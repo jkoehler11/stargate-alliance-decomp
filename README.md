@@ -115,7 +115,7 @@ if you redistribute anything, you are responsible for it.
 ## Licence
 
 The code, tooling and documentation in this repository are licensed under the **GNU General Public License,
-version 3 or (at your option) any later version**. Text to be added as `LICENSE` with the first code commit.
+version 3 or (at your option) any later version**. The full text is in [LICENSE](LICENSE).
 
 Game data, game-derived output and third-party tools are **not** covered by that licence — see Legal above.
 
