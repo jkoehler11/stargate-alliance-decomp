@@ -1,212 +1,236 @@
 #!/usr/bin/env python3
-"""Locate the UnrealScript native dispatch table (`GNatives`) in the XBE.
+"""Locate the `GNatives` dispatch table in `default.xbe` and record what the evidence supports.
 
-The VM calls natives by index through a static array of function pointers, so the table looks like
-a run of 4-byte values that are either null or the entry address of a real function. That shape
-alone is not unique -- this image has two dozen long runs of pointers into code -- so every run is
-scored with evidence only a dispatch table satisfies:
+The table is not in the file. `GNatives` is a 4096-entry array in the *uninitialised* part of
+`.data`: the image contains no bytes for it, and the native implementations are patched in at
+startup. Any index -> address map built from file bytes is therefore a map of something else --
+which is exactly what happened once here, and this tool now refuses to make that mistake twice.
 
-  1. entry 0 is null (UE leaves index 0 unused);
-  2. the run begins at a section boundary (the array is a standalone object, not a field inside
-     another structure);
-  3. every non-null entry points into `.text` -- not merely into a section flagged executable;
-  4. exactly one code reference to the table start (the interpreter's dispatch site). A vtable or
-     callback array is referenced from every site that installs it, and usually not from code at
-     all.
+Two things are written, and nothing else:
 
-Exactly one candidate satisfies all four (`0x00598e00`), and the script side corroborates it: 270
-of the 274 `native()` indices declared with an explicit index land on a distinct, non-null slot.
-The script writes the mapping for the best-evidenced table and the evidence for every candidate, so
-`docs/NATIVE_VM.md` can cite measurements instead of intuition.
+* `inventory/gnatives_candidates.csv` -- every run of dwords in `.data`/`.rdata` long enough to be
+  a function-pointer table, with the structural tests that separate a dispatch table from a
+  compiler-generated pointer array. A candidate is rejected when its entries are monotonically
+  increasing (a dispatch table is ordered by declaration, not by code address) and when no code
+  site indexes it (`call [table + reg*4]`).
+* `inventory/gnatives_table.csv` -- the table the build's own VM asserts identify. The engine
+  spells the array's name and its bound in the assert text around the interpreter
+  ("GNatives[iNative]!=0", "iNative<EX_Max"), so the table address and entry count are read out of
+  the code that asserts about them rather than guessed from a scan.
 
-Usage: gnatives.py DUMP/default.xbe [--symbols symbols/xbox_functions.csv] [--natives inventory/natives.csv]
+Usage:
+    gnatives.py DUMP/default.xbe -o inventory
 """
 import argparse
 import csv
 import os
+import re
 import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xbe import Xbe  # noqa: E402
 
-MIN_RUN = 300
-STRUCTURAL_TESTS = 4
+# The assert strings the interpreter is compiled with: the array's name and its bound.
+TABLE_ASSERT = b"GNatives[iNative]!=0"
+BOUND_ASSERT = b"iNative<EX_Max"
+# `mov reg,[reg*4+disp32]` (8b 04/0c/14/1c/24/2c/34/3c) and `call [reg*4+disp32]` (ff 14) forms.
+INDEXED = [(0x8B, r) for r in (0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C)] + [(0xFF, 0x14)]
+SIB_INDEXED = {0x85, 0x8D, 0x95, 0x9D, 0xA5, 0xAD, 0xB5, 0xBD}
 
 
-def load_function_entries(path):
-    entries = set()
-    with open(path, newline="", encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            entries.add(int(row["address"], 16))
-    return entries
+def sections(image):
+    text = [s for s in image.sections if s.name == ".text"][0]
+    return text, [s for s in image.sections if s.name in (".data", ".rdata")]
 
 
-def load_declared_indices(path):
-    """Native indices the shipped packages declare, with the names that claim them.
+def dwords(image, section):
+    """The initialised bytes of a section as dwords; `.data` is mostly uninitialised (BSS)."""
+    avail = min(section.fsize, len(image.data) - section.foff)
+    count = max(0, avail // 4)
+    return list(struct.unpack_from("<%dI" % count, image.data, section.foff))
 
-    Token 0 means the package serialised no index for that function (UELib's NativeToken is 0 for
-    the bare `native` declarations), so it carries no slot information and is not evidence either
-    way. Editor-only packages number their natives locally and are reported separately by
-    `tools/native-names.py`, but they still count here: the table either covers them or it does not.
-    """
-    declared = {}
-    if not path or not os.path.isfile(path):
-        return declared
-    with open(path, newline="", encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            token = int(row["native_token"])
-            if token == 0:
-                continue
-            declared.setdefault(token, []).append(
-                (row["package"], row["class"], row["function"]))
-    return declared
+
+def code_xrefs(text, image, va):
+    pattern = struct.pack("<I", va)
+    body = image.data[text.foff:text.foff + text.fsize]
+    out, i = [], body.find(pattern)
+    while i != -1:
+        out.append(text.va + i)
+        i = body.find(pattern, i + 1)
+    return out
+
+
+def xref_kind(text, image, site):
+    """How the code reaches an address: an indexed table use, a plain address load, or neither."""
+    body = image.data[text.foff:text.foff + text.fsize]
+    off = site - text.va
+
+    def at(k):
+        return body[k] if 0 <= k < len(body) else None
+
+    # `call [reg*4+disp]` / `mov reg,[reg*4+disp]`: the immediate is the 4th-7th byte of the inset.
+    for op, modrm in INDEXED:
+        for back in range(1, 8):
+            if at(off - back) == op and at(off + 1 - back) == modrm and at(off + 2 - back) in SIB_INDEXED:
+                return "indexed"
+    # `mov reg, imm32` (b8..bf) / `push imm32` (68) / `mov [mem], imm32` (c7 05) reach it too.
+    if at(off - 5) in range(0xB8, 0xC0) or at(off - 5) == 0x68:
+        return "address-load"
+    if at(off - 2) == 0xC7 and at(off - 1) == 0x05:
+        return "address-load"
+    return "other"
+
+
+def scan_candidates(text, image, floors):
+    lo, hi = text.va, text.va + text.vsize
+    rows = []
+    for section in floors:
+        vals = dwords(image, section)
+        i = 0
+        while i < len(vals):
+            if vals[i] == 0 or lo <= vals[i] < hi:
+                j = i
+                while j < len(vals) and (vals[j] == 0 or lo <= vals[j] < hi):
+                    j += 1
+                if j - i >= 128:
+                    rows.append({"section": section, "start": section.va + i * 4, "vals": vals[i:j]})
+                i = j
+            else:
+                i += 1
+    out = []
+    for row in rows:
+        run = row["vals"]
+        live = [v for v in run if v]
+        if not live:
+            continue
+        steps = [run[k + 1] - run[k] for k in range(len(run) - 1)]
+        monotonic = sum(1 for s in steps if s >= 0) / len(steps)
+        xrefs = code_xrefs(text, image, row["start"])
+        kinds = sorted({xref_kind(text, image, site) for site in xrefs})
+        verdict = "candidate"
+        if monotonic > 0.95:
+            verdict = "rejected:monotonic"
+        elif "indexed" not in kinds:
+            verdict = "rejected:no-indexed-xref"
+        out.append({
+            "section": row["section"].name,
+            "start": row["start"],
+            "entries": len(run),
+            "non_null": len(live),
+            "distinct": len(set(live)),
+            "monotonic_pct": round(100.0 * monotonic, 1),
+            "entry0_null": int(run[0] == 0),
+            "code_xrefs": len(xrefs),
+            "xref_kinds": "|".join(kinds),
+            "xref_vas": " ".join("0x%08x" % v for v in xrefs[:8]),
+            "verdict": verdict,
+        })
+    out.sort(key=lambda r: (-r["non_null"], r["start"]))
+    return out
+
+
+def find_string(image, needle):
+    """VA of a NUL-terminated ASCII/UTF-16 string in any section that holds initialised bytes."""
+    off = image.data.find(needle)
+    if off < 0:
+        return None
+    for s in image.sections:
+        if s.foff <= off < s.foff + s.fsize:
+            return s.va + (off - s.foff)
+    return None
+
+
+def table_from_asserts(text, image):
+    """Read the array address and its bound out of the interpreter's own assert sites."""
+    table_va = find_string(image, TABLE_ASSERT)
+    bound_va = find_string(image, BOUND_ASSERT)
+    if not table_va:
+        return None
+    sites = code_xrefs(text, image, table_va)
+    if not sites:
+        return None
+    site = sites[0]
+    body = image.data[text.foff:text.foff + text.fsize]
+    start = max(0, site - text.va - 96)
+    window = body[start:start + 192]
+    base = text.va + start
+    found, bound, bound_site = set(), None, None
+    for k in range(len(window) - 7):
+        if window[k] == 0x66 and window[k + 1] == 0x3D:                    # cmp ax, imm16
+            bound, bound_site = struct.unpack_from("<H", window, k + 2)[0], base + k
+        for op, modrm in INDEXED:
+            if window[k] == op and window[k + 1] == modrm and window[k + 2] in SIB_INDEXED:
+                found.add(struct.unpack_from("<I", window, k + 3)[0])
+    if len(found) != 1:
+        return None
+    table = found.pop()
+    lo = text.va
+    in_file = any(s.va <= table < s.va + min(s.vsize, s.fsize) for s in image.sections)
+    return {
+        "table_va": table,
+        "entries": bound,
+        "bound_site": bound_site,
+        "assert_va": table_va,
+        "bound_assert_va": bound_va,
+        "assert_site": site,
+        "in_file_bytes": int(in_file),
+    }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("xbe")
-    ap.add_argument("--symbols", default="symbols/xbox_functions.csv")
-    ap.add_argument("--natives", default="inventory/natives.csv")
     ap.add_argument("-o", "--out", default="inventory")
-    ap.add_argument("--top", type=int, default=10)
     args = ap.parse_args()
-    if not os.path.isfile(args.symbols):
-        sys.exit("symbols/xbox_functions.csv missing -- run `make ghidra` first")
 
     image = Xbe(args.xbe)
-    functions = load_function_entries(args.symbols)
-    declared = load_declared_indices(args.natives)
-    text = [s for s in image.sections if s.name == ".text"]
-    text_ranges = [(s.va, s.va + min(s.fsize, s.vsize)) for s in text]
-
-    def in_text(va):
-        return any(lo <= va < hi for lo, hi in text_ranges)
-
-    def text_xrefs(va):
-        needle = struct.pack("<I", va)
-        hits = 0
-        for s in text:
-            blob = image.data[s.foff:s.foff + min(s.fsize, s.vsize)]
-            start = 0
-            while True:
-                i = blob.find(needle, start)
-                if i < 0:
-                    break
-                hits += 1
-                start = i + 1
-        return hits
-
-    candidates = []
-    # Dispatch tables live in initialised data, never in code. XBE data sections also carry the
-    # executable flag, so "executable" cannot tell code from data here: use the name and require
-    # real file-backed bytes.
-    for section in image.sections:
-        if section.name == ".text" or section.fsize < 0x1000:
-            continue
-        blob = image.data[section.foff:section.foff + min(section.fsize, section.vsize)]
-        words = len(blob) // 4
-        values = struct.unpack_from(f"<{words}I", blob, 0)
-        run_start = None
-        run = []
-        for i, value in enumerate(tuple(values) + (0xFFFFFFFF,)):
-            # A table entry is null or points into executable memory. Requiring an exact match
-            # against Ghidra's discovered function entries is too strict: the analyser misses every
-            # target that only the dispatch table refers to (all 991 of them here), and one miss
-            # would break the run.
-            if value == 0 or in_text(value):
-                if run_start is None:
-                    run_start = i
-                run.append(value)
-            else:
-                if run_start is not None and len(run) >= MIN_RUN:
-                    candidates.append(analyse(section, run_start, run, declared, functions,
-                                              in_text, text_xrefs))
-                run_start, run = None, []
-    # Best evidence first: structural tests, then declared-index coverage, then size.
-    candidates.sort(key=lambda c: (c["structural_hits"], c["declared_present"],
-                                   c["declared_in_range"], c["nonnull"]), reverse=True)
+    text, floors = sections(image)
+    cands = scan_candidates(text, image, floors)
 
     os.makedirs(args.out, exist_ok=True)
-    evidence = os.path.join(args.out, "gnatives_candidates.csv")
-    with open(evidence, "w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
-        w.writerow(["rank", "va", "section", "entries", "non_null", "known_function_hits",
-                    "entry0_null", "at_section_start", "all_in_text", "text_xrefs",
-                    "structural_hits", "declared_in_range", "declared_present",
-                    "declared_absent", "conflicting_names", "last_non_null"])
-        for rank, c in enumerate(candidates, 1):
-            w.writerow([rank, f"0x{c['va']:08x}", c["section"], c["length"], c["nonnull"],
-                        c["hits"], int(c["entry0_null"]), int(c["at_section_start"]),
-                        int(c["all_in_text"]), c["text_xrefs"], c["structural_hits"],
-                        c["declared_in_range"], c["declared_present"], c["declared_absent"],
-                        c["conflicting"], c["last_non_null"]])
+    with open(os.path.join(args.out, "gnatives_candidates.csv"), "w", newline="",
+              encoding="utf-8") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(["section", "start_va", "entries", "non_null", "distinct", "monotonic_pct",
+                    "entry0_null", "code_xrefs", "xref_kinds", "xref_vas", "verdict"])
+        for r in cands:
+            w.writerow([r["section"], "0x%08x" % r["start"], r["entries"], r["non_null"],
+                        r["distinct"], r["monotonic_pct"], r["entry0_null"], r["code_xrefs"],
+                        r["xref_kinds"], r["xref_vas"], r["verdict"]])
 
-    print(f"{len(candidates)} candidate tables (runs >= {MIN_RUN} entries), "
-          f"{len(declared)} declared native indices")
-    for rank, c in enumerate(candidates[:args.top], 1):
-        print(f"  #{rank} 0x{c['va']:08x} {c['section']:8s} entries={c['length']:5d} "
-              f"non-null={c['nonnull']:5d} known-fn={c['hits']:5d} "
-              f"structural={c['structural_hits']}/{STRUCTURAL_TESTS} xrefs={c['text_xrefs']} "
-              f"declared={c['declared_present']}/{c['declared_in_range']} in range")
+    table = table_from_asserts(text, image)
+    path = os.path.join(args.out, "gnatives_table.csv")
+    columns = ["name", "address", "entries", "in_file_bytes", "evidence"]
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=columns, lineterminator="\n")
+        w.writeheader()
+        if table:
+            w.writerow({
+                "name": "GNatives",
+                "address": "0x%08x" % table["table_va"],
+                "entries": table["entries"],
+                "in_file_bytes": table["in_file_bytes"],
+                "evidence": "assert '%s' at 0x%08x; indexed load at the same site; bound "
+                            "'%s' (%s)" % (TABLE_ASSERT.decode(), table["assert_site"],
+                                           BOUND_ASSERT.decode(),
+                                           "0x%04x" % table["entries"] if table["entries"] else "?"),
+            })
 
-    if not candidates:
-        print("no candidates: widen MIN_RUN or check the section carve")
-        return 1
-
-    best = candidates[0]
-    if best["structural_hits"] < STRUCTURAL_TESTS:
-        print(f"WARNING: best candidate 0x{best['va']:08x} passes only "
-              f"{best['structural_hits']}/{STRUCTURAL_TESTS} structural tests -- do not trust the "
-              f"map without a second source of evidence", file=sys.stderr)
-
-    last = best["last_non_null"]
-    note = "table" if best["structural_hits"] == STRUCTURAL_TESTS else "best candidate, unconfirmed"
-    with open(os.path.join(args.out, "gnatives_map.csv"), "w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
-        w.writerow(["index", "function_va", "note"])
-        for index, value in enumerate(best["values"][:last + 1]):
-            if not value:
-                continue
-            w.writerow([index, f"0x{value:08x}", note])
-    print(f"best candidate 0x{best['va']:08x}: {best['nonnull']} live entries up to index {last}, "
-          f"{best['declared_present']} of {len(declared)} declared indices resolved "
-          f"-> {args.out}/gnatives_map.csv")
-    if best["absent"]:
-        print("  declared but absent from the table: "
-              + ", ".join(f"{i} ({','.join(sorted({c + '.' + f for _p, c, f in declared[i]}))})"
-                          for i in best["absent"]))
-    return 0
-
-
-def analyse(section, run_start, run, declared, functions, in_text, text_xrefs):
-    va = section.va + run_start * 4
-    live = [v for v in run if v]
-    in_range = [i for i in declared if i < len(run)]
-    present = [i for i in in_range if run[i]]
-    absent = sorted(i for i in declared if i not in present)
-    conflicts = 0
-    for i in present:
-        names = {(cls, fn) for _pkg, cls, fn in declared[i]}
-        if len(names) > 1:
-            conflicts += 1
-    xrefs = text_xrefs(va)
-    entry0_null = run[0] == 0
-    # The array's own first word is the only boundary this reader can check: a run that starts at
-    # the section start begins on one. Runs that begin after a null word are recorded as not
-    # starting on a boundary, which is why the vtables in .rdata fail here.
-    at_start = run_start == 0
-    all_in_text = all(in_text(v) for v in live)
-    structural = sum([entry0_null, at_start, all_in_text, xrefs == 1])
-    return {
-        "va": va, "section": section.name, "length": len(run), "nonnull": len(live),
-        "hits": sum(1 for v in live if v in functions),
-        "values": run, "entry0_null": entry0_null, "at_section_start": at_start,
-        "all_in_text": all_in_text, "text_xrefs": xrefs, "structural_hits": structural,
-        "declared_in_range": len(in_range), "declared_present": len(present),
-        "declared_absent": len(absent), "absent": absent, "conflicting": conflicts,
-        "last_non_null": max((i for i, v in enumerate(run) if v), default=-1),
-    }
+    candidates = [r for r in cands if r["verdict"] == "candidate"]
+    print("%d pointer-run candidates: %d pass, %d rejected"
+          % (len(cands), len(candidates), len(cands) - len(candidates)))
+    for r in cands[:6]:
+        print("  0x%08x %-7s %5d entries %5.1f%% monotonic xrefs=%s -> %s"
+              % (r["start"], r["section"], r["entries"], r["monotonic_pct"],
+                 r["xref_kinds"] or "-", r["verdict"]))
+    if table:
+        print("GNatives: 0x%08x, %s entries, initialised bytes in file: %s"
+              % (table["table_va"], table["entries"] or "?", "yes" if table["in_file_bytes"] else "no"))
+    else:
+        print("GNatives: not identified -- the assert scan did not resolve a single table address")
+    print("wrote %s and gnatives_candidates.csv" % path)
+    return 0 if table else 1
 
 
 if __name__ == "__main__":

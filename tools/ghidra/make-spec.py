@@ -3,7 +3,8 @@
 
 Ghidra's binary loader treats the file as one flat block, which is wrong for an XBE (file offsets
 and virtual addresses diverge after the first section). The spec lets `XbePre.java` carve the real
-sections before analysis and `XbePost.java` name the functions that own assert strings.
+sections before analysis and `XbePost.java` name the functions that own assert strings. Native
+names are not part of the spec: the dispatch table has no bytes in the file (docs/NATIVE_VM.md).
 
 Usage: make-spec.py DUMP/default.xbe --out build/ghidra
 """
@@ -21,7 +22,6 @@ def main():
     ap.add_argument("xbe")
     ap.add_argument("--out", default="build/ghidra")
     ap.add_argument("--asserts", default="inventory/xbe_modules.csv")
-    ap.add_argument("--native-names", default="inventory/native_names.csv")
     args = ap.parse_args()
 
     image = Xbe(args.xbe)
@@ -42,22 +42,7 @@ def main():
                     for va in (row["xref_vas"] or "").split():
                         fh.write(f"{row['module']}\t{row['source_file']}\t{row['string_va']}\t{va}\n")
                         rows += 1
-    # GNatives: one row per live dispatch slot, with the name the script side gives it (if any).
-    # tools/native-names.py owns the naming rules -- a slot with no declarer stays unnamed here and
-    # is marked slot-only, so XbePost.java can comment it instead of inventing a name.
-    gmap = os.path.join(args.out, "gnatives.tsv")
-    entries = 0
-    if not os.path.isfile(args.native_names):
-        print(f"no {args.native_names}: run tools/native-names.py first", file=sys.stderr)
-        return 1
-    with open(gmap, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write("# index\tva\tname\tevidence\n")
-        with open(args.native_names, newline="", encoding="utf-8") as src:
-            for row in csv.DictReader(src):
-                fh.write(f"{row['index']}\t{row['function_va']}\t{row['name']}\t"
-                         f"{row['evidence']}\n")
-                entries += 1
-    print(f"{len(image.sections)} sections, {rows} assert xrefs, {entries} natives -> {args.out}")
+    print(f"{len(image.sections)} sections, {rows} assert xrefs -> {args.out}")
 
 
 if __name__ == "__main__":

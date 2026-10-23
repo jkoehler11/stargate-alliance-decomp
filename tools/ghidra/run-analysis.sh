@@ -16,8 +16,7 @@ headless="$home/support/analyzeHeadless"
 
 proj="$PWD/build/ghidra"
 mkdir -p "$proj" symbols
-python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj" \
-    --native-names inventory/native_names.csv
+python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
 
 "$headless" "$proj" sg1 \
     -import "$game/default.xbe" \
@@ -27,6 +26,7 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj" \
     -scriptPath "$PWD/tools/ghidra/ghidra_scripts" \
     -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" 0x10184 \
     -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" 0x10184 \
-        "$proj/gnatives.tsv" "$proj/gnatives_applied.csv" "$PWD/symbols/xbe_overrides.csv" \
+        "$PWD/symbols/xbe_overrides.csv" \
+    -postScript ExportEvidence.java "$proj/evidence" \
     -deleteProject
 echo "symbols: symbols/xbox_functions.csv"

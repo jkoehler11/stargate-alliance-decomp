@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives formats decompile oracle-diff ghidra check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra check clean
 
 help:
 	@echo "targets:"
@@ -20,6 +20,7 @@ help:
 	@echo "  decompile     reconstruct UnrealScript into $(WORK)/UnrealScript (never committed)"
 	@echo "  oracle-diff   compare against the private 2006 source (set ORACLE_DIR)"
 	@echo "  formats       catalogue custom formats; dump the checkpoint property schema"
+	@echo "  call-census   direct callers of one function from the Ghidra export (needs ghidra)"
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -54,14 +55,18 @@ ghidra:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@GHIDRA_HOME="$(GHIDRA_HOME)" sh tools/ghidra/run-analysis.sh "$(SG1_DUMP)" "$(GHIDRA_HOME)"
 
-# GNatives: index -> address from the XBE, name from inventory/natives.csv (PLAN 4.3/4.4).
+# GNatives: locate the dispatch table from the VM's own assert text, and name the indices the
+# packages declare. There is no index -> address map: the table has no bytes in the file.
 natives:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/gnatives.py \
-		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
-		--symbols symbols/xbox_functions.csv --natives inventory/natives.csv -o inventory
-	@$(PYTHON) tools/native-names.py --natives inventory/natives.csv \
-		--table inventory/gnatives_map.csv -o inventory --ghidra-out build/ghidra/gnatives.tsv
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@$(PYTHON) tools/native-names.py --natives inventory/natives.csv -o inventory
+
+# Who calls a function: the call graph from `make ghidra`, keyed by address or final name.
+call-census:
+	@test -d build/ghidra/evidence || { echo "build/ghidra/evidence missing -- run 'make ghidra'"; exit 2; }
+	@$(PYTHON) tools/call-census.py --target "$(TARGET)"
 
 # Custom formats: counts from the manifest, containers from the dump, checkpoint schemas via Sg1Tool.
 formats:

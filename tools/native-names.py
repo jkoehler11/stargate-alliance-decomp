@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
-"""Name the `GNatives` dispatch slots from the script packages' own native declarations.
+"""Name the natives the shipped packages declare, by the index each declaration carries.
 
 Bytecode calls natives by index, and `inventory/natives.csv` records every native function the
-shipped packages declare together with the index the package serialised for it. That makes the
-dispatch table self-documenting: slot N of `GNatives` *is* the function the script calls as
-`class.function` at index N.
+packages declare plus the index the package serialised for it. Two things follow, and only one of
+them is a name:
 
-Three cases have to stay apart, because only one of them is a name:
+- **declared** -- one distinct `Class.Function` claims the index. `exec<Function>` is the engine's
+  spelling for a native implementation (`docs/CONVENTIONS.md`); a name two indices would share takes
+  the class prefix instead, so the common case stays `execTrace`, not `execActor_Trace`.
+- **ambiguous** -- two different functions claim one index. A conflict means the mapping is not
+  understood yet, so it is recorded empty rather than guessed.
 
-- **declared** -- one distinct `Class.Function` claims the index; the slot is that function.
-- **slot-only** -- no shipped package declares the index. 721 of the 991 live slots are like this:
-  engine-internal execs (renderer, Xbox services, Karma) that C++ calls directly and no script can
-  reach.  ``The slot number is real evidence, the name is not, so the slot gets no name.
-- **ambiguous** -- two different functions claim one index, or two indices claim one name. A
-  conflict means the mapping is not understood yet; naming either side would be a guess.
+What this tool deliberately does *not* produce is an address. `GNatives` lives in the uninitialised
+part of `.data` and is populated at startup (see `docs/NATIVE_VM.md`), so the file contains no
+index -> address map; an earlier version of this tool paired these names with addresses taken from a
+pointer array that turned out to be the CRT's static-initialiser list. An index is evidence of an
+entry point, not of an address, and the two are kept apart here until the runtime table is resolved.
 
-`Editor` and `UPreview` are excluded: they are editor-side packages (not loaded by the game build)
-and number their natives locally -- `UPreviewMapListClient.Created` claims index 2, which is a null
-slot in the runtime table, so its index cannot be read in the same space.
+`Editor`, `UPreview` and `UnrealEd` are excluded: they are editor-side packages that the shipped
+game does not load, and `UPreview.UPreviewMapListClient.Created` claims index 2, which the runtime
+table reserve for nothing -- their small indices are numbered inside the package, not in the
+engine's global space.
 
-Usage: native-names.py [--natives inventory/natives.csv] [--table inventory/gnatives_map.csv]
-                        [-o inventory] [--ghidra-out build/ghidra/gnatives.tsv]
+Usage: native-names.py [--natives inventory/natives.csv] [-o inventory]
 """
 import argparse
 import csv
@@ -28,19 +30,8 @@ import os
 import re
 import sys
 
-# Editor-side packages: present in the dump, not loaded by the shipped game, and their native
-# indices are numbered inside the package rather than across the engine's global index space.
 EXCLUDED_PACKAGES = {"Editor", "UPreview", "UnrealEd"}
-
 IDENT = re.compile(r"[^A-Za-z0-9_]")
-
-
-def load_table(path):
-    slots = {}
-    with open(path, newline="", encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            slots[int(row["index"])] = int(row["function_va"], 16)
-    return slots
 
 
 def load_declarations(path):
@@ -58,80 +49,50 @@ def load_declarations(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--natives", default="inventory/natives.csv")
-    ap.add_argument("--table", default="inventory/gnatives_map.csv")
     ap.add_argument("-o", "--out", default="inventory")
-    ap.add_argument("--ghidra-out", default="build/ghidra/gnatives.tsv")
     args = ap.parse_args()
 
-    slots = load_table(args.table)
     declared = load_declarations(args.natives)
-
-    # Pass 1: which distinct Class.Function claims each slot.
-    claims = {}
-    for index in sorted(slots):
-        live = [d for d in declared.get(index, []) if d[0] not in EXCLUDED_PACKAGES]
-        if len(declared.get(index, [])) == 0:
-            continue
-        distinct = sorted({(c, f) for _p, c, f in live})
+    claims, ambiguous = {}, {}
+    for index in sorted(declared):
+        live = [(c, f) for p, c, f in declared[index] if p not in EXCLUDED_PACKAGES]
+        distinct = sorted(set(live))
         if len(distinct) == 1:
             claims[index] = distinct[0]
+        elif len(distinct) > 1:
+            ambiguous[index] = distinct
 
-    # Pass 2: `exec<Function>` is the engine's own spelling for a native implementation, and
-    # docs/CONVENTIONS.md asks for it; only a name that two slots would share gets the class prefix,
-    # so the common case stays readable (`execTrace`, not `execActor_Trace`).
     base_counts = {}
-    for cls, fn in claims.values():
-        base_counts["exec" + IDENT.sub("_", fn)] = base_counts.get(
-            "exec" + IDENT.sub("_", fn), 0) + 1
+    for _cls, fn in claims.values():
+        base = "exec" + IDENT.sub("_", fn)
+        base_counts[base] = base_counts.get(base, 0) + 1
 
-    rows = []
-    named, slot_only, ambiguous = 0, 0, 0
-    used = {}
-    for index in sorted(slots):
-        decls = declared.get(index, [])
-        declarers = ";".join(f"{p}:{c}:{f}" for p, c, f in sorted(decls))
-        if index not in claims:
-            if decls:
-                ambiguous += 1
-                rows.append((index, slots[index], "", "ambiguous", declarers))
-            else:
-                slot_only += 1
-                rows.append((index, slots[index], "", "slot-only", ""))
-            continue
+    rows, used = [], {}
+    for index in sorted(claims):
         cls, fn = claims[index]
         base = "exec" + IDENT.sub("_", fn)
         if base_counts[base] > 1:
-            base = f"exec{IDENT.sub('_', cls)}_{IDENT.sub('_', fn)}"
-        name = base
-        if name in used:
-            name = f"{base}_{index}"
+            base = "exec%s_%s" % (IDENT.sub("_", cls), IDENT.sub("_", fn))
+        name = base if base not in used else "%s_%d" % (base, index)
         used.setdefault(name, index)
-        named += 1
-        rows.append((index, slots[index], name, "declared", declarers))
+        rows.append((index, name, "declared",
+                     ";".join("%s:%s:%s" % d for d in sorted(set(declared[index])))))
+    for index in sorted(ambiguous):
+        rows.append((index, "", "ambiguous",
+                     ";".join("%s:%s:%s" % d for d in ambiguous[index])))
+    rows.sort()
 
     os.makedirs(args.out, exist_ok=True)
-    out_path = os.path.join(args.out, "native_names.csv")
-    with open(out_path, "w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
-        w.writerow(["index", "function_va", "name", "evidence", "declarers"])
-        for index, va, name, evidence, declarers in rows:
-            w.writerow([index, f"0x{va:08x}", name, evidence, declarers])
+    path = os.path.join(args.out, "native_names.csv")
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(["index", "name", "evidence", "declarers"])
+        w.writerows(rows)
 
-    if args.ghidra_out:
-        os.makedirs(os.path.dirname(args.ghidra_out), exist_ok=True)
-        with open(args.ghidra_out, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write("# index\tva\tname\tevidence\n")
-            for index, va, name, evidence, _declarers in rows:
-                fh.write(f"{index}\t0x{va:08x}\t{name}\t{evidence}\n")
-
-    beyond = sorted(i for i in declared if i not in slots and i)
-    print(f"{len(slots)} live GNatives slots: {named} named from a declaration, "
-          f"{slot_only} slot-only (no declarer), {ambiguous} ambiguous")
-    print(f"  {len({d for ds in declared.values() for d in ds})} native declarations, "
-          f"{len(declared)} distinct explicit indices")
-    if beyond:
-        print(f"  declared indices outside the table: {', '.join(str(i) for i in beyond)}")
-    print(f"wrote {out_path}" + (f" and {args.ghidra_out}" if args.ghidra_out else ""))
+    declarations = sum(len(v) for v in declared.values())
+    print("%d declarations over %d distinct explicit indices: %d named, %d ambiguous"
+          % (declarations, len(declared), len(claims), len(ambiguous)))
+    print("wrote %s (no addresses: GNatives is not initialised in the file)" % path)
     return 0
 
 
