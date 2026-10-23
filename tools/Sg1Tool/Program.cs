@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using UELib;
+using UELib.Core;
 
 namespace Sg1Tool;
 
@@ -130,9 +131,92 @@ internal static class Dump
             .OrderBy(p => p, StringComparer.Ordinal);
     }
 
-    public static UnrealPackage Load(string path)
+    /// <summary>
+    /// Native index -> name table, built from the build's own Core.u.
+    ///
+    /// Bytecode calls natives by index, and UELib resolves those indices through
+    /// UnrealPackage.NTLPackage. Nothing in this dump supplies that table, so every native call
+    /// (including the operator natives: Object.NotEqual_ObjectObject is native 119) fell back to a
+    /// generated `__NFUN_<n>__` name -- 51k unreadable sites. Core.u declares all of them, so we
+    /// rebuild the table from it and hand it to every other package.
+    /// </summary>
+    private static NativesTablePackage? _nativeTable;
+    private static string? _nativeTableDump;
+
+    private static bool _buildingNativeTable;
+
+    /// <summary>
+    /// Every package contributes its own natives to the one global index space, so the table is the
+    /// union over all 18 packages -- Core alone covers the operators (Object.EqualEqual_*), but
+    /// iterators such as TouchingActors (307) are declared further up the class tree.
+    /// </summary>
+    private static NativesTablePackage BuildNativeTable(string dumpRoot)
+    {
+        if (_nativeTable != null && _nativeTableDump == dumpRoot) return _nativeTable;
+        if (_buildingNativeTable) return _nativeTable ?? new NativesTablePackage();
+
+        _buildingNativeTable = true;
+        try
+        {
+            var map = new Dictionary<ushort, NativeTableItem>();
+            var conflicts = 0;
+            // Core only, deliberately. Across the 18 packages there are 797 native declarations for
+            // ~275 indices, i.e. the same index is reused by different classes -- so a union table
+            // would name code in package A with package B's symbol (silently wrong, which is worse
+            // than __NFUN_n__). Core is the one package whose indices are attesible as global
+            // (verified against the 2006 oracle: 114/119/130/132/144/146/150/151/153/154/171/174/
+            // 175/177/213/216 are Object's operator natives). The rest wait for the real GNatives
+            // table in the XBE (PLAN 4.4).
+            foreach (var path in Packages(dumpRoot).Where(p =>
+                         string.Equals(Path.GetFileNameWithoutExtension(p), "Core",
+                             StringComparison.OrdinalIgnoreCase)))
+            {
+                UnrealPackage package;
+                try
+                {
+                    package = UnrealLoader.LoadPackage(path, FileAccess.Read);
+                    package.InitializePackage(UnrealPackage.InitFlags.All);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"native table: skipping {Path.GetFileName(path)}: {ex.Message}");
+                    continue;
+                }
+
+                foreach (var fn in package.Objects.OfType<UFunction>())
+                {
+                    if (!fn.FunctionFlags.HasFlag(UELib.Flags.FunctionFlag.Native)) continue;
+                    if (map.TryGetValue(fn.NativeToken, out var existing))
+                    {
+                        // Same index from two declarations: keep the first and count it, because a
+                        // conflict here means the index space is not what we think it is.
+                        if (existing.Name != fn.Name.ToString()) conflicts++;
+                        continue;
+                    }
+
+                    map[fn.NativeToken] = new NativeTableItem(fn);
+                }
+            }
+
+            _nativeTable = new NativesTablePackage { NativeTokenMap = map, NativeTableList = map.Values.ToList() };
+            _nativeTableDump = dumpRoot;
+            Console.Error.WriteLine(
+                $"native table: {map.Count} Core natives indexed" +
+                (conflicts > 0 ? $" ({conflicts} duplicate indices inside Core, first name kept)" : ""));
+            return _nativeTable;
+        }
+        finally
+        {
+            _buildingNativeTable = false;
+        }
+    }
+
+    public static UnrealPackage Load(string path, string dumpRoot)
     {
         var package = UnrealLoader.LoadPackage(path, FileAccess.Read);
+        // Resolve native indices before the token factory is built (it is lazy, so this is in time).
+        if (!string.Equals(Path.GetFileNameWithoutExtension(path), "Core", StringComparison.OrdinalIgnoreCase))
+            package.NTLPackage = BuildNativeTable(dumpRoot);
         // Construct alone leaves every export undeserialized, so UELib cannot tell a UClass from a
         // property and OfType<UClass>() silently returns a handful of stubs. Deserialize+Link is
         // what actually materialises the object graph the inventory counts.

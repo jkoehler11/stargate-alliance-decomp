@@ -35,7 +35,7 @@ internal static class InventoryCommand
             UnrealPackage package;
             try
             {
-                package = Dump.Load(path);
+                package = Dump.Load(path, dumpRoot);
             }
             catch (Exception ex)
             {

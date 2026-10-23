@@ -5,59 +5,58 @@ reconstructed tree is a token UELib cannot name for build `SG1_TA`; the script i
 structurally reconstructed but that expression or call is unreadable until the token map
 is extended. Work queue for `PLAN.md` 3.5 — fix the most frequent tokens first.
 
-- 2,319 classes reconstructed, 51,289 unresolved sites, 213 distinct tokens
-- top token `__NFUN_119__` alone accounts for 5,565 sites
+- 2,319 classes reconstructed, 4,230 unresolved sites, 93 distinct tokens
+- top token `__NFUN_278__` alone accounts for 465 sites
 
 ## Tokens by frequency
 
 | token | sites | classes affected |
 |---|---|---|
-| `__NFUN_119__` | 5,565 | 595 |
-| `__NFUN_112__` | 3,988 | 308 |
-| `__NFUN_130__` | 3,649 | 470 |
-| `__NFUN_114__` | 2,740 | 476 |
-| `__NFUN_129__` | 2,060 | 430 |
-| `__NFUN_154__` | 1,721 | 328 |
-| `__NFUN_175__` | 1,662 | 250 |
-| `__NFUN_171__` | 1,570 | 254 |
-| `__NFUN_132__` | 1,554 | 317 |
-| `__NFUN_150__` | 1,486 | 348 |
-| `__NFUN_231__` | 1,270 | 249 |
-| `__NFUN_165__` | 1,222 | 326 |
-| `__NFUN_174__` | 1,071 | 211 |
-| `__NFUN_146__` | 881 | 156 |
-| `__NFUN_113__` | 871 | 163 |
-| `__NFUN_176__` | 827 | 198 |
-| `__NFUN_177__` | 794 | 222 |
-| `__NFUN_215__` | 693 | 167 |
-| `__NFUN_168__` | 693 | 184 |
-| `__NFUN_172__` | 681 | 186 |
-| `__NFUN_216__` | 626 | 150 |
-| `__NFUN_184__` | 545 | 168 |
-| `__NFUN_155__` | 540 | 180 |
-| `__NFUN_151__` | 529 | 214 |
-| `__NFUN_147__` | 490 | 153 |
+| `__NFUN_278__` | 465 | 207 |
+| `__NFUN_465__` | 370 | 89 |
+| `__NFUN_279__` | 357 | 147 |
+| `__NFUN_256__` | 271 | 55 |
+| `__NFUN_280__` | 268 | 131 |
+| `__NFUN_259__` | 170 | 38 |
+| `__NFUN_3970__` | 162 | 55 |
+| `__NFUN_304__` | 154 | 104 |
+| `__NFUN_262__` | 149 | 75 |
+| `__NFUN_299__` | 146 | 70 |
+| `__NFUN_264__` | 138 | 73 |
+| `__NFUN_277__` | 134 | 56 |
+| `__NFUN_267__` | 129 | 70 |
+| `__NFUN_313__` | 121 | 69 |
+| `__NFUN_464__` | 121 | 31 |
+| `__NFUN_500__` | 92 | 19 |
+| `__NFUN_502__` | 85 | 16 |
+| `__NFUN_298__` | 76 | 37 |
+| `__NFUN_514__` | 70 | 27 |
+| `__NFUN_548__` | 69 | 17 |
+| `__NFUN_521__` | 65 | 15 |
+| `__NFUN_520__` | 62 | 23 |
+| `__NFUN_512__` | 50 | 36 |
+| `__NFUN_307__` | 38 | 23 |
+| `__NFUN_517__` | 38 | 20 |
 
 ## Sites by package
 
 | package | unresolved sites |
 |---|---|
-| `StargateGame` | 17,250 |
-| `Engine` | 14,093 |
-| `StargateContent` | 6,116 |
-| `UWindow` | 2,832 |
-| `GUI` | 2,781 |
-| `StargateVehicles` | 2,236 |
-| `UDebugMenu` | 1,500 |
-| `GamePlay` | 1,233 |
-| `StargateMenus` | 851 |
-| `Editor` | 847 |
-| `AmbientCreatures` | 634 |
-| `IpDrv` | 412 |
-| `Sharpeffects` | 220 |
-| `Stargateeffects` | 206 |
+| `StargateGame` | 1,621 |
+| `StargateContent` | 920 |
+| `Engine` | 887 |
+| `StargateVehicles` | 417 |
+| `GamePlay` | 120 |
+| `AmbientCreatures` | 78 |
 | `Core` | 62 |
-| `UPreview` | 16 |
+| `Sharpeffects` | 55 |
+| `Stargateeffects` | 27 |
+| `GUI` | 18 |
+| `IpDrv` | 9 |
+| `UWindow` | 8 |
+| `StargateMenus` | 4 |
+| `UDebugMenu` | 2 |
+| `UPreview` | 2 |
 
 ## How to close these
 

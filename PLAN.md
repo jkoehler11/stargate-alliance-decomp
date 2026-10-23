@@ -123,7 +123,7 @@ and `inventory/` regenerates from scripts with no manual edits.
       *matches leak*, *drifted (build is 6 months older)*, *absent in leak (cut/added content)*.
 - [~] 3.4 Triage bucket 3 — this is the cut-content list. Write `docs/CUT_CONTENT.md` (classes, missions,
       weapons, features present in Dec-2005 build but gone by Jun-2006).
-- [ ] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
+- [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
 - [ ] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
@@ -235,8 +235,17 @@ and a deliberate one-line script break is caught by the boot test.
   replaces the shortcut. The 65 drifted + 11 divergent `Engine` classes are the engine subsystems
   still being rewritten between Dec 2005 and Jun 2006 (input for 4.8), and the oracle gives a hard
   quality number to move with 3.5.
-  Next: token-map work (3.5) against `docs/DECOMPILER_GAPS.md`, then 5.2/5.3 for real cut-content
-  evidence.
+- **3.5 big win (native table).** Bytecode calls natives by index and UELib resolves them through
+  `UnrealPackage.NTLPackage`, which nothing in this dump supplies -- so every engine call, including
+  the operator natives (`Object.NotEqual_ObjectObject` = native 119), decompiled to `__NFUN_<n>__`.
+  Rebuilding that table from the build's own `Core.u` (161 natives) and handing it to every package
+  took unresolved sites from **51,289 to 4,230 (-92%)**, and operator expressions now read as source
+  (`V.bPainCausing && V.DamageType != ReducedDamageType`). Deliberately **Core-only**: across the 18
+  packages there are 797 native declarations for ~275 indices, so a union table would name package
+  A's code with package B's symbol -- silently wrong. The remaining 93 tokens (4,230 sites) need the
+  real `GNatives` dispatch table from the XBE (4.4), which is now the cheapest route to 100%
+  readability rather than a rewrite of the token map.
+  Next: 5.2/5.3 for real cut-content evidence, and 4.1/4.3 to unblock the remaining tokens.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
