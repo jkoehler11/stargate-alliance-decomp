@@ -9,8 +9,8 @@ James runs. If another file in this repository disagrees with this one, this one
 - `PLAN.md`: the task list. It is the authority on what to do next and in what order.
 - `AGENTS.md` (this file): the rules.
 - `LICENSE`: GPL-3.0-or-later, covering this repository's own code, tooling and documentation only.
-- `docs/`: not written yet. Planned: `SCOPE.md`, `LEGAL.md`, `CONVENTIONS.md`, `PROVENANCE.md`,
-  `MATCHING.md`, `NATIVE_VM.md`, `formats/`. Create them as the phases in `PLAN.md` reach them.
+- `docs/`: scope, legal, provenance, conventions, VM and native notes, per-format notes under
+  `formats/`, and `UNKNOWNS.md` — the tracked gaps. Add to it as the phases in `PLAN.md` reach them.
 
 ## The hard rule: no game data, ever
 
