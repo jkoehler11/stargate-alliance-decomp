@@ -24,10 +24,20 @@ KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAud
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", default="symbols/xbox_functions.csv")
+    ap.add_argument("--overrides", default="symbols/xbe_overrides.csv",
+                    help="evidence-based names; their module attribution joins the assert counts")
     ap.add_argument("-o", "--out", default="inventory")
     args = ap.parse_args()
     if not os.path.isfile(args.symbols):
         raise SystemExit(f"{args.symbols} not found -- run `make ghidra` first")
+
+    # A function renamed by an evidence override (symbols/xbe_overrides.csv) keeps its module
+    # attribution from the override, not from the assert-derived prefix it no longer carries.
+    overrides = {}
+    if args.overrides and os.path.isfile(args.overrides):
+        with open(args.overrides, newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                overrides[row["address"].lower()] = row
 
     rows = []
     with open(args.symbols, newline="", encoding="utf-8") as fh:
@@ -36,6 +46,12 @@ def main():
             unknown = bool(FUN.match(name))
             prefix = name.split("_", 1)[0]
             module = prefix if (not unknown and prefix in KNOWN_MODULES) else ""
+            override = overrides.get(row["address"].lower())
+            if override and override["module"] in KNOWN_MODULES:
+                module = override["module"]
+                kind_override = True
+            else:
+                kind_override = False
             # Two kinds of native-table name, counted apart: `exec<Function>` is a slot a shipped
             # package declares by index, `Native_<index>` is a slot with no declarer at all.
             if name.startswith("exec") and not module:
@@ -45,7 +61,8 @@ def main():
             else:
                 kind = "other"
             rows.append({"address": row["address"], "name": name, "size": int(row["size"]),
-                         "module": module, "unknown": unknown, "kind": kind})
+                         "module": module, "unknown": unknown, "kind": kind,
+                         "override": kind_override})
 
     per_module = defaultdict(lambda: {"functions": 0, "bytes": 0, "named": 0})
     for r in rows:
@@ -68,7 +85,8 @@ def main():
     sizes = sorted(r["size"] for r in rows)
     total = sum(sizes)
     median = sizes[len(sizes) // 2] if sizes else 0
-    assert_named = sum(1 for r in rows if r["module"])
+    assert_named = sum(1 for r in rows if r["module"] and not r["override"])
+    override_named = sum(1 for r in rows if r["override"])
     gnative_named = sum(1 for r in rows if r["kind"] == "gnatives_declared")
     gnative_slot = sum(1 for r in rows if r["kind"] == "gnatives_slot")
     other_named = sum(1 for r in rows if not r["unknown"] and not r["module"]
@@ -88,8 +106,9 @@ def main():
              "x86:LE:32, XBE sections carved at their real virtual addresses, base `0x10000`).", "",
              f"- {len(rows):,} functions discovered, {total:,} bytes of code, median function "
              f"{median} bytes",
-             f"- {assert_named:,} functions attributed to a module by the assert string they reference "
-             f"({assert_named / len(rows):.1%} of the binary); {gnative_named:,} are named from the "
+             f"- {assert_named + override_named:,} functions attributed to a module "
+             f"({assert_named:,} by the assert string they reference, {override_named:,} by an evidence "
+             f"override — {assert_named / len(rows):.1%} of the binary by assert); {gnative_named:,} are named from the "
              f"script side's own native declarations (`GNatives` slots, PLAN 4.4) and {gnative_slot:,} "
              f"more are `GNatives` slots no shipped package declares; {other_named:,} carry a name "
              f"from Ghidra's own analysis (thunks, runtime helpers)", "",
@@ -121,7 +140,8 @@ def main():
               "4. Split the project per module using these attribution counts as the work breakdown (4.5).", ""]
     with open(os.path.join("docs", "NATIVE.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines))
-    print(f"{len(rows)} functions, {assert_named} assert-attributed, {gnative_named} GNatives-named, "
+    print(f"{len(rows)} functions, {assert_named} assert-attributed, {override_named} override-attributed, "
+          f"{gnative_named} GNatives-named, "
           f"{gnative_slot} slot-only, {other_named} other named -> docs/NATIVE.md")
 
 

@@ -52,7 +52,7 @@ decompile:
 # located against a finished analysis, and naming its targets is a post-script of the next import.
 ghidra:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
-	@GHIDRA_HOME="$(GHIDRA_HOME)" tools/ghidra/run-analysis.sh "$(SG1_DUMP)" "$(GHIDRA_HOME)"
+	@GHIDRA_HOME="$(GHIDRA_HOME)" sh tools/ghidra/run-analysis.sh "$(SG1_DUMP)" "$(GHIDRA_HOME)"
 
 # GNatives: index -> address from the XBE, name from inventory/natives.csv (PLAN 4.3/4.4).
 natives:
@@ -67,7 +67,7 @@ natives:
 formats:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/formats.py --manifest inventory/manifest.sha256 --samples "$(SG1_DUMP)" -o inventory
-	@tools/sgs-dump.sh "$(SG1_DUMP)" "$(WORK)/sgs"
+	@sh tools/sgs-dump.sh "$(SG1_DUMP)" "$(WORK)/sgs"
 	@$(PYTHON) tools/sgs-schema.py "$(WORK)/sgs" -o inventory/sgs_schema.csv
 
 # Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.

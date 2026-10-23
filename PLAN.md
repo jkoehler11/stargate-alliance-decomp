@@ -156,8 +156,10 @@ matching table shows ≥98% of functions at L2 or better.
       measured result and the four unaccounted indices in `docs/NATIVE_VM.md` and `docs/UNKNOWNS.md`.
 - [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
-- [ ] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
+- [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
+      All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
+      class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
 - [ ] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
 - [ ] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
       memory/cache, script compiler hooks, Kynapse/AI integration, LIPSinc integration, ragdoll `.ka` loader).
@@ -276,6 +278,20 @@ and a deliberate one-line script break is caught by the boot test.
   attributed to a module** (Core 549, Engine 526, Gui 53, stargategame 31, IpDrv 20, D3DDrv 16,
   stargatevehicles 12, XboxLive 10, Gameplay 9, Fire 8, XboxAudio 6, XboxDrv 5). 199 assert xrefs
   sit in no function — worth a look, since each is a call site the analyser did not cover.
+- **4.6 started, and the game modules are not what the plan expected.** All 43 functions in the two
+  modules decompile (`tools/ghidra/export-c.sh`, 13,737 symbols applied first so the C reads as
+  names). **39 of the 43 are generated ucpp class-registration stubs**: each calls the class
+  constructor with the class name, outer package `System`, object size and flags as literals, then
+  asserts `ReturnClass`. The class literal is the build's own data, so they are named
+  `ucpp_Register_<Class>` through `symbols/xbe_overrides.csv` (applied by `XbePost` after the assert
+  and GNatives passes), and the object sizes — 3,788 `AlkeshBomber`, 4,344 `StargatePlayer`, 3,344
+  `StargateVehicle` — fall out as the class layout sizes for 4.3/4.7. The remaining four functions are
+  the real bodies: `StargateCar` velocity projection and clamping, two `SGCameraEffects` depth-of-field
+  bodies, and one `GoauldDrone` stub without a literal (U6). Consequence for the plan: the gameplay is
+  not in these modules — they are generated glue — so 4.6's remaining value is the four bodies, and the
+  next naming win is the three shared helpers (`FUN_00058a30` = assert-style, 43 calls; the constructor
+  and `FUN_000340c0`, 40 each). The modules' 21 `native()` declarations all serialise index 0, the same
+  signature as U1, which is the 4.7 thread.
 - **2.4/5.4/5.5 done (formats).** `inventory/formats.csv` catalogues 12 extensions with the container
   each one really is, and `docs/formats/` documents four: `.ka`/`.kaw` are Karma 1.0 XML (8 ragdoll
   assets, 141 parts, 133 joints, 256 collision primitives; `.kaw` is an authoring workspace, not

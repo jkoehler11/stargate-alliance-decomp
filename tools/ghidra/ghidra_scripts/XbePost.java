@@ -24,7 +24,7 @@ public class XbePost extends GhidraScript {
     public void run() throws Exception {
         String[] args = getScriptArgs();
         if (args.length < 2) {
-            println("usage: XbePost.java <asserts.tsv> <out.csv> [entryVa] [gnatives.tsv] [gnatives_out.csv]");
+            println("usage: XbePost.java <asserts.tsv> <out.csv> [entryVa] [gnatives.tsv] [gnatives_out.csv] [overrides.csv]");
             return;
         }
         // Make sure the entry point became a function; on an XBE nothing else marks it.
@@ -137,6 +137,31 @@ public class XbePost extends GhidraScript {
             if (nout != null) nout.close();
         }
 
+        // Explicit overrides last, so a stronger piece of evidence wins over the assert-derived file
+        // name: symbols/xbe_overrides.csv carries names derived from the build's own data (e.g. the
+        // class literal inside a ucpp registration stub) with the evidence recorded per row.
+        int overridden = 0;
+        if (args.length > 5) {
+            BufferedReader ov = new BufferedReader(new FileReader(args[5]));
+            String ol;
+            while ((ol = ov.readLine()) != null) {
+                if (ol.startsWith("address") || ol.startsWith("#") || ol.trim().isEmpty()) continue;
+                String[] p = ol.split(",", -1);
+                if (p.length < 2) continue;
+                Address at = currentProgram.getAddressFactory().getDefaultAddressSpace()
+                        .getAddress(Long.decode(p[0]));
+                Function fn = at == null ? null : getFunctionAt(at);
+                if (fn == null || fn.getName().equals(p[1])) continue;
+                try {
+                    fn.setName(p[1], SourceType.USER_DEFINED);
+                    overridden++;
+                } catch (Exception ignored) {
+                    // duplicate name: the override file is reviewed, so a clash is a name bug
+                }
+            }
+            ov.close();
+        }
+
         int functions = currentProgram.getFunctionManager().getFunctionCount();
         int unnamed = 0;
         for (Function fn : currentProgram.getFunctionManager().getFunctions(true)) {
@@ -151,6 +176,7 @@ public class XbePost extends GhidraScript {
         out.close();
         println("functions: " + functions + ", named from asserts: " + named
                 + ", duplicate names: " + duplicates + ", xrefs in no function: " + unresolved);
+        println("overrides applied: " + overridden);
         println("gnatives: renamed " + nativeNamed + ", created " + nativeCreated
                 + ", already named " + nativeKept + ", name clashes " + nativeClash
                 + ", slot comments " + slotComment + ", still FUN_* " + unnamed);

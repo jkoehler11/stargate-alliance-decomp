@@ -104,3 +104,21 @@ pass. Also unknown: what makes an actor eligible besides `MarkForSaveGame`.
 **What would settle it.** Read the reconstructed bodies for those classes (PLAN 3.10) and their
 native call sites in the XBE (4.6/4.9). No format work is blocked on it; rebuilding a checkpoint
 (PLAN 6.4) is.
+
+## U6. Three shared helpers, and four game functions that are not registration stubs
+
+**Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is
+called by every one of them as `(expression, file, line)`, and `FUN_000340c0`/`FUN_0003af60` by 40 of
+them, at the site that constructs a class from `(name, outer, object size, flags)` literals. Those three
+unnamed functions are the reason the modules read as `FUN_*` soup: naming them changes every function at
+once. Four of the 43 do not follow the registration pattern at all — the `StargateCar` physics body
+(`0x00311520`), two `SGCameraEffects` bodies (`0x00316b10`, `0x00318060`) and a `GoauldDrone` function
+(`0x003107b0`) whose constructor call carries no class-name literal in the decompiled text.
+
+**Unknown.** The helper names and signatures (the assert one is inferred from its arguments only, not
+from a symbol), what `FUN_000340c0` does, and what `0x003107b0` constructs.
+
+**What would settle it.** Cross-referencing the helper addresses against the 2006 engine source (which
+is the engine fork, so `appError`-style helpers appear there) in the private oracle-diff harness, or a
+call-site census of the helpers across all 15,018 functions — if `FUN_00058a30` has hundreds of callers
+that all pass file/line, the assert reading is settled.
