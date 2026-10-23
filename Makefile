@@ -8,7 +8,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory decompile check clean
+.PHONY: help verify-dump manifest inventory decompile oracle-diff check clean
 
 help:
 	@echo "targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  manifest      regenerate inventory/manifest.sha256"
 	@echo "  inventory     regenerate every inventory/*.csv from the dump"
 	@echo "  decompile     reconstruct UnrealScript into $(WORK)/UnrealScript (never committed)"
+	@echo "  oracle-diff   compare against the private 2006 source (set ORACLE_DIR)"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -41,6 +42,11 @@ decompile:
 	@$(DOTNET) run --project tools/Sg1Tool -c Release -- \
 		decompile --dump "$(SG1_DUMP)" --out "$(WORK)/UnrealScript"
 	@$(PYTHON) tools/token-gaps.py "$(WORK)/UnrealScript"
+
+# Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.
+oracle-diff:
+	@test -n "$(ORACLE_DIR)" || { echo "set ORACLE_DIR=/path/to/private/Classes (never committed)"; exit 2; }
+	@$(PYTHON) tools/oracle-diff.py --oracle "$(ORACLE_DIR)" --src "$(WORK)/UnrealScript" -o inventory
 
 check: verify-dump
 	@echo "dump ok; run 'make inventory' and commit if anything drifted"

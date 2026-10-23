@@ -17,6 +17,11 @@ not hold.
 | Original tooling (Python/C#/shell) written by contributors | ours, GPL-3.0 |
 | Documentation, plans, format descriptions, methodology | ours |
 | Structural metadata: file names, sizes, SHA-256 hashes, export/import counts, class names, `native()` indices, addresses, symbol maps, function sizes | describes the binary without reproducing protected expression |
+| Comparison **scores and counts** against the private oracle (e.g. "class X: 0.86 similarity") | a measurement, not source |
+
+Never, from the oracle: file names of the private tree beyond the class name already in the build,
+function bodies, comments, or lists of its internal symbols. `inventory/oracle_diff.csv` carries
+counts on that side, not names.
 | Empty directory skeletons and manifests that reference no content | tooling scaffolding |
 
 ## What must never be committed

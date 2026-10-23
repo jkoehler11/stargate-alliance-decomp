@@ -118,10 +118,10 @@ and `inventory/` regenerates from scripts with no manual edits.
       `StargateGame.u` without exceptions.
 - [x] 3.2 Baseline bulk decompile all 18 packages into `src/UnrealScript/<Package>/`; record per-package
       success/failure per class (`inventory/decompile_coverage.csv`).
-- [ ] 3.3 Build the oracle diff tool: normalize (whitespace/comments/ordering) the privately held 2006
+- [x] 3.3 Build the oracle diff tool: normalize (whitespace/comments/ordering) the privately held 2006
       studio `.uc` sources and our decompiled output; emit per-class similarity scores and three buckets:
       *matches leak*, *drifted (build is 6 months older)*, *absent in leak (cut/added content)*.
-- [ ] 3.4 Triage bucket 3 — this is the cut-content list. Write `docs/CUT_CONTENT.md` (classes, missions,
+- [~] 3.4 Triage bucket 3 — this is the cut-content list. Write `docs/CUT_CONTENT.md` (classes, missions,
       weapons, features present in Dec-2005 build but gone by Jun-2006).
 - [ ] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
@@ -226,8 +226,17 @@ and a deliberate one-line script break is caught by the boot test.
   `docs/DECOMPILER_GAPS.md` (`tools/token-gaps.py`), led by `__NFUN_119__` (5,565 sites) and
   concentrated in `StargateGame` (17,250) and `Engine` (14,093). Closing tokens is now the single
   biggest readability win in the script track, ahead of 3.3.
-  Next: 3.3 oracle diff (needs the private 2006 source mounted outside the repo), in parallel with
-  token-map work.
+- **3.3/3.4 done/started.** The oracle diff (`tools/oracle-diff.py`, `docs/ORACLE_DIFF.md`) pairs
+  291 leaked classes against our 2,319: **202 matched (mean similarity 0.862), 65 drifted, 11
+  divergent, 13 oracle-only, 1,362 build-only**. The decisive finding is what the oracle *is*:
+  269 `Engine` + 5 `Core` + 4 game classes plus `Pawn`/`ShadowProjector` as `.ucpp`. It is
+  Perception's **engine** fork source, not the game script, so `build-only` is a coverage gap and
+  **cannot** be reported as cut content — see `docs/CUT_CONTENT.md` for the evidence standard that
+  replaces the shortcut. The 65 drifted + 11 divergent `Engine` classes are the engine subsystems
+  still being rewritten between Dec 2005 and Jun 2006 (input for 4.8), and the oracle gives a hard
+  quality number to move with 3.5.
+  Next: token-map work (3.5) against `docs/DECOMPILER_GAPS.md`, then 5.2/5.3 for real cut-content
+  evidence.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
