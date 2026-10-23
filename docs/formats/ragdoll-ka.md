@@ -48,5 +48,5 @@ it, and the three entries correspond to the three `.ka` files in `Resources/`.
 
 The engine's Karma integration is native: the `K*` natives on `Engine.Actor`
 (`KGetRigidBodyState`, `KSetMass`, `KAddImpulse`, `KMakeRagdollAvailable`, …) are declared by the
-script and dispatch through `GNatives` (`inventory/native_names.csv`). The loader that turns a `.ka`
+script and dispatch through `GNatives` (`inventory/natives.csv`). The loader that turns a `.ka`
 into bodies is engine-side and undocumented until PLAN 4.8; the format itself needs no work.

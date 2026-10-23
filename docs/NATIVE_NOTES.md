@@ -11,7 +11,7 @@ tools/ghidra/export-c.sh DUMP GHIDRA_HOME stargategame_,stargatevehicles_
   # imports default.xbe, carves sections, applies symbols/xbox_functions.csv (13,737 names),
   # decompiles the selected functions to $(WORK)/native/*.c and writes an index CSV
 tools/ucpp-registrations.py $(WORK)/native -o symbols/xbe_overrides.csv
-make ghidra        # applies symbols/xbe_overrides.csv after the assert and GNatives passes
+make ghidra        # applies symbols/xbe_overrides.csv after the assert pass
 ```
 
 The C is game-derived: it stays under the git-ignored `work/` tree. What is committed is the name map
@@ -109,7 +109,7 @@ Every one of the 43 functions calls `FUN_00058a30`, and 40 call `FUN_000340c0`/`
 `inventory/natives.csv` lists 21 `native()` declarations across `StargateGame` and `StargateVehicles`
 (`BotEnemy`'s cover search, `Electrocutor` arcing, `SGOrder` drawing, HUD order drawing,
 `DeathGlider`/`StargateCopter` Karma updates). All 21 serialise `native_token` 0 — the same signature as
-the 523 index-less declarations in U1 — so none of them can be named from `GNatives`. Their bodies are in
+the 523 index-less declarations in U1 — so none of them is bound through a dispatch index. Their bodies are in
 these modules or the engine, bound outside the dispatch table, which is the thread PLAN 4.7 picks up.
 
 ## What this means for Phase 4

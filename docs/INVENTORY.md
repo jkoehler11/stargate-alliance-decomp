@@ -42,8 +42,11 @@ rather than something reconstructed here.
 ## Natives
 
 `native()` declarations carry a global token: the engine dispatches through one table, so tokens
-must be unique. 797 declarations produced 275 distinct tokens and 1 collision(s) — i.e. a single index space, which is what makes task 4.4
-(naming `GNatives` entries in the XBE from the script side) a mechanical rename pass.
+must be unique. 797 declarations produced 275 distinct tokens and 1 collision(s) — i.e. a single index space for every package.
+
+Having one index space is not the same as having addresses: `GNatives` is populated at runtime and
+the image stores no bytes for it, so naming a slot needs the table read from a running build
+(`docs/NATIVE_VM.md`, PLAN 4.3/4.4).
 
 | package | native functions |
 |---|---|
@@ -78,7 +81,7 @@ Derived from `__FILE__` assert paths plus code xrefs to each path string (`tools
 ## Maps and content
 
 - 73 `.unr` maps, 175,718 placed actors
-- 37 chapters defined in `ChapterList.ini`; 0 reference a shipped map
+- 37 chapters defined in `ChapterList.ini`; 30 reference a shipped map
 - per-map census: [CONTENT_CENSUS.md](CONTENT_CENSUS.md)
 
 ## Files by directory

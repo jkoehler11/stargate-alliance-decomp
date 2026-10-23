@@ -69,8 +69,11 @@ def main():
     w("")
     w("`native()` declarations carry a global token: the engine dispatches through one table, so tokens")
     w(f"must be unique. {len(natives):,} declarations produced {len(tokens):,} distinct tokens and "
-      f"{collisions} collision(s) — i.e. a single index space, which is what makes task 4.4")
-    w("(naming `GNatives` entries in the XBE from the script side) a mechanical rename pass.")
+      f"{collisions} collision(s) — i.e. a single index space for every package.")
+    w("")
+    w("Having one index space is not the same as having addresses: `GNatives` is populated at runtime and")
+    w("the image stores no bytes for it, so naming a slot needs the table read from a running build")
+    w("(`docs/NATIVE_VM.md`, PLAN 4.3/4.4).")
     w("")
     w("| package | native functions |")
     w("|---|---|")

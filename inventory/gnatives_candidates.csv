@@ -1,24 +1,46 @@
-rank,va,section,entries,non_null,known_function_hits,entry0_null,at_section_start,all_in_text,text_xrefs,structural_hits,declared_in_range,declared_present,declared_absent,conflicting_names,last_non_null
-1,0x00598e00,.data,994,991,991,1,1,1,1,4,271,270,4,0,993
-2,0x004c9e54,.rdata,5966,5936,2925,1,0,1,0,2,274,274,0,0,5965
-3,0x004ee908,.rdata,6417,6385,3208,1,0,1,0,2,274,272,2,0,6416
-4,0x004ebfd4,.rdata,2616,2602,1360,1,0,1,0,2,271,271,3,0,2615
-5,0x00536644,.rdata,1785,1772,926,1,0,1,0,2,271,267,7,0,1784
-6,0x004cfb9c,.rdata,1193,1179,463,1,0,1,0,2,271,265,9,0,1192
-7,0x005c2c58,.data,442,412,224,1,0,1,0,2,193,192,82,0,441
-8,0x004e10bc,.rdata,432,424,146,1,0,1,0,2,193,190,84,0,431
-9,0x00518528,.rdata,342,330,139,1,0,1,0,2,193,189,85,0,340
-10,0x0051d7c0,.rdata,318,314,145,1,0,1,0,2,185,183,91,0,317
-11,0x0059ed6c,.data,33184,0,0,1,0,1,0,2,274,0,274,0,-1
-12,0x005bffd4,.data,509,0,0,1,0,1,0,2,204,0,274,0,-1
-13,0x005c07d4,.data,509,0,0,1,0,1,0,2,204,0,274,0,-1
-14,0x005bf7d8,.data,508,0,0,1,0,1,0,2,203,0,274,0,-1
-15,0x005c0fd8,.data,508,0,0,1,0,1,0,2,203,0,274,0,-1
-16,0x00513fd0,.rdata,1152,1128,378,0,0,1,2,1,271,266,8,0,1150
-17,0x004e50c8,.rdata,754,748,380,0,0,1,2,1,250,248,26,0,752
-18,0x0050f618,.rdata,802,792,274,0,0,1,2,1,252,247,27,0,801
-19,0x004e7a18,.rdata,474,472,232,0,0,1,2,1,200,199,75,0,473
-20,0x00518ee8,.rdata,438,434,220,0,0,1,0,1,193,192,82,0,437
-21,0x0052e28c,.rdata,375,373,197,0,0,1,0,1,193,192,82,0,374
-22,0x0053326c,.rdata,319,319,0,0,0,1,0,1,186,186,88,0,318
-23,0x005c2404,.data,307,306,131,0,0,1,2,1,174,173,101,0,305
+section,start_va,entries,non_null,distinct,monotonic_pct,entry0_null,code_xrefs,xref_kinds,xref_vas,verdict
+.rdata,0x004ee908,6417,6385,279,61.6,1,0,,,rejected:no-indexed-xref
+.rdata,0x004c9e54,5966,5936,340,60.7,1,0,,,rejected:no-indexed-xref
+.rdata,0x004ebfd4,2616,2602,192,62.8,1,0,,,rejected:no-indexed-xref
+.rdata,0x00536644,1785,1772,136,56.4,1,0,,,rejected:no-indexed-xref
+.rdata,0x004cfb9c,1193,1179,286,60.5,1,0,,,rejected:no-indexed-xref
+.rdata,0x00513fd0,1152,1128,90,58.1,0,2,other,0x001b8cff 0x001b8d6a,rejected:no-indexed-xref
+.data,0x00598e00,994,991,991,99.9,1,1,other,0x00343763,rejected:monotonic
+.rdata,0x0050f618,802,792,106,60.4,0,2,other,0x0016fdca 0x0016fe6f,rejected:no-indexed-xref
+.rdata,0x004e50c8,754,748,124,62.8,0,2,other,0x0009423f 0x000942ba,rejected:no-indexed-xref
+.rdata,0x004e7a18,474,472,173,60.9,0,2,other,0x000a6eea 0x000a6f4f,rejected:no-indexed-xref
+.rdata,0x00518ee8,438,434,127,62.5,0,0,,,rejected:no-indexed-xref
+.rdata,0x004e10bc,432,424,147,54.8,1,0,,,rejected:no-indexed-xref
+.data,0x005c2c58,442,412,412,41.0,1,0,,,rejected:no-indexed-xref
+.rdata,0x0052e28c,375,373,113,63.1,0,0,,,rejected:no-indexed-xref
+.rdata,0x00518528,342,330,60,58.9,1,0,,,rejected:no-indexed-xref
+.rdata,0x0053326c,319,319,319,50.6,0,0,,,rejected:no-indexed-xref
+.rdata,0x0051d7c0,318,314,145,62.8,1,0,,,rejected:no-indexed-xref
+.data,0x005c2404,307,306,306,86.6,0,2,other,0x0040cb08 0x0040cb1a,rejected:no-indexed-xref
+.rdata,0x004c9330,280,277,105,62.0,0,0,,,rejected:no-indexed-xref
+.rdata,0x0051ad4c,277,268,59,59.8,1,0,,,rejected:no-indexed-xref
+.rdata,0x005216c0,248,247,106,63.2,0,2,other,0x00290a7a 0x00290adf,rejected:no-indexed-xref
+.rdata,0x00538e28,250,247,79,55.8,0,2,other,0x0030598a 0x003059ef,rejected:no-indexed-xref
+.rdata,0x00507da0,247,246,114,62.2,0,2,other,0x0012d94a 0x0012d9af,rejected:no-indexed-xref
+.rdata,0x0050900c,248,246,105,63.2,1,0,,,rejected:no-indexed-xref
+.rdata,0x005210a4,249,246,105,62.9,1,0,,,rejected:no-indexed-xref
+.rdata,0x004c8f24,244,241,54,59.7,1,0,,,rejected:no-indexed-xref
+.rdata,0x005392e4,240,236,67,56.5,1,0,,,rejected:no-indexed-xref
+.rdata,0x0050f178,238,234,59,60.3,0,2,other,0x0016961f 0x0016ff4a,rejected:no-indexed-xref
+.rdata,0x004c7954,234,233,47,60.5,1,0,,,rejected:no-indexed-xref
+.rdata,0x00540964,228,228,91,100.0,0,0,,,rejected:monotonic
+.rdata,0x004c7d90,231,227,57,59.1,1,0,,,rejected:no-indexed-xref
+.rdata,0x0050ec30,226,225,74,60.4,0,2,other,0x00167e3f 0x0016882a,rejected:no-indexed-xref
+.rdata,0x00517a14,221,220,46,58.6,1,0,,,rejected:no-indexed-xref
+.rdata,0x00515220,219,217,130,60.1,0,2,other,0x001bc35b 0x001bdb6f,rejected:no-indexed-xref
+.rdata,0x004d17a8,215,212,81,55.6,0,3,other,0x0003184f 0x0007b0d1 0x0007b12a,rejected:no-indexed-xref
+.rdata,0x005104a4,187,186,57,60.2,1,0,,,rejected:no-indexed-xref
+.rdata,0x0052ef14,149,147,114,64.2,0,1,other,0x002ccdf1,rejected:no-indexed-xref
+.rdata,0x0051c180,145,144,110,61.1,0,0,,,rejected:no-indexed-xref
+.rdata,0x0058f674,273,137,137,50.0,0,0,,,rejected:no-indexed-xref
+.rdata,0x004f6180,137,135,118,62.5,1,0,,,rejected:no-indexed-xref
+.rdata,0x004dd484,133,132,21,72.0,1,0,,,rejected:no-indexed-xref
+.rdata,0x004d323c,132,130,84,58.0,0,7,other,0x0003519d 0x00035822 0x0003aa6f 0x00119789 0x00215ff7 0x002185c9 0x0025f488,rejected:no-indexed-xref
+.rdata,0x00516be8,128,128,111,60.6,0,3,other,0x001d0c4a 0x001d0d9f 0x003b6380,rejected:no-indexed-xref
+.rdata,0x0051ab30,130,128,111,60.5,1,0,,,rejected:no-indexed-xref
+.rdata,0x004f6dd4,128,127,108,64.6,1,0,,,rejected:no-indexed-xref

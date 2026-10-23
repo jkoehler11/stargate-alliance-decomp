@@ -6,18 +6,19 @@ settle it. A guess does not belong here either — only a gap that is being trac
 ## U1. 523 of the 797 `native()` declarations serialise no index
 
 **Observed.** `inventory/natives.csv` records 797 native functions across 18 packages. 274 carry an
-explicit index and 270 of those resolve to a `GNatives` slot (`inventory/native_names.csv`). The
-other 523 carry `native_token` 0 — for example `Engine.Actor.KWake`, `Engine.Canvas.Clear`,
-`GUI.GUIComponent.ActualWidth` and every `IpDrv` native.
+explicit index, all 274 distinct (`inventory/native_names.csv`), and 273 of those indices have one
+declarer inside the runtime packages. The other 523 carry `native_token` 0 — for example
+`Engine.Actor.KWake`, `Engine.Canvas.Clear`, `GUI.GUIComponent.ActualWidth` and every `IpDrv`
+native.
 
 **Why 0 is the package's value, not a parser default.** UELib reads `NativeToken` unconditionally
 from the serialised `UFunction` (`src/Core/Classes/UFunction.cs`, `NativeToken = _Buffer.ReadUShort()`
 in `Deserialize`), and it reads the right value for the 274 indexed declarations in the same
 packages, so the offset is correct for build 130/4. The zeros are what the build shipped.
 
-**Why it matters.** A declaration with no index claims no dispatch slot, so it cannot be named from
-the table, and 720 slots stay `Native_<index>`. It also means those functions are not reached the way
-the indexed ones are: something else must dispatch or inline them.
+**Why it matters.** A declaration with no index claims no dispatch slot, so once the runtime table is
+read (U7) those 523 still cannot be named from it — they are reached some other way, or not through
+it at all.
 
 **Hypotheses, none confirmed.**
 
@@ -35,38 +36,41 @@ good target: `Engine.Actor` has dozens of callers) and read the emitted opcode a
 index opcode settles hypothesis 3, a function reference points at 1 or 2. Cross-check with 4.7
 (the `.ucpp` bodies) if a C++ implementation exists for the same class.
 
-**Status.** Open. No effect on the naming in 4.4: those declarations never claimed a slot, so
-nothing was named wrongly.
+**Status.** Open. It is now a bigger gap than it looked: 4.4 was withdrawn after the dispatch-table
+correction (`docs/NATIVE_VM.md`), so neither the indexed nor the index-less declarations carry an
+address yet.
 
-## U2. Three `Engine.Actor` natives declare indices beyond the table
+## U2. Three `Engine.Actor` natives declare indices beyond the table — closed
+
+**Closed 2026-10-23.** They are not beyond the table. `GNatives` has `EX_Max` = 4,096 entries
+(`docs/NATIVE_VM.md`); 3969–3971 are ordinary indices inside it. The bound of 994 that made them look
+impossible came from the pointer array that was wrongly identified as the table.
 
 **Observed.** `Actor.MoveSmooth`, `Actor.SetPhysics` and `Actor.AutonomousPhysics` declare indices
-3969, 3970 and 3971; the dispatch table has 994 entries (0–993), so there is no slot to name. The
-table itself is corroborated independently (270 of 274 declared indices resolve, one code xref, no
-size ambiguity), so this is not a table-detection error.
+3969, 3970 and 3971. Under the bound of 994 entries reported for the table at `0x00598e00`, they were
+past its end, and U2 asked whether they belonged to a different numbering space.
 
-**Hypotheses.** Same family as U1 — indices assigned in a numbering space this build does not
-dispatch through (a PS2/GameCube build, or the `ucpp` compiler's own space) — or the three
-functions are native-only and never dispatchable from script.
+**Resolution.** The table they were measured against was not the dispatch table (it is the CRT
+initialiser list). The real bound is `EX_Max` = 4,096, read from the interpreter's own assert, so all
+three indices are ordinary slots. Nothing about them is anomalous after all.
 
-**What would settle it.** Find a script call site for any of the three and see whether it compiles to
-an index opcode; look for their C++ bodies in the XBE during 4.7.
+**Status.** Closed 2026-10-23. What remains unknown about them is U7, not their index.
 
-**Status.** Open.
+## U3. `UPreviewMapListClient.Created` claims index 2
 
-## U3. `UPreviewMapListClient.Created` claims index 2, which is a null slot
-
-**Observed.** The only declarer of index 2 is `UPreview.UPreviewMapListClient.Created`; slot 2 of
-`GNatives` is null. `UPreview` is an editor-side package that the shipped game does not load.
+**Observed.** The only declarer of index 2 is `UPreview.UPreviewMapListClient.Created`. The claim was
+written when slot 2 of the array at `0x00598e00` was null; that array is the CRT initialiser list, not
+`GNatives`, so the null-slot half of the observation no longer holds. `UPreview` is an editor-side
+package that the shipped game does not load, and its small indices remain suspicious on their own.
 
 **Hypotheses.** Editor packages number their natives inside the package rather than in the engine's
 global index space, so their small indices are unrelated to the runtime table.
 
-**What would settle it.** The same test on a second editor package with indexed natives (`UnrealEd`,
-`Editor` have none with an index here, which is itself consistent with the hypothesis but does not
-prove it).
+**What would settle it.** Reading the runtime table (U7) and checking whether slot 2 is used at all,
+or the same test on a second editor package with indexed natives (`UnrealEd` and `Editor` have none
+with an index here, which is consistent with the hypothesis but does not prove it).
 
-**Status.** Open, low priority. `Editor`/`UPreview` are excluded from naming
+**Status.** Open, low priority. `Editor`, `UPreview` and `UnrealEd` are excluded from naming
 (`tools/native-names.py`), so nothing depends on the answer.
 
 ## U4. The `.lad` payload layout is not established
@@ -118,7 +122,41 @@ once. Four of the 43 do not follow the registration pattern at all — the `Star
 **Unknown.** The helper names and signatures (the assert one is inferred from its arguments only, not
 from a symbol), what `FUN_000340c0` does, and what `0x003107b0` constructs.
 
-**What would settle it.** Cross-referencing the helper addresses against the 2006 engine source (which
-is the engine fork, so `appError`-style helpers appear there) in the private oracle-diff harness, or a
-call-site census of the helpers across all 15,018 functions — if `FUN_00058a30` has hundreds of callers
-that all pass file/line, the assert reading is settled.
+**Call-site census (measured).** `tools/call-census.py` over the Ghidra export: `FUN_00058a30` has
+**2,245 call sites from 1,270 distinct callers**, spread across the engine's own modules (Core/UnTemplate
+731, Core/UnMath 136, Core/UnObjBas 115, Core/UnClass 107, Engine/UnActor 100, Core/UnObj 76,
+Engine/UnChan 71, unnamed 60, Gui/UnGUI 32, Engine/KFarfield 31). A helper called from a third of the
+binary's functions is not script-specific glue; combined with the `(expression, __FILE__, line)` argument
+shape at every inspected site, the assert/verify reading is settled.
+
+**What is still open.** What to call them. `FUN_00058a30` is assert-shaped (`check`/`verify` family) but
+whether it logs, breaks into the debugger or aborts is unmeasured, so a name would overstate it. The
+other two are unresolved: `FUN_0003af60` takes `(…, class name literal, outer "System", flags, vtable)`
+with the object size from the caller, and `FUN_000340c0` has not been read at all. The 2006 oracle is the
+other route (it is the engine fork, so its error/assert helpers are the same ones). Naming them is its
+own commit per `AGENTS.md`.
+
+## U7. How `GNatives` is populated, and how to read it
+
+**Observed.** `GNatives` is at `0x006313e8` with `EX_Max` = 4,096 entries, in the part of `.data` the
+image does not initialise — the file contains no slot bytes (`docs/NATIVE_VM.md`). Startup fills all
+4,096 slots with one default stub (`0x000404a0`, the `rep stos` in one of the static initialisers) and
+then patches individual slots: 233 `mov [slot], reg` write sites are visible statically, 776 places call
+a fixed slot directly (`call [slot+N*4]`), and 1,428 places index it (`call [slot+reg*4]`), covering 256
+distinct slots.
+
+**Why it matters.** 4.4 — naming natives from the script's `native(index)` declarations — needs
+`index -> address`. Without it, the 274 declared indices can be named but not located, and the 523
+index-less declarations (U1) stay unexplained.
+
+**Options, none tried yet.**
+
+1. **Read it from a running build.** The prototype already boots in xemu to the main menu
+   (`docs/XEMU.md`). With the symbol map loaded, dump the 16 KB array at `0x006313e8` from guest memory
+   once the engine has started; that is the whole table, one command.
+2. **Follow the write sites.** The 233 `mov [slot], reg` sites are inside initialisation code that knows
+   both the slot number and the function it stores, so disassembling them yields a partial static map.
+3. **Trace the interpreter.** Break at `0x0003a0a7` and record `(iNative, GNatives[iNative])` while the
+   menu runs; script-visible behaviour then pairs an index with a body.
+
+**Status.** Open. This is the gating task for 4.4 and the first thing 4.3's next pass should settle.
