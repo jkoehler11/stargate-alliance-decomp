@@ -1,12 +1,20 @@
-// Name XBE functions from the assert strings they reference, then emit a symbol map.
+// Name XBE functions from the evidence the build ships: assert strings first, then the script
+// side's own native table. Emits a symbol map for every function.
 //
 // MSVC-era asserts embed __FILE__, so each assert site belongs to the function containing it. That
-// gives hundreds of functions a module+source-file attribution for free -- the highest-leverage
-// naming step before any manual work (PLAN 2.3 / 4.2).
+// gives hundreds of functions a module+source-file attribution for free (PLAN 2.3 / 4.2).
+//
+// The GNatives pass (PLAN 4.4) is the other half: slot N of the native dispatch table is the
+// function the script calls as class.function at index N, so the table names code that nothing
+// calls directly -- without it those functions stay FUN_00xxxxxx forever, because no xref leads
+// to them. Slots with no declarer stay unnamed (only commented), because an index is evidence of a
+// dispatch entry, not of a function name.
 // @category SG1
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.listing.Listing;
 import ghidra.program.model.symbol.SourceType;
 import java.io.*;
 import java.util.*;
@@ -16,7 +24,7 @@ public class XbePost extends GhidraScript {
     public void run() throws Exception {
         String[] args = getScriptArgs();
         if (args.length < 2) {
-            println("usage: XbePost.java <asserts.tsv> <out.csv>");
+            println("usage: XbePost.java <asserts.tsv> <out.csv> [entryVa] [gnatives.tsv] [gnatives_out.csv]");
             return;
         }
         // Make sure the entry point became a function; on an XBE nothing else marks it.
@@ -65,7 +73,75 @@ public class XbePost extends GhidraScript {
             }
         }
 
+        // GNatives: name the dispatch targets from the script side's native declarations. Every
+        // slot is evidence; only a slot with a declarer carries a name.
+        int nativeNamed = 0, nativeCreated = 0, nativeKept = 0, nativeClash = 0, slotComment = 0;
+        PrintWriter nout = null;
+        if (args.length > 3) {
+            if (args.length > 4) nout = new PrintWriter(new FileWriter(args[4]));
+            if (nout != null) nout.println("index,address,action,name");
+            Listing listing = currentProgram.getListing();
+            BufferedReader gn = new BufferedReader(new FileReader(args[3]));
+            String gl;
+            while ((gl = gn.readLine()) != null) {
+                if (gl.startsWith("#") || gl.trim().isEmpty()) continue;
+                // Keep trailing empty fields: a slot-only row has an empty name column.
+                String[] p = gl.split("\t", -1);
+                if (p.length < 4) continue;
+                String index = p[0];
+                String name = p[2];
+                String evidence = p[3];
+                Address at = currentProgram.getAddressFactory().getDefaultAddressSpace()
+                        .getAddress(Long.decode(p[1]));
+                if (at == null) continue;
+                Function fn = getFunctionAt(at);
+                String action;
+                if (fn == null) {
+                    // Nothing xrefs a dispatch target, so the analyser never made it a function.
+                    disassemble(at);
+                    fn = createFunction(at, name.isEmpty() ? "Native_" + index : name);
+                    if (fn == null) {
+                        if (nout != null) nout.println(index + ",0x" + p[1] + ",failed,");
+                        continue;
+                    }
+                    nativeCreated++;
+                    action = "created";
+                } else if (name.isEmpty()) {
+                    action = "slot-only";
+                } else if (fn.getName().startsWith("FUN_") || fn.getName().startsWith("sub_")) {
+                    try {
+                        fn.setName(name, SourceType.USER_DEFINED);
+                        nativeNamed++;
+                        action = "renamed";
+                    } catch (Exception clash) {
+                        nativeClash++;
+                        action = "name-clash";
+                    }
+                } else {
+                    // Already named from an assert: the slot mapping is recorded, the name stands.
+                    nativeKept++;
+                    action = "already-named";
+                }
+                if (evidence.equals("slot-only") && fn != null
+                        && listing.getComment(CommentType.PLATE, at) == null) {
+                    listing.setComment(at, CommentType.PLATE,
+                            "GNatives[" + index + "] -- dispatch slot with no declarer in the shipped packages");
+                    slotComment++;
+                }
+                if (nout != null) {
+                    nout.println(index + ",0x" + p[1] + "," + action + ","
+                            + (fn == null ? "" : fn.getName()));
+                }
+            }
+            gn.close();
+            if (nout != null) nout.close();
+        }
+
         int functions = currentProgram.getFunctionManager().getFunctionCount();
+        int unnamed = 0;
+        for (Function fn : currentProgram.getFunctionManager().getFunctions(true)) {
+            if (fn.getName().startsWith("FUN_")) unnamed++;
+        }
         PrintWriter out = new PrintWriter(new FileWriter(args[1]));
         out.println("address,name,size,module");
         for (Function fn : currentProgram.getFunctionManager().getFunctions(true)) {
@@ -75,6 +151,9 @@ public class XbePost extends GhidraScript {
         out.close();
         println("functions: " + functions + ", named from asserts: " + named
                 + ", duplicate names: " + duplicates + ", xrefs in no function: " + unresolved);
+        println("gnatives: renamed " + nativeNamed + ", created " + nativeCreated
+                + ", already named " + nativeKept + ", name clashes " + nativeClash
+                + ", slot comments " + slotComment + ", still FUN_* " + unnamed);
         for (Map.Entry<String, Integer> e : perModule.entrySet()) {
             println("  module " + e.getKey() + ": " + e.getValue() + " assert-anchored functions");
         }

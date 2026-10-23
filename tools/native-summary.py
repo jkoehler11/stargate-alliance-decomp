@@ -14,6 +14,7 @@ import re
 from collections import Counter, defaultdict
 
 FUN = re.compile(r"^(FUN|sub|thunk_FUN|LAB)_([0-9a-fA-F]+)$")
+NATIVE_SLOT = re.compile(r"^Native_\d+$")
 # The 12 modules that assert somewhere in this binary; a name is only attributed to a module when
 # its prefix is one of these, otherwise an MSVC-mangled symbol would invent a module of its own.
 KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
@@ -35,12 +36,29 @@ def main():
             unknown = bool(FUN.match(name))
             prefix = name.split("_", 1)[0]
             module = prefix if (not unknown and prefix in KNOWN_MODULES) else ""
+            # Two kinds of native-table name, counted apart: `exec<Function>` is a slot a shipped
+            # package declares by index, `Native_<index>` is a slot with no declarer at all.
+            if name.startswith("exec") and not module:
+                kind = "gnatives_declared"
+            elif NATIVE_SLOT.match(name):
+                kind = "gnatives_slot"
+            else:
+                kind = "other"
             rows.append({"address": row["address"], "name": name, "size": int(row["size"]),
-                         "module": module, "unknown": unknown})
+                         "module": module, "unknown": unknown, "kind": kind})
 
     per_module = defaultdict(lambda: {"functions": 0, "bytes": 0, "named": 0})
     for r in rows:
-        key = r["module"] or ("(unnamed)" if r["unknown"] else "(other named)")
+        if r["module"]:
+            key = r["module"]
+        elif r["unknown"]:
+            key = "(unnamed)"
+        elif r["kind"] == "gnatives_declared":
+            key = "(gnatives: declared)"
+        elif r["kind"] == "gnatives_slot":
+            key = "(gnatives: slot only)"
+        else:
+            key = "(other named)"
         d = per_module[key]
         d["functions"] += 1
         d["bytes"] += r["size"]
@@ -51,7 +69,10 @@ def main():
     total = sum(sizes)
     median = sizes[len(sizes) // 2] if sizes else 0
     assert_named = sum(1 for r in rows if r["module"])
-    other_named = sum(1 for r in rows if not r["unknown"] and not r["module"])
+    gnative_named = sum(1 for r in rows if r["kind"] == "gnatives_declared")
+    gnative_slot = sum(1 for r in rows if r["kind"] == "gnatives_slot")
+    other_named = sum(1 for r in rows if not r["unknown"] and not r["module"]
+                      and r["kind"] == "other")
 
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "xbe_functions_by_module.csv"), "w", newline="",
@@ -68,8 +89,10 @@ def main():
              f"- {len(rows):,} functions discovered, {total:,} bytes of code, median function "
              f"{median} bytes",
              f"- {assert_named:,} functions attributed to a module by the assert string they reference "
-             f"({assert_named / len(rows):.1%} of the binary); {other_named:,} more carry a name from "
-             f"Ghidra's own analysis (thunks, runtime helpers)", "",
+             f"({assert_named / len(rows):.1%} of the binary); {gnative_named:,} are named from the "
+             f"script side's own native declarations (`GNatives` slots, PLAN 4.4) and {gnative_slot:,} "
+             f"more are `GNatives` slots no shipped package declares; {other_named:,} carry a name "
+             f"from Ghidra's own analysis (thunks, runtime helpers)", "",
              "## Functions by module", "",
              "| module | functions | named | bytes | mean size |", "|---|---|---|---|---|"]
     for module, d in sorted(per_module.items(), key=lambda kv: -kv[1]["functions"]):
@@ -81,19 +104,25 @@ def main():
               "those that do not. A function named `Engine_UnObjBas` is therefore an Engine function",
               "that contains an assert from `UnObjBas.cpp`, not necessarily a function *of* that file.",
               "",
-              "Naming coverage is bounded by the 154 translation units that assert at all; the remaining",
-              "functions need signature matching (CRT/XAPI/D3D8 libraries), the script native table",
-              "(PLAN 4.4) and manual work. `FUN_*` names are Ghidra's, kept deliberately: an honest",
-              "unknown beats a guessed name (`docs/CONVENTIONS.md`).", "",
+              "The `GNatives` rows are a different kind of evidence. `exec<Function>` is the name the",
+              "script packages themselves give dispatch slot N (`inventory/native_names.csv`), so it is",
+              "as strong as a native declaration. `Native_<index>` records only that the address is slot",
+              "N of the dispatch table: 721 slots are engine-internal execs (renderer, Xbox services,",
+              "Karma) that no script can reach and that C++ calls directly. The slot number is real,",
+              "the name is not, and `docs/CONVENTIONS.md` forbids turning the one into the other.", "",
+              "Everything else is bounded by the 154 translation units that assert at all; the remaining",
+              "functions need signature matching (CRT/XAPI/D3D8 libraries) and manual work. `FUN_*` names",
+              "are Ghidra's, kept deliberately: an honest unknown beats a guessed name.", "",
               "## Next", "",
               "1. Apply signature libraries for the Xbox SDK/CRT to lift the unnamed majority (4.2).",
-              "2. Locate the `GNatives` dispatch table and rename its targets from `inventory/natives.csv`",
-              "   (4.3/4.4) — that is what turns `__NFUN_<n>__` in the script tree into engine API names.",
-              "3. Split the project per module using these attribution counts as the work breakdown (4.5).", ""]
+              "2. Identify the 721 slot-only execs from their behaviour and the strings they reference;",
+              "   the table gives their index, nothing else (see `docs/UNKNOWNS.md`).",
+              "3. Locate `UObject` layout and `ProcessEvent`/`ProcessInternal` (4.3, still open).",
+              "4. Split the project per module using these attribution counts as the work breakdown (4.5).", ""]
     with open(os.path.join("docs", "NATIVE.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines))
-    print(f"{len(rows)} functions, {assert_named} assert-attributed, {other_named} other named "
-          f"-> docs/NATIVE.md")
+    print(f"{len(rows)} functions, {assert_named} assert-attributed, {gnative_named} GNatives-named, "
+          f"{gnative_slot} slot-only, {other_named} other named -> docs/NATIVE.md")
 
 
 if __name__ == "__main__":
