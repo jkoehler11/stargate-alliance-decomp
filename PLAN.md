@@ -193,7 +193,7 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 ### Phase 7 — Verification harness and CI (~1 week, then continuous)
 
-- [ ] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
+- [~] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
       other debug-kit dumps; document exact config in `docs/XEMU.md`.
 - [ ] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
       Missions are M00, M02A–D, M04A/B, M07A–C, M10B, M12A (+ the rest from the map list).
@@ -277,6 +277,11 @@ and a deliberate one-line script break is caught by the boot test.
   Oracle quality moved with it (see `docs/ORACLE_DIFF.md`). `docs/DECOMPILER_GAPS.md` is now an
   empty-table regression check.
   Next: 4.4 rename the 991 dispatch targets in Ghidra; 4.2 signature libraries; indices 3969-3971.
+- **7.1 (partial) — xemu installed, firmware missing.** xemu `0.8.139` (debug AppImage) runs on the
+  desktop and starts headless; the dump is staged at `~/nfs/sg1-dump/…` (outside the repo) so the DVD
+  path needs no copying. `tools/xemu/boot-test.sh` encodes the debug-kit run (128 MB, serial log) and
+  fails fast when firmware is absent. Blocked on the console's own `mcpx_1.0.bin` and flash ROM:
+  those are Microsoft firmware, deliberately not downloaded or committed (`docs/XEMU.md`).
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
