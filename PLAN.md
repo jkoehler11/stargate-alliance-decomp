@@ -1,7 +1,7 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
 Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
-4.3/4.4 reopened after the dispatch-table correction**
+4.4 re-done against the runtime dispatch table after the earlier correction**
 (last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -152,12 +152,14 @@ matching table shows ≥98% of functions at L2 or better.
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
       stores none of its bytes, so no slot has an address in the file. `UObject`/`ProcessEvent` still open.
-- [ ] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
+- [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
-      **Withdrawn 2026-10-23, not done.** It was marked done against a pointer array at `0x00598e00` that is the
-      CRT's static-initialiser list, not the dispatch table (see the correction note below and
-      `docs/NATIVE_VM.md`). Names cannot be applied until the runtime table is resolved (U7).
+      Done from a runtime dump of `GNatives` (16 KB over the xemu GDB stub): **273 of 273 declared indices
+      registered**, 356 of 4,096 slots live at the main menu, 356 distinct addresses, 83 slot-only slots named
+      `Native_<index>`. Map: `inventory/gnatives_slots.csv` → `symbols/xbe_dispatch.csv` → `XbePost` overrides.
+      The table is incomplete until a mission load (U7); the first attempt at this task was withdrawn because it
+      had been measured against the CRT initialiser list — see the correction note below and `docs/NATIVE_VM.md`.
 - [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
@@ -323,7 +325,20 @@ and a deliberate one-line script break is caught by the boot test.
   longer creates or names dispatch targets, and `inventory/native_names.csv` is declaration-only
   (274 declarations, 273 named indices, no addresses). What this costs: the 270 names are gone and
   4.4 is open again. What it buys: the table's real identity, `EX_Max`, and `FFrame` offsets
-  (`+0x84` `iNative`, `+0x90` `Code`) as the entry point for 4.3's remaining work. Tracked as U7.
+  (`+0x84` `iNative`, `+0x90` `Code`) as the entry point for 4.3's remaining work.
+
+- **4.4 done properly, from the running table.** xemu exposes a QEMU-style GDB stub, so the table was
+  read out of the emulator instead of the file: `gdb -ex "target remote localhost:1234" -ex "dump binary
+  memory runtime.bin 0x6313e8 0x6353e8"` at the main menu. **356 of 4,096 slots are registered, all 356
+  addresses distinct and in `.text`, and every one of the 273 declared indices is present** (the 274th,
+  index 2, is the editor-only claim in U3); 83 slots have no declarer and are named `Native_<index>`.
+  3,740 slots still hold the startup default `0x000404a0`, because natives register with the class that
+  declares them and the front end has not loaded the mission classes — a complete map needs a dump after
+  a mission load, which is blocked on input automation, not on the table. Sanity check on the operator
+  group: `execNotEqual_ObjectObject` (0x000463f0), `execAdd_IntInt` (0x00041a50) and
+  `execAndAnd_BoolBool` (0x00041120) all decode an immediate operand through `FFrame` at `[frame+0xc]`
+  and push it, which is the UE2 exec prologue for an operand read. Procedure and caveats:
+  `docs/XEMU.md`, `docs/NATIVE_VM.md`; the raw dump stays under `$WORK`, only the address map is committed.
 - **Script readability is now 100%.** Native resolution order Core -> Engine -> own package took
   unresolved `__NFUN_<n>__` sites 51,289 -> 4,230 -> 1,470 -> **0** (0 tokens) across 2,319 classes.
   Oracle quality moved with it (see `docs/ORACLE_DIFF.md`). `docs/DECOMPILER_GAPS.md` is now an

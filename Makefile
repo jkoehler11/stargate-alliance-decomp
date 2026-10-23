@@ -57,11 +57,17 @@ ghidra:
 
 # GNatives: locate the dispatch table from the VM's own assert text, and name the indices the
 # packages declare. There is no index -> address map: the table has no bytes in the file.
+# The runtime dump is taken from the emulator (docs/XEMU.md) and never committed: it is guest memory.
+# What gets committed is inventory/gnatives_slots.csv, the derived index -> address map.
 natives:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@test -f "$(WORK)/gnatives/runtime.bin" || { \
+		echo "no runtime dump at $(WORK)/gnatives/runtime.bin -- see docs/XEMU.md"; exit 2; }
 	@$(PYTHON) tools/gnatives.py \
-		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
-	@$(PYTHON) tools/native-names.py --natives inventory/natives.csv -o inventory
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory \
+		--runtime "$(WORK)/gnatives/runtime.bin"
+	@$(PYTHON) tools/native-names.py --natives inventory/natives.csv -o inventory \
+		--slots inventory/gnatives_slots.csv --symbols-out symbols/xbe_dispatch.csv
 
 # Who calls a function: the call graph from `make ghidra`, keyed by address or final name.
 call-census:

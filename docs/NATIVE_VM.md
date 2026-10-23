@@ -1,9 +1,9 @@
 # The UnrealScript VM in `default.xbe`
 
-Status: `GNatives` located (4.3), **and the table cannot be read out of the file** — it lives in the
-uninitialised part of `.data` and is populated at startup, so no slot has an address yet (4.4 is back
-to open). `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property tables are not yet
-documented; the interpreter site below is the way into them.
+Status: `GNatives` located (4.3) and **read out of a running build** (4.4): the table has no bytes in
+the file, so it was dumped from xemu over the GDB stub. 356 of 4,096 slots are registered at the main
+menu, all 273 declared native indices among them. `UObject` layout, `ProcessEvent`/`ProcessInternal`
+and the property tables are not yet documented; the interpreter site below is the way into them.
 
 ## The dispatch table
 
@@ -43,6 +43,46 @@ Two consequences worth carrying:
   explicit indices (no collisions), which is why a single table can serve every package. That is
   still true and independent of the address question.
 
+## Reading the table from a running build (U7 resolved)
+
+The table is filled at startup, so the emulator is the oracle. `docs/XEMU.md` has the exact commands;
+the short version is `xemu -config_path drive5.toml -s` and then one `gdb` command against the stub:
+
+```
+gdb -batch -ex "set architecture i386" -ex "target remote localhost:1234" \
+    -ex "dump binary memory runtime.bin 0x6313e8 0x6353e8"
+```
+
+16,384 bytes (`EX_Max` x 4), taken ~55 s after launch with the prototype at its main menu.
+
+| Measurement | Value |
+|---|---|
+| Slots held by the startup default stub `0x000404a0` | 3,740 of 4,096 |
+| Registered slots | 356 |
+| Distinct addresses among them | 356 (no slot shares an implementation) |
+| Entries outside `.text` | 0 |
+| Declared indices registered | **273 of 273** (the 274th, index 2, is the editor-only claim in U3) |
+| Registered slots with no declarer | 83 |
+
+The map is `inventory/gnatives_slots.csv` (index, address, name, evidence) and
+`symbols/xbe_dispatch.csv` (address, name) — the second is applied by `XbePost.java` as evidence
+overrides, which is how the dispatch targets get names in Ghidra. The raw 16 KB dump is guest memory:
+it lives under `$WORK/gnatives/runtime.bin` and is never committed; only the derived address map is.
+
+**Why the registration stops at 356.** Natives are registered with the class that declares them, and
+at the main menu only the classes the front end has loaded exist. A complete table therefore needs a
+dump taken after a mission loads — which is blocked on the input automation problem in
+`docs/XEMU.md`, not on the table. The 273 declared indices are all covered because the engine's own
+native classes are loaded before the menu.
+
+**Validation.** The three operator natives behave like operator bodies: at `execNotEqual_ObjectObject`
+(`0x000463f0`), `execAdd_IntInt` (`0x00041a50`) and `execAndAnd_BoolBool` (`0x00041120`) the code takes
+the `FFrame` from `[esp+0xc]`, reads the operand byte at `[frame+0xc]`, advances that pointer and
+pushes the argument — the standard UE2 exec prologue for reading an immediate. `execConcat_StrStr`
+(`0x00049e10`, 318 bytes) is the largest of the operator group, as a string join should be. Nothing
+here is inferred from ordering: every address came out of the runtime table at the index the script
+declaration names.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.
@@ -63,10 +103,9 @@ now scores monotonicity and the xref's *kind* (indexed vs plain address load) an
 explicitly (`inventory/gnatives_candidates.csv`, verdict `rejected:monotonic`).
 
 Removed with it: `inventory/gnatives_map.csv` (deleted), the 270 `exec*` names and 721 fabricated
-`Native_*` functions in `symbols/xbox_functions.csv` (the Ghidra pass no longer creates or names
-dispatch targets), and the naming rules that assumed a static slot list. `inventory/native_names.csv`
-keeps what was always the declaration side — index, `exec<Function>` name, declarers — and records no
-address, because the file has none to give.
+`Native_*` functions in `symbols/xbox_functions.csv`, and the naming rules that assumed a static slot
+list. What replaced them is the runtime map above: same idea (slot N is the function the script calls
+by index N), but the address now comes from the table the engine actually dispatches through.
 
 ## Script readability (unaffected by the correction)
 
@@ -78,8 +117,8 @@ table — taking unresolved sites 51,289 → 4,230 → 1,470 → **0** across 2,
 
 ## Next
 
-1. Resolve the runtime table (U7): dump `GNatives` from a running build in xemu with the debug kit,
-   or follow the 233 write sites that fill it, and pair each slot with its declaration index.
+1. A second dump after a mission load, to catch the classes the front end does not touch (blocked on
+   input automation, `docs/XEMU.md`).
 2. `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property pointer tables, starting from
    0x0003a083 — the interpreter is where the VM's structures become visible.
 3. Signature libraries for the CRT/XAPI/D3D8 majority (4.2).
