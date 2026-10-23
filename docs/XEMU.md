@@ -96,7 +96,18 @@ Two hypotheses for the next attempt:
    this needs `Single Player` selected instead (one D-pad press), which is the path the release notes
    say is broken — so it is the *right* one to test for the chapter-list claim.
 
-A real controller attached to the desktop is the cheapest way to settle it, if one is available.
+The runs also explain why the shortcuts above were doomed in this session: `python-evdev` as the
+desktop user sees exactly **one** input device — a stale virtual "Microsoft X-Box 360 pad"
+(`/dev/input/event11`, no ABS axes, no gamepad buttons) left over from an earlier injection attempt.
+xemu opened that device (its `/proc/<pid>/fd` lists `event11` and the new `event26`), and a pad with
+no axes and no recognised button map translates to no controller input at all. The real keyboard is
+not visible to `evdev` from this user either, so xemu's keyboard-as-gamepad has nothing to read
+beyond SDL window events — which is why F12 works and nothing else does.
+
+**A real controller on the desktop is the cheapest way to settle it**, and `tools/xemu/play.sh`
+launches the verified configuration interactively for exactly that: press `Continue`, press F12 for a
+capture, and the screenshot lands in `$WORK/shots`. Until then, 7.2's menu-driven checks are blocked
+on input, not on the emulator.
 
 ## Earlier runs (kept for the debugging trail)
 
