@@ -102,7 +102,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       address range (from assert call sites), estimated function count per file.
 - [ ] 2.4 Catalog custom/serialized formats: `.sgs`, `.sgp`, `.ka`/`.kaw`, `.lad`, `.uax` speech, `LIPSincData`
       controllers — write `docs/formats/*.md` stubs with hex samples.
-- [ ] 2.5 Map config surface: `Default.ini`, `UnrealEngine2.ini`, `DefUser.ini`, `Startup.int`, the 20+ `Setup*.int`
+- [x] 2.5 Map config surface: `Default.ini`, `UnrealEngine2.ini`, `DefUser.ini`, `Startup.int`, the 20+ `Setup*.int`
       files (Xbox/PSX2/GCN variants) → note engine options that reveal fork features.
 - [ ] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
       renderer-side natives we must understand.
@@ -245,7 +245,19 @@ and a deliberate one-line script break is caught by the boot test.
   A's code with package B's symbol -- silently wrong. The remaining 93 tokens (4,230 sites) need the
   real `GNatives` dispatch table from the XBE (4.4), which is now the cheapest route to 100%
   readability rather than a rewrite of the token map.
-  Next: 5.2/5.3 for real cut-content evidence, and 4.1/4.3 to unblock the remaining tokens.
+- **5.2 started (map census).** `Sg1Tool maps` parses all 73 `.unr` packages (they are packages:
+  exports are placed actors) into `maps.csv` / `map_actors.csv` — 175,718 placed actors, 389 distinct
+  actor classes. `tools/content-census.py` cross-references them with `classes.csv` and the campaign
+  definition, giving `docs/CONTENT_CENSUS.md`.
+- **Cut-content evidence (5.6) with a real finding:** `System/tweak/Misc/ChapterList.ini` is the
+  campaign (`StargateMenus.ChapterList.Chapters` is `config()`), and its **37 chapters reference maps
+  that do not ship in this build** (`m01a`, `M02AX`, `m07ax`, `m12ax` … Mission 21, matching the
+  `Music/M01…M21` and `Speech/M01…M21` folders), while **none of the 73 shipped maps** appears in it
+  (the build uses `M00`, `M02A`, `M04a`, `M07A`, `M12A` ids). That is the static explanation for the
+  release note "single-player campaign won't start, use Continue": the menu path reads a chapter list
+  from a different campaign revision. Candidate cut content is therefore 37 chapter maps, and the open
+  question is the revision mapping between the two id schemes.
+  Next: 5.3 (speech index: 3,287 WAVs) and 4.1/4.3 (Ghidra + GNatives) to unblock the last 93 tokens.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

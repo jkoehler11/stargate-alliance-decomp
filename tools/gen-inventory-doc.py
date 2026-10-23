@@ -88,6 +88,19 @@ def main():
             continue
         w(f"| `{m['module']}` | {m['src_files']} | {m['src_refs']} | {m['inc_files']} |")
     w("")
+    w("## Maps and content")
+    w("")
+    try:
+        maps = rows("maps.csv")
+        chapters = rows("chapters.csv")
+        w(f"- {len(maps)} `.unr` maps, {sum(int(m['actor_exports']) for m in maps):,} placed actors")
+        if chapters:
+            present = sum(1 for c in chapters if c["present_on_disk"] == "true")
+            w(f"- {len(chapters)} chapters defined in `ChapterList.ini`; {present} reference a shipped map")
+        w("- per-map census: [CONTENT_CENSUS.md](CONTENT_CENSUS.md)")
+    except FileNotFoundError:
+        w("- map census not generated yet (`make inventory`)")
+    w("")
     w("## Files by directory")
     w("")
     w("| path | files | bytes |")

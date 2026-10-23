@@ -34,6 +34,8 @@ internal static class Program
                 "decompile" => DecompileCommand.Run(
                     Require(options, "dump"), options.GetValueOrDefault("out", "src/UnrealScript"),
                     options.GetValueOrDefault("package")),
+                "maps" => MapsCommand.Run(
+                    Require(options, "dump"), options.GetValueOrDefault("out", "inventory")),
                 "probe" => ProbeCommand.Run(
                     Require(options, "dump"),
                     options.GetValueOrDefault("package") ?? throw new ArgumentException("missing --package"),
@@ -210,6 +212,8 @@ internal static class Dump
             _buildingNativeTable = false;
         }
     }
+
+    public static NativesTablePackage SharedNativeTable(string dumpRoot) => BuildNativeTable(dumpRoot);
 
     public static UnrealPackage Load(string path, string dumpRoot)
     {

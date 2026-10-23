@@ -1,0 +1,38 @@
+index,chapter,mapfile,present_on_disk
+1,Mission 1 Replicator Attack,m01a.unr,false
+2,Mission 2 First Part of the Artifact A,M02AX.unr,false
+3,Mission 2 First Part of the Artifact B,M02BX.unr,false
+4,Mission 4 Second Part of the Artifact,m04.unr,false
+5,Mission 5 Reetou Infiltration A,M05A.unr,false
+6,Mission 5 Reetou Infiltration B,M05B.unr,false
+7,Mission 7 Third Part of the Artifact. A,m07axx.unr,false
+8,Mission 7 Third Part of the Artifact. B,m07ax.unr,false
+9,Mission 7 Third Part of the Artifact. C,m07bx.unr,false
+10,Mission 10 Kelowna Invasion A,m10ax.unr,false
+11,Mission 10 Kelowna Invasion B,m10bx.unr,false
+12,Mission 10 Kelowna Invasion C,m10cx.unr,false
+13,Mission 12 The Shipyard I,m12ax.unr,false
+14,Mission 12 The Shipyard II,m12bx.unr,false
+15,Mission 12 The Shipyard III,m12cx.unr,false
+16,Mission 13 Attack on the Tok'ra Base I,m13ax.unr,false
+17,Mission 13 Attack on the Tok'ra Base II,m13bx.unr,false
+18,Mission 13 Attack on the Tok'ra Base III,m13cx.unr,false
+19,Mission 14 Looking for Grey A,M14ax.unr,false
+20,Mission 14 Looking for Grey B,M14bx.unr,false
+21,Mission 15 The Moon Base I,m15ax.unr,false
+22,Mission 15 The Moon Base II,m15bx.unr,false
+23,Mission 15 The Moon Base III,m15cx.unr,false
+24,Mission 16 Beta Site Evacuation,m16.unr,false
+25,Mission 17 Attack on SGC I,m17xa.unr,false
+26,Mission 17 Attack on SGC II,m17ax.unr,false
+27,Mission 18 Countdowns I,m18xa.unr,false
+28,Mission 18 Countdowns II,m18ax.unr,false
+29,Mission 19 Assault on Tartarus,M19x.unr,false
+30,Mission 20 Retrieving the Artifact A,m20ax.unr,false
+31,Mission 20 Retrieving the Artifact B,m20bx.unr,false
+32,Mission 21 Goodbye and Good Riddance A,m21Ax.unr,false
+33,Mission 21 Goodbye and Good Riddance B,m21Bx.unr,false
+34,MP SGCTF Haaken Vs Tartarus,SGCTF-HaakenVsTartarus.unr,false
+35,MP SGCTF Kelowna Vs Revanna,SGCTF-KelownaVsRevanna.unr,false
+36,MP SL Testmap,SL-SystemLordTestMapx.unr,false
+37,MP CTF Aztec,CTF-Aztec.unr,false

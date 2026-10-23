@@ -75,6 +75,12 @@ Derived from `__FILE__` assert paths plus code xrefs to each path string (`tools
 | `Fire` | 1 | 13 | 0 |
 | `Gameplay` | 1 | 9 | 0 |
 
+## Maps and content
+
+- 73 `.unr` maps, 175,718 placed actors
+- 37 chapters defined in `ChapterList.ini`; 0 reference a shipped map
+- per-map census: [CONTENT_CENSUS.md](CONTENT_CENSUS.md)
+
 ## Files by directory
 
 | path | files | bytes |
