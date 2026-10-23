@@ -24,8 +24,22 @@ xemu needs the console's own firmware:
 | flash ROM (`complex_4627.bin`, `Xbox_4627_v1.0.bin`, …) | 256 KB / 512 KB | same: a dump of the console's flash, model-specific |
 | `xbox_hdd.qcow2` | n/a | xemu creates a blank one on first boot, so this is not a blocker |
 
-Searched the desktop and the NAS for firmware (any `mcpx*`, any 200–700 KB `.bin`, any `.qcow2`):
-nothing on either, so there is no existing file to point the runner at.
+Searched for existing firmware on 2026-10-23, in this order:
+
+| Where | Found |
+|---|---|
+| desktop `$HOME` (any `mcpx*`, 200–700 KB `.bin`, `.qcow2`) | nothing (only an unrelated Windows VM image) |
+| `/volume1/nfs/Emulation/bios` (Batocera-style multi-system set) | PS2/Saturn/NeoCD/arcade BIOS only — **no Xbox firmware** |
+| `/volume1/nfs/Emulation/storage/xemu` | `xbox_hdd.qcow2` (4.5 MB) and `eeprom.bin` (256 B) — evidence xemu was set up before, but not the boot ROMs |
+| `/volume1/nfs/romm/library/bios` | arcade, dc, dreamcast, gba, n3ds, nds, ps2, switch — **no `xbox`** |
+| `/volume1` (whole NAS, depth 7, `mcpx*` / `complex_*.bin` / `xbox*.bin`) | nothing |
+
+So an Xbox ROM library and an xemu HDD image exist on the NAS (`roms/xbox/Jet Set Radio Future`) but
+the two firmware files are not on it. They are either on the device that previously ran xemu (a Deck
+or a Batocera box) or were removed.
+
+To unblock, drop them into `~/nfs/sg1-dump/bios/` on the desktop — `boot-test.sh` takes that directory
+as its second argument, so the run needs no other change.
 
 This project will not download, mirror or commit firmware. Supplying it is the owner's call under
 `docs/LEGAL.md` ("do not commit emulator BIOS files"), and the file has to come from a console the
