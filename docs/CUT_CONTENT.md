@@ -27,23 +27,67 @@ A cut-content claim needs evidence that ties a feature to the build **and** to i
 Everything below must cite file-level evidence, as in `PLAN.md` 5.6: a claim without a file and a
 count does not go in the report.
 
-## Already visible in the inventory (leads, not claims)
+## Evidence collected so far
 
-- **Multiplayer in a single-player prototype.** 9 DM/CTF maps ship alongside the mission maps
-  (`DM-Ha'tak`, `DM-KelownanTrain`, `CTF-Abydos`, `CTF-LostCity`, …) and `StargateGame.u` carries
-  `StargateDeathMatch`, `TeamDeathMatch`, `StargateScoreBoard`, `TeamScoreBoard`. Whether MP was
-  playable in this build or only present is a runtime question for Phase 7.
-- **Maps with no single-player mission id.** The 73 `.unr` files include more levels than the
-  mission flow names (`M00`, `M02A-D`, `M04A/B`, `M07A-C`, `M10B`, `M12A`, …). Enumerating which
-  maps the chapter list actually references is task 5.2 and will settle this.
-- **Post-build additions.** 13 classes exist in the Jun 2006 source and not in the build
-  (`SgPhysActor`, `SgPhysCarParams`, `SgPhysPawn`, `SgPhysProp`, `SgPhysVehicleParams`, `GSInterface`,
-  `MovieMaterial`, `BspMeshActor`, `CameraOverlayRot`, `BaseProfileManager`, …) — the SgPhys* family
-  is a physics system the prototype does not have, which is work-in-progress rather than cut content.
+### 1. The campaign menu is pointed at the wrong map filenames
+
+`System/tweak/Misc/ChapterList.ini` is the campaign definition (`StargateMenus.ChapterList.Chapters`
+is `config(...)`), and its 37 chapters name maps as `m02ax`, `m07axx`, `m17xa`, `m19x`, … while the
+dump ships `M02A`, `M07A`, `M17A`, `M19A`, …. **Zero** chapters match a shipped filename literally;
+30 match once the `x` build marker is removed. A literal lookup by the menu therefore fails for
+content that is present, which is exactly what the release notes describe: the single-player
+campaign cannot be started from the Single Player menu, and missions have to be loaded from
+**Continue**.
+
+*Correction to the first draft of this file:* an earlier version of the census compared the two sets
+literally and reported 37 absent maps / "disjoint campaign". That was a normalisation bug, not a
+finding — the two id schemes differ by the build marker, not by content. The numbers above are the
+corrected ones and `tools/content-census.py` now strips the marker before matching.
+
+### 2. Seven chapters have no shipped counterpart
+
+| # | chapter | map file |
+|---|---|---|
+| 1 | Mission 1 Replicator Attack | `m01a.unr` |
+| 5 | Mission 5 Reetou Infiltration A | `M05A.unr` |
+| 6 | Mission 5 Reetou Infiltration B | `M05B.unr` |
+| 34 | MP SGCTF Haaken Vs Tartarus | `SGCTF-HaakenVsTartarus.unr` |
+| 35 | MP SGCTF Kelowna Vs Revanna | `SGCTF-KelownaVsRevanna.unr` |
+| 36 | MP SL Testmap | `SL-SystemLordTestMapx.unr` |
+| 37 | MP CTF Aztec | `CTF-Aztec.unr` |
+
+Missions 1 and 5 have no map under their own id (M00 exists and may be Mission 1 under an older
+name — runtime evidence needed), and four multiplayer/test maps were planned but not shipped. The
+three`SGCTF-*`/`SL-*`/`CTF-Aztec` entries are the strongest candidates for genuinely cut content,
+because the build ships a different multiplayer map set instead (`SGCTF-AbydosVsSGC`, `CTF-Abydos`,
+`CTF-LostCity`, 7 `DM-*`).
+
+### 3. Shipped content the campaign never references
+
+49 of the 73 maps appear in no chapter, including `M00` (the map the release notes tell players to
+start from), 7 `DM-*` maps, 2 `CTF-*` maps, `SGCTF-AbydosVsSGC`, `Entry` and `MainMenu`. Except for
+the menu maps, these are content reachable only from **Continue** or by direct load — consistent
+with a prototype whose campaign glue was mid-rewrite.
+
+### 4. Dialogue was recorded for the campaign that ships
+
+`docs/DIALOGUE.md` indexes 1,364 speech WAVs across 14 recorded mission ids (m02…m21) and 29
+speakers. Every recorded mission id has a map, so the recording matches the shipped map set rather
+than the chapter list — further evidence that the maps are the real content and the chapter list is
+the stale artefact.
+
+### 5. Post-build additions (not cut content)
+
+13 classes exist in the Jun 2006 source and not in the build — the `SgPhys*` family
+(`SgPhysActor`, `SgPhysCarParams`, `SgPhysPawn`, `SgPhysProp`, `SgPhysVehicleParams`), `GSInterface`,
+`MovieMaterial`, `BspMeshActor`, `CameraOverlayRot`, `BaseProfileManager`, among others. These are
+work started after the prototype, not content removed from it.
 
 ## Next
 
-1. Dump every `.unr` to T3D (5.2) and cross-reference actor classes against `classes.csv` — that
-   turns "this class exists" into "this class is used, here".
-2. Index `Speech/` (3,287 WAVs, 21 dialogue folders) and map lines to missions (5.3).
-3. Only then write claims, each with the file and the count.
+1. Dump every `.unr` to T3D so actor instances, not just class counts, can be cited (5.2 follow-up).
+2. Map dialogue scenes to map scenes to prove which recorded lines were never reachable (5.3
+   follow-up) — the index exists, the scene-to-quest mapping does not.
+3. Runtime checks (Phase 7): does the chapter list fail at load time as predicted, and can `M00`
+   stand in for Mission 1?
+4. Every claim above is already traceable to a committed CSV or a committed doc; keep it that way.

@@ -18,141 +18,41 @@ script column depends on the local decompiled tree and is blank when it was not 
 ## Campaign definition vs shipped maps
 
 `System/tweak/Misc/ChapterList.ini` is the campaign: `StargateMenus.ChapterList`'s
-`Chapters` array is `config(...)`, so that file is the only place a mission is bound
-to a map. Comparing it with `Maps/` is the strongest static cut-content evidence
-available without running the game.
+`Chapters` array is `config(...)`, so that file is the only place the menu binds a
+mission to a map file.
 
-- 37 chapters defined; 0 reference a map that ships in this
-  build, 37 reference a map that does not.
-- 73 of the 73 shipped maps appear in no chapter.
+- 37 chapters defined
+- 0 name a map file that exists **exactly as written**
+- 30 resolve to a shipped map once the Xbox build marker is removed
+  (`m02ax` -> `M02A`, `m17xa` -> `M17A`, `m19x` -> `M19A`)
+- 7 resolve to nothing in this build
+- 49 of the 73 shipped maps are not referenced by any chapter
 
-Chapters pointing at absent maps:
+The suffix is the finding: the shipped chapter list refers to filenames like
+`M02AX.unr` while the maps in this dump are named `M02A.unr`. A literal lookup by
+the menu therefore fails for 30 of 37 chapters even though the content is present — which is what the release note
+describes when it says the single-player campaign cannot be started from the
+menu and missions must be loaded from **Continue**.
+
+Chapters with no shipped counterpart at all:
 
 | # | chapter | map file |
 |---|---|---|
 | 1 | Mission 1 Replicator Attack | `m01a.unr` |
-| 2 | Mission 2 First Part of the Artifact A | `M02AX.unr` |
-| 3 | Mission 2 First Part of the Artifact B | `M02BX.unr` |
-| 4 | Mission 4 Second Part of the Artifact | `m04.unr` |
 | 5 | Mission 5 Reetou Infiltration A | `M05A.unr` |
 | 6 | Mission 5 Reetou Infiltration B | `M05B.unr` |
-| 7 | Mission 7 Third Part of the Artifact. A | `m07axx.unr` |
-| 8 | Mission 7 Third Part of the Artifact. B | `m07ax.unr` |
-| 9 | Mission 7 Third Part of the Artifact. C | `m07bx.unr` |
-| 10 | Mission 10 Kelowna Invasion A | `m10ax.unr` |
-| 11 | Mission 10 Kelowna Invasion B | `m10bx.unr` |
-| 12 | Mission 10 Kelowna Invasion C | `m10cx.unr` |
-| 13 | Mission 12 The Shipyard I | `m12ax.unr` |
-| 14 | Mission 12 The Shipyard II | `m12bx.unr` |
-| 15 | Mission 12 The Shipyard III | `m12cx.unr` |
-| 16 | Mission 13 Attack on the Tok'ra Base I | `m13ax.unr` |
-| 17 | Mission 13 Attack on the Tok'ra Base II | `m13bx.unr` |
-| 18 | Mission 13 Attack on the Tok'ra Base III | `m13cx.unr` |
-| 19 | Mission 14 Looking for Grey A | `M14ax.unr` |
-| 20 | Mission 14 Looking for Grey B | `M14bx.unr` |
-| 21 | Mission 15 The Moon Base I | `m15ax.unr` |
-| 22 | Mission 15 The Moon Base II | `m15bx.unr` |
-| 23 | Mission 15 The Moon Base III | `m15cx.unr` |
-| 24 | Mission 16 Beta Site Evacuation | `m16.unr` |
-| 25 | Mission 17 Attack on SGC I | `m17xa.unr` |
-| 26 | Mission 17 Attack on SGC II | `m17ax.unr` |
-| 27 | Mission 18 Countdowns I | `m18xa.unr` |
-| 28 | Mission 18 Countdowns II | `m18ax.unr` |
-| 29 | Mission 19 Assault on Tartarus | `M19x.unr` |
-| 30 | Mission 20 Retrieving the Artifact A | `m20ax.unr` |
-| 31 | Mission 20 Retrieving the Artifact B | `m20bx.unr` |
-| 32 | Mission 21 Goodbye and Good Riddance A | `m21Ax.unr` |
-| 33 | Mission 21 Goodbye and Good Riddance B | `m21Bx.unr` |
 | 34 | MP SGCTF Haaken Vs Tartarus | `SGCTF-HaakenVsTartarus.unr` |
 | 35 | MP SGCTF Kelowna Vs Revanna | `SGCTF-KelownaVsRevanna.unr` |
 | 36 | MP SL Testmap | `SL-SystemLordTestMapx.unr` |
 | 37 | MP CTF Aztec | `CTF-Aztec.unr` |
 
-Shipped maps that no chapter lists:
+These are the actual cut/absent missions (see `docs/CUT_CONTENT.md` for what
+promotes a row to a claim).
 
-- `CTF-Abydos`
-- `CTF-LostCity`
-- `DM-Ha'tak`
-- `DM-KelownanTrain`
-- `DM-Langara`
-- `DM-LostCity`
-- `DM-Subterranean`
-- `DM-Tomb`
-- `DM-WorstCaseScenario`
-- `Entry`
-- `M00`
-- `M02A`
-- `M02B`
-- `M02C`
-- `M02D`
-- `M04B`
-- `M04a`
-- `M07A`
-- `M07B`
-- `M07C`
-- `M07D`
-- `M07E`
-- `M10A`
-- `M10B`
-- `M10C`
-- `M10D`
-- `M12A`
-- `M12B`
-- `M12C`
-- `M12D`
-- `M12E`
-- `M12F`
-- `M13A`
-- `M13B`
-- `M13C`
-- `M13D`
-- `M14A`
-- `M14B`
-- `M14C`
-- `M15A`
-- `M15B`
-- `M15C`
-- `M15D`
-- `M15E`
-- `M15F`
-- `M16A`
-- `M16B`
-- `M16C`
-- `M16D`
-- `M16E`
-- `M16F`
-- `M16G`
-- `M17A`
-- `M17B`
-- `M17D`
-- `M18A`
-- `M18B`
-- `M18D`
-- `M19A`
-- `M19B`
-- `M19C`
-- `M19D`
-- `M19E`
-- `M20A`
-- `M20B`
-- `M20C`
-- `M20D`
-- `M21A`
-- `M21B`
-- `M21C`
-- `M21D`
-- `MainMenu`
-- `SGCTF-AbydosVsSGC`
+Shipped maps no chapter references (49): `CTF-Abydos`, `CTF-LostCity`, `DM-Ha'tak`, `DM-KelownanTrain`, `DM-Langara`, `DM-LostCity`, `DM-Subterranean`, `DM-Tomb`, `DM-WorstCaseScenario`, `Entry`, `M00`, `M02C`, `M02D`, `M04B`, `M04a`, `M07C`, `M07D`, `M07E`, `M10D`, `M12D`, `M12E`, `M12F`, `M13D`, `M14C`, `M15D`, `M15E`, `M15F`, `M16A`, `M16B`, `M16C`, `M16D`, `M16E`, `M16F`, `M16G`, `M17B`, `M17D`, `M18B`, `M18D`, `M19A`, `M19B`, `M19C`, `M19D`, `M19E`, `M20C`, `M20D`, `M21C`, `M21D`, `MainMenu`, `SGCTF-AbydosVsSGC`.
 
-### What this means
-
-The two sets are disjoint, and that is a finding rather than a parsing error:
-
-- The chapter list uses a **second campaign revision** (`m01a`, `M02AX`, `m07ax`, `m12ax`, … up to Mission 21), matching the `Music/M01…M21` and `Speech/M01…M21` folders — a 21-mission design.
-- The shipped `Maps/` set uses the prototype's own ids (`M00`, `M02A`, `M04a`, `M07A`, `M12A`, …), which no chapter references.
-- This is visible from outside the binary too: the release notes tell players the single-player campaign cannot be started from the Single Player menu and that missions must be loaded from **Continue**. The menu path is broken because the chapter list it reads names maps this build does not contain.
-
-So the interesting cut-content question is not "which maps are missing" (that is answered above: 37 chapter maps) but "which of the 73 shipped maps is a later or earlier revision of a chapter" — a naming/revision mapping that needs the profile data (`.sgp`, `.sgs`) and runtime checks in Phase 7.
+Mission-prefixed entries here are playable content the chapter list never names —
+reachable from **Continue**, not from the campaign menu.
 
 ## Map reachability
 

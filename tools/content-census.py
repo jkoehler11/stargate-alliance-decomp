@@ -67,11 +67,30 @@ def main():
                                      "mapfile": m.group(2)})
 
     on_disk = {m["map"].lower() for m in maps}
+
+    def normalise(name):
+        """Chapter map ids carry the Xbox build's 'x' marker inside the id, not just at the end:
+
+            m02ax  -> m02a   (M02A)        m07axx -> m07a  (M07A)
+            m17xa  -> m17a   (M17A)        m19x   -> m19   (M19A..E, prefix match)
+            m16    -> m16    (M16A..G, prefix match)
+
+        So: drop every 'x' from the id, then accept an exact map id or one that extends it.
+        """
+        key = name.lower()
+        if key.endswith(".unr"):
+            key = key[:-4]
+        return re.sub(r"x", "", key)
+
     for chapter in chapters:
         key = chapter["mapfile"].lower()
         if key.endswith(".unr"):
             key = key[:-4]
-        chapter["on_disk"] = key in on_disk
+        chapter["literal_on_disk"] = key in on_disk
+        nkey = normalise(chapter["mapfile"])
+        chapter["normalised"] = nkey
+        chapter["on_disk"] = chapter["literal_on_disk"] or nkey in on_disk or \
+            any(mid.startswith(nkey) for mid in on_disk)
 
     prefixes = defaultdict(int)
     for m in maps:
@@ -140,42 +159,41 @@ def main():
               f"{len(placed)} distinct actor classes across all maps.", ""]
 
     if chapters:
+        literal = [c for c in chapters if c["literal_on_disk"]]
         present = [c for c in chapters if c["on_disk"]]
         missing = [c for c in chapters if not c["on_disk"]]
-        listed = {c["mapfile"].lower().removesuffix(".unr") for c in chapters}
+        listed = {c["normalised"] for c in chapters}
         unlisted = sorted(m["map"] for m in maps if m["map"].lower() not in listed)
         lines += ["## Campaign definition vs shipped maps", "",
                   "`System/tweak/Misc/ChapterList.ini` is the campaign: `StargateMenus.ChapterList`'s",
-                  "`Chapters` array is `config(...)`, so that file is the only place a mission is bound",
-                  "to a map. Comparing it with `Maps/` is the strongest static cut-content evidence",
-                  "available without running the game.", "",
-                  f"- {len(chapters)} chapters defined; {len(present)} reference a map that ships in this",
-                  f"  build, {len(missing)} reference a map that does not.",
-                  f"- {len(unlisted)} of the {len(maps)} shipped maps appear in no chapter.", ""]
+                  "`Chapters` array is `config(...)`, so that file is the only place the menu binds a",
+                  "mission to a map file.", "",
+                  f"- {len(chapters)} chapters defined",
+                  f"- {len(literal)} name a map file that exists **exactly as written**",
+                  f"- {len(present)} resolve to a shipped map once the Xbox build marker is removed",
+                  f"  (`m02ax` -> `M02A`, `m17xa` -> `M17A`, `m19x` -> `M19A`)",
+                  f"- {len(missing)} resolve to nothing in this build",
+                  f"- {len(unlisted)} of the {len(maps)} shipped maps are not referenced by any chapter",
+                  ""]
+        if len(literal) < len(present):
+            lines += ["The suffix is the finding: the shipped chapter list refers to filenames like",
+                      "`M02AX.unr` while the maps in this dump are named `M02A.unr`. A literal lookup by",
+                      "the menu therefore fails for " + f"{len(present) - len(literal)} of {len(chapters)}"
+                      " chapters even though the content is present — which is what the release note",
+                      "describes when it says the single-player campaign cannot be started from the",
+                      "menu and missions must be loaded from **Continue**.", ""]
         if missing:
-            lines += ["Chapters pointing at absent maps:", "", "| # | chapter | map file |", "|---|---|---|"]
+            lines += ["Chapters with no shipped counterpart at all:", "",
+                      "| # | chapter | map file |", "|---|---|---|"]
             for c in missing:
                 lines.append(f"| {c['index']} | {c['name']} | `{c['mapfile']}` |")
-            lines.append("")
+            lines += ["", "These are the actual cut/absent missions (see `docs/CUT_CONTENT.md` for what",
+                      "promotes a row to a claim).", ""]
         if unlisted:
-            lines += ["Shipped maps that no chapter lists:", ""]
-            lines += [f"- `{m}`" for m in unlisted]
-            lines += ["", "### What this means", "",
-                      "The two sets are disjoint, and that is a finding rather than a parsing error:", "",
-                      "- The chapter list uses a **second campaign revision** (`m01a`, `M02AX`, `m07ax`, "
-                      "`m12ax`, … up to Mission 21), matching the `Music/M01…M21` and `Speech/M01…M21` "
-                      "folders — a 21-mission design.",
-                      "- The shipped `Maps/` set uses the prototype's own ids (`M00`, `M02A`, `M04a`, "
-                      "`M07A`, `M12A`, …), which no chapter references.",
-                      "- This is visible from outside the binary too: the release notes tell players the "
-                      "single-player campaign cannot be started from the Single Player menu and that "
-                      "missions must be loaded from **Continue**. The menu path is broken because the "
-                      "chapter list it reads names maps this build does not contain.",
-                      "",
-                      "So the interesting cut-content question is not \"which maps are missing\" (that is "
-                      "answered above: 37 chapter maps) but \"which of the 73 shipped maps is a later or "
-                      "earlier revision of a chapter\" — a naming/revision mapping that needs the "
-                      "profile data (`.sgp`, `.sgs`) and runtime checks in Phase 7.", ""]
+            lines += [f"Shipped maps no chapter references ({len(unlisted)}): "
+                      + ", ".join(f"`{m}`" for m in unlisted) + ".", "",
+                      "Mission-prefixed entries here are playable content the chapter list never names —",
+                      "reachable from **Continue**, not from the campaign menu.", ""]
 
     lines += ["## Map reachability", "",
               "Two mention counts per map: literal occurrences in the reconstructed script, and literal",
