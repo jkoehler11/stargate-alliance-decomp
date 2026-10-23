@@ -45,7 +45,32 @@ This project will not download, mirror or commit firmware. Supplying it is the o
 `docs/LEGAL.md` ("do not commit emulator BIOS files"), and the file has to come from a console the
 user owns — or the user points at one they already have.
 
-## What happened on the first real run (2026-10-23)
+## Boot verification: PASSED (2026-10-23)
+
+The prototype boots to its main menu in xemu. The working combination is:
+
+| Setting | Value |
+|---|---|
+| BIOS / MCPX | **debug flash** `bios_debug_4627.bin` (1,048,576 B) + `mcpx_1.0.bin` |
+| Memory | 128 MB (debug-kit size) |
+| Disc | XISO with the **certificate media patch** applied (`media=DVD-X2`, `region=NA`, `version=1`) |
+| HDD | `xbox_hdd.qcow2` present (empty image is enough) |
+
+Frame evidence (captured, then deliberately **not** committed — it is game imagery):
+the engine-rendered main menu with `MAIN MENU`, `Continue` highlighted, `Single Player`,
+`Multi-Player`, `Options`, `Extras`, and the build stamp **`Build: Dec 15 2005 12:02:54`** in the
+bottom corner, which matches the release date of this prototype. Screenshot lives outside the repo at
+`~/sg1-xemu/shots/`.
+
+Two things this settles:
+
+1. **PLAN 7.1/7.2 first pass**: the dump is bootable, so the rebuild track has a working harness.
+2. **The debug BIOS was the missing piece, not the disc**: with the retail flash the kernel refused the
+   disc; with the debug flash and the media-patched certificate the same disc boots. Both parts are
+   needed — the debug flash alone still showed the insert-disc prompt with the unpatched image, and the
+   patched image alone did not boot under the retail flash.
+
+## Earlier runs (kept for the debugging trail)
 
 Firmware arrived (`mcpx_1.0.bin`, `Complex_4627.bin`, `xbox_hdd.qcow2`) and the emulator boots:
 

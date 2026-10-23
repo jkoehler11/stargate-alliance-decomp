@@ -193,9 +193,9 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 ### Phase 7 — Verification harness and CI (~1 week, then continuous)
 
-- [~] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
+- [x] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
       other debug-kit dumps; document exact config in `docs/XEMU.md`.
-- [ ] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
+- [~] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
       Missions are M00, M02A–D, M04A/B, M07A–C, M10B, M12A (+ the rest from the map list).
 - [ ] 7.3 Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
@@ -282,6 +282,11 @@ and a deliberate one-line script break is caught by the boot test.
   path needs no copying. `tools/xemu/boot-test.sh` encodes the debug-kit run (128 MB, serial log) and
   fails fast when firmware is absent. Blocked on the console's own `mcpx_1.0.bin` and flash ROM:
   those are Microsoft firmware, deliberately not downloaded or committed (`docs/XEMU.md`).
+- **7.1 done, 7.2 started — the prototype boots.** With the debug flash (`bios_debug_4627.bin`) and a
+  media-patched XISO (`media=DVD-X2`, `region=NA`) at 128 MB, xemu reaches the engine's main menu with
+  `Build: Dec 15 2005 12:02:54`. Retail flash + unpatched disc was refused; the two together work.
+  Next: drive the `Continue` flow to load a mission (needs input automation) and settle the
+  chapter-list claim in `docs/CUT_CONTENT.md`.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
