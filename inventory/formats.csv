@@ -1,0 +1,13 @@
+extension,files,container,parser,doc
+u,18,not sampled,UELib (Sg1Tool),docs/INVENTORY.md
+unr,73,not sampled,UELib (Sg1Tool maps),docs/CONTENT_CENSUS.md
+utx,170,not sampled,umodel,PLAN 5.1
+ukx,83,not sampled,umodel,PLAN 5.1
+usx,91,not sampled,umodel,PLAN 5.1
+uax,55,not sampled,umodel,PLAN 5.1
+sgs,9,unreal-package,UELib (Sg1Tool save),docs/formats/sgs-checkpoint.md
+sgp,3,ini,config/INI reader,docs/formats/sgp-profile.md
+PRO,1,ini,config/INI reader,docs/formats/sgp-profile.md
+ka,3,xml,XML (KARMA 1.0),docs/formats/ragdoll-ka.md
+kaw,1,xml,XML (KAT_WORKSPACE),docs/formats/ragdoll-ka.md
+lad,8,binary,unknown -- LIPSinc binary,docs/formats/lipsinc-lad.md

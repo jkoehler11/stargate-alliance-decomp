@@ -36,6 +36,10 @@ internal static class Program
                     options.GetValueOrDefault("package")),
                 "maps" => MapsCommand.Run(
                     Require(options, "dump"), options.GetValueOrDefault("out", "inventory")),
+                "save" => SaveCommand.Run(
+                    options.GetValueOrDefault("path") ?? throw new ArgumentException("missing --path"),
+                    options.GetValueOrDefault("out"),
+                    options.ContainsKey("verbose")),
                 "probe" => ProbeCommand.Run(
                     Require(options, "dump"),
                     options.GetValueOrDefault("package") ?? throw new ArgumentException("missing --package"),
@@ -70,6 +74,10 @@ internal static class Program
 
               Sg1Tool decompile --dump <dump-root> [--out src/UnrealScript] [--package StargateGame]
                   Reconstruct UnrealScript. Writes game-derived output: never commit it.
+
+              Sg1Tool save --path <file.sgs> [--out schema.csv] [--verbose]
+                  Describe one save/profile package: summary, exports by class, and every property
+                  tag's name, type and size (no values). Works on any package given by path.
 
             <dump-root> is the extracted release tree (the directory containing README.txt).
             """);
