@@ -8,8 +8,8 @@ Status: **xemu installed, blocked on firmware.**
   settings from `~/.local/share/xemu/xemu/`, so it can run with `SDL_VIDEODRIVER=dummy` for a
   headless smoke test of the emulator itself.
 - The dump is staged on the desktop's NAS mount at `~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15`
-  (outside this repository, never committed), so xemu can take it as its DVD image with no copying
-  at test time.
+  (outside this repository, never committed): verified **4,006 files / 2.2 GB**, `default.xbe`
+  present, so xemu can take the directory as its DVD image with no copying at test time.
 - `tools/xemu/boot-test.sh` runs the emulator with the debug-kit configuration the plan requires
   (128 MB, serial log to a file, DVD path = the game directory) and reports whether the guest stayed
   alive for N seconds.
@@ -23,6 +23,9 @@ xemu needs the console's own firmware:
 | `mcpx_1.0.bin` | 512 B | Microsoft's MCPX boot ROM — proprietary firmware, no legal download |
 | flash ROM (`complex_4627.bin`, `Xbox_4627_v1.0.bin`, …) | 256 KB / 512 KB | same: a dump of the console's flash, model-specific |
 | `xbox_hdd.qcow2` | n/a | xemu creates a blank one on first boot, so this is not a blocker |
+
+Searched the desktop and the NAS for firmware (any `mcpx*`, any 200–700 KB `.bin`, any `.qcow2`):
+nothing on either, so there is no existing file to point the runner at.
 
 This project will not download, mirror or commit firmware. Supplying it is the owner's call under
 `docs/LEGAL.md` ("do not commit emulator BIOS files"), and the file has to come from a console the
