@@ -50,6 +50,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--natives", default="inventory/natives.csv")
     ap.add_argument("-o", "--out", default="inventory")
+    ap.add_argument("--slots", default="",
+                    help="inventory/gnatives_slots.csv, from a runtime dump of the table")
+    ap.add_argument("--symbols-out", default="",
+                    help="write address,name rows here (consumed by XbePost as evidence overrides)")
     args = ap.parse_args()
 
     declared = load_declarations(args.natives)
@@ -92,7 +96,21 @@ def main():
     declarations = sum(len(v) for v in declared.values())
     print("%d declarations over %d distinct explicit indices: %d named, %d ambiguous"
           % (declarations, len(declared), len(claims), len(ambiguous)))
-    print("wrote %s (no addresses: GNatives is not initialised in the file)" % path)
+    print("wrote %s" % path)
+
+    if args.slots and args.symbols_out:
+        rows_out = []
+        with open(args.slots, newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                name = row["name"] or ("Native_%s" % row["index"])
+                rows_out.append((row["address"], name,
+                                 "dispatch slot %s (%s)" % (row["index"], row["evidence"])))
+        os.makedirs(os.path.dirname(args.symbols_out) or ".", exist_ok=True)
+        with open(args.symbols_out, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("# address,name,evidence\n")
+            for address, name, evidence in rows_out:
+                fh.write("%s,%s,%s\n" % (address, name, evidence))
+        print("wrote %s: %d dispatch symbols" % (args.symbols_out, len(rows_out)))
     return 0
 
 

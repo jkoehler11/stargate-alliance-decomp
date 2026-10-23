@@ -14,6 +14,7 @@ import re
 from collections import Counter, defaultdict
 
 FUN = re.compile(r"^(FUN|sub|thunk_FUN|LAB)_([0-9a-fA-F]+)$")
+NATIVE_SLOT = re.compile(r"^Native_\d+$")
 # The 12 modules that assert somewhere in this binary; a name is only attributed to a module when
 # its prefix is one of these, otherwise an MSVC-mangled symbol would invent a module of its own.
 KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
@@ -51,8 +52,17 @@ def main():
                 kind_override = True
             else:
                 kind_override = False
+            # Two kinds of dispatch name, counted apart: `exec<Function>` is a native the script
+            # declares by index, `Native_<index>` is a registered slot with no declarer at all.
+            if name.startswith("exec") and not module:
+                kind = "gnatives_declared"
+            elif NATIVE_SLOT.match(name):
+                kind = "gnatives_slot"
+            else:
+                kind = "other"
             rows.append({"address": row["address"], "name": name, "size": int(row["size"]),
-                         "module": module, "unknown": unknown, "override": kind_override})
+                         "module": module, "unknown": unknown, "kind": kind,
+                         "override": kind_override})
 
     per_module = defaultdict(lambda: {"functions": 0, "bytes": 0, "named": 0})
     for r in rows:
@@ -60,6 +70,10 @@ def main():
             key = r["module"]
         elif r["unknown"]:
             key = "(unnamed)"
+        elif r["kind"] == "gnatives_declared":
+            key = "(dispatch: declared)"
+        elif r["kind"] == "gnatives_slot":
+            key = "(dispatch: slot only)"
         else:
             key = "(other named)"
         d = per_module[key]
@@ -73,7 +87,10 @@ def main():
     median = sizes[len(sizes) // 2] if sizes else 0
     assert_named = sum(1 for r in rows if r["module"] and not r["override"])
     override_named = sum(1 for r in rows if r["override"])
-    other_named = sum(1 for r in rows if not r["unknown"] and not r["module"])
+    gnative_named = sum(1 for r in rows if r["kind"] == "gnatives_declared")
+    gnative_slot = sum(1 for r in rows if r["kind"] == "gnatives_slot")
+    other_named = sum(1 for r in rows if not r["unknown"] and not r["module"]
+                      and r["kind"] == "other")
 
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "xbe_functions_by_module.csv"), "w", newline="",
@@ -91,8 +108,10 @@ def main():
              f"{median} bytes",
              f"- {assert_named + override_named:,} functions attributed to a module "
              f"({assert_named:,} by the assert string they reference, {override_named:,} by an evidence "
-             f"override — {assert_named / len(rows):.1%} of the binary by assert); {other_named:,} carry "
-             f"a name from Ghidra's own analysis (thunks, runtime helpers), the rest are `FUN_*`", "",
+             f"override — {assert_named / len(rows):.1%} of the binary by assert); {gnative_named:,} are "
+             f"named from the runtime native dispatch table (`GNatives`, PLAN 4.4) and {gnative_slot:,} "
+             f"are dispatch slots no shipped package declares; {other_named:,} carry a name from Ghidra's "
+             f"own analysis (thunks, runtime helpers), the rest are `FUN_*`", "",
              "## Functions by module", "",
              "| module | functions | named | bytes | mean size |", "|---|---|---|---|---|"]
     for module, d in sorted(per_module.items(), key=lambda kv: -kv[1]["functions"]):
@@ -104,24 +123,27 @@ def main():
               "those that do not. A function named `Engine_UnObjBas` is therefore an Engine function",
               "that contains an assert from `UnObjBas.cpp`, not necessarily a function *of* that file.",
               "",
-              "No function here is named from the native dispatch table: `GNatives` is populated at",
-              "runtime and the image does not store its bytes, so there is no static slot list to name",
-              "(`docs/NATIVE_VM.md`). The 270 `exec*` names and 721 `Native_<index>` functions an earlier",
-              "pass created came from a pointer array that turned out to be the CRT initialiser list, and",
-              "were removed in the same commit that corrected the table.", "",
+              "The `GNatives` rows are a different kind of evidence. `exec<Function>` is the name the",
+              "script packages themselves give dispatch slot N, and the address comes from the table read",
+              "out of the running build (`inventory/gnatives_slots.csv`), so the pair is as strong as a",
+              "native declaration. `Native_<index>` records only that a slot is registered and nothing",
+              "declares it: 83 of those are engine-internal execs that no script can reach. An earlier",
+              "pass produced 270 `exec*` and 721 `Native_*` names from a pointer array that turned out to",
+              "be the CRT initialiser list; those rows are gone and were rebuilt from the runtime table.", "",
               "Everything else is bounded by the 154 translation units that assert at all; the remaining",
               "functions need signature matching (CRT/XAPI/D3D8 libraries) and manual work. `FUN_*` names",
               "are Ghidra's, kept deliberately: an honest unknown beats a guessed name.", "",
               "## Next", "",
               "1. Apply signature libraries for the Xbox SDK/CRT to lift the unnamed majority (4.2).",
-              "2. Resolve the runtime `GNatives` table from a running build so the declared native",
-              "   indices can be paired with addresses (`docs/UNKNOWNS.md` U7).",
+              "2. Take a second `GNatives` dump after a mission loads, for the classes the front end",
+              "   never touches (`docs/UNKNOWNS.md` U7).",
               "3. Locate `UObject` layout and `ProcessEvent`/`ProcessInternal` from the interpreter at",
               "   `0x0003a083` (4.3, still open).",
               "4. Split the project per module using these attribution counts as the work breakdown (4.5).", ""]
     with open(os.path.join("docs", "NATIVE.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines))
     print(f"{len(rows)} functions, {assert_named} assert-attributed, {override_named} override-attributed, "
+          f"{gnative_named} dispatch-named, {gnative_slot} slot-only, "
           f"{other_named} other named -> docs/NATIVE.md")
 
 
