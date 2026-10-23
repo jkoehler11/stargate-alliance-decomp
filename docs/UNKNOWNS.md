@@ -159,4 +159,11 @@ index-less declarations (U1) stay unexplained.
 3. **Trace the interpreter.** Break at `0x0003a0a7` and record `(iNative, GNatives[iNative])` while the
    menu runs; script-visible behaviour then pairs an index with a body.
 
-**Status.** Open. This is the gating task for 4.4 and the first thing 4.3's next pass should settle.
+**Resolved 2026-10-23, partly.** Option 1 was taken: a 16 KB dump over the xemu GDB stub at the main
+menu gives 356 registered slots (3,740 still hold the startup default `0x000404a0`), all 356 distinct
+and inside `.text`, and **all 273 declared indices are present**. `inventory/gnatives_slots.csv` and
+`symbols/xbe_dispatch.csv` carry the map; `docs/NATIVE_VM.md` has the validation and the procedure.
+
+**Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
+and the table is incomplete because natives are registered with the class that declares them: a full
+map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).

@@ -72,8 +72,9 @@ Short version, with the details in [PLAN.md](PLAN.md):
 2. **Inventory** — packages, classes, `native()` indices, and the XBE's module map, as generated CSVs.
 3. **Decompile scripts** — UELib already carries a build profile for this exact game (version 130, licensee 4),
    so this is a reconstruction and fix-up job rather than a parser-writing job.
-4. **Symbolise natives** — the script `native()` indices give names; the addresses need the runtime dispatch
-   table, which has no bytes in the file (`docs/NATIVE_VM.md`, [PLAN.md](PLAN.md) 4.3/4.4).
+4. **Symbolise natives** — the VM's dispatch table has no bytes in the file, so it is read from a running
+   build over the emulator's GDB stub and joined with the script `native()` indices; 273 declared natives
+   are named that way (`docs/NATIVE_VM.md`, [PLAN.md](PLAN.md) 4.4).
 5. **Decompile the game modules** — `stargategame` and `stargatevehicles` first, engine internals only where
    script-reachable.
 6. **Extract assets and levels**, then publish a cut-content report. The prototype ships maps and content that

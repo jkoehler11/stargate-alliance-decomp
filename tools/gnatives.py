@@ -18,8 +18,13 @@ Two things are written, and nothing else:
   ("GNatives[iNative]!=0", "iNative<EX_Max"), so the table address and entry count are read out of
   the code that asserts about them rather than guessed from a scan.
 
+With `--runtime` the tool reads a 16 KB memory dump of the table taken from the emulator and joins
+it with the declared indices, writing `inventory/gnatives_slots.csv` (index -> address -> name). The
+dump itself is guest memory: it stays under `$WORK`, only the derived address map is committed
+(`symbols/` is address structure, never content).
+
 Usage:
-    gnatives.py DUMP/default.xbe -o inventory
+    gnatives.py DUMP/default.xbe -o inventory [--runtime $WORK/gnatives/runtime.bin]
 """
 import argparse
 import csv
@@ -178,10 +183,61 @@ def table_from_asserts(text, image):
     }
 
 
+ENTRIES = 4096          # EX_Max, read from the interpreter's assert
+TABLE_BYTES = ENTRIES * 4
+DEFAULT_STUB = 0x000404a0   # what the startup initialiser leaves in every unclaimed slot
+
+
+def load_runtime(path, table_va, image):
+    """Validate a runtime dump and return its dwords, or exit with the reason it is unusable."""
+    data = open(path, "rb").read()
+    if len(data) != TABLE_BYTES:
+        sys.exit("%s: %d bytes, expected %d (EX_Max x 4)" % (path, len(data), TABLE_BYTES))
+    vals = list(struct.unpack("<%dI" % ENTRIES, data))
+    text = [s for s in image.sections if s.name == ".text"][0]
+    lo, hi = text.va, text.va + text.vsize
+    outside = [v for v in vals if v and not lo <= v < hi]
+    if outside:
+        sys.exit("%s: %d entries point outside .text -- not this table" % (path, len(outside)))
+    if len(set(vals)) == 1:
+        sys.exit("%s: every entry is %#x -- the dump was taken before anything registered"
+                 % (path, vals[0]))
+    return vals
+
+
+def write_slots(path, vals, names_path):
+    """index -> address -> name, with what each name rests on kept in its own column."""
+    declared = {}
+    with open(names_path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            declared[int(row["index"])] = row
+    rows = []
+    for index, va in enumerate(vals):
+        if va == DEFAULT_STUB:
+            continue
+        entry = declared.get(index)
+        rows.append({
+            "index": index,
+            "address": "0x%08x" % va,
+            "name": entry["name"] if entry else "",
+            "evidence": "declared" if entry else "slot-only",
+            "declarers": entry["declarers"] if entry else "",
+        })
+    columns = ["index", "address", "name", "evidence", "declarers"]
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=columns, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+    return rows, declared
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("xbe")
     ap.add_argument("-o", "--out", default="inventory")
+    ap.add_argument("--runtime", default="",
+                    help="16 KB dump of GNatives taken from the running build (see docs/XEMU.md)")
+    ap.add_argument("--native-names", default="inventory/native_names.csv")
     args = ap.parse_args()
 
     image = Xbe(args.xbe)
@@ -200,6 +256,9 @@ def main():
                         r["xref_kinds"], r["xref_vas"], r["verdict"]])
 
     table = table_from_asserts(text, image)
+    runtime = None
+    if args.runtime and table:
+        runtime = load_runtime(args.runtime, table["table_va"], image)
     path = os.path.join(args.out, "gnatives_table.csv")
     columns = ["name", "address", "entries", "in_file_bytes", "evidence"]
     with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -230,6 +289,20 @@ def main():
     else:
         print("GNatives: not identified -- the assert scan did not resolve a single table address")
     print("wrote %s and gnatives_candidates.csv" % path)
+
+    if runtime is not None:
+        slots_path = os.path.join(args.out, "gnatives_slots.csv")
+        rows, declared = write_slots(slots_path, runtime, args.native_names)
+        named = sum(1 for r in rows if r["name"])
+        registered = {r["index"] for r in rows}
+        absent = [i for i in declared if i not in registered]
+        print("runtime dump: %d of %d slots registered, %d distinct, %d named from declarations, "
+              "%d slot-only" % (len(rows), ENTRIES, len({r["address"] for r in rows}), named,
+                                len(rows) - named))
+        if absent:
+            print("declared indices still at the default stub: %s"
+                  % ", ".join(str(i) for i in sorted(absent)[:12]))
+        print("wrote %s" % slots_path)
     return 0 if table else 1
 
 

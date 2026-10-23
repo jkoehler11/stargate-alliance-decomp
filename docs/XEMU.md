@@ -70,6 +70,32 @@ Two things this settles:
    needed — the debug flash alone still showed the insert-disc prompt with the unpatched image, and the
    patched image alone did not boot under the retail flash.
 
+## Reading guest memory: the GDB stub (used for `GNatives`)
+
+xemu exposes a QEMU-style GDB stub with `-s` (port 1234), which is how the native dispatch table was
+read (PLAN 4.3/4.4, `docs/NATIVE_VM.md`). The run needs the graphical session's environment, not
+`DISPLAY=:0`: the desktop is Wayland, so
+
+```sh
+export XDG_RUNTIME_DIR=/run/user/$(id -u) WAYLAND_DISPLAY=wayland-1
+APPIMAGE_EXTRACT_AND_RUN=1 ~/tools/xemu.AppImage -config_path ~/sg1-xemu/drive5.toml -s &
+# wait for the stub, then let it boot to the main menu
+for i in $(seq 60); do ss -ltn | grep -q ':1234 ' && break; sleep 1; done; sleep 55
+gdb -batch -ex "set architecture i386" -ex "target remote localhost:1234" \
+    -ex "dump binary memory runtime.bin 0x6313e8 0x6353e8" -ex detach
+```
+
+`drive5.toml` is the verified configuration from the table above: `bios_debug_4627.bin`, the
+media-patched XISO and 128 MB. Two things that cost time and are worth knowing:
+
+- `DISPLAY=:0` over ssh fails with "Authorization required, but no authorization protocol specified";
+  the Wayland socket matters, not X11.
+- Attaching stops the guest. Dump and `detach` in the same `gdb` invocation, so the run resumes and can
+  be killed cleanly afterwards.
+
+The dump is guest memory (game-derived): keep it under `$WORK`, commit only the derived address map
+(`inventory/gnatives_slots.csv`, `symbols/xbe_dispatch.csv`).
+
 ## Input automation: open problem
 
 Driving the menu (to reach `Continue` → mission load) is not working yet, and the failure mode is
