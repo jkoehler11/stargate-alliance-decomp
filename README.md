@@ -1,0 +1,126 @@
+# Stargate SG-1: The Alliance — decompilation
+
+<p align="center">
+  <strong>Source-level reconstruction of the cancelled Stargate SG-1: The Alliance, from the December&nbsp;15,&nbsp;2005 Xbox prototype.</strong><br>
+  UnrealScript decompilation, native symbol map and a bootable script rebuild.
+</p>
+
+<p align="center">
+  <img alt="Target: Xbox, 2005-12-15 prototype" src="https://img.shields.io/badge/target-Xbox%202005--12--15%20prototype-107C10">
+  <img alt="Engine: Unreal Engine 2.5 (Perception fork)" src="https://img.shields.io/badge/engine-Unreal%20Engine%202.5-0A84FF">
+  <img alt="Game data not included" src="https://img.shields.io/badge/game%20data-not%20included-FF453A">
+  <img alt="Status: planning" src="https://img.shields.io/badge/status-planning-FF9F0A">
+  <img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-lightgrey">
+</p>
+
+> [!IMPORTANT]
+> **Bring your own dump.** This repository contains no game data: no Xbox executable, no `.u` packages, no
+> maps, no textures, no audio, no assets of any kind, and no code taken from the game. You need your own
+> copy of the prototype release. Everything here is tooling, documentation and code written from scratch.
+
+## What this is
+
+*Stargate SG-1: The Alliance* is a first/third-person shooter by Perception Studios (Sydney) that was
+cancelled in 2006. Two builds survive: a PC-derived build and this Xbox prototype, dated 2005-12-15, dumped
+from an Xbox Debug Kit and released by CVLT OF OSIRIS through [Hidden Palace](https://hiddenpalace.org/Stargate_SG-1:_The_Alliance_(Dec_15,_2005_prototype))
+on 2019-05-06.
+
+The game runs on a Perception-modified Unreal Engine 2.5 (their internal engine fork is "Warfare" — the
+shipped config files still carry `SetupWarfareXbox.int` and friends). Like most Unreal-era titles, most game
+logic lives in UnrealScript compiled into `.u` packages, sitting on top of a native engine.
+
+A "decompilation" here means reconstructing that in four layers, each with its own pass criterion:
+
+| Layer | Deliverable | Done means |
+| --- | --- | --- |
+| Script | every class, state and function in the 18 shipped packages as readable `.uc` | compiles clean; bytecode re-disassembly matches ≥98% per function |
+| Native | `default.xbe` loaded and symbolised, game modules decompiled to C | every script `native()` mapped to a named address |
+| Assets | packages, levels, textures, meshes, audio exported with a manifest | every map dumps to T3D; meshes export |
+| Rebuild | packages rebuilt from our scripts | boots in an emulator and loads a mission |
+
+## What this is not
+
+Not a remaster, not a port, not a reimplementation. There is no plan to rewrite the renderer or the netcode,
+and no claim that a bit-exact rebuild of the engine is achievable — the original compiler toolchain is gone,
+so the target is semantic and opcode-level equivalence, not identical bytes. Scope is written down in
+[docs/SCOPE.md](docs/SCOPE.md) once that exists; the current authority is [PLAN.md](PLAN.md).
+
+## Status
+
+**Planning.** The repository currently contains the plan and nothing else. [PLAN.md](PLAN.md) is the working
+task list: eight phases, machine-checkable acceptance criteria, effort estimate and a risk register.
+
+The recon it is built on was done against the real release, not guessed:
+
+| Verified | Value |
+| --- | --- |
+| Release archive | `Stargate_SG-1_-_The_Alliance-2005-12-15.7z`, 1,015,500,550 bytes |
+| SHA-256 | `d70e15d5ceb479bb8443f2c0bcf2d8884f913a02033d7d8a8e33f80e622d47f4` |
+| Extracted size | 4,081 files, ~2.2 GB |
+| Executable | `default.xbe`, 6,209,536 bytes, image base `0x00010000` |
+| Source paths in asserts | 154 `.cpp` files across 12 modules (Engine, Core, IpDrv, Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles) |
+| UnrealScript packages | 18 `.u` files at package versions 128/129/130, licensee 4 |
+| Content | 73 maps, 3,287 `.wav`, 170 `.utx`, 91 `.usx`, 83 `.ukx`, 55 `.uax` |
+
+Verify your own copy against that SHA-256 before reporting anything about the build.
+
+## How the work is expected to run
+
+Short version, with the details in [PLAN.md](PLAN.md):
+
+1. **Freeze the dump** — extract, hash every file, commit the manifest, keep a pristine copy.
+2. **Inventory** — packages, classes, `native()` indices, and the XBE's module map, as generated CSVs.
+3. **Decompile scripts** — UELib already carries a build profile for this exact game (version 130, licensee 4),
+   so this is a reconstruction and fix-up job rather than a parser-writing job.
+4. **Symbolise natives** — name the VM's native dispatch table from the script `native()` indices. This is the
+   highest-leverage step: it names hundreds of engine functions for free.
+5. **Decompile the game modules** — `stargategame` and `stargatevehicles` first, engine internals only where
+   script-reachable.
+6. **Extract assets and levels**, then publish a cut-content report. The prototype ships maps and content that
+   never reached the later builds; that evidence is half the reason to do this.
+
+Tooling is expected to be: UELib / UE Explorer for packages, Ghidra with the XBE loader for native code,
+umodel for assets, xemu in debug-kit configuration (128 MB, debug BIOS) for boot verification, and a matching
+UE2 compiler under Wine for the rebuild. Versions will be pinned.
+
+## Requirements for contributors
+
+- Your own legally obtained copy of the prototype. Do not upload it, link to it, or attach pieces of it to a
+  PR, issue or discussion — not a single `.u`, `.unr`, `.xbe` or asset.
+- Do not commit leaked studio source. The 2006 Perception `Classes` source that circulates online is
+  copyrighted work that was never released; it is useful as a private cross-check and nothing else. It must
+  never enter this repository, a PR or an issue.
+- Do not commit emulator BIOS files, Microsoft SDK libraries or any other proprietary binaries.
+
+## Legal
+
+This is an independent, unofficial preservation project. It is not affiliated with, authorised by or endorsed
+by MGM, Metro-Goldwyn-Mayer, Perception Studios, JoWood, Sony, Microsoft or Epic Games. *Stargate SG-1*, *The
+Alliance*, its code, data, characters, names and imagery, the Unreal Engine, and the Xbox and Unreal
+trademarks remain the property of their respective owners. This project cannot grant rights it does not hold.
+
+This repository contains no game data and no code derived from the game. It contains no Xbox executable, no
+`.u`/`.unr`/`.utx`/`.ukx`/`.usx`/`.uax` packages, no maps, textures, audio, dialogue, models or saves, and no
+leaked studio source. It ships only original tooling, documentation and source written by contributors.
+
+Running the tooling here on your own copy of the game produces output that is derived from that copy, and that
+copy is yours alone: do not share, upload or sell the extracted packages, the rebuilt packages or the
+decompiled scripts. A GPL licence on this repository's own code does not place game-derived output under the
+GPL, and the licence grants no rights in the game.
+
+Decompiled output is derivative of a copyrighted work, and this project may be limited or taken down if a
+rights holder asks. Nothing here is a legal opinion or a claim of fair use in any particular jurisdiction;
+if you redistribute anything, you are responsible for it.
+
+## Licence
+
+The code, tooling and documentation in this repository are licensed under the **GNU General Public License,
+version 3 or (at your option) any later version**. Text to be added as `LICENSE` with the first code commit.
+
+Game data, game-derived output and third-party tools are **not** covered by that licence — see Legal above.
+
+## Credits
+
+- Build dumped and released by **CVLT OF OSIRIS**, documented by **Hidden Palace** (2019).
+- Engine lineage: **Epic Games**, Unreal Engine 2.5, as modified by **Perception Studios**.
+- Decompilation tooling by the UELib / UE Explorer, Ghidra, umodel and xemu communities.
