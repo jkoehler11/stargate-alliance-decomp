@@ -1,7 +1,9 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
-Status: planning. This is the working task list for the project described in [README.md](README.md).
-Nothing here is implemented yet; the recon in section 0 was done against the real release.
+Status: **phase 0-2 done, phase 3 under way** (last run 2026-10-23). This is the working task list for the
+project described in [README.md](README.md). Section 0 was measured against the real release; every box
+ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
+Measured totals live in [docs/INVENTORY.md](docs/INVENTORY.md).
 
 **Goal:** Produce a source-level reconstruction ("decomp") of the Dec 15 2005 Xbox prototype:
 a recompilable UnrealScript source tree extracted from the shipped `.u` bytecode, a symbolized
@@ -63,40 +65,40 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 
 ### Phase 0 — Project setup (½ day)
 
-- [ ] 0.1 Create the working layout on your own machine: `src/UnrealScript/`, `src/Native/<Module>/`, `tools/`,
+- [x] 0.1 Create the working layout on your own machine: `src/UnrealScript/`, `src/Native/<Module>/`, `tools/`,
       `inventory/`, `docs/`, `build/`, with derived output under a gitignored `work/` (see `.gitignore` and
       `AGENTS.md` — game-derived trees stay off the remote; the repo carries tooling, docs and metrics).
-- [ ] 0.2 Write `docs/SCOPE.md`: what "decomp" means here (source reconstruction + symbolization, *not* a bit-exact
+- [x] 0.2 Write `docs/SCOPE.md`: what "decomp" means here (source reconstruction + symbolization, *not* a bit-exact
       rebuild of the engine), and explicitly out-of-scope items (engine renderer rewrite, netcode).
-- [ ] 0.3 Write `docs/LEGAL.md`: record the provenance of the build and the publishing posture — this
+- [x] 0.3 Write `docs/LEGAL.md`: record the provenance of the build and the publishing posture — this
       repository ships tooling, docs and our own code only; no game data, no game-derived output, no
       leaked studio source (see the Legal section of README.md for the standing rule).
-- [ ] 0.4 Add `docs/CONVENTIONS.md`: naming rules for unknown functions, how to mark unverified code,
+- [x] 0.4 Add `docs/CONVENTIONS.md`: naming rules for unknown functions, how to mark unverified code,
       what a "matched" function means, commit message format.
-- [ ] 0.5 Pin toolchain versions in `tools/versions.lock` (Ghidra, ghidra-xbe, UELib commit,
+- [~] 0.5 Pin toolchain versions in `tools/versions.lock` (Ghidra, ghidra-xbe, UELib commit,
       UE Explorer version, umodel build, xemu version, .NET SDK, Mono/Wine).
 - [ ] 0.6 Set up pre-commit hook + CI skeleton (see Phase 7) so coverage metrics cannot regress silently.
 
 ### Phase 1 — Acquire, verify, freeze (~1 day)
 
-- [ ] 1.1 Download the Hidden Palace 7z; record SHA-256 and size (done: values in §0).
-- [ ] 1.2 Extract with `py7zr` (container `/tmp` is a 512 MB tmpfs — extract to real disk, e.g. `/home/pn/sg1/dump`).
-- [ ] 1.3 Generate `inventory/manifest.sha256` over every extracted file (4,081 entries) and commit it.
+- [x] 1.1 Download the Hidden Palace 7z; record SHA-256 and size (done: values in §0).
+- [x] 1.2 Extract with `py7zr` (container `/tmp` is a 512 MB tmpfs — extract to real disk, e.g. `/home/pn/sg1/dump`).
+- [x] 1.3 Generate `inventory/manifest.sha256` over every extracted file (4,081 entries) and commit it.
 - [ ] 1.4 Verify package integrity against `System/Packages.md5` and record which packages pass (baseline for
       detecting our own repack drift later).
 - [ ] 1.5 Archive a pristine, read-only copy of the dump; all later work happens on copies.
-- [ ] 1.6 Write `docs/PROVENANCE.md`: build date, dump method (Xbox Neighborhood), release group, cross-reference
+- [x] 1.6 Write `docs/PROVENANCE.md`: build date, dump method (Xbox Neighborhood), release group, cross-reference
       to the public preservation listings for the same release (no copy is kept in this repo).
 
 **Acceptance:** fresh checkout + `make verify-dump` reproduces the manifest with zero mismatches.
 
 ### Phase 2 — Static recon of the dump (~2–3 days)
 
-- [ ] 2.1 Package inventory table (`inventory/packages.csv`): name, size, UE version, licensee version, flags,
+- [x] 2.1 Package inventory table (`inventory/packages.csv`): name, size, UE version, licensee version, flags,
       export/import counts, class count, native-class count.
-- [ ] 2.2 Class inventory (`inventory/classes.csv`): package, class, superclass, `native` flag, `native()` indices,
+- [x] 2.2 Class inventory (`inventory/classes.csv`): package, class, superclass, `native` flag, `native()` indices,
       state count, function count. (Drives Phase 3 and 4 work assignment.)
-- [ ] 2.3 Module map of the XBE (`inventory/xbe_modules.csv`): the 154 assert paths → module, source file,
+- [x] 2.3 Module map of the XBE (`inventory/xbe_modules.csv`): the 154 assert paths → module, source file,
       address range (from assert call sites), estimated function count per file.
 - [ ] 2.4 Catalog custom/serialized formats: `.sgs`, `.sgp`, `.ka`/`.kaw`, `.lad`, `.uax` speech, `LIPSincData`
       controllers — write `docs/formats/*.md` stubs with hex samples.
@@ -112,9 +114,9 @@ and `inventory/` regenerates from scripts with no manual edits.
 
 ### Phase 3 — UnrealScript decompilation (bulk of the script track, ~4–8 weeks)
 
-- [ ] 3.1 Build UELib (`dotnet build`) + UE Explorer; confirm the `SG1_TA` (130/4) profile loads
+- [x] 3.1 Build UELib (`dotnet build`) + UE Explorer; confirm the `SG1_TA` (130/4) profile loads
       `StargateGame.u` without exceptions.
-- [ ] 3.2 Baseline bulk decompile all 18 packages into `src/UnrealScript/<Package>/`; record per-package
+- [x] 3.2 Baseline bulk decompile all 18 packages into `src/UnrealScript/<Package>/`; record per-package
       success/failure per class (`inventory/decompile_coverage.csv`).
 - [ ] 3.3 Build the oracle diff tool: normalize (whitespace/comments/ordering) the privately held 2006
       studio `.uc` sources and our decompiled output; emit per-class similarity scores and three buckets:
@@ -203,6 +205,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-23)
+
+- **0.1** layout is `docs/`, `inventory/`, `src/{UnrealScript,Native}/`, `symbols/`, `tools/`, `build/`.
+  Game-derived output is git-ignored (`src/UnrealScript/**/*.uc`, `extracted/`, `build/out/`).
+- **0.5** partial: .NET SDK 10.0.402, Python 3.12.3, py7zr 1.1.4, UELib `8236c39` pinned. Ghidra,
+  umodel and xemu stay unpinned until their phases start.
+- **1.3** manifest: 4,006 files, 2,253,398,443 bytes, 4,082 tree entries. `make verify-dump` reproduces it.
+- **2.1-2.3** generated by `tools/Sg1Tool` (UELib front-end) and `tools/xbe.py`; 5.5 s for all 18 packages.
+  Pitfall worth keeping: `Construct`-only init leaves exports undeserialized and `OfType<UClass>()`
+  returns stubs (7 classes for `Core.u`), so `Dump.Load` uses `InitFlags.All`.
+- **3.1/3.2** UELib auto-detects `Build:SG1_TA` (130/4). The bulk run reconstructs **2,319/2,319
+  classes across all 18 packages in ~4 s**, 0 failures (`inventory/decompile_coverage.csv`); output is
+  14 MB of `.uc` under the git-ignored `src/UnrealScript/`. Reader warnings on
+  `TempleTurretEmplacement.ExitPositions` and `UWindowWin95LookAndFeel.Tab*` (property-tag size)
+  do not fail the class and belong to 3.5.
+- **New measured gap for 3.5:** the reconstructed tree contains **51,289 `__NFUN_<n>__` sites over
+  213 distinct tokens** — tokens UELib cannot name for this build. Ranked queue in
+  `docs/DECOMPILER_GAPS.md` (`tools/token-gaps.py`), led by `__NFUN_119__` (5,565 sites) and
+  concentrated in `StargateGame` (17,250) and `Engine` (14,093). Closing tokens is now the single
+  biggest readability win in the script track, ahead of 3.3.
+  Next: 3.3 oracle diff (needs the private 2006 source mounted outside the repo), in parallel with
+  token-map work.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

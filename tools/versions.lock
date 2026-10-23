@@ -1,0 +1,23 @@
+# Pinned toolchain. Update deliberately, in its own commit, with a note on what changed.
+# Format: tool  version  source/commit  notes
+
+python            3.12.3        distro
+py7zr             1.1.4          pypi              archive extraction
+dotnet-sdk        10.0.x         dot.net           UELib build (net10.0 targets)
+
+# UnrealScript packages
+uelib             8236c39        github.com/EliotVU/Unreal-Library
+                                 ships Build(130, 4, BuildGeneration.UE2_5) = SG1_TA profile
+uelib-decompiler  8236c39        github.com/EliotVU/Unreal-Library  (Eliot.UELib.Decompiler)
+
+# Native
+ghidra            UNPINNED       --                Phase 4.1; record build + ghidra-xbe commit
+xbox-sigs         UNPINNED       --                Phase 4.2
+
+# Assets / verification
+umodel            UNPINNED       --                Phase 5.1
+xemu              UNPINNED       --                Phase 7.1
+
+# Target build (do not edit: this is the artefact identity, not a tool)
+target.archive    Stargate_SG-1_-_The_Alliance-2005-12-15.7z   1015500550 bytes
+target.sha256     d70e15d5ceb479bb8443f2c0bcf2d8884f913a02033d7d8a8e33f80e622d47f4

@@ -1,0 +1,14 @@
+module,src_files,src_refs,inc_files
+Engine,104,827,8
+Core,13,198,10
+IpDrv,10,24,1
+stargatevehicles,7,14,0
+D3DDrv,5,32,1
+Gui,5,58,0
+stargategame,3,32,0
+XboxAudio,2,13,0
+XboxDrv,2,6,0
+XboxLive,1,22,1
+Fire,1,13,0
+Gameplay,1,9,0
+?,0,0,0

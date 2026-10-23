@@ -21,3 +21,15 @@
 *.lad
 *.pdb
 *.map
+
+# Build output of our own tooling (never commit binaries).
+tools/Sg1Tool/bin/
+tools/Sg1Tool/obj/
+tools/uelib/
+__pycache__/
+*.pyc
+
+# Decompiled UnrealScript is game-derived: never commit it (AGENTS.md hard rule).
+# Derived trees live under $WORK (default ~/sg1/work), outside the repo.
+*.uc
+/src/UnrealScript/
