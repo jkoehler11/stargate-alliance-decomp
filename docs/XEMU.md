@@ -45,6 +45,34 @@ This project will not download, mirror or commit firmware. Supplying it is the o
 `docs/LEGAL.md` ("do not commit emulator BIOS files"), and the file has to come from a console the
 user owns — or the user points at one they already have.
 
+## What happened on the first real run (2026-10-23)
+
+Firmware arrived (`mcpx_1.0.bin`, `Complex_4627.bin`, `xbox_hdd.qcow2`) and the emulator boots:
+
+| Step | Result |
+|---|---|
+| xemu starts with MCPX + flash + HDD at 128 MB | yes — window `xemu \| v0.8.139 Debug`, guest reaches the shell |
+| Guest framebuffer (F12 capture) | **"Please insert an Xbox disc…"** — the kernel runs, no disc mounted |
+| XISO built from the dump (`tools/xemu/build-xiso.sh`) | 2,258,370,560 bytes, attachable as `dvd_path` |
+| Boot with the disc attached | **still "Please insert an Xbox disc…"** |
+
+Why the disc is refused — the XBE certificate answers it:
+
+```
+titleid=0x4a570006  name='Stargate SG-1'  media=0x00000000  region=0x00000000  version=0x00000000
+```
+
+Media types, region and version are all zero. That is a **debug-kit build**: it was never licensed
+for a retail disc, and a retail flash ROM checks exactly those fields before booting. `extract-xiso`'s
+automatic media patching does not touch an all-zero certificate — verified by re-reading the XBE
+inside the produced ISO (still `media=0x0`).
+
+A manual certificate patch (`media=DVD-X2`, `region=NA`, `version=1`) was applied to a copy of the ISO
+and did not reach a title screen in two attempts. That is expected: the certificate sits inside the
+RSA-signed region, so a retail kernel rejects the modified XBE for the same reason it rejects the
+original. **The clean fix is a debug BIOS** (the dump came from a debug kit, and that is what it ran
+on), not a patched certificate.
+
 ## Running it
 
 ```sh
