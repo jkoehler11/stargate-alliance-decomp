@@ -27,6 +27,6 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj" \
     -scriptPath "$PWD/tools/ghidra/ghidra_scripts" \
     -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" 0x10184 \
     -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" 0x10184 \
-        "$proj/gnatives.tsv" "$proj/gnatives_applied.csv" \
+        "$proj/gnatives.tsv" "$proj/gnatives_applied.csv" "$PWD/symbols/xbe_overrides.csv" \
     -deleteProject
 echo "symbols: symbols/xbox_functions.csv"
