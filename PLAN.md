@@ -142,8 +142,8 @@ matching table shows ≥98% of functions at L2 or better.
 
 ### Phase 4 — Native decompilation of `default.xbe` (parallel track, 3–6+ months)
 
-- [ ] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
-- [ ] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
+- [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
+- [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
 - [ ] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
@@ -257,7 +257,17 @@ and a deliberate one-line script break is caught by the boot test.
   release note "single-player campaign won't start, use Continue": the menu path reads a chapter list
   from a different campaign revision. Candidate cut content is therefore 37 chapter maps, and the open
   question is the revision mapping between the two id schemes.
-  Next: 5.3 (speech index: 3,287 WAVs) and 4.1/4.3 (Ghidra + GNatives) to unblock the last 93 tokens.
+- **4.1 done, 4.2 started.** Ghidra 12.2 needs JDK 25 (its `application.properties` sets
+  `java.min=25`; JDK 21 is rejected with "unsupported java version"), installed in the container.
+  `tools/ghidra/run-analysis.sh` imports `default.xbe` as x86:LE:32 at base `0x10000`, and
+  `XbePre.java` carves the 15 real sections before analysis — Ghidra's binary loader makes one flat
+  block, which would put every section after `.text` at the wrong address.
+  `XbePost.java` then names every function that owns an assert string.
+  Result (`docs/NATIVE.md`): **14,027 functions**, 3.77 MB of code, median 114 bytes, **1,245
+  attributed to a module** (Core 549, Engine 526, Gui 53, stargategame 31, IpDrv 20, D3DDrv 16,
+  stargatevehicles 12, XboxLive 10, Gameplay 9, Fire 8, XboxAudio 6, XboxDrv 5). 199 assert xrefs
+  sit in no function — worth a look, since each is a call site the analyser did not cover.
+  Next: 4.3/4.4 (`GNatives` + the remaining 93 script tokens), 4.2 signature libraries.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

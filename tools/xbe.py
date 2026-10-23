@@ -91,10 +91,15 @@ class Xbe:
         return None
 
     def _cstr_at_va(self, va, limit=64):
-        try:
-            off = self.va_to_offset(va)
-        except KeyError:
-            return ""
+        # Section names live in the header region, which is mapped 1:1 from the image base and is
+        # consulted while self.sections is still being built -- so try that mapping first.
+        if self.base <= va < self.base + self.header_size:
+            off = va - self.base
+        else:
+            try:
+                off = self.va_to_offset(va)
+            except KeyError:
+                return ""
         raw = self.data[off:off + limit].split(b"\0")[0]
         return raw.decode("latin1", "replace")
 

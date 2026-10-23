@@ -4,11 +4,12 @@
 #   make verify-dump SG1_DUMP=/path/to/dump
 SG1_DUMP ?= $(HOME)/sg1/dump
 WORK     ?= $(HOME)/sg1/work   # game-derived output lives here, outside the repo
+GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory decompile oracle-diff check clean
+.PHONY: help verify-dump manifest inventory decompile oracle-diff ghidra check clean
 
 help:
 	@echo "targets:"
@@ -17,6 +18,7 @@ help:
 	@echo "  inventory     regenerate every inventory/*.csv from the dump"
 	@echo "  decompile     reconstruct UnrealScript into $(WORK)/UnrealScript (never committed)"
 	@echo "  oracle-diff   compare against the private 2006 source (set ORACLE_DIR)"
+	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -42,6 +44,11 @@ decompile:
 	@$(DOTNET) run --project tools/Sg1Tool -c Release -- \
 		decompile --dump "$(SG1_DUMP)" --out "$(WORK)/UnrealScript"
 	@$(PYTHON) tools/token-gaps.py "$(WORK)/UnrealScript"
+
+# Native track: needs Ghidra (GHIDRA_HOME). Writes build/ghidra/ and symbols/xbox_functions.csv.
+ghidra:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@GHIDRA_HOME="$(GHIDRA_HOME)" tools/ghidra/run-analysis.sh "$(SG1_DUMP)" "$(GHIDRA_HOME)"
 
 # Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.
 oracle-diff:
