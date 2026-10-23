@@ -2,14 +2,15 @@
 #
 # The game dump is never part of this repo. Point SG1_DUMP at your own copy:
 #   make verify-dump SG1_DUMP=/path/to/dump
+# game-derived output lives here, outside the repo
 SG1_DUMP ?= $(HOME)/sg1/dump
-WORK     ?= $(HOME)/sg1/work   # game-derived output lives here, outside the repo
+WORK     ?= $(HOME)/sg1/work
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives decompile oracle-diff ghidra check clean
+.PHONY: help verify-dump manifest inventory natives formats decompile oracle-diff ghidra check clean
 
 help:
 	@echo "targets:"
@@ -18,7 +19,7 @@ help:
 	@echo "  inventory     regenerate every inventory/*.csv from the dump"
 	@echo "  decompile     reconstruct UnrealScript into $(WORK)/UnrealScript (never committed)"
 	@echo "  oracle-diff   compare against the private 2006 source (set ORACLE_DIR)"
-	@echo "  natives       locate GNatives against the symbol map and name its dispatch slots"
+	@echo "  formats       catalogue custom formats; dump the checkpoint property schema"
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -61,6 +62,13 @@ natives:
 		--symbols symbols/xbox_functions.csv --natives inventory/natives.csv -o inventory
 	@$(PYTHON) tools/native-names.py --natives inventory/natives.csv \
 		--table inventory/gnatives_map.csv -o inventory --ghidra-out build/ghidra/gnatives.tsv
+
+# Custom formats: counts from the manifest, containers from the dump, checkpoint schemas via Sg1Tool.
+formats:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/formats.py --manifest inventory/manifest.sha256 --samples "$(SG1_DUMP)" -o inventory
+	@tools/sgs-dump.sh "$(SG1_DUMP)" "$(WORK)/sgs"
+	@$(PYTHON) tools/sgs-schema.py "$(WORK)/sgs" -o inventory/sgs_schema.csv
 
 # Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.
 oracle-diff:
