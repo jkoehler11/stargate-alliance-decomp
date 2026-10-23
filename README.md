@@ -85,6 +85,9 @@ UE2 compiler under Wine for the rebuild. Versions will be pinned.
 
 ## Requirements for contributors
 
+The rules agents and contributors work under are in [AGENTS.md](AGENTS.md) — read it before your first
+commit. The short version follows.
+
 - Your own legally obtained copy of the prototype. Do not upload it, link to it, or attach pieces of it to a
   PR, issue or discussion — not a single `.u`, `.unr`, `.xbe` or asset.
 - Do not commit leaked studio source. The 2006 Perception `Classes` source that circulates online is

@@ -1,0 +1,23 @@
+# Your own copy of the game and anything derived from it never goes in this repo.
+# Keep it all here; none of these paths may be committed, pushed or attached to a PR.
+/work/
+/out/
+/dump/
+/build/
+*.xbe
+*.xbe.*
+*.iso
+*.7z
+*.u
+*.unr
+*.utx
+*.ukx
+*.usx
+*.uax
+*.sgs
+*.sgp
+*.ka
+*.kaw
+*.lad
+*.pdb
+*.map

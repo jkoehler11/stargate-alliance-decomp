@@ -63,8 +63,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 
 ### Phase 0 — Project setup (½ day)
 
-- [ ] 0.1 Create repo `sg1-alliance-decomp` with layout: `src/UnrealScript/`, `src/Native/<Module>/`, `tools/`,
-      `inventory/`, `docs/`, `build/`, `.hermes/plans/`.
+- [ ] 0.1 Create the working layout on your own machine: `src/UnrealScript/`, `src/Native/<Module>/`, `tools/`,
+      `inventory/`, `docs/`, `build/`, with derived output under a gitignored `work/` (see `.gitignore` and
+      `AGENTS.md` — game-derived trees stay off the remote; the repo carries tooling, docs and metrics).
 - [ ] 0.2 Write `docs/SCOPE.md`: what "decomp" means here (source reconstruction + symbolization, *not* a bit-exact
       rebuild of the engine), and explicitly out-of-scope items (engine renderer rewrite, netcode).
 - [ ] 0.3 Write `docs/LEGAL.md`: record the provenance of the build and the publishing posture — this
