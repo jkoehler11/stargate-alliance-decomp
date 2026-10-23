@@ -1,116 +1,85 @@
 # The UnrealScript VM in `default.xbe`
 
-Status: `GNatives` located (4.3) and its targets named (4.4). `UObject` layout, `ProcessEvent` and
-the property tables are not yet documented — this file grows as they are confirmed.
+Status: `GNatives` located (4.3), **and the table cannot be read out of the file** — it lives in the
+uninitialised part of `.data` and is populated at startup, so no slot has an address yet (4.4 is back
+to open). `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property tables are not yet
+documented; the interpreter site below is the way into them.
 
-## The native dispatch table
+## The dispatch table
 
 | Field | Value |
 |---|---|
-| Address | `0x00598e00` (start of `.data`, which is file offset `0x0058a000`) |
-| Entries | 994 (indices 0–993) |
-| Non-null entries | 991 |
-| Entry 0 | null — index 0 is unused, as UE expects |
-| 4-byte alignment | 985 of 991 (99.4%) |
-| Entries pointing into `.text` | 991 of 991 |
-| Code references to the table | exactly one, at `0x00343763` — the interpreter's dispatch site |
+| Address | `0x006313e8` |
+| Entries (`EX_Max`) | 4,096 (`0x1000`) |
+| Section | `.data`, past the end of its initialised bytes — the image stores nothing for it |
+| Initial contents | filled at startup with one default stub, then patched per native |
+| Index → address map in the file | **none**; the bytes are built at runtime |
+| Static references to slots | 3,243, covering 256 distinct slots: 1,428 indexed accesses (`8b 0c 85 …`, `ff 14 95 …`), 776 direct `call [slot+N*4]`, 233 writes (`mov [slot], reg`) |
 
 ### How it is identified (`tools/gnatives.py`)
 
-A dispatch table is a run of 32-bit values that are either zero or the entry address of a function,
-and that shape is *not* unique: this image has 23 runs of at least 300 such words. Ranking them by
-size is how the first version of the script picked the wrong one — the committed map used to be a
-6,385-entry run in `.rdata`, while this document described the 994-entry table. The script now scores
-every run against four tests that only a dispatch table satisfies, and writes the evidence for all
-of them (`inventory/gnatives_candidates.csv`):
+The build names the array and its bound in the asserts compiled around the interpreter — the strings
+`GNatives[iNative]!=0` and `iNative<EX_Max`, referenced from the same routine:
 
-1. entry 0 is null (UE leaves index 0 unused);
-2. the run begins at a section boundary — the array is its own object, not a field inside one;
-3. every non-null entry points into `.text`, not merely into a section flagged executable (the XBE
-   marks `.data` and `.rdata` executable too, so the flag alone proves nothing);
-4. exactly one code reference to the run's first word. A vtable or callback array is reached from
-   whatever installs it, so it has several, and the address is usually not referenced from code at
-   all.
+```
+0x3a083  cmp    ax,0x1000              ; iNative<EX_Max, EX_Max = 4096
+0x3a0a0  movzx  eax,[esi+0x84]         ; FFrame::iNative
+0x3a0a7  mov    ecx,[eax*4+0x6313e8]   ; GNatives[iNative]
+0x3a0ae  test   ecx,ecx                ; assert "GNatives[iNative]!=0" (0x3a0c1)
+0x3a0d0  mov    edx,[ecx*4+0x6313e8]
+0x3a0d7  mov    [esi+0x90],edx         ; FFrame::Code = GNatives[iNative]
+```
 
-| candidate | section | entries | non-null | known function entries | tests | code xrefs |
-|---|---|---|---|---|---|---|
-| `0x00598e00` | `.data` | 994 | 991 | 0 | **4/4** | 1 |
-| `0x004c9e54` | `.rdata` | 5,966 | 5,936 | 2,925 | 2/4 | 0 |
-| `0x004ee908` | `.rdata` | 6,417 | 6,385 | 3,208 | 2/4 | 0 |
+The tool derives that from the file rather than from a constant written by hand: it finds the assert
+string, takes its single code reference, and reads the indexed-load displacement and the
+`cmp ax,imm16` bound out of the window around the site. Output: `inventory/gnatives_table.csv`.
 
-The real table is also the only candidate whose entries the analyser never turned into functions:
-nothing calls a native directly, so all 991 slots were `FUN_`-less addresses until this pass.
+Two consequences worth carrying:
 
-### Independent cross-checks
+- **`FFrame` layout comes free**: `+0x00` vtable, `+0x84` `iNative` (word), `+0x90` `Code` pointer.
+  `FUN_00058a30` — called 2,245 times from 1,270 functions, always as `(expression, file, line)` —
+  is the engine's check/verify helper used by the asserts above (`docs/UNKNOWNS.md` U6).
+- **Script index space is global**: 274 `native()` declarations over 18 packages carry 274 distinct
+  explicit indices (no collisions), which is why a single table can serve every package. That is
+  still true and independent of the address question.
 
-- **It matches the script side.** Across the 18 packages, 274 `native()` declarations carry an
-  explicit index; 270 of them land on a distinct, non-null slot (98.5%), and no index has two
-  different names.
-- **It contains more than the packages declare.** 721 entries have no declarer in any shipped
-  package: engine-internal exec functions (renderer, Xbox services, Karma), reachable from C++ but
-  never from script.
-- **It explains the earlier 3:1 puzzle.** 797 native declarations collapse onto 275 indices because
-  packages re-declare natives they inherit; the table has exactly one slot per index, so the index
-  space is global after all.
-- **It leaves four declared indices unaccounted for** — see `docs/UNKNOWNS.md`.
+## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
-## What it buys: readable script
+An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.
+That array is the CRT's static-initialiser list. The evidence that killed it:
+
+| Test | `0x00598e00` | What a dispatch table must look like |
+|---|---|---|
+| Order of entries | strictly increasing: 990 of 990 deltas positive, spacing 32 (635×), 96 (266×), 48 (74×), 16 (8×) | ordered by declaration, so arbitrary against code addresses |
+| Span | 991 entries inside 0x2cb4a of `.text` — one contiguous block of compiler-generated stubs | natives are spread across the whole engine's code |
+| The single xref (`0x00343762`) | `_initterm`: walks `[0x598e00,0x598e08)` and `[0x598e0c,0x599db0)`, skipping null and `0xffffffff`, calling each with no arguments — never indexes | one indexed access, `call [table+reg*4]` |
+| The code it points at | an initialiser prologue: `mov ecx,[0x635560] … rep stos`, e.g. one stub fills 4,096 dwords at `0x6313e8` — GNatives itself — with a default pointer | distinct native implementations; operator natives are a few instructions each |
+| Duplicate prologues | indices 119, 130 and 146 (`NotEqual_ObjectObject`, `AndAnd_BoolBool`, `Add_IntInt`) begin with byte-identical code | operators cannot share a body |
+
+The old filter ("entry 0 null, starts a section, all entries in `.text`, exactly one code xref") is
+satisfied by any initialiser array, and its cross-check — "270 of 274 declared indices resolve to a
+distinct slot" — was vacuous: any table of a thousand entries resolves any index. `tools/gnatives.py`
+now scores monotonicity and the xref's *kind* (indexed vs plain address load) and rejects the array
+explicitly (`inventory/gnatives_candidates.csv`, verdict `rejected:monotonic`).
+
+Removed with it: `inventory/gnatives_map.csv` (deleted), the 270 `exec*` names and 721 fabricated
+`Native_*` functions in `symbols/xbox_functions.csv` (the Ghidra pass no longer creates or names
+dispatch targets), and the naming rules that assumed a static slot list. `inventory/native_names.csv`
+keeps what was always the declaration side — index, `exec<Function>` name, declarers — and records no
+address, because the file has none to give.
+
+## Script readability (unaffected by the correction)
 
 UELib resolves native calls through `UnrealPackage.NTLPackage`, which this dump does not ship, so
-every engine call decompiled to `__NFUN_<n>__` — including the operator natives
-(`NotEqual_ObjectObject` is index 119, `AndAnd_BoolBool` 130, `Add_IntInt` 146). `tools/Sg1Tool`
-builds the table from Core (operators) + Engine (actor, sound and iterator natives) + the package
-being decompiled, in that override order.
-
-| Run | Unresolved sites | Distinct tokens |
-|---|---|---|
-| no table | 51,289 | 213 |
-| Core only | 4,230 | 93 |
-| Core + Engine | 1,470 | 61 |
-| Core + Engine + own package | **0** | **0** |
-
-Zero sites across 2,319 classes: `Spawn(Class'StargateGame.StargateVehicleSound', self)` and
-`super(Vehicle).PostBeginPlay()` read as source, and `Engine.Pawn.IsInPain` matches the 2006 oracle
-expression for expression. `docs/DECOMPILER_GAPS.md` is a regression check that should stay empty.
-
-## Naming the dispatch targets (4.4)
-
-`tools/native-names.py` turns the table into a naming decision and keeps the evidence apart:
-
-| evidence | slots | name | what it means |
-|---|---|---|---|
-| declared | 270 | `exec<Function>` (`execTrace`) | slot N is the function the script calls as `Class.Function` at index N |
-| slot-only | 721 | none in the CSV; `Native_<index>` in Ghidra | the address is dispatch slot N and nothing more |
-| ambiguous | 0 | — | a conflict would be recorded, not guessed |
-
-Naming follows `docs/CONVENTIONS.md`: `exec<Function>` is the engine's own spelling for a native
-implementation, and a name two slots would share takes the class prefix instead — one pair collides
-here (`Actor.Sleep` at 256 and `GUIPage.Sleep` at 332 become `execActor_Sleep` and
-`execGUIPage_Sleep`). `Editor` and `UPreview` are excluded from naming: they are editor-side
-packages that number their natives locally, and `UPreviewMapListClient.Created` claims index 2, which
-is a null slot in the runtime table.
-
-`XbePost.java` applies the map during the same headless run as the assert naming, and the result is
-a clean addition rather than a rename:
-
-| measurement | before | after |
-|---|---|---|
-| functions | 14,027 | 15,018 |
-| named from the dispatch table | 0 | 991 (270 `exec*`, 721 `Native_*`) |
-| assert-attributed | 1,245 | 1,245 |
-| unnamed (`FUN_*`) | 12,497 | 12,497 |
-| name clashes / renamed over an existing name | — | 0 / 0 |
-
-The 991 added functions were created at the table's entries because no xref reaches them; each
-slot-only one also carries a plate comment `GNatives[<index>] — dispatch slot with no declarer in
-the shipped packages`, so the slot number survives even when the name is only `Native_<index>`.
-`build/ghidra/gnatives_applied.csv` records index, address and final name for review.
+engine calls decompiled to `__NFUN_<n>__`. `tools/Sg1Tool` rebuilds that *compiler-side* table from
+Core (operators) + Engine + the package being decompiled — a different thing from the XBE's dispatch
+table — taking unresolved sites 51,289 → 4,230 → 1,470 → **0** across 2,319 classes.
+`docs/DECOMPILER_GAPS.md` stays empty as the regression check.
 
 ## Next
 
-1. Chase the four unaccounted indices and the 523 index-less declarations (`docs/UNKNOWNS.md`).
-2. Identify the 721 slot-only execs from behaviour and string references; the table gives an index,
-   not a function name.
-3. Locate `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property pointer tables; the
-   dispatch xref at `0x00343763` is the entry point to that neighbourhood.
-4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2).
+1. Resolve the runtime table (U7): dump `GNatives` from a running build in xemu with the debug kit,
+   or follow the 233 write sites that fill it, and pair each slot with its declaration index.
+2. `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property pointer tables, starting from
+   0x0003a083 — the interpreter is where the VM's structures become visible.
+3. Signature libraries for the CRT/XAPI/D3D8 majority (4.2).

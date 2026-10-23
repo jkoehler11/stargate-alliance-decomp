@@ -1,6 +1,7 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
-Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way**
+Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
+4.3/4.4 reopened after the dispatch-table correction**
 (last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -149,11 +150,14 @@ matching table shows ≥98% of functions at L2 or better.
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
-- [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
+      Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
+      stores none of its bytes, so no slot has an address in the file. `UObject`/`ProcessEvent` still open.
+- [ ] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
-      270 of the 991 live slots named from declarations, 721 left as slot-only `Native_<index>` (none declared);
-      measured result and the four unaccounted indices in `docs/NATIVE_VM.md` and `docs/UNKNOWNS.md`.
+      **Withdrawn 2026-10-23, not done.** It was marked done against a pointer array at `0x00598e00` that is the
+      CRT's static-initialiser list, not the dispatch table (see the correction note below and
+      `docs/NATIVE_VM.md`). Names cannot be applied until the runtime table is resolved (U7).
 - [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
@@ -254,8 +258,8 @@ and a deliberate one-line script break is caught by the boot test.
   (`V.bPainCausing && V.DamageType != ReducedDamageType`). Deliberately **Core-only**: across the 18
   packages there are 797 native declarations for ~275 indices, so a union table would name package
   A's code with package B's symbol -- silently wrong. The remaining 93 tokens (4,230 sites) need the
-  real `GNatives` dispatch table from the XBE (4.4), which is now the cheapest route to 100%
-  readability rather than a rewrite of the token map.
+  remaining opcodes named, which means reading them off the native implementations rather than the
+  dispatch table — the table has no bytes in the file and gives an index, never a name (4.3/U7).
 - **5.2 started (map census).** `Sg1Tool maps` parses all 73 `.unr` packages (they are packages:
   exports are placed actors) into `maps.csv` / `map_actors.csv` — 175,718 placed actors, 389 distinct
   actor classes. `tools/content-census.py` cross-references them with `classes.csv` and the campaign
@@ -284,7 +288,7 @@ and a deliberate one-line script break is caught by the boot test.
   constructor with the class name, outer package `System`, object size and flags as literals, then
   asserts `ReturnClass`. The class literal is the build's own data, so they are named
   `ucpp_Register_<Class>` through `symbols/xbe_overrides.csv` (applied by `XbePost` after the assert
-  and GNatives passes), and the object sizes — 3,788 `AlkeshBomber`, 4,344 `StargatePlayer`, 3,344
+  pass), and the object sizes — 3,788 `AlkeshBomber`, 4,344 `StargatePlayer`, 3,344
   `StargateVehicle` — fall out as the class layout sizes for 4.3/4.7. The remaining four functions are
   the real bodies: `StargateCar` velocity projection and clamping, two `SGCameraEffects` depth-of-field
   bodies, and one `GoauldDrone` stub without a literal (U6). Consequence for the plan: the gameplay is
@@ -305,31 +309,26 @@ and a deliberate one-line script break is caught by the boot test.
   `GameInfo.SavePackage`/`LoadSaveGame` (natives with no serialised index); the game side is
   `AutosaveCheckpoint`, `ACTION_SaveGame` and the `StargateMenus` save UI — which of them drives the
   writer is U5. This also means a rebuilt checkpoint is a rebuilt package, so PLAN 6.2 applies to saves.
-- **4.4 done — the dispatch table names 270 functions.** `tools/native-names.py` maps
-  `inventory/natives.csv` onto the table; 274 declarations carry an explicit index, 270 resolve to a
-  distinct slot, and no index has two names. Slot names follow `docs/CONVENTIONS.md`
-  (`exec<Function>`, class-prefixed only for the one colliding pair, `Actor.Sleep`/`GUIPage.Sleep`).
-  Applied in Ghidra by `XbePost.java`, which **created** 991 functions — nothing xrefs a dispatch
-  target, so the analyser had never made one — taking the binary from 14,027 to 15,018 functions
-  with 0 renames over an existing name and the 1,245 assert-attributed functions unchanged.
-  **Data correction included:** the committed `inventory/gnatives_map.csv` had been the largest
-  pointer run in `.rdata` (6,385 entries), not the documented table — `tools/gnatives.py` ranked
-  candidates by size. It now scores four structural tests (entry 0 null, section boundary, every
-  entry in `.text`, exactly one code xref); only `0x00598e00` passes 4/4, and the map is 991 rows.
-  Two questions the table cannot answer are tracked in `docs/UNKNOWNS.md`: 523 of the 797
-  declarations serialise index 0 (no slot claimed), and `Actor.MoveSmooth`/`SetPhysics`/
-  `AutonomousPhysics` declare 3969–3971, past the table's 993.
-- **4.3 (partial) — `GNatives` found.** `tools/gnatives.py` scans for runs of 32-bit values that are
-  null or point at function entries: **994 entries at `0x00598e00`**, 991 non-null, 99.4% aligned,
-  exactly one code reference (the interpreter, `0x00343763`). Cross-check: 270 of the 274 declared
-  native indices (98.5%) are present and map to distinct addresses; 721 entries are engine-internal
-  natives no package declares. Documented in `docs/NATIVE_VM.md`.
+- **4.3/4.4 corrected — the "dispatch table" was the CRT initialiser list.** The table reported at
+  `0x00598e00` (994 entries, 270 `exec*` names applied, 721 fabricated `Native_*` functions) is the
+  static-initialiser array: its 991 entries are strictly increasing (990 of 990 deltas positive,
+  spaced 32/96/48/16 bytes) inside one 183 KB block of compiler-generated stubs, and its only code
+  reference is an `_initterm` loop that walks the range and calls each entry with no arguments
+  rather than indexing it. The build names the real array in its own asserts —
+  "GNatives[iNative]!=0" and "iNative<EX_Max" — around `0x0003a083`, where the code does
+  `cmp ax,0x1000` and `mov ecx,[eax*4+0x6313e8]`: **GNatives is at `0x006313e8` with 4,096 entries,
+  in the uninitialised part of `.data`, so the file contains no slot bytes and no index -> address
+  map.** `tools/gnatives.py` now derives that from the assert site and rejects monotonic arrays
+  (`inventory/gnatives_candidates.csv`), `inventory/gnatives_map.csv` is deleted, the Ghidra pass no
+  longer creates or names dispatch targets, and `inventory/native_names.csv` is declaration-only
+  (274 declarations, 273 named indices, no addresses). What this costs: the 270 names are gone and
+  4.4 is open again. What it buys: the table's real identity, `EX_Max`, and `FFrame` offsets
+  (`+0x84` `iNative`, `+0x90` `Code`) as the entry point for 4.3's remaining work. Tracked as U7.
 - **Script readability is now 100%.** Native resolution order Core -> Engine -> own package took
   unresolved `__NFUN_<n>__` sites 51,289 -> 4,230 -> 1,470 -> **0** (0 tokens) across 2,319 classes.
   Oracle quality moved with it (see `docs/ORACLE_DIFF.md`). `docs/DECOMPILER_GAPS.md` is now an
   empty-table regression check.
-  Next: identify the 721 slot-only execs, then 4.2 signature libraries; indices 3969-3971 are
-  tracked in `docs/UNKNOWNS.md`.
+  Next: 4.2 signature libraries, then resolving the runtime `GNatives` table (U7).
 - **7.1 (partial) — xemu installed, firmware missing.** xemu `0.8.139` (debug AppImage) runs on the
   desktop and starts headless; the dump is staged at `~/nfs/sg1-dump/…` (outside the repo) so the DVD
   path needs no copying. `tools/xemu/boot-test.sh` encodes the debug-kit run (128 MB, serial log) and

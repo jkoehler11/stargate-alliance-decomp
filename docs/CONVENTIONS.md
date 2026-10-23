@@ -24,9 +24,10 @@ rerun `make inventory`. A hand-edited CSV is a bug report against the tool.
   otherwise share a name (`execActor_Sleep` / `execGUIPage_Sleep`) — never number them to break a
   tie, because a renumbering would rename functions that did not change.
 - A `GNatives` slot that no shipped package declares is `Native_<index>` and nothing more: the index
-  is evidence that the address is dispatch slot N, not evidence of what the function does. Its plate
-  comment carries the same fact. Do not promote a slot to a semantic name without evidence from
-  behaviour, a string, or the script that reaches it.
+  is evidence that an address is dispatch slot N, not evidence of what the function does. Do not
+  promote a slot to a semantic name without evidence from behaviour, a string, or the script that
+  reaches it. No such name exists today: the table is populated at runtime, so there is no static
+  slot list to name (`docs/NATIVE_VM.md`).
 - Native functions with no script counterpart: `<Module>_sub_<ADDRESS>` (e.g. `Engine_sub_0014A2C0`),
   where address is the Ghidra address without the `0x`. Never invent a semantic name without evidence;
   put the hypothesis in the comment, not the symbol.
