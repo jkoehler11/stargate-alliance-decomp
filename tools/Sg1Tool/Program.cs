@@ -146,11 +146,13 @@ internal static class Dump
     private static string? _nativeTableDump;
 
     private static bool _buildingNativeTable;
+    private static readonly Dictionary<string, NativesTablePackage> _packageTables = new();
 
     /// <summary>
-    /// Every package contributes its own natives to the one global index space, so the table is the
-    /// union over all 18 packages -- Core alone covers the operators (Object.EqualEqual_*), but
-    /// iterators such as TouchingActors (307) are declared further up the class tree.
+    /// Native indices are one global space but several packages declare the same index under
+    /// different names, so the table has to be built per package: Core first (it owns the operator
+    /// natives), then the package's own declarations override, because a package's own natives own
+    /// their indices. A union table would let one package's names leak into another (PLAN 4.4).
     /// </summary>
     private static NativesTablePackage BuildNativeTable(string dumpRoot)
     {
@@ -161,50 +163,26 @@ internal static class Dump
         try
         {
             var map = new Dictionary<ushort, NativeTableItem>();
-            var conflicts = 0;
-            // Core only, deliberately. Across the 18 packages there are 797 native declarations for
-            // ~275 indices, i.e. the same index is reused by different classes -- so a union table
-            // would name code in package A with package B's symbol (silently wrong, which is worse
-            // than __NFUN_n__). Core is the one package whose indices are attesible as global
-            // (verified against the 2006 oracle: 114/119/130/132/144/146/150/151/153/154/171/174/
-            // 175/177/213/216 are Object's operator natives). The rest wait for the real GNatives
-            // table in the XBE (PLAN 4.4).
-            foreach (var path in Packages(dumpRoot).Where(p =>
-                         string.Equals(Path.GetFileNameWithoutExtension(p), "Core",
-                             StringComparison.OrdinalIgnoreCase)))
+            // Core owns the operator natives and Engine owns the actor/audio/iterator natives that
+            // game code calls most, so both are the shared base. Everything else is per package.
+            foreach (var name in new[] { "Core", "Engine" })
             {
-                UnrealPackage package;
-                try
+                var path = Packages(dumpRoot).FirstOrDefault(p =>
+                    string.Equals(Path.GetFileNameWithoutExtension(p), name, StringComparison.OrdinalIgnoreCase));
+                if (path == null)
                 {
-                    package = UnrealLoader.LoadPackage(path, FileAccess.Read);
-                    package.InitializePackage(UnrealPackage.InitFlags.All);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"native table: skipping {Path.GetFileName(path)}: {ex.Message}");
+                    if (name == "Core") throw new FileNotFoundException("Core.u not found: no native table");
                     continue;
                 }
-
-                foreach (var fn in package.Objects.OfType<UFunction>())
-                {
-                    if (!fn.FunctionFlags.HasFlag(UELib.Flags.FunctionFlag.Native)) continue;
-                    if (map.TryGetValue(fn.NativeToken, out var existing))
-                    {
-                        // Same index from two declarations: keep the first and count it, because a
-                        // conflict here means the index space is not what we think it is.
-                        if (existing.Name != fn.Name.ToString()) conflicts++;
-                        continue;
-                    }
-
-                    map[fn.NativeToken] = new NativeTableItem(fn);
-                }
+                Harvest(path, map);
             }
-
-            _nativeTable = new NativesTablePackage { NativeTokenMap = map, NativeTableList = map.Values.ToList() };
+            _nativeTable = new NativesTablePackage
+            {
+                NativeTokenMap = map,
+                NativeTableList = map.Values.ToList()
+            };
             _nativeTableDump = dumpRoot;
-            Console.Error.WriteLine(
-                $"native table: {map.Count} Core natives indexed" +
-                (conflicts > 0 ? $" ({conflicts} duplicate indices inside Core, first name kept)" : ""));
+            Console.Error.WriteLine($"native table: {map.Count} natives indexed (Core + Engine base)");
             return _nativeTable;
         }
         finally
@@ -213,14 +191,45 @@ internal static class Dump
         }
     }
 
-    public static NativesTablePackage SharedNativeTable(string dumpRoot) => BuildNativeTable(dumpRoot);
+    private static void Harvest(string path, Dictionary<ushort, NativeTableItem> map)
+    {
+        var package = UnrealLoader.LoadPackage(path, FileAccess.Read);
+        package.InitializePackage(UnrealPackage.InitFlags.All);
+        foreach (var fn in package.Objects.OfType<UFunction>())
+        {
+            if (!fn.FunctionFlags.HasFlag(UELib.Flags.FunctionFlag.Native)) continue;
+            map[fn.NativeToken] = new NativeTableItem(fn);
+        }
+    }
+
+    /// <summary>Core's table plus this package's own declarations on top.</summary>
+    public static NativesTablePackage TableForPackage(string dumpRoot, string path)
+    {
+        var core = BuildNativeTable(dumpRoot);
+        var name = Path.GetFileNameWithoutExtension(path);
+        if (string.Equals(name, "Core", StringComparison.OrdinalIgnoreCase)) return core;
+        if (_packageTables.TryGetValue(dumpRoot + "/" + name, out var cached)) return cached;
+
+        var map = new Dictionary<ushort, NativeTableItem>(core.NativeTokenMap);
+        try
+        {
+            Harvest(path, map);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"native table: {name}: {ex.Message}");
+        }
+
+        var table = new NativesTablePackage { NativeTokenMap = map, NativeTableList = map.Values.ToList() };
+        _packageTables[dumpRoot + "/" + name] = table;
+        return table;
+    }
 
     public static UnrealPackage Load(string path, string dumpRoot)
     {
         var package = UnrealLoader.LoadPackage(path, FileAccess.Read);
         // Resolve native indices before the token factory is built (it is lazy, so this is in time).
-        if (!string.Equals(Path.GetFileNameWithoutExtension(path), "Core", StringComparison.OrdinalIgnoreCase))
-            package.NTLPackage = BuildNativeTable(dumpRoot);
+        package.NTLPackage = TableForPackage(dumpRoot, path);
         // Construct alone leaves every export undeserialized, so UELib cannot tell a UClass from a
         // property and OfType<UClass>() silently returns a handful of stubs. Deserialize+Link is
         // what actually materialises the object graph the inventory counts.

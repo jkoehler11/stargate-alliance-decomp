@@ -145,9 +145,9 @@ matching table shows ≥98% of functions at L2 or better.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
-- [ ] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
+- [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
-- [ ] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
+- [~] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
 - [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
@@ -267,7 +267,16 @@ and a deliberate one-line script break is caught by the boot test.
   attributed to a module** (Core 549, Engine 526, Gui 53, stargategame 31, IpDrv 20, D3DDrv 16,
   stargatevehicles 12, XboxLive 10, Gameplay 9, Fire 8, XboxAudio 6, XboxDrv 5). 199 assert xrefs
   sit in no function — worth a look, since each is a call site the analyser did not cover.
-  Next: 4.3/4.4 (`GNatives` + the remaining 93 script tokens), 4.2 signature libraries.
+- **4.3 (partial) — `GNatives` found.** `tools/gnatives.py` scans for runs of 32-bit values that are
+  null or point at function entries: **994 entries at `0x00598e00`**, 991 non-null, 99.4% aligned,
+  exactly one code reference (the interpreter, `0x00343763`). Cross-check: 270 of the 275 declared
+  native indices (98.2%) are present and map to distinct addresses; 721 entries are engine-internal
+  natives no package declares. Documented in `docs/NATIVE_VM.md`.
+- **Script readability is now 100%.** Native resolution order Core -> Engine -> own package took
+  unresolved `__NFUN_<n>__` sites 51,289 -> 4,230 -> 1,470 -> **0** (0 tokens) across 2,319 classes.
+  Oracle quality moved with it (see `docs/ORACLE_DIFF.md`). `docs/DECOMPILER_GAPS.md` is now an
+  empty-table regression check.
+  Next: 4.4 rename the 991 dispatch targets in Ghidra; 4.2 signature libraries; indices 3969-3971.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

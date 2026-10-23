@@ -20,13 +20,13 @@ formatting, so decompiler style cannot flatter or punish the result. Buckets:
 
 | bucket | classes |
 |---|---|
-| matched | 202 |
-| drifted | 65 |
+| matched | 204 |
+| drifted | 63 |
 | divergent | 11 |
 | build-only | 1362 |
 | oracle-only | 13 |
 
-291 oracle classes against 2319 reconstructed classes; mean similarity of matched classes **0.862**.
+291 oracle classes against 2319 reconstructed classes; mean similarity of matched classes **0.868**.
 
 ## Which packages the oracle actually covers
 
@@ -61,17 +61,17 @@ bucket is **not** evidence of cut content. What the oracle is good for:
 
 | package | class | similarity | identifiers | functions |
 |---|---|---|---|---|
-| `Engine` | AdminBase | 0.012 | 0.023 | 0.0 |
-| `Engine` | MapList | 0.133 | 0.098 | 0.167 |
+| `Engine` | AdminBase | 0.011 | 0.022 | 0.0 |
+| `Engine` | MapList | 0.144 | 0.121 | 0.167 |
 | `Engine` | Triggers | 0.174 | 0.348 | 0.0 |
-| `Engine` | AvoidMarker | 0.231 | 0.462 | 0.0 |
-| `Engine` | MissionObjective | 0.239 | 0.477 | 0.0 |
-| `Engine` | CheatManager | 0.241 | 0.482 | 0.0 |
-| `Engine` | IMusicActor | 0.251 | 0.503 | 0.0 |
-| `Engine` | SavedMove | 0.254 | 0.508 | 0.0 |
-| `Engine` | IMusicController | 0.298 | 0.596 | 0.0 |
+| `Engine` | MissionObjective | 0.247 | 0.494 | 0.0 |
+| `Engine` | AvoidMarker | 0.25 | 0.5 | 0.0 |
+| `Engine` | CheatManager | 0.254 | 0.508 | 0.0 |
+| `Engine` | IMusicActor | 0.258 | 0.517 | 0.0 |
+| `Engine` | SavedMove | 0.266 | 0.532 | 0.0 |
 | `Engine` | LevelInfo | 0.31 | 0.62 | 0.0 |
-| `Engine` | SurfaceInfo | 0.318 | 0.636 | 0.0 |
+| `Engine` | IMusicController | 0.317 | 0.635 | 0.0 |
+| `Engine` | SurfaceInfo | 0.319 | 0.638 | 0.0 |
 
 ## Classes added after the build (oracle-only)
 

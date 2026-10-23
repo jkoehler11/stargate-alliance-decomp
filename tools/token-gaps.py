@@ -51,11 +51,17 @@ def main():
     w("")
     w(f"- {len(files):,} classes reconstructed, {sites:,} unresolved sites, "
       f"{len(token)} distinct tokens")
-    w(f"- top token `__NFUN_{token.most_common(1)[0][0]}__` alone accounts for "
-      f"{token.most_common(1)[0][1]:,} sites")
+    if token:
+        w(f"- top token `__NFUN_{token.most_common(1)[0][0]}__` alone accounts for "
+          f"{token.most_common(1)[0][1]:,} sites")
+    else:
+        w("- no unresolved sites: every native call in the tree resolved to a name")
     w("")
     w("## Tokens by frequency")
     w("")
+    if not token:
+        w("Nothing to report. The tree is fully readable with respect to native calls; keep this file")
+        w("as the regression check — a non-empty table means a table-building change went wrong.")
     w("| token | sites | classes affected |")
     w("|---|---|---|")
     for n, count in token.most_common(25):

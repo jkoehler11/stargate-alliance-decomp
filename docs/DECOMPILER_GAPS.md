@@ -5,58 +5,20 @@ reconstructed tree is a token UELib cannot name for build `SG1_TA`; the script i
 structurally reconstructed but that expression or call is unreadable until the token map
 is extended. Work queue for `PLAN.md` 3.5 — fix the most frequent tokens first.
 
-- 2,319 classes reconstructed, 4,230 unresolved sites, 93 distinct tokens
-- top token `__NFUN_278__` alone accounts for 465 sites
+- 2,319 classes reconstructed, 0 unresolved sites, 0 distinct tokens
+- no unresolved sites: every native call in the tree resolved to a name
 
 ## Tokens by frequency
 
+Nothing to report. The tree is fully readable with respect to native calls; keep this file
+as the regression check — a non-empty table means a table-building change went wrong.
 | token | sites | classes affected |
 |---|---|---|
-| `__NFUN_278__` | 465 | 207 |
-| `__NFUN_465__` | 370 | 89 |
-| `__NFUN_279__` | 357 | 147 |
-| `__NFUN_256__` | 271 | 55 |
-| `__NFUN_280__` | 268 | 131 |
-| `__NFUN_259__` | 170 | 38 |
-| `__NFUN_3970__` | 162 | 55 |
-| `__NFUN_304__` | 154 | 104 |
-| `__NFUN_262__` | 149 | 75 |
-| `__NFUN_299__` | 146 | 70 |
-| `__NFUN_264__` | 138 | 73 |
-| `__NFUN_277__` | 134 | 56 |
-| `__NFUN_267__` | 129 | 70 |
-| `__NFUN_313__` | 121 | 69 |
-| `__NFUN_464__` | 121 | 31 |
-| `__NFUN_500__` | 92 | 19 |
-| `__NFUN_502__` | 85 | 16 |
-| `__NFUN_298__` | 76 | 37 |
-| `__NFUN_514__` | 70 | 27 |
-| `__NFUN_548__` | 69 | 17 |
-| `__NFUN_521__` | 65 | 15 |
-| `__NFUN_520__` | 62 | 23 |
-| `__NFUN_512__` | 50 | 36 |
-| `__NFUN_307__` | 38 | 23 |
-| `__NFUN_517__` | 38 | 20 |
 
 ## Sites by package
 
 | package | unresolved sites |
 |---|---|
-| `StargateGame` | 1,621 |
-| `StargateContent` | 920 |
-| `Engine` | 887 |
-| `StargateVehicles` | 417 |
-| `GamePlay` | 120 |
-| `AmbientCreatures` | 78 |
-| `Core` | 62 |
-| `Sharpeffects` | 55 |
-| `Stargateeffects` | 27 |
-| `GUI` | 18 |
-| `IpDrv` | 9 |
-| `UWindow` | 8 |
-| `StargateMenus` | 4 |
-| `UDebugMenu` | 2 |
-| `UPreview` | 2 |
 
 ## How to close these
 

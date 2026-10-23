@@ -35,7 +35,7 @@ internal static class MapsCommand
             try
             {
                 package = UnrealLoader.LoadPackage(path, FileAccess.Read);
-                package.NTLPackage = Dump.SharedNativeTable(dumpRoot);
+                package.NTLPackage = Dump.TableForPackage(dumpRoot, path);
                 package.InitializePackage(UnrealPackage.InitFlags.All);
             }
             catch (Exception ex)
