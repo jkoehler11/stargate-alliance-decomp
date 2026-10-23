@@ -1,6 +1,7 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
-Status: **phase 0-2 done, phase 3 under way** (last run 2026-10-23). This is the working task list for the
+Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way**
+(last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
 Measured totals live in [docs/INVENTORY.md](docs/INVENTORY.md).
@@ -147,9 +148,11 @@ matching table shows ≥98% of functions at L2 or better.
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
-- [~] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
+- [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
+      270 of the 991 live slots named from declarations, 721 left as slot-only `Native_<index>` (none declared);
+      measured result and the four unaccounted indices in `docs/NATIVE_VM.md` and `docs/UNKNOWNS.md`.
 - [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
 - [ ] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
@@ -267,16 +270,31 @@ and a deliberate one-line script break is caught by the boot test.
   attributed to a module** (Core 549, Engine 526, Gui 53, stargategame 31, IpDrv 20, D3DDrv 16,
   stargatevehicles 12, XboxLive 10, Gameplay 9, Fire 8, XboxAudio 6, XboxDrv 5). 199 assert xrefs
   sit in no function — worth a look, since each is a call site the analyser did not cover.
+- **4.4 done — the dispatch table names 270 functions.** `tools/native-names.py` maps
+  `inventory/natives.csv` onto the table; 274 declarations carry an explicit index, 270 resolve to a
+  distinct slot, and no index has two names. Slot names follow `docs/CONVENTIONS.md`
+  (`exec<Function>`, class-prefixed only for the one colliding pair, `Actor.Sleep`/`GUIPage.Sleep`).
+  Applied in Ghidra by `XbePost.java`, which **created** 991 functions — nothing xrefs a dispatch
+  target, so the analyser had never made one — taking the binary from 14,027 to 15,018 functions
+  with 0 renames over an existing name and the 1,245 assert-attributed functions unchanged.
+  **Data correction included:** the committed `inventory/gnatives_map.csv` had been the largest
+  pointer run in `.rdata` (6,385 entries), not the documented table — `tools/gnatives.py` ranked
+  candidates by size. It now scores four structural tests (entry 0 null, section boundary, every
+  entry in `.text`, exactly one code xref); only `0x00598e00` passes 4/4, and the map is 991 rows.
+  Two questions the table cannot answer are tracked in `docs/UNKNOWNS.md`: 523 of the 797
+  declarations serialise index 0 (no slot claimed), and `Actor.MoveSmooth`/`SetPhysics`/
+  `AutonomousPhysics` declare 3969–3971, past the table's 993.
 - **4.3 (partial) — `GNatives` found.** `tools/gnatives.py` scans for runs of 32-bit values that are
   null or point at function entries: **994 entries at `0x00598e00`**, 991 non-null, 99.4% aligned,
-  exactly one code reference (the interpreter, `0x00343763`). Cross-check: 270 of the 275 declared
-  native indices (98.2%) are present and map to distinct addresses; 721 entries are engine-internal
+  exactly one code reference (the interpreter, `0x00343763`). Cross-check: 270 of the 274 declared
+  native indices (98.5%) are present and map to distinct addresses; 721 entries are engine-internal
   natives no package declares. Documented in `docs/NATIVE_VM.md`.
 - **Script readability is now 100%.** Native resolution order Core -> Engine -> own package took
   unresolved `__NFUN_<n>__` sites 51,289 -> 4,230 -> 1,470 -> **0** (0 tokens) across 2,319 classes.
   Oracle quality moved with it (see `docs/ORACLE_DIFF.md`). `docs/DECOMPILER_GAPS.md` is now an
   empty-table regression check.
-  Next: 4.4 rename the 991 dispatch targets in Ghidra; 4.2 signature libraries; indices 3969-3971.
+  Next: identify the 721 slot-only execs, then 4.2 signature libraries; indices 3969-3971 are
+  tracked in `docs/UNKNOWNS.md`.
 - **7.1 (partial) — xemu installed, firmware missing.** xemu `0.8.139` (debug AppImage) runs on the
   desktop and starts headless; the dump is staged at `~/nfs/sg1-dump/…` (outside the repo) so the DVD
   path needs no copying. `tools/xemu/boot-test.sh` encodes the debug-kit run (128 MB, serial log) and

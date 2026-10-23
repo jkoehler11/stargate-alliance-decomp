@@ -73,7 +73,8 @@ Short version, with the details in [PLAN.md](PLAN.md):
 3. **Decompile scripts** — UELib already carries a build profile for this exact game (version 130, licensee 4),
    so this is a reconstruction and fix-up job rather than a parser-writing job.
 4. **Symbolise natives** — name the VM's native dispatch table from the script `native()` indices. This is the
-   highest-leverage step: it names hundreds of engine functions for free.
+   highest-leverage step: it has named 270 engine functions that nothing calls directly, out of 991 live
+   dispatch slots (see [PLAN.md](PLAN.md) 4.4).
 5. **Decompile the game modules** — `stargategame` and `stargatevehicles` first, engine internals only where
    script-reachable.
 6. **Extract assets and levels**, then publish a cut-content report. The prototype ships maps and content that

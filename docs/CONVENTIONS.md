@@ -19,8 +19,14 @@ rerun `make inventory`. A hand-edited CSV is a bug report against the tool.
 
 - Reconstructed UnrealScript keeps original names, verbatim, including the prototype's typos.
   Never "clean up" an identifier: it must match the bytecode so the diff tools line up.
-- Native functions discovered from the script side use the script name: `execTrace` for
-  `native(113) Trace` in `Actor`. Prefix with the owning class when the bare name would collide.
+- Native functions discovered from the script side use the script name: `execTrace` for the
+  function `Actor.Trace` declares as a native. Prefix with the owning class when two slots would
+  otherwise share a name (`execActor_Sleep` / `execGUIPage_Sleep`) — never number them to break a
+  tie, because a renumbering would rename functions that did not change.
+- A `GNatives` slot that no shipped package declares is `Native_<index>` and nothing more: the index
+  is evidence that the address is dispatch slot N, not evidence of what the function does. Its plate
+  comment carries the same fact. Do not promote a slot to a semantic name without evidence from
+  behaviour, a string, or the script that reaches it.
 - Native functions with no script counterpart: `<Module>_sub_<ADDRESS>` (e.g. `Engine_sub_0014A2C0`),
   where address is the Ghidra address without the `0x`. Never invent a semantic name without evidence;
   put the hypothesis in the comment, not the symbol.
