@@ -68,3 +68,39 @@ prove it).
 
 **Status.** Open, low priority. `Editor`/`UPreview` are excluded from naming
 (`tools/native-names.py`), so nothing depends on the answer.
+
+## U4. The `.lad` payload layout is not established
+
+**Observed.** All 8 files share a header (`u32 2`, `u32 2`, `u8` channel count, then that many
+length-prefixed bone names) which ends at `0x181` for 21 channels and `0x160` for 19
+(`docs/formats/lipsinc-lad.md`). The payload after the table is float data: it opens with `532` and a
+second word whose second byte equals the channel count (`0x21500` for 21, `0x21300` for 19), and the
+last 128 bytes of every file end in `-1.0f` sentinels and `undefined` name strings. File size tracks
+clip length, not channel count, so it is per-frame curve data.
+
+**Why it is not parsed yet.** Nothing in the script reads it: the five `Engine.Actor`
+`*LIPSincAnim` natives carry no serialised index, so the loader is engine-side. Guessing a record
+layout from one clip would produce exactly the plausible-looking wrong output this project bans.
+
+**What would settle it.** The middleware's own format notes (LIPSinc authoring tool), or the native
+loader from PLAN 4.8. Two cheap experiments in the meantime: compare a clip whose speech waveform is
+short with the `Controllers/` pack for the same character (the difference is the per-frame data), and
+test whether the `0x21300`/`0x21500` word is a count of visemes or frames (both files with the same
+channel count share the value exactly, so it is not per-file).
+
+## U5. Which script path writes and reads a `.sgs`
+
+**Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's
+actors). The engine side is `Engine.GameInfo.SavePackage` / `LoadSaveGame`, both natives without a
+serialised index; the game side ships `StargateGame.AutosaveCheckpoint` (a `Trigger` subclass),
+`StargateGame.ACTION_SaveGame` (a `ScriptedAction`), `Core.Object.MarkForSaveGame`, and the menu
+classes `StargateMenus.SaveGameMenu` / `SavedGameInfo` / `SavedGameList` / `OverwriteSavedGamePage` /
+`DeleteSavedGamePage`.
+
+**Unknown.** Which of them calls `SavePackage`, in what order, and whether the writer is the engine's
+generic package serializer (which would explain the exporter's choice of actor set) or a bespoke
+pass. Also unknown: what makes an actor eligible besides `MarkForSaveGame`.
+
+**What would settle it.** Read the reconstructed bodies for those classes (PLAN 3.10) and their
+native call sites in the XBE (4.6/4.9). No format work is blocked on it; rebuilding a checkpoint
+(PLAN 6.4) is.

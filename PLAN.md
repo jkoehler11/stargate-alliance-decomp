@@ -101,8 +101,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       state count, function count. (Drives Phase 3 and 4 work assignment.)
 - [x] 2.3 Module map of the XBE (`inventory/xbe_modules.csv`): the 154 assert paths → module, source file,
       address range (from assert call sites), estimated function count per file.
-- [ ] 2.4 Catalog custom/serialized formats: `.sgs`, `.sgp`, `.ka`/`.kaw`, `.lad`, `.uax` speech, `LIPSincData`
+- [x] 2.4 Catalog custom/serialized formats: `.sgs`, `.sgp`, `.ka`/`.kaw`, `.lad`, `.uax` speech, `LIPSincData`
       controllers — write `docs/formats/*.md` stubs with hex samples.
+      `inventory/formats.csv` (12 formats, container-detected) + four docs; `.lad` payload tracked as U4.
 - [x] 2.5 Map config surface: `Default.ini`, `UnrealEngine2.ini`, `DefUser.ini`, `Startup.int`, the 20+ `Setup*.int`
       files (Xbox/PSX2/GCN variants) → note engine options that reveal fork features.
 - [ ] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
@@ -173,8 +174,13 @@ matching table shows ≥98% of functions at L2 or better.
 - [ ] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
 - [ ] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       lines into a transcript index — this is the fastest route to documenting cut story content.
-- [ ] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
-- [ ] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
+- [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
+      A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
+      1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
+      indexes the checkpoints in its `[Saved Games]` section.
+- [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
+      `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
+      `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
 - [ ] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype.
 
@@ -270,6 +276,19 @@ and a deliberate one-line script break is caught by the boot test.
   attributed to a module** (Core 549, Engine 526, Gui 53, stargategame 31, IpDrv 20, D3DDrv 16,
   stargatevehicles 12, XboxLive 10, Gameplay 9, Fire 8, XboxAudio 6, XboxDrv 5). 199 assert xrefs
   sit in no function — worth a look, since each is a call site the analyser did not cover.
+- **2.4/5.4/5.5 done (formats).** `inventory/formats.csv` catalogues 12 extensions with the container
+  each one really is, and `docs/formats/` documents four: `.ka`/`.kaw` are Karma 1.0 XML (8 ragdoll
+  assets, 141 parts, 133 joints, 256 collision primitives; `.kaw` is an authoring workspace, not
+  runtime data); `.sgp`/`.PRO` are INI profiles whose `[Saved Games]` section is the checkpoint index
+  (142 entries in the default profile); `.lad` is LIPSinc binary with a documented header and channel
+  table but an unestablished payload (U4).
+  **The finding that matters is `.sgs`:** a checkpoint is an ordinary UE2 package (130/4) whose
+  *exports are the level's actors*, so "the save format" is the engine's tagged-property stream, not a
+  bespoke blob. All 9 parse with UELib, 0 objects fail, 19,080 property tags reduce to 1,739 distinct
+  schema tags (415 present in all nine) in `inventory/sgs_schema.csv`. The engine side is
+  `GameInfo.SavePackage`/`LoadSaveGame` (natives with no serialised index); the game side is
+  `AutosaveCheckpoint`, `ACTION_SaveGame` and the `StargateMenus` save UI — which of them drives the
+  writer is U5. This also means a rebuilt checkpoint is a rebuilt package, so PLAN 6.2 applies to saves.
 - **4.4 done — the dispatch table names 270 functions.** `tools/native-names.py` maps
   `inventory/natives.csv` onto the table; 274 declarations carry an explicit index, 270 resolve to a
   distinct slot, and no index has two names. Slot names follow `docs/CONVENTIONS.md`
