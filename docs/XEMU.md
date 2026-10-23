@@ -70,6 +70,34 @@ Two things this settles:
    needed — the debug flash alone still showed the insert-disc prompt with the unpatched image, and the
    patched image alone did not boot under the retail flash.
 
+## Input automation: open problem
+
+Driving the menu (to reach `Continue` → mission load) is not working yet, and the failure mode is
+informative: **host hotkeys work, guest input does not.** F12 (screenshot) is handled by xemu itself
+and always fires, while nothing that should reach the Xbox reaches it.
+
+Tried, all with the window focused (`xdotool getwindowfocus` confirms the xemu window):
+
+| Attempt | Result |
+|---|---|
+| `xdotool key --window <id> a` (synthetic XSendEvent) | no change; F12 in the same batch still works |
+| `xdotool key a` (XTEST, focused window) | no change |
+| `[input.bindings] port1 = 'keyboard'` + `background_input_capture = true`, keys `a` / `arrow` / `Return` | no change |
+| `uinput` virtual pad (`0x045e:0x028e`, full ABS axes + buttons), A / D-pad Down injected | no change |
+
+Two hypotheses for the next attempt:
+
+1. **Bind by device GUID rather than by the string `keyboard`.** `config_spec.yml` takes
+   `[input.bindings] port1 = <string>`; xemu's own code uses the literal `"keyboard"` as the GUID for
+   the SDL keyboard, and it logs no "Connected … to port N" line in any run here, so the bind may
+   simply not be happening.
+2. **`Continue` may legitimately do nothing on this setup.** The HDD image is empty, so there is no
+   save to continue from; pressing A on an inert entry would look exactly like lost input. Testing
+   this needs `Single Player` selected instead (one D-pad press), which is the path the release notes
+   say is broken — so it is the *right* one to test for the chapter-list claim.
+
+A real controller attached to the desktop is the cheapest way to settle it, if one is available.
+
 ## Earlier runs (kept for the debugging trail)
 
 Firmware arrived (`mcpx_1.0.bin`, `Complex_4627.bin`, `xbox_hdd.qcow2`) and the emulator boots:
