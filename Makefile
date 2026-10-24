@@ -25,6 +25,7 @@ help:
 	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
+	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -131,3 +132,10 @@ symbols:
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe") -o symbols
 	@as --32 -o symbols/xbox.sym.o symbols/xbox.sym.s
 	@echo "load it: gdb -batch -ex \"symbol-file symbols/xbox.sym.o\""
+
+# The libraries the image was linked against (PLAN 2.6, docs/IMPORTS.md). Reads the header only.
+libraries:
+	@test -f "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" || \
+		{ echo "no default.xbe under $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/xbe-libraries.py \
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
