@@ -210,8 +210,16 @@ and `inventory/` regenerates from scripts with no manual edits.
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
       class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
 - [ ] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
-- [ ] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
+- [~] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
       memory/cache, script compiler hooks, Kynapse/AI integration, LIPSinc integration, ragdoll `.ka` loader).
+      **First half measured** (`docs/FORK.md`): the `ucpp` pipeline (493 registrations, 492 vtables, `D:\uc.xbe`),
+      Karma **inside** the engine (`KarmaSupport.cpp`, `PHYS_Karma`/`PHYS_KarmaRagDoll`, `UKarmaParams`, and two
+      new `ULevel` fields `Ragdolls`/`KContactGenActors`), LIPSinc likewise (`LIPSincSupport.cpp`, `AnimNotify_LIPSinc`),
+      zlib statically linked, **no Kynapse or Havok strings at all**, and the reflection deltas (name indices 1..16,
+      the packed tag byte, `ProcessEvent` virtual at slot 21, class objects built from 15 C++ constructors). Drift
+      against the later leak is separated from fork deltas: 63 drifted + 11 divergent classes, concentrated in the
+      actor/level/objective plumbing. **Still open:** a real diff against stock UE2.5 (needs stock source), the
+      renderer sections' deltas, and memory/cache plus the compiler's behaviour.
 - [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
       `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
