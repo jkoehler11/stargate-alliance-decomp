@@ -166,7 +166,10 @@ matching table shows ≥98% of functions at L2 or better.
       (vtable `0x4d9618`) and `ParmsSize` at `UFunction+0x40`. It has **no direct call site** — 492
       aligned pointers in `.rdata` and nothing else — so this fork dispatches it through a table. Still
       open: the rest of `UObject`/`UStruct`, the property/`GPropPointers` tables, and which slot
-      dispatches `ProcessEvent` (U8).
+      dispatches `ProcessEvent` (U8). The four routines also give a measured struct table — `FFrame`
+      (`+0x00` vtable, `+0x04` `Node`, `+0x08` `Object`, `+0x0c` `Code`, `+0x10` `Locals`), `UFunction`
+      (`+0x40` `ParmsSize`, `+0x48` script bytes, `+0x80` flags, `+0x84` `iNative`, `+0x90` `Func`) — in
+      `docs/NATIVE_VM.md`, each row citing the instruction that proves it.
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*

@@ -222,10 +222,36 @@ has, and a script body goes down the path that builds its own frame:
 ```
 
 Measured `FFrame` layout, from those stores (frame base `ebp+0x40`): `+0x00` vtable,
-`+0x04` `Object`, `+0x08` `Node` (the `UFunction`), `+0x0c` `Code`, `+0x10` `Locals`, `+0x18` a flag
-`ProcessEvent` sets to 1 before the call (which routine reads it is not established). The locals buffer is sized from
+`+0x04` `Node` (the `UFunction`), `+0x08` `Object`, `+0x0c` `Code`, `+0x10` `Locals`, `+0x18` a flag
+`ProcessEvent` sets to 1 before the call (which routine reads it is not established). The order is
+read straight off the two stores: `[ebp+0x44]` receives `ebx`, which is the `UFunction` the flags are
+read from, and `[ebp+0x48]` receives `[ebp+0x5c]`, which is `this` (`mov edi,ecx` at entry). The locals buffer is sized from
 `UFunction+0x40` (`ParmsSize`) and zeroed before the call — the decompiled body shows
 `puVar3 = *(undefined1 **)(param_4 + 0x40)` feeding the allocation.
+
+### The structures, measured
+
+Only fields an instruction in one of these four routines touches. Each row cites the code that makes
+it a field, so a wrong offset is a wrong citation rather than a wrong guess.
+
+| struct | offset | field | evidence |
+|---|---|---|---|
+| `FFrame` | `+0x00` | vtable | `mov [ebp+0x40], 0x4d9618` (`0x4c0d2`) |
+| | `+0x04` | `Node` (`UFunction*`) | `mov [ebp+0x44], ebx`; `ProcessInternal` reads `[frame+4]` then `+0x80` for the flags |
+| | `+0x08` | `Object` (`this`) | `mov [ebp+0x48], eax` where `eax = [ebp+0x5c] = ecx` at entry |
+| | `+0x0c` | `Code` (`BYTE*`) | `mov [ebp+0x4c], [ebx+0x48]`; `ProcessInternal` walks it, terminators `0x04` and `0x42` |
+| | `+0x10` | `Locals` | `mov [ebp+0x50], edi`, `edi` = the zeroed `ParmsSize` buffer |
+| | `+0x18` | flag set to 1 before the call | `mov [ebp+0x58], 1` (`0x4c0b5`); reader not established |
+| `UFunction` | `+0x20` | object index used with the object table at `0x006be0d8` | `binder: DAT_006be0d8 + param_1[8]*4` |
+| | `+0x40` | `ParmsSize` | `mov edi, [ebx+0x40]` feeds the stack allocation and the zero-fill |
+| | `+0x48` | script bytes (stored as `FFrame::Code`) | `mov [ebp+0x4c], [ebx+0x48]` |
+| | `+0x80` | `FunctionFlags` | `test ah, 4` (`0x400`), `ProcessInternal` tests `& 0x20` |
+| | `+0x84` | `iNative` (word) | compared with `0` and `0x1000` |
+| | `+0x90` | `Func` (code pointer) | receives `GNatives[iNative]`, `0x48bf0`, or a name lookup |
+| script bytecode | — | opcode terminators `0x04`, `0x16`, `0x42` | the `ProcessInternal` loop and the `ProcessEvent` frame setup compare these bytes directly |
+
+`0x04` is the value the executor stops on; calling it `EX_Return` is an inference from the engine's
+opcode numbering, not something this binary states, so it is written as a byte value everywhere else.
 
 ### Why these four were invisible
 
@@ -239,9 +265,12 @@ None of them has a call site, and each is invisible for a different reason:
 | `ProcessEvent` `0x0004bf20` | none of its own | **492 aligned pointers to it in `.rdata`, zero direct calls** |
 
 `ProcessEvent` is the clear case: scanning every `E8` call in the image finds no target of `0x4bf20`
-at all, while a scan of the data sections finds 492 aligned dwords pointing at it, inside the runs of
-code pointers that make up the class tables (neighbouring entries are the same shared thunks across
-hundreds of classes). The address is therefore dispatched, not called, which is a fork property worth
+at all, while a scan of the data sections finds 492 aligned dwords pointing at it. Those 492 are not a
+loose scatter: in **every one** of them the three dwords immediately before the slot are the same three
+code addresses (`0x62650`, `0x62660`, `0x62670`), and the dword at `+0x04` and `+0x0c` after it are
+likewise identical across all 492. So `ProcessEvent` occupies one fixed slot in each of ~492 class
+tables, which is what a virtual method looks like — the numeric slot index is not claimed here: `.rdata`
+holds the tables back to back with no separator, and this build carries no RTTI pointers to bound them. The address is therefore dispatched, not called, which is a fork property worth
 carrying into 4.8. It was found by scanning the executable for calls to `ProcessInternal`, not by a
 name: its only caller in the whole image is `ProcessEvent` itself (two sites, `0x4c10f` and `0x4c23e`,
 both inside the same function).

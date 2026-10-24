@@ -187,12 +187,14 @@ ones in the image and both are inside this function. Its shape confirms it — `
 `FFrame` on the stack (vtable `0x4d9618`, `Object +0x04`, `Node +0x08`, `Code +0x0c`, `Locals +0x10`)
 and calls `ProcessInternal` directly (`docs/NATIVE_VM.md`).
 
-**Still open: the dispatch slot.** `ProcessEvent` has no direct call site anywhere in the image. What
-points at it is data: 492 aligned dwords in `.rdata`, inside runs of code pointers that look like the
-class tables (the same shared thunks appear as their neighbours). The tables' boundaries are not pinned,
-so the offset of the slot — and therefore whether this fork made `ProcessEvent` virtual — is not
-established. What would settle it: find the table that owns one of those runs (a vtable is preceded by
-the RTTI/class pointer run it belongs to) and check that the offset is the same in every copy.
+**Still open: the dispatch slot's number.** `ProcessEvent` has no direct call site anywhere in the
+image; what points at it is data — 492 aligned dwords in `.rdata`. Measured since: in all 492 the three
+preceding dwords are the same three code addresses (`0x62650`, `0x62660`, `0x62670`) and the dwords at
+`+0x04`/`+0x0c` after the slot are likewise identical, so it is one fixed slot in each of ~492 class
+tables — a virtual-method layout. What is missing is the slot *index*: `.rdata` holds the tables back to
+back with no separator and this build has no RTTI pointers to bound them. What would settle it: read a
+class's table pointer out of a running build (the object table at `0x006be0d8` gives a `UClass`), or find
+the first table by its known first slot. Both are runtime or table-boundary work, not name work.
 
 **Still open: 102 assert sites have no function.** After seeding they remain because no `0xCC`-delimited
 candidate within 4 KB produced a body containing the assert that justified it; those candidates were
