@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **15,410 symbols** — 14,944 functions plus 466 class tables — every one
+Status: emitted and checked. **15,422 symbols** — 14,956 functions plus 466 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 ## What is in it
@@ -17,7 +17,7 @@ make symbols      # writes symbols/xbox.map and symbols/xbox.sym.s, then assembl
 The names are the build's own, from the same places the native track measured them:
 
 - **file attribution** from the assert string a function references (`Core_UnProp`, `Engine_UnActor`),
-  1,288 functions;
+  1,300 functions;
 - **native table names** from the runtime `GNatives` dump (`execAdd_IntInt`, 273) and the 83 slots no
   shipped package declares;
 - **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 39);
@@ -55,11 +55,11 @@ resolves, not a live attach.
 ## What the map does and does not claim
 
 - **Every address is inside the image.** `make symbols` passes `--xbe` and the tool fails if a symbol
-  falls outside the section table: measured **15,410 of 15,410 inside, 0 outside**.
-- **Names are file-level, not unique.** 127 names are used by more than one function — the assert
+  falls outside the section table: measured **15,422 of 15,422 inside, 0 outside**.
+- **Names are file-level, not unique.** 128 names are used by more than one function — the assert
   attribution names a function by its source file, so `Core_UnTemplate` covers 310 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
-  gives every duplicate an `_<address>` suffix (1,157 symbols affected) so a debugger can address
+  gives every duplicate an `_<address>` suffix (1,168 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
 - **12,971 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and naming them is 4.2's blocked signature work (`docs/UNKNOWNS.md` U9), not a gap
