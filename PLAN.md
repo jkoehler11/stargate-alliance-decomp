@@ -544,6 +544,20 @@ and a deliberate one-line script break is caught by the boot test.
   `-o /tmp`. Both are fixed here, and the now-parsed override rows correct the counts PR #17 quoted: **41**
   override-attributed names and **215** from Ghidra's own analysis, not 39 and 217.
 
+### Execution notes (2026-10-24, status table)
+
+- **The progress table is generated, not written.** `tools/status.py` renders `docs/STATUS.md` and the
+  `## Status` block of `README.md` from committed artifacts only: 13 rows across four layers, each naming
+  its source. The README's stale "Planning. The repository currently contains the plan and nothing else"
+  paragraph and the `status-planning` badge are gone; the badges now carry the two headline numbers.
+  Measured: **script 100.00% reconstructed (L0)** (2,319 of 2,319 classes), **13.29% of native functions
+  named** (1,987 of 14,956), 94.72% of class tables named (466/492), 70.10% of the 2006 source's classes
+  agreeing with the build (204 of 291), and 100% on the content indexes (18 packages, 73 maps, 1,364
+  speech and 1,923 music WAVs). Rows that have not been measured print `--` rather than `0.00%`, so the
+  compile loop (3.6), the asset export (5.1) and the rebuild (6.x) read as unmeasured instead of failed.
+  `make ci` runs `tools/status.py --check`, so a landed artifact that moves a number fails the gate until
+  the table is regenerated.
+
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
 - [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
