@@ -5,9 +5,11 @@ the file, so it was dumped from xemu over the GDB stub. 356 of 4,096 slots are r
 menu, all 273 declared native indices among them. The other half of 4.3 is now measured: the binder
 that fills `UFunction::Func`, `UObject::ProcessInternal` at `0x00048bf0` (the bytecode loop) and
 `FFrame::Step` at `0x000398e0` (the expression decoder) and `UObject::ProcessEvent` at
-`0x0004bf20` — see *The body of a script function*. Still open: the rest of the `UObject` layout and
-the property/`GPropPointers` tables, and which table slot dispatches `ProcessEvent`
-(`docs/UNKNOWNS.md` U8).
+`0x0004bf20` — see *The body of a script function*. The property half of 4.3 is measured separately —
+`docs/NATIVE_PROPERTIES.md`: the type names are reserved name indices 1..16, fifteen property classes
+with their sizes and vtables, and the `+0x2c`/`+0x34`/`+0x38`/`+0x3c`/`+0x48`/`+0x6c`/`+0x70` fields
+the walk at `0x0003bdc0` reads. Still open: which table slot dispatches `ProcessEvent`
+(`docs/UNKNOWNS.md` U8) and the tagged tag record (U10).
 
 ## The dispatch table
 
@@ -272,8 +274,9 @@ before counting. See `docs/NATIVE.md` for the regenerated coverage tables.
 
 ## Next
 
-1. The rest of the `UObject`/`UStruct`/`FFrame` layout and the property pointer tables, now that
-   `ProcessInternal` and `ProcessEvent` give worked examples of how each field is reached.
+1. The rest of the `UObject`/`UStruct`/`FFrame` layout, now that `ProcessInternal` and `ProcessEvent`
+   give worked examples of how each field is reached. The property side is measured in
+   `docs/NATIVE_PROPERTIES.md`; what remains there is the tagged tag record's field order (U10).
 2. Which table slot dispatches `ProcessEvent`: the 492 pointers sit in class tables whose boundaries
    are not yet pinned, so the slot index is not established (`docs/UNKNOWNS.md` U8).
 3. A second `GNatives` dump after a mission load, to catch the classes the front end does not touch

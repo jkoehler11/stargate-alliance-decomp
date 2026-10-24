@@ -42,6 +42,11 @@ declares it: 83 of those are engine-internal execs that no script can reach. An 
 pass produced 270 `exec*` and 721 `Native_*` names from a pointer array that turned out to
 be the CRT initialiser list; those rows are gone and were rebuilt from the runtime table.
 
+One reproducibility caveat on these counts: re-running the analysis on 2026-10-24 reproduced the symbol
+map except for a single row — `FUN_00256280`, 35,070 bytes committed against 38,716 bytes measured — so
+one merged body's extent depends on analysis order. The function count and every other row were
+identical; the committed file was left unchanged rather than carrying a size no run reproduces.
+
 Everything else is bounded by the 154 translation units that assert at all; the remaining
 functions need signature matching (CRT/XAPI/D3D8 libraries) and manual work. `FUN_*` names
 are Ghidra's, kept deliberately: an honest unknown beats a guessed name.
@@ -55,8 +60,10 @@ candidates that do not. It is what found the VM's own routines (`docs/NATIVE_VM.
 
 ## Next
 
-1. The rest of `UObject`/`UStruct`/`FFrame`, and the property/`GPropPointers` tables, now
-   that `ProcessInternal` and `ProcessEvent` show how each field is reached.
+1. The rest of `UObject`/`UStruct`/`FFrame`, now that `ProcessInternal` and `ProcessEvent` show how
+   each field is reached. The property type space is measured in `docs/NATIVE_PROPERTIES.md`
+   (`inventory/property_classes.csv`, `inventory/property_types.csv`); no `GPropPointers`-style array
+   exists in this image, so there is none to find.
 2. Which table slot dispatches `ProcessEvent`: 492 pointers, no call site, and the class
    tables' boundaries are not pinned (`docs/UNKNOWNS.md` U8).
 3. A second `GNatives` dump after a mission loads, for the classes the front end never

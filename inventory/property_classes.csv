@@ -1,0 +1,16 @@
+address,class,object_size,class_flags,class_flags_2,vtable,assert_line,evidence
+0x00077860,Property,108,0x8001,0x4084004,LAB_00034650,301,UnProp.cpp:line 0x12d class literal
+0x0007c7b0,ByteProperty,112,0x8000,0x4084004,LAB_0007dfe0,431,UnProp.cpp:line 0x1af class literal
+0x0007c870,IntProperty,108,0x8000,0x4084004,LAB_0007dff0,520,UnProp.cpp:line 0x208 class literal
+0x0007c930,PointerProperty,108,0x8000,0x4084004,0x7e000,613,UnProp.cpp:line 0x265 class literal
+0x0007c9f0,DelegateProperty,112,0x8000,0x4084004,LAB_0007e0b0,914,UnProp.cpp:line 0x392 class literal
+0x0007cab0,BoolProperty,112,0x28000,0x4084004,LAB_0007e010,1046,UnProp.cpp:line 0x416 class literal
+0x0007cb70,FloatProperty,108,0x8000,0x4084004,LAB_0007e020,1134,UnProp.cpp:line 0x46e class literal
+0x0007cc30,ObjectProperty,112,0x18000,0x4084004,LAB_0007e030,1344,UnProp.cpp:line 0x540 class literal
+0x0007ccf0,ClassProperty,116,0x0,0x4084004,LAB_0007e040,1386,UnProp.cpp:line 0x56a class literal
+0x0007cdb0,NameProperty,108,0x8000,0x4084004,LAB_0007e050,1484,UnProp.cpp:line 0x5cc class literal
+0x0007ce70,StrProperty,108,0x8000,0x4084004,LAB_0007e060,1592,UnProp.cpp:line 0x638 class literal
+0x0007cf30,FixedArrayProperty,116,0x8000,0x4084004,LAB_0007e070,1743,UnProp.cpp:line 0x6cf class literal
+0x0007cff0,ArrayProperty,112,0x8000,0x4084004,LAB_0007e080,2028,UnProp.cpp:line 0x7ec class literal
+0x0007d0b0,MapProperty,116,0x8000,0x4084004,LAB_0007e090,2232,UnProp.cpp:line 0x8b8 class literal
+0x0007d170,StructProperty,112,0x8000,0x4084004,LAB_0007e0a0,2719,UnProp.cpp:line 0xa9f class literal
