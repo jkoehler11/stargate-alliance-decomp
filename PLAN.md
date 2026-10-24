@@ -2,7 +2,8 @@
 
 Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
 4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 executor, binder,
-expression decoder and `ProcessEvent` measured; property tables open)**
+expression decoder and `ProcessEvent` measured; 4.3's property type space, class roster and field
+layout measured, the tagged tag record open)**
 (last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -166,8 +167,19 @@ and `inventory/` regenerates from scripts with no manual edits.
       `Func` and calls `ProcessInternal` directly for a script body, with the `FFrame` on its own stack
       (vtable `0x4d9618`) and `ParmsSize` at `UFunction+0x40`. It has **no direct call site** — 492
       aligned pointers in `.rdata` and nothing else — so this fork dispatches it through a table. Still
-      open: the rest of `UObject`/`UStruct`, the property/`GPropPointers` tables, and which slot
-      dispatches `ProcessEvent` (U8).
+      open: which slot dispatches `ProcessEvent` (U8).
+      **The property half is measured** (`docs/NATIVE_PROPERTIES.md`, `inventory/property_classes.csv`,
+      `inventory/property_types.csv`): the type names are reserved **name indices 1..16** in declaration
+      order, registered with explicit indices by the initialiser at `0x0005c080` (325 names, 4,096-slot
+      table at `0x006ba0c8`, name entry `+0x00` index / `+0x04` flags / `+0x08` chain / `+0x0c` wide
+      name, allocation `2*len+0xe`); the **fifteen property classes** are per-class static-class
+      constructors in `UnProp.cpp` (`0x00077860` `Property` 0x6c … `0x0007d170` `StructProperty` 0x70;
+      three are 0x74), each naming its class and size literal through `FUN_0003af60`; and the walk at
+      `0x0003bdc0` reads chain `+0x2c`, count `+0x34`, stride `+0x38`, flags `+0x3c`, offset `+0x48`,
+      inner `+0x6c`/`+0x70`, with vtable `+0x94` per-element serialization and `+0xc0` destruction.
+      There is **no `GPropPointers`** in the image — the roster is the constructors, not a global array —
+      and the property classes have no package exports (`Core.u`: 7 class exports, 643 property exports).
+      Still open here: the tagged tag record's own field order (U10).
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
@@ -394,6 +406,17 @@ and a deliberate one-line script break is caught by the boot test.
   `Build: Dec 15 2005 12:02:54`. Retail flash + unpatched disc was refused; the two together work.
   Next: drive the `Continue` flow to load a mission (needs input automation) and settle the
   chapter-list claim in `docs/CUT_CONTENT.md`.
+- **4.3 property half (2026-10-24).** Measured with `ExportAt` over 39 addresses and reduced by the new
+  `tools/property-map.py`: **15 property classes** (`Property` + the 16 type names, `ByteProperty` 0x70 …
+  `MapProperty` 0x74; sizes are the constructors' own literals, not observed allocations) whose class
+  objects are built in C++ and never deserialised — `Core.u` has 7 class exports against 643 property
+  exports. The type names sit at **reserved name indices 1..16**, assigned explicitly by the initialiser
+  at `0x0005c080` (324 more names follow at sparse indices up to 1200; 294 of 325 matched by the tool, the
+  1..16 block complete). Two fork notes for 4.8: the only `DecoHack` string in the image
+  (`"DecoHack: skipping property %s"`, `0x0003a220`) and the absence of any `GPropPointers`-style global
+  array. Re-running the analysis changed exactly one line of `symbols/xbox_functions.csv`
+  (`FUN_00256280`, 35070 -> 38716 bytes), so the map is not yet byte-reproducible; the committed file was
+  left as it was and only the measured CSVs are new.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

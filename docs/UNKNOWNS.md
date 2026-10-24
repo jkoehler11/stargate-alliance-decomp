@@ -220,3 +220,24 @@ used and `docs/NATIVE.md` reporting the measured effect. Until then 4.2 stays op
 written down rather than a guess at names.
 
 **Status.** Open, blocked on data the project may not ship.
+
+## U10. The tagged property record's field order
+
+**Observed.** A `.sgs` checkpoint is a UE2 package whose exports are the level's actors
+(`docs/formats/sgs-checkpoint.md`), which means its properties are serialised as tagged records —
+a name, a type, a size and the value — not as a positional dump. The walk at `0x0003bdc0` selects
+that stream with a flag (`[archive+0x3c] == 0` recurses into nested structs, the binary path only
+does so for a property flagged `0x80000`), resolves the tag name against the struct
+(`"Property %s of %s not found"`, `__wcsicmp`) and calls each property's serializer through vtable
+`+0x94`. `0x0003ceb0` reads a tag name and `0x0003cd70` writes one (`docs/NATIVE_PROPERTIES.md`).
+
+**Why it matters.** PLAN 6.2/6.4 rebuild packages and checkpoints; reproducing a tagged stream needs
+the record's field order, and 5.4's schema (`inventory/sgs_schema.csv`, 1,739 tags) is only
+describable at the level of names until then.
+
+**What would settle it.** Read `0x0003bdc0`'s two branches to exhaustion and pair every store to the
+stream with the read that consumes it, or dump a checkpoint's first 64 bytes at a known tag and map
+the fields onto the reader's offsets. The type names are already indexed
+(`inventory/property_types.csv`), so the type field can be checked by value, not by string.
+
+**Status.** Open. Nothing in the property type-space work depends on it.
