@@ -140,15 +140,13 @@ and `inventory/` regenerates from scripts with no manual edits.
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
-      Objectives done: `docs/systems/mission-objectives.md` — the model, the one-event state machine
+      Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
       (activate, then complete), child aggregation, the panel, placement (61 of 73 maps, exactly one per
-      map), and that no checkpoint schema carries objective state. The other four systems are open.
-
-**Acceptance:** `inventory/decompile_coverage.csv` shows 100% of classes decompiled; compile error count 0;
-matching table shows ≥98% of functions at L2 or better.
-
-### Phase 4 — Native decompilation of `default.xbe` (parallel track, 3–6+ months)
-
+      map), and that no checkpoint schema carries objective state.
+      Interactions done — `docs/systems/interactions.md`: `SGInteraction` as an inline value object on
+      `Actor.InteractionData` (621 of them across 61 maps), the prompt/use path through `StargatePlayer`
+      and `CommandInterface`, and the separate Epic `Interaction`/`InteractionMaster` client framework.
+      The other three systems (AI scripts, vehicle weapon structs, checkpoint saves) are open.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
