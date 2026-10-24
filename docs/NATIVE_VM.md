@@ -305,18 +305,18 @@ pointer at `+0x54`, by name at `+0x58`.
 
 What varies between the tables is what makes them per-class: the first three slots and about a
 dozen others are the same address in all 492 (inherited implementations), while slot 3 is unique per
-table. One observation is left open rather than explained: seven slots — 19 and 20 among them —
-hold `0x00020f00` in 327 tables and something else in the remaining 165, which looks like two
-families of table (abstract/base classes against concrete ones) but is not established here.
+table. Slots 19 and 20 hold `0x00020f00` — a single `ret` — in 327 tables and real bodies in the
+other 165; `docs/NATIVE_CLASSES.md` names 466 of the 492 tables from the build's own class
+registrations, and shows that split is "overrides these two virtuals" (the actor-side hierarchy)
+against "keeps the empty default", not abstract against concrete.
 
 ## Next
 
 1. The rest of the `UObject`/`UStruct`/`FFrame` layout, now that `ProcessInternal` and `ProcessEvent`
    give worked examples of how each field is reached. The property side is measured in
    `docs/NATIVE_PROPERTIES.md`; what remains there is the tagged tag record's field order (U10).
-2. Why 327 of the 492 class tables share one stub at seven slots (19 and 20 among them) while 165
-   do not — abstract/base classes against concrete ones is the likely reading, and it is not
-   established (`docs/UNKNOWNS.md` U8).
+2. Name the 26 remaining class tables and identify the two virtuals at slots 19/20 — the naming
+   chain and the size cross-check are in `docs/NATIVE_CLASSES.md`, the residuals in `UNKNOWNS.md` U8.
 3. A second `GNatives` dump after a mission load, to catch the classes the front end does not touch
    (blocked on input automation, `docs/XEMU.md`).
 4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this

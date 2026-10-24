@@ -194,11 +194,17 @@ immediate in `.text`. So the fork dispatches `ProcessEvent` as a virtual at a fi
 `[object+0x00]`, which is why nothing calls it. Measurements and the tool:
 `docs/NATIVE_VM.md`, `tools/class-tables.py`, `inventory/xbe_class_tables.csv`.
 
-**Still open: two families of table.** Seven slots — 19 and 20 among them — hold `0x00020f00` in 327
-of the 492 tables and a different address in the remaining 165. Abstract/base classes against concrete
-ones is the likely reading; nothing here establishes it. What would settle it: match tables to class
-objects (the class registrations name both) and see whether the 327 are the classes that never
-instantiate.
+**Two families closed 2026-10-24, two residuals open.** The tables are named from the build's own
+class registrations (`docs/NATIVE_CLASSES.md`, `inventory/xbe_class_table_names.csv`): 466 of 492.
+Slots 19 and 20 hold `0x00020f00` — one `ret` — in 327 tables and real bodies in 165, and the 165 are
+the actor-side engine hierarchy (`Actor`, `Pawn`, `Controller`, `Info`, `NavigationPoint`, …): the
+split is which classes override those virtuals, not which are abstract.
+
+Still open: **which virtuals slots 19 and 20 are** (the override reads `[this+0x2dc] & 1`, then
+`[this+0xa4]` and `[+0xf4]`; nothing in the property track calls them), and **the 26 tables whose
+registration cannot be followed** — their constructors install the table but the registration pushes
+neither a literal nor a thunk the tool can follow. What would settle the first: a call site that
+dispatches `+0x4c`/`+0x50` through a known object.
 
 **Still open: 102 assert sites have no function.** After seeding they remain because no `0xCC`-delimited
 candidate within 4 KB produced a body containing the assert that justified it; those candidates were
