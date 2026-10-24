@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols assert-residual ci check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status ci check clean
 
 help:
 	@echo "targets:"
@@ -26,6 +26,7 @@ help:
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
+	@echo "  status        regenerate the progress table in README.md and docs/STATUS.md"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -101,6 +102,7 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@$(PYTHON) tools/status.py --check
 
 check: verify-dump
 	@echo "dump ok; run 'make inventory' and commit if anything drifted"
@@ -146,3 +148,8 @@ libraries:
 		{ echo "no default.xbe under $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/xbe-libraries.py \
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+# The progress table (docs/STATUS.md and the README block). Reads committed artifacts only; `make ci`
+# runs it with --check, so a landed artifact that moves a number fails the gate until it is regenerated.
+status:
+	@$(PYTHON) tools/status.py
