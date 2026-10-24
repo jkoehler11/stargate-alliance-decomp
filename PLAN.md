@@ -202,7 +202,12 @@ and `inventory/` regenerates from scripts with no manual edits.
       memory/cache, script compiler hooks, Kynapse/AI integration, LIPSinc integration, ragdoll `.ka` loader).
 - [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
       `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
-- [ ] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
+- [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
+      Done: **15,410 symbols** (14,944 functions + 466 class tables), every address inside the image's
+      sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
+      (`docs/SYMBOLS.md`). 12,971 stay `FUN_*` — that is 4.2's blocked signature work (U9), not a gap in
+      the file. 127 names are file-level and therefore shared by more than one function; the assembled
+      form suffixes duplicates with their address.
 
 **Acceptance:** every `native()` declaration resolves to a named address; zero unnamed functions in the game modules;
 `symbols/xbox.map` loads into a debugger against the original XBE without address errors.

@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols check clean
 
 help:
 	@echo "targets:"
@@ -24,6 +24,7 @@ help:
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
+	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -111,3 +112,10 @@ class-names:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/class-table-names.py \
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+# The published symbol map (PLAN 4.10, docs/SYMBOLS.md). xbox.map is committed; the assembler form is
+# regenerated and stays out of git.
+symbols:
+	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe") -o symbols
+	@as --32 -o symbols/xbox.sym.o symbols/xbox.sym.s
+	@echo "load it: gdb -batch -ex \"symbol-file symbols/xbox.sym.o\""
