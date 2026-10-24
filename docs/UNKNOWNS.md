@@ -255,7 +255,7 @@ written down rather than a guess at names.
 
 **Status.** Open, blocked on data the project may not ship.
 
-## U10. The tagged property record's field order
+## U10. The tagged property record's field order — closed 2026-10-24
 
 **Observed.** A `.sgs` checkpoint is a UE2 package whose exports are the level's actors
 (`docs/formats/sgs-checkpoint.md`), which means its properties are serialised as tagged records —
@@ -274,4 +274,16 @@ stream with the read that consumes it, or dump a checkpoint's first 64 bytes at 
 the fields onto the reader's offsets. The type names are already indexed
 (`inventory/property_types.csv`), so the type field can be checked by value, not by string.
 
-**Status.** Open. Nothing in the property type-space work depends on it.
+**Resolved 2026-10-24.** `0x0003ceb0` is the tag reader and its body gives the order outright
+(`docs/NATIVE_PROPERTIES.md` §6): int32 **Name** (index 0 ends the list), one byte **Type** whose low
+nibble is the property type, bits 4–6 the size class and bit 7 "array index follows", an int32
+**StructName** only for a struct property, a **Size** that is either implied by the size class
+(1/2/4/12/16) or read as 1/2/4 bytes, then a compact **ArrayIndex** when bit 7 is set and the type is
+not bool, then the value. The type nibble is the reserved name index of the property type (1..16), and
+each property class's `vtable+0xcc` returns exactly that byte, so the tag and the class agree by
+construction. UELib's `DeserializeTagUE1` — the parser that reads all 9 checkpoints and 19,080 tags
+of this build with no failures — implements the same masks (`0x0F`/`0x70`/`0x80`) and the same order
+independently.
+
+**Status.** Closed. The **writer** branch of the same routine was not decompiled, so a rebuilt save's
+tag order is still an assumption for PLAN 6.2/6.4 and is recorded as such in `NATIVE_PROPERTIES.md`.
