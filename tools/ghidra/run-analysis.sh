@@ -50,7 +50,7 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
     -loader-baseAddr 0x10000 \
     -scriptPath "$PWD/tools/ghidra/ghidra_scripts" \
     -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" 0x10184 \
-    -postScript SeedGaps.java "$proj/asserts.tsv" 0x1000 8 \
+    -postScript SeedGaps.java "$proj/asserts.tsv" 0x1000 8 "$PWD/inventory/xbe_block_seeds.csv" \
     -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" 0x10184 \
         "$PWD/symbols/xbe_overrides.csv,$PWD/symbols/xbe_dispatch.csv" \
     -postScript ExportEvidence.java "$proj/evidence" \
