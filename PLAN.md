@@ -420,6 +420,15 @@ and a deliberate one-line script break is caught by the boot test.
   array. Re-running the analysis changed exactly one line of `symbols/xbox_functions.csv`
   (`FUN_00256280`, 35070 -> 38716 bytes), so the map is not yet byte-reproducible; the committed file was
   left as it was and only the measured CSVs are new.
+- **4.5/4.7 groundwork: the class tables are named (2026-10-24).** `tools/class-table-names.py` follows
+  the build's own chain — the 493 registrations that call `FUN_0003af60` (class literal + object size +
+  constructor thunk) → the thunk → the constructor that stores the table at `[this]` — and names **466 of
+  the 492 tables** in `inventory/xbe_class_table_names.csv`, with each class's **object size**. The sizes
+  reproduce every previously measured one (`AlkeshBomber` 3,788, `StargatePlayer` 4,344,
+  `StargateVehicle` 3,344, `ByteProperty` 0x70, `ClassProperty` 0x74), so the column is usable for the
+  classes nothing else measured (`Actor` 908, `Pawn` 2,408). The 327/165 split in U8 is now explained:
+  slots 19/20 are one `ret` in 327 tables and real bodies in the 165 actor-side engine classes. Residuals:
+  the 26 unnamed tables and which virtuals 19/20 are. `docs/NATIVE_CLASSES.md`.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

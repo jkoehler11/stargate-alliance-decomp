@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names check clean
 
 help:
 	@echo "targets:"
@@ -23,6 +23,7 @@ help:
 	@echo "  call-census   direct callers of one function from the Ghidra export (needs ghidra)"
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
+	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -101,4 +102,11 @@ clean:
 class-tables:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/class-tables.py \
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+# Which class owns each table, and every class's object size, from the class registrations
+# (docs/NATIVE_CLASSES.md). Needs capstone: pip install capstone.
+class-names:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/class-table-names.py \
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
