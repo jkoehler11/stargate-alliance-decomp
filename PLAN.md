@@ -1,8 +1,8 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
 Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
-4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 half done (executor
-and binder measured, `ProcessEvent` open)**
+4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 executor, binder,
+expression decoder and `ProcessEvent` measured; property tables open)**
 (last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -160,8 +160,13 @@ matching table shows ≥98% of functions at L2 or better.
       `UFunction::Func` is filled by the binder at `0x0003a030`, script bodies run in
       `UObject::ProcessInternal` at `0x00048bf0` (dispatch loop over `GNatives`, terminator `EX_Return`
       `0x04`), and `FFrame::Step` is at `0x000398e0` (`docs/NATIVE_VM.md`). `UFunction` fields `+0x80`
-      `FunctionFlags`, `+0x84` `iNative`, `+0x90` `Func`; `FFrame::Code` is `+0x0c`. Still open:
-      `ProcessEvent`, the rest of `UObject`/`UStruct` and the property/`GPropPointers` tables (U8).
+      `FunctionFlags`, `+0x84` `iNative`, `+0x90` `Func`; `FFrame::Code` is `+0x0c`.
+      `UObject::ProcessEvent` is at `0x0004bf20` (1,390 bytes): it dispatches an indexed native through
+      `Func` and calls `ProcessInternal` directly for a script body, with the `FFrame` on its own stack
+      (vtable `0x4d9618`) and `ParmsSize` at `UFunction+0x40`. It has **no direct call site** — 492
+      aligned pointers in `.rdata` and nothing else — so this fork dispatches it through a table. Still
+      open: the rest of `UObject`/`UStruct`, the property/`GPropPointers` tables, and which slot
+      dispatches `ProcessEvent` (U8).
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
@@ -375,6 +380,14 @@ and a deliberate one-line script break is caught by the boot test.
   site that has no function, keeps it only if the assert lands inside the body it produced, and removes
   the rest. Measured: **64 seeds, 52 kept, 12 rejected; 199 assert sites in no function → 104;
   14,220 → 14,280 functions; 12,339 → 12,347 `FUN_*`** (`docs/NATIVE.md`).
+- **A second seed source: data tables.** Some entry points have no call site and no assert — they are
+  only ever *dispatched*. `ProcessEvent` is the example: 492 aligned pointers to `0x0004bf20` in
+  `.rdata`, zero direct calls in the whole image. `SeedGaps` now also counts, for each block that holds
+  no functions, how many dwords point at the same address in executable memory with no function, and
+  seeds the addresses with at least 8 referrers (a switch table has distinct targets; a class table
+  names one address hundreds of times). Measured: **629 entries seeded, functions 14,280 → 14,912,
+  assert-attributed 1,253 → 1,256, assert sites in no function 104 → 102, `FUN_*` 12,347 → 12,971** —
+  those entries are real code with no name evidence, so they stay `FUN_*` on purpose.
 - **7.1 done, 7.2 started — the prototype boots.** With the debug flash (`bios_debug_4627.bin`) and a
   media-patched XISO (`media=DVD-X2`, `region=NA`) at 128 MB, xemu reaches the engine's main menu with
   `Build: Dec 15 2005 12:02:54`. Retail flash + unpatched disc was refused; the two together work.

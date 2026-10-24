@@ -4,8 +4,9 @@ Status: `GNatives` located (4.3) and **read out of a running build** (4.4): the 
 the file, so it was dumped from xemu over the GDB stub. 356 of 4,096 slots are registered at the main
 menu, all 273 declared native indices among them. The other half of 4.3 is now measured: the binder
 that fills `UFunction::Func`, `UObject::ProcessInternal` at `0x00048bf0` (the bytecode loop) and
-`FFrame::Step` at `0x000398e0` (the expression decoder) — see *The body of a script function*. Still
-open: `ProcessEvent`, the full `UObject` layout and the property/`GPropPointers` tables
+`FFrame::Step` at `0x000398e0` (the expression decoder) and `UObject::ProcessEvent` at
+`0x0004bf20` — see *The body of a script function*. Still open: the rest of the `UObject` layout and
+the property/`GPropPointers` tables, and which table slot dispatches `ProcessEvent`
 (`docs/UNKNOWNS.md` U8).
 
 ## The dispatch table
@@ -191,23 +192,90 @@ expression by looping on a virtual call at `[this+0xa0]` until it returns `0x16`
 `"Bad expr token %02x"` otherwise. The name is an inference from UE2's own `FFrame::Step`; the
 behaviour and the string are measured.
 
+### `UObject::ProcessEvent` at `0x0004bf20` (1,390 bytes)
+
+The routine that calls both of the above. Signature, from the frame at entry: `ProcessEvent(this,
+UFunction* Function, void* Parms, void* Result)`, with `Function` at `[ebp+0x7c]`, `Parms` at
+`[ebp+0x74]` and `Result` at `[ebp+0x78]`.
+
+```
+0x4c01a  cmp  word [ebx+0x84], 0        ; Function->iNative
+0x4c029  je   0x4c040
+0x4c031  push [ebp+0x78]                ; Result
+0x4c032  push [ebp+0x74]                ; Parms
+0x4c033  mov  ecx, edi                  ; this
+0x4c035  call dword [ebx+0x90]          ; Function->Func
+0x4c03b  jmp  0x4c2a0
+0x4c040  mov  eax, [ebx+0x80]           ; Function->FunctionFlags
+0x4c046  test ah, 4                     ; & 0x400 (FUNC_Native)
+```
+
+So an indexed native is invoked through `UFunction::Func` (`+0x90`) with the frame the caller already
+has, and a script body goes down the path that builds its own frame:
+
+```
+0x4c0d2  mov dword [ebp+0x40], 0x4d9618 ; FFrame vtable
+0x4c0d9  mov dword [ebp+0x44], ebx      ; Object
+0x4c0dc  mov dword [ebp+0x4c], ecx      ; Code   = Function->Script
+0x4c0df  mov dword [ebp+0x50], edi      ; Locals = zeroed parm buffer
+0x4c10f  call 0x48bf0                   ; ProcessInternal(frame, Result)
+```
+
+Measured `FFrame` layout, from those stores (frame base `ebp+0x40`): `+0x00` vtable,
+`+0x04` `Object`, `+0x08` `Node` (the `UFunction`), `+0x0c` `Code`, `+0x10` `Locals`, `+0x18` a
+"not executing" flag that `ProcessInternal` tests. The locals buffer is sized from
+`UFunction+0x40` (`ParmsSize`) and zeroed before the call — the decompiled body shows
+`puVar3 = *(undefined1 **)(param_4 + 0x40)` feeding the allocation.
+
+### Why these four were invisible
+
+None of them has a call site, and each is invisible for a different reason:
+
+| routine | evidence it exists | why the analyser missed it |
+|---|---|---|
+| binder `0x0003a030` | assert strings | reached only from class binding, itself reached from a table |
+| `ProcessInternal` `0x00048bf0` | its own strings | called only through `UFunction::Func` |
+| `FFrame::Step` `0x000398e0` | `"Bad expr token %02x"` | called only from exec bodies through a vtable |
+| `ProcessEvent` `0x0004bf20` | none of its own | **492 aligned pointers to it in `.rdata`, zero direct calls** |
+
+`ProcessEvent` is the clear case: scanning every `E8` call in the image finds no target of `0x4bf20`
+at all, while a scan of the data sections finds 492 aligned dwords pointing at it, inside the runs of
+code pointers that make up the class tables (neighbouring entries are the same shared thunks across
+hundreds of classes). The address is therefore dispatched, not called, which is a fork property worth
+carrying into 4.8. It was found by scanning the executable for calls to `ProcessInternal`, not by a
+name: its only caller in the whole image is `ProcessEvent` itself (two sites, `0x4c10f` and `0x4c23e`,
+both inside the same function).
+
+That is what the seeder's second source is for. `tools/ghidra/SeedGaps.java` now also counts, for
+every 4-byte value in a block that holds no functions, how many separate values point at each address
+in executable memory with no function, and seeds the addresses with at least 8 referrers. A single
+pointer can be a switch target; a table that names the same address hundreds of times is naming an
+entry point.
+
+| measurement | before seeding | after assert seeds | after data-table seeds |
+|---|---|---|---|
+| functions | 14,220 | 14,280 | **14,912** |
+| assert sites in no function | 199 | 104 | **102** |
+| assert-attributed functions | 1,201 | 1,253 | **1,256** |
+| `FUN_*` (unnamed) | 12,339 | 12,347 | **12,971** |
+
+The last column's larger `FUN_*` count is the expected cost of this technique: the 629 entries named
+by tables are real code but carry no name evidence, so they stay `FUN_*` — an honest unknown with a
+body, which is worth more than an unanalysed gap.
+
 ### Why these three were invisible
 
-None of them has a call site. They are reached through `UFunction::Func` (`+0x90`), through
-`GNatives`, and through the exec bodies' virtual calls, so the analyser had nothing to follow and
-left the whole region un-analysed — 199 of 2,386 assert xrefs sat in no function at all. That is what
-`tools/ghidra/SeedGaps.java` fixes: it seeds a function at the nearest entry after `0xCC` fill bytes
-before each evidence site, keeps it only when the assert that justified it lands inside the body it
-produced (52 of 64 seeds), and removes the rest. Measured effect in `docs/NATIVE.md`: 14,220 → 14,280
-functions, 1,201 → 1,253 assert-attributed, 199 → 104 assert sites still in no function.
+The analyse-time seeding is the other half: `tools/ghidra/SeedGaps.java` creates a function at the
+nearest entry after `0xCC` fill bytes before each assert site that has none, keeps it only when the
+assert that justified it lands inside the body it produced (52 of 64 seeds), and removes the rest
+before counting. See `docs/NATIVE.md` for the regenerated coverage tables.
 
 ## Next
 
-1. `ProcessEvent` — the caller that builds an `FFrame`, resolves the `UFunction` and calls
-   `Func` through `+0x90`. There is no direct call edge to `ProcessInternal` to follow, so it has to
-   be identified from its own shape (`docs/UNKNOWNS.md` U8).
-2. The rest of the `UObject`/`UStruct`/`FFrame` layout and the property pointer tables, now that
-   `ProcessInternal` gives a worked example of how each field is reached.
+1. The rest of the `UObject`/`UStruct`/`FFrame` layout and the property pointer tables, now that
+   `ProcessInternal` and `ProcessEvent` give worked examples of how each field is reached.
+2. Which table slot dispatches `ProcessEvent`: the 492 pointers sit in class tables whose boundaries
+   are not yet pinned, so the slot index is not established (`docs/UNKNOWNS.md` U8).
 3. A second `GNatives` dump after a mission load, to catch the classes the front end does not touch
    (blocked on input automation, `docs/XEMU.md`).
 4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this

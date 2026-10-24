@@ -178,25 +178,28 @@ and inside `.text`, and **all 273 declared indices are present**. `inventory/gna
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
 
-## U8. `ProcessEvent` is not located, and 104 assert sites have no function
+## U8. Which slot dispatches `ProcessEvent`, and 102 assert sites with no function
 
-**Observed.** `UObject::ProcessInternal` is at `0x00048bf0` (it is what `UFunction::Func` is set to for
-a script function), but `ProcessEvent` — the routine that builds the `FFrame`, resolves the function
-and calls `Func` through `UFunction+0x90` — is not identified. It has no distinctive assert string of
-its own, and it reaches `ProcessInternal` only through that pointer, so there is no call edge in the
-evidence export to follow.
+**`ProcessEvent` found 2026-10-24, at `0x0004bf20`.** It was located by scanning the executable for
+calls to `ProcessInternal` rather than by name: its two call sites (`0x4c10f`, `0x4c23e`) are the only
+ones in the image and both are inside this function. Its shape confirms it — `Function->iNative` at
+`[Function+0x84]` selects the native path (`call [Function+0x90]`), and the script path builds an
+`FFrame` on the stack (vtable `0x4d9618`, `Object +0x04`, `Node +0x08`, `Code +0x0c`, `Locals +0x10`)
+and calls `ProcessInternal` directly (`docs/NATIVE_VM.md`).
 
-**Also observed.** After `tools/ghidra/SeedGaps.java` resolved 95 of the 199 assert sites that had no
-function, 104 remain. Their candidates were either absent (no `0xCC`-delimited entry within 4 KB before
-the site) or produced a body that did not contain the assert that justified them; those were removed
-rather than kept, which is why the counts are 52 kept out of 64 attempts.
+**Still open: the dispatch slot.** `ProcessEvent` has no direct call site anywhere in the image. What
+points at it is data: 492 aligned dwords in `.rdata`, inside runs of code pointers that look like the
+class tables (the same shared thunks appear as their neighbours). The tables' boundaries are not pinned,
+so the offset of the slot — and therefore whether this fork made `ProcessEvent` virtual — is not
+established. What would settle it: find the table that owns one of those runs (a vtable is preceded by
+the RTTI/class pointer run it belongs to) and check that the offset is the same in every copy.
 
-**What would settle it.** For `ProcessEvent`: find the routine that references `+0x90` of a `UFunction`
-*and* writes an `FFrame` (Code at `+0x0c`, `iNative`), then confirm it against a script call observed
-in xemu. For the 104 sites: the same seeding with entries taken from call sites rather than fill bytes,
-once `ProcessEvent` and the vtable-based calls are named.
+**Still open: 102 assert sites have no function.** After seeding they remain because no `0xCC`-delimited
+candidate within 4 KB produced a body containing the assert that justified it; those candidates were
+removed rather than kept (52 kept of 64 attempts). What would settle them: seeding from decoded call
+instructions rather than raw bytes, so the entries come from real call sites.
 
-**Status.** Open. Both are analysis coverage, not correctness: nothing documented depends on them.
+**Status.** `ProcessEvent` closed; the slot index and the 102 sites open. Neither is correctness. 
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
