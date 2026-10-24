@@ -228,13 +228,8 @@ and `inventory/` regenerates from scripts with no manual edits.
 
 - [ ] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build `inventory/assets.csv`.
 - [ ] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
-- [~] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
+- [ ] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       lines into a transcript index — this is the fastest route to documenting cut story content.
-      **WAVs done**: speech 1,364 files / 151 MiB with a per-mission and per-speaker index (`docs/DIALOGUE.md`,
-      `tools/dialogue-index.py`), music 1,923 files / 348 MiB in 16 groups with four cue variants and a
-      map-ships cross-check (`docs/MUSIC.md`, `inventory/music_index.csv`, `tools/music-index.py`). Cut-content
-      reading: music exists for **M01** and **M05**, neither of which has a map, and `M11` has none either.
-      **Still open:** SFX live inside the `.uax` packages and need 5.1's export pass.
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
       A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
@@ -242,17 +237,8 @@ and `inventory/` regenerates from scripts with no manual edits.
 - [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
       `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
       `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
-- [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
+- [ ] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype.
-      Done: `docs/CUT_CONTENT.md` is now the report, built on the new **campaign matrix**
-      (`inventory/campaign_matrix.csv`, `tools/campaign-matrix.py`) joining map / speech / music / chapter per
-      mission id. Seven findings, each with a file and a count: **M01 and M05 were cut with their music still in
-      the build** (112 and 108 cues, chapters naming `m01a.unr`, `M05A/B.unr`, none present); **M11 has music and
-      nothing else** (140 cues in the `M10_17` group); four planned multiplayer maps never shipped while the build
-      ships a different set; the 10 shipped MP maps place **22 classes that appear in no mission map** (161 actors)
-      against the missions' 279 mission-only classes (31,574 actors, mostly AI scaffolding); the chapter list's
-      build-marker mismatch; and 49 of 73 maps referenced by nothing. Explicit non-claims: build-only and
-      oracle-only classes. Still needs 5.2's T3D dumps and a runtime check for the chapter-list failure.
 
 **Acceptance:** every asset class in `inventory/assets.csv` has a documented extraction path, and the cut-content
 report cites file-level evidence for each claim.
@@ -275,6 +261,12 @@ are limited to expected fields (checksum/timestamp) and documented.
 - [x] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
       other debug-kit dumps; document exact config in `docs/XEMU.md`.
 - [~] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
+      **Harness built and three blockers measured** (`tools/xemu/smoke.py`, `docs/XEMU.md`): xemu 0.8.139 rejects
+      `-mcpx_path` (the old `boot-test.sh` path), `-serial` needs a `file:` prefix, and extract-xiso 2.7.1 ignores
+      `-o`. With those fixed the ISO builds (2.26 GB) and xemu boots the disc under `DISPLAY=:0`, staying alive for
+      the full window — but the **serial log stays empty**, so this build writes no engine output to the debug
+      channel and there is no log-side evidence to assert on. Next: `-monitor unix:` + `screendump` for a
+      framebuffer-based assertion. Mission loading still needs input automation.
       Missions are M00, M02A–D, M04A/B, M07A–C, M10B, M12A (+ the rest from the map list).
 - [ ] 7.3 Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
@@ -544,28 +536,9 @@ and a deliberate one-line script break is caught by the boot test.
   `-o /tmp`. Both are fixed here, and the now-parsed override rows correct the counts PR #17 quoted: **41**
   override-attributed names and **215** from Ghidra's own analysis, not 39 and 217.
 
-### Execution notes (2026-10-24, status table)
-
-- **The progress table is generated, not written.** `tools/status.py` renders `docs/STATUS.md` and the
-  `## Status` block of `README.md` from committed artifacts only: 13 rows across four layers, each naming
-  its source. The README's stale "Planning. The repository currently contains the plan and nothing else"
-  paragraph and the `status-planning` badge are gone; the badges now carry the two headline numbers.
-  Measured: **script 100.00% reconstructed (L0)** (2,319 of 2,319 classes), **13.29% of native functions
-  named** (1,987 of 14,956), 94.72% of class tables named (466/492), 70.10% of the 2006 source's classes
-  agreeing with the build (204 of 291), and 100% on the content indexes (18 packages, 73 maps, 1,364
-  speech and 1,923 music WAVs). Rows that have not been measured print `--` rather than `0.00%`, so the
-  compile loop (3.6), the asset export (5.1) and the rebuild (6.x) read as unmeasured instead of failed.
-  `make ci` runs `tools/status.py --check`, so a landed artifact that moves a number fails the gate until
-  the table is regenerated.
-
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
-- [x] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
-      Done: the pipeline as 13 `make` targets in dependency order with what each needs and produces, the
-      toolchain install (JDK 25 for Ghidra, .NET for the package tools, `as` for the symbol file), the
-      document that owns every count, what `make ci` can and cannot prove without the dump, and a
-      reproduction checklist for the 8.4 milestones. §7 says which steps were run while writing it and which
-      were transcribed, so the doc does not imply verification it did not have.
+- [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
 - [ ] 8.2 `docs/ARCHITECTURE.md`: engine fork overview, VM, script-to-native mapping, level flow.
 - [ ] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
       UI/menus, audio/LIPSinc.
