@@ -1,0 +1,14 @@
+library,major,minor,build,flags,section,section_named_from_library
+XAPILIB,1,0,5849,0x4001,.text,in .text
+UIX,1,0,5849,0x4007,.text,in .text
+XONLINE,1,0,5849,0x0007,XONLINE,yes
+D3D8,1,0,5849,0x4001,D3D,yes
+D3DX8,1,0,5849,0x4001,D3DX,yes
+XKBD,1,0,5849,0x0001,.text,in .text
+XGRAPHC,1,0,5849,0x4001,XGRPH,yes
+DSOUND,1,0,5849,0x4001,DSOUND,yes
+XBOXKRNL,1,0,5849,0x4001,,not identified
+XVOICE,1,0,5849,0x4004,,not identified
+VOICMAIL,1,0,5849,0x4804,,not identified
+LIBCP,1,0,5849,0x4001,.text,in .text
+LIBC,1,0,5849,0x4001,.text,in .text
