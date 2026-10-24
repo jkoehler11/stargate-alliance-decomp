@@ -242,8 +242,17 @@ and `inventory/` regenerates from scripts with no manual edits.
 - [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
       `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
       `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
-- [ ] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
+- [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype.
+      Done: `docs/CUT_CONTENT.md` is now the report, built on the new **campaign matrix**
+      (`inventory/campaign_matrix.csv`, `tools/campaign-matrix.py`) joining map / speech / music / chapter per
+      mission id. Seven findings, each with a file and a count: **M01 and M05 were cut with their music still in
+      the build** (112 and 108 cues, chapters naming `m01a.unr`, `M05A/B.unr`, none present); **M11 has music and
+      nothing else** (140 cues in the `M10_17` group); four planned multiplayer maps never shipped while the build
+      ships a different set; the 10 shipped MP maps place **22 classes that appear in no mission map** (161 actors)
+      against the missions' 279 mission-only classes (31,574 actors, mostly AI scaffolding); the chapter list's
+      build-marker mismatch; and 49 of 73 maps referenced by nothing. Explicit non-claims: build-only and
+      oracle-only classes. Still needs 5.2's T3D dumps and a runtime check for the chapter-list failure.
 
 **Acceptance:** every asset class in `inventory/assets.csv` has a documented extraction path, and the cut-content
 report cites file-level evidence for each claim.
