@@ -5,12 +5,20 @@
 // function for them and the code around them stays unanalysed -- the bytecode interpreter is one of
 // those gaps (docs/NATIVE_VM.md).
 //
-// The build's assert strings are the static evidence that code exists there: an MSVC assert site
-// embeds __FILE__, and the site lies inside the function that asserts. This script takes the assert
-// xref list, and for every site that falls in no function it walks backwards to the nearest
-// candidate entry -- a byte after at least two 0xCC (int3) fill bytes, whose first instruction looks
-// like a prologue -- and creates a function there. A candidate is kept only if the evidence site
-// then lands inside the created function's body; anything else is counted as a miss and left alone.
+// Two kinds of static evidence are used:
+//
+// 1. Assert strings. An MSVC assert site embeds __FILE__, and the site lies inside the function that
+//    asserts, so a site with no function means code the analyser missed. For each one this walks
+//    backwards to the nearest entry after at least two 0xCC (int3) fill bytes, creates a function
+//    there, and keeps it only if the evidence site lands inside the body it produced.
+//
+// 2. Data tables. A function reached only through a pointer -- a vtable slot, a class table -- has no
+//    call site at all. UObject::ProcessEvent is one: 492 pointers to it in .rdata and not one direct
+//    call. So every 4-byte value in a non-executable block that lands in executable memory with no
+//    function is counted, and an address referenced by at least -pointerThreshold- separate values is
+//    seeded. A single pointer can be a switch jump table target; a table that names the same address
+//    hundreds of times is naming an entry point.
+//
 // No name is invented here: names still come from XbePost.
 // @category SG1
 import ghidra.app.script.GhidraScript;
@@ -33,6 +41,7 @@ public class SeedGaps extends GhidraScript {
             return;
         }
         int maxBack = args.length > 1 ? Integer.decode(args[1]) : 0x1000;
+        int pointerThreshold = args.length > 2 ? Integer.decode(args[2]) : 8;
 
         List<Long> evidence = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(args[0]));
@@ -90,6 +99,11 @@ public class SeedGaps extends GhidraScript {
                 + validated + " verified by containing their evidence site, "
                 + rejected + " rejected as wrong entries");
         println("evidence sites in no function: " + before + " -> " + countMissing(evidence));
+
+        // Second source: entry points named by data tables rather than by code.
+        int ptrSeeded = seedFromPointers(pointerThreshold);
+        println("seeded " + ptrSeeded + " entries from data tables (>= " + pointerThreshold
+                + " pointers to one address)");
         println("functions now: " + currentProgram.getFunctionManager().getFunctionCount());
     }
 
@@ -102,6 +116,47 @@ public class SeedGaps extends GhidraScript {
             return false;
         }
         return getFunctionAt(entry) == null;
+    }
+
+    /**
+     * Seed entry points that only data refers to. Every aligned dword in a non-executable block that
+     * points into executable memory with no function is counted per target; targets with enough
+     * referrers are created as functions and analysed.
+     */
+    private int seedFromPointers(int threshold) {
+        Memory mem = currentProgram.getMemory();
+        Map<Long, Integer> refs = new TreeMap<>();
+        for (MemoryBlock b : mem.getBlocks()) {
+            // The section flag that marks "executable" is set on this build's .rdata and .data too, so
+            // the filter cannot be the flag. A block that holds functions is code; a block that holds
+            // none is a table, and its dwords are pointers.
+            if (!b.isInitialized() || b.getSize() > 0x8000000L) continue;
+            if (currentProgram.getFunctionManager().getFunctions(b.getStart(), true).hasNext()) continue;
+            long end = b.getEnd().getOffset();
+            for (long a = b.getStart().getOffset(); a + 4 <= end; a += 4) {
+                int v;
+                try {
+                    v = mem.getInt(toAddr(a));
+                } catch (MemoryAccessException e) {
+                    continue;
+                }
+                long target = v & 0xffffffffL;
+                MemoryBlock tb = mem.getBlock(toAddr(target));
+                if (tb == null || !tb.isExecute()) continue;
+                if (getFunctionContaining(toAddr(target)) != null) continue;
+                refs.merge(target, 1, Integer::sum);
+            }
+        }
+        int created = 0;
+        for (Map.Entry<Long, Integer> e : refs.entrySet()) {
+            if (e.getValue() < threshold) continue;
+            Address at = toAddr(e.getKey());
+            if (getFunctionAt(at) != null) continue;
+            disassemble(at);
+            if (createFunction(at, null) != null) created++;
+        }
+        if (created > 0) analyzeChanges(currentProgram);
+        return created;
     }
 
     private int countMissing(List<Long> evidence) {
