@@ -546,7 +546,12 @@ and a deliberate one-line script break is caught by the boot test.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
-- [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
+- [x] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
+      Done: the pipeline as 13 `make` targets in dependency order with what each needs and produces, the
+      toolchain install (JDK 25 for Ghidra, .NET for the package tools, `as` for the symbol file), the
+      document that owns every count, what `make ci` can and cannot prove without the dump, and a
+      reproduction checklist for the 8.4 milestones. §7 says which steps were run while writing it and which
+      were transcribed, so the doc does not imply verification it did not have.
 - [ ] 8.2 `docs/ARCHITECTURE.md`: engine fork overview, VM, script-to-native mapping, level flow.
 - [ ] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
       UI/menus, audio/LIPSinc.
