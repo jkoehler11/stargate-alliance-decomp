@@ -36,9 +36,19 @@ good target: `Engine.Actor` has dozens of callers) and read the emitted opcode a
 index opcode settles hypothesis 3, a function reference points at 1 or 2. Cross-check with 4.7
 (the `.ucpp` bodies) if a C++ implementation exists for the same class.
 
-**Status.** Open. It is now a bigger gap than it looked: 4.4 was withdrawn after the dispatch-table
-correction (`docs/NATIVE_VM.md`), so neither the indexed nor the index-less declarations carry an
-address yet.
+**Partially answered 2026-10-23.** Hypothesis 3 is what the build does. The routine that fills
+`UFunction::Func` (`0x0003a030`, `Core\Src\UnClass.cpp`) has an explicit branch for
+`FUNC_Native` with `iNative == 0`: it formats a name with `"int%sexec%s"`, looks it up, and stores the
+first dword of the result as `Func`. So an index-less `native()` declaration claims no dispatch slot
+because it is bound by *name*, not by index — which is also why no amount of reading `GNatives` will
+name them (`docs/NATIVE_VM.md`, *The body of a script function*).
+
+**Still open.** What the two `%s` arguments contain, whether the lookup succeeds in a debug build
+(the string suggests a debug symbol lookup, which would mean the binding only exists when a map/PDB is
+present), and therefore whether the shipped prototype resolves those functions at all.
+
+**Status.** Partially answered; the index question (U1's original wording) is settled, the binding
+route for the 523 is measured, the name construction is not.
 
 ## U2. Three `Engine.Actor` natives declare indices beyond the table — closed
 
@@ -167,3 +177,43 @@ and inside `.text`, and **all 273 declared indices are present**. `inventory/gna
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
+
+## U8. `ProcessEvent` is not located, and 104 assert sites have no function
+
+**Observed.** `UObject::ProcessInternal` is at `0x00048bf0` (it is what `UFunction::Func` is set to for
+a script function), but `ProcessEvent` — the routine that builds the `FFrame`, resolves the function
+and calls `Func` through `UFunction+0x90` — is not identified. It has no distinctive assert string of
+its own, and it reaches `ProcessInternal` only through that pointer, so there is no call edge in the
+evidence export to follow.
+
+**Also observed.** After `tools/ghidra/SeedGaps.java` resolved 95 of the 199 assert sites that had no
+function, 104 remain. Their candidates were either absent (no `0xCC`-delimited entry within 4 KB before
+the site) or produced a body that did not contain the assert that justified them; those were removed
+rather than kept, which is why the counts are 52 kept out of 64 attempts.
+
+**What would settle it.** For `ProcessEvent`: find the routine that references `+0x90` of a `UFunction`
+*and* writes an `FFrame` (Code at `+0x0c`, `iNative`), then confirm it against a script call observed
+in xemu. For the 104 sites: the same seeding with entries taken from call sites rather than fill bytes,
+once `ProcessEvent` and the vtable-based calls are named.
+
+**Status.** Open. Both are analysis coverage, not correctness: nothing documented depends on them.
+
+## U9. Phase 4.2's signature libraries cannot be carried by this repository
+
+**Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
+libraries (xbox-includes, FLIRT-style signatures) to name the CRT, XAPI, D3D8, XNet, XOnline, zlib and
+math routines. Those databases are built from Microsoft's SDK libraries and toolchain output, which
+`AGENTS.md` forbids committing, and an ordinal-to-name table for `xboxkrnl.exe` is the same kind of
+artefact.
+
+**Consequence.** The part of 4.2 that can be done from the image alone is done: the XBE's own library
+table names the statically linked libraries and their versions (XAPILIB 1.0.5849, D3D8, D3DX8,
+XONLINE, XGRAPHC, DSOUND, XBOXKRNL, XVOICE, VOICEMAIL, HLIBCP, LIBC). What is missing is the
+function-level signature data.
+
+**What would settle it.** A signature database supplied locally by whoever runs the analysis (kept
+outside the repository, like the 2006 source), with `tools/versions.lock` recording which database was
+used and `docs/NATIVE.md` reporting the measured effect. Until then 4.2 stays open with the reason
+written down rather than a guess at names.
+
+**Status.** Open, blocked on data the project may not ship.

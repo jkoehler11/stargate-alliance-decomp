@@ -2,8 +2,11 @@
 
 Status: `GNatives` located (4.3) and **read out of a running build** (4.4): the table has no bytes in
 the file, so it was dumped from xemu over the GDB stub. 356 of 4,096 slots are registered at the main
-menu, all 273 declared native indices among them. `UObject` layout, `ProcessEvent`/`ProcessInternal`
-and the property tables are not yet documented; the interpreter site below is the way into them.
+menu, all 273 declared native indices among them. The other half of 4.3 is now measured: the binder
+that fills `UFunction::Func`, `UObject::ProcessInternal` at `0x00048bf0` (the bytecode loop) and
+`FFrame::Step` at `0x000398e0` (the expression decoder) — see *The body of a script function*. Still
+open: `ProcessEvent`, the full `UObject` layout and the property/`GPropPointers` tables
+(`docs/UNKNOWNS.md` U8).
 
 ## The dispatch table
 
@@ -115,10 +118,97 @@ Core (operators) + Engine + the package being decompiled — a different thing f
 table — taking unresolved sites 51,289 → 4,230 → 1,470 → **0** across 2,319 classes.
 `docs/DECOMPILER_GAPS.md` stays empty as the regression check.
 
+## The body of a script function (4.3, second half)
+
+Nothing in the file says where the interpreter is, because the interpreter is never called: a script
+function is executed by taking a `UFunction`'s function pointer. That pointer is what the VM fills in,
+so the way in is the code that fills it.
+
+### The binder at `0x0003a030` (`Core\Src\UnClass.cpp`)
+
+This is the routine the earlier notes called "the interpreter" because the GNatives asserts are inside
+it. It does not execute bytecode; it decides what each `UFunction::Func` points at:
+
+```
+if ((FunctionFlags & 0x400) == 0) {          // not FUNC_Native: a script body
+    assert "iNative==0"                      // UnClass.cpp:0x6a6
+    Func = 0x00048bf0
+} else if (iNative == 0) {                    // FUNC_Native without an index
+    name = FString::Printf("int%sexec%s", ...)
+    if (lookup(name) != NULL) Func = *lookup(name)
+} else {
+    assert "iNative<EX_Max"                  // 0x6ac
+    assert "GNatives[iNative]!=0"            // 0x6ad
+    Func = GNatives[iNative]
+}
+```
+
+The three asserts are the ones the table was found from, so the earlier reading of this routine was
+right about the index space and wrong about the routine's job. Fields it touches, and therefore the
+measured layout of a `UFunction` here:
+
+| offset | field | evidence in the body |
+|---|---|---|
+| `+0x80` | `FunctionFlags` (dword) | `& 0x400` selects the native branch |
+| `+0x84` | `iNative` (word) | compared with `0` and with `0x1000` (`EX_Max`) |
+| `+0x90` | `Func` (code pointer) | receives `GNatives[iNative]`, `0x00048bf0`, or the lookup result |
+
+**This is also the answer to half of U1.** The 523 `native()` declarations that serialise no index are
+not dispatched through `GNatives` at all: for a `FUNC_Native` function with `iNative == 0` the binder
+resolves an implementation *by name* at bind time (`"int%sexec%s"`) and stores the result. They are
+still unreachable from the index table, but they are no longer unexplained.
+
+### `UObject::ProcessInternal` at `0x00048bf0`
+
+The address every script `UFunction::Func` is set to. Its body is the interpreter, and it says so
+itself:
+
+```
+cVar1 = **(char **)(frame + 0xc);          // FFrame::Code
+while (cVar1 != '\x04') {                   // 0x04 = EX_Return
+    bVar2 = **(byte **)(frame + 0xc);        // opcode
+    *(byte **)(frame + 0xc) += 1;            // Code++
+    GNatives[bVar2](frame, result);          // dispatch through the same table
+    cVar1 = **(char **)(frame + 0xc);
+}
+```
+
+Its own strings: `"Infinite script recursion (%i calls) detected"` (guard 250, `0xfa`) and
+`"%sNot executing, due to RPC, or nonprobing function"`. Both are referenced from inside the function,
+which is the strongest evidence available short of a symbol: a routine that walks `GNatives` with
+`EX_Return` as its terminator, and reports recursive script calls, is the script executor.
+
+**Correction to this document's earlier claim:** `FFrame::Code` is at `+0x0c`, not `+0x90`. The
+`+0x84`/`+0x90` pair belongs to `UFunction` (`iNative`, `Func`); the binder's `this` is a `UFunction`,
+not an `FFrame`. The exec bodies' operand reads at `[frame+0xc]` were already consistent with `Code`
+at `+0x0c`.
+
+### `FFrame::Step` at `0x000398e0` (1,583 bytes)
+
+Reached from the exec bodies, this is the expression/token decoder: it takes the next byte from the
+code stream, switches on it (tokens up to `0x70`; anything above `0x6f` is run to the end of the
+expression by looping on a virtual call at `[this+0xa0]` until it returns `0x16`), and reports
+`"Bad expr token %02x"` otherwise. The name is an inference from UE2's own `FFrame::Step`; the
+behaviour and the string are measured.
+
+### Why these three were invisible
+
+None of them has a call site. They are reached through `UFunction::Func` (`+0x90`), through
+`GNatives`, and through the exec bodies' virtual calls, so the analyser had nothing to follow and
+left the whole region un-analysed — 199 of 2,386 assert xrefs sat in no function at all. That is what
+`tools/ghidra/SeedGaps.java` fixes: it seeds a function at the nearest entry after `0xCC` fill bytes
+before each evidence site, keeps it only when the assert that justified it lands inside the body it
+produced (52 of 64 seeds), and removes the rest. Measured effect in `docs/NATIVE.md`: 14,220 → 14,280
+functions, 1,201 → 1,253 assert-attributed, 199 → 104 assert sites still in no function.
+
 ## Next
 
-1. A second dump after a mission load, to catch the classes the front end does not touch (blocked on
-   input automation, `docs/XEMU.md`).
-2. `UObject` layout, `ProcessEvent`/`ProcessInternal` and the property pointer tables, starting from
-   0x0003a083 — the interpreter is where the VM's structures become visible.
-3. Signature libraries for the CRT/XAPI/D3D8 majority (4.2).
+1. `ProcessEvent` — the caller that builds an `FFrame`, resolves the `UFunction` and calls
+   `Func` through `+0x90`. There is no direct call edge to `ProcessInternal` to follow, so it has to
+   be identified from its own shape (`docs/UNKNOWNS.md` U8).
+2. The rest of the `UObject`/`UStruct`/`FFrame` layout and the property pointer tables, now that
+   `ProcessInternal` gives a worked example of how each field is reached.
+3. A second `GNatives` dump after a mission load, to catch the classes the front end does not touch
+   (blocked on input automation, `docs/XEMU.md`).
+4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this
+   repository may not carry (`docs/UNKNOWNS.md` U9).

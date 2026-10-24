@@ -1,7 +1,8 @@
 # Stargate SG-1: The Alliance (Xbox, 2005-12-15 prototype) — Decompilation Plan
 
 Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
-4.4 re-done against the runtime dispatch table after the earlier correction**
+4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 half done (executor
+and binder measured, `ProcessEvent` open)**
 (last run 2026-10-23). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -148,10 +149,19 @@ matching table shows ≥98% of functions at L2 or better.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
+      **Blocked on data the repository may not carry** (U9): the signature databases are built from
+      Microsoft SDK/toolchain output. The part that needs no external data is done — the XBE's own
+      library table names the statically linked libraries and versions — and a locally supplied
+      database is the unblock, recorded in `tools/versions.lock` rather than committed.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
-      stores none of its bytes, so no slot has an address in the file. `UObject`/`ProcessEvent` still open.
+      stores none of its bytes, so no slot has an address in the file. The executor is now measured too:
+      `UFunction::Func` is filled by the binder at `0x0003a030`, script bodies run in
+      `UObject::ProcessInternal` at `0x00048bf0` (dispatch loop over `GNatives`, terminator `EX_Return`
+      `0x04`), and `FFrame::Step` is at `0x000398e0` (`docs/NATIVE_VM.md`). `UFunction` fields `+0x80`
+      `FunctionFlags`, `+0x84` `iNative`, `+0x90` `Func`; `FFrame::Code` is `+0x0c`. Still open:
+      `ProcessEvent`, the rest of `UObject`/`UStruct` and the property/`GPropPointers` tables (U8).
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
@@ -349,6 +359,22 @@ and a deliberate one-line script break is caught by the boot test.
   path needs no copying. `tools/xemu/boot-test.sh` encodes the debug-kit run (128 MB, serial log) and
   fails fast when firmware is absent. Blocked on the console's own `mcpx_1.0.bin` and flash ROM:
   those are Microsoft firmware, deliberately not downloaded or committed (`docs/XEMU.md`).
+- **4.3, second half: the executor, from the pointer that names it.** The routine at `0x0003a030`
+  that an earlier pass called "the interpreter" is the `UFunction` binder in `Core\Src\UnClass.cpp`:
+  it sets `Func` to `GNatives[iNative]` for a native with an index, to the generic executor
+  `0x00048bf0` for a script body, and — for a `FUNC_Native` function with `iNative == 0` — resolves an
+  implementation by name (`"int%sexec%s"`), which is the measured answer to the index-less half of U1.
+  `0x00048bf0` is `UObject::ProcessInternal`: it walks `FFrame::Code` (`+0x0c`) until `EX_Return`
+  (`0x04`) and dispatches each opcode through the same `GNatives`, guards 250 nested script calls, and
+  carries the strings `"Infinite script recursion (%i calls) detected"` and `"Not executing, due to
+  RPC, or nonprobing function"`. `0x000398e0` is the expression decoder (`"Bad expr token %02x"`),
+  most likely `FFrame::Step`. None of the three has a call site — they are reached through
+  `UFunction::Func` — which is also why they were un-analysed; see the seeding note below.
+- **Native coverage: functions the analyser cannot reach are now seeded from asserts.**
+  `tools/ghidra/SeedGaps.java` seeds a function at the nearest `0xCC`-delimited entry before an assert
+  site that has no function, keeps it only if the assert lands inside the body it produced, and removes
+  the rest. Measured: **64 seeds, 52 kept, 12 rejected; 199 assert sites in no function → 104;
+  14,220 → 14,280 functions; 12,339 → 12,347 `FUN_*`** (`docs/NATIVE.md`).
 - **7.1 done, 7.2 started — the prototype boots.** With the debug flash (`bios_debug_4627.bin`) and a
   media-patched XISO (`media=DVD-X2`, `region=NA`) at 128 MB, xemu reaches the engine's main menu with
   `Build: Dec 15 2005 12:02:54`. Retail flash + unpatched disc was refused; the two together work.
