@@ -454,7 +454,15 @@ and a deliberate one-line script break is caught by the boot test.
   agree: the build's own class objects return the type nibble through `vtable+0xcc` (`mov al,5; ret` for
   `ClassProperty`), and UELib's `DeserializeTagUE1` implements the same masks and order for the parser
   that reads all 9 checkpoints and 19,080 tags with no failures. `docs/NATIVE_PROPERTIES.md` §6. Still
-  open there: the **writer** branch, which is what 6.2/6.4 actually need.
+  open there was the **writer** branch. That is measured too (`0x0003cd70`): same field order (name
+  `+4`, struct name `+8`, size `+0xc`, array index `+0x10`), the type byte OR-ed with the size class
+  (1/2/4/12/16 implied; `<0x100` one byte, `<=0x10000` two, else four) and with `0x80` when the array
+  index is non-zero or a bool's value is true, and **size measured** by serializing the value through a
+  scratch archive. Remaining for 6.2: the caller that writes the tag struct into the archive byte by
+  byte.
+- **U8's seeding thread is closed out (2026-10-24).** Three passes (entries, data tables, block heads)
+  took assert sites in no function from 199 to 50; the residuals are recorded in U8 and the promoted
+  blocks listed in `inventory/xbe_block_seeds.csv`.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

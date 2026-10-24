@@ -3,8 +3,9 @@
 Status: measured from the build (PLAN 4.3, property half). What is established here is the
 **type space**: the reserved name indices the property type names occupy, the fifteen property
 classes and their sizes, the field offsets a consumer is seen reading, and the shape of the
-routine that walks a struct's properties. The tagged tag record (`FPropertyTag`) is measured too (§6), from the build's own reader at
-`0x0003ceb0` and confirmed against the independent parser that reads this build's checkpoints.
+routine that walks a struct's properties. The tagged tag record (`FPropertyTag`) is measured in both directions (§6): the reader at
+`0x0003ceb0`, the writer at `0x0003cd70`, and the independent parser that reads this build's
+checkpoints agrees with both.
 
 Everything below comes from decompiled bodies exported with
 `tools/ghidra/ghidra_scripts/ExportAt.java`; those files are game-derived and stay under `$WORK`.
@@ -237,10 +238,47 @@ Not measured here: the writer side. The reader is what a rebuilt save must satis
 `Ar.IsSaving()` half of the same routine exists, but no writer body was decompiled, so this document
 claims nothing about how the build *writes* a tag beyond "the same routine, the other branch".
 
+### The writer, `0x0003cd70`
+
+The save side is a separate routine, and it fills the same fields in the same order, so the layout is
+now measured in both directions:
+
+```
+FUN_0003cd70(&tag, archive, property, arrayIndex, &value):
+    tag[1] = property->vtable[0xcc]()          ; type id, byte
+    tag[0] = same                              ; kept in the struct's first byte too
+    *(int*)(tag+4)  = property[0x20]           ; Name: the property's name index
+    *(int*)(tag+8)  = 0                        ; StructName
+    *(int*)(tag+0xc) = 0                       ; Size, filled below
+    *(int*)(tag+0x10) = arrayIndex
+    s = struct_of(property);
+    if (s) *(int*)(tag+8) = *(int*)(s+0x6c)+0x20 ; StructName, for a struct property
+    measure = serialize value into a scratch archive   ; Size is measured, not derived
+    *(int*)(tag+0xc) = measured_size
+    size class:  1 -> 0x00   2 -> 0x10   4 -> 0x20   12 -> 0x30   16 -> 0x40
+                 < 0x100 -> 0x50 (1-byte size)   <= 0x10000 -> 0x60 (2-byte size)   else 0x70 (4-byte)
+    tag[1] |= size_class
+    if (arrayIndex != 0 || bool_property_value) tag[1] |= 0x80
+```
+
+Three things follow that the reader alone could not settle:
+
+- **`Size` is the measured serialized length**, not the property's element size: the writer runs the
+  value through a scratch archive and stores the bytes it produced. That is why `0x0003bdc0` warns on
+  `"Tag %s of %s size mismatch.  Serialized %d but expected %d"` — the number is an actual byte count.
+- **The size-class thresholds are exact**: under `0x100` the size goes on disk as one byte (`0x50`),
+  at most `0x10000` as two (`0x60`), more as four (`0x70`), and the five implied classes cover
+  1/2/4/12/16. A rebuilt writer must choose the class the same way or the reader will consume the
+  wrong number of bytes.
+- **Bit 7 means "extra field follows", and for a bool property it carries the value**: the writer sets
+  it when the array index is non-zero, or when the property is a bool whose value is true, which is
+  exactly what the reader checks before reading an array index.
+
 ## 7. Not established
 
-- **The writer side of the tag.** §6 measures the reader; the saving branch of the same routine was
-  not decompiled, so nothing is claimed about the order the build writes a tag in (PLAN 6.2/6.4).
+- **Which routine consumes the writer's tag.** `0x0003cd70` fills a tag in memory; the path that
+  writes that struct to an archive byte by byte was not followed, so the on-disk *caller* is open even
+  though the field order, packing and size thresholds are measured (PLAN 6.2).
 - **Which class owns `0x00078c20`.** Three classes are 0x74 bytes and two of them are accounted
   for; the constructors of `FixedArrayProperty` and `MapProperty` were not exported.
 - **The rest of `UObject`/`UStruct`.** Only the fields a consumer was seen reading are listed;
