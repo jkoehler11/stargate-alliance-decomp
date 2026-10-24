@@ -1,0 +1,19 @@
+mission,maps_on_disk,map_names,speech_lines,music_groups,music_group_names,chapters,chapter_entries,verdict
+M00,1,M00,0,0,,0,,shipped map only
+M01,0,,0,1,M01,1,Mission 1 Replicator Attack -> m01a.unr,audio only (no map)
+M02,4,M02A;M02B;M02C;M02D,79,2,M02A;M02B,2,Mission 2 First Part of the Artifact A -> M02AX.unr | Mission 2 First Part of the Artifact B -> M02BX.unr,"shipped, recorded, in campaign"
+M04,2,M04B;M04a,62,1,M04,1,Mission 4 Second Part of the Artifact -> m04.unr,"shipped, recorded, in campaign"
+M05,0,,0,1,M05,2,Mission 5 Reetou Infiltration A -> M05A.unr | Mission 5 Reetou Infiltration B -> M05B.unr,audio only (no map)
+M07,5,M07A;M07B;M07C;M07D;M07E,133,2,M07A;M07B,3,Mission 7 Third Part of the Artifact. A -> m07axx.unr | Mission 7 Third Part of the Artifact. B -> m07ax.unr,"shipped, recorded, in campaign"
+M10,4,M10A;M10B;M10C;M10D,37,1,M10_17,3,Mission 10 Kelowna Invasion A -> m10ax.unr | Mission 10 Kelowna Invasion B -> m10bx.unr,"shipped, recorded, in campaign"
+M11,0,,0,1,M10_17,0,,audio only (no map)
+M12,6,M12A;M12B;M12C;M12D;M12E;M12F,40,2,M10_17;M12,3,Mission 12 The Shipyard I -> m12ax.unr | Mission 12 The Shipyard II -> m12bx.unr,"shipped, recorded, in campaign"
+M13,4,M13A;M13B;M13C;M13D,45,2,M10_17;M13,3,Mission 13 Attack on the Tok'ra Base I -> m13ax.unr | Mission 13 Attack on the Tok'ra Base II -> m13bx.unr,"shipped, recorded, in campaign"
+M14,3,M14A;M14B;M14C,78,2,M10_17;M14,2,Mission 14 Looking for Grey A -> M14ax.unr | Mission 14 Looking for Grey B -> M14bx.unr,"shipped, recorded, in campaign"
+M15,6,M15A;M15B;M15C;M15D;M15E;M15F,81,1,M10_17,3,Mission 15 The Moon Base I -> m15ax.unr | Mission 15 The Moon Base II -> m15bx.unr,"shipped, recorded, in campaign"
+M16,7,M16A;M16B;M16C;M16D;M16E;M16F,59,2,M10_17;M16_18,1,Mission 16 Beta Site Evacuation -> m16.unr,"shipped, recorded, in campaign"
+M17,3,M17A;M17B;M17D,41,2,M10_17;M16_18,2,Mission 17 Attack on SGC I -> m17xa.unr | Mission 17 Attack on SGC II -> m17ax.unr,"shipped, recorded, in campaign"
+M18,3,M18A;M18B;M18D,28,1,M16_18,2,Mission 18 Countdowns I -> m18xa.unr | Mission 18 Countdowns II -> m18ax.unr,"shipped, recorded, in campaign"
+M19,5,M19A;M19B;M19C;M19D;M19E,38,1,M19,1,Mission 19 Assault on Tartarus -> M19x.unr,"shipped, recorded, in campaign"
+M20,4,M20A;M20B;M20C;M20D,60,1,M20,2,Mission 20 Retrieving the Artifact A -> m20ax.unr | Mission 20 Retrieving the Artifact B -> m20bx.unr,"shipped, recorded, in campaign"
+M21,4,M21A;M21B;M21C;M21D,38,1,M21,2,Mission 21 Goodbye and Good Riddance A -> m21Ax.unr | Mission 21 Goodbye and Good Riddance B -> m21Bx.unr,"shipped, recorded, in campaign"
