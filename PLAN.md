@@ -483,11 +483,27 @@ and a deliberate one-line script break is caught by the boot test.
   assert-residual`) into `inventory/xbe_assert_residual.csv`: `0x00592cb6`/`0x00592cbe` are dwords in
   an 8-byte record table in `.rdata` whose value equals a file string address, and the byte before a
   dword has to be `0x68` for it to be an operand at all. Cost, recorded rather than hidden:
-  `FUN_00256280`'s body moves 38,716 -> 35,070 bytes, leaving 3,646 bytes (0.09% of the image) in no
-  function; four runs today all produce 35,070, and re-running the unmodified seeder reproduced the
-  committed map byte for byte, so the map is reproducible as of this change. **Also a readability
+  `FUN_00256280`'s body is not reproducible: 35,070 bytes in four runs and 38,716 in two others of
+  identical code, the difference being exactly the 3,646 addresses (0.09% of the image) that leave no
+  function in the smaller variant. Recorded in `docs/UNKNOWNS.md` U8 as an open reproducibility
+  question, not as a property of this pass. **Also a readability
   win for the engine modules:** `Engine` gains 7 named functions and `Core` 3, all of them bodies that
   were previously only reachable as part of a bigger function.
+
+- **U6: two of the three shared helpers are named (2026-10-24).** `FUN_00058a30` -> `appAssertFailed`
+  and `FUN_000340c0` -> `appMallocBeforeInit`, both named from the wide strings they log and recorded in
+  `symbols/xbe_overrides.csv` with that evidence. The first logs
+  `"Assertion failed: %s [File:%s] [Line: %i]"` from **2,432 direct call sites**, and the body now
+  settles what U6 called unmeasured: it widens the expression and the file name through `0x00058740`,
+  formats through `0x000574d0` (`vsnprintf` into a `0x1000` stack buffer, log-suppression globals, then
+  the output device's vtable) and **returns** -- no `int3`, no abort, so `check`/`verify` logs and
+  continues. The second logs `"Called %s before memory init"` with `"appMalloc"` and returns 0 from
+  **961 pointer-mediated sites** (`call [reg]`), i.e. the allocation entry point before `GMalloc`. So the
+  modules' `FUN_*` soup is now one helper shorter each. Measured: `FUN_*` 12,971 -> 12,969, map symbols
+  unchanged at 15,422, `docs/NATIVE.md` regenerated (217 names from Ghidra's own analysis). `FUN_0003af60`
+  deliberately stays `FUN_*` -- it installs the `Class` table (`0x004d4870`, object size 1312) and its 493
+  callers are the ucpp registrations, but what to call it needs the caller-side evidence 4.7 collects
+  (`docs/CONVENTIONS.md`: hypothesis in the comment, not the symbol).
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
