@@ -446,6 +446,15 @@ and a deliberate one-line script break is caught by the boot test.
   containing its evidence site) so nothing downstream treats them as function starts. The 49 that remain
   (Engine 25, Core 21) are regions where the gap does not disassemble into an instruction covering the
   site at all — clustered, e.g. `0x1f850f`/`0x1f852b`/`0x1f8561` — and need an independent decode.
+- **U10 closed: the tagged property record (2026-10-24).** The reader at `0x0003ceb0` gives the tag
+  order outright: int32 **Name** (index 0 ends the property list), one **Type** byte (low nibble =
+  property type 1..16, bits 4–6 = size class, bit 7 = "array index follows"), int32 **StructName** only
+  for a struct, **Size** implied by the class (1/2/4/12/16) or read as 1/2/4 bytes, compact
+  **ArrayIndex** when bit 7 is set and the type is not bool, then the value. Two independent sources
+  agree: the build's own class objects return the type nibble through `vtable+0xcc` (`mov al,5; ret` for
+  `ClassProperty`), and UELib's `DeserializeTagUE1` implements the same masks and order for the parser
+  that reads all 9 checkpoints and 19,080 tags with no failures. `docs/NATIVE_PROPERTIES.md` §6. Still
+  open there: the **writer** branch, which is what 6.2/6.4 actually need.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
