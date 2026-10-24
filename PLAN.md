@@ -138,8 +138,11 @@ and `inventory/` regenerates from scripts with no manual edits.
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
 - [ ] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
-- [ ] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
+- [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
+      Objectives done: `docs/systems/mission-objectives.md` — the model, the one-event state machine
+      (activate, then complete), child aggregation, the panel, placement (61 of 73 maps, exactly one per
+      map), and that no checkpoint schema carries objective state. The other four systems are open.
 
 **Acceptance:** `inventory/decompile_coverage.csv` shows 100% of classes decompiled; compile error count 0;
 matching table shows ≥98% of functions at L2 or better.
