@@ -167,7 +167,10 @@ and `inventory/` regenerates from scripts with no manual edits.
       `Func` and calls `ProcessInternal` directly for a script body, with the `FFrame` on its own stack
       (vtable `0x4d9618`) and `ParmsSize` at `UFunction+0x40`. It has **no direct call site** — 492
       aligned pointers in `.rdata` and nothing else — so this fork dispatches it through a table. Still
-      open: which slot dispatches `ProcessEvent` (U8).
+      open: the two families of class table (U8). **`ProcessEvent`'s dispatch slot is measured**:
+      slot 21 (`+0x54`) of 492 packed tables in `.rdata` (`0x004c78c0`–`0x0053b168`, 30–159 slots
+      each), every start named by an immediate in `.text`; `tools/class-tables.py`,
+      `inventory/xbe_class_tables.csv`.
       **The property half is measured** (`docs/NATIVE_PROPERTIES.md`, `inventory/property_classes.csv`,
       `inventory/property_types.csv`): the type names are reserved **name indices 1..16** in declaration
       order, registered with explicit indices by the initialiser at `0x0005c080` (325 names, 4,096-slot

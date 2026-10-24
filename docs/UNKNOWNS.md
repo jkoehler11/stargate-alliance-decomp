@@ -187,12 +187,18 @@ ones in the image and both are inside this function. Its shape confirms it — `
 `FFrame` on the stack (vtable `0x4d9618`, `Object +0x04`, `Node +0x08`, `Code +0x0c`, `Locals +0x10`)
 and calls `ProcessInternal` directly (`docs/NATIVE_VM.md`).
 
-**Still open: the dispatch slot.** `ProcessEvent` has no direct call site anywhere in the image. What
-points at it is data: 492 aligned dwords in `.rdata`, inside runs of code pointers that look like the
-class tables (the same shared thunks appear as their neighbours). The tables' boundaries are not pinned,
-so the offset of the slot — and therefore whether this fork made `ProcessEvent` virtual — is not
-established. What would settle it: find the table that owns one of those runs (a vtable is preceded by
-the RTTI/class pointer run it belongs to) and check that the offset is the same in every copy.
+**Dispatch slot closed 2026-10-24: slot 21, byte offset `+0x54`.** The 492 pointers are 492 tables
+of code pointers in `.rdata` (`0x004c78c0`–`0x0053b168`, 30–159 slots each, packed), each with exactly
+21 code slots before `0x0004bf20` and no other address at that slot; every table start is named by an
+immediate in `.text`. So the fork dispatches `ProcessEvent` as a virtual at a fixed slot through
+`[object+0x00]`, which is why nothing calls it. Measurements and the tool:
+`docs/NATIVE_VM.md`, `tools/class-tables.py`, `inventory/xbe_class_tables.csv`.
+
+**Still open: two families of table.** Seven slots — 19 and 20 among them — hold `0x00020f00` in 327
+of the 492 tables and a different address in the remaining 165. Abstract/base classes against concrete
+ones is the likely reading; nothing here establishes it. What would settle it: match tables to class
+objects (the class registrations name both) and see whether the 327 are the classes that never
+instantiate.
 
 **Still open: 102 assert sites have no function.** After seeding they remain because no `0xCC`-delimited
 candidate within 4 KB produced a body containing the assert that justified it; those candidates were
