@@ -206,21 +206,32 @@ registration cannot be followed** — their constructors install the table but t
 neither a literal nor a thunk the tool can follow. What would settle the first: a call site that
 dispatches `+0x4c`/`+0x50` through a known object.
 
-**Assert-site residuals: 91 xrefs, down from 102.** The seeder now collects *several* plausible
-entries per site (nearest first, one attempt per round) instead of only the nearest fill run, so a site
-whose nearest candidate is a function body cut short by a jump can still be reached from the fill run
-before it. Measured on 2026-10-24: **76 seeds, 58 verified by containing their evidence site, 18
-rejected** (was 52 of 64), functions 14,912 -> 14,918, assert-attributed 1,256 -> 1,262, and sites with
-no function **199 -> 93** at the end of the pass, **88** against the committed symbol map, 102 -> 91 by
-the xref count this file used before.
+**Assert-site residuals: 49 sites, down from 102 by the xref metric.** Three passes now run, in order:
+entry candidates (several plausible entries per site, nearest first, one attempt per round — **76
+seeds, 58 verified, 18 rejected**), entries named by data tables, and **block promotion** for what is
+left: disassemble the gap before the site, walk back to the head of the block the site sits in, and
+create a function there. Measured on 2026-10-24, all against the same dump and command:
 
-**Why the remaining 88 stay.** They are not unseeded, they are rejected: the candidate disassembles,
-but the body it produces does not contain the assert, because the assert sits in a block the entry
-reaches only through an unconditional jump. Their distribution says the same thing — Engine 46, Core
-31, D3DDrv 5, XboxAudio 3, XboxLive 2, stargategame 1, median 346 bytes past the previous function's
-end, 73 of 88 within 1 KB of one. What would settle them: give the created function a body that
-includes the site's block (a jump target inside the same extent), rather than accepting only what
-linear flow from the entry reaches.
+| measurement | before the block pass | after |
+|---|---|---|
+| sites in no function, end of the seeder | 93 | **50** |
+| sites in no function, against the committed map | 88 | **49** |
+| the xref count this file quoted before | 102 -> 91 | **50** |
+| functions | 14,918 | **14,944** |
+| assert-attributed functions | 1,262 | **1,288** |
+
+**The promoted blocks are not function entries** and the repository says so in machine-readable form:
+`inventory/xbe_block_seeds.csv` lists all **26** of them with the evidence site and the body size, and
+the column says "promoted block head (not a function entry)". They exist so the assert-attributed code
+can be read and decompiled; a decompiled body that starts at one of those addresses is a block, not a
+function, and the doc for it should say which. Each of the 26 still contains its evidence site.
+
+**Why the remaining 49 stay.** Engine 25, Core 21, D3DDrv 2, XboxLive 1, and they cluster — for
+example `0x001f850f`, `0x001f852b`, `0x001f8561`, `0x001f857d` in Core. At those addresses the gap
+before the site does not disassemble into an instruction covering it, so there is no block to promote;
+the region is either data interleaved with code or code whose first bytes are not a valid opcode from
+any candidate start. What would settle them: a second, independent decode of those regions (a linear
+sweep from the section start with validation against known entries), or reading them by hand.
 
 **Status.** `ProcessEvent` closed; the slot index and the 102 sites open. Neither is correctness. 
 

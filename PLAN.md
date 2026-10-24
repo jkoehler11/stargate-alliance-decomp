@@ -437,6 +437,15 @@ and a deliberate one-line script break is caught by the boot test.
   against the committed map, and 102 -> 91 by XbePost's xref count. The 88 that remain are rejected
   candidates, not unseeded ones: the assert sits in a block reached only through a jump, so linear
   flow from the entry never covers it (Engine 46, Core 31, D3DDrv 5). `docs/UNKNOWNS.md` U8.
+- **U8 residual, block promotion (2026-10-24).** A third seeding pass for the sites the first two reject:
+  disassemble the gap before the site, walk back to the head of the block it sits in, create a function
+  there, keep it only if the body contains the site. Measured: **26 block heads promoted**, sites in no
+  function **93 -> 50** at the end of the pass (**88 -> 49** against the committed map, **102 -> 50** by
+  XbePost's xref count), functions 14,918 -> **14,944**, assert-attributed 1,262 -> **1,288**. The promoted
+  bodies are not entries and are recorded as such in `inventory/xbe_block_seeds.csv` (26 rows, each still
+  containing its evidence site) so nothing downstream treats them as function starts. The 49 that remain
+  (Engine 25, Core 21) are regions where the gap does not disassemble into an instruction covering the
+  site at all — clustered, e.g. `0x1f850f`/`0x1f852b`/`0x1f8561` — and need an independent decode.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
