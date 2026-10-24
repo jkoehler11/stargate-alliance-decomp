@@ -133,13 +133,23 @@ def main():
               "Everything else is bounded by the 154 translation units that assert at all; the remaining",
               "functions need signature matching (CRT/XAPI/D3D8 libraries) and manual work. `FUN_*` names",
               "are Ghidra's, kept deliberately: an honest unknown beats a guessed name.", "",
+              "Assert sites are not the only seed: an XBE has code that nothing calls directly — a script",
+              "body is entered through `UFunction::Func`, a native through `GNatives`, a method through a",
+              "vtable — so the analyser leaves whole regions un-analysed. `tools/ghidra/SeedGaps.java`",
+              "creates a function at the nearest `0xCC`-delimited entry before each assert site that has",
+              "none, keeps it only when the assert lands inside the body it produced, and deletes the",
+              "candidates that do not. It is what found the VM's own routines (`docs/NATIVE_VM.md`).", "",
               "## Next", "",
-              "1. Apply signature libraries for the Xbox SDK/CRT to lift the unnamed majority (4.2).",
-              "2. Take a second `GNatives` dump after a mission loads, for the classes the front end",
-              "   never touches (`docs/UNKNOWNS.md` U7).",
-              "3. Locate `UObject` layout and `ProcessEvent`/`ProcessInternal` from the interpreter at",
-              "   `0x0003a083` (4.3, still open).",
-              "4. Split the project per module using these attribution counts as the work breakdown (4.5).", ""]
+              "1. The rest of `UObject`/`UStruct`/`FFrame`, and the property/`GPropPointers` tables, now",
+              "   that `ProcessInternal` and `ProcessEvent` show how each field is reached.",
+              "2. Which table slot dispatches `ProcessEvent`: 492 pointers, no call site, and the class",
+              "   tables' boundaries are not pinned (`docs/UNKNOWNS.md` U8).",
+              "3. A second `GNatives` dump after a mission loads, for the classes the front end never",
+              "   touches (`docs/UNKNOWNS.md` U7).",
+              "4. Split the project per module using these attribution counts as the work breakdown (4.5).",
+              "5. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) are blocked on data this",
+              "   repository may not carry (`docs/UNKNOWNS.md` U9); a locally supplied database is the",
+              "   unblock.", ""]
     with open(os.path.join("docs", "NATIVE.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines))
     print(f"{len(rows)} functions, {assert_named} assert-attributed, {override_named} override-attributed, "
