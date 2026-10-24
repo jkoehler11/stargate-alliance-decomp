@@ -38,3 +38,5 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00322cd0,ucpp_Register_UnrealPlayer,ucpp class registration stub: class literal + System outer + ReturnClass assert,UnrealPlayer,System,4012,5,stargategame,StargateGame.cpp,180
 0x00322d90,ucpp_Register_StargatePlayer,ucpp class registration stub: class literal + System outer + ReturnClass assert,StargatePlayer,System,4344,6,stargategame,StargateGame.cpp,180
 0x003233b0,ucpp_Register_SubActionDepthOfField,ucpp class registration stub: class literal + System outer + ReturnClass assert,SubActionDepthOfField,System,132,3,stargategame,USubActionDepthOfField.cpp,179
+0x00058a30,appAssertFailed,wide literal "Assertion failed: %s [File:%s] [Line: %i]" is the format it logs; args are (expression, file, line); 2432 direct call sites,,,,Core,,,67
+0x000340c0,appMallocBeforeInit,logs the wide literal "Called %s before memory init" with "appMalloc" and returns 0; reached through a pointer (call [reg]) from 961 sites = the pre-init allocator slot,,,,Core,,,29

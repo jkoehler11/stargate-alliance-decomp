@@ -20,7 +20,8 @@ The names are the build's own, from the same places the native track measured th
   1,300 functions;
 - **native table names** from the runtime `GNatives` dump (`execAdd_IntInt`, 273) and the 83 slots no
   shipped package declares;
-- **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 39);
+- **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 39
+  registrations, plus `appAssertFailed` and `appMallocBeforeInit` named from the strings they log);
 - **`Vtbl_<Class>`** for the 466 class tables named by the class registrations (`docs/NATIVE_CLASSES.md`);
 - everything else keeps Ghidra's `FUN_000xxxxx`, which is an honest unknown rather than a guess.
 

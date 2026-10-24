@@ -119,32 +119,48 @@ pass. Also unknown: what makes an actor eligible besides `MarkForSaveGame`.
 native call sites in the XBE (4.6/4.9). No format work is blocked on it; rebuilding a checkpoint
 (PLAN 6.4) is.
 
-## U6. Three shared helpers, and four game functions that are not registration stubs
+## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is
 called by every one of them as `(expression, file, line)`, and `FUN_000340c0`/`FUN_0003af60` by 40 of
 them, at the site that constructs a class from `(name, outer, object size, flags)` literals. Those three
-unnamed functions are the reason the modules read as `FUN_*` soup: naming them changes every function at
-once. Four of the 43 do not follow the registration pattern at all — the `StargateCar` physics body
-(`0x00311520`), two `SGCameraEffects` bodies (`0x00316b10`, `0x00318060`) and a `GoauldDrone` function
-(`0x003107b0`) whose constructor call carries no class-name literal in the decompiled text.
+unnamed functions were the reason the modules read as `FUN_*` soup. Four of the 43 do not follow the
+registration pattern at all — the `StargateCar` physics body (`0x00311520`), two `SGCameraEffects`
+bodies (`0x00316b10`, `0x00318060`) and a `GoauldDrone` function (`0x003107b0`) whose constructor call
+carries no class-name literal in the decompiled text.
 
-**Unknown.** The helper names and signatures (the assert one is inferred from its arguments only, not
-from a symbol), what `FUN_000340c0` does, and what `0x003107b0` constructs.
+**Named 2026-10-24, from the strings each one logs.** Both names are recorded in
+`symbols/xbe_overrides.csv` with their evidence; nothing was inferred from a guess.
 
-**Call-site census (measured).** `tools/call-census.py` over the Ghidra export: `FUN_00058a30` has
-**2,245 call sites from 1,270 distinct callers**, spread across the engine's own modules (Core/UnTemplate
+| address | name | evidence |
+|---|---|---|
+| `0x00058a30` | `appAssertFailed` | 67 bytes. Wide literal `"Assertion failed: %s [File:%s] [Line: %i]"` (`0x004dafb0`) is the format it logs; **2,432 direct call sites**, every one passing `(expression, __FILE__, line)`. |
+| `0x000340c0` | `appMallocBeforeInit` | 29 bytes. Logs the wide literal `"Called %s before memory init"` (`0x004d2ecc`) with `"appMalloc"` (`0x004d2f08`) and returns 0; **961 call sites, all `call [reg]`**, i.e. reached through a pointer, which is what an allocation entry point looks like before `GMalloc` exists. |
+
+What the assert helper does is now measured rather than assumed: it converts the expression and the file
+name to wide strings through `0x00058740` (a scratch converter with a `0x400` cap that bumps a 256-slot
+block allocator at `0x00637e90`), passes both plus the line to `0x000574d0` (formats into a `0x1000`
+stack buffer with `vsnprintf` at `0x003e5cc4`, checks the log-suppression globals at `0x006be0c8`/
+`0x006be0dc`, then dispatches through the output device's vtable), and **returns** — there is no `int3`,
+no abort and no debugger break in the body, so `check`/`verify` here logs and continues.
+
+**Still open: `FUN_0003af60`.** Measured, but not named: 273 bytes, **493 direct call sites**, installs
+the **`Class`** class table (`0x004d4870`, object size 1312, `inventory/xbe_class_table_names.csv`),
+`or`s `0x12` into the flags at `+0x498`, clears `+0x49c`…`+0x51c`, stores 13 parameters at `+0x4a0`…,
+returns `this` with `ret 0x34`, and starts by calling `FUN_0003a5f0` (125 bytes). The ucpp registration
+stubs call it with the class literal and the `System` outer package, so it constructs the class object
+for a script class; what it should be *called* needs the caller-side evidence PLAN 4.7 collects, so it
+stays `FUN_*` — `docs/CONVENTIONS.md` says a hypothesis goes in the comment, not in the symbol.
+
+**Still open: `0x003107b0`.** The `GoauldDrone` function whose constructor call carries no class-name
+literal; nothing above changes that.
+
+**Call-site census (measured).** `tools/call-census.py` over the Ghidra export: `appAssertFailed` has
+**2,432 call sites** in `build/ghidra/evidence/calls.tsv` (2,245 of them from 1,270 distinct callers
+after the census collapses repeated sites), spread across the engine's own modules (Core/UnTemplate
 731, Core/UnMath 136, Core/UnObjBas 115, Core/UnClass 107, Engine/UnActor 100, Core/UnObj 76,
 Engine/UnChan 71, unnamed 60, Gui/UnGUI 32, Engine/KFarfield 31). A helper called from a third of the
-binary's functions is not script-specific glue; combined with the `(expression, __FILE__, line)` argument
-shape at every inspected site, the assert/verify reading is settled.
-
-**What is still open.** What to call them. `FUN_00058a30` is assert-shaped (`check`/`verify` family) but
-whether it logs, breaks into the debugger or aborts is unmeasured, so a name would overstate it. The
-other two are unresolved: `FUN_0003af60` takes `(…, class name literal, outer "System", flags, vtable)`
-with the object size from the caller, and `FUN_000340c0` has not been read at all. The 2006 oracle is the
-other route (it is the engine fork, so its error/assert helpers are the same ones). Naming them is its
-own commit per `AGENTS.md`.
+binary's functions is not script-specific glue.
 
 ## U7. How `GNatives` is populated, and how to read it
 
@@ -246,9 +262,12 @@ assert-attributed code can be read and decompiled; they are not entries the buil
 
 **Status.** `ProcessEvent` closed. The assert-site thread is closed at 6 sites, two of which
 are dwords in a data table rather than call sites. The cost of the gap pass is one body that moves:
-`FUN_00256280` goes from 38,716 to 35,070 bytes, leaving 3,646 bytes (0.09% of the image) in no
-function where the body used to reach; every run today produced the same 35,070, so the committed
-38,716 was the outlier. The slot-index question (which virtuals 19/20 are, the 26 unnamed tables) is
+one line of the map is **not reproducible**: `FUN_00256280`'s body measures **35,070 bytes in four runs
+and 38,716 in two others** of identical code on the same dump, and the difference is exactly the 3,646
+addresses (0.09% of the image) that fall out of a function in the smaller variant. That is the
+analyser's order, not this pass — one run of the unmodified seeder reproduced the committed map byte
+for byte and another produced the smaller body. Until that body is explained the map cannot be called
+byte-for-byte reproducible, and the next run that moves it is not a regression. The slot-index question (which virtuals 19/20 are, the 26 unnamed tables) is
 unchanged and is not a coverage problem. 
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository

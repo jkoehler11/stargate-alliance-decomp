@@ -100,9 +100,9 @@ Every one of the 43 functions calls `FUN_00058a30`, and 40 call `FUN_000340c0`/`
 
 | helper | calls | evidence |
 |---|---|---|
-| `FUN_00058a30` | 43 | called as `(expression, file, line)` from every function, i.e. the engine's assert/`appError` helper. Naming it (`appErrorf`/`checkFailed`) would clean up every game function at once. |
-| `FUN_0003af60` | 40 | the class constructor used by the registration stubs; its arguments are class name, outer package, object size and flags. |
-| `FUN_000340c0` | 40 | called by the same 40 functions alongside the constructor; not yet identified (U6). |
+| `appAssertFailed` (`0x00058a30`) | 43 | called as `(expression, file, line)` from every function. Named from the wide literal it logs, `"Assertion failed: %s [File:%s] [Line: %i]"`, and measured to log through the engine's output device and return — no break, no abort (`docs/UNKNOWNS.md` U6). |
+| `FUN_0003af60` | 40 | the class constructor used by the registration stubs: it installs the `Class` class table (`0x004d4870`, object size 1312), sets flags `\|0x12` and stores 13 arguments. Still `FUN_*`: naming it needs the caller-side evidence of PLAN 4.7. |
+| `appMallocBeforeInit` (`0x000340c0`) | 40 | logs `"Called %s before memory init"` with `"appMalloc"` and returns 0; reached through a pointer from 961 sites, i.e. the allocation entry point before `GMalloc` exists. |
 
 ## Finding 4: the two packages' natives have no dispatch index
 
@@ -116,7 +116,8 @@ these modules or the engine, bound outside the dispatch table, which is the thre
 
 - The game modules are now 39/43 named from evidence; the rest are four functions with documented
   bodies. "Zero unnamed functions in the game modules" is close, and honest about the four.
-- The high-value naming work has moved to the shared helpers (`FUN_00058a30`, `FUN_000340c0`,
-  `FUN_0003af60`) and the engine-side `ProcessEvent`/property machinery (PLAN 4.3).
+- Two of the three shared helpers are named from their own strings (`appAssertFailed`,
+  `appMallocBeforeInit`); `FUN_0003af60` stays `FUN_*` until its callers are named (PLAN 4.7). The
+  remaining engine-side naming work is the `ProcessEvent`/property machinery (PLAN 4.3).
 - The `ucpp` registration table doubles as a class inventory with layout sizes, which is what PLAN
   3.9/4.7 need to match script classes to their native copies.
