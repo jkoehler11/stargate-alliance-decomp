@@ -210,16 +210,8 @@ and `inventory/` regenerates from scripts with no manual edits.
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
       class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
 - [ ] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
-- [~] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
+- [ ] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
       memory/cache, script compiler hooks, Kynapse/AI integration, LIPSinc integration, ragdoll `.ka` loader).
-      **First half measured** (`docs/FORK.md`): the `ucpp` pipeline (493 registrations, 492 vtables, `D:\uc.xbe`),
-      Karma **inside** the engine (`KarmaSupport.cpp`, `PHYS_Karma`/`PHYS_KarmaRagDoll`, `UKarmaParams`, and two
-      new `ULevel` fields `Ragdolls`/`KContactGenActors`), LIPSinc likewise (`LIPSincSupport.cpp`, `AnimNotify_LIPSinc`),
-      zlib statically linked, **no Kynapse or Havok strings at all**, and the reflection deltas (name indices 1..16,
-      the packed tag byte, `ProcessEvent` virtual at slot 21, class objects built from 15 C++ constructors). Drift
-      against the later leak is separated from fork deltas: 63 drifted + 11 divergent classes, concentrated in the
-      actor/level/objective plumbing. **Still open:** a real diff against stock UE2.5 (needs stock source), the
-      renderer sections' deltas, and memory/cache plus the compiler's behaviour.
 - [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
       `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
@@ -236,8 +228,13 @@ and `inventory/` regenerates from scripts with no manual edits.
 
 - [ ] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build `inventory/assets.csv`.
 - [ ] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
-- [ ] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
+- [~] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       lines into a transcript index — this is the fastest route to documenting cut story content.
+      **WAVs done**: speech 1,364 files / 151 MiB with a per-mission and per-speaker index (`docs/DIALOGUE.md`,
+      `tools/dialogue-index.py`), music 1,923 files / 348 MiB in 16 groups with four cue variants and a
+      map-ships cross-check (`docs/MUSIC.md`, `inventory/music_index.csv`, `tools/music-index.py`). Cut-content
+      reading: music exists for **M01** and **M05**, neither of which has a map, and `M11` has none either.
+      **Still open:** SFX live inside the `.uax` packages and need 5.1's export pass.
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
       A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
