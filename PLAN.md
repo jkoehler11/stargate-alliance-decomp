@@ -429,6 +429,14 @@ and a deliberate one-line script break is caught by the boot test.
   classes nothing else measured (`Actor` 908, `Pawn` 2,408). The 327/165 split in U8 is now explained:
   slots 19/20 are one `ret` in 327 tables and real bodies in the 165 actor-side engine classes. Residuals:
   the 26 unnamed tables and which virtuals 19/20 are. `docs/NATIVE_CLASSES.md`.
+- **U8 residual, improved (2026-10-24).** `SeedGaps` now collects several plausible entries per orphan
+  assert site (nearest first, one attempt per round) instead of only the nearest fill run, so a site
+  whose nearest candidate yields a body cut short by a jump is retried from the fill run before it.
+  Measured: **76 seeds, 58 verified, 18 rejected** (was 52 of 64); functions 14,912 -> 14,918;
+  assert-attributed 1,256 -> 1,262; sites in no function **199 -> 93** at the end of the pass, 88
+  against the committed map, and 102 -> 91 by XbePost's xref count. The 88 that remain are rejected
+  candidates, not unseeded ones: the assert sits in a block reached only through a jump, so linear
+  flow from the entry never covers it (Engine 46, Core 31, D3DDrv 5). `docs/UNKNOWNS.md` U8.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 

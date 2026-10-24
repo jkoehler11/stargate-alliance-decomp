@@ -178,7 +178,7 @@ and inside `.text`, and **all 273 declared indices are present**. `inventory/gna
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
 
-## U8. Which slot dispatches `ProcessEvent`, and 102 assert sites with no function
+## U8. Which slot dispatches `ProcessEvent`, and the assert sites with no function
 
 **`ProcessEvent` found 2026-10-24, at `0x0004bf20`.** It was located by scanning the executable for
 calls to `ProcessInternal` rather than by name: its two call sites (`0x4c10f`, `0x4c23e`) are the only
@@ -206,10 +206,21 @@ registration cannot be followed** — their constructors install the table but t
 neither a literal nor a thunk the tool can follow. What would settle the first: a call site that
 dispatches `+0x4c`/`+0x50` through a known object.
 
-**Still open: 102 assert sites have no function.** After seeding they remain because no `0xCC`-delimited
-candidate within 4 KB produced a body containing the assert that justified it; those candidates were
-removed rather than kept (52 kept of 64 attempts). What would settle them: seeding from decoded call
-instructions rather than raw bytes, so the entries come from real call sites.
+**Assert-site residuals: 91 xrefs, down from 102.** The seeder now collects *several* plausible
+entries per site (nearest first, one attempt per round) instead of only the nearest fill run, so a site
+whose nearest candidate is a function body cut short by a jump can still be reached from the fill run
+before it. Measured on 2026-10-24: **76 seeds, 58 verified by containing their evidence site, 18
+rejected** (was 52 of 64), functions 14,912 -> 14,918, assert-attributed 1,256 -> 1,262, and sites with
+no function **199 -> 93** at the end of the pass, **88** against the committed symbol map, 102 -> 91 by
+the xref count this file used before.
+
+**Why the remaining 88 stay.** They are not unseeded, they are rejected: the candidate disassembles,
+but the body it produces does not contain the assert, because the assert sits in a block the entry
+reaches only through an unconditional jump. Their distribution says the same thing — Engine 46, Core
+31, D3DDrv 5, XboxAudio 3, XboxLive 2, stargategame 1, median 346 bytes past the previous function's
+end, 73 of 88 within 1 KB of one. What would settle them: give the created function a body that
+includes the site's block (a jump target inside the same extent), rather than accepting only what
+linear flow from the entry reaches.
 
 **Status.** `ProcessEvent` closed; the slot index and the 102 sites open. Neither is correctness. 
 
