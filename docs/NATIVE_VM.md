@@ -222,8 +222,8 @@ has, and a script body goes down the path that builds its own frame:
 ```
 
 Measured `FFrame` layout, from those stores (frame base `ebp+0x40`): `+0x00` vtable,
-`+0x04` `Object`, `+0x08` `Node` (the `UFunction`), `+0x0c` `Code`, `+0x10` `Locals`, `+0x18` a
-"not executing" flag that `ProcessInternal` tests. The locals buffer is sized from
+`+0x04` `Object`, `+0x08` `Node` (the `UFunction`), `+0x0c` `Code`, `+0x10` `Locals`, `+0x18` a flag
+`ProcessEvent` sets to 1 before the call (which routine reads it is not established). The locals buffer is sized from
 `UFunction+0x40` (`ParmsSize`) and zeroed before the call — the decompiled body shows
 `puVar3 = *(undefined1 **)(param_4 + 0x40)` feeding the allocation.
 
