@@ -330,3 +330,19 @@ which is why the reader can report a size mismatch. `docs/NATIVE_PROPERTIES.md` 
 **One residual:** the routine that writes the assembled tag struct to the archive byte by byte was not
 followed, so the on-disk *caller* of the writer is open for 6.2 even though field order, packing and
 size thresholds are measured.
+
+## U11. Which D3D8 device caps the renderer asks for
+
+**Observed.** PLAN 2.6 also asks which D3D8 device caps this build uses. There is no import table to
+read them from (`docs/IMPORTS.md`): the device is created inside the statically linked `D3D` section
+(302 functions, none named), so the caps are arguments at run time, not values in a table.
+
+**Why it matters.** The renderer-side natives (PLAN 4.8) behave the way they do because of the caps the
+device was created with; knowing them also says which Xbox features the fork relies on.
+
+**What would settle it.** Break on `CreateDevice` in a live run (xemu's GDB stub plus
+`symbols/xbox.sym.o`, `docs/SYMBOLS.md`), read the `D3DPRESENT_PARAMETERS`/cap arguments, and record
+them. Until then nothing is claimed, and the cap bit constants that appear in `.rdata` are not evidence
+of which were requested.
+
+**Status.** Open, needs a runtime probe (7.3 territory), not more static reading.

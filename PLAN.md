@@ -114,8 +114,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/formats.csv` (12 formats, container-detected) + four docs; `.lad` payload tracked as U4.
 - [x] 2.5 Map config surface: `Default.ini`, `UnrealEngine2.ini`, `DefUser.ini`, `Startup.int`, the 20+ `Setup*.int`
       files (Xbox/PSX2/GCN variants) → note engine options that reveal fork features.
-- [ ] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
+- [~] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
       renderer-side natives we must understand.
+      **Imports done, and the answer is that there are none to enumerate**: the header's import address is
+      `0` and the image links statically, recording its **13 libraries** (all 1.0.5849) in one table at
+      `0x10738` (`inventory/xbe_libraries.csv`, `tools/xbe-libraries.py`). The libraries' code is visible
+      as whole sections — `XONLINE` 704 functions, `XGRPH` 642, `DSOUND` 427, `XNET` 413, `D3DX` 379,
+      `D3D` 302, `XPP` 242 — **3,109 functions and 565 KB outside `.text` of which 22 are named**, which
+      is the measurable size of the 4.2 signature gap. **Deferred:** the D3D8 device caps, which need a
+      runtime probe (U11). `docs/IMPORTS.md`.
 - [ ] 2.7 Diff the 18 packages against stock UT2004/UE2.5 class names to classify each class as
       *stock-engine*, *modified-engine*, *game-specific*.
 
