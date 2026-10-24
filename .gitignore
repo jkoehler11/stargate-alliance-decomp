@@ -21,6 +21,10 @@
 *.lad
 *.pdb
 *.map
+# ... except the symbol map this project publishes (PLAN 4.10); the ignore above is for linker maps.
+!symbols/xbox.map
+symbols/*.sym.s
+symbols/*.sym.o
 
 # Build output of our own tooling (never commit binaries).
 tools/Sg1Tool/bin/
