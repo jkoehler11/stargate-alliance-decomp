@@ -7,6 +7,11 @@
 #   - a hard disk image (xbox_hdd.qcow2; xemu can create a blank one)
 # Point BIOS_DIR at a directory holding those (or pass the files explicitly) and keep it out of git.
 #
+# NOTE: this script predates the pinned emulator. xemu 0.8.139 no longer accepts `-mcpx_path` (it
+# forwards everything after `-display xemu` to QEMU, which rejects it), and its `-serial` wants a
+# `file:` prefix. The working configuration is the TOML form in tools/xemu/smoke.py; this one is kept
+# for the record until the disk-image path it assumes is exercised again.
+#
 # Usage: boot-test.sh GAME_DIR BIOS_DIR [SECONDS] [OUT_DIR]
 #   GAME_DIR  directory containing default.xbe and System/ (a copy of the dump, not the repo)
 #   BIOS_DIR  directory with mcpx_1.0.bin and a flash ROM (complex_*.bin / *.bin 256K/512K)

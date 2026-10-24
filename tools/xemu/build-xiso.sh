@@ -28,7 +28,9 @@ fi
 
 chmod -R a+rX "$game" 2>/dev/null || true
 rm -f "$out"
-"$ex" -q -c "$game" -o "$out" 2>/dev/null || true
+# extract-xiso 2.7 takes the output name as a positional after the directory: `-c <dir> [name]`.
+# The older `-o <path>` form is silently ignored by that version and leaves no image behind.
+"$ex" -q -c "$game" "$out" 2>/dev/null || "$ex" -q -c "$game" -o "$out" 2>/dev/null || true
 [ -s "$out" ] || { echo "extract-xiso produced no image (see the -q output by re-running without -q)" >&2; exit 3; }
 echo "iso: $out ($(stat -c %s "$out") bytes)"
 

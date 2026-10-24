@@ -185,3 +185,36 @@ path never looks like a crash.
 - The specific claim this test should settle first is the chapter-list one from
   `docs/CUT_CONTENT.md`: the campaign menu should fail to load its maps because
   `ChapterList.ini` names `M02AX.unr` etc. while the build ships `M02A.unr`.
+
+## What the harness actually does (measured 2026-10-24)
+
+Three things in the scripts above did not survive the pinned emulator, and each cost a boot to find:
+
+| symptom | cause | fix now in the repo |
+|---|---|---|
+| `AppRun: -mcpx_path: invalid option`, then no guest | xemu 0.8.139 forwards everything after `-display xemu` to QEMU, which has no `-mcpx_path` | `tools/xemu/smoke.py` writes the TOML form `play.sh` uses; `boot-test.sh` is marked stale |
+| `AppRun: -serial <path>: '<path>' is not a valid char driver` | QEMU's `-serial` wants a protocol: `file:<path>` | `smoke.py` passes `file:…` |
+| `extract-xiso produced no image`, exit 0 | extract-xiso 2.7.1 takes `-c <dir> [name]`, not `-o <path>`; the old form is ignored silently | `build-xiso.sh` tries the positional form first |
+
+With those three fixed the boot gets all the way to a live guest: the ISO builds (2,258,370,560
+bytes from the 4,081-entry dump), xemu opens a GL context (Mesa 26.2.5) under `DISPLAY=:0`, starts the
+machine with `-bios bios_debug_4627.bin -m 128` and the disc mounted, and the process stays alive for
+the whole window.
+
+**What is still missing is an evidence channel, not a boot.** The serial log is created and stays
+**0 bytes**: this build does not write engine output to the debug channel that xemu exposes. So the
+smoke test can prove "xemu started and kept running", but not "the guest reached the menu". The next
+step is a framebuffer capture instead of a log: run with `-monitor unix:<sock>` and issue
+`screendump <file.ppm>` (or F12 under the GL window), then assert on the pixels/text. Until that
+exists, PLAN 7.2 stays half-done, and the "reaches the main menu" claim earlier in this file rests on
+a screenshot taken by hand, not on a harness.
+
+`tools/xemu/smoke.py` is the harness that got that far, and it reports exactly what it saw:
+
+```
+serial: 0 bytes, process was alive after 100s
+   Log:                         absent
+   Build:\s*\w{3}\s+\d+\s+\d{4} absent
+FAIL: serial log has no engine output
+```
+
