@@ -285,5 +285,13 @@ construction. UELib's `DeserializeTagUE1` — the parser that reads all 9 checkp
 of this build with no failures — implements the same masks (`0x0F`/`0x70`/`0x80`) and the same order
 independently.
 
-**Status.** Closed. The **writer** branch of the same routine was not decompiled, so a rebuilt save's
-tag order is still an assumption for PLAN 6.2/6.4 and is recorded as such in `NATIVE_PROPERTIES.md`.
+**Writer measured 2026-10-24.** `0x0003cd70` fills the same record in the same order — name index at
+`+4`, struct name at `+8` for a struct property, size at `+0xc`, array index at `+0x10`, type byte that
+is OR-ed with the size class (1/2/4/12/16 implied, `<0x100` one byte, `<=0x10000` two, else four) and
+with `0x80` when the array index is non-zero or a bool property's value is true. It also shows the
+**size is a measured serialized length**, produced by running the value through a scratch archive —
+which is why the reader can report a size mismatch. `docs/NATIVE_PROPERTIES.md` §6.
+
+**One residual:** the routine that writes the assembled tag struct to the archive byte by byte was not
+followed, so the on-disk *caller* of the writer is open for 6.2 even though field order, packing and
+size thresholds are measured.
