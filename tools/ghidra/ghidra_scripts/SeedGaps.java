@@ -22,14 +22,23 @@
 //    seeded. A single pointer can be a switch jump table target; a table that names the same address
 //    hundreds of times is naming an entry point.
 //
+// 3. Block heads, for the sites the first two passes reject. An assert can sit in a block that the
+//    function entry reaches only through a jump, so linear flow from the nearest entry never covers
+//    it. This pass disassembles the gap before the site, walks back to the head of the block the site
+//    sits in, and creates a function there. These are NOT function entries and are recorded as such:
+//    every one is written to the block-seed CSV so nothing else can mistake a promoted block for an
+//    entry the build names.
+//
 // No name is invented here: names still come from XbePost.
 // @category SG1
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.mem.MemoryBlock;
+import ghidra.program.model.symbol.FlowType;
 import java.io.*;
 import java.util.*;
 
@@ -45,6 +54,7 @@ public class SeedGaps extends GhidraScript {
         }
         int maxBack = args.length > 1 ? Integer.decode(args[1]) : 0x1000;
         int pointerThreshold = args.length > 2 ? Integer.decode(args[2]) : 8;
+        String blockCsv = args.length > 3 ? args[3] : null;
 
         List<Long> evidence = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(args[0]));
@@ -113,6 +123,11 @@ public class SeedGaps extends GhidraScript {
         int ptrSeeded = seedFromPointers(pointerThreshold);
         println("seeded " + ptrSeeded + " entries from data tables (>= " + pointerThreshold
                 + " pointers to one address)");
+        // Third source: block heads for the sites the passes above could not cover.
+        int blockSeeded = seedFromBlocks(evidence, maxBack, blockCsv);
+        println("seeded " + blockSeeded + " block heads for sites with no reachable entry"
+                + (blockCsv != null ? " (list: " + blockCsv + ")" : ""));
+        println("evidence sites in no function, final: " + countMissing(evidence));
         println("functions now: " + currentProgram.getFunctionManager().getFunctionCount());
     }
 
@@ -172,6 +187,63 @@ public class SeedGaps extends GhidraScript {
         int missing = 0;
         for (long va : evidence) if (getFunctionContaining(toAddr(va)) == null) missing++;
         return missing;
+    }
+
+    /**
+     * Promote the block that contains each leftover evidence site. The block head is the first
+     * instruction after a gap, a terminator, a jump or a call, found by disassembling the gap before
+     * the site and walking back along instruction boundaries. A promoted block is a reading aid, not
+     * an entry point: the CSV this writes is the record of that, and the doc says so.
+     */
+    private int seedFromBlocks(List<Long> evidence, int maxBack, String csvPath) throws Exception {
+        int created = 0;
+        StringBuilder rows = new StringBuilder("function_va,evidence_va,evidence_bytes,evidence\n");
+        for (long va : evidence) {
+            if (getFunctionContaining(toAddr(va)) != null) continue;
+            Long head = blockHead(va, maxBack);
+            if (head == null) continue;
+            Address at = toAddr(head);
+            if (getFunctionContaining(at) != null || getFunctionAt(at) != null) continue;
+            Function fn = createFunction(at, null);
+            if (fn == null) continue;
+            if (!fn.getBody().contains(toAddr(va))) {
+                tryRemove(fn);
+                continue;
+            }
+            created++;
+            rows.append(String.format("0x%08x,0x%08x,%d,promoted block head (not a function entry)%n",
+                    head, va, fn.getBody().getNumAddresses()));
+        }
+        if (csvPath != null) {
+            try (PrintWriter w = new PrintWriter(new FileWriter(csvPath))) {
+                w.print(rows);
+            }
+        }
+        return created;
+    }
+
+    /** First instruction of the block containing {@code va}, after disassembling the gap before it. */
+    private Long blockHead(long va, int maxBack) {
+        Memory mem = currentProgram.getMemory();
+        MemoryBlock block = mem.getBlock(toAddr(va));
+        if (block == null) return null;
+        long lo = Math.max(block.getStart().getOffset(), va - maxBack);
+        Address from = toAddr(lo);
+        Function previous = getFunctionContaining(from);
+        if (previous != null) from = previous.getBody().getMaxAddress().add(1);
+        disassemble(from);
+        Instruction ins = getInstructionContaining(toAddr(va));
+        if (ins == null) return null;
+        Address cur = ins.getAddress();
+        for (int guard = 0; guard < 4096; guard++) {
+            Instruction prev = getInstructionBefore(cur);
+            if (prev == null) break;
+            if (!prev.getAddress().add(prev.getLength()).equals(cur)) break;   // a gap starts a block
+            FlowType ft = prev.getFlowType();
+            if (ft.isTerminal() || ft.isJump() || ft.isCall()) break;
+            cur = prev.getAddress();
+        }
+        return cur.getOffset();
     }
 
     /**

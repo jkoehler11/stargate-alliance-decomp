@@ -255,12 +255,18 @@ in executable memory with no function, and seeds the addresses with at least 8 r
 pointer can be a switch target; a table that names the same address hundreds of times is naming an
 entry point.
 
-| measurement | before seeding | after assert seeds | after data-table seeds |
-|---|---|---|---|
-| functions | 14,220 | 14,280 | **14,912** |
-| assert sites in no function | 199 | 104 | **102** |
-| assert-attributed functions | 1,201 | 1,253 | **1,256** |
-| `FUN_*` (unnamed) | 12,339 | 12,347 | **12,971** |
+| measurement | before seeding | after assert seeds | after data-table seeds | after block promotion |
+|---|---|---|---|---|
+| functions | 14,220 | 14,280 | 14,912 | **14,944** |
+| assert sites in no function | 199 | 104 | 102 | **50** |
+| assert-attributed functions | 1,201 | 1,253 | 1,256 | **1,288** |
+| `FUN_*` (unnamed) | 12,339 | 12,347 | 12,971 | **12,971** |
+
+The last column is a third kind of seed, added after the first two ran out: for a site whose entry
+cannot be reached, the seeder disassembles the gap before it, walks back to the head of the block the
+site sits in and creates a function there. Those bodies are **not function entries**, and
+`inventory/xbe_block_seeds.csv` lists every one of them (26 at present) so a decompiled body that
+starts at one is not mistaken for a function (`docs/UNKNOWNS.md` U8).
 
 The last column's larger `FUN_*` count is the expected cost of this technique: the 629 entries named
 by tables are real code but carry no name evidence, so they stay `FUN_*` — an honest unknown with a
