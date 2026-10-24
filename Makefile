@@ -48,7 +48,10 @@ decompile:
 		decompile --dump "$(SG1_DUMP)" --out "$(WORK)/UnrealScript"
 	@$(PYTHON) tools/token-gaps.py "$(WORK)/UnrealScript"
 
-# Native track: needs Ghidra (GHIDRA_HOME). Writes build/ghidra/ and symbols/xbox_functions.csv.
+# Native track: needs Ghidra (GHIDRA_HOME) and a JDK 25 on JAVA_HOME (or under $HOME/tools/jdk-*).
+# Writes build/ghidra/ and symbols/xbox_functions.csv. The analysis also seeds functions for code that
+# nothing calls directly (tools/ghidra/ghidra_scripts/SeedGaps.java), which is the only way the VM's
+# own routines get analysed at all (docs/NATIVE_VM.md).
 # Run `make ghidra`, then `make natives`, then `make ghidra` again: the dispatch table can only be
 # located against a finished analysis, and naming its targets is a post-script of the next import.
 ghidra:
