@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols assert-residual check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols assert-residual ci check clean
 
 help:
 	@echo "targets:"
@@ -26,6 +26,7 @@ help:
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
+	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -93,6 +94,12 @@ formats:
 oracle-diff:
 	@test -n "$(ORACLE_DIR)" || { echo "set ORACLE_DIR=/path/to/private/Classes (never committed)"; exit 2; }
 	@$(PYTHON) tools/oracle-diff.py --oracle "$(ORACLE_DIR)" --src "$(WORK)/UnrealScript" -o inventory
+
+# Everything CI can check without the dump: CSV shapes, the function and symbol maps, and that the
+# generated docs reproduce. AGENTS.md forbids CI from downloading the game, so this is the whole of the
+# per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
+ci:
+	@$(PYTHON) tools/ci.py
 
 check: verify-dump
 	@echo "dump ok; run 'make inventory' and commit if anything drifted"

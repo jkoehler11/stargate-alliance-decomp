@@ -81,7 +81,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       what a "matched" function means, commit message format.
 - [~] 0.5 Pin toolchain versions in `tools/versions.lock` (Ghidra, ghidra-xbe, UELib commit,
       UE Explorer version, umodel build, xemu version, .NET SDK, Mono/Wine).
-- [ ] 0.6 Set up pre-commit hook + CI skeleton (see Phase 7) so coverage metrics cannot regress silently.
+- [~] 0.6 Set up pre-commit hook + CI skeleton (see Phase 7) so coverage metrics cannot regress silently.
+      The CI skeleton is in: `.github/workflows/ci.yml` runs `make ci` on every push and pull request, and
+      that target checks what needs no game data (committed CSV shapes, the function and symbol maps, and
+      that `symbols/xbox.map`, `docs/NATIVE.md` and `inventory/xbe_functions_by_module.csv` reproduce from
+      the committed inputs). No pre-commit hook: it would run the same one command, and a hook each
+      contributor can skip is not the gate CI is.
 
 ### Phase 1 — Acquire, verify, freeze (~1 day)
 
@@ -252,7 +257,7 @@ are limited to expected fields (checksum/timestamp) and documented.
       Missions are M00, M02A–D, M04A/B, M07A–C, M10B, M12A (+ the rest from the map list).
 - [ ] 7.3 Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
-- [ ] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
+- [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [ ] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
 
@@ -504,6 +509,19 @@ and a deliberate one-line script break is caught by the boot test.
   deliberately stays `FUN_*` -- it installs the `Class` table (`0x004d4870`, object size 1312) and its 493
   callers are the ucpp registrations, but what to call it needs the caller-side evidence 4.7 collects
   (`docs/CONVENTIONS.md`: hypothesis in the comment, not the symbol).
+
+- **CI is in, and its first run found two defects of mine (2026-10-24).** `.github/workflows/ci.yml` runs
+  `make ci` -> `tools/ci.py` on every push and pull request: committed CSV shapes, the function and symbol
+  maps, that `symbols/xbox.map` reproduces byte for byte from `symbols/xbox_functions.csv` +
+  `inventory/xbe_class_table_names.csv`, and that `docs/NATIVE.md` and
+  `inventory/xbe_functions_by_module.csv` reproduce from the committed inputs. `docs/CI.md` lists what is
+  deliberately not run: every check that needs the dump, because `AGENTS.md` forbids CI from downloading
+  the game. The first run failed twice, both times on this repository's own recent work: the two rows
+  PR #17 added to `symbols/xbe_overrides.csv` had 11 and 12 fields against a 10-column header (unquoted
+  commas in the evidence column -- `XbePost` reads only columns 0-1, so the names had applied anyway), and
+  `inventory/xbe_functions_by_module.csv` was stale because that PR regenerated `docs/NATIVE.md` through
+  `-o /tmp`. Both are fixed here, and the now-parsed override rows correct the counts PR #17 quoted: **41**
+  override-attributed names and **215** from Ghidra's own analysis, not 39 and 217.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
