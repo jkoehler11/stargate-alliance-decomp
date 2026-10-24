@@ -9,8 +9,11 @@
 //
 // 1. Assert strings. An MSVC assert site embeds __FILE__, and the site lies inside the function that
 //    asserts, so a site with no function means code the analyser missed. For each one this walks
-//    backwards to the nearest entry after at least two 0xCC (int3) fill bytes, creates a function
-//    there, and keeps it only if the evidence site lands inside the body it produced.
+//    backwards over the fill bytes and collects the plausible entries before the site (nearest
+//    first, a few of them), then creates a function at one and keeps it only if the evidence site
+//    lands inside the body it produced. Trying one candidate per round is what makes an otherwise
+//    unreachable site resolvable: the nearest fill run is sometimes the tail of a function whose
+//    body a jump cuts short, and the real entry is the run before it.
 //
 // 2. Data tables. A function reached only through a pointer -- a vtable slot, a class table -- has no
 //    call site at all. UObject::ProcessEvent is one: 492 pointers to it in .rdata and not one direct
@@ -61,15 +64,20 @@ public class SeedGaps extends GhidraScript {
         int created = 0, validated = 0, rounds = 0, rejected = 0;
         Set<Long> seeds = new HashSet<>();
         for (int round = 0; round < MAX_ROUNDS; round++) {
-            Map<Long, Long> picks = new TreeMap<>();      // candidate entry -> evidence site
+            Map<Long, List<Long>> picks = new TreeMap<>();   // candidate entry -> evidence sites
             for (long va : evidence) {
                 if (getFunctionContaining(toAddr(va)) != null) continue;
-                Long start = findStart(va, maxBack);
-                if (start != null && !seeds.contains(start)) picks.put(start, va);
+                // One attempt per site per round: the nearest candidate that no earlier round has
+                // already tried and thrown away. Rejections are retried on the next candidate.
+                for (Long start : findStarts(va, maxBack, 4)) {
+                    if (seeds.contains(start)) continue;
+                    picks.computeIfAbsent(start, k -> new ArrayList<>()).add(va);
+                    break;
+                }
             }
             if (picks.isEmpty()) break;
             rounds++;
-            for (Map.Entry<Long, Long> e : picks.entrySet()) {
+            for (Map.Entry<Long, List<Long>> e : picks.entrySet()) {
                 Address at = toAddr(e.getKey());
                 if (getFunctionAt(at) != null) continue;
                 disassemble(at);
@@ -77,17 +85,18 @@ public class SeedGaps extends GhidraScript {
                 if (fn == null) continue;
                 created++;
                 seeds.add(e.getKey());
-                if (fn.getBody().contains(toAddr(e.getValue()))) {
+                long site = e.getValue().get(0);
+                if (fn.getBody().contains(toAddr(site))) {
                     validated++;
                 } else if (tryRemove(fn)) {
                     // The candidate disassembled, but the function it made does not cover the assert
                     // that is the only reason to believe there is code here. Keeping it would invent
                     // a function; drop it and count the site as unresolved.
                     rejected++;
-                    println("  rejected candidate " + at + ": evidence site " + toAddr(e.getValue())
+                    println("  rejected candidate " + at + ": evidence site " + toAddr(site)
                             + " is outside the body it produced");
                 } else {
-                    println("  kept (could not remove) " + at + " for evidence site " + toAddr(e.getValue()));
+                    println("  kept (could not remove) " + at + " for evidence site " + toAddr(site));
                 }
             }
             // Let the analyser follow what the new functions reveal: callees, jump tables, and the
@@ -165,22 +174,39 @@ public class SeedGaps extends GhidraScript {
         return missing;
     }
 
-    /** Nearest plausible entry before {@code va}, or null when nothing qualifies. */
-    private Long findStart(long va, int maxBack) {
+    /**
+     * Plausible entries before {@code va}, nearest first, at most {@code limit} of them. The caller
+     * tries them one round at a time: a candidate that produces a body not containing the site is
+     * dropped, and the next one is the previous fill run.
+     */
+    private List<Long> findStarts(long va, int maxBack, int limit) {
+        List<Long> out = new ArrayList<>();
         Memory mem = currentProgram.getMemory();
         MemoryBlock block = mem.getBlock(toAddr(va));
-        if (block == null || !block.isExecute()) return null;
+        if (block == null || !block.isExecute()) return out;
         long lo = Math.max(block.getStart().getOffset(), va - maxBack);
-        for (long i = va - 1; i > lo; i--) {
+        for (long i = va - 1; i > lo && out.size() < limit; i--) {
             if (!isFill(mem, i)) continue;                          // the 0xCC before an entry
             Address cand = toAddr(i + 1);
-            if (i - 1 > lo && !isFill(mem, i - 1)) continue;
+            // Two fill bytes, or a single one right after a ret (this compiler pads short
+            // functions with one 0xCC and the previous body ends in `ret`).
+            boolean padded = i - 1 > lo && (isFill(mem, i - 1) || isRet(mem, i - 1));
+            if (!padded && !isFill(mem, i - 1)) continue;
             if (!looksLikePrologue(mem, cand)) continue;
             if (getFunctionContaining(cand) != null) continue;
             if (entryBetween(cand, toAddr(va))) continue;
-            return cand.getOffset();
+            out.add(cand.getOffset());
         }
-        return null;
+        return out;
+    }
+
+    private boolean isRet(Memory mem, long va) {
+        try {
+            byte b = mem.getByte(toAddr(va));
+            return b == (byte) 0xc3 || b == (byte) 0xc2;
+        } catch (MemoryAccessException e) {
+            return false;
+        }
     }
 
     /** A second function between the candidate and the evidence site rules the candidate out. */
