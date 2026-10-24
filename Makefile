@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables check clean
 
 help:
 	@echo "targets:"
@@ -22,6 +22,7 @@ help:
 	@echo "  formats       catalogue custom formats; dump the checkpoint property schema"
 	@echo "  call-census   direct callers of one function from the Ghidra export (needs ghidra)"
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
+	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -94,3 +95,10 @@ check: verify-dump
 
 clean:
 	rm -rf tools/Sg1Tool/bin tools/Sg1Tool/obj build/out
+
+# Where ProcessEvent is dispatched from: the per-class tables of code pointers in .rdata and the
+# slot that holds it (docs/NATIVE_VM.md, docs/UNKNOWNS.md U8). Reads the image only.
+class-tables:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/class-tables.py \
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory

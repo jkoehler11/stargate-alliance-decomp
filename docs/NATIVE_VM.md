@@ -8,8 +8,9 @@ that fills `UFunction::Func`, `UObject::ProcessInternal` at `0x00048bf0` (the by
 `0x0004bf20` — see *The body of a script function*. The property half of 4.3 is measured separately —
 `docs/NATIVE_PROPERTIES.md`: the type names are reserved name indices 1..16, fifteen property classes
 with their sizes and vtables, and the `+0x2c`/`+0x34`/`+0x38`/`+0x3c`/`+0x48`/`+0x6c`/`+0x70` fields
-the walk at `0x0003bdc0` reads. Still open: which table slot dispatches `ProcessEvent`
-(`docs/UNKNOWNS.md` U8) and the tagged tag record (U10).
+the walk at `0x0003bdc0` reads. `ProcessEvent`'s dispatch slot is measured too: slot 21
+(`+0x54`) of 492 packed tables in `.rdata`. Still open: the tagged tag record (U10), and the 102
+assert sites that still have no function (`docs/UNKNOWNS.md` U8).
 
 ## The dispatch table
 
@@ -272,13 +273,50 @@ nearest entry after `0xCC` fill bytes before each assert site that has none, kee
 assert that justified it lands inside the body it produced (52 of 64 seeds), and removes the rest
 before counting. See `docs/NATIVE.md` for the regenerated coverage tables.
 
+## How `ProcessEvent` is dispatched (U8, first half closed)
+
+`0x0004bf20` has no call site anywhere in the image. What points at it is data — 492 dwords in
+`.rdata` — and those dwords are not scattered: each sits at **slot 21 of a table of code pointers**,
+with all 21 slots before it also holding code. `tools/class-tables.py` reads that structure out of
+the image (`inventory/xbe_class_tables.csv`, `inventory/xbe_class_table_slots.csv`):
+
+| measurement | value |
+|---|---|
+| tables | 492 |
+| span | `0x004c78c0` – `0x0053b168` — 462 KB of code pointers, packed |
+| slots per table | 30 – 159 |
+| slot holding `0x0004bf20` | **21** (`+0x54`) in **492 of 492** tables |
+| any other address at `+0x54` | none |
+| slots 0 / 1 / 2 | `0x00062650` / `0x00062660` / `0x00062670` in all 492 |
+| slot 22 (`+0x58`) | `0x00064770` in all 492 |
+| slot 3 | a different function in every table (`0x000170b0`, `0x000171f0`, `0x00017270`, …), as are slots 9–11 and 30+ |
+| table start referenced from `.text` | 492 of 492 (two immediates each for 443 of them, three or more for 63) |
+
+The answer to U8's first question: this fork dispatches `ProcessEvent` as a **virtual at a fixed
+slot, byte offset `+0x54`**, through the table at `[object+0x00]` — the same offset in every copy.
+The boundaries the earlier note called "not pinned" are simply `pointer - 0x54`, and every start is
+named by at least one immediate in the code, which is what a class registration looks like.
+
+The slot beside it is the by-name entry point: `0x00064770` takes a name, looks it up in the class's
+function hash (`[class+0x98 + (name & 0xff)*4]`, chain `+0x30`, name compare at `+0x20`), rejects
+anything without `[function+0x80] & 0x200`, reads `[function+0x8a]` as the parameter size, copies
+the parameters and runs it. So the two scripting entry points sit next to each other: by function
+pointer at `+0x54`, by name at `+0x58`.
+
+What varies between the tables is what makes them per-class: the first three slots and about a
+dozen others are the same address in all 492 (inherited implementations), while slot 3 is unique per
+table. One observation is left open rather than explained: seven slots — 19 and 20 among them —
+hold `0x00020f00` in 327 tables and something else in the remaining 165, which looks like two
+families of table (abstract/base classes against concrete ones) but is not established here.
+
 ## Next
 
 1. The rest of the `UObject`/`UStruct`/`FFrame` layout, now that `ProcessInternal` and `ProcessEvent`
    give worked examples of how each field is reached. The property side is measured in
    `docs/NATIVE_PROPERTIES.md`; what remains there is the tagged tag record's field order (U10).
-2. Which table slot dispatches `ProcessEvent`: the 492 pointers sit in class tables whose boundaries
-   are not yet pinned, so the slot index is not established (`docs/UNKNOWNS.md` U8).
+2. Why 327 of the 492 class tables share one stub at seven slots (19 and 20 among them) while 165
+   do not — abstract/base classes against concrete ones is the likely reading, and it is not
+   established (`docs/UNKNOWNS.md` U8).
 3. A second `GNatives` dump after a mission load, to catch the classes the front end does not touch
    (blocked on input automation, `docs/XEMU.md`).
 4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this
