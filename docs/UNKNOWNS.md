@@ -206,34 +206,50 @@ registration cannot be followed** — their constructors install the table but t
 neither a literal nor a thunk the tool can follow. What would settle the first: a call site that
 dispatches `+0x4c`/`+0x50` through a known object.
 
-**Assert-site residuals: 49 sites, down from 102 by the xref metric.** Three passes now run, in order:
-entry candidates (several plausible entries per site, nearest first, one attempt per round — **76
-seeds, 58 verified, 18 rejected**), entries named by data tables, and **block promotion** for what is
-left: disassemble the gap before the site, walk back to the head of the block the site sits in, and
-create a function there. Measured on 2026-10-24, all against the same dump and command:
+**Assert-site residuals: 6 sites, down from 199 (2026-10-24).** Four passes now run, in order: entry
+candidates at the fill byte before a site (**76 seeds, 58 verified, 18 rejected**), entries named by
+data tables (629), **entries found by decoding the gap** (`seedFromGaps`, 12 entries), and block
+promotion for what is left (25 blocks). Measured on the same dump with the same command (`make ghidra`):
 
-| measurement | before the block pass | after |
+| measurement | before the gap pass | after |
 |---|---|---|
-| sites in no function, end of the seeder | 93 | **50** |
-| sites in no function, against the committed map | 88 | **49** |
-| the xref count this file quoted before | 102 -> 91 | **50** |
-| functions | 14,918 | **14,944** |
-| assert-attributed functions | 1,262 | **1,288** |
+| sites in no function, end of the seeder | 50 | **5** |
+| sites in no function, against the committed map | 49 | **6** |
+| the xref count `XbePost` reports | 50 | **5** |
+| functions | 14,944 | **14,956** |
+| assert-attributed functions | 1,288 | **1,300** |
 
-**The promoted blocks are not function entries** and the repository says so in machine-readable form:
-`inventory/xbe_block_seeds.csv` lists all **26** of them with the evidence site and the body size, and
-the column says "promoted block head (not a function entry)". They exist so the assert-attributed code
-can be read and decompiled; a decompiled body that starts at one of those addresses is a block, not a
-function, and the doc for it should say which. Each of the 26 still contains its evidence site.
+The gap pass is the "second, independent decode" this section asked for, and it confirms what the
+earlier note only suspected: the 49 were not undecodable. It takes the byte after a 0xCC fill run and
+accepts an entry only on three measurements — the body created there contains the site, the
+instruction covering the site is a `PUSH` whose immediate is the file string the asserts table names
+for that row, and the body ends at a terminator. The 47 code sites had been rejected by
+`looksLikePrologue`, an opening-byte list: none of the 14 entries they sit behind opens with a byte
+the list contains (they open with an argument load — `mov eax,[esp+8]`, `mov eax,[0x7baaf8]`,
+`movzx eax,[esp+4]`). The list is kept for the first pass so its measured results do not move; the
+entries recovered without it are listed in `inventory/xbe_gap_seeds.csv`, like block seeds.
 
-**Why the remaining 49 stay.** Engine 25, Core 21, D3DDrv 2, XboxLive 1, and they cluster — for
-example `0x001f850f`, `0x001f852b`, `0x001f8561`, `0x001f857d` in Core. At those addresses the gap
-before the site does not disassemble into an instruction covering it, so there is no block to promote;
-the region is either data interleaved with code or code whose first bytes are not a valid opcode from
-any candidate start. What would settle them: a second, independent decode of those regions (a linear
-sweep from the section start with validation against known entries), or reading them by hand.
+**What the last six are.** Two are not call sites at all: `0x00592cb6` and `0x00592cbe` are dwords in
+a table of 8-byte records in `.rdata` whose value happens to equal the address of the file string
+`0x00520040`. The xref scan looks for the address anywhere in an executable section and this build
+marks `.rdata` executable, so an address alone cannot tell a dword from an operand;
+`tools/assert-residual.py` separates them with the byte before the dword, which has to be `0x68`
+(`push`) at a call site and is `0x87` there. The other four are `push` sites whose candidate entries
+all belong to a function the analysis already has, and the three tests reject what is left; they are
+listed, with the entry the decode found, in `inventory/xbe_assert_residual.csv`
+(`make assert-residual`).
 
-**Status.** `ProcessEvent` closed; the slot index and the 102 sites open. Neither is correctness. 
+**The promoted blocks are not function entries.** `inventory/xbe_block_seeds.csv` lists the 25
+blocks the last pass promoted, each with the evidence site it still contains and its body size, so a
+decompiled body that starts at one is not mistaken for a function (`docs/NATIVE.md`). They exist so
+assert-attributed code can be read and decompiled; they are not entries the build names.
+
+**Status.** `ProcessEvent` closed. The assert-site thread is closed at 6 sites, two of which
+are dwords in a data table rather than call sites. The cost of the gap pass is one body that moves:
+`FUN_00256280` goes from 38,716 to 35,070 bytes, leaving 3,646 bytes (0.09% of the image) in no
+function where the body used to reach; every run today produced the same 35,070, so the committed
+38,716 was the outlier. The slot-index question (which virtuals 19/20 are, the 26 unnamed tables) is
+unchanged and is not a coverage problem. 
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 

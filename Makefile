@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols assert-residual check clean
 
 help:
 	@echo "targets:"
@@ -25,6 +25,7 @@ help:
 	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
+	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  check         verify-dump + inventory drift check"
 
 verify-dump:
@@ -112,6 +113,17 @@ class-names:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/class-table-names.py \
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+# Which assert sites are still in no function, and whether the bytes there are code or a dword in a
+# data table (docs/UNKNOWNS.md U8). Reads the image and the committed map, writes
+# inventory/xbe_assert_residual.csv. Needs the assert scan from a `make ghidra` run.
+ASSERT_TSV ?= build/ghidra/asserts.tsv
+assert-residual:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@test -f "$(ASSERT_TSV)" || { echo "no $(ASSERT_TSV) -- run 'make ghidra' first"; exit 2; }
+	@$(PYTHON) tools/assert-residual.py \
+		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory \
+		--functions symbols/xbox_functions.csv --asserts "$(ASSERT_TSV)"
 
 # The published symbol map (PLAN 4.10, docs/SYMBOLS.md). xbox.map is committed; the assembler form is
 # regenerated and stays out of git.

@@ -1,0 +1,7 @@
+site_va,module,source_file,string_va,section,verdict,entry_va,instruction,bytes
+0x001f62f8,Core,UnTemplate.h,0x004c87e8,.text,code,0x001f5fff,push 0x4c87e8,02000068e8874c0068cc874c
+0x0007e3be,Core,UnVcWin32.cpp,0x004e1aa8,.text,code,0x0007e38f,push 0x4e1aa8,02000068a81a4e0068ec1a4e
+0x0007e3dd,Core,UnVcWin32.cpp,0x004e1aa8,.text,code,0x0007e38f,push 0x4e1aa8,02000068a81a4e0068f81a4e
+0x00081732,Engine,AxEmitter.cpp,0x004e2be8,.text,code,0x000816df,push 0x4e2be8,00000068e82b4e0068e02b4e
+0x00592cb6,Engine,UnTex.cpp,0x00520040,.rdata,not a call site,,"dword in data; byte before is 0x87, not a push",0000e687400052000000f187
+0x00592cbe,Engine,UnTex.cpp,0x00520040,.rdata,not a call site,,"dword in data; byte before is 0x87, not a push",0000f187400052000000fc87

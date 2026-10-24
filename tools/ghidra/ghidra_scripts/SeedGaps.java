@@ -13,7 +13,13 @@
 //    first, a few of them), then creates a function at one and keeps it only if the evidence site
 //    lands inside the body it produced. Trying one candidate per round is what makes an otherwise
 //    unreachable site resolvable: the nearest fill run is sometimes the tail of a function whose
-//    body a jump cuts short, and the real entry is the run before it.
+//    body a jump cuts short, and the real entry is the run before it. A fill run is the only filter
+//    applied before that test: an opening-byte list rejects real entries (they can open with an
+//    argument load), so a candidate the list does not know has to show, instead, that the instruction
+//    covering the site is a PUSH of the string the row names. Without that second test a dword in an
+//    executable data section -- the xref scan cannot tell one from a call site -- becomes a function.
+//    The first pass keeps its opening-byte list, so its results do not move; the entries recovered
+//    this way are listed in the gap CSV, like block seeds, so nothing mistakes them for pass-1 entries.
 //
 // 2. Data tables. A function reached only through a pointer -- a vtable slot, a class table -- has no
 //    call site at all. UObject::ProcessEvent is one: 492 pointers to it in .rdata and not one direct
@@ -39,6 +45,7 @@ import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.symbol.FlowType;
+import ghidra.program.model.scalar.Scalar;
 import java.io.*;
 import java.util.*;
 
@@ -49,14 +56,16 @@ public class SeedGaps extends GhidraScript {
     public void run() throws Exception {
         String[] args = getScriptArgs();
         if (args.length < 1) {
-            println("usage: SeedGaps.java <asserts.tsv> [maxBackBytes]");
+            println("usage: SeedGaps.java <asserts.tsv> [maxBackBytes] [pointerThreshold] [blockCsv] [gapCsv]");
             return;
         }
         int maxBack = args.length > 1 ? Integer.decode(args[1]) : 0x1000;
         int pointerThreshold = args.length > 2 ? Integer.decode(args[2]) : 8;
         String blockCsv = args.length > 3 ? args[3] : null;
+        String gapCsv = args.length > 4 ? args[4] : null;
 
         List<Long> evidence = new ArrayList<>();
+        Map<Long, Long> stringAt = new HashMap<>();      // evidence site -> the file string it pushes
         BufferedReader reader = new BufferedReader(new FileReader(args[0]));
         String line;
         while ((line = reader.readLine()) != null) {
@@ -64,7 +73,11 @@ public class SeedGaps extends GhidraScript {
             String[] p = line.split("\t");
             // The xref column is where the 32-bit string VA sits, i.e. an operand inside the
             // instruction, not the instruction's own address.
-            if (p.length >= 4) evidence.add(Long.decode(p[3]));
+            if (p.length >= 4) {
+                long site = Long.decode(p[3]);
+                evidence.add(site);
+                stringAt.put(site, Long.decode(p[2]));
+            }
         }
         reader.close();
 
@@ -90,6 +103,9 @@ public class SeedGaps extends GhidraScript {
             for (Map.Entry<Long, List<Long>> e : picks.entrySet()) {
                 Address at = toAddr(e.getKey());
                 if (getFunctionAt(at) != null) continue;
+                // A candidate picked earlier in this round can now sit inside a body another
+                // candidate just produced. Creating a function there would split the real one.
+                if (getFunctionContaining(at) != null) continue;
                 disassemble(at);
                 Function fn = createFunction(at, null);
                 if (fn == null) continue;
@@ -123,6 +139,11 @@ public class SeedGaps extends GhidraScript {
         int ptrSeeded = seedFromPointers(pointerThreshold);
         println("seeded " + ptrSeeded + " entries from data tables (>= " + pointerThreshold
                 + " pointers to one address)");
+        // Fourth source: an entry inside a gap, for a site the passes above could not reach. Runs
+        // before the block pass so a real entry is preferred over a promoted block.
+        int gapSeeded = seedFromGaps(evidence, stringAt, maxBack, gapCsv);
+        println("seeded " + gapSeeded + " entries from gap decodes"
+                + (gapCsv != null ? " (list: " + gapCsv + ")" : ""));
         // Third source: block heads for the sites the passes above could not cover.
         int blockSeeded = seedFromBlocks(evidence, maxBack, blockCsv);
         println("seeded " + blockSeeded + " block heads for sites with no reachable entry"
@@ -181,6 +202,56 @@ public class SeedGaps extends GhidraScript {
         }
         if (created > 0) analyzeChanges(currentProgram);
         return created;
+    }
+
+    /**
+     * Seed an entry for a site the first three sources leave, by decoding the gap it sits in.
+     *
+     * The candidate is the byte after a 0xCC fill run (pass 1's guess does not apply here), and three
+     * measurements decide whether it is an entry: the function created there contains the site; the
+     * instruction covering the site is a PUSH whose immediate is the file string the asserts table
+     * names for that row; and the body ends at a terminator rather than stopping in mid-flow. A dword
+     * in an executable data section passes none of them, and a candidate that starts inside the body
+     * of a function the analysis already has is never tried (`fillStarts` skips it).
+     */
+    private int seedFromGaps(List<Long> evidence, Map<Long, Long> stringAt, int maxBack, String csvPath)
+            throws Exception {
+        int created = 0;
+        StringBuilder rows = new StringBuilder("function_va,evidence_va,evidence_bytes,evidence\n");
+        for (long va : evidence) {
+            if (getFunctionContaining(toAddr(va)) != null) continue;
+            for (Long cand : fillStarts(va, maxBack, 8)) {
+                Address at = toAddr(cand);
+                if (getFunctionContaining(at) != null || getFunctionAt(at) != null) continue;
+                disassemble(at);
+                Function fn = createFunction(at, null);
+                if (fn == null) continue;
+                if (fn.getBody().contains(toAddr(va)) && pushesString(va, stringAt.get(va))
+                        && endsInTerminator(fn)) {
+                    created++;
+                    rows.append(String.format("0x%08x,0x%08x,%d,entry found by decoding the gap%n",
+                            cand, va, fn.getBody().getNumAddresses()));
+                    break;
+                }
+                tryRemove(fn);
+            }
+        }
+        if (csvPath != null) {
+            try (PrintWriter w = new PrintWriter(new FileWriter(csvPath))) {
+                w.print(rows);
+            }
+        }
+        return created;
+    }
+
+    /** True when the last instruction of the body returns, jumps or stops: a body that just runs out
+     *  of decode is a reading aid here, not a function. */
+    private boolean endsInTerminator(Function fn) {
+        Instruction ins = getInstructionAt(fn.getBody().getMaxAddress());
+        if (ins == null) return false;
+        String m = ins.getMnemonicString().toUpperCase();
+        if (m.startsWith("RET") || m.equals("JMP") || m.equals("HLT")) return true;
+        return ins.getFlowType().isTerminal();
     }
 
     private int countMissing(List<Long> evidence) {
@@ -250,6 +321,13 @@ public class SeedGaps extends GhidraScript {
      * Plausible entries before {@code va}, nearest first, at most {@code limit} of them. The caller
      * tries them one round at a time: a candidate that produces a body not containing the site is
      * dropped, and the next one is the previous fill run.
+     *
+     * The only static requirement is the one the compiler guarantees: the candidate follows a 0xCC
+     * fill byte, which is where this build puts a function boundary. An earlier version also demanded
+     * one of the two-byte shapes MSVC opens a function with, and that guess is what hid 47 of the 49
+     * residual assert sites -- they open with an argument load such as `mov eax,[esp+8]`, which the
+     * list does not have. What decides is the measurement afterwards, not a byte pattern: the body the
+     * candidate produces has to contain the evidence site.
      */
     private List<Long> findStarts(long va, int maxBack, int limit) {
         List<Long> out = new ArrayList<>();
@@ -281,6 +359,31 @@ public class SeedGaps extends GhidraScript {
         }
     }
 
+    /**
+     * The same scan without the opening-byte list: every entry candidate behind {@code va}, nearest
+     * first, each one the byte after a 0xCC fill run in the same section. This is what the fourth pass
+     * uses, because the list is a guess and it rejects real entries -- 47 of the 49 assert sites that
+     * had no function open with an argument load (`mov eax,[esp+8]`) that the list does not contain.
+     * Pass 4 pays for dropping the guess by demanding more evidence than pass 1: the body has to end
+     * in a terminator and the site has to be a PUSH of the file string the row names.
+     */
+    private List<Long> fillStarts(long va, int maxBack, int limit) {
+        List<Long> out = new ArrayList<>();
+        Memory mem = currentProgram.getMemory();
+        MemoryBlock block = mem.getBlock(toAddr(va));
+        if (block == null || !block.isExecute()) return out;
+        long lo = Math.max(block.getStart().getOffset(), va - maxBack);
+        for (long i = va - 1; i > lo && out.size() < limit; i--) {
+            if (!isFill(mem, i)) continue;                          // the 0xCC before an entry
+            Address cand = toAddr(i + 1);
+            if (mem.getBlock(cand) != block) continue;              // fill runs to the end of a section
+            if (getFunctionContaining(cand) != null) continue;
+            if (entryBetween(cand, toAddr(va))) continue;
+            out.add(cand.getOffset());
+        }
+        return out;
+    }
+
     /** A second function between the candidate and the evidence site rules the candidate out. */
     private boolean entryBetween(Address cand, Address target) {
         Iterator<Function> it = currentProgram.getFunctionManager().getFunctions(cand, true);
@@ -291,12 +394,21 @@ public class SeedGaps extends GhidraScript {
         return false;
     }
 
-    private boolean isFill(Memory mem, long va) {
-        try {
-            return mem.getByte(toAddr(va)) == (byte) 0xcc;
-        } catch (MemoryAccessException e) {
-            return false;                     // unreadable: not a fill byte we can trust
-        }
+    /**
+     * The evidence was a 32-bit string address in an "executable" section, and this build marks its
+     * data sections executable too, so an address alone can be a dword in a table. What makes a site
+     * a call site is the instruction that reads it: the MSVC assert macro pushes the file string, so
+     * the operand has to be the immediate of a PUSH, and its value has to be the string the row names.
+     * A candidate that has to rely on this test is one the prologue list does not know, so the test
+     * is what stands between it and a guessed entry.
+     */
+    private boolean pushesString(long site, Long stringVa) {
+        if (stringVa == null) return false;
+        Instruction ins = getInstructionContaining(toAddr(site));
+        if (ins == null || ins.getNumOperands() < 1) return false;
+        if (!ins.getMnemonicString().equalsIgnoreCase("PUSH")) return false;
+        Scalar s = ins.getScalar(0);
+        return s != null && (s.getUnsignedValue() & 0xffffffffL) == (stringVa & 0xffffffffL);
     }
 
     /** MSVC 7.1 opening instructions seen at this build's real function entries. */
@@ -315,4 +427,14 @@ public class SeedGaps extends GhidraScript {
         if (b0 == 0x8b && b1 == 0xff) return true;      // mov edi, edi (hotpatch)
         return b0 == 0xb8;                              // mov eax, imm32
     }
+
+
+    private boolean isFill(Memory mem, long va) {
+        try {
+            return mem.getByte(toAddr(va)) == (byte) 0xcc;
+        } catch (MemoryAccessException e) {
+            return false;                     // unreadable: not a fill byte we can trust
+        }
+    }
+
 }

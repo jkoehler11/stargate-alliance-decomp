@@ -203,7 +203,7 @@ and `inventory/` regenerates from scripts with no manual edits.
 - [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
       `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
-      Done: **15,410 symbols** (14,944 functions + 466 class tables), every address inside the image's
+      Done: **15,422 symbols** (14,956 functions + 466 class tables), every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
       (`docs/SYMBOLS.md`). 12,971 stay `FUN_*` — that is 4.2's blocked signature work (U9), not a gap in
       the file. 127 names are file-level and therefore shared by more than one function; the assembled
@@ -468,6 +468,26 @@ and a deliberate one-line script break is caught by the boot test.
 - **U8's seeding thread is closed out (2026-10-24).** Three passes (entries, data tables, block heads)
   took assert sites in no function from 199 to 50; the residuals are recorded in U8 and the promoted
   blocks listed in `inventory/xbe_block_seeds.csv`.
+
+- **U8's leftover assert sites are resolved, and two of them were never call sites (2026-10-24).** A
+  fourth seeding source (`SeedGaps.seedFromGaps`) decodes the gap a leftover site sits in: candidate
+  entries are the byte after a 0xCC fill run, and an entry is accepted only when three things are
+  measured -- the body contains the site, the instruction over the site is a `PUSH` whose immediate is
+  the file string the row names, and the body ends at a terminator. Measured: **sites in no function
+  49 -> 6** (5 by `XbePost`'s own count), **functions 14,944 -> 14,956**, **assert-attributed 1,288 ->
+  1,300**, `FUN_*` unchanged at 12,971 (every new entry is named from its assert). The 47 code sites
+  had been rejected by `looksLikePrologue`: none of the 14 entries behind them opens with a byte the
+  list has, because they open with an argument load. The first pass keeps that list so its measured
+  numbers do not move; the recovered entries are listed in `inventory/xbe_gap_seeds.csv`. The two that
+  remain plus two `push` sites are classified by the new `tools/assert-residual.py` (`make
+  assert-residual`) into `inventory/xbe_assert_residual.csv`: `0x00592cb6`/`0x00592cbe` are dwords in
+  an 8-byte record table in `.rdata` whose value equals a file string address, and the byte before a
+  dword has to be `0x68` for it to be an operand at all. Cost, recorded rather than hidden:
+  `FUN_00256280`'s body moves 38,716 -> 35,070 bytes, leaving 3,646 bytes (0.09% of the image) in no
+  function; four runs today all produce 35,070, and re-running the unmodified seeder reproduced the
+  committed map byte for byte, so the map is reproducible as of this change. **Also a readability
+  win for the engine modules:** `Engine` gains 7 named functions and `Core` 3, all of them bodies that
+  were previously only reachable as part of a bigger function.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
