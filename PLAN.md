@@ -246,7 +246,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 ### Phase 5 — Assets, levels, data (parallel, ~2–4 weeks)
 
 - [ ] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build `inventory/assets.csv`.
-- [ ] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
+- [~] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
+      **Class-level half done without T3D** (`docs/MAP_EXPORTS.md`, `inventory/map_export_classes.csv`): all 73 maps
+      parse as packages, and level actors are exports, so the actor-class census is a histogram — 6,478 (map, class,
+      count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
+      256 of 389 totals exact, this reader consistently slightly low). **Remaining**: actor *properties* and the level
+      script, i.e. the property-stream reader, plus the T3D text itself. `M21A` has 1,540 exports whose class index does
+      not resolve — recorded, not explained.
 - [ ] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       lines into a transcript index — this is the fastest route to documenting cut story content.
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).

@@ -36,6 +36,7 @@ help:
 	@echo "  nightly       run the dump-free gate plus every dump-side check, one summary per run (PLAN 7.5)"
 	@echo "  pkg-exports   list a class's exports and their sizes from a package (PKG=... CLASS=...)"
 	@echo "  extract-script write every class's shipped source into $WORK (never the repo)"
+	@echo "  map-actors    histogram every .unr's export classes (PLAN 5.2, class-level)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -200,3 +201,7 @@ pkg-exports:
 extract-script:
 	@$(PYTHON) tools/pkg-script-text.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
 		--tree --write "$(or $(WORK),work)/source-tree" -o inventory
+
+# Per-map actor-class counts from the export table (docs/MAP_EXPORTS.md). Needs the dump.
+map-actors:
+	@$(PYTHON) tools/map-actors.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" -o inventory
