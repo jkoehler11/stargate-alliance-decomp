@@ -29,6 +29,7 @@ help:
 	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
 	@echo "  pkg-verify    re-encode every package's tables and diff against the original"
 	@echo "  pkg-rebuild   rebuild whole packages from header + tables + payloads and diff"
+	@echo "  pkg-layout    census of where each region sits in a package"
 	@echo "  compile-readiness  per-class check of what a rebuild would have (3.6 inputs)"
 	@echo "  map-census    regenerate the map-side census CSVs (needs the dump)"
 	@echo "  package-census  regenerate the four package-side census CSVs (needs the dump)"
@@ -182,6 +183,9 @@ pkg-verify:
 
 pkg-rebuild:
 	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --rebuild
+
+pkg-layout:
+	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --layout --write inventory
 
 compile-readiness:
 	@$(PYTHON) tools/compile-readiness.py -o inventory
