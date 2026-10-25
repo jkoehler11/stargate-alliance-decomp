@@ -95,6 +95,10 @@ def collect():
     em_done = sum(int(r["rendered"]) for r in em_rows)
     out.append(("Script", "default properties rendered", em_done, em_props,
                 "inventory/class_defaults_emit.csv (rendered / properties in fully-declared blocks)"))
+    in_props = sum(int(r["inline_properties"]) for r in em_rows)
+    in_done = sum(int(r["inline_rendered"]) for r in em_rows)
+    out.append(("Script", "subobject defaults rendered", in_done, in_props,
+                "inventory/class_defaults_emit.csv (inline_rendered / inline_properties, Begin Object blocks)"))
 
     # Native track ---------------------------------------------------------
     funcs = rows_of("symbols/xbox_functions.csv")

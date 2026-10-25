@@ -145,14 +145,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
-      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 13,033 of the
-      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (97.7%), including 173 array
-      properties (317 elements) and 53 nested structs; enum element names resolve for 722 of 965 byte values from
-      the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted source so one
-      tree carries both halves. Remaining here: 288 arrays — **270 of them `editinline` arrays, whose elements are
-      inline objects rather than references** — and 15 structs whose element type decodes sometimes and not others
-      (see the doc's "Not measured"), then `replication` blocks, state code and labels, latent calls, operator
-      precedence.
+      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 13,307 of the
+      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (99.7%) — 444 array
+      properties (1,315 elements), 56 nested structs — and 1,269 `Begin Object` subobjects carrying another
+      14,887 rendered properties; enum element names resolve for 722 of 965 byte values from the shipped `enum`
+      declarations, and `make defaults-tree` merges the blocks into the extracted source so one tree carries both
+      halves. Remaining here: 17 arrays and 12 structs whose element type the tiling test refuses (see the doc's
+      "Not measured"), then `replication` blocks, state code and labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -161,7 +160,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
-      yield 13,033 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
+      yield 13,307 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
       tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
 - [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
@@ -333,6 +332,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-25, subobjects and the `editinline` correction)
+
+- **The previous PR's explanation of the 270 `editinline` arrays was wrong and is corrected here.** Their elements
+  are ordinary compact object references; the failure was `INLINE_FLAGS` stripping a single leading flag from
+  `array<export editinline ParticleEmitter>`, leaving `editinline ParticleEmitter` as the "type". One regex quantifier
+  took rendering from 13,033 to 13,304 (99.7%) — a string bug that had been read as a missing byte format and
+  documented as one.
+- **An `editinline` reference points at an export whose outer is the class**, and the compiler expects each one
+  declared by a `Begin Object Class=.. Name=..` block before the assignment naming it. The emitter now renders those
+  blocks with the same locator over the subobject's own export: **1,269 subobjects, 15,687 properties, 14,887
+  rendered**, so a class's defaults are 13,307 + 14,887 properties rather than 13,307 alone. Without them the
+  references name objects the compiler has never seen.
+- **`Plane` is atomic by name and tagged in this build** (29 bytes, four tagged floats), so a name-based atomic
+  layout now falls through to the tagged reader instead of refusing: structures 15 → 12 unrendered.
+- What is left is 17 arrays and 12 `InterpCurve` structs — element types the tiling test refuses rather than reads
+  short. `make defaults-tree` still merges 1,552 blocks, and a second merge reproduces the tree byte for byte with
+  the `Begin Object` blocks in place.
+- **Next:** the 532 withheld blocks (1,371 properties), then `replication` blocks and state code, which are the
+  remaining 3.5 gaps.
+
 ### Execution notes (2026-10-25, array and struct defaults decode from the reference)
 
 - **The pinned UELib already contained the spec.** `tools/uelib/src/Core/Classes/UDefaultProperty.cs` is the
@@ -347,6 +366,9 @@ and a deliberate one-line script break is caught by the boot test.
   (`ParticleEmitter` 189, `RosterEntry` 71, `SGInteraction` 6, `SVehicleWheel` 4) serialises each element as an
   inline object instance, which UELib reads through its inline-object path. The last 18 arrays and 15 structs are
   element types that decode in one class and not another — recorded per class, not explained.
+  **Corrected in the next note:** that explanation was wrong. Those elements are ordinary object references;
+  `editinline` is a flag in the property's type string and stripping only one of two flags made them look like an
+  unknown element type. A string bug was reported as a format gap.
 - **Two quoting defects the arrays exposed**: an element name with a space (`bip01 Spine`) and an element string
   were emitted raw, which the compiler would read as two tokens. Both now go through the same quoting rule as the
   scalar paths. A rendered string can also contain `}`, which is why `--merge` cuts at the *last*

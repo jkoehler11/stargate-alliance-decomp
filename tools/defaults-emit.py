@@ -175,7 +175,11 @@ def ref_name(pkg, ref):
 PRIMITIVE_ELEMENT = {"float": 4, "int": 4, "byte": 1, "bool": 1}
 STRUCT_LAYOUT = {"Vector": ("<3f", "X,Y,Z"), "Rotator": ("<3i", "Pitch,Yaw,Roll"),
                  "Color": ("4B", "R,G,B,A"), "Plane": ("<4f", "X,Y,Z,W")}
-INLINE_FLAGS = re.compile(r"^(?:editinlinenotify|editinline|export|localized|const|private|protected)\s+", re.I)
+# A property's friendly type can carry *several* flags: `array<export editinline ParticleEmitter>` is one array
+# of subobject references, not an array of "export editinline" things. Stripping one flag left the rest in the type
+# name, which is why these were reported as an unknown element type.
+INLINE_FLAGS = re.compile(r"^(?:(?:editinlinenotify|editinline|export|localized|const|private|protected)\s+)+",
+                          re.I)
 
 
 def inner_type(meta):
@@ -349,8 +353,22 @@ def render_value(pkg, entry, meta, buf, ctx=None, depth=0):
         sn = entry.get("struct")
         v = entry.get("value")
         if sn in STRUCT_LAYOUT:
-            text = render_struct_fields(sn, v) if isinstance(v, tuple) else None
-            return (text, sn.lower()) if text else (None, "struct")
+            fmt, _names = STRUCT_LAYOUT[sn]
+            if not isinstance(v, tuple) and entry.get("value_offset") is not None:
+                # prop-stream decodes Vector/Rotator/Color only; the other atomic layouts are unpacked here,
+                # and only when the tag's declared size agrees with the layout.
+                start = entry["value_offset"]
+                if entry["size"] == struct.calcsize(fmt):
+                    try:
+                        v = struct.unpack_from(fmt, buf, start)
+                    except struct.error:
+                        v = None
+            if isinstance(v, tuple):
+                text = render_struct_fields(sn, v)
+                if text:
+                    return text, sn.lower()
+            # A struct whose name is atomic can still be serialised as tags: `Plane` arrives as four tagged
+            # floats (29 bytes) in this build, not as 16 raw ones. Fall through rather than refuse.
         if depth >= 3:
             return None, "struct"
         start = entry.get("value_offset")
@@ -398,6 +416,33 @@ def format_float(v):
 
 
 # ------------------------------------------------------------------------------------------------- blocks
+
+def block_for_export(pkg, exp, cls, supers, declared_all, limit=512):
+    """Locate one export's property block, scored against the properties `cls` declares.
+
+    `block_of` finds a class by name; a subobject is an export whose own name is not a class, so the class it is
+    scored against is its *class* (`pkg.class_name_of`), and the same candidate/choose rule applies.
+    """
+    decl = set()
+    cur, seen = cls, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        decl |= declared_all.get(cur, set())
+        cur = supers.get(cur)
+    cands, _data = cd.candidates(pkg, ps, exp, limit=limit)
+    best = cd.choose(cands, decl)
+    if best is None:
+        return None, "no-block"
+    _score, _count, start, _names = best
+    data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+    try:
+        props, end, reason = ps.read_block(data[start:], pkg, True)
+    except Exception:                                   # noqa: BLE001 - a short payload is a skip, not a crash
+        return None, "unparsed"
+    if reason != "None":
+        return None, "unparsed"
+    return (props, start, best[0][0] == 1.0), None
+
 
 def block_of(pkg, cls, supers, declared_all, limit=512, want_score=False):
     """(props, start, trailer) for a class's defaults block, or (None, reason)."""
@@ -448,7 +493,7 @@ def render_block(pkg, props, meta_of, enums, buf_offset_data):
 
 COLUMNS = ["package", "classes", "blocks", "clean_blocks", "dirty_properties", "properties", "rendered",
            "arrays_rendered", "arrays_unrendered", "array_elements", "structs_unrendered", "nested_structs",
-           "other",
+           "other", "inline_objects", "inline_properties", "inline_rendered",
            "bytes", "bytes_resolved", "floats", "ints", "bools", "names", "strs", "objects", "geometry"]
 
 
@@ -467,6 +512,81 @@ def prop_meta_for(cls, supers, props_meta):
             cur = supers.get(cur)
         return None
     return meta_of
+
+
+def object_refs(pkg, props, buf, meta_of, ctx, container_index):
+    """Export indexes this block references that are *subobjects* of the class (their outer is the class).
+
+    An `editinline` property or array points at an export whose Outer is the class being described, and the
+    compiler expects such a reference to be declared by a `Begin Object Class=.. Name=..` block in the same
+    `defaultproperties`. 271 scalar properties and 998 array elements are this shape.
+    """
+    out = []
+
+    def add(ref):
+        if not ref or ref <= 0:
+            return
+        try:
+            exp = pkg.exports[ref - 1]
+        except IndexError:
+            return
+        if exp["outer"] == container_index:
+            out.append(ref)
+
+    for p in props:
+        if p["type"] in ("Object", "Class"):
+            add(p.get("ref"))
+        elif p["type"] == "Array":
+            inner = inner_type(meta_of(p["name"]))
+            if not inner or inner.lower() not in ctx["classes"] or inner in STRUCT_LAYOUT:
+                continue
+            start = p.get("value_offset")
+            if start is None:
+                continue
+            try:
+                count, off = ps.read_index(buf, start)
+                for _i in range(max(0, min(count, 4096))):
+                    idx, off = ps.read_index(buf, off)
+                    add(idx)
+            except IndexError:
+                continue
+    return out
+
+
+def render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, tot, seen, depth=0):
+    """Render one subobject export as a `Begin Object` block; returns its lines or None."""
+    exp = pkg.exports[ref - 1]
+    cls = pkg.class_name_of(exp)
+    name = pkg.name(exp["name"])
+    key = (cls, name)
+    if key in seen:
+        return None
+    seen.add(key)
+    if depth > 1:
+        return None
+    got, _reason = block_for_export(pkg, exp, cls, supers, declared_all)
+    tot["inline_objects"] += 1
+    lines = ["Begin Object Class=%s Name=%s" % (cls, name)]
+    if got is not None:
+        props, start, clean = got
+        if clean:
+            meta_of = prop_meta_for(cls, supers, props_meta)
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            buf = data[start:]
+            for prop in props:
+                tot["inline_properties"] += 1
+                text, note = render_value(pkg, prop, meta_of(prop["name"]), buf, ctx)
+                if text is None:
+                    lines.append("// unrendered %s (%s)" % (prop["name"], note))
+                    continue
+                tot["inline_rendered"] += 1
+                if isinstance(text, list):
+                    for index, value in text:
+                        lines.append("%s(%d)=%s" % (prop["name"], index, value))
+                    continue
+                lines.append("%s=%s" % (prop["name"], text))
+    lines.append("End Object")
+    return lines
 
 
 def class_set(path=None):
@@ -540,6 +660,18 @@ def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, note
             lines.append("%s(%d)=%s" % (p["name"], p["array_index"], text))
         else:
             lines.append("%s=%s" % (p["name"], text))
+
+    # `editinline` references point at exports whose outer is this class, and the compiler requires each of
+    # those to be declared by a `Begin Object` block before the assignment that names it.
+    refs = object_refs(pkg, props, buf, meta_of, ctx, exp["index"] + 1)
+    if refs:
+        decls, seen = [], set()
+        for ref in refs:
+            block = render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, row, seen)
+            if block:
+                decls.extend(block)
+        if decls:
+            lines = decls + lines
     return lines, "clean"
 
 
@@ -610,6 +742,8 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
              tot["array_elements"], tot["nested_structs"],
              tot["arrays_unrendered"], tot["structs_unrendered"], tot["other"],
              tot["bytes_resolved"], tot["bytes"]))
+    print("%d subobject references rendered as Begin Object blocks (%d properties, %d rendered)"
+          % (tot["inline_objects"], tot["inline_properties"], tot["inline_rendered"]))
     print("unrendered by reason: %s; %d enum-name conflicts" % (dict(notes.most_common()), enum_conflicts))
     return rows, tot
 

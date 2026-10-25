@@ -50,23 +50,23 @@ Two more came out of rendering the values, and both were invisible while only na
 | others (9 packages) | 193 | 174 | 140 |
 | **total** | **2,319** | **2,084** | **1,552 (67%)** |
 
-## Emitting: 13,033 of 13,345 properties render
+## Emitting: 13,307 of 13,345 properties render, plus 1,269 subobjects
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
-| package | classes | blocks | properties | rendered | |
-|---|---:|---:|---:|---:|---:|
-| `StargateContent` | 567 | 441 | 4,711 | 4,624 | 98.2% |
-| `GamePlay` | 262 | 180 | 1,649 | 1,648 | 99.9% |
-| `StargateVehicles` | 142 | 117 | 1,427 | 1,398 | 98.0% |
-| `Engine` | 367 | 170 | 1,293 | 1,283 | 99.2% |
-| `Sharpeffects` | 158 | 156 | 1,101 | 985 | 89.5% |
-| `GUI` | 148 | 128 | 1,085 | 1,084 | 99.9% |
-| `StargateGame` | 306 | 150 | 879 | 870 | 99.0% |
-| `Stargateeffects` | 77 | 69 | 367 | 315 | 85.8% |
-| `StargateMenus` | 98 | 65 | 310 | 304 | 98.1% |
-| others (9 packages) | 194 | 76 | 523 | 522 | 99.8% |
-| **total** | **2,319** | **1,552** | **13,345** | **13,033** | **97.7%** |
+| package | classes | blocks | properties | rendered | | subobjects |
+|---|---:|---:|---:|---:|---:|---:|
+| `StargateContent` | 567 | 441 | 4,711 | 4,704 | 99.9% | 350 |
+| `GamePlay` | 262 | 180 | 1,649 | 1,648 | 99.9% | 0 |
+| `StargateVehicles` | 142 | 117 | 1,427 | 1,410 | 98.8% | 39 |
+| `Engine` | 367 | 170 | 1,293 | 1,288 | 99.6% | 3 |
+| `Sharpeffects` | 158 | 156 | 1,101 | 1,101 | 100.0% | 467 |
+| `GUI` | 148 | 128 | 1,085 | 1,084 | 99.9% | 29 |
+| `StargateGame` | 306 | 150 | 879 | 879 | 100.0% | 75 |
+| `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
+| `StargateMenus` | 98 | 65 | 310 | 304 | 98.1% | 134 |
+| others (9 packages) | 194 | 76 | 523 | 522 | 99.8% | 0 |
+| **total** | **2,319** | **1,552** | **13,345** | **13,307** | **99.7%** | **1,269** |
 
 What renders, and what each rendering was checked against:
 
@@ -77,43 +77,48 @@ What renders, and what each rendering was checked against:
 | `Object` / `Class` | 1,466 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
 | `Struct(Vector/Rotator/Color/Plane)` | 808 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
 | `Byte` | 965 | an enum element name where the enum can be resolved, the number otherwise |
-| `Array` | 173 properties, 317 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
-| other structs | 53 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
+| `Array` | 444 properties, 1,315 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
+| other structs | 56 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
 
 Arrays and the remaining structs are decoded from **UELib's own defaults deserialiser**
 (`tools/uelib/src/Core/Classes/UDefaultProperty.cs`, pinned in `tools/versions.lock`) instead of from the bytes,
 which is the difference between a guess and a reader: an array is a **compact-index count followed by that many
 untagged elements**, their width coming from the *inner* type the property record names (`array<Sound>` — and
-`inventory/class_properties.csv` already carries that name, flags like `editinline` stripped). A struct that is not
-one of the four atomic layouts is a **nested tagged block**, `Field=value` pairs terminated by `None`, which is why
-a `Face` element comes out as a field list rather than a hex blob.
+`inventory/class_properties.csv` already carries that name), and a struct that is not one of the four atomic
+layouts is a **nested tagged block**, `Field=value` pairs terminated by `None`.
 
 Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
-declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns the previous
-attempt's "66 of 555 look plausible" into 173 decoded and 288 refused.
+declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 444
+decoded and 17 refused, and it is also what caught the defects below.
 
-**Byte values are enums, and their element names are recoverable.** The package stores a byte property's *type*
-name (`SGOrder.OrderState`) and a number; the element order lives only in the shipped script, as
-`enum OrderState { ... }`. `inventory/class_properties.csv` carries the type name, so the tool scans every
-package's `ScriptText` for `enum` declarations and maps number → element. A table built per package resolved
-**224 of 1,211** byte values; one built over the whole dump resolved **735**, and inside the fully-declared blocks
-**722 of 965 (74.8%)** — because a `StargateGame` class inheriting `Physics` gets its element names from `Engine`.
-Two enum names are declared with different element lists in two packages; the first wins and the conflict is
-printed. Where no enum resolves, the number is written: valid UnrealScript, less readable, and counted apart
-rather than guessed.
+## Subobjects: 1,269 `Begin Object` blocks
 
-**Blocks that do not account for their own properties are withheld.** 532 of the 2,084 candidate blocks contain a
-property name the class does not declare, and they hold almost every impossible value — an `Invalid` type, a
-`Float` of 16 bytes, a `Vector` of 139 bytes. They are a parse that fits the bytes rather than a real block, so
-their 1,371 properties are counted in `dirty_properties` and not emitted. Emitting them would have raised the
-percentage by four points and shipped nonsense.
+An `editinline` property or array element does not point at a class or a texture: it points at an **export whose
+outer is the class being described** — a subobject the compiler expects to be declared inside the same
+`defaultproperties`, before the assignment that names it:
 
-What is left over, all counted per block in the CSV: **288 arrays**, **15 structs** and **10** properties with a
-malformed value — 2.3% of the block contents. Of the 288 arrays, **270 are not element streams at all**:
-they are `editinline` arrays (`ParticleEmitter` 189, `RosterEntry` 71, `SGInteraction` 6, `SVehicleWheel` 4), whose
-elements are serialised **inline objects** rather than references, a stream this reader does not parse. The other 18
-carry struct element types that do not decode as either a tagged block or an atomic layout (`FaceInformation` 6,
-`PassengerWeaponStruct` 5, and one instance each of five others).
+    Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+        ... that subobject's own defaults, 12 to 40 properties ...
+    End Object
+    Emitters(0)=SpriteEmitter'SpriteEmitter0'
+
+The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,269
+subobjects carrying 15,687 properties, of which 14,887 render**, so a class's defaults are 13,307 + 14,887 =
+**28,194 rendered properties** in total. Without the declaration a reference names an object the compiler has never
+seen; that is why they are part of this pass and not a cosmetic extra.
+
+**A correction.** The previous PR reported these 270 arrays as "`editinline` arrays whose elements are serialised
+inline object *instances*, a stream this reader does not parse". That was wrong twice: `editinline` is a *flag in
+the property's type string* (`array<export editinline ParticleEmitter>` — two flags, and stripping one left
+`editinline ParticleEmitter` as a "type"), and the elements are ordinary compact object references. Nothing about
+the byte format was missing; a string-stripping bug was reported as a format gap. The count is in this table, and
+the earlier claim should not be quoted.
+
+What is left over, all counted per block in the CSV: **17 arrays**, **12 structs** and **10** properties with a
+malformed value — 0.3% of the class-level block contents. The 17 are arrays whose element type is a struct that
+decodes as neither a tagged block nor an atomic layout (`FaceInformation` 6, `PassengerWeaponStruct` 5, and one
+each of five others); the 12 are `InterpCurve`, whose member list the reference itself special-cases. Both are
+refusals of the tiling test, not truncated reads.
 
 ## The shipped text is not an oracle for defaults
 
@@ -144,13 +149,9 @@ whose block could not be located or does not account for itself.
 
 ## Not measured
 
-* **`editinline` array contents.** 270 of the 288 remaining arrays. Their elements are inline objects — a
-  serialised object instance per element — not references, and nothing here parses that stream. UELib handles them
-  through its inline-object path; the next attempt should start there rather than at the bytes.
-* **The last 18 arrays and 15 structs.** Element types that decode as neither a tagged block nor an atomic layout
-  (`FaceInformation`, `PassengerWeaponStruct`, `Karma`, `Range`, `InterpCurve` …). Some elements of the same type do
-  decode, so the type is not simply unknown: the difference between a decoding and a refused instance is not yet
-  measured, per class.
+* **The last 17 arrays and 12 structs.** Element types that decode as neither a tagged block nor an atomic layout
+  (`FaceInformation`, `PassengerWeaponStruct`, `InterpCurve` …), refused by the tiling test rather than read
+  short. Some instances of the same type do decode; the difference is not yet measured per class.
 * **The 532 withheld blocks.** Whether their candidate is a truncated real block, a different record at the
   payload's tail, or a parse coincidence is not settled per class — only counted, and excluded.
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the
