@@ -135,7 +135,8 @@ def main():
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, "package_check.csv")
         with open(path, "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["package", "bytes", "md5", "recovered_from", "check_entries"])
+            w = csv.DictWriter(f, fieldnames=["package", "bytes", "md5", "recovered_from", "check_entries"],
+                               lineterminator="\n")
             w.writeheader()
             w.writerows(rows)
         print("wrote %s (%d rows)" % (path, len(rows)))
