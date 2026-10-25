@@ -120,6 +120,11 @@ def collect():
                 count_manifest(".wav", "/Music/"), "inventory/music_index.csv vs manifest"))
 
     # Deliverables ---------------------------------------------------------
+    relayout = rows_of("inventory/package_relayout.csv")
+    resizes_tested = sum(int(r["exports_tested"]) for r in relayout)
+    resizes_passed = sum(int(r["passed"]) for r in relayout)
+    out.append(("Deliverables", "payload resizes that round-trip (6.1 writer)", resizes_passed, resizes_tested,
+                "inventory/package_relayout.csv (passed / exports_tested)"))
     out.append(("Deliverables", "assets exported (5.1)", None, None, "PLAN 5.1 has not started"))
     out.append(("Deliverables", "bootable rebuild (6.x)", None, None, "PLAN 6.1 has not started"))
     return out

@@ -39,7 +39,9 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/oracle_diff.csv` | 1653 | 11 | `make oracle-diff` |
 | `inventory/package_check.csv` | 18 | 5 | **package-check.py (no target runs it)** |
 | `inventory/package_exports_summary.csv` | 18 | 6 | `make package-census` |
+| `inventory/package_layout.csv` | 18 | 11 | `make pkg-layout` |
 | `inventory/package_parse.csv` | 0 | 4 | **InventoryCommand.cs (no target runs it)** |
+| `inventory/package_relayout.csv` | 18 | 6 | `make pkg-resize` |
 | `inventory/package_script_text.csv` | 18 | 4 | `make compile-readiness` |
 | `inventory/packages.csv` | 18 | 18 | `make help` |
 | `inventory/property_classes.csv` | 15 | 8 | `make ci` |
@@ -68,5 +70,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-61 artifacts, 59308 rows in total. 0 with no generator.
+63 artifacts, 59344 rows in total. 0 with no generator.
 

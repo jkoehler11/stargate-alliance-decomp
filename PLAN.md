@@ -284,8 +284,11 @@ report cites file-level evidence for each claim.
 
 ### Phase 6 — Rebuild pipeline (~2 weeks, after 3.6)
 
-- [ ] 6.1 Scripted rebuild: `tools/build.sh` → compile `src/UnrealScript` → produce `.u` packages → place into a
-      working copy of the dump.
+- [~] 6.1 Scripted rebuild: `tools/build.sh` → compile `src/UnrealScript` → produce `.u` packages → place into a
+      working copy of the dump. The container side is measured end to end: tables re-encode and whole files rebuild
+      byte for byte (18/18), the placement pass reproduces every package (18/18), and a payload can now be **resized**
+      and round-tripped (18/18 packages, 84 sampled resizes, `inventory/package_relayout.csv`). What is left is payload
+      *generation*: a compiler producing the bytes we currently copy.
 - [ ] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
       off in the XBE for dev builds. Document both paths in `docs/PACKAGE_CHECK.md`.
 - [ ] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
@@ -319,6 +322,33 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, the writer resizes a payload — and growth does reproduce)
+
+- **`--resize` re-lays a whole file around one payload resized by N bytes, and grow-then-shrink comes back
+  byte-identical**: 18 of 18 packages, 84 sampled resizes (`make pkg-resize`, `inventory/package_relayout.csv`,
+  `docs/PACKAGE_LAYOUT.md`). `--relay` now runs through the same placement function with a zero delta, so the proof and
+  the moving path cannot drift apart.
+- **The "growth mis-decodes the first entry" finding does not reproduce on the shipped path.** Driving the regrow
+  function that merged in #71 with `extra=64` at export 1 re-parses cleanly — `GamePlay.u` 334,722 → 334,786 bytes and
+  `Core.u` 79,165 → 79,234, zero unresolved classes in either, first entry's size grown by exactly the delta. So the
+  earlier symptom is narrower than the note above says (a specific export, or the pre-placement regrow), and growth is
+  no longer a claim to hedge: it is measured. What makes that safe is not the placement arithmetic but the checks —
+  see the next two points.
+- **Three checks a resize has to pass, and the old mode had none of them.** Re-read the result **from disk** through
+  the reader (not the in-memory dict copy — that is what hides a misplaced table); every other payload byte-identical;
+  and **grow, then shrink by the same amount, must equal the original file**. A table diff cannot see a region in the
+  wrong place, a round trip can.
+- **The sample is aimed at the entries a move can corrupt**: per package, the smallest and largest export, the one
+  nearest a 0x3F *size* boundary, the one nearest a 0x3FFF *offset* boundary, and the last export. Those are where a
+  compact-index width changes; a naive offset shift gets exactly them wrong and nothing else.
+- **A shrink is not reversible and is not claimed to be.** It discards the payload's tail, so the negative direction is
+  held to the container instead (tables, lengths and other payloads identical, target back to its old size on re-grow).
+  The resized payload's contents are meaningless either way: this proves the container around a payload, not the export
+  inside it, and nothing was loaded by the engine.
+- **The layout solver is testable with no dump**: `--selftest` (in `make ci`) builds a synthetic package from our own
+  encoders and drives five cases through writer and reader, including a 20,000-byte grow that widens every export entry
+  behind it and a shrink to zero.
 
 ### Execution notes (2026-10-24, the placement pass works; growth does not yet)
 

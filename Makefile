@@ -7,10 +7,11 @@ SG1_DUMP ?= $(HOME)/sg1/dump
 WORK     ?= $(HOME)/sg1/work
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
+RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -30,6 +31,7 @@ help:
 	@echo "  pkg-verify    re-encode every package's tables and diff against the original"
 	@echo "  pkg-rebuild   rebuild whole packages from header + tables + payloads and diff"
 	@echo "  pkg-layout    census of where each region sits in a package"
+	@echo "  pkg-resize    re-lay every package with one payload resized and round-trip it"
 	@echo "  compile-readiness  per-class check of what a rebuild would have (3.6 inputs)"
 	@echo "  map-census    regenerate the map-side census CSVs (needs the dump)"
 	@echo "  package-census  regenerate the four package-side census CSVs (needs the dump)"
@@ -186,6 +188,13 @@ pkg-rebuild:
 
 pkg-layout:
 	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --layout --write inventory
+	@echo "wrote inventory/package_layout.csv"
+
+# One payload resized by RESIZE_BYTES on five sampled exports per package, then shrunk back: the round trip is what
+# proves the relayout, since a table diff cannot see a region in the wrong place. Measured artifact only.
+pkg-resize:
+	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --resize $(RESIZE_BYTES) --write inventory
+	@echo "wrote inventory/package_relayout.csv (the resized packages themselves stay out of the repo)"
 
 compile-readiness:
 	@$(PYTHON) tools/compile-readiness.py -o inventory

@@ -39,20 +39,48 @@ region lengths) before the layout census made it obvious: the tables were in the
 
 Consequence for PLAN 6.1: a rebuild that changes payload sizes must relocate the two object tables — and because
 shifting an export offset can need one more byte in the compact index, the table length is itself a function of the
-layout. It has to be solved to a fixed point. That work is not done; `--layout` is what makes it tractable.
+layout. It has to be solved to a fixed point.
+
+## The resize writer
+
+`--resize` does that: it re-lays a whole file around one payload resized by N bytes. Three things, in the order they
+bite:
+
+1. **Place regions in the order they occupy** — header, names, payloads, imports, exports. The payload block begins
+   immediately after the name table, and a table emitted before it pushes every offset past its data.
+2. **Moving a region means rewriting the header.** `name_offset`, `export_offset` and `import_offset` (0x10, 0x18,
+   0x20) are the only pointers to the tables; relocating the data and leaving them stale does not error, it
+   mis-decodes the entries.
+3. **Iterate the layout to a fixed point.** A payload position feeds the export table, whose encoded length grows when
+   a size crosses 0x3F or an offset crosses 0x3FFF. On these 18 packages the export table is last, so it settles in one
+   pass — but the order is read from the header rather than assumed, and the tool refuses to emit a file that does not
+   converge.
+
+    make pkg-resize                      # --resize 64 --write inventory; RESIZE_BYTES to change it
+
+**Result: 18 of 18 packages, 84 sampled resizes, grow-then-shrink byte-identical** (`inventory/package_relayout.csv`).
+The sample per package is the extremes plus the export nearest a 0x3F size and a 0x3FFF offset, because those are the
+entries whose width the move can change. Each resize must also re-parse **from disk** through the reader, leave every
+other payload byte-identical, and have its own output rebuild from its own tables.
+
+A shrink is not reversible — it discards the payload's tail — so the negative direction is checked against the
+container instead of against bytes. And the resized payload's *contents* are meaningless (fill appended, or a truncated
+tail): this proves the container around a payload, not the export inside it.
 
 ## Status
 
-* `--layout` — done, census in `inventory/package_layout.csv`.
-* `--relay` — done: every package is re-laid through the writer's placement path (header, names, **payloads**,
-  imports, exports, with the header's two table offsets patched) and comes out **identical, 18 of 18**. That is the
-  placement algorithm proven end to end, not an assumption.
-* `--grow` (enlarge one payload by N bytes) — **not offered**. Providing a non-zero `extra` makes the re-encoded
-  export table mis-decode its first entry, so the re-parse fails with unresolved classes; the symptom is localised
-  (entry 1 reads garbage, later entries shift by one), the cause is not yet established. The mode that ships is the
-  one that is proven.
+* `--layout` — done, census in `inventory/package_layout.csv` (committed; `make pkg-layout` regenerates it).
+* `--relay` — done: every package is re-laid through the writer's placement path with a zero delta and comes out
+  **identical, 18 of 18**. It runs through the same function as `--resize`, deliberately: a placement rule that drifts
+  between the "prove it" mode and the "move it" mode would make the proof describe code that no longer runs.
+* `--resize` — done: relayout around a resized payload, fixed point included, round-trip proven 18/18
+  (`inventory/package_relayout.csv`).
 
-Correction to the record: the previous PR said this feature had been reverted. It had not — the broken code was
-still on the branch and merged, and the flag simply could not pass its own check. This PR replaces it with the
-placement pass that works and removes the claim that it did not exist.
+Correction to the record, again: the previous two revisions of this page described `--grow` as reverted, then as
+shipping-but-unproven with growth "not offered" because a non-zero `extra` mis-decoded the first export entry. Driving
+the merged `regrow` with `extra=64` at export 1 does **not** reproduce that — `GamePlay.u` 334,722 → 334,786 and
+`Core.u` 79,165 → 79,234 both re-parse with zero unresolved classes — so the earlier symptom was narrower than the
+wording (a particular export, or the pre-placement version of the function). What was actually missing was not
+arithmetic but **verification**: a re-read from disk, a payload-by-payload comparison, and a grow-then-shrink round
+trip. Those are what `--resize` carries now, on the boundary cases a naive offset shift gets wrong.
 
