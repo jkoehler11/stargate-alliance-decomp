@@ -48,6 +48,50 @@ nothing. `SGOrder`'s 5,857 bytes against 10 functions and 22 properties matches 
 4. **`ScriptText` explains a pile of things** in `docs/DECOMPILER_GAPS.md`: cases where the decompiler
    produced something odd are now checkable against the original line.
 
+
+## What the text contains
+
+`tools/pkg-script-text.py` extracts a class's `ScriptText` and reduces it to countable facts. Extraction
+writes to `$WORK`; nothing here prints or commits source.
+
+| measure | value |
+|---|---:|
+| classes with text | **2,319 of 2,319** |
+| source bytes recovered | 6,113,909 |
+| classes whose first line is `class X extends Y` | 2,319 |
+| `native` function declarations found | 707 |
+| `native` declarations recorded in `inventory/classes.csv` | 797 |
+
+The text is the real thing: `SGOrder`'s first line is `class SGOrder extends Order editinlinenew native;`,
+it parses as 219 lines with 44 comment lines, and its declarations match the export table's function list.
+
+### Native functions can be named from the source
+
+The declarations carry no indices in these packages, so they cannot be handed to a debugger directly — but
+they do say **which** functions are C++, which is the half of PLAN 4.7 the class table could not answer
+(`docs/systems/UCPP_NATIVES.md`).
+
+| class | natives | functions |
+|---|---:|---|
+| `SGOrder` | 4 | `isValid`, `updateCondition`, `DrawDesc`, `DrawIcon` |
+| `Electrocutor` | 2 | `StartArcing`, `WankTick` |
+| `FarClipChange` | 2 | `GetFarClipDistance`, `SetFarClipDistance` |
+| `ShadowManager` | 1 | `GetShadowLights` |
+| `SGFontInfo` | 1 | `bendover` |
+| `StargateHUD` | 1 | `DrawOrdersHud` |
+
+All six counts equal `native_functions` in `inventory/classes.csv`, so the two independent measurements
+agree. `inventory/native_declarations.csv` holds the rows.
+
+### Where counting is incomplete, and why
+
+Eight of eighteen packages match `classes.csv` exactly; five do not, and the shortfall is `Core` (101 found
+vs 203 recorded). The cause is visible in Core's own source: it declares native **operators** — `native(208)
+static final operator(20) float + ( float A, float B )` — which the counter does not treat as functions.
+`StargateContent`'s three found against zero recorded is the mirror case: declarations the inventory does not
+attribute to that package's classes. Both are recorded in `inventory/script_text_natives.csv` rather than
+smoothed over; the six-class table above is the part that is validated.
+
 ## Handling: measured here, extracted elsewhere
 
 The text is game-derived. Per `AGENTS.md` and `docs/LEGAL.md` it must not be committed: what is committed is
@@ -58,9 +102,10 @@ That is not a technicality — it is the difference between an inventory and a c
 
 ## Not measured
 
-* The text itself, by policy, and therefore its quality: whether `ScriptText` is the final source, an
-  intermediate, or a stripped variant. The sizes are consistent with real source; only reading it (in
-  `$WORK`) would settle it, and that is a deliberate next step for whoever owns the dump.
+* The text's *completeness*: it parses as source for all 2,319 classes, but whether every body is present
+  (rather than every declaration) is not measured — that needs a compile attempt, i.e. 3.6.
+* Native **indices**: the declarations here say `native function`, not `native(1234)`, so the index still
+  lives in the function's record inside the package. The names are now known; the numbers are not.
 * Whether the text is byte-identical to what the compiler consumed. The package stores what the build wrote;
   a compiler may have normalised line endings or comments.
 * Function bodies. The export table gives each function's name, size and byte range, but no `UFunction`

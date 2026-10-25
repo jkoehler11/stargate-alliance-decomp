@@ -1,0 +1,7 @@
+class,native_functions,native_function_names,from
+SGOrder,4,isValid;updateCondition;DrawDesc;DrawIcon,shipped ScriptText
+Electrocutor,2,StartArcing;WankTick,shipped ScriptText
+ShadowManager,1,GetShadowLights,shipped ScriptText
+SGFontInfo,1,bendover,shipped ScriptText
+FarClipChange,2,GetFarClipDistance;SetFarClipDistance,shipped ScriptText
+StargateHUD,1,DrawOrdersHud,shipped ScriptText
