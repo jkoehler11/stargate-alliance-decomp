@@ -54,3 +54,17 @@ they spawn. The doc now says that instead.
   at references to imports this reader does not index, not at random corruption — but that is a hypothesis.
 * Class defaults, above.
 * The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
+
+## Regenerating these numbers
+
+`make map-census` (`tools/map-census.py`) rebuilds `map_property_coverage.csv` and
+`actor_property_coverage.csv` from the `.unr` files, and both reproduce **byte for byte**:
+73 maps and 389 classes, with the property-block locator in `tools/class-defaults.py` deciding what "has a block"
+means (a start in the first 64 bytes whose stream ends exactly at the export's end and whose names all resolve).
+That is a strict reading — it counts what can be read, not what might be there.
+
+`squad_scripts.csv` is not written by it. The same pass finds **581** `(map, script)` pairs against the committed
+file's **614**: 35 references the old enumeration had and this one does not, 2 the other way. The old script
+therefore used something broader than a located property block — a second property, or a looser block rule — and
+until that is identified the file stays as it is rather than losing references. `make map-census` prints the
+delta instead of overwriting, which is the honest version of "this number is not yet reproducible".

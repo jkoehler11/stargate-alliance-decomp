@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the map-side census)
+
+- **Two of the three remaining orphans now reproduce byte for byte**: `map_property_coverage.csv` (73 maps) and
+  `actor_property_coverage.csv` (389 classes) are rebuilt by `tools/map-census.py` / `make map-census`, using the
+  same block locator as `class-defaults.py`. Ties in the class table had to keep **first-seen order**, not
+  alphabetical, to match the committed file — the values were identical and only the ordering differed.
+- **`squad_scripts.csv` is not reproducible with that rule**: 581 `(map, script)` pairs against the committed
+  614 (35 only in the old file, 2 only in this pass), so the original enumeration was broader than a located
+  property block. The tool prints the delta and refuses to overwrite, and `docs/T3D.md` says why — losing 35
+  references that other docs count would be worse than an unreproducible number that is labelled as such.
+- Orphans left: 1 (`squad_scripts`).
+
 ### Execution notes (2026-10-24, closing the orphan generators)
 
 - **Three of the seven orphaned artifacts now have a committed generator that reproduces them byte for byte.**
