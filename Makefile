@@ -225,4 +225,4 @@ t3d:
 
 # One class's default properties (docs/CLASS_DEFAULTS.md).
 class-defaults:
-	@$(PYTHON) tools/pkg-defaults.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --class "$(CLASS)"
+	@$(PYTHON) tools/class-defaults.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --class "$(CLASS)"

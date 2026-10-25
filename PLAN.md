@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, defaults: block chosen, values partial)
+
+- **The block ambiguity is settled semantically and the values are not.** Scoring candidate blocks by how many
+  of their property names the class actually declares (`inventory/class_properties.csv` plus the super chain)
+  moves `SGOrder` from a 10-property block containing `Core` and `Range` to its real 8-property block at `+0xB3`
+  (`tools/class-defaults.py`, `docs/CLASS_DEFAULTS.md`). But sweeping `StargateGame`'s 306 classes gives only
+  **18** blocks whose names are all declared, 188 ambiguous and 73 with no candidate, so names are enough to
+  *reject* a wrong block and not to *choose* between two plausible ones. `Bool`/`Int`/`Byte`/object values decode;
+  `Str` values do not (`Description` reads as the name `BeginState`). Squad scripts named by maps appear in those
+  packages' name tables but are neither imports nor exports, so the roster is referenced from inside the `Level`
+  export.
+
 ### Execution notes (2026-10-24, class defaults)
 
 - **Class defaults are locatable, not yet readable in full.** `tools/pkg-defaults.py` finds a class's default
