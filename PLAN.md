@@ -591,7 +591,13 @@ and a deliberate one-line script break is caught by the boot test.
       fully-scripted system, hence the best rebuild target; 29 of 68 weapons are two-function-or-less variants, and the
       `X`/`XAmmo`/`XDamage` naming holds for only 17 of 68, so a rebuild must not generate classes from the pattern.
       No weapon is placed in any map; they persist through checkpoints (`FragGrenade` 447, `P90Prototype` 432).
-      Remaining: objectives, UI, audio — the script-side ones stay blocked on the oracle.
+      **Mission objectives done** (`docs/systems/OBJECTIVES.md`): there is no objective *system* — 10
+      `GameObjective` classes hold 22 functions between them and 4 are empty stubs, `MissionObjective` (Engine) has no
+      subclasses, and the missions are built from 22 `ACTION_*` latent scripted actions carrying 83 properties, i.e.
+      editor-parameterised data in the level script. `StoryModeGame` (51 functions, 3 states) owns the campaign rules;
+      `ObjectivesPanel` renders state. Consequence: 5.2 (level script) is on the critical path for anything playable.
+      `chapters.csv` has 37 entries, 30 on disk.
+      Remaining: UI, audio — the script-side ones stay blocked on the oracle.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
       with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed
