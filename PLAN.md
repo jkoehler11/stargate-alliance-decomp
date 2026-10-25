@@ -145,8 +145,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
-- [ ] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
-      `Default.ini` class list; iterate until each package compiles clean.
+- [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
+      flags, so recompiled script can be compared byte-for-byte.
+      **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
+      writes all 2,319 classes to `$WORK/source-tree` (6,113,909 bytes, `inventory/source_tree_summary.csv`,
+      `docs/PACKAGE_SCRIPT_TEXT.md`). But **only 15 classes carry `defaultproperties`** — the defaults live in the
+      package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
+      `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
+      the disagreements are recorded, not explained.
 - [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),

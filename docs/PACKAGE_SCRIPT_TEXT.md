@@ -92,6 +92,53 @@ static final operator(20) float + ( float A, float B )` — which the counter do
 attribute to that package's classes. Both are recorded in `inventory/script_text_natives.csv` rather than
 smoothed over; the six-class table above is the part that is validated.
 
+
+## Extracting the whole tree, and what it is not
+
+`python3 tools/pkg-script-text.py DUMP/System --tree --write $WORK/source-tree` writes one `.uc` per class.
+Measured on 2026-10-24:
+
+| | |
+|---|---:|
+| files written | **2,319** |
+| bytes of source | 6,113,909 |
+| files whose braces balance | 2,317 |
+| files containing `defaultproperties` | **15** |
+| files declaring functions | 1,182 |
+| function declarations in the tree | 10,608 |
+| function counts recorded in `inventory/classes.csv` | 10,335 |
+| classes whose function count matches exactly | **1,789 of 2,319** |
+
+`inventory/source_tree_summary.csv` holds the per-package file counts.
+
+### The defaults are not in the text
+
+**Only 15 of 2,319 classes have a `defaultproperties` block.** This is the important correction to the
+enthusiasm of the previous section: `ScriptText` is the class declaration and its functions, and the class
+**defaults live in the package's default-properties data, not in the source text**. So:
+
+* The tree is not a drop-in replacement for the decompiled tree for rebuilding: a class compiled without its
+  defaults is a different class, and every weapon's damage, every vehicle's mass, every emitter's colour
+  lives there.
+* The 3.6/3.7 plan does not get simpler, it gets a second input: the text for structure, the defaults export
+  for values. The compile loop needs both.
+* PR #45's claim that the exact text behind the shipped bytecode is available stands, but "exact" now means
+  "for the script body" — the values that shape that bytecode's constants are elsewhere.
+
+### Where the function count drifts
+
+1,789 of 2,319 classes match the inventory's function count exactly; the rest differ by one or two in either
+direction. Three causes are visible in the data, and one is not yet explained:
+
+* **state-scoped functions** are declared inside `state` blocks and are counted by the source reader but not
+  always by the inventory's per-class count (the inventory counts states separately: 553 in total);
+* **`event` declarations** parse as functions in some classes;
+* truncated tails (`GameInfo.uc` and `WarpZoneMarker.uc` do not balance their braces — the extraction stops
+  where the text does).
+
+The unexplained residue is small but real: 530 classes' counts disagree and this file does not claim to know
+which side is right. Both numbers are recorded; the disagreement is the finding.
+
 ## Handling: measured here, extracted elsewhere
 
 The text is game-derived. Per `AGENTS.md` and `docs/LEGAL.md` it must not be committed: what is committed is

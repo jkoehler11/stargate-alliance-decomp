@@ -76,17 +76,71 @@ def stats(text):
             "extends": (decl.group(2) or "") if decl else ""}
 
 
+def extract_tree(args):
+    """Every class in every package into one directory, one .uc per class, plus a per-package summary."""
+    summary, total_bytes, total_classes, skipped = [], 0, 0, []
+    for fname in sorted(os.listdir(args.package)):
+        if not fname.lower().endswith(".u"):
+            continue
+        path = os.path.join(args.package, fname)
+        pkg = Package(path)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        pkg_name = os.path.splitext(fname)[0]
+        outdir = os.path.join(args.write, pkg_name)
+        os.makedirs(outdir, exist_ok=True)
+        classes = 0
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            name = pkg.name(exp["name"])
+            text = script_text(pkg, exp)
+            if text is None:
+                skipped.append("%s/%s" % (pkg_name, name))
+                continue
+            with open(os.path.join(outdir, name + ".uc"), "w") as f:
+                f.write(text)
+            classes += 1
+            total_bytes += len(text)
+        summary.append((pkg_name, classes, total_bytes))
+        print("%-20s %4d classes" % (pkg_name, classes))
+    total_classes = sum(c for _, c, _ in summary)
+    print("\nextracted %d classes, %d bytes into %s" % (total_classes, total_bytes, args.write))
+    if skipped:
+        print("no text for %d classes: %s" % (len(skipped), skipped[:6]))
+    if args.out:
+        os.makedirs(args.out, exist_ok=True)
+        path = os.path.join(args.out, "source_tree_summary.csv")
+        counts = {}
+        for pkg_name, classes, _ in summary:
+            counts[pkg_name] = classes
+        with open(path, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["package", "classes_with_text"])
+            for pkg_name in sorted(counts):
+                w.writerow([pkg_name, counts[pkg_name]])
+        print("wrote %s (%d rows)" % (path, len(counts)))
+    return 0 if not skipped else 1
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("package")
+    ap.add_argument("package", help="a package file, or a directory of packages with --tree")
     ap.add_argument("--class", dest="cls", help="one class")
     ap.add_argument("--all", action="store_true", help="every class in the package")
+    ap.add_argument("--tree", action="store_true",
+                    help="treat the first argument as a System/ directory and extract every package into --write")
     ap.add_argument("--stats", action="store_true")
     ap.add_argument("--write", help="directory to write .uc files into (use $WORK, never the repo)")
     ap.add_argument("--print", dest="show", action="store_true", help="print the text (debugging only)")
     ap.add_argument("-o", "--out")
     args = ap.parse_args()
 
+    if args.tree:
+        if not args.write:
+            sys.exit("--tree needs --write DIR (use $WORK: this writes game source)")
+        return extract_tree(args)
     pkg = Package(args.package)
     pkg.read_names()
     pkg.read_imports()
