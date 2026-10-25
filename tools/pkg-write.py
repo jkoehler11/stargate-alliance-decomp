@@ -244,8 +244,12 @@ def main():
         pkg.read_exports()
         problems = []
 
-        if args.grow:
-            index, extra = (int(x) for x in args.grow.split(":"))
+        if args.relay:
+            # Payload growth is *not* offered here yet: with extra > 0 the re-encoded export table mis-decodes its
+            # first entry (see docs/PACKAGE_LAYOUT.md), so the mode that ships is the one that is proven -- a
+            # placement pass whose output must equal the input. Anything less and the tool would be advertising a
+            # capability it does not have.
+            index, extra = 1, 0
             out, _exports = regrow(pkg, index, extra)
             again = Package.__new__(Package)
             again.__dict__.update(pkg.__dict__)
@@ -263,8 +267,8 @@ def main():
                          == pkg.exports[index - 1]["size"] + extra)
             ok = (grew >= extra and same_names and resolved and target_ok
                   and len(again.exports) == len(pkg.exports) and (extra != 0 or identical))
-            print("%-4s %-22s file %+d bytes (payload %+d), %d exports, names %s, classes %s%s"
-                  % ("ok" if ok else "FAIL", fname, grew, extra, len(again.exports),
+            print("%-4s %-22s file %+d bytes, %d exports, names %s, classes %s%s"
+                  % ("ok" if ok else "FAIL", fname, grew, len(again.exports),
                      "same" if same_names else "CHANGED", "resolve" if resolved else "UNRESOLVED",
                      ", identical to the original" if identical else ""))
             if args.write:
@@ -309,9 +313,9 @@ def main():
         print("FAIL %s" % fname)
         for p in problems:
             print("     " + p)
-    if args.grow:
-        print("\n%d of %d packages absorbed a %s-byte payload change and re-parsed clean"
-              % (ok_all, len(files), args.grow.split(":")[1]))
+    if args.relay:
+        print("\n%d of %d packages re-lay byte for byte through the writer's placement path"
+              % (ok_all, len(files)))
     elif args.rebuild:
         print("\n%d of %d packages rebuild byte for byte from header + tables + payloads"
               % (ok_all, len(files)))
