@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the path to a build)
+
+- **`docs/PATH.md` separates the two goals that "builds and runs" hides.** Goal A (our scripts, shipped engine and
+  assets) needs one acquisition — a UE2 compiler matching version 130/licensee 4, absent here while Wine is present
+  — and then mechanical work: 607 default blocks, a package writer, the check bypass, a boot-and-diff loop.
+  Estimate 2–4 months, with the honest caveat that it is months *or never* depending on whether a matching compiler
+  exists. Goal B (reconstruct 14,957 native functions, 13.29% named, 0 reconstructed C) is years and does not get
+  there by continuing function by function; it needs a change of method (fork classes first, stock engine by
+  lineage).
+- Recorded so the next session does not re-litigate it: **the next actionable step is acquiring `ucc` and compiling
+  one trivial class**, not more measuring.
+
 ### Execution notes (2026-10-24, defaults state, and the test that nearly inflated it)
 
 - **Compile readiness is 1,712 of 2,319 (73.8%), up from 66.9%**, and the gain is a distinction rather than a
