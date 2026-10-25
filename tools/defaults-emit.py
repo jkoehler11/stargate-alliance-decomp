@@ -172,6 +172,22 @@ def ref_name(pkg, ref):
     return (pkg.name(imp["class"]), pkg.name(imp["class_package"]), pkg.name(imp["name"]))
 
 
+PRIMITIVE_ELEMENT = {"float": 4, "int": 4, "byte": 1, "bool": 1}
+STRUCT_LAYOUT = {"Vector": ("<3f", "X,Y,Z"), "Rotator": ("<3i", "Pitch,Yaw,Roll"),
+                 "Color": ("4B", "R,G,B,A"), "Plane": ("<4f", "X,Y,Z,W")}
+INLINE_FLAGS = re.compile(r"^(?:editinlinenotify|editinline|export|localized|const|private|protected)\s+", re.I)
+
+
+def inner_type(meta):
+    """`array<Sound>` -> `Sound`; `array<editinline MatchInfo>` -> `MatchInfo`."""
+    if not meta or not meta[1]:
+        return None
+    m = re.match(r"array<(.*)>$", meta[1].strip())
+    if not m:
+        return None
+    return INLINE_FLAGS.sub("", m.group(1).strip())
+
+
 def render_ref(pkg, ref, meta):
     got = ref_name(pkg, ref)
     if got is None:
@@ -180,13 +196,127 @@ def render_ref(pkg, ref, meta):
     if not cls or cls == "?":
         return None
     object_name = "%s.%s" % (package, name) if package else name
-    if meta and meta[1].lower() in ("class",) or (meta and meta[0] == "UClassProperty"):
+    if meta and meta[0] == "UClassProperty":
         return "class'%s'" % object_name
     return "%s'%s'" % (cls, object_name)
 
 
-def render_value(pkg, entry, meta, buf):
+def render_fstring(buf, off, end):
+    """FString at `off` in an untagged element: (text, new offset), or (None, off) if it overruns."""
+    if off >= end:
+        return None, off
+    n = buf[off]
+    used = 1
+    if n & 0x80:
+        if off + 1 >= end:
+            return None, off
+        n = ((n & 0x7F) << 8) | buf[off + 1]
+        used = 2
+    stop = min(off + used + n, end)
+    return buf[off + used:stop].split(b"\0")[0].decode("latin1", "replace"), stop
+
+
+def render_struct_fields(name, values):
+    if name == "Vector":
+        return "(X=%s,Y=%s,Z=%s)" % tuple(format_float(v) for v in values)
+    if name == "Rotator":
+        return "(Pitch=%d,Yaw=%d,Roll=%d)" % values
+    if name == "Color":
+        return "(R=%d,G=%d,B=%d,A=%d)" % values
+    if name == "Plane":
+        return "(X=%s,Y=%s,Z=%s,W=%s)" % tuple(format_float(v) for v in values)
+    return None
+
+
+def render_element(pkg, buf, off, inner, ctx, end):
+    """One array element: untagged, so its width comes from the element type, not from a size byte.
+
+    Every read here is bounded by the array's own value region; a short read means the element type guess is
+    wrong, which is a refusal rather than a partial element.
+    """
+    try:
+        return _render_element(pkg, buf, off, inner, ctx, end)
+    except (IndexError, struct.error):
+        return None, off
+
+
+def _render_element(pkg, buf, off, inner, ctx, end):
+    low = inner.lower()
+    if re.match(r"class<.*>$", inner, re.I):
+        # `array<Class<Emitter>>`: the element is an object reference to a class, not to an instance.
+        idx, off2 = ps.read_index(buf, off)
+        text = render_ref(pkg, idx, ("UClassProperty", "class"))
+        return (text, off2) if text else (None, off)
+    if low in PRIMITIVE_ELEMENT:
+        width = PRIMITIVE_ELEMENT[low]
+        if off + width > end:
+            return None, off
+        if low == "float":
+            return format_float(struct.unpack_from("<f", buf, off)[0]), off + width
+        if low == "int":
+            return str(struct.unpack_from("<i", buf, off)[0]), off + width
+        if low == "bool":
+            return ("True" if buf[off] else "False"), off + width
+        return str(buf[off]), off + width
+    if low in ("name", "object"):
+        idx, off2 = ps.read_index(buf, off)
+        if low == "name":
+            # A name element goes through the same quoting rule as a scalar name: `bip01 Spine` is a name
+            # with a space in it, and unquoted it would be two tokens to the compiler.
+            name = pkg.name(idx)
+            return (name if IDENT.match(name) else quote_string(name)), off2
+        text = render_ref(pkg, idx, None)
+        return (text, off2) if text else (None, off)
+    if low in ("string", "str"):
+        text, off2 = render_fstring(buf, off, end)
+        return (quote_string(text), off2) if text is not None else (None, off)
+    if inner in STRUCT_LAYOUT:
+        fmt, _names = STRUCT_LAYOUT[inner]
+        width = struct.calcsize(fmt)
+        if off + width > end:
+            return None, off
+        return render_struct_fields(inner, struct.unpack_from(fmt, buf, off)), off + width
+    if inner in ctx["enums"]:
+        elems = ctx["enums"][inner]
+        value = buf[off]
+        return (elems[value] if value < len(elems) else str(value)), off + 1
+    if low in ctx["classes"]:
+        idx, off2 = ps.read_index(buf, off)
+        text = render_ref(pkg, idx, None)
+        return (text, off2) if text else (None, off)
+    # A struct whose fields are themselves tagged: UELib reads tags until `None`, not by a fixed width.
+    return render_tagged_struct(pkg, buf, off, end, ctx)
+
+
+def render_tagged_struct(pkg, buf, start, end, ctx, depth=0):
+    """A struct serialised as a nested tagged block (`Field=value` pairs, `None`-terminated).
+
+    UELib's `UDefaultProperty` falls back to this for every struct its atomic serialiser does not claim, and the
+    recursion is bounded because a malformed stream can otherwise nest without end.
+    """
+    if depth > 3 or end > len(buf):
+        return None, start
+    fields, off = [], start
+    while off < end:
+        try:
+            idx, off = ps.read_index(buf, off)
+            if idx == 0 or pkg.name(idx) == "None":
+                break
+            entry, off = ps.read_value(buf, off, pkg, True)
+        except (IndexError, struct.error):
+            return None, start
+        text, _note = render_value(pkg, entry, None, buf, ctx, depth + 1)
+        if text is None:
+            return None, start
+        fields.append("%s=%s" % (pkg.name(idx), text))
+    if off != end or not fields:
+        return None, start
+    return "(" + ",".join(fields) + ")", off
+
+
+def render_value(pkg, entry, meta, buf, ctx=None, depth=0):
     """(text, note) for one decoded property; text is None when the type is not rendered."""
+    ctx = ctx or {"enums": {}, "classes": set()}
     t = entry["type"]
     if t == "Byte":
         value = entry.get("value")
@@ -218,19 +348,39 @@ def render_value(pkg, entry, meta, buf):
     if t == "Struct":
         sn = entry.get("struct")
         v = entry.get("value")
-        if sn in ("Vector",) and isinstance(v, tuple) and len(v) == 3:
-            return "(X=%s,Y=%s,Z=%s)" % tuple(format_float(x) for x in v), "vector"
-        if sn == "Rotator" and isinstance(v, tuple) and len(v) == 3:
-            return "(Pitch=%d,Yaw=%d,Roll=%d)" % v, "rotator"
-        if sn == "Color" and isinstance(v, tuple) and len(v) == 4:
-            return "(R=%d,G=%d,B=%d,A=%d)" % v, "color"
-        if sn == "Plane" and isinstance(v, tuple) and len(v) == 4:
-            return "(X=%s,Y=%s,Z=%s,W=%s)" % tuple(format_float(x) for x in v), "plane"
-        return None, "struct"
-    if t in ("Vector",):
-        return None, "vector"
+        if sn in STRUCT_LAYOUT:
+            text = render_struct_fields(sn, v) if isinstance(v, tuple) else None
+            return (text, sn.lower()) if text else (None, "struct")
+        if depth >= 3:
+            return None, "struct"
+        start = entry.get("value_offset")
+        if start is None:
+            return None, "struct"
+        text, _off = render_tagged_struct(pkg, buf, start, start + entry["size"], ctx, depth + 1)
+        return (text, "struct-nested") if text else (None, "struct")
     if t == "Array":
-        return None, "array"
+        count_off = entry.get("value_offset")
+        inner = inner_type(meta)
+        if count_off is None or not inner:
+            return None, "array"
+        end = count_off + entry["size"]
+        try:
+            count, off = ps.read_index(buf, count_off)
+        except IndexError:
+            return None, "array"
+        if count < 0 or count > 4096:
+            return None, "array"
+        parts = []
+        for i in range(count):
+            text, off = render_element(pkg, buf, off, inner, ctx, end)
+            if text is None:
+                return None, "array"
+            parts.append((i, text))
+        if off != end:
+            # The elements have to tile the value region exactly; anything else is a wrong element type, and
+            # a wrong element type that happens to stop inside the size is exactly what a guess looks like.
+            return None, "array"
+        return parts, "array"
     return None, "other"
 
 
@@ -297,8 +447,9 @@ def render_block(pkg, props, meta_of, enums, buf_offset_data):
 # -------------------------------------------------------------------------------------------------- sweep
 
 COLUMNS = ["package", "classes", "blocks", "clean_blocks", "dirty_properties", "properties", "rendered",
-           "arrays", "structs", "other", "bytes", "bytes_resolved",
-           "floats", "ints", "bools", "names", "strs", "objects", "geometry"]
+           "arrays_rendered", "arrays_unrendered", "array_elements", "structs_unrendered", "nested_structs",
+           "other",
+           "bytes", "bytes_resolved", "floats", "ints", "bools", "names", "strs", "objects", "geometry"]
 
 
 def empty_row(pkg_name):
@@ -318,7 +469,19 @@ def prop_meta_for(cls, supers, props_meta):
     return meta_of
 
 
-def render_class(pkg, cls, exp, supers, declared_all, props_meta, enums, row, notes):
+def class_set(path=None):
+    """Every class name in the tree, lowercased: an array's inner type may name a class (`array<Sound>`)."""
+    path = path or os.path.join(ROOT, "inventory", "classes.csv")
+    out = set()
+    if os.path.isfile(path):
+        with open(path, newline="") as fh:
+            for r in csv.DictReader(fh):
+                out.add(r["class"].lower())
+    out.add("object")
+    return out
+
+
+def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, notes):
     """Render one class's block into lines; adds to `row`/`notes`.
 
     Returns (lines, status) where status is "clean" (every property name declared by the class: emit it),
@@ -341,27 +504,38 @@ def render_class(pkg, cls, exp, supers, declared_all, props_meta, enums, row, no
     for p in props:
         row["properties"] += 1
         meta = meta_of(p["name"])
-        text, note = render_value(pkg, p, meta, buf)
-        if text is not None and note == "byte":
+        text, note = render_value(pkg, p, meta, buf, ctx)
+        if isinstance(text, str) and note == "byte":
             row["bytes"] += 1
             enum_name = meta[1].split(".")[-1] if meta and "." in (meta[1] or "") else None
-            elems = enums.get(enum_name) if enum_name else None
+            elems = ctx["enums"].get(enum_name) if enum_name else None
             if elems and 0 <= p["value"] < len(elems):
                 text = elems[p["value"]]
                 row["bytes_resolved"] += 1
         if text is None:
-            key = {"array": "arrays", "struct": "structs"}.get(note, "other")
+            key = {"array": "arrays_unrendered", "struct": "structs_unrendered"}.get(note, "other")
             row[key] += 1
             notes[note] += 1
             lines.append("// unrendered %s (%s)" % (p["name"], note))
             continue
         row["rendered"] += 1
+        if note == "struct-nested":
+            row["nested_structs"] += 1
         key = {"Float": "floats", "Int": "ints", "Bool": "bools", "Name": "names", "Str": "strs",
                "String": "strs", "Object": "objects", "Class": "objects"}.get(p["type"])
         if key is None and note in ("vector", "rotator", "color", "plane"):
             key = "geometry"
         if key:
             row[key] += 1
+        if note == "array":
+            row["arrays_rendered"] += 1
+        if isinstance(text, list):
+            # An array renders as a line per element (`Months(0)=January`), which is the form the compiler
+            # reads back into the array.
+            for index, value in text:
+                lines.append("%s(%d)=%s" % (p["name"], index, value))
+            row["array_elements"] += len(text)
+            continue
         if p.get("array_index"):
             lines.append("%s(%d)=%s" % (p["name"], p["array_index"], text))
         else:
@@ -374,6 +548,7 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
     declared_all = cd.declared_properties()
     props_meta = property_meta()
     enums, enum_conflicts = global_enums(system_dir)
+    ctx = {"enums": enums, "classes": class_set()}
     rows, tot, notes = [], collections.Counter(), collections.Counter()
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
@@ -387,7 +562,7 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
         emitted = {}
         for exp in classes:
             cls = pkg.name(exp["name"])
-            lines, status = render_class(pkg, cls, exp, supers, declared_all, props_meta, enums, row, notes)
+            lines, status = render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, notes)
             if status == "clean":
                 row["clean_blocks"] += 1
                 emitted[cls] = lines
@@ -428,10 +603,13 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
         print("merged %d blocks into %s; %d classes had no extracted source"
               % (tot["merged"], merge_dir, tot["merge_missing"]))
     print("%d classes, %d blocks (%d clean, %d properties withheld from the rest), %d properties: "
-          "%d rendered (%.1f%%); %d arrays, %d structs, %d other; %d of %d byte values named from an enum"
+          "%d rendered (%.1f%%), %d array elements and %d nested structs included; %d arrays and %d structs "
+          "left unrendered, %d other; %d of %d byte values named from an enum"
           % (tot["classes"], tot["blocks"], tot["clean_blocks"], tot["dirty_properties"], tot["properties"],
              tot["rendered"], 100.0 * tot["rendered"] / tot["properties"] if tot["properties"] else 0.0,
-             tot["arrays"], tot["structs"], tot["other"], tot["bytes_resolved"], tot["bytes"]))
+             tot["array_elements"], tot["nested_structs"],
+             tot["arrays_unrendered"], tot["structs_unrendered"], tot["other"],
+             tot["bytes_resolved"], tot["bytes"]))
     print("unrendered by reason: %s; %d enum-name conflicts" % (dict(notes.most_common()), enum_conflicts))
     return rows, tot
 

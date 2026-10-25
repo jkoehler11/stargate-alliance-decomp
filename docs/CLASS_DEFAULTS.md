@@ -50,23 +50,23 @@ Two more came out of rendering the values, and both were invisible while only na
 | others (9 packages) | 193 | 174 | 140 |
 | **total** | **2,319** | **2,084** | **1,552 (67%)** |
 
-## Emitting: 12,807 of 13,345 properties render
+## Emitting: 13,033 of 13,345 properties render
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
 | package | classes | blocks | properties | rendered | |
 |---|---:|---:|---:|---:|---:|
-| `StargateContent` | 567 | 441 | 4,711 | 4,495 | 95.4% |
+| `StargateContent` | 567 | 441 | 4,711 | 4,624 | 98.2% |
 | `GamePlay` | 262 | 180 | 1,649 | 1,648 | 99.9% |
-| `StargateVehicles` | 142 | 117 | 1,427 | 1,372 | 96.1% |
-| `Engine` | 367 | 170 | 1,293 | 1,240 | 95.9% |
-| `Sharpeffects` | 158 | 156 | 1,101 | 982 | 89.2% |
-| `GUI` | 148 | 128 | 1,085 | 1,067 | 98.3% |
-| `StargateGame` | 306 | 150 | 879 | 862 | 98.1% |
+| `StargateVehicles` | 142 | 117 | 1,427 | 1,398 | 98.0% |
+| `Engine` | 367 | 170 | 1,293 | 1,283 | 99.2% |
+| `Sharpeffects` | 158 | 156 | 1,101 | 985 | 89.5% |
+| `GUI` | 148 | 128 | 1,085 | 1,084 | 99.9% |
+| `StargateGame` | 306 | 150 | 879 | 870 | 99.0% |
 | `Stargateeffects` | 77 | 69 | 367 | 315 | 85.8% |
 | `StargateMenus` | 98 | 65 | 310 | 304 | 98.1% |
 | others (9 packages) | 194 | 76 | 523 | 522 | 99.8% |
-| **total** | **2,319** | **1,552** | **13,345** | **12,807** | **96.0%** |
+| **total** | **2,319** | **1,552** | **13,345** | **13,033** | **97.7%** |
 
 What renders, and what each rendering was checked against:
 
@@ -77,6 +77,20 @@ What renders, and what each rendering was checked against:
 | `Object` / `Class` | 1,466 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
 | `Struct(Vector/Rotator/Color/Plane)` | 808 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
 | `Byte` | 965 | an enum element name where the enum can be resolved, the number otherwise |
+| `Array` | 173 properties, 317 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
+| other structs | 53 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
+
+Arrays and the remaining structs are decoded from **UELib's own defaults deserialiser**
+(`tools/uelib/src/Core/Classes/UDefaultProperty.cs`, pinned in `tools/versions.lock`) instead of from the bytes,
+which is the difference between a guess and a reader: an array is a **compact-index count followed by that many
+untagged elements**, their width coming from the *inner* type the property record names (`array<Sound>` — and
+`inventory/class_properties.csv` already carries that name, flags like `editinline` stripped). A struct that is not
+one of the four atomic layouts is a **nested tagged block**, `Field=value` pairs terminated by `None`, which is why
+a `Face` element comes out as a field list rather than a hex blob.
+
+Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
+declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns the previous
+attempt's "66 of 555 look plausible" into 173 decoded and 288 refused.
 
 **Byte values are enums, and their element names are recoverable.** The package stores a byte property's *type*
 name (`SGOrder.OrderState`) and a number; the element order lives only in the shipped script, as
@@ -94,8 +108,12 @@ property name the class does not declare, and they hold almost every impossible 
 their 1,371 properties are counted in `dirty_properties` and not emitted. Emitting them would have raised the
 percentage by four points and shipped nonsense.
 
-What is left over, all counted per block in the CSV: **461 arrays**, **68 structs** other than the four above, and
-**10** properties with a malformed value. That is 3.9% of the block contents.
+What is left over, all counted per block in the CSV: **288 arrays**, **15 structs** and **10** properties with a
+malformed value — 2.3% of the block contents. Of the 288 arrays, **270 are not element streams at all**:
+they are `editinline` arrays (`ParticleEmitter` 189, `RosterEntry` 71, `SGInteraction` 6, `SVehicleWheel` 4), whose
+elements are serialised **inline objects** rather than references, a stream this reader does not parse. The other 18
+carry struct element types that do not decode as either a tagged block or an atomic layout (`FaceInformation` 6,
+`PassengerWeaponStruct` 5, and one instance each of five others).
 
 ## The shipped text is not an oracle for defaults
 
@@ -126,12 +144,13 @@ whose block could not be located or does not account for itself.
 
 ## Not measured
 
-* **Array contents.** 461 properties. The value stream is not the `count` + tagged-element shape a first guess
-  takes it for — that parse succeeds on 66 of 555 instances, which is a wrong guess rather than a partial read. It
-  needs UE2's `UArrayProperty::Serialize` as a reference; guessing at the layout is what cost six attempts on the
-  object tables.
-* **Non-primitive struct contents.** 68 properties (`Karma`, `Range`, `InterpCurve`, `PieceOffsetStruct` …). Vector,
-  Rotator, Color and Plane are read as fixed layouts; the nested field stream for the rest is not established.
+* **`editinline` array contents.** 270 of the 288 remaining arrays. Their elements are inline objects — a
+  serialised object instance per element — not references, and nothing here parses that stream. UELib handles them
+  through its inline-object path; the next attempt should start there rather than at the bytes.
+* **The last 18 arrays and 15 structs.** Element types that decode as neither a tagged block nor an atomic layout
+  (`FaceInformation`, `PassengerWeaponStruct`, `Karma`, `Range`, `InterpCurve` …). Some elements of the same type do
+  decode, so the type is not simply unknown: the difference between a decoding and a refused instance is not yet
+  measured, per class.
 * **The 532 withheld blocks.** Whether their candidate is a truncated real block, a different record at the
   payload's tail, or a parse coincidence is not settled per class — only counted, and excluded.
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the

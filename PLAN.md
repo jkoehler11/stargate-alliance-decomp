@@ -145,12 +145,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
-      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 12,807 of the
-      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (96.0%), enum element names
-      resolve for 722 of 965 byte values from the shipped `enum` declarations, and `make defaults-tree` merges the
-      blocks into the extracted source so one tree carries both halves. Remaining here: 461 array and 68
-      non-primitive struct values (both need a format reference, see the doc's "Not measured"), then
-      `replication` blocks, state code and labels, latent calls, operator precedence.
+      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 13,033 of the
+      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (97.7%), including 173 array
+      properties (317 elements) and 53 nested structs; enum element names resolve for 722 of 965 byte values from
+      the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted source so one
+      tree carries both halves. Remaining here: 288 arrays — **270 of them `editinline` arrays, whose elements are
+      inline objects rather than references** — and 15 structs whose element type decodes sometimes and not others
+      (see the doc's "Not measured"), then `replication` blocks, state code and labels, latent calls, operator
+      precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -159,7 +161,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
-      yield 12,807 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
+      yield 13,033 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
       tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
 - [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
@@ -330,6 +332,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, array and struct defaults decode from the reference)
+
+- **The pinned UELib already contained the spec.** `tools/uelib/src/Core/Classes/UDefaultProperty.cs` is the
+  defaults deserialiser, and two facts in it closed the array work: an array is a **compact-index count then that
+  many *untagged* elements**, their width taken from the property's inner type, and a struct that is not one of the
+  four atomic layouts is a **nested tagged block** (`Field=value` … `None`). The previous session's guess — "each
+  element carries its own info byte" — was wrong and measured as wrong (66 of 555). Reading the reference cost one
+  fetch and converted the guess into a reader.
+- **Rendering went from 12,807 to 13,033 of 13,345 (97.7%)**: 173 array properties (317 elements) and 53 nested
+  structs, all with the tiling check that makes a wrong inner type a refusal rather than a short element.
+- **The 270 remaining arrays are a different format, not a harder version of this one**: `editinline`
+  (`ParticleEmitter` 189, `RosterEntry` 71, `SGInteraction` 6, `SVehicleWheel` 4) serialises each element as an
+  inline object instance, which UELib reads through its inline-object path. The last 18 arrays and 15 structs are
+  element types that decode in one class and not another — recorded per class, not explained.
+- **Two quoting defects the arrays exposed**: an element name with a space (`bip01 Spine`) and an element string
+  were emitted raw, which the compiler would read as two tokens. Both now go through the same quoting rule as the
+  scalar paths. A rendered string can also contain `}`, which is why `--merge` cuts at the *last*
+  `defaultproperties` head instead of matching a closing brace — that is what made the merge non-idempotent.
+- **Next:** inline-object array streams (270), then the withheld 532 blocks.
 
 ### Execution notes (2026-10-25, class defaults render back to UnrealScript)
 
