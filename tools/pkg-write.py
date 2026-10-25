@@ -124,51 +124,41 @@ def rebuild(pkg):
 
 
 def regrow(pkg, index, extra, fill=0xCC):
-    """Enlarge one export's payload and re-lay the file from scratch.
+    """Enlarge one export's payload and re-lay the file, then hand back bytes that must re-parse.
 
-    The offsets are recomputed rather than shifted: every payload is placed at the running position after the
-    tables, in the original order, with the target grown by `extra`. That is safe here because whole-package
-    rebuilds proved the payloads tile the file with no padding (`--rebuild`: zero gaps), and it avoids the
-    fixed-point mess of shifting offsets that may need an extra byte in the compact index. The table length
-    depends on the offsets, so the layout is iterated to a fixed point anyway -- but over positions, not deltas.
+    The layout decides the algorithm, and it is not the obvious one (`docs/PACKAGE_LAYOUT.md`): header, name table,
+    **payloads**, and only then the import and export tables at the end of the file. That makes this a placement
+    problem rather than a fixed point -- payload offsets start right after the names and the two tables move to
+    wherever the payload block ends, with the header's `export_offset`/`import_offset` fields patched to match.
+
+    With `extra == 0` the output must equal the input byte for byte. That is the check that the placement is right,
+    and it is the check the first attempt at this function did not have.
     """
     exports = [dict(e) for e in pkg.exports]
     target = next((e for e in exports if e["index"] + 1 == index), None)
     if target is None:
         raise SystemExit("no export %d in %s" % (index, pkg.path))
-    head = pkg.data[:pkg.name_offset]
-    # region order follows the header's own offsets -- UPreview and others do not all put imports before exports
-    order = sorted([(pkg.name_offset, "names"), (pkg.import_offset, "imports"), (pkg.export_offset, "exports")])
-    names = encode_names(pkg.names)
-    imports = encode_imports(pkg.imports)
-    ordered = sorted(exports, key=lambda e: e["offset"])
-    sizes = dict((e["index"], e["size"]) for e in exports)
-    sizes[target["index"]] += extra
 
-    table = encode_exports(exports)
-    base = len(head) + len(names) + len(imports)
-    for _ in range(8):
-        pos = base + len(table)
-        for e in ordered:
-            e["offset"] = pos
-            pos += sizes[e["index"]]
-        table = encode_exports(exports)
-        if base + len(table) == min(e["offset"] for e in ordered):
-            break
-
+    out = bytearray(pkg.data[:pkg.name_offset])
+    out += encode_names(pkg.names)
+    pos = len(out)
     payload = bytearray()
-    for e in ordered:
-        data = pkg.data[e["offset"] if False else
-                        next(x for x in pkg.exports if x["index"] == e["index"])["offset"]:
-                        next(x for x in pkg.exports if x["index"] == e["index"])["offset"]
-                        + pkg.exports[e["index"]]["size"]]
-        payload += data
+    for e in sorted(exports, key=lambda x: x["offset"]):
+        src = pkg.exports[e["index"]]
+        data = pkg.data[src["offset"]:src["offset"] + src["size"]]
         if e["index"] == target["index"]:
-            payload += bytes([fill]) * extra
-    out = bytearray(head)
-    for _off, which in order:
-        out += {"names": names, "imports": imports, "exports": table}[which]
+            data = data + bytes([fill]) * extra
+        e["offset"] = pos
+        e["size"] = len(data)
+        pos += len(data)
+        payload += data
     out += payload
+    imports_at = len(out)
+    out += encode_imports(pkg.imports)
+    exports_at = len(out)
+    out += encode_exports(exports)
+    struct.pack_into("<I", out, 24, exports_at)   # header: export table offset
+    struct.pack_into("<I", out, 32, imports_at)   # header: import table offset
     return bytes(out), exports
 
 
@@ -263,17 +253,16 @@ def main():
             again.read_names()
             again.read_imports()
             again.read_exports()
-            before = pkg.exports[index - 1]["size"]
-            target = next((e for e in again.exports if e["index"] + 1 == index), None)
-            grew = len(out) - len(pkg.data)
             same_names = [n for n, _f in again.names] == [n for n, _f in pkg.names]
             resolved = bool(again.exports) and all(again.class_name_of(e) != "?" for e in again.exports)
-            ok = (target is not None and grew == extra and same_names and resolved
-                  and target["size"] == before + extra)
-            print("%-4s %-22s export %d %d -> %s bytes, file %+d; re-parse: names %s, classes %s"
-                  % ("ok" if ok else "FAIL", fname, index, before,
-                     target["size"] if target else "?", grew,
-                     "same" if same_names else "CHANGED", "resolve" if resolved else "UNRESOLVED"))
+            grew = len(out) - len(pkg.data)
+            identical = out == pkg.data
+            ok = (grew == extra and same_names and resolved and len(again.exports) == len(pkg.exports)
+                  and (extra != 0 or identical))
+            print("%-4s %-22s file %+d bytes, %d exports, names %s, classes %s%s"
+                  % ("ok" if ok else "FAIL", fname, grew, len(again.exports),
+                     "same" if same_names else "CHANGED", "resolve" if resolved else "UNRESOLVED",
+                     ", identical to the original" if identical else ""))
             if args.write:
                 os.makedirs(args.write, exist_ok=True)
                 with open(os.path.join(args.write, fname), "wb") as fh:
@@ -283,7 +272,6 @@ def main():
             else:
                 bad.append((fname, ["grow check failed"]))
             continue
-
         # Regenerate each table from the parsed model and compare it over its own length, so the slice is exactly
         # as long as what we wrote -- no guessing where the original table ends.
         for label, enc, start in (("names", encode_names(pkg.names), pkg.name_offset),
