@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes ci check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph ci check clean
 
 help:
 	@echo "targets:"
@@ -31,6 +31,7 @@ help:
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
 	@echo "  ucpp-vtables  resolve the class tables of the six ucpp-native classes (PLAN 4.7)"
 	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
+	@echo "  class-graph   walk the subclass tree under a root (ROOT=BotBase) with states and usage"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -174,3 +175,7 @@ ucpp-vtables:
 # Generated release notes for a PLAN 8.4 milestone (docs/RELEASES.md).
 release-notes:
 	@$(PYTHON) tools/release-notes.py --milestone "$(or $(MILESTONE),a)"
+
+# Subclass tree under a root, with states and content usage (docs/systems/AI.md).
+class-graph:
+	@$(PYTHON) tools/class-graph.py --root "$(or $(ROOT),BotBase)" -o inventory

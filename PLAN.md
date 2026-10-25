@@ -576,7 +576,12 @@ and a deliberate one-line script break is caught by the boot test.
       `IntelligentSpawner` 1,860, `SVehicleTrigger` 1,115) and mid-firefight objects (`FragGrenade` 447) — so a
       checkpoint is a snapshot of the live level's actors, not a progress record. 415 rows are the `UObject`/`AActor`
       baseline every actor carries; 533 appear in exactly one file, which is where mission-specific state lives.
-      Remaining: AI, vehicles, weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
+      **AI done** (`docs/systems/AI.md`): 45 controller classes carrying 165 states against 758 functions
+      (`BotEnemy` alone 41 states), squad talk limited to three messages (`AIMSG_Cloak`, `ConcentrateFire`,
+      `TakeCover`), 11 of 12 `SGOrder*` classes adding two functions or fewer, and — the consequential part — **no AI
+      class is placed in any map**: bots appear only through `IntelligentSpawner` and checkpoint state (`BotSG` 890
+      instances), so "which bots does this mission use" is not answerable from the `.unr`.
+      Remaining: vehicles, weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
       with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed
