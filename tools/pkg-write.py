@@ -129,11 +129,8 @@ def main():
         pkg.read_imports()
         pkg.read_exports()
         problems = []
-        for label, want, got in (
-            ("names", pkg.data[pkg.name_offset:pkg.data.find(b"", pkg.name_offset) or len(pkg.data)], None),
-        ):
-            pass
-        # names: find the end by re-encoding and comparing lengths, so the slice is exact
+        # Each table is regenerated from the parsed model and compared over its own length, so the slice is
+        # exactly as long as what we wrote -- no guessing where the original table ends.
         enc_names = encode_names(pkg.names)
         enc_imports = encode_imports(pkg.imports)
         enc_exports = encode_exports(pkg.exports)

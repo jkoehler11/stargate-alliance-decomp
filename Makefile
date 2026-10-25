@@ -27,6 +27,7 @@ help:
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
 	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
+	@echo "  pkg-verify    re-encode every package's tables and diff against the original"
 	@echo "  compile-readiness  per-class check of what a rebuild would have (3.6 inputs)"
 	@echo "  map-census    regenerate the map-side census CSVs (needs the dump)"
 	@echo "  package-census  regenerate the four package-side census CSVs (needs the dump)"
@@ -121,6 +122,7 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
 	@$(PYTHON) tools/status.py --check
 
@@ -173,6 +175,9 @@ libraries:
 # runs it with --check, so a landed artifact that moves a number fails the gate until it is regenerated.
 squad-rosters:
 	@$(PYTHON) tools/squad-rosters.py "$(SYSTEM_DIR)" -o inventory
+
+pkg-verify:
+	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)"
 
 compile-readiness:
 	@$(PYTHON) tools/compile-readiness.py -o inventory
