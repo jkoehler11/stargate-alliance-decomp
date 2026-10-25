@@ -559,8 +559,13 @@ and a deliberate one-line script break is caught by the boot test.
       five addresses that form the script/native boundary, the property/tag format that doubles as the save format, the
       content layer with the mission/multiplayer split, and an explicit "not measured" for the init call graph. §8 maps
       each claim to the check that reproduces it.
-- [ ] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
-      UI/menus, audio/LIPSinc.
+- [~] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
+      UI, audio (LIPSinc). **Checkpoints done** (`docs/systems/CHECKPOINTS.md`): the nine `.sgs` files hold 1,739 property
+      rows over 96 classes, 40% of them object references, dominated by level furniture (`Mover` 2,227 instances,
+      `IntelligentSpawner` 1,860, `SVehicleTrigger` 1,115) and mid-firefight objects (`FragGrenade` 447) — so a
+      checkpoint is a snapshot of the live level's actors, not a progress record. 415 rows are the `UObject`/`AActor`
+      baseline every actor carries; 533 appear in exactly one file, which is where mission-specific state lives.
+      Remaining: AI, vehicles, weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
 - [ ] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) native symbol map, (f) bootable rebuild.
 - [ ] 8.5 Publish tooling separately (package scripts, native-symbol generator) as generally useful UE2/Xbox RE tools.
