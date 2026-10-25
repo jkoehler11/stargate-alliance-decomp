@@ -34,6 +34,7 @@ help:
 	@echo "  class-graph   walk the subclass tree under a root (ROOT=BotBase) with states and usage"
 	@echo "  package-names parse every .u header and name table (PLAN 5.2/4.7 prerequisite)"
 	@echo "  nightly       run the dump-free gate plus every dump-side check, one summary per run (PLAN 7.5)"
+	@echo "  pkg-exports   list a class's exports and their sizes from a package (PKG=... CLASS=...)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -189,3 +190,7 @@ package-names:
 # Nightly regression: the checks CI cannot run (docs/REGRESSION.md).
 nightly:
 	@sh tools/nightly.sh
+
+# One class's exports (names, kinds, sizes) straight from a package (docs/PACKAGE_SCRIPT_TEXT.md).
+pkg-exports:
+	@$(PYTHON) tools/pkg-exports.py "$(PKG)" --class "$(CLASS)"
