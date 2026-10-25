@@ -538,7 +538,12 @@ and a deliberate one-line script break is caught by the boot test.
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
 - [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
-- [ ] 8.2 `docs/ARCHITECTURE.md`: engine fork overview, VM, script-to-native mapping, level flow.
+- [x] 8.2 `docs/ARCHITECTURE.md`: engine fork overview, VM, script-to-native mapping, level flow.
+      Done: the three layers and their sizes, the address space (code, 462 KB of class tables, the name table) with the
+      measured finding that code is ordered per translation unit rather than per module, the object model down to the
+      five addresses that form the script/native boundary, the property/tag format that doubles as the save format, the
+      content layer with the mission/multiplayer split, and an explicit "not measured" for the init call graph. §8 maps
+      each claim to the check that reproduces it.
 - [ ] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
       UI/menus, audio/LIPSinc.
 - [ ] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
