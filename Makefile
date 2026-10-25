@@ -40,6 +40,7 @@ help:
 	@echo "  sfx-index     count the Sound exports in every .uax (PLAN 5.3)"
 	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
 	@echo "  t3d           write every map's actors as T3D into \$$WORK/extracted/maps (PLAN 5.2)"
+	@echo "  class-defaults read one class's default properties (PKG=... CLASS=...)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -221,3 +222,7 @@ prop-stream:
 t3d:
 	@$(PYTHON) tools/map-to-t3d.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" \
 		--out "$(or $(WORK),work)/extracted/maps"
+
+# One class's default properties (docs/CLASS_DEFAULTS.md).
+class-defaults:
+	@$(PYTHON) tools/pkg-defaults.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --class "$(CLASS)"
