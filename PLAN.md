@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the placement pass works; growth does not yet)
+
+- **`--relay` reproduces all 18 packages byte for byte through the writer's own placement**: header, names,
+  payloads, then the two object tables, with the header's `export_offset`/`import_offset` patched. Unlike `--rebuild`
+  (which places regions at their original offsets), this *chooses* the positions from the model, which is what a
+  writer must do once a payload changes size.
+- **Payload growth is still not offered.** With a non-zero growth the re-encoded export table mis-decodes its first
+  entry and classes stop resolving; the symptom is localised to the first entry and later entries shifting by one,
+  the cause is not established. The flag that ships is the one that passes its own check.
+- Correcting the previous note: that PR claimed the grow attempt was reverted. It was not — the broken code merged
+  and could not pass its own check. Both docs now say so.
+
 ### Execution notes (2026-10-24, package layout — and a reverted attempt)
 
 - **Every package lays out as `names < payloads < imports < exports`**: the two object tables sit at the *end* of

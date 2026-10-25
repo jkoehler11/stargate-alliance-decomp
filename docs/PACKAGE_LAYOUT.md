@@ -44,6 +44,15 @@ layout. It has to be solved to a fixed point. That work is not done; `--layout` 
 ## Status
 
 * `--layout` — done, census in `inventory/package_layout.csv`.
-* A `--grow` mode that enlarges one export's payload — **attempted and reverted**, for the reason above. Shipping it
-  half-working would have been worse than documenting why it is the next thing to build.
-* Payload *generation* — still a compiler's job (`docs/PATH.md`).
+* `--relay` — done: every package is re-laid through the writer's placement path (header, names, **payloads**,
+  imports, exports, with the header's two table offsets patched) and comes out **identical, 18 of 18**. That is the
+  placement algorithm proven end to end, not an assumption.
+* `--grow` (enlarge one payload by N bytes) — **not offered**. Providing a non-zero `extra` makes the re-encoded
+  export table mis-decode its first entry, so the re-parse fails with unresolved classes; the symptom is localised
+  (entry 1 reads garbage, later entries shift by one), the cause is not yet established. The mode that ships is the
+  one that is proven.
+
+Correction to the record: the previous PR said this feature had been reverted. It had not — the broken code was
+still on the branch and merged, and the flag simply could not pass its own check. This PR replaces it with the
+placement pass that works and removes the claim that it did not exist.
+

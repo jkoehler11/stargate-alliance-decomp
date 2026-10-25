@@ -44,6 +44,16 @@ produced the bytes.
 What it still does not do: writing payloads we do not have. A rebuild of the game needs a compiler to produce
 export data; this proves the scaffolding around it, which is the part 6.1 can settle without one.
 
+## Re-laying through the writer's own placement
+
+`--relay` does not copy: it rebuilds each file as header, name table, **payloads**, then the import and export
+tables, patching the header's `export_offset` and `import_offset` to the new positions (`docs/PACKAGE_LAYOUT.md`).
+It must reproduce every package byte for byte, and it does — **18 of 18**.
+
+That is a stronger statement than `--rebuild`: `--rebuild` places regions at their original offsets, so it proves the
+offsets are consistent; `--relay` *chooses* the positions from the model and only then checks the bytes, which is what
+a writer will do when a payload changes size.
+
 ## What this does *not* say
 
 * **Payloads are not written.** The export data (properties, `ScriptText`, bytecode) is copied, not generated. A
