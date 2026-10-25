@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the package check file)
+
+- **The check file was being read wrong.** Its 168 records store *hex text* (`00 21 <32 upper> 00 01 21 <32
+  lower> 00`, no filename field), and `tools/package-check.py` was searching for raw 16-byte digests — a
+  comparison that could never match whatever the transform was. With the comparison fixed, the negative is real
+  and much wider: plain `md5` of **all 4,003 files** in the dump, 89 range/zeroing variants on `Engine.u`, and 8
+  name-/data-shaped variants across **489 package files** all miss. So 6.2's "regenerate the check" route is out
+  of reach; **bypass** is the practical one, and that is now evidence rather than suspicion
+  (`docs/PACKAGE_CHECK.md`).
+
 ### Execution notes (2026-10-24, the entry point in the analysis)
 
 - **The analysis was being told the wrong entry.** `tools/ghidra/run-analysis.sh` passed `0x10184` — the
