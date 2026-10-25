@@ -27,6 +27,7 @@ help:
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
 	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
+	@echo "  inventory-index  index every committed artifact and what regenerates it"
 	@echo "  status        regenerate the progress table in README.md and docs/STATUS.md"
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
@@ -117,6 +118,7 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@$(PYTHON) tools/inventory-index.py --check
 	@$(PYTHON) tools/status.py --check
 
 check: verify-dump
@@ -168,6 +170,9 @@ libraries:
 # runs it with --check, so a landed artifact that moves a number fails the gate until it is regenerated.
 squad-rosters:
 	@$(PYTHON) tools/squad-rosters.py "$(SYSTEM_DIR)" -o inventory
+
+inventory-index:
+	@$(PYTHON) tools/inventory-index.py
 
 status:
 	@$(PYTHON) tools/status.py
