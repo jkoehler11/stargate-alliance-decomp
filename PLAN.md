@@ -591,18 +591,25 @@ and a deliberate one-line script break is caught by the boot test.
       fully-scripted system, hence the best rebuild target; 29 of 68 weapons are two-function-or-less variants, and the
       `X`/`XAmmo`/`XDamage` naming holds for only 17 of 68, so a rebuild must not generate classes from the pattern.
       No weapon is placed in any map; they persist through checkpoints (`FragGrenade` 447, `P90Prototype` 432).
-      **Mission objectives done** (`docs/systems/OBJECTIVES.md`): there is no objective *system* — 10
-      `GameObjective` classes hold 22 functions between them and 4 are empty stubs, `MissionObjective` (Engine) has no
-      subclasses, and the missions are built from 22 `ACTION_*` latent scripted actions carrying 83 properties, i.e.
-      editor-parameterised data in the level script. `StoryModeGame` (51 functions, 3 states) owns the campaign rules;
-      `ObjectivesPanel` renders state. Consequence: 5.2 (level script) is on the critical path for anything playable.
-      `chapters.csv` has 37 entries, 30 on disk.
+      **Mission objectives done** (`docs/systems/OBJECTIVES.md`): two families that do not touch, and the campaign
+      ships the engine's — `Engine.MissionObjective` has no subclasses but is placed **261 times**, while the fork's
+      `GameObjective` family (10 classes, 22 functions, 4 empty stubs) is placed **zero** times in all 73 maps. Mission
+      logic is level script: 22 `ACTION_*` latent scripted actions with 83 properties, actually placed (`ACTION_Talk`
+      719, `ACTION_PlaySGSound` 121). `StoryModeGame` (51 functions, 3 states) owns the rules; `ObjectivesPanel`
+      renders state. Consequence: 5.2 is on the critical path for anything playable. `chapters.csv`: 37 entries, 30 on
+      disk.
       **UI done** (`docs/systems/UI.md`): 347 classes / 2,137 functions across `StargateMenus` (98 classes, 334
       functions, **zero natives**), the stock `GUI`+`UWindow` (226) and the game-side HUDs — and it corrects the fork
       count: `SGListBox` and seven subclasses live *inside* `GUI`, so 503 insertion points is a lower bound and package
       name is not a stock/fork discriminator. Two full HUDs (`StargateHUD` 57/101, `ReplicatorHUD` 29/69) mean the
       Replicator mode is first-class; `SGMenuInteraction`'s 294 properties are the largest config blob in the fork.
-      Remaining: audio (LIPSinc/speech).
+      **Audio done** (`docs/systems/AUDIO.md`): three systems, not one — voice packs are script-only
+      (`StargateVoicePack` 34/24, `VoiceSelector` 10/21) with lip-sync as 18 LIPSinc files (6.5 MiB, `.lad` layout is
+      U4); music is the only audio with natives (`IMusicActor` 3) and 1,923 WAVs / 348 MiB in 16 groups with two
+      scoring shapes (mission cue sets vs `M07A`'s 28 numbered cues); speech is 1,364 lines / 150.8 MiB over 207 scenes
+      and 30 speakers, 545 of them untagged. **SFX remain unindexed** — 55 per-character/per-vehicle `.uax` packages,
+      blocked on the same package reader as 5.2/4.7. 8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI,
+      audio.
       Note: `FORK_SURFACE.md` should gain the GUI example when next touched.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
