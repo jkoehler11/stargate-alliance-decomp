@@ -6,7 +6,10 @@ whether the *inputs* are present. This joins the four things a class needs and r
 them is missing:
 
 * **source** — the class's shipped `ScriptText` (2,319 of 2,319, `inventory/package_script_text.csv`)
-* **defaults** — a default-property block whose every property the class declares
+* **defaults** — a default-property block whose every property the class declares (its own and its ancestors').
+  A class with **no properties anywhere in its ancestry** is not blocked by a missing block: it has nothing to
+  configure, so "no defaults" is the right answer for it. Note the test is the *inherited closure*, not the class's
+  own property list — 1,215 classes declare nothing themselves and inherit everything they have
   (`inventory/class_defaults_per_class.csv`)
 * **ancestry** — the superclass is known, so the tree can be ordered for compiling
   (`inventory/classes.csv`)
@@ -42,6 +45,7 @@ def main():
 
     classes = rows("classes.csv")
     defaults = {(r["package"], r["class"]): r for r in rows("class_defaults_per_class.csv")}
+    own_props = collections.Counter((r["package"], r["class"]) for r in rows("class_properties.csv"))
     props = collections.Counter((r["package"], r["class"]) for r in rows("class_properties.csv"))
     source = {r["package"]: int(r["script_text_exports"]) for r in rows("package_script_text.csv")}
     # package names in the inventory are not case-consistent (`GamePlay` vs `package_of_super=Gameplay`),
@@ -55,14 +59,28 @@ def main():
     for r in classes:
         key = (r["package"], r["class"])
         d = defaults.get(key)
+        declared_props = props.get(key, 0)
+        # the closure any defaults block could legitimately set: own properties plus every ancestor's
+        closure, cur, seen = 0, r["class"], set()
+        while cur and cur not in seen:
+            seen.add(cur)
+            closure += props.get((r["package"], cur), 0)
+            cur = r["super"]
         blockers = []
         has_source = package_classes[r["package"]] > 0 and source.get(r["package"], 0) > 0
         if not has_source:
             blockers.append("no-source")
-        if d is None or d["defaults"] == "0":
+        if closure == 0:
+            # Nothing to configure: 230 of the "ambiguous" and 54 of the "no block" classes were this case.
+            defaults_state = "not-applicable"
+        elif d is None or d["defaults"] == "0":
             blockers.append("no-defaults-block")
+            defaults_state = "none"
         elif d["fully_declared"] != "1":
             blockers.append("defaults-ambiguous")
+            defaults_state = "ambiguous"
+        else:
+            defaults_state = "read"
         sup = r["super"]
         if sup and (r["package_of_super"] or "") and \
                 (r["package_of_super"].lower(), sup.lower()) not in known and \
@@ -76,8 +94,8 @@ def main():
         by_package[r["package"]]["classes"] += 1
         by_package[r["package"]]["ready"] += 1 if ready else 0
         per_class.append([r["package"], r["class"], r["functions"], r["native_functions"],
-                          props.get(key, 0), d["defaults"] if d else 0,
-                          d["fully_declared"] if d else 0, ";".join(blockers)])
+                          declared_props, closure, d["defaults"] if d else 0,
+                          d["fully_declared"] if d else 0, defaults_state, ";".join(blockers)])
 
     per_class.sort()
     print("%-22s %6s %6s %s" % ("package", "classes", "ready", "blockers"))
@@ -96,8 +114,8 @@ def main():
     path = os.path.join(outdir, "compile_readiness.csv")
     rollup = os.path.join(outdir, "compile_readiness_by_package.csv")
     for target, header, data in (
-        (path, ["package", "class", "functions", "native_functions", "properties", "defaults",
-                "defaults_clean", "blockers"], per_class),
+        (path, ["package", "class", "functions", "native_functions", "properties", "properties_inherited",
+                "defaults", "defaults_clean", "defaults_state", "blockers"], per_class),
         (rollup, ["package", "classes", "ready", "no_source", "no_defaults_block", "defaults_ambiguous",
                   "super_not_in_tree"],
          [[pkg, by_package[pkg]["classes"], by_package[pkg]["ready"], by_package[pkg]["no-source"],

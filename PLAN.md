@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, defaults state, and the test that nearly inflated it)
+
+- **Compile readiness is 1,712 of 2,319 (73.8%), up from 66.9%**, and the gain is a distinction rather than a
+  parser change: a class with **no properties anywhere in its ancestry** cannot be blocked by an absent defaults
+  block, because it has nothing to set. `inventory/compile_readiness.csv` now carries `defaults_state` with four
+  values — `read` 843, `not-applicable` 869, `ambiguous` 400, `none` 207 — and only the last two block.
+- **The tempting wrong version of that test is the class's own property list**, and it would have reported 79.2%:
+  1,215 classes declare no properties of their own while inheriting dozens. The artifact counts the inherited
+  closure instead (`properties_inherited`), which is the number the claim actually rests on.
+- `docs/COMPILE.md` states both numbers and why one of them was wrong — a measurement page that hides its first
+  wrong answer is worth less than one that shows the correction.
+
 ### Execution notes (2026-10-24, compile readiness measured per class)
 
 - **1,552 of 2,319 classes (66.9%) have every input a rebuild needs** — source, a default-property block whose
