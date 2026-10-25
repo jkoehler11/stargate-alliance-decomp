@@ -15,7 +15,7 @@ Three layers, and they are separable: a native image, a script tree, and content
 | layer | artifact | measured |
 |---|---|---|
 | native | `default.xbe` | 6,209,536 bytes, 15 sections, 13 statically linked libraries (`docs/IMPORTS.md`, `docs/XBE_LAYOUT.md`) |
-| script | 18 `.u` packages | 2,319 classes, decompiled to readable source at L0 (`inventory/decompile_coverage.csv`) |
+| script | 18 `.u` packages | 2,319 classes, each also carrying its **original source text** as a `ScriptText` export (`docs/PACKAGE_SCRIPT_TEXT.md`); the decompiled tree at L0 is a cross-check on that text, not the only readable copy (`inventory/decompile_coverage.csv`) |
 | content | 73 maps + audio | 61 mission maps, 10 multiplayer maps, 1,364 speech WAVs, 1,923 music WAVs |
 
 The script packages, largest first: `Engine` 3,090,635 bytes, `StargateGame` 3,031,678, `StargateContent`
