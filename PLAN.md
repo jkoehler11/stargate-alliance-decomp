@@ -586,7 +586,12 @@ and a deliberate one-line script break is caught by the boot test.
       (13 `StargateWeapon`, 12 `StargateAmmo`, 10 `StargateDamageType`, 10 `StargateProjectile`) rather than vehicles.
       Unlike AI, six vehicle classes *are* placed in maps (`StaffCannon` 21, `DeathGlider` 12, `Hummvee` 9), so 5.2
       can answer what a mission fields.
-      Remaining: weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
+      **Weapons done** (`docs/systems/WEAPONS.md`): 227 classes across four trees (`StargateWeapon` 68,
+      `StargateAmmo` 71, `StargateDamageType` 36, `StargateProjectile` 52) with **zero native functions** — the one
+      fully-scripted system, hence the best rebuild target; 29 of 68 weapons are two-function-or-less variants, and the
+      `X`/`XAmmo`/`XDamage` naming holds for only 17 of 68, so a rebuild must not generate classes from the pattern.
+      No weapon is placed in any map; they persist through checkpoints (`FragGrenade` 447, `P90Prototype` 432).
+      Remaining: objectives, UI, audio — the script-side ones stay blocked on the oracle.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
       with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed
