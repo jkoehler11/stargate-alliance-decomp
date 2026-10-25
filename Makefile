@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables ci check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes ci check clean
 
 help:
 	@echo "targets:"
@@ -30,6 +30,7 @@ help:
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
 	@echo "  ucpp-vtables  resolve the class tables of the six ucpp-native classes (PLAN 4.7)"
+	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -169,3 +170,7 @@ fork-surface:
 # Vtable slots of the six classes that declare ucpp natives (docs/systems/UCPP_NATIVES.md). Needs the dump.
 ucpp-vtables:
 	@$(PYTHON) tools/ucpp-vtables.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+# Generated release notes for a PLAN 8.4 milestone (docs/RELEASES.md).
+release-notes:
+	@$(PYTHON) tools/release-notes.py --milestone "$(or $(MILESTONE),a)"

@@ -577,8 +577,12 @@ and a deliberate one-line script break is caught by the boot test.
       checkpoint is a snapshot of the live level's actors, not a progress record. 415 rows are the `UObject`/`AActor`
       baseline every actor carries; 533 appear in exactly one file, which is where mission-specific state lives.
       Remaining: AI, vehicles, weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
-- [ ] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
-      (e) native symbol map, (f) bootable rebuild.
+- [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
+      (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
+      with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed
+      artifacts (so two releases diff and a stale figure fails rather than misleads). Cutting the tag is a maintainer
+      action after merge; B stays partial because the oracle only agrees on 204 of 291 classes, and C–F have not
+      started.
 - [ ] 8.5 Publish tooling separately (package scripts, native-symbol generator) as generally useful UE2/Xbox RE tools.
 
 ---
