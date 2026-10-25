@@ -320,6 +320,15 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, whole packages rebuild byte for byte)
+
+- **All 18 packages rebuild from header + tables + payloads and come out identical**, 100% of bytes accounted for
+  and **zero gaps** (`make pkg-rebuild`). That upgrades #68's table proof to a *layout* proof: the offsets and
+  serial arrangement are recomputed from the parsed model, not copied. The gap report is the useful part — an
+  unexplained byte range would name what a writer gets wrong later.
+- Still missing for 6.1 is only payload **generation** (a compiler's job) — the scaffolding around it is now
+  measured rather than assumed.
+
 ### Execution notes (2026-10-24, the package writer's tables are proven)
 
 - **18 of 18 packages re-encode their tables byte for byte** — 37,094 names, 7,500 imports, 57,749 exports

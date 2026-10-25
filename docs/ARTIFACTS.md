@@ -41,7 +41,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/package_exports_summary.csv` | 18 | 6 | `make package-census` |
 | `inventory/package_parse.csv` | 0 | 4 | **InventoryCommand.cs (no target runs it)** |
 | `inventory/package_script_text.csv` | 18 | 4 | `make compile-readiness` |
-| `inventory/packages.csv` | 18 | 18 | `make class-defaults` |
+| `inventory/packages.csv` | 18 | 18 | `make help` |
 | `inventory/property_classes.csv` | 15 | 8 | `make ci` |
 | `inventory/property_types.csv` | 17 | 4 | **property-map.py (no target runs it)** |
 | `inventory/script_text_natives.csv` | 18 | 4 | `make package-census` |

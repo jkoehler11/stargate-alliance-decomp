@@ -5,7 +5,8 @@ Writing a package is the step PLAN 6.1 needs and the one that proves the reader:
 tables can be *regenerated* from what we parsed and come out byte-identical, the model is right, not merely
 plausible. What is not yet written is payload generation — a rebuild gets those bytes from a compiler.
 
-    python3 tools/pkg-write.py DUMP/System              # verify every package
+    python3 tools/pkg-write.py DUMP/System              # re-encode every package's tables and diff
+    python3 tools/pkg-write.py DUMP/System --rebuild    # rebuild whole files from header + tables + payloads
     python3 tools/pkg-write.py --selftest               # index codec only, no dump (runs in CI)
 
 The comparison is per table with the exact first differing offset, because "the tables differ" is not information
@@ -88,6 +89,39 @@ def encode_exports(exports):
     return bytes(out)
 
 
+def rebuild(pkg):
+    """Assemble the whole file from its parts: header, three tables, and every export payload at its offset.
+
+    The point is not to copy the original -- it is to prove that those parts *cover every byte*. Anything left
+    uncovered is a region the model does not explain, which is exactly what a writer would get wrong later.
+    """
+    total = len(pkg.data)
+    out = bytearray(total)
+    covered = bytearray(total)
+    def place(start, chunk):
+        out[start:start + len(chunk)] = chunk
+        covered[start:start + len(chunk)] = b"\x01" * len(chunk)
+    place(0, pkg.data[:pkg.name_offset])
+    place(pkg.name_offset, encode_names(pkg.names))
+    place(pkg.import_offset, encode_imports(pkg.imports))
+    place(pkg.export_offset, encode_exports(pkg.exports))
+    for e in pkg.exports:
+        place(e["offset"], pkg.data[e["offset"]:e["offset"] + e["size"]])
+    gaps, i = [], 0
+    while i < total:
+        if not covered[i]:
+            j = i
+            while j < total and not covered[j]:
+                j += 1
+            gaps.append((i, j - i))
+            # carry the original bytes through so the comparison is about coverage, not about zero-filling
+            out[i:j] = pkg.data[i:j]
+            i = j
+        else:
+            i += 1
+    return bytes(out), gaps, sum(1 for c in covered if c)
+
+
 def compare(label, want, got):
     if want == got:
         return True, "%s ok (%d bytes)" % (label, len(want))
@@ -117,6 +151,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("system_dir", nargs="?", help="a directory of .u packages")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--rebuild", action="store_true",
+                    help="assemble each whole file from header + tables + payloads and diff it")
     args = ap.parse_args()
     if args.selftest or not args.system_dir:
         return selftest()
@@ -141,17 +177,33 @@ def main():
             good, msg = compare("%s %s" % (fname, label), want, enc)
             if not good:
                 problems.append(msg)
+        if args.rebuild:
+            whole, gaps, covered = rebuild(pkg)
+            good = whole == pkg.data
+            print("%-4s %-22s %d%% of bytes accounted for, %d gap(s)%s"
+                  % ("ok" if good else "DIFF", fname, int(100.0 * covered / len(pkg.data)), len(gaps),
+                     "" if good else " -- first diff at +0x%x" % next(
+                         (i for i in range(len(whole)) if whole[i] != pkg.data[i]), 0)))
+            if gaps:
+                print("       uncovered: %s" % ", ".join("+0x%x(%d)" % g for g in gaps[:6]))
+            if not good:
+                problems.append("%s whole-file rebuild differs" % fname)
         if problems:
             bad.append((fname, problems))
         else:
             ok_all += 1
-            print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
-                  % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
+            if args.rebuild:
+                continue
+            if not args.rebuild:
+                print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
+                      % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
     for fname, problems in bad:
         print("FAIL %s" % fname)
         for p in problems:
             print("     " + p)
-    print("\n%d of %d packages re-encode their tables byte for byte" % (ok_all, len(files)))
+    print("\n%d of %d packages %s" % (ok_all, len(files),
+          "rebuild byte for byte from header + tables + payloads" if args.rebuild
+          else "re-encode their tables byte for byte"))
     return 0 if not bad else 1
 
 
