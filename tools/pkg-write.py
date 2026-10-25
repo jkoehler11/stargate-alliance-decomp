@@ -195,8 +195,8 @@ def main():
                     help="report where each region sits and in what order (a writer must follow this, not assume)")
     ap.add_argument("--rebuild", action="store_true",
                     help="assemble each whole file from header + tables + payloads and diff it")
-    ap.add_argument("--grow", metavar="INDEX:BYTES",
-                    help="enlarge one export's payload by BYTES and re-lay the file (writer mechanics)")
+    ap.add_argument("--relay", action="store_true",
+                    help="re-lay every package through the writer's placement path; must reproduce it byte for byte")
     ap.add_argument("--write", metavar="DIR", help="write the grown packages into DIR (use $WORK)")
     args = ap.parse_args()
     if args.selftest or not args.system_dir:
