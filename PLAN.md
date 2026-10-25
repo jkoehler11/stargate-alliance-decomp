@@ -320,6 +320,19 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, package layout — and a reverted attempt)
+
+- **Every package lays out as `names < payloads < imports < exports`**: the two object tables sit at the *end* of
+  the file, after all payload data, and no header field says where payloads begin (`docs/PACKAGE_LAYOUT.md`,
+  `inventory/package_layout.csv`, `make pkg-layout`).
+- That order is why a first attempt at `--grow` (enlarge one export's payload, re-lay the file) failed with a
+  `struct.error` at end-of-file rather than anything diagnostic: the writer emitted tables before payloads, so
+  `export_offset` pointed past the data. **The attempt was reverted, not shipped half-working** — a rebuild that
+  changes payload sizes has to relocate both tables and solve the layout to a fixed point, because a shifted offset
+  can need an extra byte in the compact index.
+- Next step for 6.1 is that fixed-point writer, and the census is what makes it a small job instead of another
+  session of wrong hypotheses.
+
 ### Execution notes (2026-10-24, whole packages rebuild byte for byte)
 
 - **All 18 packages rebuild from header + tables + payloads and come out identical**, 100% of bytes accounted for
