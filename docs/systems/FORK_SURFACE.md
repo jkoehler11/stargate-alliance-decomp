@@ -87,6 +87,14 @@ classes with added state, and the part that needs *native* reproduction is only 
 * `SGOrder` is the one native-heaviest insertion class (4 of 10 functions native) — the natural first
   target for the 4.9 native reconstruction, since its script half cannot execute without the C++ half.
 
+## Correction: the package name is not the discriminator
+
+Measured while writing `docs/systems/UI.md`: `SGListBox` and its seven subclasses live **inside `GUI`**, and
+`StargateMenus` has exactly one class whose name starts with `SG`. The fork therefore added classes to
+stock-named packages, which makes the 503 insertion points a **lower bound** rather than a count, and rules
+out both "package starts with `Stargate`" and "class starts with `SG`" as ways to separate stock from fork.
+Doing that properly needs a stock UE2.5 class table to diff against.
+
 ## Not measured
 
 * What any of these classes do. The bodies are the script decompilation (`$WORK/UnrealScript`), which by
