@@ -261,13 +261,12 @@ are limited to expected fields (checksum/timestamp) and documented.
 - [x] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
       other debug-kit dumps; document exact config in `docs/XEMU.md`.
 - [~] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
-      **Harness built and three blockers measured** (`tools/xemu/smoke.py`, `docs/XEMU.md`): xemu 0.8.139 rejects
-      `-mcpx_path` (the old `boot-test.sh` path), `-serial` needs a `file:` prefix, and extract-xiso 2.7.1 ignores
-      `-o`. With those fixed the ISO builds (2.26 GB) and xemu boots the disc under `DISPLAY=:0`, staying alive for
-      the full window — but the **serial log stays empty**, so this build writes no engine output to the debug
-      channel and there is no log-side evidence to assert on. Next: `-monitor unix:` + `screendump` for a
-      framebuffer-based assertion. Mission loading still needs input automation.
-      Missions are M00, M02A–D, M04A/B, M07A–C, M10B, M12A (+ the rest from the map list).
+      **Boot half done and passing** (`tools/xemu/smoke.py`, `docs/XEMU.md`): the harness boots the title and proves
+      the guest executes game code by sampling `EIP` (8 samples, 7 in user space, 6 distinct). Five emulator traps
+      measured and fixed on the way — `-mcpx_path` gone in 0.8.139, `-serial` needs `file:`, extract-xiso 2.7 ignores
+      `-o`, `screendump` absent from QMP, and a zero-filled EEPROM (or a fresh HDD) leaving the CPU halted in the
+      kernel forever. **Still open**: pixel-level assertion (needs F12 + X input automation, or a GDB-stub hook) and
+      mission loading (needs input automation).
 - [ ] 7.3 Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →

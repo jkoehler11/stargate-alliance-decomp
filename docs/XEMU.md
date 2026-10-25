@@ -188,33 +188,44 @@ path never looks like a crash.
 
 ## What the harness actually does (measured 2026-10-24)
 
-Three things in the scripts above did not survive the pinned emulator, and each cost a boot to find:
+Five things in these scripts did not survive the pinned emulator, and each one cost a boot to find:
 
-| symptom | cause | fix now in the repo |
+| symptom | cause | fix |
 |---|---|---|
-| `AppRun: -mcpx_path: invalid option`, then no guest | xemu 0.8.139 forwards everything after `-display xemu` to QEMU, which has no `-mcpx_path` | `tools/xemu/smoke.py` writes the TOML form `play.sh` uses; `boot-test.sh` is marked stale |
-| `AppRun: -serial <path>: '<path>' is not a valid char driver` | QEMU's `-serial` wants a protocol: `file:<path>` | `smoke.py` passes `file:…` |
-| `extract-xiso produced no image`, exit 0 | extract-xiso 2.7.1 takes `-c <dir> [name]`, not `-o <path>`; the old form is ignored silently | `build-xiso.sh` tries the positional form first |
+| `AppRun: -mcpx_path: invalid option`, no guest | xemu 0.8.139 forwards everything after `-display xemu` to QEMU, which has no `-mcpx_path` | `tools/xemu/smoke.py` writes the TOML form `play.sh` uses; `boot-test.sh` is marked stale |
+| `-serial <path>: not a valid char driver` | QEMU's `-serial` wants a protocol | pass `file:<path>` |
+| `extract-xiso produced no image`, exit 0 | extract-xiso 2.7.1 takes `-c <dir> [name]`, not `-o <path>`; the old form is silently ignored | `build-xiso.sh` tries the positional form first |
+| `screendump` → `CommandNotFound` over QMP | this QEMU build carries no display commands; xemu's renderer is not a QEMU console | not available — do not plan around host screenshots |
+| machine boots but the CPU sits at `EIP=0x8001d1ea`, `HLT=1`, forever | a **zero-filled `eeprom_path`**; a freshly created HDD image does the same | **omit `eeprom_path`** so xemu writes its own default, and boot from a prepared HDD image |
 
-With those three fixed the boot gets all the way to a live guest: the ISO builds (2,258,370,560
-bytes from the 4,081-entry dump), xemu opens a GL context (Mesa 26.2.5) under `DISPLAY=:0`, starts the
-machine with `-bios bios_debug_4627.bin -m 128` and the disc mounted, and the process stays alive for
-the whole window.
-
-**What is still missing is an evidence channel, not a boot.** The serial log is created and stays
-**0 bytes**: this build does not write engine output to the debug channel that xemu exposes. So the
-smoke test can prove "xemu started and kept running", but not "the guest reached the menu". The next
-step is a framebuffer capture instead of a log: run with `-monitor unix:<sock>` and issue
-`screendump <file.ppm>` (or F12 under the GL window), then assert on the pixels/text. Until that
-exists, PLAN 7.2 stays half-done, and the "reaches the main menu" claim earlier in this file rests on
-a screenshot taken by hand, not on a harness.
-
-`tools/xemu/smoke.py` is the harness that got that far, and it reports exactly what it saw:
+The last one is the important one: both the XISO and a directory mount idle in the kernel with a blank
+EEPROM, and both come alive without it, so the EEPROM — not the media form — was the blocker. Verified
+with `tools/xemu/smoke.py` on 2026-10-24:
 
 ```
-serial: 0 bytes, process was alive after 100s
-   Log:                         absent
-   Build:\s*\w{3}\s+\d+\s+\d{4} absent
-FAIL: serial log has no engine output
+vm status: running
+waiting 110s for the title to come up
+eip samples: 8, in-kernel: 1, user-space: 7 (88%), distinct user: 6
+   addresses: 0x0012ce9c, 0x00463864, 0x0004704c, 0x00457d57, 0x001eaab0, 0x8001ce8a, 0x00457a67, 0x00463864
+PASS: the guest is executing game code
 ```
 
+## The evidence channel is the CPU, not a screen
+
+Neither channel one would reach for first exists here: the serial log is created and stays **0 bytes**,
+and `screendump` is missing from QMP. So the smoke test asserts on execution instead — it samples `EIP`
+over the boot window and requires that the CPU leaves the kernel's address space, lands in the image's
+own range, and varies between samples:
+
+* `in-kernel` = `EIP >= 0x80000000`; a run that never leaves it is a machine that booted and did
+  nothing (exit 2, with the EEPROM and HDD hints printed).
+* PASS needs three distinct user-space addresses and at least a quarter of the samples out of kernel.
+
+That is weaker than "the menu is on screen": it cannot tell the title screen from a frame-buffer loop.
+It does prove the difference between "xemu is alive" and "the title is running", which is the regression
+this test exists to catch. Anything stronger needs pixel capture from inside xemu (F12 writes to
+`screenshot_dir` when a window is focused, which needs X input automation) or a guest-side hook such as
+the GDB stub.
+
+Loading a mission is still a button press nothing here can make, so PLAN 7.2 covers boot only; the
+mission-load half needs input automation and stays open.
