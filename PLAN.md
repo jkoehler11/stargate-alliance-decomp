@@ -296,6 +296,15 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, ScriptText)
+
+- **The shipping packages contain their own UnrealScript source.** Every class carries one `ScriptText`
+  `TextBuffer` export: 2,319 classes, 2,319 exports, **6,149,951 bytes** (5.9 MiB), agreeing exactly with the
+  class counts in `inventory/classes.csv` for all 18 packages (`docs/PACKAGE_SCRIPT_TEXT.md`). This changes the
+  oracle situation materially: 3.7's bytecode comparison can start from the exact text that produced the shipped
+  bytecode instead of a decompiler's reconstruction, and `ORACLE_DIFF.md`'s 291-class sample is no longer the only
+  readable source. The text itself stays out of the repository (AGENTS.md); only counts and sizes are committed.
+
 ### Execution notes (2026-10-24, the package tables)
 
 - **The package reader now decodes both object tables.** `ImportEntry = ClassPackage, ClassName, Outer(int32),
