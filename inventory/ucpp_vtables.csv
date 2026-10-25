@@ -1,0 +1,16 @@
+class,slot,target,kind,shared_tables,symbol,head_bytes
+SGOrder,3,0x00022be0,code,1,,538a5c2408f6c302
+StargateHUD,3,0x00023770,code,1,,538a5c2408f6c302
+StargateHUD,10,0x00210780,code,2,FUN_00210780,568bf18b86200400
+Electrocutor,3,0x00023270,code,1,,538a5c2408f6c302
+Electrocutor,35,0x0018db80,code,3,,81ec00010000538b
+Electrocutor,40,0x0018da10,code,3,FUN_0018da10,568bf18b066a016a
+Electrocutor,51,0x0018da70,code,2,FUN_0018da70,578bf9f687100400
+Electrocutor,70,0x001d9f20,code,3,,8b44240c538b5c24
+Electrocutor,123,0x0018e970,code,3,FUN_0018e970,83ec3853558be98b
+Electrocutor,124,0x0018d8a0,code,3,FUN_0018d8a0,83ec1855568bf18b
+Electrocutor,125,0x0018dae0,code,3,,8b919003000033c0
+FarClipChange,3,0x00023a00,code,1,,538a5c2408f6c302
+SGFontInfo,3,0x00022f80,code,1,,538a5c2408f6c302
+ShadowManager,3,0x00023860,code,1,,538a5c2408f6c302
+ShadowManager,35,0x0031e580,code,1,,f30f10442404568b
