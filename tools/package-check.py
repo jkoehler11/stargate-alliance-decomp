@@ -24,6 +24,17 @@ import sys
 TAG = 0x9E2A83C1
 IMPORT_RE = re.compile(rb"[ -~]{3,}")
 
+# A check record is fixed-layout and carries *two* digests, one uppercase and one lowercase, with no
+# filename field: \x00 \x21 <32 upper> \x00 \x01 \x21 <32 lower> \x00 then seven zero bytes. 168 of them
+# ship. The digests are text, which matters: comparing raw 16-byte digests against this blob can never
+# match, and that is what the first version of this tool did.
+RECORD_RE = re.compile(rb"\x00\x21([0-9A-F]{32})\x00\x01\x21([0-9a-f]{32})\x00")
+
+
+def check_records(blob):
+    """The check file's 168 records as (upper, lower) hex digest pairs."""
+    return [(m.group(1).decode(), m.group(2).decode()) for m in RECORD_RE.finditer(blob)]
+
 
 def parse_header(blob):
     if len(blob) < 0x28:
@@ -54,13 +65,17 @@ def name_table(blob, hdr):
 
 
 def candidates(path):
-    """Hash schemes that could plausibly be what the runtime hashed, in order of likelihood."""
+    """Hash schemes that could plausibly be what the runtime hashed, in order of likelihood.
+
+    Digests are returned as lowercase hex, because the check file stores hex text.
+    """
     data = open(path, "rb").read()
     schemes = {
-        "md5(file)": hashlib.md5(data).digest(),
-        "md5(file[4:])": hashlib.md5(data[4:]).digest(),
-        "md5(file[16:])": hashlib.md5(data[16:]).digest(),
-        "md5(header zeroed)": hashlib.md5(b"\0" * 16 + data[16:]).digest(),
+        "md5(file)": hashlib.md5(data).hexdigest(),
+        "md5(file[4:])": hashlib.md5(data[4:]).hexdigest(),
+        "md5(file[16:])": hashlib.md5(data[16:]).hexdigest(),
+        "md5(file[0x44:])": hashlib.md5(data[0x44:]).hexdigest(),
+        "md5(guid zeroed)": hashlib.md5(data[:36] + b"\0" * 16 + data[52:]).hexdigest(),
     }
     return len(data), schemes
 
@@ -84,6 +99,8 @@ def main():
     # from the names themselves -- which is what the question needs -- and the table offset/count
     # are reported from the header for whoever writes the full reader.
     checks = sorted({m.group(0) for m in re.finditer(rb"PackageCheckInfo\d+", blob)})
+    records = check_records(blob)
+    digest_set = {d.lower() for pair in records for d in pair}
     names = sorted(set(IMPORT_RE.findall(blob)))
     print("Packages.md5: %d bytes, tag 0x%08x, version %d, licensee %d"
           % (len(blob), TAG, hdr["version"], hdr["licensee"]))
@@ -91,15 +108,16 @@ def main():
           % (hdr["names"], hdr["name_offset"], hdr["exports"],
              hdr["export_offset"], hdr["imports"], hdr["import_offset"]))
     print("  PackageCheckInfo objects named: %d" % len(checks))
+    print("  digest records: %d (two per record: one uppercase, one lowercase hex, no filename field)"
+          % len(records))
 
     rows, matched = [], 0
     for fname in sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u")):
         size, schemes = candidates(os.path.join(args.system_dir, fname))
         where = None
         for label, digest in schemes.items():
-            i = blob.find(digest)
-            if i >= 0:
-                where = "%s@0x%x" % (label, i)
+            if digest.lower() in digest_set:
+                where = label
                 matched += 1
                 break
         rows.append({"package": fname, "bytes": size,
@@ -110,14 +128,15 @@ def main():
 
     print("\nrecovered: %d of %d shipped packages" % (matched, len(rows)))
     if matched == 0:
-        print("none of the four hash schemes over the shipped bytes appears in the check file:")
+        print("none of these hash schemes over the shipped bytes appears in the check file:")
         print("  the digests were produced from something other than these files as shipped,")
         print("  so a rebuild cannot satisfy the check until the transform is measured (PLAN 6.2)")
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, "package_check.csv")
         with open(path, "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["package", "bytes", "md5", "recovered_from", "check_entries"])
+            w = csv.DictWriter(f, fieldnames=["package", "bytes", "md5", "recovered_from", "check_entries"],
+                               lineterminator="\n")
             w.writeheader()
             w.writerows(rows)
         print("wrote %s (%d rows)" % (path, len(rows)))
