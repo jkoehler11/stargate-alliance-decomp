@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **15,422 symbols** — 14,956 functions plus 466 class tables — every one
+Status: emitted and checked. **15,423 symbols** — 14,957 functions plus 466 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 ## What is in it
@@ -56,7 +56,7 @@ resolves, not a live attach.
 ## What the map does and does not claim
 
 - **Every address is inside the image.** `make symbols` passes `--xbe` and the tool fails if a symbol
-  falls outside the section table: measured **15,422 of 15,422 inside, 0 outside**.
+  falls outside the section table: measured **15,423 of 15,423 inside, 0 outside**.
 - **Names are file-level, not unique.** 128 names are used by more than one function — the assert
   attribution names a function by its source file, so `Core_UnTemplate` covers 310 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
