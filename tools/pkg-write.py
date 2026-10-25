@@ -136,21 +136,23 @@ def regrow(pkg, index, extra, fill=0xCC):
     if target is None:
         raise SystemExit("no export %d in %s" % (index, pkg.path))
     head = pkg.data[:pkg.name_offset]
+    # region order follows the header's own offsets -- UPreview and others do not all put imports before exports
+    order = sorted([(pkg.name_offset, "names"), (pkg.import_offset, "imports"), (pkg.export_offset, "exports")])
     names = encode_names(pkg.names)
     imports = encode_imports(pkg.imports)
     ordered = sorted(exports, key=lambda e: e["offset"])
     sizes = dict((e["index"], e["size"]) for e in exports)
     sizes[target["index"]] += extra
 
-    pos, table = 0, b""
+    table = encode_exports(exports)
+    base = len(head) + len(names) + len(imports)
     for _ in range(8):
-        pos = len(head) + len(names) + len(imports) + len(table)
+        pos = base + len(table)
         for e in ordered:
             e["offset"] = pos
             pos += sizes[e["index"]]
         table = encode_exports(exports)
-        settled = len(head) + len(names) + len(imports) + len(table) == min(e["offset"] for e in ordered)
-        if settled:
+        if base + len(table) == min(e["offset"] for e in ordered):
             break
 
     payload = bytearray()
@@ -162,7 +164,10 @@ def regrow(pkg, index, extra, fill=0xCC):
         payload += data
         if e["index"] == target["index"]:
             payload += bytes([fill]) * extra
-    out = bytearray(head) + names + imports + table + payload
+    out = bytearray(head)
+    for _off, which in order:
+        out += {"names": names, "imports": imports, "exports": table}[which]
+    out += payload
     return bytes(out), exports
 
 
