@@ -122,6 +122,52 @@ def rebuild(pkg):
     return bytes(out), gaps, sum(1 for c in covered if c)
 
 
+def regrow(pkg, index, extra, fill=0xCC):
+    """Enlarge one export's payload and re-lay every later export at its new offset.
+
+    This is the mechanic a rebuild actually needs: a compiler's output is not the same length as the shipped
+    bytecode, so the writer has to absorb a size change and recompute what follows. The result is re-parsed
+    afterwards, so the claim is "the file still parses and every class resolves", not "the bytes looked right".
+    """
+    exports = [dict(e) for e in pkg.exports]
+    target = next((e for e in exports if e["index"] + 1 == index), None)
+    if target is None:
+        raise SystemExit("no export %d in %s" % (index, pkg.path))
+    ordered = sorted(exports, key=lambda e: e["offset"])
+    body_start = min(e["offset"] for e in ordered)
+    cursor, pieces = body_start, []
+    for e in ordered:
+        if e["offset"] > cursor:
+            pieces.append(pkg.data[cursor:e["offset"]])      # any gap bytes, kept as they were
+        data = pkg.data[e["offset"]:e["offset"] + e["size"]]
+        if e["index"] == target["index"]:
+            data = data + bytes([fill]) * extra
+        pieces.append(data)
+        cursor = e["offset"] + e["size"]
+    if cursor < len(pkg.data):
+        pieces.append(pkg.data[cursor:])                     # trailing bytes after the last export
+    payload = b"".join(pieces)
+
+    shift_from = target["offset"] + target["size"]
+    for e in exports:
+        if e["index"] == target["index"]:
+            e["size"] += extra
+        elif e["offset"] >= shift_from:
+            e["offset"] += extra
+
+    head = pkg.data[:pkg.name_offset]
+    out = bytearray(head)
+    out += encode_names(pkg.names)
+    regions = sorted([(pkg.name_offset, "names"), (pkg.import_offset, "imports"),
+                      (pkg.export_offset, "exports")])
+    for _off, which in regions[1:]:
+        out += encode_imports(pkg.imports) if which == "imports" else encode_exports(exports)
+    if len(out) != body_start:
+        raise SystemExit("region sizes changed: header+tables %d, payloads start %d" % (len(out), body_start))
+    out += payload
+    return bytes(out), exports
+
+
 def compare(label, want, got):
     if want == got:
         return True, "%s ok (%d bytes)" % (label, len(want))
@@ -153,6 +199,9 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--rebuild", action="store_true",
                     help="assemble each whole file from header + tables + payloads and diff it")
+    ap.add_argument("--grow", metavar="INDEX:BYTES",
+                    help="enlarge one export's payload by BYTES and re-lay the file (writer mechanics)")
+    ap.add_argument("--write", metavar="DIR", help="write the grown packages into DIR (use $WORK)")
     args = ap.parse_args()
     if args.selftest or not args.system_dir:
         return selftest()
@@ -165,18 +214,46 @@ def main():
         pkg.read_imports()
         pkg.read_exports()
         problems = []
-        # Each table is regenerated from the parsed model and compared over its own length, so the slice is
-        # exactly as long as what we wrote -- no guessing where the original table ends.
-        enc_names = encode_names(pkg.names)
-        enc_imports = encode_imports(pkg.imports)
-        enc_exports = encode_exports(pkg.exports)
-        for label, enc, start in (("names", enc_names, pkg.name_offset),
-                                  ("imports", enc_imports, pkg.import_offset),
-                                  ("exports", enc_exports, pkg.export_offset)):
-            want = pkg.data[start:start + len(enc)]
-            good, msg = compare("%s %s" % (fname, label), want, enc)
+
+        if args.grow:
+            index, extra = (int(x) for x in args.grow.split(":"))
+            out, _exports = regrow(pkg, index, extra)
+            again = Package.__new__(Package)
+            again.__dict__.update(pkg.__dict__)
+            again.data = out
+            again.read_names()
+            again.read_imports()
+            again.read_exports()
+            before = pkg.exports[index - 1]["size"]
+            target = next((e for e in again.exports if e["index"] + 1 == index), None)
+            grew = len(out) - len(pkg.data)
+            same_names = [n for n, _f in again.names] == [n for n, _f in pkg.names]
+            resolved = bool(again.exports) and all(again.class_name_of(e) != "?" for e in again.exports)
+            ok = (target is not None and grew == extra and same_names and resolved
+                  and target["size"] == before + extra)
+            print("%-4s %-22s export %d %d -> %s bytes, file %+d; re-parse: names %s, classes %s"
+                  % ("ok" if ok else "FAIL", fname, index, before,
+                     target["size"] if target else "?", grew,
+                     "same" if same_names else "CHANGED", "resolve" if resolved else "UNRESOLVED"))
+            if args.write:
+                os.makedirs(args.write, exist_ok=True)
+                with open(os.path.join(args.write, fname), "wb") as fh:
+                    fh.write(out)
+            if ok:
+                ok_all += 1
+            else:
+                bad.append((fname, ["grow check failed"]))
+            continue
+
+        # Regenerate each table from the parsed model and compare it over its own length, so the slice is exactly
+        # as long as what we wrote -- no guessing where the original table ends.
+        for label, enc, start in (("names", encode_names(pkg.names), pkg.name_offset),
+                                  ("imports", encode_imports(pkg.imports), pkg.import_offset),
+                                  ("exports", encode_exports(pkg.exports), pkg.export_offset)):
+            good, msg = compare("%s %s" % (fname, label), pkg.data[start:start + len(enc)], enc)
             if not good:
                 problems.append(msg)
+
         if args.rebuild:
             whole, gaps, covered = rebuild(pkg)
             good = whole == pkg.data
@@ -188,22 +265,27 @@ def main():
                 print("       uncovered: %s" % ", ".join("+0x%x(%d)" % g for g in gaps[:6]))
             if not good:
                 problems.append("%s whole-file rebuild differs" % fname)
+        elif not problems:
+            print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
+                  % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
+
         if problems:
             bad.append((fname, problems))
         else:
             ok_all += 1
-            if args.rebuild:
-                continue
-            if not args.rebuild:
-                print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
-                      % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
+
     for fname, problems in bad:
         print("FAIL %s" % fname)
         for p in problems:
             print("     " + p)
-    print("\n%d of %d packages %s" % (ok_all, len(files),
-          "rebuild byte for byte from header + tables + payloads" if args.rebuild
-          else "re-encode their tables byte for byte"))
+    if args.grow:
+        print("\n%d of %d packages absorbed a %s-byte payload change and re-parsed clean"
+              % (ok_all, len(files), args.grow.split(":")[1]))
+    elif args.rebuild:
+        print("\n%d of %d packages rebuild byte for byte from header + tables + payloads"
+              % (ok_all, len(files)))
+    else:
+        print("\n%d of %d packages re-encode their tables byte for byte" % (ok_all, len(files)))
     return 0 if not bad else 1
 
 
