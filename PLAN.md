@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, defaults: three defects fixed, 67% coverage)
+
+- **Class defaults read cleanly for 1,552 of 2,319 classes (67%)**, up from 18 of 306. Three defects were
+  found and fixed together: `Str` values were read as name indexes (so `Description` decoded as `BeginState`),
+  the block was required to end exactly at the export end (throwing away classes with a trailer), and the super
+  chain was followed within one package only (so cross-package inheritance was invisible and correct blocks
+  scored as undeclared). `SGOrder` now reads 8 defaults with real values, `Description = "Empty Order"`
+  (`docs/CLASS_DEFAULTS.md`, `inventory/class_defaults_coverage.csv`). `--walk` exists because the byte-level
+  view is what settled the `Str` question.
+
 ### Execution notes (2026-10-24, defaults: block chosen, values partial)
 
 - **The block ambiguity is settled semantically and the values are not.** Scoring candidate blocks by how many

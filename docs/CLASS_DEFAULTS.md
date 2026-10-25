@@ -1,60 +1,73 @@
-# Class defaults: the class's own property list settles the block, but not the values
+# Class defaults: readable for two thirds of the tree
 
-`docs/T3D.md` left the roster link open: a spawner names a squad script, and that script's roster is a class
-default. This is where reading defaults stands — the block selection problem is solved, the value decoding is
-not.
+The roster link `map → spawner → squad script → roster` ends in a class default, and the compile loop (3.6)
+needs defaults as an input. Three defects stood between this reader and that data; all three are fixed, and the
+coverage is measured rather than asserted.
 
     python3 tools/class-defaults.py DUMP/System --class SGOrder
     python3 tools/class-defaults.py DUMP/System --sweep -o inventory
+    python3 tools/class-defaults.py DUMP/System --class SGOrder --walk   # byte-level, for alignment questions
 
-## The ambiguity is settled by what the class declares
+## What was wrong, and what it cost
 
-The first attempt located a class's default block by the boundary rule alone and produced two candidate starts
-two bytes apart, one of which invented properties (`Core`, `Range`). `inventory/class_properties.csv` already
-knows what each class declares, and its superclass chain supplies inherited names, so the candidates can be
-scored by how many of their names the class actually declares.
+| defect | symptom | fix |
+|---|---|---|
+| `Str` (type 13) read as a name index | `Description` decoded as the *name* `BeginState` | read it as an FString: `size` bytes of text |
+| block required to end exactly at the export end | 73 of 306 `StargateGame` classes had "no block" | allow a bounded trailer (≤ 64 bytes) after the terminator |
+| super chain followed within the package only | inherited properties invisible, so correct blocks looked undeclared (18 of 306 "fully declared") | follow `inventory/classes.csv`'s super map, which is cross-package |
 
-`SGOrder` now resolves at **`+0xB3` with 8 properties, 100% of them declared by the class** — `canPerformOneill`,
-`canPerformCarter`, `canPerformTealc`, `canPerformJackson`, `Description`, `maxBotsAssigned`, `iconTexture`,
-`Condition` — where the boundary-only rule picked a 10-property block containing `Core` and `Range`.
-
-## But it is not reliable across the package
-
-Sweeping all 306 classes in `StargateGame`:
-
-| | |
-|---|---:|
-| classes with a candidate block | 233 |
-| classes with no candidate at all | 73 |
-| candidates whose names are **all** declared | **18** |
-| partial matches with more than one candidate | 188 |
-
-Eighteen of 306 is not a reader that works — it is a reader that works on the clean cases and is ambiguous on
-the rest. The honest reading: property names are enough to *reject* a wrong block but not to *choose* between
-two plausible ones, because a class's inherited property set is large enough that a shifted block still
-matches.
-
-## Values are still partly wrong
-
-`Bool`, `Int`, `Byte` and object references decode correctly and self-consistently:
+`SGOrder` now reads cleanly:
 
 ```
-canPerformOneill   Bool    True
-maxBotsAssigned    Int     -1
-iconTexture        Object  icon_mission'Engine'
-Condition          Byte    1
+canPerformOneill      Bool     True
+canPerformCarter      Bool     True
+canPerformTealc       Bool     True
+canPerformJackson     Bool     True
+Description           Str      Empty Order
+maxBotsAssigned       Int      -1
+iconTexture           Object   icon_mission'Engine'
+Condition             Byte     1
 ```
 
-`Str` values do not: `Description` decodes as `Str BeginState`, which is a *name* from the package's name
-table, not a string. So for `UPT_Str` the value is being read at the wrong offset or with the wrong width —
-one type, not a general failure, and the next thing to fix. Until it is fixed, this tool is trustworthy for
-numeric and object defaults and untrustworthy for string ones.
+Eight defaults, every one declared by the class, values that read like authoring data.
 
-## What is not measured
+## Coverage, all 18 packages
 
-* The 73 classes with no candidate: whether their block is absent, or present and failing the boundary rule.
-* String values, above.
-* The roster itself. The squad scripts the maps name (`TSS_7A_B_Jaffa_01` in `M07A.unr`,
-  `AI_Jaffa_Horus_Med_single` in `M15B`/`M15C`) appear in those packages' **name tables** but are neither
-  imports nor exports of them — so they are referenced from data inside the `Level` export rather than by an
-  object reference this reader follows. That is measured, and it is where the next search goes.
+`inventory/class_defaults_coverage.csv` has the per-package rows:
+
+| | classes | blocks found | every property declared |
+|---|---:|---:|---:|
+| `StargateContent` | 567 | 541 | **441** |
+| `Engine` | 367 | 287 | 170 |
+| `StargateGame` | 306 | 248 | 150 |
+| `GamePlay` | 262 | 260 | 180 |
+| `Sharpeffects` | 158 | 157 | **156** |
+| `GUI` | 148 | 139 | 128 |
+| `StargateVehicles` | 142 | 133 | 117 |
+| `StargateMenus` | 98 | 82 | 65 |
+| `UWindow` | 78 | 61 | 5 |
+| others (9 packages) | 193 | 174 | 140 |
+| **total** | **2,319** | **2,084** | **1,552 (67%)** |
+
+Two thirds of the tree now yields a defaults block whose property names the class actually declares — up from
+18 of 306 in the previous attempt, a factor of eight on the package that motivated it.
+
+## Where it still fails, and why
+
+* `UWindow` (5 of 78) and `Fire` (0 of 7) are the worst. `UWindow`'s classes are engine-heavy GUI types whose
+  declared properties mostly come from `GUI`/`Core` parents; `Fire`'s are fractals with almost no declared
+  properties, so "every property declared" is the wrong test there — they may well be correct blocks scored
+  harshly.
+* 235 classes still have no candidate: whether their block is absent or failing the trailer bound is not
+  measured.
+* Ambiguous cases (64 in `StargateGame`, 79 in `StargateContent`) are ties between blocks with equally
+  declared names; the tie-break prefers the longer block and then the smaller trailer, which is a rule of
+  thumb, not a proof.
+
+## Not measured
+
+* Default *values* in bulk — this file reports one class's values, and defaults are authoring data for the whole
+  game.
+* The roster itself: the squad scripts maps name (`TSS_7A_B_Jaffa_01`, `AI_Jaffa_Horus_Med_single`) appear in
+  those packages' name tables but are neither imports nor exports, so the reference to them lives in data
+  inside the `Level` export, which this reader does not parse.
