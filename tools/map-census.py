@@ -66,6 +66,7 @@ def main():
     outdir = args.out or os.path.join(ROOT, "inventory")
 
     map_rows, class_totals, class_blocks, squad_rows = [], collections.Counter(), collections.Counter(), []
+    first_seen = []  # ties keep first-seen order, which is how the committed artifact reads
     for fname in sorted(f for f in os.listdir(args.maps_dir) if f.lower().endswith(".unr")):
         pkg = Package(os.path.join(args.maps_dir, fname))
         pkg.read_names()
@@ -76,6 +77,8 @@ def main():
         squads = collections.Counter()
         for exp in pkg.exports:
             cls = pkg.class_name_of(exp)
+            if cls not in class_totals:
+                first_seen.append(cls)
             class_totals[cls] += 1
             props = blocks_in(pkg, ps, exp)
             if props is None:
@@ -92,7 +95,8 @@ def main():
         print("%-22s %5d exports %5d blocks %4d squad names" % (map_name, len(pkg.exports), with_block, len(squads)))
 
     actor_rows = []
-    for cls, total in sorted(class_totals.items(), key=lambda kv: (-kv[1], kv[0])):
+    order = {cls: i for i, cls in enumerate(first_seen)}
+    for cls, total in sorted(class_totals.items(), key=lambda kv: (-kv[1], order[kv[0]])):
         got = class_blocks.get(cls, 0)
         actor_rows.append([cls, total, got, "%.1f%%" % (100.0 * got / total if total else 0.0)])
 
