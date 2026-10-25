@@ -68,17 +68,43 @@ to treat "untagged" as a category rather than an error.
 Per mission (`inventory/dialogue_by_mission.csv`, 14 missions): `m07` 133 lines / 30 scenes / 7 speakers is
 the densest, then `m15` 81, `m02` 79, `m14` 78.
 
-## Sound effects are the gap
+## Sound effects are now indexed
 
-`Sounds/` holds **55 `.uax` packages** — and they are per-character and per-vehicle, not one bucket:
-`Carter.uax`, `Jackson.uax`, `AlkeshBomber.uax`, `GoauldDrone.uax`, `GoauldSound.uax`, `HUD_sounds.uax`,
-`FootstepSounds.uax`, `GeneralSounds.uax`. That is the voice-side acting as a second character system: the
-same actor has a `.uax` for effects and a voice pack for lines.
+The gap recorded in the first version of this file is closed: `.uax` packages parse, and each `Sound` export
+is one effect.
 
-None of it is indexed. SFX live inside `.uax` packages, and the repository has no package reader that
-extracts sound objects — the same gap that blocks 5.2 (maps), 4.7 (function records) and the T3D work. So
-`docs/MUSIC.md`'s "SFX remain unindexed" is not a TODO anyone can close by writing a smarter glob: it needs
-the package parser.
+| | |
+|---|---:|
+| `.uax` packages | **55 of 55 parsed** |
+| sound effects | **3,047** |
+| bytes | 92,222,592 (88 MiB) |
+
+The five biggest are character and weapon sets, not ambient beds:
+
+| package | sounds | bytes |
+|---|---:|---:|
+| `Carter` | 407 | 4,975,024 |
+| `Oneill` | 297 | 3,480,809 |
+| `Tealc` | 262 | 4,050,534 |
+| `Jackson` | 261 | 3,492,544 |
+| `jaffasounds` | 218 | 6,433,796 |
+
+So the per-character arrangement is confirmed from the effect side: `Carter`, `Oneill`, `Tealc` and `Jackson`
+each carry 260–410 effects of their own, next to their voice packs. `weaponsounds` (132) and `vehicles` (47)
+are the shared sets; `surfaces` (156) is footsteps and impacts by material.
+
+`inventory/sfx_index.csv` holds all 55 rows.
+
+### What that means for the audio totals
+
+| audio layer | count | source |
+|---|---:|---|
+| speech lines (loose WAVs) | 1,364 | `inventory/speech_index.csv` |
+| music (loose WAVs, 16 groups) | 1,923 | `inventory/music_index.csv` |
+| sound effects (inside `.uax`) | **3,047** | `inventory/sfx_index.csv` |
+
+All three layers are now counted, which is what PLAN 5.3 asked for. Extraction is still separate from
+indexing: the effects live inside packages and pulling them out as WAVs is the export pass (5.1), not this.
 
 ## What this means for the rebuild
 
@@ -92,4 +118,5 @@ the package parser.
 
 * Which voice pack a given mission uses, and how `VoiceSelector` picks between them (script bodies, `$WORK`).
 * The `.lad` layout (UNKNOWNS U4).
-* Any sound-effect inventory beyond "55 `.uax` files exist".
+* What each effect sounds like, and which weapon or surface uses it — that is a property value on the sound
+  object, i.e. the property-stream reader, not the export table.

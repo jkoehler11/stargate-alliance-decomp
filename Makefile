@@ -37,6 +37,7 @@ help:
 	@echo "  pkg-exports   list a class's exports and their sizes from a package (PKG=... CLASS=...)"
 	@echo "  extract-script write every class's shipped source into $WORK (never the repo)"
 	@echo "  map-actors    histogram every .unr's export classes (PLAN 5.2, class-level)"
+	@echo "  sfx-index     count the Sound exports in every .uax (PLAN 5.3)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -205,3 +206,7 @@ extract-script:
 # Per-map actor-class counts from the export table (docs/MAP_EXPORTS.md). Needs the dump.
 map-actors:
 	@$(PYTHON) tools/map-actors.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" -o inventory
+
+# Sound effects inside the .uax packages (PLAN 5.3). Needs the dump.
+sfx-index:
+	@$(PYTHON) tools/sfx-index.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Sounds" -o inventory
