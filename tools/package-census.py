@@ -19,7 +19,8 @@ Definitions, because a census is only useful if each column means one thing:
 * `natives_in_source` counts `native` function declarations in the shipped text, while
   `native_functions_in_inventory` is that package's total from `inventory/classes.csv`. They disagree wherever the
   inventory counts inherited or operator natives, and the disagreement is the point of the column.
-* `native_declarations` lists the fork's *own* C++ natives: a native function declared by a class whose ancestors
+* `native_declarations` covers the fork's own package (`StargateGame`) and lists the *own* C++ natives: a native
+  function declared by a class whose ancestors
   do not declare it. An override of a stock native (`BotBase.CoverActors` re-declaring what `Bot.CoverActors`
   already declares) is not a new native, and that ancestry test is what separates the six classes that add
   natives of their own from the ones that only rename a stock one.
@@ -85,8 +86,12 @@ def main():
     supers = load_column("class", "super")
     outdir = args.out or os.path.join(ROOT, "inventory")
     inventory_natives = {}
-    for pkg_name, n in load_column("package", "native_functions").items():
-        inventory_natives[pkg_name] = inventory_natives.get(pkg_name, 0) + int(n or 0)
+    classes_csv = os.path.join(ROOT, "inventory", "classes.csv")
+    if os.path.isfile(classes_csv):
+        with open(classes_csv, newline="") as fh:
+            for r in csv.DictReader(fh):
+                inventory_natives[r["package"]] = inventory_natives.get(r["package"], 0) \
+                    + int(r["native_functions"] or 0)
 
     # Pass 1: read every package once, and remember which native names each class's source declares, because the
     # ancestry test needs ancestors from other packages.
@@ -118,7 +123,7 @@ def main():
         for _index, cls, _n, _bytes in rows:
             own = [n for n in declared_by_class.get(cls, [])
                    if not any(n in declared_by_class.get(a, []) for a in ancestry(cls, supers))]
-            if own:
+            if own and pkg_name == DECLARATION_PACKAGE:
                 decl_rows.append([cls, len(own), ";".join(own), "shipped ScriptText"])
 
     files = [
