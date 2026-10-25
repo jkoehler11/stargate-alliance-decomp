@@ -29,7 +29,7 @@ def main():
 
     with open(os.path.join(args.out, "sections.tsv"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("# name\tva\tvsize\tfoff\tfsize\tflags\n")
-        fh.write(f"# base=0x{image.base:x} entry=0x{image.entry:x} image=0x{image.image_size:x}\n")
+        fh.write(f"# base=0x{image.base:x} image=0x{image.image_size:x} certificate=0x{image.certificate:x} (entry not readable; docs/XBE_LAYOUT.md)\n")
         for s in image.sections:
             fh.write(f"{s.name}\t0x{s.va:x}\t0x{s.vsize:x}\t0x{s.foff:x}\t0x{s.fsize:x}\t0x{s.flags:x}\n")
 
