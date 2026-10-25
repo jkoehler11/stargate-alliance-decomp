@@ -257,10 +257,14 @@ def main():
             resolved = bool(again.exports) and all(again.class_name_of(e) != "?" for e in again.exports)
             grew = len(out) - len(pkg.data)
             identical = out == pkg.data
-            ok = (grew == extra and same_names and resolved and len(again.exports) == len(pkg.exports)
-                  and (extra != 0 or identical))
-            print("%-4s %-22s file %+d bytes, %d exports, names %s, classes %s%s"
-                  % ("ok" if ok else "FAIL", fname, grew, len(again.exports),
+            # The file does not grow by exactly `extra`: shifting the payload block moves the two tables, and a
+            # shifted offset can need one more byte in the compact index, so the table length changes too.
+            target_ok = (next((e for e in again.exports if e["index"] + 1 == index), {}).get("size")
+                         == pkg.exports[index - 1]["size"] + extra)
+            ok = (grew >= extra and same_names and resolved and target_ok
+                  and len(again.exports) == len(pkg.exports) and (extra != 0 or identical))
+            print("%-4s %-22s file %+d bytes (payload %+d), %d exports, names %s, classes %s%s"
+                  % ("ok" if ok else "FAIL", fname, grew, extra, len(again.exports),
                      "same" if same_names else "CHANGED", "resolve" if resolved else "UNRESOLVED",
                      ", identical to the original" if identical else ""))
             if args.write:
