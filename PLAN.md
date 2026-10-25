@@ -320,6 +320,15 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the entry point in the analysis)
+
+- **The analysis was being told the wrong entry.** `tools/ghidra/run-analysis.sh` passed `0x10184` — the
+  certificate address — to both `XbePre` and `XbePost`, so the CRT entry at `0x0033F317` was never created and
+  the function map started at `FUN_0033f389`. The script now resolves the entry through `tools/xbe.py` and
+  refuses to guess. One run later: `XbeEntry` at `0x0033F317` (114 bytes), functions **14,956 → 14,957**, one
+  addition, zero removals, zero renamed, zero previous starts left uncovered, 15,423 symbols all inside the
+  image. `docs/XBE_LAYOUT.md` and U12 record it.
+
 ### Execution notes (2026-10-24, the XBE entry point — U12 resolved)
 
 - **The entry point decodes after all: `0x0033F317`, with the debug-build key `0x94859D4B`.** The retail key

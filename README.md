@@ -58,8 +58,8 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | classes agreeing with the 2006 source | 204 | 291 | `█████████████████░░░░░░░` 70.10% | 🟨 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
 | Script | class defaults decoded | 1,552 | 2,319 | `████████████████░░░░░░░░` 66.93% | 🟨 |
-| Native | functions carrying a name | 1,987 | 14,956 | `███░░░░░░░░░░░░░░░░░░░░░` 13.29% | 🟧 |
-| Native | functions attributed to a module | 1,912 | 14,956 | `███░░░░░░░░░░░░░░░░░░░░░` 12.78% | 🟧 |
+| Native | functions carrying a name | 1,988 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 13.29% | 🟧 |
+| Native | functions attributed to a module | 1,913 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 12.79% | 🟧 |
 | Native | class tables named | 466 | 492 | `███████████████████████░` 94.72% | 🟩 |
 | Native | property classes measured | 15 | 15 | `████████████████████████` 100.00% | 🟩 |
 | Content | maps parsed | 73 | 73 | `████████████████████████` 100.00% | 🟩 |
