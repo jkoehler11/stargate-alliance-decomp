@@ -26,6 +26,7 @@ help:
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
+	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
 	@echo "  status        regenerate the progress table in README.md and docs/STATUS.md"
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
@@ -165,6 +166,9 @@ libraries:
 
 # The progress table (docs/STATUS.md and the README block). Reads committed artifacts only; `make ci`
 # runs it with --check, so a landed artifact that moves a number fails the gate until it is regenerated.
+squad-rosters:
+	@$(PYTHON) tools/squad-rosters.py "$(SYSTEM_DIR)" -o inventory
+
 status:
 	@$(PYTHON) tools/status.py
 
