@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, squad rosters)
+
+- **The `SQUAD_*` rosters read: 58 of 65, at a uniform `+0x5D`, 129 members in total** and 44 of them
+  single-member (`docs/systems/SQUADS.md`, `inventory/squad_rosters.csv`, `make squad-rosters`). `PawnTag` is
+  authoring metadata rather than a key — `Dropturret` is shared by three rosters. The blocker is the last hop:
+  `Members` (declared `array<export editinline RosterEntry>`) is one count byte then **two bytes per member**,
+  and those values are consecutive serial numbers (`SQUAD_Jaffa_Full_Patrol`: 30573…30588), so they index
+  neither the name table nor an object table this reader can see. Seven rosters have no `Class` export at all,
+  and all seven are vehicles or single minions. Status table gained a "class defaults decoded" row.
+
 ### Execution notes (2026-10-24, defaults: three defects fixed, 67% coverage)
 
 - **Class defaults read cleanly for 1,552 of 2,319 classes (67%)**, up from 18 of 306. Three defects were

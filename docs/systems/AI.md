@@ -64,7 +64,7 @@ map does name is the encounter script that spawns them.** With the T3D written a
 maps carry such names (601 distinct scripts, `inventory/squad_scripts.csv`). So the chain is
 `map → spawner → squad script → its default roster → bot classes`, with the first two links measured. This
 supersedes the earlier claim in this file that the question was not answerable from the `.unr` at all: it is
-answerable by encounter script today, and by bot class once class defaults parse.
+answerable by encounter script today, and by roster once the roster classes are read — which they are: 58 of the 65 `SQUAD_*` `SquadRoster` subclasses decode (`docs/systems/SQUADS.md`, `inventory/squad_rosters.csv`), 129 members in total, 44 of them single-member rosters. What is still missing is the last hop: a roster's `Members` array is a run of two-byte serial numbers, not references, so a count does not yet name its pawns.
 
 They
 appear in shipped checkpoints instead — `BotSG` 890 instances, `JaffaBotLight` 324, `ScriptedController` 70,
