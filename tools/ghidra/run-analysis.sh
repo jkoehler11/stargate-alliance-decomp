@@ -39,6 +39,17 @@ if [ -n "${JAVA_HOME:-}" ]; then
     export PATH
 fi
 
+# The entry point comes from the header, through the same reader the rest of the tooling uses: `0x128`
+# XOR the debug-build key. It used to be passed as `0x10184`, the *certificate* address, so every run
+# seeded the analysis somewhere in the header region and the real CRT entry at 0x0033F317 was never
+# analysed (docs/XBE_LAYOUT.md).
+ENTRY=$(python3 -c "import sys; sys.path.insert(0, 'tools'); from xbe import Xbe; \
+x = Xbe('$game/default.xbe'); print('0x%x' % x.entry) if x.entry is not None else sys.exit(1)") || {
+    echo "cannot resolve the XBE entry point from '$game/default.xbe'; refusing to guess" >&2
+    exit 2
+}
+echo "entry point: $ENTRY"
+
 proj="$PWD/build/ghidra"
 mkdir -p "$proj" symbols
 python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
@@ -49,10 +60,10 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
     -loader BinaryLoader \
     -loader-baseAddr 0x10000 \
     -scriptPath "$PWD/tools/ghidra/ghidra_scripts" \
-    -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" 0x10184 \
+    -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" "$ENTRY" \
     -postScript SeedGaps.java "$proj/asserts.tsv" 0x1000 8 "$PWD/inventory/xbe_block_seeds.csv" \
         "$PWD/inventory/xbe_gap_seeds.csv" \
-    -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" 0x10184 \
+    -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" "$ENTRY" \
         "$PWD/symbols/xbe_overrides.csv,$PWD/symbols/xbe_dispatch.csv" \
     -postScript ExportEvidence.java "$proj/evidence" \
     -deleteProject

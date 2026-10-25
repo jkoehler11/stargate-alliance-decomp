@@ -360,6 +360,6 @@ is inside `.text`. Three independent checks agree: the five bytes before the add
 the retail key produces nothing mapped. `Xbe.entry`/`Xbe.entry_key` now carry it and `tools/xbe.py … sections`
 prints it.
 
-**Still open (small).** The entry is not in the function map — `symbols/xbox_functions.csv` starts at
-`FUN_0033f389`, because Ghidra was never told the entry. Passing it to the analysis adds that function and lets
-it be named; that is a single `make ghidra` run, tracked in `PLAN.md`.
+**Second half, also resolved.** Ghidra *was* told an entry, just the wrong one: `run-analysis.sh` passed
+`0x10184` (the certificate) to both scripts. With the real entry passed, the analysis creates `XbeEntry` at
+`0x0033F317` (114 bytes) and the function map goes 14,956 → 14,957 with nothing removed and no name changed.

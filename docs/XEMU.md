@@ -229,3 +229,11 @@ the GDB stub.
 
 Loading a mission is still a button press nothing here can make, so PLAN 7.2 covers boot only; the
 mission-load half needs input automation and stays open.
+
+## Tracing guest execution
+
+QEMU's `-d in_asm -D <file>` is accepted by xemu 0.8.139 — unknown options are forwarded to QEMU — and would
+give the first translated block of every region, which is the direct way to prove an entry point. It is unusable
+on a host without a live display, because xemu's SDL init runs before QEMU's tracing: with no session it fails
+with `wayland,x11 not available` (and with an Xauthority we cannot authorise, `Authorization required`), and no
+log is written at all. Run it from a desktop session, not over a detached SSH.

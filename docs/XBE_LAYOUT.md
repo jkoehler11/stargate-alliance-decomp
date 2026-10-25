@@ -114,10 +114,13 @@ immediately before it are `33 C0 C2 04 00` — `xor eax, eax` / `ret 4`, the tai
 Two loose ends are worth naming rather than smoothing over. The address is **odd**, which looks wrong for an
 entry point but is not: x86 has no alignment requirement, the bytes before it end a function cleanly, and the
 debug key is the standard constant to the bit — a key typo would not land on a function boundary and produce a
-CRT prologue. And **Ghidra never analysed it**: `symbols/xbox_functions.csv` has `FUN_0033f389` onwards but
-nothing at `0x0033f317`, because nothing in the image references its own entry and the header value was not
-passed to the analysis. Seeding `0x0033F317` as an entry (and naming it) is a one-run follow-up, deliberately
-not bundled here so this change stays a measurement.
+CRT prologue. **Ghidra analyses it now.** `tools/ghidra/run-analysis.sh` passed `0x10184` — the certificate — as the
+analysis entry to *both* the pre- and post-script, the same mistake the reader made, so the CRT function was
+never created and `symbols/xbox_functions.csv` began at `FUN_0033f389`. The script now asks `tools/xbe.py` for
+the entry and refuses to run if it cannot resolve one. The measured effect of that run: `0x0033F317` becomes
+`XbeEntry`, **114 bytes**, functions **14,956 → 14,957** with **one addition and nothing removed**, no previous
+function start left outside a function, no name changed, and all 15,423 symbols still inside the image's
+sections. A purely additive seed, which is what an unreferenced entry point should be.
 
 ## Checking
 
