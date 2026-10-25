@@ -296,6 +296,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the package tables)
+
+- **The package reader now decodes both object tables.** `ImportEntry = ClassPackage, ClassName, Outer(int32),
+  ObjectName` and `ExportEntry = Class, Super, Outer(int32), ObjectName, Flags(int32), SerialSize,
+  SerialOffset`, with the index encoding from `surrealengine`'s format doc (bit 7 sign, bit 6 continue, 6 then
+  7 bits). Validated semantically: `Class` exports per package equal `inventory/classes.csv` exactly — 18
+  packages, **2,319 classes**. Six earlier attempts failed because `Outer` and `Flags` are plain int32, not
+  index-encoded, which kept the parse plausible while the values were nonsense. This is the prerequisite for
+  4.7 (function records) and 5.2 (map actors).
+
 ### Execution notes (2026-10-23)
 
 - **0.1** layout is `docs/`, `inventory/`, `src/{UnrealScript,Native}/`, `symbols/`, `tools/`, `build/`.

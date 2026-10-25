@@ -65,59 +65,61 @@ The name table answers a question the class graph could not: **what identifiers 
 example `StargateGame` contains `SGOrderAttack` … `SGOrderUse`, plus `NumOrders`, `SGPlayerOrders` and
 `ConcentrateShootOrder_General` — evidence of the order system beyond the class names.
 
-What it does **not** yet answer is *which object owns which name*: that is the export table, and until the
-compact-index entries are decoded and cross-checked, asking this reader for a class's function list would be
-inventing structure. That is the next slice, and it is the one that unblocks 4.7's native function records.
+It now also says *which object owns which name*, because the export table is decoded: every export carries a
+class, a super, an outer, a name and a byte range in the file. Asking for a class's functions is a filter on
+that table rather than a guess.
 
 
-## The export table: two encodings tried, neither accepted
+## The export and import tables: solved, and how
 
-The next slice is the export table, and this is where the reader currently stops. The table's position and
-size are known — `export_offset` and `export_count` from the header, and both are inside the file for all 18
-packages — but the entry encoding is not, and guessing it produced nonsense rather than a result.
-
-Two index encodings were tried against `Core.u` (472 names, 906 exports at `0xFCCD`, 18 imports at
-`0xFC2C`), plus a field layout that assumed four compacts followed by flags and two more compacts. The test
-each one has to pass is structural, not aesthetic: **parsing the import table must end exactly where the
-export table begins.** Neither index encoding does, and the field layout produced 906 entries of nonsense.
-
-| encoding | imports end | should be |
-|---|---|---|
-| 1-byte, else 4-byte, sign in bit `0x40` (UE1 `FCompactIndex`) | `0xFC95` | `0xFCCD` |
-| 1-byte, else 2-byte, sign in the high bit | `0xFC86` | `0xFCCD` |
-
-The raw bytes say why the simple forms fail. At `0xFC2C`:
+Both tables now parse, and the export one is validated against an independent artifact: the number of
+`Class` exports per package equals the class count UELib produced, **18 packages, 2,319 classes, exact per
+package**.
 
 ```
-04 4f 07 00 00 00 00 04 | 04 4d 07 ff ff ff ff 45 | 05 04 4d 07 ff ff ff ff
+package              ver    parsed   classes.csv
+AmbientCreatures     130        18      18  OK
+Core                 130         7       7  OK
+Engine               130       367     367  OK
+StargateGame         130       306     306  OK
+UPreview             128         4       4  OK
+...                                        18/18 OK, 2,319 total
 ```
 
-There is a four-byte field per entry that is `0` in the first and `-1` in the rest — an outer/parent index,
-not a compact one — and the leading pairs (`04 4f`, `04 4d`) read like package/class *name* indices, which
-would make each entry a mix of compact and fixed-width fields. A wrong guess here does not fail loudly: it
-produced a plausible-looking 906 entries whose class histogram was nonsense (`Class` 248 in a package with 7
-classes). That is the failure mode worth remembering — **entry counts matching proves the table's extent,
-not the field layout.**
+### The layouts
 
-`python3 tools/ue2pkg.py PKG --tables` prints those regions verbatim so the next attempt compares against
-bytes instead of re-deriving the same dead ends.
+```
+ImportEntry  ClassPackage(index)  ClassName(index)  Outer(int32)     ObjectName(index)
+ExportEntry  Class(index)         Super(index)      Outer(int32)     ObjectName(index)
+                                                    Flags(int32)     SerialSize(index)  SerialOffset(index)
+```
 
-### What a correct decoder has to reproduce
+`inventory/package_exports_summary.csv` holds the per-package counts.
 
-Four independent facts are available to check against, which is why this is worth finishing rather than
-abandoning:
+### Two details that cost six failed attempts
 
-1. `inventory/classes.csv` counts classes per package (`StargateGame` 306, `Engine` 367, `Core` 7).
-2. `inventory/xbe_class_table_names.csv` names 466 of 492 runtime class tables.
-3. `inventory/class_properties.csv` holds 11,496 class/property pairs.
-4. The export table must end exactly where the next table starts, in all 18 packages.
+**The index encoding is not the one UE1 documentation leads you to.** It is: bit 7 is the sign, bit 6 means
+"more bytes follow", and the value is 6 bits in the first byte then 7 bits per continuation byte —
+`ReadIndex` in `dpjudas/surrealengine`'s `Docs/PackageFormat.md`. Every earlier attempt used a 1-byte-or-4
+scheme and mis-signed negatives.
 
-Format note for whoever picks this up: `UPreview.u` is version **128** while the other 17 are 130, so a
-decoder that works on the majority may still need a branch for it.
+**`Outer` and `Flags` are plain 32-bit integers, not index-encoded.** That is the field that made the parse
+stay *plausible* while being wrong: entry counts matched, and the values were nonsense, so the only thing
+that could catch it was a semantic check. The check that settled it was the class histogram — a class
+package should be mostly `Function`, `ObjectProperty`, `FloatProperty`, `StructProperty`, and
+`StargateGame`'s histogram is exactly that (3,273 / 2,684 / 1,712 / 1,278) — not the byte count.
+
+### What the boundary check was good for
+
+The import table has to end exactly where the export table begins (`0xFCCD` in `Core.u`). That test is what
+proved the import layout correct before the export layout was even close, and it is why `--tables` exists:
+raw bytes, no interpretation. Two of the rejected candidates are recorded in this file's git history rather
+than here, because they are not worth remembering — the *method* is: exact boundary, then semantics.
 
 ## Not measured
 
-* The export and import tables (offsets and counts are parsed; the entry encoding above is unresolved).
+* Object *contents*: the tables say where each export's data begins and how long it is, but nothing reads a
+  property stream or a function's bytecode yet. That is the next slice, and it is what 4.7 needs.
 * Function-level data of any kind — no bytecode, no `UFunction` records.
 * Whether `UPreview`'s version 128 changes the name-table encoding (it does not appear to; its 164 names
   parse).

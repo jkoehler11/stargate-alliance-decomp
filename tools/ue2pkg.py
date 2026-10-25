@@ -66,65 +66,70 @@ class Package:
         return out
 
 
-    # -- compact index and tables ---------------------------------------
-    def read_compact(self, off):
-        """UE2 FCompactIndex: one byte for 0..0x7F, else four; bit 0x40 is the sign."""
-        b0 = self.data[off]
-        if b0 & 0x80 == 0:
-            return b0, off + 1
-        b1, b2, b3 = self.data[off + 1], self.data[off + 2], self.data[off + 3]
-        value = ((b0 & 0x3F) << 24) | (b1 << 16) | (b2 << 8) | b3
-        return (-value if b0 & 0x40 else value), off + 4
+
+    # -- compact index and tables (format confirmed against SurrealEngine's PackageFormat.md) -----
+    def read_index(self, off):
+        """UE1/UE2 index: bit 7 is the sign, bit 6 means "more bytes", 6 bits then 7 per byte."""
+        b = self.data[off]
+        sign, cont, val = b & 0x80, b & 0x40, b & 0x3F
+        off += 1
+        shift = 6
+        while cont and shift < 32:
+            b = self.data[off]
+            off += 1
+            cont = b & 0x80
+            val |= (b & 0x7F) << shift
+            shift += 7
+        return (-val if sign else val), off
 
     def read_imports(self):
-        """Import entries: class package name, class name, outer index, object name."""
+        """Import entry: ClassPackage(index), ClassName(index), Package(uint32), ObjectName(index)."""
         out, off = [], self.import_offset
-        try:
-            for i in range(self.import_count):
-                pkg, off = self.read_compact(off)
-                cls, off = self.read_compact(off)
-                outer, off = self.read_compact(off)
-                name, off = self.read_compact(off)
-                out.append({"index": i, "class_package": pkg, "class": cls,
-                            "outer": outer, "name": name})
-        except (IndexError, struct.error):
-            self.import_error = "truncated at entry %d" % len(out)
+        for i in range(self.import_count):
+            cls_pkg, off = self.read_index(off)
+            cls, off = self.read_index(off)
+            pkg = struct.unpack_from("<I", self.data, off)[0]
+            off += 4
+            name, off = self.read_index(off)
+            out.append({"class_package": cls_pkg, "class": cls, "package": pkg, "name": name})
         self.imports = out
         return out
 
     def read_exports(self):
-        """Export entries: class idx, super idx, outer idx, name idx, flags, serial size, serial offset."""
+        """Export entry, in this order, with Outer and Flags as plain 32-bit ints:
+
+            Class(index), Super(index), Outer(int32), ObjectName(index), Flags(int32),
+            SerialSize(index), SerialOffset(index)
+
+        That Outer/Flags are not index-encoded is what broke six earlier attempts: every field looked
+        compact, so the parse stayed plausible while the values were nonsense. The check that settled it is
+        semantic -- the class histogram -- not the byte count.
+        """
         out, off = [], self.export_offset
-        try:
-            for i in range(self.export_count):
-                cls, off = self.read_compact(off)
-                sup, off = self.read_compact(off)
-                outer, off = self.read_compact(off)
-                name, off = self.read_compact(off)
-                flags = struct.unpack_from("<I", self.data, off)[0]
-                off += 4
-                size, off = self.read_compact(off)
-                offset, off = self.read_compact(off)
-                out.append({"index": i, "class": cls, "super": sup, "outer": outer,
-                            "name": name, "flags": flags, "size": size, "offset": offset})
-        except (IndexError, struct.error):
-            self.export_error = "truncated at entry %d" % len(out)
+        for i in range(self.export_count):
+            cls, off = self.read_index(off)
+            sup, off = self.read_index(off)
+            outer = struct.unpack_from("<i", self.data, off)[0]
+            off += 4
+            name, off = self.read_index(off)
+            flags = struct.unpack_from("<i", self.data, off)[0]
+            off += 4
+            size, off = self.read_index(off)
+            offset, off = self.read_index(off)
+            out.append({"index": i, "class": cls, "super": sup, "outer": outer, "name": name,
+                        "flags": flags, "size": size, "offset": offset})
         self.exports = out
+        self.export_table_end = off
         return out
 
     def class_name_of(self, export):
-        """Resolve an export's class through the import table (negative indices) or another export."""
         idx = export["class"]
-        if idx == 0:
-            return "Class"
         if idx < 0:
             i = -idx - 1
-            if 0 <= i < len(getattr(self, "imports", [])):
-                return self.name(self.imports[i]["name"])
-            return "?import%d" % i
-        if 0 <= idx - 1 < len(self.exports):
-            return self.name(self.exports[idx - 1]["name"])
-        return "?export%d" % idx
+            return self.name(self.imports[i]["name"]) if 0 <= i < len(self.imports) else "?"
+        if idx > 0:
+            return self.name(self.exports[idx - 1]["name"]) if idx - 1 < len(self.exports) else "?"
+        return "Class"
 
     def name(self, i):
         return self.names[i][0] if self.names and 0 <= i < len(self.names) else "?"
@@ -157,6 +162,16 @@ def main():
         print("%-26s v%-4d names %5d/%-5d exports %5d imports %4d  %s"
               % (os.path.basename(path), pkg.version, got, pkg.name_count,
                  pkg.export_count, pkg.import_count, status))
+        pkg.read_imports()
+        pkg.read_exports()
+        hist = {}
+        for exp in pkg.exports:
+            c = pkg.class_name_of(exp)
+            hist[c] = hist.get(c, 0) + 1
+        print("      classes=%d  top=%s  table_end=0x%x  in-file=%s"
+              % (hist.get("Class", 0),
+                 sorted(hist.items(), key=lambda kv: -kv[1])[:3],
+                 pkg.export_table_end, pkg.export_table_end <= len(pkg.data)))
         if args.tables:
             # Raw evidence, no interpretation: the two table regions verbatim, so the next attempt at
             # decoding starts from bytes instead of another guess (docs/PACKAGE_READER.md).
