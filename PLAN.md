@@ -536,6 +536,17 @@ and a deliberate one-line script break is caught by the boot test.
   `-o /tmp`. Both are fixed here, and the now-parsed override rows correct the counts PR #17 quoted: **41**
   override-attributed names and **215** from Ghidra's own analysis, not 39 and 217.
 
+
+### Execution notes (2026-10-24, the XBE header)
+
+- **The reader was mislabelling the certificate as the entry point.** Offset `0x118` is the certificate
+  (`0x10184`, verified by the `0x1EC`-byte certificate and its UTF-16 `Stargate SG-1` title), not the
+  entry. `tools/ghidra/make-spec.py` had been writing `entry=0x10184` into every Ghidra project spec.
+  Fixed: `Xbe.certificate` / `Xbe.entry_field` / `Xbe.entry = None`, and `docs/XBE_LAYOUT.md` records the
+  verified header plus all **15** sections (an earlier note said 5; the seven library sections are
+  separate mappings after `.text`). The real entry field at `0x128` decrypts outside every section, so it
+  is UNKNOWNS U12 now rather than a guess.
+
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
 - [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.

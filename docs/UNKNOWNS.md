@@ -346,3 +346,25 @@ them. Until then nothing is claimed, and the cap bit constants that appear in `.
 of which were requested.
 
 **Status.** Open, needs a runtime probe (7.3 territory), not more static reading.
+
+## U12. The XBE entry point does not decode from the header
+
+**Observed.** The header field at `0x128` reads `0x94B66E5C`. The documented key (`0xA8FC57AB`) decrypts
+it to `0x3C4A39F7`, which is outside every section: `.text` ends at `0x4190FC` and the highest mapped VA
+is `0x7E95E0`. So the field is either keyed differently in this build or is not an entry point at all.
+
+**What was wrong before.** `tools/xbe.py` read offset `0x118` and called it `entry`. That offset is the
+**certificate** address (`0x10184`), confirmed by the `0x1EC`-byte certificate there with the UTF-16 title
+`Stargate SG-1`. `tools/ghidra/make-spec.py` printed that value into the project spec as `entry=0x10184`,
+so every `make ghidra` run was told the certificate was the analysis entry point. Ghidra still found code
+(it starts at `.text` and follows calls), but the seed was meaningless.
+
+**Now.** `Xbe.certificate` and `Xbe.entry_field` carry the raw values, `Xbe.entry` is `None`, and
+`make-spec.py` no longer claims one. `docs/XBE_LAYOUT.md` records the verified header and the 15-section
+table.
+
+**What would settle it.** Observe the first instruction the loader jumps to: break in xemu's GDB stub
+after the loader hands control to the title and read `EIP`, or single-step from the loader's
+`LaunchDataPage`. Only then should a tool name an entry point.
+
+**Status.** Open, and it is the gate on the init call graph noted in `docs/ARCHITECTURE.md` §6.

@@ -54,7 +54,14 @@ class Xbe:
         self.base = u(0x104)
         self.header_size = u(0x108)
         self.image_size = u(0x10C)
-        self.entry = u(0x118)
+        # 0x118 is the *certificate* address, not the entry point: at that offset the file holds a
+        # 0x1EC-byte certificate with the UTF-16 title "Stargate SG-1". The documented entry field at
+        # 0x128 XOR 0xA8FC57AB decrypts to 0x3C4A39F7, which is outside every section, so the real
+        # entry is not readable from the header (docs/XBE_LAYOUT.md). Keep the raw value, claim nothing.
+        self.certificate = u(0x118)
+        self.entry_field = u(0x128)
+        self.entry = None  # not derivable from this header; see docs/XBE_LAYOUT.md
+        self.entry_xor_candidate = self.entry_field ^ 0xA8FC57AB
         self.kernel_thunk = u(0x150) if len(d) > 0x150 else 0
         count = u(0x11C)
         sh_va = u(0x120)
@@ -156,7 +163,9 @@ class Xbe:
 
 
 def cmd_sections(xbe, args):
-    print(f"base={xbe.base:#x} headers={xbe.header_size:#x} image={xbe.image_size:#x} entry={xbe.entry:#x}")
+    print(f"base={xbe.base:#x} headers={xbe.header_size:#x} image={xbe.image_size:#x} "
+          f"certificate={xbe.certificate:#x} entry_field={xbe.entry_field:#010x} "
+          f"(xor candidate {xbe.entry_xor_candidate:#x}, unmapped)")
     print(f"{'#':>2} {'name':<12} {'flags':>8} {'va':>10} {'vsize':>10} {'foff':>9} {'fsize':>10} ex")
     for s in xbe.sections:
         print(f"{s.index:>2} {s.name:<12} {s.flags:#08x} {s.va:#010x} {s.vsize:#010x} "
