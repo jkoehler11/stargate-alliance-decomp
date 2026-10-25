@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names ci check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -33,6 +33,7 @@ help:
 	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
 	@echo "  class-graph   walk the subclass tree under a root (ROOT=BotBase) with states and usage"
 	@echo "  package-names parse every .u header and name table (PLAN 5.2/4.7 prerequisite)"
+	@echo "  nightly       run the dump-free gate plus every dump-side check, one summary per run (PLAN 7.5)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -184,3 +185,7 @@ class-graph:
 # Header + name table of every shipped package (docs/PACKAGE_READER.md). Needs the dump.
 package-names:
 	@$(PYTHON) tools/ue2pkg.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System"
+
+# Nightly regression: the checks CI cannot run (docs/REGRESSION.md).
+nightly:
+	@sh tools/nightly.sh
