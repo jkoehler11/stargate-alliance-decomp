@@ -347,24 +347,19 @@ of which were requested.
 
 **Status.** Open, needs a runtime probe (7.3 territory), not more static reading.
 
-## U12. The XBE entry point does not decode from the header
+## U12. ~~The XBE entry point does not decode from the header~~ — resolved
 
-**Observed.** The header field at `0x128` reads `0x94B66E5C`. The documented key (`0xA8FC57AB`) decrypts
-it to `0x3C4A39F7`, which is outside every section: `.text` ends at `0x4190FC` and the highest mapped VA
-is `0x7E95E0`. So the field is either keyed differently in this build or is not an entry point at all.
+**Was.** The header field at `0x128` reads `0x94B66E5C`. The documented retail key (`0xA8FC57AB`) decrypts it to
+`0x3C4A39F7`, outside every section, so the entry looked unreadable. The earlier reader also mistook `0x118` (the
+certificate address, `0x10184`) for the entry.
 
-**What was wrong before.** `tools/xbe.py` read offset `0x118` and called it `entry`. That offset is the
-**certificate** address (`0x10184`), confirmed by the `0x1EC`-byte certificate there with the UTF-16 title
-`Stargate SG-1`. `tools/ghidra/make-spec.py` printed that value into the project spec as `entry=0x10184`,
-so every `make ghidra` run was told the certificate was the analysis entry point. Ghidra still found code
-(it starts at `.text` and follows calls), but the seed was meaningless.
+**Resolved.** The field is XOR-encrypted with the **debug-build** key `0x94859D4B`, giving **`0x0033F317`**, which
+is inside `.text`. Three independent checks agree: the five bytes before the address are another function's
+`xor eax,eax; ret 4` tail, so it is a function start; the body reads the XBE header back (`[0x10118]`,
+`[0x10108]`), aligns the heap to 16 bytes and registers a static initialiser, which is what a CRT entry does; and
+the retail key produces nothing mapped. `Xbe.entry`/`Xbe.entry_key` now carry it and `tools/xbe.py … sections`
+prints it.
 
-**Now.** `Xbe.certificate` and `Xbe.entry_field` carry the raw values, `Xbe.entry` is `None`, and
-`make-spec.py` no longer claims one. `docs/XBE_LAYOUT.md` records the verified header and the 15-section
-table.
-
-**What would settle it.** Observe the first instruction the loader jumps to: break in xemu's GDB stub
-after the loader hands control to the title and read `EIP`, or single-step from the loader's
-`LaunchDataPage`. Only then should a tool name an entry point.
-
-**Status.** Open, and it is the gate on the init call graph noted in `docs/ARCHITECTURE.md` §6.
+**Still open (small).** The entry is not in the function map — `symbols/xbox_functions.csv` starts at
+`FUN_0033f389`, because Ghidra was never told the entry. Passing it to the analysis adds that function and lets
+it be named; that is a single `make ghidra` run, tracked in `PLAN.md`.

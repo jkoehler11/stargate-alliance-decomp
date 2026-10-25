@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the XBE entry point — U12 resolved)
+
+- **The entry point decodes after all: `0x0033F317`, with the debug-build key `0x94859D4B`.** The retail key
+  `0xA8FC57AB` gives `0x3C4A39F7`, which is why the field looked unreadable. Three checks agree: the bytes
+  before the address are another function's `xor eax,eax; ret 4` tail (so it is a function *start*), the body is
+  CRT start-up that reads the XBE header back and aligns the heap, and only the debug key lands in a section.
+  `Xbe.entry`/`entry_key` carry it (`docs/XBE_LAYOUT.md`, U12). **Follow-up worth one Ghidra run:** the entry is
+  not in `symbols/xbox_functions.csv` (nothing references it, and the header value was never passed to the
+  analysis) — seed and name it, which adds the CRT function to the map.
+
 ### Execution notes (2026-10-24, squad rosters)
 
 - **The `SQUAD_*` rosters read: 58 of 65, at a uniform `+0x5D`, 129 members in total** and 44 of them

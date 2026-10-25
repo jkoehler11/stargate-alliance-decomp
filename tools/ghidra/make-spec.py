@@ -26,10 +26,13 @@ def main():
 
     image = Xbe(args.xbe)
     os.makedirs(args.out, exist_ok=True)
+    # The entry point now resolves (debug-build XOR key); record it in the spec header. Seeding it as a
+    # function is a deliberate follow-up, not part of the change that measured it (docs/XBE_LAYOUT.md).
+    entry = ("0x%x (key 0x%x)" % (image.entry, image.entry_key)) if image.entry else "unresolved"
 
     with open(os.path.join(args.out, "sections.tsv"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("# name\tva\tvsize\tfoff\tfsize\tflags\n")
-        fh.write(f"# base=0x{image.base:x} image=0x{image.image_size:x} certificate=0x{image.certificate:x} (entry not readable; docs/XBE_LAYOUT.md)\n")
+        fh.write(f"# base=0x{image.base:x} image=0x{image.image_size:x} certificate=0x{image.certificate:x} entry={entry}\n")
         for s in image.sections:
             fh.write(f"{s.name}\t0x{s.va:x}\t0x{s.vsize:x}\t0x{s.foff:x}\t0x{s.fsize:x}\t0x{s.flags:x}\n")
 
