@@ -132,3 +132,9 @@ Written and checked on 2026-10-24 against `main`:
 
 If you run a stage and get a different count than the document it feeds, the document is stale — that
 is the signal to regenerate and commit, not to edit the doc by hand.
+
+## Indexing what has been measured
+
+`make inventory-index` writes `docs/ARTIFACTS.md`: every committed CSV with its row and column count and the
+target that regenerates it. `tools/inventory-index.py --check` runs in `make ci`, so the page cannot age, and the
+artifacts it cannot resolve are listed explicitly — an artifact nothing rebuilds is a measurement that will drift.

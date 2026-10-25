@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the artifact index)
+
+- **Seven committed artifacts have no generator at all.** `tools/inventory-index.py` resolves every committed CSV
+  to the `make` target that rebuilds it (through the Makefile, or through the tool that writes it, Ghidra scripts
+  and `tools/Sg1Tool` included) and reports the rest. Result: 58 artifacts, 54,647 rows, **7 orphans** —
+  `actor_property_coverage`, `map_property_coverage`, `native_declarations`, `package_exports_summary`,
+  `package_script_text`, `script_text_natives`, `squad_scripts` — each produced by a one-off script that was never
+  committed, so nothing rebuilds it. Nine more have a writer but no `make` target. `docs/ARTIFACTS.md` is the
+  generated page and `--check` is wired into `make ci`.
+
 ### Execution notes (2026-10-24, the package check file)
 
 - **The check file was being read wrong.** Its 168 records store *hex text* (`00 21 <32 upper> 00 01 21 <32
