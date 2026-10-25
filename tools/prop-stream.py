@@ -90,6 +90,7 @@ def read_value(buf, off, pkg, want_values):
     elif t == 3:
         entry["value"] = bool(info & 0x80)
     start = off
+    entry["value_offset"] = start
     off += size
     if want_values:
         # Values inside package property streams are *compact*: a name or object reference can be one or two

@@ -11,7 +11,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/chapters.csv` | 37 | 4 | `make inventory` |
 | `inventory/checkpoint_summary.csv` | 96 | 7 | `make checkpoints` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make ci` |
-| `inventory/class_defaults_emit.csv` | 18 | 19 | `make defaults-emit` |
+| `inventory/class_defaults_emit.csv` | 18 | 22 | `make defaults-emit` |
 | `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make class-defaults` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
