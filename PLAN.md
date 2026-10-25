@@ -597,7 +597,13 @@ and a deliberate one-line script break is caught by the boot test.
       editor-parameterised data in the level script. `StoryModeGame` (51 functions, 3 states) owns the campaign rules;
       `ObjectivesPanel` renders state. Consequence: 5.2 (level script) is on the critical path for anything playable.
       `chapters.csv` has 37 entries, 30 on disk.
-      Remaining: UI, audio — the script-side ones stay blocked on the oracle.
+      **UI done** (`docs/systems/UI.md`): 347 classes / 2,137 functions across `StargateMenus` (98 classes, 334
+      functions, **zero natives**), the stock `GUI`+`UWindow` (226) and the game-side HUDs — and it corrects the fork
+      count: `SGListBox` and seven subclasses live *inside* `GUI`, so 503 insertion points is a lower bound and package
+      name is not a stock/fork discriminator. Two full HUDs (`StargateHUD` 57/101, `ReplicatorHUD` 29/69) mean the
+      Replicator mode is first-class; `SGMenuInteraction`'s 294 properties are the largest config blob in the fork.
+      Remaining: audio (LIPSinc/speech).
+      Note: `FORK_SURFACE.md` should gain the GUI example when next touched.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
       with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed
