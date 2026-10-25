@@ -100,10 +100,16 @@ def main():
         got = class_blocks.get(cls, 0)
         actor_rows.append([cls, total, got, "%.1f%%" % (100.0 * got / total if total else 0.0)])
 
+    # `squad_scripts.csv` is deliberately *not* written: this pass finds 581 (map, script) pairs where the
+    # committed artifact has 614, so the enumeration that produced it was broader than "a located property block
+    # in a map export". Overwriting would silently drop 35 references that other docs count, so the delta is
+    # reported instead and reconciling it is its own task.
+    print("squad_scripts.csv: %d pairs found, committed has %d -- not written (see docs/T3D.md)"
+          % (len(squad_rows), len(open(os.path.join(outdir, "squad_scripts.csv"), newline="").readlines()) - 1))
+
     files = [
         ("map_property_coverage.csv", ["map", "exports", "blocks_with_properties"], map_rows),
         ("actor_property_coverage.csv", ["class", "exports", "blocks_with_properties", "coverage"], actor_rows),
-        ("squad_scripts.csv", ["map", "squad_script", "spawners"], squad_rows),
     ]
     stale = []
     for name, header, rows in files:
