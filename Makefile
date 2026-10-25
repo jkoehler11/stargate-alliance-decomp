@@ -39,6 +39,7 @@ help:
 	@echo "  map-actors    histogram every .unr's export classes (PLAN 5.2, class-level)"
 	@echo "  sfx-index     count the Sound exports in every .uax (PLAN 5.3)"
 	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
+	@echo "  t3d           write every map's actors as T3D into \$$WORK/extracted/maps (PLAN 5.2)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -215,3 +216,8 @@ sfx-index:
 # One export's property block, or a class sweep (docs/ACTOR_PROPERTIES.md).
 prop-stream:
 	@$(PYTHON) tools/prop-stream.py "$(MAP)" $(if $(CLASS),--class "$(CLASS)" --scan,--export $(EXPORT))
+
+# Every map's actors as T3D, into $WORK (docs/T3D.md). Game content: never committed.
+t3d:
+	@$(PYTHON) tools/map-to-t3d.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" \
+		--out "$(or $(WORK),work)/extracted/maps"
