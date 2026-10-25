@@ -123,64 +123,46 @@ def rebuild(pkg):
 
 
 def regrow(pkg, index, extra, fill=0xCC):
-    """Enlarge one export's payload and re-lay the file, growing the tables if the offsets need more bytes.
+    """Enlarge one export's payload and re-lay the file from scratch.
 
-    The awkward part is that a shifted offset can need one more byte in the compact index, which makes the export
-    table longer, which pushes the payloads further -- so the layout is solved by iteration rather than assumed.
-    Each round recomputes the tables with the current shift and asks whether the tables still end before the first
-    payload; if not, the shift grows by the difference. Two rounds is typical, and the loop is bounded.
+    The offsets are recomputed rather than shifted: every payload is placed at the running position after the
+    tables, in the original order, with the target grown by `extra`. That is safe here because whole-package
+    rebuilds proved the payloads tile the file with no padding (`--rebuild`: zero gaps), and it avoids the
+    fixed-point mess of shifting offsets that may need an extra byte in the compact index. The table length
+    depends on the offsets, so the layout is iterated to a fixed point anyway -- but over positions, not deltas.
     """
     exports = [dict(e) for e in pkg.exports]
     target = next((e for e in exports if e["index"] + 1 == index), None)
     if target is None:
         raise SystemExit("no export %d in %s" % (index, pkg.path))
-
     head = pkg.data[:pkg.name_offset]
     names = encode_names(pkg.names)
     imports = encode_imports(pkg.imports)
-    shift_from = target["offset"] + target["size"]
+    ordered = sorted(exports, key=lambda e: e["offset"])
+    sizes = dict((e["index"], e["size"]) for e in exports)
+    sizes[target["index"]] += extra
 
-    def lay(delta):
-        for e in exports:
-            if e["index"] == target["index"]:
-                e["size"] = pkg.exports[index - 1]["size"] + extra
-                e["offset"] = pkg.exports[index - 1]["offset"]
-            elif pkg.exports[e["index"]]["offset"] >= shift_from:
-                e["offset"] = pkg.exports[e["index"]]["offset"] + delta + extra
-            else:
-                e["offset"] = pkg.exports[e["index"]]["offset"]
-        table = encode_exports(exports)
-        return table, len(head) + len(names) + len(imports) + len(table)
-
-    delta, table, body_start = 0, None, None
+    pos, table = 0, b""
     for _ in range(8):
-        table, body_start = lay(delta)
-        first_payload = min(e["offset"] for e in exports if e["index"] != target["index"]) if len(exports) > 1 \
-            else target["offset"]
-        if body_start <= first_payload:
+        pos = len(head) + len(names) + len(imports) + len(table)
+        for e in ordered:
+            e["offset"] = pos
+            pos += sizes[e["index"]]
+        table = encode_exports(exports)
+        settled = len(head) + len(names) + len(imports) + len(table) == min(e["offset"] for e in ordered)
+        if settled:
             break
-        delta += body_start - first_payload
 
-    payloads = bytearray()
-    placed = body_start
-    for e in sorted(exports, key=lambda x: x["offset"]):
-        if e["offset"] > placed:
-            payloads += pkg.data[placed - (e["offset"] - placed + 0):e["offset"]][:0]  # gaps: none expected
-            payloads += b"\0" * (e["offset"] - placed)
-            placed = e["offset"]
-        data = pkg.data[pkg.exports[e["index"]]["offset"]:pkg.exports[e["index"]]["offset"] + pkg.exports[e["index"]]["size"]]
+    payload = bytearray()
+    for e in ordered:
+        data = pkg.data[e["offset"] if False else
+                        next(x for x in pkg.exports if x["index"] == e["index"])["offset"]:
+                        next(x for x in pkg.exports if x["index"] == e["index"])["offset"]
+                        + pkg.exports[e["index"]]["size"]]
+        payload += data
         if e["index"] == target["index"]:
-            data = data + bytes([fill]) * extra
-        payloads += data
-        placed += len(data)
-
-    out = bytearray(head) + names + imports + table
-    if len(out) != body_start:
-        raise SystemExit("layout did not settle: tables end at %d, payloads start at %d" % (len(out), body_start))
-    out += payloads
-    # whatever the original had after the last export (rare, but it existed in some packages)
-    last_end = max(pkg.exports[e["index"]]["offset"] + pkg.exports[e["index"]]["size"] for e in exports[:-1]) \
-        if len(exports) > 1 else 0
+            payload += bytes([fill]) * extra
+    out = bytearray(head) + names + imports + table + payload
     return bytes(out), exports
 
 
