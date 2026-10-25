@@ -3,28 +3,31 @@
 
 Four artifacts that `docs/ARTIFACTS.md` flagged as having no generator: `package_exports_summary.csv`,
 `package_script_text.csv`, `script_text_natives.csv`, `native_declarations.csv`. They were produced by one-off
-scripts that were never committed, which means nothing rebuilt them and any doc quoting them quoted a frozen
-number. This is that generator, and `--check` proves it reproduces the committed files byte for byte.
+scripts that were never committed, so nothing rebuilt them and any doc quoting them quoted a frozen number.
+`--check` proves this tool reproduces the committed files byte for byte.
 
     python3 tools/package-census.py DUMP/.../System -o inventory
     python3 tools/package-census.py DUMP/.../System --check
 
-Definitions, so the numbers mean something specific:
+Definitions, because a census is only useful if each column means one thing:
 
-* `names` is the package's name-table count as the header records it; `exports` and `imports` are table lengths;
-  `classes` counts exports whose class is `Class`.
+* `names`, `exports`, `imports` are the package header's own counts; `classes` counts exports whose class is
+  `Class`.
 * `script_text_exports` counts class exports whose `ScriptText` child yielded text, and `script_text_bytes` is
-  the length of that text as decoded — the same locator `tools/pkg-script-text.py` uses, imported rather than
-  reimplemented.
-* `natives_in_source` counts `native` function declarations in the shipped text; `native_functions_in_inventory`
-  is the same package's total from `inventory/classes.csv`, and the two disagree wherever the inventory counts
-  inherited or operator natives (a disagreement the doc records rather than smoothing).
-* `native_declarations` lists the fork's own C++ natives: classes in `StargateGame` whose *source* declares at
-  least one native function, in export order.
+  the size of that `TextBuffer` export — the stored bytes, not the decoded string. The locator is
+  `tools/pkg-script-text.py`'s, imported rather than reimplemented.
+* `natives_in_source` counts `native` function declarations in the shipped text, while
+  `native_functions_in_inventory` is that package's total from `inventory/classes.csv`. They disagree wherever the
+  inventory counts inherited or operator natives, and the disagreement is the point of the column.
+* `native_declarations` lists the fork's *own* C++ natives: a native function declared by a class whose ancestors
+  do not declare it. An override of a stock native (`BotBase.CoverActors` re-declaring what `Bot.CoverActors`
+  already declares) is not a new native, and that ancestry test is what separates the six classes that add
+  natives of their own from the ones that only rename a stock one.
 """
 import argparse
 import csv
 import importlib.util
+import io
 import os
 import sys
 
@@ -32,7 +35,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ue2pkg import Package  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DECLARATION_PACKAGE = "StargateGame"
 
 
 def load_script_text():
@@ -43,21 +45,33 @@ def load_script_text():
     return mod
 
 
-def inventory_natives(path=os.path.join(ROOT, "inventory", "classes.csv")):
+def load_column(name, column, path=os.path.join(ROOT, "inventory", "classes.csv")):
     out = {}
-    if not os.path.isfile(path):
-        return out
-    with open(path, newline="") as fh:
-        for r in csv.DictReader(fh):
-            out[r["package"]] = out.get(r["package"], 0) + int(r["native_functions"] or 0)
+    if os.path.isfile(path):
+        with open(path, newline="") as fh:
+            for r in csv.DictReader(fh):
+                out[r[name]] = r[column]
     return out
 
 
-def write_csv(path, header, rows):
-    with open(path, "w", newline="") as fh:
-        w = csv.writer(fh, lineterminator="\n")
-        w.writerow(header)
-        w.writerows(rows)
+def ancestry(cls, supers):
+    out, seen = [], set()
+    cur = supers.get(cls)
+    while cur and cur not in seen:
+        seen.add(cur)
+        out.append(cur)
+        cur = supers.get(cur)
+    return out
+
+
+def size_of_text_buffer(pkg, export):
+    """The `ScriptText` child export's stored size."""
+    idx = export["index"] + 1
+    for kid in pkg.exports:
+        if kid["outer"] == idx and pkg.class_name_of(kid) == "TextBuffer" \
+                and pkg.name(kid["name"]) == "ScriptText":
+            return kid["size"]
+    return 0
 
 
 def main():
@@ -68,36 +82,44 @@ def main():
     args = ap.parse_args()
 
     st = load_script_text()
+    supers = load_column("class", "super")
     outdir = args.out or os.path.join(ROOT, "inventory")
-    inv = inventory_natives()
+    inventory_natives = {}
+    for pkg_name, n in load_column("package", "native_functions").items():
+        inventory_natives[pkg_name] = inventory_natives.get(pkg_name, 0) + int(n or 0)
 
-    exports_rows, text_rows, native_rows, decl_rows = [], [], [], []
+    # Pass 1: read every package once, and remember which native names each class's source declares, because the
+    # ancestry test needs ancestors from other packages.
+    per_package = []
+    declared_by_class = {}
     for fname in sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u")):
-        path = os.path.join(args.system_dir, fname)
-        pkg = Package(path)
+        pkg = Package(os.path.join(args.system_dir, fname))
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
-        pkg_name = fname[:-2]
         classes = [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]
-
-        exports_rows.append([pkg_name, pkg.version, len(pkg.names), len(pkg.exports),
-                             len(pkg.imports), len(classes)])
-
-        found, byte_count, natives_in_source = 0, 0, 0
+        rows = []
         for exp in classes:
             text = st.script_text(pkg, exp)
             if text is None:
                 continue
-            found += 1
-            byte_count += len(text)
-            declared = st.NATIVE_FN.findall(text)
-            natives_in_source += len(declared)
-            if pkg_name == DECLARATION_PACKAGE and declared:
-                names = [m[1] if isinstance(m, tuple) else m for m in declared]
-                decl_rows.append([pkg.name(exp["name"]), len(names), ";".join(names), "shipped ScriptText"])
-        text_rows.append([pkg_name, len(classes), found, byte_count])
-        native_rows.append([pkg_name, len(classes), natives_in_source, inv.get(pkg_name, 0)])
+            cls = pkg.name(exp["name"])
+            names = [m[1] if isinstance(m, tuple) else m for m in st.NATIVE_FN.findall(text)]
+            declared_by_class[cls] = names
+            rows.append((exp["index"], cls, len(names), size_of_text_buffer(pkg, exp)))
+        per_package.append((fname[:-2], pkg.version, len(pkg.names), len(pkg.exports),
+                            len(pkg.imports), len(classes), rows))
+
+    exports_rows, text_rows, native_rows, decl_rows = [], [], [], []
+    for pkg_name, version, names, exports, imports, classes, rows in per_package:
+        exports_rows.append([pkg_name, version, names, exports, imports, classes])
+        text_rows.append([pkg_name, classes, len(rows), sum(r[3] for r in rows)])
+        native_rows.append([pkg_name, classes, sum(r[2] for r in rows), inventory_natives.get(pkg_name, 0)])
+        for _index, cls, _n, _bytes in rows:
+            own = [n for n in declared_by_class.get(cls, [])
+                   if not any(n in declared_by_class.get(a, []) for a in ancestry(cls, supers))]
+            if own:
+                decl_rows.append([cls, len(own), ";".join(own), "shipped ScriptText"])
 
     files = [
         ("package_exports_summary.csv",
@@ -110,30 +132,32 @@ def main():
          ["class", "native_functions", "native_function_names", "from"], decl_rows),
     ]
 
-    bad = []
+    stale = []
     for name, header, rows in files:
         path = os.path.join(outdir, name)
         if args.check:
-            import io
             buf = io.StringIO()
             w = csv.writer(buf, lineterminator="\n")
             w.writerow(header)
             w.writerows(rows)
-            want = buf.getvalue()
             try:
                 have = open(path, encoding="utf-8").read()
             except FileNotFoundError:
                 have = None
-            if have != want:
-                bad.append(name)
-            print("%-4s %s (%d rows)" % ("ok" if have == want else "DIFF", name, len(rows)))
+            same = have == buf.getvalue()
+            if not same:
+                stale.append(name)
+            print("%-4s %s (%d rows)" % ("ok" if same else "DIFF", name, len(rows)))
         else:
-            write_csv(path, header, rows)
+            with open(path, "w", newline="") as fh:
+                w = csv.writer(fh, lineterminator="\n")
+                w.writerow(header)
+                w.writerows(rows)
             print("wrote %s (%d rows)" % (path, len(rows)))
+    if args.check and stale:
+        print("\nstale: %s" % ", ".join(stale))
+        return 1
     if args.check:
-        if bad:
-            print("\nstale: %s -- a doc quoting these numbers may be wrong" % ", ".join(bad))
-            return 1
         print("\nall four reproduce byte for byte")
     return 0
 
