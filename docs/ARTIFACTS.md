@@ -10,9 +10,9 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/campaign_matrix.csv` | 18 | 9 | **campaign-matrix.py (no target runs it)** |
 | `inventory/chapters.csv` | 37 | 4 | `make inventory` |
 | `inventory/checkpoint_summary.csv` | 96 | 7 | `make checkpoints` |
-| `inventory/class_defaults_coverage.csv` | 18 | 6 | `make ci` |
+| `inventory/class_defaults_coverage.csv` | 18 | 6 | `make defaults-coverage` |
 | `inventory/class_defaults_emit.csv` | 18 | 25 | `make defaults-emit` |
-| `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make class-defaults` |
+| `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make defaults-per-class` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |

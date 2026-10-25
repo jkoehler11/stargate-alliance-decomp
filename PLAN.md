@@ -145,13 +145,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
-      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 13,307 of the
-      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (99.7%) — 444 array
-      properties (1,315 elements), 56 nested structs — and 1,269 `Begin Object` subobjects carrying another
-      14,887 rendered properties; enum element names resolve for 722 of 965 byte values from the shipped `enum`
-      declarations, and `make defaults-tree` merges the blocks into the extracted source so one tree carries both
-      halves. Remaining here: 17 arrays and 12 structs whose element type the tiling test refuses (see the doc's
-      "Not measured"), then `replication` blocks, state code and labels, latent calls, operator precedence.
+      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): the locator
+      finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,666 (71.8%) — the previous
+      512-byte scan window excluded every base class, whose record is longer than that. 15,491 of 15,530 class-level
+      properties render to UnrealScript (99.7%) — 468 arrays (1,435 elements), 207 nested structs — and 1,317
+      `Begin Object` subobjects carry another 15,010 of 15,810; enum element names resolve for 771 of 1,052 byte
+      values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
+      source so one tree carries both halves. Remaining here: 18 arrays and 12 structs whose element type the tiling
+      test refuses, 543 withheld blocks (see the doc's "Not measured"), then `replication` blocks, state code and
+      labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -160,7 +162,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
-      yield 13,307 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
+      yield 15,491 rendered properties over 1,666 classes and `make defaults-tree` merges them into the extracted
       tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
 - [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
@@ -331,6 +333,25 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, the locator was scanning 512 bytes)
+
+- **Most of the 532 withheld classes were not ambiguous blocks: the locator never looked that far.** It searched the
+  first 512 bytes of each export, and a class export puts its record (script tables, super, package dependencies)
+  *before* the defaults block. Every base class has a longer record than that — `Actor` 2,451 bytes, `Pawn` 3,992,
+  `PlayerController` 13,665, `GameInfo` 5,682 — so the classes with the most defaults were exactly the ones reported
+  as having none. Scanning the whole payload: blocks found 2,084 → **2,209**, fully declared 1,552 → **1,666**,
+  no block 235 → **110**, 114 classes recovered — the inheritance spine, which is why rendered properties went
+  13,307 → **15,491**.
+- **The two defaults artifacts had no generator.** `inventory/class_defaults_coverage.csv` was produced once by hand
+  from `--sweep` output and `class_defaults_per_class.csv` came from `--packages`. The coverage file now has a
+  `--coverage` mode that reproduces the *old* committed file byte for byte before the window changed (2,319 classes,
+  2,084 blocks, 1,552 clean, 411 ambiguous, 235 none), so the semantics are confirmed rather than assumed, plus
+  `make defaults-coverage` and `make defaults-per-class` so `make inventory-index` resolves both.
+- **Status moved in two places**: class defaults decoded 66.9% → **71.84%**, default properties rendered 99.72% →
+  **99.75%**, subobject defaults 94.90% → **94.94%**.
+- **Next:** the 543 blocks still withheld (does the tail candidate belong to the class at all?), the 110 classes with
+  no candidate, and the 18 arrays / 12 structs the tiling test refuses.
 
 ### Execution notes (2026-10-25, subobjects and the `editinline` correction)
 

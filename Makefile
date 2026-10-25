@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-emit defaults-tree help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -52,6 +52,8 @@ help:
 	@echo "  t3d           write every map's actors as T3D into \$$WORK/extracted/maps (PLAN 5.2)"
 	@echo "  class-defaults read one class's default properties (PKG=... CLASS=...)"
 	@echo "  defaults-emit  render every class's defaultproperties block (PLAN 3.5, needs the dump)"
+	@echo "  defaults-coverage  roll the defaults locator up per package (needs the dump)"
+	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -276,6 +278,16 @@ class-defaults:
 defaults-emit:
 	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
 	@echo "wrote inventory/class_defaults_emit.csv"
+
+# The locator's own census, and the per-class rows behind it (docs/CLASS_DEFAULTS.md). Both artifacts existed
+# without a generator; these targets are what `make inventory-index` now resolves them to.
+defaults-coverage:
+	@$(PYTHON) tools/class-defaults.py --coverage "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/class_defaults_coverage.csv"
+
+defaults-per-class:
+	@$(PYTHON) tools/class-defaults.py --packages "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/class_defaults_per_class.csv"
 
 # The same pass, written into the extracted source tree so 3.6 has one tree with text and defaults.
 defaults-tree:
