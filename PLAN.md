@@ -214,8 +214,13 @@ and `inventory/` regenerates from scripts with no manual edits.
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
       class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
 - [ ] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
-- [ ] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
-      memory/cache, script compiler hooks, Kynapse/AI integration, LIPSinc integration, ragdoll `.ka` loader).
+- [~] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
+      memory/cache, compiler behaviour, ...). **Script half measured** (`docs/systems/FORK_SURFACE.md`): 503 classes
+      across the seven fork packages insert directly onto 83 stock base classes — 200 `Emitter`, 58 `Actor`, 12 `Pawn`
+      — but 230 of them add no functions and no properties (data-only renames such as the 21 `Surface` subclasses), so
+      the behavioural surface is 237 classes and only **6** carry ucpp natives (`SGOrder` 4, `Electrocutor` 2,
+      `FarClipChange` 2, `SGFontInfo` 1, `ShadowManager` 1, `StargateHUD` 1). Remaining: the native half (renderer,
+      memory, compiler behaviour) — needs the module split (4.5) or targeted export of stock engine functions.
 - [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
       `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.

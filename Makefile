@@ -10,7 +10,7 @@ PYTHON   ?= python3
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints ci check clean
+.PHONY: help verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ci check clean
 
 help:
 	@echo "targets:"
@@ -28,6 +28,7 @@ help:
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
 	@echo "  status        regenerate the progress table in README.md and docs/STATUS.md"
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
+	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -159,3 +160,7 @@ status:
 # schema only, so it needs no dump.
 checkpoints:
 	@$(PYTHON) tools/checkpoint-report.py -o inventory
+
+# The fork's script surface: fork classes whose super is a stock engine class (docs/systems/FORK_SURFACE.md).
+fork-surface:
+	@$(PYTHON) tools/fork-surface.py -o inventory
