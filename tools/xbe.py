@@ -19,6 +19,10 @@ import struct
 import sys
 
 MAGIC = b"XBEH"
+
+# The entry point field at 0x128 is stored XOR-encrypted. Retail builds use the first key, debug builds the
+# second; which one applies is decided by whether the result lands inside a section.
+ENTRY_XOR_KEYS = (0xA8FC57AB, 0x94859D4B)
 ASSERT_PATH = re.compile(
     rb"(?:[A-Za-z]:)?(?:\\|/)[^\x00\"\r\n]{4,200}?\.(?:cpp|hpp|cxx|h)", re.IGNORECASE
 )
@@ -55,13 +59,18 @@ class Xbe:
         self.header_size = u(0x108)
         self.image_size = u(0x10C)
         # 0x118 is the *certificate* address, not the entry point: at that offset the file holds a
-        # 0x1EC-byte certificate with the UTF-16 title "Stargate SG-1". The documented entry field at
-        # 0x128 XOR 0xA8FC57AB decrypts to 0x3C4A39F7, which is outside every section, so the real
-        # entry is not readable from the header (docs/XBE_LAYOUT.md). Keep the raw value, claim nothing.
+        # 0x1EC-byte certificate with the UTF-16 title "Stargate SG-1".
         self.certificate = u(0x118)
+        # 0x128 is the entry point and is stored XOR-encrypted. Two keys exist: 0xA8FC57AB for a retail
+        # build, 0x94859D4B for a debug build. Retail lands outside every section here; debug lands at
+        # 0x0033F317, which begins a function (the bytes before it are another function's
+        # `xor eax,eax; ret 4` tail) whose body is CRT start-up reading the XBE header back. Resolved
+        # below, once the section table is available (docs/XBE_LAYOUT.md).
         self.entry_field = u(0x128)
-        self.entry = None  # not derivable from this header; see docs/XBE_LAYOUT.md
-        self.entry_xor_candidate = self.entry_field ^ 0xA8FC57AB
+        self.entry = None
+        self.entry_key = None
+        self.entry_candidates = [(k, self.entry_field ^ k) for k in ENTRY_XOR_KEYS]
+        self.entry_xor_candidate = self.entry_field ^ ENTRY_XOR_KEYS[0]
         self.kernel_thunk = u(0x150) if len(d) > 0x150 else 0
         count = u(0x11C)
         sh_va = u(0x120)
@@ -72,6 +81,10 @@ class Xbe:
             flags, va, vsize, foff, fsize, name_va = struct.unpack_from("<6I", d, o)
             name = self._cstr_at_va(name_va) if name_va else f"<section {i}>"
             self.sections.append(Section(i, flags, va, vsize, foff, fsize, name))
+        for key, va in self.entry_candidates:
+            if self.section_for(va) is not None:
+                self.entry_key, self.entry = key, va
+                break
 
     # -- mapping ---------------------------------------------------------
     def section_for(self, va, executable=None):
@@ -163,9 +176,11 @@ class Xbe:
 
 
 def cmd_sections(xbe, args):
+    cands = ", ".join(f"{k:#010x}->{va:#010x}" for k, va in xbe.entry_candidates)
+    entry = (f"entry={xbe.entry:#010x} (key {xbe.entry_key:#010x}, {xbe.section_for(xbe.entry).name})"
+             if xbe.entry is not None else "entry=unresolved")
     print(f"base={xbe.base:#x} headers={xbe.header_size:#x} image={xbe.image_size:#x} "
-          f"certificate={xbe.certificate:#x} entry_field={xbe.entry_field:#010x} "
-          f"(xor candidate {xbe.entry_xor_candidate:#x}, unmapped)")
+          f"certificate={xbe.certificate:#x} entry_field={xbe.entry_field:#010x} [{cands}] {entry}")
     print(f"{'#':>2} {'name':<12} {'flags':>8} {'va':>10} {'vsize':>10} {'foff':>9} {'fsize':>10} ex")
     for s in xbe.sections:
         print(f"{s.index:>2} {s.name:<12} {s.flags:#08x} {s.va:#010x} {s.vsize:#010x} "

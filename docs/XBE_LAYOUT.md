@@ -81,10 +81,48 @@ Three things this table settles:
 * `$$XTIMAGE` / `$$XSIMAGE` are the dashboard title image and save image, 67,584 bytes each, and are not
   executable — they are presentation, not code.
 
+## Entry point: `0x0033F317`, and the build is a debug one
+
+The field at `0x128` holds `0x94B66E5C` and is stored XOR-encrypted. Two keys exist — `0xA8FC57AB` for a
+retail build, `0x94859D4B` for a debug build — and they give different answers here:
+
+| key | decodes to | in a section? |
+|---|---|---|
+| `0xA8FC57AB` (retail) | `0x3C4A39F7` | no — `.text` ends at `0x4190FC` |
+| `0x94859D4B` (debug) | **`0x0033F317`** | **yes, `.text`** |
+
+The debug key is the one that applies, and the address it produces is not a coincidence. The five bytes
+immediately before it are `33 C0 C2 04 00` — `xor eax, eax` / `ret 4`, the tail of the *previous* function — so
+`0x0033F317` starts a function rather than pointing into the middle of one. The body is classic CRT start-up:
+
+```
+0x0033f317  mov ecx, dword ptr [0x10118]   ; the header's certificate field, read back at runtime
+0x0033f31d  mov eax, dword ptr [0x10108]   ; header size
+0x0033f322  sub eax, ecx
+0x0033f324  add eax, 0x10000               ; the image base
+0x0033f329  cmp eax, dword ptr [ecx]
+0x0033f32b  jae 0x33f32f
+0x0033f32d  mov dword ptr [ecx], eax
+...
+0x0033f346  and eax, 0xfffffff0            ; 16-byte alignment for the heap
+0x0033f34f  mov dword ptr [0x7be384], eax
+0x0033f355  idiv ecx
+...
+0x0033f362  push 0x33f2a3                  ; a code address: static-initialiser registration
+```
+
+Two loose ends are worth naming rather than smoothing over. The address is **odd**, which looks wrong for an
+entry point but is not: x86 has no alignment requirement, the bytes before it end a function cleanly, and the
+debug key is the standard constant to the bit — a key typo would not land on a function boundary and produce a
+CRT prologue. And **Ghidra never analysed it**: `symbols/xbox_functions.csv` has `FUN_0033f389` onwards but
+nothing at `0x0033f317`, because nothing in the image references its own entry and the header value was not
+passed to the analysis. Seeding `0x0033F317` as an entry (and naming it) is a one-run follow-up, deliberately
+not bundled here so this change stays a measurement.
+
 ## Checking
 
 ```sh
-python3 tools/xbe.py DUMP/default.xbe sections    # header + section table, as above
+python3 tools/xbe.py DUMP/default.xbe sections    # header, section table and the resolved entry
 python3 tools/xbe.py DUMP/default.xbe asserts -o inventory   # assert-path mining, uses the same reader
 ```
 
