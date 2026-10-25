@@ -334,6 +334,21 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-25, the withheld blocks: three explanations tested and rejected)
+
+- **`--explain` now reports the residue**, and it rules out the cheap explanations rather than leaving them for the
+  next session: the 64-byte **trailer bound** (relaxing it to 4,096 recovers 2 classes / 4 properties), **missing
+  property metadata** (`inventory/class_properties.csv` covers all 11,493 class-owned property exports, 0 missing),
+  and **payload size** (clean payloads are also small — median 159 B, minimum 100 — against 112 B for withheld).
+- **The signature of the 543 is a record, not a tag stream**: 227 have exactly one unaccounted name and 316 have two
+  or more, and the names are dominated by *package* names — `Core` 252, `System` 189, `Engine` 73, `Lighting` 69 —
+  which cannot be property names. The bytes between them are hash-like values that repeat across classes
+  (`b31d40ff`, `2c08ad6c`, `5911e68c`), so the likely reading is "this class sets no defaults", with a component
+  table as the competing candidate. Whether it is either is not settled, and the doc says so.
+- **Next:** the reader of that table in the XBE would settle it (the route `docs/NATIVE_PROPERTIES.md` took for the
+  tag format). The rest of the defaults residue is small: 18 arrays and 12 `InterpCurve` structs, both refused by
+  the tiling test.
+
 ### Execution notes (2026-10-25, the locator was scanning 512 bytes)
 
 - **Most of the 532 withheld classes were not ambiguous blocks: the locator never looked that far.** It searched the
