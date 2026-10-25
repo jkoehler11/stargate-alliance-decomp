@@ -59,7 +59,10 @@ def write_map(path, outdir, mod, verbose=False):
         found = mod.find_block(data, pkg)
         if not found:
             continue
-        count, start, props = found
+        count, start, _ = found
+        # re-parse from the located start, this time decoding values: find_block works on names and sizes
+        # only, so the values have to be read on a second pass over the same bytes.
+        props, _end, _reason = mod.read_block(data[start:], pkg, True)
         cls = pkg.class_name_of(exp)
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
         for p in props:

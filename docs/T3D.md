@@ -1,55 +1,56 @@
-# T3D: every map's actors, written out
 
-PLAN 5.2's first half is done. With the property block readable (`docs/ACTOR_PROPERTIES.md`), writing T3D is
-formatting, and all 73 maps have been written:
+# T3D: values, references, and what a spawner points at
+
+The T3D writer from the previous step produced actor *names* and sizes. This adds the values, and in doing so
+answers a question the AI system doc had recorded as unanswerable.
+
+## What changed
+
+* **Property values decode.** Values inside a package's property stream are *compact* — a name or object
+  reference is one or two bytes, not a fixed four — and a vector arrives as `Struct(Vector)`, not as a
+  `Vector` type. Reading them by assumed width is why `Location` and `Squad` came out empty on the first
+  attempt.
+* **Object references resolve** to `Class'Name'` form (`SQUAD_JaffaSerpentL_Single'SQUAD_…2'`) instead of
+  `ref:<index>`.
+
+Measured over the same 73 maps:
 
 | | |
 |---|---:|
-| `.t3d` files | **73** |
-| actors written | **121,225** |
-| actors carrying a `Location` | **112,000** |
-| size | 27 MB |
-| location | `$WORK/extracted/maps/` — game content, never the repository |
+| actors written | 121,225 |
+| actors carrying a `Location` with coordinates | **111,520** |
+| distinct `SuggestedSquadScript` values | **601** |
+| maps whose spawners reference a squad script | **61 of 73** |
+| references that do not resolve (`?`) | 820 |
 
-    python3 tools/map-to-t3d.py DUMP/Maps --out $WORK/extracted/maps
+`inventory/squad_scripts.csv` holds (map, squad script, spawner count) — 614 rows of identifiers.
 
-## The writer is checked by its own arithmetic
+## Spawners point at named AI scripts
 
-The actor count written equals the property-block count measured independently in the previous step —
-**121,225 in both** — so no actor is being silently skipped between "has a block" and "appears in the file".
-One map in detail: `M02A` yields 2,246 actors and 527,030 bytes, with 1,858 of those actors carrying a
-`Location`, and the first section is the level's `LevelInfo` (`TimeSeconds`, `Summary`, `VisibleGroups`, the
-editor camera positions). That is the right object in the right place.
-
-## Shape
+`IntelligentSpawner` never names a bot class. Its properties are `SpawningRate`, `Squad`,
+`SuggestedSquadScript`, `spawnPriority` and `bForceSpawn`, and `SuggestedSquadScript` carries a *script class*
+name — `AI_Jaffa_Horus_Med_single`, `AI_Jaffa_Horus_Med_Obs`, `Jaffa_Enc5`, `TSS_7A_B_Jaffa_01`. So the chain
+from a mission to its enemies runs:
 
 ```
-Begin Actor Class=StaticMeshActor Name=StaticMeshActor_25
-   Tag="..."
-   Location=(X=...,Y=...,Z=...)
-   Rotation=(Pitch=...,Yaw=...,Roll=...)
-   StaticMesh="..."
-   ...
-End Actor
+map → IntelligentSpawner → SuggestedSquadScript (a class) → that class's default roster → bot classes
 ```
 
-Float, int, bool, name, string, vector and rotator values are decoded; arrays and structs are written by size
-rather than expanded member by member.
+The first two links are now measured. The third is a **class default**, which is the one part of the package
+format this reader still cannot reach (`docs/ACTOR_PROPERTIES.md`: class objects have no property block). So
+"which bots does mission 7 use" is answerable *by encounter script name* today, and by bot class only once
+defaults parse.
 
-## What this makes answerable
+## Correcting an earlier claim
 
-Anything that is a per-map, per-actor property question is now a text query over `$WORK/extracted/maps` —
-which maps place which actor classes, where the spawn points, path nodes, triggers, movers and objective
-actors are, and what each one's parameters are. That covers the class-level census (already in
-`inventory/map_export_classes.csv`) and goes past it into configuration.
+`docs/systems/AI.md` said "no AI class is placed in any map… so 'which bots does this mission use' is not
+answerable from the `.unr` alone". Half of that stands — no bot *class* is placed. But the map does name the
+encounter script that will spawn them, 61 of 73 maps carry such names, and the names are explicit about what
+they spawn. The doc now says that instead.
 
-## Not measured, and why
+## Still not measured
 
-* **Object references are not resolved.** A value that points at another object is written as `ref:<index>`
-  rather than the object's name. Resolving requires a name-lookup walk over the export and import tables for
-  every reference, which is the next improvement and is why the tool does not claim to produce
-  editor-loadable T3D.
-* **The level script itself** is not extracted: the `Level` export's bytecode/action list is separate from the
-  actors' properties, and the `ACTION_*` actors' parameters are visible while the *sequence* is not.
-* **Arrays and structs** are emitted by size, not expanded.
-* **Round-tripping** is untested and out of scope: this is an index, not a re-importable map.
+* The 820 unresolved references, and the 18 `?` squad scripts. They cluster rather than scatter, which points
+  at references to imports this reader does not index, not at random corruption — but that is a hypothesis.
+* Class defaults, above.
+* The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
