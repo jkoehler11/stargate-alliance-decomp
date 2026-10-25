@@ -36,6 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ue2pkg import Package  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DECLARATION_PACKAGE = "StargateGame"
 
 
 def load_script_text():
