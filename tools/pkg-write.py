@@ -190,15 +190,20 @@ def main():
                 problems.append("%s whole-file rebuild differs" % fname)
         if problems:
             bad.append((fname, problems))
-        elif not args.rebuild:
+        else:
             ok_all += 1
-            print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
-                  % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
+            if args.rebuild:
+                continue
+            if not args.rebuild:
+                print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
+                      % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
     for fname, problems in bad:
         print("FAIL %s" % fname)
         for p in problems:
             print("     " + p)
-    print("\n%d of %d packages re-encode their tables byte for byte" % (ok_all, len(files)))
+    print("\n%d of %d packages %s" % (ok_all, len(files),
+          "rebuild byte for byte from header + tables + payloads" if args.rebuild
+          else "re-encode their tables byte for byte"))
     return 0 if not bad else 1
 
 

@@ -25,6 +25,25 @@ with no dump present.
 The comparison reports the **first differing offset**, not just "differs": `Engine.u exports DIFF at +0x2a975e` is
 information, `exports differ` is not.
 
+## Rebuilding the whole file
+
+`--rebuild` goes further than the tables: it assembles a complete file from the header region, the three
+regenerated tables and every export payload placed at its own `SerialOffset`, then diffs the result against the
+original.
+
+**18 of 18 packages rebuild byte for byte, with 100% of bytes accounted for and zero gaps** — 8.2 MB of package
+data assembled from our own model rather than copied wholesale. The gap report is the part that matters: it lists
+any byte range that header, tables and payloads do not explain, so a future writer's mistakes show up as a
+*location* instead of a mysterious diff. Here there are none, which also means the payloads tile the file exactly
+— no alignment padding between exports.
+
+What that upgrades: the tables being identical (previous section) proves the *tables*; whole-file identity proves
+the **offsets, sizes and serial layout** as well, because recomputing the layout from the parsed model is what
+produced the bytes.
+
+What it still does not do: writing payloads we do not have. A rebuild of the game needs a compiler to produce
+export data; this proves the scaffolding around it, which is the part 6.1 can settle without one.
+
 ## What this does *not* say
 
 * **Payloads are not written.** The export data (properties, `ScriptText`, bytecode) is copied, not generated. A
