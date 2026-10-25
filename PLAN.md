@@ -246,7 +246,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 ### Phase 5 — Assets, levels, data (parallel, ~2–4 weeks)
 
 - [ ] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build `inventory/assets.csv`.
-- [~] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
+- [x] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
+      **Done for actors and properties, not for the level script.** All 73 maps written to `$WORK/extracted/maps`
+      (27 MB, **121,225 actors**, 112,000 with a `Location`), and the writer's actor count equals the independently
+      measured property-block count, so nothing is silently dropped (`docs/T3D.md`). `make t3d`. Remaining, recorded:
+      object references are written as `ref:<index>` rather than resolved names (so the output is an index, not
+      editor-loadable T3D), arrays/structs are emitted by size, and the `Level` export's script sequence is separate
+      from the actors' properties and still unread.
       **Class-level half done without T3D** (`docs/MAP_EXPORTS.md`, `inventory/map_export_classes.csv`): all 73 maps
       parse as packages, and level actors are exports, so the actor-class census is a histogram — 6,478 (map, class,
       count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
