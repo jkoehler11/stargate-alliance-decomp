@@ -253,8 +253,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       256 of 389 totals exact, this reader consistently slightly low). **Remaining**: actor *properties* and the level
       script, i.e. the property-stream reader, plus the T3D text itself. `M21A` has 1,540 exports whose class index does
       not resolve — recorded, not explained.
-- [ ] 5.3 Extract the 3,287 WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
-      lines into a transcript index — this is the fastest route to documenting cut story content.
+- [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
+      data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
+      **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
+      export pass (`inventory/sfx_index.csv`, `docs/systems/AUDIO.md`). Extraction of the effects as WAVs remains the
+      5.1 export pass.
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
       A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
