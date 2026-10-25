@@ -145,6 +145,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.5 Fix decompiler gaps in priority order: `defaultproperties` reconstruction, struct/enum recovery,
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
+      **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): 12,807 of the
+      13,345 properties inside the 1,552 fully-declared blocks render to UnrealScript (96.0%), enum element names
+      resolve for 722 of 965 byte values from the shipped `enum` declarations, and `make defaults-tree` merges the
+      blocks into the extracted source so one tree carries both halves. Remaining here: 461 array and 68
+      non-primitive struct values (both need a format reference, see the doc's "Not measured"), then
+      `replication` blocks, state code and labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -152,7 +158,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `docs/PACKAGE_SCRIPT_TEXT.md`). But **only 15 classes carry `defaultproperties`** — the defaults live in the
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
-      the disagreements are recorded, not explained.
+      the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
+      yield 12,807 rendered properties over 1,552 classes and `make defaults-tree` merges them into the extracted
+      tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
 - [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
@@ -322,6 +330,37 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, class defaults render back to UnrealScript)
+
+- **The defaults half of 3.6's input exists.** `tools/defaults-emit.py` renders each located block as
+  `defaultproperties` text: **12,807 of 13,345 properties (96.0%)** over **1,552 classes**, and
+  `make defaults-tree` merges them into the `make extract-script` tree (1,552 of 2,319 files get a block, and a
+  re-run reproduces the tree bit for bit). `inventory/class_defaults_emit.csv` is the per-package artifact;
+  `docs/CLASS_DEFAULTS.md` is the page; the status table gained a *default properties rendered* row.
+- **Two value defects were hiding behind correct-looking names.** The FString length prefix **counts the
+  terminating NUL** and the NUL is only stored when the declared size has room, so decoding from the prefix byte
+  printed `Description` as "\x0cEmpty Order"; and an imported object reference was rendered with its class
+  package in the class slot (`icon_mission'Engine'`) — it resolved, so it looked decoded. Both fixed in
+  `tools/prop-stream.py`, which the T3D pass also uses.
+- **A per-package enum table resolves a third of the byte values; a whole-dump one resolves most of them.**
+  224 of 1,211 → 735, because a `StargateGame` class inheriting `Physics` takes its element names from `Engine`'s
+  script. Inside the emitted blocks: 722 of 965 (74.8%). This is the same lesson as the defaults locator —
+  the reference set, not the layout, was the limit.
+- **Emit only from blocks that account for themselves.** 532 of the 2,084 candidate blocks hold a property the
+  class does not declare, and they hold almost every impossible value (an `Invalid` type, a 16-byte `Float`, a
+  139-byte `Vector`). Their 1,371 properties are counted and withheld; emitting them would have raised the pass
+  rate four points and shipped nonsense.
+- **The shipped text is not an oracle for defaults, and `--verify` says so.** Only two classes still carry a
+  block: `Core.Locale` (50 properties in the text, none in the package) and `GUI.SGVertScrollBar` (13 in the text,
+  2 in the package, one matching and `WinWidth` differing — text `0.02`, bytes an exact `20.0`). Three
+  explanations fit and none is measured; what does not depend on which is that the packages are the authority.
+- **Arrays are still open, and the first guess is measurably wrong.** "count then tagged elements" parses 66 of
+  555 instances, so they are counted (`461` in clean blocks) rather than guessed at; the next attempt should start
+  from UE2's `UArrayProperty::Serialize`, not from the bytes.
+- **Next:** the remaining `ucc`-blocked items are unchanged (`ucc` under Wine), so the finishable work is array and
+  struct value decoding, then the withheld 532 blocks (is the tail candidate a truncated real block or a parse
+  coincidence?) one class at a time.
 
 ### Execution notes (2026-10-25, the writer resizes a payload — and growth does reproduce)
 

@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-emit defaults-tree help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -51,6 +51,7 @@ help:
 	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
 	@echo "  t3d           write every map's actors as T3D into \$$WORK/extracted/maps (PLAN 5.2)"
 	@echo "  class-defaults read one class's default properties (PKG=... CLASS=...)"
+	@echo "  defaults-emit  render every class's defaultproperties block (PLAN 3.5, needs the dump)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -269,3 +270,14 @@ t3d:
 # One class's default properties (docs/CLASS_DEFAULTS.md).
 class-defaults:
 	@$(PYTHON) tools/class-defaults.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --class "$(CLASS)"
+
+# Every class's defaults, rendered back to UnrealScript (docs/CLASS_DEFAULTS.md). Needs the dump, so this is a
+# nightly/local check rather than a `make ci` one; `make defaults-tree` is what the compile loop consumes.
+defaults-emit:
+	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
+	@echo "wrote inventory/class_defaults_emit.csv"
+
+# The same pass, written into the extracted source tree so 3.6 has one tree with text and defaults.
+defaults-tree:
+	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
+		--emit "$(WORK)/defaults" --merge "$(WORK)/source-tree"

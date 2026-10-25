@@ -53,6 +53,19 @@ def read_array_index(buf, off):
     return b1, off
 
 
+def read_fstring(buf, start, size):
+    """Decode an FString whose value region is `size` bytes at `start` (length prefix counts the NUL)."""
+    if start >= len(buf):
+        return None
+    n = buf[start]
+    used = 1
+    if n & 0x80:
+        if start + 1 >= len(buf):
+            return None
+        used = 2
+    return buf[start + used:start + size].split(b"\0")[0].decode("latin1", "replace")
+
+
 def read_value(buf, off, pkg, want_values):
     """Return (entry dict, new offset) for one property value starting at `off` (the info byte)."""
     info = buf[off]
@@ -110,15 +123,24 @@ def read_value(buf, off, pkg, want_values):
             entry["value"] = buf[start]
         elif t == 13:
             # Str is an FString: `size` bytes of text, not a name index. Reading it as an index is what made
-            # `Description` decode as the name `BeginState`.
-            entry["value"] = buf[start:start + size].split(b"\0")[0].decode("latin1", "replace")
+            # `Description` decode as the name `BeginState` -- and reading the *length prefix* as text is what
+            # then made it decode as "\x0cEmpty Order": the prefix counts the terminating NUL, and the NUL is
+            # only stored when the declared size has room for it.
+            text = read_fstring(buf, start, size)
+            entry["value"] = text if text is not None else ""
         elif t == 7 or t == 9:
             entry["value"] = buf[start:start + size].split(b"\0")[0].decode("latin1", "replace")
     return entry, off
 
 
 def resolve_ref(pkg, ref):
-    """Object reference -> a readable name. Positive indexes exports, negative imports, zero is None."""
+    """Object reference -> `Class'Name'` inside the package, `Class'Package.Name'` when imported, `None`.
+
+    The import branch used to print the class package in the class slot and the object name in the package
+    slot (`icon_mission\'Engine\'`), which is the right two names in the wrong order -- the reference resolved,
+    so it looked decoded. The class name is the import\'s `Class`, its package the import\'s `ClassPackage`, and
+    the object is the import\'s own `ObjectName`.
+    """
     if ref == 0:
         return "None"
     try:
@@ -126,7 +148,8 @@ def resolve_ref(pkg, ref):
             exp = pkg.exports[ref - 1]
             return "%s\'%s\'" % (pkg.class_name_of(exp), pkg.name(exp["name"]))
         imp = pkg.imports[-ref - 1]
-        return "%s\'%s\'" % (pkg.name(imp["name"]), pkg.name(imp["class_package"]))
+        return "%s\'%s.%s\'" % (pkg.name(imp["class"]), pkg.name(imp["class_package"]),
+                                 pkg.name(imp["name"]))
     except (IndexError, KeyError):
         return "ref:%d" % ref
 

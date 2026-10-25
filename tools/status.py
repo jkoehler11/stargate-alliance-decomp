@@ -90,6 +90,11 @@ def collect():
     cd_read = sum(int(r["fully_declared"]) for r in cd_rows)
     out.append(("Script", "class defaults decoded", cd_read, cd_total,
                 "inventory/class_defaults_coverage.csv (fully_declared / classes)"))
+    em_rows = rows_of("inventory/class_defaults_emit.csv")
+    em_props = sum(int(r["properties"]) for r in em_rows)
+    em_done = sum(int(r["rendered"]) for r in em_rows)
+    out.append(("Script", "default properties rendered", em_done, em_props,
+                "inventory/class_defaults_emit.csv (rendered / properties in fully-declared blocks)"))
 
     # Native track ---------------------------------------------------------
     funcs = rows_of("symbols/xbox_functions.csv")
