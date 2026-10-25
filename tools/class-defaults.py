@@ -139,7 +139,7 @@ def all_packages(system_dir, outdir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("path")
+    ap.add_argument("path", nargs="?", help="a package file (not needed with --packages)")
     ap.add_argument("--class", dest="cls")
     ap.add_argument("--sweep", action="store_true", help="every class in the package")
     ap.add_argument("--packages", metavar="DIR",
