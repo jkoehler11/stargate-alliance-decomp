@@ -7,6 +7,7 @@ plausible. What is not yet written is payload generation — a rebuild gets thos
 
     python3 tools/pkg-write.py DUMP/System              # re-encode every package's tables and diff
     python3 tools/pkg-write.py DUMP/System --rebuild    # rebuild whole files from header + tables + payloads
+    python3 tools/pkg-write.py DUMP/System --layout     # where every region actually sits, per package
     python3 tools/pkg-write.py --selftest               # index codec only, no dump (runs in CI)
 
 The comparison is per table with the exact first differing offset, because "the tables differ" is not information
@@ -200,6 +201,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("system_dir", nargs="?", help="a directory of .u packages")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--layout", action="store_true",
+                    help="report where each region sits and in what order (a writer must follow this, not assume)")
     ap.add_argument("--rebuild", action="store_true",
                     help="assemble each whole file from header + tables + payloads and diff it")
     ap.add_argument("--grow", metavar="INDEX:BYTES",
@@ -208,6 +211,39 @@ def main():
     args = ap.parse_args()
     if args.selftest or not args.system_dir:
         return selftest()
+
+    if args.layout:
+        rows = []
+        print("%-20s %-28s %-28s %-28s %s" % ("package", "names", "imports", "exports", "order"))
+        for fname in sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u")):
+            pkg = Package(os.path.join(args.system_dir, fname))
+            pkg.read_names()
+            pkg.read_imports()
+            pkg.read_exports()
+            n_end = pkg.name_offset + len(encode_names(pkg.names))
+            i_end = pkg.import_offset + len(encode_imports(pkg.imports))
+            e_end = pkg.export_offset + len(encode_exports(pkg.exports))
+            first = min(e["offset"] for e in pkg.exports)
+            last = max(e["offset"] + e["size"] for e in pkg.exports)
+            regions = [("names", pkg.name_offset, n_end), ("imports", pkg.import_offset, i_end),
+                       ("exports", pkg.export_offset, e_end), ("payloads", first, last)]
+            order = "<".join(r for r, _s, _e in sorted(regions, key=lambda r: r[1]))
+            print("%-20s %-28s %-28s %-28s %s" % (
+                fname[:-2],
+                "%#x-%#x" % (pkg.name_offset, n_end),
+                "%#x-%#x" % (pkg.import_offset, i_end),
+                "%#x-%#x" % (pkg.export_offset, e_end), order))
+            rows.append([fname[:-2], pkg.name_offset, n_end, pkg.import_offset, i_end,
+                         pkg.export_offset, e_end, first, last, len(pkg.data), order])
+        if args.write:
+            os.makedirs(args.write, exist_ok=True)
+            with open(os.path.join(args.write, "package_layout.csv"), "w", newline="") as fh:
+                w = __import__("csv").writer(fh, lineterminator="\n")
+                w.writerow(["package", "name_start", "name_end", "import_start", "import_end",
+                            "export_start", "export_end", "payload_start", "payload_end", "file_size", "order"])
+                w.writerows(rows)
+            print("\nwrote %s/package_layout.csv (%d rows)" % (args.write, len(rows)))
+        return 0
 
     files = sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u"))
     ok_all, bad = 0, []
