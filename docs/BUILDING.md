@@ -100,7 +100,7 @@ expect and that the generated docs reproduce. Its output on the current tree:
 ok   symbol-map-regenerates: symbols/xbox.map
 ok   docs-counts: docs/NATIVE.md
 ok   docs-counts: inventory/xbe_functions_by_module.csv
-ok   addresses-in-image: 15422 symbols inside the image's sections
+ok   addresses-in-image: 15423 symbols inside the image's sections
 all checks passed
 ``` Everything dump-dependent — manifest verification,
 inventory drift, the Ghidra run, the package parse — is a local step.

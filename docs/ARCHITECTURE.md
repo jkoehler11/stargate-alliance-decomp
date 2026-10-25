@@ -34,7 +34,7 @@ in the symbol map is the address in the running game. Three structures anchor th
 
 | what | address | size | proof |
 |---|---|---|---|
-| code | `0x00011000` upward | 14,956 functions | `symbols/xbox_functions.csv` |
+| code | `0x00011000` upward | 14,957 functions | `symbols/xbox_functions.csv` |
 | class tables (`.rdata`) | `0x004c78c0`–`0x0053b168` | 462 KB, 492 tables | `inventory/xbe_class_tables.csv` |
 | name table | `0x006ba0c8` | 4,096 slots | `docs/NATIVE_PROPERTIES.md` §3 |
 

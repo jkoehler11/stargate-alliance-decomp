@@ -255,9 +255,12 @@ in executable memory with no function, and seeds the addresses with at least 8 r
 pointer can be a switch target; a table that names the same address hundreds of times is naming an
 entry point.
 
+The current map has **14,957** functions: one more than the end of that series, because the resolved XBE
+entry point (`0x0033F317`, `docs/XBE_LAYOUT.md`) is now seeded into the analysis (`XbeEntry`, 114 bytes).
+
 | measurement | before seeding | after assert seeds | after data-table seeds | after block promotion | after gap decodes |
 |---|---|---|---|---|---|
-| functions | 14,220 | 14,280 | 14,912 | 14,944 | **14,956** |
+| functions | 14,220 | 14,280 | 14,912 | 14,944 | 14,956 |
 | assert sites in no function | 199 | 104 | 102 | 50 | **5** |
 | assert-attributed functions | 1,201 | 1,253 | 1,256 | 1,288 | **1,300** |
 | `FUN_*` (unnamed) | 12,339 | 12,347 | 12,971 | 12,971 | **12,971** |

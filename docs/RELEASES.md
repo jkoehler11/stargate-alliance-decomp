@@ -24,7 +24,7 @@ A release is cut from `main` only after its milestone's exit criteria are met �
 
 **Why A is met:** every committed artifact has a target or tool that regenerates it — 13 `make` targets and
 20 tools, mapped step by step in `docs/BUILDING.md` — and `make ci` (which never touches the game) verifies
-the committed shapes: the symbol map regenerates, the docs' counts match, all 15,422 symbol addresses land
+the committed shapes: the symbol map regenerates, the docs' counts match, all 15,423 symbol addresses land
 inside the image's sections, and the status table is current. `make inventory`, `make ghidra`, `make
 symbols` and the content indexes rebuild the rest from the dump.
 
