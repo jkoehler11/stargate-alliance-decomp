@@ -286,7 +286,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       walk objective graph, spawn/test classes in isolation.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
-- [ ] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
+- [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
+      **The harness exists and runs** (`tools/nightly.sh`, `docs/REGRESSION.md`): `make ci`, then `verify-dump`,
+      `class-tables`, `libraries` when `SG1_DUMP` is set, then optionally the xemu boot, one summary and one log per
+      stage under `build/nightly/<UTC>/`, exit non-zero on any failure, last 30 runs kept. It reports `git status`
+      drift instead of repairing it. **Not yet**: the rebuild stage (blocked on 3.6) and assert-dialog detection (the
+      evidence channel is `EIP` sampling, `docs/XEMU.md`).
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
