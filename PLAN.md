@@ -581,7 +581,12 @@ and a deliberate one-line script break is caught by the boot test.
       `TakeCover`), 11 of 12 `SGOrder*` classes adding two functions or fewer, and — the consequential part — **no AI
       class is placed in any map**: bots appear only through `IntelligentSpawner` and checkpoint state (`BotSG` 890
       instances), so "which bots does this mission use" is not answerable from the `.unr`.
-      Remaining: vehicles, weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
+      **Vehicles done** (`docs/systems/VEHICLES.md`): `StargateVehicles` is 142 classes but the `Vehicle` tree is
+      44 with just 17 states and 260 functions, 13 of them empty shells, and the package is mostly mounted weaponry
+      (13 `StargateWeapon`, 12 `StargateAmmo`, 10 `StargateDamageType`, 10 `StargateProjectile`) rather than vehicles.
+      Unlike AI, six vehicle classes *are* placed in maps (`StaffCannon` 21, `DeathGlider` 12, `Hummvee` 9), so 5.2
+      can answer what a mission fields.
+      Remaining: weapons, objectives, UI, audio — the script-side ones stay blocked on the oracle.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,
       (e) playable rebuild, (f) asset-complete. **Milestone A is met and releasable**: `docs/RELEASES.md` defines all six
       with exit criteria and measured status, and `tools/release-notes.py` generates the release body from the committed

@@ -176,6 +176,6 @@ ucpp-vtables:
 release-notes:
 	@$(PYTHON) tools/release-notes.py --milestone "$(or $(MILESTONE),a)"
 
-# Subclass tree under a root, with states and content usage (docs/systems/AI.md).
+# Subclass tree under a root, with states and content usage (docs/systems/AI.md, VEHICLES.md).
 class-graph:
 	@$(PYTHON) tools/class-graph.py --root "$(or $(ROOT),BotBase)" -o inventory
