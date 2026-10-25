@@ -213,7 +213,13 @@ and `inventory/` regenerates from scripts with no manual edits.
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
       class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
-- [ ] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
+- [~] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
+      **Located half of them** (`docs/systems/UCPP_NATIVES.md`): only six classes declare natives, and the class table
+      carries the *virtual* ones — `Electrocutor` 7 slots clustered at `0x0018D8A0`–`0x0018E970` (shared with 2–3
+      classes, so a small shared effect implementation), `ShadowManager` 1 at `0x0031E580`, `StargateHUD` 1 at
+      `0x00210780`. The non-virtual natives (`SGOrder` 4, `SGFontInfo` 1, `FarClipChange` 2) are **not** in the
+      vtable — measured: those four classes contribute only their constructor thunk — so they hang off `UFunction`
+      records inside the `.u` and need a package function-table reader (UELib/.NET or a Python equivalent).
 - [~] 4.8 Reverse engine-side fork changes: what did Perception change vs stock UE2.5 (renderer for Xbox,
       memory/cache, compiler behaviour, ...). **Script half measured** (`docs/systems/FORK_SURFACE.md`): 503 classes
       across the seven fork packages insert directly onto 83 stock base classes — 200 `Emitter`, 58 `Actor`, 12 `Pawn`
