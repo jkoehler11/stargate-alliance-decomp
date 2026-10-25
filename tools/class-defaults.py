@@ -58,9 +58,19 @@ def declared_properties(path=os.path.join(ROOT, "inventory", "class_properties.c
     return by_class
 
 
-def candidates(pkg, mod, exp, limit=512):
+def candidates(pkg, mod, exp, limit=None):
+    """Every offset where a property block parses, bounded by the export's own size.
+
+    The bound used to be a fixed 512 bytes, and that is what made the classes with the most defaults look
+    like classes with none: a class export carries its record (script tables, super, dependencies) *before*
+    the defaults block, so `Actor` (record 2,451 bytes), `Pawn` (3,992), `PlayerController` (13,665) and
+    `GameInfo` (5,682) all began their block past the window and were reported as "no block". Scanning the
+    whole payload recovers 114 of the 532 withheld classes, and those are precisely the base classes.
+    """
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     out = []
+    if limit is None:
+        limit = len(data)
     for start in range(0, min(len(data), limit)):
         try:
             props, end, reason = mod.read_block(data[start:], pkg, False)
@@ -137,6 +147,57 @@ def all_packages(system_dir, outdir):
     return 0
 
 
+def coverage(system_dir, outdir):
+    """Per-package rollup of the locator: classes, blocks found, fully declared, ambiguous, no block.
+
+    This is the artifact `inventory/class_defaults_coverage.csv`, which until now had no generator: it was
+    produced once by hand from `--sweep` output. Same definitions, one file per package.
+    """
+    mod = load_prop_stream()
+    supers = super_map()
+    declared = declared_properties()
+    rows = []
+
+    def known_for(cls):
+        out, seen, cur = set(), set(), cls
+        while cur and cur not in seen:
+            seen.add(cur)
+            out |= declared.get(cur, set())
+            cur = supers.get(cur)
+        return out
+
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        classes = blocks = clean = ambiguous = none_found = 0
+        for exp in [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]:
+            classes += 1
+            cands, _data = candidates(pkg, mod, exp)
+            if not cands:
+                none_found += 1
+                continue
+            blocks += 1
+            score = choose(cands, known_for(pkg.name(exp["name"])))
+            if score[0][0] == 1.0:
+                clean += 1
+            elif len(cands) > 1:
+                ambiguous += 1
+        rows.append([fname[:-2], classes, blocks, clean, ambiguous, none_found])
+    path = os.path.join(outdir, "class_defaults_coverage.csv")
+    os.makedirs(outdir, exist_ok=True)
+    with open(path, "w", newline="") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(["package", "classes", "blocks_found", "fully_declared", "ambiguous", "no_block"])
+        w.writerows(rows)
+    total = [sum(r[i] for r in rows) for i in range(1, 6)]
+    print("%d packages: %d classes, %d blocks found, %d fully declared, %d ambiguous, %d no block"
+          % (len(rows), *total))
+    print("wrote %s" % path)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path", nargs="?", help="a package file (not needed with --packages)")
@@ -145,6 +206,8 @@ def main():
     ap.add_argument("--packages", metavar="DIR",
                     help="sweep every .u in DIR and write one per-class CSV (this is the mode that produces "
                          "inventory/class_defaults_per_class.csv; the per-package --sweep -o overwrites itself)")
+    ap.add_argument("--coverage", metavar="DIR",
+                    help="roll every package up into inventory/class_defaults_coverage.csv")
     ap.add_argument("--walk", action="store_true",
                     help="print the raw byte walk of the chosen block (type byte, size, consumed bytes)")
     ap.add_argument("-o", "--out")
@@ -152,6 +215,8 @@ def main():
 
     if args.packages:
         return all_packages(args.packages, args.out or "inventory")
+    if args.coverage:
+        return coverage(args.coverage, args.out or "inventory")
 
     mod = load_prop_stream()
     declared = declared_properties()

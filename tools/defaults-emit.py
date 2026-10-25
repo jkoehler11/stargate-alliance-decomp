@@ -417,7 +417,7 @@ def format_float(v):
 
 # ------------------------------------------------------------------------------------------------- blocks
 
-def block_for_export(pkg, exp, cls, supers, declared_all, limit=512):
+def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
     """Locate one export's property block, scored against the properties `cls` declares.
 
     `block_of` finds a class by name; a subobject is an export whose own name is not a class, so the class it is
@@ -444,7 +444,7 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=512):
     return (props, start, best[0][0] == 1.0), None
 
 
-def block_of(pkg, cls, supers, declared_all, limit=512, want_score=False):
+def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
     """(props, start, trailer) for a class's defaults block, or (None, reason)."""
     exp = None
     for e in pkg.exports:

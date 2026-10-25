@@ -34,51 +34,74 @@ Two more came out of rendering the values, and both were invisible while only na
 
 ## Coverage, all 18 packages
 
-`inventory/class_defaults_coverage.csv` has the per-package rows:
+`inventory/class_defaults_coverage.csv` has the per-package rows (`make defaults-coverage`; `--coverage` in
+`tools/class-defaults.py` reproduces the committed file byte for byte, which it did not have a generator for
+before this change):
 
 | | classes | blocks found | every property declared |
 |---|---:|---:|---:|
-| `StargateContent` | 567 | 541 | **441** |
-| `Engine` | 367 | 287 | 170 |
-| `StargateGame` | 306 | 248 | 150 |
-| `GamePlay` | 262 | 260 | 180 |
+| `StargateContent` | 567 | 557 | **457** |
+| `Engine` | 367 | 310 | 195 |
+| `StargateGame` | 306 | 293 | 195 |
+| `GamePlay` | 262 | 261 | 182 |
 | `Sharpeffects` | 158 | 157 | **156** |
-| `GUI` | 148 | 139 | 128 |
-| `StargateVehicles` | 142 | 133 | 117 |
-| `StargateMenus` | 98 | 82 | 65 |
-| `UWindow` | 78 | 61 | 5 |
-| others (9 packages) | 193 | 174 | 140 |
-| **total** | **2,319** | **2,084** | **1,552 (67%)** |
+| `GUI` | 148 | 144 | 132 |
+| `StargateVehicles` | 142 | 141 | 124 |
+| `StargateMenus` | 98 | 86 | 68 |
+| `UWindow` | 78 | 78 | 12 |
+| others (9 packages) | 193 | 182 | 145 |
+| **total** | **2,319** | **2,209** | **1,666 (71.8%)** |
 
-## Emitting: 13,307 of 13,345 properties render, plus 1,269 subobjects
+### The scan window was the biggest single defect
+
+The locator used to search the first **512 bytes** of an export for the block. A class export carries its record
+(script tables, super, package dependencies) *before* its defaults, and the record of every base class is longer
+than that, so the classes with the most defaults were exactly the ones reported as having none:
+`Actor` (record 2,451 bytes), `Pawn` (3,992), `PlayerController` (13,665), `GameInfo` (5,682), `Weapon` (2,580).
+Scanning the whole payload recovers **114 classes**, takes blocks found from 2,084 to **2,209**, fully-declared
+blocks from 1,552 to **1,666**, and classes with no block from 235 down to **110** — and the recovered set is the
+inheritance spine of the whole tree, which is why the emitted property count jumps from 13,307 to 15,491.
+
+Where it still fails:
+
+* `UWindow` (12 of 78) and `Fire` (0 of 7) are the worst. `UWindow`'s classes are engine-heavy GUI types whose
+  declared properties mostly come from `GUI`/`Core` parents; `Fire`'s are fractals with almost no declared
+  properties, so "every property declared" is the wrong test there — they may well be correct blocks scored
+  harshly.
+* 110 classes still have no candidate at all: whether their block is absent or fails the trailer bound is not
+  measured.
+* 428 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
+  broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
+
+## Emitting: 15,491 of 15,530 properties render, plus 1,317 subobjects
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
 | package | classes | blocks | properties | rendered | | subobjects |
 |---|---:|---:|---:|---:|---:|---:|
-| `StargateContent` | 567 | 441 | 4,711 | 4,704 | 99.9% | 350 |
-| `GamePlay` | 262 | 180 | 1,649 | 1,648 | 99.9% | 0 |
-| `StargateVehicles` | 142 | 117 | 1,427 | 1,410 | 98.8% | 39 |
-| `Engine` | 367 | 170 | 1,293 | 1,288 | 99.6% | 3 |
+| `StargateContent` | 567 | 457 | 5,010 | 5,003 | 99.9% | 350 |
+| `Engine` | 367 | 195 | 1,823 | 1,818 | 99.7% | 9 |
+| `StargateGame` | 306 | 195 | 1,753 | 1,753 | 100.0% | 89 |
+| `GamePlay` | 262 | 182 | 1,657 | 1,656 | 99.9% | 0 |
+| `StargateVehicles` | 142 | 124 | 1,559 | 1,542 | 98.9% | 41 |
+| `GUI` | 148 | 132 | 1,152 | 1,150 | 99.8% | 46 |
 | `Sharpeffects` | 158 | 156 | 1,101 | 1,101 | 100.0% | 467 |
-| `GUI` | 148 | 128 | 1,085 | 1,084 | 99.9% | 29 |
-| `StargateGame` | 306 | 150 | 879 | 879 | 100.0% | 75 |
+| `UDebugMenu` | 38 | 31 | 384 | 384 | 100.0% | 0 |
 | `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
-| `StargateMenus` | 98 | 65 | 310 | 304 | 98.1% | 134 |
-| others (9 packages) | 194 | 76 | 523 | 522 | 99.8% | 0 |
-| **total** | **2,319** | **1,552** | **13,345** | **13,307** | **99.7%** | **1,269** |
+| others (9 packages) | 254 | 125 | 724 | 717 | 99.0% | 143 |
+| **total** | **2,319** | **1,666** | **15,530** | **15,491** | **99.7%** | **1,317** |
 
 What renders, and what each rendering was checked against:
 
 | type | count | rendered as |
 |---|---:|---|
-| `Float` / `Int` / `Bool` | 6,544 (3,171 / 1,192 / 2,181) | `1.0`, `-1`, `True` |
-| `Name` / `Str` / `String` | 3,024 (1,563 / 1,461) | bare when the text is identifier-shaped, quoted when it holds a space or punctuation |
-| `Object` / `Class` | 1,466 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
-| `Struct(Vector/Rotator/Color/Plane)` | 808 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
-| `Byte` | 965 | an enum element name where the enum can be resolved, the number otherwise |
-| `Array` | 444 properties, 1,315 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
-| other structs | 56 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
+| `Float` / `Int` / `Bool` | 7,627 (3,778 / 1,322 / 2,527) | `1.0`, `-1`, `True` |
+| `Name` / `Str` / `String` | 3,548 (1,785 / 1,763) | bare when the text is identifier-shaped, quoted when it holds a space or punctuation |
+| `Object` / `Class` | 1,670 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
+| `Struct(Vector/Rotator/Color/Plane)` | 919 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
+| `Byte` | 1,052 | an enum element name where the enum can be resolved (771 of them), the number otherwise |
+| `Array` | 468 properties, 1,435 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
+| other structs | 207 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
 
 Arrays and the remaining structs are decoded from **UELib's own defaults deserialiser**
 (`tools/uelib/src/Core/Classes/UDefaultProperty.cs`, pinned in `tools/versions.lock`) instead of from the bytes,
@@ -88,10 +111,16 @@ untagged elements**, their width coming from the *inner* type the property recor
 layouts is a **nested tagged block**, `Field=value` pairs terminated by `None`.
 
 Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
-declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 444
-decoded and 17 refused, and it is also what caught the defects below.
+declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 468
+decoded and 18 refused, and it is also what caught the defects below.
 
-## Subobjects: 1,269 `Begin Object` blocks
+What is left over, all counted per block in the CSV: **18 arrays**, **12 structs** and **10** properties with a
+malformed value — 0.26% of the class-level block contents. The arrays are element types that decode as neither a
+tagged block nor an atomic layout (`FaceInformation` 6, `PassengerWeaponStruct` 5, and singles); the structs are
+`InterpCurve`, whose member list the reference itself special-cases. Both are refusals of the tiling test, not
+truncated reads.
+
+## Subobjects: 1,317 `Begin Object` blocks
 
 An `editinline` property or array element does not point at a class or a texture: it points at an **export whose
 outer is the class being described** — a subobject the compiler expects to be declared inside the same
@@ -102,9 +131,9 @@ outer is the class being described** — a subobject the compiler expects to be 
     End Object
     Emitters(0)=SpriteEmitter'SpriteEmitter0'
 
-The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,269
-subobjects carrying 15,687 properties, of which 14,887 render**, so a class's defaults are 13,307 + 14,887 =
-**28,194 rendered properties** in total. Without the declaration a reference names an object the compiler has never
+The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,317
+subobjects carrying 15,810 properties, of which 15,010 render**, so a class's defaults are 15,491 + 15,010 =
+**30,501 rendered properties** in total. Without the declaration a reference names an object the compiler has never
 seen; that is why they are part of this pass and not a cosmetic extra.
 
 **A correction.** The previous PR reported these 270 arrays as "`editinline` arrays whose elements are serialised
@@ -113,12 +142,6 @@ the property's type string* (`array<export editinline ParticleEmitter>` — two 
 `editinline ParticleEmitter` as a "type"), and the elements are ordinary compact object references. Nothing about
 the byte format was missing; a string-stripping bug was reported as a format gap. The count is in this table, and
 the earlier claim should not be quoted.
-
-What is left over, all counted per block in the CSV: **17 arrays**, **12 structs** and **10** properties with a
-malformed value — 0.3% of the class-level block contents. The 17 are arrays whose element type is a struct that
-decodes as neither a tagged block nor an atomic layout (`FaceInformation` 6, `PassengerWeaponStruct` 5, and one
-each of five others); the 12 are `InterpCurve`, whose member list the reference itself special-cases. Both are
-refusals of the tiling test, not truncated reads.
 
 ## The shipped text is not an oracle for defaults
 
@@ -149,10 +172,10 @@ whose block could not be located or does not account for itself.
 
 ## Not measured
 
-* **The last 17 arrays and 12 structs.** Element types that decode as neither a tagged block nor an atomic layout
+* **The last 18 arrays and 12 structs.** Element types that decode as neither a tagged block nor an atomic layout
   (`FaceInformation`, `PassengerWeaponStruct`, `InterpCurve` …), refused by the tiling test rather than read
   short. Some instances of the same type do decode; the difference is not yet measured per class.
-* **The 532 withheld blocks.** Whether their candidate is a truncated real block, a different record at the
+* **The 543 withheld blocks.** Whether their candidate is a truncated real block, a different record at the
   payload's tail, or a parse coincidence is not settled per class — only counted, and excluded.
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the
   shipped source (verified character by character on the two blocks above that do agree), not compiled. 3.6 is
