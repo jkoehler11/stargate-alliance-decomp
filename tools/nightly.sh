@@ -66,6 +66,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
         stage class-tables make class-tables SG1_DUMP="$SG1_DUMP"
         stage libraries make libraries SG1_DUMP="$SG1_DUMP"
     fi
+    # The defaults coverage artifact is dump-gated, so `make ci` cannot hold it: reproduce it here instead and
+    # fail when the committed CSV no longer matches a fresh pass.
+    stage defaults-emit python3 tools/defaults-emit.py \
+        "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --check
 else
     say "SKIP  dump-side stages (set SG1_DUMP)"
 fi
