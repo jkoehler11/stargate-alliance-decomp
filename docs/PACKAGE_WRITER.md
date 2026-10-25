@@ -54,6 +54,31 @@ That is a stronger statement than `--rebuild`: `--rebuild` places regions at the
 offsets are consistent; `--relay` *chooses* the positions from the model and only then checks the bytes, which is what
 a writer will do when a payload changes size.
 
+## Resizing a payload
+
+`--relay` re-lays a file with nothing resized. `--resize` moves the layout:
+
+    make pkg-resize     # tools/pkg-write.py DUMP/System --resize 64 --write inventory
+
+**18 of 18 packages, 84 sampled resizes: re-lay a file with one payload 64 bytes longer, and grow-then-shrink returns
+it byte-identical to the original** (`inventory/package_relayout.csv`). Per package the sample is the smallest and
+largest export, the one nearest a 0x3F *size* boundary and the one nearest a 0x3FFF *offset* boundary, plus the last
+export — the entries whose compact encoding the move can widen. Each resize must also re-parse from disk through the
+reader, leave every other payload byte-identical, and produce a file that rebuilds from its own tables.
+
+Why the round trip is the claim worth making: a table diff cannot see a region in the wrong place, which is exactly how
+this mode failed the first time. A round trip fails on any byte the writer put somewhere else. The layout loop, and the
+three traps it encodes, are on `docs/PACKAGE_LAYOUT.md`.
+
+What it does not claim:
+
+* **The resized payload is not meaningful.** Growing appends `0xCC` fill and shrinking truncates; the container is
+  valid, the export inside it is not a properties block any more.
+* **A shrink is not reversible.** The truncated tail is gone, so the negative direction is checked against the
+  container rather than against bytes.
+* **Nothing was loaded.** A byte-identical round trip is not a package the game will accept; that needs a compiler and
+  xemu.
+
 ## What this does *not* say
 
 * **Payloads are not written.** The export data (properties, `ScriptText`, bytecode) is copied, not generated. A
