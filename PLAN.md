@@ -93,8 +93,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [x] 1.1 Download the Hidden Palace 7z; record SHA-256 and size (done: values in §0).
 - [x] 1.2 Extract with `py7zr` (container `/tmp` is a 512 MB tmpfs — extract to real disk, e.g. `/home/pn/sg1/dump`).
 - [x] 1.3 Generate `inventory/manifest.sha256` over every extracted file (4,081 entries) and commit it.
-- [ ] 1.4 Verify package integrity against `System/Packages.md5` and record which packages pass (baseline for
-      detecting our own repack drift later).
+- [x] 1.4 Verify package integrity against `System/Packages.md5` and record which packages pass (baseline for
+      6.2's package-check problem). Done as a measurement with a negative result: the file is itself a UE2 package
+      (tag `0x9E2A83C1`, version 130) holding **168** `PackageCheckInfo` exports, not a text MD5 list, and none of
+      the 18 shipped `.u` files' digests appears in it under four candidate hash schemes. Recorded in
+      `inventory/package_check.csv` with `recovered_from=absent` and in `docs/PACKAGE_CHECK.md`, which states what
+      6.2 now has to reproduce instead of assuming `md5(file)` is the check.
 - [ ] 1.5 Archive a pristine, read-only copy of the dump; all later work happens on copies.
 - [x] 1.6 Write `docs/PROVENANCE.md`: build date, dump method (Xbox Neighborhood), release group, cross-reference
       to the public preservation listings for the same release (no copy is kept in this repo).
