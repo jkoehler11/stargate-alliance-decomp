@@ -1,7 +1,12 @@
 class,native_functions,native_function_names,from
-SGOrder,4,isValid;updateCondition;DrawDesc;DrawIcon,shipped ScriptText
-Electrocutor,2,StartArcing;WankTick,shipped ScriptText
-ShadowManager,1,GetShadowLights,shipped ScriptText
-SGFontInfo,1,bendover,shipped ScriptText
-FarClipChange,2,GetFarClipDistance;SetFarClipDistance,shipped ScriptText
+BotBase,1,CoverActors,shipped ScriptText
+BotEnemy,4,CalcBestCoverLoc;EvaluateBestForwardHideLocation;EvaluateBestHideLocation;FindBestHideNode,shipped ScriptText
+StargateWeapon,2,DrawReticule;updateLeadLag,shipped ScriptText
 StargateHUD,1,DrawOrdersHud,shipped ScriptText
+SGOrder,4,isValid;updateCondition;DrawDesc;DrawIcon,shipped ScriptText
+SGScreenBloom,1,SelectFilter,shipped ScriptText
+SGFontInfo,1,bendover,shipped ScriptText
+HitEffectManager,2,Update;SetupFade,shipped ScriptText
+ShadowManager,1,GetShadowLights,shipped ScriptText
+Electrocutor,2,StartArcing;WankTick,shipped ScriptText
+FarClipChange,2,GetFarClipDistance;SetFarClipDistance,shipped ScriptText
