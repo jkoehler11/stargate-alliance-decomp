@@ -320,6 +320,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, class defaults)
+
+- **Class defaults are locatable, not yet readable in full.** `tools/pkg-defaults.py` finds a class's default
+  block by the same boundary rule the actor reader uses: `SGOrder`'s 229-byte export carries 10 defaults at
+  `+0xAC` with `Bool`/`Int`/`Byte`/object values decoding correctly (`canPerformOneill=True`,
+  `maxBotsAssigned=-1`, `Condition=1`). Two problems are recorded rather than worked around: string values
+  misalign because two candidate starts two bytes apart both pass the test, and the squad scripts the maps name
+  (`TSS_7A_B_Jaffa_01`) are not `Class` exports in any `System/` package or in the referencing map, so the
+  roster link from `docs/T3D.md` stays open (`docs/CLASS_DEFAULTS.md`).
+
 ### Execution notes (2026-10-24, ScriptText)
 
 - **The shipping packages contain their own UnrealScript source.** Every class carries one `ScriptText`
