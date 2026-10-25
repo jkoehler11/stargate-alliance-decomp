@@ -79,24 +79,52 @@ def read_value(buf, off, pkg, want_values):
     start = off
     off += size
     if want_values:
-        if t == 4 and size == 4:
+        # Values inside package property streams are *compact*: a name or object reference can be one or two
+        # bytes, and vectors arrive as Struct(Vector) rather than as a Vector type. Reading them by assumed
+        # width is what left Location and Squad empty in the first attempt at this.
+        if t == 10:
+            sn = entry["struct"]
+            if sn == "Vector" and size == 12:
+                entry["value"] = struct.unpack_from("<3f", buf, start)
+            elif sn == "Rotator" and size == 12:
+                entry["value"] = struct.unpack_from("<3i", buf, start)
+            elif sn == "Color" and size >= 4:
+                entry["value"] = tuple(buf[start:start + 4])
+            elif sn == "PointRegion" and size >= 13:
+                entry["value"] = None
+        elif t in (5, 6, 13):
+            idx, used = read_index(buf, start)
+            entry["index_bytes"] = used - start
+            if t == 5:
+                entry["ref"] = idx
+                entry["value"] = resolve_ref(pkg, idx)
+            else:
+                entry["value"] = pkg.name(idx)
+        elif t == 4 and size == 4:
             entry["value"] = struct.unpack_from("<f", buf, start)[0]
         elif t == 2 and size == 4:
             entry["value"] = struct.unpack_from("<i", buf, start)[0]
+        elif t == 2 and size == 2:
+            entry["value"] = struct.unpack_from("<h", buf, start)[0]
         elif t == 1:
             entry["value"] = buf[start]
-        elif t == 5 and size == 4:
-            ref = struct.unpack_from("<i", buf, start)[0]
-            entry["value"] = "ref:%d" % ref
-        elif t == 6 and size == 4:
-            entry["value"] = pkg.name(struct.unpack_from("<i", buf, start)[0])
-        elif t == 11 and size == 12:
-            entry["value"] = struct.unpack_from("<3f", buf, start)
-        elif t == 12 and size == 12:
-            entry["value"] = struct.unpack_from("<3i", buf, start)
-        elif t == 7:
+        elif t == 7 or t == 9:
             entry["value"] = buf[start:start + size].split(b"\0")[0].decode("latin1", "replace")
     return entry, off
+
+
+def resolve_ref(pkg, ref):
+    """Object reference -> a readable name. Positive indexes exports, negative imports, zero is None."""
+    if ref == 0:
+        return "None"
+    try:
+        if ref > 0:
+            exp = pkg.exports[ref - 1]
+            return "%s\'%s\'" % (pkg.class_name_of(exp), pkg.name(exp["name"]))
+        imp = pkg.imports[-ref - 1]
+        return "%s\'%s\'" % (pkg.name(imp["name"]), pkg.name(imp["class_package"]))
+    except (IndexError, KeyError):
+        return "ref:%d" % ref
 
 
 def read_block(buf, pkg, want_values=False, limit=2000):

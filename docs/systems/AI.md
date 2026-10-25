@@ -57,7 +57,16 @@ where a large share of the behaviour is native (4 of 10), which is why it is the
 
 ## Enemies are spawned, not placed
 
-No AI class is placed in any of the 73 maps: `placed_in_maps` is zero for all 45 controller classes. They
+No AI class is placed in any of the 73 maps: `placed_in_maps` is zero for all 45 controller classes. **What the
+map does name is the encounter script that spawns them.** With the T3D written and its references resolved
+(`docs/T3D.md`), `IntelligentSpawner` actors carry a `SuggestedSquadScript` pointing at a class —
+`AI_Jaffa_Horus_Med_single`, `AI_Jaffa_Horus_Med_Obs`, `Jaffa_Enc5`, `TSS_7A_B_Jaffa_01` — and 61 of the 73
+maps carry such names (601 distinct scripts, `inventory/squad_scripts.csv`). So the chain is
+`map → spawner → squad script → its default roster → bot classes`, with the first two links measured. This
+supersedes the earlier claim in this file that the question was not answerable from the `.unr` at all: it is
+answerable by encounter script today, and by bot class once class defaults parse.
+
+They
 appear in shipped checkpoints instead — `BotSG` 890 instances, `JaffaBotLight` 324, `ScriptedController` 70,
 `AlkeshBomberBot` 18, `AttachedAlkeshTurretController` 18 — and the agent that puts them there is
 `IntelligentSpawner`, which the checkpoint schema shows at 1,860 instances
