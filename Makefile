@@ -27,6 +27,7 @@ help:
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
 	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
+	@echo "  compile-readiness  per-class check of what a rebuild would have (3.6 inputs)"
 	@echo "  map-census    regenerate the map-side census CSVs (needs the dump)"
 	@echo "  package-census  regenerate the four package-side census CSVs (needs the dump)"
 	@echo "  inventory-index  index every committed artifact and what regenerates it"
@@ -172,6 +173,9 @@ libraries:
 # runs it with --check, so a landed artifact that moves a number fails the gate until it is regenerated.
 squad-rosters:
 	@$(PYTHON) tools/squad-rosters.py "$(SYSTEM_DIR)" -o inventory
+
+compile-readiness:
+	@$(PYTHON) tools/compile-readiness.py -o inventory
 
 map-census:
 	@$(PYTHON) tools/map-census.py "$(MAPS_DIR)" -o inventory

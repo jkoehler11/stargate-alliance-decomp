@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, compile readiness measured per class)
+
+- **1,552 of 2,319 classes (66.9%) have every input a rebuild needs** — source, a default-property block whose
+  properties the class declares, and an ancestor that is in the tree. 767 are blocked on the default block alone,
+  which is now a number rather than a caveat (`docs/COMPILE.md`, `inventory/compile_readiness.csv` by class,
+  `inventory/compile_readiness_by_package.csv` rollup, `make compile-readiness`).
+- The ancestry check has to be **case-insensitive**: the inventory spells `GamePlay` while `package_of_super`
+  says `Gameplay`, and a case-sensitive join invented 70 "super-not-in-tree" classes that do not exist.
+- `inventory/class_defaults_per_class.csv` is new: 2,319 rows from `class-defaults.py --packages`, and its total
+  (1,552 fully declared) matches `inventory/class_defaults_coverage.csv` exactly, which is the cross-check.
+- 3.6 remains `[~]`: the hard blocker is still `ucc`, and this measures inputs, not compilation.
+
 ### Execution notes (2026-10-24, the map-side census)
 
 - **Two of the three remaining orphans now reproduce byte for byte**: `map_property_coverage.csv` (73 maps) and

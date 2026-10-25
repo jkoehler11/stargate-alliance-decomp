@@ -84,7 +84,7 @@ def collect():
     oracle_match = sum(1 for r in od if r["bucket"] == "matched")
     out.append(("Script", "classes agreeing with the 2006 source", oracle_match, oracle_total,
                 "inventory/oracle_diff.csv (bucket=matched / all oracle classes)"))
-    out.append(("Script", "classes compiling clean (L1)", None, None, "PLAN 3.6 has not started"))
+    out.append(("Script", "classes compiling clean (L1)", None, None, "PLAN 3.6 has not started (inputs: docs/COMPILE.md)"))
     cd_rows = rows_of("inventory/class_defaults_coverage.csv")
     cd_total = sum(int(r["classes"]) for r in cd_rows)
     cd_read = sum(int(r["fully_declared"]) for r in cd_rows)

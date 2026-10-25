@@ -36,7 +36,7 @@ exist yet. That is different from a layer that was measured and scored badly.
 | Script | classes reconstructed (L0) | inventory/decompile_coverage.csv |
 | Script | shipped packages parsed | inventory/packages.csv vs inventory/manifest.sha256 |
 | Script | classes agreeing with the 2006 source | inventory/oracle_diff.csv (bucket=matched / all oracle classes) |
-| Script | classes compiling clean (L1) | PLAN 3.6 has not started |
+| Script | classes compiling clean (L1) | PLAN 3.6 has not started (inputs: docs/COMPILE.md) |
 | Script | class defaults decoded | inventory/class_defaults_coverage.csv (fully_declared / classes) |
 | Native | functions carrying a name | symbols/xbox_functions.csv (name not FUN_*) |
 | Native | functions attributed to a module | inventory/xbe_functions_by_module.csv (all rows except '(unnamed)') |
