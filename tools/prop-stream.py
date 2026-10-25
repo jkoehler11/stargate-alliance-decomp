@@ -92,7 +92,7 @@ def read_value(buf, off, pkg, want_values):
                 entry["value"] = tuple(buf[start:start + 4])
             elif sn == "PointRegion" and size >= 13:
                 entry["value"] = None
-        elif t in (5, 6, 13):
+        elif t in (5, 6):
             idx, used = read_index(buf, start)
             entry["index_bytes"] = used - start
             if t == 5:
@@ -108,6 +108,10 @@ def read_value(buf, off, pkg, want_values):
             entry["value"] = struct.unpack_from("<h", buf, start)[0]
         elif t == 1:
             entry["value"] = buf[start]
+        elif t == 13:
+            # Str is an FString: `size` bytes of text, not a name index. Reading it as an index is what made
+            # `Description` decode as the name `BeginState`.
+            entry["value"] = buf[start:start + size].split(b"\0")[0].decode("latin1", "replace")
         elif t == 7 or t == 9:
             entry["value"] = buf[start:start + size].split(b"\0")[0].decode("latin1", "replace")
     return entry, off

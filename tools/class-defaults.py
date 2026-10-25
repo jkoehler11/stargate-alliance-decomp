@@ -32,6 +32,21 @@ def load_prop_stream():
     return mod
 
 
+def super_map(path=os.path.join(ROOT, "inventory", "classes.csv")):
+    """class -> superclass, taken from the whole tree rather than one package.
+
+    Following supers within the package being read stops at the first class that extends a class from
+    another package (StargateGame classes extend Engine ones), which truncated the inherited property set and
+    made correct blocks look undeclared.
+    """
+    out = {}
+    if os.path.isfile(path):
+        with open(path, newline="") as f:
+            for r in csv.DictReader(f):
+                out[r["class"]] = r["super"]
+    return out
+
+
 def declared_properties(path=os.path.join(ROOT, "inventory", "class_properties.csv")):
     """class -> set of property names it declares, plus the same set for all its ancestors."""
     by_class = collections.defaultdict(set)
@@ -55,18 +70,23 @@ def candidates(pkg, mod, exp, limit=512):
             continue
         if any(p["name"] == "?" for p in props):
             continue
-        if start + end != len(data):
+        if start + end > len(data):
             continue
-        out.append((len(props), start, [p["name"] for p in props]))
+        trailer = len(data) - (start + end)
+        if trailer > 64:
+            # A class export can carry data after its defaults (a component table, for one). Requiring an
+            # exact ending threw away every such class; a bounded trailer keeps them.
+            continue
+        out.append((len(props), start, [p["name"] for p in props], trailer))
     return out, data
 
 
 def choose(cands, declared):
-    """Prefer the candidate whose names the class actually declares; fall back to the longest."""
+    """Prefer the candidate whose names the class declares, then the longest, then the smallest trailer."""
     best = None
-    for count, start, names in cands:
+    for count, start, names, trailer in cands:
         known = sum(1 for n in names if n in declared)
-        score = (known / float(count), count)
+        score = (known / float(count), count, -trailer)
         if best is None or score > best[0]:
             best = (score, count, start, names)
     return best
@@ -77,6 +97,8 @@ def main():
     ap.add_argument("path")
     ap.add_argument("--class", dest="cls")
     ap.add_argument("--sweep", action="store_true", help="every class in the package")
+    ap.add_argument("--walk", action="store_true",
+                    help="print the raw byte walk of the chosen block (type byte, size, consumed bytes)")
     ap.add_argument("-o", "--out")
     args = ap.parse_args()
 
@@ -86,9 +108,8 @@ def main():
     pkg.read_names()
     pkg.read_imports()
     pkg.read_exports()
-    # ancestor closure: a class's defaults may set inherited properties
-    supers = {pkg.name(e["name"]): pkg.name(e["super"]) for e in pkg.exports
-              if pkg.class_name_of(e) == "Class"}
+    # ancestor closure from the committed tree, so cross-package inheritance is followed
+    supers = super_map()
 
     def known_for(cls):
         out, seen, cur = set(), set(), cls
@@ -118,6 +139,21 @@ def main():
             ambiguous += 1
         rows.append({"class": cls, "properties": count, "start": "0x%x" % start,
                      "declared_fraction": "%.2f" % score[0]})
+        if args.walk:
+            # Byte-level walk: every property with its info byte and how many bytes its value consumed.
+            # This is what showed that a Bool writes no size field: the byte after its info byte is the next
+            # property's name index. Kept as a mode because it is the only way to settle an alignment question.
+            off = start
+            while off < len(data):
+                name, after_name = mod.read_index(data, off)
+                if name == 0:
+                    break
+                info = data[after_name]
+                _entry, after_value = mod.read_value(data, after_name, pkg, False)
+                print("   %-24s nameIdx=%-5d info=%#04x type=%-8s consumed=%d"
+                      % (pkg.name(name), name, info, mod.TYPES.get(info & 0x0F),
+                         after_value - after_name))
+                off = after_value
         if args.cls:
             props, _end, _reason = mod.read_block(data[start:], pkg, True)
             print("%s: %d defaults at +0x%x, %.0f%% declared by the class"
