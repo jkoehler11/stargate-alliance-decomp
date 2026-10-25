@@ -92,15 +92,66 @@ def choose(cands, declared):
     return best
 
 
+def all_packages(system_dir, outdir):
+    """Sweep every package into one CSV: package, class, defaults, declared fraction, block start.
+
+    Written as its own mode because `--sweep -o` writes `class_defaults.csv` per invocation and a loop over
+    packages would leave only the last one -- the flag-shared artifact trap.
+    """
+    mod = load_prop_stream()
+    rows = []
+    supers = super_map()
+    declared_all = declared_properties()
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        pkg_name = fname[:-2]
+        for exp in [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]:
+            cls = pkg.name(exp["name"])
+            decl, cur, seen = set(), cls, set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                decl |= declared_all.get(cur, set())
+                cur = supers.get(cur)
+            cands, _data = candidates(pkg, mod, exp)
+            best = choose(cands, decl)
+            if best is None:
+                rows.append([pkg_name, cls, 0, 0.0, "", 0])
+                continue
+            _score, count, start, names = best
+            known = sum(1 for n in names if n in decl)
+            rows.append([pkg_name, cls, count, round(known / float(count), 4), start, 1 if known == count else 0])
+    path = os.path.join(outdir, "class_defaults_per_class.csv")
+    os.makedirs(outdir, exist_ok=True)
+    with open(path, "w", newline="") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(["package", "class", "defaults", "declared_fraction", "block_start", "fully_declared"])
+        w.writerows(rows)
+    total = len(rows)
+    clean = sum(r[5] for r in rows)
+    print("%d classes across %d packages; %d fully declared (%.1f%%)"
+          % (total, len({r[0] for r in rows}), clean, 100.0 * clean / total if total else 0.0))
+    print("wrote %s" % path)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("path")
+    ap.add_argument("path", nargs="?", help="a package file (not needed with --packages)")
     ap.add_argument("--class", dest="cls")
     ap.add_argument("--sweep", action="store_true", help="every class in the package")
+    ap.add_argument("--packages", metavar="DIR",
+                    help="sweep every .u in DIR and write one per-class CSV (this is the mode that produces "
+                         "inventory/class_defaults_per_class.csv; the per-package --sweep -o overwrites itself)")
     ap.add_argument("--walk", action="store_true",
                     help="print the raw byte walk of the chosen block (type byte, size, consumed bytes)")
     ap.add_argument("-o", "--out")
     args = ap.parse_args()
+
+    if args.packages:
+        return all_packages(args.packages, args.out or "inventory")
 
     mod = load_prop_stream()
     declared = declared_properties()

@@ -11,9 +11,12 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/chapters.csv` | 37 | 4 | `make inventory` |
 | `inventory/checkpoint_summary.csv` | 96 | 7 | `make checkpoints` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make ci` |
+| `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make class-defaults` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |
+| `inventory/compile_readiness.csv` | 2319 | 8 | `make compile-readiness` |
+| `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
 | `inventory/content_census.csv` | 73 | 4 | **content-census.py (no target runs it)** |
 | `inventory/decompile_coverage.csv` | 2319 | 5 | `make release-notes` |
 | `inventory/dialogue_by_mission.csv` | 14 | 5 | **dialogue-index.py (no target runs it)** |
@@ -37,8 +40,8 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/package_check.csv` | 18 | 5 | **package-check.py (no target runs it)** |
 | `inventory/package_exports_summary.csv` | 18 | 6 | `make package-census` |
 | `inventory/package_parse.csv` | 0 | 4 | **InventoryCommand.cs (no target runs it)** |
-| `inventory/package_script_text.csv` | 18 | 4 | `make package-census` |
-| `inventory/packages.csv` | 18 | 18 | `make class-graph` |
+| `inventory/package_script_text.csv` | 18 | 4 | `make compile-readiness` |
+| `inventory/packages.csv` | 18 | 18 | `make class-defaults` |
 | `inventory/property_classes.csv` | 15 | 8 | `make ci` |
 | `inventory/property_types.csv` | 17 | 4 | **property-map.py (no target runs it)** |
 | `inventory/script_text_natives.csv` | 18 | 4 | `make package-census` |
@@ -65,5 +68,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-58 artifacts, 54652 rows in total. 0 with no generator.
+61 artifacts, 59308 rows in total. 0 with no generator.
 
