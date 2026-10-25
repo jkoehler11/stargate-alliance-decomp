@@ -127,14 +127,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `D3D` 302, `XPP` 242 — **3,109 functions and 565 KB outside `.text` of which 22 are named**, which
       is the measurable size of the 4.2 signature gap. **Deferred:** the D3D8 device caps, which need a
       runtime probe (U11). `docs/IMPORTS.md`.
-- [ ] 2.7 Diff the 18 packages against stock UT2004/UE2.5 class names to classify each class as
-      *stock-engine*, *modified-engine*, *game-specific*.
-
-**Acceptance:** every one of the 18 packages and 154 XBE source files appears in an inventory CSV with counts,
-and `inventory/` regenerates from scripts with no manual edits.
-
-### Phase 3 — UnrealScript decompilation (bulk of the script track, ~4–8 weeks)
-
+- [~] 2.7 Diff the 18 packages against stock UT2004/UE2.5 class names to classify each class as
+      build-only / modified / stock.
+      **Blocked differently now**: no stock UE2.5 package set is on hand, and the shipped `ScriptText`
+      (`docs/PACKAGE_SCRIPT_TEXT.md`) makes part of the question moot — a class's text can be compared against stock
+      *source* for whichever classes UT2004 sources cover, which is a stronger test than class names. Needs either a
+      stock package set or the stock script sources; neither is in this repository or the dump.
 - [x] 3.1 Build UELib (`dotnet build`) + UE Explorer; confirm the `SG1_TA` (130/4) profile loads
       `StargateGame.u` without exceptions.
 - [x] 3.2 Baseline bulk decompile all 18 packages into `src/UnrealScript/<Package>/`; record per-package
