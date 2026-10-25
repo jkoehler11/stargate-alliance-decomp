@@ -65,6 +65,67 @@ class Package:
         self.names = out
         return out
 
+
+    # -- compact index and tables ---------------------------------------
+    def read_compact(self, off):
+        """UE2 FCompactIndex: one byte for 0..0x7F, else four; bit 0x40 is the sign."""
+        b0 = self.data[off]
+        if b0 & 0x80 == 0:
+            return b0, off + 1
+        b1, b2, b3 = self.data[off + 1], self.data[off + 2], self.data[off + 3]
+        value = ((b0 & 0x3F) << 24) | (b1 << 16) | (b2 << 8) | b3
+        return (-value if b0 & 0x40 else value), off + 4
+
+    def read_imports(self):
+        """Import entries: class package name, class name, outer index, object name."""
+        out, off = [], self.import_offset
+        try:
+            for i in range(self.import_count):
+                pkg, off = self.read_compact(off)
+                cls, off = self.read_compact(off)
+                outer, off = self.read_compact(off)
+                name, off = self.read_compact(off)
+                out.append({"index": i, "class_package": pkg, "class": cls,
+                            "outer": outer, "name": name})
+        except (IndexError, struct.error):
+            self.import_error = "truncated at entry %d" % len(out)
+        self.imports = out
+        return out
+
+    def read_exports(self):
+        """Export entries: class idx, super idx, outer idx, name idx, flags, serial size, serial offset."""
+        out, off = [], self.export_offset
+        try:
+            for i in range(self.export_count):
+                cls, off = self.read_compact(off)
+                sup, off = self.read_compact(off)
+                outer, off = self.read_compact(off)
+                name, off = self.read_compact(off)
+                flags = struct.unpack_from("<I", self.data, off)[0]
+                off += 4
+                size, off = self.read_compact(off)
+                offset, off = self.read_compact(off)
+                out.append({"index": i, "class": cls, "super": sup, "outer": outer,
+                            "name": name, "flags": flags, "size": size, "offset": offset})
+        except (IndexError, struct.error):
+            self.export_error = "truncated at entry %d" % len(out)
+        self.exports = out
+        return out
+
+    def class_name_of(self, export):
+        """Resolve an export's class through the import table (negative indices) or another export."""
+        idx = export["class"]
+        if idx == 0:
+            return "Class"
+        if idx < 0:
+            i = -idx - 1
+            if 0 <= i < len(getattr(self, "imports", [])):
+                return self.name(self.imports[i]["name"])
+            return "?import%d" % i
+        if 0 <= idx - 1 < len(self.exports):
+            return self.name(self.exports[idx - 1]["name"])
+        return "?export%d" % idx
+
     def name(self, i):
         return self.names[i][0] if self.names and 0 <= i < len(self.names) else "?"
 
@@ -74,6 +135,8 @@ def main():
     ap.add_argument("path", help="a package file, or a directory of them")
     ap.add_argument("-o", "--out")
     ap.add_argument("--grep", help="only print names containing this substring")
+    ap.add_argument("--tables", action="store_true",
+                    help="print the raw import/export table bytes (no interpretation)")
     args = ap.parse_args()
 
     paths = ([os.path.join(args.path, f) for f in sorted(os.listdir(args.path))
@@ -91,9 +154,16 @@ def main():
         got = len(pkg.names or [])
         status = "ok" if got == pkg.name_count and not pkg.name_error else \
                  ("partial: %s" % pkg.name_error if pkg.name_error else "count mismatch")
-        print("%-26s v%-4d lic=%-3d names %5d/%-5d exports %5d imports %4d  %s"
-              % (os.path.basename(path), pkg.version, pkg.licensee, got, pkg.name_count,
+        print("%-26s v%-4d names %5d/%-5d exports %5d imports %4d  %s"
+              % (os.path.basename(path), pkg.version, got, pkg.name_count,
                  pkg.export_count, pkg.import_count, status))
+        if args.tables:
+            # Raw evidence, no interpretation: the two table regions verbatim, so the next attempt at
+            # decoding starts from bytes instead of another guess (docs/PACKAGE_READER.md).
+            for label, start, size in (("imports", pkg.import_offset, 48),
+                                       ("exports", pkg.export_offset, 48)):
+                chunk = pkg.data[start:start + size]
+                print("      %-8s @0x%06x %s" % (label, start, " ".join("%02x" % b for b in chunk)))
         if args.grep:
             hits = [n for n, _ in (pkg.names or []) if args.grep.lower() in n.lower()]
             for h in hits[:40]:

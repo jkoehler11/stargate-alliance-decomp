@@ -69,9 +69,55 @@ What it does **not** yet answer is *which object owns which name*: that is the e
 compact-index entries are decoded and cross-checked, asking this reader for a class's function list would be
 inventing structure. That is the next slice, and it is the one that unblocks 4.7's native function records.
 
+
+## The export table: two encodings tried, neither accepted
+
+The next slice is the export table, and this is where the reader currently stops. The table's position and
+size are known — `export_offset` and `export_count` from the header, and both are inside the file for all 18
+packages — but the entry encoding is not, and guessing it produced nonsense rather than a result.
+
+Two index encodings were tried against `Core.u` (472 names, 906 exports at `0xFCCD`, 18 imports at
+`0xFC2C`), plus a field layout that assumed four compacts followed by flags and two more compacts. The test
+each one has to pass is structural, not aesthetic: **parsing the import table must end exactly where the
+export table begins.** Neither index encoding does, and the field layout produced 906 entries of nonsense.
+
+| encoding | imports end | should be |
+|---|---|---|
+| 1-byte, else 4-byte, sign in bit `0x40` (UE1 `FCompactIndex`) | `0xFC95` | `0xFCCD` |
+| 1-byte, else 2-byte, sign in the high bit | `0xFC86` | `0xFCCD` |
+
+The raw bytes say why the simple forms fail. At `0xFC2C`:
+
+```
+04 4f 07 00 00 00 00 04 | 04 4d 07 ff ff ff ff 45 | 05 04 4d 07 ff ff ff ff
+```
+
+There is a four-byte field per entry that is `0` in the first and `-1` in the rest — an outer/parent index,
+not a compact one — and the leading pairs (`04 4f`, `04 4d`) read like package/class *name* indices, which
+would make each entry a mix of compact and fixed-width fields. A wrong guess here does not fail loudly: it
+produced a plausible-looking 906 entries whose class histogram was nonsense (`Class` 248 in a package with 7
+classes). That is the failure mode worth remembering — **entry counts matching proves the table's extent,
+not the field layout.**
+
+`python3 tools/ue2pkg.py PKG --tables` prints those regions verbatim so the next attempt compares against
+bytes instead of re-deriving the same dead ends.
+
+### What a correct decoder has to reproduce
+
+Four independent facts are available to check against, which is why this is worth finishing rather than
+abandoning:
+
+1. `inventory/classes.csv` counts classes per package (`StargateGame` 306, `Engine` 367, `Core` 7).
+2. `inventory/xbe_class_table_names.csv` names 466 of 492 runtime class tables.
+3. `inventory/class_properties.csv` holds 11,496 class/property pairs.
+4. The export table must end exactly where the next table starts, in all 18 packages.
+
+Format note for whoever picks this up: `UPreview.u` is version **128** while the other 17 are 130, so a
+decoder that works on the majority may still need a branch for it.
+
 ## Not measured
 
-* The export and import tables (offsets are parsed and printed; entries are not decoded).
+* The export and import tables (offsets and counts are parsed; the entry encoding above is unresolved).
 * Function-level data of any kind — no bytecode, no `UFunction` records.
 * Whether `UPreview`'s version 128 changes the name-table encoding (it does not appear to; its 164 names
   parse).
