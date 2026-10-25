@@ -252,7 +252,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
       256 of 389 totals exact, this reader consistently slightly low). **Remaining**: actor *properties* and the level
       script, i.e. the property-stream reader, plus the T3D text itself. `M21A` has 1,540 exports whose class index does
-      not resolve — recorded, not explained.
+      not resolve — recorded, not explained. **Actor properties now parse too** (`docs/ACTOR_PROPERTIES.md`):
+      121,225 of 194,190 exports across the 73 maps carry a readable property block — `StaticMeshActor` 32,191 of
+      32,193, `ReachSpec` and `PathNode` at 100% — and the properties are the same `Tag`/`PhysicsVolume`/`Region`/
+      `Level`/`Location`/`Rotation` baseline the checkpoint analysis found, arrived at independently. The block is
+      located (class prefixes of 0/12/15/16/17 bytes) rather than assumed. **Remaining**: writing T3D text, property
+      values at scale, and class defaults.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an

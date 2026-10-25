@@ -38,6 +38,7 @@ help:
 	@echo "  extract-script write every class's shipped source into $WORK (never the repo)"
 	@echo "  map-actors    histogram every .unr's export classes (PLAN 5.2, class-level)"
 	@echo "  sfx-index     count the Sound exports in every .uax (PLAN 5.3)"
+	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -210,3 +211,7 @@ map-actors:
 # Sound effects inside the .uax packages (PLAN 5.3). Needs the dump.
 sfx-index:
 	@$(PYTHON) tools/sfx-index.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Sounds" -o inventory
+
+# One export's property block, or a class sweep (docs/ACTOR_PROPERTIES.md).
+prop-stream:
+	@$(PYTHON) tools/prop-stream.py "$(MAP)" $(if $(CLASS),--class "$(CLASS)" --scan,--export $(EXPORT))
