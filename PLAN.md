@@ -320,6 +320,18 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-24, the package writer's tables are proven)
+
+- **18 of 18 packages re-encode their tables byte for byte** — 37,094 names, 7,500 imports, 57,749 exports
+  regenerated from the parsed model by an independently written compact-index encoder (`tools/pkg-write.py`,
+  `docs/PACKAGE_WRITER.md`, `make pkg-verify`). That is the strongest evidence short of a rebuild that the container
+  format is right, and it closes the layout doubt that `docs/PACKAGE_READER.md` records from six failed attempts.
+- **What is still missing for 6.1 is payload generation** (a compiler's job — the writer copies export data rather
+  than synthesising it) and the package summary, which is carried through verbatim rather than modelled. State that,
+  not "the writer works".
+- `--selftest` exercises the index codec with no dump present and runs in `make ci`, so the encoder cannot rot
+  silently.
+
 ### Execution notes (2026-10-24, the path to a build)
 
 - **`docs/PATH.md` separates the two goals that "builds and runs" hides.** Goal A (our scripts, shipped engine and
