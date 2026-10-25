@@ -58,7 +58,8 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | classes agreeing with the 2006 source | 204 | 291 | `█████████████████░░░░░░░` 70.10% | 🟨 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
 | Script | class defaults decoded | 1,552 | 2,319 | `████████████████░░░░░░░░` 66.93% | 🟨 |
-| Script | default properties rendered | 13,033 | 13,345 | `███████████████████████░` 97.66% | 🟩 |
+| Script | default properties rendered | 13,307 | 13,345 | `████████████████████████` 99.72% | 🟩 |
+| Script | subobject defaults rendered | 14,887 | 15,687 | `███████████████████████░` 94.90% | 🟩 |
 | Native | functions carrying a name | 1,988 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 13.29% | 🟧 |
 | Native | functions attributed to a module | 1,913 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 12.79% | 🟧 |
 | Native | class tables named | 466 | 492 | `███████████████████████░` 94.72% | 🟩 |
