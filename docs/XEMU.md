@@ -301,3 +301,27 @@ repository unless `--show` is given.
 still empty, so "the title screen is up" becomes "the title's label exists in RAM", which is a *proxy* assertion and
 should be described as one. And a title-screen run still needs the disc as a regular file (see the pitfall above) —
 the dump directory cannot be mounted, so step one is a XISO from `tools/xemu/build-xiso.sh`.
+
+## The XISO, and what the guest actually did with it (measured 2026-10-26)
+
+`tools/xemu/build-xiso.sh $DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 ~/sg1-xiso/sg1.iso` builds the disc image
+from the dump on the desktop: **2,258,370,560 bytes**, the size `docs/XEMU.md`’s own table predicted, in about three
+minutes including the `extract-xiso` build. Mounted as `dvd_path` it is accepted (no more *“file driver requires a
+regular file”*), and the kernel loads the title’s `default.xbe` from it.
+
+**What the memory channel shows, with the disc mounted.** A 6 MiB scan of physical `0x10000..0x610000` finds the
+UTF-16 title string **once, at `0x000e0190`** — so the image is resident near `0xE0000`, not at the `0x10000` base
+its header declares. The CPU, sampled five times over ~180 s, is at `EIP=0x8001b030`, `CPL=0` every time: the
+**kernel**, not the title.
+
+**That contradicts the earlier note in this document** (“boot a prepared HDD image, and the title runs”). Two things
+could explain it and neither is measured: the earlier run may have used a different HDD/EEPROM state, or the title
+starts and returns early here and the sampling window (3 minutes) missed it. What is *not* in doubt is the state
+this configuration reaches: image loaded, CPU in the kernel, no sign of the title executing.
+
+`tools/xemu/bootcheck.py` turns exactly that distinction into one command and three verdicts — *executing*
+(`CPL=3` and `EIP` inside the image), *resident but not running*, *no image at all* — so the next session does not
+have to reconstruct it from `info registers` output. Its first end-to-end run died with xemu's own
+`GLib: g_source_destroy: assertion … failed` after a `pkill -9` of a previous instance, which is a harness flake
+worth knowing about rather than a logic error; the two measurements it composes (CPL/EIP sampling over QMP, title
+string over the GDB stub) were each taken by hand and are what the paragraph above reports.

@@ -353,6 +353,22 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, the XISO mounts and the title is resident — but the CPU stays in the kernel)
+
+- **The disc is no longer a blocker.** `tools/xemu/build-xiso.sh` produced **2,258,370,560 bytes** (exactly the size
+  the doc's table predicted) in ~3 minutes, and xemu accepts it as `dvd_path`. The kernel loads the title's
+  `default.xbe` from it: the UTF-16 title string appears **once at physical `0x000e0190`** in a 6 MiB scan, so the
+  image is resident near `0xE0000`.
+- **The CPU was not in the title.** Five samples over ~180 s all read `EIP=0x8001b030`, `CPL=0`. That contradicts this
+  doc's earlier "the title runs" note; the candidates are a different HDD/EEPROM state in that run, or a title that
+  starts and returns inside the window — neither is measured, and the entry says so instead of picking one.
+- **`tools/xemu/bootcheck.py`** makes the distinction a command: *executing* (`CPL=3` with `EIP` inside the image),
+  *resident but not running*, *no image at all*. It composes the two mechanisms already proven (QMP register sampling,
+  the GDB stub's physical reads); its own first end-to-end run hit xemu's `GLib: g_source_destroy` assertion after a
+  `pkill -9` of a previous instance — a harness flake, recorded rather than papered over.
+- **Next for 7.2**: a fresh HDD/EEPROM state (the current image is the 4.5 MB one from the NAS) and a longer sampling
+  window, then `bootcheck.py` as the assertion; `Continue` and mission loading remain behind that.
+
 ### Execution notes (2026-10-26, the boot harness gets a memory channel)
 
 - **7.2's assertion was CPU-only because the obvious channels are missing** (`screendump` absent, serial log empty,

@@ -133,7 +133,8 @@ oracle-diff:
 ci:
 	@$(PYTHON) tools/ci.py
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
-	@$(PYTHON) -m py_compile tools/xemu/mem.py && echo "ok   xemu-mem: tools/xemu/mem.py compiles"
+	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py \
+		&& echo "ok   xemu-tools: mem.py and bootcheck.py compile"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
