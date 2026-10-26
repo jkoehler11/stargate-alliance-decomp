@@ -370,6 +370,32 @@ that the disassembler needs is the same dispatch the interpreter uses, and the s
 can be checked against rather than a guess. The `'G'` marker also explains why some payloads may not decode as
 bytecode directly: a script can be stored compressed.
 
-Not measured yet: which helper the `+0xa0` virtual points at for each class, and whether any shipped function's script
-carries the `G` marker. Both are now answerable with the tables above and `tools/xemu/mem.py`-style reads — no further
-guessing at payload offsets.
+### The `+0xa0` slot is `0x000398e0`, and it is inherited more than overridden
+
+`UStruct::Serialize` calls a virtual at `+0xa0` while it rebuilds the script buffer, so that slot is the token walker
+the disassembler has to agree with. Reading it from every table (bounded by each table's own declared slot count —
+reading past the end lands in whatever `.rdata` holds next, which is how the first attempt reported "walkers" at
+`0x0d` and `0x31`):
+
+* **327 of 492** classes have a slot `0xa0` at all; the rest have shorter tables;
+* `Struct`, `Function` and `Class` all point at **`0x000398e0`** (1,373 bytes, attributed to `UnClass.cpp`) — one
+  walker for the whole struct hierarchy;
+* 134 distinct targets overall, and the distribution is lopsided: 117 classes share `0x00020f10`, 61 share
+  `0x000171c0` (which is also the deleting destructor's target on some tables), 39 share `0x002f8880`. Those look
+  like *inherited* engine implementations rather than per-class overrides.
+
+`inventory/class_serialize_slots.csv` now carries `serialize` **and** `script_walk` (with the symbol each resolves to),
+so "which function should the disassembler model?" has a per-class answer in a committed artifact.
+
+### Why the payload-layout attempts failed, now that the reader is known
+
+The third attempt at finding the script inside a `UFunction` payload used the field order read out of
+`UStruct::Serialize` — `Super`, `Children`, `FriendlyName`, line, text position, size, script — and tried compact
+indices for the first three. **It validates for 0 of 3,931 `Engine.u` functions** (and 1 false positive in
+`StargateGame.u`), which is consistent with the reader: `Super` and `Children` are serialised through the *archive's*
+object-reference method (vtable `+0x18`) and `FriendlyName` through its name method (`+0x1c`), and those are not the
+same encoding as a property block's compact index. The field *order* is right; the field *widths* belong to the
+archive, and the archive's own primitives (`FUN_000370e0`, `FUN_00037110`) are what to read next.
+
+Not measured yet: the walker's own dispatch (its jump table is the opcode table 3.7 needs), and whether any shipped
+function's script carries the `G` marker.

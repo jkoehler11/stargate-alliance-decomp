@@ -16,7 +16,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 13 | `make class-reach` |
-| `inventory/class_serialize_slots.csv` | 492 | 4 | `make serialize-slots` |
+| `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |
 | `inventory/compile_readiness.csv` | 2319 | 10 | `make compile-readiness` |
 | `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
@@ -63,7 +63,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/xbe_block_seeds.csv` | 26 | 4 | `make ci` |
 | `inventory/xbe_class_table_names.csv` | 492 | 8 | `make ci` |
 | `inventory/xbe_class_table_slots.csv` | 159 | 6 | `make class-tables` |
-| `inventory/xbe_class_tables.csv` | 492 | 8 | `make class-names` |
+| `inventory/xbe_class_tables.csv` | 492 | 8 | `make serialize-slots` |
 | `inventory/xbe_functions_by_module.csv` | 16 | 5 | `make ci` |
 | `inventory/xbe_game_modules.csv` | 43 | 7 | **game-modules.py (no target runs it)** |
 | `inventory/xbe_gap_seeds.csv` | 12 | 4 | `make ghidra` |
