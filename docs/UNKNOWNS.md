@@ -36,6 +36,12 @@ good target: `Engine.Actor` has dozens of callers) and read the emitted opcode a
 index opcode settles hypothesis 3, a function reference points at 1 or 2. Cross-check with 4.7
 (the `.ucpp` bodies) if a C++ implementation exists for the same class.
 
+**Cross-checked 2026-10-26 against the other half.** `tools/native-reconcile.py` (`inventory/native_reconcile.csv`,
+`docs/NATIVE_CLASSES.md`) compares these records with the `native()` declarations in the shipped script: 256
+declarations carry an explicit index and every one of them agrees with its record's token — 0 disagreements. So the
+count in the header of this entry needs one refinement: **274 records carry a token, 256 declarations spell one out.**
+The 18-record difference is not a parser artefact and is measured below (U3).
+
 **Partially answered 2026-10-23.** Hypothesis 3 is what the build does. The routine that fills
 `UFunction::Func` (`0x0003a030`, `Core\Src\UnClass.cpp`) has an explicit branch for
 `FUNC_Native` with `iNative == 0`: it formats a name with `"int%sexec%s"`, looks it up, and stores the
@@ -82,6 +88,18 @@ with an index here, which is consistent with the hypothesis but does not prove i
 
 **Status.** Open, low priority. `Editor`, `UPreview` and `UnrealEd` are excluded from naming
 (`tools/native-names.py`), so nothing depends on the answer.
+
+
+**Measured 2026-10-26.** The class is one of exactly **two** where the record carries a token and the shipped text
+does not: `Core.Object` has 160 token-carrying records against 143 indexed declarations (17 more), and
+`UPreview.UPreviewMapListClient` has 1 against 0. So `Created`'s index 2 is not a stray value — it is the compiler
+assigning an index to a declaration that does not spell one out, and the same happens 17 times in `Core.Object`,
+mostly for the per-signature operator records (`Concat_StrStr`, `EqualEqual_ObjectObject`, …) the compiler
+synthesises. The practical consequence for the native work: **the record's token is authoritative and the text's
+index is not exhaustive**, so a rebuild must read indices from the packages, never from the source.
+
+Still open: which 17 of `Object`'s records are compiler-synthesised and which are hand-declared without an index —
+the class's own text does not distinguish them.
 
 ## U4. The `.lad` payload layout is not established
 
@@ -363,3 +381,33 @@ prints it.
 **Second half, also resolved.** Ghidra *was* told an entry, just the wrong one: `run-analysis.sh` passed
 `0x10184` (the certificate) to both scripts. With the real entry passed, the analysis creates `XbeEntry` at
 `0x0033F317` (114 bytes) and the function map goes 14,956 → 14,957 with nothing removed and no name changed.
+
+## U13. Where a function's bytecode lives in its export (PLAN 3.7)
+
+**Observed.** PLAN 3.7 needs a disassembler, and the reader is blocked on the *serialised* layout of a `UFunction`,
+not on the opcode table: `tools/uelib` (pinned) maps opcode → token class in `src/Branch/DefaultEngineBranch.cs` and
+gives every operand width in `src/Core/Tokens/*.cs`, so the decoding side is specified. What is missing is where the
+script bytes start and how long they are inside the function's export payload.
+
+**Two negatives, both measured, both worth keeping.**
+
+1. **UELib's own reader does not transfer.** Its `UStruct.Deserialize` reads `Super`, `ScriptText`, `Children`, an
+   optional `StructFlags`, `Line`, `TextPos`, `ByteScriptSize`, then the script — but parsing our 3,931 `Engine.u`
+   function payloads that way validates for **1 of them** (identifier widths and the trailing function header were
+   tried in both compact and `int32` forms; none fit).
+2. **The content side anchors but does not locate.** Trivial bodies are unambiguous: `return true;` compiles to
+   `EX_Return` + `EX_True` (`04 27`) and that pair sits exactly **12 bytes before the payload end in 424 functions**
+   (`return false;` in 463). So the trailing 12 bytes are the function header and the script ends there — but no
+   consistent size field precedes it: a dword at offset *k* with value `payload_end - 12 - (k+4)` exists in only
+   **11 of 1,224** candidates.
+
+**What is known.** The runtime side (`docs/NATIVE_VM.md`) reads `Function->Script` at object offset `+0x4c`, and the
+interpreter treats `EX_Return` as the terminator, so the loader must fill that field from somewhere in the payload.
+
+**What would settle it.** Decompile `UStruct::Serialize` in `default.xbe` and read the field order: it is the function
+that writes `ScriptStorageSize` and the script bytes, and it is reachable through the class tables the project has
+already named (`inventory/xbe_class_tables.csv`). Second route, cheaper if it works: find the *store* to `[reg+0x4c]`
+in the loader with a Ghidra script and read backwards from it.
+
+**Why it has not been attempted from those two routes yet.** Two sessions tried the payload-bytes route first; this
+entry exists so the third starts from the reader, not from another alignment guess.

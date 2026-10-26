@@ -237,3 +237,34 @@ give the first translated block of every region, which is the direct way to prov
 on a host without a live display, because xemu's SDL init runs before QEMU's tracing: with no session it fails
 with `wayland,x11 not available` (and with an Xauthority we cannot authorise, `Authorization required`), and no
 log is written at all. Run it from a desktop session, not over a detached SSH.
+
+## Running it unattended: three things measured the hard way
+
+Everything below was observed on the desktop (Arch, KDE on Wayland with Xwayland) while trying to extend the boot
+assertion from "the CPU left kernel space" to "this screen is up".
+
+**1. The GL context needs the session's Xwayland cookie, not `$DISPLAY` alone.** An ssh command has no `DISPLAY`,
+and exporting `DISPLAY=:0` on its own fails with `Authorization required, but no authorization protocol specified` /
+`Failed to initialize SDL video subsystem`. The working set is read out of the live session:
+
+```
+ps aux | grep '[X]wayland'      # e.g. Xwayland :0 -auth /run/user/1000/xauth_DQpnsX
+export DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_DQpnsX
+export WAYLAND_DISPLAY=wayland-1 XDG_RUNTIME_DIR=/run/user/1000
+export APPIMAGE_EXTRACT_AND_RUN=1
+```
+
+With that, xemu starts headless-with-a-session and reports `GL_VERSION: 4.6 (Core Profile) Mesa …`.
+
+**2. `dvd_path` must be a regular file.** Pointing it at the dump *directory* does not mount it: xemu builds
+`-drive index=1,media=cdrom,file=<dir>` and QEMU answers `warning: 'file' driver requires '<dir>' to be a regular
+file`, so the guest boots with no disc and idles at the shell — which reads exactly like the EEPROM trap in the
+pitfalls below. A directory only works through `tools/xemu/smoke.py --dvd-dir` if a XISO is built first
+(`tools/xemu/build-xiso.sh GAME_DIR OUT.iso`, needs `extract-xiso`, which the script builds). No XISO exists on the
+desktop today, so a title-screen run needs that step first.
+
+**3. The memory-dump route is unproven on this build.** `human-monitor-command` works for `info registers` (that is
+what `smoke.py` samples), but `pmemsave 0 0x4000000 FILE` and `memsave 0 0x4000000 FILE` both answer
+`invalid char 't' in expression` — the command parses the path as part of the expression. Whether a quoted form, a
+different monitor command, or QMP's `human-monitor-command` in another form can dump guest RAM is **not established**;
+until it is, the CPU remains the only assertion this harness can make, and "which screen is up" stays unmeasured.
