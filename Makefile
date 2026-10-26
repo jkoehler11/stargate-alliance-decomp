@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: class-reach defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: class-reach native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -55,6 +55,7 @@ help:
 	@echo "  defaults-coverage  roll the defaults locator up per package (needs the dump)"
 	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
+	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -290,6 +291,11 @@ defaults-coverage:
 defaults-per-class:
 	@$(PYTHON) tools/class-defaults.py --packages "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@echo "wrote inventory/class_defaults_per_class.csv"
+
+# Native declarations in the shipped script against inventory/natives.csv (docs/NATIVE_CLASSES.md, PLAN 3.9).
+native-reconcile:
+	@$(PYTHON) tools/native-reconcile.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/native_reconcile.csv"
 
 # Every class against the content that instantiates it (docs/CUT_CONTENT.md, PLAN 5.6). Committed CSVs only.
 class-reach:

@@ -70,6 +70,9 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # fail when the committed CSV no longer matches a fresh pass.
     stage defaults-emit python3 tools/defaults-emit.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --check
+    # Dump-gated for the same reason: the declarations live in the packages.
+    stage native-reconcile python3 tools/native-reconcile.py \
+        "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
 else
     say "SKIP  dump-side stages (set SG1_DUMP)"
 fi

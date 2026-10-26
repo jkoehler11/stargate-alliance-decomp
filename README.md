@@ -64,6 +64,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Native | functions carrying a name | 1,988 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 13.29% | 🟧 |
 | Native | functions attributed to a module | 1,913 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 12.79% | 🟧 |
 | Native | class tables named | 466 | 492 | `███████████████████████░` 94.72% | 🟩 |
+| Native | native declarations reconciled | 672 | 685 | `████████████████████████` 98.10% | 🟩 |
 | Native | property classes measured | 15 | 15 | `████████████████████████` 100.00% | 🟩 |
 | Content | maps parsed | 73 | 73 | `████████████████████████` 100.00% | 🟩 |
 | Content | speech WAVs indexed | 1,364 | 1,364 | `████████████████████████` 100.00% | 🟩 |

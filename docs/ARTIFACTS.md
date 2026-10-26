@@ -37,6 +37,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/music_index.csv` | 16 | 7 | `make release-notes` |
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_names.csv` | 273 | 4 | `make natives` |
+| `inventory/native_reconcile.csv` | 96 | 12 | `make native-reconcile` |
 | `inventory/natives.csv` | 797 | 6 | `make natives` |
 | `inventory/oracle_diff.csv` | 1653 | 11 | `make oracle-diff` |
 | `inventory/package_check.csv` | 18 | 5 | **package-check.py (no target runs it)** |
@@ -72,5 +73,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-65 artifacts, 61681 rows in total. 0 with no generator.
+66 artifacts, 61777 rows in total. 0 with no generator.
 

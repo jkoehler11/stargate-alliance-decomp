@@ -117,6 +117,11 @@ def collect():
     named_tables = [r for r in tables if r["class"]]
     out.append(("Native", "class tables named", len(named_tables), len(tables),
                 "inventory/xbe_class_table_names.csv"))
+    nr = rows_of("inventory/native_reconcile.csv")
+    nr_matched = sum(int(r["matched"]) for r in nr)
+    nr_records = sum(int(r["csv_records"]) for r in nr)
+    out.append(("Native", "native declarations reconciled", nr_matched, nr_records,
+                "inventory/native_reconcile.csv (matched / csv_records)"))
     props = rows_of("inventory/property_classes.csv")
     out.append(("Native", "property classes measured", len(props), 15,
                 "inventory/property_classes.csv (15 = base + 14 subclasses)"))
