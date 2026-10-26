@@ -101,3 +101,49 @@ functions unimplemented.
 `ucpp_Register_<Class>` stub in `symbols/xbe_overrides.csv`; the other five declare natives the stock engine
 already implements, so nothing about them needs ucpp. The artifact used to list only those six, which read as though
 six classes added natives at all.
+
+## Reconciling the declarations against the records (PLAN 3.9)
+
+`inventory/natives.csv` lists the native functions the packages carry; the script text declares them. Nothing had
+checked that the two agree class by class, and both are inputs to the compile loop: a `native function` declaration
+says the body lives in C++, and a `native(1234)` pins its index, so a disagreement would mean either the tree is
+missing a native body or the record is describing something the source no longer has.
+
+    python3 tools/native-reconcile.py DUMP/System -o inventory     # inventory/native_reconcile.csv
+    python3 tools/native-reconcile.py DUMP/System --class Object --walk
+
+| | count |
+|---|---:|
+| classes declaring natives (text) or carrying records | 96 |
+| `native function` declarations in the shipped text | 681 |
+| …of those carrying an explicit index | 256 |
+| `native … operator` declarations | 92 |
+| operator records the compiler synthesises from them | 112 |
+| native function records (`natives.csv`, operators excluded) | 685 |
+| **records matched to a declaration** | **672 (98.1%)** |
+| declarations with no record | 9 |
+| records with no declaration | 13 |
+| **index disagreements** | **0** |
+
+**The index check is the part that matters.** Every one of the 256 indexed declarations agrees with its record's
+token — the same number `docs/NATIVE_VM.md` reports as the distinct index space. That makes the native list usable as
+a cross-check for a rebuild rather than a claim about one.
+
+Three wrinkles, each handled explicitly instead of being smoothed over:
+
+* **headers wrap across lines** (`native function Foo(` / `int A )`), so statements are matched, not lines — the
+  line-shaped regex the source-tree extraction uses loses those;
+* **`Core.Object` declares most of its natives as operators**, including pre-operators
+  (`native(129) static final preoperator bool ! ( bool A )`), which a function-shaped pattern does not see at all;
+* **the compiler synthesises a record per operator signature** (`Add_IntInt`, `AddEqual_VectorVector`,
+  `Concat_StrStr`, `LessLess_VectorRotator`, …), so those 112 records have no declaration to match by design and are
+  counted apart.
+
+**The residual is 22 records over 14 classes**, and it is named rather than explained: `PlayerController` has 4
+records with no declaration (the `Client*`/`Server*` pairs, where the shipped text looks truncated), `Core.Object`
+has 2 declarations with no record, `Weapon`, `GUIController`, `StargateWeapon` and `HitEffectManager` two each. The
+same two classes whose text the extraction flagged as truncated (`GameInfo`, `WarpZoneMarker`) are **not** among
+them, so truncation is a candidate cause, not a demonstrated one.
+
+Not measured: which side is right where they disagree. Settling that needs the C++ side (Phase 4), which is why the
+residual is a list of names and counts rather than a verdict.

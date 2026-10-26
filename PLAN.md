@@ -168,8 +168,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
-- [ ] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
+- [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
+      **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
+      declarations in the shipped text (256 carrying an explicit index) and 92 operator declarations, against 685
+      function records in `inventory/natives.csv` — **672 matched (98.1%) and 0 index disagreements**, so every
+      `native(N)` agrees with its record. 22 records over 14 classes still disagree (`PlayerController` 4,
+      `Core.Object` 2, four others 2 each); which side is right needs the C++ side. Marking the bodies and the
+      `src/Native` cross-links remain.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
@@ -339,6 +345,27 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, the native declarations reconcile to 98.1%, indices to 0 disagreements)
+
+- **`inventory/native_reconcile.csv`** (`tools/native-reconcile.py`, `make native-reconcile`, a nightly stage) puts the
+  shipped text and `inventory/natives.csv` side by side per class: 681 `native function` declarations (256 indexed),
+  92 operator declarations, 685 function records — **672 matched (98.1%) and 0 index disagreements**.
+- **The index check is the useful half**: every `native(N)` agrees with its record's token, and 256 indexed
+  declarations is the same index space `docs/NATIVE_VM.md` reports. A rebuild can now cross-check natives instead of
+  trusting a list.
+- **Three wrinkles had to be handled rather than smoothed**: headers that wrap across lines (statements matched, not
+  lines), `Core.Object`'s operator and pre-operator natives (a function-shaped regex misses 86 of them), and the
+  compiler's synthesised per-signature operator records (112, counted apart by design).
+- **Residual, named not explained**: 22 records over 14 classes — `PlayerController` 4 (`Client*`/`Server*` pairs
+  where the text looks truncated), `Core.Object` 2, `Weapon`/`GUIController`/`StargateWeapon`/`HitEffectManager` 2
+  each. The two classes whose text the extraction already flagged as truncated are *not* among them, so truncation
+  is a candidate cause, not a demonstrated one.
+- **Bytecode (3.7) was the alternative and is still blocked**: a full-payload search over the class record no longer
+  applies, but a function export's own layout did not fall out of UELib's reader either — the three anchor
+  experiments (ScriptText/child index anchoring, compact-vs-int32 field widths, 13 trailing function-header bytes)
+  produced no consistent parse, so the next attempt should start from the XBE's `UStruct::Serialize` rather than
+  from the payload bytes.
 
 ### Execution notes (2026-10-25, 5.6 closes from the class end)
 
