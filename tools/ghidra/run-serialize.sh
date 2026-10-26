@@ -4,7 +4,8 @@
 # `run-analysis.sh` deletes its project at the end, which is right for the symbol map and wrong for reading one
 # function: this variant keeps `build/ghidra/sg1.gpr` and adds an ExportAt postscript for the addresses that matter.
 # The addresses are the slot-11 targets from `inventory/class_serialize_slots.csv`:
-#   0x392b0 Struct, 0x39f10 Function, 0x394c0 State, 0x3a800 Class, 0x3bdc0 the class-property serializer,
+#   0x398e0 the script/token walker (slot 0xa0), 0x392b0 Struct, 0x39f10 Function, 0x394c0 State,
+#   0x3a800 Class, 0x3bdc0 the class-property serializer,
 #   0x3d580 the deleting destructor (kept as the negative: slot 3 is *not* Serialize).
 #
 # Output is game-derived and lands under $WORK (never the repository). Afterwards, one more pass reuses the kept
@@ -79,5 +80,5 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
     -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" "$ENTRY" \
         "$PWD/symbols/xbe_overrides.csv,$PWD/symbols/xbe_dispatch.csv" \
     -postScript ExportEvidence.java "$proj/evidence" \
-    -postScript ExportAt.java "0x0003d580,0x0003d5d0,0x0003d6c0,0x0003dba0,0x0003bdc0,0x0003a800" "$HOME/sg1/work/serialize" \
+    -postScript ExportAt.java "0x000398e0,0x000392b0,0x0003d580,0x0003d5d0,0x0003d6c0,0x0003dba0,0x0003bdc0,0x0003a800" "$HOME/sg1/work/serialize" \
 echo "symbols: symbols/xbox_functions.csv"

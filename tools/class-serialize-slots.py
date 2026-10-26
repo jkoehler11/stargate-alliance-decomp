@@ -23,25 +23,44 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERIALIZE_SLOT = 11
+# `UStruct::Serialize` calls a virtual at vtable +0xa0 once per script byte while it rebuilds the script buffer;
+# +0xa0 / 4 is therefore the token-walk slot, and the next question is which function each class puts there.
+SCRIPT_WALK_SLOT = 0xA0 // 4
+SLOT_COUNT = 64
 
 
-def sections(path):
-    out = []
-    for line in open(path):
-        if line.startswith("#") or not line.strip():
-            continue
-        parts = line.split("\t")
-        try:
-            out.append((parts[0], int(parts[1], 16), int(parts[3], 16), int(parts[4], 16)))
-        except (ValueError, IndexError):
-            continue
+def sections(xbe_path, tsv):
+    """(name, va, file offset, size) per section, from the XBE header; the Ghidra census is only a cross-check.
+
+    Taking section boundaries from `build/ghidra/sections.tsv` made this tool depend on a Ghidra run that is not
+    committed, so it failed in a clean worktree. The header is the authority anyway, and `tools/xbe.py` already
+    parses it.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from xbe import Xbe
+
+    parsed = Xbe(xbe_path).sections
+    out = [(s.name or "s%d" % s.index, s.va, s.foff, s.fsize) for s in parsed]
+    if tsv and os.path.isfile(tsv):
+        expected = []
+        for line in open(tsv):
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.split("\t")
+            try:
+                expected.append((int(parts[1], 16), int(parts[3], 16), int(parts[4], 16)))
+            except (ValueError, IndexError):
+                continue
+        if len(expected) != len(out):
+            print("warning: %d sections in the header, %d in %s" % (len(out), len(expected), tsv))
     return out
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--xbe", required=True)
-    ap.add_argument("--sections", default=os.path.join(ROOT, "build", "ghidra", "sections.tsv"))
+    ap.add_argument("--sections", default=os.path.join(ROOT, "build", "ghidra", "sections.tsv"),
+                    help="optional cross-check against the Ghidra census")
     ap.add_argument("--tables", default=os.path.join(ROOT, "inventory", "xbe_class_table_names.csv"))
     ap.add_argument("--symbols", default=os.path.join(ROOT, "symbols", "xbox_functions.csv"))
     ap.add_argument("-o", "--out")
@@ -50,10 +69,18 @@ def main():
     args = ap.parse_args()
 
     image = open(args.xbe, "rb").read()
-    secs = sections(args.sections)
+    secs = sections(args.xbe, args.sections)
     names = {}
+    slot_counts = {}
     for r in csv.DictReader(open(args.tables)):
         names[int(r["table_va"], 16)] = r["class"]
+    table_csv = os.path.join(ROOT, "inventory", "xbe_class_tables.csv")
+    if os.path.isfile(table_csv):
+        for r in csv.DictReader(open(table_csv)):
+            try:
+                slot_counts[int(r["table_va"], 16)] = int(r["slots"])
+            except (ValueError, KeyError):
+                continue
     starts, syms = [], {}
     for r in csv.DictReader(open(args.symbols)):
         va = int(r["address"], 16)
@@ -78,10 +105,15 @@ def main():
         off = file_offset(va)
         if off is None:
             continue
-        slots = struct.unpack_from("<32I", image, off)
+        # A table is only as long as its own slot count; reading past it lands in whatever `.rdata` holds next,
+        # which is how the first version of this reported "script_walk" values like 0x0d and 0x31.
+        length = min(slot_counts.get(va, SLOT_COUNT), SLOT_COUNT)
+        slots = struct.unpack_from("<%dI" % length, image, off) + (0,) * (SLOT_COUNT - length)
         rows.append({"class": cls, "table_va": "0x%08x" % va,
                      "serialize": "0x%08x" % slots[SERIALIZE_SLOT],
-                     "symbol": owner(slots[SERIALIZE_SLOT])})
+                     "symbol": owner(slots[SERIALIZE_SLOT]),
+                     "script_walk": ("0x%08x" % slots[SCRIPT_WALK_SLOT]) if length > SCRIPT_WALK_SLOT else "",
+                     "script_walk_symbol": owner(slots[SCRIPT_WALK_SLOT]) if length > SCRIPT_WALK_SLOT else ""})
         if args.cls and cls == args.cls:
             if args.walk:
                 for i, s in enumerate(slots):
@@ -92,16 +124,18 @@ def main():
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, "class_serialize_slots.csv")
         with open(path, "w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=["class", "table_va", "serialize", "symbol"], lineterminator="\n")
+            w = csv.DictWriter(fh, fieldnames=["class", "table_va", "serialize", "symbol",
+                                               "script_walk", "script_walk_symbol"], lineterminator="\n")
             w.writeheader()
             for r in rows:
                 w.writerow(r)
         print("wrote %s" % path)
-    distinct = collections_sorted = sorted({r["serialize"] for r in rows})
-    print("%d classes, %d distinct Serialize entry points" % (len(rows), len(distinct)))
-    for addr in distinct[:12]:
-        who = [r["class"] for r in rows if r["serialize"] == addr][:4]
-        print("  %s  %s%s" % (addr, ", ".join(who), " …" if len(who) == 4 else ""))
+    for column in ("serialize", "script_walk"):
+        distinct = sorted({r[column] for r in rows})
+        print("%d classes, %d distinct %s entry points" % (len(rows), len(distinct), column))
+        for addr in distinct[:10]:
+            who = [r["class"] for r in rows if r[column] == addr][:4]
+            print("  %s  %s%s" % (addr, ", ".join(who), " …" if len(who) == 4 else ""))
     return 0
 
 

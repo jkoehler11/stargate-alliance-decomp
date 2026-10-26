@@ -358,6 +358,23 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, the script walker is 0x398e0, and the payload widths belong to the archive)
+
+- **The `+0xa0` virtual is answered**: `Struct`, `Function` and `Class` all point at **`0x000398e0`** (1,373 bytes,
+  `UnClass.cpp`), and 327 of 492 classes have that slot at all — 134 distinct targets, lopsided (117 share
+  `0x00020f10`, 61 `0x000171c0`), which reads as inherited engine implementations rather than per-class overrides.
+  `inventory/class_serialize_slots.csv` now carries `script_walk` with the symbol it resolves to.
+- **A bug worth recording**: the first version read 64 slots from every table, so tables shorter than 40 slots had
+  their "walker" read out of whatever `.rdata` held next — it reported `0x0d` and `0x31` as code. The read is now
+  bounded by each table's declared slot count (`inventory/xbe_class_tables.csv`), and the tool takes its section
+  boundaries from the XBE header rather than from a Ghidra byproduct, which is also why it failed in a clean worktree.
+- **The third payload-layout attempt is a measured negative**: using the field order from `UStruct::Serialize`
+  (`Super`, `Children`, `FriendlyName`, line, text position, size, script) with compact indices validates for **0 of
+  3,931** `Engine.u` functions. That is consistent with the reader — those fields go through the *archive's*
+  object-reference and name methods, not through a property block's compact index — so the order is right and the
+  widths are the archive's. `FUN_000370e0` / `FUN_00037110` are the primitives to read next, then the walker's jump
+  table, which is the opcode table 3.7 needs.
+
 ### Execution notes (2026-10-26, slot 11 is Serialize — and UStruct's body validates scripts by walking them)
 
 - **The class tables are vtables and slot 11 is `Serialize`.** Comparing the 492 per-class tables against their
