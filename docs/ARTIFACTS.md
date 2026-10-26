@@ -15,6 +15,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make defaults-per-class` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
+| `inventory/class_reach.csv` | 2319 | 13 | `make class-reach` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |
 | `inventory/compile_readiness.csv` | 2319 | 10 | `make compile-readiness` |
 | `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
@@ -53,7 +54,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/source_tree_summary.csv` | 18 | 2 | `make extract-script` |
 | `inventory/speech_index.csv` | 1364 | 7 | `make release-notes` |
 | `inventory/squad_rosters.csv` | 65 | 8 | `make squad-rosters` |
-| `inventory/squad_scripts.csv` | 614 | 3 | `make map-census` |
+| `inventory/squad_scripts.csv` | 614 | 3 | `make ci` |
 | `inventory/token_map.csv` | 57 | 8 | **token-calibrate.py (no target runs it)** |
 | `inventory/ucpp_vtables.csv` | 15 | 7 | `make ucpp-vtables` |
 | `inventory/xbe_assert_residual.csv` | 6 | 9 | `make assert-residual` |
@@ -71,5 +72,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-64 artifacts, 59362 rows in total. 0 with no generator.
+65 artifacts, 61681 rows in total. 0 with no generator.
 

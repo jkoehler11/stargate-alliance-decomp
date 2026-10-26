@@ -129,11 +129,52 @@ started **after** the prototype (`docs/ORACLE_DIFF.md` `oracle-only`), not conte
 Likewise the 63 drifted + 11 divergent `Engine` classes are engine plumbing still being rewritten
 (`docs/FORK.md` §5), not cut features.
 
+## How much of the script tree the content reaches (`inventory/class_reach.csv`)
+
+The findings above are about missions and audio. This is the same question asked from the other end — for
+each of the 2,319 classes, is anything in the dump built out of it? Four independent signals, all committed:
+placed in a `.unr` (`map_actors.csv`), present in a `.sgs` snapshot (`checkpoint_summary.csv`), a base class
+of something reached (`classes.csv` supers), and named by a map's spawner (`squad_scripts.csv`).
+
+| reach | classes | share |
+|---|---:|---:|
+| placed in a map | 381 | 16.4% |
+| reached only through checkpoint state | 79 | 3.4% |
+| a base class of something reached | 93 | 4.0% |
+| **reached by content (any of the above)** | **553** | **23.8%** |
+| referenced by nothing these artifacts can see | 1,766 | 76.2% |
+
+Of the 381 placed classes, **359 appear only in mission maps and 22 only in multiplayer maps** (the DM/CTF
+pickups and `LinkedGate` of finding 4), across **141,796 actor instances**. Three independent checks land on
+numbers the system write-ups already published, which is what makes the artifact worth carrying:
+
+* **no AI controller is placed in any map** — 25 controller/bot classes, 0 placements, which is
+  `docs/systems/AI.md`'s finding arrived at from a different file;
+* **vehicles are placed** — `StaffCannon` 21, `DeathGlider` 12, `Hummvee` 9, matching `VEHICLES.md`;
+* **weapon classes are not** — 15 `StargateGame` weapon/ammo/damage classes, 1 placement, consistent with
+  `WEAPONS.md`'s "no weapon is placed in any map".
+
+The 79 checkpoint-only classes are the runtime spawns the checkpoint analysis predicted: `SVehicleTrigger`
+1,115 instances, `InventoryAttachment` 288, `AttachmentP90Weap` 266, `Binoculars` 218.
+
+**What "referenced by nothing" does not mean.** It is 76.2% of the tree, and calling that cut content would be
+the same mistake finding 7 warns about. A class is invisible to these artifacts when it is reached only
+through a *default property* — a pawn's `InventoryClasses`, a squad roster's members, an `AIScript` — and
+defaults values are game data this repository does not publish (`docs/CLASS_DEFAULTS.md` reads them, but the
+values stay in `$WORK`). Abstract bases, native shells and classes the engine names in C++ are the rest. What
+the artifact does support is the opposite direction: **553 classes are provably reachable**, and any future
+claim that a system is unused has to explain why its classes are not among them.
+
+One negative worth recording: `squad_scripts.csv`'s 601 names match **no** class in the tree. They name
+`.uc` AI scripts, not classes, so the spawner→roster link stays a defaults-level reference and cannot be
+resolved from the map side.
+
 ## What would strengthen this
 
-1. **T3D dumps of every `.unr`** (PLAN 5.2's remaining half) so an actor *instance* can be cited, not
-   just a class count — that is what would prove, for example, that no shipped map triggers a
-   particular recorded scene.
+1. **Instance-level citations** — `make t3d` writes every map's actors to `$WORK` (73 files, 121,225 actors),
+   but the *index* committed here is still class-level, so a claim can cite `SVehicleTrigger` 1,115 across the
+   nine `.sgs` files and not "the fourth trigger in `M07A`". Committing an actor index would need the actor
+   names, which are game data; the class-level reach census is what fits the rule.
 2. **Map speech scenes to map scenes** (5.3 follow-up): the speech index has 14 mission ids and 34
    scene folders; the scene-to-quest mapping does not exist yet, so "recorded dialogue that no map
    can reach" is currently only provable at mission granularity.

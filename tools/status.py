@@ -99,6 +99,10 @@ def collect():
     in_done = sum(int(r["inline_rendered"]) for r in em_rows)
     out.append(("Script", "subobject defaults rendered", in_done, in_props,
                 "inventory/class_defaults_emit.csv (inline_rendered / inline_properties, Begin Object blocks)"))
+    reach = rows_of("inventory/class_reach.csv")
+    reach_ok = sum(1 for r in reach if r["reach"] != "unreferenced")
+    out.append(("Content", "classes the shipped content reaches", reach_ok, len(reach),
+                "inventory/class_reach.csv (reach != unreferenced / classes)"))
 
     # Native track ---------------------------------------------------------
     funcs = rows_of("symbols/xbox_functions.csv")
