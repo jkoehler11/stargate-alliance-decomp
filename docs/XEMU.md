@@ -325,3 +325,32 @@ have to reconstruct it from `info registers` output. Its first end-to-end run di
 `GLib: g_source_destroy: assertion … failed` after a `pkill -9` of a previous instance, which is a harness flake
 worth knowing about rather than a logic error; the two measurements it composes (CPL/EIP sampling over QMP, title
 string over the GDB stub) were each taken by hand and are what the paragraph above reports.
+
+## Two more attempts at getting the title to run (both negative, both measured)
+
+**The debug flash is not the discriminator.** The XISO's own builder warns that a debug-kit build carries a zeroed
+XBE certificate the retail kernel refuses, so the obvious next test was the debug flash
+(`bios_debug_4627.bin`, present in the dump's `bios/`):
+
+| flash | title string in RAM | CPU samples | verdict |
+|---|---|---|---|
+| `Complex_4627.bin` (retail) | 1 hit at `0x000e0190` | 5 of 5 at `EIP=0x8001b03x`, `CPL=0` | image resident, not running |
+| `bios_debug_4627.bin` | 1 hit at `0x001be190` | 10 of 10 at `CPL=0`, `EIP` range `0x1b030..0x80024a98` | image resident, not running |
+
+The image lands at a different physical address under the debug flash — so the load path differs — but in both cases
+the CPU sits in the kernel. Nothing about the signature check is the visible blocker.
+
+**A framebuffer hunt found nothing to look at.** With no `screendump`, the next idea was to read the framebuffer out of
+RAM ourselves and decode it. A 16 MiB dump of `0x3000000..0x4000000` was scanned for a 1 MiB-aligned block with
+UI-like structure (sampled distinct colours, non-zero byte fraction): every block scored the same (300–373 distinct
+sampled colours, ~93k/128k non-zero bytes), which is heap, not a 640×480 screen. That is consistent with the CPU
+measurement — a kernel that never started the title has nothing to draw — but it does **not** establish that the
+screen is blank, because this dump cannot distinguish "no framebuffer here" from "framebuffer is elsewhere and black".
+Where it *is* has not been found: the NV2A surface registers at `0xFD000000` would say, and the mem channel can read
+them.
+
+**Where that leaves 7.2.** The disc mounts, the image loads, and the title does not execute under either flash with
+the current HDD image (the 4.5 MB one from the NAS). The remaining candidates, in the order they are worth trying:
+a fresh formattable HDD image (the kernel may refuse to run a title with no dashboard/save state), the NV2A surface
+registers (to get the framebuffer address, then decode a real screen), and a longer window with sampling inside the
+first 60 s rather than after it.
