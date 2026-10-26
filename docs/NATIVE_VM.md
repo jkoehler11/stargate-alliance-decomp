@@ -334,3 +334,42 @@ against "keeps the empty default", not abstract against concrete.
    (blocked on input automation, `docs/XEMU.md`).
 4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this
    repository may not carry (`docs/UNKNOWNS.md` U9).
+
+## `Serialize`: slot 11 of every class table, and the struct's own reader
+
+PLAN 3.7 has been blocked on where a function's bytecode lives in its export, and the two previous attempts tried to
+derive it from the payload bytes (UELib's reader order and a content anchor, both in `docs/UNKNOWNS.md` U13). The
+third route works: **read the serializer out of the image's class tables.**
+
+The 492 per-class tables in `.rdata` are vtables — a class's slots are mostly its parent's, and the ones that differ
+are the virtuals it overrides. **Slot 11 is `Serialize`**, which the decompiled bodies confirm:
+
+| class | slot 11 |
+|---|---|
+| `Const` | `0x00039270` |
+| `Struct` | **`0x000392b0`** |
+| `State` | `0x000394c0` |
+| `Function` | `0x00039f10` |
+| `Class` | `0x0003a800` |
+| `LinkerLoad` / `LinkerSave` | `0x000515d0` / `0x00050050` |
+
+`make serialize-slots` writes all 492 rows (`inventory/class_serialize_slots.csv`): **82 distinct `Serialize` entry
+points**, each one a class that overrides the parent's. `Struct`'s is the one 3.7 needed.
+
+**What `UStruct::Serialize` (`0x000392b0`) actually does**, from the decompiled body (under `$WORK`, never committed):
+
+* calls its base first (`FUN_00038dc0`), then serialises `Super` and walks `Children`;
+* serialises `FriendlyName` and **asserts it is not `NAME_None`** (`UnClass.cpp:0x2e2`);
+* serialises two integers — the source line and text position;
+* serialises the **script as a size plus that many bytes**, and on save appends a **`'G'`** marker when absent;
+* then **walks the stored script token by token** (a virtual call at vtable `+0xa0` per token) and ends with
+  `"Script serialization mismatch: Got %i, expected %i"` if the walk did not consume exactly the stored size.
+
+That last line is the useful one for 3.7: the engine itself validates a script by walking tokens, so the token table
+that the disassembler needs is the same dispatch the interpreter uses, and the size field is an *assertion* the walk
+can be checked against rather than a guess. The `'G'` marker also explains why some payloads may not decode as
+bytecode directly: a script can be stored compressed.
+
+Not measured yet: which helper the `+0xa0` virtual points at for each class, and whether any shipped function's script
+carries the `G` marker. Both are now answerable with the tables above and `tools/xemu/mem.py`-style reads — no further
+guessing at payload offsets.

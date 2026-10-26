@@ -16,6 +16,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 13 | `make class-reach` |
+| `inventory/class_serialize_slots.csv` | 492 | 4 | `make serialize-slots` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |
 | `inventory/compile_readiness.csv` | 2319 | 10 | `make compile-readiness` |
 | `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
@@ -73,5 +74,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-66 artifacts, 61777 rows in total. 0 with no generator.
+67 artifacts, 62269 rows in total. 0 with no generator.
 

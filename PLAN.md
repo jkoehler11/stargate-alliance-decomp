@@ -167,7 +167,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
       yield 15,491 rendered properties over 1,666 classes and `make defaults-tree` merges them into the extracted
       tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
-- [ ] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
+- [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
+      **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
+      class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as
+      a **size plus bytes with a `'G'` compression marker**, then **walked token by token** and validated with
+      "Script serialization mismatch: Got %i, expected %i". So the token dispatch the disassembler needs is the same
+      one the engine uses, and the size field is an assertion to check against. Next: the `+0xa0` token walker;
       produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
@@ -352,6 +357,25 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-26, slot 11 is Serialize — and UStruct's body validates scripts by walking them)
+
+- **The class tables are vtables and slot 11 is `Serialize`.** Comparing the 492 per-class tables against their
+  parents leaves five differing slots (3, 9, 10, 11, 23); slot 3 turned out to be the deleting destructor
+  (`param & 1` → operator delete), and slot 11's targets name themselves: `Struct` `0x392b0`, `State` `0x394c0`,
+  `Function` `0x39f10`, `Class` `0x3a800`, `LinkerLoad` `0x515d0`, `LinkerSave` `0x50050`. **82 distinct overrides**
+  over 492 classes, `make serialize-slots`, `inventory/class_serialize_slots.csv`.
+- **`UStruct::Serialize` is the reader 3.7 needed**, and it says what the two payload-bytes attempts could not: the
+  script is **a size plus that many bytes**, with a **`'G'` marker** appended on save when absent, and the engine then
+  **walks the script token by token** (virtual at vtable `+0xa0`) and asserts
+  `"Script serialization mismatch: Got %i, expected %i"`. The token table is therefore the same dispatch the
+  interpreter uses, and the stored size is a check rather than a guess.
+- **Two things that now look different**: a script may be stored compressed (the `'G'` marker), which would explain a
+  payload that does not decode as bytecode; and the `assert`-driven decompilation route (find the class table, read
+  slot 11, decompile) is faster than analysing payload shapes — three routes tried, this is the one that produced a
+  reading of the actual reader.
+- **Next for 3.7**: identify the `+0xa0` walker per class (it is a vtable slot too, so the same table read gives it),
+  then the opcode table falls out of that function's dispatch instead of from UELib's approximation.
 
 ### Execution notes (2026-10-26, 7.2 is blocked on a HDD image, not on the harness)
 
