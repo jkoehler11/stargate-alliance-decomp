@@ -34,6 +34,7 @@ import csv
 import importlib.util
 import os
 import re
+import statistics
 import struct
 import sys
 
@@ -901,6 +902,71 @@ def exp_size(pkg, cls):
 
 # --------------------------------------------------------------------------------------------------- main
 
+def explain(system_dir):
+    """Why a class is not emitted, measured rather than guessed.
+
+    Three outcomes exist per class: a block that accounts for itself (emitted), a candidate block that does not
+    (withheld), and no candidate at all. This mode reports the residue and the evidence for what it is —
+    payload sizes, how many names are unaccounted for, and which names they are — without printing property
+    values. It exists because three plausible explanations have been tested and rejected already: the 64-byte
+    trailer bound (relaxing it to 4,096 recovers 2 classes), the property metadata (`inventory/class_properties.csv`
+    covers all 11,493 class-owned property exports, 0 missing), and payload size (clean payloads are also small —
+    median 159 bytes against 112 for withheld).
+    """
+    supers = cd.super_map()
+    declared_all = cd.declared_properties()
+    clean_sizes, withheld_sizes, none_sizes = [], [], []
+    undeclared = collections.Counter()
+    bucket = collections.Counter()
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            cls = pkg.name(exp["name"])
+            decl = set()
+            cur, seen = cls, set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                decl |= declared_all.get(cur, set())
+                cur = supers.get(cur)
+            cands, _data = cd.candidates(pkg, ps, exp)
+            best = cd.choose(cands, decl)
+            if best is None:
+                none_sizes.append(exp["size"])
+                bucket["no candidate"] += 1
+                continue
+            if best[0][0] == 1.0:
+                clean_sizes.append(exp["size"])
+                bucket["emitted"] += 1
+                continue
+            withheld_sizes.append(exp["size"])
+            bucket["withheld"] += 1
+            bad = [n for n in best[3] if n not in decl]
+            bucket["withheld with 1 unaccounted name" if len(bad) == 1 else "withheld with 2+"] += 1
+            for n in bad:
+                undeclared[n] += 1
+
+    def describe(values):
+        values = sorted(values)
+        if not values:
+            return "n=0"
+        return ("n=%d, median %d bytes, p90 %d, max %d, under 256 bytes %d"
+                % (len(values), statistics.median(values), values[int(len(values) * 0.9)], values[-1],
+                   sum(1 for v in values if v < 256)))
+
+    print("outcomes: %s" % dict(bucket))
+    print("emitted payloads:   %s" % describe(clean_sizes))
+    print("withheld payloads:  %s" % describe(withheld_sizes))
+    print("no-candidate:       %s" % describe(none_sizes))
+    print("most frequent unaccounted names: %s" % undeclared.most_common(12))
+    print("total unaccounted name slots: %d" % sum(undeclared.values()))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("path", help="the dump's System directory")
@@ -911,6 +977,8 @@ def main():
                     help="append each block to TREE/<Pkg>/<Class>.uc (the tree `make extract-script` writes)")
     ap.add_argument("--verify", action="store_true", help="compare against the shipped text blocks")
     ap.add_argument("--check", action="store_true", help="recompute and diff against the committed CSV")
+    ap.add_argument("--explain", action="store_true",
+                    help="classify the classes that are not emitted, with the evidence for why")
     ap.add_argument("--class", dest="cls", help="limit --show to this class")
     ap.add_argument("--package", dest="pkg", help="the class's package (with --class)")
     ap.add_argument("--show", action="store_true", help="print one class's block (game data: explicit)")
@@ -930,6 +998,8 @@ def main():
                 sys.exit("inventory/class_defaults_emit.csv drifted (length %d vs %d)" % (len(new), len(old)))
         print("ok   class-defaults-emit: inventory/class_defaults_emit.csv reproduces")
         return 0
+    if args.explain:
+        return explain(args.path)
     if args.verify:
         verify(args.path, show=args.show)
         return 0

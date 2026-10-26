@@ -143,6 +143,37 @@ the property's type string* (`array<export editinline ParticleEmitter>` — two 
 the byte format was missing; a string-stripping bug was reported as a format gap. The count is in this table, and
 the earlier claim should not be quoted.
 
+## What the 543 withheld classes are, measured
+
+`tools/defaults-emit.py --explain` reports the residue without printing values. Three outcomes per class:
+
+| outcome | classes | payload median | p90 | under 256 bytes |
+|---|---:|---:|---:|---:|
+| block accounts for itself (emitted) | 1,666 | 159 B | 570 B | 1,247 |
+| candidate that does not account for itself (withheld) | 543 | 112 B | 279 B | 474 |
+| no candidate at all | 110 | 103 B | 270 B | 98 |
+
+Of the 543, **227 have exactly one unaccounted name and 316 have two or more**; there are 1,017 unaccounted name
+slots in total. Those names are dominated by **package names** — `Core` 252, `System` 189, `Engine` 73,
+`Lighting` 69 — followed by names that are struct *fields* elsewhere in the tree (`Range`, `LightColor`,
+`Movement`, `Subject`, `GenericType`, `Type`). Package names cannot be property names, which is the useful part:
+a candidate that parses a package name as a property is reading a record, not a tag stream. The plausible reading
+is that these payloads hold a small table (the bytes between the names are hash-like 4-byte values that repeat
+across classes: `b31d40ff`, `2c08ad6c`, `5911e68c`) and that the class sets no defaults at all — but the same
+signature could also be a struct block belonging to a component table, so it is **not** settled.
+
+Three explanations have been tested and rejected, which is why the residue stays labelled rather than explained:
+
+* **the 64-byte trailer bound** — relaxing it to 4,096 bytes recovers **2** classes and 4 properties;
+* **missing property metadata** — `inventory/class_properties.csv` covers **all 11,493** class-owned property
+  exports in the dump (0 missing), so an unaccounted name is not a property we failed to inventory;
+* **payload size** — clean payloads are also small (median 159 bytes, minimum 100), so a small payload is not a
+  class without defaults.
+
+What would settle it: the reader of that table in the XBE (the same route `docs/NATIVE_PROPERTIES.md` took for the
+tag format), or a class whose defaults are known from the shipped text. The shipped text cannot help — it retains a
+`defaultproperties` block for only two classes, and neither agrees with its package (below).
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds
@@ -175,8 +206,9 @@ whose block could not be located or does not account for itself.
 * **The last 18 arrays and 12 structs.** Element types that decode as neither a tagged block nor an atomic layout
   (`FaceInformation`, `PassengerWeaponStruct`, `InterpCurve` …), refused by the tiling test rather than read
   short. Some instances of the same type do decode; the difference is not yet measured per class.
-* **The 543 withheld blocks.** Whether their candidate is a truncated real block, a different record at the
-  payload's tail, or a parse coincidence is not settled per class — only counted, and excluded.
+* **The 543 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
+  not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
+  settled (see the section above for the three explanations already tested and rejected).
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the
   shipped source (verified character by character on the two blocks above that do agree), not compiled. 3.6 is
   where that gets tested.
