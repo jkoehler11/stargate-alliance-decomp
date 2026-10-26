@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: class-reach native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: class-reach rebuild native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -56,6 +56,7 @@ help:
 	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
+	@echo "  rebuild       run the rebuild pipeline stage by stage (PLAN 6.1; needs the dump)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -131,6 +132,7 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
@@ -281,6 +283,11 @@ class-defaults:
 defaults-emit:
 	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
 	@echo "wrote inventory/class_defaults_emit.csv"
+
+# The rebuild pipeline, one stage at a time (docs/REBUILD.md, PLAN 6.1). Needs the dump; the compiler stages
+# report SKIP with their reason rather than pretending.
+rebuild:
+	@tools/build.sh
 
 # The locator's own census, and the per-class rows behind it (docs/CLASS_DEFAULTS.md). Both artifacts existed
 # without a generator; these targets are what `make inventory-index` now resolves them to.
