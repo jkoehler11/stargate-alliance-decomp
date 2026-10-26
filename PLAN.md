@@ -353,6 +353,20 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, two more negatives on the title: the flash is not it, and the framebuffer was not found)
+
+- **The debug flash changes nothing that matters.** Under `bios_debug_4627.bin` the title image is still resident (title
+  string at `0x001be190` instead of `0x000e0190`, so the load path does differ) and the CPU is still in the kernel:
+  10 of 10 samples `CPL=0`. The XISO builder's warning about retail signature checks is therefore not the visible
+  blocker.
+- **The framebuffer was hunted and not found.** With `screendump` missing, the idea was to decode the screen out of
+  RAM. A 16 MiB dump of `0x3000000..0x4000000` has no UI-like block — every 1 MiB block scores the same (300–373
+  sampled colours, ~93k/128k non-zero bytes), which is heap. That fits "no title, nothing drawn", but it does not
+  prove the screen is blank; the NV2A surface registers at `0xFD000000` are what would settle the framebuffer address.
+- **Both negatives are recorded where the next session looks first** (`docs/XEMU.md`), with the three candidates worth
+  trying in order: a fresh formattable HDD image (the kernel may refuse to run a title with no dashboard/save state),
+  the NV2A registers, and sampling inside the first 60 s rather than after it.
+
 ### Execution notes (2026-10-26, the XISO mounts and the title is resident — but the CPU stays in the kernel)
 
 - **The disc is no longer a blocker.** `tools/xemu/build-xiso.sh` produced **2,258,370,560 bytes** (exactly the size
