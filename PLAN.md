@@ -353,6 +353,22 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, the boot harness gets a memory channel)
+
+- **7.2's assertion was CPU-only because the obvious channels are missing** (`screendump` absent, serial log empty,
+  `pmemsave`/`memsave` unusable over the human monitor). The GDB stub is a third channel and it works:
+  `tools/xemu/mem.py` reads guest **physical** memory, dumps a region, scans it for strings, and reports where a
+  given text occurs — measured 512 KiB in 1.7 s in 16 KiB chunks and 2 MiB scanned in 14 s, so 128 MiB would be
+  ~7 minutes and a targeted region is seconds.
+- **The one non-obvious step is worth the entry**: every read returns `E14` until the stub is switched with
+  `Qqemu.PhyMemMode:1`; without it the stub answers against the CPU's current virtual context, which looks like a
+  broken stub rather than a wrong address space.
+- **Measured proof it reads real content**: `--find xbox` reports two hits inside `0x80000..0x480000` of a booted
+  guest, and `--dump 0x1000:0x8000` writes 32 KiB. What it does *not* prove is anything about the game: the guest
+  was booted without a disc, because `dvd_path` needs a regular file and no XISO exists on the desktop.
+- **Next for 7.2**: build the XISO (`tools/xemu/build-xiso.sh`), boot the title, then assert on memory — the title
+  screen's own label in RAM is a *proxy* assertion and must be described as one, since pixels are still unreadable.
+
 ### Execution notes (2026-10-26, UNKNOWNS re-measured; the boot harness's limits written down)
 
 - **U3 is answered, and the answer changes a rule**: `UPreviewMapListClient.Created`'s index 2 is not a stray value.
