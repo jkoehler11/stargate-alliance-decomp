@@ -354,3 +354,35 @@ the current HDD image (the 4.5 MB one from the NAS). The remaining candidates, i
 a fresh formattable HDD image (the kernel may refuse to run a title with no dashboard/save state), the NV2A surface
 registers (to get the framebuffer address, then decode a real screen), and a longer window with sampling inside the
 first 60 s rather than after it.
+
+## A fresh HDD image changes nothing either, and why that is probably the answer
+
+The remaining candidate from the list above was the HDD: the 4.5 MB image from the NAS is blank, and a kernel with no
+dashboard or save state may refuse to launch a title. xemu creates its own image when the configured one is missing,
+so the test is cheap — remove the path, boot, sample the CPU **from t+0** rather than after three minutes:
+
+| configuration | CPU samples | image in RAM |
+|---|---|---|
+| blank NAS HDD, retail flash, XISO | 5 of 5 at `EIP=0x8001b03x`, `CPL=0` (t+120 s … t+180 s) | yes, `0x000e0190` |
+| blank NAS HDD, debug flash, XISO | 10 of 10 at `CPL=0` | yes, `0x001be190` |
+| **xemu-created HDD**, retail flash, XISO | **30 of 30 at `EIP=0x8001b02f..0x8001b043`, `CPL=0` (t+12 s … t+102 s)** | scan aborted: the stub closed mid-read |
+
+Three configurations, three flashes-and-images, and the CPU never leaves `0x8001b000` — the kernel's idle loop. The
+`EIP` bucket is worth remembering: **`0x8001b03x` with `CPL=0` is the kernel idling**, so a sample there is not
+evidence of progress however long it is sampled for.
+
+**The hypothesis that fits all three**, and the reason this line stops here: the kernel's launch path is
+HDD-oriented. With no dashboard on HDD it has nothing to boot, and it does not fall back to launching the disc's
+`default.xbe` — which is consistent with what the memory channel sees, an image that is *loaded* (the loader read the
+XBE from the disc) but never entered. Testing that needs a HDD image with a dashboard or a game installed to it, which
+this project does not have; nothing else about the setup is in question any more (disc mounts, XBE loads, both flashes
+behave the same).
+
+**So 7.2 is blocked on an asset, not on a tool.** The harness can now say *image resident, not running* on its own
+(`tools/xemu/bootcheck.py`), and it can read the guest's memory (`tools/xemu/mem.py`); what it cannot do is make the
+kernel launch the title without a HDD the kernel considers bootable. The next session should start from a dashboard or
+game-installed `xbox_hdd.qcow2` — not from another xemu flag.
+
+One flake, recorded so it is not mistaken for the finding: the bootcheck run in the third row died with the GDB stub
+closing mid-read (the earlier GLib `g_source_destroy` assertion is the same family). Both crashes follow a `pkill -9`
+of a previous instance; starting from a clean display session, as the first two rows did, has been reliable.

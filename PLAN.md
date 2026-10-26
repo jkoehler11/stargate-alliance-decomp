@@ -353,6 +353,20 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, 7.2 is blocked on a HDD image, not on the harness)
+
+- **A third configuration, a third kernel idle**: xemu's own freshly created HDD image, retail flash, XISO mounted —
+  30 of 30 CPU samples from t+12 s to t+102 s sit in the kernel's idle loop. Combined with the two earlier runs that
+  is *image resident, never entered* under three configurations.
+- **`EIP=0x8001b03x`, `CPL=0` is the kernel idling** and is now written down as such: sampling it for longer is not
+  evidence of progress, which is what made the earlier "the title runs" note hard to reconcile with these runs.
+- **The hypothesis that fits all three**: the launch path is HDD-oriented, so a kernel with no dashboard and no
+  installed game loads the disc's XBE (the memory channel sees it) and never enters it. Settling it needs a HDD image
+  with a dashboard or the game installed — an asset this project does not have, not a flag or a tool.
+- **So the xemu line stops here** until such an image exists. What the project gained from it: `tools/xemu/mem.py`
+  (physical memory), `tools/xemu/bootcheck.py` (three verdicts), the XISO recipe, and the two host facts that made
+  unattended runs possible.
+
 ### Execution notes (2026-10-26, two more negatives on the title: the flash is not it, and the framebuffer was not found)
 
 - **The debug flash changes nothing that matters.** Under `bios_debug_4627.bin` the title image is still resident (title
