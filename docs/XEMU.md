@@ -268,3 +268,36 @@ what `smoke.py` samples), but `pmemsave 0 0x4000000 FILE` and `memsave 0 0x40000
 `invalid char 't' in expression` — the command parses the path as part of the expression. Whether a quoted form, a
 different monitor command, or QMP's `human-monitor-command` in another form can dump guest RAM is **not established**;
 until it is, the CPU remains the only assertion this harness can make, and "which screen is up" stays unmeasured.
+
+## Reading guest memory over the GDB stub
+
+The CPU is not the only evidence channel after all. `xemu -gdb tcp::PORT` opens a QEMU GDB stub, and
+`tools/xemu/mem.py` uses it to read guest **physical** memory — which is what a boot assertion needs in order to say
+*which screen is up* rather than only that the CPU left kernel space.
+
+**The trap, measured:** every memory read fails with `E14` until the stub is told to use physical addresses.
+
+    >>> m,0x100000,0x40            # without Qqemu.PhyMemMode:1
+    E14
+    >>> Qqemu.PhyMemMode:1
+    OK
+    >>> m,0x100000,0x40
+    000000ff000000ff...
+
+Without the packet the stub answers against whatever *virtual* context the CPU happens to be in, so a read of a
+physical address returns an error that reads exactly like a broken stub. The client also interrupts first (`0x03`):
+a consistent read needs a stopped CPU.
+
+    python3 tools/xemu/mem.py --port 12345 --dump 0x1000:0x8000 -o $WORK/boot.bin
+    python3 tools/xemu/mem.py --port 12345 --scan --region 0x80000:0x200000        # counts only
+    python3 tools/xemu/mem.py --port 12345 --find "Continue" --region 0x80000:0x400000
+
+Measured on the desktop against a booted guest (`PacketSize=0x20020`): 512 KiB in 1.7 s in 16 KiB chunks from the
+Python client, 2 MiB scanned in 14 s including string extraction, so a full 128 MiB dump is about seven minutes and
+a targeted region is seconds. `--find` reports offsets only — the strings are guest data and stay out of the
+repository unless `--show` is given.
+
+**What this does not solve.** The stub reaches memory, not pixels: `screendump` is still missing and the serial log is
+still empty, so "the title screen is up" becomes "the title's label exists in RAM", which is a *proxy* assertion and
+should be described as one. And a title-screen run still needs the disc as a regular file (see the pitfall above) —
+the dump directory cannot be mounted, so step one is a XISO from `tools/xemu/build-xiso.sh`.
