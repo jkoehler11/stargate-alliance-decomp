@@ -158,7 +158,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
       writes all 2,319 classes to `$WORK/source-tree` (6,113,909 bytes, `inventory/source_tree_summary.csv`,
-      `docs/PACKAGE_SCRIPT_TEXT.md`). But **only 15 classes carry `defaultproperties`** — the defaults live in the
+      `docs/PACKAGE_SCRIPT_TEXT.md`). **The pipeline is scripted** (`tools/build.sh`, `docs/REBUILD.md`, `make rebuild`):
+      eight stages, four proven today (writer relay 18/18, rebuild identity 18/18, source tree, defaults merged into
+      it) and four SKIP with their reason (compile, repack, package check, boot). But **only 15 classes carry
+      `defaultproperties`** — the defaults live in the
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
@@ -314,7 +317,11 @@ report cites file-level evidence for each claim.
       *generation*: a compiler producing the bytes we currently copy.
 - [ ] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
       off in the XBE for dev builds. Document both paths in `docs/PACKAGE_CHECK.md`.
-- [ ] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
+- [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
+      **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
+      cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 18 of 18 byte-identical), but a
+      *build* is not, because generated payloads (the compiler's output, its timestamps and name ordering) do not
+      exist yet. 6.3 closes with stage 5 of the pipeline, not before.
 - [ ] 6.4 Produce two build targets: `rebuild-hybrid` (our scripts + original assets) and `rebuild-full`
       (our scripts + re-extracted assets) and record which missions boot in each.
 
@@ -345,6 +352,25 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, the rebuild pipeline is scripted; four stages proven, four SKIP)
+
+- **`tools/build.sh`** (`docs/REBUILD.md`, `make rebuild`, a nightly stage) runs the eight stages in order and
+  reports PASS / FAIL / SKIP with a reason. Four pass in the container against the copied packages: writer relay
+  18/18, rebuild identity 18/18 with 100% of bytes accounted for, the source tree, and the defaults merge into it.
+- **Four SKIP, each naming its blocker**: `compile` (no `ucc` matching package version 130 / licensee 4), `repack`
+  (needs compiled payloads), `package-check` (bypass decided in `docs/PACKAGE_CHECK.md`, not implemented) and `boot`
+  (needs a repacked image; the harness exists).
+- **6.3 is deliberately not claimed.** Determinism is trivially true today because every payload is copied, so
+  measuring two runs would prove nothing about a build; it closes with the compiler stage. That is the difference
+  between a green check and a real one, and the doc says it in those words.
+- **The first attempt at this stage was wrong and is worth recording**: it compared two `--rebuild --write` runs, but
+  the writer does not have a `--write` for `--rebuild` (it diffs in memory), so the stage "failed" on a missing
+  directory. It now greps the writer's own 18/18 claim, which is the evidence that actually exists.
+- **Bytecode (3.7) is still the blocked item**, and this session adds to the negative: the payload-anchor route was
+  tried from the content side too — trivial bodies (`return true;` = `04 27`) end exactly 12 bytes before the payload
+  end in 424 functions, but no consistent script-size field precedes them (11 of 1,224 candidates), so the layout is
+  not derivable from the bytes alone. The next attempt should decompile `UStruct::Serialize` in the XBE.
 
 ### Execution notes (2026-10-25, the native declarations reconcile to 98.1%, indices to 0 disagreements)
 
