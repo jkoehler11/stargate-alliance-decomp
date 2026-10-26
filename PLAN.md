@@ -287,8 +287,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
       `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
       `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
-- [ ] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
-      that shipped in a single-player prototype.
+- [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
+      that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
+      committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
+      question from the class end — **553 of 2,319 classes (23.8%) are reached by shipped content** (381 placed,
+      79 checkpoint-only, 93 bases of reached classes), 359 of them mission-only against 22 multiplayer-only, and
+      it independently reproduces three earlier write-ups (no AI controller placed, vehicles placed, weapons not).
+      The 1,766 unreferenced classes are not called cut: defaults-level references are game data this repository
+      does not publish.
 
 **Acceptance:** every asset class in `inventory/assets.csv` has a documented extraction path, and the cut-content
 report cites file-level evidence for each claim.
@@ -333,6 +339,22 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-25, 5.6 closes from the class end)
+
+- **`inventory/class_reach.csv`** (`tools/class-reach.py`, `make class-reach`, `--check` in `make ci`) joins four
+  committed artifacts into one row per class: placed in a map, present in a `.sgs` snapshot, a base of something
+  reached, or named by a spawner. **553 of 2,319 classes (23.8%) are reached by shipped content** — 381 placed
+  (359 mission-only, 22 multiplayer-only, 141,796 actors), 79 checkpoint-only, 93 bases.
+- **It reproduces three write-ups from a fourth file**, which is why it is worth carrying: 25 controller/bot
+  classes with **0** placements (AI.md), `StaffCannon` 21 / `DeathGlider` 12 / `Hummvee` 9 (VEHICLES.md), and 1 of
+  15 weapon classes placed (WEAPONS.md). Divergence would have meant one of the four was wrong.
+- **The 1,766 unreferenced classes are named, not judged.** Reaching them needs a *default property* (a pawn's
+  inventory, a roster's members, an `AIScript`), and defaults values stay in `$WORK` by the no-game-data rule, so
+  the report says what the artifact can see and refuses the cut-content reading — the same standard finding 7
+  applied to the oracle diff.
+- **Negative:** the 601 names in `squad_scripts.csv` match no class — they are `.uc` AI scripts, so the
+  spawner→roster link cannot be followed from the map side.
 
 ### Execution notes (2026-10-25, the withheld blocks: three explanations tested and rejected)
 
