@@ -358,6 +358,21 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, the walker's table is 31 opcodes, and above them it is range checks)
+
+- **The dispatch is measured**: `0x398e0` seeks to the script buffer in the object (`+0x48` bytes, `+0x4c` length), reads
+  one opcode byte, then either runs a nested walk until it returns `0x16` (`EX_EndFunctionParms`) for opcodes above
+  `0x5f`/`0x6f`, or switches through a table at **`0x00039e44`** with **31 entries, `0x00..0x1e`, one handler each**,
+  every handler inside the walker. Entry `0x1f` onward is `.rdata` (`0xcccccccc`, then ASCII) — the table is *not*
+  `0x100` entries, and reading it as such yields convincing nonsense. `make opcode-dispatch`,
+  `inventory/opcode_dispatch.csv`.
+- **Not claimed**: the handlers' operand widths. They are inside the 31 separate bodies, and inferring them from UE2
+  docs would be exactly the guessing this thread has now failed at three times. Reading the bodies is the next step.
+- **Two primitives nailed down** by the same decompilation: `0x00037110` is `operator<<(int32)` — 4 raw bytes through
+  archive vtable `+4`, no compact encoding — and `0x00038dc0` is `UField::Serialize`, which serialises `Next` (`+0x28`)
+  through archive vtable `+0x18`, the object-reference method. That is the concrete reason the compact-index payload
+  layout could not work, now stated as a fact about the archive rather than a suspicion.
+
 ### Execution notes (2026-10-26, the script walker is 0x398e0, and the payload widths belong to the archive)
 
 - **The `+0xa0` virtual is answered**: `Struct`, `Function` and `Class` all point at **`0x000398e0`** (1,373 bytes,
