@@ -387,6 +387,39 @@ reading past the end lands in whatever `.rdata` holds next, which is how the fir
 `inventory/class_serialize_slots.csv` now carries `serialize` **and** `script_walk` (with the symbol each resolves to),
 so "which function should the disassembler model?" has a per-class answer in a committed artifact.
 
+### The walker's dispatch: 31 opcodes with a handler each, and range checks above them
+
+Decompiling the walker (`0x000398e0`) shows how a script is skipped:
+
+1. seek the archive to the script buffer (`FUN_00037040`), which lives **in the object** at `+0x48` with its length at
+   **`+0x4c`** — the same two fields `UStruct::Serialize` filled from the payload;
+2. read **one byte** — the opcode — and advance;
+3. `if (0x6f < op)`, `if (0x5f < op)`: two range checks, each running a **nested walk** until the nested walk returns
+   **`0x16`** (`EX_EndFunctionParms`);
+4. otherwise `switch (op)` through the table at **`0x00039e44`**.
+
+That table has **31 entries, opcodes `0x00..0x1e`, one handler each**, and every handler is inside the walker
+(`0x399a7..0x39e38`). Entry `0x1f` onwards is **not code**: the table simply ends and `.rdata` continues with
+`0xcccccccc` and then ASCII. So opcodes at or above `0x1f` are skipped **by the range checks, not by the table** —
+which is worth writing down, because reading the table as if it were `0x100` entries produces plausible-looking
+garbage.
+
+`make opcode-dispatch` writes `inventory/opcode_dispatch.csv` (opcode, handler address, handler size). It finds the
+table from the walker in the committed slot CSV, so it reruns byte-identically.
+
+What it deliberately does **not** claim: each handler's operand width. The handlers differ (`0x00` and `0x01` are the
+local/instance-variable forms, `0x09`..`0x12` the jump and constant forms), but the width is inside each handler's own
+body, and the honest next step is to read the 31 bodies rather than infer widths from UE2 folklore.
+
+Two primitives the same run identified, because the widths turned out to belong to the archive:
+
+* **`0x00037110`** is `operator<<(int32)`: it bumps a clock, calls a callback if the low 16 bits of it are non-zero,
+  then serialises **exactly 4 bytes** through archive vtable **`+4`**. So integers in a payload are raw little-endian
+  32-bit — no compact encoding.
+* **`0x00038dc0`** is `UField::Serialize`: it calls `UObject::Serialize`, then serialises `Next` (at `+0x28`) through
+  archive vtable **`+0x18`** — the *object-reference* method, not a property block's compact index, which is why the
+  payload-layout attempt below failed.
+
 ### Why the payload-layout attempts failed, now that the reader is known
 
 The third attempt at finding the script inside a `UFunction` payload used the field order read out of
