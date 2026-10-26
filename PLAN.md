@@ -353,6 +353,24 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, UNKNOWNS re-measured; the boot harness's limits written down)
+
+- **U3 is answered, and the answer changes a rule**: `UPreviewMapListClient.Created`'s index 2 is not a stray value.
+  Exactly two classes carry a token in the record without an index in the text — `Core.Object` (160 vs 143, mostly
+  the compiler-synthesised operator records) and that class (1 vs 0). So the record's token is authoritative and the
+  source's index is not exhaustive: a rebuild must read indices from the packages, never from the text.
+- **U1 gets its cross-check**: 256 declarations spell an index out, 274 records carry a token, and all 256 agree with
+  their record (0 disagreements) — the 18-record difference is the U3 pattern, not a parser artefact.
+- **U13 is new and is where 3.7 should start.** Two measured negatives: UELib's `UStruct.Deserialize` order validates
+  for 1 of 3,931 `Engine.u` functions, and the content-side anchor (`04 27` = `return true;`, exactly 12 bytes before
+  the payload end in 424 functions) has no consistent size field before it (11 of 1,224). Next route: decompile
+  `UStruct::Serialize`, or find the loader's store to `[reg+0x4c]` (`Function->Script`).
+- **Three host facts that cost this session their time**, now in `docs/XEMU.md`: the GL context needs the live
+  session's Xwayland cookie (`XAUTHORITY=/run/user/1000/xauth_*`, not `$DISPLAY` alone); `dvd_path` must be a regular
+  file, so a title-screen run needs a XISO from `tools/xemu/build-xiso.sh` (none exists today) and a directory mount
+  silently idles at the shell; and `pmemsave`/`memsave` are not usable as documented over this xemu's HMP, so guest
+  memory cannot yet be read and the CPU stays the only assertion.
+
 ### Execution notes (2026-10-25, the rebuild pipeline is scripted; four stages proven, four SKIP)
 
 - **`tools/build.sh`** (`docs/REBUILD.md`, `make rebuild`, a nightly stage) runs the eight stages in order and
