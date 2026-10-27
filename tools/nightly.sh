@@ -73,6 +73,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # Dump-gated for the same reason: the declarations live in the packages.
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
+    # Dump-gated: the flags live in the packages. Regenerate into scratch and diff, so a drift fails here.
+    stage function-flags sh -c "python3 tools/function-flags.py \
+        --packages '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System' -o '$out/flags' \
+        && cmp '$out/flags/function_flags.csv' inventory/function_flags.csv"
     # Dump-gated as well: both opcode tables live in the image. Regenerate into scratch and diff, so a drift
     # fails here rather than rewriting a committed artifact (`make ci` checks only the table's consistency).
     stage opcode-table sh -c "python3 tools/opcode-table.py \
