@@ -99,9 +99,48 @@ Two findings from parsing all four (`inventory/lipsinc_phonemes.csv`, 2,580 rows
 * the vectors are almost one-hot: a phoneme maps to one target at 0.85 (or 0.7 for `F`/`V`, 0.2 for `G`/`K`) with the
   rest at zero, which is why 15 targets are enough for 43 phonemes.
 
+## The runtime side, located
+
+The loader is native, but it is not anonymous: the module logs through **43 `[LIPSinc]:` strings**, and the image
+still carries its own source path as an ASCII assert —
+`\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\LIPSincSupport.cpp`. `tools/lipsinc-runtime.py`
+(`make lipsinc-runtime`, `inventory/lipsinc_runtime.csv`, `--check` in `make ci`) finds every `push <string>` of those
+43 strings and attributes it to the function that contains it: **19 functions, 23,255 bytes**, in
+`0x000b24f0`–`0x000ba750` plus three in the actor path (`0x00225cd0`, `0x00228730`, `0x0022e090`).
+
+Nine of them name themselves, which is the convention this project names by (`docs/CONVENTIONS.md`: the name comes
+from the string or assert site):
+
+| address | bytes | name | the string that says so |
+|---|---|---|---|
+| `0x000ba750` | 1,860 | `LIPSincInitLevel` | `[LIPSinc]: LIPSincInitLevel`, `Prefix: %s`, `Searching for .lad files... %s`, `Num Controllers: %i` |
+| `0x000ba290` | 563 | `LIPSincInitGame` | `[LIPSinc]: LIPSincInitGame` |
+| `0x000ba520` | 370 | `LIPSincShutdownLevel` | `[LIPSinc]: LIPSincShutdownLevel`, `UnBinding Controller for %s` |
+| `0x000ba720` | 39 | `LIPSincShutdownGame` | `[LIPSinc]: LIPSincShutdownGame` |
+| `0x000b9e90` | 1,015 | `LIPSincLoadDBFromDisk` | `[LIPSinc]: LoadLIPSincDBFromDisk with %i files` |
+| `0x000b8340` | 4,977 | `LIPSincReadAnimFile` | `Read Track %s`, `ERROR: Couldn't load file %s.`, the LTF version/validity errors |
+| `0x000b7260` | 4,290 | `LIPSincReadControllerFile` | `Parsed %s`, `Attempt to import an obsolete .LBP file!`, the bone-linkup warnings |
+| `0x00225cd0` | 164 | `LIPSincLinkBones` | `Linking Bones for %s` |
+| `0x00228730` | 521 | `LIPSincPlayAnim` | `PlayLIPSincAnim for %s` |
+
+The other ten carry only pose/transform warnings (`WARNING: pDefBonePose`, `pTargetTransform`, `pBaseTransform`,
+`ERROR -> bone %d doesn't exist in base set!`) or the key-lookup assert
+`ValuesAtTime, m_nEndTime = %i, time = %f`, so they are located but deliberately unnamed: a warning does not name a
+function the way a lifecycle or I/O log line does.
+
+**What this says about the records.** `LIPSincInitLevel` enumerates `L"*.lad"` under a prefix and hands each file to
+the two readers above; `LIPSincReadAnimFile` is the *track* reader (`Read Track %s`), which is what a per-bone
+keyframe stream is. The 32-byte stride, the `-1.0f` at bytes 24–27 and the three-name trailer therefore belong to a
+track-and-keys container, not to a flat frame dump — which is consistent with `ValuesAtTime` walking a key list with
+an `m_nEndTime`, and with the measured fact that file size tracks clip length rather than channel count.
+
+The names are **not applied to the symbol map yet**: that map is regenerated from `symbols/xbe_overrides.csv` by a
+Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is the evidence list for it.
+
 ## Status
 
 - Header + channel table: parsed in all 8 files, no exceptions.
 - Payload: strided record stream measured (32 bytes), field meanings not established.
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
+- Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.

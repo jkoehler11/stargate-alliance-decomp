@@ -1,0 +1,20 @@
+address,size,strings,proposed_name
+0x000b24f0,235,"ValuesAtTime, m_nEndTime = %i, time = %f",
+0x000b2700,662,WARNING: pDefBonePose | WARNING: pDefaultTransform | WARNING: pPoseTransform,
+0x000b29a0,766,WARNING: pDefBonePose | WARNING: pDefaultTransform | WARNING: pPoseTransform,
+0x000b2d70,828,WARNING: pTargetTransform,
+0x000b3880,1278,ERROR -> bone %d doesn't exist in base set! | WARNING: pBaseTransform | WARNING: pDefPose | WARNING: pDefaultTransform,
+0x000b3df0,107,ERROR -> %s not found in list!,
+0x000b4930,614,WARNING: NOT VALID CONTROLLER! | is valid controller,
+0x000b5f10,1244,WARNING: pTargetTransform,
+0x000b7260,4290,Attempt to import an obsolete .LBP file! | Look at linked up correctly. | Parsed %s | WARNING: Bone linkup for look at failed! | WARNING: LIPSinc bone linkup failed!,LIPSincReadControllerFile
+0x000b8340,4977,ERROR: %s is a more recent LTF format.  This version can only read version %f and lower LTF files. | ERROR: %s is not a valid LTF file! | ERROR: Couldn't load file %s. | Parsed %s | Read Track %s,LIPSincReadAnimFile
+0x000b9900,630,Memory Used: %i bytes | Stripped %i Animations,
+0x000b9e90,1015,%s | LoadLIPSincDBFromDisk with %i files,LIPSincLoadDBFromDisk
+0x000ba290,563,Found files... | LIPSincInitGame,LIPSincInitGame
+0x000ba520,370,LIPSincShutdownLevel | UnBinding Controller for %s,LIPSincShutdownLevel
+0x000ba720,39,LIPSincShutdownGame,LIPSincShutdownGame
+0x000ba750,1860,Found files... | LIPSincInitLevel | Num Controllers: %i | Prefix: %s | Searching for .lad files... %s | Total Controller memory used: %i bytes,LIPSincInitLevel
+0x00225cd0,164,Linking Bones for %s | NumAnimations = %i | WARNING: LIPSinc bone linkup failed!,LIPSincLinkBones
+0x00228730,521,Found at %i | Just started at %f for Actor %s and MeshInstance %s: Volume: %f Radius: %f Pitch: %f | Looking up animation %s | PlayLIPSincAnim for %s,LIPSincPlayAnim
+0x0022e090,14676,bAnimDone for %s,
