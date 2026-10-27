@@ -77,8 +77,8 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/xbe_module_summary.csv` | 13 | 4 | `make inventory` |
 | `inventory/xbe_modules.csv` | 176 | 7 | `make inventory` |
 | `symbols/xbe_dispatch.csv` | 356 | 3 | `make natives` |
-| `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
+| `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-73 artifacts, 77622 rows in total. 0 with no generator.
+73 artifacts, 77631 rows in total. 0 with no generator.
 
