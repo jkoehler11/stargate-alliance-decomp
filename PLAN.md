@@ -363,6 +363,24 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-27, the LIPSinc module is 19 functions and nine of them name themselves)
+
+- **The runtime side is located.** The five `*LIPSincAnim` natives carry no index, but the module logs through 43
+  `[LIPSinc]:` strings and the image still carries `Engine\Src\LIPSincSupport.cpp` as an assert path.
+  `tools/lipsinc-runtime.py` (`make lipsinc-runtime`, `inventory/lipsinc_runtime.csv`, `--check` in `make ci`)
+  attributes them to **19 functions / 23,255 bytes** in `0x000b24f0`–`0x000ba750` plus three in the actor path.
+- **Nine name themselves** — `LIPSincInitLevel` (`0xba750`), `LIPSincInitGame`, `LIPSincShutdownLevel`,
+  `LIPSincShutdownGame`, `LIPSincLoadDBFromDisk`, `LIPSincReadAnimFile` (`0x8340`: `Read Track %s` and the LTF
+  version/validity errors), `LIPSincReadControllerFile` (`0x7260`: `Parsed %s`, `Attempt to import an obsolete .LBP
+  file!`), `LIPSincLinkBones`, `LIPSincPlayAnim`. The other ten carry only pose/transform warnings, so they are
+  located and deliberately unnamed.
+- **What it says about U4's records**: `LIPSincInitLevel` enumerates `L"*.lad"` and hands each file to those two
+  readers, and `ValuesAtTime, m_nEndTime = %i, time = %f` (`0xb24f0`) says the container is per-bone **key lists with
+  an end time** — which is consistent with the 32-byte stride and the `-1.0f` sentinel measured in the previous note,
+  and with file size tracking clip length rather than channel count.
+- **The rename is deliberately not in this PR**: the symbol map only changes in a Ghidra run, so the names are
+  evidence for that run, not a hand-edit of a generated artifact. The CSV is the list.
+
 ### Execution notes (2026-10-27, the LIPSinc containers are strided records and the phoneme maps are text)
 
 - **U4 narrows to field meanings.** `tools/lipsinc-index.py` (`make lipsinc-index`, `--check` in `make ci`, three

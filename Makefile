@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -62,6 +62,7 @@ help:
 	@echo "  opcode-table-check  validate the committed table with no image (what make ci runs)"
 	@echo "  function-flags  every function's FunctionFlags from its export payload (docs/systems/NETWORK.md; needs the dump)"
 	@echo "  lipsinc-index  the LIPSinc .map phonemes and .lad containers (docs/formats/lipsinc-lad.md; needs the dump)"
+	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -320,6 +321,11 @@ serialize-slots:
 opcode-table:
 	@$(PYTHON) tools/opcode-table.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/opcode_table.csv"
+
+# The LIPSinc support module in the image, one row per function with the log string that names it.
+lipsinc-runtime:
+	@$(PYTHON) tools/lipsinc-runtime.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/lipsinc_runtime.csv"
 
 # The LIPSinc lip-sync directory: the text phoneme maps and the .lad containers (docs/formats/lipsinc-lad.md).
 lipsinc-index:

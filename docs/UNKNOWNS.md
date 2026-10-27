@@ -137,6 +137,17 @@ What is still open: what the three floats mean (position? rotation?), whether th
 the trailer's exact length. The route is unchanged — the LIPSinc authoring tool's notes, or the native loader from
 4.8 — but the file is no longer opaque, and `--check` in `make ci` keeps the measurement honest.
 
+**The runtime side is located too (same session).** The loader is native but not anonymous: the module logs through 43
+`[LIPSinc]:` strings and the image carries `Engine\Src\LIPSincSupport.cpp` as an assert path.
+`tools/lipsinc-runtime.py` (`inventory/lipsinc_runtime.csv`) attributes 19 functions to those strings, and nine name
+themselves — `LIPSincInitLevel` (`0xba750`), `LIPSincInitGame`, `LIPSincShutdownLevel`, `LIPSincShutdownGame`,
+`LIPSincLoadDBFromDisk`, `LIPSincReadAnimFile` (`0x8340`, the *track* reader: `Read Track %s`, the LTF version
+errors), `LIPSincReadControllerFile` (`0x7260`, `Parsed %s` and `Attempt to import an obsolete .LBP file!`),
+`LIPSincLinkBones`, `LIPSincPlayAnim`. `LIPSincInitLevel` enumerates `L"*.lad"` and hands each file to the two
+readers, and `ValuesAtTime, m_nEndTime = %i, time = %f` in `0xb24f0` says the container is per-bone key lists with an
+end time — which is what the 32-byte stride and the `-1.0f` sentinel are. The names are evidence for a rename, not
+applied: the symbol map only changes in a Ghidra run.
+
 ## U5. Which script path writes and reads a `.sgs`
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's

@@ -73,6 +73,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # Dump-gated for the same reason: the declarations live in the packages.
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
+    # Dump-gated: the module is in the image. Regenerate and diff.
+    stage lipsinc-runtime sh -c "python3 tools/lipsinc-runtime.py \
+        --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
+        && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
     # Dump-gated: the lip-sync directory is on disk. Regenerate into scratch and diff all three artifacts.
     stage lipsinc-index sh -c "python3 tools/lipsinc-index.py \
         --dir '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData' -o '$out/lipsinc' \
