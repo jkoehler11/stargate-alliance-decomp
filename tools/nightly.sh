@@ -73,6 +73,11 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # Dump-gated for the same reason: the declarations live in the packages.
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
+    # Dump-gated as well: both opcode tables live in the image. Regenerate into scratch and diff, so a drift
+    # fails here rather than rewriting a committed artifact (`make ci` checks only the table's consistency).
+    stage opcode-table sh -c "python3 tools/opcode-table.py \
+        --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/opcode' \
+        && cmp '$out/opcode/opcode_table.csv' inventory/opcode_table.csv"
     # The rebuild pipeline's dump-side stages (docs/REBUILD.md); the compiler stages SKIP with a reason.
     stage rebuild SG1_DUMP="$SG1_DUMP" REBUILD_OUT="$out/rebuild" tools/build.sh --dry-run
 else

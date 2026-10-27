@@ -1,0 +1,257 @@
+opcode,group,handler,name,pattern,fixed_bytes,source,note
+0x00,0,0x00039c0e,LocalVariable,bytes:4,4,map,"object/name reference, 4 bytes"
+0x01,0,0x00039c0e,InstanceVariable,bytes:4,4,map,"object/name reference, 4 bytes"
+0x02,0,0x00039c0e,DefaultVariable,bytes:4,4,map,"object/name reference, 4 bytes"
+0x03,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; this build rejects it too
+0x04,1,0x00039dec,Return,expr,0,map,one nested token
+0x05,2,0x00039d12,Switch,"bytes:1,expr",1,map,case-count byte then the expression
+0x06,3,0x00039a14,Jump,bytes:2,2,map,code offset
+0x07,4,0x00039cce,JumpIfNot,"bytes:2,expr",2,map,code offset then the condition
+0x08,5,0x00039e38,Stop,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x09,6,0x00039d98,Assert,"bytes:2,expr",2,map,code offset then the expression
+0x0a,7,0x00039d26,Case,"bytes:2,case",2,map,"value, then a nested token unless the value is 0xffff"
+0x0b,5,0x00039e38,Nothing,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x0c,8,0x00039d4e,LabelTable,labeltable,0,map,8-byte entries until a zero dword
+0x0d,9,0x000399a7,GotoLabel,expr,0,map,one nested token
+0x0e,9,0x000399a7,EatString,expr,0,map,one nested token
+0x0f,10,0x00039b55,Let,"expr,expr",0,map,"two nested tokens (lvalue, value)"
+0x10,10,0x00039b55,DynamicArrayElement,"expr,expr",0,map,"two nested tokens (lvalue, value)"
+0x11,11,0x00039b3d,New,"expr,expr,expr,expr",0,map,four nested tokens; agrees with UELib's NewToken
+0x12,12,0x00039af0,ClassContext,"expr,bytes:3,expr",3,map,"expression, 2-byte offset, byte, expression"
+0x13,13,0x00039de1,MetaClassCast,"bytes:4,expr",4,map,reference then the expression
+0x14,10,0x00039b55,LetBool,"expr,expr",0,map,"two nested tokens (lvalue, value)"
+0x15,30,0x00039e1f,LineNumber,bad-token,0,map,UELib maps LineNumber for UE2 builds; this build rejects it (no line-number token is emitted)
+0x16,5,0x00039e38,EndFunctionParms,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x17,5,0x00039e38,Self,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x18,6,0x00039d98,Skip,"bytes:2,expr",2,map,code offset then the expression
+0x19,12,0x00039af0,Context,"expr,bytes:3,expr",3,map,"expression, 2-byte offset, byte, expression"
+0x1a,10,0x00039b55,ArrayElement,"expr,expr",0,map,"two nested tokens (lvalue, value)"
+0x1b,14,0x00039a9b,VirtualFunction,"bytes:4,parms",4,map,name reference then the parameter list
+0x1c,15,0x00039a70,FinalFunction,"bytes:4,parms",4,map,function reference then the parameter list
+0x1d,16,0x00039b79,IntConst,bytes:4,4,map,int32
+0x1e,17,0x00039b96,FloatConst,bytes:4,4,map,float32
+0x1f,18,0x00039bb3,StringConst,str,0,map,NUL-terminated ANSI string
+0x20,0,0x00039c0e,ObjectConst,bytes:4,4,map,"object/name reference, 4 bytes"
+0x21,19,0x00039e04,NameConst,bytes:4,4,map,name reference
+0x22,20,0x00039c29,RotationConst,bytes:12,12,map,three int32
+0x23,21,0x00039c6e,VectorConst,bytes:12,12,map,three float32
+0x24,22,0x00039cb3,ByteConst,bytes:1,1,map,one byte
+0x25,5,0x00039e38,IntZero,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x26,5,0x00039e38,IntOne,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x27,5,0x00039e38,True,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x28,5,0x00039e38,False,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x29,0,0x00039c0e,NativeParm,bytes:4,4,map,"object/name reference, 4 bytes"
+0x2a,5,0x00039e38,NoObject,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x2b,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken from CastStringSizeTokenDeprecated on; rejected here too
+0x2c,22,0x00039cb3,IntConstByte,bytes:1,1,map,one byte
+0x2d,5,0x00039e38,BoolVariable,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x2e,13,0x00039de1,DynamicCast,"bytes:4,expr",4,map,reference then the expression
+0x2f,23,0x00039ce4,Iterator,"expr,bytes:2",2,map,expression then the code offset
+0x30,5,0x00039e38,IteratorPop,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x31,5,0x00039e38,IteratorNext,,0,map,"no operand bytes, no children: the handler returns the opcode"
+0x32,24,0x00039dc1,StructCmpEq,"bytes:4,expr,expr",4,map,reference then two nested tokens
+0x33,24,0x00039dc1,StructCmpNe,"bytes:4,expr,expr",4,map,reference then two nested tokens
+0x34,25,0x00039be0,UnicodeStringConst,utf16,0,map,NUL-terminated UTF-16 string
+0x35,30,0x00039e1f,RangeConst,bad-token,0,map,"UELib maps RangeConst only for BuildGeneration.UE2; rejected here, so this build is not that generation"
+0x36,13,0x00039de1,StructMember,"bytes:4,expr",4,map,reference then the expression
+0x37,9,0x000399a7,DynamicArrayLength,expr,0,map,one nested token
+0x38,14,0x00039a9b,GlobalFunction,"bytes:4,parms",4,map,name reference then the parameter list
+0x39,26,0x00039a05,PrimitiveCast,"bytes:1,expr",1,map,cast type byte then the expression
+0x3a,30,0x00039e1f,ReturnNothing,bad-token,0,map,"UELib: ReturnNothing; this build rejects it, and its payloads end `04 0b 47` instead"
+0x3b,30,0x00039e1f,DelegateCmpEq,bad-token,0,map,UELib: DelegateCmpEq; delegates are not accepted by this build's walker
+0x3c,30,0x00039e1f,DelegateCmpNe,bad-token,0,map,UELib: DelegateCmpNe; not accepted
+0x3d,30,0x00039e1f,DelegateFunctionCmpEq,bad-token,0,map,UELib: DelegateFunctionCmpEq; not accepted
+0x3e,30,0x00039e1f,DelegateFunctionCmpNe,bad-token,0,map,UELib: DelegateFunctionCmpNe; not accepted
+0x3f,30,0x00039e1f,EmptyDelegate,bad-token,0,map,UELib: EmptyDelegate; not accepted
+0x40,27,0x00039b49,DynamicArrayInsert,"expr,expr,expr",0,map,three nested tokens
+0x41,27,0x00039b49,DynamicArrayRemove,"expr,expr,expr",0,map,three nested tokens
+0x42,28,0x00039a1a,DebugInfo,bytes:13,13,map,three int32 then one byte
+0x43,29,0x00039ac1,DelegateFunction,"bytes:4,expr",4,map,reference then the expression
+0x44,19,0x00039e04,DelegateProperty,bytes:4,4,map,name reference
+0x45,10,0x00039b55,LetDelegate,"expr,expr",0,map,"two nested tokens (lvalue, value)"
+0x46,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; rejected here too
+0x47,5,0x00039e38,EndOfScript,,0,map,"UELib: EndOfScript; no operand bytes, and it is the third byte of the payload epilogue"
+0x48,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x49,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4a,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4b,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4c,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4d,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4e,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x4f,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x50,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x51,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x52,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x53,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x54,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x55,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x56,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x57,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x58,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x59,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5a,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5b,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5c,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5d,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5e,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x5f,30,0x00039e1f,,bad-token,0,range,above the table (cmp 0x47 / ja) the walker logs the bad-token message
+0x60,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x61,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x62,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x63,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x64,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x65,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x66,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x67,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x68,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x69,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6a,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6b,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6c,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6d,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6e,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x6f,,,,"bytes:1,parms",1,range,0x60..0x6f: one byte then a nested walk until 0x16
+0x70,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x71,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x72,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x73,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x74,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x75,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x76,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x77,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x78,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x79,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7a,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7b,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7c,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7d,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7e,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x7f,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x80,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x81,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x82,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x83,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x84,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x85,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x86,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x87,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x88,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x89,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8a,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8b,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8c,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8d,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8e,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x8f,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x90,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x91,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x92,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x93,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x94,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x95,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x96,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x97,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x98,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x99,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9a,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9b,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9c,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9d,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9e,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0x9f,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xa9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xaa,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xab,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xac,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xad,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xae,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xaf,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xb9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xba,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xbb,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xbc,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xbd,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xbe,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xbf,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xc9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xca,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xcb,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xcc,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xcd,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xce,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xcf,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xd9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xda,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xdb,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xdc,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xdd,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xde,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xdf,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xe9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xea,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xeb,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xec,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xed,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xee,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xef,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf0,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf1,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf2,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf3,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf4,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf5,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf6,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf7,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf8,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xf9,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xfa,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xfb,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xfc,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xfd,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xfe,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"
+0xff,,,,parms,0,range,"above 0x6f: no byte, a nested walk until 0x16"

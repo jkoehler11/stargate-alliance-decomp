@@ -409,5 +409,27 @@ that writes `ScriptStorageSize` and the script bytes, and it is reachable throug
 already named (`inventory/xbe_class_tables.csv`). Second route, cheaper if it works: find the *store* to `[reg+0x4c]`
 in the loader with a Ghidra script and read backwards from it.
 
+**Third session, 2026-10-26: the trailer is identified, the size field is not.** `docs/BYTECODE.md` lands the opcode
+table, and its U13 probe (`python3 tools/uscript-dis.py --payloads System/Engine.u`, counts only, no payload bytes)
+narrows this entry. Over `Engine.u`'s 3,842 `Function` exports with a payload of 16 bytes or more:
+
+* **`FunctionFlags` is the dword at `payload_end-4`**: 439 of the 444 exports that join to `inventory/natives.csv` by
+  (class, function) carry exactly that file's `function_flags`, so the last four payload bytes are flags and not
+  script.
+* **the script ends 7 bytes before the payload end** in most payloads: `04 0b 47` (`Return`, `Nothing`,
+  `EndOfScript`) sits at `payload_end-10..end-8` in **3,197 of 3,842**. So the payload is
+  `[header][script][3 bytes][flags]`, and only the header's field order and the script's length encoding are missing.
+* **a size field in front of the script is not a plain int32 there**: a dword whose value equals the remaining length
+  exists in **937** of the 3,842, and 518 of those are the 3-byte epilogue-only body; for a longer script no such
+  dword is at that position.
+* **and the walk cannot find the start instead**: requiring a token walk from a candidate offset that lands exactly on
+  `payload_end-7` leaves **3,623 of 3,826** payloads with more than one candidate start (a scratch probe, not carried
+  by the committed tool), so a self-delimiting walk is not a locator either.
+
+**What would settle it, now that the tail is known.** The remaining question is only how the script's length is
+encoded in front of it, so read the *load* side rather than the payload bytes: `LinkerLoad`'s own `Serialize`
+(`0x000515d0`, slot 11 of the `LinkerLoad` table in `inventory/class_serialize_slots.csv`) is the code that fills
+`Function->Script` and its size, and the store to `[reg+0x4c]` is the anchor to read backwards from.
+
 **Why it has not been attempted from those two routes yet.** Two sessions tried the payload-bytes route first; this
 entry exists so the third starts from the reader, not from another alignment guess.

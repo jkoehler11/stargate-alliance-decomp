@@ -11,7 +11,7 @@ RESIZE_BYTES ?= 64
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: class-reach rebuild serialize-slots opcode-dispatch native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: class-reach rebuild serialize-slots opcode-table native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -58,7 +58,8 @@ help:
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  rebuild       run the rebuild pipeline stage by stage (PLAN 6.1; needs the dump)"
 	@echo "  serialize-slots  every class's Serialize override from its class table (PLAN 3.7; needs the dump)"
-	@echo "  opcode-dispatch  the walker's per-opcode handler table (PLAN 3.7; needs the dump)"
+	@echo "  opcode-table  the walker's opcode map and per-group operand rules (PLAN 3.7; needs the dump)"
+	@echo "  opcode-table-check  validate the committed table with no image (what make ci runs)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -313,10 +314,15 @@ serialize-slots:
 	@$(PYTHON) tools/class-serialize-slots.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/class_serialize_slots.csv"
 
-# The one-opcode-at-a-time dispatch inside the script walker (docs/NATIVE_VM.md, PLAN 3.7). Needs the image.
-opcode-dispatch:
-	@$(PYTHON) tools/opcode-dispatch.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
-	@echo "wrote inventory/opcode_dispatch.csv"
+# The script walker's opcode map and per-group operand rules (docs/BYTECODE.md, PLAN 3.7). Needs the image.
+opcode-table:
+	@$(PYTHON) tools/opcode-table.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/opcode_table.csv"
+
+# The same table's consistency, and the disassembler that consumes it. Committed files only.
+opcode-table-check:
+	@$(PYTHON) tools/opcode-table.py --check
+	@$(PYTHON) tools/uscript-dis.py --selftest
 
 # Every class against the content that instantiates it (docs/CUT_CONTENT.md, PLAN 5.6). Committed CSVs only.
 class-reach:

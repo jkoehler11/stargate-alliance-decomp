@@ -10,6 +10,8 @@ because it is what goes stale silently:
   3. the published symbol map agrees with the function map and the class tables it was built from;
   4. regenerating the symbol map reproduces the committed one byte for byte;
   5. regenerating `docs/NATIVE.md` and `inventory/xbe_functions_by_module.csv` reproduces them;
+  5b. the opcode table is the table `tools/opcode-table.py` defines, and the disassembler splits the
+     streams `docs/BYTECODE.md` documents;
   6. when a dump is present (`SG1_DUMP`), every symbol address is inside one of the image's sections.
 
 Checks 1-5 are pure stdlib and run anywhere. Check 6 skips with a printed reason, because a CI runner
@@ -230,6 +232,19 @@ def check_docs_regenerate():
                                "inventory/xbe_functions_by_module.csv")
 
 
+def check_opcode_table():
+    """The opcode table must be internally consistent and the disassembler must split the known streams."""
+    name = "opcode-table"
+    for argv in ([sys.executable, repo("tools", "opcode-table.py"), "--check"],
+                 [sys.executable, repo("tools", "uscript-dis.py"), "--selftest"]):
+        r = subprocess.run(argv, capture_output=True, text=True, cwd=ROOT)
+        line = (r.stdout or r.stderr).strip().splitlines()
+        if r.returncode != 0:
+            fail(name, line[-1] if line else "exit %d" % r.returncode)
+            return
+    ok(name, "256 opcodes, 31 groups, 11 streams split, 4 refusals honoured")
+
+
 def check_addresses_in_image():
     """Every symbol inside a section of the image, when there is an image."""
     name = "addresses-in-image"
@@ -256,6 +271,7 @@ def main():
     check_symbol_map()
     check_map_regenerates()
     check_docs_regenerate()
+    check_opcode_table()
     check_addresses_in_image()
     print()
     if SKIPS:
