@@ -84,6 +84,7 @@ Do not trust a count in prose; every number lives in a generated document that s
 | how the decompilation compares with the 2006 source | `docs/ORACLE_DIFF.md` |
 | native coverage: functions found, named, attributed per module | `docs/NATIVE.md` |
 | the VM: dispatch table, `ProcessEvent`, `FFrame`, seeding | `docs/NATIVE_VM.md` |
+| the bytecode: opcode groups, operand widths, the disassembler | `docs/BYTECODE.md` |
 | the class tables, their classes and object sizes | `docs/NATIVE_CLASSES.md` |
 | the property system and the tagged save format | `docs/NATIVE_PROPERTIES.md` |
 | what the image was linked against, and what that costs | `docs/IMPORTS.md` |

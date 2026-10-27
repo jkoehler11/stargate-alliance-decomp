@@ -171,9 +171,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as
       a **size plus bytes with a `'G'` compression marker**, then **walked token by token** and validated with
-      "Script serialization mismatch: Got %i, expected %i". So the token dispatch the disassembler needs is the same
-      one the engine uses, and the size field is an assertion to check against. Next: the `+0xa0` token walker;
-      produce per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact).
+      "Script serialization mismatch: Got %i, expected %i". **The disassembler half has landed**
+      (`docs/BYTECODE.md`, `make opcode-table`, `inventory/opcode_table.csv`, `tools/uscript-dis.py`): the walker's
+      dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
+      operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
+      tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
+      **Still open**: the script's extent inside a `Function` payload (U13 — the trailer is now identified, the size
+      encoding is not), so no shipped script longer than its epilogue has been disassembled end to end, and per-function
+      match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
 - [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
@@ -357,6 +362,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-26, the walker's dispatch is 72 opcodes in 31 groups, and every group's operands are measured)
+
+- **The dispatch is two tables, not one.** Opcode `0x00..0x47` indexes a **72-byte map at `0x39ec0`**, whose values
+  name one of **31 handler groups**; the group indexes the jump table at `0x39e44` (31 entries, all inside the walker,
+  and `0x39e44 + 31*4 == 0x39ec0`). The previous note read the jump table as opcode-indexed, which is why it reported
+  "31 opcodes `0x00..0x1e`": the count was right, the index was the group number. `inventory/opcode_table.csv`
+  replaces `inventory/opcode_dispatch.csv` (`make opcode-table`), and `docs/NATIVE_VM.md` is corrected in place.
+- **Every group's operand stream is now measured**, not inferred from UE2 folklore: 31 patterns read out of the
+  handler bodies, each handler's address in the CSV so the instructions can be re-read. `bytes:4` for
+  local/instance/default variables and object constants, `expr,expr` for the `Let`/`ArrayElement` family,
+  `bytes:4,parms` for virtual/global/final calls, `labeltable` for `0x0c`, NUL-terminated strings for `0x1f`/`0x34`,
+  `expr,expr,expr,expr` for `New`, and thirteen opcodes with no operand at all. **35 of 256 opcodes are refused**:
+  eleven in the map (`0x03`, `0x15`, `0x2b`, `0x35`, `0x3a..0x3f`, `0x46`) and `0x48..0x5f` by range.
+- **The pinned UELib token map is the independent check**, and it agrees on the shapes that were not used to build the
+  table (`New` = four children, `Iterator` = expression + code offset, `DebugInfo` = three int32 + a byte,
+  `EndOfScript` = no operands). Where it disagrees, this build is the narrower one: no `LineNumber` (`0x15`), no
+  `RangeConst` (`0x35`), no `ReturnNothing` (`0x3a`), no delegate tokens (`0x3b..0x3f`) — a format-level statement
+  that these packages did not come from the `BuildGeneration.UE2` compiler branch UELib special-cases.
+- **U13 moved without closing.** `tools/uscript-dis.py --payloads System/Engine.u`: `FunctionFlags` is the dword at
+  `payload_end-4` (439 of 444 joinable to `inventory/natives.csv`), the script's epilogue `04 0b 47` sits at
+  `payload_end-10..end-8` in 3,197 of 3,842 payloads, a size dword in front of the script is **not** there for longer
+  scripts (937 hits, 518 of them the epilogue-only body), and a token walk that lands exactly on the boundary leaves
+  3,623 of 3,826 payloads with more than one candidate start. The next route is `LinkerLoad`'s `Serialize`
+  (`0x000515d0`) and the store to `[reg+0x4c]`, not another payload-shape guess.
+- **The disassembler's gate is real but small**: `--selftest` (in `make ci`) splits eleven streams and honours four
+  refusals, including the three-byte epilogue that most shipped functions end with. It has **not** been run over a
+  long shipped script, because none is located yet — say that rather than implying L2 coverage.
 
 ### Execution notes (2026-10-26, the walker's table is 31 opcodes, and above them it is range checks)
 

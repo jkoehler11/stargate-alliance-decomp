@@ -387,29 +387,28 @@ reading past the end lands in whatever `.rdata` holds next, which is how the fir
 `inventory/class_serialize_slots.csv` now carries `serialize` **and** `script_walk` (with the symbol each resolves to),
 so "which function should the disassembler model?" has a per-class answer in a committed artifact.
 
-### The walker's dispatch: 31 opcodes with a handler each, and range checks above them
+### The walker's dispatch: 31 handler groups over 72 opcodes, and range checks above them
 
 Decompiling the walker (`0x000398e0`) shows how a script is skipped:
 
-1. seek the archive to the script buffer (`FUN_00037040`), which lives **in the object** at `+0x48` with its length at
-   **`+0x4c`** — the same two fields `UStruct::Serialize` filled from the payload;
-2. read **one byte** — the opcode — and advance;
-3. `if (0x6f < op)`, `if (0x5f < op)`: two range checks, each running a **nested walk** until the nested walk returns
-   **`0x16`** (`EX_EndFunctionParms`);
-4. otherwise `switch (op)` through the table at **`0x00039e44`**.
+1. read **one byte** — the opcode — and advance the cursor (`[esi]`), which indexes the object's script buffer at
+   **`+0x48`** with its length at **`+0x4c`**, the same two fields the interpreter uses;
+2. `if (0x6f < op)` and `if (0x5f < op)`: two range checks, each running a **nested walk** until the nested walk
+   returns **`0x16`** (`EX_EndFunctionParms`);
+3. `if (0x47 < op)`: the group that logs `"Bad expr token %02x"`;
+4. otherwise the opcode indexes a **72-byte table at `0x39ec0`** whose values name one of **31 handler groups**, and
+   the group indexes the jump table at **`0x39e44`**. The two tables are adjacent (`0x39e44 + 31*4 == 0x39ec0`).
 
-That table has **31 entries, opcodes `0x00..0x1e`, one handler each**, and every handler is inside the walker
-(`0x399a7..0x39e38`). Entry `0x1f` onwards is **not code**: the table simply ends and `.rdata` continues with
-`0xcccccccc` and then ASCII. So opcodes at or above `0x1f` are skipped **by the range checks, not by the table** —
-which is worth writing down, because reading the table as if it were `0x100` entries produces plausible-looking
-garbage.
+**Corrected in the bytecode-table PR:** the jump table's 31 entries are handler *groups*, not one per opcode, and the
+byte map is what turns the 72 opcodes `0x00..0x47` into them. Reading the jump table as if it were opcode-indexed
+gives the right *count* and the wrong *index* — `0x47` is group 5, and group 30 alone covers eleven opcodes that the
+walker rejects. Entry `0x1f` of the jump table is not code either: `.rdata` continues with `0xcccccccc` and ASCII,
+which is why reading it as `0x100` entries produces plausible-looking garbage.
 
-`make opcode-dispatch` writes `inventory/opcode_dispatch.csv` (opcode, handler address, handler size). It finds the
-table from the walker in the committed slot CSV, so it reruns byte-identically.
-
-What it deliberately does **not** claim: each handler's operand width. The handlers differ (`0x00` and `0x01` are the
-local/instance-variable forms, `0x09`..`0x12` the jump and constant forms), but the width is inside each handler's own
-body, and the honest next step is to read the 31 bodies rather than infer widths from UE2 folklore.
+`make opcode-table` writes `inventory/opcode_table.csv` — 256 rows of opcode, group, handler address, operand
+pattern and fixed byte count — and supersedes `inventory/opcode_dispatch.csv`, which listed group indices in an
+`opcode` column. The 31 operand patterns are read from the handler bodies, and the terminators, the range rules and
+the cross-check against the pinned UELib token map are in **`docs/BYTECODE.md`**.
 
 Two primitives the same run identified, because the widths turned out to belong to the archive:
 
