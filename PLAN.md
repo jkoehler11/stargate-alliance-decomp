@@ -304,6 +304,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
       indexes the checkpoints in its `[Saved Games]` section.
 - [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
+      **The `.lad` container is now measured to a bind pose.** `.ka`/`.kaw` are Karma XML, fully documented; `.lad`
+      has its header, channel table, 10-byte prelude and then **one 32-byte pose record per channel** (21 or 19, the
+      same bind pose in every file, `inventory/lipsinc_pose.csv`) — after which the 32-byte stride that an earlier note
+      claimed for the whole body does not hold. What remains is the animation payload (96–99% of each file), which is
+      a keyframe decoder's problem rather than a container's: U4.
       `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
       `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
