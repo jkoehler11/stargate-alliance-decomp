@@ -40,3 +40,12 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x003233b0,ucpp_Register_SubActionDepthOfField,ucpp class registration stub: class literal + System outer + ReturnClass assert,SubActionDepthOfField,System,132,3,stargategame,USubActionDepthOfField.cpp,179
 0x00058a30,appAssertFailed,wide literal "Assertion failed: %s [File:%s] [Line: %i]" is the format it logs; its arguments are expression / file / line; 2432 direct call sites,,,,,Core,,67
 0x000340c0,appMallocBeforeInit,logs the wide literal "Called %s before memory init" with "appMalloc" and returns 0; reached through a pointer (call [reg]) from 961 sites = the pre-init allocator slot,,,,,Core,,29
+0x000ba750,LIPSincInitLevel,its own log line [LIPSinc]: LIPSincInitLevel; builds a search prefix then enumerates *.lad and logs Searching for .lad files... / Found files...,,,,,Engine,,1860
+0x000ba290,LIPSincInitGame,its own log line [LIPSinc]: LIPSincInitGame,,,,,Engine,,563
+0x000ba520,LIPSincShutdownLevel,its own log lines [LIPSinc]: LIPSincShutdownLevel and UnBinding Controller for %s,,,,,Engine,,370
+0x000ba720,LIPSincShutdownGame,its own log line [LIPSinc]: LIPSincShutdownGame,,,,,Engine,,39
+0x000b9e90,LIPSincLoadDBFromDisk,its own log line [LIPSinc]: LoadLIPSincDBFromDisk with %i files,,,,,Engine,,1015
+0x000b8340,LIPSincReadAnimFile,the track reader: logs [LIPSinc]: Read Track %s and Parsed %s plus the LTF version/validity errors,,,,,Engine,,4977
+0x000b7260,LIPSincReadControllerFile,logs [LIPSinc]: Parsed %s and [LIPSinc]: Attempt to import an obsolete .LBP file!,,,,,Engine,,4290
+0x00225cd0,LIPSincLinkBones,its own log line [LIPSinc]: Linking Bones for %s,,,,,Engine,,164
+0x00228730,LIPSincPlayAnim,its own log line [LIPSinc]: PlayLIPSincAnim for %s,,,,,Engine,,521

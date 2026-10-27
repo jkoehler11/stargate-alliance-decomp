@@ -1,7 +1,7 @@
 module,functions,named_from_asserts,bytes,mean_size
-(unnamed),13044,0,3117291,239.0
-Engine,577,577,279602,484.6
-Core,576,576,388951,675.3
+(unnamed),13037,0,3105722,238.2
+Engine,586,586,293401,500.7
+Core,574,574,386721,673.7
 (dispatch: declared),273,273,83301,305.1
 (other named),216,216,23029,106.6
 (dispatch: slot only),83,83,9761,117.6
