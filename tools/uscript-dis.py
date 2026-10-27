@@ -17,6 +17,7 @@ stops looking like a header (the `FunctionFlags` dword at `payload_end-4`), wher
 -- no payload bytes are printed, per `AGENTS.md`.
 """
 import argparse
+import collections
 import csv
 import os
 import struct
@@ -191,6 +192,15 @@ def selftest():
 
 
 def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
+    """Measure a package's `Function` payloads: the trailer, and how far locating the script gets.
+
+    Four counts, all reproduced by this one command:
+      * the `FunctionFlags` dword at `payload_end-4` against `inventory/natives.csv`;
+      * the script epilogue (`04 0b 47` = Return, Nothing, the `'G'` marker) and where it sits, which fixes the
+        trailer's length: 7 bytes, or 9 when the Net flag (0x40) means `RepOffset` follows the flags;
+      * how many payloads carry a 4-byte size field immediately before a script that the table then walks
+        exactly, with the script ending on that epilogue.
+    """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
 
@@ -200,6 +210,7 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
     pkg.read_exports()
     exports = {e["index"]: e for e in pkg.exports}
     pkg_name = os.path.basename(path).rsplit(".", 1)[0]
+    table = Table()
 
     def flags(text):
         total = 0
@@ -212,42 +223,63 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
     if os.path.isfile(natives):
         for r in csv.DictReader(open(natives)):
             if r["package"].lower() == pkg_name.lower():
-                known[(r["class"].lower(), r["function"].lower())] = (int(r["parameter_count"]),
-                                                                      flags(r["function_flags"]))
-    payloads_seen = 0
-    joined = matched = 0
-    epilogue = 0
-    size_hits = 0
-    size_hits_epilogue_only = 0
+                known[(r["class"].lower(), r["function"].lower())] = flags(r["function_flags"])
+
+    seen = joined = matched = 0
+    tail = {"7": 0, "9": 0, "neither": 0}
+    net = {"7": 0, "9": 0}
+    located = 0
     for e in pkg.exports:
         if pkg.class_name_of(e) != "Function":
             continue
         pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
-        if len(pay) < 16:
+        n = len(pay)
+        if n < 16:
             continue
-        payloads_seen += 1
-        if len(pay) >= 10 and pay[-10:-7] == bytes([0x04, 0x0B, 0x47]):
-            epilogue += 1
+        seen += 1
         owner = exports.get(e["outer"] - 1) if e["outer"] > 0 else None
         if owner is not None:
             key = (pkg.name(owner["name"]).lower(), pkg.name(e["name"]).lower())
             if key in known:
                 joined += 1
-                if struct.unpack_from("<I", pay, len(pay) - 4)[0] == known[key][1]:
+                if struct.unpack_from("<I", pay, n - 4)[0] == known[key]:
                     matched += 1
-        end = len(pay) - 7
-        hits = [k for k in range(0, max(0, end - 4))
-                if struct.unpack_from("<I", pay, k)[0] == end - (k + 4)]
-        if hits:
-            size_hits += 1
-            if end - (hits[0] + 4) == 3:
-                size_hits_epilogue_only += 1
-    print("%s: %d Function exports with a payload of 16 bytes or more" % (pkg_name, payloads_seen))
+        epilogue = bytes([0x04, 0x0B, 0x47])
+        if n >= 10 and pay[n - 10:n - 7] == epilogue:
+            tail["7"] += 1
+            if struct.unpack_from("<I", pay, n - 4)[0] & 0x40:
+                net["7"] += 1
+            end, trailer = n - 7, 7
+        elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+            tail["9"] += 1
+            if struct.unpack_from("<I", pay, n - 6)[0] & 0x40:
+                net["9"] += 1
+            end, trailer = n - 9, 9
+        else:
+            tail["neither"] += 1
+            continue
+        for k in range(0, min(48, end - 6)):
+            size = struct.unpack_from("<I", pay, k)[0]
+            if size != end - (k + 4):
+                continue
+            try:
+                nodes = parse(pay[k + 4:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) == size:
+                located += 1
+                break
+
+    print("%s: %d Function exports with a payload of 16 bytes or more" % (pkg_name, seen))
     print("  FunctionFlags at payload_end-4 equals inventory/natives.csv: %d of %d joinable"
           % (matched, joined))
-    print("  script epilogue 04 0b 47 at payload_end-10..end-8: %d of %d" % (epilogue, payloads_seen))
-    print("  a dword immediately before the script equal to its length: %d (of which %d are the 3-byte "
-          "epilogue-only body)" % (size_hits, size_hits_epilogue_only))
+    print("  trailer 7 bytes (epilogue at end-10..end-8): %d, of which Net flag set: %d"
+          % (tail["7"], net["7"]))
+    print("  trailer 9 bytes (epilogue at end-12..end-10, RepOffset after the flags): %d, "
+          "of which Net flag set: %d" % (tail["9"], net["9"]))
+    print("  neither: %d" % tail["neither"])
+    print("  size dword immediately before a script the table walks exactly: %d of %d"
+          % (located, seen))
     return 0
 
 

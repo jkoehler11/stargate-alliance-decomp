@@ -176,8 +176,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
-      **Still open**: the script's extent inside a `Function` payload (U13 — the trailer is now identified, the size
-      encoding is not), so no shipped script longer than its epilogue has been disassembled end to end, and per-function
+      **Still open**: the script's extent inside a `Function` payload (U13 — the *tail* is now solved, the header's
+      field widths are not), so no *long* shipped script has been disassembled end to end, and per-function
       match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
@@ -362,6 +362,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-26, a `UFunction` payload's tail is 7 bytes — 9 for a network function — and the size field is in front of the script)
+
+- **The tail is read out of `UFunction::Serialize` (`0x00039f10`, 283 bytes) and it is four fields**: after
+  `UStruct::Serialize`, a `u16` at `+0x84` (the native token), a `u8` at `+0x88` (operator precedence), the `u32`
+  `FunctionFlags` at `+0x80`, and a `u16` `RepOffset` at `+0x86` **only when `FunctionFlags & 0x40` (Net)**. The three
+  fields a `UFunction` otherwise has — `paramsSize` (`+0x8a`), `paramsCount` (`+0x89`), `returnValueOffset` (`+0x8c`)
+  — are behind `if (Arch.Version < 0x40)` gates and this build is **version 130**, so they are not serialized at all;
+  the body recomputes them from the `Children` chain on load. That is why earlier sessions kept finding a 7-byte tail
+  where UELib's field list promised 12: the reader and the writer agree, the *fields* are gated off.
+- **The measurement that confirms it, with no exceptions:** `04 0b 47` (Return, Nothing, and `47` = the `'G'` marker
+  `UStruct::Serialize` appends to an uncompressed script) sits at `payload_end-10..end-8` in **3,197** of `Engine.u`'s
+  3,842 payloads with the `Net` flag set in **0** of them, and at `payload_end-12..end-10` in **201** with the `Net`
+  flag set in **all 201**. The trailer length is predicted by a flag, so this half of U13 is closed;
+  `python3 tools/uscript-dis.py --payloads System/Engine.u` reproduces every count.
+- **The size field is real but not general yet**: a 4-byte size immediately before the script, with the table walking
+  the script exactly, is found for **804** payloads (offsets 19..24, which is where the variable-width header lands).
+  Those scripts are 2 to ~30 bytes, so this proves the *layout*, not the *width table* — say that rather than
+  implying the disassembler has been validated on real bodies.
+- **Two negatives worth not repeating.** The walk cannot locate a script by running to the boundary: for 3,623 of
+  3,826 payloads more than one start reaches `end-7`, and a walk started at a guessed header offset desynchronises
+  several hundred bytes later (a property of the start, not evidence about the table). And a size field found *by
+  value* is not the rule: for **444** payloads the epilogue is at neither position, and for 3,038 no dword among the
+  first 48 offsets equals the script's length. Next route is `LinkerLoad::Serialize` (`0x000515d0`), which consumes
+  these same fields on the load side.
 
 ### Execution notes (2026-10-26, the walker's dispatch is 72 opcodes in 31 groups, and every group's operands are measured)
 
