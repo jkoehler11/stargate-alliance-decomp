@@ -137,6 +137,16 @@ What is still open: what the three floats mean (position? rotation?), whether th
 the trailer's exact length. The route is unchanged — the LIPSinc authoring tool's notes, or the native loader from
 4.8 — but the file is no longer opaque, and `--check` in `make ci` keeps the measurement honest.
 
+**Correction, and one more measured step (same day, later).** An earlier revision of this entry and of
+`docs/formats/lipsinc-lad.md` described the whole `.lad` body as 32-byte-strided records with a small remainder. That
+is wrong, and the comparison with the channel table is what shows it: the stride holds for **exactly one record per
+channel** — a 21- or 19-entry bind pose whose first entry is the same `(3.0464, 8.6571, 10.3889)` in every file — and
+nowhere after it. `inventory/lipsinc_pose.csv` records the block per file (it starts 10 bytes after the channel table,
+i.e. at 395 or 362) and `--check` enforces that it never exceeds the channel count and that the scan reaches the end
+of the file. The animation payload that follows is 96–99% of every file and is not 32-byte strided; its key times and
+values remain unread. So U4 has narrowed twice in one day: the container is known to a bind pose plus an
+unread animation payload, and what is left is a keyframe decoder, not a container.
+
 **The runtime side is located too (same session).** The loader is native but not anonymous: the module logs through 43
 `[LIPSinc]:` strings and the image carries `Engine\Src\LIPSincSupport.cpp` as an assert path.
 `tools/lipsinc-runtime.py` (`inventory/lipsinc_runtime.csv`) attributes 19 functions to those strings, and nine name

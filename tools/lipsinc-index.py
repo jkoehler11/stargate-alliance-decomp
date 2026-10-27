@@ -29,6 +29,10 @@ FILE_COLUMNS = ["path", "kind", "bytes", "entries", "note"]
 PHONEME_COLUMNS = ["map", "character", "phoneme", "target", "weight"]
 LAD_COLUMNS = ["path", "bytes", "header_u32", "bones", "data_offset", "record_bytes", "records", "residue_bytes",
                "trailer_names"]
+# What the first records of the body actually are: a 32-byte pose per bone name, not an animation key list. The
+# scan stops at the first record that is not one, which is why it is a measurement rather than a stride assumption.
+POSE_COLUMNS = ["path", "data_offset", "prelude_bytes", "bones", "pose_records", "pose_stops_at", "tail_bytes",
+                "pose0_x", "pose0_y", "pose0_z", "constant_triple", "sentinel"]
 RECORD = 32
 
 
@@ -83,6 +87,55 @@ def parse_lad(path):
             "trailer_names": ";".join(names)}, len(d)
 
 
+def scan_poses(d, off):
+    """Count the leading 32-byte records that look like a bone pose and describe the first one.
+
+    A pose record was measured as three plausible floats, three near-zero bit patterns that repeat in every record,
+    a -1.0 and a small integer. The scan is deliberately strict: it stops at the first record that fails, so a file
+    whose body is something else reports zero rather than a number invented by dividing its length by 32.
+    """
+    import math
+
+    def run(start):
+        """How many whole pose records begin at `start`."""
+        n = 0
+        while start + RECORD <= len(d):
+            rec = d[start:start + RECORD]
+            v = struct.unpack("<8f", rec)
+            if not all(math.isfinite(x) and abs(x) < 1e4 for x in v[:3]) or abs(v[6] + 1.0) > 1e-6:
+                break
+            n += 1
+            start += RECORD
+        return n
+
+    # The name table is followed by a short prelude before the first pose, and its length was measured per file from
+    # where the first run of whole poses starts -- 10 bytes in the 385-offset files, none in the 352-offset ones.
+    skip, best = 0, 0
+    for candidate in range(0, 64):
+        n = run(off + candidate)
+        if n > best:
+            skip, best = candidate, n
+    off += skip
+    count = 0
+    first = None
+    while off + RECORD <= len(d):
+        rec = d[off:off + RECORD]
+        v = struct.unpack("<8f", rec)
+        u = struct.unpack("<8I", rec)
+        finite = all(math.isfinite(x) and abs(x) < 1e4 for x in v[:3])
+        if not finite or abs(v[6] + 1.0) > 1e-6:
+            break
+        if first is None:
+            first = (v, u)
+        count += 1
+        off += RECORD
+    if first is None:
+        return 0, off, ["", "", "", "", ""]
+    v, u = first
+    triple = "%08x,%08x,%08x" % (u[3], u[4], u[5])
+    return count, off, ["%.4f" % v[0], "%.4f" % v[1], "%.4f" % v[2], triple, "%.1f" % v[6]]
+
+
 def parse_map(path):
     character = os.path.basename(path)[:-4]
     targets = None
@@ -114,7 +167,7 @@ def parse_map(path):
 
 
 def build(root):
-    files, phonemes, lads = [], [], []
+    files, phonemes, lads, poses = [], [], [], []
     for dirpath, _dirs, names in os.walk(root):
         for name in sorted(names):
             path = os.path.join(dirpath, name)
@@ -126,6 +179,15 @@ def build(root):
                 info["path"] = rel
                 info["bytes"] = size2
                 lads.append(info)
+                blob = open(path, "rb").read()
+                count, stop, first = scan_poses(blob, info["data_offset"])
+                poses.append({"path": rel, "data_offset": info["data_offset"],
+                              "prelude_bytes": stop - int(info["data_offset"]) - count * RECORD,
+                              "bones": len(info["bones"].split(";")) if info["bones"] else 0,
+                              "pose_records": count, "pose_stops_at": stop,
+                              "tail_bytes": len(blob) - stop,
+                              "pose0_x": first[0], "pose0_y": first[1], "pose0_z": first[2],
+                              "constant_triple": first[3], "sentinel": first[4]})
                 files.append({"path": rel, "kind": "lad", "bytes": size,
                               "entries": "%d bones, %d records" % (len(info["bones"].split(";")), info["records"]),
                               "note": "record %d bytes, %d residue bytes, trailer %s"
@@ -143,7 +205,7 @@ def build(root):
     files.sort(key=lambda r: r["path"])
     phonemes.sort(key=lambda r: (r["map"], r["phoneme"], int(r["target"])))
     lads.sort(key=lambda r: r["path"])
-    return files, phonemes, lads
+    return files, phonemes, lads, poses
 
 
 def write(path, columns, rows):
@@ -161,10 +223,11 @@ def check(out):
         files = list(csv.DictReader(open(os.path.join(out, "lipsinc_files.csv"))))
         phonemes = list(csv.DictReader(open(os.path.join(out, "lipsinc_phonemes.csv"))))
         lads = list(csv.DictReader(open(os.path.join(out, "lipsinc_lad.csv"))))
+        poses = list(csv.DictReader(open(os.path.join(out, "lipsinc_pose.csv"))))
     except FileNotFoundError as exc:
         print("FAIL lipsinc-index: %s" % exc)
         return 1
-    if not files or not phonemes or not lads:
+    if not files or not phonemes or not lads or not poses:
         problems.append("an artifact is empty")
     for r in files:
         if sorted(r) != sorted(FILE_COLUMNS):
@@ -187,11 +250,27 @@ def check(out):
             problems.append("%s: residue %s" % (r["path"], r["residue_bytes"]))
         if len(r["trailer_names"].split(";")) != 3:
             problems.append("%s: trailer" % r["path"])
+    # The pose block is the one part of the record region that is measured rather than assumed: it must be a whole
+    # number of 32-byte records, no more than the bone table names, and its tail must account for the rest exactly.
+    by_path = {r["path"]: r for r in lads}
+    for r in poses:
+        lad = by_path.get(r["path"])
+        if lad is None:
+            problems.append("%s: pose row without a .lad row" % r["path"])
+            continue
+        count, bones = int(r["pose_records"]), int(r["bones"])
+        if count > bones:
+            problems.append("%s: %d poses for %d bones" % (r["path"], count, bones))
+        if int(r["pose_stops_at"]) + int(r["tail_bytes"]) != int(lad["bytes"]):
+            problems.append("%s: pose scan does not reach the end" % r["path"])
+        if count and not r["sentinel"]:
+            problems.append("%s: poses without a sentinel" % r["path"])
     if problems:
         print("FAIL lipsinc-index: " + "; ".join(problems[:6]))
         return 1
-    print("ok   lipsinc-index: %d files, %d phoneme weights over %d maps, %d .lad containers"
-          % (len(files), len(phonemes), len(per_map), len(lads)))
+    posed = sum(1 for r in poses if int(r["pose_records"]))
+    print("ok   lipsinc-index: %d files, %d phoneme weights over %d maps, %d .lad containers, "
+          "%d pose blocks" % (len(files), len(phonemes), len(per_map), len(lads), posed))
     return 0
 
 
@@ -205,10 +284,11 @@ def main():
         return check(args.out)
     if not args.dir:
         ap.error("--dir is required unless --check")
-    files, phonemes, lads = build(args.dir)
+    files, phonemes, lads, poses = build(args.dir)
     write(os.path.join(args.out, "lipsinc_files.csv"), FILE_COLUMNS, files)
     write(os.path.join(args.out, "lipsinc_phonemes.csv"), PHONEME_COLUMNS, phonemes)
     write(os.path.join(args.out, "lipsinc_lad.csv"), LAD_COLUMNS, lads)
+    write(os.path.join(args.out, "lipsinc_pose.csv"), POSE_COLUMNS, poses)
     for r in lads:
         print("%-34s bones=%2d data=%4d records=%5d residue=%2d trailer=%s"
               % (r["path"], len(r["bones"].split(";")), r["data_offset"], r["records"], r["residue_bytes"],

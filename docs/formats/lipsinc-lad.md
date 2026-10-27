@@ -45,43 +45,49 @@ speech clips while carrying *fewer* channels (19 vs 21), so they hold far more f
 are below, and the parse is reproducible, but what the three floats *are* needs either the middleware's own
 documentation or the loader from PLAN 4.8 — it is tracked as U4 in `docs/UNKNOWNS.md`.
 
-## The record stream is 32 bytes per record
+## The leading records are a bind pose, one per channel
 
-`tools/lipsinc-index.py` (`make lipsinc-index`, `inventory/lipsinc_lad.csv`) measures the payload without guessing
-at it. Three things fall out:
+`tools/lipsinc-index.py` (`make lipsinc-index`) measures the payload without guessing at it. After the channel table
+there is a **10-byte prelude** — `532` (u32), `0` (u8), then `0x21500` for 21 channels or `0x21300` for 19 (u32),
+`0` (u8), so the second word packs the channel count with a flag rather than being a plain count — and after the
+prelude comes a **pose block: exactly one 32-byte record per channel name**, in every one of the eight files.
 
-* after the channel table there is a **10-byte prelude**: `532` (u32), `0` (u8), then `0x21500` for 21 channels or
-  `0x21300` for 19 (u32), `0` (u8) — the second word's low byte is zero and its *second* byte is the channel count,
-  so it packs the count with a flag rather than being a plain count;
-* then a **32-byte-strided record stream**. The `-1.0f` that occupies a record's last-but-four bytes recurs at
-  exactly **32-byte** steps — checked in `grey.lad`, `sg1_crew_jackson.lad` and `Controllers/sg1_crew_tealc.lad`,
-  352 of 424 records in the smallest clip carrying it at a stride of 32 with no exceptions in the run;
-* the stream ends in a **block of three names**, the same in all eight files: `BN-Head`, `undefined`, `undefined`,
-  each length-prefixed like the channel table.
+| file | channels | pose block starts | poses | animation payload after it |
+|---|---:|---:|---:|---:|
+| `sg1_crew_jackson.lad` | 21 | 395 | 21 | 12,896 |
+| `sg1_crew_carter.lad` | 21 | 395 | 21 | 26,311 |
+| `JAnderson.lad` | 21 | 395 | 21 | 33,073 |
+| `Controllers/grey.lad` | 21 | 395 | 21 | 39,583 |
+| `Controllers/sg1_crew_tealc.lad` | 19 | 362 | 19 | 649,732 |
+| `Controllers/sg1_crew_jackson.lad` | 19 | 362 | 19 | 1,067,713 |
+| `Controllers/sg1_crew_carter.lad` | 19 | 362 | 19 | 1,300,403 |
+| `Controllers/sg1_crew_oneill.lad` | 19 | 362 | 19 | 1,831,589 |
 
-A record's 32 bytes are, at the observed offsets:
+The block is recognised, not assumed: `inventory/lipsinc_pose.csv` (one row per file, `--check` keeps its invariants)
+counts the leading 32-byte records that look like a pose — three plausible floats followed by a `-1.0f` at bytes
+24–27 — and stops at the first one that does not. On all eight files that count is exactly the channel count, and the
+first pose is the *same* in every file: `(3.0464, 8.6571, 10.3889)` for channel 0, `Controllers/` files included. A
+shared bind pose for a shared skeleton, then per-character animation.
+
+A pose's 32 bytes, at the observed offsets:
 
 | bytes | content |
 |---|---|
-| 0–11 | three float32, all small and signed (|x| < 5), non-monotonic across records — so not a time |
-| 12–23 | three float32 near zero (1e-30 … 1e-15): they vary per record but stay denormal |
-| 24–27 | `-1.0f` in most records |
-| 28–31 | `2` in most records |
+| 0–11 | three float32, small and signed (`\|x\| < 12`), the bind position |
+| 12–23 | twelve bytes that are **not** float data — `80000000` (`-0.0f`) and words that read as byte pairs when printed as hex |
+| 24–27 | `-1.0f` |
+| 28–31 | `2` (u32) |
 
-| file | records | bytes after the last whole record |
-|---|---|---|
-| `sg1_crew_jackson.lad` | 423 | 11 |
-| `sg1_crew_carter.lad` | 842 | 18 |
-| `JAnderson.lad` | 1,053 | 28 |
-| `Controllers/grey.lad` | 1,257 | 10 |
-| `Controllers/sg1_crew_tealc.lad` | 20,316 | 14 |
-| `Controllers/sg1_crew_jackson.lad` | 33,377 | 0 |
-| `Controllers/sg1_crew_carter.lad` | 40,665 | 18 |
-| `Controllers/sg1_crew_oneill.lad` | 57,256 | 4 |
+**Correction to an earlier reading of this page.** A previous revision called the whole body a 32-byte-strided record
+stream, because the `-1.0f` recurs at 32-byte steps and only 352 of 424 records in the smallest clip did not fit. That
+stopped being defensible once the count was compared with the channel table: the stride holds **inside the pose
+block** (21 or 19 records) and nowhere else. The old `records` and `residue_bytes` columns in
+`inventory/lipsinc_lad.csv` are the body length divided by 32 and its remainder; the remainder is the signal that the
+stride fails, not a damaged final record. They are kept because they bound the payload's size, but they no longer
+claim a layout.
 
-The last column is the honest part: on seven of the eight files the record stream does not end on a stride boundary,
-so the final record (or the trailer's prefix) is not laid out like the others. It is reported per file rather than
-rounded away, and it is what the "trailer length" question below is really about.
+What the animation payload *is* remains unread: it is 96–99% of every file and it does not stride at 32. That is
+U4's remaining half.
 
 ## The `.map` files are the viseme set, and they are text
 
@@ -129,10 +135,11 @@ The other ten carry only pose/transform warnings (`WARNING: pDefBonePose`, `pTar
 function the way a lifecycle or I/O log line does.
 
 **What this says about the records.** `LIPSincInitLevel` enumerates `L"*.lad"` under a prefix and hands each file to
-the two readers above; `LIPSincReadAnimFile` is the *track* reader (`Read Track %s`), which is what a per-bone
-keyframe stream is. The 32-byte stride, the `-1.0f` at bytes 24–27 and the three-name trailer therefore belong to a
-track-and-keys container, not to a flat frame dump — which is consistent with `ValuesAtTime` walking a key list with
-an `m_nEndTime`, and with the measured fact that file size tracks clip length rather than channel count.
+the two readers above; `LIPSincReadAnimFile` is the *track* reader (`Read Track %s`). A bind pose followed by an
+animation payload is exactly what such a reader needs: `ValuesAtTime, m_nEndTime = %i, time = %f` in `0xb24f0`
+interpolates between keys up to an end time, and the pose block is the state those keys are relative to. That the
+block is one record per channel — and that the rest of the file is not laid out like it — is the measured part; which
+fields of the animation payload hold time and which hold value is still U4.
 
 The names are **not applied to the symbol map yet**: that map is regenerated from `symbols/xbe_overrides.csv` by a
 Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is the evidence list for it.
@@ -140,7 +147,8 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 ## Status
 
 - Header + channel table: parsed in all 8 files, no exceptions.
-- Payload: strided record stream measured (32 bytes), field meanings not established.
+- Payload: the leading pose block is measured (one 32-byte pose per channel); the animation data after it
+  is not 32-byte strided and is unread.
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
 - Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.
