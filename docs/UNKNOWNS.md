@@ -120,6 +120,23 @@ short with the `Controllers/` pack for the same character (the difference is the
 test whether the `0x21300`/`0x21500` word is a count of visemes or frames (both files with the same
 channel count share the value exactly, so it is not per-file).
 
+**Narrowed 2026-10-27: the container and the stride are measured, the fields are not.** `tools/lipsinc-index.py`
+(`make lipsinc-index`, `inventory/lipsinc_lad.csv`, `inventory/lipsinc_phonemes.csv`) establishes:
+
+* after the channel table a **10-byte prelude** (`532`, `0`, `0x21500`/`0x21300`, `0`), then a **32-byte-strided
+  record stream** — the `-1.0f` at a record's bytes 24–27 recurs at exactly 32-byte steps in `grey.lad`,
+  `sg1_crew_jackson.lad` and `Controllers/sg1_crew_tealc.lad` (352 of 424 records in the smallest clip, no
+  exceptions in the run) — ending in a block of three names (`BN-Head`, `undefined`, `undefined`);
+* a record is 12 bytes of three small signed float32, 12 bytes of three near-zero float32, `-1.0f`, and a `2`;
+* **seven of the eight files do not end on a stride boundary** (0–28 bytes over), so the last record or the
+  trailer's prefix has a different shape — that residue is the open question, not a rounding error;
+* the `.map` siblings are **plain text**: `[PhonemeToSpeechTargetMapping]`, `NumSpeechTargets=15`, 43 phonemes,
+  and **all four maps carry identical weights**, so character differentiation is in the `.lad` packs.
+
+What is still open: what the three floats mean (position? rotation?), whether the near-zero triple is padding, and
+the trailer's exact length. The route is unchanged — the LIPSinc authoring tool's notes, or the native loader from
+4.8 — but the file is no longer opaque, and `--check` in `make ci` keeps the measurement honest.
+
 ## U5. Which script path writes and reads a `.sgs`
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's

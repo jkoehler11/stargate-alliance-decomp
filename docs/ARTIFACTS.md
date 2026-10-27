@@ -31,6 +31,9 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/gnatives_candidates.csv` | 45 | 11 | `make natives` |
 | `inventory/gnatives_slots.csv` | 356 | 5 | `make natives` |
 | `inventory/gnatives_table.csv` | 1 | 5 | `make natives` |
+| `inventory/lipsinc_files.csv` | 18 | 5 | `make lipsinc-index` |
+| `inventory/lipsinc_lad.csv` | 8 | 9 | `make lipsinc-index` |
+| `inventory/lipsinc_phonemes.csv` | 2580 | 5 | `make lipsinc-index` |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
 | `inventory/map_export_classes.csv` | 6478 | 3 | `make map-actors` |
 | `inventory/map_parse.csv` | 0 | 3 | **MapsCommand.cs (no target runs it)** |
@@ -53,7 +56,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/property_classes.csv` | 15 | 8 | `make ci` |
 | `inventory/property_types.csv` | 17 | 4 | **property-map.py (no target runs it)** |
 | `inventory/script_text_natives.csv` | 18 | 4 | `make package-census` |
-| `inventory/sfx_index.csv` | 55 | 4 | `make sfx-index` |
+| `inventory/sfx_index.csv` | 55 | 4 | `make lipsinc-index` |
 | `inventory/sgs_schema.csv` | 1739 | 7 | `make formats` |
 | `inventory/source_tree_summary.csv` | 18 | 2 | `make extract-script` |
 | `inventory/speech_index.csv` | 1364 | 7 | `make release-notes` |
@@ -76,5 +79,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-69 artifacts, 74997 rows in total. 0 with no generator.
+72 artifacts, 77603 rows in total. 0 with no generator.
 
