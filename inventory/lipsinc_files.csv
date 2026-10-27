@@ -1,0 +1,19 @@
+path,kind,bytes,entries,note
+Controllers/grey.lad,lad,40650,"21 bones, 1257 records","record 32 bytes, 10 residue bytes, trailer BN-Head;undefined;undefined"
+Controllers/sg1_crew_carter.lad,lad,1301681,"19 bones, 40665 records","record 32 bytes, 18 residue bytes, trailer BN-Head;undefined;undefined"
+Controllers/sg1_crew_jackson.lad,lad,1068447,"19 bones, 33377 records","record 32 bytes, 0 residue bytes, trailer BN-Head;undefined;undefined"
+Controllers/sg1_crew_oneill.lad,lad,1832579,"19 bones, 57256 records","record 32 bytes, 4 residue bytes, trailer BN-Head;undefined;undefined"
+Controllers/sg1_crew_tealc.lad,lad,650509,"19 bones, 20316 records","record 32 bytes, 14 residue bytes, trailer BN-Head;undefined;undefined"
+DtC6dal.dat,dat,261761,,audio for the .lad of the same stem
+DtC6dl.dat,dat,176718,,audio for the .lad of the same stem
+JAnderson.lad,lad,34140,"21 bones, 1053 records","record 32 bytes, 28 residue bytes, trailer BN-Head;undefined;undefined"
+Mappings/sg1_crew_carter.map,map,4204,43 phonemes x 15 targets,"text INI, [PhonemeToSpeechTargetMapping]"
+Mappings/sg1_crew_jackson.map,map,4206,43 phonemes x 15 targets,"text INI, [PhonemeToSpeechTargetMapping]"
+Mappings/sg1_crew_oneill.map,map,4204,43 phonemes x 15 targets,"text INI, [PhonemeToSpeechTargetMapping]"
+Mappings/sg1_crew_tealc.map,map,4202,43 phonemes x 15 targets,"text INI, [PhonemeToSpeechTargetMapping]"
+Wt16M9bs.dat,dat,323076,,audio for the .lad of the same stem
+Wt16M9fs.dat,dat,323076,,audio for the .lad of the same stem
+Wt8S9bs.dat,dat,323076,,audio for the .lad of the same stem
+Wt8S9fs.dat,dat,323076,,audio for the .lad of the same stem
+sg1_crew_carter.lad,lad,27378,"21 bones, 842 records","record 32 bytes, 18 residue bytes, trailer BN-Head;undefined;undefined"
+sg1_crew_jackson.lad,lad,13963,"21 bones, 423 records","record 32 bytes, 11 residue bytes, trailer BN-Head;undefined;undefined"

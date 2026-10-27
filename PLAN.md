@@ -363,6 +363,23 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-27, the LIPSinc containers are strided records and the phoneme maps are text)
+
+- **U4 narrows to field meanings.** `tools/lipsinc-index.py` (`make lipsinc-index`, `--check` in `make ci`, three
+  artifacts) measures the `.lad` payload instead of describing it as opaque: after the channel table a **10-byte
+  prelude** (`532`, `0`, `0x21500`/`0x21300`, `0`) and then a **32-byte-strided record stream** — the `-1.0f` at a
+  record's bytes 24–27 recurs at exactly 32-byte steps (352 of 424 records in the smallest clip, no exception in the
+  run) — ending in three length-prefixed names (`BN-Head`, `undefined`, `undefined`). A record is 12 bytes of three
+  small signed float32, 12 bytes of three near-zero float32, `-1.0f` and `2`.
+- **The residue is the story, not a rounding error**: seven of the eight files do not end on a stride boundary
+  (0–28 bytes over), so the last record or the trailer's prefix is shaped differently. `inventory/lipsinc_lad.csv`
+  carries that per file and `docs/formats/lipsinc-lad.md` names it as the open half of U4.
+- **The `.map` siblings are text and they are copies.** `Mappings/*.map` are INI files —
+  `[PhonemeToSpeechTargetMapping]`, `NumSpeechTargets=15`, **43 phonemes**, weights only from `{0, 0.2, 0.5, 0.7,
+  0.85}` — and **all four carry identical weights (0 of 645 entries differ)**, so the per-character viseme sets are
+  copies and the character differences live in the `.lad` controller packs. `inventory/lipsinc_phonemes.csv` has the
+  2,580 weights; the fifteen targets are named in the files' comment header.
+
 ### Execution notes (2026-10-26, every function's flags come out of its payload, so the network surface is a census)
 
 - **The tail work pays off immediately.** `UFunction::Serialize`'s flags field (the previous note) is enough to read

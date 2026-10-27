@@ -73,6 +73,12 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # Dump-gated for the same reason: the declarations live in the packages.
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
+    # Dump-gated: the lip-sync directory is on disk. Regenerate into scratch and diff all three artifacts.
+    stage lipsinc-index sh -c "python3 tools/lipsinc-index.py \
+        --dir '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData' -o '$out/lipsinc' \
+        && cmp '$out/lipsinc/lipsinc_files.csv' inventory/lipsinc_files.csv \
+        && cmp '$out/lipsinc/lipsinc_phonemes.csv' inventory/lipsinc_phonemes.csv \
+        && cmp '$out/lipsinc/lipsinc_lad.csv' inventory/lipsinc_lad.csv"
     # Dump-gated: the flags live in the packages. Regenerate into scratch and diff, so a drift fails here.
     stage function-flags sh -c "python3 tools/function-flags.py \
         --packages '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System' -o '$out/flags' \
