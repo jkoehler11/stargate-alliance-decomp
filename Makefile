@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check maps-parse class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check maps-parse artifact-hashes class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -73,6 +73,7 @@ help:
 	@echo "  game-modules     per-module function counts from a native index (needs WORK/native)"
 	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
+	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -403,3 +404,8 @@ maps-parse: $(TOOL)
 	@$(DOTNET) $(TOOL) maps --dump "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" -o inventory
 	@echo "wrote inventory/map_parse.csv"
 
+# The expected hashes of every committed artifact (PLAN 8.1). Run after regenerating anything; `make ci` verifies
+# the manifest against the files, which is what catches an artifact edited by hand instead of regenerated.
+artifact-hashes:
+	@$(PYTHON) tools/artifact-hashes.py
+	@echo "wrote inventory/artifact_hashes.csv"

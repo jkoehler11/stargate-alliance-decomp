@@ -112,13 +112,22 @@ CI from downloading it. It checks that the committed CSVs and symbol map have th
 expect and that the generated docs reproduce. Its output on the current tree:
 
 ```
+ok   csv-shape: 73 files
+ok   symbol-map: 15423 symbols (14957 functions + 466 class tables)
 ok   symbol-map-regenerates: symbols/xbox.map
 ok   docs-counts: docs/NATIVE.md
-ok   docs-counts: inventory/xbe_functions_by_module.csv
-ok   addresses-in-image: 15423 symbols inside the image's sections
+ok   campaign-matrix: inventory/campaign_matrix.csv
+ok   artifact-hashes: 76 artifacts, 5.4 MiB, manifest matches
+ok   opcode-table: 256 opcodes, 31 groups, 11 streams split, 4 refusals honoured
+ok   lipsinc-runtime: 19 functions, 9 with a self-evident name
+ok   inventory-index: docs/ARTIFACTS.md (74 artifacts)
+ok   status-table: docs/STATUS.md and README.md
+... 13 more (23 checks)
 all checks passed
-``` Everything dump-dependent — manifest verification,
-inventory drift, the Ghidra run, the package parse — is a local step.
+```
+
+Everything dump-dependent — manifest verification, inventory drift, the Ghidra run, the package parse — is a local
+step.
 
 Consequence worth stating plainly: **a green CI does not prove the dump-side artifacts are current.**
 Run `make inventory`, `make ghidra`, then `make natives` and `make symbols`, and commit any drift in
@@ -133,6 +142,29 @@ PLAN 8.4 lists the milestones. For any of them:
 3. `make ci` and commit the regenerated artifacts.
 4. Record the toolchain actually used if it differs from `tools/versions.lock`; that difference is a
    finding, not a detail.
+5. `python3 tools/artifact-hashes.py --check` — every artifact must match its expected hash.
+
+### Expected hashes
+
+`inventory/artifact_hashes.csv` is the manifest: the path, size and SHA-256 of all 76 committed artifacts under
+`inventory/` and `symbols/`. It answers the question a fresh checkout asks before trusting any number — *is this file
+the one the tools produce?* — without re-running the tools, which for half of them means a Ghidra run and the dump.
+
+```
+$ python3 tools/artifact-hashes.py --check
+ok   artifact-hashes: 76 artifacts, 5.4 MiB, manifest matches
+```
+
+`make ci` runs that check, so three things fail a build: an artifact whose hash changed but whose manifest was not
+rewritten in the same commit, an artifact listed in the manifest that is gone, and a file under `inventory/` or
+`symbols/` that the manifest does not mention at all. The remedy is always the same and is deliberately manual — run
+the artifact's stage, then `make artifact-hashes`, and commit the two together, so the diff shows which numbers moved.
+
+A mismatch is only a bug when the tree is otherwise unchanged. Against *your own* dump it usually means something
+else, and both explanations are worth naming: a different dump (the archive is identified in `README.md` and its hash
+is pinned in `tools/versions.lock`), or a different toolchain (`tools/versions.lock` again — a JDK or Ghidra change
+can move a body size). Hand-written prose in `docs/` is out of scope on purpose; the counts in it are checked by
+regenerating the document (`docs-counts` above).
 
 ## 7. Which of these were actually run
 

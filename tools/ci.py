@@ -291,6 +291,18 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_artifact_hashes():
+    """Every committed artifact must match the expected hash recorded beside it."""
+    name = "artifact-hashes"
+    r = subprocess.run([sys.executable, repo("tools", "artifact-hashes.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   artifact-hashes: ", "") if out else "")
+
+
 def check_addresses_in_image():
     """Every symbol inside a section of the image, when there is an image."""
     name = "addresses-in-image"
@@ -318,6 +330,7 @@ def main():
     check_map_regenerates()
     check_docs_regenerate()
     check_campaign_matrix()
+    check_artifact_hashes()
     check_opcode_table()
     check_function_flags()
     check_lipsinc_index()
