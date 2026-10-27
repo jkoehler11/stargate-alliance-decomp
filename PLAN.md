@@ -1292,7 +1292,15 @@ and a deliberate one-line script break is caught by the boot test.
 
 ### Phase 8 — Documentation, release, handoff (ongoing)
 
-- [ ] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
+- [x] 8.1 `docs/BUILDING.md`: end-to-end reproduction, toolchain versions, expected hashes.
+      Done: §3 is the ordered pipeline with each stage's needs and outputs, §4 maps every count to the document that
+      states it, §5 is what the gate can and cannot prove (with its real output), §6 is the release recipe. The third
+      piece, expected hashes, is new: `inventory/artifact_hashes.csv` records the SHA-256 and size of all **76**
+      committed artifacts under `inventory/` and `symbols/`, `make artifact-hashes` writes it and
+      `python3 tools/artifact-hashes.py --check` verifies it in `make ci` — failing on a changed hash, a vanished
+      file, or an artifact the manifest does not mention. Verified with two manufactured failures (a forged hash and
+      a dropped row), each reported by name. Toolchain versions stay in `tools/versions.lock` with the honest
+      UNPINNED entries for `umodel`/`xemu`, which nothing here has run.
 - [x] 8.2 `docs/ARCHITECTURE.md`: engine fork overview, VM, script-to-native mapping, level flow.
       Done: the three layers and their sizes, the address space (code, 462 KB of class tables, the name table) with the
       measured finding that code is ordered per translation unit rather than per module, the object model down to the
