@@ -198,6 +198,16 @@ def diff_against_committed(check, generated, committed):
     ok(check, committed)
 
 
+def check_campaign_matrix():
+    """The mission matrix is dump-free, so CI can insist it reproduces from the committed CSVs."""
+    name = "campaign-matrix"
+    with tempfile.TemporaryDirectory() as tmp:
+        if not run_generator(name, [sys.executable, repo("tools", "campaign-matrix.py"), "-o", tmp], ROOT):
+            return
+        diff_against_committed(name, os.path.join(tmp, "campaign_matrix.csv"),
+                               "inventory/campaign_matrix.csv")
+
+
 def check_map_regenerates():
     """make symbols must reproduce the committed map byte for byte."""
     name = "symbol-map-regenerates"
@@ -307,6 +317,7 @@ def main():
     check_symbol_map()
     check_map_regenerates()
     check_docs_regenerate()
+    check_campaign_matrix()
     check_opcode_table()
     check_function_flags()
     check_lipsinc_index()

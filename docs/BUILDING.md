@@ -59,19 +59,33 @@ Each row is one `make` target. "Needs" is what has to exist first; "produces" is
 | 10 | `make symbols SG1_DUMP=…` | step 5, `as` | `symbols/xbox.map` (+ `xbox.sym.s`, `.o` not committed) |
 | 11 | `make assert-residual SG1_DUMP=…` | steps 5, `build/ghidra/asserts.tsv` | `inventory/xbe_assert_residual.csv` |
 | 12 | `make formats SG1_DUMP=…` | dump, dotnet | `inventory/formats.csv`, `inventory/sgs_schema.csv` |
-| 13 | `make ci` | nothing | the dump-free gate (see §5) |
+| 13 | `make ci` | nothing | the dump-free gate (see §5), including the one census step that needs no dump |
 
 Order matters in two places: **step 5 before 6/10/11** (the symbol map comes out of the Ghidra run),
 and **step 7 before 8** (the class names are looked up in the tables step 7 measured).
 
-Content-side tools are not `make` targets; they run where the dump or the CSVs are:
+The census and derived stages. **Every committed artifact is reachable from one of these** — that is what
+`docs/ARTIFACTS.md` audits, and it reported nine artifacts whose tool no target ran before these existed:
 
-```sh
-python3 tools/dialogue-index.py "$SG1_DUMP" -o inventory      # speech: docs/DIALOGUE.md
-python3 tools/music-index.py    "$SG1_DUMP" -o inventory      # music:  docs/MUSIC.md
-python3 tools/campaign-matrix.py -o inventory                 # CSVs only, no dump: docs/CUT_CONTENT.md
-python3 tools/native-summary.py -o inventory                  # rewrites docs/NATIVE.md from the symbol map
-```
+| command | needs | produces | gate |
+|---|---|---|---|
+| `make campaign-matrix` | committed CSVs only | `inventory/campaign_matrix.csv` | **`make ci`** (reproduced byte for byte) |
+| `make dialogue-index SG1_DUMP=…` | the dump's `Speech/` | `inventory/dialogue_by_mission.csv`, `docs/DIALOGUE.md` | nightly |
+| `make package-check SG1_DUMP=…` | the dump's `System/Packages.md5` | `inventory/package_check.csv` | nightly |
+| `make content-census SG1_DUMP=… WORK=…` | the dump + `$WORK/UnrealScript` | `inventory/content_census.csv`, `docs/CONTENT_CENSUS.md` | nightly |
+| `make property-types WORK=…` | `$WORK/native` ExportAt output (step 5) | `inventory/property_types.csv` | nightly |
+| `make token-map ORACLE_DIR=…` | the private tree + `$WORK/UnrealScript` | `inventory/token_map.csv`, `docs/TOKEN_MAP.md` | nightly |
+| `make game-modules WORK=…` | `$WORK/native/functions.csv` (a native index) | `inventory/xbe_game_modules.csv` | nightly |
+| `make maps-parse SG1_DUMP=…` | the dump, Sg1Tool | `inventory/map_parse.csv` | nightly |
+| `python3 tools/native-summary.py -o inventory` | the symbol map | rewrites `docs/NATIVE.md` | `make ci` |
+
+`token-map` refuses to run without `ORACLE_DIR` rather than publishing a guess, and `game-modules` without its index
+produces different per-module counts (measured: `inventory/xbe_game_modules.csv` differs at byte 104 without
+`--index`), which is why it is a nightly stage rather than a CI one.
+
+Two of these were run against the real dump and reproduced their committed artifacts byte for byte —
+`dialogue-index` (1,364 WAVs, 14 missions, 29 speakers) and `package-check`. The other four need an input this
+repository does not carry (`$WORK/native`, the private tree) and stay listed as gates rather than claims.
 
 ## 4. What each stage is expected to say
 
