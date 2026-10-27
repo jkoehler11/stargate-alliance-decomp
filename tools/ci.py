@@ -291,6 +291,18 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_versions_lock():
+    """tools/versions.lock must still parse, pin what it claims, and explain what it does not pin."""
+    name = "versions-lock"
+    r = subprocess.run([sys.executable, repo("tools", "versions-check.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   versions-lock: ", "") if out else "")
+
+
 def check_artifact_hashes():
     """Every committed artifact must match the expected hash recorded beside it."""
     name = "artifact-hashes"
@@ -331,6 +343,7 @@ def main():
     check_docs_regenerate()
     check_campaign_matrix()
     check_artifact_hashes()
+    check_versions_lock()
     check_opcode_table()
     check_function_flags()
     check_lipsinc_index()

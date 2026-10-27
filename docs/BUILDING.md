@@ -18,7 +18,29 @@ Everything else — Python packages, the .NET SDK, Ghidra, binutils — is publi
 ## 2. Toolchain
 
 `tools/versions.lock` is the authority; the pins in it are what the committed artifacts were produced
-with. A minimal install:
+with. Each line is a **constraint, not prose** — `>=3.11`, `==12.2`, `~=5.0` — so it can be checked against a machine
+instead of being trusted:
+
+```
+$ make versions                      # on the dump-free analysis host
+tool               constraint   found      status      source
+python             >=3.11       3.11.15    match       /usr/local/bin/python3
+py7zr              >=1.0        -          absent      pypi
+dotnet-sdk         >=10.0       -          absent      dot.net
+ghidra             ==12.2       -          absent      ghidra_12.2_PUBLIC
+capstone           >=5.0        -          absent      pypi
+as                 >=2.38       2.44       match       /usr/bin/as
+umodel             UNPINNED     -          n/a (UNPINNED) --
+```
+
+`make versions --strict` exits non-zero when an **installed** tool violates its constraint; an absent tool is not a
+failure, because that is a stage this machine has not run. Three entries say so out loud rather than pretending:
+`xbox-sigs` is `none` (Phase 4.2 is blocked on a signature database the repo may not carry), and `umodel`/`xemu` are
+`UNPINNED` with the reason — Phase 5.1 has not been run and the xemu build that booted is not recorded, which is
+exactly why its captures are not comparable yet. `make ci` checks the lock's shape: it must parse, nothing may be
+listed twice, every constraint must be a version, and an `UNPINNED`/`none` entry must say why.
+
+A minimal install:
 
 ```sh
 # Python side (3.12): the inventory and analysis tools
@@ -159,6 +181,9 @@ ok   artifact-hashes: 76 artifacts, 5.4 MiB, manifest matches
 rewritten in the same commit, an artifact listed in the manifest that is gone, and a file under `inventory/` or
 `symbols/` that the manifest does not mention at all. The remedy is always the same and is deliberately manual — run
 the artifact's stage, then `make artifact-hashes`, and commit the two together, so the diff shows which numbers moved.
+
+**Before blaming the tree, check the toolchain.** `make versions --strict` names an installed tool that violates its
+constraint; that — not a hand edit — is the usual reason a hash differs on a second machine.
 
 A mismatch is only a bug when the tree is otherwise unchanged. Against *your own* dump it usually means something
 else, and both explanations are worth naming: a different dump (the archive is identified in `README.md` and its hash

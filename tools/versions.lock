@@ -1,29 +1,27 @@
-# Pinned toolchain. Update deliberately, in its own commit, with a note on what changed.
-# Format: tool  version  source/commit  notes
+# Pinned toolchain (PLAN 0.5). Each line is checkable: `make versions` compares the constraint against what is
+# actually installed, and `make ci` checks that this file still parses and pins nothing it does not mean to.
+#
+#   tool              constraint    source                       stage / notes
+#
+# A constraint is one of:  >=X.Y[.Z]   <=X.Y[.Z]   ==X.Y[.Z]   ~=X.Y   (a bare X.Y.Z means ==). `UNPINNED` says the
+# tool is used but its version is not established -- which is a finding, not a placeholder: the note says why.
+# `none` says the tool is deliberately absent (a blocked phase), not forgotten.
+python              >=3.11        distro                       every tool in tools/ runs on the interpreter; 3.12.3 is
+                                                               what the inventory stages were last run on
+py7zr               >=1.0         pypi                         archive extraction (tools/verify-dump.py)
+dotnet-sdk          >=10.0        dot.net                      builds tools/Sg1Tool; its net10.0 targets need the 10 SDK
+uelib               ==8236c39     github.com/EliotVU/Unreal-Library  ships Build(130, 4, BuildGeneration.UE2_5) = SG1_TA
+uelib-decompiler    ==8236c39     github.com/EliotVU/Unreal-Library  Eliot.UELib.Decompiler, same commit as UELib
+ghidra              ==12.2        ghidra_12.2_PUBLIC           Phase 4.1; --headless only
+jdk                 >=25          temurin 25.0.5+8             Ghidra 12.2 refuses JDK 21 and older (java.min=25)
+capstone            >=5.0         pypi                         tools/class-table-names.py reads three instruction shapes
+as                  >=2.38        binutils                     make symbols assembles symbols/xbox.sym.s
+xbox-sigs           none          --                           Phase 4.2 blocked: signature databases come from MS SDK
+                                                               output (docs/UNKNOWNS.md U9). Supply locally; never commit.
+umodel              UNPINNED      --                           Phase 5.1 has not been run, so there is nothing to pin
+xemu                UNPINNED      --                           Phase 7.1 boot harness: the version that booted is not
+                                                               recorded, which is why its captures are not comparable yet
 
-python            3.12.3        distro
-py7zr             1.1.4          pypi              archive extraction
-dotnet-sdk        10.0.x         dot.net           UELib build (net10.0 targets)
-
-# UnrealScript packages
-uelib             8236c39        github.com/EliotVU/Unreal-Library
-                                 ships Build(130, 4, BuildGeneration.UE2_5) = SG1_TA profile
-uelib-decompiler  8236c39        github.com/EliotVU/Unreal-Library  (Eliot.UELib.Decompiler)
-
-# Native
-ghidra            12.2_PUBLIC    2026-10-16 build  Phase 4.1; --headless only, no ghidra-xbe needed
-                                 shipped, Ghidra/Features/Base/lib/Base.jar used for script compile checks
-jdk               temurin 25.0.5+8  adoptium         Ghidra 12.2 refuses JDK 21 and older (java.min=25)
-capstone          5.0.7          pypi              tools/class-table-names.py reads three instruction
-                                                   shapes; pip install capstone
-xbox-sigs         none           --                Phase 4.2 blocked: signature databases are built
-                                                   from MS SDK/toolchain output (docs/UNKNOWNS.md U9).
-                                                   Supply one locally; never commit it.
-
-# Assets / verification
-umodel            UNPINNED       --                Phase 5.1
-xemu              UNPINNED       --                Phase 7.1
-
-# Target build (do not edit: this is the artefact identity, not a tool)
-target.archive    Stargate_SG-1_-_The_Alliance-2005-12-15.7z   1015500550 bytes
-target.sha256     d70e15d5ceb479bb8443f2c0bcf2d8884f913a02033d7d8a8e33f80e622d47f4
+# The dump's identity is an artifact of this project, not a tool: a different archive is a different result.
+target.archive      ==Stargate_SG-1_-_The_Alliance-2005-12-15.7z   1015500550 bytes
+target.sha256       ==d70e15d5ceb479bb8443f2c0bcf2d8884f913a02033d7d8a8e33f80e622d47f4
