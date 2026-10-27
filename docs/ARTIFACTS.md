@@ -27,6 +27,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/extensions.csv` | 29 | 3 | `make inventory` |
 | `inventory/fork_surface.csv` | 503 | 8 | `make fork-surface` |
 | `inventory/formats.csv` | 12 | 5 | `make help` |
+| `inventory/function_flags.csv` | 12472 | 6 | `make function-flags` |
 | `inventory/gnatives_candidates.csv` | 45 | 11 | `make natives` |
 | `inventory/gnatives_slots.csv` | 356 | 5 | `make natives` |
 | `inventory/gnatives_table.csv` | 1 | 5 | `make natives` |
@@ -75,5 +76,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 41 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-68 artifacts, 62525 rows in total. 0 with no generator.
+69 artifacts, 74997 rows in total. 0 with no generator.
 

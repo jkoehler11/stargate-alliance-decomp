@@ -363,6 +363,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-26, every function's flags come out of its payload, so the network surface is a census)
+
+- **The tail work pays off immediately.** `UFunction::Serialize`'s flags field (the previous note) is enough to read
+  `FunctionFlags` for **every** function in every package, which no committed artifact had: `tools/function-flags.py`
+  (`make function-flags`, `inventory/function_flags.csv`, `--check` in `make ci`) writes **12,472 functions over 1,568
+  classes in 16 packages**. `Fire.u` and `UnrealEd.u` declare no `Function` export at all.
+- **The tail rule validates against a second source**: **795 of 797** functions in `inventory/natives.csv` agree on
+  their flags; the two that do not are `UPreview.Created` and `UPreview.SetRenderInfo`, i.e. the class U3 was already
+  about, so that is a reader disagreement and not a payload one.
+- **The 756-payload residue from the previous note is explained, not written off.** 751 of them have no script at all
+  (no `'G'` marker, so no `04 0b 47` epilogue) and all 756 carry `Native` — a body-less function is exactly the case
+  `UStruct::Serialize` skips the marker for. The last 5 are Net RPCs whose scripts end `0b 47` instead of `04 0b 47`
+  (`Engine.Actor.DemoPlaySound` and four `PlayerController` client/server pairs); their flags resolve at `end-6` as
+  the Net rule predicts, and why their scripts are two bytes shorter is the one thing here left unexplained.
+- **The network surface is the finding** (`docs/systems/NETWORK.md`): **342 `Net`** functions of which **279 are
+  `NetReliable`** (81.6%), **2,016 `Simulated`**, 433 `Exec`, 795 `Native`. `Engine.PlayerController` alone holds
+  **125 of the 342 RPCs** (36.5%) while `StargateContent` holds **643 of 2,016** simulated functions (35% of that
+  package against 17% of Engine) — so **RPCs are engine-side and client-side prediction is content-side**, and 2,016
+  predicted functions against 342 RPCs is a design built for a few players, not a deathmatch. `NetServer` /
+  `NetClient` are never set, so RPC direction is not in the flags.
+- **Replicated state is the engine's**: **318 of 11,496** declared properties carry `Net`, led by `Engine.Actor` 56,
+  `Engine.Pawn` 35, `GameReplicationInfo` 34, `PlayerReplicationInfo` 31, with the fork adding `StargatePawn` 14.
+  The build's property vocabulary has **no `RepNotify` and no `RepRetry`**, which is the format-level reason the
+  content layer leans on `Simulated` functions rather than notifies.
+
 ### Execution notes (2026-10-26, a `UFunction` payload's tail is 7 bytes — 9 for a network function — and the size field is in front of the script)
 
 - **The tail is read out of `UFunction::Serialize` (`0x00039f10`, 283 bytes) and it is four fields**: after
@@ -1222,7 +1247,12 @@ and a deliberate one-line script break is caught by the boot test.
       content layer with the mission/multiplayer split, and an explicit "not measured" for the init call graph. §8 maps
       each claim to the check that reproduces it.
 - [~] 8.3 Per-system write-ups: AI (`AIScript`/`AIMsgManager`), vehicles, weapons, mission objectives, checkpoints,
-      UI, audio (LIPSinc). **Checkpoints done** (`docs/systems/CHECKPOINTS.md`): the nine `.sgs` files hold 1,739 property
+      UI, audio (LIPSinc), network. **Network done** (`docs/systems/NETWORK.md`): every function's `FunctionFlags` is
+      readable from its export payload now, so the replication surface is a census rather than a reading — 12,472
+      functions over 1,568 classes in 16 packages, of which **342 `Net`** (279 reliable), **2,016 `Simulated`**, 433
+      `Exec`, 795 `Native`, and **318 of 11,496** declared properties replicated. `Engine.PlayerController` holds 125
+      of the 342 RPCs; `StargateContent` holds 643 of the 2,016 simulated functions; the build has no `RepNotify`
+      vocabulary at all. **Checkpoints done** (`docs/systems/CHECKPOINTS.md`): the nine `.sgs` files hold 1,739 property
       rows over 96 classes, 40% of them object references, dominated by level furniture (`Mover` 2,227 instances,
       `IntelligentSpawner` 1,860, `SVehicleTrigger` 1,115) and mid-firefight objects (`FragGrenade` 447) — so a
       checkpoint is a snapshot of the live level's actors, not a progress record. 415 rows are the `UObject`/`AActor`
@@ -1259,7 +1289,7 @@ and a deliberate one-line script break is caught by the boot test.
       U4); music is the only audio with natives (`IMusicActor` 3) and 1,923 WAVs / 348 MiB in 16 groups with two
       scoring shapes (mission cue sets vs `M07A`'s 28 numbered cues); speech is 1,364 lines / 150.8 MiB over 207 scenes
       and 30 speakers, 545 of them untagged. **SFX remain unindexed** — 55 per-character/per-vehicle `.uax` packages,
-      blocked on the same package reader as 5.2/4.7. 8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI,
+      blocked on the same package reader as 5.2/4.7. 8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI, network,
       audio.
       Note: `FORK_SURFACE.md` should gain the GUI example when next touched.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,

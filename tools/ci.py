@@ -245,6 +245,18 @@ def check_opcode_table():
     ok(name, "256 opcodes, 31 groups, 11 streams split, 4 refusals honoured")
 
 
+def check_function_flags():
+    """Every committed flags row must decode to its own name list, and a Net tail must carry the Net bit."""
+    name = "function-flags"
+    r = subprocess.run([sys.executable, repo("tools", "function-flags.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    line = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, line[-1] if line else "exit %d" % r.returncode)
+    else:
+        ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
+
+
 def check_addresses_in_image():
     """Every symbol inside a section of the image, when there is an image."""
     name = "addresses-in-image"
@@ -272,6 +284,7 @@ def main():
     check_map_regenerates()
     check_docs_regenerate()
     check_opcode_table()
+    check_function_flags()
     check_addresses_in_image()
     print()
     if SKIPS:
