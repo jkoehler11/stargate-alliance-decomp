@@ -79,8 +79,18 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       leaked studio source (see the Legal section of README.md for the standing rule).
 - [x] 0.4 Add `docs/CONVENTIONS.md`: naming rules for unknown functions, how to mark unverified code,
       what a "matched" function means, commit message format.
-- [~] 0.5 Pin toolchain versions in `tools/versions.lock` (Ghidra, ghidra-xbe, UELib commit,
+- [x] 0.5 Pin toolchain versions in `tools/versions.lock` (Ghidra, ghidra-xbe, UELib commit,
       UE Explorer version, umodel build, xemu version, .NET SDK, Mono/Wine).
+      Done, and **checkable**: every line is now a constraint (`>=3.11`, `==12.2`, `~=5.0`) rather than prose, and
+      `tools/versions-check.py` (`make versions`, `--strict`, `--check` in `make ci`) compares it with the machine.
+      On the dump-free host it reports `python` and `as` matching and the native-side tools absent; `--strict`
+      fails on an installed tool that violates its pin and stays quiet about absent ones — absence is a
+      stage not yet run, not a broken pin. Eleven entries are pinned; three say out loud why they are not:
+      `xbox-sigs` is `none` (4.2 is blocked on a signature database this repo may not carry), `umodel` and `xemu` are
+      `UNPINNED` because 5.1 has not been run and the emulator build that booted was never recorded — which is why its
+      captures are not comparable. `uexplorer` and `wine` are gone from the lock: neither is used by any stage.
+      Verified with two manufactured failures: a violated constraint fails `--strict`, and an `UNPINNED` line without
+      a reason fails the structural check.
 - [~] 0.6 Set up pre-commit hook + CI skeleton (see Phase 7) so coverage metrics cannot regress silently.
       The CI skeleton is in: `.github/workflows/ci.yml` runs `make ci` on every push and pull request, and
       that target checks what needs no game data (committed CSV shapes, the function and symbol maps, and
