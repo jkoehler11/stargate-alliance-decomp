@@ -77,6 +77,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     stage lipsinc-runtime sh -c "python3 tools/lipsinc-runtime.py \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
         && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
+    # Dump-gated: the check file's code, from the image itself.
+    stage package-check-code sh -c "python3 tools/package-check-code.py \
+        --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/pkgcode' \
+        && cmp '$out/pkgcode/package_check_code.csv' inventory/package_check_code.csv"
     # Dump-gated: the placed-class, dialogue and package censuses, each regenerated into scratch and diffed.
     stage content-census sh -c "SG1_DUMP='$SG1_DUMP' python3 tools/content-census.py \
         --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/census' \

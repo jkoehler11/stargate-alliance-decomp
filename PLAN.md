@@ -340,8 +340,16 @@ report cites file-level evidence for each claim.
       byte for byte (18/18), the placement pass reproduces every package (18/18), and a payload can now be **resized**
       and round-tripped (18/18 packages, 84 sampled resizes, `inventory/package_relayout.csv`). What is left is payload
       *generation*: a compiler producing the bytes we currently copy.
-- [ ] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
+- [~] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
       off in the XBE for dev builds. Document both paths in `docs/PACKAGE_CHECK.md`.
+      **The file is measured, the transform is not, and the check's code is located.** The check data is 168 records of
+      78 bytes, two 32-hex fields each, with no filename field; ~500 files and 89 framing variants were searched for a
+      digest match and none was found, so regenerating it needs the transform. What was missing was whether the build
+      even reads it: `tools/package-check-code.py` (`inventory/package_check_code.csv`) finds **six functions** carrying
+      the check's strings — a named `Engine_UnPackageCheckInfo` class-native at `0x187350`, three readers of
+      `Packages.md5` behind one dispatcher at `0x126860`, and `Engine_UnGame` itself — and the two families connect at
+      depth two, so the check is live code, not a leftover. The bypass path therefore has an address now: `0x187350`
+      and the readers behind `0x126860`. Still open: which path invokes it (runtime probe) and the digest transform.
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 18 of 18 byte-identical), but a
