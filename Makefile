@@ -8,10 +8,12 @@ WORK     ?= $(HOME)/sg1/work
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 RESIZE_BYTES ?= 64
+# the privately held reference decompile, only the token map needs it
+ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check maps-parse class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -63,6 +65,14 @@ help:
 	@echo "  function-flags  every function's FunctionFlags from its export payload (docs/systems/NETWORK.md; needs the dump)"
 	@echo "  lipsinc-index  the LIPSinc .map phonemes and .lad containers (docs/formats/lipsinc-lad.md; needs the dump)"
 	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
+	@echo "  campaign-matrix  missions x maps x speech x music x chapters (dump-free: reads committed CSVs)"
+	@echo "  content-census   which game classes are placed in a map (needs the dump and WORK/UnrealScript)"
+	@echo "  dialogue-index   speech lines per mission, from the Speech/ WAV names (needs the dump)"
+	@echo "  property-types   UnProp property-type census from ExportAt output (needs WORK/native)"
+	@echo "  token-map        the bytecode token map calibrated against the private tree (needs ORACLE_DIR)"
+	@echo "  game-modules     per-module function counts from a native index (needs WORK/native)"
+	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
+	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -351,3 +361,45 @@ class-reach:
 defaults-tree:
 	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
 		--emit "$(WORK)/defaults" --merge "$(WORK)/source-tree"
+
+# --- artifact stages that had no target -------------------------------------------------------------------------
+# docs/ARTIFACTS.md audits this: an artifact no command regenerates cannot be checked, so it drifts silently.
+
+# Dump-free: reads four committed inventory CSVs and writes a fifth, so `make ci` insists it reproduces.
+campaign-matrix:
+	@$(PYTHON) tools/campaign-matrix.py -o inventory
+	@echo "wrote inventory/campaign_matrix.csv"
+
+# Dump-side: the placed-class census needs the map actor tables and the decompiled scripts.
+content-census:
+	@SG1_DUMP="$(SG1_DUMP)" $(PYTHON) tools/content-census.py --src "$(WORK)/UnrealScript" -o inventory
+	@echo "wrote inventory/content_census.csv"
+
+dialogue-index:
+	@$(PYTHON) tools/dialogue-index.py "$(SG1_DUMP)" -o inventory
+	@echo "wrote inventory/dialogue_by_mission.csv"
+
+# The property census reads ExportAt output, which only a Ghidra run produces.
+property-types:
+	@$(PYTHON) tools/property-map.py --exports "$(WORK)/native" -o inventory
+	@echo "wrote inventory/property_types.csv"
+
+# Calibrated against the privately held reference decompile: without it, stop rather than publish a guess.
+token-map:
+	@if [ -z "$(ORACLE_DIR)" ]; then echo "token-map: set ORACLE_DIR to the reference decompile" >&2; exit 2; fi
+	@$(PYTHON) tools/token-calibrate.py --oracle "$(ORACLE_DIR)" --src "$(WORK)/UnrealScript" -o inventory
+	@echo "wrote inventory/token_map.csv"
+
+game-modules:
+	@$(PYTHON) tools/game-modules.py --index "$(WORK)/native/functions.csv" -o inventory/xbe_game_modules.csv
+	@echo "wrote inventory/xbe_game_modules.csv"
+
+package-check:
+	@$(PYTHON) tools/package-check.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/package_check.csv"
+
+# The .NET-side artifact: same dump, different reader.
+maps-parse: $(TOOL)
+	@$(DOTNET) $(TOOL) maps --dump "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" -o inventory
+	@echo "wrote inventory/map_parse.csv"
+

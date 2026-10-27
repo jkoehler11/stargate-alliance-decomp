@@ -77,6 +77,27 @@ if [ -n "${SG1_DUMP:-}" ]; then
     stage lipsinc-runtime sh -c "python3 tools/lipsinc-runtime.py \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
         && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
+    # Dump-gated: the placed-class, dialogue and package censuses, each regenerated into scratch and diffed.
+    stage content-census sh -c "SG1_DUMP='$SG1_DUMP' python3 tools/content-census.py \
+        --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/census' \
+        && cmp '$out/census/content_census.csv' inventory/content_census.csv"
+    stage dialogue-index sh -c "python3 tools/dialogue-index.py '$SG1_DUMP' -o '$out/dialogue' \
+        && cmp '$out/dialogue/dialogue_by_mission.csv' inventory/dialogue_by_mission.csv"
+    stage package-check sh -c "python3 tools/package-check.py \
+        '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System' -o '$out/pkgcheck' \
+        && cmp '$out/pkgcheck/package_check.csv' inventory/package_check.csv"
+    # These need inputs the repo does not carry; skip loudly rather than compare against nothing.
+    stage game-modules sh -c "[ -f '${WORK:-$HOME/sg1/work}/native/functions.csv' ] || { echo skip: no native index; exit 0; }; \
+        python3 tools/game-modules.py --index '${WORK:-$HOME/sg1/work}/native/functions.csv' \
+        -o '$out/modules/xbe_game_modules.csv' \
+        && cmp '$out/modules/xbe_game_modules.csv' inventory/xbe_game_modules.csv"
+    stage property-types sh -c "[ -d '${WORK:-$HOME/sg1/work}/native' ] || { echo skip: no ExportAt output; exit 0; }; \
+        python3 tools/property-map.py --exports '${WORK:-$HOME/sg1/work}/native' -o '$out/props' \
+        && cmp '$out/props/property_types.csv' inventory/property_types.csv"
+    stage token-map sh -c "[ -n '${ORACLE_DIR:-}' ] || { echo skip: ORACLE_DIR unset; exit 0; }; \
+        python3 tools/token-calibrate.py --oracle '$ORACLE_DIR' \
+        --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/tokens' \
+        && cmp '$out/tokens/token_map.csv' inventory/token_map.csv"
     # Dump-gated: the lip-sync directory is on disk. Regenerate into scratch and diff all three artifacts.
     stage lipsinc-index sh -c "python3 tools/lipsinc-index.py \
         --dir '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData' -o '$out/lipsinc' \

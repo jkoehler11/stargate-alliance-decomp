@@ -92,13 +92,31 @@ def resolve(path, mk, tl):
         if base in recipe or stem in recipe:
             return "target", target
     writers = [name for name, src in tl.items() if base in src or stem in src]
+
+    def credits(w, recipe):
+        """Does `recipe` run the tool `w`? A .cs file is run through Sg1Tool's verb, not by name."""
+        if w in recipe:
+            return True
+        verb = dotnet_verb(w)
+        # `Sg1Tool ... -- inventory --dump` or `$(TOOL) maps --dump`: the verb opens a command and is
+        # followed by its first option. Matching the bare word would credit every recipe writing `-o inventory`.
+        return bool(verb) and bool(re.search(r"(?:^|\s)" + re.escape(verb) + r"\s+--[a-z]", recipe, re.M))
+
     for w in writers:
         for target, recipe in mk.items():
-            if w in recipe:
+            if credits(w, recipe):
                 return "target", target
     if writers:
         return "tool", writers[0] + " (no target runs it)"
     return "orphan", ""
+
+
+def dotnet_verb(writer):
+    """`InventoryCommand.cs` -> `inventory`: the Sg1Tool verb that class implements."""
+    stem = writer[:-3] if writer.endswith(".cs") else ""
+    if stem.endswith("Command"):
+        return stem[: -len("Command")].lower()
+    return ""
 
 
 def page(rows):
