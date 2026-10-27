@@ -426,6 +426,43 @@ narrows this entry. Over `Engine.u`'s 3,842 `Function` exports with a payload of
   `payload_end-7` leaves **3,623 of 3,826** payloads with more than one candidate start (a scratch probe, not carried
   by the committed tool), so a self-delimiting walk is not a locator either.
 
+**Fourth session, 2026-10-26: the tail is solved, the header's widths are not.** `UFunction::Serialize`
+(`0x00039f10`) settles what the trailing bytes are, and its version gates explain why earlier readings of this
+payload went wrong. After `UStruct::Serialize` it writes, in order, a `u16` (`+0x84`, the native token), a `u8`
+(`+0x88`, operator precedence), the `u32` `FunctionFlags` (`+0x80`) and — **only when `FunctionFlags & 0x40` (Net)** —
+a `u16` `RepOffset` (`+0x86`). The three fields a `UFunction` otherwise carries (`paramsSize`, `paramsCount`,
+`returnValueOffset`) sit behind `if (Arch.Version < 0x40)` gates and this build is **version 130**, so they are
+**not in the payload at all**; the body recomputes them at load by walking the `Children` chain. UELib's reader
+applies the same gate (`PackageObjectLegacyVersion.Release64 = 64`), so for this build its tail order is
+`NativeToken`, `OperPrec`, `FunctionFlags` — 7 bytes, or 9 with `RepOffset`.
+
+Measured on `Engine.u`'s 3,842 `Function` payloads (`python3 tools/uscript-dis.py --payloads System/Engine.u`):
+
+* the epilogue `04 0b 47` (Return, Nothing, and `47` = the `'G'` marker `UStruct::Serialize` appends to an
+  uncompressed script) sits at `payload_end-10..end-8` in **3,197** payloads, and the `Net` flag is set in **0** of
+  them;
+* at `payload_end-12..end-10` in **201**, and in **all 201** the `Net` flag is set — the two extra bytes are the
+  `RepOffset` the body writes. The trailer's length is therefore *predicted by a flag* with no exceptions in 3,398;
+* **444** payloads carry it at neither position, which is the residue this entry now starts from;
+* the script's size is a 4-byte field immediately in front of it in **804** payloads, and in exactly those the
+  opcode table walks to the boundary. Those scripts are short (2 to ~30 bytes), so the evidence proves the layout
+  rather than the table.
+
+**What is left is the header.** It serialises the struct's `Next`, `Super` and `Children` object references and its
+`FriendlyName`, then a `u32` (written when `Version > 119`), then `Line` and `TextPos`, then the size — but the
+four indices are archive-encoded and their widths vary per payload (the 804 size fields land at offsets 19..24).
+For the other 3,038 payloads no dword at any of the first 48 offsets equals the script's length, so a size field
+found by value is not the general rule. **Do not run the walk backwards from the tail to find the start**: a walk
+started anywhere near the header walks hundreds of bytes before desynchronising, which is a property of a wrong
+start rather than of the table (and 3,623 of 3,826 payloads have more than one start that reaches the boundary).
+
+**What would settle it, now that the tail is known.** Read the *load* side rather than the payload: `LinkerLoad`'s
+`Serialize` (`0x000515d0`) is what fills `Function->Script` from these bytes, so the header's widths are the ones its
+`operator<<` calls consume — decompile it and count the bytes each of the four indices takes. Second route, cheaper
+if the header parse works first: for the 444 payloads with no epilogue at either position, check whether their
+scripts are stored with a marker other than `'G'` (i.e. compressed), which would make the size field the compressed
+length and explain a residue that no layout arithmetic fits.
+
 **What would settle it, now that the tail is known.** The remaining question is only how the script's length is
 encoded in front of it, so read the *load* side rather than the payload bytes: `LinkerLoad`'s own `Serialize`
 (`0x000515d0`, slot 11 of the `LinkerLoad` table in `inventory/class_serialize_slots.csv`) is the code that fills

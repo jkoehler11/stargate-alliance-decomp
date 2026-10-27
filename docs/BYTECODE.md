@@ -136,12 +136,49 @@ why it is the first self-test. `make ci` runs `--selftest` — eleven streams th
 refused — so a change to the table that breaks a width fails the gate instead of silently disagreeing with the
 engine.
 
+## The payload's tail, from `UFunction::Serialize`
+
+`UFunction::Serialize` is `0x00039f10` (283 bytes), and its whole serialized tail is readable from the body. It calls
+`UStruct::Serialize` first (`0x000392b0`), then writes, **version-gated on the archive version field**:
+
+| in the payload | field | gate |
+|---|---|---|
+| `u16` | `+0x84` (the native token) | always |
+| `u8` | `+0x88` (operator precedence) | always |
+| `u32` | `+0x80` — `FunctionFlags` | always |
+| `u16` | `+0x86` — `RepOffset` | only when `FunctionFlags & 0x40` (Net) |
+
+and the build's version is **130**, so the three gates written as `if (Arch.Version < 0x40) write …` — `paramsSize`
+(`+0x8a`), `paramsCount` (`+0x89`) and `returnValueOffset` (`+0x8c`) — **never fire**: those fields are *computed at
+load* by walking the `Children` chain (the loop at the end of the body), not stored. That is why a `UFunction`
+payload here ends in **7 bytes**, or **9** for a network function, and it is the same gate UELib's reader applies
+(`PackageObjectLegacyVersion.Release64 = 64`), so its field list agrees with the image for this build.
+
+Measured over `Engine.u`'s 3,842 `Function` payloads (`python3 tools/uscript-dis.py --payloads System/Engine.u`):
+
+* the script's epilogue — `04 0b` (`Return`, `Nothing`) plus `47`, the `'G'` marker `UStruct::Serialize` appends to
+  a script it stores uncompressed — sits at `payload_end-10..end-8` in **3,197** payloads, and in **0** of those is
+  the `Net` flag set;
+* it sits at `payload_end-12..end-10` in **201**, and in **all 201** the `Net` flag *is* set, i.e. the two extra
+  bytes are exactly the `RepOffset` the body writes;
+* **444** payloads carry the epilogue at neither position (next section);
+* `FunctionFlags` at `payload_end-4` equals `inventory/natives.csv`'s `function_flags` for **439 of the 444**
+  exports joinable by (class, function) — the field is identified by content, not by position alone.
+
+So the tail is no longer a guess: its length is predicted by a flag, and the prediction has no exceptions in 3,398
+payloads. What the tail does *not* give is where the script starts, because the header in front of it serialises
+three object references and a name whose widths differ per payload.
+
 ## Not measured
 
 * **Where a script starts and ends inside a `Function` payload (U13).** Operand widths are necessary for a
-  disassembler but not sufficient: the scripts themselves are still not located, so no shipped function of more than
-  a few bytes has been disassembled end to end. `python3 tools/uscript-dis.py --payloads System/Engine.u` is the
-  measurement, and `docs/UNKNOWNS.md` U13 carries its numbers.
+  disassembler but not sufficient. The tail is solved (above), so the script's end is known; the *start* is not:
+  a 4-byte size field sits immediately in front of the script in **804 of 3,842** payloads, and in those the table
+  walks the script exactly — but those scripts are 2 to ~30 bytes, so they exercise a handful of opcodes. For the
+  other 3,038 no dword at any of the first 48 offsets equals the script's length, so the header's field widths are
+  the open question, and no *long* shipped function has been disassembled end to end.
+  `python3 tools/uscript-dis.py --payloads System/Engine.u` reproduces every count here; `docs/UNKNOWNS.md` U13
+  carries the routes that would settle it.
 * **Operand semantics.** A pattern says four bytes, not *which* reference; which object a `0x13` cast names, which
   function a `0x1c` calls, and what a `0x05` switch's byte means are all still to read, and each is per-opcode work
   on top of this table.
