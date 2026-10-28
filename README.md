@@ -57,9 +57,9 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | shipped packages parsed | 18 | 18 | `████████████████████████` 100.00% | 🟩 |
 | Script | classes agreeing with the 2006 source | 204 | 291 | `█████████████████░░░░░░░` 70.10% | 🟨 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
-| Script | class defaults decoded | 1,666 | 2,319 | `█████████████████░░░░░░░` 71.84% | 🟨 |
-| Script | default properties rendered | 15,519 | 15,530 | `████████████████████████` 99.93% | 🟩 |
-| Script | subobject defaults rendered | 15,802 | 15,810 | `████████████████████████` 99.95% | 🟩 |
+| Script | class defaults decoded | 1,664 | 2,319 | `█████████████████░░░░░░░` 71.76% | 🟨 |
+| Script | default properties rendered | 15,517 | 15,521 | `████████████████████████` 99.97% | 🟩 |
+| Script | subobject defaults rendered | 15,790 | 15,798 | `████████████████████████` 99.95% | 🟩 |
 | Content | classes the shipped content reaches | 553 | 2,319 | `██████░░░░░░░░░░░░░░░░░░` 23.85% | 🟧 |
 | Native | functions carrying a name | 1,995 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 13.34% | 🟧 |
 | Native | functions attributed to a module | 1,920 | 14,957 | `███░░░░░░░░░░░░░░░░░░░░░` 12.84% | 🟧 |

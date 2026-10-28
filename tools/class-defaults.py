@@ -58,7 +58,73 @@ def declared_properties(path=os.path.join(ROOT, "inventory", "class_properties.c
     return by_class
 
 
-def candidates(pkg, mod, exp, limit=None):
+# Which tag types each declared property *kind* can legitimately carry. A block whose tag type contradicts the
+# class's own property record is reading something other than a tag stream -- the one test the name score cannot
+# make, because a start inside a preceding native blob still lands on names the class declares.
+# `UDelegateProperty` and `UPointerProperty` are deliberately unconstrained: a delegate's default is written by the
+# engine rather than by the tag grammar, and a pointer carries no value in the block.
+TYPE_AGREEMENT = {
+    "UByteProperty": {"Byte"},
+    "UIntProperty": {"Int"},
+    "UFloatProperty": {"Float"},
+    "UBoolProperty": {"Bool"},
+    "UNameProperty": {"Name"},
+    "UStrProperty": {"Str", "String"},
+    "UObjectProperty": {"Object"},
+    # A `Class<X>` property serialises as an object reference in this build: 734 tags in blocks that are
+    # otherwise clean carry type `Object` for a `UClassProperty`, so the tag type cannot be `Class` alone.
+    "UClassProperty": {"Class", "Object"},
+    "UStructProperty": {"Struct", "Vector", "Rotator"},
+    "UArrayProperty": {"Array"},
+}
+
+
+def declared_kinds(path=os.path.join(ROOT, "inventory", "class_properties.csv")):
+    """class -> {property: kind}, the `kind` column of the property inventory."""
+    out = collections.defaultdict(dict)
+    if not os.path.isfile(path):
+        return out
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f):
+            out[r["class"]][r["property"]] = r["kind"]
+    return out
+
+
+_AUX = {}
+
+
+def kinds_for(cls, kinds, supers):
+    """{property: kind} for a class, closed over its ancestors (cross-package, from `classes.csv`)."""
+    out, cur, seen = {}, cls, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        for prop, kind in kinds.get(cur, {}).items():
+            out.setdefault(prop, kind)
+        cur = supers.get(cur)
+    return out
+
+
+def kinds_for_class(cls):
+    """`kinds_for` with the inventory loaded once per process, for callers that only have a class name."""
+    if not _AUX:
+        _AUX["kinds"] = declared_kinds()
+        _AUX["supers"] = super_map()
+    return kinds_for(cls, _AUX["kinds"], _AUX["supers"])
+
+
+def contradictions(props, kinds):
+    """How many tags in this parse carry a type their declared kind cannot have (0 when `kinds` is empty)."""
+    if not kinds:
+        return 0
+    bad = 0
+    for p in props:
+        allowed = TYPE_AGREEMENT.get(kinds.get(p["name"]))
+        if allowed is not None and p["type"] not in allowed:
+            bad += 1
+    return bad
+
+
+def candidates(pkg, mod, exp, limit=None, kinds=None):
     """Every offset where a property block parses, bounded by the export's own size.
 
     The bound used to be a fixed 512 bytes, and that is what made the classes with the most defaults look
@@ -87,7 +153,9 @@ def candidates(pkg, mod, exp, limit=None):
             # A class export can carry data after its defaults (a component table, for one). Requiring an
             # exact ending threw away every such class; a bounded trailer keeps them.
             continue
-        out.append((len(props), start, [p["name"] for p in props], trailer))
+        # `bad` is the count of tags whose type the class's own property record contradicts; `choose` sorts on it
+        # first, so a misparsed start cannot win just because it happens to hold declared names.
+        out.append((len(props), start, [p["name"] for p in props], trailer, contradictions(props, kinds)))
     return out, data
 
 
@@ -214,8 +282,10 @@ def misses(system_dir, outdir):
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
             if defaults:
-                cands, _data = candidates(pkg, mod, exp)
-                rows.append(["%s" % pkg_name, cls, len(decl), "incomplete", len(cands), defaults, fully])
+                cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
+                bad = choose(cands, decl)[4] if cands else 0
+                rows.append([pkg_name, cls, len(decl), "type-contradiction" if bad else "incomplete",
+                             len(cands), defaults, fully])
                 continue
             reason, parsed, props, trailer = diagnose(pkg, mod, exp, decl)
             rows.append([pkg_name, cls, len(decl), reason, parsed, props, trailer])
@@ -234,13 +304,21 @@ def misses(system_dir, outdir):
 
 
 def choose(cands, declared):
-    """Prefer the candidate whose names the class declares, then the longest, then the smallest trailer."""
+    """The declared names first, then no contradicting tag type, then the length and the smallest trailer.
+
+    Type agreement is the *tie-break*, not the leading term: `KConeLimit`'s chosen block types `CollisionHeight`
+    (a `Float` property) as a 16-byte `Float` and `PhysicsVolume` (an `Object`) as a `Float`, while a shorter
+    candidate at a later offset agrees with both — so among candidates that explain the same names, prefer the one
+    whose tag types the class's own property record allows. Ranking it *first* is measured in
+    `docs/CLASS_DEFAULTS.md`: it promotes 535 withheld classes to clean blocks, which is a claim about those
+    blocks that nothing here has checked yet.
+    """
     best = None
-    for count, start, names, trailer in cands:
+    for count, start, names, trailer, bad in cands:
         known = sum(1 for n in names if n in declared)
-        score = (known / float(count), count, -trailer)
+        score = (known / float(count), bad == 0, count, -trailer)
         if best is None or score > best[0]:
-            best = (score, count, start, names)
+            best = (score, count, start, names, bad)
     return best
 
 
@@ -267,14 +345,15 @@ def all_packages(system_dir, outdir):
                 seen.add(cur)
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
-            cands, _data = candidates(pkg, mod, exp)
+            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
             best = choose(cands, decl)
             if best is None:
                 rows.append([pkg_name, cls, 0, 0.0, "", 0])
                 continue
-            _score, count, start, names = best
+            _score, count, start, names, bad = best
             known = sum(1 for n in names if n in decl)
-            rows.append([pkg_name, cls, count, round(known / float(count), 4), start, 1 if known == count else 0])
+            rows.append([pkg_name, cls, count, round(known / float(count), 4), start,
+                         1 if known == count and bad == 0 else 0])
     path = os.path.join(outdir, "class_defaults_per_class.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
@@ -316,13 +395,14 @@ def coverage(system_dir, outdir):
         classes = blocks = clean = ambiguous = none_found = 0
         for exp in [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]:
             classes += 1
-            cands, _data = candidates(pkg, mod, exp)
+            cls = pkg.name(exp["name"])
+            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
             if not cands:
                 none_found += 1
                 continue
             blocks += 1
-            score = choose(cands, known_for(pkg.name(exp["name"])))
-            if score[0][0] == 1.0:
+            best = choose(cands, known_for(cls))
+            if best[0][0] == 1.0 and best[4] == 0:
                 clean += 1
             elif len(cands) > 1:
                 ambiguous += 1
@@ -394,12 +474,12 @@ def main():
     for exp in targets:
         cls = pkg.name(exp["name"])
         known = known_for(cls)
-        cands, data = candidates(pkg, mod, exp)
+        cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
         if not cands:
             none_found += 1
             continue
-        score, count, start, names = choose(cands, known)
-        if score[0] == 1.0:
+        score, count, start, names, bad = choose(cands, known)
+        if score[0] == 1.0 and bad == 0:
             clean += 1
         elif len(cands) > 1:
             ambiguous += 1

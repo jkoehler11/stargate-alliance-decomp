@@ -18,13 +18,13 @@ Per class, four things a compiler would need:
 
 <!-- generated:compile-readiness -->
 
-**1,826 of 2,319 classes (78.7%) have every input.**
+**1,824 of 2,319 classes (78.7%) have every input.**
 
 | `defaults_state` | classes | blocks the compile loop? |
 |---|---:|---|
-| `read` — a block whose every property the class declares | 957 | no |
+| `read` — a block whose every property the class declares | 955 | no |
 | `not-applicable` — no properties anywhere in its ancestry | 869 | no |
-| `ambiguous` — block found, not every property declared | 411 | yes |
+| `ambiguous` — block found, not every property declared | 413 | yes |
 | `none` — declares properties, no block located | 82 | yes |
 
 | package | classes | ready | no block | ambiguous |
@@ -36,7 +36,7 @@ Per class, four things a compiler would need:
 | `Sharpeffects` | 158 | 98.7% | 1 | 1 |
 | `GUI` | 148 | 91.2% | 3 | 10 |
 | `StargateVehicles` | 142 | 90.8% | 1 | 12 |
-| `StargateMenus` | 98 | 71.4% | 11 | 17 |
+| `StargateMenus` | 98 | 69.4% | 11 | 19 |
 | `UWindow` | 78 | 16.7% | 0 | 65 |
 | `Stargateeffects` | 77 | 94.8% | 1 | 3 |
 | `UDebugMenu` | 38 | 86.8% | 2 | 3 |
@@ -48,7 +48,7 @@ Per class, four things a compiler would need:
 | `Fire` | 7 | 0.0% | 0 | 7 |
 | `UPreview` | 4 | 75.0% | 0 | 1 |
 
-Blockers across the tree: no-defaults-block 82, defaults-ambiguous 411.
+Blockers across the tree: no-defaults-block 82, defaults-ambiguous 413.
 
 <!-- /generated -->
 

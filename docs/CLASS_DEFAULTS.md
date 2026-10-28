@@ -47,10 +47,10 @@ before this change):
 | `Sharpeffects` | 158 | 157 | **156** |
 | `GUI` | 148 | 144 | 132 |
 | `StargateVehicles` | 142 | 141 | 124 |
-| `StargateMenus` | 98 | 86 | 68 |
+| `StargateMenus` | 98 | 86 | 66 |
 | `UWindow` | 78 | 78 | 12 |
 | others (9 packages) | 193 | 182 | 145 |
-| **total** | **2,319** | **2,209** | **1,666 (71.8%)** |
+| **total** | **2,319** | **2,209** | **1,664 (71.8%)** |
 
 ### The scan window was the biggest single defect
 
@@ -60,7 +60,9 @@ than that, so the classes with the most defaults were exactly the ones reported 
 `Actor` (record 2,451 bytes), `Pawn` (3,992), `PlayerController` (13,665), `GameInfo` (5,682), `Weapon` (2,580).
 Scanning the whole payload recovers **114 classes**, takes blocks found from 2,084 to **2,209**, fully-declared
 blocks from 1,552 to **1,666**, and classes with no block from 235 down to **110** — and the recovered set is the
-inheritance spine of the whole tree, which is why the emitted property count jumps from 13,307 to 15,491.
+inheritance spine of the whole tree, which is why the emitted property count jumps from 13,307 to 15,491. (Those are
+the values of that change; the current ones are 1,664 and 15,517, because two blocks were later withheld for
+contradicting their own property record — see "The locator scores names first and tag types second".)
 
 Where it still fails:
 
@@ -74,7 +76,8 @@ Where it still fails:
 
   | reason | classes | what it means |
   |---|---:|---|
-  | `incomplete` | 543 | a block was chosen, but it holds names the class does not declare — the tie below |
+  | `incomplete` | 515 | a block was chosen, but it holds names the class does not declare — the tie below |
+  | `type-contradiction` | 30 | a block was chosen whose names are declared, but at least one tag's type the declared kind cannot carry (below) |
   | `empty-block` | 109 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding even two of the class's properties |
   | `single-property` | 1 | only one-property blocks parse |
   | `trailer-over-64` | **0** | no class is rejected by the 64-byte bound |
@@ -95,26 +98,26 @@ Where it still fails:
 * Relaxing the one-property filter was tried and rejected: it would "recover" 19 of the single-property group, but the
   matches are spurious (`Modifier` matching its own class name, `TexPanner` matching on `ObjectFlags`). A false block is
   worse than a miss: it would emit wrong defaults where the compiler would otherwise leave the class alone.
-* 428 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
+* 430 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 
-## Emitting: 15,519 of 15,530 properties render, plus 1,317 subobjects
+## Emitting: 15,517 of 15,521 properties render, plus 1,313 subobjects
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
 | package | classes | blocks | properties | rendered | | subobjects |
 |---|---:|---:|---:|---:|---:|---:|
-| `StargateContent` | 567 | 457 | 5,010 | 5,009 | 100.0% | 350 |
-| `Engine` | 367 | 195 | 1,823 | 1,821 | 99.9% | 9 |
+| `StargateContent` | 567 | 457 | 5,009 | 5,009 | 100.0% | 350 |
+| `Engine` | 367 | 195 | 1,822 | 1,821 | 99.9% | 9 |
 | `StargateGame` | 306 | 195 | 1,753 | 1,753 | 100.0% | 89 |
-| `GamePlay` | 262 | 182 | 1,657 | 1,656 | 99.9% | 0 |
+| `GamePlay` | 262 | 182 | 1,656 | 1,656 | 100.0% | 0 |
 | `StargateVehicles` | 142 | 124 | 1,559 | 1,559 | 100.0% | 41 |
 | `GUI` | 148 | 132 | 1,152 | 1,151 | 99.9% | 46 |
 | `Sharpeffects` | 158 | 156 | 1,101 | 1,101 | 100.0% | 467 |
 | `UDebugMenu` | 38 | 31 | 384 | 384 | 100.0% | 0 |
 | `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
-| others (9 packages) | 254 | 125 | 724 | 718 | 99.2% | 143 |
-| **total** | **2,319** | **1,666** | **15,530** | **15,519** | **99.9%** | **1,317** |
+| others (9 packages) | 254 | 123 | 718 | 716 | 99.7% | 139 |
+| **total** | **2,319** | **1,664** | **15,521** | **15,517** | **99.97%** | **1,313** |
 
 What renders, and what each rendering was checked against:
 
@@ -161,9 +164,40 @@ Every array decode has to tile its own value region exactly — count and elemen
 declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 484
 decoded and 2 refused, and it is also what caught the defects below.
 
-What is left over, all counted per block in the CSV: **2 arrays**, **0 structs** and **9** properties with a malformed
-value — 0.07% of the class-level block contents, down from 0.26%. The residue is no longer a format gap: every one of
-the eleven is a *type contradiction* inside a block the locator accepted (below).
+What is left over, all counted per block in the CSV: **1 array**, **0 structs** and **3** properties with a malformed
+value — 0.03% of the class-level block contents, down from 0.26% two changes ago. The array is
+`Engine.TextToSpeechAlias.Aliases` (`array<SpeechReplacement>`, 511 bytes), which still does not tile; the three are
+delegate tags typed `Invalid`/`FixedArray` in `GUI.MenuItemOverlay`, `StargateMenus.ExtrasPage` and
+`StargateMenus.CreditsPage`. A delegate's default is written by the engine rather than by the tag grammar, so the
+type-agreement check below deliberately leaves `UDelegateProperty` unconstrained and these three stay counted rather
+than explained away.
+
+### The locator scores names first and tag types second
+
+A name score cannot tell a class's block from a parse that starts inside the record in front of it. `KConeLimit`'s
+chosen candidate held all four declared names and typed `CollisionHeight` (a `Float` property) as a 16-byte `Float`
+and `PhysicsVolume` (an `Object`) as a `Float` — pairings a real tag stream never produces. `tools/class-defaults.py`
+now counts, per candidate, how many tags carry a type the class's own property record forbids (`TYPE_AGREEMENT`), and
+`choose()` sorts on that **after** the declared-name fraction:
+
+    score = (declared fraction, bad == 0, property count, -trailer)
+
+The map is measured rather than assumed. A `Class<X>` property serialises as an **object reference** in this build —
+734 tags in otherwise-clean blocks carry type `Object` for a `UClassProperty` — so `UClassProperty` accepts
+`{Class, Object}`; taking the tag type to be `Class` alone demoted **419** clean blocks and cost 3,800 properties.
+`UDelegateProperty` and `UPointerProperty` stay unconstrained: the engine writes a delegate's default rather than the
+tag grammar, and a pointer carries no value in the block.
+
+Measured on the dump: the residue goes **11 → 4** values, clean blocks **1,666 → 1,664** (two classes are withheld
+rather than emitting a block that contradicts their own record: `StargateMenus.SelectPawnPanel`,
+`StargateMenus.SelectTeamPanel`), properties **15,530 → 15,521** (the nine impossible tags are gone) and rendered
+**15,517 (99.97%)** — the six classes named in the previous note are down to one array and three delegate tags.
+
+**What was deliberately not shipped, measured: ranking type agreement *first*.** Putting `bad == 0` at the head of
+that tuple instead promotes **535 withheld classes to clean blocks** — 2,201 of 2,319, 16,764 properties (against
+15,521), 272 unrendered values — because those are exactly the classes whose candidate held undeclared package names,
+and the type check picks a shorter candidate that agrees. That is a claim that those 535 blocks *are* the classes'
+blocks, and nothing here checks it, so it stays a measurement rather than a change.
 
 ## Subobjects: 1,317 `Begin Object` blocks
 
@@ -176,10 +210,10 @@ outer is the class being described** — a subobject the compiler expects to be 
     End Object
     Emitters(0)=SpriteEmitter'SpriteEmitter0'
 
-The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,317
-subobjects carrying 15,810 properties, of which 15,802 render**, so a class's defaults are 15,519 + 15,802 =
-**31,321 rendered properties** in total. Subobjects gained the most from the array fix (15,010 → 15,802): a particle
-system's own defaults are full of struct arrays. Without the declaration a reference names an object the compiler has never
+The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,313
+subobjects carrying 15,798 properties, of which 15,790 render**, so a class's defaults are 15,517 + 15,790 =
+**31,307 rendered properties** in total. Subobjects gained the most from the array fix (15,010 → 15,802, before the
+type check withheld a few blocks): a particle system's own defaults are full of struct arrays. Without the declaration a reference names an object the compiler has never
 seen; that is why they are part of this pass and not a cosmetic extra.
 
 **A correction.** The previous PR reported these 270 arrays as "`editinline` arrays whose elements are serialised
@@ -189,20 +223,21 @@ the property's type string* (`array<export editinline ParticleEmitter>` — two 
 the byte format was missing; a string-stripping bug was reported as a format gap. The count is in this table, and
 the earlier claim should not be quoted.
 
-## What the 543 withheld classes are, measured
+## What the 545 withheld classes are, measured
 
 `tools/defaults-emit.py --explain` reports the residue without printing values. Three outcomes per class:
 
 | outcome | classes | payload median | p90 | under 256 bytes |
 |---|---:|---:|---:|---:|
-| block accounts for itself (emitted) | 1,666 | 159 B | 570 B | 1,247 |
-| candidate that does not account for itself (withheld) | 543 | 112 B | 279 B | 474 |
+| block accounts for itself (emitted) | 1,664 | 159 B | 570 B | 1,245 |
+| candidate that does not account for itself (withheld) | 545 | 112 B | 279 B | 476 |
 | no candidate at all | 110 | 103 B | 270 B | 98 |
 
-Of the 543, **227 have exactly one unaccounted name and 316 have two or more**; there are 1,017 unaccounted name
-slots in total. Those names are dominated by **package names** — `Core` 252, `System` 189, `Engine` 73,
-`Lighting` 69 — followed by names that are struct *fields* elsewhere in the tree (`Range`, `LightColor`,
-`Movement`, `Subject`, `GenericType`, `Type`). Package names cannot be property names, which is the useful part:
+Of the 545, **228 have exactly one unaccounted name and 317 have two or more**; there are 1,016 unaccounted name
+slots in total, and **30 of them have no unaccounted name at all — their block contradicts its own property
+record instead** (see the type-agreement section). The unaccounted names are dominated by **package names** —
+`Core` 251, `System` 189, `Engine` 73, `Lighting` 69 — followed by names that are struct *fields* elsewhere in the
+tree (`Range` 31, `Subject` 25, `LightColor` 18, `Movement` 14, `GenericType` 13, `Type` 11). Package names cannot be property names, which is the useful part:
 a candidate that parses a package name as a property is reading a record, not a tag stream. The plausible reading
 is that these payloads hold a small table (the bytes between the names are hash-like 4-byte values that repeat
 across classes: `b31d40ff`, `2c08ad6c`, `5911e68c`) and that the class sets no defaults at all — but the same
@@ -249,19 +284,17 @@ whose block could not be located or does not account for itself.
 
 ## Not measured
 
-* **The last 11 values: a located block whose tag *types* contradict the class's declared kinds.** Two arrays and
-  nine scalars in six classes (`Engine.TextToSpeechAlias`, `GamePlay.EFFECT_DOME_SAINTPAULS`, `Engine.KConeLimit`,
-  `GUI.MenuItemOverlay`, `StargateMenus.SelectPawnPanel`, `StargateContent.ReplicatorQueen`). The locator scores a
-  candidate by *names* only — "does this block hold properties the class declares?" — never by whether each tag's
-  type agrees with the property record, so it can accept a start inside a preceding native blob. Examples from the
-  committed artifact: `CollisionHeight` (a `Float` property) arriving as a 16-byte `Float` tag,
-  `PhysicsVolume` (an `Object`) as a `Float`, `RegularMovementAnims` (a `Name`) as a `Vector`. In all six classes a
-  *type-agreeing* candidate exists that the name score ranks lower, so the fix is a scoring change (type agreement
-  as a hard filter, or as a tie-break), and it cannot be made without re-measuring the 1,666/2,319 block count —
-  which is why it is a separate task and not part of the array fix. What would settle the correct start per class:
-  that type-aware locator, cross-checked against a stock `ucc` build. **Do not read these eleven as an undecoded
-  byte format** — the bytes decode fine; the block chosen is not the class's block.
-* **The 543 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
+* **Whether the 535 promoted blocks are real.** Ranking tag-type agreement first promotes 535 withheld classes to
+  clean blocks (2,201 of 2,319, 16,764 properties) — measured, not shipped, as the section above describes. Those
+  classes' candidates held undeclared **package** names, and the type rule chooses a shorter candidate that agrees
+  with the record; nothing here checks that the shorter block is *complete*. What would settle it: a per-class audit
+  of the chosen block against the properties the class is documented to override, or the runtime reader of the
+  trailing table (the route `docs/NATIVE_PROPERTIES.md` took for the tag format).
+* **The last 4 values.** `Engine.TextToSpeechAlias.Aliases` — a 511-byte `array<SpeechReplacement>` that does not
+  tile under any element width tried — and three delegate tags typed `Invalid`/`FixedArray` (`GUI.MenuItemOverlay`,
+  `StargateMenus.ExtrasPage`, `StargateMenus.CreditsPage`). Delegates are outside the type map by design, so whether
+  those three blocks are misparsed is not measured; a delegate value's real layout is what would settle it.
+* **The 545 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
   not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
   settled (see the section above for the three explanations already tested and rejected).
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the

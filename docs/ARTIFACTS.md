@@ -13,7 +13,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/checkpoint_summary.csv` | 96 | 7 | `make checkpoints` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make defaults-coverage` |
 | `inventory/class_defaults_emit.csv` | 18 | 25 | `make defaults-emit` |
-| `inventory/class_defaults_misses.csv` | 653 | 7 | `make defaults-misses` |
+| `inventory/class_defaults_misses.csv` | 655 | 7 | `make defaults-misses` |
 | `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make defaults-per-class` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
@@ -87,5 +87,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-80 artifacts, 93361 rows in total. 0 with no generator.
+80 artifacts, 93363 rows in total. 0 with no generator.
 

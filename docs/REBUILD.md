@@ -17,7 +17,7 @@ One directory per run under `build/rebuild/<UTC>/`, one log per stage, `summary.
 | 1 | `writer-relay` | every package re-lays through the writer's own placement path and comes back byte-identical (18 of 18) | **proven** |
 | 2 | `rebuild-identity` | each package is assembled from header + tables + payloads and matches the original byte for byte (18 of 18, 100% of bytes accounted for, zero gaps) | **proven** |
 | 3 | `source-tree` | the 2,319 classes' own source is written out as one `.uc` per class | **proven** |
-| 4 | `merge-defaults` | each class's `defaultproperties` block is merged into that tree (1,666 of 2,319 classes) | **proven** |
+| 4 | `merge-defaults` | each class's `defaultproperties` block is merged into that tree (1,664 of 2,319 classes) | **proven** |
 | 5 | `compile` | a compiler turns that tree into `.u` payloads | **missing**: no `ucc` matching package version 130 / licensee 4 |
 | 6 | `repack` | generated payloads are placed by the writer | **blocked** on 5 |
 | 7 | `package-check` | a repacked package passes `Packages.md5` | **decided, not implemented** (`docs/PACKAGE_CHECK.md`: bypass, not regeneration — none of 168 stored digests matches any shipped file under ~500 hash schemes) |
