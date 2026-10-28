@@ -77,6 +77,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     stage lipsinc-runtime sh -c "python3 tools/lipsinc-runtime.py \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
         && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
+    # Dump-gated: the save surface, from the extracted scripts (skips when the extraction is absent).
+    stage savegame-paths sh -c "[ -d '${WORK:-$HOME/sg1/work}/UnrealScript' ] || { echo skip: no extraction; exit 0; }; \
+        python3 tools/savegame-paths.py --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/saves' \
+        && cmp '$out/saves/savegame_paths.csv' inventory/savegame_paths.csv"
     # Dump-gated: the check file's code, from the image itself.
     stage package-check-code sh -c "python3 tools/package-check-code.py \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/pkgcode' \

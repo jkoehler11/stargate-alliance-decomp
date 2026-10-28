@@ -404,6 +404,22 @@ and a deliberate one-line script break is caught by the boot test.
 - **Two were verified on the real dump**: `dialogue-index` (1,364 WAVs, 14 missions, 29 speakers) and `package-check`
   both reproduce their committed CSVs exactly. The other four stay documented gates, not claims.
 
+### Execution notes (2026-10-27, the save/load surface is readable without reconstructing anything)
+
+- **U5's first question is answered from the shipped text.** The packages carry their own `ScriptText`, so "which path
+  calls `SavePackage`" never needed 3.10: `tools/savegame-paths.py` (`inventory/savegame_paths.csv`, 16 rows) shows both
+  writes coming from `GameProfile` (`StartNewMatch` 160, `ContinueSinglePlayerGame` 191) through `GameInfo.SavePackage`,
+  both loads issued by `PlayerController` as a **console command** (`RestartCheckpoint` 1002 with the
+  `c_<mission>_<checkpoint>.sgs` composition, `LoadGame` 3593), and `GameInfo.PostLogin` as the resume path that calls
+  `LoadSaveGame(SaveGameFileName)` when `bIsSaveGame` is set.
+- **Eligibility is opt-in**: `Object.MarkForSaveGame` is called from `Pawn.PossessedBy`, `KActor.PreSaveGame`,
+  `PlayerReplicationInfo.PreSaveGame`, `UnrealTeamInfo.PreSaveGame`, `GravCrane.PostNetBeginPlay` and
+  `GravCraneLifter.OnMove` — four of six through the engine's own `PreSaveGame` hook, which fits the exporter's actor
+  set being generic rather than bespoke.
+- **Where the native half lives, measured**: the `.sgs` literals are name-table strings with no `push` xrefs, but the
+  wide `LoadSaveGameInfo` string is referenced by one function, `0x001226a0` (7,486 bytes), in the same `0x0012xxxx`
+  region as the package-check readers — the save/load/check neighbourhood is one place.
+
 ### Execution notes (2026-10-27, the LIPSinc module is 19 functions and nine of them name themselves)
 
 - **The runtime side is located.** The five `*LIPSincAnim` natives carry no index, but the module logs through 43

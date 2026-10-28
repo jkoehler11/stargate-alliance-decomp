@@ -158,22 +158,44 @@ readers, and `ValuesAtTime, m_nEndTime = %i, time = %f` in `0xb24f0` says the co
 end time — which is what the 32-byte stride and the `-1.0f` sentinel are. The names are evidence for a rename, not
 applied: the symbol map only changes in a Ghidra run.
 
-## U5. Which script path writes and reads a `.sgs`
+## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
-**Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's
-actors). The engine side is `Engine.GameInfo.SavePackage` / `LoadSaveGame`, both natives without a
-serialised index; the game side ships `StargateGame.AutosaveCheckpoint` (a `Trigger` subclass),
-`StargateGame.ACTION_SaveGame` (a `ScriptedAction`), `Core.Object.MarkForSaveGame`, and the menu
-classes `StargateMenus.SaveGameMenu` / `SavedGameInfo` / `SavedGameList` / `OverwriteSavedGamePage` /
-`DeleteSavedGamePage`.
+**Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
+is `Engine.GameInfo.SavePackage` / `LoadSaveGame`, both natives without a serialised index; the game side ships
+`StargateGame.AutosaveCheckpoint` (a `Trigger` subclass), `StargateGame.ACTION_SaveGame` (a `ScriptedAction`),
+`Core.Object.MarkForSaveGame`, and the menu classes `StargateMenus.SaveGameMenu` / `SavedGameInfo` / `SavedGameList` /
+`OverwriteSavedGamePage` / `DeleteSavedGamePage`.
 
-**Unknown.** Which of them calls `SavePackage`, in what order, and whether the writer is the engine's
-generic package serializer (which would explain the exporter's choice of actor set) or a bespoke
-pass. Also unknown: what makes an actor eligible besides `MarkForSaveGame`.
+**This did not need PLAN 3.10.** The packages carry their own `ScriptText`, so the call sites are readable today:
+`tools/pkg-script-text.py` extracts them and `tools/savegame-paths.py` (`make savegame-paths`,
+`inventory/savegame_paths.csv`) finds **16 rows** — 5 declarations, 9 calls, 2 console commands:
 
-**What would settle it.** Read the reconstructed bodies for those classes (PLAN 3.10) and their
-native call sites in the XBE (4.6/4.9). No format work is blocked on it; rebuilding a checkpoint
-(PLAN 6.4) is.
+| role | class.routine | line | what it says |
+|---|---|---|---|
+| declare | `GameInfo` | 268 | `native final function bool SavePackage(string packageName)` |
+| declare | `GameInfo` | 273 | `native simulated final static function bool LoadSaveGame(string GameFile)` |
+| declare | `Object` | 556 | `native final function MarkForSaveGame()` |
+| declare | `GameInfo` / `StoryModeGame` | 277 / 47 | `event LoadSaveGameInfo(GameInfo SavedGameInfo)` — base and override |
+| **call** | `GameProfile.StartNewMatch` | 160 | `CurrentLevel.Game.SavePackage(PackageName)` |
+| **call** | `GameProfile.ContinueSinglePlayerGame` | 191 | `Level.Game.SavePackage(PackageName)` |
+| **call** | `GameInfo.PostLogin` | 1860 | `LoadSaveGame(SaveGameFileName)` |
+| **console** | `PlayerController.RestartCheckpoint` | 1002 | `ConsoleCommand("LoadSaveGame" @ "c_" $ Left $ "_" $ LastCheckpointFilename $ ".sgs")` |
+| **console** | `PlayerController.LoadGame` | 3593 | `ConsoleCommand("LoadSaveGame" @ Filename)` |
+| call | `Pawn.PossessedBy`, `KActor.PreSaveGame`, `PlayerReplicationInfo.PreSaveGame`, `UnrealTeamInfo.PreSaveGame`, `GravCrane.PostNetBeginPlay`, `GravCraneLifter.OnMove` | | `MarkForSaveGame()` |
+
+So the chain is: **both writes come from `GameProfile`** (profile start and continue), through `GameInfo.SavePackage`;
+**both loads come from `PlayerController` as a console command**, not as a call to the native — and the checkpoint
+filename is composed there, `c_<mission>_<checkpoint>.sgs`. `GameInfo.PostLogin` is the resume path: when
+`bIsSaveGame` is set it calls `LoadSaveGame(SaveGameFileName)` for the filename a console command left pending.
+Eligibility is opt-in and per-class: `MarkForSaveGame` is called from six places, four of them the engine's own
+`PreSaveGame` hook, which is consistent with the exporter's actor set rather than a bespoke selection pass.
+
+**Still open.** The native bodies behind `SavePackage`/`LoadSaveGame` — whether the writer is the engine's generic
+package serializer and what the console path's handler does with the name. The `.sgs` literals in the image are
+**name-table strings, not log strings**: they have no `push` xrefs, so the code has to be found another way. One
+measured lead: the wide string `LoadSaveGameInfo` is referenced by a single function at `0x001226a0` (7,486 bytes),
+inside the same `0x0012xxxx` region that holds the package-check readers (PLAN 6.2) — the save/load/check neighbourhood
+is one place, which is worth knowing before decompiling anything there.
 
 ## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 
