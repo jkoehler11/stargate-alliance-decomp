@@ -36,10 +36,72 @@ def rows(name):
         return list(csv.DictReader(fh))
 
 
+BEGIN = "<!-- generated:compile-readiness -->"
+END = "<!-- /generated -->"
+STATES = ("read", "not-applicable", "ambiguous", "none")
+
+
+def report_block(per_class, by_package, totals):
+    """The part of docs/COMPILE.md that is a measurement, generated so it cannot be hand-edited stale."""
+    total = len(per_class)
+    state_at = 8          # the row order is the header below: defaults_state is the ninth column
+    ready = sum(1 for r in per_class if r[state_at] in ("read", "not-applicable"))
+    out = [BEGIN, ""]
+    out.append("**%s of %s classes (%s%%) have every input.**" % (format(ready, ","), format(total, ","),
+                                                                 "%.1f" % (100.0 * ready / total)))
+    out += ["", "| `defaults_state` | classes | blocks the compile loop? |", "|---|---:|---|"]
+    blocks = {"read": "no", "not-applicable": "no", "ambiguous": "yes", "none": "yes"}
+    label = {"read": "`read` — a block whose every property the class declares",
+             "not-applicable": "`not-applicable` — no properties anywhere in its ancestry",
+             "ambiguous": "`ambiguous` — block found, not every property declared",
+             "none": "`none` — declares properties, no block located"}
+    for state in STATES:
+        n = sum(1 for r in per_class if r[state_at] == state)
+        out.append("| %s | %s | %s |" % (label[state], format(n, ","), blocks[state]))
+    out += ["", "| package | classes | ready | no block | ambiguous |", "|---|---:|---:|---:|---:|"]
+    for pkg, d in sorted(by_package.items(), key=lambda kv: -kv[1]["classes"]):
+        pct = 100.0 * d["ready"] / d["classes"] if d["classes"] else 0.0
+        out.append("| `%s` | %s | %.1f%% | %s | %s |"
+                   % (pkg, d["classes"], pct, d["no-defaults-block"], d["defaults-ambiguous"]))
+    out += ["", "Blockers across the tree: " + (", ".join("%s %d" % (b, totals[b]) for b in
+                                                          ("no-source", "no-defaults-block", "defaults-ambiguous",
+                                                           "super-not-in-tree") if totals[b]) or "none") + ".",
+            "", END]
+    return "\n".join(out)          # no trailing newline: the document supplies the one after the marker
+
+
+def write_doc(path, block, write):
+    """Splice (or compare) the generated block in a document between BEGIN and END."""
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError as exc:
+        print("FAIL compile-readiness: %s" % exc)
+        return 1
+    if BEGIN not in text or END not in text:
+        print("FAIL compile-readiness: %s has no %s block" % (path, BEGIN))
+        return 1
+    head, rest = text.split(BEGIN, 1)
+    _old, tail = rest.split(END, 1)
+    want = head + block + tail
+    if write:
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(want)
+        print("wrote %s" % path)
+        return 0
+    if want != text:
+        print("FAIL compile-readiness: %s is stale -- run `make compile-readiness-doc`" % path)
+        return 1
+    print("ok   compile-readiness: docs/COMPILE.md matches a fresh computation")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--out", help="directory for the rollup CSV (default: inventory/)")
     ap.add_argument("--check", action="store_true", help="fail if the committed artifacts disagree")
+    ap.add_argument("--report", action="store_true", help="print the markdown block docs/COMPILE.md carries")
+    ap.add_argument("--write-doc", metavar="PATH", help="splice that block into a document between its markers")
+    ap.add_argument("--check-doc", metavar="PATH", help="fail if the document's block is stale (in `make ci`)")
     args = ap.parse_args()
     outdir = args.out or os.path.join(ROOT, "inventory")
 
@@ -98,18 +160,27 @@ def main():
                           d["fully_declared"] if d else 0, defaults_state, ";".join(blockers)])
 
     per_class.sort()
-    print("%-22s %6s %6s %s" % ("package", "classes", "ready", "blockers"))
-    for pkg in sorted(by_package):
-        c = by_package[pkg]
-        detail = ", ".join("%s %d" % (b, c[b]) for b in ("no-source", "no-defaults-block", "defaults-ambiguous",
-                                                         "super-not-in-tree") if c[b])
-        print("%-22s %6d %6.1f%% %s" % (pkg, c["classes"], 100.0 * c["ready"] / c["classes"], detail or "-"))
-    n = len(classes)
-    print("\n%d classes: %d ready for the compile loop (%.1f%%); blockers: %s"
+    if not (args.report or args.write_doc or args.check_doc):
+        print("%-22s %6s %6s %s" % ("package", "classes", "ready", "blockers"))
+        for pkg in sorted(by_package):
+            c = by_package[pkg]
+            detail = ", ".join("%s %d" % (b, c[b]) for b in ("no-source", "no-defaults-block", "defaults-ambiguous",
+                                                             "super-not-in-tree") if c[b])
+            print("%-22s %6d %6.1f%% %s" % (pkg, c["classes"], 100.0 * c["ready"] / c["classes"], detail or "-"))
+        n = len(classes)
+        print("\n%d classes: %d ready for the compile loop (%.1f%%); blockers: %s"
           % (n, totals["ready"], 100.0 * totals["ready"] / n if n else 0.0,
              ", ".join("%s %d" % (b, totals[b]) for b in ("no-source", "no-defaults-block",
                                                           "defaults-ambiguous", "super-not-in-tree")
                        if totals[b]) or "none"))
+
+    if args.report or args.write_doc or args.check_doc:
+        block = report_block(per_class, by_package, totals)
+        if args.report:
+            print(block)
+            return 0
+        target = args.write_doc or args.check_doc
+        return write_doc(target, block, write=bool(args.write_doc))
 
     path = os.path.join(outdir, "compile_readiness.csv")
     rollup = os.path.join(outdir, "compile_readiness_by_package.csv")

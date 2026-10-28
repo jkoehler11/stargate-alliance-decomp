@@ -14,8 +14,8 @@ assets, and boot the game in xemu.
 | what it needs | measured state | source |
 |---|---|---|
 | shipped source for every class | **2,319 of 2,319** | `inventory/package_script_text.csv` |
-| every input a rebuild needs, per class | **1,712 of 2,319 (73.8%)** | `inventory/compile_readiness.csv`, `docs/COMPILE.md` |
-| defaults readable, or nothing to set | 843 read + 869 not-applicable; **607 blocked** | same |
+| every input a rebuild needs, per class | **1,826 of 2,319 (78.7%)** | `inventory/compile_readiness.csv`, `docs/COMPILE.md` |
+| defaults readable, or nothing to set | 957 read + 869 not-applicable; **493 blocked** | same |
 | a UE2 compiler (`ucc`) | **absent**. Wine is installed on the desktop; no UE2 runtime anywhere | this session, measured |
 | package integrity check (`Packages.md5`) | not reproducible; **bypass is the plan** | `docs/PACKAGE_CHECK.md` |
 | a boot harness | **works**: the title boots in xemu and executes game code | `docs/XEMU.md` |

@@ -322,6 +322,18 @@ def check_tool_contract():
     ok(name, detail)
 
 
+def check_compile_doc():
+    """docs/COMPILE.md's tables are generated; they must match a fresh computation."""
+    name = "compile-doc"
+    r = subprocess.run([sys.executable, repo("tools", "compile-readiness.py"), "--check-doc", "docs/COMPILE.md"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   compile-readiness: ", "") if out else "")
+
+
 def check_module_split():
     """The per-function module split must reconcile with the committed per-module rollup."""
     name = "module-split"
@@ -415,6 +427,7 @@ def main():
     check_versions_lock()
     check_image_strings()
     check_module_split()
+    check_compile_doc()
     check_tool_contract()
     check_savegame_paths()
     check_opcode_table()
