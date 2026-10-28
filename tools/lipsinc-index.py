@@ -32,7 +32,8 @@ LAD_COLUMNS = ["path", "bytes", "header_u32", "bones", "data_offset", "record_by
 # What the first records of the body actually are: a 32-byte pose per bone name, not an animation key list. The
 # scan stops at the first record that is not one, which is why it is a measurement rather than a stride assumption.
 POSE_COLUMNS = ["path", "data_offset", "prelude_bytes", "bones", "pose_records", "pose_stops_at", "tail_bytes",
-                "pose0_x", "pose0_y", "pose0_z", "constant_triple", "sentinel"]
+                "pose0_x", "pose0_y", "pose0_z", "constant_triple", "sentinel", "payload_bytes", "payload_mod32",
+                "payload_gaps"]
 RECORD = 32
 
 
@@ -136,6 +137,28 @@ def scan_poses(d, off):
     return count, off, ["%.4f" % v[0], "%.4f" % v[1], "%.4f" % v[2], triple, "%.1f" % v[6]]
 
 
+def payload_runs(d, start):
+    """How the animation payload is punctuated, measured rather than assumed.
+
+    The payload is mostly 32-byte-strided runs but is *not* a uniform array: its length is not a multiple of 32 in
+    most files. The recurring 12-byte block that every record carries gives the gaps between records directly, so the
+    artifact can state which strides occur and with what counts instead of claiming one.
+    """
+    body = d[start:]
+    if len(body) < 24:
+        return 0, 0, ""
+    seen = {}
+    for i in range(0, min(len(body) - 12, 4096)):
+        seen[body[i:i + 12]] = seen.get(body[i:i + 12], 0) + 1
+    pattern = max(seen, key=seen.get) if seen else b""
+    positions = [i for i in range(len(body) - 12) if body.startswith(pattern, i)] if pattern else []
+    gaps = {}
+    for a, b in zip(positions, positions[1:]):
+        gaps[b - a] = gaps.get(b - a, 0) + 1
+    top = sorted(gaps.items(), key=lambda kv: -kv[1])[:3]
+    return len(body), len(body) % RECORD, " ".join("%d:%d" % kv for kv in top)
+
+
 def parse_map(path):
     character = os.path.basename(path)[:-4]
     targets = None
@@ -181,13 +204,15 @@ def build(root):
                 lads.append(info)
                 blob = open(path, "rb").read()
                 count, stop, first = scan_poses(blob, info["data_offset"])
+                pbytes, pmod, pgaps = payload_runs(blob, stop)
                 poses.append({"path": rel, "data_offset": info["data_offset"],
                               "prelude_bytes": stop - int(info["data_offset"]) - count * RECORD,
                               "bones": len(info["bones"].split(";")) if info["bones"] else 0,
                               "pose_records": count, "pose_stops_at": stop,
                               "tail_bytes": len(blob) - stop,
                               "pose0_x": first[0], "pose0_y": first[1], "pose0_z": first[2],
-                              "constant_triple": first[3], "sentinel": first[4]})
+                              "constant_triple": first[3], "sentinel": first[4],
+                              "payload_bytes": pbytes, "payload_mod32": pmod, "payload_gaps": pgaps})
                 files.append({"path": rel, "kind": "lad", "bytes": size,
                               "entries": "%d bones, %d records" % (len(info["bones"].split(";")), info["records"]),
                               "note": "record %d bytes, %d residue bytes, trailer %s"
@@ -265,12 +290,18 @@ def check(out):
             problems.append("%s: pose scan does not reach the end" % r["path"])
         if count and not r["sentinel"]:
             problems.append("%s: poses without a sentinel" % r["path"])
+        if int(r["payload_bytes"]) != int(r["tail_bytes"]):
+            problems.append("%s: payload length disagrees with the tail" % r["path"])
+        if int(r["payload_mod32"]) >= RECORD:
+            problems.append("%s: payload remainder %s" % (r["path"], r["payload_mod32"]))
     if problems:
         print("FAIL lipsinc-index: " + "; ".join(problems[:6]))
         return 1
     posed = sum(1 for r in poses if int(r["pose_records"]))
+    aligned = sum(1 for r in poses if int(r["payload_mod32"]) == 0)
     print("ok   lipsinc-index: %d files, %d phoneme weights over %d maps, %d .lad containers, "
-          "%d pose blocks" % (len(files), len(phonemes), len(per_map), len(lads), posed))
+          "%d pose blocks, %d/%d payloads a whole number of 32-byte records"
+          % (len(files), len(phonemes), len(per_map), len(lads), posed, aligned, len(poses)))
     return 0
 
 

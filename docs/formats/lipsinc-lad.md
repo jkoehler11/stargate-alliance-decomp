@@ -86,8 +86,26 @@ block** (21 or 19 records) and nowhere else. The old `records` and `residue_byte
 stride fails, not a damaged final record. They are kept because they bound the payload's size, but they no longer
 claim a layout.
 
-What the animation payload *is* remains unread: it is 96–99% of every file and it does not stride at 32. That is
-U4's remaining half.
+What the animation payload *is* remains unread, and the honest description of its shape is narrower than "32-byte
+records" and wider than "not strided at all": it is **32-byte-strided runs, not a uniform array**. Only one of the eight
+payloads is a whole number of 32-byte records, and the 12-byte block every record carries recurs at gaps of 32, 37, 64,
+128 and 192:
+
+| file | payload bytes | mod 32 | most common gaps between records |
+|---|---:|---:|---|
+| `sg1_crew_jackson.lad` | 12,896 | 0 | 32:123, 64:30, 128:19 |
+| `sg1_crew_carter.lad` | 26,311 | 7 | 32:123, 64:30, 128:19 |
+| `JAnderson.lad` | 33,073 | 17 | 32:123, 64:30, 128:19 |
+| `Controllers/grey.lad` | 39,583 | 31 | 32:123, 64:30, 128:19 |
+| `Controllers/sg1_crew_tealc.lad` | 649,539 | 3 | 32:494, 37:69, 128:39 |
+| `Controllers/sg1_crew_jackson.lad` | 1,067,477 | 21 | 32:385, 128:59, 192:56 |
+| `Controllers/sg1_crew_carter.lad` | 1,300,711 | 7 | 32:414, 37:69, 128:39 |
+| `Controllers/sg1_crew_oneill.lad` | 1,831,609 | 25 | 32:273, 128:59, 192:37 |
+
+A gap of 37 (the two `Controllers` files where it appears) is the interesting one: it says some records are five bytes
+longer than the common case, which is what a per-record flag or a variable-length tail would do. So the remaining
+question is not "what is the stride" but "what does a record hold, and what makes one 37 bytes instead of 32" — a
+keyframe decoder's problem, and U4's remaining half.
 
 ## The `.map` files are the viseme set, and they are text
 
@@ -147,8 +165,8 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 ## Status
 
 - Header + channel table: parsed in all 8 files, no exceptions.
-- Payload: the leading pose block is measured (one 32-byte pose per channel); the animation data after it
-  is not 32-byte strided and is unread.
+- Payload: the leading pose block is measured (one 32-byte pose per channel); the animation data after it is
+  32-byte-strided **runs** (1 of 8 payloads is a whole number of records; gaps of 32/37/64/128/192) and is unread.
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
 - Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.

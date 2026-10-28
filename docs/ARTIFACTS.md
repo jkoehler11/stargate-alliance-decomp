@@ -37,7 +37,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/lipsinc_files.csv` | 18 | 5 | `make lipsinc-index` |
 | `inventory/lipsinc_lad.csv` | 8 | 9 | `make lipsinc-index` |
 | `inventory/lipsinc_phonemes.csv` | 2580 | 5 | `make lipsinc-index` |
-| `inventory/lipsinc_pose.csv` | 8 | 12 | `make lipsinc-index` |
+| `inventory/lipsinc_pose.csv` | 8 | 15 | `make lipsinc-index` |
 | `inventory/lipsinc_runtime.csv` | 19 | 4 | `make lipsinc-runtime` |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
 | `inventory/map_export_classes.csv` | 6478 | 3 | `make map-actors` |
