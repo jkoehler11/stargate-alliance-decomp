@@ -375,8 +375,17 @@ report cites file-level evidence for each claim.
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 18 of 18 byte-identical), but a
       *build* is not, because generated payloads (the compiler's output, its timestamps and name ordering) do not
       exist yet. 6.3 closes with stage 5 of the pipeline, not before.
-- [ ] 6.4 Produce two build targets: `rebuild-hybrid` (our scripts + original assets) and `rebuild-full`
+- [~] 6.4 Produce two build targets: `rebuild-hybrid` (our scripts + original assets) and `rebuild-full`
       (our scripts + re-extracted assets) and record which missions boot in each.
+      **Both targets exist** (`tools/build.sh --target hybrid|full`, `make rebuild-hybrid` / `make rebuild-full`;
+      `docs/REBUILD.md` defines them). `hybrid` is the one that can produce something today: it places **18
+      assembled packages** — the writer's own output via `pkg-write --rebuild --write`, not a copy — beside
+      `Packages.md5`, then `tools/build-manifest.py` writes `manifest.csv` (size + SHA-256 against the source, and
+      the stage fails unless all 18 are `identical=1`) and `missions.csv` (the 18 campaign rows the build carries,
+      joined from `inventory/campaign_matrix.csv`). `full` is the same stages plus `compile`/`repack`/`package-check`
+      /`boot`, which report SKIP with their reason. **What is still missing**: a hybrid build's script half is a
+      *source tree*, not packages (no `ucc`, PLAN 3.6), and the "which missions boot in each" column needs an HDD
+      image built from these packages, so it stays empty.
 
 **Acceptance:** `tools/build.sh` on a clean checkout produces bootable packages; rebuilt-vs-original package diffs
 are limited to expected fields (checksum/timestamp) and documented.
@@ -405,6 +414,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-28, two build targets, and the first one produces something)
+
+- **6.4's two targets exist and one of them ships a build.** `tools/build.sh --target hybrid|full` (`make
+  rebuild-hybrid` / `make rebuild-full`); stages 1-4 are shared. `hybrid` places **18 assembled packages** — the
+  writer's own output through a new `pkg-write --rebuild --write DIR`, not a copy of the input — beside
+  `Packages.md5`, and `tools/build-manifest.py` writes `manifest.csv` (size + SHA-256 next to the source's) and
+  `missions.csv` (the 18 campaign rows, joined from `inventory/campaign_matrix.csv`). The manifest stage fails
+  unless all 18 are `identical=1`, so a build cannot report PASS on a tree it assembled wrongly.
+- **What the hybrid target is not**: with no `ucc` (3.6) its script half is the merged source tree beside the
+  packages (2,319 `.uc` files, asserted as a stage), not packages compiled from it. The "which missions boot in
+  each" column of 6.4 needs an HDD image, so `boot` stays SKIP and `missions.csv` is the column it will attach to.
+- **The children-chain test the last note named was run, and it is out.** Predicting the script's start as `Super` +
+  one reference per parameter + `FriendlyName` + 16 is exact for 181 of the 2,171 payloads with a unique size dword
+  (mostly off by +1..+3); adding a leading name index reaches 904 with residuals spread both ways, and the walk
+  from the predicted offset tiles in 3,030 payloads against 3,545 at `+2` — no peak, so the walker cannot serve as
+  the locator either. `docs/UNKNOWNS.md` U13 carries the two routes that remain (the image's `UStruct::Deserialize`,
+  or pinning one start from a source-visible first token).
+- **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
+  next finishable unit.
 
 ### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
 

@@ -507,7 +507,8 @@ def main():
     ap.add_argument("--export", metavar="INDEX", type=int,
                     help="0-based export index to resize (default: the sampled set)")
     ap.add_argument("--write", metavar="DIR",
-                    help="write the resized packages and package_relayout.csv into DIR (use $WORK)")
+                    help="write the packages this run assembled (--rebuild) or resized (--resize) into DIR, "
+                         "plus package_relayout.csv for a resize (use $WORK, never the repository)")
     args = ap.parse_args()
     if args.selftest or not args.system_dir:
         return selftest()
@@ -552,6 +553,7 @@ def main():
 
     files = sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u"))
     ok_all, bad = 0, []
+    placed = [0]
     for fname in files:
         pkg = Package(os.path.join(args.system_dir, fname))
         pkg.read_names()
@@ -579,6 +581,13 @@ def main():
                 print("       uncovered: %s" % ", ".join("+0x%x(%d)" % g for g in gaps[:6]))
             if not good:
                 problems.append("%s whole-file rebuild differs" % fname)
+            elif args.write:
+                # A placed package is the writer's own output, not a copy of the input: this is what a build
+                # target hands the engine (PLAN 6.4, `docs/REBUILD.md`).
+                os.makedirs(args.write, exist_ok=True)
+                with open(os.path.join(args.write, fname), "wb") as fh:
+                    fh.write(whole)
+                placed[0] += 1
         elif not problems:
             print("ok   %-22s names %5d imports %3d exports %5d re-encode byte-identical"
                   % (fname, len(pkg.names), len(pkg.imports), len(pkg.exports)))
@@ -588,6 +597,8 @@ def main():
         else:
             ok_all += 1
 
+    if args.write:
+        print("wrote %d assembled package(s) into %s" % (placed[0], args.write))
     for fname, problems in bad:
         print("FAIL %s" % fname)
         for p in problems:

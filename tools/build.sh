@@ -7,8 +7,12 @@
 # being discovered late. Every stage prints the command that would run it.
 #
 #   tools/build.sh --dry-run                      # everything that needs no compiler
-#   SG1_DUMP=~/sg1/dump tools/build.sh            # + the dump-side stages
+#   SG1_DUMP=~/sg1/dump tools/build.sh            # + the dump-side stages (target `full`)
+#   SG1_DUMP=~/sg1/dump tools/build.sh --target hybrid   # the packages a hybrid build carries, with a manifest
 #   SG1_DUMP=~/sg1/dump UCC=~/tools/ucc/ucc tools/build.sh    # + compile (not available: see docs/REBUILD.md)
+#
+# Two targets (PLAN 6.4): `hybrid` is our scripts + the original assets, `full` is our scripts + re-extracted
+# assets. What each can do *today* differs, and the script says which stages it ran rather than implying the rest.
 #
 # Output: build/rebuild/<UTC>/ with one log per stage and summary.txt. Nothing is committed.
 set -u
@@ -21,11 +25,22 @@ summary="$out/summary.txt"
 fail=0
 dry=0
 
-for arg in "$@"; do
-    case "$arg" in
+target=full
+while [ "$#" -gt 0 ]; do
+    case "$1" in
         --dry-run) dry=1 ;;
-        *) echo "unknown argument: $arg"; exit 2 ;;
+        --target)
+            shift
+            case "${1:-}" in
+                hybrid|full) target=$1 ;;
+                *) echo "--target takes hybrid or full"; exit 2 ;;
+            esac
+            ;;
+        --target=*) target=${1#--target=}
+            case "$target" in hybrid|full) ;; *) echo "--target takes hybrid or full"; exit 2 ;; esac ;;
+        *) echo "unknown argument: $1"; exit 2 ;;
     esac
+    shift
 done
 
 say() { printf '%s\n' "$*" | tee -a "$summary"; }
@@ -45,7 +60,7 @@ stage() {  # stage NAME COMMAND...
 
 skip() { say "SKIP  $1  ($2)"; }
 
-say "rebuild $stamp"
+say "rebuild $stamp  target $target"
 say "repository $(git rev-parse --short HEAD 2>/dev/null || echo 'not a git checkout')"
 say "python $(python3 -V 2>&1 | cut -d' ' -f2)"
 say "dump ${SG1_DUMP:-<unset>}"
@@ -79,6 +94,28 @@ else
     skip merge-defaults "needs the dump"
 fi
 
+# 4. The target. A hybrid build carries the original assets and our scripts; the packages it hands the engine are
+#    the writer's own assembled output, which is what the manifest proves. It does *not* compile: there is no `ucc`
+#    (PLAN 3.6), so the script half is the merged source tree beside the packages, not packages made from it.
+if [ "$target" = hybrid ]; then
+    system="${SG1_DUMP:-$HOME/sg1/dump}/Stargate_SG-1_-_The_Alliance-2005-12-15/System"
+    mkdir -p "$out/workdir/System"
+    stage place-packages python3 tools/pkg-write.py "$system" --rebuild --write "$out/workdir/System"
+    if [ -f "$system/Packages.md5" ]; then
+        stage place-check-data sh -c "cp '$system/Packages.md5' '$out/workdir/System/Packages.md5'"
+    else
+        skip place-check-data "no Packages.md5 beside the packages"
+    fi
+    stage manifest python3 tools/build-manifest.py "$out/workdir/System" "$system" -o "$out"
+    if [ -d "$out/source-tree" ]; then
+        stage source-count sh -c "test \$(find '$out/source-tree' -name '*.uc' | wc -l) -eq 2319"
+    else
+        skip source-count "no source tree was written"
+    fi
+    skip compile "not a hybrid stage: a hybrid build places the original payloads (PLAN 6.1's remaining half)"
+    skip repack "not a hybrid stage: nothing was generated to pack"
+    skip boot "needs an HDD image built from these packages (tools/xemu/smoke.py exists: docs/XEMU.md)"
+else
 # 4. Compile. This is the stage the project cannot run yet, and the only one that needs a compiler.
 if [ -n "${UCC:-}" ] && [ -x "${UCC:-}" ]; then
     if [ "$dry" = 1 ]; then
@@ -99,6 +136,7 @@ skip package-check "bypass decided, not implemented (docs/PACKAGE_CHECK.md)"
 
 # 7. Boot. Needs a repacked HDD image, so it follows 4-6; the boot harness itself exists (tools/xemu/smoke.py).
 skip boot "needs a repacked image (tools/xemu/smoke.py exists and boots the retail image: docs/XEMU.md)"
+fi
 
 say ""
 say "stages that ran: $([ "$fail" = 0 ] && echo PASS || echo FAIL)"

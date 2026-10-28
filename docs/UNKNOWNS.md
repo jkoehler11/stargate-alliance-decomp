@@ -529,8 +529,19 @@ with the index the function's *script* declares in `native(1234)`:
   most likely the `Children` chain (one reference per parameter). **Next test, not tried:** take the parameter
   count from the export table (exports whose `outer` is the function and whose class name ends in `Property`),
   predict the start as `Super` + one reference per child + `FriendlyName` + 16, and require the walk from the
-  predicted offset to end exactly on the epilogue. That is a bounded per-payload check and it either closes this
-  entry or gives a fourth negative with a smaller surface.
+  predicted offset to end exactly on the epilogue.
+
+  **That test has now been run, and the children-chain prediction does not hold.** Over the same 2,171 payloads, the
+  prediction `Super` + one reference per child + `FriendlyName` + 16 is exact for **181**, and off by +1/+2/+3 for
+  722/639/258 — adding one leading name index raises the exact count to **904** and leaves residuals spread either
+  way, which is what a wrong rule looks like rather than a missing byte. Using the walker as the locator is no help
+  either: walking from the predicted offset, and from ±3 around it, succeeds for 3,030 payloads at the predicted
+  offset against 3,545 at **+2**, i.e. no peak where the rule says the start is — a wrong start still lands on a
+  boundary in a quarter of payloads because most scripts are short. So the header width is neither a fixed count of
+  references nor the `Children` chain alone, and `uscript-dis` keeps refusing rather than guessing. The two routes
+  left are the ones this entry started with: `UStruct::Deserialize` in the image (the reader, not the writer), or a
+  payload whose script's first token is unambiguous in the *source* — a function whose `.uc` body begins with a
+  distinctive literal — used to pin one start and work outward.
 
 **What is left is the header.** It serialises the struct's `Next`, `Super` and `Children` object references and its
 `FriendlyName`, then a `u32` (written when `Version > 119`), then `Line` and `TextPos`, then the size — but the
