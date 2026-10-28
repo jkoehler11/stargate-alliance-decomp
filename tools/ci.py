@@ -279,6 +279,18 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_module_split():
+    """The per-function module split must reconcile with the committed per-module rollup."""
+    name = "module-split"
+    r = subprocess.run([sys.executable, repo("tools", "module-split.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   module-split: ", "") if out else "")
+
+
 def check_image_strings():
     """Every topic's artifact must still name the strings that put its functions there."""
     name = "image-strings"
@@ -359,6 +371,7 @@ def main():
     check_artifact_hashes()
     check_versions_lock()
     check_image_strings()
+    check_module_split()
     check_savegame_paths()
     check_opcode_table()
     check_function_flags()
