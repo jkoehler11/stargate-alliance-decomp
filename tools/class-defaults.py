@@ -91,7 +91,7 @@ def candidates(pkg, mod, exp, limit=None):
     return out, data
 
 
-def diagnose(pkg, mod, exp):
+def diagnose(pkg, mod, exp, declared=frozenset()):
     """Why a class has no usable block: the question `docs/CLASS_DEFAULTS.md` left as "not measured".
 
     `candidates()` returns only survivors, so a miss told us nothing. This walks the same offsets and classifies the
@@ -99,8 +99,9 @@ def diagnose(pkg, mod, exp):
     blocks parse, or the parsed block carries an unnamed property.
     """
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-    parsed = single = unnamed = 0
-    best = None                                  # (props, trailer) among blocks rejected only by the bound
+    parsed = single = unnamed = empty = 0
+    max_declared = 0                             # most declared properties any single parse contains
+    best = None                                  # (declared, props, trailer) among blocks rejected only by the bound
     for start in range(len(data)):
         try:
             props, end, reason = mod.read_block(data[start:], pkg, False)
@@ -109,6 +110,10 @@ def diagnose(pkg, mod, exp):
         if reason != "None":
             continue
         parsed += 1
+        if not props:
+            empty += 1
+            continue
+        max_declared = max(max_declared, sum(1 for p in props if p["name"] in declared))
         if len(props) < 2:
             single += 1
             continue
@@ -118,10 +123,21 @@ def diagnose(pkg, mod, exp):
         if start + end > len(data):
             continue
         trailer = len(data) - (start + end)
-        if trailer > 64 and (best is None or len(props) > best[0]):
-            best = (len(props), trailer)
-    if best is not None:
-        return "trailer-over-64", parsed, best[0], best[1]
+        known = sum(1 for p in props if p["name"] in declared)
+        if trailer > 64 and (best is None or (known, len(props)) > (best[0], best[1])):
+            best = (known, len(props), trailer)
+    if best is not None and best[0] >= 2:
+        # A block that carries at least two of the class's properties and only fails the trailer bound: that is the
+        # bound's problem, and raising it is the fix.
+        return "trailer-over-64", parsed, best[1], best[2]
+    if empty and max_declared < 2:
+        # The payload parses a *valid empty* block and nothing anywhere carries even two of the class's properties:
+        # either the class genuinely sets none of them, or its block does not have the shape read_block parses.
+        return "empty-block", parsed, empty, best[2] if best else -1
+    if parsed and max_declared < 2:
+        # Nothing anywhere in the payload contains even two of the class's properties. The bound is irrelevant here:
+        # either the block is absent or it does not have the shape read_block parses.
+        return "no-declared-property", parsed, max_declared, best[2] if best else -1
     if single:
         return "single-property", parsed, 0, -1
     if unnamed:
@@ -144,7 +160,8 @@ def check_misses(outdir):
         return 1
     got = {(r["package"], r["class"]) for r in rows}
     reasons = collections.Counter(r["reason"] for r in rows)
-    blockless = reasons.get("single-property", 0) + reasons.get("trailer-over-64", 0)
+    blockless = sum(v for k, v in reasons.items()
+                    if k in ("single-property", "trailer-over-64", "no-declared-property", "empty-block"))
     problems = []
     if got != wanted:
         problems.append("%d classes explained but %d not fully declared (%d missing, %d invented)"
@@ -155,9 +172,10 @@ def check_misses(outdir):
     if problems:
         print("FAIL class-defaults: " + "; ".join(problems))
         return 1
-    print("ok   class-defaults: %d classes without a fully declared block (%d with no block: %d single-property, "
-          "%d past the trailer bound)" % (len(rows), blockless, reasons.get("single-property", 0),
-                                          reasons.get("trailer-over-64", 0)))
+    print("ok   class-defaults: %d classes without a fully declared block (%d with no usable block: "
+          "%d empty-block, %d single-property, %d past the trailer bound)"
+          % (len(rows), blockless, reasons.get("empty-block", 0),
+             reasons.get("single-property", 0), reasons.get("trailer-over-64", 0)))
     return 0
 
 
@@ -199,7 +217,7 @@ def misses(system_dir, outdir):
                 cands, _data = candidates(pkg, mod, exp)
                 rows.append(["%s" % pkg_name, cls, len(decl), "incomplete", len(cands), defaults, fully])
                 continue
-            reason, parsed, props, trailer = diagnose(pkg, mod, exp)
+            reason, parsed, props, trailer = diagnose(pkg, mod, exp, decl)
             rows.append([pkg_name, cls, len(decl), reason, parsed, props, trailer])
     path = os.path.join(outdir, "class_defaults_misses.csv")
     os.makedirs(outdir, exist_ok=True)
