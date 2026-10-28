@@ -191,18 +191,47 @@ def selftest():
     return 0
 
 
-def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
+def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet=False):
     """Measure a package's `Function` payloads: the trailer, and how far locating the script gets.
 
-    Four counts, all reproduced by this one command:
-      * the `FunctionFlags` dword at `payload_end-4` against `inventory/natives.csv`;
-      * the script epilogue (`04 0b 47` = Return, Nothing, the `'G'` marker) and where it sits, which fixes the
-        trailer's length: 7 bytes, or 9 when the Net flag (0x40) means `RepOffset` follows the flags;
-      * how many payloads carry a 4-byte size field immediately before a script that the table then walks
-        exactly, with the script ending on that epilogue.
+    What the trailer *is* (measured, `docs/BYTECODE.md`), and what is still open:
+
+      * `FunctionFlags` is the dword at `payload_end-4`;
+      * in front of it sit **`NativeToken` (u16) and `OperPrecedence` (u8)** -- the two fields `UFunction` adds
+        after `UStruct`'s script. The token agrees with the index the script declares (`native(1234)`) for the
+        great majority of functions, and an empty script has no `04 0b 47` epilogue at all, which is why the
+        native half of `natives.csv` is also the half with no epilogue;
+      * a Net function (flag 0x40) serialises `RepOffset` (u16) between `OperPrecedence` and the flags, which is
+        why its epilogue sits two bytes earlier: a 9-byte trailer instead of 7;
+      * **still open**: where the 4-byte `ScriptStorageSize` sits. A dword immediately before a script the table
+        walks exactly is found in a minority of payloads, so the object references in front of it are not pinned
+        -- `docs/UNKNOWNS.md` U13.
     """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    if os.path.isdir(path):
+        # A whole dump directory: one line per package, then the corpus totals, since a per-package number
+        # invites a total retyped from one file.
+        tot, per_pkg = {}, []
+        for fname in sorted(f for f in os.listdir(path) if f.lower().endswith(".u")):
+            stats = payloads(os.path.join(path, fname), natives, quiet=True)
+            per_pkg.append(stats)
+            for k, v in stats.items():
+                if isinstance(v, int):
+                    tot[k] = tot.get(k, 0) + v
+        print("%-18s %6s %6s %6s %6s %5s %5s %5s %6s" %
+              ("package", "fn", "join", "flags", "token", "tr7", "tr9", "none", "sized"))
+        for stats in per_pkg:
+            print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d" %
+                  (stats["package"], stats["seen"], stats["joined"], stats["matched"], stats["token_ok"],
+                   stats["tail7"], stats["tail9"], stats["neither"], stats["located"]))
+        print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d" %
+              ("TOTAL", tot.get("seen", 0), tot.get("joined", 0), tot.get("matched", 0), tot.get("token_ok", 0),
+               tot.get("tail7", 0), tot.get("tail9", 0), tot.get("neither", 0), tot.get("located", 0)))
+        print("token disagreements beyond a declared none: %d; they are listed only when one package is named"
+              % tot.get("token_other", 0))
+        return 0
 
     pkg = Package(path)
     pkg.read_names()
@@ -225,10 +254,18 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
             if r["package"].lower() == pkg_name.lower():
                 known[(r["class"].lower(), r["function"].lower())] = flags(r["function_flags"])
 
+    declared_token = {}
+    if os.path.isfile(natives):
+        for r in csv.DictReader(open(natives)):
+            if r["package"].lower() == pkg_name.lower():
+                declared_token[(r["class"].lower(), r["function"].lower())] = int(r["native_token"])
+
     seen = joined = matched = 0
     tail = {"7": 0, "9": 0, "neither": 0}
     net = {"7": 0, "9": 0}
     located = 0
+    token_ok = token_unset = token_declared_only = token_other = 0
+    exceptions = []
     for e in pkg.exports:
         if pkg.class_name_of(e) != "Function":
             continue
@@ -238,12 +275,35 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
             continue
         seen += 1
         owner = exports.get(e["outer"] - 1) if e["outer"] > 0 else None
+        key = None
         if owner is not None:
             key = (pkg.name(owner["name"]).lower(), pkg.name(e["name"]).lower())
             if key in known:
                 joined += 1
                 if struct.unpack_from("<I", pay, n - 4)[0] == known[key]:
                     matched += 1
+                else:
+                    exceptions.append("%s.%s: flags %#x in the payload, %#x in the script"
+                                      % (key[0], key[1], struct.unpack_from("<I", pay, n - 4)[0], known[key]))
+        # `NativeToken` (u16) then `OperPrecedence` (u8) sit in front of the flags; a Net function keeps
+        # `RepOffset` (u16) between them, so the token moves two bytes further back. The count runs over *every*
+        # payload, because the native functions -- the only ones `natives.csv` describes -- have no script and so
+        # no epilogue to find.
+        flags_here = struct.unpack_from("<I", pay, n - 4)[0]
+        token_at = n - 9 if (flags_here >> 6) % 2 == 1 else n - 7
+        if token_at >= 0 and key is not None and key in declared_token:
+            token = struct.unpack_from("<H", pay, token_at)[0]
+            want = declared_token[key]
+            if token == want:
+                token_ok += 1
+            elif want == 0:
+                token_unset += 1
+            elif token == 0:
+                token_declared_only += 1
+            else:
+                token_other += 1
+                exceptions.append("%s.%s: native token %d in the payload, %d in the script"
+                                  % (key[0], key[1], token, want))
         epilogue = bytes([0x04, 0x0B, 0x47])
         if n >= 10 and pay[n - 10:n - 7] == epilogue:
             tail["7"] += 1
@@ -270,6 +330,11 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
                 located += 1
                 break
 
+    stats = {"package": pkg_name, "seen": seen, "joined": joined, "matched": matched, "token_ok": token_ok,
+             "token_unset": token_unset, "token_declared_only": token_declared_only, "token_other": token_other,
+             "tail7": tail["7"], "tail9": tail["9"], "neither": tail["neither"], "located": located}
+    if quiet:
+        return stats
     print("%s: %d Function exports with a payload of 16 bytes or more" % (pkg_name, seen))
     print("  FunctionFlags at payload_end-4 equals inventory/natives.csv: %d of %d joinable"
           % (matched, joined))
@@ -280,6 +345,11 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv")):
     print("  neither: %d" % tail["neither"])
     print("  size dword immediately before a script the table walks exactly: %d of %d"
           % (located, seen))
+    print("  NativeToken at payload_end-7 (payload_end-9 when Net) equals the script's declared index: "
+          "%d of %d joinable; %d carry a token where the script declares none, %d the other way"
+          % (token_ok, joined, token_unset, token_declared_only))
+    for line in exceptions:
+        print("    %s" % line)
     return 0
 
 

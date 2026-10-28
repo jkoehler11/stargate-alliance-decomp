@@ -187,9 +187,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
-      **Still open**: the script's extent inside a `Function` payload (U13 — the *tail* is now solved, the header's
-      field widths are not), so no *long* shipped script has been disassembled end to end, and per-function
-      match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need the comparator's compiler.
+      **Still open**: the script's extent inside a `Function` payload (U13 — the tail is solved *and* its fields are
+      now confirmed by content: the `NativeToken` at `payload_end-7` equals the script's declared index in 791 of 797
+      joinable functions corpus-wide, and a fixed number of leading references does not predict the header width, so
+      the `Children`-chain hypothesis is the next test), so no *long* shipped script has been disassembled end to
+      end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
+      the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
 - [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
@@ -402,6 +405,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
+
+- **The field order written down from `UFunction::Serialize` now has a content check.** `tools/uscript-dis.py
+  --payloads` takes the whole `System` directory (12,472 `Function` payloads) and compares the `u16` at `payload_end-7`
+  — `payload_end-9` when `Net` — with the index the function's *script* declares in `native(1234)`: **791 of 797**
+  joinable payloads carry exactly it, 5 carry a token where the script declares none, 1 the other way, and **0
+  disagree in both**; `FunctionFlags` matches **790 of 797**. The `-payloads` mode now also lists the exceptions
+  (`actor.demoplaysound` and four `PlayerController` client RPCs carry flags the script does not declare) and prints
+  a per-package table with corpus totals, which is what a total in a doc should be quoted from.
+- **The scriptless half is now named as such**: 11,379 payloads carry the epilogue 7 bytes from the end, 337 at 9
+  (all `Net`), and **756** at neither — those are the native functions, so `natives.csv`'s 797 joinable rows and the
+  756 are the same population seen from two sides.
+- **U13's remaining question got narrower, not answered.** The size field *should* sit immediately before the
+  script, and a unique dword does equal the distance to the epilogue in 2,166 of 12,472 — but a header of *N* compact
+  indexes plus the 16 fixed bytes fits 596 of those at two leading references, 22 at three and 618 at four, so no
+  fixed count explains it. The variable part is most likely the `Children` chain (one reference per parameter), and
+  the next test is bounded and named in `docs/UNKNOWNS.md`: predict the start from the export table's parameter
+  count and require the walk to end on the epilogue.
+- **Next:** run that children-chain test; then `replication` blocks and state code, the rest of 3.5.
 
 ### Execution notes (2026-10-28, the locator checks tag types, and one measured variant is not shipped)
 
