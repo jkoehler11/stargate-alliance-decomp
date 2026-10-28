@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -74,6 +74,7 @@ help:
 	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
 	@echo "  package-check-code  the functions that read the check file, from the image (needs the dump)"
 	@echo "  savegame-paths   the save/load call sites, read from the shipped ScriptText (needs the dump)"
+	@echo "  karma-runtime    the Karma (ragdoll physics) functions, from their own strings (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
@@ -338,7 +339,7 @@ opcode-table:
 
 # The LIPSinc support module in the image, one row per function with the log string that names it.
 lipsinc-runtime:
-	@$(PYTHON) tools/lipsinc-runtime.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@$(PYTHON) tools/image-strings.py --topic lipsinc --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/lipsinc_runtime.csv"
 
 # The LIPSinc lip-sync directory: the text phoneme maps and the .lad containers (docs/formats/lipsinc-lad.md).
@@ -420,7 +421,7 @@ versions:
 
 # PLAN 6.2: the code behind the check file, so "bypass" has an address instead of an intention.
 package-check-code:
-	@$(PYTHON) tools/package-check-code.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@$(PYTHON) tools/image-strings.py --topic package-check --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/package_check_code.csv"
 
 # U5: the save surface read out of the scripts the packages carry. Needs the extraction step first.
@@ -428,3 +429,8 @@ savegame-paths:
 	@test -d "$(WORK)/UnrealScript" || { echo "savegame-paths: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
 	@$(PYTHON) tools/savegame-paths.py --src "$(WORK)/UnrealScript" -o inventory
 	@echo "wrote inventory/savegame_paths.csv"
+
+# The third topic of the same scanner: Karma's runtime, which is what the .ka ragdolls are loaded by.
+karma-runtime:
+	@$(PYTHON) tools/image-strings.py --topic karma --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/karma_runtime.csv"

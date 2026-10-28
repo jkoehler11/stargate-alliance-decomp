@@ -149,7 +149,7 @@ unread animation payload, and what is left is a keyframe decoder, not a containe
 
 **The runtime side is located too (same session).** The loader is native but not anonymous: the module logs through 43
 `[LIPSinc]:` strings and the image carries `Engine\Src\LIPSincSupport.cpp` as an assert path.
-`tools/lipsinc-runtime.py` (`inventory/lipsinc_runtime.csv`) attributes 19 functions to those strings, and nine name
+`tools/image-strings.py --topic lipsinc` (`inventory/lipsinc_runtime.csv`) attributes 19 functions to those strings, and nine name
 themselves — `LIPSincInitLevel` (`0xba750`), `LIPSincInitGame`, `LIPSincShutdownLevel`, `LIPSincShutdownGame`,
 `LIPSincLoadDBFromDisk`, `LIPSincReadAnimFile` (`0x8340`, the *track* reader: `Read Track %s`, the LTF version
 errors), `LIPSincReadControllerFile` (`0x7260`, `Parsed %s` and `Attempt to import an obsolete .LBP file!`),

@@ -1,0 +1,9 @@
+address,size,name,evidence,callers
+0x0008ded0,860,FUN_0008ded0,KarmaGlobals,0x00139030
+0x000a4820,176,Engine_KScript,KarmaParamsCollision,0x00012620 0x00017eb0 0x00091650 0x000a4b80 0x0013be80
+0x000a4c90,179,Engine_KScript,KarmaParams,0x00012620 0x00091450 0x00098c90 0x0009a320 0x000a2050 0x000a2e10
+0x000a4d50,179,Engine_KScript,KarmaParamsRBFull,0x00012620 0x00017f10 0x000a2c90 0x0013be80
+0x000a4e10,179,Engine_KScript,KarmaParamsSkel,0x00012620 0x00017ee0 0x0008f4f0 0x000a7d40 0x0013be80
+0x000ae030,872,FUN_000ae030,Karma Safe-Time Disabled. | Karma Safe-Time Enabled. | Karma debugging option recognized,0x0015ef40
+0x000d8110,950,FUN_000d8110,KarmaGravScale | KarmaTimeScale,
+0x00253950,10539,FUN_00253950,Karma,0x001226a0

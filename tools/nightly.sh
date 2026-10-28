@@ -74,7 +74,7 @@ if [ -n "${SG1_DUMP:-}" ]; then
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
     # Dump-gated: the module is in the image. Regenerate and diff.
-    stage lipsinc-runtime sh -c "python3 tools/lipsinc-runtime.py \
+    stage lipsinc-runtime sh -c "python3 tools/image-strings.py --topic lipsinc \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
         && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
     # Dump-gated: the save surface, from the extracted scripts (skips when the extraction is absent).
@@ -82,9 +82,12 @@ if [ -n "${SG1_DUMP:-}" ]; then
         python3 tools/savegame-paths.py --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/saves' \
         && cmp '$out/saves/savegame_paths.csv' inventory/savegame_paths.csv"
     # Dump-gated: the check file's code, from the image itself.
-    stage package-check-code sh -c "python3 tools/package-check-code.py \
+    stage package-check-code sh -c "python3 tools/image-strings.py --topic package-check \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/pkgcode' \
         && cmp '$out/pkgcode/package_check_code.csv' inventory/package_check_code.csv"
+    stage karma-runtime sh -c "python3 tools/image-strings.py --topic karma \
+        --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/karma' \
+        && cmp '$out/karma/karma_runtime.csv' inventory/karma_runtime.csv"
     # Dump-gated: the placed-class, dialogue and package censuses, each regenerated into scratch and diffed.
     stage content-census sh -c "SG1_DUMP='$SG1_DUMP' python3 tools/content-census.py \
         --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/census' \

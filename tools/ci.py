@@ -255,18 +255,6 @@ def check_opcode_table():
     ok(name, "256 opcodes, 31 groups, 11 streams split, 4 refusals honoured")
 
 
-def check_lipsinc_runtime():
-    """Every committed runtime row must still carry evidence for its name."""
-    name = "lipsinc-runtime"
-    r = subprocess.run([sys.executable, repo("tools", "lipsinc-runtime.py"), "--check"],
-                       capture_output=True, text=True, cwd=ROOT)
-    line = (r.stdout or r.stderr).strip().splitlines()
-    if r.returncode != 0:
-        fail(name, line[-1] if line else "exit %d" % r.returncode)
-    else:
-        ok(name, line[-1].replace("ok   lipsinc-runtime: ", "") if line else "")
-
-
 def check_lipsinc_index():
     """The committed LIPSinc index must be consistent with itself (target indices, record size, trailer names)."""
     name = "lipsinc-index"
@@ -291,6 +279,20 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_image_strings():
+    """Every topic's artifact must still name the strings that put its functions there."""
+    name = "image-strings"
+    r = subprocess.run([sys.executable, repo("tools", "image-strings.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    for line in out:
+        if line.startswith("ok   image-strings"):
+            ok(name, line.replace("ok   image-strings [", "").replace("]: ", ": "))
+    if r.returncode != 0:
+        bad = [l for l in out if l.startswith("FAIL")] or out[-1:]
+        fail(name, bad[-1] if bad else "exit %d" % r.returncode)
+
+
 def check_savegame_paths():
     """The save/load rows must still say which class and routine each call sits in."""
     name = "savegame-paths"
@@ -301,18 +303,6 @@ def check_savegame_paths():
         fail(name, out[-1] if out else "exit %d" % r.returncode)
     else:
         ok(name, out[-1].replace("ok   savegame-paths: ", "") if out else "")
-
-
-def check_package_check_code():
-    """Every row must still name the string that put its function in the artifact."""
-    name = "package-check-code"
-    r = subprocess.run([sys.executable, repo("tools", "package-check-code.py"), "--check"],
-                       capture_output=True, text=True, cwd=ROOT)
-    out = (r.stdout or r.stderr).strip().splitlines()
-    if r.returncode != 0:
-        fail(name, out[-1] if out else "exit %d" % r.returncode)
-    else:
-        ok(name, out[-1].replace("ok   package-check-code: ", "") if out else "")
 
 
 def check_versions_lock():
@@ -368,12 +358,11 @@ def main():
     check_campaign_matrix()
     check_artifact_hashes()
     check_versions_lock()
-    check_package_check_code()
+    check_image_strings()
     check_savegame_paths()
     check_opcode_table()
     check_function_flags()
     check_lipsinc_index()
-    check_lipsinc_runtime()
     check_addresses_in_image()
     print()
     if SKIPS:
