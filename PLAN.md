@@ -327,6 +327,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       same bind pose in every file, `inventory/lipsinc_pose.csv`) — after which the 32-byte stride that an earlier note
       claimed for the whole body does not hold. What remains is the animation payload (96–99% of each file), which is
       a keyframe decoder's problem rather than a container's: U4.
+      **The payload's shape is measured, not assumed**: 32-byte-strided *runs* — 1 of 8 payloads is a whole number of
+      32-byte records, gaps of 32/37/64/128/192, with 37 meaning a record five bytes longer than the common case. The
+      earlier phrasing ("does not stride at 32") was too strong and is corrected in both pages.
       **And the ragdoll runtime is located** (`docs/formats/ragdoll-ka.md`): `tools/image-strings.py --topic karma`
       attributes `Karma*` strings to **8 functions** — the four `UKarmaParams` constructors (already named), a
       `KarmaGlobals` initialiser called from `Engine_UnGame`, the safe-time/debug toggle, a

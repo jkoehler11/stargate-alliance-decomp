@@ -143,8 +143,10 @@ is wrong, and the comparison with the channel table is what shows it: the stride
 channel** — a 21- or 19-entry bind pose whose first entry is the same `(3.0464, 8.6571, 10.3889)` in every file — and
 nowhere after it. `inventory/lipsinc_pose.csv` records the block per file (it starts 10 bytes after the channel table,
 i.e. at 395 or 362) and `--check` enforces that it never exceeds the channel count and that the scan reaches the end
-of the file. The animation payload that follows is 96–99% of every file and is not 32-byte strided; its key times and
-values remain unread. So U4 has narrowed twice in one day: the container is known to a bind pose plus an
+of the file. The animation payload that follows is 96–99% of every file: **32-byte-strided runs, not a uniform
+array** — 1 of 8 payloads is a whole number of 32-byte records, and the block each record carries recurs at gaps of 32,
+37, 64, 128 and 192, so headers or longer records punctuate the runs (37 = five bytes more than the common case). Its
+key times and values remain unread, and the questions are now "what does a record hold" and "what makes one 37 bytes". So U4 has narrowed twice in one day: the container is known to a bind pose plus an
 unread animation payload, and what is left is a keyframe decoder, not a container.
 
 **The runtime side is located too (same session).** The loader is native but not anonymous: the module logs through 43
