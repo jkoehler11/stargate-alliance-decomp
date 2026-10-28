@@ -77,6 +77,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     stage lipsinc-runtime sh -c "python3 tools/image-strings.py --topic lipsinc \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
         && cmp '$out/lipsinc/lipsinc_runtime.csv' inventory/lipsinc_runtime.csv"
+    # Dump-gated: the block-locator misses, which need the packages.
+    stage defaults-misses sh -c "python3 tools/class-defaults.py --misses \
+        '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System' -o '$out/defaults' \
+        && cmp '$out/defaults/class_defaults_misses.csv' inventory/class_defaults_misses.csv"
     # Dump-gated: the save surface, from the extracted scripts (skips when the extraction is absent).
     stage savegame-paths sh -c "[ -d '${WORK:-$HOME/sg1/work}/UnrealScript' ] || { echo skip: no extraction; exit 0; }; \
         python3 tools/savegame-paths.py --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/saves' \

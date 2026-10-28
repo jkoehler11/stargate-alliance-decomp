@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -76,6 +76,7 @@ help:
 	@echo "  savegame-paths   the save/load call sites, read from the shipped ScriptText (needs the dump)"
 	@echo "  karma-runtime    the Karma (ragdoll physics) functions, from their own strings (needs the dump)"
 	@echo "  module-split     per-function module attribution and per-module lists (dump-free)"
+	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
@@ -443,3 +444,8 @@ karma-runtime:
 module-split:
 	@$(PYTHON) tools/module-split.py
 	@echo "wrote inventory/function_modules.csv"
+
+# PLAN 3.6: why the block locator misses, measured instead of guessed (the question docs/CLASS_DEFAULTS.md left open).
+defaults-misses:
+	@$(PYTHON) tools/class-defaults.py --misses "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/class_defaults_misses.csv"

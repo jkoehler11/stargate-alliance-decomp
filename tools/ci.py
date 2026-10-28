@@ -322,6 +322,18 @@ def check_tool_contract():
     ok(name, detail)
 
 
+def check_defaults_misses():
+    """The miss reasons must reconcile with the per-class defaults artifact."""
+    name = "defaults-misses"
+    r = subprocess.run([sys.executable, repo("tools", "class-defaults.py"), "--check-misses"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   class-defaults: ", "") if out else "")
+
+
 def check_compile_doc():
     """docs/COMPILE.md's tables are generated; they must match a fresh computation."""
     name = "compile-doc"
@@ -428,6 +440,7 @@ def main():
     check_image_strings()
     check_module_split()
     check_compile_doc()
+    check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
     check_opcode_table()
