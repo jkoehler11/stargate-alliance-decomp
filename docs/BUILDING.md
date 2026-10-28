@@ -151,6 +151,21 @@ all checks passed
 Everything dump-dependent — manifest verification, inventory drift, the Ghidra run, the package parse — is a local
 step.
 
+### The `--check` contract
+
+Every tool that advertises `--check` must answer it **without the dump and without writing to the tree** — that is what
+makes it usable as a per-commit gate. `make ci` enforces it (`tool-check-contract`): it discovers the tools from their
+own source, runs each one, and diffs `git status` around the whole sweep, so a `--check` that mutates the tree fails the
+build. Twelve tools comply; four (`defaults-emit`, `make-manifest`, `map-census`, `package-census`) still require dump
+arguments and are **reported by name** rather than silently skipped — they are the next thing to fix, not a licence to
+skip.
+
+That contract is not decorative. `compile-readiness.py --check` used to ignore its flag and rewrite two artifacts on
+every run, which is how `inventory/compile_readiness.csv` sat **142 rows stale**: later defaults work improved what the
+tool computes (`HerdAnimal` went from `defaults 0` to `2`, 142 classes moved out of `defaults-ambiguous`), and nothing
+noticed because the check that should have compared never compared. It compares now, the artifact is regenerated in the
+same commit, and `--check` reports the drift by file and row count.
+
 Consequence worth stating plainly: **a green CI does not prove the dump-side artifacts are current.**
 Run `make inventory`, `make ghidra`, then `make natives` and `make symbols`, and commit any drift in
 its own commit so a reviewer can see which numbers moved.
