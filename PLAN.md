@@ -251,8 +251,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `Native_<index>`. Map: `inventory/gnatives_slots.csv` → `symbols/xbe_dispatch.csv` → `XbePost` overrides.
       The table is incomplete until a mission load (U7); the first attempt at this task was withdrawn because it
       had been measured against the CRT initialiser list — see the correction note below and `docs/NATIVE_VM.md`.
-- [ ] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
+- [~] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
+      **The split is per function, not per range — measured.** `inventory/function_modules.csv`
+      (`make module-split`, `tools/module-split.py`, `--check` in `make ci`) attributes all 14,957 functions to a module
+      with the same rule the rollup uses, and reconciles against `inventory/xbe_functions_by_module.csv` so the two
+      cannot drift. The result refutes the wording above: `Engine`'s 586 functions occupy **558 separate runs** over a
+      2.5 MB span (11.7% coverage), `Core`'s 574 occupy 570 runs over 3.2 MB (11.9%), and mean functions-per-run is
+      1.0–1.1 for every module. There is no module range to split; a module is a set of addresses, so
+      `--lists $WORK/export` emits `<module>.txt` for `ExportAt.java @<file>` and per-module work is one exporter pass
+      per list. What remains for 4.5 is the Ghidra-project half, and it now has an input instead of an assumption.
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own

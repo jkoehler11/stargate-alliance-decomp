@@ -67,3 +67,47 @@ resolves, not a live attach.
   in this file.
 - **No types, no variables, no source lines.** The map carries code addresses and class-table
   addresses only; there is no debug information in this build (`RSDS` absent, PLAN §0).
+
+## Per-module address lists, and why there are no module ranges
+
+PLAN 4.5 wants the image split per module. `inventory/function_modules.csv` (`make module-split`) is that split, per
+function: address, name, size, module, what attributed it, and which contiguous `run` of that module it falls in.
+`--check` recomputes the per-module counts and **fails if they disagree with `inventory/xbe_functions_by_module.csv`**,
+so the two cannot drift apart.
+
+| module | functions | bytes | runs | span | coverage |
+|---|---:|---:|---:|---:|---:|
+| `(unnamed)` | 13,037 | 3,105,722 | 8,817 | 7,925,899 | 39.2% |
+| `Engine` | 586 | 293,401 | 558 | 2,510,518 | 11.7% |
+| `Core` | 574 | 386,721 | 570 | 3,244,777 | 11.9% |
+| `(dispatch: declared)` | 273 | 83,301 | 269 | 2,876,663 | 2.9% |
+| `(other named)` | 216 | 23,029 | 114 | 4,500,825 | 0.5% |
+| `(dispatch: slot only)` | 83 | 9,761 | 81 | 2,801,033 | 0.3% |
+| `Gui` | 55 | 13,308 | 54 | 126,657 | 10.5% |
+| `stargategame` | 32 | 5,612 | 29 | 51,539 | 10.9% |
+| `D3DDrv` | 22 | 15,540 | 22 | 90,521 | 17.2% |
+| `IpDrv` | 22 | 7,543 | 22 | 86,338 | 8.7% |
+| `XboxLive` | 13 | 7,148 | 13 | 11,536 | 62.0% |
+| `stargatevehicles` | 12 | 2,521 | 12 | 38,340 | 6.6% |
+| `XboxAudio` | 9 | 9,556 | 9 | 24,304 | 39.3% |
+| `Fire` | 9 | 2,558 | 9 | 31,157 | 8.2% |
+| `Gameplay` | 9 | 1,604 | 6 | 2,468 | 65.0% |
+| `XboxDrv` | 5 | 775 | 5 | 4,916 | 15.8% |
+
+**The table is a measurement, and it refutes 4.5's premise.** "Module → address range" does not exist in this build:
+`Engine`'s 586 functions sit in **558 separate runs** across 2.5 MB and cover 11.7% of that span; `Core` is 574 runs
+across 3.2 MB at 11.9%. Mean functions per run is 1.0–1.1 for every module. This is the same fact `docs/ARCHITECTURE.md`
+states as "code is ordered per translation unit rather than per module" — quantified, and with a consequence: a module
+is a *set* of addresses, and any per-module work has to be driven by a list, not a range.
+
+That is what the tool emits:
+
+```sh
+python3 tools/module-split.py --lists "$WORK/export"
+#   $WORK/export/Engine.txt — 586 addresses, one per line
+# then one exporter pass per module, since ExportAt takes an @file:
+#   ExportAt.java @$WORK/export/Engine.txt $WORK/dec/Engine
+```
+
+Only real modules get a list. The three `(…)` buckets are ways a function can carry a name without a module — dispatch
+names, GNatives slots and MSVC-mangled symbols — and exporting them as a "module" would be inventing one.
