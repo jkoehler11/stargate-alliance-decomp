@@ -68,8 +68,23 @@ Where it still fails:
   declared properties mostly come from `GUI`/`Core` parents; `Fire`'s are fractals with almost no declared
   properties, so "every property declared" is the wrong test there — they may well be correct blocks scored
   harshly.
-* 110 classes still have no candidate at all: whether their block is absent or fails the trailer bound is not
-  measured.
+* **110 classes still have no candidate — and none of them is blockless.** `make defaults-misses`
+  (`tools/class-defaults.py --misses`, `inventory/class_defaults_misses.csv`, `--check-misses` in `make ci`) classifies
+  every one of the 653 classes that are not fully declared against the committed per-class artifact:
+
+  | reason | classes | what it means |
+  |---|---:|---|
+  | `incomplete` | 543 | a block was chosen, but it carries names the class does not declare — the tie below |
+  | `single-property` | 62 | every block that parses holds exactly **one** property, so the `len(props) < 2` filter drops it |
+  | `trailer-over-64` | 48 | blocks parse, but every one ends more than 64 bytes before the export's end |
+  | `no-block-parses` | **0** | no class in the tree is without a parseable block |
+
+  So the doc's old phrasing ("absent or fails the trailer bound") is answered: nothing is absent. The two groups are
+  different problems. The 48 are a *bound* problem — the 64-byte trailer is a rule of thumb for the component table that
+  can follow a defaults block, and these exports carry more than that. The 62 are a *shape* problem, and relaxing the
+  one-property filter was tried and rejected: 19 of the 62 would then match a name the class declares, but the matches
+  are spurious (`Modifier` matching its own class name, `TexPanner` matching on `ObjectFlags`), which is worse than a
+  miss — a false block would emit wrong defaults for classes the compiler would otherwise leave alone.
 * 428 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 
