@@ -5,7 +5,8 @@ not that it runs: it is *which* stages run. Four of the eight are proven today, 
 ones now fail visibly with a reason instead of being discovered at the end.
 
     tools/build.sh --dry-run                                  # every stage that needs no compiler
-    SG1_DUMP=~/sg1/dump tools/build.sh                        # + the dump-side stages
+    SG1_DUMP=~/sg1/dump tools/build.sh                        # + the dump-side stages (target `full`)
+    SG1_DUMP=~/sg1/dump tools/build.sh --target hybrid        # the packages a hybrid build carries + a manifest
     SG1_DUMP=~/sg1/dump UCC=~/tools/ucc/ucc tools/build.sh    # + compile (no such ucc exists: see below)
 
 One directory per run under `build/rebuild/<UTC>/`, one log per stage, `summary.txt` at the top, nothing committed.
@@ -26,6 +27,32 @@ One directory per run under `build/rebuild/<UTC>/`, one log per stage, `summary.
 So 6.1 is *half built*: the container is a non-risk (stages 1-2), the input tree is complete for two thirds of the
 classes (stages 3-4), and everything from payload generation onward waits on a compiler that this project does not
 have. That is the same conclusion `docs/PATH.md` reaches from the estimate side.
+
+## The two targets (PLAN 6.4)
+
+`--target hybrid|full` selects what the run is *for*; stages 1-4 are shared.
+
+| target | definition | what it does today |
+|---|---|---|
+| `hybrid` | our scripts + the original assets | places **18 assembled packages** into `workdir/System` (the writer's own output, not a copy — `--rebuild --write`), copies `Packages.md5` beside them, writes `manifest.csv` + `missions.csv`, and checks the merged source tree is 2,319 files. `manifest.csv` must say `identical=1` for all 18 or the stage fails |
+| `full` | our scripts + re-extracted assets | the four stages above plus `compile`/`repack`/`package-check`/`boot`, which report SKIP with their reason (no `ucc`; `docs/PACKAGE_CHECK.md` decides bypass-not-regeneration) |
+
+Two things this deliberately does **not** claim:
+
+* **`hybrid` is not a compiled build.** There is no `ucc`, so "our scripts" in a hybrid build is the merged source
+  tree staged beside the packages, not `.u` payloads made from it. The `manifest.csv` row for each package proves
+  the *placement* (the file the engine would load is the writer's assembly of the original payloads), not that a
+  single line of our script went in.
+* **no boot matrix yet.** PLAN 6.4 also asks which missions boot in each target. `missions.csv` carries the 18
+  campaign rows the build ships (`inventory/campaign_matrix.csv`) so the eventual per-target boot column has
+  something to attach to, and the `boot` stage stays SKIP until an HDD image can be built from these packages
+  (`docs/XEMU.md`).
+
+`make rebuild-hybrid` / `make rebuild-full` are the same two invocations. Verifying the hybrid target by hand:
+
+    SG1_DUMP=~/sg1/dump tools/build.sh --target hybrid
+    grep -c ',1$' build/rebuild/<UTC>/manifest.csv        # 18
+    cmp build/rebuild/<UTC>/workdir/System/Engine.u ~/sg1/dump/*/System/Engine.u
 
 ## Why 6.3 is not claimed
 
