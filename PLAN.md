@@ -319,6 +319,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       same bind pose in every file, `inventory/lipsinc_pose.csv`) — after which the 32-byte stride that an earlier note
       claimed for the whole body does not hold. What remains is the animation payload (96–99% of each file), which is
       a keyframe decoder's problem rather than a container's: U4.
+      **And the ragdoll runtime is located** (`docs/formats/ragdoll-ka.md`): `tools/image-strings.py --topic karma`
+      attributes `Karma*` strings to **8 functions** — the four `UKarmaParams` constructors (already named), a
+      `KarmaGlobals` initialiser called from `Engine_UnGame`, the safe-time/debug toggle, a
+      `KarmaGravScale`/`KarmaTimeScale` reader, and a 10,539-byte body called from the same `0x1226a0` function the
+      save/load work found. Ragdoll setup is level-load state, which is what `XLevel->Ragdolls` implied.
       `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
       `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps

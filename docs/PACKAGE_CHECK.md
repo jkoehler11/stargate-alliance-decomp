@@ -74,7 +74,7 @@ evidence for saying so.
 The question this page could not answer was whether the shipped build reads the file at all. It does, and the code is
 locatable the same way the LIPSinc module was: the strings are still in the image.
 
-    python3 tools/package-check-code.py --xbe DUMP/.../default.xbe -o inventory
+    python3 tools/image-strings.py --topic package-check --xbe DUMP/.../default.xbe -o inventory
 
 | function | bytes | evidence | callers |
 |---|---:|---|---|

@@ -109,7 +109,7 @@ Two findings from parsing all four (`inventory/lipsinc_phonemes.csv`, 2,580 rows
 
 The loader is native, but it is not anonymous: the module logs through **43 `[LIPSinc]:` strings**, and the image
 still carries its own source path as an ASCII assert —
-`\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\LIPSincSupport.cpp`. `tools/lipsinc-runtime.py`
+`\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\LIPSincSupport.cpp`. `tools/image-strings.py --topic lipsinc`
 (`make lipsinc-runtime`, `inventory/lipsinc_runtime.csv`, `--check` in `make ci`) finds every `push <string>` of those
 43 strings and attributes it to the function that contains it: **19 functions, 23,255 bytes**, in
 `0x000b24f0`–`0x000ba750` plus three in the actor path (`0x00225cd0`, `0x00228730`, `0x0022e090`).

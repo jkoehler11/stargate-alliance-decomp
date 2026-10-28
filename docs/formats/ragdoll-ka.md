@@ -50,3 +50,36 @@ The engine's Karma integration is native: the `K*` natives on `Engine.Actor`
 (`KGetRigidBodyState`, `KSetMass`, `KAddImpulse`, `KMakeRagdollAvailable`, …) are declared by the
 script and dispatch through `GNatives` (`inventory/natives.csv`). The loader that turns a `.ka`
 into bodies is engine-side and undocumented until PLAN 4.8; the format itself needs no work.
+
+## The runtime side, located
+
+The `.ka`/`.kaw` files are XML, so they need no reverse engineering — but the *code that consumes ragdolls* is in the
+image, and it announces itself the same way LIPSinc does. `tools/image-strings.py --topic karma`
+(`make karma-runtime`, `inventory/karma_runtime.csv`, `--check` in `make ci`) attributes every `push` of a `Karma*` or
+`KarmaSupport.cpp` string to the function containing it: **8 functions**.
+
+| address | bytes | name | evidence | called by |
+|---|---:|---|---|---|
+| `0x000a4820` | 176 | `Engine_KScript` | `KarmaParamsCollision` | `Core_UnObjBas` (`0x12620`) and four class registrations |
+| `0x000a4c90` | 179 | `Engine_KScript` | `KarmaParams` | `Core_UnObjBas` and five more |
+| `0x000a4d50` | 179 | `Engine_KScript` | `KarmaParamsRBFull` | `Core_UnObjBas` and three more |
+| `0x000a4e10` | 179 | `Engine_KScript` | `KarmaParamsSkel` | `Core_UnObjBas` and four more |
+| `0x0008ded0` | 860 | `FUN_0008ded0` | `KarmaGlobals` | **`Engine_UnGame`** (`0x139030`) |
+| `0x000ae030` | 872 | `FUN_000ae030` | `Karma Safe-Time Disabled.` / `Enabled.` / `Karma debugging option recognized` | `0x15ef40` |
+| `0x000d8110` | 950 | `FUN_000d8110` | `KarmaGravScale` / `KarmaTimeScale` | — |
+| `0x00253950` | 10,539 | `FUN_00253950` | `Karma` | **`0x001226a0`** |
+
+Three things follow from where they sit, rather than from reading them:
+
+* **The four `UKarmaParams` subclasses are already named** (`Engine_KScript` from their asserts) and all four are
+  constructed through `Core_UnObjBas` at `0x12620` — the same static-constructor dispatcher every class registration
+  goes through, so that is registration, not physics.
+* **`KarmaGlobals` is initialised from `Engine_UnGame`**, which is what the `XLevel->Ragdolls` field in
+  `docs/FORK.md` implies: ragdolls are level state, set up when the game class starts.
+* **The biggest body (10,539 bytes) is called from `0x001226a0`** — the same function the save/load work located as the
+  `LoadSaveGameInfo` neighbourhood (`docs/UNKNOWNS.md` U5). So ragdoll setup sits in the level-load path, next to the
+  package check and the save loader, in one region of the image.
+
+Not measured: which function parses the XML. The `.ka` files are the *authoring* format; what ships in the packages are
+cooked `KarmaParams` properties, so the parser may never exist in this build. That distinction is why the ragdolls are
+"fully documented" without any of the code above being read.
