@@ -291,6 +291,18 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_savegame_paths():
+    """The save/load rows must still say which class and routine each call sits in."""
+    name = "savegame-paths"
+    r = subprocess.run([sys.executable, repo("tools", "savegame-paths.py"), "--check"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   savegame-paths: ", "") if out else "")
+
+
 def check_package_check_code():
     """Every row must still name the string that put its function in the artifact."""
     name = "package-check-code"
@@ -357,6 +369,7 @@ def main():
     check_artifact_hashes()
     check_versions_lock()
     check_package_check_code()
+    check_savegame_paths()
     check_opcode_table()
     check_function_flags()
     check_lipsinc_index()
