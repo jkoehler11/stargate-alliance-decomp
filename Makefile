@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -72,6 +72,7 @@ help:
 	@echo "  token-map        the bytecode token map calibrated against the private tree (needs ORACLE_DIR)"
 	@echo "  game-modules     per-module function counts from a native index (needs WORK/native)"
 	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
+	@echo "  package-check-code  the functions that read the check file, from the image (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
@@ -415,3 +416,8 @@ artifact-hashes:
 versions:
 	@$(PYTHON) tools/versions-check.py
 	@echo "a mismatch is a reproduction finding: update tools/versions.lock in its own commit"
+
+# PLAN 6.2: the code behind the check file, so "bypass" has an address instead of an intention.
+package-check-code:
+	@$(PYTHON) tools/package-check-code.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/package_check_code.csv"

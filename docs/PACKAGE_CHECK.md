@@ -69,9 +69,32 @@ For PLAN 6.2 that means: satisfying the check by regenerating it is out of reach
 so the practical route for a rebuilt game stays **bypass** — patch or skip the check — and this page is the
 evidence for saying so.
 
+## Where the check lives in the image
+
+The question this page could not answer was whether the shipped build reads the file at all. It does, and the code is
+locatable the same way the LIPSinc module was: the strings are still in the image.
+
+    python3 tools/package-check-code.py --xbe DUMP/.../default.xbe -o inventory
+
+| function | bytes | evidence | callers |
+|---|---:|---|---|
+| `0x00187350` `Engine_UnPackageCheckInfo` | 176 | `PackageCheckInfo` / `CheckInfo` (and the assert path `PackageCheckInfo.cpp`) | `0x00012620`, `0x00125310`, `0x00127590`, `0x00132b10`, `0x00132e70`, `0x00147b40` |
+| `0x00121490` | 670 | `Packages.md5` | `0x00126860` |
+| `0x00121730` | 479 | `Packages.md5` | `0x00126860` |
+| `0x00125a90` | 1,542 | `Packages.md5` | `0x00126860` |
+| `0x00132300` | 80 | `Packages.md5` | — |
+| `0x00139030` `Engine_UnGame` | 3,348 | `Packages.md5` | — |
+
+Six functions carry the check's vocabulary, and the two families are connected: `Engine_UnPackageCheckInfo` reaches the
+reader at `0x00125a90` at depth two, and `Engine_UnGame` appears at depth two above it. So the check is not dead code —
+a class exists for the records, and the game class is two calls away from the code that opens the file. Which path
+calls it (per-load, per-menu, or a developer/console route) is not measured, and would need the runtime probe.
+
+Artifact: `inventory/package_check_code.csv` (`make package-check-code`, `--check` in `make ci`).
+
 ## Not measured
 
 * The transform behind the digests (above).
 * Which packages the 168 records describe, and in what order.
-* Whether the runtime checks them at all in this build, or only on a command-line path — that needs the runtime
-  probe in U5 / 7.3 territory.
+* **Which** path invokes the check at runtime: the code is present and reachable from `Engine_UnGame`, but whether it
+  runs on every load, on a menu, or only on a console command needs the probe in U5 / 7.3 territory.
