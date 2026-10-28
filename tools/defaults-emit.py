@@ -33,10 +33,14 @@ import collections
 import csv
 import importlib.util
 import os
+
 import re
 import statistics
 import struct
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import checkcsv  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -969,7 +973,7 @@ def explain(system_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("path", help="the dump's System directory")
+    ap.add_argument("path", nargs="?", help="the dump's System directory (not needed for --check)")
     ap.add_argument("--sweep", action="store_true", help="measure every package")
     ap.add_argument("-o", "--out", help="directory for class_defaults_emit.csv (usually inventory)")
     ap.add_argument("--emit", metavar="DIR", help="write one .uc snippet per class into DIR ($WORK only)")
@@ -983,6 +987,12 @@ def main():
     ap.add_argument("--package", dest="pkg", help="the class's package (with --class)")
     ap.add_argument("--show", action="store_true", help="print one class's block (game data: explicit)")
     args = ap.parse_args()
+    if args.check and not args.path:
+        # Dump-free: the artifact cannot be recomputed here, but it can be checked for the shape this tool writes.
+        return checkcsv.report("defaults-emit",
+                               checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit.csv"),
+                                              COLUMNS, key="package"),
+                               "class_defaults_emit.csv is the shape this tool writes (shape only: needs the dump)")
 
     if args.check:
         import tempfile

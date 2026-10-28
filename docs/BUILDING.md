@@ -156,9 +156,12 @@ step.
 Every tool that advertises `--check` must answer it **without the dump and without writing to the tree** — that is what
 makes it usable as a per-commit gate. `make ci` enforces it (`tool-check-contract`): it discovers the tools from their
 own source, runs each one, and diffs `git status` around the whole sweep, so a `--check` that mutates the tree fails the
-build. Twelve tools comply; four (`defaults-emit`, `make-manifest`, `map-census`, `package-census`) still require dump
-arguments and are **reported by name** rather than silently skipped — they are the next thing to fix, not a licence to
-skip.
+build. **Sixteen tools comply.** Twelve recompute their artifact or re-read it from the committed inputs; four
+(`defaults-emit`, `make-manifest`, `map-census`, `package-census`) cannot recompute without the game, so they check the
+**shape** of what is committed — columns, row counts, no empty key, and a manifest whose every line is a sha256 and a
+path — and say so in their own summary line (`shape only: needs the dump`). That is not nothing: it catches a truncated
+run, an empty file, a changed column set or a stub committed in place of output, which is exactly what a regeneration
+cannot report when nothing regenerates in CI.
 
 That contract is not decorative. `compile-readiness.py --check` used to ignore its flag and rewrite two artifacts on
 every run, which is how `inventory/compile_readiness.csv` sat **142 rows stale**: later defaults work improved what the

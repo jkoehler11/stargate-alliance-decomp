@@ -30,6 +30,10 @@ import csv
 import importlib.util
 import io
 import os
+import sys as _sys
+
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import checkcsv  # noqa: E402
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -78,10 +82,25 @@ def size_of_text_buffer(pkg, export):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("system_dir", help="the dump's System directory")
+    ap.add_argument("system_dir", nargs="?", help="the dump's System directory (not needed for --check)")
     ap.add_argument("-o", "--out", help="directory holding the CSVs (default: inventory/)")
     ap.add_argument("--check", action="store_true", help="compare instead of writing; non-zero if different")
     args = ap.parse_args()
+    outdir = args.out or os.path.join(ROOT, "inventory")
+    if args.check and not args.system_dir:
+        problems = []
+        for name, header in (("package_exports_summary.csv",
+                              ["package", "version", "names", "exports", "imports", "classes"]),
+                             ("package_script_text.csv",
+                              ["package", "classes", "script_text_exports", "script_text_bytes"]),
+                             ("script_text_natives.csv",
+                              ["package", "classes", "natives_in_source", "native_functions_in_inventory"]),
+                             ("native_declarations.csv",
+                              ["class", "native_functions", "native_function_names", "from"])):
+            problems += checkcsv.shape(os.path.join(outdir, name), header, key=header[0])
+        return checkcsv.report("package-census", problems,
+                               "the four package-census artifacts are the shapes this tool writes\n"
+                               "     (shape only: needs the dump)")
 
     st = load_script_text()
     supers = load_column("class", "super")
