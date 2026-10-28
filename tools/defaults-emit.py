@@ -451,11 +451,11 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
         seen.add(cur)
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
-    cands, _data = cd.candidates(pkg, ps, exp, limit=limit)
+    cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
     best = cd.choose(cands, decl)
     if best is None:
         return None, "no-block"
-    _score, _count, start, _names = best
+    _score, _count, start, _names, bad = best
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     try:
         props, end, reason = ps.read_block(data[start:], pkg, True)
@@ -463,7 +463,7 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
         return None, "unparsed"
     if reason != "None":
         return None, "unparsed"
-    return (props, start, best[0][0] == 1.0), None
+    return (props, start, best[0][0] == 1.0 and bad == 0), None
 
 
 def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
@@ -481,11 +481,11 @@ def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
         seen.add(cur)
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
-    cands, _data = cd.candidates(pkg, ps, exp, limit=limit)
+    cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
     best = cd.choose(cands, decl)
     if best is None:
         return None, "no-block"
-    _score, _count, start, _names = best
+    _score, _count, start, _names, bad = best
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     try:
         props, end, reason = ps.read_block(data[start:], pkg, True)
@@ -493,7 +493,7 @@ def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
         return None, "unparsed"
     if reason != "None":
         return None, "unparsed"
-    clean = best[0][0] == 1.0
+    clean = best[0][0] == 1.0 and bad == 0
     if want_score:
         return (props, start, clean), None
     return (props, start, len(data) - start - end), None
@@ -954,16 +954,18 @@ def explain(system_dir):
                 seen.add(cur)
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
-            cands, _data = cd.candidates(pkg, ps, exp)
+            cands, _data = cd.candidates(pkg, ps, exp, kinds=cd.kinds_for_class(cls))
             best = cd.choose(cands, decl)
             if best is None:
                 none_sizes.append(exp["size"])
                 bucket["no candidate"] += 1
                 continue
-            if best[0][0] == 1.0:
+            if best[0][0] == 1.0 and best[4] == 0:
                 clean_sizes.append(exp["size"])
                 bucket["emitted"] += 1
                 continue
+            if best[4]:
+                bucket["withheld, tag type contradicts the declared kind"] += 1
             withheld_sizes.append(exp["size"])
             bucket["withheld"] += 1
             bad = [n for n in best[3] if n not in decl]

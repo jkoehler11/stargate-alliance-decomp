@@ -156,14 +156,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
       **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): the locator
-      finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,666 (71.8%) — the previous
-      512-byte scan window excluded every base class, whose record is longer than that. 15,519 of 15,530 class-level
-      properties render to UnrealScript (99.93%) — 484 arrays (1,502 elements), 219 nested structs — and 1,317
-      `Begin Object` subobjects carry another 15,802 of 15,810; enum element names resolve for 771 of 1,052 byte
+      finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,664 (71.8%) — the previous
+      512-byte scan window excluded every base class, whose record is longer than that. 15,517 of 15,521 class-level
+      properties render to UnrealScript (99.97%) — 484 arrays (1,502 elements), 219 nested structs — and 1,313
+      `Begin Object` subobjects carry another 15,790 of 15,798; enum element names resolve for 771 of 1,052 byte
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
-      source so one tree carries both halves. Remaining here: 11 values whose located block contradicts the
-      class's declared property *types* (the locator scores names only — see the doc's "Not measured"), 543
-      withheld blocks, then `replication` blocks, state code and labels, latent calls, operator precedence.
+      source so one tree carries both halves. Remaining here: 4 values (one `array<SpeechReplacement>` that does not
+      tile, three delegate tags), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
+      real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
+      labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -401,6 +402,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-28, the locator checks tag types, and one measured variant is not shipped)
+
+- **The 11 residue values were a locator finding, and the fix is a scoring term.** A candidate is chosen by the
+  fraction of its property *names* the class declares; nothing asked whether a tag's type is one the class's own
+  property record allows, so a parse starting inside the record in front of the block could win. `KConeLimit`'s chosen
+  candidate typed `CollisionHeight` (a `Float` property) as a 16-byte `Float` and `PhysicsVolume` (an `Object`) as a
+  `Float`. `tools/class-defaults.py` now carries `TYPE_AGREEMENT` and counts contradictions per candidate; `choose()`
+  sorts `(declared fraction, bad == 0, count, -trailer)`.
+- **The map had to be measured, not assumed**: a `Class<X>` property serialises as an **object reference** here — 734
+  tags in otherwise-clean blocks carry type `Object` for a `UClassProperty` — so `UClassProperty` accepts
+  `{Class, Object}`. Assuming `Class` alone demoted 419 clean blocks and cost 3,800 properties, which is what the first
+  run of the change looked like: 2,141 "clean" blocks and 12,787 properties, i.e. worse everywhere.
+- **Result**: residue 11 → **4**, clean blocks **1,666 → 1,664**, properties **15,530 → 15,521**, rendered
+  **15,517 (99.97%)**, subobject properties 15,802 → **15,790**. Two classes lose their block rather than emit one
+  that contradicts their own record (`StargateMenus.SelectPawnPanel`, `SelectTeamPanel`); six of the seven named
+  classes are clean, and the residue is now one `array<SpeechReplacement>` plus three delegate tags.
+- **The aggressive variant is measured and deliberately not shipped**: ranking `bad == 0` *first* promotes **535
+  withheld classes** to clean blocks (2,201 of 2,319, 16,764 properties, 272 unrendered values). Those are exactly
+  the classes whose candidate held undeclared package names, and nothing here checks that the shorter block it picks
+  instead is complete — so it is written up as the open question, not shipped as coverage.
+- `inventory/compile_readiness.csv` and `docs/COMPILE.md` move with the block set (8 rows), since a class without a
+  fully declared block is not compile-ready; both are regenerated here.
+- **Next:** settle the 535 (a per-class audit of the chosen block, or the runtime reader of the trailing table), then
+  `replication` blocks and state code, which are the rest of 3.5.
 
 ### Execution notes (2026-10-28, an array of structs is one tagged block per element)
 

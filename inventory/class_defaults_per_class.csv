@@ -305,7 +305,7 @@ Engine,AnimNotify_Trigger,2,0.0,101,0
 Engine,xProcMesh,19,1.0,122,1
 Engine,xWeatherEffect,19,1.0,95,1
 Engine,KHinge,3,1.0,151,1
-Engine,KConeLimit,4,1.0,80,1
+Engine,KConeLimit,3,1.0,97,1
 Engine,KarmaParamsRBFull,3,1.0,97,1
 Engine,KarmaParamsSkel,4,0.0,92,0
 Engine,KTire,10,1.0,97,1
@@ -493,7 +493,7 @@ GUI,fntHugeFont,2,1.0,91,1
 GUI,fntHeaderFont,2,1.0,91,1
 GUI,GUITabControl,2,0.5,773,0
 GUI,GUIScrollingPanel,3,1.0,317,1
-GUI,STY_XBoxButton,6,1.0,65,1
+GUI,STY_XBoxButton,6,1.0,91,1
 GUI,STY_TextLabel,6,1.0,91,1
 GUI,STY_TextButton,12,1.0,91,1
 GUI,STY_TabButton,18,1.0,91,1
@@ -700,7 +700,7 @@ GamePlay,EFFECT_DRIVING_FULLGRANDSTAND,12,1.0,92,1
 GamePlay,EFFECT_DRIVING_EMPTYGRANDSTAND,12,1.0,92,1
 GamePlay,EFFECT_DRIVING_COMMENTATOR,14,1.0,92,1
 GamePlay,EFFECT_DOME_TOMB,15,1.0,92,1
-GamePlay,EFFECT_DOME_SAINTPAULS,15,1.0,72,1
+GamePlay,EFFECT_DOME_SAINTPAULS,14,1.0,92,1
 GamePlay,EFFECT_Dizzy,9,1.0,92,1
 GamePlay,EFFECT_ConcertHall,8,1.0,92,1
 GamePlay,EFFECT_CITY_UNDERPASS,14,1.0,92,1
@@ -730,7 +730,7 @@ GamePlay,EFFECT_Arena,8,1.0,92,1
 GamePlay,EFFECT_Alley,5,1.0,92,1
 GamePlay,Drowned,6,1.0,93,1
 GamePlay,Dispatcher,2,1.0,93,1
-GamePlay,DefensePoint,4,0.5,87,0
+GamePlay,DefensePoint,2,0.5,95,0
 GamePlay,DecisionTrigger,2,0.5,88,0
 GamePlay,CriticalStringPlus,2,0.5,94,0
 GamePlay,SlimeZone,2,0.5,92,0
@@ -834,7 +834,7 @@ IpDrv,MasterServerGameStats,4,0.0,95,0
 IpDrv,TcpLink,2,0.5,98,0
 IpDrv,UdpBeacon,5,1.0,134,1
 IpDrv,UdpGamespyUplink,3,1.0,116,1
-IpDrv,LANQueryClient,2,0.5,83,0
+IpDrv,LANQueryClient,2,0.5,97,0
 IpDrv,ClientBeaconReceiver,5,0.2,102,0
 IpDrv,BufferedTCPLink,2,0.5,125,0
 IpDrv,MasterServerClient,4,0.25,87,0
@@ -1275,7 +1275,7 @@ StargateContent,Roster_Anubis,2,1.0,93,1
 StargateContent,RepQueenEnergyWeaponProjectile,14,1.0,113,1
 StargateContent,RepQueenEnergyWeaponAttachment,2,0.0,1,0
 StargateContent,RepQueenEnergyWeaponAmmo,9,1.0,94,1
-StargateContent,ReplicatorQueen,47,1.0,102,1
+StargateContent,ReplicatorQueen,46,1.0,104,1
 StargateContent,ReetouWeaponProjectile,10,1.0,113,1
 StargateContent,ReetouWeaponAttachment,2,0.5,91,0
 StargateContent,ReetouVoicePack,3,0.0,99,0
@@ -1885,7 +1885,7 @@ StargateMenus,GameModeList,3,0.6667,149,0
 StargateMenus,LeftLockingPanel,3,1.0,93,1
 StargateMenus,ChapterSelectionPanel,3,0.6667,116,0
 StargateMenus,GameModeSelectionPanel,3,0.6667,96,0
-StargateMenus,SelectPawnPanel,2,1.0,146,1
+StargateMenus,SelectPawnPanel,2,1.0,146,0
 StargateMenus,VirtualKeyboardPanel,25,1.0,1121,1
 StargateMenus,InGameMenu,5,1.0,138,1
 StargateMenus,FullSlidingPanel,0,0.0,,0
@@ -1893,7 +1893,7 @@ StargateMenus,ProfileList,0,0.0,,0
 StargateMenus,OptionsEditBase,3,1.0,165,1
 StargateMenus,SavedGameList,2,0.0,75,0
 StargateMenus,VirtualKeyboardPage,6,1.0,186,1
-StargateMenus,SelectTeamPanel,2,1.0,236,1
+StargateMenus,SelectTeamPanel,2,1.0,236,0
 StargateMenus,VSMainMenu,13,1.0,202,1
 StargateMenus,CurrentProfilePanel,2,1.0,158,1
 StargateMenus,SinglePlayerSelectProfile,7,1.0,231,1
@@ -1943,9 +1943,9 @@ StargateMenus,WaitingForPlayers,4,1.0,246,1
 StargateMenus,SinglePlayerNewGame,2,1.0,132,1
 StargateMenus,SinglePlayerMenu,3,1.0,138,1
 StargateMenus,SinglePlayerLoadGame,0,0.0,,0
-StargateMenus,SelectTeamPage,7,1.0,159,1
+StargateMenus,SelectTeamPage,6,1.0,119,1
 StargateMenus,SelectTeamListBox,0,0.0,,0
-StargateMenus,SelectPawnPage,7,1.0,205,1
+StargateMenus,SelectPawnPage,6,1.0,207,1
 StargateMenus,ReturnToMainPage,3,0.6667,87,0
 StargateMenus,QuickLoadMapTempPage,2,1.0,94,1
 StargateMenus,OverwriteSavedGamePage,3,0.6667,133,0
