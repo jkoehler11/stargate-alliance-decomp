@@ -113,6 +113,8 @@ def main():
 
     path = os.path.join(outdir, "compile_readiness.csv")
     rollup = os.path.join(outdir, "compile_readiness_by_package.csv")
+    os.makedirs(outdir, exist_ok=True)
+    drift = []
     for target, header, data in (
         (path, ["package", "class", "functions", "native_functions", "properties", "properties_inherited",
                 "defaults", "defaults_clean", "defaults_state", "blockers"], per_class),
@@ -122,11 +124,30 @@ def main():
            by_package[pkg]["no-defaults-block"], by_package[pkg]["defaults-ambiguous"],
            by_package[pkg]["super-not-in-tree"]] for pkg in sorted(by_package)]),
     ):
+        if args.check:
+            # --check must never touch the tree: compare against what is committed, in memory.
+            committed = os.path.join(ROOT, "inventory", os.path.basename(target))
+            if not os.path.isfile(committed):
+                drift.append("%s is missing" % os.path.basename(committed))
+                continue
+            with open(committed, newline="") as fh:
+                have = list(csv.reader(fh))
+            want = [header] + [[str(c) for c in row] for row in data]
+            if have != want:
+                changed = sum(1 for a, b in zip(have, want) if a != b) + abs(len(have) - len(want))
+                drift.append("%s (%d of %d rows differ)" % (os.path.basename(committed), changed, len(want)))
+            continue
         with open(target, "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(header)
             w.writerows(data)
         print("wrote %s (%d rows)" % (target, len(data)))
+    if args.check:
+        if drift:
+            print("FAIL compile-readiness: " + "; ".join(drift) + " -- run `make compile-readiness`")
+            return 1
+        print("ok   compile-readiness: %d classes and %d packages match a fresh computation"
+              % (len(per_class), len(by_package)))
     return 0
 
 

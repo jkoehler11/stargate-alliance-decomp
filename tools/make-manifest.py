@@ -38,11 +38,33 @@ def walk(root):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("dump_root")
+    ap.add_argument("dump_root", nargs="?", help="the dump root (not needed for --check)")
     ap.add_argument("-o", "--output", default="inventory/manifest.sha256")
     ap.add_argument("--check", action="store_true",
                     help="verify against an existing manifest instead of writing")
     args = ap.parse_args()
+    if args.check and not args.dump_root:
+        # Dump-free: verify the committed manifest is still a manifest -- 64 hex digits, two spaces, a path -- and that
+        # it lists a plausible number of files. A truncated manifest is the failure this catches.
+        import re as _re
+        bad = total = 0
+        try:
+            with open(args.output, encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.rstrip("\n")
+                    if not line or line.startswith("#"):
+                        continue
+                    total += 1
+                    if not _re.match(r"^[0-9a-f]{64}  \S", line):
+                        bad += 1
+        except OSError as exc:
+            print("FAIL make-manifest: %s" % exc)
+            return 1
+        if bad or total < 1000:
+            print("FAIL make-manifest: %d of %d lines are not `sha256  path` (expected the whole dump)" % (bad, total))
+            return 1
+        print("ok   make-manifest: %d entries, every line a sha256 and a path" % total)
+        return 0
     if not os.path.isdir(args.dump_root):
         sys.exit(f"not a directory: {args.dump_root}")
 

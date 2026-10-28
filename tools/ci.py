@@ -279,6 +279,49 @@ def check_function_flags():
         ok(name, line[-1].replace("ok   function-flags: ", "") if line else "")
 
 
+def check_tool_contract():
+    """Every tool that answers `--check` must answer it without the dump, and must not write to the tree.
+
+    This is the check that would have caught `compile-readiness.py --check`, which ignored its flag and rewrote two
+    artifacts every time it ran. It discovers the tools from their own source, so a new one joins the contract by
+    having the flag rather than by being added to a list here.
+    """
+    name = "tool-check-contract"
+    tools = sorted(p for p in os.listdir(os.path.join(ROOT, "tools"))
+                   if p.endswith(".py") and p != "ci.py"        # ci.py is this runner: invoking it would recurse
+                   and '"--check"' in open(os.path.join(ROOT, "tools", p), encoding="utf-8", errors="replace").read())
+    before = subprocess.run(["git", "-C", ROOT, "status", "--porcelain"], capture_output=True, text=True).stdout
+    compliant, needs_dump, wrote, broke = [], [], [], []
+    for tool in tools:
+        try:
+            r = subprocess.run([sys.executable, os.path.join("tools", tool), "--check"], cwd=ROOT,
+                               capture_output=True, text=True, timeout=120)
+        except subprocess.TimeoutExpired:
+            broke.append(tool + " (timeout)")
+            continue
+        out = (r.stdout or "") + (r.stderr or "")
+        if r.returncode == 2 and "required" in out:
+            needs_dump.append(tool)
+        elif r.returncode != 0:
+            broke.append(tool)
+        else:
+            compliant.append(tool)
+    after = subprocess.run(["git", "-C", ROOT, "status", "--porcelain"], capture_output=True, text=True).stdout
+    if after != before:
+        added = [l for l in after.splitlines() if l not in before.splitlines()]
+        wrote = [l.strip() for l in added][:3]
+    if broke:
+        fail(name, "%d tool(s) fail their own --check: %s" % (len(broke), ", ".join(broke)))
+        return
+    if wrote:
+        fail(name, "--check wrote to the tree: %s" % ", ".join(wrote))
+        return
+    detail = "%d tools answer --check without the dump and write nothing" % len(compliant)
+    if needs_dump:
+        detail += "; %d still require dump arguments (%s)" % (len(needs_dump), ", ".join(needs_dump))
+    ok(name, detail)
+
+
 def check_module_split():
     """The per-function module split must reconcile with the committed per-module rollup."""
     name = "module-split"
@@ -372,6 +415,7 @@ def main():
     check_versions_lock()
     check_image_strings()
     check_module_split()
+    check_tool_contract()
     check_savegame_paths()
     check_opcode_table()
     check_function_flags()

@@ -20,6 +20,10 @@ import collections
 import csv
 import importlib.util
 import os
+import sys as _sys
+
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import checkcsv  # noqa: E402
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -56,10 +60,22 @@ def blocks_in(pkg, mod, exp):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("maps_dir", help="the dump's Maps directory")
+    ap.add_argument("maps_dir", nargs="?", help="the dump's Maps directory (not needed for --check)")
     ap.add_argument("-o", "--out", help="directory holding the CSVs (default: inventory/)")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
+    outdir = args.out or os.path.join(ROOT, "inventory")
+    if args.check and not args.maps_dir:
+        # Dump-free: the numbers cannot be recomputed here, so check that the committed artifacts are still the shape
+        # this tool writes -- a truncated run or a stub would pass a rebuild that never ran.
+        problems = []
+        for name, header, *_rest in (("map_property_coverage.csv", ["map", "exports", "blocks_with_properties"],),
+                                     ("actor_property_coverage.csv",
+                                      ["class", "exports", "blocks_with_properties", "coverage"],)):
+            problems += checkcsv.shape(os.path.join(outdir, name), header, key=header[0])
+        return checkcsv.report("map-census", problems,
+                               "map_property_coverage.csv and actor_property_coverage.csv are the shapes this tool \n"
+                               "     writes (shape only: needs the dump)")
 
     cd = load("class_defaults", "class-defaults.py")
     ps = load("prop_stream", "prop-stream.py")
