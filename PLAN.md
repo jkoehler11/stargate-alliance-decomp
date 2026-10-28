@@ -157,13 +157,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       File UELib issues/patches upstream where the gap is generic.
       **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): the locator
       finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,666 (71.8%) — the previous
-      512-byte scan window excluded every base class, whose record is longer than that. 15,491 of 15,530 class-level
-      properties render to UnrealScript (99.7%) — 468 arrays (1,435 elements), 207 nested structs — and 1,317
-      `Begin Object` subobjects carry another 15,010 of 15,810; enum element names resolve for 771 of 1,052 byte
+      512-byte scan window excluded every base class, whose record is longer than that. 15,519 of 15,530 class-level
+      properties render to UnrealScript (99.93%) — 484 arrays (1,502 elements), 219 nested structs — and 1,317
+      `Begin Object` subobjects carry another 15,802 of 15,810; enum element names resolve for 771 of 1,052 byte
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
-      source so one tree carries both halves. Remaining here: 18 arrays and 12 structs whose element type the tiling
-      test refuses, 543 withheld blocks (see the doc's "Not measured"), then `replication` blocks, state code and
-      labels, latent calls, operator precedence.
+      source so one tree carries both halves. Remaining here: 11 values whose located block contradicts the
+      class's declared property *types* (the locator scores names only — see the doc's "Not measured"), 543
+      withheld blocks, then `replication` blocks, state code and labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -401,6 +401,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-28, an array of structs is one tagged block per element)
+
+- **The last residue was the reader's shape, not the format.** `docs/CLASS_DEFAULTS.md` had counted 18 arrays and 12
+  structs as "element types the tiling test refuses". They are ordinary nested tagged blocks: each *element* of an
+  `array<Struct>` ends at its own `None`, and the reader required the whole value region to end there, so only a
+  one-element array could ever decode. `tools/defaults-emit.py` now decodes elements one at a time
+  (`render_tagged_struct(..., exact=False)`) and the array loop still has to land exactly on the tag's declared size.
+- **30 of the 39 render**: arrays unrendered 18 → **2**, structs unrendered 12 → **0**, array elements 1,435 →
+  **1,502**, nested structs 207 → **219**, properties 15,491 → **15,519 of 15,530 (99.93%)**. Subobjects gain most
+  (15,010 → **15,802 of 15,810**) because a particle system's own defaults are full of struct arrays.
+- **`InterpCurve` came with them, and needed two more corrections.** Its `Points` member is an array *inside* a
+  struct, and (a) `inventory/class_properties.csv` covers class-owned properties only, so nothing in the tree names
+  that inner type — the tag stream is self-describing, so the elements are read from it and tiling is the check;
+  (b) an array inside a struct is written inline and positionally (`Points=((InVal=..,OutVal=..),…)`), per
+  `UDefaultProperty`'s `WithinStruct` flag, where the code had been printing its `(index, text)` pairs as a Python
+  list. Spot-checked against the bytes: `Face(0)=(MeshName=sg1_anim.Tokra_Generic,…,MeshSectionIndex=2)`.
+- **The 11 that remain are a different defect and are now measured as one**: in six classes the located block types
+  a declared `Float` as a 16-byte `Float`, an `Object` as a `Float`, a `Name` as a `Vector`. The locator scores
+  candidates by names only, so it can accept a start inside a preceding native blob even when a type-agreeing
+  candidate exists lower in the ranking. Named per class in the doc, not guessed at.
+- **Status moved in two places**: default properties rendered 99.75% → **99.93%**, subobject defaults 94.94% →
+  **99.95%**; `inventory/class_defaults_emit.csv` regenerates byte for byte on a second run.
+- **Next:** make the locator's scoring type-aware (tag type must agree with the declared kind) and re-measure the
+  1,666/2,319 block count with it — that is the task the last 11 belong to, and it is deliberately not in this PR.
 
 ### Execution notes (2026-10-27, every artifact now has a stage)
 

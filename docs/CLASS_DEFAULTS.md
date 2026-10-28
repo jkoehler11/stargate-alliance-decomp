@@ -98,23 +98,23 @@ Where it still fails:
 * 428 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 
-## Emitting: 15,491 of 15,530 properties render, plus 1,317 subobjects
+## Emitting: 15,519 of 15,530 properties render, plus 1,317 subobjects
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
 | package | classes | blocks | properties | rendered | | subobjects |
 |---|---:|---:|---:|---:|---:|---:|
-| `StargateContent` | 567 | 457 | 5,010 | 5,003 | 99.9% | 350 |
-| `Engine` | 367 | 195 | 1,823 | 1,818 | 99.7% | 9 |
+| `StargateContent` | 567 | 457 | 5,010 | 5,009 | 100.0% | 350 |
+| `Engine` | 367 | 195 | 1,823 | 1,821 | 99.9% | 9 |
 | `StargateGame` | 306 | 195 | 1,753 | 1,753 | 100.0% | 89 |
 | `GamePlay` | 262 | 182 | 1,657 | 1,656 | 99.9% | 0 |
-| `StargateVehicles` | 142 | 124 | 1,559 | 1,542 | 98.9% | 41 |
-| `GUI` | 148 | 132 | 1,152 | 1,150 | 99.8% | 46 |
+| `StargateVehicles` | 142 | 124 | 1,559 | 1,559 | 100.0% | 41 |
+| `GUI` | 148 | 132 | 1,152 | 1,151 | 99.9% | 46 |
 | `Sharpeffects` | 158 | 156 | 1,101 | 1,101 | 100.0% | 467 |
 | `UDebugMenu` | 38 | 31 | 384 | 384 | 100.0% | 0 |
 | `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
-| others (9 packages) | 254 | 125 | 724 | 717 | 99.0% | 143 |
-| **total** | **2,319** | **1,666** | **15,530** | **15,491** | **99.7%** | **1,317** |
+| others (9 packages) | 254 | 125 | 724 | 718 | 99.2% | 143 |
+| **total** | **2,319** | **1,666** | **15,530** | **15,519** | **99.9%** | **1,317** |
 
 What renders, and what each rendering was checked against:
 
@@ -125,8 +125,8 @@ What renders, and what each rendering was checked against:
 | `Object` / `Class` | 1,670 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
 | `Struct(Vector/Rotator/Color/Plane)` | 919 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
 | `Byte` | 1,052 | an enum element name where the enum can be resolved (771 of them), the number otherwise |
-| `Array` | 468 properties, 1,435 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'` |
-| other structs | 207 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
+| `Array` | 484 properties, 1,502 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'`, and inline inside a struct: `Points=((InVal=0.0,OutVal=1.0),…)` |
+| other structs | 219 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
 
 Arrays and the remaining structs are decoded from **UELib's own defaults deserialiser**
 (`tools/uelib/src/Core/Classes/UDefaultProperty.cs`, pinned in `tools/versions.lock`) instead of from the bytes,
@@ -135,15 +135,35 @@ untagged elements**, their width coming from the *inner* type the property recor
 `inventory/class_properties.csv` already carries that name), and a struct that is not one of the four atomic
 layouts is a **nested tagged block**, `Field=value` pairs terminated by `None`.
 
-Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
-declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 468
-decoded and 18 refused, and it is also what caught the defects below.
+**An array of structs is one nested tagged block *per element*, and that is what the last two sessions got wrong.**
+The reader treated the whole value region as a single tagged struct, so `array<FaceInformation>` could only decode
+when the count was 1: each element ends at its own `None`, and requiring the *region* to end there made every
+multi-element array a refusal. Elements are now decoded one at a time — `render_tagged_struct(…, exact=False)` returns
+the offset after the element's terminator — and the array loop still has to land exactly on the tag's declared size,
+so a wrong element type is a **refusal** and not a short element. The same change closes `InterpCurve`, whose
+`Points` member is an array of tagged structs:
 
-What is left over, all counted per block in the CSV: **18 arrays**, **12 structs** and **10** properties with a
-malformed value — 0.26% of the class-level block contents. The arrays are element types that decode as neither a
-tagged block nor an atomic layout (`FaceInformation` 6, `PassengerWeaponStruct` 5, and singles); the structs are
-`InterpCurve`, whose member list the reference itself special-cases. Both are refusals of the tiling test, not
-truncated reads.
+    WheelLongFrictionFunc=(Points=((InVal=0.0,OutVal=0.0),(InVal=100.0,OutVal=1.0),(InVal=200.0,OutVal=0.7)))
+    Face(0)=(MeshName=sg1_anim.Tokra_Generic,FaceTextureName=TokraTex.Generic_Tokra_Face_01_S,MeshSectionIndex=2)
+
+**An array inside a struct is written inline and positionally** — `Points=((InVal=..),(InVal=..))` — because
+`UDefaultProperty` renders arrays that way under its `WithinStruct` flag; only the top level of a
+`defaultproperties` block gets `Name(i)=` lines. That also meant the nested form needed the *array* path to return a
+formatted string rather than its top-level `(index, text)` pairs, which is what had been printing a Python list.
+
+**A nested array has no metadata here, so its element type comes from the tag stream.** `inventory/class_properties.csv`
+covers *class-owned* properties only, so `InterpCurve.Points` names no inner type anywhere in this repository. The
+elements of a struct array are tagged, i.e. self-describing, so the attempt is still a read — the tiling test is what
+turns a wrong guess into a refusal — and the field names it produces (`InVal`, `OutVal`) are consistent across all
+twelve instances.
+
+Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
+declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 484
+decoded and 2 refused, and it is also what caught the defects below.
+
+What is left over, all counted per block in the CSV: **2 arrays**, **0 structs** and **9** properties with a malformed
+value — 0.07% of the class-level block contents, down from 0.26%. The residue is no longer a format gap: every one of
+the eleven is a *type contradiction* inside a block the locator accepted (below).
 
 ## Subobjects: 1,317 `Begin Object` blocks
 
@@ -157,8 +177,9 @@ outer is the class being described** — a subobject the compiler expects to be 
     Emitters(0)=SpriteEmitter'SpriteEmitter0'
 
 The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,317
-subobjects carrying 15,810 properties, of which 15,010 render**, so a class's defaults are 15,491 + 15,010 =
-**30,501 rendered properties** in total. Without the declaration a reference names an object the compiler has never
+subobjects carrying 15,810 properties, of which 15,802 render**, so a class's defaults are 15,519 + 15,802 =
+**31,321 rendered properties** in total. Subobjects gained the most from the array fix (15,010 → 15,802): a particle
+system's own defaults are full of struct arrays. Without the declaration a reference names an object the compiler has never
 seen; that is why they are part of this pass and not a cosmetic extra.
 
 **A correction.** The previous PR reported these 270 arrays as "`editinline` arrays whose elements are serialised
@@ -228,9 +249,18 @@ whose block could not be located or does not account for itself.
 
 ## Not measured
 
-* **The last 18 arrays and 12 structs.** Element types that decode as neither a tagged block nor an atomic layout
-  (`FaceInformation`, `PassengerWeaponStruct`, `InterpCurve` …), refused by the tiling test rather than read
-  short. Some instances of the same type do decode; the difference is not yet measured per class.
+* **The last 11 values: a located block whose tag *types* contradict the class's declared kinds.** Two arrays and
+  nine scalars in six classes (`Engine.TextToSpeechAlias`, `GamePlay.EFFECT_DOME_SAINTPAULS`, `Engine.KConeLimit`,
+  `GUI.MenuItemOverlay`, `StargateMenus.SelectPawnPanel`, `StargateContent.ReplicatorQueen`). The locator scores a
+  candidate by *names* only — "does this block hold properties the class declares?" — never by whether each tag's
+  type agrees with the property record, so it can accept a start inside a preceding native blob. Examples from the
+  committed artifact: `CollisionHeight` (a `Float` property) arriving as a 16-byte `Float` tag,
+  `PhysicsVolume` (an `Object`) as a `Float`, `RegularMovementAnims` (a `Name`) as a `Vector`. In all six classes a
+  *type-agreeing* candidate exists that the name score ranks lower, so the fix is a scoring change (type agreement
+  as a hard filter, or as a tie-break), and it cannot be made without re-measuring the 1,666/2,319 block count —
+  which is why it is a separate task and not part of the array fix. What would settle the correct start per class:
+  that type-aware locator, cross-checked against a stock `ucc` build. **Do not read these eleven as an undecoded
+  byte format** — the bytes decode fine; the block chosen is not the class's block.
 * **The 543 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
   not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
   settled (see the section above for the three explanations already tested and rejected).

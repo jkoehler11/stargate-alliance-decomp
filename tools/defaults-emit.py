@@ -237,19 +237,21 @@ def render_struct_fields(name, values):
     return None
 
 
-def render_element(pkg, buf, off, inner, ctx, end):
+def render_element(pkg, buf, off, inner, ctx, end, depth=0):
     """One array element: untagged, so its width comes from the element type, not from a size byte.
 
     Every read here is bounded by the array's own value region; a short read means the element type guess is
     wrong, which is a refusal rather than a partial element.
     """
     try:
-        return _render_element(pkg, buf, off, inner, ctx, end)
+        return _render_element(pkg, buf, off, inner, ctx, end, depth)
     except (IndexError, struct.error):
         return None, off
 
 
-def _render_element(pkg, buf, off, inner, ctx, end):
+def _render_element(pkg, buf, off, inner, ctx, end, depth=0):
+    if not inner:
+        return render_tagged_struct(pkg, buf, off, end, ctx, depth + 1, exact=False)
     low = inner.lower()
     if re.match(r"class<.*>$", inner, re.I):
         # `array<Class<Emitter>>`: the element is an object reference to a class, not to an instance.
@@ -294,16 +296,24 @@ def _render_element(pkg, buf, off, inner, ctx, end):
         text = render_ref(pkg, idx, None)
         return (text, off2) if text else (None, off)
     # A struct whose fields are themselves tagged: UELib reads tags until `None`, not by a fixed width.
-    return render_tagged_struct(pkg, buf, off, end, ctx)
+    # One *element* of an array ends at its own `None`, not at the array's end (see `render_tagged_struct`).
+    return render_tagged_struct(pkg, buf, off, end, ctx, depth + 1, exact=False)
 
 
-def render_tagged_struct(pkg, buf, start, end, ctx, depth=0):
+def format_inline(text):
+    """An array rendered inside a struct: `(elem,elem)` rather than the top level's `Name(i)=elem` lines."""
+    if isinstance(text, list):
+        return "(" + ",".join(value for _index, value in text) + ")"
+    return text
+
+
+def render_tagged_struct(pkg, buf, start, end, ctx, depth=0, exact=True):
     """A struct serialised as a nested tagged block (`Field=value` pairs, `None`-terminated).
 
     UELib's `UDefaultProperty` falls back to this for every struct its atomic serialiser does not claim, and the
     recursion is bounded because a malformed stream can otherwise nest without end.
     """
-    if depth > 3 or end > len(buf):
+    if depth > 4 or end > len(buf):
         return None, start
     fields, off = [], start
     while off < end:
@@ -317,8 +327,11 @@ def render_tagged_struct(pkg, buf, start, end, ctx, depth=0):
         text, _note = render_value(pkg, entry, None, buf, ctx, depth + 1)
         if text is None:
             return None, start
-        fields.append("%s=%s" % (pkg.name(idx), text))
-    if off != end or not fields:
+        # An array inside a struct is written inline and positionally, `Points=((InVal=..),(InVal=..))`:
+        # `UDefaultProperty` does exactly this for `WithinStruct` -- element names and indices only appear at
+        # the top level of a `defaultproperties` block.
+        fields.append("%s=%s" % (pkg.name(idx), format_inline(text)))
+    if not fields or (exact and off != end):
         return None, start
     return "(" + ",".join(fields) + ")", off
 
@@ -384,7 +397,11 @@ def render_value(pkg, entry, meta, buf, ctx=None, depth=0):
     if t == "Array":
         count_off = entry.get("value_offset")
         inner = inner_type(meta)
-        if count_off is None or not inner:
+        # A nested array inside a struct has no metadata here: `inventory/class_properties.csv` covers
+        # class-owned properties only, so `InterpCurve.Points` names no inner type. The elements of a struct
+        # array are tagged, i.e. self-describing, so the attempt is still a read -- the tiling test below is
+        # what makes a wrong guess a refusal.
+        if count_off is None:
             return None, "array"
         end = count_off + entry["size"]
         try:
@@ -395,7 +412,7 @@ def render_value(pkg, entry, meta, buf, ctx=None, depth=0):
             return None, "array"
         parts = []
         for i in range(count):
-            text, off = render_element(pkg, buf, off, inner, ctx, end)
+            text, off = render_element(pkg, buf, off, inner, ctx, end, depth)
             if text is None:
                 return None, "array"
             parts.append((i, text))
