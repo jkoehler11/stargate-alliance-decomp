@@ -165,18 +165,41 @@ Measured over `Engine.u`'s 3,842 `Function` payloads (`python3 tools/uscript-dis
 * `FunctionFlags` at `payload_end-4` equals `inventory/natives.csv`'s `function_flags` for **439 of the 444**
   exports joinable by (class, function) — the field is identified by content, not by position alone.
 
-So the tail is no longer a guess: its length is predicted by a flag, and the prediction has no exceptions in 3,398
-payloads. What the tail does *not* give is where the script starts, because the header in front of it serialises
-three object references and a name whose widths differ per payload.
+**And every field in the tail is now checked by content, not just by position.** `--payloads` takes a dump
+directory and compares the `u16` at `payload_end-7` (`payload_end-9` when `Net`) with the index the *script*
+declares (`native(1234)`), from `inventory/natives.csv`'s `native_token`: over all 18 packages (12,472 `Function`
+payloads, 797 joinable) the token equals the declared index in **791**, 5 carry a token where the script declares
+none and 1 the other way — **0 disagree in both**. `FunctionFlags` matches in **790 of 797**. That is what makes
+`u16` `NativeToken` + `u8` `OperPrecedence` a measurement rather than a reading of the body: the value is the same
+number in two unrelated places.
+
+    $ python3 tools/uscript-dis.py --payloads System      # per package, then the corpus totals
+    package                fn   join  flags  token   tr7   tr9  none  sized
+    ...
+    TOTAL               12472    797    790    791 11379   337   756   2150
+
+The epilogue counts move slightly with the corpus: **11,379** payloads carry it 7 bytes from the end, **337** 9
+because they are Net functions, and **756** carry it at neither position — the native/scriptless functions, which
+is why `natives.csv`'s 797 joinable are almost exactly that set. What the tail does *not* give is where the script
+starts, because the header in front of it serialises object references and a name whose widths differ per payload.
 
 ## Not measured
 
 * **Where a script starts and ends inside a `Function` payload (U13).** Operand widths are necessary for a
   disassembler but not sufficient. The tail is solved (above), so the script's end is known; the *start* is not:
-  a 4-byte size field sits immediately in front of the script in **804 of 3,842** payloads, and in those the table
-  walks the script exactly — but those scripts are 2 to ~30 bytes, so they exercise a handful of opcodes. For the
-  other 3,038 no dword at any of the first 48 offsets equals the script's length, so the header's field widths are
-  the open question, and no *long* shipped function has been disassembled end to end.
+  `UStruct::Serialize` (`0x000392b0`) writes, in order, `Super`, a chain of `Children` references, `FriendlyName`,
+  `StructFlags` (gated on archive version > 119), `Line`, `TextPos`, the 4-byte `ScriptStorageSize` and then the
+  script — so the size field *should* sit immediately in front of the script. Measured corpus-wide, a unique dword
+  at a single offset equals the distance to the script's epilogue in **2,166 of 12,472** payloads, and those are the
+  short scripts; for the rest no dword at any of the first 60 offsets equals it.
+  **The header width is not `N` compact indexes plus the 16 fixed bytes either**, which is the next thing that had
+  to be tested and was: of those 2,166, the hypothesis *fits exactly* for 596 payloads at two leading indexes, 22 at
+  three and 618 at four — so a fixed number of leading references is not the rule, and the `Children` chain (one
+  reference per parameter, whose count varies per function) is what the width is most likely made of. Settling it
+  needs the chain's length, which is the function's parameter count — one query away from the export table
+  (`exports whose outer is the function and whose class ends in Property`), and then a per-payload check that the
+  predicted start lands on a token the table accepts and walks to the epilogue. No *long* shipped function has been
+  disassembled end to end yet.
   `python3 tools/uscript-dis.py --payloads System/Engine.u` reproduces every count here; `docs/UNKNOWNS.md` U13
   carries the routes that would settle it.
 * **Operand semantics.** A pattern says four bytes, not *which* reference; which object a `0x13` cast names, which

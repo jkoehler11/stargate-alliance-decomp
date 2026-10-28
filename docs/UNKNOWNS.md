@@ -510,6 +510,28 @@ Measured on `Engine.u`'s 3,842 `Function` payloads (`python3 tools/uscript-dis.p
   opcode table walks to the boundary. Those scripts are short (2 to ~30 bytes), so the evidence proves the layout
   rather than the table.
 
+**Fifth session, 2026-10-28: the tail's fields are confirmed by content, and the header width is now the only
+question left.** `tools/uscript-dis.py --payloads` takes the whole `System` directory (12,472 `Function` payloads,
+797 joinable to `inventory/natives.csv`) and compares the `u16` at `payload_end-7` — `payload_end-9` when `Net` —
+with the index the function's *script* declares in `native(1234)`:
+
+* **791 of 797** payloads carry exactly the declared `NativeToken`; 5 carry a token where the script declares none
+  and 1 the other way, **0 disagree in both**; `FunctionFlags` matches in **790 of 797**. The field order written
+  down from `UFunction::Serialize` is therefore checked by a value that appears in two unrelated places, not by
+  position alone.
+* the epilogue counts over the corpus are **11,379** at 7 bytes, **337** at 9 (all Net) and **756** at neither —
+  that last number is the scriptless native half, which is why it sits just under `natives.csv`'s 797.
+* **the size field's position is still not derivable**, and two hypotheses have now been tested against each other
+  over the 2,166 payloads where a *unique* dword equals the distance to the epilogue: `UStruct::Serialize`
+  (`0x000392b0`) writes `Super`, a `Children` chain, `FriendlyName`, `StructFlags` (version > 119), `Line`,
+  `TextPos`, `ScriptStorageSize`, then the script; a header of *N* compact indexes plus 16 fixed bytes fits 596
+  payloads at two leading references, 22 at three and 618 at four — i.e. no fixed count, so the variable part is
+  most likely the `Children` chain (one reference per parameter). **Next test, not tried:** take the parameter
+  count from the export table (exports whose `outer` is the function and whose class name ends in `Property`),
+  predict the start as `Super` + one reference per child + `FriendlyName` + 16, and require the walk from the
+  predicted offset to end exactly on the epilogue. That is a bounded per-payload check and it either closes this
+  entry or gives a fourth negative with a smaller surface.
+
 **What is left is the header.** It serialises the struct's `Next`, `Super` and `Children` object references and its
 `FriendlyName`, then a `u32` (written when `Version > 119`), then `Line` and `TextPos`, then the size — but the
 four indices are archive-encoded and their widths vary per payload (the 804 size fields land at offsets 19..24).

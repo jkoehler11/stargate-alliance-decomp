@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -62,6 +62,7 @@ help:
 	@echo "  serialize-slots  every class's Serialize override from its class table (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table  the walker's opcode map and per-group operand rules (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table-check  validate the committed table with no image (what make ci runs)"
+	@echo "  payload-tail  every Function payload's tail, checked against its script (docs/BYTECODE.md; needs the dump)"
 	@echo "  function-flags  every function's FunctionFlags from its export payload (docs/systems/NETWORK.md; needs the dump)"
 	@echo "  lipsinc-index  the LIPSinc .map phonemes and .lad containers (docs/formats/lipsinc-lad.md; needs the dump)"
 	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
@@ -358,6 +359,11 @@ function-flags:
 	@echo "wrote inventory/function_flags.csv"
 
 # The same table's consistency, and the disassembler that consumes it. Committed files only.
+# The `Function` payload's tail: `NativeToken` and `FunctionFlags` against the script's own declarations, over
+# every package (docs/BYTECODE.md, docs/UNKNOWNS.md U13). Needs the dump, so it is not a `make ci` gate.
+payload-tail:
+	@$(PYTHON) tools/uscript-dis.py --payloads "$(SYSTEM_DIR)"
+
 opcode-table-check:
 	@$(PYTHON) tools/opcode-table.py --check
 	@$(PYTHON) tools/uscript-dis.py --selftest
