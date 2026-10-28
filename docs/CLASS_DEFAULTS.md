@@ -68,23 +68,33 @@ Where it still fails:
   declared properties mostly come from `GUI`/`Core` parents; `Fire`'s are fractals with almost no declared
   properties, so "every property declared" is the wrong test there — they may well be correct blocks scored
   harshly.
-* **110 classes still have no candidate — and none of them is blockless.** `make defaults-misses`
+* **110 classes have no usable block, and the trailer bound is not why.** `make defaults-misses`
   (`tools/class-defaults.py --misses`, `inventory/class_defaults_misses.csv`, `--check-misses` in `make ci`) classifies
-  every one of the 653 classes that are not fully declared against the committed per-class artifact:
+  every one of the 653 classes that are not fully declared, against the committed per-class artifact:
 
   | reason | classes | what it means |
   |---|---:|---|
-  | `incomplete` | 543 | a block was chosen, but it carries names the class does not declare — the tie below |
-  | `single-property` | 62 | every block that parses holds exactly **one** property, so the `len(props) < 2` filter drops it |
-  | `trailer-over-64` | 48 | blocks parse, but every one ends more than 64 bytes before the export's end |
-  | `no-block-parses` | **0** | no class in the tree is without a parseable block |
+  | `incomplete` | 543 | a block was chosen, but it holds names the class does not declare — the tie below |
+  | `empty-block` | 109 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding even two of the class's properties |
+  | `single-property` | 1 | only one-property blocks parse |
+  | `trailer-over-64` | **0** | no class is rejected by the 64-byte bound |
+  | `no-block-parses` | **0** | every class parses *something* |
 
-  So the doc's old phrasing ("absent or fails the trailer bound") is answered: nothing is absent. The two groups are
-  different problems. The 48 are a *bound* problem — the 64-byte trailer is a rule of thumb for the component table that
-  can follow a defaults block, and these exports carry more than that. The 62 are a *shape* problem, and relaxing the
-  one-property filter was tried and rejected: 19 of the 62 would then match a name the class declares, but the matches
-  are spurious (`Modifier` matching its own class name, `TexPanner` matching on `ObjectFlags`), which is worse than a
-  miss — a false block would emit wrong defaults for classes the compiler would otherwise leave alone.
+  This corrects an earlier reading of the same data. The first pass labelled 48 of these `trailer-over-64`, because it
+  asked only "what was the best parse and how far did it end from EOF" — and a 1–2 property parse 90 bytes from the end
+  looks like a block cut short by the bound. Asking the stronger question, "does any parse contain a property this class
+  *declares*", gives 0 or 1 for all 110: there is no block being truncated, so raising the bound would recover nothing.
+  The `< 2` and `≤ 64` guards are innocent here.
+
+  What the 109 actually look like, measured: an empty block parses at offset 0, followed by a **uniform 80–95-byte
+  remainder** (`Object` 81 bytes, `Locale` 91, `Subsystem` 92) that is not decoded. Two readings survive and this page
+  does not choose between them: the classes set none of their declared properties (so a rebuild emits an empty
+  `defaultproperties` and loses nothing), or their block has a shape `read_block` does not parse and the remainder is
+  where it lives. Settling it needs that remainder decoded, or a stock `ucc` build of one of these classes to compare
+  against — neither of which this project has.
+* Relaxing the one-property filter was tried and rejected: it would "recover" 19 of the single-property group, but the
+  matches are spurious (`Modifier` matching its own class name, `TexPanner` matching on `ObjectFlags`). A false block is
+  worse than a miss: it would emit wrong defaults where the compiler would otherwise leave the class alone.
 * 428 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 
