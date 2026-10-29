@@ -217,9 +217,11 @@ starts, because the header in front of it serialises object references and a nam
   one position is always zero, the value that resolves to a same-named parent is `Super`, the "other function" is
   `Next` and the child is `Children`. What `v0`/`v3` are attached to is not identified.
 
-  **The fixed run after `FriendlyName` is still open, and the two kinds do not agree.** A dword 16 bytes past the name
-  equals the distance to the script's epilogue in **2,141** `Function` payloads and in **zero** `Class` payloads; at 8
-  bytes it is 39 functions and no classes. The walk from `name_end + 16` reaches the epilogue in 1,975 functions, and
+  **The fixed run after `FriendlyName` is still open, and the class control cannot reach it.** No `Class` payload
+  carries the `04 0b 47` epilogue at all — **2,319 of 2,319** — so a class's script is not stored the way a function's
+  is and there is no end to measure the run against; the control settles the encoded part only. On functions, a dword
+  16 bytes past the name equals the distance to the epilogue in **2,141** payloads (39 at 8 bytes). The walk from
+  `name_end + 16` reaches the epilogue in 1,975 functions, and
   the ones it misses fail on the walker's own refusals (bad-token 3,824, unterminated parameter lists 1,617) spread
   across the whole opcode range — the signature of a desynchronised start rather than of a table gap. So the run's
   length is not settled, and until it is, no *long* shipped function is disassembled end to end.

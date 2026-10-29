@@ -601,10 +601,11 @@ What the five values are, over the whole corpus: `v0` always zero, `v1` = `Super
 functions in a parent class), `v2` = `Next` (another function of the same outer, 10,529), `v3` always zero, `v4` =
 `Children` (9,218). For a class the order shifts: `[Super][0][Children][…]` (2,317 of 2,318 resolve `v2` to a child).
 
-The fixed run after the name is the last piece, and the two kinds disagree there: the dword at `name_end+16` equals the
-distance to the script's epilogue in **2,141** functions and in **no** class. A class's script is stored under
-different conditions than a function's, so a run measured on functions cannot be carried to classes, and neither has a
-layout yet that explains both.
+The fixed run after the name is the last piece, and the class control cannot reach it: **no class payload carries the
+`04 0b 47` epilogue at all (2,319 of 2,319)**, so a class's script is not stored the way a function's is and there is no
+end to measure the run against. On functions the dword at `name_end+16` equals the distance to the epilogue in **2,141**
+payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
+the opcode range, so the start is probably still wrong for them and the run's length is not settled.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
@@ -669,10 +670,11 @@ What the five values are, over the whole corpus: `v0` always zero, `v1` = `Super
 functions in a parent class), `v2` = `Next` (another function of the same outer, 10,529), `v3` always zero, `v4` =
 `Children` (9,218). For a class the order shifts: `[Super][0][Children][…]` (2,317 of 2,318 resolve `v2` to a child).
 
-The fixed run after the name is the last piece, and the two kinds disagree there: the dword at `name_end+16` equals the
-distance to the script's epilogue in **2,141** functions and in **no** class. A class's script is stored under
-different conditions than a function's, so a run measured on functions cannot be carried to classes, and neither has a
-layout yet that explains both.
+The fixed run after the name is the last piece, and the class control cannot reach it: **no class payload carries the
+`04 0b 47` epilogue at all (2,319 of 2,319)**, so a class's script is not stored the way a function's is and there is no
+end to measure the run against. On functions the dword at `name_end+16` equals the distance to the epilogue in **2,141**
+payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
+the opcode range, so the start is probably still wrong for them and the run's length is not settled.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
