@@ -198,7 +198,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
-- [ ] 3.8 **Blocked on a compiler, and nothing else here is.** Chase L2→L3 on the small packages first (`Core`, `Fire`,
+- [ ] 3.8 **The comparator exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
+      packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and it is
+      validated the only way it can be without a build: a package against itself gives 3,352 of 3,821 shared functions
+      identical (the rest have no script), and a one-byte mutation inside an operand moves L3 to 3,351 while L2 stays
+      at 3,352. Chase L2→L3 on the small packages first (`Core`, `Fire`,
       `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
 - [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
