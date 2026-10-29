@@ -397,7 +397,12 @@ def check_versions_lock():
 
 
 def check_artifact_hashes():
-    """Every committed artifact must match the expected hash recorded beside it."""
+    """Every committed artifact must match the expected hash recorded beside it.
+
+    The check, then that check's own selftest: the manifest covers committed files, and the one way that is easy to
+    get wrong is to count whatever happens to be in the directory. The selftest builds a throwaway repository with a
+    git-ignored build product in it and asserts the four verdicts, which takes a git binary and no game data.
+    """
     name = "artifact-hashes"
     r = subprocess.run([sys.executable, repo("tools", "artifact-hashes.py"), "--check"],
                        capture_output=True, text=True, cwd=ROOT)
@@ -406,6 +411,14 @@ def check_artifact_hashes():
         fail(name, out[-1] if out else "exit %d" % r.returncode)
     else:
         ok(name, out[-1].replace("ok   artifact-hashes: ", "") if out else "")
+    s = subprocess.run([sys.executable, repo("tools", "artifact-hashes.py"), "--selftest"],
+                       capture_output=True, text=True, cwd=ROOT)
+    lines = (s.stdout or s.stderr).strip().splitlines()
+    if s.returncode != 0:
+        fail(name + "-selftest", lines[-1] if lines else "exit %d" % s.returncode)
+    else:
+        ok(name + "-selftest", "%d cases (ignored build product, untracked file, unrecorded artifact, gone artifact)"
+           % len(lines))
 
 
 def check_addresses_in_image():

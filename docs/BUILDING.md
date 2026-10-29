@@ -186,18 +186,29 @@ PLAN 8.4 lists the milestones. For any of them:
 
 ### Expected hashes
 
-`inventory/artifact_hashes.csv` is the manifest: the path, size and SHA-256 of all 76 committed artifacts under
+`inventory/artifact_hashes.csv` is the manifest: the path, size and SHA-256 of all 82 committed artifacts under
 `inventory/` and `symbols/`. It answers the question a fresh checkout asks before trusting any number — *is this file
 the one the tools produce?* — without re-running the tools, which for half of them means a Ghidra run and the dump.
 
 ```
 $ python3 tools/artifact-hashes.py --check
-ok   artifact-hashes: 76 artifacts, 5.4 MiB, manifest matches
+ok   artifact-hashes: 82 artifacts, 6.3 MiB, manifest matches
 ```
 
 `make ci` runs that check, so three things fail a build: an artifact whose hash changed but whose manifest was not
-rewritten in the same commit, an artifact listed in the manifest that is gone, and a file under `inventory/` or
-`symbols/` that the manifest does not mention at all. The remedy is always the same and is deliberately manual — run
+rewritten in the same commit, an artifact listed in the manifest that is gone, and a committed file under `inventory/`
+or `symbols/` that the manifest does not mention at all.
+
+**Committed means in the git index, not on disk.** The manifest covers what `git ls-files -- inventory symbols`
+answers, because two of the paths under `symbols/` are build products that `.gitignore` excludes on purpose —
+`symbols/xbox.sym.s` and `symbols/xbox.sym.o`, the assembler output of a build. Counting them made this check fail on
+every tree that had been built in (`unrecorded:`), and worse, made a regenerated manifest record them so that a clean
+checkout reported them `gone:`; the ignore list only held while nobody followed the remedy above. A tree exported
+without git has no index to ask, so the tool falls back to the directory scan and says so in its summary line, since
+only there can an ignored file not be told apart. `tools/artifact-hashes.py --selftest` (also in `make ci`) builds a
+throwaway repository with an ignored build product in it and asserts all four cases: the product is not an artifact, an
+untracked file is not one either, a committed artifact missing from the manifest is still reported, and a committed
+artifact deleted from the worktree is reported `gone`. The remedy is always the same and is deliberately manual — run
 the artifact's stage, then `make artifact-hashes`, and commit the two together, so the diff shows which numbers moved.
 
 **Before blaming the tree, check the toolchain.** `make versions --strict` names an installed tool that violates its
