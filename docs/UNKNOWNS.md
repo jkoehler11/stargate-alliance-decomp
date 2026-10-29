@@ -664,18 +664,26 @@ declares. `inventory/script_calls.csv` carries package, class, function, token, 
 per package, so a call into a native parent's function is indistinguishable from a call into a sibling package's until
 the hierarchy is consulted.
 
+**Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
+correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
+`0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
+2,319 `Class` payloads were tried at five offsets past `FriendlyName`, with four skips and both zlib framings, and none
+inflates to something that starts with a `Return` or ends on the `'G'` marker. Since no class carries the `04 0b 47`
+epilogue either, a class's script is stored some third way — a fact to carry, not a lead.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
 `0x00037110` = the 4-byte field writer, `0x00036740` = a byte writer) contain no reader for this header. So the
 route needs the real address first, from a call site into the export loader, rather than the number recorded here.
 
-**What would settle it, now that the tail is known.** Read the *load* side rather than the payload: `LinkerLoad`'s
-`Serialize` (`0x000515d0`) is what fills `Function->Script` from these bytes, so the header's widths are the ones its
-`operator<<` calls consume — decompile it and count the bytes each of the four indices takes. Second route, cheaper
-if the header parse works first: for the 444 payloads with no epilogue at either position, check whether their
-scripts are stored with a marker other than `'G'` (i.e. compressed), which would make the size field the compressed
-length and explain a residue that no layout arithmetic fits.
+**What would settle it, now that the tail is known.** The remaining question is only how the script's length is
+encoded in front of it, so read the *load* side rather than the payload bytes: `LinkerLoad`'s own `Serialize`
+(`0x000515d0`, slot 11 of the `LinkerLoad` table in `inventory/class_serialize_slots.csv`) is the code that fills
+`Function->Script` and its size, and the store to `[reg+0x4c]` is the anchor to read backwards from.
+
+**Why it has not been attempted from those two routes yet.** Two sessions tried the payload-bytes route first; this
+entry exists so the third starts from the reader, not from another alignment guess.
 
 **Sixth session, 2026-10-29: the header's encoded part is pinned and the `Children`-chain rule is dead.**
 `tools/uscript-dis.py --header` decodes the payload's leading values with the archive's own compact index and
@@ -772,34 +780,3 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 `index` for those groups and `inventory/opcode_usage.csv` is the census of the new set. This is the per-opcode work
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
-
-**Twelfth session, 2026-10-29: the index operands resolve, and the encoding indexes two tables.** With 99.3% of
-scripts walking, `--resolve` reads every index operand and asks the package what it lands on. The unambiguous tokens
-agree perfectly — `FinalFunction` **5,424 of 5,424** resolve to a `Function`, `DynamicCast` **4,153 of 4,153** and
-`MetaClassCast` **129 of 129** to a `Class`, every variable token to a property — which is a semantic check on the
-operand rules that no walk can give, because a wrong width can still tile. The virtual and global call tokens do not
-name objects at all: **10,405 of 13,398** `VirtualFunction` operands and **109 of 109** `GlobalFunction` operands name
-a function the package declares, i.e. they index the **name table**, and `NameConst` does the same. So the same compact
-codec indexes exports/imports on one token and names on another, and only the opcode distinguishes them.
-
-**Thirteenth session, 2026-10-29: the corpus's call sites are a table.** `--calls` records every call in the 11,602
-scripts that walk: **5,424 static** (`FinalFunction`, an object reference — **all 5,424 resolve to a `Function`**) and
-**13,507 dynamic** (`VirtualFunction`, `GlobalFunction`, a name), of which **10,514** name a function the package itself
-declares. `inventory/script_calls.csv` carries package, class, function, token, dispatch, target and target class. The
-2,993 dynamic sites whose name is not declared locally are not a defect to fix but a fact to carry: the name table is
-per package, so a call into a native parent's function is indistinguishable from a call into a sibling package's until
-the hierarchy is consulted.
-
-**The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
-entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
-after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
-`0x00037110` = the 4-byte field writer, `0x00036740` = a byte writer) contain no reader for this header. So the
-route needs the real address first, from a call site into the export loader, rather than the number recorded here.
-
-**What would settle it, now that the tail is known.** The remaining question is only how the script's length is
-encoded in front of it, so read the *load* side rather than the payload bytes: `LinkerLoad`'s own `Serialize`
-(`0x000515d0`, slot 11 of the `LinkerLoad` table in `inventory/class_serialize_slots.csv`) is the code that fills
-`Function->Script` and its size, and the store to `[reg+0x4c]` is the anchor to read backwards from.
-
-**Why it has not been attempted from those two routes yet.** Two sessions tried the payload-bytes route first; this
-entry exists so the third starts from the reader, not from another alignment guess.
