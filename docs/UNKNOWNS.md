@@ -623,6 +623,15 @@ That closes 3.7's *locator*: the start is computed from the header, not searched
 table's coverage (the 979 early refusals plus the ~5,000 later ones are unnamed or mis-patterned opcodes) and the
 identity of the run's four words.
 
+**Tenth session, 2026-10-29: the disassembler runs on shipped functions, and the walk refusals have no single cause.**
+`--script` disassembles a function from `name_end + 16` to the epilogue, and `--usage` runs the corpus: **3,444 of
+11,687** scripted payloads walk clean end to end, and their opcode census (`inventory/opcode_usage.csv`, 153 opcodes)
+is now the order the per-opcode work should be done in. The refusals are spread across the table — `VirtualFunction`
+708, `BadToken` 690, `FinalFunction` 424, `LabelTable` 415, `0x77` 271, `0x00` 186 — and **a single-opcode fix does not
+work**: giving `0x03` each operand width from 0 to 6, or an expression, completes at most **75 of its 690** payloads.
+That is the signature of a desynchronisation earlier in the stream, which makes the walk refusals a per-opcode
+investigation with the usage census as its guide, not a bug to be patched in one place.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -707,6 +716,15 @@ independent readings agree, and `python3 tools/uscript-dis.py --start System` re
 That closes 3.7's *locator*: the start is computed from the header, not searched for. What is left is the opcode
 table's coverage (the 979 early refusals plus the ~5,000 later ones are unnamed or mis-patterned opcodes) and the
 identity of the run's four words.
+
+**Tenth session, 2026-10-29: the disassembler runs on shipped functions, and the walk refusals have no single cause.**
+`--script` disassembles a function from `name_end + 16` to the epilogue, and `--usage` runs the corpus: **3,444 of
+11,687** scripted payloads walk clean end to end, and their opcode census (`inventory/opcode_usage.csv`, 153 opcodes)
+is now the order the per-opcode work should be done in. The refusals are spread across the table — `VirtualFunction`
+708, `BadToken` 690, `FinalFunction` 424, `LabelTable` 415, `0x77` 271, `0x00` 186 — and **a single-opcode fix does not
+work**: giving `0x03` each operand width from 0 to 6, or an expression, completes at most **75 of its 690** payloads.
+That is the signature of a desynchronisation earlier in the stream, which makes the walk refusals a per-opcode
+investigation with the usage census as its guide, not a bug to be patched in one place.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
