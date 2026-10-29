@@ -5,8 +5,9 @@ The table in `README.md` and the page in `docs/STATUS.md` are generated: every p
 committed CSV or the symbol map, and each row names its source. Nothing here is estimated -- a metric
 that has not been measured prints as `--`, which is the honest state of the compile and asset layers.
 
-    python3 tools/status.py            # rewrites docs/STATUS.md and the README block
-    python3 tools/status.py --check    # exit 1 if either is stale (what `make ci` runs)
+    python3 tools/status.py            # rewrites docs/STATUS.md, the README table and both badges
+    python3 tools/status.py --check    # exit 1 if any of that is stale (what `make ci` runs)
+    python3 tools/status.py --selftest # the badge write on strings, no files touched (also in `make ci`)
 
 Bars are `filled/total` over 24 cells; the marker is by band, so a reader can see the shape before
 reading the number: green >= 90, yellow >= 50, orange >= 10, red < 10, white = not measured.
@@ -14,6 +15,7 @@ reading the number: green >= 90, yellow >= 50, orange >= 10, red < 10, white = n
 import argparse
 import csv
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -179,15 +181,61 @@ def sources(rows):
     return ("| Layer | Measure | Source |\n|---|---|---|\n" + "\n".join(seen) + "\n")
 
 
+BADGE_LINES = {
+    "Script": r'(?m)^  <img alt="Script: [^\n]*$',
+    "Native": r'(?m)^  <img alt="Native: [^\n]*$',
+}
+
+
 def badge(rows):
+    """The two numeric badges, as {label: line}. They come from the same rows the table does."""
     g = {(l, m): (h, t) for l, m, h, t, _ in rows}
     s_h, s_t = g[("Script", "classes reconstructed (L0)")]
     n_h, n_t = g[("Native", "functions carrying a name")]
     s, n = pct(s_h, s_t), pct(n_h, n_t)
     colour = lambda p: "3fb950" if p >= 90 else ("d29922" if p >= 50 else ("db6d28" if p >= 10 else "da3633"))
-    return ('  <img alt="Script: %.2f%% reconstructed" src="https://img.shields.io/badge/script%%20L0-%.2f%%25-%s">\n'
-            '  <img alt="Native: %.2f%% named" src="https://img.shields.io/badge/native%%20symbols-%.2f%%25-%s">'
-            % (s, s, colour(s), n, n, colour(n)))
+    return {
+        "Script": '  <img alt="Script: %.2f%% reconstructed" src="https://img.shields.io/badge/script%%20L0-%.2f%%25-%s">'
+                  % (s, s, colour(s)),
+        "Native": '  <img alt="Native: %.2f%% named" src="https://img.shields.io/badge/native%%20symbols-%.2f%%25-%s">'
+                  % (n, n, colour(n)),
+    }
+
+
+def apply_badges(readme, rows):
+    """Rewrite each badge line in place. Refuses a README that does not carry both, rather than doing nothing."""
+    lines = badge(rows)
+    for label, pattern in BADGE_LINES.items():
+        text, n = re.subn(pattern, lambda _m, line=lines[label]: line, readme)
+        if n != 1:
+            raise SystemExit("README.md: expected exactly one %s badge line, found %d -- the generated badge "
+                             "would not be written" % (label.lower(), n))
+        readme = text
+    return readme
+
+
+def selftest():
+    """The badge write, on a throwaway README: stale is replaced, current is left alone, missing is refused."""
+    rows = [("Script", "classes reconstructed (L0)", 2319, 2319, "x"),
+            ("Native", "functions carrying a name", 1995, 14957, "x")]
+    stale = ('  <img alt="Script: 1.00% reconstructed" src="x">\n'
+             '  <img alt="Native: 2.00% named" src="x">\n')
+    fixed = apply_badges(stale, rows)
+    if 'alt="Script: 100.00% reconstructed"' not in fixed or 'alt="Native: 13.34% named"' not in fixed:
+        raise SystemExit("selftest: a stale badge was not rewritten:\n" + fixed)
+    if fixed == stale:
+        raise SystemExit("selftest: apply_badges changed nothing")
+    if apply_badges(fixed, rows) != fixed:
+        raise SystemExit("selftest: a current badge was rewritten")
+    dropped = re.sub(BADGE_LINES["Native"], "", fixed)
+    try:
+        apply_badges(dropped, rows)
+    except SystemExit:
+        pass
+    else:
+        raise SystemExit("selftest: a README with no native badge was accepted")
+    print("ok   status-badges-selftest: 3 cases (stale rewritten, current kept, missing refused)")
+    return 0
 
 
 def write(path, text):
@@ -199,7 +247,11 @@ def write(path, text):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
+
+    if args.selftest:
+        return selftest()
 
     rows = collect()
     table = render(rows)
@@ -229,10 +281,7 @@ def main():
         new_readme = readme[:start] + block + readme[stop:]
     else:
         new_readme = readme
-    badge_line = badge(rows)
-    if 'alt="Script:' in new_readme or True:
-        import re
-        new_readme = re.sub(r'(?m)^  <img alt="Status: [^\n]*\n', badge_line + "\n", new_readme)
+    new_readme = apply_badges(new_readme, rows)
 
     page_path = repo("docs/STATUS.md")
     old_page = open(page_path).read() if os.path.isfile(page_path) else None
@@ -243,17 +292,17 @@ def main():
         if old_page != page:
             bad.append("docs/STATUS.md")
         if old_readme != new_readme:
-            bad.append("README.md status block")
+            bad.append("README.md status block or badges")
         if bad:
             print("stale: " + ", ".join(bad) + " -- run python3 tools/status.py")
             return 1
-        print("ok   status-table: docs/STATUS.md and README.md")
+        print("ok   status-badges: docs/STATUS.md, README.md table and both badges")
         return 0
 
     write("docs/STATUS.md", page)
     open(readme_path, "w").write(new_readme)
     print(headline(rows).replace("**", ""))
-    print("wrote docs/STATUS.md and the README status block")
+    print("wrote docs/STATUS.md, the README status block and both badges")
 
 
 if __name__ == "__main__":

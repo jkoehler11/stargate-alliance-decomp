@@ -143,7 +143,7 @@ ok   artifact-hashes: 76 artifacts, 5.4 MiB, manifest matches
 ok   opcode-table: 256 opcodes, 31 groups, 11 streams split, 4 refusals honoured
 ok   lipsinc-runtime: 19 functions, 9 with a self-evident name
 ok   inventory-index: docs/ARTIFACTS.md (74 artifacts)
-ok   status-table: docs/STATUS.md and README.md
+ok   status-badges: docs/STATUS.md, README.md table and both badges
 ... 13 more (23 checks)
 all checks passed
 ```
