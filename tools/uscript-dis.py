@@ -20,6 +20,7 @@ import argparse
 import collections
 import csv
 import os
+import re
 import struct
 import sys
 
@@ -501,6 +502,81 @@ def header_report(path, quiet=False):
               ("k", dict(sorted(sized[what].items()))))
     return 0
 
+
+def start_report(path):
+    """Where the script starts: three independent readings of the same offset, for a package or a directory.
+
+    1. the **smallest** payload after `FriendlyName` -- an empty body still costs the epilogue and the trailer, so the
+       floor of that distribution is the fixed run's length plus 3 plus 7 (or 9 for a Net function);
+    2. how **deep** the walk from `name_end + 16` gets before it refuses -- a wrong start desynchronises within a
+       token or two, a right one decodes tens of bytes and then stops on an opcode the table does not name;
+    3. the dword 16 bytes past the name against the physical script length, which is what a size field would carry.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    table = Table()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    tail = collections.Counter()
+    depth = collections.Counter()
+    word = collections.Counter()
+    smallest = None
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last = 0, None
+            aligned = True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    aligned = False
+                    break
+            if not aligned or last != e["name"]:
+                continue
+            rest = n - off
+            tail[rest] += 1
+            smallest = rest if smallest is None else min(smallest, rest)
+            if n < 10 or pay[n - 10:n - 7] != epilogue:
+                continue
+            end = n - 7
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = parse(pay[start:end], table)
+            except Refused as exc:
+                text = str(exc)
+                m = re.match(r"0x([0-9a-f]+)", text)
+                got = int(m.group(1), 16) if m else 0
+                depth["under 4" if got < 4 else "4-15" if got < 16 else "16-63" if got < 64
+                      else "64-255" if got < 256 else "256 or more"] += 1
+            else:
+                if sum(x["end"] - x["offset"] for x in nodes) == end - start:
+                    depth["walked to the epilogue"] += 1
+                else:
+                    depth["stopped short"] += 1
+            sized = struct.unpack_from("<I", pay, off + 12)[0]
+            word["equal" if sized == end - start else ("larger" if sized > end - start else "smaller")] += 1
+    if smallest is None:
+        print("no Function export decoded")
+        return 1
+    print("smallest payload after FriendlyName: %d bytes" % smallest)
+    print("  the ten smallest (bytes -> payloads): %s" % dict(sorted(tail.items())[:10]))
+    print("walk from name_end + 16 got this far before refusing: %s" % dict(depth.most_common()))
+    print("dword at name_end + 12 against the physical script length: %s" % dict(word.most_common()))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -508,11 +584,15 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--header", metavar="PATH",
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
+    ap.add_argument("--start", metavar="PATH",
+                    help="three readings of where a script starts: payload floor, walk depth, the dword's meaning")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     args = ap.parse_args()
 
     if args.header:
         return header_report(args.header)
+    if args.start:
+        return start_report(args.start)
     if args.selftest:
         return selftest()
     if args.payloads:

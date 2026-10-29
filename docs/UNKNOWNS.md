@@ -607,6 +607,22 @@ end to measure the run against. On functions the dword at `name_end+16` equals t
 payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
 the opcode range, so the start is probably still wrong for them and the run's length is not settled.
 
+**Ninth session, 2026-10-29: the locator is solved — the script starts 16 bytes past `FriendlyName`.** Three
+independent readings agree, and `python3 tools/uscript-dis.py --start System` reproduces all of them:
+
+* the **floor**: an empty body still pays the epilogue and the trailer, so the smallest payload after `FriendlyName` is
+  the run plus 3 plus 7 (9 when `Net`). Measured: **25** is the floor over 12,360 payloads, with spikes at **26**
+  (1,380) and **28** (801) = `16+3+7` and `16+3+9`. A 12-byte run would floor at 22, where nothing appears.
+* the **walk depth**: from `name_end + 16` the decoder gets 16–63 bytes in 3,494 payloads, 64–255 in 1,486, past 256
+  in 86, and all the way to the epilogue in 3,328. A wrong start desynchronises within a token or two — that is 979.
+* the **dword at +12** is not the script's length: larger than the physical script in 9,298 payloads, equal in 2,052,
+  never smaller. So the fourth word of the run is another field, and no size field is required: `SerialSize` already
+  fixes the script's end.
+
+That closes 3.7's *locator*: the start is computed from the header, not searched for. What is left is the opcode
+table's coverage (the 979 early refusals plus the ~5,000 later ones are unnamed or mis-patterned opcodes) and the
+identity of the run's four words.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -675,6 +691,22 @@ The fixed run after the name is the last piece, and the class control cannot rea
 end to measure the run against. On functions the dword at `name_end+16` equals the distance to the epilogue in **2,141**
 payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
 the opcode range, so the start is probably still wrong for them and the run's length is not settled.
+
+**Ninth session, 2026-10-29: the locator is solved — the script starts 16 bytes past `FriendlyName`.** Three
+independent readings agree, and `python3 tools/uscript-dis.py --start System` reproduces all of them:
+
+* the **floor**: an empty body still pays the epilogue and the trailer, so the smallest payload after `FriendlyName` is
+  the run plus 3 plus 7 (9 when `Net`). Measured: **25** is the floor over 12,360 payloads, with spikes at **26**
+  (1,380) and **28** (801) = `16+3+7` and `16+3+9`. A 12-byte run would floor at 22, where nothing appears.
+* the **walk depth**: from `name_end + 16` the decoder gets 16–63 bytes in 3,494 payloads, 64–255 in 1,486, past 256
+  in 86, and all the way to the epilogue in 3,328. A wrong start desynchronises within a token or two — that is 979.
+* the **dword at +12** is not the script's length: larger than the physical script in 9,298 payloads, equal in 2,052,
+  never smaller. So the fourth word of the run is another field, and no size field is required: `SerialSize` already
+  fixes the script's end.
+
+That closes 3.7's *locator*: the start is computed from the header, not searched for. What is left is the opcode
+table's coverage (the 979 early refusals plus the ~5,000 later ones are unnamed or mis-patterned opcodes) and the
+identity of the run's four words.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"

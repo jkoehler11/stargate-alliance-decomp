@@ -187,12 +187,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
-      **Still open**: the script's extent inside a `Function` payload (U13 — the tail is solved *and* its fields are
-      now confirmed by content: the `NativeToken` at `payload_end-7` equals the script's declared index in 791 of 797
-      joinable functions corpus-wide, the header's last field is `FriendlyName` in 11,687 of the 11,716 payloads that
-      carry an epilogue, and the values in front of it are a fixed four for a class and five for a function whatever their child count — so
-      the `Children`-chain rule is refuted and only the fixed run after the name is open), so no *long* shipped script
-      has been disassembled end
+      **The locator is solved** (U13): the script starts **16 bytes past `FriendlyName`**, measured three ways — the
+      payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9), the walk's depth from that offset (3,328
+      reach the epilogue and most others stop 16–255 bytes in), and the dword at +12 not being a size (larger than
+      the script in 9,298 payloads, equal in 2,052, never smaller). What blocks long scripts now is the **opcode
+      table's coverage** — 979 payloads refuse in under 4 bytes — not the offset, so no *long* shipped script has been
+      disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
