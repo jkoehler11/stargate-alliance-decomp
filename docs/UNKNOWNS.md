@@ -632,6 +632,21 @@ work**: giving `0x03` each operand width from 0 to 6, or an expression, complete
 That is the signature of a desynchronisation earlier in the stream, which makes the walk refusals a per-opcode
 investigation with the usage census as its guide, not a bug to be patched in one place.
 
+**Eleventh session, 2026-10-29: five operand widths were four fixed bytes and are a compact index — 99.3% of scripts
+now walk.** The walker's handlers for groups 0, 13, 14, 15 and 19 read an `int`, and `tools/opcode-table.py` recorded
+that as `bytes:4`. Held one group at a time against the corpus, with the start now known, the payloads say the operand
+is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits then seven per byte):
+
+| groups as `bytes:4` (shipped) | groups 0, 14, 15 as `index` | + group 13 | + group 19 |
+|---:|---:|---:|---:|
+| 3,328 of 11,350 walk | 8,869 | 10,040 | **11,269** |
+
+`--usage` over the whole corpus agrees: **11,602 of 11,687** scripted payloads walk clean, against 3,444 before, and
+`--start`'s depth histogram moves with it (11,269 to the epilogue, 81 refusing at all). The table now regenerates with
+`index` for those groups and `inventory/opcode_usage.csv` is the census of the new set. This is the per-opcode work
+3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
+most 75 of.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -725,6 +740,21 @@ is now the order the per-opcode work should be done in. The refusals are spread 
 work**: giving `0x03` each operand width from 0 to 6, or an expression, completes at most **75 of its 690** payloads.
 That is the signature of a desynchronisation earlier in the stream, which makes the walk refusals a per-opcode
 investigation with the usage census as its guide, not a bug to be patched in one place.
+
+**Eleventh session, 2026-10-29: five operand widths were four fixed bytes and are a compact index — 99.3% of scripts
+now walk.** The walker's handlers for groups 0, 13, 14, 15 and 19 read an `int`, and `tools/opcode-table.py` recorded
+that as `bytes:4`. Held one group at a time against the corpus, with the start now known, the payloads say the operand
+is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits then seven per byte):
+
+| groups as `bytes:4` (shipped) | groups 0, 14, 15 as `index` | + group 13 | + group 19 |
+|---:|---:|---:|---:|
+| 3,328 of 11,350 walk | 8,869 | 10,040 | **11,269** |
+
+`--usage` over the whole corpus agrees: **11,602 of 11,687** scripted payloads walk clean, against 3,444 before, and
+`--start`'s depth histogram moves with it (11,269 to the epilogue, 81 refusing at all). The table now regenerates with
+`index` for those groups and `inventory/opcode_usage.csv` is the census of the new set. This is the per-opcode work
+3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
+most 75 of.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"

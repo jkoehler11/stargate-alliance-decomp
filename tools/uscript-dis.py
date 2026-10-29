@@ -67,6 +67,21 @@ def parse(data, table):
                 child = token(q, depth + 1)
                 node["children"].append(child)
                 q = child["end"]
+            elif item == "index":
+                # A UE1/UE2 index: bit 7 is the sign, bit 6 means more bytes follow, six bits then
+                # seven per byte. Five groups' handlers read an int and the table recorded that as four
+                # fixed bytes; the corpus says the operand is this encoding (docs/BYTECODE.md).
+                start = q
+                if q >= len(data):
+                    raise Refused("%#x: index of opcode %02x runs off the end" % (pos, op))
+                b = data[q]
+                q += 1
+                cont = b & 0x40
+                while cont and q < len(data):
+                    b = data[q]
+                    q += 1
+                    cont = b & 0x80
+                node["operands"] += data[start:q]
             elif item.startswith("bytes:"):
                 n = int(item.split(":", 1)[1])
                 if q + n > len(data):
@@ -157,7 +172,8 @@ def selftest():
         ("vector constant, 13 bytes", bytes([0x23] + [0] * 12), 1, 13),
         ("string constant, NUL-terminated", bytes([0x1F]) + b"ab\0" + bytes([0x47]), 2, 5),
         ("unicode string constant, one unit", bytes([0x34]) + bytes([0x61, 0x00, 0x00, 0x00]) + bytes([0x47]), 2, 6),
-        ("final function with an empty parameter list", bytes([0x1C, 0, 0, 0, 0, 0x16]), 1, 6),
+        ("final function with an empty parameter list", bytes([0x1C, 0x05, 0x16]), 1, 3),
+        ("virtual function, two-byte index, one argument", bytes([0x1B, 0x41, 0x02, 0x27, 0x16]), 1, 5),
         ("return of an int one", bytes([0x04, 0x26]), 1, 2),
         ("jump over a byte", bytes([0x06, 0x02, 0x00, 0x47]), 2, 4),
         ("iterator pop, no operands", bytes([0x30, 0x31]), 2, 2),
@@ -177,7 +193,7 @@ def selftest():
     refusals = [
         ("the bad-token opcode", bytes([0x03])),
         ("an unterminated string", bytes([0x1F]) + b"ab"),
-        ("a parameter list with no 0x16", bytes([0x1C, 0, 0, 0, 0, 0x47])),
+        ("a parameter list with no 0x16", bytes([0x1C, 0x05, 0x47])),
         ("a truncated int constant", bytes([0x1D, 0x01])),
     ]
     for label, data in refusals:

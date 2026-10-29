@@ -191,8 +191,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9), the walk's depth from that offset (3,328
       reach the epilogue and most others stop 16–255 bytes in), and the dword at +12 not being a size (larger than
       the script in 9,298 payloads, equal in 2,052, never smaller). What blocks long scripts now is the **opcode
-      table's coverage** — 979 payloads refuse in under 4 bytes — not the offset, so no *long* shipped script has been
-      disassembled end
+      table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
+      compact index, which takes the corpus from 3,444 to 11,602 scripts walking (99.3%), so *long* shipped scripts
+      are disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),

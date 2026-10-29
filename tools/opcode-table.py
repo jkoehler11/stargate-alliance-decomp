@@ -40,14 +40,17 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # group -> (pattern, uelib name(s) for the group, evidence note). Patterns are the operand stream in order:
 #   expr        one nested token (recursive walk)
 #   bytes:N     N fixed operand bytes
+#   index       a UE1/UE2 compact index: bit 7 sign, bit 6 continuation, 6 bits then 7 per byte. The walker's
+#               handler for these groups reads an int, which this table used to record as four fixed bytes -- the
+#               payloads say otherwise: with these five groups as an index, 11,269 of 11,350 scripts walk clean
 #   parms       nested tokens until one of them is 0x16 (EX_EndFunctionParms)
 #   str         NUL-terminated ANSI string
 #   utf16       NUL-terminated UTF-16 string (2-byte units, ends on a zero unit)
 #   labeltable  8-byte entries until a zero dword
 #   case        2-byte value; 0xffff ends the case list, otherwise one nested token
 GROUPS = {
-    0:  ("bytes:4",          "LocalVariable,InstanceVariable,DefaultVariable,ObjectConst,NativeParm",
-         "object/name reference, 4 bytes"),
+    0:  ("index",            "LocalVariable,InstanceVariable,DefaultVariable,ObjectConst,NativeParm",
+         "object/name reference as a compact index"),
     1:  ("expr",             "Return", "one nested token"),
     2:  ("bytes:1,expr",     "Switch", "case-count byte then the expression"),
     3:  ("bytes:2",          "Jump", "code offset"),
@@ -63,13 +66,13 @@ GROUPS = {
          "two nested tokens (lvalue, value)"),
     11: ("expr,expr,expr,expr", "New", "four nested tokens; agrees with UELib's NewToken"),
     12: ("expr,bytes:3,expr", "ClassContext,Context", "expression, 2-byte offset, byte, expression"),
-    13: ("bytes:4,expr",     "MetaClassCast,DynamicCast,StructMember", "reference then the expression"),
-    14: ("bytes:4,parms",    "VirtualFunction,GlobalFunction", "name reference then the parameter list"),
-    15: ("bytes:4,parms",    "FinalFunction", "function reference then the parameter list"),
+    13: ("index,expr",       "MetaClassCast,DynamicCast,StructMember", "an index then the expression"),
+    14: ("index,parms",      "VirtualFunction,GlobalFunction", "an index then the parameter list"),
+    15: ("index,parms",      "FinalFunction", "an index then the parameter list"),
     16: ("bytes:4",          "IntConst", "int32"),
     17: ("bytes:4",          "FloatConst", "float32"),
     18: ("str",              "StringConst", "NUL-terminated ANSI string"),
-    19: ("bytes:4",          "NameConst,DelegateProperty", "name reference"),
+    19: ("index",            "NameConst,DelegateProperty", "an index"),
     20: ("bytes:12",         "RotationConst", "three int32"),
     21: ("bytes:12",         "VectorConst", "three float32"),
     22: ("bytes:1",          "ByteConst,IntConstByte", "one byte"),
