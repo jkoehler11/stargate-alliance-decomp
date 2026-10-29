@@ -191,6 +191,21 @@ def selftest():
     return 0
 
 
+def read_index(data, off):
+    """The archive's compact index: bit 7 is the sign, bit 6 means "more bytes", six bits then seven per byte."""
+    b = data[off]
+    sign, cont, val = b & 0x80, b & 0x40, b & 0x3F
+    off += 1
+    shift = 6
+    while cont and shift < 32:
+        b = data[off]
+        off += 1
+        cont = b & 0x80
+        val |= (b & 0x7F) << shift
+        shift += 7
+    return (-val if sign else val), off
+
+
 def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet=False):
     """Measure a package's `Function` payloads: the trailer, and how far locating the script gets.
 
@@ -220,15 +235,17 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
             for k, v in stats.items():
                 if isinstance(v, int):
                     tot[k] = tot.get(k, 0) + v
-        print("%-18s %6s %6s %6s %6s %5s %5s %5s %6s" %
-              ("package", "fn", "join", "flags", "token", "tr7", "tr9", "none", "sized"))
+        print("%-18s %6s %6s %6s %6s %5s %5s %5s %6s %6s %6s %6s" %
+              ("package", "fn", "join", "flags", "token", "tr7", "tr9", "none", "hdr", "size16", "walk16", "sized"))
         for stats in per_pkg:
-            print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d" %
+            print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d %6d %6d %6d" %
                   (stats["package"], stats["seen"], stats["joined"], stats["matched"], stats["token_ok"],
-                   stats["tail7"], stats["tail9"], stats["neither"], stats["located"]))
-        print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d" %
+                   stats["tail7"], stats["tail9"], stats["neither"], stats["header"], stats["header_sized"],
+                   stats["header_walk"], stats["located"]))
+        print("%-18s %6d %6d %6d %6d %5d %5d %5d %6d %6d %6d %6d" %
               ("TOTAL", tot.get("seen", 0), tot.get("joined", 0), tot.get("matched", 0), tot.get("token_ok", 0),
-               tot.get("tail7", 0), tot.get("tail9", 0), tot.get("neither", 0), tot.get("located", 0)))
+               tot.get("tail7", 0), tot.get("tail9", 0), tot.get("neither", 0), tot.get("header", 0),
+               tot.get("header_sized", 0), tot.get("header_walk", 0), tot.get("located", 0)))
         print("token disagreements beyond a declared none: %d; they are listed only when one package is named"
               % tot.get("token_other", 0))
         return 0
@@ -264,6 +281,7 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
     tail = {"7": 0, "9": 0, "neither": 0}
     net = {"7": 0, "9": 0}
     located = 0
+    header = header_sized = header_walk = 0
     token_ok = token_unset = token_declared_only = token_other = 0
     exceptions = []
     for e in pkg.exports:
@@ -318,6 +336,31 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
         else:
             tail["neither"] += 1
             continue
+        # The header in front of the script is six archive-encoded values whose *last* is `FriendlyName`, so
+        # the export's own name index is what says the decode is aligned. This is the measurement that
+        # replaced the `Children`-chain model: the count is constant, it is the widths that vary.
+        try:
+            off, values = 0, []
+            for _ in range(6):
+                value, off = read_index(pay, off)
+                values.append(value)
+        except IndexError:
+            continue
+        if values[5] != e["name"]:
+            continue
+        header += 1
+        start = off + 16
+        if start + 4 > end or start <= off:
+            continue
+        if struct.unpack_from("<I", pay, off + 12)[0] == end - start:
+            header_sized += 1
+        try:
+            nodes = parse(pay[start:end], table)
+        except Refused:
+            continue
+        if sum(x["end"] - x["offset"] for x in nodes) == end - start:
+            header_walk += 1
+
         for k in range(0, min(48, end - 6)):
             size = struct.unpack_from("<I", pay, k)[0]
             if size != end - (k + 4):
@@ -332,7 +375,8 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
 
     stats = {"package": pkg_name, "seen": seen, "joined": joined, "matched": matched, "token_ok": token_ok,
              "token_unset": token_unset, "token_declared_only": token_declared_only, "token_other": token_other,
-             "tail7": tail["7"], "tail9": tail["9"], "neither": tail["neither"], "located": located}
+             "tail7": tail["7"], "tail9": tail["9"], "neither": tail["neither"], "located": located,
+             "header": header, "header_sized": header_sized, "header_walk": header_walk}
     if quiet:
         return stats
     print("%s: %d Function exports with a payload of 16 bytes or more" % (pkg_name, seen))
@@ -345,6 +389,9 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
     print("  neither: %d" % tail["neither"])
     print("  size dword immediately before a script the table walks exactly: %d of %d"
           % (located, seen))
+    print("  header decode ends on FriendlyName: %d of %d; of those the size dword 16 bytes after it equals the "
+          "script's length in %d, and the walk from there lands on the epilogue in %d"
+          % (header, seen, header_sized, header_walk))
     print("  NativeToken at payload_end-7 (payload_end-9 when Net) equals the script's declared index: "
           "%d of %d joinable; %d carry a token where the script declares none, %d the other way"
           % (token_ok, joined, token_unset, token_declared_only))
@@ -353,13 +400,91 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
     return 0
 
 
+def header_report(path, quiet=False):
+    """What the five values in front of `FriendlyName` are, resolved against the package's own tables.
+
+    The decode is aligned by requiring the sixth value to be the export's name index, then each of the five is
+    classified by what it points at: zero, a function with this one's name in another outer (`Super`), another
+    function in the same outer (`Next`), or a child of this function (`Children`).
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = []
+    if os.path.isdir(path):
+        files = [os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+    else:
+        files = [path]
+    kind = [collections.Counter() for _ in range(5)]
+    total = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        children = collections.defaultdict(set)
+        for k in pkg.exports:
+            if k["outer"] > 0:
+                children[k["outer"]].add(k["index"] + 1)
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            try:
+                off, values = 0, []
+                for _ in range(6):
+                    value, off = read_index(pay, off)
+                    values.append(value)
+            except IndexError:
+                continue
+            if values[5] != e["name"]:
+                continue
+            total += 1
+            name = pkg.name(e["name"])
+            kids = children[e["index"] + 1]
+            for i, v in enumerate(values[:5]):
+                c = kind[i]
+                if v == 0:
+                    c["zero"] += 1
+                elif v > 0 and v <= len(pkg.exports):
+                    target = pkg.exports[v - 1]
+                    if v == e["outer"]:
+                        c["own outer"] += 1
+                    elif v in kids:
+                        c["child"] += 1
+                    elif pkg.name(target["name"]) == name:
+                        c["same-name function"] += 1
+                    elif pkg.class_name_of(target) == "Function":
+                        c["other function"] += 1
+                    else:
+                        c["other export"] += 1
+                elif v < 0 and -v <= len(pkg.imports):
+                    c["import"] += 1
+                else:
+                    c["out of range"] += 1
+    labels = ["v0", "v1", "v2", "v3", "v4"]
+    print("%-4s %8s %8s %8s %8s %8s %8s %8s" %
+          ("", "zero", "import", "same-name", "other fn", "child", "other", "out"))
+    for label, c in zip(labels, kind):
+        print("%-4s %8d %8d %8d %8d %8d %8d %8d" %
+              (label, c["zero"], c["import"], c["same-name function"], c["other function"], c["child"],
+               c["other export"] + c["own outer"], c["out of range"]))
+    print("payloads whose sixth value is the export's own name index: %d" % total)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
     ap.add_argument("--file", help="a script as a binary file")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--header", metavar="PATH",
+                    help="classify the five values in front of FriendlyName, for a package or a System directory")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     args = ap.parse_args()
+
+    if args.header:
+        return header_report(args.header)
     if args.selftest:
         return selftest()
     if args.payloads:
