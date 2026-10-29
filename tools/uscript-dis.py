@@ -729,6 +729,207 @@ def usage_report(path, table, out=None):
     return 0
 
 
+
+def resolve_report(path, table):
+    """What each reference operand points at, over every script that walks clean.
+
+    An opcode whose operand is an index is only *read* correctly if the value names the kind of object the token
+    implies: a final-function reference should name a `Function`, a variable reference a property. This resolves
+    every such operand against the package's own export and import tables and reports the distribution -- a check
+    on the operand rules that no walk can give, because a wrong width can still happen to tile.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    kinds = collections.defaultdict(collections.Counter)
+    counts = collections.Counter()
+    walked = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        exports = [(pkg.name(e["name"]), pkg.class_name_of(e)) for e in pkg.exports]
+        imports = [(pkg.name(i["name"]), pkg.name(i["class"])) for i in pkg.imports]
+        # The same compact encoding indexes two different tables depending on the opcode: an object reference
+        # names an export or an import, a name reference names a row of the name table. Both are in range most of
+        # the time, so the discriminator has to be *what* the value lands on.
+        function_names = {pkg.name(e["name"]) for e in pkg.exports if pkg.class_name_of(e) == "Function"}
+        all_names = {n for n, _f in pkg.names}
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, ok = 0, None, True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    ok = False
+                    break
+            if not ok or last != e["name"]:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = parse(pay[start:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+                continue
+            walked += 1
+            stack = list(nodes)
+            while stack:
+                node = stack.pop()
+                stack.extend(node["children"])
+                if not node["operands"] or not table.rows[node["opcode"]]["pattern"].startswith("index"):
+                    continue
+                name = table.rows[node["opcode"]]["name"] or "op%02x" % node["opcode"]
+                value, _end = read_index(node["operands"], 0)
+                counts[name] += 1
+                if value == 0:
+                    kinds[name]["none"] += 1
+                    continue
+                if value > 0 and value <= len(exports):
+                    kinds[name][exports[value - 1][1]] += 1
+                elif value < 0 and -value <= len(imports):
+                    kinds[name][imports[-value - 1][1]] += 1
+                else:
+                    kinds[name]["out of range"] += 1
+                # ... and the same value read as a name-table index, which is what a virtual call carries.
+                if 0 < value < len(pkg.names):
+                    nm = pkg.names[value][0]
+                    kinds[name]["NAMES:" + ("a function in the package" if nm in function_names
+                                            else "a name" if nm in all_names else "not a name")] += 1
+    print("%d scripts walked clean; reference operands resolved against the package tables" % walked)
+    for name, _n in counts.most_common():
+        top = ", ".join("%s %d" % (k, v) for k, v in kinds[name].most_common(4))
+        print("  %-18s %6d operands: %s" % (name, counts[name], top))
+    return 0
+
+
+
+CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalFunction": "by name"}
+
+
+def calls_report(path, table, out=None):
+    """Every script-level call the corpus makes, resolved as far as the operand rules allow.
+
+    A `FinalFunction` operand is an object reference, so the call is static and the target is known; a
+    `VirtualFunction` or `GlobalFunction` operand is a name, so the target is a name the runtime resolves against the
+    receiver -- which is recorded as such rather than guessed. This is the script half of a call graph, and the
+    static edges are the ones a reader can rely on.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    rows = []
+    walked = seen = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        pkg_name = os.path.basename(one).rsplit(".", 1)[0]
+        exports = [(pkg.name(e["name"]), pkg.class_name_of(e)) for e in pkg.exports]
+        imports = [(pkg.name(i["name"]), pkg.name(i["class"])) for i in pkg.imports]
+        # A by-name call carries a name-table index, so it is resolved against the names this package declares --
+        # "is it a function here" is the question a call graph asks of it.
+        function_names = {pkg.name(e["name"]) for e in pkg.exports if pkg.class_name_of(e) == "Function"}
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, ok = 0, None, True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    ok = False
+                    break
+            if not ok or last != e["name"]:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            seen += 1
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = parse(pay[start:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+                continue
+            walked += 1
+            owner = pkg.name(pkg.exports[e["outer"] - 1]["name"]) if e["outer"] > 0 else "?"
+            stack = list(nodes)
+            while stack:
+                node = stack.pop()
+                stack.extend(node["children"])
+                kind = CALL_TOKENS.get(table.rows[node["opcode"]]["name"])
+                if kind is None or not node["operands"]:
+                    continue
+                value, _e = read_index(node["operands"], 0)
+                token = table.rows[node["opcode"]]["name"]
+                if kind == "by name":
+                    name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
+                                 "Function" if name in function_names else "name"))
+                    continue
+                if value == 0:
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", ""))
+                elif 0 < value <= len(exports):
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, exports[value - 1][0],
+                                 exports[value - 1][1]))
+                elif -value <= len(imports):
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, imports[-value - 1][0],
+                                 imports[-value - 1][1]))
+                else:
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", "out of range"))
+    static = [r for r in rows if r[4] == "static"]
+    by_name = [r for r in rows if r[4] == "by name"]
+    named_fn = [r for r in by_name if r[6] == "Function"]
+    print("%d scripts with an epilogue, %d walked; %d call sites" % (seen, walked, len(rows)))
+    print("  static (FinalFunction): %d, of which the target is a Function: %d"
+          % (len(static), sum(1 for r in static if r[6] == "Function")))
+    print("  by name (VirtualFunction, GlobalFunction): %d, of which the name is a function in the package: %d"
+          % (len(by_name), len(named_fn)))
+    callees = collections.Counter(r[5] for r in static + named_fn if r[5])
+    print("  most-called function targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
+    others = collections.Counter(r[5] for r in by_name if r[6] != "Function" and r[5])
+    print("  by-name operands that name something other than a function: %s"
+          % ", ".join("%s %d" % kv for kv in others.most_common(5)))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class"])
+            for row in rows:
+                w.writerow(row)
+        print("wrote %s/script_calls.csv (%d rows)" % (out, len(rows)))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -738,6 +939,10 @@ def main():
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
     ap.add_argument("--script", nargs=3, metavar=("PACKAGE", "CLASS", "FUNCTION"),
                     help="disassemble one function's script from the header to the epilogue")
+    ap.add_argument("--calls", metavar="PATH",
+                    help="every script-level call site, static or by name, for a package or a System directory")
+    ap.add_argument("--resolve", metavar="PATH",
+                    help="for each index operand, what the value points at (a check on the operand rules)")
     ap.add_argument("--usage", metavar="PATH",
                     help="which opcodes the shipped scripts that walk clean actually use")
     ap.add_argument("-o", "--out", help="write inventory/opcode_usage.csv into this directory (with --usage)")
@@ -754,6 +959,10 @@ def main():
         return function_script(args.script[0], args.script[1], args.script[2], Table())
     if args.usage:
         return usage_report(args.usage, Table(), args.out)
+    if args.resolve:
+        return resolve_report(args.resolve, Table())
+    if args.calls:
+        return calls_report(args.calls, Table(), args.out)
     if args.selftest:
         return selftest()
     if args.payloads:
