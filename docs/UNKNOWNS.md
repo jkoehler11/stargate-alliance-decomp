@@ -551,12 +551,66 @@ found by value is not the general rule. **Do not run the walk backwards from the
 started anywhere near the header walks hundreds of bytes before desynchronising, which is a property of a wrong
 start rather than of the table (and 3,623 of 3,826 payloads have more than one start that reaches the boundary).
 
+**Sixth session, 2026-10-29: the header's encoded part is pinned and the `Children`-chain rule is dead.**
+`tools/uscript-dis.py --header` decodes the payload's leading values with the archive's own compact index and
+requires the **sixth** to be the export's `FriendlyName` name index: that aligns **12,360** payloads, and it is
+**11,687 of the 11,716** that carry the epilogue (99.75%) — so the header's last field is identified by content, the
+same way the tail's was. The count of values in front of it is **constant at five** for every payload, whatever the
+parameter count, which is what the previous session's test got wrong: `Super` + one reference per parameter is not
+the rule, and the earlier +1/+2/+3 residuals were the encoded *widths*, not a missing reference. Resolved against the
+package tables, the five are `v1` = `Super` (import 3,226, same-named function in a parent class 2,406, zero 6,728),
+`v2` = `Next` (another function of the same class 10,529), `v4` = `Children` (a child of this function 9,223), and
+`v0`/`v3` always zero.
+
+**What that leaves is the fixed run after the name.** With the writer body's three `u32`s plus the size — 16 bytes
+past `FriendlyName` — the size dword equals the remaining length in **672** payloads and the walk from there reaches
+the epilogue in **1,975**; the rest fail at that start in the walker's bad-token case (3,824) or on an unterminated
+parameter list (1,617), and the failures concentrate in the long scripts, so the 1,975 that land say nothing about
+them. The two explanations still standing are therefore (a) a field
+in the fixed run that the reading of `UStruct::Serialize` misses, and (b) the opcode table's 35 unnamed opcodes
+being what stops the walk. **The test that separates them is a script whose first token the shipped `ScriptText`
+fixes** — a body that begins with a literal the table classifies unambiguously — and it is now the cheapest route,
+because everything needed is in the packages.
+
+**The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
+entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
+after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
+`0x00037110` = the 4-byte field writer, `0x00036740` = a byte writer) contain no reader for this header. So the
+route needs the real address first, from a call site into the export loader, rather than the number recorded here.
+
 **What would settle it, now that the tail is known.** Read the *load* side rather than the payload: `LinkerLoad`'s
 `Serialize` (`0x000515d0`) is what fills `Function->Script` from these bytes, so the header's widths are the ones its
 `operator<<` calls consume — decompile it and count the bytes each of the four indices takes. Second route, cheaper
 if the header parse works first: for the 444 payloads with no epilogue at either position, check whether their
 scripts are stored with a marker other than `'G'` (i.e. compressed), which would make the size field the compressed
 length and explain a residue that no layout arithmetic fits.
+
+**Sixth session, 2026-10-29: the header's encoded part is pinned and the `Children`-chain rule is dead.**
+`tools/uscript-dis.py --header` decodes the payload's leading values with the archive's own compact index and
+requires the **sixth** to be the export's `FriendlyName` name index: that aligns **12,360** payloads, and it is
+**11,687 of the 11,716** that carry the epilogue (99.75%) — so the header's last field is identified by content, the
+same way the tail's was. The count of values in front of it is **constant at five** for every payload, whatever the
+parameter count, which is what the previous session's test got wrong: `Super` + one reference per parameter is not
+the rule, and the earlier +1/+2/+3 residuals were the encoded *widths*, not a missing reference. Resolved against the
+package tables, the five are `v1` = `Super` (import 3,226, same-named function in a parent class 2,406, zero 6,728),
+`v2` = `Next` (another function of the same class 10,529), `v4` = `Children` (a child of this function 9,223), and
+`v0`/`v3` always zero.
+
+**What that leaves is the fixed run after the name.** With the writer body's three `u32`s plus the size — 16 bytes
+past `FriendlyName` — the size dword equals the remaining length in **672** payloads and the walk from there reaches
+the epilogue in **1,975**; the rest fail at that start in the walker's bad-token case (3,824) or on an unterminated
+parameter list (1,617), and the failures concentrate in the long scripts, so the 1,975 that land say nothing about
+them. The two explanations still standing are therefore (a) a field
+in the fixed run that the reading of `UStruct::Serialize` misses, and (b) the opcode table's 35 unnamed opcodes
+being what stops the walk. **The test that separates them is a script whose first token the shipped `ScriptText`
+fixes** — a body that begins with a literal the table classifies unambiguously — and it is now the cheapest route,
+because everything needed is in the packages.
+
+**The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
+entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
+after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
+`0x00037110` = the 4-byte field writer, `0x00036740` = a byte writer) contain no reader for this header. So the
+route needs the real address first, from a call site into the export loader, rather than the number recorded here.
 
 **What would settle it, now that the tail is known.** The remaining question is only how the script's length is
 encoded in front of it, so read the *load* side rather than the payload bytes: `LinkerLoad`'s own `Serialize`

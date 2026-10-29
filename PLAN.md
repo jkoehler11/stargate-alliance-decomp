@@ -189,9 +189,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
       **Still open**: the script's extent inside a `Function` payload (U13 — the tail is solved *and* its fields are
       now confirmed by content: the `NativeToken` at `payload_end-7` equals the script's declared index in 791 of 797
-      joinable functions corpus-wide, and a fixed number of leading references does not predict the header width, so
-      the `Children`-chain hypothesis is the next test), so no *long* shipped script has been disassembled end to
-      end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
+      joinable functions corpus-wide, the header's last field is `FriendlyName` in 11,687 of the 11,716 payloads that
+      carry an epilogue, and the five values in front of it are constant in number — so the `Children`-chain rule is
+      refuted and only the fixed run after the name is open), so no *long* shipped script has been disassembled end
+      to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
 - [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
