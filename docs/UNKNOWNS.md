@@ -647,6 +647,15 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
 
+**Twelfth session, 2026-10-29: the index operands resolve, and the encoding indexes two tables.** With 99.3% of
+scripts walking, `--resolve` reads every index operand and asks the package what it lands on. The unambiguous tokens
+agree perfectly — `FinalFunction` **5,424 of 5,424** resolve to a `Function`, `DynamicCast` **4,153 of 4,153** and
+`MetaClassCast` **129 of 129** to a `Class`, every variable token to a property — which is a semantic check on the
+operand rules that no walk can give, because a wrong width can still tile. The virtual and global call tokens do not
+name objects at all: **10,405 of 13,398** `VirtualFunction` operands and **109 of 109** `GlobalFunction` operands name
+a function the package declares, i.e. they index the **name table**, and `NameConst` does the same. So the same compact
+codec indexes exports/imports on one token and names on another, and only the opcode distinguishes them.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -755,6 +764,15 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 `index` for those groups and `inventory/opcode_usage.csv` is the census of the new set. This is the per-opcode work
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
+
+**Twelfth session, 2026-10-29: the index operands resolve, and the encoding indexes two tables.** With 99.3% of
+scripts walking, `--resolve` reads every index operand and asks the package what it lands on. The unambiguous tokens
+agree perfectly — `FinalFunction` **5,424 of 5,424** resolve to a `Function`, `DynamicCast` **4,153 of 4,153** and
+`MetaClassCast` **129 of 129** to a `Class`, every variable token to a property — which is a semantic check on the
+operand rules that no walk can give, because a wrong width can still tile. The virtual and global call tokens do not
+name objects at all: **10,405 of 13,398** `VirtualFunction` operands and **109 of 109** `GlobalFunction` operands name
+a function the package declares, i.e. they index the **name table**, and `NameConst` does the same. So the same compact
+codec indexes exports/imports on one token and names on another, and only the opcode distinguishes them.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
