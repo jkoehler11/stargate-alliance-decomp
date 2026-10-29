@@ -110,6 +110,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/package_check.csv` with `recovered_from=absent` and in `docs/PACKAGE_CHECK.md`, which states what
       6.2 now has to reproduce instead of assuming `md5(file)` is the check.
 - [ ] 1.5 Archive a pristine, read-only copy of the dump; all later work happens on copies.
+      **Blocked on a physical action, not on work**: this needs a second copy of the dump and read-only media, which
+      whoever holds the dump does. Everything in Phases 2–7 has run against copies under `$WORK` regardless.
 - [x] 1.6 Write `docs/PROVENANCE.md`: build date, dump method (Xbox Neighborhood), release group, cross-reference
       to the public preservation listings for the same release (no copy is kept in this repo).
 
@@ -196,7 +198,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
-- [ ] 3.8 Chase L2→L3 on the small packages first (`Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`),
+- [ ] 3.8 **Blocked on a compiler, and nothing else here is.** Chase L2→L3 on the small packages first (`Core`, `Fire`,
+      `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
 - [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
@@ -286,8 +289,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the behavioural surface is 237 classes and only **6** carry ucpp natives (`SGOrder` 4, `Electrocutor` 2,
       `FarClipChange` 2, `SGFontInfo` 1, `ShadowManager` 1, `StargateHUD` 1). Remaining: the native half (renderer,
       memory, compiler behaviour) — needs the module split (4.5) or targeted export of stock engine functions.
-- [ ] 4.9 Write `src/Native/<Module>/` reconstructed C for game modules with original function names, plus
-      `docs/NATIVE_NOTES.md` per subsystem. Engine internals: name + document, decompile only where script-reachable.
+- [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
+      `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
+      the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
+      addresses and what each body does (4.6 did this for the four real game-module bodies). The C itself stays under
+      `$WORK` on the machine that produced it. Engine internals: name + document, decompile only where script-reachable.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,422 symbols** (14,956 functions + 466 class tables), every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
@@ -300,7 +306,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 
 ### Phase 5 — Assets, levels, data (parallel, ~2–4 weeks)
 
-- [ ] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build `inventory/assets.csv`.
+- [ ] 5.1 **Blocked on `umodel`, which is not installed on either machine** (it is the one UNPINNED tool in
+      `tools/versions.lock`). umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build
+      `inventory/assets.csv`. Note the volume before starting: 3,287 WAVs and 73 maps are already counted by the
+      package reader, so the export adds meshes and textures — plan disk for it.
 - [x] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
       **Done for actors and properties, not for the level script.** All 73 maps written to `$WORK/extracted/maps`
       (27 MB, **121,225 actors**, 112,000 with a `Location`), and the writer's actor count equals the independently
@@ -404,7 +413,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       `-o`, `screendump` absent from QMP, and a zero-filled EEPROM (or a fresh HDD) leaving the CPU halted in the
       kernel forever. **Still open**: pixel-level assertion (needs F12 + X input automation, or a GDB-stub hook) and
       mission loading (needs input automation).
-- [ ] 7.3 Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
+- [ ] 7.3 **Blocked on input automation**: xemu has no scripted key injection, and the boot harness can only sample
+      `EIP` (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
@@ -1520,7 +1530,9 @@ and a deliberate one-line script break is caught by the boot test.
       artifacts (so two releases diff and a stale figure fails rather than misleads). Cutting the tag is a maintainer
       action after merge; B stays partial because the oracle only agrees on 204 of 291 classes, and C–F have not
       started.
-- [ ] 8.5 Publish tooling separately (package scripts, native-symbol generator) as generally useful UE2/Xbox RE tools.
+- [ ] 8.5 **Blocked on a decision, not on code**: publishing the tooling separately means a new repository and a
+      licence/ownership call. Publish tooling separately (package scripts, native-symbol generator) as generally useful
+      UE2/Xbox RE tools.
 
 ---
 
