@@ -347,7 +347,7 @@ are the virtuals it overrides. **Slot 11 is `Serialize`**, which the decompiled 
 | class | slot 11 |
 |---|---|
 | `Const` | `0x00039270` |
-| `Struct` | **`0x000392b0`** |
+| `Struct` | **`0x000392b0`** (two call sites only: `0x394c9` and `0x39f1a`) |
 | `State` | `0x000394c0` |
 | `Function` | `0x00039f10` |
 | `Class` | `0x0003a800` |
