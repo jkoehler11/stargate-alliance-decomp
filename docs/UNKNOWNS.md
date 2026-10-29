@@ -572,6 +572,24 @@ being what stops the walk. **The test that separates them is a script whose firs
 fixes** — a body that begins with a literal the table classifies unambiguously — and it is now the cheapest route,
 because everything needed is in the packages.
 
+**Seventh session, 2026-10-29: the serializer's call sites are measured, and the loader is a vtable slot.**
+`tools/ghidra/ghidra_scripts/Callers.java` exports every function that references an address, so the load side can be
+looked for from the reader rather than guessed. `UStruct::Serialize` (`0x000392b0`) has **exactly two direct call
+sites** — `0x000394c9` inside `0x000394c0`, and `0x00039f1a` inside `UFunction::Serialize` (`0x00039f10`), which is
+the order `docs/BYTECODE.md` documents — and `UFunction::Serialize` itself has **none**, because it is dispatched
+through a class table. So **the linker never calls the struct serializer directly**: the payload's header is read by
+whatever `Object->Serialize(Ar)` virtual call the export loader makes, and a search for a call to `0x000392b0` from
+linker code cannot succeed. The route that remains is the vtable slot, which the project already has named for 492
+class tables (`inventory/xbe_class_tables.csv`).
+
+**And the header decode does not line up with what that serializer writes.** Decoding the payload from offset 0 puts
+`FriendlyName` sixth in **7,104 of 7,115** `Function` payloads in `Engine.u` and `StargateGame.u`, but decoding from
+offset 2 puts it third in 4,629, fourth in 2,121 and fifth in 354 — a variable count that **does not track the export
+table's child count** (three values with 0 children: 899 payloads, with 1: 1,472, with 4: 321). So the variable part of
+the header is not the parameter list, and the leading values are not simply `Super` + `Children` as the body reads.
+Two readings survive: a fixed prefix of linker bytes in front of the struct's own output, or a value whose decoded
+width differs from its stored width. Neither is measured yet, and the fixed run after the name stays open on top of it.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -605,6 +623,24 @@ in the fixed run that the reading of `UStruct::Serialize` misses, and (b) the op
 being what stops the walk. **The test that separates them is a script whose first token the shipped `ScriptText`
 fixes** — a body that begins with a literal the table classifies unambiguously — and it is now the cheapest route,
 because everything needed is in the packages.
+
+**Seventh session, 2026-10-29: the serializer's call sites are measured, and the loader is a vtable slot.**
+`tools/ghidra/ghidra_scripts/Callers.java` exports every function that references an address, so the load side can be
+looked for from the reader rather than guessed. `UStruct::Serialize` (`0x000392b0`) has **exactly two direct call
+sites** — `0x000394c9` inside `0x000394c0`, and `0x00039f1a` inside `UFunction::Serialize` (`0x00039f10`), which is
+the order `docs/BYTECODE.md` documents — and `UFunction::Serialize` itself has **none**, because it is dispatched
+through a class table. So **the linker never calls the struct serializer directly**: the payload's header is read by
+whatever `Object->Serialize(Ar)` virtual call the export loader makes, and a search for a call to `0x000392b0` from
+linker code cannot succeed. The route that remains is the vtable slot, which the project already has named for 492
+class tables (`inventory/xbe_class_tables.csv`).
+
+**And the header decode does not line up with what that serializer writes.** Decoding the payload from offset 0 puts
+`FriendlyName` sixth in **7,104 of 7,115** `Function` payloads in `Engine.u` and `StargateGame.u`, but decoding from
+offset 2 puts it third in 4,629, fourth in 2,121 and fifth in 354 — a variable count that **does not track the export
+table's child count** (three values with 0 children: 899 payloads, with 1: 1,472, with 4: 321). So the variable part of
+the header is not the parameter list, and the leading values are not simply `Super` + `Children` as the body reads.
+Two readings survive: a fixed prefix of linker bytes in front of the struct's own output, or a value whose decoded
+width differs from its stored width. Neither is measured yet, and the fixed run after the name stays open on top of it.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
