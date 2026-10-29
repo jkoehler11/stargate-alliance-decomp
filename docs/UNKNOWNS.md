@@ -590,6 +590,23 @@ the header is not the parameter list, and the leading values are not simply `Sup
 Two readings survive: a fixed prefix of linker bytes in front of the struct's own output, or a value whose decoded
 width differs from its stored width. Neither is measured yet, and the fixed run after the name stays open on top of it.
 
+**Eighth session, 2026-10-29: the header is a fixed four values for a class and five for a function, and classes are
+the control.** A class runs the same `UStruct::Serialize` and carries no `UFunction` tail, so it separates "a field per
+child" from "a fixed header" without any reading of the body: a class's children range from 1 (`Time`, `Locale`) to 618
+(`Actor`) and **every one of the 2,316 aligned classes holds four values** in front of `FriendlyName`; every one of the
+12,355 aligned functions holds five. The `Children`-chain model is therefore dead as a width rule, and the residuals
+that killed the earlier per-parameter prediction were compact-encoding widths.
+
+What the five values are, over the whole corpus: `v0` always zero, `v1` = `Super` (3,226 imports, 2,406 same-named
+functions in a parent class), `v2` = `Next` (another function of the same outer, 10,529), `v3` always zero, `v4` =
+`Children` (9,218). For a class the order shifts: `[Super][0][Children][…]` (2,317 of 2,318 resolve `v2` to a child).
+
+The fixed run after the name is the last piece, and the class control cannot reach it: **no class payload carries the
+`04 0b 47` epilogue at all (2,319 of 2,319)**, so a class's script is not stored the way a function's is and there is no
+end to measure the run against. On functions the dword at `name_end+16` equals the distance to the epilogue in **2,141**
+payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
+the opcode range, so the start is probably still wrong for them and the run's length is not settled.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -641,6 +658,23 @@ table's child count** (three values with 0 children: 899 payloads, with 1: 1,472
 the header is not the parameter list, and the leading values are not simply `Super` + `Children` as the body reads.
 Two readings survive: a fixed prefix of linker bytes in front of the struct's own output, or a value whose decoded
 width differs from its stored width. Neither is measured yet, and the fixed run after the name stays open on top of it.
+
+**Eighth session, 2026-10-29: the header is a fixed four values for a class and five for a function, and classes are
+the control.** A class runs the same `UStruct::Serialize` and carries no `UFunction` tail, so it separates "a field per
+child" from "a fixed header" without any reading of the body: a class's children range from 1 (`Time`, `Locale`) to 618
+(`Actor`) and **every one of the 2,316 aligned classes holds four values** in front of `FriendlyName`; every one of the
+12,355 aligned functions holds five. The `Children`-chain model is therefore dead as a width rule, and the residuals
+that killed the earlier per-parameter prediction were compact-encoding widths.
+
+What the five values are, over the whole corpus: `v0` always zero, `v1` = `Super` (3,226 imports, 2,406 same-named
+functions in a parent class), `v2` = `Next` (another function of the same outer, 10,529), `v3` always zero, `v4` =
+`Children` (9,218). For a class the order shifts: `[Super][0][Children][…]` (2,317 of 2,318 resolve `v2` to a child).
+
+The fixed run after the name is the last piece, and the class control cannot reach it: **no class payload carries the
+`04 0b 47` epilogue at all (2,319 of 2,319)**, so a class's script is not stored the way a function's is and there is no
+end to measure the run against. On functions the dword at `name_end+16` equals the distance to the epilogue in **2,141**
+payloads and the walk from there reaches it in 1,975; the ones that miss fail on the walker's refusals spread across
+the opcode range, so the start is probably still wrong for them and the run's length is not settled.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"

@@ -401,22 +401,27 @@ def payloads(path, natives=os.path.join(ROOT, "inventory", "natives.csv"), quiet
 
 
 def header_report(path, quiet=False):
-    """What the five values in front of `FriendlyName` are, resolved against the package's own tables.
+    """What the header's encoded values are, for a package or a System directory, classes included.
 
-    The decode is aligned by requiring the sixth value to be the export's name index, then each of the five is
-    classified by what it points at: zero, a function with this one's name in another outer (`Super`), another
-    function in the same outer (`Next`), or a child of this function (`Children`).
+    The decode is aligned by requiring a value to be the export's own name index -- `FriendlyName` -- and then
+    every value in front of it is classified by what it points at: zero, an import, a function with this one's
+    name in another outer (`Super` for a function), another object in the same outer (`Next`), or a child of
+    this export (`Children`).
+
+    Classes are the control: a class runs the same `UStruct::Serialize` and has no `UFunction` tail, so a count
+    that is constant for both kinds, and unchanged by a class's child count, is a fixed header rather than one
+    reference per child.
     """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
 
-    files = []
-    if os.path.isdir(path):
-        files = [os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
-    else:
-        files = [path]
-    kind = [collections.Counter() for _ in range(5)]
-    total = 0
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    counts = {"Class": collections.Counter(), "Function": collections.Counter()}
+    kind = {"Class": [collections.Counter() for _ in range(6)],
+            "Function": [collections.Counter() for _ in range(6)]}
+    sized = {"Class": collections.Counter(), "Function": collections.Counter()}
+    epilogue = bytes([0x04, 0x0B, 0x47])
     for one in files:
         pkg = Package(one)
         pkg.read_names()
@@ -427,33 +432,35 @@ def header_report(path, quiet=False):
             if k["outer"] > 0:
                 children[k["outer"]].add(k["index"] + 1)
         for e in pkg.exports:
-            if pkg.class_name_of(e) != "Function":
+            what = pkg.class_name_of(e)
+            if what not in counts:
                 continue
             pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
-            try:
-                off, values = 0, []
-                for _ in range(6):
-                    value, off = read_index(pay, off)
-                    values.append(value)
-            except IndexError:
-                continue
-            if values[5] != e["name"]:
-                continue
-            total += 1
             name = pkg.name(e["name"])
             kids = children[e["index"] + 1]
-            for i, v in enumerate(values[:5]):
-                c = kind[i]
+            off, values = 0, []
+            while len(values) < 400:
+                try:
+                    value, off = read_index(pay, off)
+                except IndexError:
+                    values = None
+                    break
+                if value == e["name"]:
+                    break
+                values.append(value)
+            if values is None or len(values) >= 400 or not values:
+                continue
+            counts[what][len(values)] += 1
+            for i, v in enumerate(values[:6]):
+                c = kind[what][i]
                 if v == 0:
                     c["zero"] += 1
                 elif v > 0 and v <= len(pkg.exports):
                     target = pkg.exports[v - 1]
-                    if v == e["outer"]:
-                        c["own outer"] += 1
-                    elif v in kids:
+                    if v in kids:
                         c["child"] += 1
                     elif pkg.name(target["name"]) == name:
-                        c["same-name function"] += 1
+                        c["same-name"] += 1
                     elif pkg.class_name_of(target) == "Function":
                         c["other function"] += 1
                     else:
@@ -462,16 +469,37 @@ def header_report(path, quiet=False):
                     c["import"] += 1
                 else:
                     c["out of range"] += 1
-    labels = ["v0", "v1", "v2", "v3", "v4"]
-    print("%-4s %8s %8s %8s %8s %8s %8s %8s" %
-          ("", "zero", "import", "same-name", "other fn", "child", "other", "out"))
-    for label, c in zip(labels, kind):
-        print("%-4s %8d %8d %8d %8d %8d %8d %8d" %
-              (label, c["zero"], c["import"], c["same-name function"], c["other function"], c["child"],
-               c["other export"] + c["own outer"], c["out of range"]))
-    print("payloads whose sixth value is the export's own name index: %d" % total)
-    return 0
+            # The fixed run after the name: is there a dword that is exactly the distance to the script's
+            # end? A size field in front of the script would be one, whatever the script's length.
+            end = None
+            n = len(pay)
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            if end is None:
+                continue
+            for k in (4, 8, 12, 16, 20):
+                if off + k + 4 > end:
+                    break
+                if struct.unpack_from("<I", pay, off + k)[0] == end - (off + k + 4):
+                    sized[what][k + 4] += 1
 
+    for what in ("Function", "Class"):
+        print("%s exports whose header ends on FriendlyName: %d" % (what, sum(counts[what].values())))
+        print("  values in front of it: %s" % dict(sorted(counts[what].most_common(6))))
+        print("  %-4s %8s %7s %10s %13s %7s %6s" %
+              ("", "zero", "import", "same-name", "other function", "child", "other"))
+        for i in range(6):
+            c = kind[what][i]
+            if not sum(c.values()):
+                continue
+            print("  v%-3d %8d %7d %10d %13d %7d %6d" %
+                  (i, c["zero"], c["import"], c["same-name"], c["other function"], c["child"],
+                   c["other export"] + c["out of range"]))
+        print("  dword = the distance to the script's end at name_end+%s: %s" %
+              ("k", dict(sorted(sized[what].items()))))
+    return 0
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
