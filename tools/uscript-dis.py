@@ -577,6 +577,142 @@ def start_report(path):
     return 0
 
 
+
+dis_parse = parse
+
+
+def function_script(path, want_class, want_function, table):
+    """One function's script, from the header to the epilogue, as a token tree.
+
+    The start is `name_end + 16` (`--start` proves it), the end is the epilogue, so this is the first path that
+    disassembles a shipped function end to end rather than from a guessed offset.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    pkg = Package(path)
+    pkg.read_names()
+    pkg.read_imports()
+    pkg.read_exports()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    for e in pkg.exports:
+        if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
+            continue
+        owner = pkg.exports[e["outer"] - 1]
+        if pkg.name(owner["name"]).lower() != want_class.lower():
+            continue
+        if pkg.name(e["name"]).lower() != want_function.lower():
+            continue
+        pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+        n = len(pay)
+        off, last = 0, None
+        for _ in range(6):
+            last, off = read_index(pay, off)
+        if last != e["name"]:
+            print("%s.%s: the header does not end on FriendlyName" % (want_class, want_function))
+            return 1
+        if n >= 10 and pay[n - 10:n - 7] == epilogue:
+            end = n - 7
+        elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+            end = n - 9
+        else:
+            print("%s.%s: no epilogue, so no script" % (want_class, want_function))
+            return 1
+        start = off + 16
+        print("%s.%s: payload %d bytes, script %d..%d (%d bytes), header %d bytes"
+              % (want_class, want_function, n, start, end, end - start, start))
+        try:
+            nodes = dis_parse(pay[start:end], table)
+        except Refused as exc:
+            print("  the walk refuses at script offset %s" % exc)
+            return 1
+        for line in render(nodes):
+            print("  " + line)
+        return 0
+    print("%s.%s: no such function" % (want_class, want_function))
+    return 1
+
+
+def usage_report(path, table, out=None):
+    """Which opcodes the shipped scripts actually use, over every payload whose script walks clean.
+
+    A census, not a guess: an opcode no script uses cannot be checked against anything, and one that appears in
+    thousands of payloads is worth naming first.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    counts = collections.Counter()
+    payloads = collections.Counter()
+    walked = 0
+    seen = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, ok = 0, None, True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    ok = False
+                    break
+            if not ok or last != e["name"]:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            seen += 1
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = dis_parse(pay[start:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+                continue
+            walked += 1
+            here = set()
+
+            def visit(items):
+                for node in items:
+                    counts[node["opcode"]] += 1
+                    here.add(node["opcode"])
+                    visit(node["children"])
+            visit(nodes)
+            for op in here:
+                payloads[op] += 1
+    print("%d scripts with an epilogue, %d walk clean end to end" % (seen, walked))
+    print("%-6s %-24s %10s %9s" % ("op", "name", "tokens", "payloads"))
+    for op, _n in sorted(payloads.items(), key=lambda kv: -payloads[kv[0]]):
+        print("0x%02x   %-24s %10d %9d" % (op, table.rows[op]["name"] or "-", counts[op], payloads[op]))
+    if out:
+        # Sorted by opcode, because this file is a table a reader looks things up in; the console listing is
+        # sorted by use, which answers a different question.
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "opcode_usage.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["opcode", "name", "tokens", "payloads", "scripts_walked", "scripts_with_epilogue"])
+            for op in sorted(payloads):
+                w.writerow(["0x%02x" % op, table.rows[op]["name"], counts[op], payloads[op], walked, seen])
+        print("wrote %s/opcode_usage.csv (%d opcodes, %d scripts)"
+              % (out, len(payloads), walked))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -584,6 +720,11 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--header", metavar="PATH",
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
+    ap.add_argument("--script", nargs=3, metavar=("PACKAGE", "CLASS", "FUNCTION"),
+                    help="disassemble one function's script from the header to the epilogue")
+    ap.add_argument("--usage", metavar="PATH",
+                    help="which opcodes the shipped scripts that walk clean actually use")
+    ap.add_argument("-o", "--out", help="write inventory/opcode_usage.csv into this directory (with --usage)")
     ap.add_argument("--start", metavar="PATH",
                     help="three readings of where a script starts: payload floor, walk depth, the dword's meaning")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
@@ -593,6 +734,10 @@ def main():
         return header_report(args.header)
     if args.start:
         return start_report(args.start)
+    if args.script:
+        return function_script(args.script[0], args.script[1], args.script[2], Table())
+    if args.usage:
+        return usage_report(args.usage, Table(), args.out)
     if args.selftest:
         return selftest()
     if args.payloads:

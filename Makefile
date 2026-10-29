@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -62,6 +62,7 @@ help:
 	@echo "  serialize-slots  every class's Serialize override from its class table (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table  the walker's opcode map and per-group operand rules (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table-check  validate the committed table with no image (what make ci runs)"
+	@echo "  opcode-usage  which opcodes the shipped scripts that walk clean actually use (needs the dump)"
 	@echo "  payload-tail  every Function payload's tail, checked against its script (docs/BYTECODE.md; needs the dump)"
 	@echo "  rebuild-hybrid  our scripts + original assets: 18 assembled packages, a manifest, a missions list (PLAN 6.4)"
 	@echo "  rebuild-full    + compile/repack/check/boot, which report SKIP with their reason"
@@ -355,6 +356,9 @@ opcode-table:
 	@echo "wrote inventory/opcode_table.csv"
 
 # The LIPSinc support module in the image, one row per function with the log string that names it.
+opcode-usage:
+	@$(PYTHON) tools/uscript-dis.py --usage "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+
 lipsinc-runtime:
 	@$(PYTHON) tools/image-strings.py --topic lipsinc --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/lipsinc_runtime.csv"
