@@ -656,6 +656,14 @@ name objects at all: **10,405 of 13,398** `VirtualFunction` operands and **109 o
 a function the package declares, i.e. they index the **name table**, and `NameConst` does the same. So the same compact
 codec indexes exports/imports on one token and names on another, and only the opcode distinguishes them.
 
+**Thirteenth session, 2026-10-29: the corpus's call sites are a table.** `--calls` records every call in the 11,602
+scripts that walk: **5,424 static** (`FinalFunction`, an object reference — **all 5,424 resolve to a `Function`**) and
+**13,507 dynamic** (`VirtualFunction`, `GlobalFunction`, a name), of which **10,514** name a function the package itself
+declares. `inventory/script_calls.csv` carries package, class, function, token, dispatch, target and target class. The
+2,993 dynamic sites whose name is not declared locally are not a defect to fix but a fact to carry: the name table is
+per package, so a call into a native parent's function is indistinguishable from a call into a sibling package's until
+the hierarchy is consulted.
+
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
 after `SeedGaps` has run, and the cached decompilations of the neighbourhood (`0x00038dc0` = `UObject::Serialize`,
@@ -773,6 +781,14 @@ operand rules that no walk can give, because a wrong width can still tile. The v
 name objects at all: **10,405 of 13,398** `VirtualFunction` operands and **109 of 109** `GlobalFunction` operands name
 a function the package declares, i.e. they index the **name table**, and `NameConst` does the same. So the same compact
 codec indexes exports/imports on one token and names on another, and only the opcode distinguishes them.
+
+**Thirteenth session, 2026-10-29: the corpus's call sites are a table.** `--calls` records every call in the 11,602
+scripts that walk: **5,424 static** (`FinalFunction`, an object reference — **all 5,424 resolve to a `Function`**) and
+**13,507 dynamic** (`VirtualFunction`, `GlobalFunction`, a name), of which **10,514** name a function the package itself
+declares. `inventory/script_calls.csv` carries package, class, function, token, dispatch, target and target class. The
+2,993 dynamic sites whose name is not declared locally are not a defect to fix but a fact to carry: the name table is
+per package, so a call into a native parent's function is indistinguishable from a call into a sibling package's until
+the hierarchy is consulted.
 
 **The image route was attempted and its address is wrong.** `LinkerLoad::Serialize` at `0x000515d0`, named in this
 entry as the definitive route, is **not a function start**: `ExportAt.java` reports "no function at this address"
