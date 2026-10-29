@@ -1,7 +1,7 @@
 opcode,group,handler,name,pattern,fixed_bytes,source,note
-0x00,0,0x00039c0e,LocalVariable,bytes:4,4,map,"object/name reference, 4 bytes"
-0x01,0,0x00039c0e,InstanceVariable,bytes:4,4,map,"object/name reference, 4 bytes"
-0x02,0,0x00039c0e,DefaultVariable,bytes:4,4,map,"object/name reference, 4 bytes"
+0x00,0,0x00039c0e,LocalVariable,index,0,map,object/name reference as a compact index
+0x01,0,0x00039c0e,InstanceVariable,index,0,map,object/name reference as a compact index
+0x02,0,0x00039c0e,DefaultVariable,index,0,map,object/name reference as a compact index
 0x03,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; this build rejects it too
 0x04,1,0x00039dec,Return,expr,0,map,one nested token
 0x05,2,0x00039d12,Switch,"bytes:1,expr",1,map,case-count byte then the expression
@@ -18,7 +18,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x10,10,0x00039b55,DynamicArrayElement,"expr,expr",0,map,"two nested tokens (lvalue, value)"
 0x11,11,0x00039b3d,New,"expr,expr,expr,expr",0,map,four nested tokens; agrees with UELib's NewToken
 0x12,12,0x00039af0,ClassContext,"expr,bytes:3,expr",3,map,"expression, 2-byte offset, byte, expression"
-0x13,13,0x00039de1,MetaClassCast,"bytes:4,expr",4,map,reference then the expression
+0x13,13,0x00039de1,MetaClassCast,"index,expr",0,map,an index then the expression
 0x14,10,0x00039b55,LetBool,"expr,expr",0,map,"two nested tokens (lvalue, value)"
 0x15,30,0x00039e1f,LineNumber,bad-token,0,map,UELib maps LineNumber for UE2 builds; this build rejects it (no line-number token is emitted)
 0x16,5,0x00039e38,EndFunctionParms,,0,map,"no operand bytes, no children: the handler returns the opcode"
@@ -26,13 +26,13 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x18,6,0x00039d98,Skip,"bytes:2,expr",2,map,code offset then the expression
 0x19,12,0x00039af0,Context,"expr,bytes:3,expr",3,map,"expression, 2-byte offset, byte, expression"
 0x1a,10,0x00039b55,ArrayElement,"expr,expr",0,map,"two nested tokens (lvalue, value)"
-0x1b,14,0x00039a9b,VirtualFunction,"bytes:4,parms",4,map,name reference then the parameter list
-0x1c,15,0x00039a70,FinalFunction,"bytes:4,parms",4,map,function reference then the parameter list
+0x1b,14,0x00039a9b,VirtualFunction,"index,parms",0,map,an index then the parameter list
+0x1c,15,0x00039a70,FinalFunction,"index,parms",0,map,an index then the parameter list
 0x1d,16,0x00039b79,IntConst,bytes:4,4,map,int32
 0x1e,17,0x00039b96,FloatConst,bytes:4,4,map,float32
 0x1f,18,0x00039bb3,StringConst,str,0,map,NUL-terminated ANSI string
-0x20,0,0x00039c0e,ObjectConst,bytes:4,4,map,"object/name reference, 4 bytes"
-0x21,19,0x00039e04,NameConst,bytes:4,4,map,name reference
+0x20,0,0x00039c0e,ObjectConst,index,0,map,object/name reference as a compact index
+0x21,19,0x00039e04,NameConst,index,0,map,an index
 0x22,20,0x00039c29,RotationConst,bytes:12,12,map,three int32
 0x23,21,0x00039c6e,VectorConst,bytes:12,12,map,three float32
 0x24,22,0x00039cb3,ByteConst,bytes:1,1,map,one byte
@@ -40,12 +40,12 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x26,5,0x00039e38,IntOne,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x27,5,0x00039e38,True,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x28,5,0x00039e38,False,,0,map,"no operand bytes, no children: the handler returns the opcode"
-0x29,0,0x00039c0e,NativeParm,bytes:4,4,map,"object/name reference, 4 bytes"
+0x29,0,0x00039c0e,NativeParm,index,0,map,object/name reference as a compact index
 0x2a,5,0x00039e38,NoObject,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x2b,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken from CastStringSizeTokenDeprecated on; rejected here too
 0x2c,22,0x00039cb3,IntConstByte,bytes:1,1,map,one byte
 0x2d,5,0x00039e38,BoolVariable,,0,map,"no operand bytes, no children: the handler returns the opcode"
-0x2e,13,0x00039de1,DynamicCast,"bytes:4,expr",4,map,reference then the expression
+0x2e,13,0x00039de1,DynamicCast,"index,expr",0,map,an index then the expression
 0x2f,23,0x00039ce4,Iterator,"expr,bytes:2",2,map,expression then the code offset
 0x30,5,0x00039e38,IteratorPop,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x31,5,0x00039e38,IteratorNext,,0,map,"no operand bytes, no children: the handler returns the opcode"
@@ -53,9 +53,9 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x33,24,0x00039dc1,StructCmpNe,"bytes:4,expr,expr",4,map,reference then two nested tokens
 0x34,25,0x00039be0,UnicodeStringConst,utf16,0,map,NUL-terminated UTF-16 string
 0x35,30,0x00039e1f,RangeConst,bad-token,0,map,"UELib maps RangeConst only for BuildGeneration.UE2; rejected here, so this build is not that generation"
-0x36,13,0x00039de1,StructMember,"bytes:4,expr",4,map,reference then the expression
+0x36,13,0x00039de1,StructMember,"index,expr",0,map,an index then the expression
 0x37,9,0x000399a7,DynamicArrayLength,expr,0,map,one nested token
-0x38,14,0x00039a9b,GlobalFunction,"bytes:4,parms",4,map,name reference then the parameter list
+0x38,14,0x00039a9b,GlobalFunction,"index,parms",0,map,an index then the parameter list
 0x39,26,0x00039a05,PrimitiveCast,"bytes:1,expr",1,map,cast type byte then the expression
 0x3a,30,0x00039e1f,ReturnNothing,bad-token,0,map,"UELib: ReturnNothing; this build rejects it, and its payloads end `04 0b 47` instead"
 0x3b,30,0x00039e1f,DelegateCmpEq,bad-token,0,map,UELib: DelegateCmpEq; delegates are not accepted by this build's walker
@@ -67,7 +67,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x41,27,0x00039b49,DynamicArrayRemove,"expr,expr,expr",0,map,three nested tokens
 0x42,28,0x00039a1a,DebugInfo,bytes:13,13,map,three int32 then one byte
 0x43,29,0x00039ac1,DelegateFunction,"bytes:4,expr",4,map,reference then the expression
-0x44,19,0x00039e04,DelegateProperty,bytes:4,4,map,name reference
+0x44,19,0x00039e04,DelegateProperty,index,0,map,an index
 0x45,10,0x00039b55,LetDelegate,"expr,expr",0,map,"two nested tokens (lvalue, value)"
 0x46,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; rejected here too
 0x47,5,0x00039e38,EndOfScript,,0,map,"UELib: EndOfScript; no operand bytes, and it is the third byte of the payload epilogue"
