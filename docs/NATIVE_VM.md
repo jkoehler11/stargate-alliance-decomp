@@ -351,7 +351,7 @@ are the virtuals it overrides. **Slot 11 is `Serialize`**, which the decompiled 
 | `State` | `0x000394c0` |
 | `Function` | `0x00039f10` |
 | `Class` | `0x0003a800` |
-| `LinkerLoad` / `LinkerSave` | `0x000515d0` / `0x00050050` |
+| `LinkerLoad` / `LinkerSave` | `0x000515d0` (not a function start — see U13) / `0x00050050` |
 
 `make serialize-slots` writes all 492 rows (`inventory/class_serialize_slots.csv`): **82 distinct `Serialize` entry
 points**, each one a class that overrides the parent's. `Struct`'s is the one 3.7 needed.

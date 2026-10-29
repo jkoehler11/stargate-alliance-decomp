@@ -185,36 +185,44 @@ starts, because the header in front of it serialises object references and a nam
 
 ## Not measured
 
-* **Where a script starts inside a `Function` payload (U13).** Operand widths are necessary for a
-  disassembler but not sufficient. The tail is solved (above), so the script's end is known, and the *header's*
-  encoded part is now pinned by content: it is **six archive-encoded values whose last is `FriendlyName`**, so
-  requiring the sixth to be the export's own name index aligns the decode — in **12,360** payloads, which is
-  **11,687 of the 11,716** that carry an epilogue (99.75%), and the payloads it misses are the ones whose trailer
-  did not decode either.
-  **The `Children`-chain rule this document used to propose is refuted by that count**: the number of leading
-  values is **constant at five**, whatever the function's parameter count, so it is the *widths* that vary, not the
-  number of references. Classifying each value against the package's own tables
-  (`python3 tools/uscript-dis.py --header System`) gives, over those 12,360 payloads:
+* **Where a script starts inside a `Function` payload (U13).** The tail is solved (above), and the header's encoded
+  part is now measured **with a control**: a `Class` runs the same `UStruct::Serialize` without `UFunction`'s tail, so
+  anything that is the `Children` chain would scale with a class's children and anything fixed would not.
+  `python3 tools/uscript-dis.py --header System` aligns the decode by requiring a value to be the export's own
+  `FriendlyName` name index and counts the values in front of it:
 
-  | value | zero | import | same-name function | other function in the class | child |
-  |---|---:|---:|---:|---:|---:|
-  | v0 | 12,360 | 0 | 0 | 0 | 0 |
-  | v1 | 6,728 | 3,226 | 2,406 | 0 | 0 |
-  | v2 | 783 | 0 | 0 | 10,529 | 0 |
-  | v3 | 12,360 | 0 | 0 | 0 | 0 |
-  | v4 | 3,137 | 0 | 0 | 0 | 9,223 |
+  | kind | exports aligned | values in front of `FriendlyName` |
+  |---|---:|---|
+  | `Function` | 12,360 | **five** in 12,355 (four in 4, two in 1) |
+  | `Class` | 2,318 | **four** in 2,316 (three in 1, two in 1) |
 
-  so `v1` behaves as `Super` (an import where the parent is native, a same-named function in a parent class
-  otherwise), `v2` as `Next` (another function of the same class in 10,529), `v4` as `Children` (a child of this
-  function in 9,223), and `v0` and `v3` are always zero — which field each belongs to is not identified.
-  **What is still open is the fixed run after `FriendlyName`.** Taking it as the writer body's three `u32`s plus
-  the size, 16 bytes past the name, the dword there equals the remaining script length in **672** payloads and the
-  walk from that offset lands on the epilogue in **1,975** — good on short scripts (of those with 16 bytes or fewer,
-  75.7% walk at +16 against 41.6% at +12), and bad on long ones, which fail at that start in the walker's
-  bad-token case (3,824 payloads) or on an unterminated parameter list (1,617). Either a field is missing from the
-  reading of `UStruct::Serialize` or the opcode table is what fails there; the test that separates them is a script
-  whose first token the shipped source fixes, and `UStruct::Deserialize` in the image is the other route
-  (`docs/UNKNOWNS.md` U13). No *long* shipped function has been disassembled end to end yet.
+  **The count does not move with the export's child count.** `Object` carries 250 children and `Actor` 618, and both
+  hold four values like `Time` with one — so the per-child `Children`-chain model this document used to propose is
+  dead, and the +1/+2/+3 residuals of that prediction were the compact encoding's *widths*, not missing references.
+  Classified against each package's own export, import and name tables, the values are:
+
+  | kind | position | zero | import | same-name | other function | child |
+  |---|---|---:|---:|---:|---:|---:|
+  | Function | v0 | 12,360 | 0 | 0 | 0 | 0 |
+  | Function | v1 | 6,728 | 3,226 | 2,406 | 0 | 0 |
+  | Function | v2 | 783 | 0 | 0 | 10,529 | 0 |
+  | Function | v3 | 12,359 | 0 | 0 | 0 | 0 |
+  | Function | v4 | 3,137 | 0 | 0 | 0 | 9,218 |
+  | Class | v0 | 1 | 1,275 | 0 | 0 | 1,042 other |
+  | Class | v1 | 2,318 | 0 | 0 | 0 | 0 |
+  | Class | v2 | 0 | 0 | 0 | 0 | 2,317 |
+  | Class | v3 | 942 | 0 | 0 | 0 | 1,374 |
+
+  So a function's header reads `[0][Super][Next][0][Children]` and a class's reads `[Super][0][Children][…]`: in both,
+  one position is always zero, the value that resolves to a same-named parent is `Super`, the "other function" is
+  `Next` and the child is `Children`. What `v0`/`v3` are attached to is not identified.
+
+  **The fixed run after `FriendlyName` is still open, and the two kinds do not agree.** A dword 16 bytes past the name
+  equals the distance to the script's epilogue in **2,141** `Function` payloads and in **zero** `Class` payloads; at 8
+  bytes it is 39 functions and no classes. The walk from `name_end + 16` reaches the epilogue in 1,975 functions, and
+  the ones it misses fail on the walker's own refusals (bad-token 3,824, unterminated parameter lists 1,617) spread
+  across the whole opcode range — the signature of a desynchronised start rather than of a table gap. So the run's
+  length is not settled, and until it is, no *long* shipped function is disassembled end to end.
 * **Operand semantics.** A pattern says four bytes, not *which* reference; which object a `0x13` cast names, which
   function a `0x1c` calls, and what a `0x05` switch's byte means are all still to read, and each is per-opcode work
   on top of this table.
