@@ -10,7 +10,7 @@
   <img alt="Engine: Unreal Engine 2.5 (Perception fork)" src="https://img.shields.io/badge/engine-Unreal%20Engine%202.5-0A84FF">
   <img alt="Game data not included" src="https://img.shields.io/badge/game%20data-not%20included-FF453A">
   <img alt="Script: 100.00% reconstructed" src="https://img.shields.io/badge/script%20L0-100.00%25-3fb950">
-  <img alt="Native: 13.29% named" src="https://img.shields.io/badge/native%20symbols-13.29%25-db6d28">
+  <img alt="Native: 13.34% named" src="https://img.shields.io/badge/native%20symbols-13.34%25-db6d28">
   <img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-lightgrey">
 </p>
 
@@ -75,7 +75,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 
 <!-- status:end -->
 
-The table is generated from committed artifacts by `tools/status.py`; [docs/STATUS.md](docs/STATUS.md) has
+The table and the two numeric badges are generated from committed artifacts by `tools/status.py`; [docs/STATUS.md](docs/STATUS.md) has
 the same rows plus where each number comes from. A row that shows `--` has not been measured yet, which is
 not the same as scoring zero. [PLAN.md](PLAN.md) remains the working task list.
 

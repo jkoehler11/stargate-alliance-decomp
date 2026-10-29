@@ -165,6 +165,7 @@ ci:
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
 	@$(PYTHON) tools/status.py --check
+	@$(PYTHON) tools/status.py --selftest
 
 check: verify-dump
 	@echo "dump ok; run 'make inventory' and commit if anything drifted"
