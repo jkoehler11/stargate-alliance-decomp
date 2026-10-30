@@ -21,24 +21,30 @@ code and latent calls — and this page counts them, class by class.
 **State code and latent calls are not gaps** — every class that declares them keeps them, and the reconstruction emits
 slightly more of both (it is a decompiler, so it can also produce a state where the source has one written by a macro).
 
-**`replication` is the gap**, and it is not total: 63 classes keep a block and the block counts match the source
-exactly, so what the decompiler emits it emits correctly. The 79 that lose every block are concentrated in the fork's
-own packages — `StargateContent` 39, `StargateGame` 15, `StargateVehicles` 15, `Engine` 9, `GamePlay` 1 — and only 4 of
-them declare themselves `native`, so "the body is in C++" explains a twentieth of it.
+**`replication` is the gap**, and the first reading of it — "the decompiler drops the block" — is wrong. Two
+measurements corrected it:
 
-## What the missing blocks look like
+* **The blocks we do emit are exactly the blocks the class record can support.** 63 classes carry a `replication`
+  block in both trees and the block counts match the source *exactly*, so nothing the data can express is lost.
+* **The 79 classes that lose their block have no replication data to reconstruct.** Instrumenting
+  `UClassDecompiler.FormatReplication` (a local build of `tools/uelib`, never committed) and running the decompile over
+  all 2,319 classes shows **`net=0`** for every one of the 79: not one of their properties carries `PropertyFlag.Net`,
+  so the class record holds no group, no `RepOffset` and no condition. All 15 of `StargateGame`'s are in that set —
+  `BotBase` 77 properties, 0 replicated; `BotEnemy` 92, 0; `SquadRoster` 14, 0.
 
-Shape of the first line inside the block, over the 79:
+So what the 79 declare is a **`persistent` group**, which is a different construct from replication: it is
+compile-time-only and leaves no trace in the serialized class, unlike `defaultproperties`, which the reader can put
+back together from the tag stream. The class record is not thinner than it should be; the source is simply saying
+something the record does not carry.
 
-| shape | classes |
-|---|---:|
-| a bare `persistent` followed by a list, with no condition | 48 |
-| `persistent bField, bOther` (one line) | 3 |
-| other | 28 |
+Two candidate causes were tested and are out: the parser is not failing on a `persistent` group (no exception is
+raised — the 79 never reach the condition decoder), and the `DataScriptSize <= 0` gate is not dropping them either
+(**0 classes in the corpus have a Net-flagged property with no class script**, so the gate never fires on a
+reconstructable block).
 
-So the dominant shape is a `persistent` group with no `if (...)`, which is legal script and not the `reliable if (...)`
-form the decompiler's replication parser appears to expect. That is the lead for a fix, and the fix is in UELib's
-decompiler (`tools/uelib`, pinned at `8236c39`), not in this repository's own code.
+What that means for 3.5: the replication feature is closed for everything the data supports, and the 79 are not a
+decompiler gap but a limit of the format. A rebuild that wants those blocks has to take them from the source text,
+which is game-derived and stays out of this repository.
 
 ## What this does not measure
 
