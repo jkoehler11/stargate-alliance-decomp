@@ -780,3 +780,25 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 `index` for those groups and `inventory/opcode_usage.csv` is the census of the new set. This is the per-opcode work
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
+
+## U14. No scripted input path has reached the guest yet (PLAN 7.2, 7.3)
+
+The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
+changed what it shows. Measured on 2026-10-30, guest executing throughout (`EIP` in user space at every check):
+`xdotool key Down` targeted at the window (`XSendEvent`, which SDL ignores), the same through XTEST, XTEST after
+`xdotool windowfocus --sync` (the X input focus *is* the xemu window), and XTEST with
+`[input] background_input_capture = true` in the run's TOML — in every case the highlight stayed on `Continue` and the
+frame moved by no more than the animated background's noise floor (591 pixels in a 640x480 crop at `-fuzz 15%`,
+measured with no input sent at all). XTEST `a`, the pad's A button, produced no transition either.
+
+**What would settle it, in this order.** (1) A virtual pad: `/dev/uinput` is writable by the desktop user and
+`python-evdev` is installed, so a `UInput` device can be created (`sg1-vpad` was created on `/dev/input/event27`) —
+SDL reads an evdev gamepad with no window focus, so this is the one path that does not depend on the compositor handing
+focus to an ssh-started process. It needs an SDL mapping so xemu treats the device as a controller, plus
+`[input] gamepad_mappings` and `[input.bindings] port1` in the run's TOML. (2) If the virtual pad also shows nothing,
+the question moves to the guest: whether this build reads the pad at all before the first frame, which the same
+harness answers by sampling what the guest does after a click that must have an effect (a mission load changes the
+screen by whole frames, not by the noise floor).
+
+The distinction to keep: what is missing is **input injection**, not a boot or a display. Pixels were the weak channel
+until the noise floor was measured; `cpu=` (QMP `EIP` sampling) is what says the guest is alive in the same run.
