@@ -930,6 +930,122 @@ def calls_report(path, table, out=None):
     return 0
 
 
+
+def flatten(nodes):
+    """Tokens in stream order, as (opcode, operands) -- the unit a match percentage is computed over."""
+    out = []
+    for n in nodes:
+        out.append((n["opcode"], n["operands"]))
+        out.extend(flatten(n["children"]))
+    return out
+
+
+def compare_tokens(a, b):
+    """How two token streams differ: bytes, opcode sequence, or halfway.
+
+    The three tiers this project grades with are `L2` (opcode sequence matches) and `L3` (bytes match), so a
+    comparison has to report them separately -- an operand that changed is not an opcode that changed.
+    """
+    import difflib
+    same_bytes = a == b
+    same_opcodes = [op for op, _ in a] == [op for op, _ in b]
+    ratio = difflib.SequenceMatcher(None, [op for op, _ in a], [op for op, _ in b]).ratio()
+    return {"bytes": same_bytes, "opcodes": same_opcodes, "similarity": ratio, "tokens": (len(a), len(b))}
+
+
+def script_of(pkg, export, table):
+    """One function's token stream, or None when the payload does not disassemble."""
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    pay = pkg.data[export["offset"]:export["offset"] + export["size"]]
+    n = len(pay)
+    off, last, ok = 0, None, True
+    for _ in range(6):
+        try:
+            last, off = read_index(pay, off)
+        except IndexError:
+            ok = False
+            break
+    if not ok or last != export["name"]:
+        return None
+    if n >= 10 and pay[n - 10:n - 7] == epilogue:
+        end = n - 7
+    elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+        end = n - 9
+    else:
+        return None
+    start = off + 16
+    if start >= end:
+        return None
+    try:
+        nodes = parse(pay[start:end], table)
+    except Refused:
+        return None
+    if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+        return None
+    return flatten(nodes)
+
+
+def compare_report(path_a, path_b, table, out=None):
+    """Compare two packages function by function: is a rebuild the same bytes, the same opcodes, or neither?
+
+    This is the comparator half of PLAN 3.8. It needs no compiler -- it compares two packages -- so it can be built and
+    validated now, and pointed at a recompiled package the day one exists. Comparing a package with itself is the
+    integration test that it is wired correctly.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    def index_of(path):
+        pkg = Package(path)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        out = {}
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
+                continue
+            owner = pkg.name(pkg.exports[e["outer"] - 1]["name"])
+            out[(owner, pkg.name(e["name"]))] = e
+        return pkg, out
+
+    pkg_a, funcs_a = index_of(path_a)
+    pkg_b, funcs_b = index_of(path_b)
+    shared = sorted(set(funcs_a) & set(funcs_b))
+    rows = []
+    only_a = sorted(set(funcs_a) - set(funcs_b))
+    only_b = sorted(set(funcs_b) - set(funcs_a))
+    skipped = 0
+    for key in shared:
+        ta = script_of(pkg_a, funcs_a[key], table)
+        tb = script_of(pkg_b, funcs_b[key], table)
+        if ta is None or tb is None:
+            skipped += 1
+            continue
+        c = compare_tokens(ta, tb)
+        rows.append((key[0], key[1], c["tokens"][0], c["bytes"], c["opcodes"], round(c["similarity"], 4)))
+    byte_identical = sum(1 for r in rows if r[3])
+    opcode_identical = sum(1 for r in rows if r[4])
+    mean = sum(r[5] for r in rows) / len(rows) if rows else 0.0
+    print("%s vs %s" % (os.path.basename(path_a), os.path.basename(path_b)))
+    print("  %d functions in both, %d only in the first, %d only in the second, %d not disassembled"
+          % (len(shared), len(only_a), len(only_b), skipped))
+    print("  byte-identical (L3): %d; opcode-identical (L2): %d; mean opcode similarity: %.2f%%"
+          % (byte_identical, opcode_identical, 100.0 * mean))
+    diff = sorted([r for r in rows if not r[4]], key=lambda r: r[5])
+    for r in diff[:5]:
+        print("  differs: %s.%s  %d vs %d tokens, %.0f%% of the opcode sequence"
+              % (r[0], r[1], r[2], r[2], 100.0 * r[5]))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "script_match.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["class", "function", "tokens", "bytes_identical", "opcodes_identical", "similarity"])
+            for row in rows:
+                w.writerow(row)
+        print("wrote %s/script_match.csv (%d rows)" % (out, len(rows)))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -939,6 +1055,8 @@ def main():
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
     ap.add_argument("--script", nargs=3, metavar=("PACKAGE", "CLASS", "FUNCTION"),
                     help="disassemble one function's script from the header to the epilogue")
+    ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
+                    help="compare two packages function by function: bytes, opcode sequence, or neither")
     ap.add_argument("--calls", metavar="PATH",
                     help="every script-level call site, static or by name, for a package or a System directory")
     ap.add_argument("--resolve", metavar="PATH",
@@ -963,6 +1081,8 @@ def main():
         return resolve_report(args.resolve, Table())
     if args.calls:
         return calls_report(args.calls, Table(), args.out)
+    if args.compare:
+        return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.selftest:
         return selftest()
     if args.payloads:
