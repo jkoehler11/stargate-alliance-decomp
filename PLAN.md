@@ -472,6 +472,13 @@ and a deliberate one-line script break is caught by the boot test.
   installed — `UInput` produced `sg1-vpad` on `/dev/input/event27`. SDL reads evdev without window focus, so this is
   the route that does not depend on the compositor; what it still needs is an SDL mapping string for the device GUID
   and the matching `[input] gamepad_mappings` / `port1` entry. **U14** carries it.
+- **XTEST keys were going into a running game, not the emulator.** After the runs, `xdotool getwindowfocus` named the
+  focused window as a Steam game (`Northgard Battlegrounds`, `steam_app_4487060`): every XTEST `Down` and `a` was
+  delivered to that window and never to xemu, and the desktop rang KDE's "input not accepted" sound, which is how the
+  owner noticed. `xdotool windowfocus --sync` does move focus when called, which takes the keyboard away from whoever is
+  using the machine. The harness now prints the focus owner, **refuses** an XTEST step that would type elsewhere
+  (exit 2, naming the window), moves focus only on an explicit `--step=activate`, and hands focus back on exit — an
+  evdev pad needs none of this, which is the second reason it is the next thing to build.
 - **Two harness bugs found by running it**: `proc.terminate()` leaves `AppRun` holding the HDD image, so the next run
   fails on a "write" lock that reads as a config error (xemu now runs in its own session and the group is killed), and
   a window id can die mid-sequence (a failed capture now re-finds the window once).

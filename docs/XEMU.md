@@ -436,9 +436,27 @@ key. Measured on the title screen with its five-item menu (`Continue` highlighte
 
 `xdotool windowactivate --sync` does nothing here (the compositor does not hand activation to an X client), and the
 window id is stable across runs, so a stale id is not the explanation. **SDL ignores synthetic `XSendEvent` keys**, which
-is why the targeted form cannot work; XTEST should work and does not, so the open question is whether this build's SDL
-window receives keyboard focus at all — the harness runs over ssh, where nothing on the desktop gives it focus, and
-`background_input_capture` governs only xemu's own gamepad capture. Recorded as U14.
+is why the targeted form cannot work. For XTEST, the answer turned out to be the focus owner — see below.
+
+### XTEST keys go to whoever owns the focus, and on a desktop somebody is using that is not the emulator
+
+Measured after these runs (`xdotool getwindowfocus` / `getwindowname`): the focused window was a **running Steam game**,
+`Northgard Battlegrounds` (`steam_app_4487060`) — not xemu. So every XTEST `Down` and `a` was delivered to the game the
+owner of the machine was playing and never reached the emulator, and the desktop rang **KDE's "input not accepted"
+sound** during the runs, which is how the owner noticed. `xdotool windowfocus --sync` *does* move the focus to xemu when
+it is called, which is worse than useless here: it takes the keyboard away from whoever is using the machine.
+
+Three rules follow, and the harness now enforces all three:
+
+- **Check the focus owner before an XTEST step and refuse when it is not the emulator.** `drive.py` prints the owner at
+  startup (`note: X input focus is … , not the emulator`) and exits **2** naming the window instead of typing into it.
+- **Never move focus implicitly.** Only an explicit `--step=activate` does, and it says so: the harness is a guest on
+  somebody's desktop.
+- **Give the focus back.** On the way out, the previous owner gets it back (`focus returned to …`) before the emulator
+  is killed.
+
+This is the same reason the virtual pad below is the route worth building: an evdev gamepad is read without any window
+focus, so it cannot type into anybody's application. Recorded as U14.
 
 **The route that does not depend on focus is a virtual pad.** `/dev/uinput` is writable by the desktop user (an ACL
 grants `james` rw) and `python-evdev` is installed, so `UInput` can create a device — measured: `uinput ok:

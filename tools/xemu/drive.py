@@ -104,7 +104,18 @@ def difference(a, b, fuzz=0):
         return -1
 
 
+class FocusElsewhere(Exception):
+    """Raised instead of sending XTEST keys into a window that is not the emulator."""
+
+
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "noise", "cpu")
+
+
+def focus_owner():
+    """The window X input focus is on right now, and its name -- an XTEST key goes there, whoever owns it."""
+    got = run(["xdotool", "getwindowfocus"]).stdout.strip()
+    name = run(["xdotool", "getwindowfocus", "getwindowname"]).stdout.strip() if got else ""
+    return got, name or "(no name)"
 
 
 def parse_step(text):
@@ -118,11 +129,22 @@ def parse_step(text):
 
 
 def send(window, name, value):
-    """Send one input step to the guest; return a line for the log."""
+    """Send one input step to the guest; return a line for the log.
+
+    XTEST (`xkey`/`xtype`) is delivered to whichever window owns X input focus, so it is only sent when that is the
+    emulator: on a desktop somebody is using, the alternative is typing into their editor or their game, which is both
+    useless for the test and audible (KDE rings when an application refuses the key).
+    """
     if name == "activate":
-        run(["xdotool", "windowactivate", "--sync", window])
+        run(["xdotool", "windowraise", window])
+        run(["xdotool", "windowfocus", "--sync", window])
         return "activate"
     targeted = name in ("key", "type")
+    if not targeted:
+        owner, owner_name = focus_owner()
+        if owner != window:
+            raise FocusElsewhere("XTEST would type into %s (%s), not the emulator (%s)"
+                                 % (owner_name, owner or "?", window))
     if name in ("key", "xkey"):
         args = ["xdotool", "key"] + (["--window", window] if targeted else []) + [value]
         run(args)
@@ -186,6 +208,7 @@ def main():
         f.write("hdd_path = '%s'\ndvd_path = '%s'\n" % (args.hdd, args.iso))
     env = dict(os.environ, APPIMAGE_EXTRACT_AND_RUN="1")
     log = open(os.path.join(args.out, "xemu.log"), "wb")
+    prior_focus = ""
     proc = subprocess.Popen([args.xemu, "-config_path", toml,
                              "-serial", "file:" + os.path.join(args.out, "serial.log"),
                              "-qmp", "unix:%s,server,nowait" % sock_path],
@@ -215,6 +238,10 @@ def main():
             say("FAIL: no xemu window on %s" % os.environ.get("DISPLAY"))
             return 3
         say("window: %s" % window)
+        prior_focus, prior_name = focus_owner()
+        if prior_focus and prior_focus != window:
+            say("note: X input focus is %s (%s), not the emulator -- XTEST steps will refuse rather than type there"
+                % (prior_name, prior_focus))
         failures, shots, previous = [], 0, None
         for index, (name, value) in enumerate(steps, 1):
             if name == "noise":
@@ -278,7 +305,13 @@ def main():
                         failures.append(value)
                 previous = path
                 continue
-            say("step %d: %s" % (index, send(window, name, value)))
+            try:
+                say("step %d: %s" % (index, send(window, name, value)))
+            except FocusElsewhere as exc:
+                say("REFUSED: %s" % exc)
+                say("         nothing was sent. A `--step=activate` moves focus to the emulator, and takes it away")
+                say("         from whoever is using the desktop -- do that only when the machine is free.")
+                return 2
         if failures:
             say("FAIL: %d shot step(s) did not repaint: %s" % (len(failures), ", ".join(failures)))
             return 2
@@ -297,6 +330,14 @@ def main():
                 os.killpg(proc.pid, 9)
             except OSError:
                 proc.kill()
+        # Do not leave the desktop user's focus on a machine that is about to be killed.
+        try:
+            owner, _ = focus_owner()
+            if prior_focus and owner == window and owner != prior_focus:
+                run(["xdotool", "windowfocus", "--sync", prior_focus])
+                say("focus returned to %s" % prior_focus)
+        except Exception:
+            pass
         log.close()
 
 
