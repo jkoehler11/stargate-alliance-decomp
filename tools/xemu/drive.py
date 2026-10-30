@@ -21,6 +21,8 @@ Steps, in order:
     xtype=TEXT  the same, through XTEST
     wait=SECS   sleep
     activate    focus the window first (`windowactivate --sync`)
+    monitor=CMD  run one QMP human-monitor-command (e.g. `device_add usb-kbd,port=1.3,id=kbd`, which xemu documents
+                as the way to give the guest a keyboard); the reply is printed
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
                 that stopped executing, so every sequence that reads "no change" needs this
     noise=SECS  capture, wait SECS with no input, capture again: the screen's own animation, in pixels
@@ -108,7 +110,7 @@ class FocusElsewhere(Exception):
     """Raised instead of sending XTEST keys into a window that is not the emulator."""
 
 
-STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "noise", "cpu")
+STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "noise", "cpu", "monitor")
 
 
 def focus_owner():
@@ -242,7 +244,7 @@ def main():
         if prior_focus and prior_focus != window:
             say("note: X input focus is %s (%s), not the emulator -- XTEST steps will refuse rather than type there"
                 % (prior_name, prior_focus))
-        failures, shots, previous = [], 0, None
+        failures, shots, previous, measured_noise = [], 0, None, False
         for index, (name, value) in enumerate(steps, 1):
             if name == "noise":
                 first = os.path.join(args.out, "%02d-noise-a.png" % index)
@@ -258,9 +260,17 @@ def main():
                                    comparable(second, args.crop, args.out), args.fuzz)
                 say("step %d: noise %d differing pixels over %ss with no input%s"
                     % (index, floor, value, " (crop %s)" % args.crop if args.crop else ""))
+                measured_noise = True
                 if floor > 0:
                     args.threshold = max(args.threshold, 2 * floor)
                     say("         threshold raised to %d (twice the noise floor)" % args.threshold)
+                continue
+            if name == "monitor":
+                got = cmd("human-monitor-command", {"command-line": value})
+                if got is None:
+                    say("FAIL: no QMP socket at %s" % sock_path)
+                    return 3
+                say("step %d: monitor %s -> %s" % (index, value, (got.get("return") or "").strip() or "(no output)"))
                 continue
             if name == "cpu":
                 status = cmd("query-status")
@@ -298,6 +308,9 @@ def main():
                         say("FAIL: could not compare %s with %s" % (path, previous))
                         return 3
                     ok = diff >= args.threshold
+                    if not measured_noise and diff < args.threshold:
+                        say("         (no noise= step ran: the threshold is the default %d, not a measured floor)"
+                            % args.threshold)
                     shots += 1
                     say("step %d: shot %s differing pixels: %d (threshold %d) %s"
                         % (index, value, diff, args.threshold, "PASS" if ok else "FAIL"))

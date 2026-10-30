@@ -401,8 +401,8 @@ the same TOML `smoke.py` writes and then runs a scripted **sequence**, one step 
         --step=xkey=a --step=wait=10 --step=shot=02-padA
 
 `shot=NAME` captures and asserts against the previous shot; `key=`/`type=` target the window, `xkey=`/`xtype=` go
-through XTEST; `wait=SECS`, `activate`; `noise=SECS` measures the screen's own animation and `cpu=COUNT` samples `EIP`
-over QMP. Exit codes: 0 every shot repainted, 2 a step did not, 3 the emulator never came up.
+through XTEST; `wait=SECS`, `activate`; `noise=SECS` measures the screen's own animation; `cpu=COUNT` samples `EIP`
+over QMP; and `monitor=CMD` runs one QMP `human-monitor-command` (`info usb`, `device_add …`). Exit codes: 0 every shot repainted, 2 a step did not, 3 the emulator never came up.
 
 ### The title screen animates, so a raw pixel diff proves nothing
 
@@ -414,6 +414,9 @@ animating.** The title is a live scene behind a translucent panel, so two frames
 | 5 s apart | 680x620+560+60 | AE | 3,525 |
 | 4 s apart | 680x620+560+60 | AE | 3,629 |
 | 4 s apart | 640x480+620+140 | AE, `-fuzz 15%` | 591 |
+| 4 s apart, a later boot | 640x480+620+140 | AE, `-fuzz 15%` | 389 |
+
+The floor is not a constant — it moves with the scene — so it is measured per run, never carried over as a number.
 
 The harness therefore measures the floor first (`noise=`) and raises its threshold to twice it, and `--crop` restricts
 the comparison to the region the input is supposed to change. Without both, any keypress "passes".
@@ -437,6 +440,30 @@ key. Measured on the title screen with its five-item menu (`Continue` highlighte
 `xdotool windowactivate --sync` does nothing here (the compositor does not hand activation to an X client), and the
 window id is stable across runs, so a stale id is not the explanation. **SDL ignores synthetic `XSendEvent` keys**, which
 is why the targeted form cannot work. For XTEST, the answer turned out to be the focus owner — see below.
+
+### Giving the guest a keyboard (and where it does and does not help)
+
+xemu's documented way to attach a keyboard is a runtime command, not a config key — its own docs say there is no
+graphical interface for it yet: open the Monitor and run `device_add usb-kbd,port=1.x,id=kbd`, "where the x after the
+`port` should be replaced with one of 3,4,1,2 for player 1,2,3,4". `drive.py` can now issue those through QMP
+(`--step=monitor=…`), so a run attaches it itself instead of depending on a GUI session that leaves nothing behind.
+
+Measured on this build, the port rule is not what it looks like: **`port=1.3` is occupied by player 1's hub**, so the
+documented spelling fails and the keyboard goes on the hub, one slot past the pad:
+
+```
+step 3: monitor info usb -> Device 1.1, Port 1, Speed 12 Mb/s, Product QEMU USB Hub
+  Device 1.2, Port 1.3, Speed 12 Mb/s, Product QEMU USB Hub
+  Device 1.3, Port 1.3.1, Speed 12 Mb/s, Product Microsoft Xbox Controller, ID: gamepad_0
+step 4: monitor device_add usb-kbd,port=1.3,id=kbd -> Error: usb port 1.3 (bus usb-bus.1) not found (in use?)
+step 4: monitor device_add usb-kbd,port=1.3.2,id=kbd -> (no output)
+step 5: monitor info usb -> … Device 1.0, Port 1.3.2, Speed 12 Mb/s, Product QEMU USB Keyboard, ID: kbd
+```
+
+**What that buys is the guest's side of typed input, not the host's.** Attaching the device gives the game a keyboard to
+read, which is what scripted console commands (7.3) will need; it does not change how a host key reaches xemu, which is
+still the focus problem above and still U14. Read the two as separate halves: the peripheral is now known to attach, and
+the host-to-guest key path is still unmeasured.
 
 ### XTEST keys go to whoever owns the focus, and on a desktop somebody is using that is not the emulator
 

@@ -479,6 +479,13 @@ and a deliberate one-line script break is caught by the boot test.
   using the machine. The harness now prints the focus owner, **refuses** an XTEST step that would type elsewhere
   (exit 2, naming the window), moves focus only on an explicit `--step=activate`, and hands focus back on exit — an
   evdev pad needs none of this, which is the second reason it is the next thing to build.
+- **The guest can be given a keyboard, and the documented port is wrong for this build.** xemu's docs say the way to
+  attach a keyboard is a runtime Monitor command (`device_add usb-kbd,port=1.x,id=kbd`, "3,4,1,2 for player 1,2,3,4"),
+  with no GUI for it — so it lives in no config file and a GUI session leaves nothing behind. `drive.py` now issues it
+  over QMP (`--step=monitor=…`). Measured: `port=1.3` is **player 1's hub** and `device_add` refuses it
+  ("usb port 1.3 (bus usb-bus.1) not found (in use?)"); on the hub, one slot past the pad, it attaches —
+  `Device 1.0, Port 1.3.2, … Product QEMU USB Keyboard, ID: kbd`. That is the *guest's* half of typed input (what 7.3's
+  console commands need); the host half is unchanged and still U14.
 - **Two harness bugs found by running it**: `proc.terminate()` leaves `AppRun` holding the HDD image, so the next run
   fails on a "write" lock that reads as a config error (xemu now runs in its own session and the group is killed), and
   a window id can die mid-sequence (a failed capture now re-finds the window once).
