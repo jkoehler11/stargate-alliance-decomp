@@ -21,6 +21,10 @@ Steps, in order:
     xtype=TEXT  the same, through XTEST
     wait=SECS   sleep
     activate    focus the window first (`windowactivate --sync`)
+    raise       bring the emulator window to the top *without* taking the focus, so whoever is using the desktop can
+                click it and hand the focus over on their own terms
+    focus=SECS  wait up to SECS for the emulator to own X input focus, and refuse the sequence if it never does: on a
+                desktop somebody is using, the polite form is to wait for them to look at the emulator, never to steal it
     monitor=CMD  run one QMP human-monitor-command (e.g. `device_add usb-kbd,port=1.3,id=kbd`, which xemu documents
                 as the way to give the guest a keyboard); the reply is printed
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
@@ -110,7 +114,8 @@ class FocusElsewhere(Exception):
     """Raised instead of sending XTEST keys into a window that is not the emulator."""
 
 
-STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "noise", "cpu", "monitor")
+STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
+         "focus")
 
 
 def focus_owner():
@@ -137,6 +142,9 @@ def send(window, name, value):
     emulator: on a desktop somebody is using, the alternative is typing into their editor or their game, which is both
     useless for the test and audible (KDE rings when an application refuses the key).
     """
+    if name == "raise":
+        run(["xdotool", "windowraise", window])
+        return "raise (focus untouched)"
     if name == "activate":
         run(["xdotool", "windowraise", window])
         run(["xdotool", "windowfocus", "--sync", window])
@@ -264,6 +272,20 @@ def main():
                 if floor > 0:
                     args.threshold = max(args.threshold, 2 * floor)
                     say("         threshold raised to %d (twice the noise floor)" % args.threshold)
+                continue
+            if name == "focus":
+                deadline = time.time() + float(value)
+                while time.time() < deadline:
+                    if focus_owner()[0] == window:
+                        say("step %d: the emulator owns the focus after %.0fs"
+                            % (index, float(value) - (deadline - time.time())))
+                        break
+                    time.sleep(0.5)
+                else:
+                    owner, owner_name = focus_owner()
+                    say("REFUSED: the emulator never got the focus (owner is %s (%s)); nothing was sent"
+                        % (owner_name, owner or "?"))
+                    return 2
                 continue
             if name == "monitor":
                 got = cmd("human-monitor-command", {"command-line": value})

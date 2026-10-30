@@ -481,6 +481,11 @@ Three rules follow, and the harness now enforces all three:
   somebody's desktop.
 - **Give the focus back.** On the way out, the previous owner gets it back (`focus returned to …`) before the emulator
   is killed.
+- **Wait for the focus when the machine is in use.** `--step=focus=SECS` polls until the emulator owns it and refuses the
+  sequence if it never does — measured: a boot on a desktop whose focus was a running game waited the full 240 s and
+  exited 2 with `REFUSED: the emulator never got the focus (owner is Northgard Battlegrounds (104857601)); nothing was
+  sent`. `--step=raise` brings the window to the top without touching the focus, so the person at the keyboard can hand
+  it over by clicking, which is the only polite way to run this on a machine somebody is using.
 
 This is the same reason the virtual pad below is the route worth building: an evdev gamepad is read without any window
 focus, so it cannot type into anybody's application. Recorded as U14.
