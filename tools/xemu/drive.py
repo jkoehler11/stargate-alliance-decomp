@@ -25,6 +25,8 @@ Steps, in order:
                 click it and hand the focus over on their own terms
     focus=SECS  wait up to SECS for the emulator to own X input focus, and refuse the sequence if it never does: on a
                 desktop somebody is using, the polite form is to wait for them to look at the emulator, never to steal it
+    gkey=KEY     press a key in the *guest*, over QMP `sendkey`: it needs the emulated USB keyboard attached (see
+                 docs/XEMU.md) and, unlike `key=`/`xkey=`, it needs no window focus and no X at all
     monitor=CMD  run one QMP human-monitor-command (e.g. `device_add usb-kbd,port=1.3,id=kbd`, which xemu documents
                 as the way to give the guest a keyboard); the reply is printed
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
@@ -115,7 +117,7 @@ class FocusElsewhere(Exception):
 
 
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
-         "focus")
+         "focus", "gkey")
 
 
 def focus_owner():
@@ -286,6 +288,13 @@ def main():
                     say("REFUSED: the emulator never got the focus (owner is %s (%s)); nothing was sent"
                         % (owner_name, owner or "?"))
                     return 2
+                continue
+            if name == "gkey":
+                got = cmd("human-monitor-command", {"command-line": "sendkey " + value})
+                if got is None:
+                    say("FAIL: no QMP socket at %s" % sock_path)
+                    return 3
+                say("step %d: guest key %s -> %s" % (index, value, (got.get("return") or "").strip() or "ok"))
                 continue
             if name == "monitor":
                 got = cmd("human-monitor-command", {"command-line": value})

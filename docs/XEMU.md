@@ -465,6 +465,32 @@ read, which is what scripted console commands (7.3) will need; it does not chang
 still the focus problem above and still U14. Read the two as separate halves: the peripheral is now known to attach, and
 the host-to-guest key path is still unmeasured.
 
+### QMP `sendkey` reaches the guest, so input needs no focus at all (measured 2026-10-30)
+
+The keyboard device above is the input channel. QEMU's `sendkey` (HMP — `--step=gkey=…` in the harness) injects a
+keypress into the *guest's* attached keyboard, which is a different path from SDL entirely: no X window, no focus, no
+`xdotool`. Measured on the title screen with the X input focus on a running game rather than the emulator:
+
+| sent | pixels changed | screen afterwards |
+|---|---:|---|
+| `sendkey ret` **without** a keyboard attached | 0 | the title, unchanged — a silent no-op that reports success |
+| attach `usb-kbd` at 1.3.2, then `sendkey ret` | 18,790 | `SELECT PROFILE` (`A Select`, `Y Create New`, `B Back`) |
+| `sendkey y` — the pad's Y = Create New | 2,867 then 9,753 | `QUICK SELECT MAP`, the in-game map list |
+| `sendkey ret` — the pad's A = Select | 10,434 | the map list again, scrolled to `M20A`…`M21D` |
+| `sendkey esc` — the pad's B = Back | 13,872 | back out of the page |
+| `sendkey down` / `up` / `left` / `right` on those pages | 0–246, i.e. the noise floor | the selection did not move |
+| `sendkey tab` | 6,610, then 0 | no console; this build shows none on the menus |
+
+Two things this settles. **The input path is solved**: a sequence can drive the game while the machine is in somebody
+else's hands, which `xdotool` could not do and which is what 7.2 needed. And **`ret`, `y` and `esc` are the pad's A, Y
+and B** on these menus — the game reads them as buttons, so the menus are navigable by scripted key.
+
+Two things it does not. The map list shows the campaign maps by name (`M20A`…`M21D`, beside the `CTF-*`/`DM-*`
+multiplayer maps and `MainMenu`), but **nothing yet moves its highlight** — arrows, `tab` and letter keys left it where it
+was — and `ret` on that page changed the list without loading a level. And **`sendkey` with no keyboard attached does
+nothing at all and still reports success** (empty HMP reply), so a sequence that looks frozen after its first steps is
+usually missing `device_add usb-kbd`.
+
 ### XTEST keys go to whoever owns the focus, and on a desktop somebody is using that is not the emulator
 
 Measured after these runs (`xdotool getwindowfocus` / `getwindowname`): the focused window was a **running Steam game**,

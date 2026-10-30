@@ -791,7 +791,16 @@ changed what it shows. Measured on 2026-10-30, guest executing throughout (`EIP`
 frame moved by no more than the animated background's noise floor (591 pixels in a 640x480 crop at `-fuzz 15%`,
 measured with no input sent at all). XTEST `a`, the pad's A button, produced no transition either.
 
-**What would settle it, in this order.** (1) A virtual pad: `/dev/uinput` is writable by the desktop user and
+**The input path is found (2026-10-30, later the same day): QMP `sendkey`.** With a `usb-kbd` attached to player 1's
+hub (`device_add usb-kbd,port=1.3.2,id=kbd` — the documented `port=1.3` is the hub itself and is refused), `sendkey`
+injects into the guest's own keyboard and needs no window focus, no SDL and no X. Measured: `ret` took the title to
+`SELECT PROFILE` (18,790 pixels changed), `y` (the pad's Y) to `QUICK SELECT MAP` (2,867–9,753), `esc` (the pad's B) back
+out (13,872), while arrows moved nothing (0–246, the noise floor) and `tab` opened no console. Without the keyboard
+attached the same `sendkey` changed 0 pixels and still reported success, which is the trap to remember. What remains is
+narrower than before: get the map list's highlight onto a campaign map (`M20A`…`M21D` are listed in-game) and select it —
+arrows and `tab` do not move it — and then a mission load is demonstrated.
+
+**The earlier routes, kept because they say why `xdotool` cannot be the answer.** (1) A virtual pad: `/dev/uinput` is writable by the desktop user and
 `python-evdev` is installed, so a `UInput` device can be created (`sg1-vpad` was created on `/dev/input/event27`) —
 SDL reads an evdev gamepad with no window focus, so this is the one path that does not depend on the compositor handing
 focus to an ssh-started process. It needs an SDL mapping so xemu treats the device as a controller, plus

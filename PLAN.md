@@ -493,6 +493,26 @@ and a deliberate one-line script break is caught by the boot test.
   then the same sequence with an assertion per menu step. 7.2 stays `[~]` until a mission loads; 7.3 (scripted console
   commands) inherits the same input path.
 
+### Execution notes (2026-10-30, input injection is solved by QMP sendkey — the menus move)
+
+- **`sendkey` over QMP is the input path**, and it needs no focus, no SDL and no X, so a sequence can drive the game
+  while somebody is using the machine — which is exactly what `xdotool` could not do. It requires the guest keyboard:
+  `device_add usb-kbd,port=1.3.2,id=kbd` (the documented `port=1.3` is player 1's hub and is refused; the pad sits at
+  1.3.1, so the keyboard goes one slot past it). `drive.py` grows a `--step=gkey=KEY` for it.
+- **Measured key semantics on the menus** (X input focus was on a running game the whole time, so nothing could have come
+  from the host keyboard): `ret` = the pad's A — title → `SELECT PROFILE`, 18,790 pixels changed; `y` = Y — `SELECT
+  PROFILE` → `QUICK SELECT MAP`, 2,867–9,753; `esc` = B — back out, 13,872. `sendkey` **without** the keyboard device
+  changes 0 pixels and still reports success, which is the trap in this channel.
+- **The in-game map list names the campaign maps**: `M20A`…`M21D`, beside `CTF-*`/`DM-*` multiplayer maps and
+  `MainMenu`, under a `QUICK SELECT MAP` page. So 7.2's "load each mission" is reachable from inside the game, not just
+  from a `.unr` dump.
+- **Not yet**: moving that list's highlight. Arrows moved nothing (0–246 pixels, the noise floor), `tab` moved focus
+  nowhere and opened no console, and `ret` on the page re-rendered the list (10,434) without a loaded level. Until a
+  mission loads, 7.2 stays `[~]` — but the blocker is now a key in a list, not the absence of an input path.
+- **Next:** the list's navigation key (try the pad's d-pad names the game uses elsewhere, `spc`, `kp_enter`, or hold a
+  key longer than `sendkey`'s default 100 ms), then `ret` on `M20A` with a 60 s settle for the load, and an assertion per
+  step. Then 7.3's console commands have an input path too.
+
 ### Execution notes (2026-10-30, the script side is measurable end to end, and the nightly actually runs)
 
 - **U13 is closed.** A `Function` payload's script starts **16 bytes past `FriendlyName`**, proved three ways by
