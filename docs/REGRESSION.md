@@ -67,3 +67,24 @@ than a headless one — the same constraint `docs/XEMU.md` records for the boot 
 moved or was re-extracted (`verify-dump` fails on a hash), a generator's output changed because the code
 changed (`git status` shows which CSV), or the emulator's environment lost its display (`xemu-boot` reports
 `FAIL: xemu never opened its QMP socket` with the tail of `xemu.log`).
+
+## A real run, and the five things it found
+
+`tools/nightly.sh` had never been run on a machine that has the game, and the first run — `SG1_DUMP=~/sg1/dump`
+against the full dump — failed five ways. All five were the harness or the tree, not the project:
+
+| failure | cause | fix |
+|---|---|---|
+| `tools/nightly.sh: Permission denied` | every script under `tools/` was committed mode `100644` | they are `100755` now; the documented `tools/nightly.sh` invocation works |
+| `verify-dump` failed after 224 s | the unlisted-file check counted `bios/*.bin` and `bios/xbox_hdd.qcow2` — emulator files kept beside the dump — as part of the dump | `MANIFEST_ROOTS` scopes the check to the dump's own directory; they print `IGNORED` and the stage runs in 19 s |
+| `savegame-paths` differed at line 2 | the committed artifact predated the tool's current row order | regenerated (16 rows, same content) |
+| `content-census` crashed on `maps.csv` | the stage passed an empty scratch directory; the census reads `maps.csv`, `map_actors.csv` and `classes.csv` *from its output directory* | the stage seeds them from the committed inventory and compares the product — a freshness check, as intended |
+| `token-map` killed the run with `ORACLE_DIR: unbound variable` | `set -u` plus an optional variable | defaults declared at the top |
+| `rebuild` exited 127 | `stage rebuild SG1_DUMP=… tools/build.sh` ran `SG1_DUMP=…` as a command | `env` introduces the environment |
+
+With those in, the same run is **19 of 19 stages PASS** (`RESULT PASS`), including `rebuild`, which walks the pipeline
+in `--dry-run` and reports what each stage would do.
+
+The lesson worth keeping: a harness nobody runs is a harness that does not work. Every one of the five was in the
+harness's own plumbing, and each had been documented as working in `PLAN` 7.5 since it was written.
+

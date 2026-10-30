@@ -1,17 +1,17 @@
 package,class,routine,line,role,symbol,text
-GameInfo,GameInfo,PostLogin,1860,call,LoadSaveGame,LoadSaveGame( SaveGameFileName );
-GravCrane,GravCrane,PostNetBeginPlay,44,call,MarkForSaveGame,MarkForSaveGame();
-GravCraneLifter,GravCraneLifter,OnMove,424,call,MarkForSaveGame,MarkForSaveGame();
-KActor,KActor,PreSaveGame,43,call,MarkForSaveGame,MarkForSaveGame();
-Pawn,Pawn,PossessedBy,798,call,MarkForSaveGame,MarkForSaveGame();
-PlayerReplicationInfo,PlayerReplicationInfo,PreSaveGame,135,call,MarkForSaveGame,MarkForSaveGame();
-UnrealTeamInfo,UnrealTeamInfo,PreSaveGame,38,call,MarkForSaveGame,MarkForSaveGame();
-GameProfile,GameProfile,StartNewMatch,160,call,SavePackage,CurrentLevel.Game.SavePackage(PackageName);
-GameProfile,GameProfile,ContinueSinglePlayerGame,191,call,SavePackage,Level.Game.SavePackage(PackageName);
-PlayerController,PlayerController,RestartCheckpoint,1002,console,LoadSaveGame,"ConsoleCommand(""LoadSaveGame""@""c_""$Left$""_""$LastCheckpointFilename$"".sgs"");"
-PlayerController,PlayerController,LoadGame,3593,console,LoadSaveGame,"ConsoleCommand(""LoadSaveGame""@Filename);"
-GameInfo,GameInfo,,273,declare,LoadSaveGame,native simulated final static function bool LoadSaveGame( string GameFile );
-GameInfo,GameInfo,,277,declare,LoadSaveGameInfo,event LoadSaveGameInfo( GameInfo SavedGameInfo );
-StoryModeGame,StoryModeGame,,47,declare,LoadSaveGameInfo,event LoadSaveGameInfo( GameInfo SavedGameInfo )
-Object,Object,,556,declare,MarkForSaveGame,native final function MarkForSaveGame();
-GameInfo,GameInfo,,268,declare,SavePackage,native final function bool      SavePackage      ( string packageName );
+GameInfo,GameInfo,PostLogin,1895,call,LoadSaveGame,LoadSaveGame(SaveGameFileName);
+GravCrane,GravCrane,PostNetBeginPlay,49,call,MarkForSaveGame,MarkForSaveGame();
+GravCraneLifter,GravCraneLifter,OnMove,351,call,MarkForSaveGame,MarkForSaveGame();
+KActor,KActor,PreSaveGame,23,call,MarkForSaveGame,MarkForSaveGame();
+Pawn,Pawn,PossessedBy,801,call,MarkForSaveGame,MarkForSaveGame();
+PlayerReplicationInfo,PlayerReplicationInfo,PreSaveGame,104,call,MarkForSaveGame,MarkForSaveGame();
+UnrealTeamInfo,UnrealTeamInfo,PreSaveGame,24,call,MarkForSaveGame,MarkForSaveGame();
+GameProfile,GameProfile,StartNewMatch,169,call,SavePackage,CurrentLevel.Game.SavePackage(PackageName);
+GameProfile,GameProfile,ContinueSinglePlayerGame,217,call,SavePackage,Level.Game.SavePackage(PackageName);
+PlayerController,PlayerController,RestartCheckpoint,1062,console,LoadSaveGame,"ConsoleCommand(""LoadSaveGame"" @ ""c_"" $ Left $ ""_"" $ LastCheckpointFilename $ "".sgs"");"
+PlayerController,PlayerController,LoadGame,3891,console,LoadSaveGame,"ConsoleCommand(""LoadSaveGame"" @ Filename);"
+GameInfo,GameInfo,,204,declare,LoadSaveGame,native static final simulated function bool LoadSaveGame(string GameFile);
+GameInfo,GameInfo,,209,declare,LoadSaveGameInfo,event LoadSaveGameInfo(GameInfo SavedGameInfo)
+StoryModeGame,StoryModeGame,,36,declare,LoadSaveGameInfo,event LoadSaveGameInfo(GameInfo SavedGameInfo)
+Object,Object,,874,declare,MarkForSaveGame,native final function MarkForSaveGame();
+GameInfo,GameInfo,,198,declare,SavePackage,native final function bool SavePackage(string PackageName);

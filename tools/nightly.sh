@@ -14,6 +14,10 @@
 # Nothing here commits or modifies tracked files; `git status --porcelain` is reported, not repaired.
 set -u
 
+# A stage that glances at an optional variable is not a stage that requires it.
+: "${ORACLE_DIR:=}"
+: "${WORK:=$HOME/sg1/work}"
+
 out_root="${NIGHTLY_OUT:-build/nightly}"
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 out="$out_root/$stamp"
@@ -93,7 +97,11 @@ if [ -n "${SG1_DUMP:-}" ]; then
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/karma' \
         && cmp '$out/karma/karma_runtime.csv' inventory/karma_runtime.csv"
     # Dump-gated: the placed-class, dialogue and package censuses, each regenerated into scratch and diffed.
-    stage content-census sh -c "SG1_DUMP='$SG1_DUMP' python3 tools/content-census.py \
+    # The census reads maps.csv, map_actors.csv and classes.csv from its output directory, so the stage seeds
+    # them from the committed inventory and compares the product -- it is a freshness check, not a re-derivation.
+    stage content-census sh -c "mkdir -p '$out/census' && cp inventory/maps.csv inventory/map_actors.csv \
+        inventory/classes.csv '$out/census/' \
+        && SG1_DUMP='$SG1_DUMP' python3 tools/content-census.py \
         --src '${WORK:-$HOME/sg1/work}/UnrealScript' -o '$out/census' \
         && cmp '$out/census/content_census.csv' inventory/content_census.csv"
     stage dialogue-index sh -c "python3 tools/dialogue-index.py '$SG1_DUMP' -o '$out/dialogue' \
@@ -129,7 +137,7 @@ if [ -n "${SG1_DUMP:-}" ]; then
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/opcode' \
         && cmp '$out/opcode/opcode_table.csv' inventory/opcode_table.csv"
     # The rebuild pipeline's dump-side stages (docs/REBUILD.md); the compiler stages SKIP with a reason.
-    stage rebuild SG1_DUMP="$SG1_DUMP" REBUILD_OUT="$out/rebuild" tools/build.sh --dry-run
+    stage rebuild env SG1_DUMP="$SG1_DUMP" REBUILD_OUT="$out/rebuild" tools/build.sh --dry-run
 else
     say "SKIP  dump-side stages (set SG1_DUMP)"
 fi
