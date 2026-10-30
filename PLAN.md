@@ -442,6 +442,40 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-10-30, the script side is measurable end to end, and the nightly actually runs)
+
+- **U13 is closed.** A `Function` payload's script starts **16 bytes past `FriendlyName`**, proved three ways by
+  `tools/uscript-dis.py --start`: the payload floor (25 bytes, spikes at 26 = `16+3+7` and 28 = `16+3+9`; a 12-byte run
+  would floor at 22, where nothing appears), the walk's depth from that offset, and the dword 16 bytes past the name
+  not being a size (larger than the script in 9,298 payloads, equal in 2,052, never smaller — the loader uses
+  `SerialSize`).
+- **The header's encoded part is fixed**: five values for a `Function`, four for a `Class`, the last being
+  `FriendlyName`, and the count does not move with the child count (`--header`). `v1` is `Super`, `v2` is `Next`, `v4`
+  is `Children`; the zero positions are unidentified. This killed the `Children`-chain model, whose +1/+2/+3 residuals
+  were the compact encoding's widths.
+- **Five operand widths were four fixed bytes and are the archive's compact index** (groups 0, 13, 14, 15, 19). The
+  corpus went from **3,444 to 11,602 of 11,687** scripts walking clean (29% → 99.3%); `--usage` is the census,
+  `inventory/opcode_usage.csv`. The 85 that still refuse are a per-opcode tail with nothing common behind them.
+- **The encoding indexes two different tables**, and only the opcode says which: objects for the variable, cast and
+  final-call tokens (`FinalFunction` names a `Function` 5,424 of 5,424), the name table for `VirtualFunction`,
+  `GlobalFunction` and `NameConst` (`--resolve`).
+- **The call sites are a table**: 5,424 static edges and 13,507 dynamic ones, `inventory/script_calls.csv`, `--calls`.
+- **The comparator exists** (`--compare`): a package against itself compares 3,352 of 3,821 shared functions identical
+  (the rest have no script), and a one-byte mutation inside an operand moves L3 by one while L2 stays. 3.8's remaining
+  half is the oracle — producing a rebuild needs `ucc`.
+- **The decompiler gaps are counted** (`docs/DECOMPILER.md`, `inventory/decompiler_gaps.csv`): state blocks and latent
+  declarations are complete; `replication` is 63 of 142 blocks and that is the format's limit — instrumenting
+  `FormatReplication` shows every one of the 79 classes that lose a block has `net=0`, i.e. no property carries
+  `PropertyFlag.Net`, so there is nothing to reconstruct.
+- **The nightly runs.** Six plumbing failures were fixed on the first real run (scripts committed non-executable, the
+  manifest counting BIOS images as dump files, a stale artifact, a census stage that seeded nothing, `set -u` on an
+  optional variable, and a stage that ran `VAR=value` as a command) — 19 of 19 after that, and **20 of 20 with
+  `--xemu`**, the boot test in 140 s with six `EIP` samples all in user space. `docs/REGRESSION.md` records the two
+  prerequisites that cost a run each: an X display, and a free HDD image.
+- **Next:** 7.2's input injection — pixel-level assertion and mission loading — is now the only route to
+  gameplay-level regression. Everything else open is blocked on a tool (`ucc`, `umodel`) or a decision (1.5, 8.5);
+  the script and bytecode tracks are at the limit of what is verifiable without a compiler.
+
 ### Execution notes (2026-10-28, two build targets, and the first one produces something)
 
 - **6.4's two targets exist and one of them ships a build.** `tools/build.sh --target hybrid|full` (`make
