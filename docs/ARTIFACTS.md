@@ -24,6 +24,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
 | `inventory/content_census.csv` | 73 | 4 | `make content-census` |
 | `inventory/decompile_coverage.csv` | 2319 | 5 | `make release-notes` |
+| `inventory/decompiler_gaps.csv` | 2319 | 8 | `make decompiler-gaps` |
 | `inventory/dialogue_by_mission.csv` | 14 | 5 | `make dialogue-index` |
 | `inventory/directories.csv` | 12 | 3 | `make artifact-hashes` |
 | `inventory/extensions.csv` | 29 | 3 | `make inventory` |
@@ -89,5 +90,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-82 artifacts, 112480 rows in total. 0 with no generator.
+83 artifacts, 114799 rows in total. 0 with no generator.
 
