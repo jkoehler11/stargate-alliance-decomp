@@ -88,3 +88,24 @@ in `--dry-run` and reports what each stage would do.
 The lesson worth keeping: a harness nobody runs is a harness that does not work. Every one of the five was in the
 harness's own plumbing, and each had been documented as working in `PLAN` 7.5 since it was written.
 
+## The boot test in a nightly run
+
+`--xemu` adds the emulator boot, and it works — **20 of 20 stages PASS**, `xemu-boot` in 140 s — but only with two
+prerequisites that cost a run each to find:
+
+* **A display.** xemu needs X11 or Wayland; over plain ssh it dies with `Failed to initialize SDL video subsystem:
+  wayland,x11 not available` and the smoke test reports that it never opened its QMP socket. Run it from the
+  logged-in session:
+
+      DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_XXXX SG1_DUMP=~/sg1/dump \
+          tools/nightly.sh --xemu --iso=$WORK/sg1.iso --bios=$SG1_DUMP/bios --hdd=$WORK/hdd.qcow2
+
+* **A free HDD image.** A second xemu holding the qcow2 makes the boot stage fail with
+  `Failed to get "write" lock ... Is another process using the image?` — the guest never starts, so the run reports a
+  boot failure that is really a lock conflict. `pkill -f "[x]emu"` (the bracket keeps the pattern from matching the
+  pkill's own command line) before a run.
+
+What the boot stage proves is unchanged and now measured in a full run: the guest executes game code — six EIP samples,
+100% in user space, six distinct addresses — which is the evidence channel described in `docs/XEMU.md`. Pixel-level
+assertion and mission loading still need input automation.
+
