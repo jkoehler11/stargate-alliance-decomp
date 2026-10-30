@@ -421,8 +421,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       the guest executes game code by sampling `EIP` (8 samples, 7 in user space, 6 distinct). Five emulator traps
       measured and fixed on the way — `-mcpx_path` gone in 0.8.139, `-serial` needs `file:`, extract-xiso 2.7 ignores
       `-o`, `screendump` absent from QMP, and a zero-filled EEPROM (or a fresh HDD) leaving the CPU halted in the
-      kernel forever. **Still open**: pixel-level assertion (needs F12 + X input automation, or a GDB-stub hook) and
-      mission loading (needs input automation).
+      kernel forever. **The assertion half now has a measured floor**: the title animates, so two frames with no input
+      sent differ by 3,525–3,629 pixels, which is what the earlier "4178 differing pixels, the key reached the guest"
+      reading was. `tools/xemu/drive.py` runs a *sequence* (`--step`), measures the noise floor (`noise=`), crops the
+      assertion (`--crop`, `--fuzz`) and samples `EIP` in the same run (`cpu=`) — `docs/XEMU.md`. **Still open**: input.
+      Every path tried left the menu highlight on `Continue` with the guest executing, so mission loading needs the
+      virtual pad in U14.
 - [ ] 7.3 **Blocked on input automation**: xemu has no scripted key injection, and the boot harness can only sample
       `EIP` (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
       walk objective graph, spawn/test classes in isolation.
@@ -441,6 +445,39 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-10-30, the pixel assertion was passing on animation; input is now the open end)
+
+- **The shipped "repaint" measurement was the background, not the key.** `drive.py` reported `differing pixels: 4178`
+  for a `Tab` press and called it proof that input reached the guest. The title screen is a live scene behind a
+  translucent panel: **two frames captured with no input at all differ by 3,525 (5 s apart) and 3,629 (4 s apart)** in
+  the menu crop, so the threshold of 200 could never fail. The harness now measures that floor itself (`noise=SECS`)
+  and raises its pass threshold to twice it.
+- **Mission loading is a sequence, not a keystroke, and the tool takes one.** `--step` repeats: `shot=NAME` (asserted
+  against the previous shot), `key=`/`type=` (window-targeted), `xkey=`/`xtype=` (XTEST), `wait=`, `activate`,
+  `noise=`, and `cpu=COUNT`, which samples `EIP` over QMP in the same run — pixels cannot tell a key that was ignored
+  from a guest that stopped executing. `--crop` and `--fuzz` scope the comparison to the region the input should
+  change. A no-input floor of **591 pixels** in a `640x480+620+140` crop at `-fuzz 15%` is what a menu highlight has
+  to beat.
+- **Keyboard is mapped onto the pad by xemu itself**, so the guest needs no keyboard driver: `config_spec.yml`'s
+  `keyboard_controller_scancode_map` gives `a`/`b`/`x`/`y` = face buttons, arrows = d-pad, `Return` = START,
+  `Backspace` = BACK.
+- **Nothing sent at the guest has changed the screen yet**, with the guest executing at every check (`EIP` in user
+  space, 0 of 2 in kernel): targeted `XSendEvent` `Down` (SDL ignores synthetic events), XTEST `Down`, XTEST `Down`
+  after `xdotool windowfocus --sync` (the X input focus is the xemu window), `background_input_capture = true` in the
+  run's TOML, and XTEST `a` (the pad's A, which would activate the highlighted `Continue`). `windowactivate` is a
+  no-op here — the compositor does not hand activation to an X client — which is the likeliest reason, and the reason
+  the next attempt is not another key.
+- **A virtual pad is creatable on this host**: `/dev/uinput` is writable by `james` (ACL) and `python-evdev` is
+  installed — `UInput` produced `sg1-vpad` on `/dev/input/event27`. SDL reads evdev without window focus, so this is
+  the route that does not depend on the compositor; what it still needs is an SDL mapping string for the device GUID
+  and the matching `[input] gamepad_mappings` / `port1` entry. **U14** carries it.
+- **Two harness bugs found by running it**: `proc.terminate()` leaves `AppRun` holding the HDD image, so the next run
+  fails on a "write" lock that reads as a config error (xemu now runs in its own session and the group is killed), and
+  a window id can die mid-sequence (a failed capture now re-finds the window once).
+- **Next:** `tools/xemu/vpad.py` — a `UInput` gamepad with an SDL mapping, wired into `drive.py` as the input channel —
+  then the same sequence with an assertion per menu step. 7.2 stays `[~]` until a mission loads; 7.3 (scripted console
+  commands) inherits the same input path.
 
 ### Execution notes (2026-10-30, the script side is measurable end to end, and the nightly actually runs)
 

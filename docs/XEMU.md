@@ -387,28 +387,71 @@ One flake, recorded so it is not mistaken for the finding: the bootcheck run in 
 closing mid-read (the earlier GLib `g_source_destroy` assertion is the same family). Both crashes follow a `pkill -9`
 of a previous instance; starting from a clean display session, as the first two rows did, has been reliable.
 
-## Driving the game: a keystroke and a repaint (PLAN 7.2)
+## Driving the game: a sequence of inputs, and an assertion that is not animation (PLAN 7.2)
 
 Sampling `EIP` proves the guest executes code; it says nothing about whether the display is alive or whether input
-reaches the game. xemu has no `screendump` in its QMP, so the window is the channel:
+reaches the game. xemu has no `screendump` in its QMP, so the window is the channel. `tools/xemu/drive.py` boots with
+the same TOML `smoke.py` writes and then runs a scripted **sequence**, one step at a time:
 
     DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_XXXX python3 tools/xemu/drive.py \
-        --iso=$WORK/sg1.iso --bios=$SG1_DUMP/bios --hdd=$WORK/hdd.qcow2 --out=$WORK/drive --seconds 100
+        --iso=$WORK/sg1.iso --bios=$SG1_DUMP/bios --hdd=$WORK/hdd.qcow2 --out=$WORK/drive \
+        --crop=640x480+620+140 --fuzz=15 \
+        --step=shot=00-title --step=noise=4 --step=cpu=2 \
+        --step=xkey=Down --step=wait=3 --step=shot=01-down \
+        --step=xkey=a --step=wait=10 --step=shot=02-padA
 
-`tools/xemu/drive.py` boots with the same TOML `smoke.py` writes, waits for the title, captures the window with
-ImageMagick's `import`, presses a key with `xdotool` (`Tab` by default — it opens the Unreal console), captures again,
-and compares with `compare -metric AE`:
+`shot=NAME` captures and asserts against the previous shot; `key=`/`type=` target the window, `xkey=`/`xtype=` go
+through XTEST; `wait=SECS`, `activate`; `noise=SECS` measures the screen's own animation and `cpu=COUNT` samples `EIP`
+over QMP. Exit codes: 0 every shot repainted, 2 a step did not, 3 the emulator never came up.
 
-    window: 67108917
-    pressed Tab
-    differing pixels: 4178 (threshold 200)
-    PASS: the screen repainted after a keystroke
+### The title screen animates, so a raw pixel diff proves nothing
 
-**That is the pixel-level assertion the plan asked for**: a keypress reaches the guest and the frame changes by a
-measured number of pixels, with both frames kept in `--out` for inspection. It needs an X display and `xdotool` plus
-ImageMagick; over plain ssh xemu cannot open a display at all (`docs/REGRESSION.md`).
+**The measurement this section used to carry — `pressed Tab`, `differing pixels: 4178`, `PASS` — was the background
+animating.** The title is a live scene behind a translucent panel, so two frames with *no input at all* differ:
 
-Mission loading is still open: it needs a *sequence* of inputs (menu navigation, which the harness cannot verify the
-meaning of), not one keystroke. What exists now is the machinery to send and observe input — a scripted sequence would
-run through the same path with an assertion per step.
+| frames, no input sent | crop | metric | differing pixels |
+|---|---|---:|---:|
+| 5 s apart | 680x620+560+60 | AE | 3,525 |
+| 4 s apart | 680x620+560+60 | AE | 3,629 |
+| 4 s apart | 640x480+620+140 | AE, `-fuzz 15%` | 591 |
 
+The harness therefore measures the floor first (`noise=`) and raises its threshold to twice it, and `--crop` restricts
+the comparison to the region the input is supposed to change. Without both, any keypress "passes".
+
+### The keyboard is mapped onto the pad, and it is not reaching the guest
+
+xemu maps the host keyboard onto the emulated pad itself — `keyboard_controller_scancode_map` in its `config_spec.yml`,
+documented on xemu.app: letters `a`/`b`/`x`/`y` are the pad's face buttons, the arrow keys are the d-pad, `Return` is
+START, `Backspace` is BACK. So a scripted run does not need keyboard support in the game; it needs xemu to receive the
+key. Measured on the title screen with its five-item menu (`Continue` highlighted), the guest executing throughout
+(QMP `EIP` samples in user space at every check, 0 of 2 in kernel):
+
+| input path | measured |
+|---|---|
+| `xdotool key Down` targeted at the window (`--window`, i.e. `XSendEvent`) | highlight did not move; the frame differs by the noise floor |
+| `xdotool key Down` through XTEST, to the X input focus | the same |
+| `xdotool windowfocus --sync` first, then XTEST `Down` (`getwindowfocus` reports the xemu window) | the same: the highlight stays on `Continue` |
+| `[input] background_input_capture = true` in the run's TOML | the same |
+| XTEST `a` — the pad's A button, which would activate `Continue` | no change, so no screen transition |
+
+`xdotool windowactivate --sync` does nothing here (the compositor does not hand activation to an X client), and the
+window id is stable across runs, so a stale id is not the explanation. **SDL ignores synthetic `XSendEvent` keys**, which
+is why the targeted form cannot work; XTEST should work and does not, so the open question is whether this build's SDL
+window receives keyboard focus at all — the harness runs over ssh, where nothing on the desktop gives it focus, and
+`background_input_capture` governs only xemu's own gamepad capture. Recorded as U14.
+
+**The route that does not depend on focus is a virtual pad.** `/dev/uinput` is writable by the desktop user (an ACL
+grants `james` rw) and `python-evdev` is installed, so `UInput` can create a device — measured: `uinput ok:
+/dev/input/event27 sg1-vpad`. SDL reads an evdev gamepad without any window focus, so a sequence driven from one works
+under ssh. Not yet measured, and the whole of what U14 needs: an SDL mapping string so xemu treats the device as a
+controller (`gamecontrollerdb_path`, or `SDL_GAMECONTROLLERCONFIG`, keyed by its GUID), and the matching
+`[input] gamepad_mappings` / `[input.bindings] port1` entry in the run's TOML.
+
+Two traps the sequence work turned up. **`proc.terminate()` leaks the emulator**: the AppImage wrapper exits while
+`AppRun` keeps the HDD image locked, and the next run then dies with `Failed to get "write" lock` — which reads like a
+config error, so the harness now starts xemu in its own session and kills the process group. And **the window id can die
+mid-run**, so a failed capture re-finds the window once instead of failing the sequence.
+
+**What this measures today**: the title boots to its real menu, frames are capturable and comparable against a measured
+noise floor, and the guest keeps executing while the sequence runs. **What it does not**: that any input reaches the
+game. Mission loading needs the virtual-pad route (U14) and the plan item stays `[~]`.
