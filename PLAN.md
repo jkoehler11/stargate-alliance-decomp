@@ -163,7 +163,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       properties render to UnrealScript (99.97%) — 484 arrays (1,502 elements), 219 nested structs — and 1,313
       `Begin Object` subobjects carry another 15,790 of 15,798; enum element names resolve for 771 of 1,052 byte
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
-      source so one tree carries both halves. Remaining here: 4 values (one `array<SpeechReplacement>` that does not
+      source so one tree carries both halves. **The decompiler gaps are now counted** (`docs/DECOMPILER.md`,
+      `inventory/decompiler_gaps.csv`): against the shipped source, `state` blocks are complete (457 declared, 512
+      emitted, no class loses one) and so are latent declarations (10 vs 13); **`replication` is not** — 142 blocks in
+      the source against 63 in ours, with **79 classes losing every block**, 75 of them not native, and 48 of those
+      opening on a bare `persistent` group that UELib's replication parser drops.
+      Remaining here: 4 values (one `array<SpeechReplacement>` that does not
       tile, three delegate tags), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
       real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
       labels, latent calls, operator precedence.

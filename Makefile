@@ -64,6 +64,7 @@ help:
 	@echo "  opcode-table-check  validate the committed table with no image (what make ci runs)"
 	@echo "  opcode-usage  which opcodes the shipped scripts that walk clean actually use (needs the dump)"
 	@echo "  script-calls  every call site in the corpus, static or by name (needs the dump)"
+	@echo "  decompiler-gaps  the reconstruction against the shipped source, per class (needs both trees)"
 	@echo "  payload-tail  every Function payload's tail, checked against its script (docs/BYTECODE.md; needs the dump)"
 	@echo "  rebuild-hybrid  our scripts + original assets: 18 assembled packages, a manifest, a missions list (PLAN 6.4)"
 	@echo "  rebuild-full    + compile/repack/check/boot, which report SKIP with their reason"
@@ -357,6 +358,13 @@ opcode-table:
 	@echo "wrote inventory/opcode_table.csv"
 
 # The LIPSinc support module in the image, one row per function with the log string that names it.
+# PLAN 3.5: the reconstruction against the shipped source, per class. Both trees are game-derived and live under $WORK.
+SOURCE_TREE ?= $(WORK)/source-tree
+DECOMPILED_TREE ?= $(WORK)/UnrealScript
+decompiler-gaps:
+	@test -d "$(SOURCE_TREE)" || { echo "decompiler-gaps: no source tree (make extract-script SOURCE_TREE=...)" >&2; exit 2; }
+	@$(PYTHON) tools/decompiler-gaps.py "$(SOURCE_TREE)" "$(DECOMPILED_TREE)" -o inventory
+
 script-calls:
 	@$(PYTHON) tools/uscript-dis.py --calls "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 
