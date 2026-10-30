@@ -165,9 +165,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
       source so one tree carries both halves. **The decompiler gaps are now counted** (`docs/DECOMPILER.md`,
       `inventory/decompiler_gaps.csv`): against the shipped source, `state` blocks are complete (457 declared, 512
-      emitted, no class loses one) and so are latent declarations (10 vs 13); **`replication` is not** — 142 blocks in
-      the source against 63 in ours, with **79 classes losing every block**, 75 of them not native, and 48 of those
-      opening on a bare `persistent` group that UELib's replication parser drops.
+      emitted, no class loses one) and so are latent declarations (10 vs 13); **`replication`** is 63 of 142 blocks and
+      that is the format's limit, not the decompiler's — instrumenting `FormatReplication` shows every one of the 79
+      classes that lose a block has **`net=0`**: not one property carries `PropertyFlag.Net`, so the class record holds
+      no group to reconstruct. They declare `persistent` groups, which are compile-time-only.
       Remaining here: 4 values (one `array<SpeechReplacement>` that does not
       tile, three delegate tags), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
       real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
