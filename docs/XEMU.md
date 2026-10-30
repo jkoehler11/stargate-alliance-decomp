@@ -386,3 +386,29 @@ game-installed `xbox_hdd.qcow2` — not from another xemu flag.
 One flake, recorded so it is not mistaken for the finding: the bootcheck run in the third row died with the GDB stub
 closing mid-read (the earlier GLib `g_source_destroy` assertion is the same family). Both crashes follow a `pkill -9`
 of a previous instance; starting from a clean display session, as the first two rows did, has been reliable.
+
+## Driving the game: a keystroke and a repaint (PLAN 7.2)
+
+Sampling `EIP` proves the guest executes code; it says nothing about whether the display is alive or whether input
+reaches the game. xemu has no `screendump` in its QMP, so the window is the channel:
+
+    DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_XXXX python3 tools/xemu/drive.py \
+        --iso=$WORK/sg1.iso --bios=$SG1_DUMP/bios --hdd=$WORK/hdd.qcow2 --out=$WORK/drive --seconds 100
+
+`tools/xemu/drive.py` boots with the same TOML `smoke.py` writes, waits for the title, captures the window with
+ImageMagick's `import`, presses a key with `xdotool` (`Tab` by default — it opens the Unreal console), captures again,
+and compares with `compare -metric AE`:
+
+    window: 67108917
+    pressed Tab
+    differing pixels: 4178 (threshold 200)
+    PASS: the screen repainted after a keystroke
+
+**That is the pixel-level assertion the plan asked for**: a keypress reaches the guest and the frame changes by a
+measured number of pixels, with both frames kept in `--out` for inspection. It needs an X display and `xdotool` plus
+ImageMagick; over plain ssh xemu cannot open a display at all (`docs/REGRESSION.md`).
+
+Mission loading is still open: it needs a *sequence* of inputs (menu navigation, which the harness cannot verify the
+meaning of), not one keystroke. What exists now is the machinery to send and observe input — a scripted sequence would
+run through the same path with an assertion per step.
+
