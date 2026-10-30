@@ -36,6 +36,11 @@ def walk(root):
     return out
 
 
+# The manifest describes the dump, so only the dump's own directory is in scope; a BIOS image or an HDD
+# container kept beside it is ignored rather than failed (AGENTS.md forbids committing those, not owning them).
+MANIFEST_ROOTS = ("Stargate_SG-1_-_The_Alliance-2005-12-15",)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("dump_root", nargs="?", help="the dump root (not needed for --check)")
@@ -85,6 +90,11 @@ def main():
             got = sha256(full)
             seen_digest = expected.get(rel)
             if seen_digest is None:
+                # The manifest covers the game dump. A BIOS image or an HDD container kept beside it is
+                # not part of the dump: AGENTS.md forbids committing those, not owning them.
+                if rel.split("/")[0] not in MANIFEST_ROOTS:
+                    print(f"IGNORED  {rel} (outside the dump)")
+                    continue
                 print(f"UNLISTED {rel}")
                 bad += 1
             elif seen_digest != got:
