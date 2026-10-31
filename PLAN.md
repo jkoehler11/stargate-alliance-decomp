@@ -424,12 +424,17 @@ are limited to expected fields (checksum/timestamp) and documented.
       kernel forever. **The assertion half now has a measured floor**: the title animates, so two frames with no input
       sent differ by 3,525–3,629 pixels, which is what the earlier "4178 differing pixels, the key reached the guest"
       reading was. `tools/xemu/drive.py` runs a *sequence* (`--step`), measures the noise floor (`noise=`), crops the
-      assertion (`--crop`, `--fuzz`) and samples `EIP` in the same run (`cpu=`) — `docs/XEMU.md`. **Still open**: input.
-      Every path tried left the menu highlight on `Continue` with the guest executing, so mission loading needs the
-      virtual pad in U14.
-- [ ] 7.3 **Blocked on input automation**: xemu has no scripted key injection, and the boot harness can only sample
-      `EIP` (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to dump actors,
-      walk objective graph, spawn/test classes in isolation.
+      assertion (`--crop`, `--fuzz`) and samples `EIP` in the same run (`cpu=`) — `docs/XEMU.md`. **Input is solved** (QMP `sendkey` over an attached
+      guest keyboard) and the map list is navigable **by page**: `home`/`end`/`pgup`/`pgdn` move the highlight
+      (measured, `docs/XEMU.md`), and the list is 41 entries with the campaign maps inside it. **Still open**: `M20A`
+      is entry **31**, one past a page boundary, so both page routes land on 30 and the single-step key is the d-pad —
+      U14's virtual pad. And `A` on the page does not load: either the list consumes `XC_A`
+      (`GUIVertList.InternalOnXControllerEvent`) before `SinglePlayerChapterSelect`'s `LoadMap()` runs, or `Travel`
+      refuses the URL — one more run with either route tells them apart.
+- [ ] 7.3 **Blocked on the console, not on input**: QMP `sendkey` injects keys now (7.2), but `tab` opens no Unreal
+      console on this build's menus (0–6,610 pixels, no console frame), so the scripted `exec` half has no shell to type
+      into yet (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to
+      dump actors, walk objective graph, spawn/test classes in isolation.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -512,6 +517,29 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** the list's navigation key (try the pad's d-pad names the game uses elsewhere, `spc`, `kp_enter`, or hold a
   key longer than `sendkey`'s default 100 ms), then `ret` on `M20A` with a 60 s settle for the load, and an assertion per
   step. Then 7.3's console commands have an input path too.
+
+### Execution notes (2026-10-31, the map list moves by page — and the harness was reporting stale frames)
+
+- **The map list answers to `home`/`end`/`pgup`/`pgdn`, not to the arrows.** Measured on one live instance over
+  `sendkey` only: `home` → index 0 (16,760 pixels), one `pgdn` → index 10 (`M00` on the top row, 14,803), `end` → the
+  last entry (14,134). `down`/`up`, `left`/`right`, `kp_8`, `kp_2`, `ins`, `del`, `spc` and `tab` move nothing
+  (0–351). The list's step is one *page* (ten entries), and the campaign maps are inside it.
+- **The harness was reporting the frame from *before* the key.** An `import` grab taken immediately after `sendkey`
+  comes back byte-identical to the pre-key frame; the next one differs by 18,790 pixels on the title. Two sessions of
+  "nothing moves the list" were partly this. `drive.py` now takes every asserting capture twice, 1.5 s apart
+  (`--regrab`), and a second identical key inside ~2 s is coalesced by the guest (19 pixels), so sequences space their
+  keys. This is the fix that made the table above possible.
+- **The list is 41 entries and `M20A` is entry 31**: `home` + 3 `pgdn` lands on 30, `end` + 1 `pgup` lands on 30.
+  The difference is a single step, which the list's own code takes from `XC_PadUp`/`XC_PadDown` — i.e. the pad, i.e.
+  U14. The page map is in `docs/XEMU.md` (`0`–`9`, `10`–`19`, `20`–`29`, `31`–`40`).
+- **`A` (`ret`) does not load the highlighted map** (13 pixels over 65 s, guest executing; double-tap, no change).
+  `QuickLoadMapTempPage` inherits `bButtonA=True` and `URL="?Game=StargateGame.StoryModeGame"` from
+  `SinglePlayerChapterSelect` (class defaults read out of the package), so `LoadMap()` is reachable *in principle* —
+  but `GUIVertList.InternalOnXControllerEvent` consumes `XC_A` for the focused list first. Either the list swallows it
+  or `Travel` refuses the URL; one run with the pad on port 1, or an assert dialog, tells them apart.
+- **Next:** U14's virtual pad (`tools/xemu/vpad.py`) for the single step and for a clean `XC_A`/`XC_B`, then `ret` on
+  `M20A` with a 60 s settle and one screenshot per mission. 7.2 stays `[~]` until a level loads; 7.3's blocker is now
+  the missing console, not the input path.
 
 ### Execution notes (2026-10-30, the script side is measurable end to end, and the nightly actually runs)
 
