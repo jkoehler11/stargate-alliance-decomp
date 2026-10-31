@@ -781,7 +781,7 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
 
-## U14. No scripted input path has reached the guest yet (PLAN 7.2, 7.3)
+## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
 changed what it shows. Measured on 2026-10-30, guest executing throughout (`EIP` in user space at every check):
@@ -799,6 +799,20 @@ out (13,872), while arrows moved nothing (0–246, the noise floor) and `tab` op
 attached the same `sendkey` changed 0 pixels and still reported success, which is the trap to remember. What remains is
 narrower than before: get the map list's highlight onto a campaign map (`M20A`…`M21D` are listed in-game) and select it —
 arrows and `tab` do not move it — and then a mission load is demonstrated.
+
+**The list moves by page, and the step it cannot take is one entry (2026-10-31).** `home` → index 0, one `pgdn` →
+index 10, `end` → the last entry (16,760 / 14,803 / 14,134 pixels in the list's own crop), while `down`/`up`,
+`left`/`right`, `kp_8`, `kp_2`, `ins`, `del`, `spc` and `tab` changed nothing (0–351). The list is **41 entries, ten per
+page**, campaign maps inside it — and `M20A` is **entry 31**, so `home` + 3 `pgdn` and `end` + 1 `pgup` both land on
+30. The missing step is the d-pad (`GUIVertList.InternalOnXControllerEvent` maps `XC_PadUp`/`XC_PadDown` to
+`Up()`/`Down()`), i.e. the virtual pad below, and that is the whole of what U14 still needs. `A` (`ret`) on the page
+does not load the highlighted map (13 pixels over 65 s, guest executing, double-tap included): the page's
+`LoadMap()` is behind `XC_A` with `bButtonA=True`, but the focused list consumes that event first
+(`GUIVertList.InternalOnXControllerEvent` returns `true` after `OnClick`) — or `Travel` refuses the
+`?Game=StargateGame.StoryModeGame` URL. Those are the two candidates, and a pad on port 1 (or an assert dialog) tells
+them apart. The harness bug behind two sessions of this: an `import` grab taken right after `sendkey` returns the
+*pre-key* frame (0 pixels, where the next grab differs by 18,790), so `drive.py` now grabs twice per asserting shot
+(`--regrab`).
 
 **The earlier routes, kept because they say why `xdotool` cannot be the answer.** (1) A virtual pad: `/dev/uinput` is writable by the desktop user and
 `python-evdev` is installed, so a `UInput` device can be created (`sg1-vpad` was created on `/dev/input/event27`) —

@@ -38,6 +38,12 @@ measured fact per input type, not a safe assumption (docs/XEMU.md carries the nu
 `XSendEvent` keys, so a targeted `key=` that "repaints" may be the background animating rather than input
 arriving: run a `noise=` step first and give `--crop` the region the input is supposed to change.
 
+**Every asserting capture is taken twice, 1.5 s apart (`--regrab`).** The window's pixmap lags a keypress:
+measured, a grab taken immediately after `sendkey ret` on the title is *byte-identical* to the pre-key frame while the
+next grab differs by 18,790 pixels, so the first grab reports "no change" for a key that worked -- which is how the
+map list looked inert for two sessions. Two identical keys sent less than ~2 s apart are also coalesced by the guest
+(a second `pgdn` moved 19 pixels where the first moved 14,203), so a sequence spaces its keys.
+
 It needs `xdotool` and ImageMagick's `import`/`compare`, and an X display: over plain ssh xemu cannot open one at
 all (docs/REGRESSION.md). Exit codes: 0 every shot step repainted, 2 a step did not change the screen (the input
 never reached the guest, or the screen it was meant to change was already up), 3 the emulator never came up.
@@ -86,6 +92,23 @@ def capture(window, path):
             break
         window = fresh
     return False, window
+
+
+REGRAB_SECONDS = 1.5
+
+
+def regrab(window, path):
+    """Capture twice and keep the second.
+
+    The X window's pixmap can lag a keypress by about a second: the grab taken right after `sendkey` comes back
+    byte-identical to the frame from *before* the key, and the next one shows the change. Every frame an assertion is
+    made on therefore goes through here; `--regrab 0` restores the single grab for a run that does not send input.
+    """
+    ok, window = capture(window, path)
+    if ok and REGRAB_SECONDS > 0:
+        time.sleep(REGRAB_SECONDS)
+        ok, window = capture(window, path)
+    return ok, window
 
 
 def comparable(path, geom, out_dir):
@@ -172,6 +195,7 @@ def say(*args):
 
 
 def main():
+    global REGRAB_SECONDS
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--iso", required=True)
     ap.add_argument("--bios", required=True, help="directory with mcpx*.bin and a debug flash")
@@ -184,9 +208,12 @@ def main():
     ap.add_argument("--step", action="append", metavar="NAME=VALUE", help="one step of a sequence; repeatable")
     ap.add_argument("--crop", metavar="GEOM", help="assert on this ImageMagick crop (WxH+X+Y), not the whole frame")
     ap.add_argument("--fuzz", type=int, default=0, help="ignore pixel differences below this percentage")
+    ap.add_argument("--regrab", type=float, default=REGRAB_SECONDS,
+                    help="seconds between the two grabs of an asserting capture (0 = one grab)")
     ap.add_argument("--xemu", default=os.environ.get("XEMU", smoke_default()))
     args = ap.parse_args()
 
+    REGRAB_SECONDS = args.regrab
     steps = [parse_step(s) for s in args.step] if args.step else \
             [("shot", "before"), ("key", args.key), ("wait", str(args.settle)), ("shot", "after")]
 
@@ -259,10 +286,10 @@ def main():
             if name == "noise":
                 first = os.path.join(args.out, "%02d-noise-a.png" % index)
                 second = os.path.join(args.out, "%02d-noise-b.png" % index)
-                ok, window = capture(window, first)
+                ok, window = regrab(window, first)
                 if ok:
                     time.sleep(float(value))
-                    ok, window = capture(window, second)
+                    ok, window = regrab(window, second)
                 if not ok:
                     say("FAIL: could not capture the noise frames")
                     return 3
@@ -326,7 +353,7 @@ def main():
                 continue
             if name == "shot":
                 path = os.path.join(args.out, "%s.png" % value)
-                ok, window = capture(window, path)
+                ok, window = regrab(window, path)
                 if not ok:
                     say("FAIL: could not capture %s" % path)
                     return 3

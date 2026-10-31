@@ -529,5 +529,59 @@ config error, so the harness now starts xemu in its own session and kills the pr
 mid-run**, so a failed capture re-finds the window once instead of failing the sequence.
 
 **What this measures today**: the title boots to its real menu, frames are capturable and comparable against a measured
-noise floor, and the guest keeps executing while the sequence runs. **What it does not**: that any input reaches the
-game. Mission loading needs the virtual-pad route (U14) and the plan item stays `[~]`.
+noise floor, the guest keeps executing while the sequence runs, and scripted keys now move the game's own menus (the
+next section is the measured key vocabulary). **What it does not**: a loaded mission — the map list's highlight moves
+by the page, and the step from `M20A`'s neighbour onto `M20A` is the one thing the keyboard will not give.
+
+## The map list's navigation keys, and why `A` does not load (measured 2026-10-31)
+
+`QUICK SELECT MAP` is reachable with one scripted key and it is navigable by *page*. Measured on one live instance
+(`sendkey` only, X input focus on another window throughout, guest executing at every check — `EIP` `0x002b98a0`,
+`0x002007e3`, `0x0004c66f` from three samples). Deltas are pixels in the list's own crop (`480x520+760+210`), so the
+animated background behind the panel cannot contribute.
+
+| guest key | effect | pixels |
+|---|---|---:|
+| `ret` on `MAIN MENU` | straight to `QUICK SELECT MAP` (this EEPROM holds a profile, so `Continue` skips `SELECT PROFILE`) | 18,790 in the earlier run |
+| `home` | index 0, `CTF-Abydos` highlighted | 16,760 |
+| `pgdn` | **+10 entries**, highlight lands on the top row | 14,203 / 14,803 |
+| `end` | the last entry, view jumps to the tail page | 14,134 |
+| `pgup` | −10 in the list's code, but one press from the tail landed on index 0 | 14,289 |
+| `down` / `up` | nothing | 0–351 |
+| `left` / `right`, `kp_8`, `kp_2`, `ins`, `del`, `spc`, `tab` | nothing | 0–55 |
+| `ret` with a map highlighted | the list handles it; **no load** | 13 over 65 s |
+| `ret` twice, 0.35 s apart | no load either | 0 |
+
+**The list is 41 entries, ten per page**, and the campaign maps are inside it. Pages read off the frames: `0`–`9`
+`CTF-Abydos`, `CTF-LostCity`, the seven `DM-*` maps and `Entry`; `10`–`19` `M00` … `M07C`; `20`–`29` `M07D`, `M07E`,
+`M10A`–`M10D`, `M12A`–`M12D`; `31`–`40` `M20A` … `M21D`, `MainMenu`, `SGCTF-AbydosVsSGC`. So `M20A` sits at **index 31**
+— one past a page boundary — and both routes to it stop one short: `home` then three `pgdn` lands on index 30, `end`
+then one `pgup` lands on index 30. **A single-step key is the missing piece**, which is the d-pad (the list's own
+`InternalOnXControllerEvent` handles `XC_PadUp`/`XC_PadDown` as `Up()`/`Down()`), and that is U14's virtual pad.
+
+**Why `A` does not load the highlighted map, from the shipped script.** `QuickLoadMapTempPage extends
+SinglePlayerChapterSelect`, whose `InternalOnXControllerEvent` is `case XC_A: if (bButtonA) return LoadMap();` — and its
+defaults do declare `bButtonA=True`, with `URL = "?Game=StargateGame.StoryModeGame"` (read with
+`tools/class-defaults.py StargateMenus.u --class SinglePlayerChapterSelect`). The page never gets that event, because
+the list consumes it first: `GUIVertList.InternalOnXControllerEvent` returns `true` for `XC_A` after `OnClick(self)`, and
+`ChapterList extends SGListBox extends GUIListBox` puts that list on the page. The earlier session's `ret` on this page
+"re-rendered the list" by 10,434 pixels — that is the click, not a load. Two candidate explanations are left, and either
+is settled by the same next run: the list swallowing `XC_A` (a virtual pad does not change that), or `LoadMap()` running
+and `Travel` refusing a `StoryModeGame` URL for a map that is not a Story Mode map (an assert dialog the `EIP` channel
+cannot see). Do not write "the emulator cannot load a mission" from this — the honest statement is that no scripted
+input has made `Travel` happen yet.
+
+**The harness bug this cost: the window's pixmap lags a keypress.** A grab taken immediately after `sendkey` comes back
+**byte-identical** to the pre-key frame (measured on the title: `ret` → immediate grab 0 pixels, next grab 18,790), so
+an assertion made on the first grab reports "no change" for a key that worked. `drive.py` now takes every asserting
+capture twice, 1.5 s apart (`--regrab`), which is what turned "nothing moves the list" into the table above. The same
+lag made a *second* identical key look ignored in one run (19 pixels) — the guest coalesces fast repeats, so a sequence
+spaces its keys.
+
+**Reproduced by the harness, not only by the probe.** The same sequence through `drive.py` with `--regrab` on and
+`shot` steps only: `ret` 34,890, `home` 4,500 (already at index 0, so the list did not move — the delta is the page's own
+redraw), `pgdn` 17,443, `end` 2,252, four of four shot steps PASS, `EIP` `0x00252ab5` and `0x001f6620` with 0 of 2
+samples in kernel. The table's values come from isolated probes on a long-lived instance, where each key was pressed from
+a known position; run-to-run values differ because a delta measures the *transition*, not the key. Two runs are also
+what show the boot window matters: at `--seconds=110` the menu is still fading in and `ret` moves 1,476 pixels, at 135 s
+the same key moves 34,890.
