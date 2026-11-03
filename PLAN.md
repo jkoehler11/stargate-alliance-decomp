@@ -434,7 +434,14 @@ are limited to expected fields (checksum/timestamp) and documented.
       entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
       `M20A`). **Still open**: "load *each* mission" -- the sequence is proven on one mission and the loop over the
       campaign set is what remains.
-- [ ] 7.3 **The console does not open in this build, in gameplay either** (2026-11-03, `docs/XEMU.md`, U15):
+- [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
+      executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
+      `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
+      overlay, 0-1,501 pixels on `tab`), and `bIgnoreKeys` swallows the first keypress, so a command sent cold loses its
+      first character. **Next**: a readable sink for command output -- screen-drawing commands (`showdebug`, `stat game`)
+      work today, and text-only output needs the console's scrollback read out of guest memory (`Console.Scrollback`,
+      `History`) the way `tools/xemu/mem.py` reads other guest addresses. The paraphrase below is the earlier, wrong
+      reading of the same frames, kept because it says what an absent picture cost:
       `System/DefUser.ini:50` binds `Tab=Type` and `Default.ini` sets `Console=Engine.Console`, so the intention is there,
       but measured in live gameplay with a guest keyboard attached, `tab` (683 and 1,501 pixels), `grave_accent` (0) and
       `kp_7` (30, the only live branch in `Engine/Console.uc:149-159`, whose `ConsoleHotKey` arm is dead code and whose
