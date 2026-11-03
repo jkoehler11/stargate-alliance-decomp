@@ -831,5 +831,6 @@ before xemu starts and `drive.py --step=pad=` presses it; `pad=down` steps the l
 highlighted map** (in-game HUD, no assert dialog, `docs/XEMU.md`). Three traps sat between "pad created" and "the guest
 moves": the first identity reused the *physical* pad's SDL GUID, `BTN_DPAD_*` made SDL map the d-pad to buttons instead
 of the hats, and xemu merges its base-path settings over `-config_path` so auto-bind handed port 1 to the physical pad and
-pushed the virtual one to port 2. What is left is arithmetic, not input: 31 presses landed on `M12F` rather than the
-`M20A` index 31 predicts, and `M00` from `Continue` still needs a save in the EEPROM.
+pushed the virtual one to port 2. The arithmetic is settled too: the list advances exactly one entry per press, so `M00` is index 10 and
+31 presses really are `M12F` -- the older page table had been read off scrolled windows, not indices. `M00` now loads
+from `Continue` (a profile-carrying EEPROM, `drive.py --eeprom`), with the tutorial overlay and no assert dialog.
