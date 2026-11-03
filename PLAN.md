@@ -434,10 +434,15 @@ are limited to expected fields (checksum/timestamp) and documented.
       entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
       `M20A`). **Still open**: "load *each* mission" -- the sequence is proven on one mission and the loop over the
       campaign set is what remains.
-- [ ] 7.3 **Blocked on the console, not on input**: QMP `sendkey` injects keys now (7.2), but `tab` opens no Unreal
-      console on this build's menus (0–6,610 pixels, no console frame), so the scripted `exec` half has no shell to type
-      into yet (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to
-      dump actors, walk objective graph, spawn/test classes in isolation.
+- [ ] 7.3 **The console does not open in this build, in gameplay either** (2026-11-03, `docs/XEMU.md`, U15):
+      `System/DefUser.ini:50` binds `Tab=Type` and `Default.ini` sets `Console=Engine.Console`, so the intention is there,
+      but measured in live gameplay with a guest keyboard attached, `tab` (683 and 1,501 pixels), `grave_accent` (0) and
+      `kp_7` (30, the only live branch in `Engine/Console.uc:149-159`, whose `ConsoleHotKey` arm is dead code and whose
+      config byte is 0) all leave the screen unchanged, while a burst of letters does reach a chat-shaped line — the
+      keyboard is delivered and the console still does not appear. **Next, in order**: attach the USB keyboard before the
+      guest enumerates `XID` (today's `device_add` lands ~75 s into the boot), or trace the scancode the Xbox kernel
+      delivers for `sendkey tab`. If neither opens it, the scripted-`exec` probes move to
+      `GamePlay/ACTION_ConsoleCommand.uc`, which runs console commands from level script.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

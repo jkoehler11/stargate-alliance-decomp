@@ -657,3 +657,44 @@ the same frames), `M04B` 15, `M12E` 30, `M12F` 31, `M13A` 32, `M13D` 35. The ear
 `20`-`29`, `31`-`40`) was read off *scrolled windows* in `home`/`pgdn` probes and mistook the visible page for the
 index range: it put `M20A` at 31, and 31 is `M12F`. `home` still means index 0 and each `pgdn` still moves ten; what
 was wrong was the mapping from a screenshot's rows to the list's indices, not the page keys.
+
+## The Unreal console does not open in this build (measured 2026-11-03, PLAN 7.3)
+
+7.3 assumed `Tab` opens the Unreal console once the game is running rather than sitting on a menu. It does not, and the
+shipped configuration says why the assumption was reasonable in the first place.
+
+**What the packages and the dump say.** `System/Default.ini` sets `[Engine.Engine] Console=Engine.Console`, so the class
+in play is the engine's own `Engine.Console`, and `System/DefUser.ini:50` binds `Tab=Type` -- `Engine/Console.uc:205` is
+`exec function Type()`, the console's open path. `[Engine.Console] ConsoleKey=9` in `Default.ini` is dead config: no
+script in the 2,319 classes declares `ConsoleKey`, and the class's own declared defaults are five entries
+(`HistoryBot`, `TimePerDemo`, `TimeTooIdle`, `TimeBeforeReboot`, `bRequiresTick`) with no `ConsoleHotKey` among them, so
+that `config byte` is zero. The one live branch in `Engine/Console.uc:149-159` is therefore the fallback:
+
+    if ((Key==ConsoleHotKey && Action==IST_Release) || (Key==IK_NumPad7)) { GotoState('Typing'); return true; }
+
+and the first arm cannot fire: the function returns `false` for anything that is not `IST_Press` three lines earlier, so
+`Action==IST_Release` is unreachable and `ConsoleHotKey` is 0 anyway.
+
+**What the guest does.** Three runs, a guest keyboard attached over QMP (`device_add usb-kbd,port=1.3.2,id=kbd`) in each,
+in live gameplay after the tutorial modal was dismissed, frames kept under `~/sg1/work/xemu/seq8`, `seq10`, `seq12`:
+
+| key sent | differing pixels | console on screen |
+|---|---:|---|
+| `tab` (the `Tab=Type` binding) | 683, then 1,501 in a second run | no (vision-checked frame) |
+| `grave_accent` (`~`) | 0 | no |
+| `kp_7` (`IK_NumPad7`, the only live branch) | 30 | no |
+| `tab` then `stat fps` and `ret`, 0.3 s apart | 1,213 | no, and no FPS counter |
+
+**One thing did reach the game.** In a run where ten keys were sent in a burst with no spacing, the frame afterwards
+carried a chat-shaped line -- `Jack O'Neill( DefaultProfile): at fps` -- so the guest keyboard is delivered, the text
+entry path exists, and `Enter` executed nothing (the command was missing its first two characters, which is what
+`bIgnoreKeys` does: it swallows presses until the next `KeyDown`). A keyboard that types into a message box and a console
+that never opens are different failures, and this build has the second.
+
+**What would settle it**, in the order worth trying: attach the keyboard before the guest enumerates its input devices
+(the `device_add` above happens ~75 s into the boot, long after `XID` has built its device list, and a device that
+arrives later may never be registered with the game's input system); or trace the scancode the Xbox kernel delivers for
+`sendkey tab`, since a kernel-level key that never becomes `IK_Tab` explains every row above at once.
+
+**Until then 7.3 is unreachable as written** -- not "not yet tried": the binding exists in the shipped config, the class
+`Console` is the one configured, and nothing that arrives from the emulated keyboard opens it.

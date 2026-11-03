@@ -834,3 +834,15 @@ of the hats, and xemu merges its base-path settings over `-config_path` so auto-
 pushed the virtual one to port 2. The arithmetic is settled too: the list advances exactly one entry per press, so `M00` is index 10 and
 31 presses really are `M12F` -- the older page table had been read off scrolled windows, not indices. `M00` now loads
 from `Continue` (a profile-carrying EEPROM, `drive.py --eeprom`), with the tutorial overlay and no assert dialog.
+
+## U15. The console's `Tab=Type` binding does not open a console (PLAN 7.3)
+
+`System/DefUser.ini:50` binds `Tab=Type`, `Engine/Console.uc:205` is `exec function Type()`, and `Default.ini` sets
+`Console=Engine.Console` -- so the build intends a console on Tab. Measured 2026-11-03: `tab`, `grave_accent` and `kp_7`
+each leave the screen unchanged in live gameplay with a guest keyboard attached, while typed letters do reach a
+chat-shaped line (frames in `~/sg1/work/xemu/seq8`, `seq10`, `seq12`; tables in `docs/XEMU.md`).
+
+**What would settle it:** attach the USB keyboard before the guest enumerates `XID` (the current `device_add` lands ~75 s
+into the boot), or trace the scancode the Xbox kernel delivers for `sendkey tab`. If the kernel never produces `IK_Tab`,
+the console is unreachable from the emulator's keyboard by construction and 7.3 needs the scripted-action route instead
+(`GamePlay/ACTION_ConsoleCommand.uc` exists and runs console commands from level script).
