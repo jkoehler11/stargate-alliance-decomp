@@ -428,10 +428,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       guest keyboard) and the map list is navigable **by page**: `home`/`end`/`pgup`/`pgdn` move the highlight
       (measured, `docs/XEMU.md`), and the list is 41 entries with the campaign maps inside it. **The single step and the load are measured** (2026-11-03,
       `docs/XEMU.md`): `tools/xemu/vpad.py` puts a uinput pad on port 1 and `--step=pad=` presses it — `pad=down` moves
-      the list one entry and `pad=a` **loads the highlighted map** (in-game HUD, no assert dialog). **Still open**:
-      7.2's printed criterion is `M00` from `Continue`, and this EEPROM copy holds no save, so the load above came from
-      the in-game list; and 31 d-pad presses landed on `M12F` rather than the `M20A` the page map puts at index 31, so
-      the list's index maths needs one more run.
+      the list one entry and `pad=a` **loads the highlighted map** (in-game HUD, no assert dialog). **7.2's printed criterion is met for `M00`** (2026-11-03): `Continue` (a
+      profile-carrying EEPROM, `drive.py --eeprom`) opens the list, ten d-pad presses highlight `M00`, and `pad=a` loads
+      it -- tutorial overlay, O'Neill's HUD, no assert dialog, frame still changing after 40 s. The list advances one
+      entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
+      `M20A`). **Still open**: "load *each* mission" -- the sequence is proven on one mission and the loop over the
+      campaign set is what remains.
 - [ ] 7.3 **Blocked on the console, not on input**: QMP `sendkey` injects keys now (7.2), but `tab` opens no Unreal
       console on this build's menus (0–6,610 pixels, no console frame), so the scripted `exec` half has no shell to type
       into yet (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to

@@ -629,3 +629,31 @@ and 31 `pad=down` presses landed on `M12F`, not on the `M20A` the page map puts 
 skipped row look identical from the pixels, so the list's index maths needs its own run. And 7.2's printed criterion is
 `M00` from `Continue`: this EEPROM copy holds no save, so `Continue` opens `SELECT PROFILE` and the load above came from
 the in-game list.
+
+## `M00` from `Continue`, and the list's real index (measured 2026-11-03)
+
+7.2's printed criterion is the title screen, `Continue`, a mission load, a screenshot and a log tail. One run:
+
+| step | differing pixels | screen |
+|---|---:|---|
+| `pad=a` on `MAIN MENU` | 19,475 | `QUICK SELECT MAP` -- `Continue`, no `SELECT PROFILE` |
+| `pad=down`, ten times | 11,459 | the highlight walks to **`M00`** |
+| `pad=a` | 23,850 | **`M00` loads**: O'Neill's HUD, the tutorial box "Press the X button to open the door", "New Objective: Open the door for the doctor" |
+| `wait=40`, shot | 6,675 | still animating, **no assert dialog**, `A Continue` prompt on screen |
+
+`EIP` `0x80024a97` and `0x80024a98`, both in kernel at sample time -- a paused tutorial frame is the guest idling in
+the kernel, not a stopped one: the frame changed by 6,675 pixels across the 40 s wait.
+
+**`Continue` is an EEPROM property, not a menu property.** Two 256-byte EEPROM images are on this machine and they
+behave differently: the one in `$HOME/.local/share/xemu/xemu/` (`d0f50547…`) holds no profile, so `Continue` opens
+`SELECT PROFILE` (measured, seq2 in this session's runs); `~/sg1/work/xemu/smoke1/eeprom.bin` (`aaa061bd…`, Oct 24)
+does hold one and goes straight to the map list. `drive.py --eeprom PATH` now names the image a run starts from and
+keeps its own copy, so the difference is a flag in the command instead of a file somebody has to remember to place.
+
+**The list's index is the press count, and the page table was wrong.** Ten presses from `CTF-Abydos` land on `M00`;
+fifteen land on `M04B`; thirty-one on `M12F`; thirty-five on `M13D`. All four agree with a list that advances exactly
+one entry per press, so `index == presses` and the campaign maps sit at: `M00` 10, `M01A` 12, `M02A` 16 (measured from
+the same frames), `M04B` 15, `M12E` 30, `M12F` 31, `M13A` 32, `M13D` 35. The earlier page table (`0`-`9`, `10`-`19`,
+`20`-`29`, `31`-`40`) was read off *scrolled windows* in `home`/`pgdn` probes and mistook the visible page for the
+index range: it put `M20A` at 31, and 31 is `M12F`. `home` still means index 0 and each `pgdn` still moves ten; what
+was wrong was the mapping from a screenshot's rows to the list's indices, not the page keys.

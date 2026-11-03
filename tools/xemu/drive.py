@@ -236,6 +236,9 @@ def main():
                     help="create the virtual pad even when no step presses it (proves SDL sees the device)")
     ap.add_argument("--pad-hold", type=float, default=PAD_HOLD, help="seconds a pad button is held (default 0.15)")
     ap.add_argument("--pad-settle", type=float, default=1.5, help="seconds udev gets to publish the pad")
+    ap.add_argument("--eeprom", default=None,
+                    help="EEPROM to boot from (default: the one xemu itself uses); a copy is kept in --out, so a "
+                         "run's profile and settings survive only as long as its own directory")
     ap.add_argument("--xemu", default=os.environ.get("XEMU", smoke_default()))
     args = ap.parse_args()
 
@@ -272,7 +275,9 @@ def main():
     # drove nobody. A private base path is what makes the run's own bindings the only ones.
     env_xdg = os.path.join(args.out, "xdg")
     os.makedirs(os.path.join(env_xdg, "xemu", "xemu"), exist_ok=True)
-    shared_eeprom = os.path.join(os.path.expanduser("~/.local/share/xemu/xemu"), "eeprom.bin")
+    # The EEPROM is where the profile list lives: an empty one sends `Continue` to `SELECT PROFILE`, while the one
+    # this harness has been carrying since 2026-10-24 keeps a profile and goes straight to the map list.
+    shared_eeprom = args.eeprom or os.path.join(os.path.expanduser("~/.local/share/xemu/xemu"), "eeprom.bin")
     eeprom = os.path.join(args.out, "eeprom.bin")
     if not os.path.exists(eeprom) and os.path.exists(shared_eeprom):
         shutil.copyfile(shared_eeprom, eeprom)
