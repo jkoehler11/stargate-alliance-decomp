@@ -825,3 +825,11 @@ screen by whole frames, not by the noise floor).
 
 The distinction to keep: what is missing is **input injection**, not a boot or a display. Pixels were the weak channel
 until the noise floor was measured; `cpu=` (QMP `EIP` sampling) is what says the guest is alive in the same run.
+
+**Closed 2026-11-03: the virtual pad, and a map that loads.** `tools/xemu/vpad.py` puts a uinput gamepad on port 1
+before xemu starts and `drive.py --step=pad=` presses it; `pad=down` steps the list one entry and `pad=a` **loads the
+highlighted map** (in-game HUD, no assert dialog, `docs/XEMU.md`). Three traps sat between "pad created" and "the guest
+moves": the first identity reused the *physical* pad's SDL GUID, `BTN_DPAD_*` made SDL map the d-pad to buttons instead
+of the hats, and xemu merges its base-path settings over `-config_path` so auto-bind handed port 1 to the physical pad and
+pushed the virtual one to port 2. What is left is arithmetic, not input: 31 presses landed on `M12F` rather than the
+`M20A` index 31 predicts, and `M00` from `Continue` still needs a save in the EEPROM.

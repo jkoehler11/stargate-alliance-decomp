@@ -585,3 +585,47 @@ samples in kernel. The table's values come from isolated probes on a long-lived 
 a known position; run-to-run values differ because a delta measures the *transition*, not the key. Two runs are also
 what show the boot window matters: at `--seconds=110` the menu is still fading in and `ret` moves 1,476 pixels, at 135 s
 the same key moves 34,890.
+
+## The virtual pad drives the menus, and a campaign map loads (measured 2026-11-03)
+
+`tools/xemu/vpad.py` creates a `uinput` gamepad before xemu starts and `drive.py --step=pad=BUTTON` presses it, so a
+sequence can drive the game while the machine is in somebody's hands: no window focus, no XTEST and no guest keyboard.
+One run on the title screen, crop `480x520+760+210` (the map list's own region), `-fuzz 15`, floor measured inside the
+same run:
+
+| step | differing pixels | screen afterwards |
+|---|---:|---|
+| `noise=3`, no input | 405, so the threshold becomes 810 | the title, animating |
+| `pad=a` | 20,606 | `MAIN MENU` to `SELECT PROFILE` |
+| `pad=y` | 1,197 | `SELECT PROFILE` to `QUICK SELECT MAP` |
+| `pad=down`, 31 times | 13,800 | the highlight walks the list, `CTF-Abydos` onward to `M12F` |
+| `pad=a` | 31,718 | **the map loads**: in-game HUD, Carter, `P90` 250 rounds, objective chevrons |
+| `wait=45`, then a shot | 3,366 | still animating, **no assert dialog** |
+
+`EIP` `0x00048cda` and `0x00224a51`, 0 of 2 samples in kernel, exit 0, five of five shot steps PASS. The d-pad's single
+step exists, a pad's `XC_A` selects a map, and a mission runs.
+
+Four things had to be right before any of it moved, and every one of them looked like "the pad is created and nothing
+happens":
+
+- **The identity was a collision.** A fake pad claiming 045e:028e:0114 gets SDL GUID
+  `030081b85e0400008e02000014010000` -- which is the GUID of the *physical* pad plugged into this desktop, and the one
+  xemu's own settings bind port 1 to. Two devices under one GUID is a pad the run cannot address. The pad claims
+  1209:0001 (pid.codes vendor) instead, GUID `030015c6091200000100000001000000`, read back from SDL
+  (`SDL_GetJoystickGUIDForID`) rather than computed.
+- **The mapping has to be the device's own.** The string in `vpad.py` is what `SDL_GetGamepadMappingForID` returns for
+  the live device, and it reaches xemu through `SDL_GAMECONTROLLERCONFIG`. A mapping keyed to another GUID is silently
+  unused, and a device SDL cannot map is opened and then ignored.
+- **`BTN_DPAD_*` on the device breaks the d-pad.** With those keys declared, SDL maps `dpup`/`dpdown` to buttons b11 to
+  b14 and never reads the hats, so `pad=down` (which writes `ABS_HAT0Y`) changed 38 and 128 pixels, i.e. nothing. Without
+  them the hats are the d-pad, which is what a real pad has.
+- **xemu's base-path settings override `-config_path`, and auto-bind takes port 1.** The run's TOML asked for the virtual
+  pad on port 1; xemu came back with the physical pad there and the virtual one on **port 2**, where the game never
+  looks. `[input] auto_bind = false` with the explicit `port1` binding, and a private `XDG_DATA_HOME` per run, is what
+  makes the run's own binding the only one; `SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS=1` rides along for the unfocused case.
+
+**Not measured yet, and named so it is not mistaken for done:** the step count. The list opens on `CTF-Abydos` (index 0)
+and 31 `pad=down` presses landed on `M12F`, not on the `M20A` the page map puts at index 31 -- a coalesced tap and a
+skipped row look identical from the pixels, so the list's index maths needs its own run. And 7.2's printed criterion is
+`M00` from `Continue`: this EEPROM copy holds no save, so `Continue` opens `SELECT PROFILE` and the load above came from
+the in-game list.

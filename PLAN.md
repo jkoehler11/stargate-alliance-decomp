@@ -426,11 +426,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       reading was. `tools/xemu/drive.py` runs a *sequence* (`--step`), measures the noise floor (`noise=`), crops the
       assertion (`--crop`, `--fuzz`) and samples `EIP` in the same run (`cpu=`) — `docs/XEMU.md`. **Input is solved** (QMP `sendkey` over an attached
       guest keyboard) and the map list is navigable **by page**: `home`/`end`/`pgup`/`pgdn` move the highlight
-      (measured, `docs/XEMU.md`), and the list is 41 entries with the campaign maps inside it. **Still open**: `M20A`
-      is entry **31**, one past a page boundary, so both page routes land on 30 and the single-step key is the d-pad —
-      U14's virtual pad. And `A` on the page does not load: either the list consumes `XC_A`
-      (`GUIVertList.InternalOnXControllerEvent`) before `SinglePlayerChapterSelect`'s `LoadMap()` runs, or `Travel`
-      refuses the URL — one more run with either route tells them apart.
+      (measured, `docs/XEMU.md`), and the list is 41 entries with the campaign maps inside it. **The single step and the load are measured** (2026-11-03,
+      `docs/XEMU.md`): `tools/xemu/vpad.py` puts a uinput pad on port 1 and `--step=pad=` presses it — `pad=down` moves
+      the list one entry and `pad=a` **loads the highlighted map** (in-game HUD, no assert dialog). **Still open**:
+      7.2's printed criterion is `M00` from `Continue`, and this EEPROM copy holds no save, so the load above came from
+      the in-game list; and 31 d-pad presses landed on `M12F` rather than the `M20A` the page map puts at index 31, so
+      the list's index maths needs one more run.
 - [ ] 7.3 **Blocked on the console, not on input**: QMP `sendkey` injects keys now (7.2), but `tab` opens no Unreal
       console on this build's menus (0–6,610 pixels, no console frame), so the scripted `exec` half has no shell to type
       into yet (`docs/XEMU.md`). Gameplay probes on keyboard (Tab opens the Unreal console): scripted `exec` commands to
@@ -450,6 +451,20 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
+
+- **A uinput pad on port 1 is the input path 7.2 needed**, and it took four fixes rather than one: an identity that
+  collided with the *physical* pad's SDL GUID (`030081b85e0400008e02000014010000` -- the one this desktop's own
+  xemu settings bind port 1 to), a mapping that has to be keyed to the pad's own GUID and handed over in
+  `SDL_GAMECONTROLLERCONFIG`, `BTN_DPAD_*` keys on the device making SDL map the d-pad to buttons b11-b14 instead of the
+  hats (so `pad=down` wrote an axis nobody read), and xemu merging its **base-path** settings over `-config_path` so
+  auto-bind gave port 1 to the physical pad and pushed the virtual one to port 2.
+- **Measured, one run, floor 405 pixels in the list's crop**: `pad=a` 20,606 (`MAIN MENU` to `SELECT PROFILE`), `pad=y`
+  1,197 (to `QUICK SELECT MAP`), 31 `pad=down` 13,800, `pad=a` 31,718 -- **the map loads** -- and 45 s later 3,366 pixels
+  with no assert dialog. `EIP` `0x00048cda`, `0x00224a51`, 0 of 2 in kernel, exit 0.
+- **Next:** the list's arithmetic (31 presses from index 0 landed on `M12F`, not `M20A`), then `M00` from `Continue`
+  with a saved profile in the EEPROM, then the same sequence as the nightly's mission-load stage.
 
 ### Execution notes (2026-10-30, the pixel assertion was passing on animation; input is now the open end)
 

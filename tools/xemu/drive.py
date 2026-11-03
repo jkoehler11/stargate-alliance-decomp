@@ -27,6 +27,10 @@ Steps, in order:
                 desktop somebody is using, the polite form is to wait for them to look at the emulator, never to steal it
     gkey=KEY     press a key in the *guest*, over QMP `sendkey`: it needs the emulated USB keyboard attached (see
                  docs/XEMU.md) and, unlike `key=`/`xkey=`, it needs no window focus and no X at all
+    pad=BUTTON   press a button on the virtual pad (`tools/xemu/vpad.py`, created before xemu starts): `a`/`b`/
+                 `x`/`y`, `up`/`down`/`left`/`right` (the d-pad), `start`, `back`, `white`, `black`. The map list's
+                 single step is the d-pad and the guest keyboard cannot produce one (docs/XEMU.md), so this is the
+                 only step that reaches it; it needs no focus, no X and no USB keyboard
     monitor=CMD  run one QMP human-monitor-command (e.g. `device_add usb-kbd,port=1.3,id=kbd`, which xemu documents
                 as the way to give the guest a keyboard); the reply is printed
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
@@ -52,6 +56,7 @@ Every frame stays in `--out`: they are frames of the game and must not be commit
 import argparse
 import importlib.util
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -140,7 +145,12 @@ class FocusElsewhere(Exception):
 
 
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
-         "focus", "gkey")
+         "focus", "gkey", "pad")
+
+PAD = None          # the virtual pad, when a step needs one (created before xemu starts, see vpad.py)
+PAD_MAPPING = ""    # the pad's SDL mapping, handed to xemu through SDL_GAMECONTROLLERCONFIG
+PAD_GUID = ""       # and the GUID port 1 is bound to, which is how xemu picks *this* device
+PAD_HOLD = 0.15
 
 
 def focus_owner():
@@ -167,6 +177,10 @@ def send(window, name, value):
     emulator: on a desktop somebody is using, the alternative is typing into their editor or their game, which is both
     useless for the test and audible (KDE rings when an application refuses the key).
     """
+    if name == "pad":
+        if PAD is None:
+            raise SystemExit("a pad= step needs a pad: it is created when --vpad is passed")
+        return "pad " + PAD.tap(value, PAD_HOLD)
     if name == "raise":
         run(["xdotool", "windowraise", window])
         return "raise (focus untouched)"
@@ -194,8 +208,16 @@ def say(*args):
     print(*args, flush=True)
 
 
+def load_vpad():
+    spec = importlib.util.spec_from_file_location("vpad", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                                      "vpad.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def main():
-    global REGRAB_SECONDS
+    global REGRAB_SECONDS, PAD, PAD_MAPPING, PAD_GUID, PAD_HOLD
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--iso", required=True)
     ap.add_argument("--bios", required=True, help="directory with mcpx*.bin and a debug flash")
@@ -210,10 +232,15 @@ def main():
     ap.add_argument("--fuzz", type=int, default=0, help="ignore pixel differences below this percentage")
     ap.add_argument("--regrab", type=float, default=REGRAB_SECONDS,
                     help="seconds between the two grabs of an asserting capture (0 = one grab)")
+    ap.add_argument("--vpad", action="store_true",
+                    help="create the virtual pad even when no step presses it (proves SDL sees the device)")
+    ap.add_argument("--pad-hold", type=float, default=PAD_HOLD, help="seconds a pad button is held (default 0.15)")
+    ap.add_argument("--pad-settle", type=float, default=1.5, help="seconds udev gets to publish the pad")
     ap.add_argument("--xemu", default=os.environ.get("XEMU", smoke_default()))
     args = ap.parse_args()
 
     REGRAB_SECONDS = args.regrab
+    PAD_HOLD = args.pad_hold
     steps = [parse_step(s) for s in args.step] if args.step else \
             [("shot", "before"), ("key", args.key), ("wait", str(args.settle)), ("shot", "after")]
 
@@ -239,13 +266,44 @@ def main():
     sock_path = os.path.join(args.out, "qmp.sock")
     if os.path.exists(sock_path):
         os.unlink(sock_path)
+    # xemu merges the settings in its base path ($XDG_DATA_HOME/xemu/xemu/xemu.toml) *over* -config_path, and
+    # this desktop's own file binds port 1 to a physical pad. Measured: the run's TOML asked for the virtual pad
+    # on port 1, and xemu came back up with the physical one on port 1 and the virtual one on port 2, so the pad
+    # drove nobody. A private base path is what makes the run's own bindings the only ones.
+    env_xdg = os.path.join(args.out, "xdg")
+    os.makedirs(os.path.join(env_xdg, "xemu", "xemu"), exist_ok=True)
+    shared_eeprom = os.path.join(os.path.expanduser("~/.local/share/xemu/xemu"), "eeprom.bin")
+    eeprom = os.path.join(args.out, "eeprom.bin")
+    if not os.path.exists(eeprom) and os.path.exists(shared_eeprom):
+        shutil.copyfile(shared_eeprom, eeprom)
+    want_pad = args.vpad or any(name == "pad" for name, _ in steps)
+    if want_pad:
+        module = load_vpad()
+        PAD = module.Pad(settle=args.pad_settle)
+        PAD_MAPPING, PAD_GUID = module.SDL_MAPPING, module.GUID
+        say("pad: created before the emulator starts, so SDL sees it at init")
     with open(toml, "w") as f:
         f.write("[general]\nshow_welcome = false\n[sys]\nmem_limit = '128'\n")
         # xemu drops input while its window is unfocused; a harness started over ssh never gets the WM to focus it.
-        f.write("[input]\nbackground_input_capture = true\n[sys.files]\n")
+        f.write("[input]\nbackground_input_capture = true\n")
+        if want_pad:
+            # Port 1 is bound by GUID, and this desktop has a physical pad of its own: binding to the virtual
+            # pad's own GUID is what makes xemu read the device the steps press, and auto-bind has to be off or
+            # xemu hands port 1 to whatever it finds first -- measured, the physical pad took port 1 and the
+            # virtual one was pushed to port 2, where the game does not look.
+            f.write("auto_bind = false\ngamepad_mappings = [\n    { gamepad_id = '%s'}\n    ]\n" % PAD_GUID)
+            f.write("[input.bindings]\nport1_driver = 'usb-xbox-gamepad'\nport1 = '%s'\n" % PAD_GUID)
+        f.write("[sys.files]\n")
         f.write("bootrom_path = '%s'\nflashrom_path = '%s'\n" % (mcpx, flash))
+        if os.path.exists(eeprom):
+            f.write("eeprom_path = '%s'\n" % eeprom)
         f.write("hdd_path = '%s'\ndvd_path = '%s'\n" % (args.hdd, args.iso))
-    env = dict(os.environ, APPIMAGE_EXTRACT_AND_RUN="1")
+    env = dict(os.environ, APPIMAGE_EXTRACT_AND_RUN="1", XDG_DATA_HOME=env_xdg)
+    if PAD_MAPPING:
+        env["SDL_GAMECONTROLLERCONFIG"] = PAD_MAPPING
+        # SDL drops joystick events while the application is unfocused unless it is told not to, which is the
+        # pad's half of the reason a scripted run has to work without ever owning the focus.
+        env["SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"] = "1"
     log = open(os.path.join(args.out, "xemu.log"), "wb")
     prior_focus = ""
     proc = subprocess.Popen([args.xemu, "-config_path", toml,
@@ -401,6 +459,8 @@ def main():
                 os.killpg(proc.pid, 9)
             except OSError:
                 proc.kill()
+        if PAD is not None:
+            PAD.close()
         # Do not leave the desktop user's focus on a machine that is about to be killed.
         try:
             owner, _ = focus_owner()
