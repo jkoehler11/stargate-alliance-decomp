@@ -31,6 +31,7 @@ someone runs the heavy stages by hand weeks later. The nightly closes it on what
 | `class-tables` | `make class-tables` | `SG1_DUMP` |
 | `libraries` | `make libraries` | `SG1_DUMP` |
 | `xemu-boot` | `tools/xemu/smoke.py` | `--iso`, `--bios`, `--hdd`, a display |
+| `missions` | `tools/xemu/missions.sh OUTDIR INDEX...` | the same, plus `--missions`; indices default to `10 11` (`SG1_MISSION_INDICES`) |
 
 Stages that cannot run say `SKIP` and are not failures — an unset `SG1_DUMP` on a laptop is not a regression.
 

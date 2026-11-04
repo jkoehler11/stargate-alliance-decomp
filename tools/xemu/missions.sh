@@ -21,19 +21,25 @@ bios="${SG1_BIOS:-$HOME/nfs/sg1-dump/bios}"
 hdd=""
 eeprom=""
 settle=60
+out=""
+indices=""
 while [ $# -gt 0 ]; do
   case "$1" in
+    --iso=*) iso=${1#*=}; shift ;;
+    --bios=*) bios=${1#*=}; shift ;;
+    --hdd=*) hdd=${1#*=}; shift ;;
+    --eeprom=*) eeprom=${1#*=}; shift ;;
+    --settle=*) settle=${1#*=}; shift ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
     --hdd) hdd="$2"; shift 2 ;;
     --eeprom) eeprom="$2"; shift 2 ;;
     --settle) settle="$2"; shift 2 ;;
     --*) echo "unknown option $1" >&2; exit 2 ;;
-    *) break ;;
+    *) if [ -z "$out" ]; then out="$1"; else indices="$indices $1"; fi; shift ;;
   esac
 done
-[ $# -ge 2 ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...]" >&2; exit 2; }
-out="$1"; shift
+[ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...]" >&2; exit 2; }
 mkdir -p "$out"
 : > "$out/missions.tsv"  # fresh: one row per index for this invocation
 here=$(cd "$(dirname "$0")" && pwd)
@@ -42,7 +48,7 @@ repo=$(cd "$here/../.." && pwd)
 [ -n "$eeprom" ] || eeprom="${WORK:-$HOME/.local/share/xemu/sg1}/smoke1/eeprom.bin"
 
 failed=0
-for index in "$@"; do
+for index in $indices; do
   dir="$out/$(printf 'index-%02d' "$index")"
   rm -rf "$dir"; mkdir -p "$dir"
   cp --reflink=auto "$hdd" "$dir/hdd.qcow2"

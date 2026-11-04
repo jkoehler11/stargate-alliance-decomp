@@ -9,6 +9,7 @@
 #   tools/nightly.sh                       # dump-free gate only
 #   SG1_DUMP=~/sg1/dump tools/nightly.sh   # + manifest, inventory drift, symbol map
 #   tools/nightly.sh --xemu --iso=... --bios=... --hdd=...   # + the boot smoke test
+#   ... --missions --mission-indices='10 11'                 # + one mission load per index (PLAN 7.2)
 #
 # Output: $NIGHTLY_OUT (default build/nightly)/<UTC timestamp>/ with one log per stage and a summary.txt.
 # Nothing here commits or modifies tracked files; `git status --porcelain` is reported, not repaired.
@@ -43,6 +44,8 @@ stage() {  # stage NAME COMMAND...
 }
 
 xemu=0
+missions=0
+mission_indices="${SG1_MISSION_INDICES:-10 11}"
 iso=""; bios=""; hdd=""
 for arg in "$@"; do
     case "$arg" in
@@ -50,6 +53,8 @@ for arg in "$@"; do
         --iso=*) iso=${arg#*=} ;;
         --bios=*) bios=${arg#*=} ;;
         --hdd=*) hdd=${arg#*=} ;;
+        --missions) missions=1 ;;
+        --mission-indices=*) mission_indices=${arg#*=} ;;
         *) say "unknown argument: $arg"; exit 2 ;;
     esac
 done
@@ -148,6 +153,18 @@ if [ "$xemu" = 1 ]; then
             --out="$out/xemu" --seconds="${XEMU_SECONDS:-110}"
     else
         say "SKIP  xemu-boot (needs --iso= --bios= --hdd=)"
+    fi
+fi
+
+if [ "$missions" = 1 ]; then
+    # One boot per index, so this stage is minutes long and its index list is a deliberate subset: the whole campaign
+    # is 61 maps, which is a nightly of its own (docs/REGRESSION.md).
+    if [ -n "$iso" ] && [ -n "$bios" ] && [ -n "$hdd" ] && [ -n "${DISPLAY:-}" ]; then
+        stage missions sh -c "DISPLAY='${DISPLAY}' XAUTHORITY='${XAUTHORITY:-}' tools/xemu/missions.sh \
+            '$out/missions' $mission_indices --iso='$iso' --bios='$bios' --hdd='$hdd' \
+            --eeprom='${SG1_EEPROM:-$WORK/smoke1/eeprom.bin}'"
+    else
+        say "SKIP  missions (needs --iso= --bios= --hdd= and a display)"
     fi
 fi
 
