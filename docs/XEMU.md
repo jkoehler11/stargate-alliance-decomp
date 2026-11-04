@@ -911,3 +911,20 @@ work, and the reason the harness asserts after *every* step rather than at the e
 135-second boot window (`--boot=SECS`) rather than the 75 the probes use.
 
 The per-index frames and the TSV stay under `~/sg1/work/xemu/`; they are frames of the game and are not committed.
+
+## A swallowed press is now retried, and the retry path is proven by failing on purpose (2026-11-04)
+
+One index in six failed in the six-index run, and the failure was input rather than a map: the highlight frame was still
+the main menu. `missions.sh` therefore takes `--retries N` (default 2) and records the attempt count in its TSV -- each
+attempt is a fresh boot, because the state a swallowed press leaves behind is not worth trusting.
+
+Two runs:
+
+| run | command | result |
+|---|---|---|
+| index 12, which failed in the six-index run | `--retries=3` | **PASS after 1 attempt** -- the flake is not deterministic, which is exactly why a retry is the right answer and a diagnosis is not |
+| index 10, boot window cut to 25 s so the presses land during the fade | `--boot=25 --retries=3` | **FAIL after 3 attempt(s)**, three boots, one TSV row |
+
+The second is the manufactured failure: it proves the loop iterates, that a failed attempt does not poison the next one
+(fresh HDD copy, fresh boot), and that the TSV says how many attempts were spent. `missions.tsv` rows now end in
+`<n> attempts`.
