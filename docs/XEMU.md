@@ -811,3 +811,31 @@ verified that it had.
 
 The tool needs ImageMagick, which the harness already requires; nothing new is installed. `make ci` now compiles it with
 the other xemu tools.
+
+## What the console's prompt actually says, and when it draws (measured 2026-11-04)
+
+One run with the rebuilt disc (`Console=GUI.ExtendedConsole`), one shot per keystroke group, `console-line.py` over every
+frame (`~/sg1/work/xemu/seq21`):
+
+| frame | keys sent since the level loaded | cyan pixels | verdict |
+|---|---|---:|---|
+| `a-play` | none | 0 | nothing drawn |
+| `b-tab` | `Tab` | 0 | nothing drawn -- **`Tab` alone is invisible** |
+| `c-one-letter` | `Tab`, `s` | 0 | below the threshold, or not drawn |
+| `d-stat` | `Tab`, `stat` | 104 | prompt drawn |
+| `e-four-bs` | ... four `Backspace` | 75 | still drawn, shorter |
+| `f-six-bs` | ... two more | 57 | still drawn, shorter |
+| `g-letter-after` | ... `z` | 61 | still drawn |
+
+Cropping the drawn line at 3x and reading it gives **`(>Say at_`** -- the `(>` prompt, `Say ` pre-filled by the class, then
+`at` (the `st` of `stat` eaten by `bIgnoreKeys`) and the caret. So the console *is* open, it opens in **say mode**, and it
+draws its prompt only once there is text in it.
+
+Two corrections follow, both to claims this session made earlier. `Tab` opening the console **is** confirmed here -- it
+was invisible, not absent, and the earlier "the swap is not yet a command console" stands only in the say-mode sense.
+And `console-line.py`'s `absent` means "no prompt text drawn", not "console closed": an empty prompt measures 0, which is
+why `seq20` looked like a console that never opened when it was most likely open and empty.
+
+What that leaves for 7.3 is one concrete step: clear the pre-filled `Say ` (four backspaces, with one spare key sent
+first to absorb `bIgnoreKeys`) and type a command, then read the FPS counter that `stat fps` draws. If the class keeps
+re-prefixing `Say `, the console cannot run commands in this build and the probes have to be screen-drawing commands only.

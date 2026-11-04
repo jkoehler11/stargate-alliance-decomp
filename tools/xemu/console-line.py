@@ -6,8 +6,10 @@ The build's configured console (`Engine.Console`) has no renderer at all, and th
 facts make "the console is open" a question about a handful of pixels in a corner, which a whole-frame diff cannot
 answer: the level behind it moves by tens of thousands of pixels and the console adds about a hundred.
 
-Measured on two frames from the same session (docs/XEMU.md): with the line drawn, 128 cyan pixels in the crop below;
-with the console closed, 0 in the same crop.
+Measured on frames from one session (docs/XEMU.md): 0 cyan pixels before anything is typed, 104 once four letters are
+in the prompt, 128 in a later run. **An empty prompt can fall below the threshold** -- `Tab` alone draws nothing
+measurable and a cleared prompt reads `absent` -- so `absent` means "no prompt text is drawn", not "the console is
+closed". The prompt it draws is `(> ` with `Say ` pre-filled (`(> Say `), which is a console in say mode, not chat.
 
     tools/xemu/console-line.py FRAME.png            # present: exit 0, absent: exit 2
     tools/xemu/console-line.py FRAME.png --crop=WxH+X+Y
