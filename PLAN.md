@@ -441,9 +441,11 @@ are limited to expected fields (checksum/timestamp) and documented.
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
       overlay, 0-1,501 pixels on `tab`), and `bIgnoreKeys` swallows the first keypress, so a command sent cold loses its
-      first character. **Next**: a readable sink for command output -- screen-drawing commands (`showdebug`, `stat game`)
-      work today, and text-only output needs the console's scrollback read out of guest memory (`Console.Scrollback`,
-      `History`) the way `tools/xemu/mem.py` reads other guest addresses. The paraphrase below is the earlier, wrong
+      first character. **Next**: the console cannot draw because `Default.ini` picks `Engine.Console`, the
+      only class in the tree without a `PostRender` (measured: swapping it for `GUI.ExtendedConsole` in a rebuilt disc
+      makes `Tab` draw an input line, `docs/XEMU.md`), but that class opens in `Say` mode, so text is a chat message
+      rather than a command. Clearing the `Say: ` prefix is the next measurement; screen-drawing commands
+      (`showdebug`, `stat game`) remain the only readable output until then. The paraphrase below is the earlier, wrong
       reading of the same frames, kept because it says what an absent picture cost:
       `System/DefUser.ini:50` binds `Tab=Type` and `Default.ini` sets `Console=Engine.Console`, so the intention is there,
       but measured in live gameplay with a guest keyboard attached, `tab` (683 and 1,501 pixels), `grave_accent` (0) and
