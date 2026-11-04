@@ -69,6 +69,11 @@ if [ "$dry_run" = 1 ]; then
 fi
 mkdir -p "$out"
 : > "$out/missions.tsv"  # fresh: one row per index for this invocation
+avail=$(df -Pk "$out" | awk 'NR == 2 {print $4}')
+if [ "${avail:-0}" -lt 1200000 ]; then
+  echo "not enough free space under $out: ${avail} kB available, one boot needs about 1.2 GB" >&2
+  exit 2
+fi
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../.." && pwd)
 [ -n "$hdd" ] || hdd="${WORK:-$HOME/.local/share/xemu/sg1}/probe/hdd.qcow2"
@@ -107,6 +112,10 @@ for index in $indices; do
     echo "index $index: FAIL after $retries attempt(s) ($dir/run.log)"
     failed=$((failed+1))
   fi
+  # One boot needs a ~1 GB HDD copy and xemu's shader cache; neither is an artifact. Keeping them per index filled a
+  # 820 GB disk after 33 indices (measured), so they go as soon as the run they served is over.
+  rm -f "$dir/hdd.qcow2"
+  rm -rf "$dir/xdg"
   pgrep -fc "[x]emu" >/dev/null 2>&1 && sleep 5 || true
 done
 echo "$(($# - 1)) mission(s) attempted" > /dev/null || true
