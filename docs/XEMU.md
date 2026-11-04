@@ -660,6 +660,11 @@ was wrong was the mapping from a screenshot's rows to the list's indices, not th
 
 ## The Unreal console does not open in this build (measured 2026-11-03, PLAN 7.3)
 
+**Corrected the same day: it does open, and it runs commands -- it draws no window.** The negative below is
+real (no overlay appears, and `tab` moves 0 to 1,501 pixels) but the conclusion drawn from it was wrong: the
+console is open and executing, and what defeated the first attempts was `bIgnoreKeys` swallowing the first
+press. See the section after this one for the measurement that settles it.
+
 7.3 assumed `Tab` opens the Unreal console once the game is running rather than sitting on a menu. It does not, and the
 shipped configuration says why the assumption was reasonable in the first place.
 
@@ -698,3 +703,30 @@ arrives later may never be registered with the game's input system); or trace th
 
 **Until then 7.3 is unreachable as written** -- not "not yet tried": the binding exists in the shipped config, the class
 `Console` is the one configured, and nothing that arrives from the emulated keyboard opens it.
+
+## The console executes commands and draws nothing (measured 2026-11-03, PLAN 7.3 corrected)
+
+The console is open after `Tab` and it runs what is typed. Two runs, both with the tutorial modal cleared, one with the
+guest keyboard attached ~10 s into the boot and one attached after the boot window, both sent `Tab`, then a leading
+`space` (to absorb the press `bIgnoreKeys` swallows), then `stat fps` and `Enter`:
+
+| run | keyboard attached | frame after the command |
+|---|---|---|
+| `seq13` | during the boot (10 s in) | **`60 cur FPS` / `59 avg FPS`** in the upper left |
+| `seq14` | after the boot window (`monitor=device_add`) | **`64 cur FPS` / `60 avg FPS`** |
+
+So the attach timing makes no difference, and `Tab=Type` does what `DefUser.ini:50` says it does. Two things hid it:
+
+- **The console draws no window in this build.** `tab` changes 0 to 1,501 pixels -- the animation floor -- and no overlay,
+  prompt or scrollback appears in the frame, so "the console did not open" was an inference from an absent picture.
+  A command that has no on-screen effect leaves no trace at all.
+- **`bIgnoreKeys` eats the first keypress.** `Console.uc` sets it when the console opens and clears it on the next
+  `IST_Press`, so `stat fps` sent cold becomes `at fps` -- an unknown command whose error text is equally invisible.
+  The earlier run's `Jack O'Neill( DefaultProfile): at fps` line was that, not a chat box: the leading `s` and `t` went
+  into opening the console.
+
+**What this changes for 7.3**: the scripted-`exec` half has a working channel today. What it does not have is *output*:
+commands whose result is drawn (`stat fps`, `showdebug`, `stat game`, `slomo`) are readable in a frame, and commands
+whose result is text are not. The next step is therefore a readable sink -- the console keeps its scrollback in guest
+memory (`Console.Scrollback` / `History`), and reading it is the same class of work as `tools/xemu/mem.py`, which already
+reads guest addresses over the QMP channel.

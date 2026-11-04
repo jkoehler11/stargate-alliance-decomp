@@ -835,7 +835,7 @@ pushed the virtual one to port 2. The arithmetic is settled too: the list advanc
 31 presses really are `M12F` -- the older page table had been read off scrolled windows, not indices. `M00` now loads
 from `Continue` (a profile-carrying EEPROM, `drive.py --eeprom`), with the tutorial overlay and no assert dialog.
 
-## U15. The console's `Tab=Type` binding does not open a console (PLAN 7.3)
+## U15. ~~The console's `Tab=Type` binding does not open a console~~ -- corrected: it opens and draws nothing
 
 `System/DefUser.ini:50` binds `Tab=Type`, `Engine/Console.uc:205` is `exec function Type()`, and `Default.ini` sets
 `Console=Engine.Console` -- so the build intends a console on Tab. Measured 2026-11-03: `tab`, `grave_accent` and `kp_7`
@@ -846,3 +846,10 @@ chat-shaped line (frames in `~/sg1/work/xemu/seq8`, `seq10`, `seq12`; tables in 
 into the boot), or trace the scancode the Xbox kernel delivers for `sendkey tab`. If the kernel never produces `IK_Tab`,
 the console is unreachable from the emulator's keyboard by construction and 7.3 needs the scripted-action route instead
 (`GamePlay/ACTION_ConsoleCommand.uc` exists and runs console commands from level script).
+
+**Corrected 2026-11-03, after the measurement in `docs/XEMU.md`.** The console does open on `Tab` and it does run what is
+typed: `stat fps` produced a visible `60 cur FPS` / `59 avg FPS` overlay in two runs, one with the keyboard attached
+during the boot and one after it. What is missing is the *window* -- the console draws nothing, and `bIgnoreKeys` swallows
+the first keypress, so a command sent cold loses its first character. The open question is now output: a text-only
+command leaves no on-screen trace, and the console's scrollback is in guest memory (`Console.Scrollback`, `History`), which
+`tools/xemu/mem.py` is the right instrument to read.
