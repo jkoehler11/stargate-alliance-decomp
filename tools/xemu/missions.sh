@@ -16,6 +16,10 @@
 #   --boot SECS     seconds to wait for the title before the first press (default 135: at 110 the menu is still fading
 #                   in and the press can be swallowed -- docs/XEMU.md measures 1,476 pixels at 110 s against 34,890 at
 #                   135 s for the same key)
+#   --all           the campaign range, 10-40 (the list has 41 entries and index 10 is the first campaign map; the
+#                   0-9 range is the multiplayer maps and `Entry`). `--all --dry-run` prints the indices instead of
+#                   booting, which is how the range is checked without a three-hour run.
+#   --dry-run       print what would run, then exit
 #   --retries N     attempts per index before it counts as failed (default 2). A run fails when a press is swallowed,
 #                   and a swallowed press looks identical to a map that will not load -- measured, one index in six
 #                   failed that way in a six-index run, with the highlight frame still showing the main menu. Each
@@ -30,6 +34,8 @@ eeprom=""
 settle=60
 boot=135
 retries=2
+all=0
+dry_run=0
 out=""
 indices=""
 while [ $# -gt 0 ]; do
@@ -41,6 +47,8 @@ while [ $# -gt 0 ]; do
     --settle=*) settle=${1#*=}; shift ;;
     --boot=*) boot=${1#*=}; shift ;;
     --retries=*) retries=${1#*=}; shift ;;
+    --all) all=1; shift ;;
+    --dry-run) dry_run=1; shift ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
     --hdd) hdd="$2"; shift 2 ;;
@@ -52,7 +60,13 @@ while [ $# -gt 0 ]; do
     *) if [ -z "$out" ]; then out="$1"; else indices="$indices $1"; fi; shift ;;
   esac
 done
-[ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...]" >&2; exit 2; }
+[ "$all" = 1 ] && indices="$indices $(seq 10 40 | tr '\n' ' ')"
+[ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...] | --all" >&2; exit 2; }
+if [ "$dry_run" = 1 ]; then
+  echo "$(echo $indices | wc -w | tr -d ' ') indices, one boot each:"
+  echo "$indices"
+  exit 0
+fi
 mkdir -p "$out"
 : > "$out/missions.tsv"  # fresh: one row per index for this invocation
 here=$(cd "$(dirname "$0")" && pwd)
