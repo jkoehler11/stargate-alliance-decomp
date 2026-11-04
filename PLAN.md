@@ -445,10 +445,14 @@ are limited to expected fields (checksum/timestamp) and documented.
       only class in the tree without a `PostRender` (measured: swapping it for `GUI.ExtendedConsole` in a rebuilt disc
       makes `Tab` draw an input line, `docs/XEMU.md`), but that class opens in `Say` mode, so text is a chat message
       rather than a command. Clearing the `Say: ` prefix is the next measurement; screen-drawing commands
-      (`showdebug`, `stat game`) remain the only readable output until then. A frame can now answer whether the console
-      is open at all -- `tools/xemu/console-line.py` counts the cyan input line (128 pixels when drawn, 0 when not,
-      `docs/XEMU.md`) -- which the whole-frame diff could not, and which showed that `Tab` opened the console in one run
-      and not in the next with the same keys. The paraphrase below is the earlier, wrong
+      (`showdebug`, `stat game`) remain the only readable output until then. The console's prompt is now readable off a frame: `tools/xemu/console-line.py` counts
+      its cyan pixels, and a 3x crop of them reads `(>Say at_` -- the `(>` prompt with `Say ` pre-filled and the typed
+      text after it, drawn only once there is text (`Tab` alone draws 0). So the console opens and is in **say mode**;
+      `absent` means "no prompt text", not "closed". **Measured: the prefix cannot be cleared.** Four
+      backspaces and `stat fps` still read `(>Say at fps_`, and `Enter` sent a message: on the swapped disc the console is
+      a chat console. The stock disc is the opposite -- invisible and executing (`60 cur FPS` twice) -- so **the class
+      swap is a dead end for probing**: 7.3 uses the stock disc, runs commands whose effect is drawn, and takes actor or
+      objective data from `tools/xemu/mem.py` and the package tools rather than from console text. The paraphrase below is the earlier, wrong
       reading of the same frames, kept because it says what an absent picture cost:
       `System/DefUser.ini:50` binds `Tab=Type` and `Default.ini` sets `Console=Engine.Console`, so the intention is there,
       but measured in live gameplay with a guest keyboard attached, `tab` (683 and 1,501 pixels), `grave_accent` (0) and

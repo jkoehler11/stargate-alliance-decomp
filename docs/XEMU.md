@@ -811,3 +811,54 @@ verified that it had.
 
 The tool needs ImageMagick, which the harness already requires; nothing new is installed. `make ci` now compiles it with
 the other xemu tools.
+
+## What the console's prompt actually says, and when it draws (measured 2026-11-04)
+
+One run with the rebuilt disc (`Console=GUI.ExtendedConsole`), one shot per keystroke group, `console-line.py` over every
+frame (`~/sg1/work/xemu/seq21`):
+
+| frame | keys sent since the level loaded | cyan pixels | verdict |
+|---|---|---:|---|
+| `a-play` | none | 0 | nothing drawn |
+| `b-tab` | `Tab` | 0 | nothing drawn -- **`Tab` alone is invisible** |
+| `c-one-letter` | `Tab`, `s` | 0 | below the threshold, or not drawn |
+| `d-stat` | `Tab`, `stat` | 104 | prompt drawn |
+| `e-four-bs` | ... four `Backspace` | 75 | still drawn, shorter |
+| `f-six-bs` | ... two more | 57 | still drawn, shorter |
+| `g-letter-after` | ... `z` | 61 | still drawn |
+
+Cropping the drawn line at 3x and reading it gives **`(>Say at_`** -- the `(>` prompt, `Say ` pre-filled by the class, then
+`at` (the `st` of `stat` eaten by `bIgnoreKeys`) and the caret. So the console *is* open, it opens in **say mode**, and it
+draws its prompt only once there is text in it.
+
+Two corrections follow, both to claims this session made earlier. `Tab` opening the console **is** confirmed here -- it
+was invisible, not absent, and the earlier "the swap is not yet a command console" stands only in the say-mode sense.
+And `console-line.py`'s `absent` means "no prompt text drawn", not "console closed": an empty prompt measures 0, which is
+why `seq20` looked like a console that never opened when it was most likely open and empty.
+
+What that leaves for 7.3 is one concrete step: clear the pre-filled `Say ` (four backspaces, with one spare key sent
+first to absorb `bIgnoreKeys`) and type a command, then read the FPS counter that `stat fps` draws. If the class keeps
+re-prefixing `Say `, the console cannot run commands in this build and the probes have to be screen-drawing commands only.
+
+## The say prefix survives backspacing, and the stock console is the one that runs commands (2026-11-04)
+
+The swapped disc's prompt reads `(>Say …`, so the next step was to clear the prefix and type a command. One run
+(`~/sg1/work/xemu/seq22`): `Tab`, one spare key to absorb `bIgnoreKeys`, four `Backspace`, `stat fps`, `Enter`.
+
+| frame | text in the prompt | cyan pixels |
+|---|---|---:|
+| `p1-typed` after the backspaces and the command | **`(>Say at fps_`** -- the prefix is still there, `st` eaten again | 125 |
+| `p2-executed` after `Enter` | line gone | 0 |
+
+No FPS counter appeared. So on the `GUI.ExtendedConsole` disc the console is a **chat** console: the `Say ` prefix is
+re-applied (or never removed) and `Enter` sends a message rather than running a command. Four backspaces and a command's
+worth of typing did not get it out of that mode.
+
+**The stock disc's console runs commands.** The same command, sent to `Engine.Console` -- the class that draws nothing --
+produced a visible FPS overlay twice: `60 cur FPS` / `59 avg FPS` in `seq13` and `64 cur FPS` / `60 avg FPS` in `seq14`.
+Invisible, but executing.
+
+**That makes the class swap a dead end for probing.** It trades a console that runs commands and draws nothing for one
+that draws and chats. For 7.3 the stock disc stays the tool of record: a command executes, and only its *drawn* effect is
+readable (`stat fps`, `showdebug`, `stat game`). Text output is unavailable in both configurations, so `exec`-style
+dumps are not a route to actor or objective data -- `tools/xemu/mem.py` and the package tools are.
