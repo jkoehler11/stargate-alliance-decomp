@@ -117,8 +117,13 @@ layout from one clip would produce exactly the plausible-looking wrong output th
 **What a census rules out (2026-11-04).** `tools/lad-scan.py` counts the `-1.0f` hits against the records that share a
 file's commonest 12-byte tail: 352 hits vs 222 records in a 21-channel file (the rest are the four bytes of `-1.0f`
 occurring inside float data), and the commonest tail differs between two 21-channel files whose stride histograms are
-identical -- so neither `-1.0f` alone nor a fixed tail identifies a record. **What would settle it:** the loader's own
-loop, `LIPSincReadAnimFile` at `0x000b8340`.
+identical -- so neither `-1.0f` alone nor a fixed tail identifies a record. **What the loader says (2026-11-04).** `LIPSincReadControllerFile`
+(`0x000b7260`) indexes its pose array with a **32-byte stride** and fills a record by copying **eight floats** into it
+after writing the integer 2 -- so the payload's `-1.0f` is the *eighth float of a record*, not a sentinel after one, which
+is what the census's twelve "tail" bytes really are (floats four to six). `LIPSincReadAnimFile` (`0x000b8340`) is the
+track reader and parses text through `__wtof`, so it is not the `.lad` path. **What would settle the field meanings:** a
+value-by-value check against a known clip, or the offline writer, since the runtime function is too inlined to read its
+field order.
 
 **What would settle it.** The middleware's own format notes (LIPSinc authoring tool), or the native
 loader from PLAN 4.8. Two cheap experiments in the meantime: compare a clip whose speech waveform is
