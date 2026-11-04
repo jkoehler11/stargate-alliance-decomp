@@ -928,3 +928,27 @@ Two runs:
 The second is the manufactured failure: it proves the loop iterates, that a failed attempt does not poison the next one
 (fresh HDD copy, fresh boot), and that the TSV says how many attempts were spent. `missions.tsv` rows now end in
 `<n> attempts`.
+
+## The campaign set loads: 31 of 31 list entries (measured 2026-11-04)
+
+`tools/xemu/missions.sh --all` over indices 10-40, one boot each, `--retries=2`. Every index loaded at least once:
+
+| range | result | notes |
+|---|---|---|
+| 10-15 | 6 of 6 | 12 and 14 failed at the old 75-second boot window and passed once it was 135 s |
+| 16-33 | 18 of 18 | 20, 23, 28 and 32 needed a second attempt; **21 failed both** in that run and passed first time in a later one |
+| 34-40 | 7 of 7 | **38 failed both** attempts and passed first time in a later run |
+
+**27 indices loaded on the first attempt, 3 needed a second, 1 needed a third.** The retry is doing the work it was added
+for: four of 31 (~13%) hit a failure, all of them input.
+
+**Two failure signatures, both input.** The common one is the opening `A` doing nothing: the highlight frame is still
+`MAIN MENU`, so the list never opened and the d-pad presses that follow went nowhere. The other is the `A` **on** the list
+doing nothing: index 38's highlight frame is `QUICK MAP` with `M14C` selected, `M14C.unr` is on the disc, and the frame
+after a 60 s settle is identical to the one before it. Neither is a missing map, and the title frames of a passing and a
+failing run are indistinguishable (mean luminance 46.7 vs 46.6), so the press is lost rather than arriving early.
+
+**What "each mission" means here.** 62 `M*` maps are on the disc and the list offers 31 campaign entries, so about half
+the mission maps cannot be reached from `QUICK SELECT MAP` at all -- loading them would need a different route (a
+checkpoint, `Continue`, or the console, which refuses to travel). This closes 7.2 for the reachable set and names the
+other half as a separate question rather than counting it as passed.
