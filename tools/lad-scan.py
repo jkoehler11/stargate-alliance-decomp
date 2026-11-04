@@ -42,10 +42,11 @@ def scan(path):
     while i >= 0:
         hits.append(i)
         i = d.find(SENTINEL, i + 1)
-    # A hit is a record terminator only if the 12 bytes in front of it are a tail this file uses more than once.
-    tails = Counter(d[h - 12:h] for h in hits if h >= 12)
-    real_tail, real_count = tails.most_common(1)[0] if tails else (b"", 0)
-    ends = [h for h in hits if h >= 12 and d[h - 12:h] == real_tail]
+    # A record is 32 bytes that end in -1.0f and begin with the integer 2 (the loader's first word), so a hit is a
+    # record terminator when the 28 bytes before it start that way. The 12 bytes between are *not* a constant: they
+    # vary per run of records, so grouping by them (an earlier version of this tool did) counts a subset.
+    ends = [h for h in hits if h >= 28 and struct.unpack_from("<I", d, h - 28)[0] == 2]
+    tails = Counter(d[h - 12:h] for h in ends)
     starts = [h - 28 for h in ends]
     gaps = Counter(y - x for x, y in zip(starts, starts[1:]))
     return {
@@ -58,8 +59,9 @@ def scan(path):
         "payload_bytes": len(d) - table_end,
         "sentinel_hits": len(hits),
         "records": len(ends),
-        "tail": real_tail.hex(" "),
-        "tail_repeats": real_count,
+        "distinct_tails": len(tails),
+        "commonest_tail": (tails.most_common(1)[0][0].hex(" ") if tails else ""),
+        "commonest_tail_repeats": (tails.most_common(1)[0][1] if tails else 0),
         "strides": dict(sorted(gaps.items())),
         "first_record": starts[0] if starts else None,
         "bytes_before_first": (starts[0] - table_end) if starts else None,
@@ -78,8 +80,8 @@ def main():
     for r in rows:
         print("%s: %d bytes, %d channels, table ends 0x%x, payload %d bytes"
               % (r["path"].rsplit("/", 1)[-1], r["bytes"], r["channels"], r["table_end"], r["payload_bytes"]))
-        print("  -1.0f hits %d; with the file's own tail (%s, %dx) %d records, first at table_end+%s"
-              % (r["sentinel_hits"], r["tail"], r["tail_repeats"], r["records"], r["bytes_before_first"]))
+        print("  -1.0f hits %d; %d are records (first word 2, ending -1.0f), %d distinct 12-byte middles"
+              % (r["sentinel_hits"], r["records"], r["distinct_tails"]))
         print("  strides between record starts: %s" % r["strides"])
     return 0
 

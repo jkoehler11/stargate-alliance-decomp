@@ -176,11 +176,16 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 `tools/lad-scan.py` measures the payload without interpreting it, and two rows of its output dispose of the two
 heuristics this file used to lean on -- use `-1.0f` as a record terminator, and treat a fixed 12-byte tail as one:
 
-| file | bytes | channels | `-1.0f` hits | records sharing that file's commonest 12-byte tail | strides |
-|---|---:|---:|---:|---:|---|
-| `Controllers/grey.lad` | 40,650 | 21 | 352 | 222 (tail `04 00 00 0f 00 00 00 80 02 20 92 0e`) | 32x131, 37x16, 64x31, 101x3, 128x20, 192x19 |
-| `sg1_crew_jackson.lad` | 13,963 | 21 | 352 | 222 (tail `00 00 88 24 3c d5 14 26 e4 a5 12 27`) | identical to the row above |
-| `Controllers/sg1_crew_carter.lad` | 1,301,681 | 19 | 1,139 | 604 (tail `03 00 40 19 00 00 00 80 f0 3f b2 16`) | 32x422, 37x70, 64x22, 101x6, 128x40, 192x38 |
+| file | bytes | channels | `-1.0f` hits | of those, records (first word 2) | distinct 12-byte middles | strides |
+|---|---:|---:|---:|---:|---:|---|
+| `Controllers/grey.lad` | 40,650 | 21 | 352 | **352** | 91 | 32x151, 37x16, 64x12, 128x9 |
+| `sg1_crew_jackson.lad` | 13,963 | 21 | 352 | **352** | 91 | identical to the row above |
+| `Controllers/sg1_crew_carter.lad` | 1,301,681 | 19 | 1,139 | **1,139** | 148 | 32x616, 37x86, 128x27, 101x3 |
+
+The first version of this census counted only the records that shared a file's *commonest* 12-byte middle -- 222 of
+`grey.lad`'s 352 -- and called the rest noise. They are not noise: every `-1.0f` hit in that file is preceded by a
+well-formed record, and the middles come in 91 distinct values across 163 contiguous runs, so the middle varies per run
+rather than per file or per channel. What that middle *is* is open (see the loader section below).
 
 **`-1.0f` alone over-counts**: 352 hits in a 21-channel file are not 352 records, and the extra hits are the four bytes
 `00 00 80 bf` occurring by chance inside float data. A terminator needs *something* else to be identified by.
