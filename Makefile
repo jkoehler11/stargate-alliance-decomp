@@ -163,7 +163,7 @@ ci:
 	@$(PYTHON) tools/ci.py
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py and drive.py compile"
+		tools/xemu/console-line.py && echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py and console-line.py compile"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
