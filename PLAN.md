@@ -432,8 +432,11 @@ are limited to expected fields (checksum/timestamp) and documented.
       profile-carrying EEPROM, `drive.py --eeprom`) opens the list, ten d-pad presses highlight `M00`, and `pad=a` loads
       it -- tutorial overlay, O'Neill's HUD, no assert dialog, frame still changing after 40 s. The list advances one
       entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
-      `M20A`). **Still open**: "load *each* mission" -- the sequence is proven on one mission and the loop over the
-      campaign set is what remains.
+      `M20A`). **The loop exists**: `tools/xemu/missions.sh OUTDIR INDEX...` boots once per index,
+      presses the d-pad that many times and keeps a frame per mission, one row per index in `missions.tsv`; indices 10
+      (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Still open**:
+      running it over the campaign set -- 61 `M*` maps are on disk and each index is one boot (~2.5 min), so the full set
+      is a nightly job rather than a session's work.
 - [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
