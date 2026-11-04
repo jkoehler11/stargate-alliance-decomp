@@ -416,7 +416,7 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 - [x] 7.1 xemu configured as an Xbox debug kit (128 MB RAM, debug BIOS, HDD image) per Hidden Palace's notes for
       other debug-kit dumps; document exact config in `docs/XEMU.md`.
-- [~] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
+- [x] 7.2 Smoke test script: boot → title screen → Continue → load each mission → capture screenshot + log tail.
       **Boot half done and passing** (`tools/xemu/smoke.py`, `docs/XEMU.md`): the harness boots the title and proves
       the guest executes game code by sampling `EIP` (8 samples, 7 in user space, 6 distinct). Five emulator traps
       measured and fixed on the way — `-mcpx_path` gone in 0.8.139, `-serial` needs `file:`, extract-xiso 2.7 ignores
@@ -434,7 +434,10 @@ are limited to expected fields (checksum/timestamp) and documented.
       entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
       `M20A`). **The loop exists**: `tools/xemu/missions.sh OUTDIR INDEX...` boots once per index,
       presses the d-pad that many times and keeps a frame per mission, one row per index in `missions.tsv`; indices 10
-      (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Run over six indices** (2026-11-04, `docs/XEMU.md`): 10, 11, 13, 14
+      (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Run over the whole reachable set** (2026-11-04, `docs/XEMU.md`): all **31**
+      list entries (indices 10-40) load, 27 on the first attempt, 3 on a second, 1 on a third; 62 `M*` maps are on the
+      disc and the list offers 31, so the rest are unreachable from `QUICK SELECT MAP` and are a separate question.
+      **Run over six indices** (2026-11-04, `docs/XEMU.md`): 10, 11, 13, 14
       and 15 load and keep a frame; 12 does not, and its highlight frame is the main menu, so that failure is input, not
       a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass, and
       retries a failed index (`--retries`, default 2) because a swallowed press and a map that will not load look the
