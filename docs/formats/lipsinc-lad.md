@@ -195,3 +195,28 @@ the 222 are a *subset* of its records, not all of them. A file therefore carries
 step is the one this project prefers anyway: read the loader. `LIPSincReadAnimFile` is at `0x000b8340` (4,977 bytes, named
 from its own `Read Track %s` log string, `inventory/lipsinc_runtime.csv`) and its loop over the payload is what says which
 bytes are time and which are value.
+
+## The loader's record is eight floats, and the `-1.0f` is the eighth (measured 2026-11-04)
+
+The census in the section above bounds the payload but cannot name a field, so the next step was the loader -- and the
+loader says what a record *is*, in the one form that survives a mangled decompilation: its arithmetic.
+
+`LIPSincReadControllerFile` (`0x000b7260`, 4,297 bytes, named from its own `Parsed %s` string) builds a pose array
+indexed with a **32-byte stride** -- the index expression is `count * 0x20` plus the array base -- and fills one record
+by writing a 4-byte value and then copying **eight consecutive floats** into it. The 4-byte value it writes first is the
+integer **2** (`0x00000002`, which a float view renders as `2.8e-45`), and the copy overwrites it from the first float of
+the source, so the eight floats are the record and the "2" is either the first float's value or a default the copy
+replaces.
+
+That identifies the payload's `-1.0f` for what it is: **the eighth float of a 32-byte record**, not a sentinel after one.
+It also matches the census exactly -- the stride histogram's dominant 32 bytes, the trailing `-1.0f`, and the twelve bytes
+between the third float and it are floats four, five and six, which this project had been calling "the tail".
+
+What the eight floats *mean* is still U4, and the source of the numbers is the surprise: this reader converts wide
+strings to floats (`__wtof`) before filling the array, so the runtime side parses text and the binary `.lad` payload is
+that same 32-byte structure dumped -- which is why the file's records line up with the runtime array's stride. The
+37-byte gaps in the census (five bytes past a record) are run headers of some kind and are the next thing to read.
+
+**Not measured, and not claimed**: which of the eight floats is time, which are a rotation and which are a translation.
+The decompilation of this function is heavily inlined logging, so the field order needs the *writer* -- the offline tool
+that produced the `.lad` -- or a value-by-value check against a known clip.
