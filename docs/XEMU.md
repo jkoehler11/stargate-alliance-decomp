@@ -862,3 +862,28 @@ Invisible, but executing.
 that draws and chats. For 7.3 the stock disc stays the tool of record: a command executes, and only its *drawn* effect is
 readable (`stat fps`, `showdebug`, `stat game`). Text output is unavailable in both configurations, so `exec`-style
 dumps are not a route to actor or objective data -- `tools/xemu/mem.py` and the package tools are.
+
+## Which console commands draw, and why that table is a lower bound (measured 2026-11-04)
+
+With 7.3 routed to the stock disc -- invisible console, executing commands -- the useful question is which commands leave
+a *drawn* trace. Two runs, each command typed into the console after the tutorial modal was dismissed, one frame per
+command:
+
+| command | differing pixels | overlay in the frame |
+|---|---:|---|
+| `stat fps` (earlier runs, `seq13`/`seq14`) | 20,606 and 23,850 (the load) -> counter drawn | **`60 cur FPS` / `59 avg FPS`**, then `64`/`60` |
+| `stat game` | 554 | none (vision-checked) |
+| `stat physics` | 2,293 | none (vision-checked) |
+| `showdebug` | 0 | none |
+| `behindview 1` | 0 | none -- a camera change would be unmistakable |
+| `walk` | 0 | none |
+
+**Only `stat fps` is confirmed to execute.** The rest are either inert in this build or never entered the console, and the
+frames cannot tell those apart: `behindview 1` changes the camera when it runs, so 0 pixels means it did not run -- and if
+that one did not run, neither did the neighbours in the same sequence. `stat fps` is the one command that has drawn on
+every attempt, and it is also the one that is easy to confirm, which makes it a poor witness for the rest.
+
+**The instrument this needs is not a better crop.** On the stock disc the console draws nothing, so `bTyping` is the only
+honest "is it open" signal, and it lives in the guest's `Console` object. Reading it over QMP is the same class of work as
+`tools/xemu/mem.py` already does for other addresses, and it would turn every future command from a guess into a
+measurement. Until then 7.3's command survey is a table of what has been *seen* to work, not of what works.
