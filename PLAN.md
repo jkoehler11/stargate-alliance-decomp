@@ -448,7 +448,11 @@ are limited to expected fields (checksum/timestamp) and documented.
       (`showdebug`, `stat game`) remain the only readable output until then. The console's prompt is now readable off a frame: `tools/xemu/console-line.py` counts
       its cyan pixels, and a 3x crop of them reads `(>Say at_` -- the `(>` prompt with `Say ` pre-filled and the typed
       text after it, drawn only once there is text (`Tab` alone draws 0). So the console opens and is in **say mode**;
-      `absent` means "no prompt text", not "closed". Next: clear the `Say ` prefix and run `stat fps`. The paraphrase below is the earlier, wrong
+      `absent` means "no prompt text", not "closed". **Measured: the prefix cannot be cleared.** Four
+      backspaces and `stat fps` still read `(>Say at fps_`, and `Enter` sent a message: on the swapped disc the console is
+      a chat console. The stock disc is the opposite -- invisible and executing (`60 cur FPS` twice) -- so **the class
+      swap is a dead end for probing**: 7.3 uses the stock disc, runs commands whose effect is drawn, and takes actor or
+      objective data from `tools/xemu/mem.py` and the package tools rather than from console text. The paraphrase below is the earlier, wrong
       reading of the same frames, kept because it says what an absent picture cost:
       `System/DefUser.ini:50` binds `Tab=Type` and `Default.ini` sets `Console=Engine.Console`, so the intention is there,
       but measured in live gameplay with a guest keyboard attached, `tab` (683 and 1,501 pixels), `grave_accent` (0) and
