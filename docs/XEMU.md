@@ -652,8 +652,10 @@ keeps its own copy, so the difference is a flag in the command instead of a file
 
 **The list's index is the press count, and the page table was wrong.** Ten presses from `CTF-Abydos` land on `M00`;
 fifteen land on `M04B`; thirty-one on `M12F`; thirty-five on `M13D`. All four agree with a list that advances exactly
-one entry per press, so `index == presses` and the campaign maps sit at: `M00` 10, `M01A` 12, `M02A` 16 (measured from
-the same frames), `M04B` 15, `M12E` 30, `M12F` 31, `M13A` 32, `M13D` 35. The earlier page table (`0`-`9`, `10`-`19`,
+one entry per press, so `index == presses` and the campaign maps sit at: `M00` 10, `M02A` 11, `M02B` 12, `M02C` 13,
+`M02D` 14, `M04B` 15, `M12E` 30, `M12F` 31, `M13A` 32, `M13D` 35. (An earlier revision of this paragraph read `M01A 12,
+M02A 16` off the same frames: a transcription slip that contradicted itself, since `M02A` cannot sit past `M04B`. Indices
+10 and 11 are now *loaded* and photographed, which is what settled it -- `tools/xemu/missions.sh`.) The earlier page table (`0`-`9`, `10`-`19`,
 `20`-`29`, `31`-`40`) was read off *scrolled windows* in `home`/`pgdn` probes and mistook the visible page for the
 index range: it put `M20A` at 31, and 31 is `M12F`. `home` still means index 0 and each `pgdn` still moves ten; what
 was wrong was the mapping from a screenshot's rows to the list's indices, not the page keys.
@@ -730,3 +732,31 @@ commands whose result is drawn (`stat fps`, `showdebug`, `stat game`, `slomo`) a
 whose result is text are not. The next step is therefore a readable sink -- the console keeps its scrollback in guest
 memory (`Console.Scrollback` / `History`), and reading it is the same class of work as `tools/xemu/mem.py`, which already
 reads guest addresses over the QMP channel.
+
+## Loading missions by index, and the console refuses to travel (measured 2026-11-03)
+
+`tools/xemu/missions.sh OUTDIR INDEX...` loads missions out of the in-game list, one boot per index, and keeps one frame
+per mission: `Continue`, N d-pad presses, `A`, a settle, a screenshot, one row per index in `OUTDIR/missions.tsv`. It takes
+indices rather than names on purpose -- the name of the mission an index lands on is read off the frame it saves.
+
+Two indices, run back to back:
+
+| index | list crop, highlight -> load | frame |
+|---|---|---|
+| 10 | 26,393 -> 24,505 pixels | `M00`: the SGC lab, O'Neill's HUD, "Press the X button to open the door" |
+| 11 | PASS | **`M02A`**: an off-world jungle ruin, a crashed vehicle, three soldiers, letterboxed cutscene, `Press A` |
+
+Both exited 0, one row each, both frames kept. So "load each mission" is now a loop over indices rather than a menu
+walk, and the remaining work in 7.2 is executing it over the campaign set rather than proving it can be done.
+
+**The console will not change levels.** Before the loop existed, the obvious shortcut was `open` from the console that
+7.3 now reaches. Measured twice, in live gameplay, with the same input path that makes `stat fps` work:
+
+| sent | result |
+|---|---|
+| `open m02a` then `Enter`, 50 s | the same SGC lab, no load |
+| `open m02a?game=stargategame.storymodegame` then `Enter`, 55 s | the same SGC lab, no load |
+
+So console travel is refused in this build (a shipping build commonly gates `Travel`), and the map list stays the only
+route into a mission. That also means the console is good for *state* commands (`stat`, `showdebug`, `slomo`) and not for
+level control, which is worth knowing before writing a probe that assumes otherwise.
