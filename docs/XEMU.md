@@ -787,3 +787,27 @@ work on the stock console), then the backspaces, then the command.
 
 This is a debug artefact, not a claim about the shipped build: the disc under `~/sg1/work/console-iso/` is a copy with one
 configuration line changed, and nothing about the original build's behaviour changes because of it.
+
+## Asking a frame whether the console is open (`tools/xemu/console-line.py`, 2026-11-03)
+
+With `Console=GUI.ExtendedConsole` in the rebuilt disc, the console draws exactly one cyan line of text in the bottom
+left. Against a level that animates by tens of thousands of pixels per second, that is invisible to `drive.py`'s
+whole-frame diff -- which is how two runs with the same keystrokes read as "nothing happened" and one read as a console.
+
+`tools/xemu/console-line.py FRAME.png` counts cyan pixels in that corner and answers the question as a number: exit 0
+present, exit 2 absent. Measured on three frames from this session, default crop `576x268+0+691` at 1280x960, threshold
+20:
+
+| frame | cyan pixels | verdict |
+|---|---:|---|
+| `seq18/03-typed.png` (console open, `Say: at fps` typed) | 128 | present |
+| `seq18/04-executed.png` (after `Enter`) | 0 | absent -- `Enter` closes the console |
+| `seq20/02-cleared.png` (same keys, one run later) | 0 | absent -- the console never opened |
+
+The third row is the finding this tool was built for: the console's opening is **not yet deterministic**. `seq20` sent
+`Tab` and then the same keys as `seq18` and drew nothing, so the next question is what state makes `Tab` reach the
+console -- the tutorial modal is the standing suspect, since `seq18` had already dismissed it and `seq20` had not
+verified that it had.
+
+The tool needs ImageMagick, which the harness already requires; nothing new is installed. `make ci` now compiles it with
+the other xemu tools.
