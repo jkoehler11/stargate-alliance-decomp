@@ -887,3 +887,27 @@ every attempt, and it is also the one that is easy to confirm, which makes it a 
 honest "is it open" signal, and it lives in the guest's `Console` object. Reading it over QMP is the same class of work as
 `tools/xemu/mem.py` already does for other addresses, and it would turn every future command from a guess into a
 measurement. Until then 7.3's command survey is a table of what has been *seen* to work, not of what works.
+
+## The mission loop over six indices, and the boot window it needed (measured 2026-11-04)
+
+`tools/xemu/missions.sh` over indices 10-15, one boot each. The first run used the 75-second boot window the earlier
+probes had used, and two of six failed; raising it to 135 seconds -- the value `docs/XEMU.md` already measured for this
+menu, where the same key moves 34,890 pixels at 135 s and 1,476 at 110 s while the panel is still fading in -- fixed one
+of them:
+
+| index | 75 s window | 135 s window | frame |
+|---|---|---|---|
+| 10 | PASS | -- | `M00`, the SGC lab |
+| 11 | PASS | -- | `M02A`, the off-world jungle |
+| 12 | FAIL (`01-highlight` 0 px: the list never opened) | **FAIL** -- the highlight frame is `MAIN MENU`, so the first `A` did nothing | none |
+| 13 | PASS | -- | kept |
+| 14 | FAIL (`01-highlight`) | **PASS** | kept |
+| 15 | PASS | -- | kept |
+
+Five of six load; the sixth is not a map problem. `index-12/01-highlight.png` is the main menu with `Continue`
+highlighted, so the run never reached the list and the twelve d-pad presses that followed were pressed into a menu that
+was already there -- the same "input arrives and the game does nothing with it" behaviour that has dogged the console
+work, and the reason the harness asserts after *every* step rather than at the end. `missions.sh` now defaults to a
+135-second boot window (`--boot=SECS`) rather than the 75 the probes use.
+
+The per-index frames and the TSV stay under `~/sg1/work/xemu/`; they are frames of the game and are not committed.
