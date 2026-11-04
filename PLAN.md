@@ -436,7 +436,9 @@ are limited to expected fields (checksum/timestamp) and documented.
       presses the d-pad that many times and keeps a frame per mission, one row per index in `missions.tsv`; indices 10
       (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Run over six indices** (2026-11-04, `docs/XEMU.md`): 10, 11, 13, 14
       and 15 load and keep a frame; 12 does not, and its highlight frame is the main menu, so that failure is input, not
-      a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass.
+      a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass, and
+      retries a failed index (`--retries`, default 2) because a swallowed press and a map that will not load look the
+      same from outside -- proven by cutting the boot window to 25 s, which fails three attempts in a row and says so.
       **Still open**: the other 55 indices -- 61 `M*` maps on disk, ~3 min each, a nightly job rather than a session's.
 - [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,

@@ -16,6 +16,10 @@
 #   --boot SECS     seconds to wait for the title before the first press (default 135: at 110 the menu is still fading
 #                   in and the press can be swallowed -- docs/XEMU.md measures 1,476 pixels at 110 s against 34,890 at
 #                   135 s for the same key)
+#   --retries N     attempts per index before it counts as failed (default 2). A run fails when a press is swallowed,
+#                   and a swallowed press looks identical to a map that will not load -- measured, one index in six
+#                   failed that way in a six-index run, with the highlight frame still showing the main menu. Each
+#                   attempt is a fresh boot, and the TSV records how many it took.
 # One run per index: a boot, `Continue`, N d-pad presses, `A`, a settle, one screenshot. Missions do not share an
 # emulator session because a level that fails to load leaves the guest in a state the next index cannot trust.
 set -eu
@@ -25,6 +29,7 @@ hdd=""
 eeprom=""
 settle=60
 boot=135
+retries=2
 out=""
 indices=""
 while [ $# -gt 0 ]; do
@@ -35,12 +40,14 @@ while [ $# -gt 0 ]; do
     --eeprom=*) eeprom=${1#*=}; shift ;;
     --settle=*) settle=${1#*=}; shift ;;
     --boot=*) boot=${1#*=}; shift ;;
+    --retries=*) retries=${1#*=}; shift ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
     --hdd) hdd="$2"; shift 2 ;;
     --eeprom) eeprom="$2"; shift 2 ;;
     --settle) settle="$2"; shift 2 ;;
     --boot) boot="$2"; shift 2 ;;
+    --retries) retries="$2"; shift 2 ;;
     --*) echo "unknown option $1" >&2; exit 2 ;;
     *) if [ -z "$out" ]; then out="$1"; else indices="$indices $1"; fi; shift ;;
   esac
@@ -67,14 +74,23 @@ for index in $indices; do
     i=$((i+1))
   done
   set -- "$@" --step=shot=01-highlight --step=pad=a --step=wait="$settle" --step=shot=02-mission --step=cpu=2
-  echo "index $index: booting, $index d-pad presses, then select"
-  if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" python3 tools/xemu/drive.py $args "$@" ) \
-       > "$dir/run.log" 2>&1; then
-    printf '%s\tPASS\t%s\n' "$index" "$dir/02-mission.png" >> "$out/missions.tsv"
-    echo "index $index: PASS ($dir/02-mission.png)"
+  attempt=1
+  ok=0
+  while [ "$attempt" -le "$retries" ]; do
+    echo "index $index: attempt $attempt of $retries, booting, $index d-pad presses, then select"
+    if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" python3 tools/xemu/drive.py $args "$@" ) \
+         > "$dir/run.log" 2>&1; then
+      ok=1
+      break
+    fi
+    attempt=$((attempt+1))
+  done
+  if [ "$ok" = 1 ]; then
+    printf '%s\tPASS\t%s\t%s attempts\n' "$index" "$dir/02-mission.png" "$((attempt))" >> "$out/missions.tsv"
+    echo "index $index: PASS after $attempt attempt(s) ($dir/02-mission.png)"
   else
-    printf '%s\tFAIL\t%s\n' "$index" "$dir/run.log" >> "$out/missions.tsv"
-    echo "index $index: FAIL ($dir/run.log)"
+    printf '%s\tFAIL\t%s\t%s attempts\n' "$index" "$dir/run.log" "$retries" >> "$out/missions.tsv"
+    echo "index $index: FAIL after $retries attempt(s) ($dir/run.log)"
     failed=$((failed+1))
   fi
   pgrep -fc "[x]emu" >/dev/null 2>&1 && sleep 5 || true
