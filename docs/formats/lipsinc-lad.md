@@ -170,3 +170,28 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
 - Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.
+
+## What a census of the payload can and cannot say (measured 2026-11-04)
+
+`tools/lad-scan.py` measures the payload without interpreting it, and two rows of its output dispose of the two
+heuristics this file used to lean on -- use `-1.0f` as a record terminator, and treat a fixed 12-byte tail as one:
+
+| file | bytes | channels | `-1.0f` hits | records sharing that file's commonest 12-byte tail | strides |
+|---|---:|---:|---:|---:|---|
+| `Controllers/grey.lad` | 40,650 | 21 | 352 | 222 (tail `04 00 00 0f 00 00 00 80 02 20 92 0e`) | 32x131, 37x16, 64x31, 101x3, 128x20, 192x19 |
+| `sg1_crew_jackson.lad` | 13,963 | 21 | 352 | 222 (tail `00 00 88 24 3c d5 14 26 e4 a5 12 27`) | identical to the row above |
+| `Controllers/sg1_crew_carter.lad` | 1,301,681 | 19 | 1,139 | 604 (tail `03 00 40 19 00 00 00 80 f0 3f b2 16`) | 32x422, 37x70, 64x22, 101x6, 128x40, 192x38 |
+
+**`-1.0f` alone over-counts**: 352 hits in a 21-channel file are not 352 records, and the extra hits are the four bytes
+`00 00 80 bf` occurring by chance inside float data. A terminator needs *something* else to be identified by.
+
+**A single 12-byte tail does not identify records either.** `grey.lad` and `sg1_crew_jackson.lad` are both 21 channels and
+both yield 222 records on the same stride histogram, yet their tails differ -- and `grey.lad` is three times the size, so
+the 222 are a *subset* of its records, not all of them. A file therefore carries more than one tail population, and the
+"constant tail" idea is a property of the subset a file happens to repeat most, not of the format.
+
+**Where that leaves U4.** The payload is not decodable by pattern-matching terminators; the facts above bound the problem
+(a record stride of 32 bytes with 37-byte insertions, most of the payload covered) without naming a single field. The next
+step is the one this project prefers anyway: read the loader. `LIPSincReadAnimFile` is at `0x000b8340` (4,977 bytes, named
+from its own `Read Track %s` log string, `inventory/lipsinc_runtime.csv`) and its loop over the payload is what says which
+bytes are time and which are value.
