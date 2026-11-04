@@ -434,9 +434,10 @@ are limited to expected fields (checksum/timestamp) and documented.
       entry per press, so `M00` is index 10 and the older page table was read off scrolled windows (31 is `M12F`, not
       `M20A`). **The loop exists**: `tools/xemu/missions.sh OUTDIR INDEX...` boots once per index,
       presses the d-pad that many times and keeps a frame per mission, one row per index in `missions.tsv`; indices 10
-      (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Still open**:
-      running it over the campaign set -- 61 `M*` maps are on disk and each index is one boot (~2.5 min), so the full set
-      is a nightly job rather than a session's work.
+      (`M00`, the SGC lab) and 11 (`M02A`, an off-world jungle cutscene) both loaded and were photographed. **Run over six indices** (2026-11-04, `docs/XEMU.md`): 10, 11, 13, 14
+      and 15 load and keep a frame; 12 does not, and its highlight frame is the main menu, so that failure is input, not
+      a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass.
+      **Still open**: the other 55 indices -- 61 `M*` maps on disk, ~3 min each, a nightly job rather than a session's.
 - [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no

@@ -13,6 +13,9 @@
 #   --eeprom PATH   EEPROM to boot from; the profile-carrying one sends Continue straight to the list
 #                   (default $WORK/smoke1/eeprom.bin)
 #   --settle SECS   seconds to wait after the map is selected (default 60)
+#   --boot SECS     seconds to wait for the title before the first press (default 135: at 110 the menu is still fading
+#                   in and the press can be swallowed -- docs/XEMU.md measures 1,476 pixels at 110 s against 34,890 at
+#                   135 s for the same key)
 # One run per index: a boot, `Continue`, N d-pad presses, `A`, a settle, one screenshot. Missions do not share an
 # emulator session because a level that fails to load leaves the guest in a state the next index cannot trust.
 set -eu
@@ -21,6 +24,7 @@ bios="${SG1_BIOS:-$HOME/nfs/sg1-dump/bios}"
 hdd=""
 eeprom=""
 settle=60
+boot=135
 out=""
 indices=""
 while [ $# -gt 0 ]; do
@@ -30,11 +34,13 @@ while [ $# -gt 0 ]; do
     --hdd=*) hdd=${1#*=}; shift ;;
     --eeprom=*) eeprom=${1#*=}; shift ;;
     --settle=*) settle=${1#*=}; shift ;;
+    --boot=*) boot=${1#*=}; shift ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
     --hdd) hdd="$2"; shift 2 ;;
     --eeprom) eeprom="$2"; shift 2 ;;
     --settle) settle="$2"; shift 2 ;;
+    --boot) boot="$2"; shift 2 ;;
     --*) echo "unknown option $1" >&2; exit 2 ;;
     *) if [ -z "$out" ]; then out="$1"; else indices="$indices $1"; fi; shift ;;
   esac
@@ -53,7 +59,7 @@ for index in $indices; do
   rm -rf "$dir"; mkdir -p "$dir"
   cp --reflink=auto "$hdd" "$dir/hdd.qcow2"
   args="--iso=$iso --bios=$bios --hdd=$dir/hdd.qcow2 --out=$dir --eeprom=$eeprom"
-  args="$args --fuzz=10 --seconds=75 --crop=480x520+760+210"
+  args="$args --fuzz=10 --seconds=$boot --crop=480x520+760+210"
   set -- --step=shot=00-title --step=noise=3 --step=pad=a --step=wait=4
   i=0
   while [ "$i" -lt "$index" ]; do
