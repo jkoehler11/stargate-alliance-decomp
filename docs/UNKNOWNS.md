@@ -114,6 +114,12 @@ clip length, not channel count, so it is per-frame curve data.
 `*LIPSincAnim` natives carry no serialised index, so the loader is engine-side. Guessing a record
 layout from one clip would produce exactly the plausible-looking wrong output this project bans.
 
+**What a census rules out (2026-11-04).** `tools/lad-scan.py` counts the `-1.0f` hits against the records that share a
+file's commonest 12-byte tail: 352 hits vs 222 records in a 21-channel file (the rest are the four bytes of `-1.0f`
+occurring inside float data), and the commonest tail differs between two 21-channel files whose stride histograms are
+identical -- so neither `-1.0f` alone nor a fixed tail identifies a record. **What would settle it:** the loader's own
+loop, `LIPSincReadAnimFile` at `0x000b8340`.
+
 **What would settle it.** The middleware's own format notes (LIPSinc authoring tool), or the native
 loader from PLAN 4.8. Two cheap experiments in the meantime: compare a clip whose speech waveform is
 short with the `Controllers/` pack for the same character (the difference is the per-frame data), and
