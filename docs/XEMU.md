@@ -760,3 +760,30 @@ walk, and the remaining work in 7.2 is executing it over the campaign set rather
 So console travel is refused in this build (a shipping build commonly gates `Travel`), and the map list stays the only
 route into a mission. That also means the console is good for *state* commands (`stat`, `showdebug`, `slomo`) and not for
 level control, which is worth knowing before writing a probe that assumes otherwise.
+
+## Why the console draws nothing: the configured class has no renderer (measured 2026-11-03)
+
+`System/Default.ini` sets `[Engine.Engine] Console=Engine.Console`, and `Engine.Console` is the one console class in the
+tree that has **no** `PostRender`: `Engine/Interaction.uc:143` declares it as a stub, `UWindow/WindowConsole.uc:133`,
+`GamePlay/TournamentConsole.uc` and `GUI/ExtendedConsole.uc:392` all override it (ExtendedConsole's state even draws its
+scrollback through `Canvas.DrawText`). The configured console therefore accepts input and renders nothing -- which is what
+three sessions of "the console did not open" were seeing.
+
+**The class can be swapped, and the swap draws.** Rebuilding the disc with that one line changed is enough:
+
+    cp -a "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15" /tmp/console-iso/game
+    # System/Default.ini: Console=Engine.Console -> Console=GUI.ExtendedConsole
+    tools/xemu/build-xiso.sh /tmp/console-iso/game /tmp/console-iso/game.iso
+
+The rebuilt image boots (title id `0x4a570006`, same 2,258,370,560 bytes as the original) and, in gameplay, `Tab` now
+draws an input line: **`(> Say: at fps_`**. So the renderer is real and the shipped line is what suppresses it.
+
+**The swap is not yet a command console.** `ExtendedConsole` opens in `Say` mode on this build: the typed text renders as
+a chat message (`Say: …`) and `Enter` sends it, so `stat fps` typed there produced no FPS counter in two runs
+(`~/sg1/work/xemu/seq18`, `seq19`) exactly as it does with the stock console. Clearing the `Say: ` prefix with backspaces
+was attempted and did not clear it -- the press that opens the console sets `bIgnoreKeys`, which eats the first key after
+it, so four backspaces arrived as three. **What would settle it**: send a spare key first (the trick that makes `stat fps`
+work on the stock console), then the backspaces, then the command.
+
+This is a debug artefact, not a claim about the shipped build: the disc under `~/sg1/work/console-iso/` is a copy with one
+configuration line changed, and nothing about the original build's behaviour changes because of it.
