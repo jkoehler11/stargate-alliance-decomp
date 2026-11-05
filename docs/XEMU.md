@@ -1152,3 +1152,27 @@ of file entries anywhere in it. So the loop in `execGetMapList` iterates the `Pa
 come from the callee it calls per glob -- `0x00036cc0`, with `0x00036ce0` and `0x00036c90` next to it building and
 concatenating the strings -- not from an array the routine walks itself. Reading those three bodies is the next step,
 and a cheaper one than another memory instrument.
+
+## The three helpers `GetMapList` calls: string functions, and one call that is not (measured 2026-11-05)
+
+The previous section named `0x00036cc0`, `0x00036ce0` and `0x00036c90` as "building and concatenating the strings". Exported,
+they are the CRT: **`_wcscat` (`0x36ce0`), `_wcsstr` (`0x36cc0`) and `_vsnwprintf` (`0x36c90`, into a fixed `0x400`
+wchar buffer)**. A fourth body settles what the loop is doing -- `0x300410` is the widget's array clear: it walks the
+0x1c-byte elements, frees them, sets the count to 0 and then reallocates. So `this + 0x27c` is the list the routine owns,
+and the routine clears it before filling it.
+
+That corrects the mechanism in two places:
+
+- **The `*.unr` test is a literal substring search, not a wildcard.** `_wcsstr(glob, L"*.unr")` is run against each
+  `[Core.System] Paths` glob, where `*` is just a character, so the entries that qualify are the ones that *contain* the
+  text `*.unr` -- `..\Maps\*.unr` and `..\TestMaps\*.unr`. The routine is collecting **paths**, not map names.
+- **The map names come from one virtual call.** For each qualifying path it formats/concatenates the string, logs it via
+  `[VL:GetMapList]:%s` (`0x574d0` is the log wrapper) and then calls `[[0x005bf514] + 0x30]` at the site `0x2fe806` with
+  four arguments (path, 1, 0), taking the result and appending it to its own array (`0x1fda0` / `0xc19a0`). A call shaped
+  like that, handed a glob path and returning something the caller appends, is a file enumerator -- so **the count of 41 is
+  produced one level below `GetMapList`**, in the engine's glob/file layer, and not by the GUI and not by this routine.
+
+**Next instrument, one read:** `[[0x005bf514] + 0x30]` at the title screen over the GDB stub (the retry from the section
+above makes it reliable) gives the enumerator's address; `ExportAt.java` on that address is then the whole of the
+remaining question. If it is the same code the package loaders use, then what caps the list at 41 is also what caps any
+other `Paths` glob -- which would make the missing 30 maps a symptom of a file-layer limit rather than of this screen.

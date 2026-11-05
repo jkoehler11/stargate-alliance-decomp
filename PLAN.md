@@ -510,6 +510,10 @@ and a deliberate one-line script break is caught by the boot test.
   stage. Retry rather than conclude, and record the retry (`docs/XEMU.md`).
 - The physical fallback is still a dead end (one-packet reads answer `E22`) and the emulator can lose its GPU context
   mid-run, so a read that needs the image should go through a virtual read with a retry.
+- **The helpers are CRT and the enumeration is below the routine.** `0x36cc0`/`0x36ce0`/`0x36c90` are `_wcsstr`,
+  `_wcscat`, `_vsnwprintf`; `_wcsstr(glob, L"*.unr")` is a literal substring test on each `Paths` glob, so `GetMapList`
+  collects *paths* and the 41 names come from the virtual call at `0x2fe806` (`[[0x005bf514]+0x30]`). One read of that
+  slot at the title, then `ExportAt`, is what is left.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 
