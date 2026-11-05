@@ -502,10 +502,14 @@ and a deliberate one-line script break is caught by the boot test.
   builds `*.unr` from `MapExt`, walks the enumeration source and adds a list item per hit.
 - **The 41 is a prefix of the disc's order**: `Maps/` has 73 `.unr`, XDVDFS order is ASCII, index 40 is `M15B.unr` and
   41 `M15C.unr`. Prefixes come from a fill that stops, not from a filter.
-- **The source global `0x005fbee4` resolves to the `Paths` globs** (`Default.ini:49-56`, 8 of them) when read virtually
-  over the GDB stub early in the boot; the count behind them is what the next session should read, and the two
-  instruments that failed here (virtual read = 0 at the title, physical scan = `E22`, then an amdgpu context loss) are
-  written down so they are not tried twice.
+- **The source global `0x005fbee4` resolves to the `Paths` globs** (`Default.ini:49-56`, 8 of them) -- and only to
+  those, at the title as well as at t+20 s, so it is not the file cache and the names come from the callee at
+  `0x00036cc0`.
+- **The virtual read does work at the title.** The first attempt's zeros were the stub's `odd hex length from stub`
+  failure being mistaken for a value: on a fresh connection `.text`, `MapExt` and the global all read correctly at every
+  stage. Retry rather than conclude, and record the retry (`docs/XEMU.md`).
+- The physical fallback is still a dead end (one-packet reads answer `E22`) and the emulator can lose its GPU context
+  mid-run, so a read that needs the image should go through a virtual read with a retry.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 

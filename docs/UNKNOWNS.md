@@ -887,11 +887,14 @@ the middle; a fill that stops early leaves a prefix. The enumeration source glob
 stub in a booted guest, to a struct whose `+0x7c`/`+0x11c` arrays are the 8 `[Core.System] Paths` globs from
 `System/Default.ini:49-56` -- so the list is filled from the path globs and the file cache behind them.
 
-**What would settle the count.** One read at the title screen in the game's own context: stop the guest inside the title
-loop (or take the file-array offset from `FPackageFileCache`'s own `Add`/`Find` bodies) and count `.unr` entries. 41
-means the cache fill stops early and the cap is above `GetMapList`; 73 means the cache is complete and the truncation is
-in the widget's `Add`. `docs/XEMU.md` records the two instruments that did not work (virtual reads at the title return
-0, physical scans answer `E22`, and the retry lost the emulator's GPU context).
+**What the read actually shows (2026-11-05, correcting the first attempt).** The virtual read *does* work at the title --
+`.text` and the `MapExt` global read correctly at every stage, and a caller only sees zeros because the stub raises
+`odd hex length from stub` on roughly every other read and a swallowed exception looks like a zero; retrying on a fresh
+connection fixes it. With that fixed, `0x005fbee4` still resolves to an object whose only arrays are the two 8-entry
+`Paths` copies, so it is **not** the file cache: the routine iterates the path globs and the names come from the callee
+at `0x00036cc0`. **What would settle the count:** read `0x00036cc0` (and `0x36ce0`, `0x36c90`) and find where the file
+list lives, then read it at the title. 41 means the fill stops early and the cap is above `GetMapList`; 73 means the
+cache is complete and the truncation is in the widget's `Add`.
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
 `Continue` (a save that starts inside one of those maps) and checkpoint loads.
