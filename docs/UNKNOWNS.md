@@ -868,12 +868,30 @@ command leaves no on-screen trace, and the console's scrollback is in guest memo
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 The list holds the first 31 campaign maps in ASCII order and nothing after them, while 30 more (M15C through M21D) are
-on the disc (`docs/XEMU.md`, 2026-11-04). Either a fixed-size array is filled in id order until full, or the list is
-generated from a table that the shipping build cut short. **Narrowed (2026-11-04):** the entries come from
-`GUIController.GetMapList`, a `native` function (`GUI/GUIController.uc:430`), so both the enumeration and the cap are in
-the XBE -- there is no ini or UnrealScript table to read or extend (`docs/XEMU.md`). The question for the XBE work is
-what that native function enumerates and why it stops at 41. Distinguishing the two needs the list's population code
-(`xMaps`/`GUIQuickSelectMap` in the packages, or the XBE routine behind it), not more frames.
+on the disc (`docs/XEMU.md`, 2026-11-04).
+
+**Narrowed (2026-11-04):** the entries come from `GUIController.GetMapList`, a `native` function
+(`GUI/GUIController.uc:430`), so both the enumeration and the cap are in the XBE -- there is no ini or UnrealScript
+table to read or extend.
+
+**The routine is found, and it has no cap (2026-11-05).** `UGUIController::execGetMapList` is `0x002fe5f0`, reached from
+the binder name `intUGUIControllerexecGetMapList` (`0x00534a4a`) and its one xref from the log format
+`[VL:GetMapList]:%s` (`0x00538d28` -> site `0x002fe7e4`). Measured in the body: it builds `*.%s` from the `MapExt`
+global, walks the engine's enumeration source, and adds one list item per hit; `Filter` is stepped and never read, so the
+filter box is inert by construction; and no comparison against a constant bound exists anywhere in its 1,256 bytes, so
+the truncation is **not** a loop limit in this routine.
+
+**The truncation is a prefix (2026-11-05).** `Maps/` holds 73 `.unr`, the XDVDFS directory walk is ASCII order, and
+index 40 is `M15B.unr` / 41 is `M15C.unr`: the list is the first 41 names of the disc's own order. A filter drops from
+the middle; a fill that stops early leaves a prefix. The enumeration source global (`0x005fbee4`) resolves, over the GDB
+stub in a booted guest, to a struct whose `+0x7c`/`+0x11c` arrays are the 8 `[Core.System] Paths` globs from
+`System/Default.ini:49-56` -- so the list is filled from the path globs and the file cache behind them.
+
+**What would settle the count.** One read at the title screen in the game's own context: stop the guest inside the title
+loop (or take the file-array offset from `FPackageFileCache`'s own `Add`/`Find` bodies) and count `.unr` entries. 41
+means the cache fill stops early and the cap is above `GetMapList`; 73 means the cache is complete and the truncation is
+in the widget's `Add`. `docs/XEMU.md` records the two instruments that did not work (virtual reads at the title return
+0, physical scans answer `E22`, and the retry lost the emulator's GPU context).
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
 `Continue` (a save that starts inside one of those maps) and checkpoint loads.

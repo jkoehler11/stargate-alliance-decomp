@@ -442,7 +442,10 @@ are limited to expected fields (checksum/timestamp) and documented.
       a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass, and
       retries a failed index (`--retries`, default 2) because a swallowed press and a map that will not load look the
       same from outside -- proven by cutting the boot window to 25 s, which fails three attempts in a row and says so.
-      **Still open**: the other 55 indices -- 61 `M*` maps on disk, ~3 min each, a nightly job rather than a session's.
+      **Still open**: the 30 campaign maps past `M15B`, which `QUICK SELECT MAP` never offers. The routine behind the
+      list is `UGUIController::execGetMapList` at `0x002fe5f0` and it has no cap, and the list is the first 41 names
+      of the disc's own order (`docs/XEMU.md`, `docs/UNKNOWNS.md` U16) -- so the truncation is in the fill, one
+      measurement short of a cause.
 - [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
@@ -487,6 +490,22 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-05, `GetMapList` is found and has no cap; the fill is one read away)
+
+- **U16's routine is `0x002fe5f0`**, and it needed no native index: the build binds an index-less `native` by name (U1),
+  so the image's own `intUGUIControllerexecGetMapList` wide literal (`0x00534a4a`) names it and its log format
+  `[VL:GetMapList]:%s` (`0x00538d28`) has exactly one dword reference, at `0x002fe7e4`. `ExportAt.java` on that address
+  is the whole cost of getting the body.
+- **The body rules out two explanations and leaves one.** `Filter` is stepped and never read (the filter box cannot work
+  by construction), and there is no comparison against a constant bound in 1,256 bytes (so 41 is not a loop limit). It
+  builds `*.unr` from `MapExt`, walks the enumeration source and adds a list item per hit.
+- **The 41 is a prefix of the disc's order**: `Maps/` has 73 `.unr`, XDVDFS order is ASCII, index 40 is `M15B.unr` and
+  41 `M15C.unr`. Prefixes come from a fill that stops, not from a filter.
+- **The source global `0x005fbee4` resolves to the `Paths` globs** (`Default.ini:49-56`, 8 of them) when read virtually
+  over the GDB stub early in the boot; the count behind them is what the next session should read, and the two
+  instruments that failed here (virtual read = 0 at the title, physical scan = `E22`, then an amdgpu context loss) are
+  written down so they are not tried twice.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 

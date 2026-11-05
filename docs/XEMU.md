@@ -1077,3 +1077,54 @@ TSV instead of a pass. End-to-end, on the truncated-map ISO:
 capture `02-mission.png` at all ("could not capture"), because by then the emulator's window is no longer the one the
 harness grabbed. That is still a failure, but it is a *capture* failure; the frame check covers the case where a frame
 does arrive, which is what `--settle=20` produces and what any shorter settle will hit.
+
+## The routine behind `QUICK SELECT MAP`: `Filter` is never read, and the 41 is a prefix (measured 2026-11-05)
+
+U16 said the cap lives in the XBE because `GetMapList` is `native`. That is right, and the routine needs no native
+index: `inventory/natives.csv` records this declaration with token 0, which is the *name*-binding case U1 settled. Two
+wide literals identify it without an index at all --
+
+| what | VA | why it is the routine |
+|---|---|---|
+| `intUGUIControllerexecGetMapList` | `0x00534a4a` | the name the binder formats and looks up for an index-less native |
+| `[VL:GetMapList]:%s` | `0x00538d28` | its own log format; exactly one dword reference in the image, `0x002fe7e4` |
+
+That reference lands inside a 1,256-byte function at **`0x002fe5f0`**: `UGUIController::execGetMapList`, exported by
+`ExportAt.java` in one run. The body, in order: two `FFrame::Step` calls off the call's expression stream (`Filter`,
+then `List`) with the `EX_EndFunctionParms` (`0x42`) skip every native's argument reader needs; the wildcard built from
+the engine's `MapExt` global (`0x007b6c80`, `unr` in `System/Default.ini:9`) into `*.unr`; a walk of the engine's
+enumeration source with a wildcard test at `0x00036cc0`, a `[VL:GetMapList]` log line per hit, and one 0x1c-byte item
+appended to the list widget's array (offsets `0x27c`, `0x280`, `0x284` are that array's data, count and max); and the
+whole walk run twice, the second pass with a base path plus `System\` in front.
+
+Two facts are in the body itself, and both are checks the outside could not make:
+
+- **`Filter` is stepped and never read.** The buffer the first `Step` fills is passed by address and then reused as a
+  scratch local for the rest of the function; nothing compares against it. `StargateMenus.MapFileList.Filter(S)` hands
+  `S` straight to this native, so the filter box cannot filter -- what #157 measured from the outside (typing `M20`
+  after `Tab` changed nothing but animation) now has its cause.
+- **There is no cap in this routine.** A linear sweep of all 1,256 bytes finds no comparison against a constant bound,
+  so the 41 is not a loop limit here.
+
+The disc explains the *shape* of the list. `Maps/` holds **73** `.unr`; the XDVDFS directory walk (left-then-right, the
+on-disc order) is ASCII order, and **index 40 is `M15B.unr`, 41 is `M15C.unr`**. The list's 41 entries are exactly the
+first 41 of that order -- 9 `CTF-`/`DM-`, then `Entry`, then 31 campaign maps. A filter would drop entries from the
+middle; the list stops mid-alphabet, so whatever truncates does it to a prefix, which points at the fill rather than at
+the matching.
+
+**The enumeration source, measured in the guest -- and the instrument that did not finish the job.** The global the loop
+dereferences is `0x005fbee4`. Read over the GDB stub in a booted guest, in **virtual** mode (`mem.py`'s documented
+physical mode answers zero for this image global at every offset tried, because the XBE's sections are not
+identity-mapped), it holds two 8-entry `FString` arrays at `+0x7c` and `+0x11c` whose strings are exactly
+`[Core.System] Paths` from `System/Default.ini:49-56` (`..\System\*.u`, `..\Maps\*.unr`, ... `..\Animations\*.ukx`).
+So the routine walks the engine's path globs and whatever the file layer caches behind them -- the same conclusion #158
+reached from the package side, now with the structure in hand.
+
+What is still open is the *count* behind those globs, and the failed instrument is worth recording: the virtual read
+works at t+13 s (that is where the `Paths` strings above came from) and returns 0 for the same address at the title,
+where the interrupted CPU context does not map the image; a physical scan for the map names then answered `E22` to every
+request, and the retry with working chunking died with the emulator itself (`amdgpu: The CS has cancelled because the
+context is lost`) 150 s into the boot. **The next instrument is one read at the title in the game's own context** --
+stop the guest inside the title loop, or read the file-array offset out of a second `ExportAt` of `FPackageFileCache`'s
+own `Add`/`Find` bodies -- and it answers one number: how many `.unr` entries the cache holds. 41 means the fill stops
+and the cap sits above this routine; 73 means the cache is complete and the truncation is in the widget's `Add`.
