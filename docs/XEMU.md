@@ -952,3 +952,37 @@ failing run are indistinguishable (mean luminance 46.7 vs 46.6), so the press is
 the mission maps cannot be reached from `QUICK SELECT MAP` at all -- loading them would need a different route (a
 checkpoint, `Continue`, or the console, which refuses to travel). This closes 7.2 for the reachable set and names the
 other half as a separate question rather than counting it as passed.
+
+## `QUICK SELECT MAP` is the first half of the campaign, and stops at M15B (measured 2026-11-04)
+
+The list has 41 entries and the first ten are not campaign maps, so indices 10-40 are the campaign -- but only the
+**first 31** of the 61 campaign maps on the disc. Read off the highlight frames (`01-highlight.png`, one per index):
+
+| index | map | index | map | index | map |
+|---|---|---|---|---|---|
+| 10 | M00 | 21 | M07E | 32 | M13A |
+| 11 | M02A | 22 | M10A | 33 | M13B |
+| 12 | M02B | 23 | M10B | 34 | M13C |
+| 13 | M02C | 24 | M10C | 35 | M13D |
+| 14 | M02D | 25 | M10D | 36 | M14A |
+| 15 | M04B | 26 | M12A | 37 | M14B |
+| 16 | M04a | 27 | M12B | 38 | M14C |
+| 17 | M07A | 28 | M12C | 39 | M15A |
+| 18 | M07B | 29 | M12D | 40 | **M15B** |
+| 19 | M07C | 30 | M12E | | |
+| 20 | M07D | 31 | M12F | | |
+
+Four rows (12, 13, 14, 20) are placed by the list's own ordering rather than read, because their frames were the ones
+whose highlight sat against the panel edge; every other row was read off a frame, and the two anchors that pin the
+ordering are index 10 (`M00`, the first campaign entry) and index 40 (`M15B`, with empty panel below it and the
+scrollbar at the bottom).
+
+**The order is ASCII, not alphabetical**: `M04B` at 15 comes before `M04a` at 16 because `B` sorts before `a`. The
+first ten entries are `CTF-Abydos`, `CTF-LostCity`, `DM-Ha'tak`, `DM-KelownanTrain`, `DM-Langara`, `DM-LostCity`,
+`DM-Subterranean`, `DM-Tomb`, `DM-WorstCaseScenario`, `Entry`.
+
+**30 campaign maps are on the disc and cannot be reached this way**: `M15C`-`M15F`, `M16A`-`M16G`, `M17A`, `M17B`,
+`M17D`, `M18A`, `M18B`, `M18D`, `M19A`-`M19E`, `M20A`-`M20D`, `M21A`-`M21D`. The list is a *prefix* of the campaign in
+id order, ending mid-way through `M15` -- consistent with a fixed-size list filled in order until it is full, which is
+a hypothesis about the cause, not a measurement. Reaching these needs a different route: `Continue` with a save, a
+checkpoint load, or a level-travel call the console will accept (it refuses `open`, measured in #147).

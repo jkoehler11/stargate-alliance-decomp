@@ -864,3 +864,13 @@ during the boot and one after it. What is missing is the *window* -- the console
 the first keypress, so a command sent cold loses its first character. The open question is now output: a text-only
 command leaves no on-screen trace, and the console's scrollback is in guest memory (`Console.Scrollback`, `History`), which
 `tools/xemu/mem.py` is the right instrument to read.
+
+## U16 -- why `QUICK SELECT MAP` stops at `M15B`
+
+The list holds the first 31 campaign maps in ASCII order and nothing after them, while 30 more (M15C through M21D) are
+on the disc (`docs/XEMU.md`, 2026-11-04). Either a fixed-size array is filled in id order until full, or the list is
+generated from a table that the shipping build cut short. Distinguishing the two needs the list's population code
+(`xMaps`/`GUIQuickSelectMap` in the packages, or the XBE routine behind it), not more frames.
+
+This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
+`Continue` (a save that starts inside one of those maps) and checkpoint loads.
