@@ -110,6 +110,26 @@ prerequisites that cost a run each to find:
   pkill's own command line) before a run.
 
 What the boot stage proves is unchanged and now measured in a full run: the guest executes game code — six EIP samples,
-100% in user space, six distinct addresses — which is the evidence channel described in `docs/XEMU.md`. Pixel-level
-assertion and mission loading still need input automation.
+100% in user space, six distinct addresses — which is the evidence channel described in `docs/XEMU.md`.
+
+## A full run with the mission stage, measured (2026-11-04)
+
+`tools/nightly.sh --xemu --missions --mission-indices="10 11"`, from the logged-in session, `SG1_DUMP` at the dump
+root:
+
+    RESULT PASS
+    23 of 23 stages PASS
+    rebuild      38 s
+    xemu-boot   141 s
+    missions   1129 s      index 10 PASS after 2 attempts, index 11 PASS after 1
+    tracked files modified by this run: 0
+
+The last line is the property that makes the nightly usable as a gate: the run writes only into `build/nightly/<stamp>/`
+and the git-ignored work tree, so a pass means the repository is unchanged as well as correct.
+
+**The mission stage is the expensive one** — 1,129 s for two indices, because each boot waits 135 s for the title and
+60 s to settle, and a swallowed press costs a whole second attempt. `SG1_MISSION_INDICES` therefore stays a deliberate
+subset in the nightly; `tools/xemu/missions.sh --all` is the full 31-index sweep to run by hand (about 90 minutes).
+Pixel-level assertion now exists in that stage: `tools/xemu/guest-halt.py` fails an index whose mission frame is the
+BIOS screen, which is what a failed load looks like in this build (`docs/XEMU.md`, 2026-11-04).
 
