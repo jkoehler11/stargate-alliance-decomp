@@ -869,7 +869,10 @@ command leaves no on-screen trace, and the console's scrollback is in guest memo
 
 The list holds the first 31 campaign maps in ASCII order and nothing after them, while 30 more (M15C through M21D) are
 on the disc (`docs/XEMU.md`, 2026-11-04). Either a fixed-size array is filled in id order until full, or the list is
-generated from a table that the shipping build cut short. Distinguishing the two needs the list's population code
+generated from a table that the shipping build cut short. **Narrowed (2026-11-04):** the entries come from
+`GUIController.GetMapList`, a `native` function (`GUI/GUIController.uc:430`), so both the enumeration and the cap are in
+the XBE -- there is no ini or UnrealScript table to read or extend (`docs/XEMU.md`). The question for the XBE work is
+what that native function enumerates and why it stops at 41. Distinguishing the two needs the list's population code
 (`xMaps`/`GUIQuickSelectMap` in the packages, or the XBE routine behind it), not more frames.
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are

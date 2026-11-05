@@ -986,3 +986,38 @@ first ten entries are `CTF-Abydos`, `CTF-LostCity`, `DM-Ha'tak`, `DM-KelownanTra
 id order, ending mid-way through `M15` -- consistent with a fixed-size list filled in order until it is full, which is
 a hypothesis about the cause, not a measurement. Reaching these needs a different route: `Continue` with a save, a
 checkpoint load, or a level-travel call the console will accept (it refuses `open`, measured in #147).
+
+## Where `QUICK SELECT MAP` gets its entries, and four routes that do not reach the rest (2026-11-04)
+
+The list is **not** built from `System/tweak/Misc/ChapterList.ini`. The class chain is:
+
+    QuickLoadMapTempPage          (StargateMenus, TitleString="Quick Select Map")
+      -> SinglePlayerChapterSelect
+        -> MapSelectionPanel     (overrides the chapter list with a map-file list)
+          -> MapFileList         (config Tweak_Misc_ChapterList, but it zeroes Chapters and ignores the config)
+             Controller.GetMapList("", List)      <-- GUI/GUIController.uc:430, `native`
+
+`GetMapList` is a **native** function, so the 41 entries are whatever the engine enumerates and the cap or filter behind
+it lives in the XBE, not in UnrealScript and not in any ini. That is why the ini is a dead end: `ChapterList.ini` has 37
+chapters with display titles ("Mission 1 Replicator Attack") and file ids (`M02AX.unr`), and none of those strings appear
+in the list at all.
+
+What the GUI does on selection, for reference (`SinglePlayerChapterSelect.LoadMap`):
+
+    URL = map $ URL $ "?Name=" $ PlayerOwner().GetCurrentProfile().GetPlayerName() $ "?LAN";
+    Controller.Master.Travel(URL);
+
+So the engine's own travel takes a URL of the form `M20A?Name=<profile>?LAN`.
+
+**Four routes tried against the back half, all negative:**
+
+| route | what was done | result |
+|---|---|---|
+| boot map | rebuilt the ISO with `[URL] LocalMap=M20A.unr` in `System/Default.ini`, booted it | main menu; the ini value is ignored for a normal boot |
+| filter box | `MapSelectionPanel` declares a `FilterBox` at `WinTop=0.9` that calls `GetMapList(S, List)` | the box is not drawn in the quick page; typing `M20` after `Tab` changed nothing but animation |
+| console from the title | `Tab`, five `BackSpace`, `open M20A`, `Return` at the main menu | no console line drawn (whole-frame change 0 px on the command shot), and the menu was unchanged 60 s after `Return` |
+| map list itself | `--all`, 31 entries | ends at `M15B`; 30 campaign maps are not offered |
+
+The console *does* run commands once a level is loaded (`stat fps`, #142), so the fourth row is not evidence that the
+console is broken -- only that it is not available from the main menu. The next attempt at the back half belongs
+in-game, with the URL shape the GUI uses.
