@@ -892,8 +892,12 @@ stub in a booted guest, to a struct whose `+0x7c`/`+0x11c` arrays are the 8 `[Co
 `odd hex length from stub` on roughly every other read and a swallowed exception looks like a zero; retrying on a fresh
 connection fixes it. With that fixed, `0x005fbee4` still resolves to an object whose only arrays are the two 8-entry
 `Paths` copies, so it is **not** the file cache: the routine iterates the path globs and the names come from the callee
-at `0x00036cc0`. **What would settle the count:** read `0x00036cc0` (and `0x36ce0`, `0x36c90`) and find where the file
-list lives, then read it at the title. 41 means the fill stops early and the cap is above `GetMapList`; 73 means the
+at `0x00036cc0`. **The callee, measured (2026-11-05):** `0x36cc0`, `0x36ce0` and `0x36c90` are `_wcsstr`, `_wcscat` and
+`_vsnwprintf` -- CRT, not the enumeration. The `*.unr` match is a literal *substring* test on each `Paths` glob, so the
+routine collects paths, and the map names arrive from one 4-argument virtual call at `0x2fe806`
+(`[[0x005bf514] + 0x30]`) whose result it appends to its own array; `0x300410` (called first) is the widget's array
+clear. **What would settle the count:** read `[[0x005bf514] + 0x30]` at the title (one GDB read, with the retry) and
+export that address -- the 41 is produced by the file enumerator, one level below `GetMapList`. 41 means the fill stops early and the cap is above `GetMapList`; 73 means the
 cache is complete and the truncation is in the widget's `Add`.
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
