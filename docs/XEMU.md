@@ -1128,3 +1128,27 @@ context is lost`) 150 s into the boot. **The next instrument is one read at the 
 stop the guest inside the title loop, or read the file-array offset out of a second `ExportAt` of `FPackageFileCache`'s
 own `Add`/`Find` bodies -- and it answers one number: how many `.unr` entries the cache holds. 41 means the fill stops
 and the cap sits above this routine; 73 means the cache is complete and the truncation is in the widget's `Add`.
+
+## The same global read again: the image *is* mapped at the title, and `0x5fbee4` is only `Paths` (measured 2026-11-05)
+
+The section above records a virtual read that returned 0 at the title and concluded that the interrupted context does
+not map the image. That was wrong, and the correction matters because it removes a blocker that was never there:
+
+| t | `0x2fe5f0` (`.text`, 8 bytes) | `0x7b6c80` (`MapExt`) | `[0x5fbee4]` |
+|---|---|---|---|
+| +20 s | `558bec83e4f86aff` (the prologue of `execGetMapList`) | `0xaddaf0`, 4 | `0xb4f6e0` |
+| +120 s | same | same | `0xb4f6e0` |
+| +160 s (title) | same | same | `0xb4f6e0` |
+
+The XBE is mapped in whatever context the stub interrupts, at every stage, and the global is stable. The zeros were the
+stub's own intermittent failure: roughly every other read raises `odd hex length from stub`, and a loop that treats the
+exception as "nothing there" records 0. Retrying on a fresh connection (`Gdb.close()`, reconnect, `interrupt()`) returns
+the value -- that is what the table is built from, and it is the difference between two sessions answering the same
+question differently.
+
+**And `0x5fbee4` is not the package file cache.** At the title it resolves to the same object as at t+20 s, and a
+`{ptr,count}` sweep of its first `0x600` bytes finds only the two 8-entry `Paths` copies at `+0x7c` / `+0x11c`: no array
+of file entries anywhere in it. So the loop in `execGetMapList` iterates the `Paths` globs, and the file names have to
+come from the callee it calls per glob -- `0x00036cc0`, with `0x00036ce0` and `0x00036c90` next to it building and
+concatenating the strings -- not from an array the routine walks itself. Reading those three bodies is the next step,
+and a cheaper one than another memory instrument.
