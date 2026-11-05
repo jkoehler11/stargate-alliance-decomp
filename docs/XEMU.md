@@ -1021,3 +1021,25 @@ So the engine's own travel takes a URL of the form `M20A?Name=<profile>?LAN`.
 The console *does* run commands once a level is loaded (`stat fps`, #142), so the fourth row is not evidence that the
 console is broken -- only that it is not available from the main menu. The next attempt at the back half belongs
 in-game, with the URL shape the GUI uses.
+
+## The console does not travel, and the tutorial modal is what blocks the console (measured 2026-11-04)
+
+The earlier `open` attempts (#147) had two confounders: the console opens with `Say ` already typed, and a tutorial modal
+can hold the focus. Both were removed for this run:
+
+1. boot, `pad=a`, ten `pad=down`, `pad=a` -> `M00` loads with the tutorial modal up ("Press the X button to open the
+   door", "New Objective: Open the door for the doctor", green **A** Continue);
+2. `pad=a` dismisses the modal (the frame changes to the plain lab with the `O'NEILL` HUD and no objective text);
+3. `Tab`, five `BackSpace` (clears `Say `), `open M20A?LAN`, `Return`, then 75 s.
+
+The console line **did** draw (3,184 pixels changed on the command shot), so the keystrokes reached the guest and the
+command was submitted. Seventy-five seconds later the frame is still `M00`: the same lab, the same `O'NEILL` HUD, no
+loading screen. The console accepts `stat fps` in the same session (#142) and refuses `open` -- with a bare map id
+(#147) and with the GUI's own `map?LAN` shape here.
+
+**The modal is a harness trap worth knowing.** While it is up, every key goes to it: `Tab` does not open the console,
+typing does not appear, and the run reads as "the console is broken" when it is only covered. Any sequence that types
+into the console must dismiss the tutorial first with one `pad=a`.
+
+So travel is closed off as a route to the second half of the campaign. What is left is a save or checkpoint that starts
+inside those maps, or patching `GUIController.GetMapList` in the XBE (U16).
