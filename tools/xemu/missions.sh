@@ -104,7 +104,17 @@ for index in $indices; do
     fi
     attempt=$((attempt+1))
   done
-  if [ "$ok" = 1 ]; then
+  # A guest that fell back to the BIOS screen still repaints, so the shot assertion passes for a crash (measured
+  # 2026-11-04: a truncated map put the BIOS prompt up and the frame diff read 176,832 pixels). Ask the frame too.
+  halt=0
+  if [ -f "$dir/02-mission.png" ] && tools/xemu/guest-halt.py "$dir/02-mission.png" > "$dir/halt.log" 2>&1; then
+    halt=1
+  fi
+  if [ "$ok" = 1 ] && [ "$halt" = 1 ]; then
+    printf '%s\tFAIL\t%s\t%s attempts\tBIOS screen\n' "$index" "$dir/halt.log" "$((attempt))" >> "$out/missions.tsv"
+    echo "index $index: FAIL -- the guest fell back to the BIOS screen ($dir/halt.log)"
+    failed=$((failed+1))
+  elif [ "$ok" = 1 ]; then
     printf '%s\tPASS\t%s\t%s attempts\n' "$index" "$dir/02-mission.png" "$((attempt))" >> "$out/missions.tsv"
     echo "index $index: PASS after $attempt attempt(s) ($dir/02-mission.png)"
   else

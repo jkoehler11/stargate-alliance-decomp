@@ -1043,3 +1043,37 @@ into the console must dismiss the tutorial first with one `pad=a`.
 
 So travel is closed off as a route to the second half of the campaign. What is left is a save or checkpoint that starts
 inside those maps, or patching `GUIController.GetMapList` in the XBE (U16).
+
+## A map that will not load resets the guest to the BIOS screen, and that passes a repaint test (measured 2026-11-04)
+
+`appAssertFailed` logs and returns -- no break, no abort (`docs/NATIVE_NOTES.md`, U6) -- so a failed load leaves no
+dialog to find. What it leaves is worse for a harness that only compares frames: **the guest falls back to the BIOS
+screen**, and a black screen is a perfectly good "the frame changed".
+
+Reproduction: rebuilt the test ISO with `Maps/M00.unr` truncated to 1,000 bytes (the name stays in the list, the package
+is invalid), booted it, opened `QUICK SELECT MAP`, ten `pad=down`, `pad=a`. Twenty seconds later the frame is black with
+"Please insert an Xbox disc..." in the top left, and both `EIP` samples are in the kernel idle loop (`0x80024a97`,
+`0x80024a98`). The shot step that captured it **passed** (176,832 pixels changed, threshold 200).
+
+**The measurement that separates the two states**, over four real frames:
+
+| frame | black (<= 20) | p99 | text pixels, top-left |
+|---|---|---|---|
+| BIOS prompt | **0.9972** | **13** | 1,808 |
+| in-game `M00` | 0.1488 | 192 | 16,037 |
+| title menu | 0.1984 | 255 | 20,201 |
+| map list | 0.1074 | 218 | 4,394 |
+
+Xbox output is limited range, so black is 16, not 0 -- which is why the tool's threshold is 20 and not 0. `p99` is the
+value at the 99th percentile: on the prompt nothing but the glyphs is brighter than 13.
+
+`tools/xemu/guest-halt.py FRAME [FRAME ...]` returns 0 when any frame is the BIOS screen, 2 when all are running, 3 when
+a frame cannot be read. `missions.sh` now asks it about every `02-mission.png` and records `FAIL ... BIOS screen` in the
+TSV instead of a pass. End-to-end, on the truncated-map ISO:
+
+    10  FAIL  .../index-10/halt.log  1 attempts  BIOS screen
+
+**One limit worth knowing.** With the default `--settle=60` the crash is caught one step earlier: `drive.py` cannot
+capture `02-mission.png` at all ("could not capture"), because by then the emulator's window is no longer the one the
+harness grabbed. That is still a failure, but it is a *capture* failure; the frame check covers the case where a frame
+does arrive, which is what `--settle=20` produces and what any shorter settle will hit.

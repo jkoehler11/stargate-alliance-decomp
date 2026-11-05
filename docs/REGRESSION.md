@@ -57,8 +57,11 @@ than a headless one — the same constraint `docs/XEMU.md` records for the boot 
 * **No rebuild.** 3.6 does not exist, so the "rebuild then boot then fail on a new assert" loop is still
   the goal rather than the behaviour. When it lands, it slots in as a stage between `verify-dump` and
   `xemu-boot` without changing anything else here.
-* **No assert-dialog detection.** The emulator evidence channel today is `EIP` sampling
-  (`docs/XEMU.md`), which cannot read an assert dialog off the screen.
+* **No assert-dialog detection, and there is no assert dialog to detect.** `appAssertFailed` logs and returns
+  (`docs/NATIVE_NOTES.md`, U6), so a failed load does not put a dialog up -- it puts the guest back on the BIOS screen.
+  That *is* detectable and is now checked: `tools/xemu/guest-halt.py` scores a frame (99.7% black, `p99` 13, against
+  15-20% black and `p99` 192+ for a running game) and `missions.sh` fails an index whose mission frame is the BIOS
+  screen (`docs/XEMU.md`, 2026-11-04).
 * **No notification.** It writes a summary and exits; wiring it to mail or chat is one line the operator
   should own, not something this repository should assume.
 
