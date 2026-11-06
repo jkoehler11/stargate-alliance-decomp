@@ -525,10 +525,12 @@ and a deliberate one-line script break is caught by the boot test.
   entries; six anchors re-derived from the guest, `--verify`), `missions.sh --name M15C` resolves it, and `--all` now
   covers 10-72. Index 41 (`M15C`) and 70 (`M21D`) both loaded on the first attempt; the remaining 30 indices are 30
   boots of harness time, not an access question.
-- **The nightly's mission stage rotates instead of repeating two indices.** `map-index.py --rotate 2` walks 10-72 with
-  a day-of-year start, so 2 boots a night cover all 63 campaign entries in 32 nights with nothing skipped (2 is coprime
-  with 63); `SG1_MISSION_INDICES` still pins an exact list and `SG1_MISSION_COUNT` changes the per-night count. Checked
-  over 32 simulated nights: 63 unique indices, 10 through 72.
+- **The nightly's mission stage rotates instead of repeating two indices.** `map-index.py --rotate 2` walks 10-70 with
+  a day-of-year start, so 2 boots a night cover all 61 campaign entries in 31 nights with nothing skipped (2 is coprime
+  with 61); `SG1_MISSION_INDICES` still pins an exact list and `SG1_MISSION_COUNT` changes the per-night count. The
+  range stops at 70 because 71/72 are `MainMenu` and `SGCTF-AbydosVsSGC`, which are list entries and not missions, and
+  `--verify` now refuses a table where those look like campaign maps. Checked over 31 simulated nights: 61 unique
+  indices, 10 through 70.
 - **The console keeps no output to read (U15).** The configured class, `Engine.Console`, declares only `TypedStr` and
   `History[16]`; `WindowConsole.Scrollback` is an int and the only `array<string> Scrollback` is `GUI.ExtendedConsole`'s,
   which this build never instantiates. So 7.3's output channel does not exist in guest memory -- what is assertable is
