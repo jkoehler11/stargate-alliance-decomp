@@ -941,6 +941,19 @@ the live `Console` and `--object <console> --fstrings` for its `TypedStr`/`Histo
 where the array walk under them costs 3 m 29 s. Keys cannot be injected after the driver exits (a QMP client on the
 run's `qmp.sock` times out waiting for the greeting), so the sequence itself has to end in that state.
 
+**Corrected again 2026-11-06, with the prompt open: the drawn line is not a `Console` instance, and the boot is
+not the swap.** The disc was identified from its own `System/Default.ini` (`tools/xemu/xiso-cat.py`): the booted
+`$WORK/xemu/sg1.iso` is stock (`Console=Engine.Console`, md5 `109fff2a...`), and the swap image
+`$WORK/console-iso/game.iso` is the `GUI.ExtendedConsole` one -- a `grep` for that string hits the stock image too
+(a stray copy at offset 1,881,354,812), so only reading the file settles it. On that stock disc, with `hist` typed and
+the crop reading `(> hist_` (82 cyan px, 128x32) and `stat fps`'s counter above it, a walk of `0x6c21b0` still finds
+45,802 objects and exactly **one** `Console`, the class default at `0x02344b00`, with no FString carrying text, and no
+`ExtendedConsole` at all. **What would settle the object question now** is the console default's interaction block:
+`0x02344b00` points at `InteractionMaster` `0x02406720`, whose `+0x028`..`+0x034` name `XboxClient`, `GUIController`,
+`Console` (the class default) and `UIXInteraction` -- one `objects.py --object 0x2406720 --refs --object-size 0x200`
+turns that block from four addresses into the list the drawing object belongs to. The `Player` arm is closed for the
+controller: its first 0xc00 bytes hold no `Console` field, in either prompt state.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

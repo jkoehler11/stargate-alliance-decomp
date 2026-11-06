@@ -447,8 +447,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       list is `UGUIController::execGetMapList` at `0x002fe5f0` and it has no cap, and the list is the first 41 names
       of the disc's own order (`docs/XEMU.md`, `docs/UNKNOWNS.md` U16) -- so the truncation is in the fill, one
       measurement short of a cause.
-- [~] 7.3 **The console works and draws its input line; `ret` submits it, only `stat fps` is readable, and
-      the console leaves the object array when it closes**
+- [~] 7.3 **The console works and draws its input line on a stock disc; `ret` submits it, only `stat fps` is
+      readable, and no `Console` instance is in the object array in any state measured**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
@@ -493,6 +493,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the prompt draws on a stock disc, and the interaction list names the console default)
+
+- **The disc was identified before the frame was interpreted**, because a drawn prompt is supposed to mean the boot
+  is the `Console=GUI.ExtendedConsole` swap. It is not: `$WORK/xemu/sg1.iso` (md5 `109fff2a5a0091932f4262eefda41855`)
+  carries `Console=Engine.Console` in its own `System/Default.ini`, while the swap image
+  `$WORK/console-iso/game.iso` (md5 `5c47159b3e4ec558d2532a177b4e6992`) carries `GUI.ExtendedConsole`. Both are
+  2,258,370,560 bytes, so size does not separate them.
+- **`grep` on the image is not an identity check.** The *stock* ISO answers 1 for `Console=GUI.ExtendedConsole`,
+  because a stray copy of that line sits at offset 1,881,354,812. Read the file: `tools/xemu/xiso-cat.py --iso
+  <image> System/Default.ini` walks the XDVDFS tree and prints it in seconds (extract-xiso is gone from the desktop;
+  `-c` would unpack 2.2 GB).
+- **The stock disc draws `(> hist_`.** Sequence: `Tab`, `spc`, `stat fps`, `ret`, then `Tab`, `spc`, `hist` and stop.
+  `console-line.py` reads `absent` (0 cyan px) on the post-submit frame and `typed` (82 cyan px, 128x32) on the frame
+  with `hist` typed, and the crop reads `(> hist_` with the `stat fps` counter (`59 cur FPS` / `58 avg FPS`) above it.
+  So a drawn line does not mean the swap, and a submit ran a command on a stock disc.
+- **The census is unchanged with the prompt open**: `data=0x41e0000 num=48646 max=51886`, 45,802 objects over 295
+  pages, one `Console` (`0x02344b00`, `defaultproperties` text inside it, no FString carrying text), zero
+  `ExtendedConsole` (the filter is a substring match, so a subclass would have been caught), and no `Console` field in
+  the controller's 0xc00 bytes.
+- **The console default's own pointers are the next target**: `0x02344b00` holds `XboxViewport` at `+0x02c` and
+  `InteractionMaster` `0x02406720` at `+0x030`; that object's `+0x028`..`+0x034` name `XboxClient` `0x01fb9bc0`,
+  `GUIController` `0x02345500`, `Console` `0x02344b00` (the class default again) and `UIXInteraction` `0x05b10a80`.
+  Whatever draws the line is in that list, not in a `Player` field.
 
 ### Execution notes (2026-11-06, the console is not in the object array once it closes)
 
