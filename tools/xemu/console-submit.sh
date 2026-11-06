@@ -1,17 +1,19 @@
 #!/bin/sh
 # Type a command into the Unreal console and try submit keys, one frame per candidate (PLAN 7.3).
 #
-# The console opens, takes characters and draws its input line, but a Return does not submit what was typed
-# (`docs/XEMU.md`, measured 2026-11-06). A frame cannot settle it: "the command ran and printed nothing" and "the
-# key never arrived" are the same picture on a disc whose configured console class has no `PostRender`. This
-# script therefore does two things -- it produces the sequence (so the boot is not hand-built each time) and it
+# The console opens, takes characters and draws its input line, and `ret` submits what was typed in one session and
+# does nothing in the next (`docs/XEMU.md`, measured 2026-11-06) -- so a frame alone cannot settle a submit: "the
+# command ran and printed nothing" and "the key never arrived" are the same picture on a disc whose configured console
+# class has no `PostRender`.
+# The script does two things -- it produces the sequence (so the boot is not hand-built each time) and it
 # leaves a GDB stub up after the last frame, because the *answer* is the console object's own state:
 #
 #     objects.py --port 12351 --xbe $SG1_DUMP/default.xbe --walk 0x6c21b0 --class Console --fstrings
 #
 # `TypedStr` still holding the text means no submit; `History` holding it means the command was submitted and
 # `ConsoleCommand` ran; `bTyping` says whether the console is still in its typing state. Read the guest, then the
-# frame -- the frames are for the drawing question, not the delivery one.
+# frame -- the frames are for the drawing question, not the delivery one. `console-line.py` separates the frames'
+# three states (`absent`, an empty `prompt`, `typed`), which is what says whether the characters arrived at all.
 #
 # Usage: console-submit.sh [options] OUTDIR
 #   --iso PATH       disc image                (default $WORK/sg1.iso)
@@ -155,7 +157,7 @@ if [ "$linger" != 0 ] && [ "$rc" = 0 ]; then
 The frames are drawing evidence only. The delivery question is the guest's:
   python3 tools/xemu/objects.py --port $port --xbe \$SG1_DUMP/default.xbe --walk 0x6c21b0 \\
       --class Console --fstrings --object-size 0x800
-  python3 tools/xemu/console-line.py $out/05-typed.png   # exit 0 = prompt text drawn
+  python3 tools/xemu/console-line.py $out/05-typed.png   # exit 0 = a line is drawn (prompt or typed)
 EOF
 fi
 rm -f "$out/hdd.qcow2"   # a boot copy is ~1 GB and is not an artifact

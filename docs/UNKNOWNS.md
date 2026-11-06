@@ -917,6 +917,18 @@ now conditional on a positive prompt frame, which costs one screenshot instead o
 measured is a `History` entry — and since the console only exists while a `Tab` lands, the scripted route
 (`GamePlay/ACTION_ConsoleCommand.uc`) remains the way to get a command in without one.
 
+**Corrected 2026-11-06: the "cyan HUD glyph" was an empty prompt, and `ret` submits.** The frame this entry called a
+false positive (`submit1/05-typed`, 56 cyan px in a 64x32 box) is `(>_` -- the console's empty input line with its
+caret, read at 4x -- not a HUD glyph; the console was open and empty, which is a *positive* read. `console-line.py` now
+separates `absent` / `prompt` (50--64 px wide) / `typed` (176 px stock, 210 px for `GUI.ExtendedConsole`) by the
+trimmed extent, because the count alone also called the title screen (22 px over 554x246) and a menu button glyph
+(87 px in 18x8) `present`. And the submit is not missing: in `conhist9` the frame after `ret` holds **no input line**
+where `kp_enter` left `(> stat fps_` drawn, which is `TypingClose()` from the `IK_Enter` branch; `submit1`'s `ret`
+frame is byte-identical to the one before it, so the same key did not arrive there. What remains unmeasured is the
+command's *effect* -- no FPS counter draws in `conhist9/07-ret` -- and the console object's `History`, which the class
+filter has never resolved (only the class default object, in every session). `docs/XEMU.md` "The console's submit is
+`ret`" carries the frames, the extents and the shot-by-shot diff counts.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
