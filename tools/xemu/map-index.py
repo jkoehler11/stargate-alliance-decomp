@@ -9,6 +9,11 @@ index 0 `CTF-Abydos`, 10 `M00`, 31 `M12F`, 35 `M13D`, 40 `M15B`, 72 `SGCTF-Abydo
     python3 tools/xemu/map-index.py --iso $WORK/sg1.iso                # "0\tCTF-Abydos" ... one line per entry
     python3 tools/xemu/map-index.py --iso $WORK/sg1.iso --name M15C    # 41
     python3 tools/xemu/map-index.py --iso $WORK/sg1.iso --verify       # the anchors above, re-derived
+    python3 tools/xemu/map-index.py --rotate 2                         # today's two indices for the nightly
+
+The campaign range is 10-72 (63 maps). `--rotate N` walks it with stride `N` from a day-numbered start, so a nightly
+that loads N maps a night covers every one of them in ceil(63/N) nights -- with N=2 that is 32 nights, and because 2
+is coprime with 63 no index is skipped by the wrap.
 
 The walk is the XDVDFS directory tree (left child, node, right child), which is the order the disc stores names in
 sorted form; the tool still sorts explicitly so a hand-built ISO cannot quietly reorder the table.
@@ -17,11 +22,14 @@ import argparse
 import os
 import struct
 import sys
+import time
 
 SEC = 2048
 MAGIC = b"MICROSOFT*XBOX*MEDIA"
 ANCHORS = {0: "CTF-Abydos", 10: "M00", 31: "M12F", 35: "M13D", 40: "M15B", 72: "SGCTF-AbydosVsSGC"}
 COUNT = 73
+CAMPAIGN_LO, CAMPAIGN_HI = 10, 72          # first and last campaign entries on the page
+CAMPAIGN = CAMPAIGN_HI - CAMPAIGN_LO + 1   # 63
 
 
 class Disc:
@@ -91,7 +99,18 @@ def main():
     ap.add_argument("--iso", default=os.environ.get("SG1_ISO"), help="disc image (the XISO, not the dump directory)")
     ap.add_argument("--name", help="print only this map's index")
     ap.add_argument("--verify", action="store_true", help="check the anchors measured from the running guest")
+    ap.add_argument("--rotate", type=int, metavar="N",
+                    help="print N campaign indices for one day of a rotating schedule")
+    ap.add_argument("--day", type=int, help="day number for --rotate (default: day of year)")
     args = ap.parse_args()
+    if args.rotate:
+        if args.rotate < 1:
+            sys.exit("--rotate needs a positive count")
+        day = args.day if args.day is not None else int(time.strftime("%j"))
+        start = (day * args.rotate) % CAMPAIGN
+        print(" ".join(str(CAMPAIGN_LO + (start + k) % CAMPAIGN) for k in range(args.rotate)))
+        return 0
+
     if not args.iso:
         sys.exit("give --iso, or set SG1_ISO")
     rows = table(args.iso)

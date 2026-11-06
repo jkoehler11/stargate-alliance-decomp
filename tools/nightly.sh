@@ -45,7 +45,7 @@ stage() {  # stage NAME COMMAND...
 
 xemu=0
 missions=0
-mission_indices="${SG1_MISSION_INDICES:-10 11}"
+mission_indices="${SG1_MISSION_INDICES:-}"
 iso=""; bios=""; hdd=""
 for arg in "$@"; do
     case "$arg" in
@@ -158,7 +158,12 @@ fi
 
 if [ "$missions" = 1 ]; then
     # One boot per index, so this stage is minutes long and its index list is a deliberate subset: the whole campaign
-    # is 61 maps, which is a nightly of its own (docs/REGRESSION.md).
+    # is 63 maps, which is a nightly of its own (docs/REGRESSION.md). With no index list given the subset rotates by
+    # day of year, so the campaign is covered in 32 nights instead of the same two entries every run.
+    if [ -z "$mission_indices" ]; then
+        mission_indices=$(python3 tools/xemu/map-index.py --rotate "${SG1_MISSION_COUNT:-2}") || exit 2
+        say "missions: rotating indices $mission_indices (SG1_MISSION_INDICES overrides)"
+    fi
     if [ -n "$iso" ] && [ -n "$bios" ] && [ -n "$hdd" ] && [ -n "${DISPLAY:-}" ]; then
         stage missions sh -c "DISPLAY='${DISPLAY}' XAUTHORITY='${XAUTHORITY:-}' tools/xemu/missions.sh \
             '$out/missions' $mission_indices --iso='$iso' --bios='$bios' --hdd='$hdd' \

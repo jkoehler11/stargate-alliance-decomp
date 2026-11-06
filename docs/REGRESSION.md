@@ -31,7 +31,7 @@ someone runs the heavy stages by hand weeks later. The nightly closes it on what
 | `class-tables` | `make class-tables` | `SG1_DUMP` |
 | `libraries` | `make libraries` | `SG1_DUMP` |
 | `xemu-boot` | `tools/xemu/smoke.py` | `--iso`, `--bios`, `--hdd`, a display |
-| `missions` | `tools/xemu/missions.sh OUTDIR INDEX...` | the same, plus `--missions`; indices default to `10 11` (`SG1_MISSION_INDICES`) |
+| `missions` | `tools/xemu/missions.sh OUTDIR INDEX...` | the same, plus `--missions`; indices rotate by day of year (`SG1_MISSION_COUNT`, default 2), `SG1_MISSION_INDICES` overrides |
 
 Stages that cannot run say `SKIP` and are not failures — an unset `SG1_DUMP` on a laptop is not a regression.
 
@@ -128,8 +128,13 @@ The last line is the property that makes the nightly usable as a gate: the run w
 and the git-ignored work tree, so a pass means the repository is unchanged as well as correct.
 
 **The mission stage is the expensive one** — 1,129 s for two indices, because each boot waits 135 s for the title and
-60 s to settle, and a swallowed press costs a whole second attempt. `SG1_MISSION_INDICES` therefore stays a deliberate
-subset in the nightly; `tools/xemu/missions.sh --all` is the full 31-index sweep to run by hand (about 90 minutes).
+60 s to settle, and a swallowed press costs a whole second attempt. It therefore stays a deliberate subset, but the
+subset now **rotates**: with no `SG1_MISSION_INDICES` the stage asks `tools/xemu/map-index.py --rotate 2` for the day's
+pair, which walks the campaign range 10-72 with stride 2 from a day-of-year start. Two indices a night covers all 63
+campaign entries in 32 nights, and because 2 is coprime with 63 the wrap skips nothing (checked: 32 nights, 63 unique
+indices, 10 through 72). `SG1_MISSION_COUNT` changes the per-night count and `SG1_MISSION_INDICES` still pins an exact
+list; `tools/xemu/missions.sh --all` remains the full 63-index sweep to run by hand (about four hours at the measured
+~4 min per index).
 Pixel-level assertion now exists in that stage: `tools/xemu/guest-halt.py` fails an index whose mission frame is the
 BIOS screen, which is what a failed load looks like in this build (`docs/XEMU.md`, 2026-11-04).
 
