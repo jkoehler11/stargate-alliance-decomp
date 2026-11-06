@@ -867,8 +867,9 @@ command leaves no on-screen trace, and the console's scrollback is in guest memo
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
-The list holds the first 31 campaign maps in ASCII order and nothing after them, while 30 more (M15C through M21D) are
-on the disc (`docs/XEMU.md`, 2026-11-04).
+**Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
+campaign maps and nothing after them" reading came from a fifth page that held a single item (`docs/XEMU.md`,
+corrected 2026-11-05). The trail below is kept because each step removed one candidate.
 
 **Narrowed (2026-11-04):** the entries come from `GUIController.GetMapList`, a `native` function
 (`GUI/GUIController.uc:430`), so both the enumeration and the cap are in the XBE -- there is no ini or UnrealScript
@@ -881,7 +882,7 @@ global, walks the engine's enumeration source, and adds one list item per hit; `
 filter box is inert by construction; and no comparison against a constant bound exists anywhere in its 1,256 bytes, so
 the truncation is **not** a loop limit in this routine.
 
-**The truncation is a prefix (2026-11-05).** `Maps/` holds 73 `.unr`, the XDVDFS directory walk is ASCII order, and
+**Where a prefix appeared to come from (2026-11-05; superseded by the count at the end of this entry).** `Maps/` holds 73 `.unr`, the XDVDFS directory walk is ASCII order, and
 index 40 is `M15B.unr` / 41 is `M15C.unr`: the list is the first 41 names of the disc's own order. A filter drops from
 the middle; a fill that stops early leaves a prefix. The enumeration source global (`0x005fbee4`) resolves, over the GDB
 stub in a booted guest, to a struct whose `+0x7c`/`+0x11c` arrays are the 8 `[Core.System] Paths` globs from
@@ -896,18 +897,15 @@ at `0x00036cc0`. **The callee, measured (2026-11-05):** `0x36cc0`, `0x36ce0` and
 `_vsnwprintf` -- CRT, not the enumeration. The `*.unr` match is a literal *substring* test on each `Paths` glob, so the
 routine collects paths, and the map names arrive from one 4-argument virtual call at `0x2fe806`
 (`[[0x005bf514] + 0x30]`) whose result it appends to its own array; `0x300410` (called first) is the widget's array
-clear. **The file layer is cleared (2026-11-05).** The call is `[[0x005bf514] + 0x30]` in the double-dereference sense
-(`mov 0x5bf514,%ecx; mov (%ecx),%edx; call *0x30(%edx)`), and the pointer at `0x005bf514` is rewritten at runtime: the
-image's own chain ends in a 22-byte stub (`0x00034570`) that returns an empty `TArray`, so resolving it from the file
-alone answers with a no-op. At the title the object's table is `0x004c8db8` (`FFileManagerGeneric`, named from
-`0x000246d0` and the `FFileManagerGeneric.h` assert literal at `0x004c8b40`) and slot 12 is **`0x00024e70`**, a
-`FindFirstFile`/`FindNextFile` loop that skips `.`/`..` and directories and has **no bound**. Measured at the call's
-return, with a breakpoint at `0x2fe809`: **73 names**, the whole `Maps/` directory, in directory order. So the
-enumeration does not produce the 41 -- it is produced above this call, in `GetMapList`'s copy
-(`0x000c19a0`/`0x0001fda0`) or in the widget's own array. **What would settle it:** read the widget's `+0x280`/`+0x284`
-(count/max) after `QUICK SELECT MAP` opens -- 41 means the copy dropped 32, 73 means the page holds all of them and the
-`M15B` index table was a scrolling artefact (`end` lands on `SGCTF-AbydosVsSGC`, the last of the 73, which that table
-cannot explain).
+clear. **The file layer is cleared, and the page holds the full set (2026-11-05).** The call is `[[0x005bf514] + 0x30]` in the
+double-dereference sense (`mov 0x5bf514,%ecx; mov (%ecx),%edx; call *0x30(%edx)`), and the pointer at `0x005bf514` is
+rewritten at runtime: the image's own chain ends in a 22-byte stub (`0x00034570`) that returns an empty `TArray`, so
+resolving it from the file alone answers with a no-op. At the title the object's table is `0x004c8db8`
+(`FFileManagerGeneric`, named from `0x000246d0` and the `FFileManagerGeneric.h` assert literal at `0x004c8b40`) and
+slot 12 is **`0x00024e70`**, a `FindFirstFile`/`FindNextFile` loop that skips `.`/`..` and directories and has **no
+bound**; at the call's return (breakpoint `0x2fe809`) it hands back **73** names in directory order. `GetMapList` sorts
+them (`0x000f8ab0`) and appends every one -- the controller's array at `this+0x27c` reads `count=73 max=76` after the
+page opens (breakpoint `0x2fe8e0`). There is no cap to patch, and no map needs a save or a `Travel` call to reach.
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
 `Continue` (a save that starts inside one of those maps) and checkpoint loads.

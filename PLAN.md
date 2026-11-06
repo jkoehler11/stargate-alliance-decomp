@@ -518,8 +518,9 @@ and a deliberate one-line script break is caught by the boot test.
   indirection (`[[0x005bf514]] + 0x30`); the image's own values end at the 22-byte stub `0x34570` (an empty `TArray`),
   because the `.data` slot is rewritten at runtime. At the title the table is `0x4c8db8` (`FFileManagerGeneric`) and
   slot 12 is `0x24e70`, a `FindFirstFile`/`FindNextFile` loop with no bound; a breakpoint at `0x2fe809` reads back
-  **73** names in directory order. The 41 is therefore above the call -- the widget's `+0x280` count is the next read,
-  and the `M15B` index table is in tension with `end` landing on the last of the 73 (`docs/XEMU.md`, U16).
+  **73** names in directory order. The page's count settles it: **print all 73** -- the controller's array reads
+  `count=73 max=76` after `QUICK SELECT MAP` opens, ASCII-sorted, `M15B` at 40 and `SGCTF-AbydosVsSGC` last. The
+  41-entry table was a fifth page holding one item, and U16 closes: every campaign map is reachable by paging.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 

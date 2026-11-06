@@ -953,10 +953,13 @@ the mission maps cannot be reached from `QUICK SELECT MAP` at all -- loading the
 checkpoint, `Continue`, or the console, which refuses to travel). This closes 7.2 for the reachable set and names the
 other half as a separate question rather than counting it as passed.
 
-## `QUICK SELECT MAP` is the first half of the campaign, and stops at M15B (measured 2026-11-04)
+## `QUICK SELECT MAP` lists every map on the disc; the 41-entry table was a paging artefact (measured 2026-11-04,
+corrected 2026-11-05)
 
-The list has 41 entries and the first ten are not campaign maps, so indices 10-40 are the campaign -- but only the
-**first 31** of the 61 campaign maps on the disc. Read off the highlight frames (`01-highlight.png`, one per index):
+The page holds **73** entries, not 41 -- the controller's own array is `count=73 max=76` after the page opens (the read
+is in *The call below `GetMapList`* at the end of this file). The first ten entries are not campaign maps, so indices
+10 onwards are the campaign; the table below is correct as far as it goes and simply stops at the last row that session
+read, not at the last row the page has. Read off the highlight frames (`01-highlight.png`, one per index):
 
 | index | map | index | map | index | map |
 |---|---|---|---|---|---|
@@ -981,11 +984,12 @@ scrollbar at the bottom).
 first ten entries are `CTF-Abydos`, `CTF-LostCity`, `DM-Ha'tak`, `DM-KelownanTrain`, `DM-Langara`, `DM-LostCity`,
 `DM-Subterranean`, `DM-Tomb`, `DM-WorstCaseScenario`, `Entry`.
 
-**30 campaign maps are on the disc and cannot be reached this way**: `M15C`-`M15F`, `M16A`-`M16G`, `M17A`, `M17B`,
-`M17D`, `M18A`, `M18B`, `M18D`, `M19A`-`M19E`, `M20A`-`M20D`, `M21A`-`M21D`. The list is a *prefix* of the campaign in
-id order, ending mid-way through `M15` -- consistent with a fixed-size list filled in order until it is full, which is
-a hypothesis about the cause, not a measurement. Reaching these needs a different route: `Continue` with a save, a
-checkpoint load, or a level-travel call the console will accept (it refuses `open`, measured in #147).
+**Indices 41-72 are the rest of the disc, and they were never missing**: `M15C`-`M15F`, `M16A`-`M16G`, `M17A`, `M17B`,
+`M17D`, `M18A`, `M18B`, `M18D`, `M19A`-`M19E`, `M20A`-`M20D`, `M21A`-`M21D`, `MainMenu`, `SGCTF-AbydosVsSGC`. The
+earlier reading stopped on a fifth page that held a **single** item, with empty panel below it and the scrollbar at the
+bottom -- a page that looks exactly like the end and is not; the same section's `end` measurement lands on
+`SGCTF-AbydosVsSGC`, the last of the 73, which is the observation that agrees with the array. So every campaign map is
+reachable from this page by paging, and none of them needs a save, a checkpoint or a `Travel` call.
 
 ## Where `QUICK SELECT MAP` gets its entries, and four routes that do not reach the rest (2026-11-04)
 
@@ -1078,7 +1082,7 @@ capture `02-mission.png` at all ("could not capture"), because by then the emula
 harness grabbed. That is still a failure, but it is a *capture* failure; the frame check covers the case where a frame
 does arrive, which is what `--settle=20` produces and what any shorter settle will hit.
 
-## The routine behind `QUICK SELECT MAP`: `Filter` is never read, and the 41 is a prefix (measured 2026-11-05)
+## The routine behind `QUICK SELECT MAP`: `Filter` is never read, and there is no cap anywhere (measured 2026-11-05)
 
 U16 said the cap lives in the XBE because `GetMapList` is `native`. That is right, and the routine needs no native
 index: `inventory/natives.csv` records this declaration with token 0, which is the *name*-binding case U1 settled. Two
@@ -1104,13 +1108,13 @@ Two facts are in the body itself, and both are checks the outside could not make
   `S` straight to this native, so the filter box cannot filter -- what #157 measured from the outside (typing `M20`
   after `Tab` changed nothing but animation) now has its cause.
 - **There is no cap in this routine.** A linear sweep of all 1,256 bytes finds no comparison against a constant bound,
-  so the 41 is not a loop limit here.
+  so no loop limit here can shorten the list.
 
-The disc explains the *shape* of the list. `Maps/` holds **73** `.unr`; the XDVDFS directory walk (left-then-right, the
-on-disc order) is ASCII order, and **index 40 is `M15B.unr`, 41 is `M15C.unr`**. The list's 41 entries are exactly the
-first 41 of that order -- 9 `CTF-`/`DM-`, then `Entry`, then 31 campaign maps. A filter would drop entries from the
-middle; the list stops mid-alphabet, so whatever truncates does it to a prefix, which points at the fill rather than at
-the matching.
+The disc explains the *shape* of the list, and it also corrects the assumption that its order is the disc's.
+`Maps/` holds **73** `.unr` in one 2048-byte directory sector, and the enumerator hands them back in **storage** order --
+`M12F.unr` first, `SGCTF-AbydosVsSGC.unr` last (measured at the call's return, below). `GetMapList` then sorts them
+(`0x000f8ab0`) before appending, which is why the page reads `CTF-Abydos`, `CTF-LostCity`, ... in ASCII order, and why
+`M04B` sits before `M04a`. A prefix in the *page* is therefore a property of the page, not of the enumeration.
 
 **The enumeration source, measured in the guest -- and the instrument that did not finish the job.** The global the loop
 dereferences is `0x005fbee4`. Read over the GDB stub in a booted guest, in **virtual** mode (`mem.py`'s documented
@@ -1211,12 +1215,11 @@ is no comparison against a bound anywhere in the 718 bytes.
 the title, four hits each returned a `TArray` with **`count=73 max=73`** holding every `.unr` on the disc, in
 *directory* order -- `M12F.unr` first, `SGCTF-AbydosVsSGC.unr` last -- not the sorted order the page shows.
 
-So the enumeration is not where 41 comes from: it hands back all 73 and the truncation is above this call. That also
-puts this file's two page measurements in tension, which is the next thing to settle rather than another export:
-`end` on `QUICK SELECT MAP` lands on `SGCTF-AbydosVsSGC` -- the last of the 73 -- while the index table says 40 is
-`M15B` with nothing after it, so one of the two is a scrolling artefact. **Next instrument:** open the page and read the
-widget's count and max at `this+0x280`/`+0x284` -- 41 means `GetMapList` dropped 32 names copying the returned array
-across (`0x000c19a0` and `0x0001fda0` are the two calls it makes with it), 73 means the page holds all of them.
+**And the page keeps all 73.** After `ret`, `y` from the title, a breakpoint at `0x2fe8e0` -- the head of the loop that
+appends the collected names -- gives the controller (`[esp+0x20]`), and the array at `this+0x27c` then reads
+`data=0x07438c00 count=73 max=76`, ASCII-sorted: `CTF-Abydos` at 0, `M00` at 10, `M15B` at 40, `M21D` at 71,
+`M21D` at 70, `MainMenu` at 71 and `SGCTF-AbydosVsSGC` at 72. So nothing is capped and nothing is dropped: the 41-entry table
+above measured a page, not the list, and U16 closes with no cap to patch.
 
 A mechanical note for that run: the guest's user stack sits at `0xD016xxxx` at the title, so a pointer into `0xD0...` is
 ordinary on this title and the "impossible address" reading of `[0x005bf514]` was wrong twice. And a `mem.py` read is
