@@ -991,7 +991,7 @@ pointer to it: no 4-byte-aligned dword names the match or any even address in th
 table sits within 0x8000 before the bytes, so the buffer is neither reachable by a stored pointer nor a field of
 any object the vtable walk can name. **What would settle the owner:** the register file at the same step
 (`--step=monitor=info registers`, or a GDB stack read there), because a `Data` pointer absent from 128 MiB of RAM
-can only be live in a register or in the stack frame of whatever draws the line -- and `pmemsave` covers neither.
+can only be live in a register or in the stack frame of whatever draws the line -- and `pmemsave` covers neither. **A whole-image census says the same about the object**: the `Console` class table occurs exactly twice in all 128 MiB -- a `mov` that mentions it at `0x00291bbc` and the object at `0x02661b00` whose fields run into the class-defaults text -- so there is no live console anywhere in the image, only its default (`docs/XEMU.md`, "two mentions of `Console`").
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
