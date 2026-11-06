@@ -896,9 +896,18 @@ at `0x00036cc0`. **The callee, measured (2026-11-05):** `0x36cc0`, `0x36ce0` and
 `_vsnwprintf` -- CRT, not the enumeration. The `*.unr` match is a literal *substring* test on each `Paths` glob, so the
 routine collects paths, and the map names arrive from one 4-argument virtual call at `0x2fe806`
 (`[[0x005bf514] + 0x30]`) whose result it appends to its own array; `0x300410` (called first) is the widget's array
-clear. **What would settle the count:** read `[[0x005bf514] + 0x30]` at the title (one GDB read, with the retry) and
-export that address -- the 41 is produced by the file enumerator, one level below `GetMapList`. 41 means the fill stops early and the cap is above `GetMapList`; 73 means the
-cache is complete and the truncation is in the widget's `Add`.
+clear. **The file layer is cleared (2026-11-05).** The call is `[[0x005bf514] + 0x30]` in the double-dereference sense
+(`mov 0x5bf514,%ecx; mov (%ecx),%edx; call *0x30(%edx)`), and the pointer at `0x005bf514` is rewritten at runtime: the
+image's own chain ends in a 22-byte stub (`0x00034570`) that returns an empty `TArray`, so resolving it from the file
+alone answers with a no-op. At the title the object's table is `0x004c8db8` (`FFileManagerGeneric`, named from
+`0x000246d0` and the `FFileManagerGeneric.h` assert literal at `0x004c8b40`) and slot 12 is **`0x00024e70`**, a
+`FindFirstFile`/`FindNextFile` loop that skips `.`/`..` and directories and has **no bound**. Measured at the call's
+return, with a breakpoint at `0x2fe809`: **73 names**, the whole `Maps/` directory, in directory order. So the
+enumeration does not produce the 41 -- it is produced above this call, in `GetMapList`'s copy
+(`0x000c19a0`/`0x0001fda0`) or in the widget's own array. **What would settle it:** read the widget's `+0x280`/`+0x284`
+(count/max) after `QUICK SELECT MAP` opens -- 41 means the copy dropped 32, 73 means the page holds all of them and the
+`M15B` index table was a scrolling artefact (`end` lands on `SGCTF-AbydosVsSGC`, the last of the 73, which that table
+cannot explain).
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
 `Continue` (a save that starts inside one of those maps) and checkpoint loads.

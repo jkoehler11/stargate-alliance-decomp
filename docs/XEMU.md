@@ -1172,7 +1172,53 @@ That corrects the mechanism in two places:
   like that, handed a glob path and returning something the caller appends, is a file enumerator -- so **the count of 41 is
   produced one level below `GetMapList`**, in the engine's glob/file layer, and not by the GUI and not by this routine.
 
-**Next instrument, one read:** `[[0x005bf514] + 0x30]` at the title screen over the GDB stub (the retry from the section
-above makes it reliable) gives the enumerator's address; `ExportAt.java` on that address is then the whole of the
-remaining question. If it is the same code the package loaders use, then what caps the list at 41 is also what caps any
-other `Paths` glob -- which would make the missing 30 maps a symptom of a file-layer limit rather than of this screen.
+**The read is done, and the file layer returns everything (measured 2026-11-05).** The call is one indirection deeper
+than the paragraph above assumed, and resolving it from the image alone is a decoy; see *The call below `GetMapList`*
+at the end of this file.
+
+## The call below `GetMapList` is `FFileManagerGeneric`'s find loop, and it hands back all 73 (measured 2026-11-05)
+
+`0x2fe7ee` is `mov 0x5bf514,%ecx; mov (%ecx),%edx; call *0x30(%edx)`, so the callee is slot 12 of the vtable of
+`[[0x005bf514]]` -- a double dereference, not the single one the previous section assumed. Every hop is image-resident,
+and the image's answer is wrong, which is the part worth recording first:
+
+| hop | image (`default.xbe`) | guest at the title |
+|---|---|---|
+| `[0x005bf514]` | `0x005c1a0c` (`.data`) | `0xd0174428` |
+| `[[0x005bf514]]` | `0x004d2fd0` (`.rdata`) | `0x004c8db8` (`.rdata`) |
+| `[[[0x005bf514]] + 0x30]` | `0x00034570` | `0x00024e70` |
+
+`0x00034570` is 22 bytes: it zeroes three dwords at its first argument and does `RET 0x10` -- an empty 12-byte
+`TArray`, i.e. the base class's no-op override. Exporting the image's chain therefore answers the question with a stub.
+The `.data` slots are runtime object handles: of the six globals at `0x005bf500..0x005bf514`, two still match the image
+at the title and four do not.
+
+**At the title the object's table is real and image-resident.** `0x004c8db8` reads back identical to `default.xbe` in
+all 24 slots dumped, so this is not a corrupted read; its slot 12 is **`0x00024e70`**. Two artifacts name the class
+without needing a symbol: `symbols/xbox_functions.csv` has `0x000246d0 = Core_FFileManagerGeneric`, and
+`inventory/xbe_modules.csv` puts `FFileManagerGeneric.h`'s assert literal at `0x004c8b40`, immediately in front of the
+`0x4c8db8` table.
+
+**The body is a find loop, and it has no cap.** It formats the pattern (the caller's `..\Maps\*.unr`-shaped string) into
+an `_alloca` buffer, calls a `FindFirstFileW`-shaped routine at `0x0033e596` with a find-data struct whose `cFileName`
+starts at `+0x2c`; per hit it copies at most `0x104` wchars of the name, skips `.` and `..` (`0x004cfb98`,
+`0x004cfb90`), and skips directories through the caller's two flags (`local_190[0] & 0x10` picks parameter 3 or 4, and
+the call passes `1, 0` -- files yes, directories no). Each name is appended to a `TArray` that grows `count*1.375 + 4`
+at a time, `0x0033e6a3` (`FindNextFile`-shaped) drives the loop until it answers 0, and `0x0033d437` closes it. There
+is no comparison against a bound anywhere in the 718 bytes.
+
+**Measured, not inferred.** With a breakpoint at `0x2fe809` (the instruction after the call) and `ret`, `y` sent from
+the title, four hits each returned a `TArray` with **`count=73 max=73`** holding every `.unr` on the disc, in
+*directory* order -- `M12F.unr` first, `SGCTF-AbydosVsSGC.unr` last -- not the sorted order the page shows.
+
+So the enumeration is not where 41 comes from: it hands back all 73 and the truncation is above this call. That also
+puts this file's two page measurements in tension, which is the next thing to settle rather than another export:
+`end` on `QUICK SELECT MAP` lands on `SGCTF-AbydosVsSGC` -- the last of the 73 -- while the index table says 40 is
+`M15B` with nothing after it, so one of the two is a scrolling artefact. **Next instrument:** open the page and read the
+widget's count and max at `this+0x280`/`+0x284` -- 41 means `GetMapList` dropped 32 names copying the returned array
+across (`0x000c19a0` and `0x0001fda0` are the two calls it makes with it), 73 means the page holds all of them.
+
+A mechanical note for that run: the guest's user stack sits at `0xD016xxxx` at the title, so a pointer into `0xD0...` is
+ordinary on this title and the "impossible address" reading of `[0x005bf514]` was wrong twice. And a `mem.py` read is
+only retried when it raises: read each address three times and compare it with the same bytes in the image before
+believing a zero or an odd value.
