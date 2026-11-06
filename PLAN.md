@@ -517,6 +517,23 @@ and a deliberate one-line script break is caught by the boot test.
 
 
 
+
+### Execution notes (2026-11-06, the console's submit key comes from its source, and no key we can send produces it)
+
+- **`Engine/Console.uc` says exactly what a submit does:** `KeyEvent` on `IK_Enter` + `IST_Press` writes
+  `History[HistoryTop] = TypedStr`, runs `ConsoleCommand(Temp)`, clears `TypedStr` and calls `TypingClose()`. A
+  submit is therefore observable three ways — History gains an entry, the text clears, the console closes.
+- **None of that happens for `kp_enter`, `ret`, `pad=start` or `enter`.** After each, the frame still reads
+  `(> stat fps_`, the console is still open, and there is no FPS readout. Letters echo (so `KeyType` is reached), and
+  the one missing event is an `IK_Enter` press.
+- **Two candidates, and the next instrument is the input map, not a boot**: the guest's keyboard driver does not
+  translate either Return scancode to `IK_Enter`, or `PlayerInput` consumes it first — `DefUser.ini` binds
+  `Enter=Use`. Read the scancode→`EInputKey` mapping (`UInput`/`PlayerInput` in the XBE) and the answer falls out
+  without another game run.
+- **The console thread stops here for now**, on the skill's own rule: three negatives is a research question, and the
+  next step is reading a table, not spending boots. The value banked is that the console opens, toggles on `Tab`,
+  draws its input line, and holds a typed command.
+
 ### Execution notes (2026-11-06, `Tab` is a toggle — and the console takes text but not a Return)
 
 - **`Tab` toggles the console; one press is the sequence once the modal is gone.** Two runs differing only in press
