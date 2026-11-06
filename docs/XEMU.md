@@ -1324,3 +1324,34 @@ widths, and spends a bounded number of reads. Validated on a live `PlayerProfile
 **What is left is one clean run**, not another instrument: a single vpad, the keyboard at 75 s, three select taps,
 then `objects.py --walk 0x6c21b0 --class Console --fstrings --object-size 0x800`. That closes U15's `History` read
 and 7.3's output channel.
+
+## A loaded level still has no live `Console`: the level was never the variable, `Tab` was (measured 2026-11-06)
+
+The previous section left one run to do: a single pad, the keyboard at 75 s, a repeated select, then
+`objects.py --class Console --fstrings` on the instance a level creates. The run was made and the instance does not
+exist. What it did produce is a better order for the next attempt.
+
+**The run.** One virtual pad, no leftover pad device, `device_add usb-kbd` at 75 s, presses from 137 s: `pad=a`
+opened `QUICK SELECT MAP` (**21,940 px**), the ten `pad=down` taps that follow moved **0 px**, the select `pad=a`
+after them started a level (**31,222 px**). The highlight never repainting is not the pad failing — the loaded level
+is **48,647 objects over 295 pages** with `StaticMeshActor` **927**, the M00 census measured in the previous section
+to the object, and M00 is ten presses down the list. **A frame is not a way to index that list in a keyboard-attached
+run**; the object census is, and it costs the same walk.
+
+**The walk.** `objects.py --walk 0x6c21b0 --class Console --fstrings --object-size 0x800` resolves exactly one
+object, `0x02344b00`. Its 0x800-byte window is a `defaultproperties` block — `FontNames(0)="SmallFont"`,
+`KeyName="SGMenuButton"`, `Images(0)=Shader'SG1_MainMenuTex.MM_high_mouseover_S'`,
+`FontColors(4)=(B=120,G=120,R=120,A=200)` — and the FString scan reads **1 pair, 0 carrying text**. At the title the
+same command returned the same shape. A live level does not, on its own, create the console object.
+
+**Why it was empty, and the precondition the next run needs.** `Tab` in that session produced **0 px**, and
+`console-line.py` counted **0 cyan pixels** on the frame after it, so no console was open when the walk ran. The
+`History[16]` read therefore needs a frame that shows the prompt (`(>Say at_`, the shape `console-line.py` measures)
+*before* the walk: `absent` means "no prompt text", not "closed", and walking without it spends 2m21s to re-measure
+the class default object. The order is `Tab`, prompt frame, walk — and if the prompt never appears, the run has
+produced a negative about input, which is what three of the last four runs produced.
+
+**One more input rule.** Keys cannot be added from a second shell: `xdotool key`/`type` sent over ssh after
+`drive.py` had exited went to whatever owned focus (`TotK Recomp`, with `windowfocus --sync` on the xemu window not
+taking) and three frames came back byte-identical. `drive.py` refuses that case by design (`FocusElsewhere`); a
+console run carries its keys in its own `--step` list.

@@ -491,6 +491,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-11-06, a loaded level still has no live `Console`, and the highlight frame is not an index read)
+
+- **The clean run happened.** One vpad and no stale pad device, the keyboard at 75 s, presses after 137 s: the first
+  `pad=a` opened `QUICK SELECT MAP` (**21,940 px**), the ten `pad=down` taps produced **0 px**, and the `pad=a` after
+  them started a level (**31,222 px**). The loaded level's census is **48,647 objects over 295 pages**,
+  `StaticMeshActor` **927** — the earlier M00 numbers to the object, and M00 is index 10, so the ten presses did land:
+  **the highlight crop simply does not repaint in a keyboard-attached run**, and a frame is not a way to read the
+  list's index. The census is.
+- **`--class Console --fstrings` at that loaded level finds one object, `0x02344b00`, and it is the class default.**
+  Its 0x800-byte window is a `defaultproperties` block (`FontNames(0)="SmallFont"`, `KeyName="SGMenuButton"`,
+  `Images(0)=Shader'SG1_MainMenuTex.MM_high_mouseover_S'`, `FontColors(4)=(B=120,G=120,R=120,A=200)`) and the FString
+  scan reads **1 pair, 0 carrying text**. A live level does not create the console: `Tab` in the same session produced
+  **0 px** and `console-line.py` counted **0 cyan pixels** on the frame after it, so no console existed when the walk
+  ran. The `History[16]` read is not blocked by the input plumbing any more — it is blocked by the console not being
+  opened, and the frame can say so before a walk is spent.
+- **Assert the prompt, then walk.** `console-line.py` answers "is a console up" on a single frame (`absent` = no
+  prompt text, not "closed"); a run that walks first and looks second spends 2m21s to rediscover the CDO. Order for
+  the next attempt: `Tab`, `console-line.py` on the next frame, and only on a prompt does the walk run.
+- **Keys cannot come from a second shell.** `xdotool key`/`type` sent over ssh after `drive.py` had exited went to
+  whatever owned focus (`TotK Recomp` here — `windowfocus --sync` on the xemu window did not take) and all three
+  frames came back byte-identical. `drive.py` refuses that case with `FocusElsewhere`; a console run sends its keys
+  inside its own `--step` list or not at all.
+
 ### Execution notes (2026-11-06, the console read has its instrument; three input traps and no PR from the first autonomous run)
 
 - **`objects.py --fstrings` is the read.** A UE2 `string` is `(Data, Count)`, so `--strings` saw a `Console`'s

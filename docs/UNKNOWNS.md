@@ -907,6 +907,16 @@ per-press retry; and a killed `drive.py` leaves its `SG1 virtual pad` uinput dev
 while every `pad=` step silently does nothing. What remains is one clean run with a single pad and the keyboard early,
 then `--class Console --fstrings` on the instance — not another measurement of the console.
 
+**A loaded level still has no live `Console`, and `Tab` was the variable, not the level (measured 2026-11-06).** With
+the keyboard attached at 75 s and a campaign level up (`48,647 objects over 295 pages`, `StaticMeshActor` 927, the M00
+census), `objects.py --walk 0x6c21b0 --class Console --fstrings --object-size 0x800` resolves **one** object on the
+`Console` class table, `0x02344b00`, and its window is the class's `defaultproperties` block with **1 FString pair,
+0 carrying text**. In the same session `Tab` drew **0 px** and `console-line.py` counted **0 cyan pixels**: no console
+was open, so the walk measured the class default object again and the level was never the missing piece. The read is
+now conditional on a positive prompt frame, which costs one screenshot instead of a 2m21s walk. What is still not
+measured is a `History` entry — and since the console only exists while a `Tab` lands, the scripted route
+(`GamePlay/ACTION_ConsoleCommand.uc`) remains the way to get a command in without one.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
