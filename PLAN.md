@@ -4,7 +4,7 @@ Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started
 4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 executor, binder,
 expression decoder and `ProcessEvent` measured; 4.3's property type space, class roster and field
 layout measured, the tagged tag record open)**
-(last run 2026-10-23). This is the working task list for the
+(last run 2026-11-06). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
 Measured totals live in [docs/INVENTORY.md](docs/INVENTORY.md).
@@ -490,6 +490,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the engine's object array is located, and objects are addressable by class)
+
+- **`GObjObjects` is at `0x006c21b0`** and holds **42,152 objects at the title** (`data=0x041e0000`, `num=42152`,
+  `max=51886`). The image cannot name it — `.data` is 2.2 MB of virtual size against 215 KB of file bytes, so the
+  array is zeros in `default.xbe` — and the guest can: a `TArray`-shaped triple (`Data`, `Num`, `Max`) is a
+  candidate when `Data` points into the heap, and it is evidence only when the objects it points at carry vtables
+  from the image's class-table set. **64 of 64** sampled objects did; the other three heap-pointer candidates in
+  `.data` scored 0. `tools/xemu/objects.py --find`.
+- **The walk is a page read, not a sweep**: 42,143 objects over **255** 64 KiB pages, one RSP packet per page,
+  **2m21s**. Reading the `min..max` span (the first attempt) or the same pages at 16 KiB chunks (the second) is
+  what made it look hung; the stub advertises `PacketSize=0x20020`.
+- **The histogram is the engine at the title**: `Function` 8,510, `ObjectProperty` 5,758, `FloatProperty` 4,402,
+  `BoolProperty` 4,173, `StructProperty` 3,388, `IntProperty` 3,193, `StrProperty` 2,424, `Sound` 1,409,
+  `Class` 1,004, `Package` 332, `State` 320, `LinkerLoad` 188, `StaticMeshActor` 171. `--class Player` names a
+  `PlayerController`, a `PlayerInput`, a `PlayerProfile`, six `PlayerReplicationInfo`, two `PlayerChatManager` and
+  two `PlayerStart` — an object-level assertion channel for the regression harness.
+- **7.3's `History` read is one run away, and the console object at the title is not it.** The only object on the
+  `Console` class table holds a `defaultproperties` block (`FontNames(0)="SmallFont"`, …), which reads as the class
+  default object; the live console appears with a level. `drive.py` now carries `--gdb=PORT` and `--linger=SECS`,
+  so a scripted run leaves the stub up for exactly that read, and `objects.py --class Console --strings` is the
+  instrument. A class-table name is a name for the *vtable*, not proof of an instance's class — 179 distinct
+  unnamed vtables appear in the walk, and that caveat belongs in any count taken from it.
 
 ### Execution notes (2026-11-05, `GetMapList` is found and has no cap; the fill is one read away)
 

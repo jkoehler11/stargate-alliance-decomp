@@ -1244,3 +1244,49 @@ A mechanical note for that run: the guest's user stack sits at `0xD016xxxx` at t
 ordinary on this title and the "impossible address" reading of `[0x005bf514]` was wrong twice. And a `mem.py` read is
 only retried when it raises: read each address three times and compare it with the same bytes in the image before
 believing a zero or an odd value.
+
+## The engine's object array is located, and objects are addressable by class (measured 2026-11-06)
+
+`UObject::GObjObjects` — the engine's list of every live object — is a `TArray<UObject*>` at **`0x006c21b0`** in
+`.data`, holding **42,152 objects at the title screen** (`data=0x041e0000`, `num=42152`, `max=51886`).
+
+The address cannot come from the image. `.data` is `0x00226bd4` bytes of virtual size against `0x00034b9c` of file
+bytes, so the array is zeros in `default.xbe` and exists only in the guest. It was found by shape and confirmed by
+content: a triple is a candidate when `Num` is in the thousands, `Max` is at or above it and `Data` points into the
+heap, and a candidate is **validated** only when the objects it points at carry vtables from the image's own
+class-table set (`inventory/xbe_class_tables.csv`). The winner scored **64 of 64** sampled objects; the other three
+heap-pointer candidates in `.data` scored 0, so the check is what separates the array from its neighbours.
+
+    python3 tools/xemu/drive.py ... --gdb=12345 --linger=1500 --step=shot=00-title --step=cpu=2
+    python3 tools/xemu/objects.py --port 12345 --xbe $SG1_DUMP/default.xbe --find
+    python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --top 25 --class Player
+
+**The walk is a page read, not a sweep.** 42,143 objects live on **255** 64 KiB pages, one RSP packet per page at
+the stub's own `PacketSize=0x20020`: **2m21s** for the whole array. Reading the `min..max` span (the first attempt)
+or the same pages at 16 KiB chunks (the second) is what made the walk look hung — the span includes tens of
+megabytes of unrelated allocation, and one packet per 16 KiB multiplies the latency by four.
+
+The histogram is the engine's own shape at the title:
+
+| objects | class | | objects | class |
+|---:|---|---|---:|---|
+| 8,510 | `Function` | | 1,004 | `Class` |
+| 5,758 | `ObjectProperty` | | 332 | `Package` |
+| 4,402 | `FloatProperty` | | 320 | `State` |
+| 4,173 | `BoolProperty` | | 188 | `LinkerLoad` |
+| 3,388 | `StructProperty` | | 171 | `StaticMeshActor` |
+| 3,193 | `IntProperty` | | 168 | `PackageCheckInfo` |
+| 2,424 | `StrProperty` | | 128 | `ReachSpec` |
+| 1,409 | `Sound` | | 104 | `StaticMesh` |
+
+`--class Player` resolves the live objects a regression run can assert on at the title: **one `PlayerController`**,
+one `PlayerInput`, one `PlayerProfile`, six `PlayerReplicationInfo`, two `PlayerChatManager` and two `PlayerStart`.
+That is the object-level channel: ask for an object by class instead of inferring one from pixels.
+
+**What it does not prove, stated so it is not read as more.** `--class Console` returns **one** object, and its
+bytes are a default-properties block (`FontNames(0)="SmallFont"`, `Images(0)=Shader'SG1_MainMenuTex…'`,
+`KeyName="SGMenuButton"`) — read as the class default object rather than a live console, because a `UConsole`
+instance carries `TypedStr`/`History`, not style defaults. So at the title there is no console to read a command
+back from, and U15's `History[16]` check still needs a run with a level loaded. A class-table name is also a name
+for the *vtable*, not proof of an instance's class: 179 distinct unnamed vtables appear in this walk, and every
+instance of a class whose table was named by its registration literal inherits that label.

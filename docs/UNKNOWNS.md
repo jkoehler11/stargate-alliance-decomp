@@ -890,6 +890,14 @@ there; a 1 MiB-chunk sweep that begins below it aborts on an unmapped page (`rea
 route is `GObjObjects`: UE2 keeps every `UObject*` in one global array, and walking it would name the `Console` instance
 in a few hundred reads instead of a 120 MiB sweep -- nothing in this tree has located that array yet.
 
+**The object array is located, so the read has an instrument (measured 2026-11-06).** `UObject::GObjObjects` is at
+`0x006c21b0` — 42,152 objects at the title — and `tools/xemu/objects.py` walks it into a class histogram
+(`docs/XEMU.md`). That settles the route this entry called "the cheaper": objects are addressable by class without
+a 120 MiB sweep, and a regression run can ask for a `PlayerController` or a `Level` by name. It does **not** settle
+the `History[16]` read: at the title the only object on the `Console` class table holds a `defaultproperties` block,
+which reads as the class default object, so the live console appears with a level. The remaining measurement is one
+in-game run — `Tab`, a command, `Enter` — then `--class Console --strings` on the instance that run creates.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
