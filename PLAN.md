@@ -515,6 +515,20 @@ and a deliberate one-line script break is caught by the boot test.
   inside its own `--step` list or not at all.
 
 
+
+### Execution notes (2026-11-06, the console opens — the tutorial modal was the blocker, and the census is not a map fingerprint)
+
+- **The tutorial modal is why three runs saw nothing after `Tab`.** M00's panel ("Press the X button to open the
+  door" … "A Continue") freezes the game: four captures over seven seconds are **byte-identical**. `pad=a` is the
+  dismiss it asks for, and the next shot moves **41,294 px**.
+- **The console then opens and draws its command line.** `Tab`, `Tab`, `stat fps` → a cyan **`> stat fps_`** at the
+  bottom-left of a first-person frame, no modal. U15's "the console draws nothing" holds only for an *empty*
+  console; text draws. The line is ~300×20 px in a 1,280×720 frame, which is why a menu-region crop never saw it.
+- **`Enter` is the remaining gap**: after typing, the frame is **identical** (0 px) and no FPS readout appears, so
+  the command is typed but not submitted. Next test is `kp_enter` (or `ret` twice), not another console hunt.
+- **Corrected: the object census is not a map fingerprint.** The 45,802-object run recorded above as "not M00" is
+  M00 — its `02-mission` frame is the lab with the same modal. Counts move with level state; read the frame.
+
 ### Execution notes (2026-11-06, a second clean console run: CDO again, and the d-pad step is what is unreliable)
 
 - **The run was built to remove every confounder and reproduced the result.** One vpad, no stale pad, keyboard at

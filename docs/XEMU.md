@@ -1383,3 +1383,27 @@ in the array when the walk runs. A live `UConsole` is created from `Engine.Conso
 its absence after a load is the thing to explain, and the next instrument is the `PlayerController` the walk
 already resolves: read its members for a pointer on the `Console` class table rather than trusting the class-list
 lookup, which only matches objects whose *own* vtable is that table.
+
+## The console opens and draws its input line; the tutorial modal was eating the keys (measured 2026-11-06)
+
+Three runs read "0 px after `Tab`" as "no console". A frame read with eyes says otherwise.
+
+**M00's tutorial modal is a modal, not an overlay.** The frame at `02-mission` shows O'Neill's HUD, the lab, and a
+panel reading *"Press the X button to open the door" / "New Objective: Open the door for the doctor" / A Continue* —
+and four captures taken over the next seven seconds are **byte-identical** (`00c0b078…` four times), so the game is
+frozen while it is up and keyboard input goes nowhere. Dismissing it is the `A` the panel itself asks for; after
+that the frames move again (41,294 px on the next shot).
+
+**With the modal gone the console opens, and its input line is drawn.** `Tab`, `Tab`, then `stat fps` typed as guest
+keys gives a **cyan `> stat fps_` line at the bottom-left** of the frame — in a first-person view of the lab with no
+modal. So U15's "the console renders no window" is true only of an *empty* console: `Tab` alone draws 0, and text
+draws, as `console-line.py`'s own docstring says. The screen is 1,280×720 and the line is roughly 300 px wide and
+20 tall — a few thousand pixels, which is why a crop aimed at the menu region missed it.
+
+**What is still missing is the Return.** `Enter` was sent after the text and the next frame is **identical** to the
+one before it (0 px) with no FPS readout anywhere, so the command is typed but not submitted. The obvious next test
+is the other Return scancode (`kp_enter`, or `ret` twice), not another search for the console.
+
+**Correction to the previous note in this file.** It read a 45,802-object census as "the level was not M00", because
+M00 had measured 48,647. The `02-mission` frame from that very run is M00's lab with the same modal — the object
+count moves with level state (a modal up, actors spawned), so **the census is not a map fingerprint**. The frame is.
