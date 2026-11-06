@@ -477,7 +477,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       keyboard is delivered and the console still does not appear. **Next, in order**: attach the USB keyboard before the
       guest enumerates `XID` (today's `device_add` lands ~75 s into the boot), or trace the scancode the Xbox kernel
       delivers for `sendkey tab`. If neither opens it, the scripted-`exec` probes move to
-      `GamePlay/ACTION_ConsoleCommand.uc`, which runs console commands from level script.
+      **Whole-RAM dump (2026-11-06)**: `pmemsave` as a `drive.py` step writes all 128 MiB inside the boot and
+      `tools/xemu/ramscan.py` searches it in 0.1 s; the typed line is in it **exactly once** -- `0x06823b7a`,
+      two bytes into `" hist"` at `0x06823b78` -- while the boot whose pad press never took has 0 hits and the
+      8-bit form has 0. Nothing in the image points at the buffer (no dword names the match or the 0x40 before
+      it, no class table within 0x8000), so the owner is the register file: **next is
+      `--step=monitor=info registers` in the same boot**, one step and no new data.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -493,6 +498,35 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the whole guest dumps inside the boot, and the typed line is in it but unowned)
+
+- **`pmemsave` inside the boot is the instrument the stub could not be.** `--step="monitor=pmemsave 0 0x8000000
+  \"<path>\""` writes all 128 MiB (134,217,728 bytes in `findtext3` and `findtext4`) and prints nothing. The
+  command answers `help pmemsave`; a bare path does not -- the monitor parses it as an expression and refuses it
+  (`invalid char 'h' in expression`) -- so the quotes travel inside the step value. This closes the "untested"
+  line in the note above.
+- **`tools/xemu/ramscan.py` is the other half**: one pattern over the whole image in 0.1 s (0.19 s with the
+  interpreter), against ~17 min for the same bytes over the stub at the recorded 7.9 s/MiB. `--text` searches the
+  UE2 UTF-16 form with its NUL terminator, `--ascii` the 8-bit one, `--dword` a value, and `--refs` walks every
+  pointer to a hit back to the nearest class table to name the owning object. `--ref-window` (0x40) exists because
+  a text pattern matches *inside* a string: the FString's `Data` names the first character, not the match.
+- **Two boots, one variable.** `findtext3` and `findtext4` differ only in `$L`. `findtext3`: `01-list` 0 px (the
+  pad press never took, the game stayed on the title), `console-line.py` reads `absent`, and the dump has 0 hits.
+  `findtext4`: `01-list` 37,878 px PASS, `05-typed` reads `typed` (95 cyan pixels, 128x33 at +34+208), and the dump
+  one step later has exactly one hit -- `0x06823b7a`, two bytes into `" hist"` at `0x06823b78`. The leading space
+  is the `spc` step, so in this boot it was not the swallowed keystroke.
+- **The negative that matters is about the image, not the walk.** No 4-byte-aligned dword in 128 MiB names the
+  match or any even address in the 0x40 before it, and no known class table is within 0x8000 before the bytes --
+  so the buffer is not a field of any object the vtable walk can name, and nothing in RAM holds a pointer to it.
+  A `Data` pointer absent from the whole image can only be live in a register or in a stack frame; the next step
+  is `monitor=info registers` in the same boot, which is one step and no new data.
+- **The 8-bit copy is excluded for this state**: `--ascii hist` is 0 hits in the image that holds the UTF-16 copy,
+  which retires the caveat the stub scan left open.
+- **`drive.py`'s whole-frame threshold is the wrong witness here, again**: `findtext4` failed `02-mission`,
+  `03-dismissed`, `04-tab` and `06-dumped` at 0 px while `05-typed` passed with a whole-frame change -- the mission
+  loaded somewhere inside the 55 s wait and the shots before it were all the same list frame. The frame counter is
+  the witness for the line, and `console-line.py` read it right on the frame the dump was taken.
 
 ### Execution notes (2026-11-06, the prompt draws on a stock disc, and the interaction list names the console default)
 

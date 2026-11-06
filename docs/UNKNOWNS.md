@@ -980,6 +980,19 @@ stub time, and a whole-RAM `pmemsave` has to happen *inside* a boot -- a second 
 connects and never gets a greeting. What is still open is where the buffer is allocated: outside the pages the
 objects live in, in a form this scan did not search (an 8-bit `char*` copy), or on one of the four unread pages.
 
+**The whole-RAM dump finds the text, and nothing in the image points at it (measured 2026-11-06).** The bounded
+scan above was replaced by the cheap route: `pmemsave 0 0x8000000` as a `drive.py` step writes all 128 MiB inside
+the boot, and `tools/xemu/ramscan.py` searches it in 0.1 s instead of 17 minutes. With the console drawn
+(`console-line.py` reads `typed`, 95 cyan pixels) there is **exactly one** copy of UTF-16 `hist` plus its
+terminator, at `0x06823b7a`, inside the string `" hist"` that starts at `0x06823b78`; the control boot, whose pad
+press never took and whose frame reads `absent`, has **0** hits, and the 8-bit form has 0 hits in the positive
+image, so this is the console's own UTF-16 buffer and not a `char*` echo. What the image does **not** contain is a
+pointer to it: no 4-byte-aligned dword names the match or any even address in the 0x40 before it, and no class
+table sits within 0x8000 before the bytes, so the buffer is neither reachable by a stored pointer nor a field of
+any object the vtable walk can name. **What would settle the owner:** the register file at the same step
+(`--step=monitor=info registers`, or a GDB stack read there), because a `Data` pointer absent from 128 MiB of RAM
+can only be live in a register or in the stack frame of whatever draws the line -- and `pmemsave` covers neither.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
