@@ -45,6 +45,12 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # one object by address, seconds not minutes (an address --refs printed), and what it points at
     python3 tools/xemu/objects.py --port 12345 --object 0x42a1b40 --object-size 0x800 --refs --fstrings
 
+    # where a typed string actually lives, when no object the graph names carries it: pattern-scan the pages the
+    # object array covers (19 MB, ~2 min) and then find who points at the buffer (`--region` scans an explicit
+    # range, 123 MB for the whole span and ~15 min at the stub's own read rate)
+    python3 tools/xemu/objects.py --port 12345 --find-text hist --array-pages
+    python3 tools/xemu/objects.py --port 12345 --find-dword 0x5b12040 --array-pages
+
     # ...and one step further: the FString pairs inside the `Console` that pointer reaches (`TypedStr`,
     # `History[16]`), which is the difference between "the key was never delivered" and "the command ran"
     python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class PlayerController --refs \
@@ -308,6 +314,77 @@ def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=
     return True
 
 
+def object_pages(guest, address, span=0x10000):
+    """[(addr, size)] for the pages the object array's pointers occupy, merged into contiguous runs.
+
+    The walk reads one 64 KiB page per page holding an object (295 pages at 45,802 objects) rather than the span
+    from the lowest pointer to the highest, which is 123 MB -- and a scan has the same choice, so this returns the
+    same page set for one: reading only the array costs a few packets, and 19 MB of scan is a fifth of the span.
+    """
+    data, num, cap = struct.unpack("<III", guest.read(address, 12))
+    if not plausible_pointer(data) or not (ARRAY_MIN <= num <= ARRAY_MAX) or cap < num:
+        raise SystemExit("%#x does not hold a plausible object array (data=%#x num=%d max=%d)"
+                         % (address, data, num, cap))
+    blob = guest.read(data, num * 4)
+    pages = sorted({p & ~(span - 1) for p in struct.unpack("<%dI" % num, blob) if plausible_pointer(p)})
+    runs = []
+    for page in pages:
+        if runs and runs[-1][0] + runs[-1][1] == page:
+            runs[-1][1] += span
+        else:
+            runs.append([page, span])
+    print("array %#x: data=%#x num=%d -- %d page(s) in %d contiguous run(s), %d KiB"
+          % (address, data, num, len(pages), len(runs), len(pages) * span // 1024))
+    return [(addr, size) for addr, size in runs]
+
+
+def find_patterns(guest, patterns, spans, span=0x4000, limit=8, chunk=0x4000):
+    """Locate byte patterns in the given guest ranges, one bulk read per `span`, all patterns per read.
+
+    The object walk answers "which objects exist"; this answers "which address holds these bytes", which is
+    the other half of a read like U15's: an FString's text lives in its own allocation, so a typed command
+    is findable even when no object the interaction graph names holds the `(Data, Count)` pair.
+
+    `patterns` is [(label, bytes)] and every one is searched in each read, because the stub is the cost: it
+    answers ~2 packets a second whatever the packet holds, so 123 MB is ~16 minutes at one 64 KiB read per
+    request and a second pass for a second pattern would double that. Progress is printed with the elapsed
+    time for the same reason -- a scan with no output reads as a hung guest.
+    """
+    total = sum(size for _, size in spans)
+    print("scanning %d range(s), %d KiB, for %s"
+          % (len(spans), total // 1024, ", ".join("%s (%d bytes)" % (label, len(pat)) for label, pat in patterns)))
+    counts = dict((label, 0) for label, _ in patterns)
+    started = last = time.time()
+    done = 0
+    for base, size in spans:
+        for off in range(0, size, span):
+            try:
+                blob = guest.read(base + off, min(span, size - off), chunk=chunk)
+            except IOError as exc:
+                print("  %#x: unreadable (%s)" % (base + off, exc))
+                continue
+            done += len(blob)
+            for label, pattern in patterns:
+                i = blob.find(pattern)
+                while i >= 0:
+                    counts[label] += 1
+                    print("  hit %s at %#010x" % (label, base + off + i))
+                    if counts[label] >= limit:
+                        print("  %s: stopped at %d hit(s), %d KiB read, %.0fs"
+                              % (label, limit, done // 1024, time.time() - started))
+                        return counts
+                    i = blob.find(pattern, i + 1)
+            now = time.time()
+            if now - last >= 10:
+                last = now
+                print("  ... %d/%d KiB, %.0fs" % (done // 1024, total // 1024, now - started))
+    elapsed = time.time() - started
+    print("  %s in %d KiB, %.0fs (%.0f KiB/s)"
+          % (", ".join("%d hit(s) %s" % (n, label) for label, n in counts.items()), done // 1024, elapsed,
+             (done / 1024.0 / elapsed) if elapsed else 0))
+    return counts
+
+
 def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size, want_fstrings=False,
          want_refs=False, follow=""):
     data, num, cap = struct.unpack("<III", guest.read(addr, 12))
@@ -438,6 +515,26 @@ def main():
                          "seconds -- use it on an address --refs printed, even after that run's stub is gone; "
                          "add --refs to name the guest pointers it holds, or --fstrings for its TypedStr-shaped "
                          "pairs")
+    ap.add_argument("--find-text", action="append", default=[], metavar="TEXT",
+                    help="scan the region for TEXT as a UE2 FString payload (UTF-16LE plus its NUL "
+                         "terminator, so `hist` does not match inside `History`); repeatable, and prints the "
+                         "address of each hit")
+    ap.add_argument("--find-dword", metavar="ADDR",
+                    help="scan the region for a little-endian dword (hex), e.g. a --find-text hit, which finds "
+                         "the object that points at that buffer")
+    ap.add_argument("--find-ascii", action="append", default=[], metavar="TEXT",
+                    help="scan for TEXT as an 8-bit NUL-terminated string (a widget or a `char*` buffer that "
+                         "never became an FString); searched in the same reads as --find-text, which costs "
+                         "nothing extra because the stub's packet rate is the limit")
+    ap.add_argument("--region", metavar="ADDR:SIZE", default="0x970000:0x7540000",
+                    help="range for --find-text/--find-dword (default: the object heap the walk covers, "
+                         "0x970000:0x7540000); --array-pages is the cheap alternative")
+    ap.add_argument("--array-pages", metavar="ADDR", nargs="?", const="0x6c21b0", default=None,
+                    help="scan only the 64 KiB pages the object array at ADDR (default GObjObjects 0x6c21b0) "
+                         "covers: 19 MB instead of the 123 MB span, from one array read")
+    ap.add_argument("--scan-chunk", type=lambda x: int(x, 0), default=0x20000,
+                    help="bytes per stub read while scanning (default 0x20000, the stub's own PacketSize)")
+    ap.add_argument("--limit", type=int, default=8, help="stop a scan after N hits (default 8)")
     ap.add_argument("--classes-only", action="store_true",
                     help="with --object/--refs: print only fields whose target resolves to a named class "
                          "(a defaultproperties window is mostly UTF-16 text and prints dozens of dwords that "
@@ -483,6 +580,22 @@ def main():
             else:
                 print("\nno candidate validated -- the array is not a 12-byte TArray in .data, and the next "
                       "split is the block form (UE1 kept pointer blocks, and this fork may)")
+        if args.find_text or args.find_ascii or args.find_dword:
+            if args.array_pages:
+                spans = object_pages(guest, int(args.array_pages, 0))
+            else:
+                base, size = (int(x, 0) for x in args.region.split(":"))
+                spans = [(base, size)]
+            patterns = []
+            for text in args.find_text:
+                patterns.append(("UTF-16 %r + NUL" % text, text.encode("utf-16-le") + b"\x00\x00"))
+            for text in args.find_ascii:
+                patterns.append(("ASCII %r + NUL" % text, text.encode("ascii") + b"\x00"))
+            if args.find_dword:
+                value = int(args.find_dword, 0)
+                patterns.append(("dword %#010x" % value, struct.pack("<I", value)))
+            find_patterns(guest, patterns, spans, span=args.scan_chunk, limit=args.limit,
+                          chunk=args.scan_chunk)
         if args.object:
             read_object(guest, int(args.object, 0), args.object_size or 0x800, args.strings, args.fstrings,
                         "", names, args.refs, args.classes_only)
