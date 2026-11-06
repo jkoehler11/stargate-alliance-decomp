@@ -130,11 +130,12 @@ and the git-ignored work tree, so a pass means the repository is unchanged as we
 **The mission stage is the expensive one** — 1,129 s for two indices, because each boot waits 135 s for the title and
 60 s to settle, and a swallowed press costs a whole second attempt. It therefore stays a deliberate subset, but the
 subset now **rotates**: with no `SG1_MISSION_INDICES` the stage asks `tools/xemu/map-index.py --rotate 2` for the day's
-pair, which walks the campaign range 10-72 with stride 2 from a day-of-year start. Two indices a night covers all 63
-campaign entries in 32 nights, and because 2 is coprime with 63 the wrap skips nothing (checked: 32 nights, 63 unique
-indices, 10 through 72). `SG1_MISSION_COUNT` changes the per-night count and `SG1_MISSION_INDICES` still pins an exact
-list; `tools/xemu/missions.sh --all` remains the full 63-index sweep to run by hand (about four hours at the measured
-~4 min per index).
+pair, which walks the campaign range **10-70** with stride 2 from a day-of-year start. Two indices a night covers all 61
+campaign entries in 31 nights, and because 2 is coprime with 61 the wrap skips nothing (checked: 31 nights, 61 unique
+indices, 10 through 70). The range stops at 70 because 71 and 72 are `MainMenu` and `SGCTF-AbydosVsSGC` -- list entries,
+not missions -- and `map-index.py --verify` refuses a table where those two look like campaign maps. `SG1_MISSION_COUNT`
+changes the per-night count and `SG1_MISSION_INDICES` still pins an exact list; `tools/xemu/missions.sh --all` remains
+the full 61-index sweep to run by hand (about four hours at the measured ~4 min per index).
 Pixel-level assertion now exists in that stage: `tools/xemu/guest-halt.py` fails an index whose mission frame is the
 BIOS screen, which is what a failed load looks like in this build (`docs/XEMU.md`, 2026-11-04).
 

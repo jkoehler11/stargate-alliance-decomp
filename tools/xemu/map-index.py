@@ -11,15 +11,18 @@ index 0 `CTF-Abydos`, 10 `M00`, 31 `M12F`, 35 `M13D`, 40 `M15B`, 72 `SGCTF-Abydo
     python3 tools/xemu/map-index.py --iso $WORK/sg1.iso --verify       # the anchors above, re-derived
     python3 tools/xemu/map-index.py --rotate 2                         # today's two indices for the nightly
 
-The campaign range is 10-72 (63 maps). `--rotate N` walks it with stride `N` from a day-numbered start, so a nightly
-that loads N maps a night covers every one of them in ceil(63/N) nights -- with N=2 that is 32 nights, and because 2
-is coprime with 63 no index is skipped by the wrap.
+The campaign range is **10-70** (61 maps). The page has 73 entries, but 0-9 are the multiplayer maps and `Entry` and
+71-72 are `MainMenu` and `SGCTF-AbydosVsSGC`, which are not missions; `--verify` checks that every index in the range
+looks like a campaign map (`M00`..`M21D`) and that the two after it do not. `--rotate N` walks the range with stride
+`N` from a day-numbered start, so a nightly that loads N maps a night covers all 61 in ceil(61/N) nights -- with N=2
+that is 31 nights, and because 2 is coprime with 61 no index is skipped by the wrap.
 
 The walk is the XDVDFS directory tree (left child, node, right child), which is the order the disc stores names in
 sorted form; the tool still sorts explicitly so a hand-built ISO cannot quietly reorder the table.
 """
 import argparse
 import os
+import re
 import struct
 import sys
 import time
@@ -28,8 +31,9 @@ SEC = 2048
 MAGIC = b"MICROSOFT*XBOX*MEDIA"
 ANCHORS = {0: "CTF-Abydos", 10: "M00", 31: "M12F", 35: "M13D", 40: "M15B", 72: "SGCTF-AbydosVsSGC"}
 COUNT = 73
-CAMPAIGN_LO, CAMPAIGN_HI = 10, 72          # first and last campaign entries on the page
-CAMPAIGN = CAMPAIGN_HI - CAMPAIGN_LO + 1   # 63
+CAMPAIGN_LO, CAMPAIGN_HI = 10, 70          # first and last campaign entries on the page
+CAMPAIGN = CAMPAIGN_HI - CAMPAIGN_LO + 1   # 61
+CAMPAIGN_NAME = re.compile(r"^M[0-9]{2}[A-Za-z]?$")
 
 
 class Disc:
@@ -123,6 +127,14 @@ def main():
             got = rows[idx][1] if idx < len(rows) else None
             if got != name:
                 bad.append("index %d is %r, measured %r" % (idx, got, name))
+        for idx in range(CAMPAIGN_LO, CAMPAIGN_HI + 1):
+            got = rows[idx][1] if idx < len(rows) else None
+            if not got or not CAMPAIGN_NAME.match(got):
+                bad.append("index %d is %r, not a campaign map" % (idx, got))
+        for idx in range(CAMPAIGN_HI + 1, len(rows)):
+            got = rows[idx][1]
+            if CAMPAIGN_NAME.match(got):
+                bad.append("index %d is %r, a campaign map outside the rotated range" % (idx, got))
         if bad:
             for line in bad:
                 print("FAIL " + line)

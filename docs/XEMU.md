@@ -943,6 +943,7 @@ The second is the manufactured failure: it proves the loop iterates, that a fail
 | 16-33 | 18 of 18 | 20, 23, 28 and 32 needed a second attempt; **21 failed both** in that run and passed first time in a later one |
 | 34-40 | 7 of 7 | **38 failed both** attempts and passed first time in a later run |
 | 41, 70 | 2 of 2 | the first second-half maps ever loaded: `--name M15C` (41) and `--name M21D` (70), both on the first attempt |
+| 71, 72 | 2 of 2, but not missions | `MainMenu` loads the MAIN MENU page itself and `SGCTF-AbydosVsSGC` a CTF map; the harness passes both |
 
 **27 indices loaded on the first attempt, 3 needed a second, 1 needed a third.** The retry is doing the work it was added
 for: four of 31 (~13%) hit a failure, all of them input.
@@ -952,6 +953,13 @@ for: four of 31 (~13%) hit a failure, all of them input.
 doing nothing: index 38's highlight frame is `QUICK MAP` with `M14C` selected, `M14C.unr` is on the disc, and the frame
 after a 60 s settle is identical to the one before it. Neither is a missing map, and the title frames of a passing and a
 failing run are indistinguishable (mean luminance 46.7 vs 46.6), so the press is lost rather than arriving early.
+
+**The two entries after the campaign are not missions, and the harness passes them anyway (measured 2026-11-05).**
+`--name MainMenu` (index 71) and `--name SGCTF-AbydosVsSGC` (index 72) both PASS, and index 71's "mission" frame is the
+MAIN MENU page with `Continue` highlighted. Neither has a HUD and neither trips `guest-halt.py`, because a menu repaints
+and is not the BIOS screen -- so the pixel-and-halt pair asserts *a load happened*, not that a mission did. That is why
+the campaign rotation stops at 70, and why a real "is this frame a mission" check would need a HUD-specific assertion
+rather than a frame diff.
 
 **What "each mission" means here, corrected 2026-11-05: the list offers every map, so "each" is all 73.** The
 31-of-31 reading counted the pages this session had scrolled, not the entries the page holds -- the array is 73 entries
