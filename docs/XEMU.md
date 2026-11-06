@@ -1585,3 +1585,51 @@ guest pointers from each target's own vtable (`--refs`) and its UE2 `(Data, Coun
 the console open* -- a non-character submit key, or no submit at all -- followed by that read. Injecting keys after
 `drive.py` has exited is not available: a QMP client opened on the run's `qmp.sock` connected and then timed out
 waiting for the greeting, at 6 s and again at 60 s.
+
+## A drawn prompt is a stock disc's, and its object is not in the array (measured 2026-11-06)
+
+A drawn input line used to be the tell that the boot was the `Console=GUI.ExtendedConsole` swap, and a console object
+was supposed to be reachable from the player. One run measured both: the disc's own `System/Default.ini`, and the
+object array with the prompt open and text in it.
+
+**The booted image is stock.** `$WORK/xemu/sg1.iso` (md5 `109fff2a5a0091932f4262eefda41855`) carries
+`Console=Engine.Console`; `$WORK/console-iso/game.iso` (md5 `5c47159b3e4ec558d2532a177b4e6992`) carries
+`Console=GUI.ExtendedConsole`. Same byte size, different file: identify the disc from the file, never from the size.
+
+**`grep` on the image answers wrong.** The stock ISO still contains a stray `Console=GUI.ExtendedConsole` at offset
+1,881,354,812, so a string hit -- or its absence -- says nothing about the config the engine reads. Read the file out of
+the XDVDFS tree instead:
+
+    python3 tools/xemu/xiso-cat.py --iso $WORK/xemu/sg1.iso System/Default.ini     # Console=Engine.Console
+    python3 tools/xemu/xiso-cat.py --iso $WORK/xemu/sg1.iso --list System
+
+`extract-xiso` is not installed on the desktop any more and a `-c` extract would be 2.2 GB; this reads one file in
+about a second. The tool's walk is the same one `map-index.py` does: a directory entry's `left`/`right` are offsets
+into the directory table in **4-byte words** (words, not bytes -- the first version read them as bytes and found no
+file at all).
+
+**That stock disc draws the prompt.** The sequence was `Tab`, `spc`, `stat fps`, `ret`, then `Tab`, `spc`, `hist` and
+nothing else. `console-line.py` reads `absent` (0 cyan px) on the post-submit frame and `typed` -- 82 cyan pixels in a
+128x32 band -- on the frame with `hist` typed, where the crop reads `(> hist_` and `stat fps`'s counter
+(`59 cur FPS` / `58 avg FPS`) is still drawing above it. So a drawn line does not mean the swap, and a submit executed a
+command on a stock disc.
+
+**And the prompt still has no object.** With that frame on screen, one walk of `0x6c21b0` reads
+`data=0x41e0000 num=48646 max=51886` and finds 45,802 objects over 295 pages; `--class Console` returns **one**
+object, `0x02344b00`, whose first 0x800 bytes are the class's `defaultproperties` text and whose FString pairs carry
+no text; `ExtendedConsole` -- a substring match, so a subclass instance would be caught -- returns none; and the
+`PlayerController` at `0x01c31000` has no `Console` pointer anywhere in 0xc00 bytes. Its object fields are the same
+eleven the closed-prompt walk named: `ObjectProperty`, `Package`, three `Class` objects, `LevelInfo`, `Level`,
+`DefaultPhysicsVolume`, `ScriptedController`, `PlayerReplicationInfo`, itself at `+0x5e8`, `SceneReplicationInfo`,
+`CheatManager`, `PlayerChatManager`.
+
+**Where the console default does point is the interaction block.** `0x02344b00` holds `XboxViewport` at `+0x02c` and
+`InteractionMaster` `0x02406720` at `+0x030`; that object's `+0x028`..`+0x034` name `XboxClient` `0x01fb9bc0`,
+`GUIController` `0x02345500`, `Console` `0x02344b00` (the class default again) and `UIXInteraction` `0x05b10a80`. So
+the console's registration is a list of interactions, one slot of which is the class default rather than an instance:
+whatever draws and executes the prompt is in that list, and `Player.Console` is not where U15's `History` will come
+from.
+
+**What this changes.** `Tab` + `stat fps` + `ret` remain a working console on the shipped disc; the drawn line is no
+longer evidence of a swapped image; and the next read is `objects.py --object 0x2406720 --refs --object-size 0x200`,
+one step past the console default's `InteractionMaster`.
