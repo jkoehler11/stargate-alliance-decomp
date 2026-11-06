@@ -529,6 +529,11 @@ and a deliberate one-line script break is caught by the boot test.
   a day-of-year start, so 2 boots a night cover all 63 campaign entries in 32 nights with nothing skipped (2 is coprime
   with 63); `SG1_MISSION_INDICES` still pins an exact list and `SG1_MISSION_COUNT` changes the per-night count. Checked
   over 32 simulated nights: 63 unique indices, 10 through 72.
+- **The console keeps no output to read (U15).** The configured class, `Engine.Console`, declares only `TypedStr` and
+  `History[16]`; `WindowConsole.Scrollback` is an int and the only `array<string> Scrollback` is `GUI.ExtendedConsole`'s,
+  which this build never instantiates. So 7.3's output channel does not exist in guest memory -- what is assertable is
+  that a command was delivered (`History`) or that it had a visible effect (`stat fps`'s overlay). 7.3's remaining half
+  is a scripted command path (`ACTION_ConsoleCommand.uc`), not a memory read.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 
