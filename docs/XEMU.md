@@ -1355,3 +1355,31 @@ produced a negative about input, which is what three of the last four runs produ
 `drive.py` had exited went to whatever owned focus (`TotK Recomp`, with `windowfocus --sync` on the xemu window not
 taking) and three frames came back byte-identical. `drive.py` refuses that case by design (`FocusElsewhere`); a
 console run carries its keys in its own `--step` list.
+
+## A second clean run: the console is still only a class default, and the d-pad step is the unreliable part (measured 2026-11-06)
+
+One run, built to remove every confounder the previous one named: a single vpad, no stale pad device, `device_add
+usb-kbd` at 75 s, presses from 137 s, `Tab` sent **twice** (the first keypress after a load is swallowed), then
+`stat fps` and `Return`.
+
+| step | result |
+|---|---|
+| `pad=a` opens `QUICK SELECT MAP` | 21,937 px |
+| ten `pad=down` | **0 px** |
+| `pad=a` selects | level loads (21,789 px) |
+| `Tab`, `Tab`, `stat fps`, `Return` | 0 px |
+| object walk | **45,802 objects** over 295 pages; `--class Console` = **1 object, the CDO**; FString scan 1 pair, 0 text |
+
+**The loaded level was not M00.** M00's census is 48,647 objects, measured twice; this run's is 45,802, so the ten
+d-pad presses did not step the list and the select took its opening entry. That is the finding: in a
+keyboard-attached run `pad=down` steps the list only sometimes, and the highlight crop reads 0 px either way, so
+**the census is the only evidence of which map loaded** — compare it with the M00 number before drawing any
+conclusion about what happened *inside* the level.
+
+**What this does and does not establish.** On M00, the previous run's walk found only the CDO after a `Tab`
+(#176), and that stands. This run adds a second CDO-only walk, but on a level reached by a select press whose
+stepping was never verified, so it cannot be used to say `Tab` failed — it can only say the console object is not
+in the array when the walk runs. A live `UConsole` is created from `Engine.Console` when the viewport is made, so
+its absence after a load is the thing to explain, and the next instrument is the `PlayerController` the walk
+already resolves: read its members for a pointer on the `Console` class table rather than trusting the class-list
+lookup, which only matches objects whose *own* vtable is that table.

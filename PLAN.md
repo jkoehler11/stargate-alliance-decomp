@@ -514,6 +514,23 @@ and a deliberate one-line script break is caught by the boot test.
   frames came back byte-identical. `drive.py` refuses that case with `FocusElsewhere`; a console run sends its keys
   inside its own `--step` list or not at all.
 
+
+### Execution notes (2026-11-06, a second clean console run: CDO again, and the d-pad step is what is unreliable)
+
+- **The run was built to remove every confounder and reproduced the result.** One vpad, no stale pad, keyboard at
+  75 s, presses from 137 s, `Tab` twice (the first keypress after a load is swallowed), `stat fps`, `Return`:
+  `pad=a` opened the list (**21,937 px**), ten `pad=down` gave **0 px**, the select loaded a level (**21,789 px**),
+  every key after it **0 px**, and the walk found **45,802 objects** with `--class Console` = **one object, the CDO**
+  (FString scan: 1 pair, 0 text).
+- **The level was not M00** — M00 is 48,647 objects, measured twice — so the presses did not step the list this
+  time. `pad=down` is the unreliable element, the highlight crop repaints in neither case, and **the object census
+  is the only evidence of which map loaded**; compare against 48,647 before reading anything into the level.
+- **So the CDO finding stands only for the M00 run** (#176, 48,647). This run adds a second CDO-only walk on a map
+  whose stepping was unverified, which is why it is recorded as a negative about the *instrument*, not about `Tab`.
+- **Next instrument, named**: a live `UConsole` is created from `Engine.Console` when the viewport is made, so its
+  absence after a load is the thing to explain. The walk already resolves the `PlayerController`; read its members
+  for a pointer whose target is on the `Console` class table, instead of matching the instance's own vtable.
+
 ### Execution notes (2026-11-06, the console read has its instrument; three input traps and no PR from the first autonomous run)
 
 - **`objects.py --fstrings` is the read.** A UE2 `string` is `(Data, Count)`, so `--strings` saw a `Console`'s
