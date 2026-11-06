@@ -240,6 +240,12 @@ def main():
                     help="EEPROM to boot from (default: the one xemu itself uses); a copy is kept in --out, so a "
                          "run's profile and settings survive only as long as its own directory")
     ap.add_argument("--xemu", default=os.environ.get("XEMU", smoke_default()))
+    ap.add_argument("--gdb", type=int, default=0,
+                    help="open a GDB stub on this port, so tools/xemu/mem.py and objects.py can read the guest "
+                         "during the sequence")
+    ap.add_argument("--linger", type=float, default=0,
+                    help="after the last step, keep the guest running this many seconds for a memory read "
+                         "(xemu is killed on exit, so a read has to happen while this sleeps)")
     args = ap.parse_args()
 
     REGRAB_SECONDS = args.regrab
@@ -311,9 +317,14 @@ def main():
         env["SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"] = "1"
     log = open(os.path.join(args.out, "xemu.log"), "wb")
     prior_focus = ""
-    proc = subprocess.Popen([args.xemu, "-config_path", toml,
-                             "-serial", "file:" + os.path.join(args.out, "serial.log"),
-                             "-qmp", "unix:%s,server,nowait" % sock_path],
+    cmd = [args.xemu, "-config_path", toml,
+           "-serial", "file:" + os.path.join(args.out, "serial.log"),
+           "-qmp", "unix:%s,server,nowait" % sock_path]
+    if args.gdb:
+        # A second evidence channel: QMP samples the CPU and injects input, the stub reads memory.
+        # Measured: a read needs `interrupt()` and *virtual* mode, never `Qqemu.PhyMemMode:1`.
+        cmd += ["-gdb", "tcp::%d" % args.gdb]
+    proc = subprocess.Popen(cmd,
                             stdout=log, stderr=subprocess.STDOUT, env=env, start_new_session=True)
     try:
         time.sleep(min(args.seconds, 10))
@@ -446,6 +457,10 @@ def main():
                 say("         nothing was sent. A `--step=activate` moves focus to the emulator, and takes it away")
                 say("         from whoever is using the desktop -- do that only when the machine is free.")
                 return 2
+        if args.linger:
+            # The guest is alive and the stub is up: this is the window a memory read attaches in.
+            say("lingering %.0fs for a memory read: gdb 127.0.0.1:%d" % (args.linger, args.gdb))
+            time.sleep(args.linger)
         if failures:
             say("FAIL: %d shot step(s) did not repaint: %s" % (len(failures), ", ".join(failures)))
             return 2
