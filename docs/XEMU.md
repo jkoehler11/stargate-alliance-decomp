@@ -1535,3 +1535,53 @@ that the read is taken from*: `Tab`, `stat fps`, `ret`, then one `objects.py` wa
 `PlayerController` points at instead of filtering by class name -- the class filter has now been measured to return
 only the class default object in every session, and what changed between `kp_enter` and `ret` is a state the frame
 shows and the array does not name.
+
+## The console is not in the object array once it closes (measured 2026-11-06)
+
+The read U15 has been waiting on -- the live `Console`'s `TypedStr`/`History` -- needs the object to exist, and the
+object array says it does not exist in the state every run so far has read it in. One boot: `M00` loaded, `Tab`,
+`stat fps`, one `ret`, then a GDB stub left up and the array walked twice.
+
+**The array is `0x6c21b0` in every state, and only `num` moves.** At this level `data=0x041e0000 num=48646
+max=51886`; the title screen read `num=42152` with the same `data` and `max`, so the triple names the engine's array
+and not a per-boot allocation.
+
+**45,802 live objects over 295 pages** (`0x970000..0x7eb0000`; the whole walk is 3 m 29 s at this level, against 2 m 41 s
+without the follow step). 45,794 resolved to a class table, 2,844 slots are null or implausible, and four 64 KiB pages were unreadable.
+The histogram's head is `Function` 8,610, `ObjectProperty` 5,849, `FloatProperty` 4,430, `BoolProperty` 4,208,
+`StructProperty` 3,403, `IntProperty` 3,208, `StrProperty` 2,472, then content (`Sound` 1,436, `StaticMeshActor` 927,
+`Light` 579) -- a loaded level, not the title menu.
+
+**Exactly one `PlayerController`, at `0x01c31000`, and none of its first 0x800 bytes points at a `Console`.** Its
+object-address fields are:
+
+| field | target | class |
+|---|---|---|
+| `+0x008` | `0x019c9ae0` | `ObjectProperty` |
+| `+0x018` | `0x01f61068` | `Package` |
+| `+0x024` | `0x00d9ae00` | `Class` |
+| `+0x0a0`, `+0x0ac` | `0x02031400` | `LevelInfo` |
+| `+0x150` | `0x02347300` | `DefaultPhysicsVolume` |
+| `+0x370`, `+0x4bc` | `0x00d96600`, `0x00d94e00` | `Class` |
+| `+0x3b8` | `0x0237d200` | `ScriptedController` |
+| `+0x4c0` | `0x02345a00` | `PlayerReplicationInfo` |
+| `+0x5e8` | `0x01c31000` | `PlayerController` (itself) |
+
+The field exists in the layout -- `inventory/class_properties.csv` has
+`Engine,Player,Console,UObjectProperty,0x2000:Transient;,Console`, and `PlayerController` extends `Player` -- and the
+self-reference at `+0x5e8` shows the read window covers the whole object, so a null `Console` is a null field, not a
+window that stops short. `--class Console` in the same state returns **one** object: the class default at
+`0x02344b00`, a `defaultproperties` block (`FontNames(0)="SmallFont"`, `Images(0)=Shader'SG1_MainMenuTex...'`).
+
+**That is the submit's other half.** `TypingClose()` closes the console when the text is submitted, and this state is
+three to four minutes past that: the frame the run saved after `ret` is `absent` (0 cyan px) where `05-typed` held
+109 cyan px in a 176x30 band, so the console really did close *and* the object went with it. A walk taken while the
+prompt is up is the only walk that can see a `Console`; every previous one, including the two that reported "only the
+class default object", was taken after the console had already gone.
+
+**Reading one object no longer costs a walk.** `objects.py --object ADDR` reads an address directly and names its
+guest pointers from each target's own vtable (`--refs`) and its UE2 `(Data, Count)` pairs (`--fstrings`), in seconds;
+`--follow CLASS` does the same one step past a `--refs` field. The remaining experiment is a sequence that *ends with
+the console open* -- a non-character submit key, or no submit at all -- followed by that read. Injecting keys after
+`drive.py` has exited is not available: a QMP client opened on the run's `qmp.sock` connected and then timed out
+waiting for the greeting, at 6 s and again at 60 s.
