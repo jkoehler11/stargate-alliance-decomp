@@ -73,6 +73,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/speech_index.csv` | 1364 | 7 | `make campaign-matrix` |
 | `inventory/squad_rosters.csv` | 65 | 8 | `make squad-rosters` |
 | `inventory/squad_scripts.csv` | 614 | 3 | `make ci` |
+| `inventory/t3d_coverage.csv` | 73 | 5 | `make t3d` |
 | `inventory/token_map.csv` | 57 | 8 | `make token-map` |
 | `inventory/ucpp_vtables.csv` | 15 | 7 | `make ucpp-vtables` |
 | `inventory/xbe_assert_residual.csv` | 6 | 9 | `make assert-residual` |
@@ -90,5 +91,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-83 artifacts, 114800 rows in total. 0 with no generator.
+84 artifacts, 114873 rows in total. 0 with no generator.
 

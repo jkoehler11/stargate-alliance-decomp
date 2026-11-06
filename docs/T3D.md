@@ -68,3 +68,30 @@ file's **614**: 35 references the old enumeration had and this one does not, 2 t
 therefore used something broader than a located property block — a second property, or a looser block rule — and
 until that is identified the file stays as it is rather than losing references. `make map-census` prints the
 delta instead of overwriting, which is the honest version of "this number is not yet reproducible".
+
+## Every map written, with references resolved (measured 2026-11-06)
+
+`make t3d` now writes a committed coverage table beside the T3D itself (`inventory/t3d_coverage.csv`,
+`tools/map-to-t3d.py --stats`). One run over the 73 shipped maps:
+
+| measure | value |
+|---|---|
+| maps | 73 |
+| actors | 121,225 |
+| properties | **1,178,141** |
+| unresolved object references | **3** |
+| T3D bytes | 44,375,952 |
+
+**The `ref:<index>` reading is stale.** `prop-stream.py` resolves an export index to `Class'Package.Name'` and a
+negative one to the import's `Class'Package.Object'`; only three values in 1.18 million fall through, and each is
+its own defect rather than a missing feature:
+
+| map | property | value | what it suggests |
+|---|---|---|---|
+| `M02A` | `Vector` | `ref:-17179869183` | a struct-typed tag decoded as an object reference |
+| `M15A` | `Max` | `ref:7470` | an export index past the map's export table |
+| `M17B` | `StaticMesh` | `ref:5758` | same shape, different map |
+
+**What this does not claim.** References resolve; *arrays and structs are still emitted by size*, so a property whose
+value is a struct array does not round-trip through an editor yet, and the `Level` export's script sequence is still
+separate from the actors. The T3D is much closer to editor-loadable than the previous note said, and not yet there.

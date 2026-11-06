@@ -310,7 +310,7 @@ prop-stream:
 # Every map's actors as T3D, into $WORK (docs/T3D.md). Game content: never committed.
 t3d:
 	@$(PYTHON) tools/map-to-t3d.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" \
-		--out "$(or $(WORK),work)/extracted/maps"
+		--out "$(or $(WORK),work)/extracted/maps" --stats inventory/t3d_coverage.csv
 
 # One class's default properties (docs/CLASS_DEFAULTS.md).
 class-defaults:

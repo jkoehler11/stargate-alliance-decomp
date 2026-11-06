@@ -324,9 +324,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **Done for actors and properties, not for the level script.** All 73 maps written to `$WORK/extracted/maps`
       (27 MB, **121,225 actors**, 112,000 with a `Location`), and the writer's actor count equals the independently
       measured property-block count, so nothing is silently dropped (`docs/T3D.md`). `make t3d`. Remaining, recorded:
-      object references are written as `ref:<index>` rather than resolved names (so the output is an index, not
-      editor-loadable T3D), arrays/structs are emitted by size, and the `Level` export's script sequence is separate
-      from the actors' properties and still unread.
+      object references **resolve to names**, not to `ref:<index>`: across all 73 maps **1,178,138 of 1,178,141
+      properties** carry a `Class'Package.Name'` value and only **3** fall back to an index
+      (`inventory/t3d_coverage.csv`, `make t3d`), so the 2026-10 reading is stale. Still open: arrays/structs are
+      emitted by size, and the `Level` export's script sequence is separate from the actors' properties and unread.
       **Class-level half done without T3D** (`docs/MAP_EXPORTS.md`, `inventory/map_export_classes.csv`): all 73 maps
       parse as packages, and level actors are exports, so the actor-class census is a histogram — 6,478 (map, class,
       count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
@@ -517,6 +518,20 @@ and a deliberate one-line script break is caught by the boot test.
 
 
 
+
+
+### Execution notes (2026-11-06, T3D resolves its references — 1,178,138 of 1,178,141 properties — and 5.2's old reading was stale)
+
+- **`make t3d` now measures itself.** `tools/map-to-t3d.py --stats inventory/t3d_coverage.csv` writes one row per map
+  (actors, properties, unresolved refs, bytes). One run over all 73 maps: **121,225 actors**, **1,178,141
+  properties**, **3 unresolved**, **44,375,952 bytes**, in **1m26s**.
+- **The "object references are written as `ref:<index>`" note was wrong by three orders of magnitude.** References
+  resolve: `prop-stream.py` renders an export as `Class'Package.Name'` and an import as
+  `Class'Package.Object'`. The three misses are named in `docs/T3D.md` (`Vector` in M02A decoded as a reference,
+  `Max` in M15A and `StaticMesh` in M17B past the export table), and each looks like its own defect.
+- **5.2 stays `[~]` for the reasons that survive**: arrays and structs are emitted by size, and the `Level` export's
+  script sequence is still unread. The reference half is done, and the plan line says so now instead of carrying the
+  stale claim.
 
 ### Execution notes (2026-11-06, the console's submit key comes from its source, and no key we can send produces it)
 
