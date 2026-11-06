@@ -42,6 +42,14 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # what an object *points at*: every field that is itself an object address, named by its target's class
     python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class PlayerController --refs --object-size 0x800
 
+    # one object by address, seconds not minutes (an address --refs printed), and what it points at
+    python3 tools/xemu/objects.py --port 12345 --object 0x42a1b40 --object-size 0x800 --refs --fstrings
+
+    # ...and one step further: the FString pairs inside the `Console` that pointer reaches (`TypedStr`,
+    # `History[16]`), which is the difference between "the key was never delivered" and "the command ran"
+    python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class PlayerController --refs \
+        --follow Console --object-size 0x800
+
 `--class` answers "is there an object whose class is X", which is the wrong question for an engine that keeps
 one pointer per player to an interface object: a `Console` that exists only as `Player.Console` is still a
 `Console` instance, so the filter does find it -- unless the instance's vtable is not the table the class name was
@@ -239,8 +247,53 @@ def fstring_scan(guest, raw, limit=24, budget=96):
     return out
 
 
+def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=None, want_refs=False):
+    """What one object holds, given only its address -- no array walk, so this is seconds instead of minutes."""
+    try:
+        raw = guest.read(addr, size)
+    except IOError as exc:
+        print("object %#x: unreadable (%s)" % (addr, exc))
+        return False
+    print("\nobject %#x%s, %#x bytes:" % (addr, " (" + label + ")" if label else "", size))
+    if want_refs:
+        # Naming a target needs only its *own* first dword, so this surveys one object in seconds where the
+        # array walk that would name it from the pointer array takes minutes.
+        print("  fields that are guest pointers, named by the target's own vtable:")
+        found = 0
+        for off in range(0, len(raw) - 4, 4):
+            target = struct.unpack_from("<I", raw, off)[0]
+            if not plausible_pointer(target):
+                continue
+            try:
+                vblob = guest.read(target, 4)
+            except IOError:
+                continue
+            if len(vblob) < 4:            # a truncated read is not a class: skip rather than unpack short
+                continue
+            vt = struct.unpack("<I", vblob)[0]
+            label_of = (names or {}).get(vt)
+            if label_of is None:
+                label_of = ("class table %08x" % vt) if vt in (names or {}) else "not a known class table (%08x)" % vt
+            found += 1
+            print("    +%#05x -> %#010x  %s" % (off, target, label_of))
+        if not found:
+            print("    none: no field in the first %#x bytes holds a guest pointer" % size)
+    if want_strings:
+        for off, kind, text in mem.strings_in(raw)[:40]:
+            print("  +%#05x %-5s %r" % (off, kind, text))
+    if want_fstrings or not want_strings:
+        print("  FString-shaped (Data, Count) pairs inside it -- a UE2 `string` is a pointer plus a count, so")
+        print("  `--strings` cannot see a `TypedStr` or a `History` entry:")
+        pairs = fstring_scan(guest, raw)
+        for off, count, text in pairs:
+            print("    +%#05x count=%-4d %r" % (off, count, text))
+        if not pairs:
+            print("    none carried text (every slot empty: no command held and none delivered)")
+    return True
+
+
 def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size, want_fstrings=False,
-         want_refs=False):
+         want_refs=False, follow=""):
     data, num, cap = struct.unpack("<III", guest.read(addr, 12))
     if not plausible_pointer(data) or not (ARRAY_MIN <= num <= ARRAY_MAX) or cap < num:
         raise SystemExit("%#x does not hold a plausible object array (data=%#x num=%d max=%d)"
@@ -325,14 +378,28 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
                     print("  %#x: unreadable (%s)" % (a, exc))
                     continue
                 print("\n  fields of %s at %#x that are object addresses (%#x bytes):" % (label, a, size))
-                found = 0
+                fields = []
                 for off in range(0, len(raw) - 4, 4):
                     target = struct.unpack_from("<I", raw, off)[0]
                     if target in classof:
-                        found += 1
+                        fields.append((off, target))
                         print("    +%#05x -> %#010x  %s" % (off, target, classof[target]))
-                if not found:
+                if not fields:
                     print("    none: no field in the first %#x bytes points at a walked object" % size)
+                    continue
+                if not follow:
+                    continue
+                # Reading the *owner's* field answers "where is the instance"; only the instance's own bytes
+                # answer "what does it hold". A `Console` is created from its class default at viewport
+                # creation and keeps `TypedStr`/`History` inline, so following the pointer one step is the
+                # difference between an address and a delivered command.
+                seen = set()
+                for off, target in fields:
+                    if target in seen or follow.lower() not in classof[target].lower():
+                        continue
+                    seen.add(target)
+                    print("\n  following +%#05x:" % off)
+                    read_object(guest, target, size, False, True, classof[target])
     return total
 
 
@@ -350,6 +417,14 @@ def main():
                     help="with --class: also resolve UE2 (Data, Count) FString pairs and print their text")
     ap.add_argument("--refs", action="store_true",
                     help="with --class: print the instances' own fields that point at a walked object, named by class")
+    ap.add_argument("--object", metavar="ADDR",
+                    help="read one object at ADDR (hex) and print what it holds; no array walk, so it takes "
+                         "seconds -- use it on an address --refs printed, even after that run's stub is gone; "
+                         "add --refs to name the guest pointers it holds, or --fstrings for its TypedStr-shaped "
+                         "pairs")
+    ap.add_argument("--follow", metavar="CLASS",
+                    help="with --class and --refs: also read the bytes of each ref target whose class matches "
+                         "CLASS and print the UE2 FString pairs they hold (a Console's TypedStr/History)")
     ap.add_argument("--object-size", type=lambda x: int(x, 0), default=0, help="bytes to read per object for --strings")
     ap.add_argument("--top", type=int, default=25, help="rows in the class histogram")
     ap.add_argument("--all", action="store_true", help="with --find: validate every candidate, not just the first 8")
@@ -388,9 +463,12 @@ def main():
             else:
                 print("\nno candidate validated -- the array is not a 12-byte TArray in .data, and the next "
                       "split is the block form (UE1 kept pointer blocks, and this fork may)")
+        if args.object:
+            read_object(guest, int(args.object, 0), args.object_size or 0x800, args.strings, args.fstrings,
+                        "", names, args.refs)
         if args.walk:
             walk(guest, int(args.walk, 0), vtables, names, sizes, args.top,
-                 args.want_class, args.strings, args.object_size, args.fstrings, args.refs)
+                 args.want_class, args.strings, args.object_size, args.fstrings, args.refs, args.follow or "")
     finally:
         guest.close()
     return 0

@@ -447,7 +447,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       list is `UGUIController::execGetMapList` at `0x002fe5f0` and it has no cap, and the list is the first 41 names
       of the disc's own order (`docs/XEMU.md`, `docs/UNKNOWNS.md` U16) -- so the truncation is in the fill, one
       measurement short of a cause.
-- [~] 7.3 **The console works and draws its input line; `ret` submits it, and only `stat fps` is readable**
+- [~] 7.3 **The console works and draws its input line; `ret` submits it, only `stat fps` is readable, and
+      the console leaves the object array when it closes**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
@@ -492,6 +493,35 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the console is not in the object array once it closes)
+
+- **The array is one address, not one boot.** At a loaded `M00` with a command submitted, `objects.py --walk
+  0x6c21b0` reads `data=0x041e0000 num=48646 max=51886` -- the same `data` and `max` the title screen read
+  (`num=42152`), so the triple names the array and only `num` moves with level state.
+- **45,802 live objects over 295 pages** (`0x970000..0x7eb0000`): 45,794 resolved to a class table, 2,844 slots null
+  or implausible, four pages unreadable (262,144 bytes). Exactly one `PlayerController` (`0x01c31000`) -- so the
+  class filter does find the controller, which is what makes its missing `Console` field a measurement rather than a
+  filter artefact.
+- **`Engine.Player` declares `Console` and the controller's first 0x800 bytes hold no pointer to one.**
+  `inventory/class_properties.csv` lists `Engine,Player,Console,UObjectProperty,0x2000:Transient;,Console`, so the
+  field is in the layout; the eleven object-address fields the walk reads instead are levels and volumes
+  (`+0x0a0`, `+0x0ac`), `DefaultPhysicsVolume`, `ScriptedController`, `PlayerReplicationInfo`, three `Class`
+  objects, a `Package`, an `ObjectProperty` and the controller itself at `+0x5e8`. `--class Console` in the same
+  state returns exactly one object, the class default at `0x02344b00`, whose bytes are its `defaultproperties`
+  block (`FontNames(0)="SmallFont"`, `KeyName="SGMenuButton"`).
+- **So the console exists only while the prompt is up, and U15's read is a question of *when*.** Every walk so far
+  -- this one included -- was taken after a submit, when `TypingClose()` has run: `Player.Console` reads null and
+  there is no instance to hold a `History`. The next read has to be taken with `bTyping` set.
+- **Two modes make that read cheap.** `--object ADDR [--refs] [--fstrings]` reads one object by address in seconds,
+  naming each guest pointer from the target's own vtable with no array walk (which costs 3 min 29 s here); `--follow
+  CLASS` with `--class`/`--refs` follows an owner's field into the instance and prints its `(Data, Count)` pairs.
+  Both were exercised against a synthetic object graph and against the guest.
+- **The same boot re-confirmed the submit a third time**: `04-tab` absent (0 cyan px), `05-typed` `typed`
+  (109 px, 176x30), `06-ret` **absent** (0 px) -- the line gone after one `ret`, which is `TypingClose()`.
+- **Keys cannot be injected after `drive.py` exits**, so the sequence has to end with the console open: a QMP client
+  opened on the run's `qmp.sock` once the driver was gone connected and then timed out waiting for the greeting
+  (6 s and 60 s deadlines, same result). Do not plan a post-run `sendkey`.
 
 ### Execution notes (2026-11-06, the input line is a three-state read, and `ret` submits)
 

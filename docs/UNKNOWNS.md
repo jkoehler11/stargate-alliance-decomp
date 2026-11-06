@@ -929,6 +929,18 @@ command's *effect* -- no FPS counter draws in `conhist9/07-ret` -- and the conso
 filter has never resolved (only the class default object, in every session). `docs/XEMU.md` "The console's submit is
 `ret`" carries the frames, the extents and the shot-by-shot diff counts.
 
+**Corrected 2026-11-06: the console is not in the object array once it closes.** With `M00` loaded and one `ret`
+sent, the walk finds 45,802 live objects over 295 pages, exactly one `PlayerController` (`0x01c31000`) and **no
+pointer to a `Console` anywhere in its first 0x800 bytes** -- although `Engine.Player` declares
+`Console,UObjectProperty,0x2000:Transient;` (`inventory/class_properties.csv`) and `--class Console` returns only the
+class default at `0x02344b00`. The frame after `ret` is `absent` (0 cyan px against `05-typed`'s 109), so the console
+had closed: `TypingClose()` takes the object with it, and every walk that reported "only the class default object"
+was read minutes after the prompt had gone. **What would settle the `History` read now is a sequence that ends with
+the console open** (a non-character submit key, or no submit), then `objects.py --object <controller> --refs` to get
+the live `Console` and `--object <console> --fstrings` for its `TypedStr`/`History` pairs -- both read in seconds,
+where the array walk under them costs 3 m 29 s. Keys cannot be injected after the driver exits (a QMP client on the
+run's `qmp.sock` times out waiting for the greeting), so the sequence itself has to end in that state.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
