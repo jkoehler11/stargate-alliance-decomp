@@ -1407,3 +1407,25 @@ is the other Return scancode (`kp_enter`, or `ret` twice), not another search fo
 **Correction to the previous note in this file.** It read a 45,802-object census as "the level was not M00", because
 M00 had measured 48,647. The `02-mission` frame from that very run is M00's lab with the same modal — the object
 count moves with level state (a modal up, actors spawned), so **the census is not a map fingerprint**. The frame is.
+
+## `Tab` is a toggle, and neither Return submits the command (measured 2026-11-06)
+
+Two runs, one boot each, same map and modal handling, differ only in how many times `Tab` is sent — and the
+difference identifies what the last note got wrong.
+
+| run | sequence after the modal is dismissed | typed frame |
+|---|---|---|
+| conhist8 | `Tab`, `Tab`, then `stat fps` | **byte-identical to the `Tab` frame** (`cd1802d9…`) — the text was never drawn |
+| conhist9 | `Tab` once, then `stat fps` | **3,394 px** — the text is drawn |
+
+So `Tab` **toggles** the console: one press opens it, a second closes it. The earlier "send `Tab` twice" recipe was
+only correct while M00's tutorial modal was up, because the first press went to the modal. After the modal is gone,
+one press is the whole sequence. `Tab` alone draws ~300 px (inside noise), so "is the console open" can only be
+answered by typing a character or by the object array — not by the `Tab` frame.
+
+**Typed text stays typed, and neither Return submits it.** After `stat fps` is on screen, `kp_enter` and then `ret`
+each change the frame by only 2,121 and 3,053 px (the caret and the echo), and the frame after both still reads
+**`(> stat fps_`** — the same prompt with the same text and no FPS readout anywhere. So the console receives
+characters and does not receive an execute key from either scancode. The next keys to try are the pad's `start`
+(what xemu's keyboard map turns Return into) and `gkey=enter`, before anything more elaborate: the console is open,
+the command is typed, and the only missing event is the submit.

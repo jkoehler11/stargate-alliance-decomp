@@ -516,6 +516,21 @@ and a deliberate one-line script break is caught by the boot test.
 
 
 
+
+### Execution notes (2026-11-06, `Tab` is a toggle — and the console takes text but not a Return)
+
+- **`Tab` toggles the console; one press is the sequence once the modal is gone.** Two runs differing only in press
+  count: two `Tab`s then typing gave a frame **byte-identical** to the `Tab` frame, one `Tab` then typing gave
+  **3,394 px** of drawn text. The "send `Tab` twice" recipe in the previous note was only right while M00's tutorial
+  modal was up — the first press went to the modal.
+- **`Tab` alone draws ~300 px**, inside the frame's own noise, so the console's state cannot be read off the `Tab`
+  frame; type a character or read the object array.
+- **Neither Return submits.** With `stat fps` on screen, `kp_enter` then `ret` changed 2,121 and 3,053 px (caret and
+  echo) and the frame after both still reads **`(> stat fps_`** with no FPS readout. The console takes characters
+  and does not take an execute key from either scancode.
+- **Next keys, in order**: `pad=start` (xemu maps keyboard Return onto the pad's Start, so the guest may be expecting
+  that event), then `gkey=enter`. The console is open and the command is typed; the submit is the only missing event.
+
 ### Execution notes (2026-11-06, the console opens — the tutorial modal was the blocker, and the census is not a map fingerprint)
 
 - **The tutorial modal is why three runs saw nothing after `Tab`.** M00's panel ("Press the X button to open the
