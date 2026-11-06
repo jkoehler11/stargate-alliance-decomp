@@ -518,6 +518,23 @@ and a deliberate one-line script break is caught by the boot test.
   `GUIController` `0x02345500`, `Console` `0x02344b00` (the class default again) and `UIXInteraction` `0x05b10a80`.
   Whatever draws the line is in that list, not in a `Player` field.
 
+### Execution notes (2026-11-06, the typed line is not in the pages the objects live in)
+
+- **`objects.py` now answers "which address holds these bytes"**: `--find-text` (UTF-16LE plus the FString's NUL
+  terminator, so `hist` does not match inside `History`), `--find-ascii`, `--find-dword`, and `--array-pages`,
+  which derives the 64 KiB page set from the object array (295 pages / 150 runs / 18,880 KiB) instead of scanning
+  the 123 MB span. Every pattern is searched in the same reads, because the stub's packet rate is the limit and a
+  second pass would double the cost.
+- **The scan came back empty and the hole is named**: 0 UTF-16 hits over 18,624 KiB read in 145 s, and four pages
+  unreadable after four attempts each (`0x22b0000`, `0x70c0000`, `0x7230000`, `0x7570000`).
+- **Read rate, measured in two regions**: 64 KiB per request costs 0.49 s (130 and 129 KiB/s); a `0x20000`
+  request is refused every time, so one page per request is the ceiling and the span is ~16 min.
+- **The RAM-dump route is closed after the fact**: a second client on the run's `qmp.sock` gets no greeting
+  (30 s for `info status`, 300 s for `pmemsave`, no file), so a dump has to be
+  `--step='monitor=pmemsave 0 0x8000000 <file>'` inside the boot -- untested, and the next measurement worth one.
+- **A 70-pixel line does not clear a whole-frame threshold**: `drive.py` marked the `05-typed` step FAIL
+  (1,570 px against 1,720) on the frame `console-line.py` reads `typed`. For this state, read the line counter.
+
 ### Execution notes (2026-11-06, the interaction block is four pointers and none of them holds the typed text)
 
 - **The state was reproduced and proved from the frame first.** `intm1`: `M00` (index 10, ten d-pad presses),

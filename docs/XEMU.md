@@ -1633,3 +1633,45 @@ from.
 **What this changes.** `Tab` + `stat fps` + `ret` remain a working console on the shipped disc; the drawn line is no
 longer evidence of a swapped image; and the next read is `objects.py --object 0x2406720 --refs --object-size 0x200`,
 one step past the console default's `InteractionMaster`.
+
+
+## The typed command is not in the pages the object array covers (measured 2026-11-06)
+
+`objects.py --find-text/--find-ascii/--find-dword` answer the other half of a memory read: the walk says which
+objects exist, this says **which address holds these bytes**. It is what U15's last paragraph asked for -- an
+FString's text lives in its own allocation, so a typed command is findable even when no object the interaction
+graph names carries the `(Data, Count)` pair -- and the answer for the console's input line is a negative.
+
+**The state, proven from the frame.** `findtext1`: keyboard attached at 75 s, `Continue` -> ten d-pad presses ->
+`M00`, one `a` for the intro card, one `a` for the tutorial modal, one `Tab`, one spent `spc` for `bIgnoreKeys`,
+then `h i s t` and **no** submit. `console-line.py` reads `05-typed` as `typed` (70 cyan px, 128x28 at +34+213),
+the same three-state shape the earlier runs recorded. `drive.py` **failed** that step's repaint check (1,570 px
+against its 1,720 threshold) on the very frame that carries the line: a 70-pixel line cannot move a whole-frame
+delta, so the line counter is the witness here and the delta is not.
+
+**The scan.** `--array-pages` reads the array at `0x6c21b0` (`data=0x041e0000 num=48,646`) for its pointers and
+scans only the 64 KiB pages they occupy -- the same page set the walk reads, rather than the span between the
+lowest pointer and the highest. Measured: **295 pages in 150 contiguous runs, 18,880 KiB**, scanned in 145 s.
+
+- **0 hits for the payload.** UTF-16LE `hist` plus its NUL terminator (10 bytes) appears in none of the
+  18,624 KiB that were readable. Matching the terminator is what makes that a statement about the command line:
+  the bare four characters would also match `History`, `HistoryTop` and `Histogram` in the class defaults.
+- **The 256 KiB hole is named, not swallowed.** Four pages answer nothing after four attempts each (`0x22b0000`,
+  `0x70c0000`, `0x7230000`, `0x7570000`); each is printed as `unreadable`, and the summary counts only bytes that
+  were read. A negative over a scan with holes is a negative over the read part, which is why the addresses are
+  in the output.
+- **The stub reads at 130 KiB/s and refuses a 128 KiB request.** One 64 KiB page costs 0.49 s: 130 KiB/s measured
+  in `0x980000` and 129 KiB/s repeated in `0x2000000`, a region that fails elsewhere, so the rate is the stub's
+  and not the region's. A `--scan-chunk 0x20000` data request is refused every time -- four attempts, then
+  `unreadable` -- in *both* regions, so the ceiling is one 64 KiB page per request (the stub's packet is
+  `0x20020` including its header). The 123 MB span is therefore ~16 minutes of stub time, which is what makes
+  the page set worth computing: 2.5 minutes buys the 19 MB that holds every object.
+- **What the negative leaves open.** The cheap hypothesis -- the `TypedStr` buffer is allocated in the same pages
+  as the objects -- is dead, so the buffer is outside them, and the span scan is the expensive way to find it.
+  Only the UTF-16 form was searched: the two probes that followed the scan used `zzzz`, a pattern that cannot
+  occur, to measure the read rate. An 8-bit copy (`--find-ascii`, added after this scan) is still unexcluded.
+- **Guest RAM cannot be dumped after the harness exits.** xemu's `qmp.sock` outlives `drive.py`, but a second
+  client connects and never reads a greeting: `info status` was silent for 30 s and
+  `pmemsave 0 0x8000000 <file>` silent for 300 s with no file written. That repeats the recorded post-run
+  `sendkey` negative, now for the monitor as a whole, and it moves any RAM dump inside the boot:
+  `--step='monitor=pmemsave 0 0x8000000 <file>'` is one step and one argv, and is untested.

@@ -970,6 +970,16 @@ buffer it finds is the FString `Data` pointer whose owner is then one window loo
 same session: fifteen minutes into a linger, two of these addresses answered all zeros while the emulator still ran
 -- a failed stub reply padded to zero, not a freed object, which is why `--object` now warns on an all-zero window.
 
+**The object pages do not hold it (measured 2026-11-06).** The bounded scan proposed above was run with the
+prompt open and `hist` typed and unsubmitted: the 295 64 KiB pages `GObjObjects`' pointers cover (18,880 KiB) were
+searched in 2.5 min for the UTF-16LE payload *with* its NUL terminator and returned **0 hits** over 18,624 KiB read,
+with four pages (256 KiB) unreadable after four attempts each (`docs/XEMU.md`, "The typed command is not in the
+pages the object array covers"). The read rate is what decides the shape of the next attempt: the stub answers
+130 KiB/s at one 64 KiB page per request and refuses a `0x20000` request outright, so the 123 MB span is ~16 min of
+stub time, and a whole-RAM `pmemsave` has to happen *inside* a boot -- a second client on the run's `qmp.sock`
+connects and never gets a greeting. What is still open is where the buffer is allocated: outside the pages the
+objects live in, in a form this scan did not search (an 8-bit `char*` copy), or on one of the four unread pages.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
