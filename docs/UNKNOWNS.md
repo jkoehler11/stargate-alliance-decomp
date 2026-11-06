@@ -898,6 +898,15 @@ the `History[16]` read: at the title the only object on the `Console` class tabl
 which reads as the class default object, so the live console appears with a level. The remaining measurement is one
 in-game run — `Tab`, a command, `Enter` — then `--class Console --strings` on the instance that run creates.
 
+**The read instrument exists and the three input traps are measured (2026-11-06).** `objects.py --fstrings` resolves
+a UE2 `string` as the `(Data, Count)` pair it is, so a console's `History[16]` is readable once an instance exists
+(validated on a live `PlayerProfile`: 21 pairs, 6 with text). Three negatives stand between that and the read, and
+none of them is the console: a keyboard attached *after* the level loads is never read (0 px on `Tab`, `space`,
+`stat fps`, `Return`); attached at 75 s the keys do arrive but a select press can be swallowed, and `drive.py` has no
+per-press retry; and a killed `drive.py` leaves its `SG1 virtual pad` uinput device behind, which the next xemu binds
+while every `pad=` step silently does nothing. What remains is one clean run with a single pad and the keyboard early,
+then `--class Console --fstrings` on the instance — not another measurement of the console.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

@@ -491,6 +491,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-11-06, the console read has its instrument; three input traps and no PR from the first autonomous run)
+
+- **`objects.py --fstrings` is the read.** A UE2 `string` is `(Data, Count)`, so `--strings` saw a `Console`'s
+  `History` as sixteen integers. The new mode resolves every plausible pair, keeps only the ones whose target is
+  NUL-terminated text, tries both widths and caps its reads. Validated at the title on a live `PlayerProfile` at
+  `0x06ad8a00`: **21 pairs read, 6 carried text** (`DefaultProfile`, `StargateContent.Oneill`, `Jack O'neill`,
+  `SG1_MenusTex.HUD_Oneill`).
+- **Trap 1: a keyboard attached after the level loads is never read.** `device_add usb-kbd` issued once M00 was up
+  left `Tab`, `space`, `stat fps` and `Return` at **0 px** with no overlay, and `--class Console` returned only the
+  CDO — because no `Tab` had reached the game. Attach at 75 s, before the title.
+- **Trap 2: the keys arrive and the press that matters is swallowed.** With the keyboard at 75 s, letters moved the
+  map list (**17,780 px**) but the select press was lost. `missions.sh` retries a boot; `drive.py` needs the select
+  press repeated inside the sequence.
+- **Trap 3: a killed `drive.py` leaves its virtual pad behind.** `/proc/bus/input/devices` carried two `SG1 virtual
+  pad` devices after one, xemu bound the dead one, and every `pad=` step was a no-op in an otherwise healthy run.
+  Kill the emulator as `appimage_extracted…` (the AppImage wrapper's real name), and clear stale pads first.
+- **The in-mission object count is a measurement of its own**: M00 → **48,647 objects over 295 pages**,
+  `StaticMeshActor` 927, against 42,152 / 255 / 171 at the title.
+- **The first autonomous run shipped nothing, and that is the finding worth acting on**: it used its whole budget on
+  three game runs and hit the iteration cap before writing the diff. The instrument and the negatives above are its
+  work, salvaged here. The loop now ships the instrument plus its negative result when a measurement will not finish,
+  because a run that ends without a PR costs a boot and teaches the next run nothing.
+- **Next, and it is one run**: a single vpad, the keyboard at 75 s, three select taps, then
+  `objects.py --walk 0x6c21b0 --class Console --fstrings --object-size 0x800`. That closes U15 and 7.3.
+
 ### Execution notes (2026-11-06, the engine's object array is located, and objects are addressable by class)
 
 - **`GObjObjects` is at `0x006c21b0`** and holds **42,152 objects at the title** (`data=0x041e0000`, `num=42152`,

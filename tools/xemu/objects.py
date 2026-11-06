@@ -36,8 +36,11 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     python3 tools/xemu/objects.py --port 12345 --walk 0x5f1234 --top 25
     python3 tools/xemu/objects.py --port 12345 --walk 0x5f1234 --class Console --strings
 
+    # the text an object *points at*: UE2 keeps a `string` as (Data, Count), so `--strings` cannot see it
+    python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class Console --fstrings --object-size 0x800
+
 Guest data stays out of the repository: addresses, counts and class names are measurements, the strings an
-object holds are game state. `--strings` prints them to the terminal and never writes a file.
+object holds are game state. `--strings`/`--fstrings` print them to the terminal and never write a file.
 """
 import argparse
 import importlib.util
@@ -185,7 +188,49 @@ def validate(guest, data, num, vtables, sample=64):
     return ok, "%d of %d sampled objects carry a class-table vtable" % (seen, len(ptrs))
 
 
-def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size):
+def fstring_scan(guest, raw, limit=24, budget=96):
+    """[(offset, count, text)] for FString-shaped `(Data, Count)` pairs inside a blob.
+
+    A UE2 `string` is a pointer to a NUL-terminated TCHAR buffer plus a count that includes the terminator,
+    so the characters are *not* in the object: `--strings` reads the object's own bytes and cannot see them,
+    which is why a `Console`'s `History[16]` reads as sixteen integers. This resolves each plausible pair and
+    keeps only the ones whose target really is text, which makes a delivered console command visible.
+
+    Both widths are tried: this build's `TCHAR` is UTF-16, but a count of bytes plus a NUL is also what a
+    narrower build writes, and the check is on content either way. At most `budget` reads are spent, because
+    every one is an RSP round trip and a wrong pair fails slowly.
+    """
+    out, reads = [], 0
+    for off in range(0, len(raw) - 8, 4):
+        ptr, count = struct.unpack_from("<II", raw, off)
+        if not plausible_pointer(ptr) or not (2 <= count <= 256):
+            continue
+        if reads >= budget:
+            break
+        reads += 1
+        try:
+            blob = guest.read(ptr, count * 2)
+        except IOError:
+            continue
+        text = None
+        if len(blob) >= count and blob[count - 1] == 0 and \
+                all(0x20 <= b < 0x7F for b in blob[:count - 1]):
+            text = blob[:count - 1].decode("ascii")
+        if text is None and len(blob) >= count * 2:
+            wide = blob[:count * 2]
+            body = wide[:count * 2 - 2]
+            if wide[count * 2 - 2:] == b"\x00\x00" and body[1::2] == b"\x00" * (count - 1) and \
+                    all(0x20 <= b < 0x7F for b in body[0::2]):
+                text = body.decode("utf-16-le")
+        if text:
+            out.append((off, count, text))
+            if len(out) >= limit:
+                break
+    print("  %d FString-shaped pair(s) read, %d carried text" % (reads, len(out)))
+    return out
+
+
+def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size, want_fstrings=False):
     data, num, cap = struct.unpack("<III", guest.read(addr, 12))
     if not plausible_pointer(data) or not (ARRAY_MIN <= num <= ARRAY_MAX) or cap < num:
         raise SystemExit("%#x does not hold a plausible object array (data=%#x num=%d max=%d)"
@@ -242,7 +287,7 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
         print("\n%d instance(s) matching %r:" % (len(hits), want_class))
         for label, a in hits[:40]:
             print("  %#010x  %s" % (a, label))
-        if want_strings:
+        if want_strings or want_fstrings:
             for label, a in hits[:4]:
                 size = object_size or 0x1000
                 try:
@@ -253,6 +298,10 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
                 print("\n  strings inside %s at %#x (guest state, not written):" % (label, a))
                 for off, kind, text in mem.strings_in(raw)[:40]:
                     print("    +%#05x %-5s %r" % (off, kind, text))
+                if want_fstrings:
+                    print("  FStrings those bytes point at (%#x bytes read):" % size)
+                    for off, count, text in fstring_scan(guest, raw):
+                        print("    +%#05x count=%-4d %r" % (off, count, text))
     return total
 
 
@@ -266,6 +315,8 @@ def main():
     ap.add_argument("--walk", metavar="ADDR", help="walk the object array at ADDR (hex)")
     ap.add_argument("--class", dest="want_class", help="with --walk: list instances whose class name matches")
     ap.add_argument("--strings", action="store_true", help="with --class: print strings inside those objects")
+    ap.add_argument("--fstrings", action="store_true",
+                    help="with --class: also resolve UE2 (Data, Count) FString pairs and print their text")
     ap.add_argument("--object-size", type=lambda x: int(x, 0), default=0, help="bytes to read per object for --strings")
     ap.add_argument("--top", type=int, default=25, help="rows in the class histogram")
     ap.add_argument("--all", action="store_true", help="with --find: validate every candidate, not just the first 8")
@@ -306,7 +357,7 @@ def main():
                       "split is the block form (UE1 kept pointer blocks, and this fork may)")
         if args.walk:
             walk(guest, int(args.walk, 0), vtables, names, sizes, args.top,
-                 args.want_class, args.strings, args.object_size)
+                 args.want_class, args.strings, args.object_size, args.fstrings)
     finally:
         guest.close()
     return 0
