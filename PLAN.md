@@ -514,6 +514,12 @@ and a deliberate one-line script break is caught by the boot test.
   `_wcscat`, `_vsnwprintf`; `_wcsstr(glob, L"*.unr")` is a literal substring test on each `Paths` glob, so `GetMapList`
   collects *paths* and the 41 names come from the virtual call at `0x2fe806` (`[[0x005bf514]+0x30]`). One read of that
   slot at the title, then `ExportAt`, is what is left.
+- **That read is done: the enumerator returns all 73, and the image's chain is a decoy.** `0x2fe806` is a double
+  indirection (`[[0x005bf514]] + 0x30`); the image's own values end at the 22-byte stub `0x34570` (an empty `TArray`),
+  because the `.data` slot is rewritten at runtime. At the title the table is `0x4c8db8` (`FFileManagerGeneric`) and
+  slot 12 is `0x24e70`, a `FindFirstFile`/`FindNextFile` loop with no bound; a breakpoint at `0x2fe809` reads back
+  **73** names in directory order. The 41 is therefore above the call -- the widget's `+0x280` count is the next read,
+  and the `M15B` index table is in tension with `end` landing on the last of the 73 (`docs/XEMU.md`, U16).
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 
