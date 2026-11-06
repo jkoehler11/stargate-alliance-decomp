@@ -1723,3 +1723,34 @@ copy, which closes the "an 8-bit `char*` copy is still unexcluded" caveat for th
 
 A dump is guest data: it stays in `$WORK` and is never committed. `ramscan.py` prints addresses, counts and class
 names, the same rule as `objects.py`'s string readers.
+
+## The whole image holds two mentions of `Console`, and one of them is the class default (measured 2026-11-06)
+
+`objects.py` can only see what `GObjObjects` points at -- 295 pages, 18,880 KiB in the states measured so far -- so
+"there is no live `Console`" was a statement about the array's pages. `ramscan.py --objects` asks the image instead:
+every class table in `inventory/xbe_class_tables.csv` is searched for as a 4-byte-aligned dword, and each hit is
+screened by the words after it (`object_shape`: a small positive `ObjectInternalInteger`, then two words that are
+each 0 or an address inside the image).
+
+**The census, over all 131,072 KiB**: 492 class tables produce **1,606** four-aligned occurrences in 32.8 s (one
+pass per table; counts stop at `--limit`, so "15" means "at least 15"). The screen matters more than the total: the
+`Console` table `0x0050cb80` occurs **twice in the whole image**, and a raw hit count would call both of them
+objects.
+
+| address | shape | the words after the table |
+|---|---|---|
+| `0x00291bbc` | `not-object` | `0xf6d1068 0xb5206800 0x106a0001` -- instruction bytes, a `mov` that mentions the table |
+| `0x02661b00` | `object` | `0x8d34 0x230eaf0 0x1ffc480 0x0 0xffffffff` -- an object header |
+
+`0x02661b00` is the object the array walk called the class default, and it has the same signature here: from
+`+0x440` its fields run into inline UTF-16 default-property text (`CPUSPEED=`, `Artist: %s`, `Title: %s`), which is
+what a class-defaults blob looks like and what a live console does not. It also does not point at the typed line:
+the only `hist` in this image is at `0x06823b78` and nothing names it (see the section above). So in the state whose
+frame draws `(> hist_`, the image contains the console's *default* and no live console instance -- 7.3's negative is
+now about all of RAM, not about 295 pages.
+
+**What the census is not.** It is a lower bound over the 492 classes whose tables are in the inventory (the dump's
+18 packages declare 2,318 classes, `tools/pkg-script-text.py`), so 1,606 is not an object count and a class with no
+hit is only as strong as the table inventory. What it does answer is where a *given* class appears: `--class SUBSTR`
+prints each hit with its header words and the screen's verdict, which is how the two `Console` mentions above were
+separated.

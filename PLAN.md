@@ -483,6 +483,9 @@ are limited to expected fields (checksum/timestamp) and documented.
       8-bit form has 0. Nothing in the image points at the buffer (no dword names the match or the 0x40 before
       it, no class table within 0x8000), so the owner is the register file: **next is
       `--step=monitor=info registers` in the same boot**, one step and no new data.
+      `--objects` then censuses every class table over all 128 MiB: 492 tables, 1,606 four-aligned
+      occurrences, and the `Console` table appears **twice** -- a `mov` at `0x00291bbc` and the class
+      default at `0x02661b00` -- so the negative no longer rests on the object array's pages.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

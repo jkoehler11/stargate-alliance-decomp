@@ -25,6 +25,11 @@ proves the walk on a synthetic image, because CI may not have a dump.
 
 A dump is guest data: it stays on the desktop, is never committed, and this tool prints addresses, counts and
 class names only -- the same rule as `objects.py`'s string readers.
+
+`--objects` answers the other question over the same file: a census of every class table's vtable over the whole
+image, each hit screened by the words after it (`object_shape`), because a whole-image hit count would call a
+`mov` that mentions a table an object. `--class SUBSTR` prints the hits for the matching classes with their header
+words; the screen is a screen, and `objects.py`'s array walk stays the source of a whole-game object count.
 """
 import argparse
 import os
@@ -99,9 +104,10 @@ def selftest():
     """
     table, obj, field, text_at = 0x00500000, 0x1000, 0x120, 0x2000
     blob = bytearray(0x4000)
-    struct.pack_into("<I", blob, obj, table)  # UObject's first field is its vtable
+    struct.pack_into("<III", blob, obj, table, 0x8D34, 0)  # vtable, ObjectInternalInteger, a null pointer
     struct.pack_into("<I", blob, obj + field, text_at)  # TypedStr.Data
     blob[text_at:text_at + 12] = " hist".encode("utf-16-le") + b"\x00\x00"
+    struct.pack_into("<IIII", blob, 0x3000, table, 0, 0, 0)  # a bare mention of the table: not a UObject
     raw = bytes(blob)
 
     hits = find_all(raw, "hist".encode("utf-16-le") + b"\x00\x00", 4)
@@ -110,10 +116,53 @@ def selftest():
     assert refs == [obj + field], refs
     owner = owner_of(raw, refs[0], {table: "Engine.Console"}, 0x1000)
     assert owner == (obj, field, "Engine.Console"), owner
-    assert owner_of(raw, 0x3000, {table: "Engine.Console"}, 0x1000) is None  # a pointer with no object is None
-    print("ok   ramscan: the ref walk names Engine.Console at +0x%x for a string %d bytes into the match"
-          % (field, 2))
+    assert owner_of(raw, 0x3800, {table: "Engine.Console"}, 0x400) is None  # no vtable in reach: no owner
+    assert census(raw, {table: "Engine.Console"}, 8, None) == [("Engine.Console", table, [obj, 0x3000])]
+    assert object_shape(raw, obj) == "object" and object_shape(raw, 0x3000) == "not-object"
+    print("ok   ramscan: the ref walk names Engine.Console at +0x%x for a string %d bytes into the match, and the "
+          "census separates an object from a table mentioned in code" % (field, 2))
     return 0
+
+
+def object_shape(blob, hit):
+    """'object' when the words after a class table look like a `UObject` header, else 'not-object'.
+
+    Measured header at the Console default, `0x02661b00`: `vtable, 0x8d34, 0x230eaf0, 0x1ffc480, 0, 0xffffffff` --
+    a small integer then two in-image pointers, so the third word is *not* a flag word (the earlier three-word rule
+    called a real object 'not-object' because of it). The screen is therefore: vtable, a small positive
+    `ObjectInternalInteger`, then two words that are each 0 or an address inside the image. Code that merely
+    mentions a class table (`mov eax, 0x50cb80`) fails on the integer, which is what the census needs.
+    """
+    if hit + 16 > len(blob):
+        return "not-object"
+    integer, second, third = struct.unpack_from("<III", blob, hit + 4)
+    if not 0 < integer <= 0x10000:
+        return "not-object"
+    for word in (second, third):
+        if word and not 0x10000 <= word < len(blob):
+            return "not-object"
+    return "object"
+
+
+def census(blob, tables, limit, only):
+    """[(class_name, table, [four-aligned occurrences])] -- every class table's vtable, over the whole image.
+
+    `objects.py` can only see what `GObjObjects` points at (295 pages of 18,880 KiB in the measured states); this
+    walks the image itself, so an object the array has dropped still shows up here, and a class with *no* hit is a
+    statement about all 128 MiB rather than about the array's pages.
+    """
+    if only:
+        wanted = {table: name for table, name in tables.items() if only.lower() in name.lower()}
+        if not wanted:
+            raise SystemExit("no class table matches %r" % only)
+    else:
+        wanted = tables
+    out = []
+    for table, name in sorted(wanted.items(), key=lambda kv: kv[1]):
+        hits = [h for h in find_all(blob, struct.pack("<I", table), limit) if h % 4 == 0]
+        if hits:
+            out.append((name, table, hits))
+    return out
 
 
 def main():
@@ -139,12 +188,43 @@ def main():
     parser.add_argument("--limit", type=int, default=16, help="stop after N hits per pattern (default 16)")
     parser.add_argument("--base", type=lambda x: int(x, 0), default=0,
                         help="address the dump starts at, printed in the output (default 0)")
+    parser.add_argument("--objects", action="store_true",
+                        help="census every class table's vtable over the whole image instead of searching patterns: "
+                             "an object the object array has dropped still shows up, and a class with no hit is a "
+                             "statement about all of RAM rather than about the array's pages")
+    parser.add_argument("--class", dest="class_name", metavar="SUBSTR",
+                        help="with --objects: only classes whose name contains SUBSTR, printing each hit's header "
+                             "words and whether it looks like a UObject")
+    parser.add_argument("--objects-limit", type=int, default=40,
+                        help="with --objects: print at most N classes (default 40)")
     args = parser.parse_args()
 
     with open(args.dump, "rb") as handle:
         blob = handle.read()
     print("dump %s: %d KiB%s" % (args.dump, len(blob) // 1024,
                                  "" if not args.base else " from %#x" % args.base))
+    if args.objects or args.class_name:
+        tables = class_names()
+        if not tables:
+            raise SystemExit("no class tables: %s and %s are missing" % (CLASS_NAMES, CLASS_TABLES))
+        rows = census(blob, tables, args.limit, args.class_name)
+        total = sum(len(hits) for _, _, hits in rows)
+        print("%d class table(s), %d four-aligned occurrence(s) in %d KiB"
+              % (len(tables), total, len(blob) // 1024))
+        rows.sort(key=lambda row: (-len(row[2]), row[0]))
+        if args.class_name:
+            for name, table, hits in rows:
+                print("\n%s  table %#010x  %d hit(s)" % (name, table, len(hits)))
+                for hit in hits:
+                    words = " ".join("%#x" % struct.unpack_from("<I", blob, hit + k)[0]
+                                     for k in range(0, 0x18, 4))
+                    print("  %#010x  %-10s %s" % (args.base + hit, object_shape(blob, hit), words))
+        else:
+            for name, table, hits in rows[:args.objects_limit]:
+                print("  %-34s %#010x  %3d  %s%s"
+                      % (name, table, len(hits), " ".join("%#x" % (args.base + h) for h in hits[:5]),
+                         " ..." if len(hits) > 5 else ""))
+        return 0
     patterns = [("UTF-16 %r + NUL" % t, t.encode("utf-16-le") + b"\x00\x00") for t in args.text]
     patterns += [("ASCII %r + NUL" % t, t.encode("ascii") + b"\x00") for t in args.ascii]
     patterns += [("dword %s" % d, struct.pack("<I", int(d, 0))) for d in args.dword]
