@@ -954,6 +954,22 @@ the crop reading `(> hist_` (82 cyan px, 128x32) and `stat fps`'s counter above 
 turns that block from four addresses into the list the drawing object belongs to. The `Player` arm is closed for the
 controller: its first 0xc00 bytes hold no `Console` field, in either prompt state.
 
+**Measured 2026-11-06: the interaction block is four pointers, and none of them carries the text.** With the prompt
+open on the stock disc (`hist` typed, 60 cyan px in a 110x32 band, no submit), `objects.py --object 0x2406720 --refs
+--object-size 0x200` names the master's block in one read -- `XboxClient` `0x01fb9bc0`, `GUIController` `0x02345500`,
+`Console` `0x02344b00`, `UIXInteraction` `0x05b10a80` -- and `--fstrings` over each window finds **0, 0, 0 and 0**
+pairs carrying text (1, 4, 8 and 11 slots). The `Console` slot is the class default's `defaultproperties` window, so
+the master holds no live console; and since the typed string is in none of its children, live (`XboxClient`,
+`UIXInteraction`) or default (`Console`, `GUIController`), this block cannot yield `History` -- and it is not the
+object that draws the line either, so "in that list" is now a negative rather than a lead. The console default's own
+fields are the stable part and cost seconds: `XboxViewport` `0x022fe200` at `+0x02c` (itself a defaults window -- two
+pointers in 0x400, no console field) and `InteractionMaster` `0x02406720` at `+0x030`. **What would settle where the
+text lives** is a bounded scan for its payload: the heap the walk covers is `0x970000..0x7eb0000`, 295 pages of
+64 KiB, so a two-byte `hist` search over just those pages is ~470 reads (2--3 min, no new external data), and the
+buffer it finds is the FString `Data` pointer whose owner is then one window lookup away. One caveat measured the
+same session: fifteen minutes into a linger, two of these addresses answered all zeros while the emulator still ran
+-- a failed stub reply padded to zero, not a freed object, which is why `--object` now warns on an all-zero window.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

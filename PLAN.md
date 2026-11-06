@@ -518,6 +518,34 @@ and a deliberate one-line script break is caught by the boot test.
   `GUIController` `0x02345500`, `Console` `0x02344b00` (the class default again) and `UIXInteraction` `0x05b10a80`.
   Whatever draws the line is in that list, not in a `Player` field.
 
+### Execution notes (2026-11-06, the interaction block is four pointers and none of them holds the typed text)
+
+- **The state was reproduced and proved from the frame first.** `intm1`: `M00` (index 10, ten d-pad presses),
+  tutorial modal dismissed with `a`, one `Tab`, one spent `spc` for `bIgnoreKeys`, then `hist` and no submit.
+  `console-line.py` reads `04-tab` `absent` (0 cyan px) and `05-typed` `typed` (60 cyan px, 110x32) -- the recorded
+  three-state shape, where the prompt draws only once it holds text.
+- **The console default's own fields, read live in seconds.** `--object 0x2344b00 --refs --classes-only` names six
+  pointers in its first 0x800: `BoolProperty` at `+0x008`, `Package` `+0x018`, `Class` `+0x024`, `XboxViewport`
+  `0x022fe200` at `+0x02c`, `InteractionMaster` `0x02406720` at `+0x030`.
+- **The master's block is four children, named in one read** (`--object 0x2406720 --refs --object-size 0x200`):
+  `XboxClient` `0x01fb9bc0` at `+0x028`, `GUIController` `0x02345500` at `+0x02c`, `Console` `0x02344b00` at
+  `+0x030`, `UIXInteraction` `0x05b10a80` at `+0x034`. The `Console` slot is the *same* class default
+  (`defaultproperties` window) that `--class Console` has returned in every state, so the master is not holding a
+  live console for a walk to find.
+- **None of the four holds the typed text.** `--fstrings` over each window reads Console 1 pair / 0 with text,
+  `XboxClient` 0 of 4, `GUIController` 0 of 8, `UIXInteraction` 0 of 11. So the previous note's "whatever draws the
+  line is in that list" turns into a negative: two of the four resolve to live instances (`XboxClient`,
+  `UIXInteraction`), two to `defaultproperties` windows (`Console`, `GUIController`), and the typed string is in
+  neither kind. Reading `History` back through this block is closed.
+- **The viewport pointer is a default as well**: `--object 0x022fe200 --refs` finds two pointers in 0x400
+  (`KarmaParamsCollision` at `+0x07c`, a `Function` at `+0x274`) and no console field, so the `+0x02c` the console
+  default holds does not open a second route.
+- **A linger goes bad silently.** Fifteen minutes and ~10 connections into the stub, `0x02344b00` (six pointers a
+  few minutes earlier) and then `0x01fb9bc0` (four) both answered "no field in the first 0x800 bytes holds a guest
+  pointer" while the emulator still ran: a failed read padded to zeros, which is exactly the shape that makes a
+  null look measured. Every number above was taken in the first two minutes after the frame; `--object` now prints
+  a `WARNING: all-zero window` line instead of letting that read pass as an empty object.
+
 ### Execution notes (2026-11-06, the console is not in the object array once it closes)
 
 - **The array is one address, not one boot.** At a loaded `M00` with a command submitted, `objects.py --walk

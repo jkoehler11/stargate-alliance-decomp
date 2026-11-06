@@ -247,7 +247,8 @@ def fstring_scan(guest, raw, limit=24, budget=96):
     return out
 
 
-def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=None, want_refs=False):
+def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=None, want_refs=False,
+                classes_only=False):
     """What one object holds, given only its address -- no array walk, so this is seconds instead of minutes."""
     try:
         raw = guest.read(addr, size)
@@ -255,11 +256,17 @@ def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=
         print("object %#x: unreadable (%s)" % (addr, exc))
         return False
     print("\nobject %#x%s, %#x bytes:" % (addr, " (" + label + ")" if label else "", size))
+    if raw and not any(raw):
+        # A window that is entirely zero is what a failed stub read looks like once the linger has gone
+        # bad (the reply is short, the reader pads it, and every conclusion below reads "empty object").
+        # Measured: a class default that held six pointers minutes earlier answered all-zero at 15 min.
+        print("  WARNING: all-zero window -- that is also a failed stub read; re-read a known address "
+              "before quoting a null")
     if want_refs:
         # Naming a target needs only its *own* first dword, so this surveys one object in seconds where the
         # array walk that would name it from the pointer array takes minutes.
         print("  fields that are guest pointers, named by the target's own vtable:")
-        found = 0
+        found = named = 0
         for off in range(0, len(raw) - 4, 4):
             target = struct.unpack_from("<I", raw, off)[0]
             if not plausible_pointer(target):
@@ -275,9 +282,18 @@ def read_object(guest, addr, size, want_strings, want_fstrings, label="", names=
             if label_of is None:
                 label_of = ("class table %08x" % vt) if vt in (names or {}) else "not a known class table (%08x)" % vt
             found += 1
-            print("    +%#05x -> %#010x  %s" % (off, target, label_of))
+            keep = not label_of.startswith("not a known class table")
+            named += 1 if keep else 0
+            if keep or not classes_only:
+                print("    +%#05x -> %#010x  %s" % (off, target, label_of))
+        # A defaults blob (`defaultproperties` serialised into an object window) is mostly UTF-16 text
+        # and enum words, so a raw survey prints dozens of "not a known class table" lines around the
+        # handful of real pointers; `--classes-only` drops them. Both counts are reported so a filtered
+        # run still says how much it hid.
         if not found:
             print("    none: no field in the first %#x bytes holds a guest pointer" % size)
+        elif classes_only:
+            print("    %d of %d guest pointer(s) resolve to a named class" % (named, found))
     if want_strings:
         for off, kind, text in mem.strings_in(raw)[:40]:
             print("  +%#05x %-5s %r" % (off, kind, text))
@@ -422,6 +438,10 @@ def main():
                          "seconds -- use it on an address --refs printed, even after that run's stub is gone; "
                          "add --refs to name the guest pointers it holds, or --fstrings for its TypedStr-shaped "
                          "pairs")
+    ap.add_argument("--classes-only", action="store_true",
+                    help="with --object/--refs: print only fields whose target resolves to a named class "
+                         "(a defaultproperties window is mostly UTF-16 text and prints dozens of dwords that "
+                         "are not objects)")
     ap.add_argument("--follow", metavar="CLASS",
                     help="with --class and --refs: also read the bytes of each ref target whose class matches "
                          "CLASS and print the UE2 FString pairs they hold (a Console's TypedStr/History)")
@@ -465,7 +485,7 @@ def main():
                       "split is the block form (UE1 kept pointer blocks, and this fork may)")
         if args.object:
             read_object(guest, int(args.object, 0), args.object_size or 0x800, args.strings, args.fstrings,
-                        "", names, args.refs)
+                        "", names, args.refs, args.classes_only)
         if args.walk:
             walk(guest, int(args.walk, 0), vtables, names, sizes, args.top,
                  args.want_class, args.strings, args.object_size, args.fstrings, args.refs, args.follow or "")
