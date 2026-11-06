@@ -163,8 +163,8 @@ ci:
 	@$(PYTHON) tools/ci.py
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
-		tools/xemu/console-line.py tools/xemu/map-index.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py and map-index.py compile"
+		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
+		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py and frame-diff.py compile"
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest

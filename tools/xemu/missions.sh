@@ -123,9 +123,21 @@ for index in $indices; do
   if [ -f "$dir/02-mission.png" ] && tools/xemu/guest-halt.py "$dir/02-mission.png" > "$dir/halt.log" 2>&1; then
     halt=1
   fi
+  # A load that bounces back to the main menu repaints and is not the BIOS screen, so the pixel and halt assertions both
+  # pass for it (measured 2026-11-05: `MainMenu.unr` at index 71 does exactly this). Ask the frame that it really
+  # changed from the boot frame, which is the main menu.
+  menu=0
+  if [ -f "$dir/00-title.png" ] && [ -f "$dir/02-mission.png" ] && \
+     ! tools/xemu/frame-diff.py "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1; then
+    menu=1
+  fi
   if [ "$ok" = 1 ] && [ "$halt" = 1 ]; then
     printf '%s\tFAIL\t%s\t%s attempts\tBIOS screen\n' "$index" "$dir/halt.log" "$((attempt))" >> "$out/missions.tsv"
     echo "index $index: FAIL -- the guest fell back to the BIOS screen ($dir/halt.log)"
+    failed=$((failed+1))
+  elif [ "$ok" = 1 ] && [ "$menu" = 1 ]; then
+    printf '%s\tFAIL\t%s\t%s attempts\tmain menu\n' "$index" "$dir/menu.log" "$((attempt))" >> "$out/missions.tsv"
+    echo "index $index: FAIL -- the post-load frame is the main menu ($dir/menu.log)"
     failed=$((failed+1))
   elif [ "$ok" = 1 ]; then
     printf '%s\tPASS\t%s\t%s attempts\n' "$index" "$dir/02-mission.png" "$((attempt))" >> "$out/missions.tsv"
