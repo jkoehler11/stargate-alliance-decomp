@@ -139,3 +139,10 @@ the full 61-index sweep to run by hand (about four hours at the measured ~4 min 
 Pixel-level assertion now exists in that stage: `tools/xemu/guest-halt.py` fails an index whose mission frame is the
 BIOS screen, which is what a failed load looks like in this build (`docs/XEMU.md`, 2026-11-04).
 
+**A load that comes back to the main menu used to pass.** Both existing assertions describe *a load*: a menu repaints
+and is not the BIOS screen, and `MainMenu.unr` is one of the page's entries, so an index that lands on it reported PASS
+(measured: index 71). The stage now also asks `tools/xemu/frame-diff.py` whether the post-load frame really changed from
+the boot frame -- which is the main menu -- and fails the index as `main menu` if it did not. Measured at 1280x960 with
+`--fuzz 10%`, differing pixels as a share of the frame: 1.07% for the menu that came back, against 4.94%, 7.70% and
+13.04% for a cutscene, a CTF map and a first-person mission. The default threshold is 2.5%, between the two.
+

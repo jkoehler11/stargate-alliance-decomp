@@ -552,12 +552,14 @@ animated background behind the panel cannot contribute.
 | `ret` with a map highlighted | the list handles it; **no load** | 13 over 65 s |
 | `ret` twice, 0.35 s apart | no load either | 0 |
 
-**The list is 41 entries, ten per page**, and the campaign maps are inside it. Pages read off the frames: `0`–`9`
-`CTF-Abydos`, `CTF-LostCity`, the seven `DM-*` maps and `Entry`; `10`–`19` `M00` … `M07C`; `20`–`29` `M07D`, `M07E`,
-`M10A`–`M10D`, `M12A`–`M12D`; `31`–`40` `M20A` … `M21D`, `MainMenu`, `SGCTF-AbydosVsSGC`. So `M20A` sits at **index 31**
-— one past a page boundary — and both routes to it stop one short: `home` then three `pgdn` lands on index 30, `end`
-then one `pgup` lands on index 30. **A single-step key is the missing piece**, which is the d-pad (the list's own
-`InternalOnXControllerEvent` handles `XC_PadUp`/`XC_PadDown` as `Up()`/`Down()`), and that is U14's virtual pad.
+**The list has 73 entries, ten per page**, and every campaign map is inside it (`tools/xemu/map-index.py` derives the
+whole table from the disc). Page one is `CTF-Abydos`, `CTF-LostCity`, the seven `DM-*` maps and `Entry`; index 10 is
+`M00`; `M07C` is 19 and `M07D` is 20, so a page boundary falls between two campaign maps; `M20A` is **63**, `M20D` 66,
+`M21D` 70, `MainMenu` 71 and `SGCTF-AbydosVsSGC` 72. An earlier version of this paragraph put `M20A` at index 31 and
+gave a five-page table; that table was read off *scrolled* frames and was wrong -- the count is 73, not 41, and
+`pgdn`-by-`pgdn` counting is what corrected it (`QUICK SELECT MAP lists every map on the disc`, below). The single-step
+key the old text wanted is the d-pad: `InternalOnXControllerEvent` maps `XC_PadUp`/`XC_PadDown` to `Up()`/`Down()`,
+which is U14's virtual pad.
 
 **Why `A` does not load the highlighted map, from the shipped script.** `QuickLoadMapTempPage extends
 SinglePlayerChapterSelect`, whose `InternalOnXControllerEvent` is `case XC_A: if (bButtonA) return LoadMap();` — and its
@@ -958,8 +960,9 @@ failing run are indistinguishable (mean luminance 46.7 vs 46.6), so the press is
 `--name MainMenu` (index 71) and `--name SGCTF-AbydosVsSGC` (index 72) both PASS, and index 71's "mission" frame is the
 MAIN MENU page with `Continue` highlighted. Neither has a HUD and neither trips `guest-halt.py`, because a menu repaints
 and is not the BIOS screen -- so the pixel-and-halt pair asserts *a load happened*, not that a mission did. That is why
-the campaign rotation stops at 70, and why a real "is this frame a mission" check would need a HUD-specific assertion
-rather than a frame diff.
+the campaign rotation stops at 70. `missions.sh` now also compares the post-load frame with the boot frame
+(`tools/xemu/frame-diff.py`: 2.5% of the frame must differ) and records `FAIL ... main menu`; measured, that is 1.07%
+for the menu that came back against 4.94%, 7.70% and 13.04% for a cutscene, a CTF map and a first-person mission.
 
 **What "each mission" means here, corrected 2026-11-05: the list offers every map, so "each" is all 73.** The
 31-of-31 reading counted the pages this session had scrolled, not the entries the page holds -- the array is 73 entries

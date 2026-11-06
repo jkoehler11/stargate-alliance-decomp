@@ -531,6 +531,10 @@ and a deliberate one-line script break is caught by the boot test.
   range stops at 70 because 71/72 are `MainMenu` and `SGCTF-AbydosVsSGC`, which are list entries and not missions, and
   `--verify` now refuses a table where those look like campaign maps. Checked over 31 simulated nights: 61 unique
   indices, 10 through 70.
+- **A mission PASS had to mean a load, not a menu.** `MainMenu.unr` is a list entry, so index 71 reported PASS on the
+  MAIN MENU page: a repaint plus "not the BIOS screen" is true of a menu too. `missions.sh` now also runs
+  `tools/xemu/frame-diff.py 00-title.png 02-mission.png` (2.5% of the frame must differ; measured 1.07% for the menu
+  against 4.94-13.04% for a cutscene, a CTF map and a mission) and records `FAIL ... main menu`.
 - **The console keeps no output to read (U15).** The configured class, `Engine.Console`, declares only `TypedStr` and
   `History[16]`; `WindowConsole.Scrollback` is an int and the only `array<string> Scrollback` is `GUI.ExtendedConsole`'s,
   which this build never instantiates. So 7.3's output channel does not exist in guest memory -- what is assertable is
