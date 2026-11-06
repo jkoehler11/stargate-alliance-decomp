@@ -16,9 +16,12 @@
 #   --boot SECS     seconds to wait for the title before the first press (default 135: at 110 the menu is still fading
 #                   in and the press can be swallowed -- docs/XEMU.md measures 1,476 pixels at 110 s against 34,890 at
 #                   135 s for the same key)
-#   --all           the campaign range, 10-40 (the list has 41 entries and index 10 is the first campaign map; the
-#                   0-9 range is the multiplayer maps and `Entry`). `--all --dry-run` prints the indices instead of
-#                   booting, which is how the range is checked without a three-hour run.
+#   --all           the campaign range, 10-72 (the page holds all 73 entries: 0-9 are the multiplayer maps and
+#                   `Entry`, 10-71 are the campaign and 72 is `SGCTF-AbydosVsSGC`). `--all --dry-run` prints the
+#                   indices instead of booting, which is how the range is checked without a four-hour run.
+#   --name NAME     a map by name instead of by index (`--name M15C`), resolved against the disc with
+#                   tools/xemu/map-index.py: the index is the map's position in the page's ASCII order, not a number to
+#                   guess, and it is the reason a name is the better argument.
 #   --dry-run       print what would run, then exit
 #   --retries N     attempts per index before it counts as failed (default 2). A run fails when a press is swallowed,
 #                   and a swallowed press looks identical to a map that will not load -- measured, one index in six
@@ -38,6 +41,7 @@ all=0
 dry_run=0
 out=""
 indices=""
+names=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --iso=*) iso=${1#*=}; shift ;;
@@ -48,6 +52,8 @@ while [ $# -gt 0 ]; do
     --boot=*) boot=${1#*=}; shift ;;
     --retries=*) retries=${1#*=}; shift ;;
     --all) all=1; shift ;;
+    --name=*) names="$names ${1#*=}"; shift ;;
+    --name) names="$names $2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
@@ -60,7 +66,14 @@ while [ $# -gt 0 ]; do
     *) if [ -z "$out" ]; then out="$1"; else indices="$indices $1"; fi; shift ;;
   esac
 done
-[ "$all" = 1 ] && indices="$indices $(seq 10 40 | tr '\n' ' ')"
+[ "$all" = 1 ] && indices="$indices $(seq 10 72 | tr '\n' ' ')"
+if [ -n "$names" ]; then
+  here0=$(cd "$(dirname "$0")" && pwd)
+  for n in $names; do
+    idx=$(python3 "$here0/map-index.py" --iso "$iso" --name "$n") || { echo "no map named $n in $iso" >&2; exit 2; }
+    indices="$indices $idx"
+  done
+fi
 [ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...] | --all" >&2; exit 2; }
 if [ "$dry_run" = 1 ]; then
   echo "$(echo $indices | wc -w | tr -d ' ') indices, one boot each:"

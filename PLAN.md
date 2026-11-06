@@ -521,6 +521,10 @@ and a deliberate one-line script break is caught by the boot test.
   **73** names in directory order. The page's count settles it: **print all 73** -- the controller's array reads
   `count=73 max=76` after `QUICK SELECT MAP` opens, ASCII-sorted, `M15B` at 40 and `SGCTF-AbydosVsSGC` last. The
   41-entry table was a fifth page holding one item, and U16 closes: every campaign map is reachable by paging.
+- **The second half of the campaign loads.** `tools/xemu/map-index.py` derives the page's index from the disc (73
+  entries; six anchors re-derived from the guest, `--verify`), `missions.sh --name M15C` resolves it, and `--all` now
+  covers 10-72. Index 41 (`M15C`) and 70 (`M21D`) both loaded on the first attempt; the remaining 30 indices are 30
+  boots of harness time, not an access question.
 
 ### Execution notes (2026-11-03, the virtual pad drives the menus, and a campaign map loads)
 

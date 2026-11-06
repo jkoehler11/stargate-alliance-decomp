@@ -736,8 +736,11 @@ reads guest addresses over the QMP channel.
 ## Loading missions by index, and the console refuses to travel (measured 2026-11-03)
 
 `tools/xemu/missions.sh OUTDIR INDEX...` loads missions out of the in-game list, one boot per index, and keeps one frame
-per mission: `Continue`, N d-pad presses, `A`, a settle, a screenshot, one row per index in `OUTDIR/missions.tsv`. It takes
-indices rather than names on purpose -- the name of the mission an index lands on is read off the frame it saves.
+per mission: `Continue`, N d-pad presses, `A`, a settle, a screenshot, one row per index in `OUTDIR/missions.tsv`.
+`--name M15C` is the better argument than an index: `tools/xemu/map-index.py` derives the index from the disc, because
+the page is the disc's `.unr` set in ASCII order (73 entries). The six anchors are the ones measured from the guest --
+0 `CTF-Abydos`, 10 `M00`, 31 `M12F`, 35 `M13D`, 40 `M15B`, 72 `SGCTF-AbydosVsSGC` -- and `--verify` re-derives them,
+so a name resolves without a boot and a table that drifts fails loudly. `--all` covers 10-72.
 
 Two indices, run back to back:
 
@@ -929,7 +932,8 @@ The second is the manufactured failure: it proves the loop iterates, that a fail
 (fresh HDD copy, fresh boot), and that the TSV says how many attempts were spent. `missions.tsv` rows now end in
 `<n> attempts`.
 
-## The campaign set loads: 31 of 31 list entries (measured 2026-11-04)
+## The campaign set loads: 31 of 31 list entries, and the second half loads too (measured 2026-11-04, extended
+2026-11-05)
 
 `tools/xemu/missions.sh --all` over indices 10-40, one boot each, `--retries=2`. Every index loaded at least once:
 
@@ -938,6 +942,7 @@ The second is the manufactured failure: it proves the loop iterates, that a fail
 | 10-15 | 6 of 6 | 12 and 14 failed at the old 75-second boot window and passed once it was 135 s |
 | 16-33 | 18 of 18 | 20, 23, 28 and 32 needed a second attempt; **21 failed both** in that run and passed first time in a later one |
 | 34-40 | 7 of 7 | **38 failed both** attempts and passed first time in a later run |
+| 41, 70 | 2 of 2 | the first second-half maps ever loaded: `--name M15C` (41) and `--name M21D` (70), both on the first attempt |
 
 **27 indices loaded on the first attempt, 3 needed a second, 1 needed a third.** The retry is doing the work it was added
 for: four of 31 (~13%) hit a failure, all of them input.
@@ -948,10 +953,13 @@ doing nothing: index 38's highlight frame is `QUICK MAP` with `M14C` selected, `
 after a 60 s settle is identical to the one before it. Neither is a missing map, and the title frames of a passing and a
 failing run are indistinguishable (mean luminance 46.7 vs 46.6), so the press is lost rather than arriving early.
 
-**What "each mission" means here.** 62 `M*` maps are on the disc and the list offers 31 campaign entries, so about half
-the mission maps cannot be reached from `QUICK SELECT MAP` at all -- loading them would need a different route (a
-checkpoint, `Continue`, or the console, which refuses to travel). This closes 7.2 for the reachable set and names the
-other half as a separate question rather than counting it as passed.
+**What "each mission" means here, corrected 2026-11-05: the list offers every map, so "each" is all 73.** The
+31-of-31 reading counted the pages this session had scrolled, not the entries the page holds -- the array is 73 entries
+(see *`QUICK SELECT MAP` lists every map on the disc* below). Two of the second half were then loaded rather than
+assumed: index 41 (`M15C`) and index 70 (`M21D`), one boot each, both passing on the first attempt -- one a
+first-person HUD scene with `CARTER`'s portrait and a shotgun, the other a cutscene over a panelled floor. 41-72 as a
+set is 32 boots (about two hours at the measured cost), so 7.2's full sweep is now a matter of harness time, not of
+access.
 
 ## `QUICK SELECT MAP` lists every map on the disc; the 41-entry table was a paging artefact (measured 2026-11-04,
 corrected 2026-11-05)
