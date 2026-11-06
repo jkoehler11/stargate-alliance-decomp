@@ -1675,3 +1675,51 @@ lowest pointer and the highest. Measured: **295 pages in 150 contiguous runs, 18
   `pmemsave 0 0x8000000 <file>` silent for 300 s with no file written. That repeats the recorded post-run
   `sendkey` negative, now for the monitor as a whole, and it moves any RAM dump inside the boot:
   `--step='monitor=pmemsave 0 0x8000000 <file>'` is one step and one argv, and is untested.
+
+## The whole guest dumps inside the boot and scans in 0.1 s, and the typed line is in it (measured 2026-11-06)
+
+The section above closes the *after-the-fact* route and leaves one step untested. It works, and it makes every
+coarse memory question cheap: `--step="monitor=pmemsave 0 0x8000000 \"<path>\""` writes all 128 MiB of guest RAM
+to a host file **inside** the same boot. Two boots produced byte-identical sizes, 134,217,728 bytes each
+(`$WORK/xemu/findtext3/ram.bin` at 17:07 and `findtext4/ram.bin` at 17:18), and the step itself prints nothing.
+Two details, both measured: `help pmemsave` answers, so the command is in xemu's monitor; and the filename has to
+arrive **quoted**, because a bare path is parsed as an expression and the monitor rejects it
+(`invalid char 'h' in expression`) -- the quotes therefore live inside the step value.
+
+**Cost, measured against the stub.** `tools/xemu/ramscan.py` searches the whole image for one UTF-16 pattern in
+**0.1 s** (0.19 s including the interpreter). The same 128 MiB over the GDB stub is ~17 minutes at the recorded
+7.9 s/MiB (145 s for 18,880 KiB), so the dump is worth the two seconds it costs to write. `--refs` is the
+expensive form -- it searches a pointer for each of the 33 even addresses in the 0x40 before the hit -- and still
+costs 2.3 s.
+
+**The pairing is what makes the hit mean anything.** `findtext3` and `findtext4` are the same script with only
+`$L` changed, so the state is the only variable:
+
+- `findtext3`: `01-list` was **0 px** -- the pad press never took and the game stayed on the title -- `console-line.py`
+  reads `absent` on `05-typed`, and the dump has **0 hits** for UTF-16 `hist` plus its NUL terminator.
+- `findtext4`: `01-list` **37,878 px PASS**, `05-typed` PASS with a whole-frame change, `console-line.py` reads
+  `typed` (95 cyan pixels, 128x33 at +34+208), and the dump written one step later has **exactly one hit**.
+
+So the payload appears exactly in the boot whose frame says the line is drawn, and nowhere in the boot that never
+left the title. This is the read the stub needed 2.5 minutes and 295 pages for, and it comes back in a tenth of a
+second.
+
+**What the bytes are.** At `0x06823b78` the ten bytes are `20 00 68 00 69 00 73 00 74 00 00 00` = `" hist"`, and
+the pattern matched at `0x06823b7a` -- two bytes in, on the `h`. The leading space is the `spc` step that opens the
+sequence, so in this boot the space was **not** the swallowed keystroke; and because a text pattern matches inside
+a string, a pointer to the string is a pointer to an address *before* the hit, which is what `--ref-window` is for.
+
+**Nobody points at it.** With the window, no 4-byte-aligned dword anywhere in 128 MiB equals the match address or
+any even address in the 0x40 before it, and no known class table sits within 0x8000 before the bytes, so the
+buffer is not a field of any object the vtable walk can name either. The one dword that does point into the
+surrounding 16 KiB is at `0x022a67bc` -> `0x06823a34e`, 0x830 bytes before the text, and no class table precedes
+that one either. This is a negative about the *image*, not a failure of the walk: a `Data` pointer that is absent
+from 128 MiB of RAM can only be live in a register or in the stack frame of whatever draws the line, and
+`pmemsave` covers neither. The next instrument is one more step in the same boot --
+`monitor=info registers`, or a GDB stack read at that step -- and it needs no new data.
+
+**The 8-bit copy is excluded in this state.** `--ascii hist` returns 0 hits in the image that holds the UTF-16
+copy, which closes the "an 8-bit `char*` copy is still unexcluded" caveat for the typed line.
+
+A dump is guest data: it stays in `$WORK` and is never committed. `ramscan.py` prints addresses, counts and class
+names, the same rule as `objects.py`'s string readers.
