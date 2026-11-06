@@ -1429,3 +1429,30 @@ each change the frame by only 2,121 and 3,053 px (the caret and the echo), and t
 characters and does not receive an execute key from either scancode. The next keys to try are the pad's `start`
 (what xemu's keyboard map turns Return into) and `gkey=enter`, before anything more elaborate: the console is open,
 the command is typed, and the only missing event is the submit.
+
+## The console's submit is `IK_Enter`, read from its own source, and four keys do not produce it (measured 2026-11-06)
+
+Three runs had established that the console opens, holds `stat fps`, and closes again on a second `Tab`. What no run
+settled was *why* no key submits it. The class's shipped script does (`Engine/Console.uc`, in the package's own
+`ScriptText`):
+
+    else if( Key==IK_Enter )                      // Event bool KeyEvent(EInputKey Key, EInputAction Action, FLOAT Delta)
+        if( TypedStr!="" ) {
+            History[HistoryTop] = TypedStr;
+            HistoryTop = (HistoryTop+1) % ArrayCount(History);
+            Temp = TypedStr;  TypedStr="";  TypedStrPos=0;
+            if( !ConsoleCommand( Temp ) ) Message( Localize("Errors","Exec","Core"), 6.0 );
+        }
+        TypingClose();
+        return true;
+
+So a submit has three observable effects: `History` gains the command, `TypedStr` clears, and the console closes.
+Measured against a frame after each key — `kp_enter`, `ret`, `pad=start` and `enter` — the line still reads
+**`(> stat fps_`**, the console stays open, and no FPS readout appears anywhere: none of the four produces an
+`IK_Enter` press the console sees.
+
+**What that leaves, precisely.** The keyboard reaches the console (letters echo, and `KeyType` is what echoes them),
+so the gap is one event: the guest's translation of a Return scancode to `IK_Enter`. Either its keyboard driver does
+not map either QEMU Return (`ret` 0x1C, `kp_enter` 0xE0 0x1C) to `IK_Enter`, or the game consumes `Enter` first —
+`DefUser.ini` binds `Enter=Use`, and a binding is evaluated by `PlayerInput` before the console's interaction sees
+the key. The instrument that separates those is the input map itself, not another boot.
