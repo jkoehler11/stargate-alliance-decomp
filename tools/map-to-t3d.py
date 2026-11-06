@@ -54,6 +54,7 @@ def write_map(path, outdir, mod, verbose=False):
     name = os.path.splitext(os.path.basename(path))[0]
     lines = ["// %s — written by tools/map-to-t3d.py" % name, ""]
     actors = 0
+    props_total = 0
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         found = mod.find_block(data, pkg)
@@ -68,6 +69,7 @@ def write_map(path, outdir, mod, verbose=False):
         for p in props:
             # decode simple values on demand (read_block already walked the bytes)
             lines.append("   %s=%s" % (p["name"], fmt(p.get("value"))))
+        props_total += len(props)
         lines.append("End Actor")
         lines.append("")
         actors += 1
@@ -78,7 +80,7 @@ def write_map(path, outdir, mod, verbose=False):
         f.write(text)
     if verbose:
         print("  %s" % out)
-    return actors, len(text)
+    return {"actors": actors, "bytes": len(text), "props": props_total, "unresolved": text.count("ref:")}
 
 
 def main():
@@ -87,6 +89,9 @@ def main():
     ap.add_argument("--out", required=True, help="$WORK/extracted/maps (never the repository)")
     ap.add_argument("--limit", type=int, help="first N maps only")
     ap.add_argument("-v", "--verbose", action="store_true")
+    ap.add_argument("--stats", metavar="CSV",
+                    help="write one row per map (map, actors, properties, unresolved refs, bytes); counts only, "
+                         "so it may live in inventory/")
     args = ap.parse_args()
 
     if "/work/" not in args.out and not args.out.startswith(os.path.expanduser("~/sg1/work")):
@@ -98,14 +103,26 @@ def main():
     if args.limit:
         paths = paths[: args.limit]
 
-    total_actors = total_bytes = 0
+    total_actors = total_bytes = total_props = total_unresolved = 0
+    rows = []
     for path in paths:
-        actors, size = write_map(path, args.out, mod, args.verbose)
-        total_actors += actors
-        total_bytes += size
-        print("%-22s actors=%-6d t3d=%8d bytes" % (os.path.splitext(os.path.basename(path))[0], actors, size))
-    print("\nmaps: %d, actors: %d, t3d bytes: %d, out: %s"
-          % (len(paths), total_actors, total_bytes, args.out))
+        got = write_map(path, args.out, mod, args.verbose)
+        total_actors += got["actors"]
+        total_bytes += got["bytes"]
+        total_props += got["props"]
+        total_unresolved += got["unresolved"]
+        name = os.path.splitext(os.path.basename(path))[0]
+        rows.append((name, got["actors"], got["props"], got["unresolved"], got["bytes"]))
+        print("%-22s actors=%-6d props=%-6d unresolved=%-4d t3d=%8d bytes"
+              % (name, got["actors"], got["props"], got["unresolved"], got["bytes"]))
+    if args.stats:
+        with open(args.stats, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("map,actors,properties,unresolved_refs,t3d_bytes\n")
+            for row in rows:
+                fh.write("%s,%d,%d,%d,%d\n" % row)
+        print("stats: %s (%d rows)" % (args.stats, len(rows)))
+    print("\nmaps: %d, actors: %d, properties: %d, unresolved refs: %d, t3d bytes: %d, out: %s"
+          % (len(paths), total_actors, total_props, total_unresolved, total_bytes, args.out))
     return 0
 
 
