@@ -447,7 +447,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       list is `UGUIController::execGetMapList` at `0x002fe5f0` and it has no cap, and the list is the first 41 names
       of the disc's own order (`docs/XEMU.md`, `docs/UNKNOWNS.md` U16) -- so the truncation is in the fill, one
       measurement short of a cause.
-- [~] 7.3 **The console works; it draws nothing** (2026-11-03, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
+- [~] 7.3 **The console works and draws its input line; `ret` submits it, and only `stat fps` is readable**
+      (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
       executed -- `60 cur FPS` / `59 avg FPS` appeared in two runs (`seq13` with the keyboard attached during the boot,
       `seq14` after it), so the attach timing is not the variable. Two things hid it: the console renders no window (no
       overlay, 0-1,501 pixels on `tab`), and `bIgnoreKeys` swallows the first keypress, so a command sent cold loses its
@@ -491,6 +492,33 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the input line is a three-state read, and `ret` submits)
+
+- **`console-line.py` answers with a shape, not a count.** Its 20-pixel threshold called the title screen `present`
+  (**22 px over 554x246**) and a menu button `present` (**87 px in an 18x8 glyph**); it now requires the drawn band to
+  be line-shaped (<= 5% of the frame's height, >= 3% of its width) and separates `absent` / `prompt` (50--64 px wide,
+  the empty `(>_`) / `typed` (176 px stock, 210 px `GUI.ExtendedConsole`), with `--require=typed`, `--min-text`,
+  `--min-line-width` and `--max-line-height` for other resolutions. Ran over 17 frames in four sessions: every console
+  shot classifies, and no menu or title frame does.
+- **An empty prompt is a positive read.** The frame the last note called a cyan HUD glyph (`submit1/05-typed`, 56 px in
+  64x32) is `(>_` read at 4x -- the console was open and empty, not absent. Crops at 4x of four frames read `(>_` and
+  `(> stat fps_` exactly.
+- **A shot lags its own keys by one step.** `submit1`: the `Tab` frame is empty, the *next* frame holds the empty
+  prompt, and the frame after holds all eight characters -- although the key step in between sent nothing valid
+  (`gkey=enter` is not a QEMU key name). `conhist9` renders the prompt within its 2 s wait. So an `absent` frame right
+  after a key is not evidence the key was lost, and this alone explains the two sessions' contradictory frames.
+- **`ret` submits.** `conhist9`: 113 px of `(> stat fps_`, 113 px through `kp_enter` (2,121 px of frame diff, the
+  caret), then **0 px** and 3,053 px of frame diff after `ret` -- the input line gone, which is `TypingClose()` in the
+  `IK_Enter` branch of the class's own script. `submit1`'s `ret` frame is **byte-identical** to the one before it with
+  the line still drawn: the same key, not delivered. The submit exists and its delivery is not reliable.
+- **The command's effect is still unread.** No FPS counter draws in `conhist9/07-ret` (420x120 top-left crop and a
+  whole-frame read: O'Neill's nameplate only), though `seq13`/`seq14` drew `60 cur FPS` on this disc. Next: one walk
+  that reads the `PlayerController`'s console pointer rather than filtering by class name, and takes
+  `History[HistoryTop]` from it.
+- **No `(> ` literal exists to name the drawer**: the byte pair is in none of the 18 packages and not in
+  `default.xbe`, ASCII or UTF-16, and `Engine.Console`'s 23-function table has no `PostRender`, so the prompt is
+  composed at run time and no package string can say which class renders it.
 
 ### Execution notes (2026-11-06, a loaded level still has no live `Console`, and the highlight frame is not an index read)
 

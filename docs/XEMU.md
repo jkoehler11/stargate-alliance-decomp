@@ -768,6 +768,13 @@ level control, which is worth knowing before writing a probe that assumes otherw
 
 ## Why the console draws nothing: the configured class has no renderer (measured 2026-11-03)
 
+**Corrected 2026-11-06: the heading is wrong in one word, and the measurement below stands.** The stock console
+*does* draw -- it draws its input line, `(>_` when the prompt is empty and `(> stat fps_` when text is in it, on nine
+frames over three sessions (see "The console's submit is `ret`" at the end of this file). What it does not draw is
+command *output*: the class's own function table (`inventory/function_flags.csv`, 23 functions on `Engine.Console`)
+has no `PostRender`, and its properties carry `TypedStr` and `History` but no scrollback field, so a command's text has
+nowhere to go. Everything below about the swap is still measured; "renders nothing" is not.
+
 `System/Default.ini` sets `[Engine.Engine] Console=Engine.Console`, and `Engine.Console` is the one console class in the
 tree that has **no** `PostRender`: `Engine/Interaction.uc:143` declares it as a stub, `UWindow/WindowConsole.uc:133`,
 `GamePlay/TournamentConsole.uc` and `GUI/ExtendedConsole.uc:392` all override it (ExtendedConsole's state even draws its
@@ -1451,8 +1458,80 @@ Measured against a frame after each key — `kp_enter`, `ret`, `pad=start` and `
 **`(> stat fps_`**, the console stays open, and no FPS readout appears anywhere: none of the four produces an
 `IK_Enter` press the console sees.
 
+**Correction (2026-11-06): `ret` does submit, and the frame that said otherwise was lagged.** In `conhist9` the
+frame after `ret` has no input line at all -- 0 cyan pixels where `kp_enter` left it drawn -- which is exactly what
+`TypingClose()` in the branch quoted above produces. In `submit1` the same key left the frame byte-identical to the one
+before it and the line still drawn: the same key, not arriving. The two sessions, their shot-by-shot pixel counts and
+what a frame can still not say about the command's effect are in "The console's submit is `ret`, and the line it clears
+is the proof" at the end of this file.
+
 **What that leaves, precisely.** The keyboard reaches the console (letters echo, and `KeyType` is what echoes them),
 so the gap is one event: the guest's translation of a Return scancode to `IK_Enter`. Either its keyboard driver does
 not map either QEMU Return (`ret` 0x1C, `kp_enter` 0xE0 0x1C) to `IK_Enter`, or the game consumes `Enter` first —
 `DefUser.ini` binds `Enter=Use`, and a binding is evaluated by `PlayerInput` before the console's interaction sees
 the key. The instrument that separates those is the input map itself, not another boot.
+
+## The console's submit is `ret`, and the line it clears is the proof (measured 2026-11-06)
+
+The note above read four frames after four keys and concluded that no key submits. Two of those frames were of the
+state *before* the press: a capture taken 1--4 s after a key can predate the guest's render of it, and in one session
+every shot lagged its own keys by exactly one shot. Re-read with each shot's own diff count and a classifier that
+separates an empty prompt from a full one, the same corpus says what the class's source says it should.
+
+`tools/xemu/console-line.py` now answers with three states instead of a pixel count -- `absent`, `prompt` (the empty
+`(>_`) and `typed` -- by the trimmed extent of the drawn band, because the count alone cannot tell an empty prompt
+(46--62 px) from the noise floor of a menu (22 px on the title screen, 87 px in one 18x8 button glyph, both called
+`present` by the old 20-pixel threshold). Over the frames that exist on disk:
+
+| session / frame | keys since the previous shot | state | cyan px | extent | diff vs previous shot |
+|---|---|---|---:|---|---:|
+| `conhist9/00-title` | -- (title screen) | not a line | 22 | 554x246 | -- |
+| `conhist9/01-list` | `A` (map list) | not a line | 87 | 18x8 | -- |
+| `conhist9/03-dismissed` | `A` (tutorial modal) | absent | 0 | -- | -- |
+| `conhist9/04-tab` | `Tab`, 2 s | **prompt** | 46 | 50x32 | 294 |
+| `conhist9/05-typed` | `stat fps` as 8 guest keys, 1 s | **typed** | 113 | 176x32 | 3,394 |
+| `conhist9/06-kpenter` | `kp_enter`, 4 s | typed | 113 | 176x32 | 2,121 |
+| `conhist9/07-ret` | `ret`, 4 s | **absent** | 0 | -- | 3,053 |
+| `submit1/04-tab` | `Tab`, 2 s | absent | 0 | -- | -- |
+| `submit1/05-typed` | `stat fps` as 8 guest keys, 1 s | **prompt** | 56 | 64x32 | 1,311 |
+| `submit1/06-enter` | `gkey=enter` (invalid key name, so nothing sent), 3 s | **typed** | 138 | 176x32 | 1,312 |
+| `submit1/07-kpenter` | `kp_enter`, 3 s | typed | 138 | 176x32 | 800 |
+| `submit1/08-ret` | `ret`, 3 s | typed | 138 | 176x32 | **0** |
+| `submit1/09-start` | `pad=start`, 3 s | typed | 138 | 176x32 | 1,470 |
+| `conhist10/04-tab` | `Tab` | **prompt** | 56 | 64x32 | -- |
+| `conhist10/05-typed` | `stat fps` | **typed** | 138 | 176x32 | -- |
+| `seq18/03-typed` (rebuilt disc) | `Say: at fps` | **typed** | 128 | 210x32 | -- |
+| `seq18/04-executed` | `Enter` | absent | 0 | -- | -- |
+
+Transcribed at 4x from the crop, the two states read **`(>_`** (an empty prompt with its caret) and
+**`(> stat fps_`**. So the stock build draws the prompt as soon as the console opens and the text as it is typed, and
+the token `(> ` is not a script literal: the byte pair `(> ` occurs in **none** of the 18 packages and not in
+`default.xbe`, in ASCII or UTF-16, while `Engine.Console`'s 23-function table has no `PostRender` -- so the prompt is
+composed at run time and no package string can name the class that draws it.
+
+**The lag is one shot, and it is why the earlier readings contradicted each other.** In `submit1` the frame labelled
+`04-tab` is empty, the *next* frame holds the empty prompt, and the frame after that holds all eight characters --
+although the key step between them sent nothing valid. Each shot shows what the previous step rendered: an eight-key
+burst plus a one-second wait is not enough to see the text, and three seconds is. `conhist9` renders faster (its `Tab`
+frame already holds the prompt), which is why the same sequence produced opposite-looking frames in the two sessions.
+
+**`ret` closed the console in `conhist9`.** 113 cyan px of `(> stat fps_`, unchanged through `kp_enter` (2,121 px of
+frame diff: the caret), then **0 px** and 3,053 px of frame diff after `ret` -- the line gone and the world moving
+again, which is precisely what `TypingClose()` does in the `IK_Enter` branch quoted above. The submit therefore exists,
+and it is the main Return; `kp_enter` does not produce it.
+
+**The same key did nothing at all in `submit1`.** `08-ret` is **byte-identical** to `07-kpenter` (0 differing pixels)
+with the line still drawn, and `pad=start` after it changed 1,470 px and left the line drawn. Two sessions, one disc,
+one key, opposite outcomes: the submit works and its delivery is not reliable, so a single frame cannot settle it and
+the console object's `History`/`TypedStr` remain the oracle.
+
+**What the frame still cannot say is whether the command ran.** No FPS counter is drawn in `conhist9/07-ret` -- a
+420x120 top-left crop and a whole-frame read find only O'Neill's nameplate -- although this disc drew `60 cur FPS` /
+`59 avg FPS` for the same command twice (`seq13`, `seq14`). Closing the line is the submit; the command's *effect* is
+not in the picture, and `History[HistoryTop]` is where it would be.
+
+**The next instrument is therefore not another boot of the sequence.** It is the console object read *in the frame
+that the read is taken from*: `Tab`, `stat fps`, `ret`, then one `objects.py` walk that resolves the object the
+`PlayerController` points at instead of filtering by class name -- the class filter has now been measured to return
+only the class default object in every session, and what changed between `kp_enter` and `ret` is a state the frame
+shows and the array does not name.
