@@ -846,7 +846,8 @@ pushed the virtual one to port 2. The arithmetic is settled too: the list advanc
 31 presses really are `M12F` -- the older page table had been read off scrolled windows, not indices. `M00` now loads
 from `Continue` (a profile-carrying EEPROM, `drive.py --eeprom`), with the tutorial overlay and no assert dialog.
 
-## U15. ~~The console's `Tab=Type` binding does not open a console~~ -- corrected: it opens and draws nothing
+## U15. ~~The console's `Tab=Type` binding does not open a console~~ -- corrected twice: it opens, draws nothing, and
+keeps no output
 
 `System/DefUser.ini:50` binds `Tab=Type`, `Engine/Console.uc:205` is `exec function Type()`, and `Default.ini` sets
 `Console=Engine.Console` -- so the build intends a console on Tab. Measured 2026-11-03: `tab`, `grave_accent` and `kp_7`
@@ -862,8 +863,32 @@ the console is unreachable from the emulator's keyboard by construction and 7.3 
 typed: `stat fps` produced a visible `60 cur FPS` / `59 avg FPS` overlay in two runs, one with the keyboard attached
 during the boot and one after it. What is missing is the *window* -- the console draws nothing, and `bIgnoreKeys` swallows
 the first keypress, so a command sent cold loses its first character. The open question is now output: a text-only
-command leaves no on-screen trace, and the console's scrollback is in guest memory (`Console.Scrollback`, `History`), which
-`tools/xemu/mem.py` is the right instrument to read.
+command leaves no on-screen trace.
+
+**There is no scrollback to read, and the field this entry named does not exist (measured 2026-11-05).** All 18 packages
+ship their `ScriptText`, so the classes are readable without a boot (`tools/pkg-script-text.py <dump>/System/<pkg>.u
+--all --write $WORK/scripts`; 2,318 classes over the 18 packages):
+
+| class | what it declares | configured? |
+|---|---|---|
+| `Engine.Console` (`Console.uc`) | `var string TypedStr, History[16];` -- no output field at all | **yes**: `Default.ini` sets `Console=Engine.Console` |
+| `Engine.WindowConsole` | `var int Scrollback, NumLines, TopLine, TextLines;` -- its `Scrollback` is a **count**, not text | no |
+| `GUI.ExtendedConsole` | `var array<string> Scrollback;` -- the only real scrollback buffer in the tree | no; it needs the disc rebuilt |
+
+So "the console's scrollback is in guest memory (`Console.Scrollback`)" was wrong twice: `Console` has no such field, and
+the only `array<string> Scrollback` belongs to a class this build never instantiates. **What is readable is the command
+line**: `History[16]` holds the last sixteen commands, ring-buffered on `Enter` in `KeyType` via `HistoryTop`/`HistoryBot`,
+so a memory channel can prove *a command was delivered* and never what it printed. For output, the usable assertions stay
+the ones already measured: `stat fps`'s overlay (`docs/XEMU.md`) and `GamePlay/ACTION_ConsoleCommand.uc`, which runs
+console commands from level script.
+
+**The instrument that did not finish the read, and the route that would.** Scanning guest RAM for the `Console` class
+table (`0x0050cb80`, 1088 bytes, `inventory/xbe_class_table_names.csv`) as a dword finds the constructor's own immediate
+twice, at `0x00153bbc` and `0x00153c5f` -- both inside `.text`, because the store that installs the table is
+`mov [ecx],0x50cb80`. Instances live **above the loaded image end** (`0x7d95e0` for this XBE), so the scan has to start
+there; a 1 MiB-chunk sweep that begins below it aborts on an unmapped page (`read 0x7cc000+0x4000 failed`). The cheaper
+route is `GObjObjects`: UE2 keeps every `UObject*` in one global array, and walking it would name the `Console` instance
+in a few hundred reads instead of a 120 MiB sweep -- nothing in this tree has located that array yet.
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
