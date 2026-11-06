@@ -39,6 +39,15 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # the text an object *points at*: UE2 keeps a `string` as (Data, Count), so `--strings` cannot see it
     python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class Console --fstrings --object-size 0x800
 
+    # what an object *points at*: every field that is itself an object address, named by its target's class
+    python3 tools/xemu/objects.py --port 12345 --walk 0x6c21b0 --class PlayerController --refs --object-size 0x800
+
+`--class` answers "is there an object whose class is X", which is the wrong question for an engine that keeps
+one pointer per player to an interface object: a `Console` that exists only as `Player.Console` is still a
+`Console` instance, so the filter does find it -- unless the instance's vtable is not the table the class name was
+resolved from, which is what `--refs` is for. It prints the object's own fields that point at another walked
+object, so `Console` shows up as a field of the `Player`/`PlayerController` rather than as a class-table hit.
+
 Guest data stays out of the repository: addresses, counts and class names are measurements, the strings an
 object holds are game state. `--strings`/`--fstrings` print them to the terminal and never write a file.
 """
@@ -230,7 +239,8 @@ def fstring_scan(guest, raw, limit=24, budget=96):
     return out
 
 
-def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size, want_fstrings=False):
+def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, object_size, want_fstrings=False,
+         want_refs=False):
     data, num, cap = struct.unpack("<III", guest.read(addr, 12))
     if not plausible_pointer(data) or not (ARRAY_MIN <= num <= ARRAY_MAX) or cap < num:
         raise SystemExit("%#x does not hold a plausible object array (data=%#x num=%d max=%d)"
@@ -253,7 +263,7 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
             heap[page] = guest.read(page, 0x10000, chunk=0x10000)
         except IOError:
             gap += 0x10000
-    counts, instances, unknown = {}, {}, {}
+    counts, instances, unknown, classof = {}, {}, {}, {}
     for ptr in ptrs:
         base = ptr & ~0xFFFF
         chunk = heap.get(base)
@@ -263,6 +273,7 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
         label = names.get(vt) or ("table_%08x" % vt if vt in vtables else "not a class table: %08x" % vt)
         counts[label] = counts.get(label, 0) + 1
         instances.setdefault(label, []).append(ptr)
+        classof[ptr] = label
         if vt not in names:
             unknown[vt] = unknown.get(vt, 0) + 1
     total = sum(counts.values())
@@ -302,6 +313,26 @@ def walk(guest, addr, vtables, names, sizes, top, want_class, want_strings, obje
                     print("  FStrings those bytes point at (%#x bytes read):" % size)
                     for off, count, text in fstring_scan(guest, raw):
                         print("    +%#05x count=%-4d %r" % (off, count, text))
+        if want_refs:
+            # The class filter matches an instance's *own* vtable against a table named for the class, so an
+            # object the engine creates through a subclass or a table that never got a name is invisible to it.
+            # Its owner still holds a pointer, so read the owner's fields instead of the class list.
+            size = object_size or 0x800
+            for label, a in hits[:8]:
+                try:
+                    raw = guest.read(a, size)
+                except IOError as exc:
+                    print("  %#x: unreadable (%s)" % (a, exc))
+                    continue
+                print("\n  fields of %s at %#x that are object addresses (%#x bytes):" % (label, a, size))
+                found = 0
+                for off in range(0, len(raw) - 4, 4):
+                    target = struct.unpack_from("<I", raw, off)[0]
+                    if target in classof:
+                        found += 1
+                        print("    +%#05x -> %#010x  %s" % (off, target, classof[target]))
+                if not found:
+                    print("    none: no field in the first %#x bytes points at a walked object" % size)
     return total
 
 
@@ -317,6 +348,8 @@ def main():
     ap.add_argument("--strings", action="store_true", help="with --class: print strings inside those objects")
     ap.add_argument("--fstrings", action="store_true",
                     help="with --class: also resolve UE2 (Data, Count) FString pairs and print their text")
+    ap.add_argument("--refs", action="store_true",
+                    help="with --class: print the instances' own fields that point at a walked object, named by class")
     ap.add_argument("--object-size", type=lambda x: int(x, 0), default=0, help="bytes to read per object for --strings")
     ap.add_argument("--top", type=int, default=25, help="rows in the class histogram")
     ap.add_argument("--all", action="store_true", help="with --find: validate every candidate, not just the first 8")
@@ -357,7 +390,7 @@ def main():
                       "split is the block form (UE1 kept pointer blocks, and this fork may)")
         if args.walk:
             walk(guest, int(args.walk, 0), vtables, names, sizes, args.top,
-                 args.want_class, args.strings, args.object_size, args.fstrings)
+                 args.want_class, args.strings, args.object_size, args.fstrings, args.refs)
     finally:
         guest.close()
     return 0
