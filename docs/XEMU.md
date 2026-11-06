@@ -1290,3 +1290,37 @@ instance carries `TypedStr`/`History`, not style defaults. So at the title there
 back from, and U15's `History[16]` check still needs a run with a level loaded. A class-table name is also a name
 for the *vtable*, not proof of an instance's class: 179 distinct unnamed vtables appear in this walk, and every
 instance of a class whose table was named by its registration literal inherits that label.
+
+## Three input failures on the way to a live console, and the instrument that reads its strings (measured 2026-11-06)
+
+7.3 needs the live `Console`'s `History[16]`, which needs a console instance, which needs a loaded level and a `Tab`
+that lands. This session got the instrument and the three reasons the run before it did not: none of them is the
+console.
+
+**A keyboard attached after the level loads is never read.** With `device_add usb-kbd` issued once the mission was
+up, `Tab`, `space`, `stat fps` and `Return` produced **0 pixels** and no FPS overlay; the object walk at M00 then
+found **48,647 objects over 295 pages** with `StaticMeshActor` 927 (against 42,152 / 255 / 171 at the title) and
+`--class Console` returned only the class-default object, because no `Tab` had ever reached the game. Attach the
+keyboard *before* the title — 75 s works, which is why every earlier console measurement used that timing.
+
+**Attached early, the keys do reach the game — and the press that matters is the one that gets swallowed.** With the
+keyboard at 75 s, letters moved the map list (**17,780 px**), but the select press was lost and the level never
+loaded. `missions.sh` retries a whole *boot*; `drive.py` has no retry inside a sequence, so a console run needs its
+select press repeated rather than the boot repeated.
+
+**A killed `drive.py` leaves its virtual pad behind, and the next run binds the stale one.** After a run whose
+`drive.py` survived its first kill, `/proc/bus/input/devices` carried **two** `SG1 virtual pad` devices
+(`input56`/`input57`); xemu bound the dead one and every `pad=` step was a no-op while the run still looked healthy.
+Kill the emulator by its real process name — the AppImage wrapper runs as `appimage_extracted…`, not `xemu.AppImage`
+— and remove leftover pad devices before the next start.
+
+**The instrument: `--fstrings`.** A UE2 `string` is a `(Data, Count)` pair, so the characters are not inside the
+object and `--strings` cannot see a console's `History` — the field reads as sixteen integers. `objects.py
+--fstrings` resolves each plausible pair, keeps only the ones whose target really is NUL-terminated text, tries both
+widths, and spends a bounded number of reads. Validated on a live `PlayerProfile` at `0x06ad8a00` at the title:
+**21 pairs read, 6 carried text** — `DefaultProfile`, `StargateContent.Oneill`, `Jack O'neill`,
+`SG1_MenusTex.HUD_Oneill`, and two more of the same shape.
+
+**What is left is one clean run**, not another instrument: a single vpad, the keyboard at 75 s, three select taps,
+then `objects.py --walk 0x6c21b0 --class Console --fstrings --object-size 0x800`. That closes U15's `History` read
+and 7.3's output channel.
