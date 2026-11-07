@@ -993,6 +993,19 @@ any object the vtable walk can name. **What would settle the owner:** the regist
 (`--step=monitor=info registers`, or a GDB stack read there), because a `Data` pointer absent from 128 MiB of RAM
 can only be live in a register or in the stack frame of whatever draws the line -- and `pmemsave` covers neither. **A whole-image census says the same about the object**: the `Console` class table occurs exactly twice in all 128 MiB -- a `mov` that mentions it at `0x00291bbc` and the object at `0x02661b00` whose fields run into the class-defaults text -- so there is no live console anywhere in the image, only its default (`docs/XEMU.md`, "two mentions of `Console`").
 
+**Resolved 2026-11-06: the buffer has an owner, and the earlier search had the wrong address space.** `pmemsave`
+writes *physical* memory while every address in this entry is a *linear* one, and the page tables travel in the dump
+(`CR3=0x0000f000`), so `tools/xemu/vamap.py` translates between the two. The typed line at physical `0x06bfcb78` is
+linear **`0x0802db78`**, and that value occurs exactly once in 131,072 KiB: at `+0x44` of the object at `0x02661b00`,
+whose first word is the `Console` class table — an `FString` of `Count=6`, `Max=6` (`" hist"`), with `History[16]`
+behind it still all zero. The earlier dump reproduces it at the same object offset, with its heap `0x3d9000` away, so
+the owner is not an artefact of one boot. "Nothing in 128 MiB names it" was true of the physical value and false of
+the string's address; the read that is still missing is not a pointer question: `Engine.Console.KeyType` fills
+`History` only on a submit, so one run that submits (`ret` is the key that closes the console and runs the command,
+measured) and one `objects.py --object 0x2661b00 --fstrings` would read it. The register file at the dump step was
+measured too and names nothing: `CPL=0`, `EIP=0x00020669`, `ESP=0xd0169d38` — a ring-0 frame on a kernel stack, and
+a `pmemsave` covers that stack anyway.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

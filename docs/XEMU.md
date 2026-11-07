@@ -1754,3 +1754,72 @@ now about all of RAM, not about 295 pages.
 hit is only as strong as the table inventory. What it does answer is where a *given* class appears: `--class SUBSTR`
 prints each hit with its header words and the screen's verdict, which is how the two `Console` mentions above were
 separated.
+
+## The dump is physical memory, the CPU's addresses are linear — and with the translation the typed line has an owner (measured 2026-11-06)
+
+`pmemsave` writes the guest's *physical* memory, and every address in this project's notes is a *linear* one: the
+XBE's own section table, `objects.py`'s walk, a class-table VA, a breakpoint we set. On this build the two spaces are
+not the same, so an address read out of a dump is neither a value a pointer can hold nor an address a watchpoint can
+watch. `tools/xemu/vamap.py` closes the gap out of the dump itself: `info registers` gives `CR3` (`0x0000f000` at the
+points measured), the page tables are ordinary 4 KiB RAM, and i386 two-level paging (PAE off — `CR4=0x000610` sets
+PSE, not PAE) turns either address into the other, in both directions.
+
+    python3 tools/xemu/vamap.py $WORK/watch-ram.bin --cr3 0xf000 --pa 0x6bfcb78 --va 0x11000 --stats
+
+**The walk is right, and that is checked against content rather than against itself.** `--va 0x11000` answers physical
+`0x613000`, and those 32 bytes are `.text`'s prologue at file offset 0x1000 of `default.xbe`
+(`8b 44 24 04 56 57 8b 79 04 …`); `--va 0x4d1cc2`, the VA of an assert path in `.rdata`, answers physical `0x67dcc2`,
+where the bytes read `…\XboxAudio\Src\XboxAudioSubsystem.cpp`. The map's shape: **137 present PDEs, 63 of them 4 MiB
+pages, 93,495 mapped pages over 93,399 distinct physical pages** — the image is spread across physical pages, so no
+constant offset relates the two spaces (`.text`'s first page is at `0x613000`, an assert string's page at `0x67dcc2`,
+and the same code bytes also appear at `0x36e8c0`, a second mapping of the same page).
+
+**This flips U15's central negative.** The typed console line in `findtext5` is at physical `0x06bfcb78`
+(`ramscan.py --text hist`, one copy): its linear address is **`0x0802db78`**. Searched as a dword over all 131,072 KiB,
+that value occurs **exactly once**, at physical `0x02661b44` — `+0x44` inside the object at `0x02661b00` whose first
+word is the `Console` class table `0x0050cb80`. The earlier dump agrees: `findtext4`'s line is physical `0x06823b78`,
+linear `0x07fedb78`, and the pointer is at the same `+0x44` of the same object address — the heap moved `0x3d9000`
+between those two boots, the object did not.
+
+| offset | value | field |
+|---|---|---|
+| `+0x44` | the string's linear address | `FString.Data` |
+| `+0x48` | 6 | `FString.Count` |
+| `+0x4c` | 6 | `FString.Max` |
+| `+0x50` … `+0x74` | all zero | `History[0..3]`, empty |
+
+Six bytes is `" hist"` — five characters and the terminator — so this is `Console.TypedStr`, the field the class
+declares first, and `History[16]` behind it is empty because the run typed and never submitted. The object is the one
+`objects.py --class Console` reports; its `+0x440` runs into `defaultproperties` text, which is why earlier notes
+called it the class default. Whether it is the CDO or a live instance is not settled by this read, and does not change
+the pointer.
+
+**So the earlier search was right and its target was wrong.** "Nothing in 128 MiB names the buffer" was a search for
+the physical *value* in a linear *space*: the owner is one dword away once the address is translated, and `--refs`
+finds no class table behind `0x02661b44` for the same reason a class default has none — a class names it, not the
+game's arrays.
+
+**The register file at the dump step is a ring-0 frame, and that is the answer `monitor=info registers` earned.**
+`findtext5`, step 47, with the console drawn (`console-line.py` reads `typed`, 67 cyan pixels):
+
+| register | value |
+|---|---|
+| `EIP` | `0x00020669` (inside `.text`) |
+| `CPL` | **0** |
+| `ESP` / `EBP` | `0xd0169d38` / `0x0979d700` |
+| `EAX` / `ESI` / `EDI` | `0xd016a140` / `0xd016a158` / `0xd0169d48` |
+
+A single stopped sample is whatever the CPU was doing: here ring 0 on a kernel stack, with no game pointer in the
+file. The earlier plan — "the pointer can only be live in a register or in the stack frame of whatever draws the
+line" — was also wrong on its own terms, because the stack *is* inside a `pmemsave`. What was missing was the address
+space, not the channel.
+
+**The stub does implement read watchpoints, and they have to be armed on the linear address.**
+`tools/xemu/mem.py --watch ADDR` arms `Z3` and reports each stop's register file, the stack words around `ESP` within
+`--window` of the address, and `EIP`; `--selftest` proves the RSP half on a fake stub, which is why `make ci` can run
+it with no emulator. Measured: `Z3,<addr>,8` answers `OK` on xemu's stub, and a watchpoint armed on the *physical*
+address never stops in 25 s (`findtext6`) — which is what a page mapped somewhere else should do. `drive.py`'s
+`watch=TEXT` step now does the whole chain inside one boot (`pmemsave`, find the UTF-16 text with its terminator, back
+up to the string's first character, `CR3` from `info registers`, translate, arm `Z3` over 8 bytes); that translation
+step compiles and its halves are each measured, but **the boot that would exercise the pair end to end is the next
+run's first job**, so no claim is made here about which instruction reads the line.

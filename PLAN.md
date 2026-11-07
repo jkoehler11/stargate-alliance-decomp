@@ -502,6 +502,32 @@ are limited to expected fields (checksum/timestamp) and documented.
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
 
+### Execution notes (2026-11-06, the dump is physical memory — translate it and the typed line has an owner)
+
+- **`pmemsave` writes physical memory; every address this project uses is linear.** The two differ on this build, and
+  the difference is what `U15`'s negative was measuring. `tools/xemu/vamap.py` walks the guest's i386 page tables out
+  of the dump itself (`CR3` from `info registers`, `0x0000f000`; PAE off, PSE on per `CR4=0x000610`), both directions,
+  with `--stats`. It is validated by content rather than by itself: `--va 0x11000` → physical `0x613000` is `.text`'s
+  prologue (file offset 0x1000 of `default.xbe`), and `--va 0x4d1cc2` → physical `0x67dcc2` is an `.rdata` assert path.
+  The map is 137 present PDEs (63 of them 4 MiB), 93,495 mapped pages over 93,399 distinct physical pages — the image
+  is scattered, so no constant offset relates the two spaces.
+- **With the translation the buffer's owner is one dword away.** The typed line is physical `0x06bfcb78` in
+  `findtext5`, linear `0x0802db78`; that dword occurs exactly once in 131,072 KiB, at physical `0x02661b44` — `+0x44`
+  of the object at `0x02661b00` whose first word is the `Console` class table `0x0050cb80`. `+0x44` is
+  `FString.Data`, `+0x48`/`+0x4c` are `Count=6`/`Max=6` (`" hist"`), and `+0x50`..`+0x74` are zero, so `History[16]` is
+  empty because nothing was submitted. `findtext4` reproduces it at the same object offset with its heap `0x3d9000`
+  away. The old "no pointer in 128 MiB" was a physical value searched for in a linear space.
+- **The register file at the dump step answers its own question and not this one.** `findtext5` step 47, console
+  drawn: `EIP=0x00020669`, `CPL=0`, `ESP=0xd0169d38`, `EBP=0x0979d700`, `EAX=0xd016a140` — a ring-0 frame on a kernel
+  stack. The plan it was meant to serve ("the pointer can only be in a register or a stack frame") was wrong anyway:
+  the stack is inside the dump. The address space was the missing piece.
+- **xemu's stub implements read watchpoints (`Z3` → `OK`), and they must be armed on the linear address.**
+  `tools/xemu/mem.py --watch ADDR[:LEN]` reports each stop's register file, the stack words that name the address and
+  `EIP`, with a fake-stub `--selftest` in `make ci`. Armed on the physical `0x06a57b78` (`findtext6`) it never stopped
+  in 25 s. `drive.py`'s new `watch=TEXT` step does the chain in one boot — dump, find, back up to the string's first
+  character, `CR3`, translate, `Z3` — and the pair is unproven end to end until a boot finishes with it, which is the
+  next run's first job.
+
 ### Execution notes (2026-11-06, the whole guest dumps inside the boot, and the typed line is in it but unowned)
 
 - **`pmemsave` inside the boot is the instrument the stub could not be.** `--step="monitor=pmemsave 0 0x8000000
