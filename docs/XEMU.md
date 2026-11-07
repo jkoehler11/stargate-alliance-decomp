@@ -2161,3 +2161,39 @@ whole-RAM dump at the end, so the same run yields the delivery receipt (`console
 `pad=a` on the main menu moved only the highlight (527 px, then 4,930 px at a 165 s boot) and no later `pad` press left
 the menu, so nothing was ever typed into a level. The pad's 0.15 s press is the suspect (`--pad-hold` is its knob) and
 the run needs a quiet desktop; the input path itself is unchanged from the `submit8` boot that measured a submit.
+
+**Six commands, all delivered, one drawn (measured 2026-11-06, `~/sg1/work/cmdrun2/try1`).** With `--pad-hold=0.35`,
+`--boot=180` and the desktop idle (load 0.4), `M00` loaded on the first attempt -- `01-list` 57,224 px and
+`02-mission` 101,648 px against the title's own 18,343 px floor, with an in-game floor of 682-754 px per 3 s -- and the
+dump's `Console` receipt (`0x02681b00`) holds all six lines:
+
+| # | command | `History` | frame |
+|---|---|---|---|
+| 1 | `god` | ` god` | no text anywhere in the frame |
+| 2 | `say hello` | ` say hello` | no text anywhere in the frame |
+| 3 | `enablecheats` | ` enablecheats` | no text anywhere in the frame |
+| 4 | `god` | ` god` | no text anywhere in the frame |
+| 5 | `addnotification hello` | ` addnotification helloooo...` (65 chars) | no text anywhere in the frame |
+| 6 | `stat fps` | ` stat fps` | **`64 cur FPS` / `60 avg FPS`**, green, upper left |
+
+`HistoryTop` 6, `HistoryBot` 0, `TypedStr` empty, `bTyping` 0 -- submitted, six times, so `ConsoleCommand` received
+every line. The two commands whose only purpose is to message the client drew nothing that a frame 3 s later can see.
+Command 5's line grew a tail of `o`s: a burst of successive `gkey` steps repeats the last character, so a receipt
+longer than the typed text is a burst artefact rather than a mismatch.
+
+**The message channel the source describes, and the two conditions on it.** `StargateHUD.Message` does not use
+`Engine.HUD`'s buffer at all (`AddTextMessage` is commented out there): `Say`/`TeamSay` take `SetSubtitle(Msg, 2.0,
+PRI.GetHumanReadableName(), icon)` -- a **2.0 s** subtitle -- and every other type takes `AddNotification(Msg)`, which
+is `StargatePlayer.NotificationManager.AddNotification` (a no-op when that manager is `None`), whose `DisplayMessages`
+returns early unless `GameHUD(PC.GameHUDPtr) != None` and then hands the text to `GH.SetNotifications`. The engine's
+own buffer is not the channel on this disc either: `HUD.TextMessages[8]` is filled by `HUD.AddTextMessage` and painted
+by `HUD.DisplayMessages`, but `StargateHUD` overrides both `DrawHUD` and `DisplayMessages`, so nothing fills or paints
+it in a mission.
+
+That makes this run's zero a timing-and-condition question rather than a delivery one, and the dump agrees with it: a
+128 MiB `pmemsave` after the run holds **no** UTF-16 copy of `Cheats are NOT enabled` (the `areCheatsEnabled`
+refusal), `God Mode On` or `You feel much lighter`, so neither a `TextMessages` slot nor an `SNotification.Text` was
+written -- `areCheatsEnabled()` only messages when `Level.Game.CurrentGameProfile != none`, and a map opened from
+`QUICK SELECT MAP` need not carry one. **The next measurement is one boot that takes its per-command frame one second
+after the submit** (inside the 2.0 s subtitle), on a command whose path is unconditional, and reads
+`StargatePlayer.NotificationManager`/`GameHUDPtr` out of the same dump instead of inferring them from a frame.

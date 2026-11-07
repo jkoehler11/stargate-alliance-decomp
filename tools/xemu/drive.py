@@ -296,6 +296,7 @@ def main():
 
     REGRAB_SECONDS = args.regrab
     PAD_HOLD = args.pad_hold
+    BASE_THRESHOLD = args.threshold
     steps = [parse_step(s) for s in args.step] if args.step else \
             [("shot", "before"), ("key", args.key), ("wait", str(args.settle)), ("shot", "after")]
 
@@ -419,8 +420,12 @@ def main():
                     % (index, floor, value, " (crop %s)" % args.crop if args.crop else ""))
                 measured_noise = True
                 if floor > 0:
-                    args.threshold = max(args.threshold, 2 * floor)
-                    say("         threshold raised to %d (twice the noise floor)" % args.threshold)
+                    # Twice the floor *this screen* animates by. Keeping the largest floor of the whole run made a
+                    # title's 18,343 px poison every gameplay shot after it: six commands that all executed were
+                    # reported as 18 FAILs, because in-game animation is 682-754 px per 3 s. `--threshold` stays a
+                    # floor, so an explicit value is still honoured.
+                    args.threshold = max(BASE_THRESHOLD, 2 * floor)
+                    say("         threshold set to %d (twice this screen's noise floor)" % args.threshold)
                 continue
             if name == "focus":
                 deadline = time.time() + float(value)
