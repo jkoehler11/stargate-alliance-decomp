@@ -44,18 +44,27 @@ Steps, in order:
                 `--out` (delete it: 128 MiB). `--watch-key` sends one guest key once the watchpoint is armed, because
                 an idle guest reads nothing: the read that names the owner has to be caused, and a stop that never
                 comes is reported as "no stop in N s" rather than as a stub fault.
-    brk=SPEC    a *script* breakpoint, and the reason this step exists: the interpreter executes a function's
-                bytecode in place, in the copy the package loader made, so the function's own bytes are a pattern whose
-                address in a RAM dump is the address the CPU fetches from. SPEC is `label=hex` repeated and
+    brk=SPEC    a *script* breakpoint, and the reason this step exists: a script function's bytecode is only a byte
+                pattern in the copy the package loader made, so finding it in a RAM dump gives the address the
+                interpreter *reads* it from, and a watchpoint there answers "did this script function run" for a build
+                whose natives are already accounted for. **Read, not execute**: UE2's VM reads bytecode through a
+                pointer (`Script[CodeOffset++]` -> `GNatives[op]`) and never fetches an instruction from it, so
+                `--brk-kind=exec` (a Z0 execution breakpoint) cannot fire on a script function -- it is kept as the
+                control that measures exactly that, and `--brk-kind=read` (the default) arms a Z3 read watchpoint on
+                the function's first byte, which stops on the interpreter's first read at entry. SPEC is `label=hex` repeated and
                 comma-separated, and the hex is **not** the package's bytes: the loader widens every compact index
                 operand to a four-byte slot, so `tools/uscript-dis.py --script PKG CLASS FUNCTION --hex-bytes N`
                 prints the pattern with `??` where an index was (matched here as one byte each); a byte-exact copy of
                 the file's script occurs nowhere in a loaded guest (docs/XEMU.md). `--brk-freeze` stops the VM across
                 the dump and the arming, which is what makes arming a load-time function possible at all. The
                 step dumps RAM, finds each pattern, translates it through the page tables to a linear address, arms an
-                execution breakpoint (`Z0`) on each copy, then resumes the guest for `--brk-wait` seconds and reports
+                watchpoint on each copy, then resumes the guest for `--brk-wait` seconds and reports
                 **which labels fired** with EIP/ESP and the first 16 stack words -- so a chain of script functions
-                answers "how far did it get" in one boot. It needs `--gdb`.
+                answers "how far did it get" in one boot. `--brk-tap=SECS:BUTTON` presses the pad from inside that
+                wait, because a step list is sequential and a brk= step that waits behind an intro card ("Press A")
+                measures a load that is not running; `--brk-wait` takes a comma list, one value per brk= step, so a
+                second short step can re-find the same patterns after the load and say whether the first step's armed
+                addresses were still the guest's. It needs `--gdb`.
 
 `key=` and `type=` take target-window input, `xkey=`/`xtype=` take XTEST input; which reaches the guest is a
 measured fact per input type, not a safe assumption (docs/XEMU.md carries the numbers). SDL ignores synthetic
@@ -258,6 +267,21 @@ def say(*args):
     print(*args, flush=True)
 
 
+WATCH_STOP = re.compile(rb"(?:r|a)?watch:([0-9a-fA-F]+);")
+
+
+def watch_address(stop):
+    """The address a read/access watchpoint stop names (`T05thread:01;rwatch:16b2800;`), or None.
+
+    A read watchpoint stops at the *reader's* EIP, so this address is the only thing that says which pattern was
+    touched -- matching EIP against the armed addresses is the execution form of the question and answers nothing
+    here. xemu's stub names the address, not an index into the watchpoint table (a `watch:2` reading of this packet is
+    a number that matches no address, and it ended the first run's wait on its first hit).
+    """
+    match = WATCH_STOP.search(stop or b"")
+    return int(match.group(1), 16) if match else None
+
+
 def load_vpad():
     spec = importlib.util.spec_from_file_location("vpad", os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                                       "vpad.py"))
@@ -308,11 +332,28 @@ def main():
                          "appends to the console's TypedStr)")
     ap.add_argument("--watch-length", type=lambda v: int(v, 0), default=8,
                     help="bytes the read watchpoint covers, from the watch= text's first character")
-    ap.add_argument("--brk-wait", type=float, default=60.0,
-                    help="seconds a brk= step leaves the guest running, waiting for its breakpoints")
+    ap.add_argument("--brk-wait", default="60",
+                    help="seconds a brk= step leaves the guest running, waiting for its breakpoints; a comma list is "
+                         "consumed one value per brk= step, so a second short step can re-find the patterns after a "
+                         "load and say whether the first step's armed addresses were still the guest's")
     ap.add_argument("--brk-timeout", type=float, default=20.0, help="seconds to wait for one breakpoint stop")
+    ap.add_argument("--brk-tap", action="append", metavar="SECS:BUTTON",
+                    help="tap a virtual-pad button SECS into a brk= step's wait, from inside the wait: a load that "
+                         "stops to ask for a button (M00's intro card) never reaches the code the breakpoints cover, "
+                         "so without this an armed load reports every label dead for a reason that is input, not the "
+                         "route. Repeatable, e.g. --brk-tap=8:a --brk-tap=25:a")
+
     ap.add_argument("--brk-copies", type=int, default=4,
                     help="copies of one pattern to arm (a package's bytecode can have more than one in RAM)")
+    ap.add_argument("--brk-kind", default="read",
+                    help="`read` or `exec`, one value per brk= step (comma list, or one for all): `read` puts a Z3 read "
+                         "watchpoint on the function's "
+                         "first byte, which is what an *interpreted* build does with bytecode -- UE2's VM reads it "
+                         "through a pointer and never fetches an instruction from it, so a Z0 execution breakpoint on "
+                         "a script function cannot fire; `exec` keeps that Z0, the control that shows it")
+    ap.add_argument("--brk-tap-step", type=int, default=1,
+                    help="which brk= step (1-based) the --brk-tap presses belong to: a press in the title screen is a "
+                         "menu action, so the taps go to the one step that is waiting behind a level load")
     ap.add_argument("--brk-freeze", action="store_true",
                     help="freeze the VM (QMP `stop`) across a brk= step's dump and arming: the guest runs during a "
                          "pmemsave, so without this the pattern is searched in a state the CPU has left and the "
@@ -325,6 +366,29 @@ def main():
     REGRAB_SECONDS = args.regrab
     PAD_HOLD = args.pad_hold
     BASE_THRESHOLD = args.threshold
+    # A brk= wait can stop being a wait at all: M00 opens on an intro card ("Press A") with the guest frozen on it, so
+    # every pattern armed before that card is armed for a load that is not running. The taps are sent from inside the
+    # wait loop, because a step list is sequential and no pad= step can run while a brk= step is waiting.
+    BRK_TAPS = []
+    for spec in args.brk_tap or []:
+        secs, _, button = spec.partition(":")
+        try:
+            BRK_TAPS.append((float(secs), (button.strip() or "a")))
+        except ValueError:
+            raise SystemExit("--brk-tap=%r is not SECS:BUTTON" % spec)
+    BRK_TAPS.sort()
+    BRK_KINDS = []
+    for item in str(args.brk_kind).split(","):
+        item = item.strip()
+        if item not in ("read", "exec"):
+            raise SystemExit("--brk-kind=%r is not read or exec" % args.brk_kind)
+        BRK_KINDS.append(item)
+    BRK_WAITS = []
+    for item in str(args.brk_wait).split(","):
+        try:
+            BRK_WAITS.append(float(item))
+        except ValueError:
+            raise SystemExit("--brk-wait=%r is not a number or a comma list of them" % args.brk_wait)
     steps = [parse_step(s) for s in args.step] if args.step else \
             [("shot", "before"), ("key", args.key), ("wait", str(args.settle)), ("shot", "after")]
 
@@ -362,7 +426,7 @@ def main():
     eeprom = os.path.join(args.out, "eeprom.bin")
     if not os.path.exists(eeprom) and os.path.exists(shared_eeprom):
         shutil.copyfile(shared_eeprom, eeprom)
-    want_pad = args.vpad or any(name == "pad" for name, _ in steps)
+    want_pad = args.vpad or bool(BRK_TAPS) or any(name == "pad" for name, _ in steps)
     if want_pad:
         module = load_vpad()
         PAD = module.Pad(settle=args.pad_settle)
@@ -431,6 +495,7 @@ def main():
             say("note: X input focus is %s (%s), not the emulator -- XTEST steps will refuse rather than type there"
                 % (prior_name, prior_focus))
         failures, shots, previous, measured_noise = [], 0, None, False
+        brk_seen = 0
         for index, (name, value) in enumerate(steps, 1):
             if name == "noise":
                 first = os.path.join(args.out, "%02d-noise-a.png" % index)
@@ -614,10 +679,11 @@ def main():
                     gdb.close()
                 continue
             if name == "brk":
-                # A *script* breakpoint. The interpreter runs a function's bytecode in place, in the copy the package
-                # loader made, so those bytes are a pattern whose address in a RAM dump is the address the CPU fetches
-                # from; Z0 there fires exactly when the function is entered. That is the only way to ask "did this
-                # script function run" of a build whose natives are already accounted for.
+                # A *script* breakpoint. The function's bytecode is a byte pattern in the copy the package loader made,
+                # and the interpreter reads it in place -- so the pattern's address in a RAM dump is the address the
+                # VM reads, and a watchpoint there answers "did this script function run" for a build whose natives
+                # are already accounted for. Read, not execute: a Z0 on that address waits for a fetch that an
+                # interpreted build never performs (docs/XEMU.md, measured 2026-11-07).
                 if not args.gdb:
                     say("FAIL: a brk= step needs --gdb, so there is a stub to attach to")
                     return 3
@@ -705,6 +771,7 @@ def main():
                     say("step %d: brk -- nothing to arm" % index)
                     continue
                 gdb = memory.Gdb("127.0.0.1", args.gdb)
+                kind = BRK_KINDS[min(brk_seen, len(BRK_KINDS) - 1)]
                 fired, live = {}, []
                 try:
                     try:
@@ -716,21 +783,45 @@ def main():
                     except (IOError, OSError):
                         pass
                     for label, lin in armed:
-                        reply = gdb.watch(lin, 1, "exec")
+                        reply = gdb.watch(lin, 1, kind)
                         if reply != b"OK":
-                            say("         %s at %#010x: the stub refused Z0 (%r)" % (label, lin, reply[:32]))
+                            say("         %s at %#010x: the stub refused %s (%r)"
+                                % (label, lin, "Z3" if kind == "read" else "Z0", reply[:32]))
                             continue
                         live.append((label, lin))
-                    say("         %d breakpoint(s) armed: %s; running up to %.0fs"
-                        % (len(live), " ".join("%s@%#x" % item for item in live), args.brk_wait))
+                    brk_step_wait = BRK_WAITS[min(brk_seen, len(BRK_WAITS) - 1)]
+                    brk_seen += 1
+                    say("         %d %s armed: %s; running up to %.0fs"
+                        % (len(live), "read watchpoint(s)" if kind == "read" else "breakpoint(s)",
+                           " ".join("%s@%#x" % item for item in live), brk_step_wait))
                     if args.brk_freeze:
                         # The stub's breakpoints are in; let the guest go on from exactly the state that was searched.
                         cmd("human-monitor-command", {"command-line": "cont"})
-                    deadline = time.time() + args.brk_wait
+                    # A tap is per brk= step only: a second step that re-finds the patterns after the load has nothing
+                    # to press for, and a press in gameplay is a game action rather than a load being let through.
+                    taps = list(BRK_TAPS) if brk_seen == args.brk_tap_step else []
+                    started = time.time()
+                    deadline = started + brk_step_wait
                     while live and time.time() < deadline:
+                        # The card is a *wait for input*: with the guest frozen on it, every armed pattern sits behind
+                        # a keypress, so a tap scheduled here is what lets the load reach the code under the
+                        # breakpoints at all.
+                        while taps and started + taps[0][0] <= time.time():
+                            delay, button = taps.pop(0)
+                            if PAD is None:
+                                say("         brk-tap at %.1fs: this run has no pad" % delay)
+                                continue
+                            say("         brk-tap %s at %.1fs (%.0fs of the wait left)"
+                                % (PAD.tap(button, PAD_HOLD), time.time() - started,
+                                   max(0.0, deadline - time.time())))
+                        wait_for = max(1.0, min(args.brk_timeout, deadline - time.time()))
+                        if taps:
+                            # Do not sleep past the next tap: wait_stop blocks, and a press delivered after the
+                            # timeout the guest needs it inside is the same as no press.
+                            wait_for = max(1.0, min(wait_for, started + taps[0][0] - time.time()))
                         gdb.resume()
                         try:
-                            stop = gdb.wait_stop(max(1.0, min(args.brk_timeout, deadline - time.time())))
+                            stop = gdb.wait_stop(wait_for)
                         except (IOError, OSError):
                             # A stub that answers nothing within the timeout has not disproved the breakpoint: keep
                             # waiting until the step's own deadline, so a stage that fires late is still seen.
@@ -739,15 +830,23 @@ def main():
                             continue
                         regs = gdb.registers()
                         eip = regs.get("eip")
-                        hit = [item for item in live if eip is not None and item[1] == eip]
+                        if kind == "exec":
+                            # Execution: the stop *is* the armed address, which is why this cannot see an interpreter.
+                            hit = [item for item in live if eip is not None and item[1] == eip]
+                        else:
+                            # A read watchpoint stops at the reader, so the stub names the *address* it guards. One
+                            # hit per label is the measurement, and the watchpoint is removed on it -- a function read
+                            # every frame would otherwise stop the guest 60 times a second for the rest of the wait.
+                            where = watch_address(stop)
+                            hit = [(label, lin) for label, lin in live if where is not None and lin == where]
                         if not hit:
-                            say("         a stop at eip %s matches no armed address (%r): ending the wait"
+                            say("         a stop at eip %s matches no armed pattern (%r): ending the wait"
                                 % ("%#010x" % eip if eip is not None else "?", stop[:40]))
                             break
                         label, lin = hit[0]
                         live.remove(hit[0])
                         try:
-                            gdb.unwatch(lin, 1, "exec")
+                            gdb.unwatch(lin, 1, kind)
                         except (IOError, OSError):
                             pass
                         fired[label] = regs
@@ -766,7 +865,7 @@ def main():
                 finally:
                     for label, lin in list(live):
                         try:
-                            gdb.unwatch(lin, 1, "exec")
+                            gdb.unwatch(lin, 1, kind)
                         except (IOError, OSError):
                             pass
                     try:
@@ -777,8 +876,9 @@ def main():
                 for label, _lin in armed:
                     if label in fired:
                         say("         %-28s fired (eip %#010x)" % (label, fired[label].get("eip", 0)))
+
                     else:
-                        say("         %-28s did not fire in %.0fs" % (label, args.brk_wait))
+                        say("         %-28s did not fire in %.0fs" % (label, brk_step_wait))
                 for label, why in absent:
                     say("         %-28s never armed: %s" % (label, why))
                 continue

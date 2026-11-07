@@ -2464,3 +2464,44 @@ is fatal for the whole HUD route, whose setup runs at level start. `drive.py --b
 dump, arms while the CPU is stopped, and `cont` before the wait, so the state that was searched is the state the
 breakpoints go into.
 
+
+## A script function is *read*, not executed: the watchpoint an interpreted build answers
+
+The `brk=` step was built on "the interpreter executes a function's bytecode in place, so Z0 at that address fires when
+the function is entered". The second half of that is false and the first half is what makes it false: UE2's VM reads a
+function's bytecode **through a pointer** (`Script[CodeOffset++]` -> `GNatives[op]`), it never fetches an instruction
+from it. An execution breakpoint on a script function cannot fire, however long the guest runs.
+
+Measured with a control whose answer is not in doubt: `StargateHUD.DrawHUD` draws every frame of gameplay.
+`tools/uscript-dis.py --script $SG1_DUMP/System/StargateGame.u StargateHUD DrawHUD --hex-bytes 48` gives its pattern,
+and on one loaded `M00`:
+
+| armed | stop |
+| --- | --- |
+| `Z0` (exec) on `DrawHUD`'s first byte `0x01c4cc00`, 10 s of gameplay | **none** |
+| `Z3` (read) on the same address, 10 s of gameplay | **immediately**: `T05thread:01;rwatch:1c4cc00;` |
+
+`drive.py` now arms a read watchpoint by default (`--brk-kind=read`, Z3) and keeps Z0 behind `--brk-kind=exec` as that
+control. Two facts about the stub and the step came out of the same run:
+
+- **xemu's stub names the *address* in a watchpoint stop** (`rwatch:1c4cc00;`), not the watchpoint index. Reading the
+  number after `watch:` as an index matches no armed address, ends the wait on its first hit, and reports every label
+  as "did not fire" -- which is exactly what the first read-arm run did for a `PostNetBeginPlay` read it had seen.
+- **A brk= wait can be behind a keypress.** `M00` opens on an intro card with the guest stopped on it, so an arm taken
+  before the card measures a load that is not running (PLAN 7.3's 150 s freeze boot). `--brk-tap=SECS:BUTTON` presses
+  the pad from inside the wait -- a step list is sequential, so no `pad=` step can run while a `brk=` step waits --
+  and `--brk-tap-step` says which `brk=` step owns the presses (a press at the title screen is a menu action).
+
+`--brk-wait` and `--brk-kind` take comma lists, one value per `brk=` step, so one boot can carry a control and the
+measurement: `--brk-kind=read,read,read,exec --brk-wait=8,150,10,10`.
+
+**The route, re-armed as a read (measured 2026-11-07).** Read watchpoints on the five HUD-setup functions, armed 0.5 s
+after the map select, with A presses at 8, 20, 35, 60 and 90 s inside the wait (all five landed; the load went through:
+`03-after-wait` 30,644 px, `04-gameplay` 9,489 px and the HUD up). The first stop was **`PostNetBeginPlay`'s first
+byte, read 0.4 s after the first tap** (`T05thread:01;rwatch:16b2800;`, eip `0x0003990f`) -- where 150 s of Z0 on the
+same address had reported nothing in three separate boots. The wait ended on that stop (the parser bug above), so the
+four later links were not recorded. A dump taken after the load finds all six patterns at the same linear addresses as
+the pre-load one, so the arms are not stale, and the remaining question is what read it: the interpreter's loop or the
+loader's copy. `Timer` and `PostNetHUDSetup` firing (or not) after it is what decides that, and it needs the fixed
+parser -- the next measurement, not another theory.
+

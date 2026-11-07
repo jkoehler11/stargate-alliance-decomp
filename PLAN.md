@@ -577,6 +577,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       `--brk-freeze`; `Timer` firing means the route ran and the class string did not resolve, nothing means the
       HUD's `PostNetBeginPlay` route is dead in this boot.
 
+      **A script function is *read*, not executed (measured 2026-11-07)**: the item above armed Z0 execution
+      breakpoints and got nothing three boots running, and the reasons were both the instrument. UE2's VM reads a
+      function's bytecode through a pointer and never fetches an instruction from it, so `Z0` on a script function
+      cannot fire at all: `StargateHUD.DrawHUD`, which draws every frame, took **no** Z0 hit in 10 s of gameplay while a
+      `Z3` read watchpoint on the same first byte (`0x01c4cc00`) stopped immediately. `drive.py --brk-kind=read` is
+      now the default and `exec` is kept as that control. Second, the stub's stop reply names the *address*
+      (`T05thread:01;rwatch:1c4cc00;`), not a watchpoint index, so the index parser matched nothing and ended a wait on
+      its first hit. Third, the guest can be *waiting* on an intro card with the arm in place: `--brk-tap=SECS:BUTTON`
+      (with `--brk-tap-step`) presses the pad from inside the wait, because a step list is sequential and no `pad=`
+      step can run while a `brk=` step waits; `--brk-wait`/`--brk-kind` take comma lists so one boot can carry a
+      control and the measurement. With all three, read watchpoints on the five HUD-setup functions armed 0.5 s after
+      the map select and five A taps inside the wait (all landed; HUD up, `04-gameplay` 9,489 px) reported
+      **`PostNetBeginPlay`'s first byte read 0.4 s after the first tap** (`rwatch:16b2800;`, eip `0x0003990f`) -- where
+      150 s of Z0 had reported nothing. The parse bug ended the wait on that first stop, so the four later links went
+      unrecorded, and a post-load dump finds all six patterns at the same linear addresses as the pre-load one (the
+      arms were never stale). **Next**: the same boot with the fixed parser, which records whether `Timer` and
+      `PostNetHUDSetup` are read after `PostNetBeginPlay` -- that is what separates "the route ran and the class string
+      did not resolve" from "the read was the loader's copy" (`docs/XEMU.md`).
+
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
