@@ -345,6 +345,13 @@ def main():
 
     ap.add_argument("--brk-copies", type=int, default=4,
                     help="copies of one pattern to arm (a package's bytecode can have more than one in RAM)")
+    ap.add_argument("--brk-keep", action="store_true",
+                    help="keep a read watchpoint armed after it fires and log the reader eip of every stop: one stop "
+                         "says a byte was read once, not who read it, and a function that runs is read again by the "
+                         "interpreter -- the set of eips is what separates the loader's copy from the VM")
+    ap.add_argument("--brk-stops", type=int, default=8,
+                    help="stops to take per brk= step under --brk-keep (a function read every frame reaches this at "
+                         "once, which is the point of the control)")
     ap.add_argument("--brk-kind", default="read",
                     help="`read` or `exec`, one value per brk= step (comma list, or one for all): `read` puts a Z3 read "
                          "watchpoint on the function's "
@@ -772,7 +779,7 @@ def main():
                     continue
                 gdb = memory.Gdb("127.0.0.1", args.gdb)
                 kind = BRK_KINDS[min(brk_seen, len(BRK_KINDS) - 1)]
-                fired, live = {}, []
+                fired, live, readers, stops = {}, [], {}, 0
                 try:
                     try:
                         gdb.stop(3.0)
@@ -855,6 +862,19 @@ def main():
                                 break
                             continue
                         label, lin = hit[0]
+                        if args.brk_keep:
+                            # The watchpoint stays in: one read names a reader, a second read from another eip names
+                            # the route. (A hardware read watchpoint does not retrigger on the instruction that just
+                            # retired, so resuming is enough.)
+                            readers.setdefault(label, []).append(eip)
+                            stops += 1
+                            say("         READ %s at %#010x, eip %#010x, t+%.1fs (stop %d of %d)"
+                                % (label, lin, eip if eip is not None else 0, time.time() - started,
+                                   stops, args.brk_stops))
+                            if stops >= args.brk_stops:
+                                say("         %d stop(s) taken: ending the wait" % stops)
+                                break
+                            continue
                         live.remove(hit[0])
                         try:
                             gdb.unwatch(lin, 1, kind)
@@ -889,8 +909,16 @@ def main():
                     if label in fired:
                         say("         %-28s fired (eip %#010x)" % (label, fired[label].get("eip", 0)))
 
-                    else:
+                    elif not args.brk_keep:
+                        # In keep mode a label that was read is not "fired" -- the read summary below is the result,
+                        # and six contradicting negatives beside it are how this run's first log read.
                         say("         %-28s did not fire in %.0fs" % (label, brk_step_wait))
+                for label, eips in readers.items():
+                    seen = {}
+                    for one in eips:
+                        seen[one] = seen.get(one, 0) + 1
+                    say("         %-28s read %d time(s) from %s"
+                        % (label, len(eips), ", ".join("%#010x x%d" % (k or 0, v) for k, v in seen.items())))
                 for label, why in absent:
                     say("         %-28s never armed: %s" % (label, why))
                 continue

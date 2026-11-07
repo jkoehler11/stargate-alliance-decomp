@@ -2538,3 +2538,31 @@ resolve" is untested rather than supported, and no read-arm boot will test it. T
 *effect* of the route: `UInteractionMaster::AddInteraction`, which only the seven `AddInteraction` sites in the
 shipped scripts reach, a property the setup writes, or an execution breakpoint filtered on the reader `eip`.
 
+**The route's two readers are both load passes (measured 2026-11-07, wait cut at the stop cap).** Keeping the
+watchpoints armed (`--brk-keep`) shows every one of the six route functions read **twice**, 0.1 s apart, by two
+different addresses -- `0x0003990f` and `0x00058ad4`:
+
+| function and address | first read | second read |
+| --- | --- | --- |
+| `PostNetBeginPlay` `0x016b2800` | `0x0003990f` t+8.6 s | `0x00058ad4` t+8.7 s |
+| `AddInteraction` `0x00c26c00` | `0x0003990f` t+12.6 s | `0x00058ad4` t+12.7 s |
+| `Timer` `0x016b0140` | `0x0003990f` t+12.9 s | `0x00058ad4` t+13.0 s |
+| `PostNetHUDSetup` `0x01c6af80` | `0x0003990f` t+13.0 s | `0x00058ad4` t+13.1 s |
+| `PostNetBeginPlay` `0x01c9fdc0` | `0x0003990f` t+13.2 s | `0x00058ad4` t+13.3 s |
+| `SetupInteractionsFor` `0x01a7e000` | `0x0003990f` t+14.9 s | `0x00058ad4` t+14.9 s |
+
+The **order** rules out a call chain: `AddInteraction` is read at 12.7 s, *before* `Timer` (13.0 s) and before
+`SetupInteractionsFor` (14.9 s), which is the first walk's order and the reverse of the only chain that reaches them
+(`PostNetBeginPlay` -> `SetTimer(1.0)` -> `Timer` -> `PostNetHUDSetup` -> `SetupInteractionsFor` -> `AddInteraction`).
+Two passes over one list, not six entries.
+
+The control also names what a *running* function looks like: `DrawHUD`, kept armed in gameplay, is read from
+`0x00040900` once and then from an alternating pair `0x00048ce0`/`0x00048ce8` about five times a second for as long as
+it draws.
+
+**What this boot does not say:** the stop cap (12) was consumed by those twelve load reads, so the wait ended at
+t+14.9 s and the remaining 135 s -- the whole of gameplay -- went unobserved. The run that closes 7.3's route question
+takes the same arms with `--brk-stops=40`: a third read of a route function, from the `0x48ce0`/`0x48ce8` pair, is the
+route running; only `0x3990f` and `0x58ad4` through gameplay is the route never running, which is the cause U15's five
+`none` player fields are waiting for.
+

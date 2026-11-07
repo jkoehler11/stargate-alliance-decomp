@@ -1142,6 +1142,14 @@ byte the loader also reads: a breakpoint on `UInteractionMaster::AddInteraction`
 sites reach it), an exec breakpoint filtered on the reader's `eip`, or the HUD-side property the setup writes, whose
 offset the package does not carry.
 
+**The first half of that is now measured: both readers of the route are load passes (2026-11-07).** Keeping the
+read watchpoints armed shows each of the five functions plus the second `PostNetBeginPlay` copy read exactly twice,
+0.1 s apart, by `0x0003990f` and `0x00058ad4`, in the walker's order -- `AddInteraction` before `Timer` and before
+`SetupInteractionsFor`, the reverse of the call chain. The wait was cut at the stop cap, so whether the route runs
+*after* the load is still open: the same arms with `--brk-stops=40` either show a third read (the interpreter's
+`0x48ce0`/`0x48ce8` pair, which `DrawHUD` hits about five times a second) or show none through gameplay, and the
+latter is the cause of the five `none` fields this entry is about.
+
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
