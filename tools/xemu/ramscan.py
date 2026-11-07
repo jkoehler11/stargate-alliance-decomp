@@ -19,6 +19,11 @@ table names the class -- so the output reads "the pointer sits at +0x… inside 
 pattern matches *inside* a string, so `--ref-window` (default 0x40) also accepts a pointer to any even address
 before the hit: when the match is not the string's first character, that address is the FString's `Data`.
 
+**A dump is physical and a pointer is linear**, so on this build a raw dword comparison finds nothing: a field
+holding a heap string may point at `0xd0xxxxxx` while the bytes it names sit at physical `0x06xxxxxx`. `--cr3`
+(given with `--refs`) translates each candidate string address through the page tables (`vamap.linear_for`) and
+searches for *both* forms, which is what turns "10 copies of `hello`, no pointer to any of them" into an owner.
+
 Measured: a 128 MiB image (`pmemsave 0 0x8000000`) is scanned in 0.1 s for one pattern -- the whole guest, in
 less time than one 64 KiB page costs over the stub, which is what makes the coarse questions cheap. `--selftest`
 proves the walk on a synthetic image, because CI may not have a dump.
@@ -41,6 +46,7 @@ TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(TOOLS))
 CLASS_NAMES = os.path.join(REPO, "inventory", "xbe_class_table_names.csv")
 CLASS_TABLES = os.path.join(REPO, "inventory", "xbe_class_tables.csv")
+OBJECT_INTEGER_MAX = 0x100000   # `ObjectInternalInteger` is a serial number: 0x8d34 at the title, 0xbb0d in a mission
 
 
 def class_names():
@@ -75,6 +81,50 @@ def find_all(blob, pattern, limit):
         out.append(at)
         start = at + 1
     return out
+
+
+def load(name):
+    """A sibling tool by module name -- `vamap` is only needed for `--cr3`."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, os.path.join(TOOLS, name + ".py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def linear_pages(blob, cr3):
+    """{physical page: [linear page base, ...]} -- one pass over the page tables, so a ref search is not 33 lookups.
+
+    `vamap.linear_for` walks the whole directory for a single address, which is right for one translation and far
+    too slow for a window of 33 candidate starts per hit; this builds the inverse map once (137 present PDEs, 63 of
+    them 4 MiB) and then every lookup is a dictionary hit.
+    """
+    vamap = load("vamap")
+    pages = {}
+    for index, pde in vamap.directory(blob, cr3):
+        if not pde & 1:
+            continue
+        base = index << 22
+        if pde & 0x80:
+            start = pde & 0xFFC00000
+            for page in range(start, start + 0x400000, 0x1000):
+                pages.setdefault(page, []).append(base | (page - start))
+        else:
+            table = pde & 0xFFFFF000
+            for slot in range(1024):
+                pte = struct.unpack_from("<I", blob, table + slot * 4)[0]
+                if pte & 1:
+                    pages.setdefault(pte & 0xFFFFF000, []).append(base | (slot << 12))
+    return pages
+
+
+def pointer_forms(pages, addr):
+    """Every value a field would hold to name physical `addr`: the physical form, then every linear alias."""
+    forms = [addr]
+    if pages:
+        for linear in pages.get(addr & 0xFFFFF000, ()):
+            forms.append(linear | (addr & 0xFFF))
+    return forms
 
 
 def owner_of(blob, offset, tables, depth):
@@ -147,10 +197,10 @@ def selftest():
     """
     table, obj, field, text_at = 0x00500000, 0x1000, 0x120, 0x2000
     blob = bytearray(0x4000)
-    struct.pack_into("<III", blob, obj, table, 0x8D34, 0)  # vtable, ObjectInternalInteger, a null pointer
+    struct.pack_into("<IIIIII", blob, obj, table, 0x8D34, 0, 0, 0, 0xFFFFFFFF)  # the measured header
     struct.pack_into("<I", blob, obj + field, text_at)  # TypedStr.Data
     blob[text_at:text_at + 12] = " hist".encode("utf-16-le") + b"\x00\x00"
-    struct.pack_into("<IIII", blob, 0x3000, table, 0, 0, 0)  # a bare mention of the table: not a UObject
+    struct.pack_into("<IIIIII", blob, 0x3000, table, 0, 0, 0, 0, 0xFFFFFFFF)  # a bare mention: no integer
     raw = bytes(blob)
 
     hits = find_all(raw, "hist".encode("utf-16-le") + b"\x00\x00", 4)
@@ -162,6 +212,15 @@ def selftest():
     assert owner_of(raw, 0x3800, {table: "Engine.Console"}, 0x400) is None  # no vtable in reach: no owner
     assert census(raw, {table: "Engine.Console"}, 8, None) == [("Engine.Console", table, [obj, 0x3000])]
     assert object_shape(raw, obj) == "object" and object_shape(raw, 0x3000) == "not-object"
+    # The integer is a serial number, not a flag: a mission's StargatePlayer carries 0xbb0d, which the first bound
+    # (0x10000) rejected -- so the screen has to accept it, and still reject a number too large to be one.
+    struct.pack_into("<IIIIII", blob, 0x3400, table, 0xBB0D, 0x7E57640, 0x9335D60, 0, 0xFFFFFFFF)
+    raw = bytes(blob)
+    assert object_shape(raw, 0x3400) == "object", "a late-created object (internal integer 0xbb0d) is an object"
+    assert object_shape(raw, 0x3400 - 0) == "object" and object_shape(raw, obj) == "object"
+    blob2 = bytearray(raw)
+    struct.pack_into("<I", blob2, 0x3404, 0x7FFFFFFF)
+    assert object_shape(bytes(blob2), 0x3400) == "not-object", "an integer that size is code, not an object"
 
     # Which copy is the object's? A decoy string of the same text, with no FString field, sorts first by address;
     # the resolver has to hand back the field's copy and name the object, and must not mistake the decoy for one.
@@ -184,23 +243,34 @@ def selftest():
     return 0
 
 
-def object_shape(blob, hit):
+def object_shape(blob, hit, mapped=None):
     """'object' when the words after a class table look like a `UObject` header, else 'not-object'.
 
     Measured header at the Console default, `0x02661b00`: `vtable, 0x8d34, 0x230eaf0, 0x1ffc480, 0, 0xffffffff` --
     a small integer then two in-image pointers, so the third word is *not* a flag word (the earlier three-word rule
-    called a real object 'not-object' because of it). The screen is therefore: vtable, a small positive
-    `ObjectInternalInteger`, then two words that are each 0 or an address inside the image. Code that merely
-    mentions a class table (`mov eax, 0x50cb80`) fails on the integer, which is what the census needs.
+    called a real object 'not-object' because of it). The screen is therefore: vtable, a *plausible*
+    `ObjectInternalInteger`, then two words that are each 0 or an address inside the guest. Code that merely mentions
+    a class table (`mov eax, 0x50cb80`) fails on the integer, which is what the census needs.
+
+    Two bounds are measured, and both of them were wrong once:
+
+    * the integer is a **serial number**, not a flag. It reads `0x8d34` at the title and `0xbb0d` (47,885) on a
+      loaded level -- the `StargatePlayer` object at physical `0x05aaf800` -- so the first bound (`0x10000`) made
+      every mission class read zero. It is now `OBJECT_INTEGER_MAX`.
+    * the words after the integer are **not** two in-image pointers, which is what an earlier revision claimed from
+      the title's Console default (`0x230eaf0`, `0x1ffc480`). That object names `0x07e57640` and `0x09335d60`, one
+      of them above the 128 MiB the dump covers and neither of them mapped, so a range test on them rejects a real
+      object. What *does* separate the six hits on this table is the pair at +0x10: a zero, then `0xffffffff` --
+      measured on all six (`0x05aaf800` has it, the five code/data mentions do not), and on the Console default.
     """
-    if hit + 16 > len(blob):
+    if hit + 24 > len(blob):
         return "not-object"
     integer, second, third = struct.unpack_from("<III", blob, hit + 4)
-    if not 0 < integer <= 0x10000:
+    if not 0 < integer <= OBJECT_INTEGER_MAX:
         return "not-object"
-    for word in (second, third):
-        if word and not 0x10000 <= word < len(blob):
-            return "not-object"
+    zero, tag = struct.unpack_from("<II", blob, hit + 16)
+    if zero != 0 or tag != 0xFFFFFFFF:
+        return "not-object"
     return "object"
 
 
@@ -248,6 +318,9 @@ def main():
     parser.add_argument("--limit", type=int, default=16, help="stop after N hits per pattern (default 16)")
     parser.add_argument("--base", type=lambda x: int(x, 0), default=0,
                         help="address the dump starts at, printed in the output (default 0)")
+    parser.add_argument("--cr3", type=lambda x: int(x, 0), default=None, metavar="ADDR",
+                        help="page directory (`info registers`, measured 0xf000): adds the linear forms of a "
+                             "pointer to --refs, and lets --objects accept header pointers into the mapped heap")
     parser.add_argument("--objects", action="store_true",
                         help="census every class table's vtable over the whole image instead of searching patterns: "
                              "an object the object array has dropped still shows up, and a class with no hit is a "
@@ -263,6 +336,10 @@ def main():
         blob = handle.read()
     print("dump %s: %d KiB%s" % (args.dump, len(blob) // 1024,
                                  "" if not args.base else " from %#x" % args.base))
+    mapped = None
+    if args.cr3 is not None:
+        pages = linear_pages(blob, args.cr3)
+        mapped = lambda va: bool(pages.get(va & 0xFFFFF000))  # noqa: E731 -- a dictionary hit per header word
     if args.objects or args.class_name:
         tables = class_names()
         if not tables:
@@ -278,7 +355,7 @@ def main():
                 for hit in hits:
                     words = " ".join("%#x" % struct.unpack_from("<I", blob, hit + k)[0]
                                      for k in range(0, 0x18, 4))
-                    print("  %#010x  %-10s %s" % (args.base + hit, object_shape(blob, hit), words))
+                    print("  %#010x  %-10s %s" % (args.base + hit, object_shape(blob, hit, mapped), words))
         else:
             for name, table, hits in rows[:args.objects_limit]:
                 print("  %-34s %#010x  %3d  %s%s"
@@ -306,15 +383,19 @@ def main():
             starts = [addr - k for k in range(0, args.ref_window + 1, 2) if addr - k >= 0]
             refs = []
             for start in starts:
-                for ref in find_all(blob, struct.pack("<I", start), args.limit):
-                    if ref % 4 == 0:
-                        refs.append((ref, start - addr))
+                for value in pointer_forms(pages, start - args.base):
+                    for ref in find_all(blob, struct.pack("<I", value), args.limit):
+                        if ref % 4 == 0:
+                            refs.append((ref, start - addr, value))
             if not refs:
-                print("    no dword-aligned pointer to it, or to the %#x before it" % args.ref_window)
+                print("    no dword-aligned pointer to it, or to the %#x before it%s"
+                      % (args.ref_window, "" if args.cr3 else " (no --cr3: physical forms only)"))
                 continue
-            for ref, delta in refs[:args.limit]:
+            for ref, delta, value in refs[:args.limit]:
                 owner = owner_of(blob, ref, tables, args.owner_depth)
                 where = "it" if not delta else "string %#010x (%+d)" % (args.base + addr + delta, delta)
+                if pages is not None and value != start - args.base:
+                    where += ", named as linear %#010x" % value
                 if owner:
                     base, back, name = owner
                     print("    pointer at %#010x -> %s in object %#010x +%#05x  %s"

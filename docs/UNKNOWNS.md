@@ -1067,6 +1067,22 @@ refusal messages go through it -- so **a command that messages the client draws 
 `Engine.Console` has no `PostRender`**. `tools/xemu/console-commands.sh` types a list of commands in one boot and
 photographs each; it has not yet produced a reading (two boots lost to input on a busy desktop, `docs/XEMU.md`).
 
+**The player object was there and the census called it code (measured 2026-11-06).** A mission boot that submitted
+`say hello`, `addnotification hello` and `stat fps` drew nothing for the first two even with the frame one second after
+the submit (`docs/XEMU.md`, `~/sg1/work/msg1`), and the dump could not be asked why: `ramscan --objects --class
+StargatePlayer` answered six hits and read every one as `not-object`, although the sixth is the player --
+`0x4d0b68 0xbb0d 0x7e57640 0x9335d60 0 0xffffffff` at physical `0x05aaf800`. The screen had two guessed bounds and
+both fail on a loaded level: the `ObjectInternalInteger` cap (`0x10000`, measured `0xbb0d`) and an "in-image"
+range test on the two words after it (measured `0x09335d60`, above the 128 MiB dump). With the screen on the measured
+pair (`+0x10` zero then `0xffffffff`) the object is named, its pointer fields decode to `Pawn`,
+`PlayerReplicationInfo`, `AIMsgManager`, `StargateHUD` and `XboxViewport`, and `--refs --cr3` names the `History`
+slots that own the typed line. **What still blocks the drawing half**: `SetSubtitle` and `AddNotification` both end in
+a `GameHud` actor (`StargatePlayer.GameHudPtr`, `NotificationManager`), and `GameHud` is a script class with **no XBE
+class table**, so the 492-table census cannot see one. **What would settle it**: a package-class-table resolver (the
+tables a `.u` package's classes get at load, which no artifact enumerates today), plus a `pmemsave` taken at the
+`ret` that submits `say hello` rather than ten seconds later -- `M00`'s own dialogue rewrites `SubTitleText`, so the
+absence of `O'Neill: hello` from a late dump is not evidence either way.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
