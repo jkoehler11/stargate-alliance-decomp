@@ -95,6 +95,49 @@ def owner_of(blob, offset, tables, depth):
     return None
 
 
+def string_copies(blob, needle, tables=None, limit=16, depth=0x1000, addr_for=None):
+    """[(copy)] for every UTF-16 copy of `needle`, each with the object that holds it, if any.
+
+    A short word occurs several times in an image (a class name, an ini key, a log format), so a text hit alone
+    does not say which copy a game object owns -- arming a watchpoint on the first one produced "8 hits, no stop".
+    A script string is an `FString` field: a four-aligned word naming its first character, then `Count` (characters
+    plus the NUL) and `Max` (>= Count). That signature is what picks the field out of the copies, and `owner_of`
+    then names the object from its vtable.
+
+    `addr_for(phys)` returns the CPU-visible (linear) addresses of a physical offset: `pmemsave` writes physical
+    memory, while a field holds a linear pointer, so a caller with a dump and its page tables passes
+    `vamap.linear_for`. Default: identity.
+    """
+    tables = tables or {}
+    addr_for = addr_for or (lambda phys: [phys])
+    out = []
+    for hit in find_all(blob, needle, limit):
+        start = hit
+        # The match is inside the string: an FString's Data names the first character, so walk back to it.
+        while start >= 2 and 0x20 <= blob[start - 2] <= 0x7E and blob[start - 1] == 0:
+            start -= 2
+        chars, at = 0, start
+        while at + 1 < len(blob) and 0x20 <= blob[at] <= 0x7E and blob[at + 1] == 0:
+            chars += 1
+            at += 2
+        copy = {"match": hit, "phys": start, "chars": chars, "addresses": addr_for(start),
+                "field": None, "owner": None}
+        for address in copy["addresses"]:
+            pos = blob.find(struct.pack("<I", address))
+            while pos >= 0:
+                if pos % 4 == 0 and pos + 8 < len(blob):
+                    count, capacity = struct.unpack_from("<II", blob, pos + 4)
+                    if count == chars + 1 and count <= capacity <= 0x400:
+                        copy["field"] = (pos, address, count, capacity)
+                        copy["owner"] = owner_of(blob, pos, tables, depth)
+                        break
+                pos = blob.find(struct.pack("<I", address), pos + 1)
+            if copy["field"]:
+                break
+        out.append(copy)
+    return out
+
+
 def selftest():
     """A synthetic image: one object, one known class table, one string, one pointer. Assert the walk names it.
 
@@ -119,8 +162,25 @@ def selftest():
     assert owner_of(raw, 0x3800, {table: "Engine.Console"}, 0x400) is None  # no vtable in reach: no owner
     assert census(raw, {table: "Engine.Console"}, 8, None) == [("Engine.Console", table, [obj, 0x3000])]
     assert object_shape(raw, obj) == "object" and object_shape(raw, 0x3000) == "not-object"
-    print("ok   ramscan: the ref walk names Engine.Console at +0x%x for a string %d bytes into the match, and the "
-          "census separates an object from a table mentioned in code" % (field, 2))
+
+    # Which copy is the object's? A decoy string of the same text, with no FString field, sorts first by address;
+    # the resolver has to hand back the field's copy and name the object, and must not mistake the decoy for one.
+    decoy = 0x100
+    blob[decoy:decoy + 12] = " hist".encode("utf-16-le") + b"\x00\x00"
+    struct.pack_into("<II", blob, obj + field + 4, 6, 6)  # the FString's Count/Max beside its Data
+    raw = bytes(blob)
+    copies = string_copies(raw, "hist".encode("utf-16-le") + b"\x00\x00", {table: "Engine.Console"}, 4, 0x1000)
+    assert [copy["phys"] for copy in copies] == [decoy, text_at], copies
+    assert copies[0]["field"] is None and copies[0]["owner"] is None, copies[0]  # the decoy names no object
+    assert copies[1]["field"] == (obj + field, text_at, 6, 6), copies[1]
+    assert copies[1]["owner"] == (obj, field, "Engine.Console"), copies[1]
+    # `pmemsave` is physical and the field holds a linear pointer: identity only holds when the two agree.
+    moved = string_copies(raw, "hist".encode("utf-16-le") + b"\x00\x00", {table: "Engine.Console"}, 4, 0x1000,
+                          addr_for=lambda phys: [phys + 0x1000])
+    assert [copy["field"] for copy in moved] == [None, None], moved  # no field names the shifted address
+    print("ok   ramscan: the ref walk names Engine.Console at +0x%x for a string %d bytes into the match, the "
+          "census separates an object from a table mentioned in code, and the resolver picks the FString's copy "
+          "over a decoy of the same text" % (field, 2))
     return 0
 
 

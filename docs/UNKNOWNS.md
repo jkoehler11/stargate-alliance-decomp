@@ -1006,6 +1006,17 @@ measured) and one `objects.py --object 0x2661b00 --fstrings` would read it. The 
 measured too and names nothing: `CPL=0`, `EIP=0x00020669`, `ESP=0xd0169d38` — a ring-0 frame on a kernel stack, and
 a `pmemsave` covers that stack anyway.
 
+**The line's owner is measurable in one boot; the reader is not (measured 2026-11-06).** `drive.py --step=watch=hist
+--watch-key=x` resolves every copy of the text to its `FString` field (`ramscan.string_copies`), translates the winner
+with `vamap.py`, arms `Z3` on its *linear* address and sends one key so that something reads it. On `findtext8` the line
+is `Console.TypedStr` at `+0x44` of `0x02661b00`, `Count/Max 6/6`, and the watchpoint's three stops are one instruction,
+`FUN_0001b2c0+0x40`, the `rep movsl` of an `FString` assignment copying `12` bytes *into* the line from `line+0xC`.
+Settled: the console keeps the typed command where its class says it does, and a keystroke rewrites it in place
+(`Data` unchanged, `Max` 6, no realloc). Open: the instruction that *reads* it — this stub accepts `Z3` but traps the
+store, so **what would settle it** is the same run with `--watch-key=ret`, whose submit copies `TypedStr` into
+`History[HistoryTop]` before it clears the line; if that stops only on stores too, the read channel is a breakpoint in
+the interpreter's dispatch rather than a data watchpoint.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

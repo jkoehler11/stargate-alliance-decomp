@@ -41,7 +41,9 @@ Steps, in order:
                 tables are in the same dump, CR3 from `info registers`, `tools/xemu/vamap.py`), then arm a *read*
                 watchpoint over the string's first `--watch-length` bytes and print each stop's register file, the
                 stack words around ESP that name the address, and EIP. It needs `--gdb`; the dump is written to
-                `--out` (delete it: 128 MiB).
+                `--out` (delete it: 128 MiB). `--watch-key` sends one guest key once the watchpoint is armed, because
+                an idle guest reads nothing: the read that names the owner has to be caused, and a stop that never
+                comes is reported as "no stop in N s" rather than as a stub fault.
 
 `key=` and `type=` take target-window input, `xkey=`/`xtype=` take XTEST input; which reaches the guest is a
 measured fact per input type, not a safe assumption (docs/XEMU.md carries the numbers). SDL ignores synthetic
@@ -65,13 +67,22 @@ import os
 import re
 import shutil
 import subprocess
+import struct
 import sys
 import time
 
 SMOKE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py")
 MEM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mem.py")
 VAMAP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vamap.py")
+RAMSCAN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ramscan.py")
 CR3 = re.compile(r"CR3=([0-9a-fA-F]{8})")
+
+
+def load_ramscan():
+    spec = importlib.util.spec_from_file_location("ramscan", RAMSCAN)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def load_vamap():
@@ -272,6 +283,10 @@ def main():
                     help="how close a register or stack word must be to the watched address to count as naming it")
     ap.add_argument("--watch-stack", type=lambda v: int(v, 0), default=0x400, help="stack bytes to read around ESP")
     ap.add_argument("--watch-timeout", type=float, default=20.0, help="seconds to wait for one watchpoint stop")
+    ap.add_argument("--watch-key", metavar="KEY", default=None,
+                    help="guest key to send over QMP once a watch= step has armed its watchpoint: an idle guest "
+                         "reads nothing, so the read that names the owner has to be caused (e.g. a letter that "
+                         "appends to the console's TypedStr)")
     ap.add_argument("--watch-length", type=lambda v: int(v, 0), default=8,
                     help="bytes the read watchpoint covers, from the watch= text's first character")
     ap.add_argument("--linger", type=float, default=0,
@@ -467,23 +482,15 @@ def main():
                 # first version of this step armed a watchpoint on a class-name string nobody reads (8 hits, no stop).
                 needle = value.encode("utf-16-le") + b"\x00\x00"
                 hits, at = [], blob.find(needle)
-                while at >= 0 and len(hits) < 8:
+                while at >= 0 and len(hits) < 16:
                     hits.append(at)
                     at = blob.find(needle, at + 1)
-                say("step %d: watch %r -- %s holds %d byte(s), %d cop%s of the UTF-16 text%s"
+                say("step %d: watch %r -- %s holds %d byte(s), %d%s cop%s of the UTF-16 text%s"
                     % (index, value, os.path.basename(ram), len(blob), len(hits),
-                       "y" if len(hits) == 1 else "ies",
+                       "+" if len(hits) == 16 else "", "y" if len(hits) == 1 else "ies",
                        "" if not hits else " (%s)" % ", ".join("%#010x" % hit for hit in hits)))
                 if not hits:
                     continue
-                # Arm at the *start* of the string: a text pattern matches inside it, and a reader starts at the
-                # first character. Walk back while the bytes are still printable UTF-16.
-                start = hits[0]
-                while start >= 2 and 0x20 <= blob[start - 2] <= 0x7E and blob[start - 1] == 0:
-                    start -= 2
-                if start != hits[0]:
-                    say("         the string starts at %#010x (the match is %#x bytes into it)"
-                        % (start, hits[0] - start))
                 # `pmemsave` writes *physical* memory and the stub watches *linear* addresses: the page tables in
                 # the same dump translate one into the other (CR3 comes from the register file, one QMP call).
                 try:
@@ -492,23 +499,62 @@ def main():
                     registers = None
                 match = CR3.search((registers or {}).get("return", "") or "")
                 if not match:
-                    say("         no CR3 in `info registers`: cannot translate %#010x to a linear address" % start)
+                    say("         no CR3 in `info registers`: cannot translate %#010x to a linear address"
+                        % hits[0])
                     continue
                 cr3 = int(match.group(1), 16)
                 vamap = load_vamap()
-                linear = vamap.linear_for(blob, cr3, start)
-                if not linear:
-                    say("         CR3 %#x maps no linear address onto %#010x: nothing to watch" % (cr3, start))
+                ramscan = load_ramscan()
+                # Several copies of a short word exist (a class name, an ini key), and arming on the wrong one is
+                # "8 hits, no stop". `string_copies` picks the copy an object holds (an FString field: a pointer to
+                # the first character, then Count/Max) and names that object by its vtable.
+                copies = ramscan.string_copies(
+                    blob, needle, ramscan.class_names(), limit=16, depth=0x1000,
+                    addr_for=lambda phys: [at for at, _how, _flags in vamap.linear_for(blob, cr3, phys)])
+                say("         CR3 %#x: %d cop%s, %d with an FString field and %d with a named owner"
+                    % (cr3, len(copies), "y" if len(copies) == 1 else "ies",
+                       sum(1 for copy in copies if copy["field"]),
+                       sum(1 for copy in copies if copy["owner"])))
+                for copy in copies:
+                    where = ", linear " + "/".join("%#010x" % at for at in copy["addresses"]) \
+                        if copy["addresses"] else ", no linear address"
+                    if copy["field"]:
+                        pos, address, count, capacity = copy["field"]
+                        where += "; field at %#010x -> %#010x, Count/Max %d/%d" % (pos, address, count, capacity)
+                        if copy["owner"]:
+                            base, back, name = copy["owner"]
+                            where += ", %s at %#010x +%#x" % (name, base, back)
+                    else:
+                        where += "; no FString field names it"
+                    say("           %#010x (%d char(s), match +%#x)%s"
+                        % (copy["phys"], copy["chars"], copy["match"] - copy["phys"], where))
+                # The console's own field wins: that is the buffer a keystroke appends to and a submit reads.
+                ordered = sorted(copies, key=lambda copy: (
+                    not (copy["owner"] and "console" in copy["owner"][2].lower()),
+                    not copy["field"], not copy["addresses"]))
+                owner = ordered[0] if ordered and ordered[0]["addresses"] else None
+                if owner is None:
+                    say("         CR3 %#x maps no linear address onto any copy: nothing to watch" % cr3)
                     continue
-                say("         CR3 %#x: %#010x is linear %s"
-                    % (cr3, start, ", ".join("%#010x (%s)" % (at, how) for at, how, _flags in linear)))
-                watched = linear[0][0]
+                if not owner["field"]:
+                    say("         no copy has an FString field: arming on %#010x, the lowest-address copy"
+                        % owner["phys"])
+                watched = owner["addresses"][0]
                 memory = load_mem()
+
+                def trigger(_key=args.watch_key):
+                    """Send the key that makes the guest read the buffer: an idle console reads nothing."""
+                    if not _key:
+                        return None
+                    answer = cmd("human-monitor-command", {"command-line": "sendkey " + _key})
+                    return "sendkey %s -> %r" % (_key, (answer or {}).get("return"))
+
                 gdb = memory.Gdb("127.0.0.1", args.gdb)
                 try:
                     first, supported, reply, records = memory.watchpoint(
                         gdb, watched, length=args.watch_length, window=args.watch_window,
-                        stack=args.watch_stack, stops=args.watch_stops, timeout=args.watch_timeout)
+                        stack=args.watch_stack, stops=args.watch_stops, timeout=args.watch_timeout,
+                        trigger=trigger)
                     for line in memory.format_report(watched, first, supported, reply, records,
                                                      args.watch_window):
                         say("         " + line)

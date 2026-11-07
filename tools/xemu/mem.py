@@ -210,12 +210,17 @@ def find_text(blob, needle):
     return sorted(out)
 
 
-def watchpoint(gdb, addr, window=0x200, stack=0x400, stops=3, length=2, timeout=20.0):
+def watchpoint(gdb, addr, window=0x200, stack=0x400, stops=3, length=2, timeout=20.0, trigger=None):
     """Arm a read watchpoint on ADDR and report who reads it.
 
     Returns (registers at the request, supported, the Z3 reply, records). A record holds the stop's register file,
     the stop packet, the stack bytes around ESP, and every register or stack word inside `window` of the address --
     the last is what names the owner when the buffer has no pointer anywhere in RAM.
+
+    `trigger` is called once, after the watchpoint is armed and before the guest resumes: on an idle guest nothing
+    reads the buffer, so the read has to be caused (a keystroke that appends to the string) rather than waited for.
+    A stop that never comes is recorded as a negative instead of raised, because "nobody read it in N s" is the
+    measurement a timeout is hiding.
     """
     try:
         gdb.stop(3.0)
@@ -232,10 +237,22 @@ def watchpoint(gdb, addr, window=0x200, stack=0x400, stops=3, length=2, timeout=
     records = []
     if reply != b"OK":
         return start, False, reply, records
+    noted = None
+    if trigger is not None:
+        try:
+            noted = trigger()
+        except Exception as exc:  # a trigger that fails must not lose the negative the stops would carry
+            noted = "failed: %s" % exc
     try:
-        for _ in range(stops):
+        for index in range(stops):
             gdb.resume()
-            stop = gdb.wait_stop(timeout)
+            try:
+                stop = gdb.wait_stop(timeout)
+            except (IOError, OSError):
+                # Nothing read the buffer: that is the answer, not a fault in the stub.
+                records.append({"timeout": timeout, "trigger": noted if index == 0 else None,
+                                "stop": "", "regs": {}, "names": [], "stack": b"", "stack_base": 0})
+                break
             regs = gdb.registers()
             names = [("register %s" % name, value) for name, value in regs.items()
                      if name != "eip" and abs(value - addr) <= window]
@@ -252,7 +269,8 @@ def watchpoint(gdb, addr, window=0x200, stack=0x400, stops=3, length=2, timeout=
                     if abs(value - addr) <= window:
                         names.append(("stack %#010x" % (base + off), value))
             records.append({"regs": regs, "stop": stop.decode("latin-1"), "names": names,
-                            "stack": blob, "stack_base": base})
+                            "stack": blob, "stack_base": base,
+                            "trigger": noted if index == 0 else None})
     finally:
         try:
             gdb.unwatch(addr, length, "read")
@@ -272,8 +290,15 @@ def format_report(addr, start, supported, reply, records, window=0x200):
     if not supported:
         lines.append("the stub answered %r to Z3,%#x,%d: no read watchpoint here" % (reply, addr, 2))
         return lines
-    lines.append("read watchpoint Z3,%#x,2 accepted; %d stop(s)" % (addr, len(records)))
+    real = [record for record in records if "timeout" not in record]
+    lines.append("read watchpoint Z3,%#x,2 accepted; %d stop(s)" % (addr, len(real)))
     for index, record in enumerate(records, 1):
+        if record.get("trigger"):
+            lines.append("trigger after arming: %s" % record["trigger"])
+        if "timeout" in record:
+            lines.append("no stop in %.1fs: nothing read %#010x while the guest ran"
+                         % (record["timeout"], addr))
+            continue
         regs = record["regs"]
         lines.append("stop %d: eip=%#010x esp=%#010x ebp=%#010x esi=%#010x edi=%#010x"
                      % (index, regs.get("eip", 0), regs.get("esp", 0), regs.get("ebp", 0),
@@ -294,8 +319,9 @@ class FakeStub:
     reader kept the pointer in a local. It is deliberately not a general RSP server.
     """
 
-    def __init__(self, target):
+    def __init__(self, target, silent=False):
         self.target = target
+        self.silent = silent
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(("127.0.0.1", 0))
@@ -374,7 +400,8 @@ class FakeStub:
             addr, _, size = body[1:].partition(b",")
             self.send_packet(conn, self.memory(int(addr, 16), int(size, 16)).hex().encode())
         elif body == b"c":
-            self.send_packet(conn, self.stop_packet())
+            if not self.silent:
+                self.send_packet(conn, self.stop_packet())
         else:
             self.send_packet(conn, b"")
         return True
@@ -390,11 +417,13 @@ class FakeStub:
 def selftest():
     """`make ci` cannot have an emulator or a dump: prove the watchpoint path on the fake stub instead."""
     target = 0x06823b78
+    fired = []
     stub = FakeStub(target)
     stub.thread.start()
     gdb = Gdb("127.0.0.1", stub.port)
     try:
-        start, supported, reply, records = watchpoint(gdb, target, window=0x200, stack=0x100, stops=2, timeout=5.0)
+        start, supported, reply, records = watchpoint(gdb, target, window=0x200, stack=0x100, stops=2, timeout=5.0,
+                                                     trigger=lambda: fired.append(1) or "sendkey x")
     finally:
         gdb.resume()
         gdb.close()
@@ -402,13 +431,30 @@ def selftest():
     assert supported, "the fake stub accepted Z3: %r" % reply
     assert start["esp"] == 0x2000, "the register file decodes: %#x" % start["esp"]
     assert len(records) == 2, "%d stops" % len(records)
+    assert fired == [1], "the trigger runs once, after arming: %r" % (fired,)
     for record in records:
         assert record["regs"]["eip"] == 0x00123456, hex(record["regs"]["eip"])
         named = [value for where, value in record["names"] if where.startswith("stack")]
         assert named == [target], "the stack slot names the address: %r" % record["names"]
     text = "\n".join(format_report(target, start, supported, reply, records))
     assert "stop 2:" in text and "0x6823b78" in text, text
-    print("selftest: the register file decodes, Z3 is accepted, and a stack slot names the watched address")
+    assert "trigger after arming: sendkey x" in text and text.count("trigger after arming") == 1, text
+
+    # Nothing reads the buffer: that has to come back as a negative with a stop count of zero, not as a stub fault.
+    silent = FakeStub(target, silent=True)
+    silent.thread.start()
+    gdb = Gdb("127.0.0.1", silent.port)
+    try:
+        two, ok, said, quiet = watchpoint(gdb, target, window=0x200, stack=0x100, stops=2, timeout=1.0)
+    finally:
+        gdb.resume()
+        gdb.close()
+        silent.close()
+    assert ok and quiet and "timeout" in quiet[0], "a silent target is one timeout record: %r" % (quiet,)
+    lines = "\n".join(format_report(target, two, ok, said, quiet))
+    assert "0 stop(s)" in lines and "no stop in 1.0s" in lines, lines
+    print("selftest: the register file decodes, Z3 is accepted, a stack slot names the watched address, the "
+          "trigger runs once, and a target that never reads is one recorded negative")
 
 
 def main():

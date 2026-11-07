@@ -1823,3 +1823,78 @@ address never stops in 25 s (`findtext6`) — which is what a page mapped somewh
 up to the string's first character, `CR3` from `info registers`, translate, arm `Z3` over 8 bytes); that translation
 step compiles and its halves are each measured, but **the boot that would exercise the pair end to end is the next
 run's first job**, so no claim is made here about which instruction reads the line.
+
+## The watchpoint chain runs end to end: the copy is resolved to `Console+0x44`, and the first access after a key is a copy *into* the line (measured 2026-11-06)
+
+`drive.py`'s `watch=TEXT` step was three instruments stacked in one boot and unproven as a stack: `pmemsave`, a text
+search, `vamap.py`'s translation, then `Z3`. `findtext6` armed the watchpoint on a physical address and stopped nothing
+in 25 s; `findtext5` armed it on the *first* of **eight** copies of `hist` in the image — a class name or an ini key —
+and again nothing stopped. Both failures were in the arming, not in the stub.
+
+**Two things had to change, and both are now in the tools.** `ramscan.string_copies` picks the copy that an object
+holds: a script string is an `FString` field, so a four-aligned word naming its first character and followed by
+`Count = characters + 1` and `Max >= Count` is a field, and `owner_of` names the object behind it from its vtable.
+`drive.py --watch-key KEY` sends one guest key over QMP *after* the watchpoint is armed, because a console sitting
+with text in it reads nothing on its own — the read has to be caused. `mem.watchpoint` records a stop that never comes
+as `no stop in N s` instead of raising, so a silent target is a negative with a stop count of zero (`--selftest`
+covers the trigger, the timeout and a decoy copy of the same text).
+
+**One boot, and the resolver finds the field without hand work** (`findtext8`, the same sequence as `findtext5`):
+
+    step 48: watch 'hist' -- watch-ram.bin holds 134217728 byte(s), 1 copy of the UTF-16 text (0x06ac9b7a)
+             CR3 0xf000: 1 copy, 1 with an FString field and 1 with a named owner
+               0x06ac9b78 (5 char(s), match +0x2), linear 0x07ffdb78; field at 0x02661b44 ->
+               0x07ffdb78, Count/Max 6/6, Console at 0x02661b00 +0x44
+
+That is `findtext4`'s and `findtext5`'s finding reproduced on a third boot by the tool rather than by a session: the
+same object `0x02661b00`, the same `+0x44`, a different heap. Read back from that dump:
+
+| offset | value | field |
+|---|---|---|
+| `+0x00` | `0x0050cb80` | vtable, the `Console` class table |
+| `+0x44` | `0x07ffdb78` | `TypedStr.Data` — the one dword in 128 MiB that names the line |
+| `+0x48` / `+0x4c` | 6 / 6 | `Count` / `Max`, a five-character line plus its terminator |
+| `+0x50` … `+0x78` | all zero | `History[0..3]`, empty: this run typed and never submitted |
+
+The bytes at the string are `20 00 68 00 69 00 73 00 74 00 00 00` — `" hist"`, the leading space being the `spc` step
+this time, so the swallow is not deterministic across boots.
+
+**The watchpoint accepted, stopped three times, and every stop is one instruction.**
+
+| field | value |
+|---|---|
+| `Z3,0x7ffdb78,8` | `OK` (read watchpoint armed on the linear address) |
+| trigger | `sendkey x` → accepted, sent after arming |
+| `EIP` | `0x0001b300`, all three stops |
+| `ESP` | `0xd01691a0` |
+| `EDI` / `ESI` | `0x07ffdb78` / `0x07ffdb84` |
+| stack | `0xd0169218` = `0x07ffdb6c`, the line − 0xC: nothing here points *at* the line |
+
+`FUN_0001b2c0` is 79 bytes at `0x1b2c0`, and `0x1b300` is `+0x40` inside it. The bytes two before it are `f3 a5`
+(`rep movsl`, at `0x1b2fe`), so the stub reports the PC *after* the repeated instruction while the register file is that
+instruction's pre-execution state — `EDI` is the line's first character and `ESI` is `[src.Data]`. The function is an
+`FString` assignment, and the disassembly says so without a symbol: a self-assignment test (`cmp esi,ebx`), `Max` and
+`Count` both written from `[esi+4]`, `call 0x45ed0` (the allocator), then `rep movsl` + `rep movsb` from `[esi]` to
+`[ebx]`, `ret 4` (one stack argument).
+
+**So the first access to the line after a keystroke is a write, not a read.** The move is `Count × 2` = 12 bytes, the
+destination is the line, and the source starts at the line **+0xC** — one character past the eight watched bytes. A
+`rep movsl` in that direction reads `[ESI, ESI+0xC)` and writes `[EDI, EDI+0xC)`, so the trap is the store into the
+watched range; nothing in the sequence reads it. The reading that this measurement supports is that xemu's stub
+**accepts `Z3` but fires it on the store**: `findtext6`'s 25-second silence and this stop are the same behaviour seen
+from two sides.
+
+**What this settles and what it does not.** Settled: the chain — dump, resolve, translate, arm, trigger, stop — works
+in one boot; the console's typed line is `Console.TypedStr` at `+0x44` of `0x02661b00`; a keystroke reaches the console
+and the text in it is rewritten in place by an `FString` assignment at `0x1b2f4`-`0x1b307`, with no realloc (`Data` is
+unchanged, `Max` stays 6). Not settled: the instruction that *reads* the line. A `Z3` armed on it does not produce a
+read stop here, so the next run asks the same question through a path that must read it — `--watch-key=ret`, whose
+submit copies `TypedStr` into `History[HistoryTop]` before it clears the line — and if that stops only on stores too,
+the read channel is a breakpoint in the interpreter's dispatch rather than a watchpoint.
+
+**The three screenshots below the threshold are the noise floor, not a missing console.** `noise=3` measured 2,509
+differing pixels and `drive.py` raised the threshold to 5,018; `04-tab`, `05-typed` and `06-after` then measured 711,
+1,263 and 762 and were called FAIL. The same sequence at a 200-pixel threshold measured 1,320 and 1,113 for those
+steps, and this dump holds the typed text — the console line moves about a thousand pixels, which a whole-frame
+threshold derived from a live 3D view cannot see. Read the console's state from RAM or from a cropped counter, never
+from the whole-frame delta.
