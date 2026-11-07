@@ -167,10 +167,12 @@ ci:
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
 		tools/xemu/objects.py tools/xemu/ramscan.py tools/xemu/vamap.py tools/xemu/console-state.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py and console-state.py compile"
+		tools/xemu/owner.py \
+		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py and owner.py compile"
 	@$(PYTHON) tools/xemu/ramscan.py --selftest
 	@$(PYTHON) tools/xemu/mem.py --selftest
 	@$(PYTHON) tools/xemu/console-state.py --selftest
+	@$(PYTHON) tools/xemu/owner.py --selftest
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
