@@ -907,19 +907,18 @@ per-press retry; and a killed `drive.py` leaves its `SG1 virtual pad` uinput dev
 while every `pad=` step silently does nothing. What remains is one clean run with a single pad and the keyboard early,
 then `--class Console --fstrings` on the instance — not another measurement of the console.
 
-**A submit reads the line, so the receipt is one `wait=` away (measured 2026-11-06).** `drive.py --step=watch=hist
---watch-key=ret` takes four `Z3` stops on `Console.TypedStr` (`0x02661b00 +0x44`) at `EIP=0x1b300`, the `FString`
-assignment, with the copy's destination a fresh heap buffer (`0x0802e610`) instead of the line — so a submit's first
-access *is* a read, the stub honours a read watchpoint, and the previous entry's "the trap is the write" was a
-pre-execution reading of the same register file. The `pmemsave` that follows a watch is taken before the resume
-finishes the copy (`TypedStr` unchanged, no `History` field anywhere in the object), so `History[HistoryTop]` needs a
-dump after a `wait=`. `tools/xemu/console-state.py` is the reader for that dump: every four-aligned offset of a
-`Console` object decoded as an `FString`, `--cr3` for the linear-to-physical translation, `--expect TEXT` as the
-assertion, `--selftest` for CI. A second boot also measured the needle's own failure mode: a repeating key grew
-`TypedStr` to 104 characters, `hist\0` matched 0 copies, the watch never armed and `ret` was never sent — so a
-"0 copies" line is a statement about the needle, not about the console. **What would settle it:** one boot —
-`--watch-key=ret`, `wait=3`, `pmemsave`, then `console-state.py --expect hist`; a nonzero exit with the console's
-line still drawn is a real negative (delivered key, no submit).
+**A submit delivers, and the receipt is `History[0]` plus an empty `TypedStr` (measured 2026-11-06).** `ret` reads
+`Console.TypedStr` (`0x02661b00 +0x44`) at the `FString` assignment `EIP=0x1b300`, whose destination is a fresh heap
+buffer, and the state it leaves is the receipt: three seconds later `TypedStr` is `0 0 0` and `History[0]` at `+0x50`
+holds `0x07fde61c 6/6 ' hist'`. `History` is `var string History[16]` (`Console.uc:10`) — a static array of 16 inline
+12-byte `FString` structs ending at `+0x110`, where `TypedStrPos` reads 5 -> 0 and `bTyping` 1 -> 0 — so
+`tools/xemu/console-state.py --cr3 0xf000 --receipt TEXT` reads the slots by offset and exits 0 only when the text is
+in a slot *and* the line is empty; the same dump taken before the submit exits 1. The earlier reading, "the trap is
+the write", was the pre-execution interpretation of the same register file, and a dump taken at a watch is a
+pre-submit snapshot because the guest resumes inside the same second. **What remains:** the console's output has no
+sink at all (`Scrollback` belongs to `ExtendedConsole`, which this build never instantiates), and
+`kp_enter`/`pad=a`/`pad=start` were sent after the submit had already closed the console (`bTyping` 0), so they are
+untested rather than negative — a boot that re-types the line before each key would settle them.
 
 **A loaded level still has no live `Console`, and `Tab` was the variable, not the level (measured 2026-11-06).** With
 the keyboard attached at 75 s and a campaign level up (`48,647 objects over 295 pages`, `StaticMeshActor` 927, the M00

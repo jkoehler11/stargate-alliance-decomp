@@ -494,8 +494,13 @@ are limited to expected fields (checksum/timestamp) and documented.
       a watch is a pre-submit snapshot (`TypedStr` unchanged, no `History` field), so the receipt needs a `wait=`
       first. `tools/xemu/console-state.py` reads a dump's `Console` string fields and `--expect` asserts one; a
       second boot measured the needle's own failure (a repeating key grew `TypedStr` to 104 chars, `hist\0` matched
-      0 copies, so `ret` was never sent -- `drive.py` now falls back to the bare text). **Next**: `--watch-key=ret`
-      with `wait=3` before the dump, then `console-state.py --expect hist` (`docs/XEMU.md`).
+      0 copies, so `ret` was never sent -- `drive.py` now falls back to the bare text).
+      **The receipt is measured (2026-11-06)**: a `pmemsave` three seconds after `ret` holds `TypedStr` empty and
+      `History[0]` (`Console+0x50`, 16 inline slots of stride `0xC` ending at `+0x110`, where `TypedStrPos` reads
+      5 -> 0 and `bTyping` 1 -> 0) holding the line, so the key is delivered and the command reaches
+      `ConsoleCommand`; `console-state.py --receipt hist` asserts it and answers 1 on the pre-submit dump
+      (`docs/XEMU.md`). **Next**: `kp_enter`, `pad=a` and `pad=start` were sent after the submit had closed the
+      console, so they are untested rather than negative, and the console's *output* still has no sink.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -511,6 +516,28 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the receipt: `ret` submits and leaves `History[0]`)
+
+- **The object answers what the register file could not.** `submit5` is `submit2`'s boot with the watch removed and
+  a `pmemsave` after every candidate key. `d0-typed` holds `TypedStr` `+0x44` = `0x07fddb78 6/6 ' hist'` and an
+  empty `History`; `d1-ret`, three seconds after `ret`, holds `TypedStr` `0 0 0` and `History[0]` `+0x50` =
+  `0x07fde61c 6/6 ' hist'`. The submit ran, its copy landed in the object, and the fresh `EDI=0x0802e61c` the
+  previous boot saw at the `Z3` stop is that `History[0]` buffer.
+- **`History` is a static inline array, not a `TArray`.** `Console.uc:10` declares `var string TypedStr,
+  History[16]`, so the entries are 12-byte `FString` structs inside the object: `History[i]` at `0x50 + 12i`,
+  ending at `+0x110`, where the declaration order puts `TypedStrPos` (5 while ` hist` is typed, 0 after) and
+  `bTyping` (1 -> 0). Earlier notes' "no `History` field in the first 0x200 bytes" was true because the array was
+  empty, and the reader now looks at the slots by offset instead of scanning for them.
+- **A submit closes the console, so the three keys sent after it are untested, not negative.** `bTyping` is 0 in
+  `d1`, and `d3`/`d4` are the same receipt byte for byte: `kp_enter` and `pad=a` arrived with an empty line, and
+  `if (TypedStr != "")` guards the copy.
+- **The run's last step timed out.** The `pmemsave` immediately after a `pad=start` tap never got a QMP answer
+  (`TimeoutError` in `smoke.py`), which left `d5` at 54 MiB and nothing known about Start. That is not a verdict
+  on the key; a re-run should put a `wait=` between the tap and the dump.
+- **`tools/xemu/console-state.py` gained the named layout**: `--history` prints `TypedStr` plus the populated
+  slots, `--receipt TEXT` exits 0 only when the text is in a slot *and* the line is empty, and `--selftest` proves
+  both on a synthetic object whose `HistoryTop` sits past slot 15.
 
 ### Execution notes (2026-11-06, a submit reads the line, and the dump taken at the watch is one step too early)
 
