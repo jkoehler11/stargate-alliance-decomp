@@ -2388,3 +2388,43 @@ reached only from these seven call sites, so a `drive.py --watch` on it during a
 setup ran, and the class string failed to resolve) or never does (the `PostNetBeginPlay` route is dead in this
 boot, and no map will ever show these five fields). The alternative — reading `bPostHudSetupCompleted` off the HUD
 — needs a property offset the dump does not carry, because it is a script bool whose offset is assigned at load.
+
+## A script breakpoint: the bytecode is a pattern, and its address is a place to stop
+
+`UInteractionMaster::AddInteraction` has no address to break on: it is a **script** function
+(`inventory/function_flags.csv`: `0x00020803`, `Final;Defined;Event;Public` — no `Native`), so there is no
+`GNatives` entry and no XBE body to arm. What it does have is 281 bytes of bytecode in `Engine.u`, and the interpreter
+runs those bytes **in place**, in the copy the package loader made: the bytes are the address.
+
+So `drive.py` grew a `brk=` step that treats a function as a pattern:
+
+    python3 tools/uscript-dis.py --script $SG1_DUMP/System/Engine.u InteractionMaster AddInteraction --hex-bytes 48
+    0f007835133d1c9f006f35208b16072e01770078352a160f00720f110b0b0b00783507f8007700720f2a1607ab007700
+
+    --step='brk=Timer=0732…,AddInteraction=0f00…'
+
+The step dumps all of RAM with `pmemsave` inside the boot, finds each pattern's physical copies, translates them to
+linear addresses through the same page tables (`vamap.py`, CR3 from `info registers`), arms an **execution**
+breakpoint (`Z0`, `mem.py`'s `watch(kind="exec")`) on each copy, then resumes the guest for `--brk-wait` seconds. Each
+stop is reported as `FIRED <label>`, with EIP/ESP and the sixteen stack words under ESP, and the breakpoint it hit is
+disarmed so a second call to the same function cannot hide the first. A label that never stops is reported as
+`did not fire in N s` — one bit per function, per boot. Five labels therefore answer "how far did it get" for a whole
+script chain in one four-minute boot instead of one boot per stage.
+
+**Measured, and the measurement itself did not run (2026-11-07).** The five patterns for the HUD route
+(`StargateHUD.PostNetBeginPlay`, `StargateHUD.Timer`, `StargateHUD.PostNetHUDSetup`,
+`StoryModeGame.SetupInteractionsFor`, `InteractionMaster.AddInteraction`) were checked against the shipped packages
+first: every one is present in the file (`Engine.u` at `0x0b24a9` for `AddInteraction`, `StargateGame.u` at `0x0ac2d7`
+for `Timer`), so the extraction is right. The boot then failed **before** the route could be asked about: at a 135 s
+window the first `pad=a` moved only the highlight (139 px in the menu crop), the ten d-pad presses walked the *main
+menu*'s selection from `Continue` to `Options`, and `03-mission.png` is still `MAIN MENU` — no level, so no
+`PostNetBeginPlay`, and the `brk=` step answered **0 copies of every pattern** in a 128 MiB dump.
+
+That zero is a fact about the dump, not about the route, and it is the one thing this section does not settle: the
+step now prints the dump's length and the count of the label's own **ASCII name** in the same image, because the
+package's name table is resident whenever its functions are, so "the name is there and the bytes are not" and "the
+dump holds no package at all" are different failures that a 0-copy search cannot tell apart.
+
+Two sequence facts, measured and now in the runner: `--seconds=180` (a boot that shared the desktop lost its first `A`
+at 135-165 s, moving the highlight only) and `--pad-hold=0.35` (the 0.15 s press is the suspect for a menu that
+registers a highlight move and no select).

@@ -166,12 +166,17 @@ class Gdb:
         return out
 
     def watch(self, addr, length=2, kind="read"):
-        """Arm a watchpoint: `Z2` write, `Z3` read, `Z4` access. Empty reply = the stub does not implement it."""
-        code = {"write": "Z2", "read": "Z3", "access": "Z4"}[kind]
+        """Arm a watchpoint: `Z2` write, `Z3` read, `Z4` access; `Z0` is an *execution* breakpoint (length 1).
+
+        `Z0` is what turns a byte pattern into a breakpoint: the same address space the page tables translate is the
+        one the CPU fetches from, so a script function found in a RAM dump can be armed where it will be executed
+        (`drive.py --step=brk=`, docs/XEMU.md).
+        """
+        code = {"write": "Z2", "read": "Z3", "access": "Z4", "exec": "Z0"}[kind]
         return self.packet(("%s,%x,%x" % (code, addr, length)).encode())
 
     def unwatch(self, addr, length=2, kind="read"):
-        code = {"write": "z2", "read": "z3", "access": "z4"}[kind]
+        code = {"write": "z2", "read": "z3", "access": "z4", "exec": "z0"}[kind]
         return self.packet(("%s,%x,%x" % (code, addr, length)).encode())
 
     def close(self):

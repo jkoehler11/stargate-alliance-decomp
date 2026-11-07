@@ -597,7 +597,7 @@ def start_report(path):
 dis_parse = parse
 
 
-def function_script(path, want_class, want_function, table):
+def function_script(path, want_class, want_function, table, hex_bytes=0):
     """One function's script, from the header to the epilogue, as a token tree.
 
     The start is `name_end + 16` (`--start` proves it), the end is the epilogue, so this is the first path that
@@ -637,6 +637,11 @@ def function_script(path, want_class, want_function, table):
         start = off + 16
         print("%s.%s: payload %d bytes, script %d..%d (%d bytes), header %d bytes"
               % (want_class, want_function, n, start, end, end - start, start))
+        if hex_bytes:
+            # The pattern form: the script bytes are identical in the package and in the guest's loaded copy, so a
+            # RAM dump search for them finds where the interpreter will execute the function (docs/XEMU.md).
+            print(pay[start:start + hex_bytes].hex())
+            return 0
         try:
             nodes = dis_parse(pay[start:end], table)
         except Refused as exc:
@@ -1055,6 +1060,9 @@ def main():
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
     ap.add_argument("--script", nargs=3, metavar=("PACKAGE", "CLASS", "FUNCTION"),
                     help="disassemble one function's script from the header to the epilogue")
+    ap.add_argument("--hex-bytes", type=int, default=0, metavar="N",
+                    help="with --script, print the first N script bytes as hex and stop: that string is the pattern "
+                         "`drive.py --step=brk=` searches a RAM dump for (docs/XEMU.md)")
     ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
                     help="compare two packages function by function: bytes, opcode sequence, or neither")
     ap.add_argument("--calls", metavar="PATH",
@@ -1074,7 +1082,7 @@ def main():
     if args.start:
         return start_report(args.start)
     if args.script:
-        return function_script(args.script[0], args.script[1], args.script[2], Table())
+        return function_script(args.script[0], args.script[1], args.script[2], Table(), hex_bytes=args.hex_bytes)
     if args.usage:
         return usage_report(args.usage, Table(), args.out)
     if args.resolve:

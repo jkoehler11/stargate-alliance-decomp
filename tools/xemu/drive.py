@@ -44,6 +44,14 @@ Steps, in order:
                 `--out` (delete it: 128 MiB). `--watch-key` sends one guest key once the watchpoint is armed, because
                 an idle guest reads nothing: the read that names the owner has to be caused, and a stop that never
                 comes is reported as "no stop in N s" rather than as a stub fault.
+    brk=SPEC    a *script* breakpoint, and the reason this step exists: the interpreter executes a function's
+                bytecode in place, in the copy the package loader made, so the function's own bytes are a pattern whose
+                address in a RAM dump is the address the CPU fetches from. SPEC is `label=hex` repeated and
+                comma-separated; `tools/uscript-dis.py --script PKG CLASS FUNCTION --hex-bytes N` prints the hex. The
+                step dumps RAM, finds each pattern, translates it through the page tables to a linear address, arms an
+                execution breakpoint (`Z0`) on each copy, then resumes the guest for `--brk-wait` seconds and reports
+                **which labels fired** with EIP/ESP and the first 16 stack words -- so a chain of script functions
+                answers "how far did it get" in one boot. It needs `--gdb`.
 
 `key=` and `type=` take target-window input, `xkey=`/`xtype=` take XTEST input; which reaches the guest is a
 measured fact per input type, not a safe assumption (docs/XEMU.md carries the numbers). SDL ignores synthetic
@@ -183,7 +191,7 @@ class FocusElsewhere(Exception):
 
 
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
-         "focus", "gkey", "pad", "watch")
+         "focus", "gkey", "pad", "watch", "brk")
 
 PAD = None          # the virtual pad, when a step needs one (created before xemu starts, see vpad.py)
 PAD_MAPPING = ""    # the pad's SDL mapping, handed to xemu through SDL_GAMECONTROLLERCONFIG
@@ -296,6 +304,11 @@ def main():
                          "appends to the console's TypedStr)")
     ap.add_argument("--watch-length", type=lambda v: int(v, 0), default=8,
                     help="bytes the read watchpoint covers, from the watch= text's first character")
+    ap.add_argument("--brk-wait", type=float, default=60.0,
+                    help="seconds a brk= step leaves the guest running, waiting for its breakpoints")
+    ap.add_argument("--brk-timeout", type=float, default=20.0, help="seconds to wait for one breakpoint stop")
+    ap.add_argument("--brk-copies", type=int, default=4,
+                    help="copies of one pattern to arm (a package's bytecode can have more than one in RAM)")
     ap.add_argument("--linger", type=float, default=0,
                     help="after the last step, keep the guest running this many seconds for a memory read "
                          "(xemu is killed on exit, so a read has to happen while this sleeps)")
@@ -591,6 +604,146 @@ def main():
                     except (IOError, OSError):
                         pass
                     gdb.close()
+                continue
+            if name == "brk":
+                # A *script* breakpoint. The interpreter runs a function's bytecode in place, in the copy the package
+                # loader made, so those bytes are a pattern whose address in a RAM dump is the address the CPU fetches
+                # from; Z0 there fires exactly when the function is entered. That is the only way to ask "did this
+                # script function run" of a build whose natives are already accounted for.
+                if not args.gdb:
+                    say("FAIL: a brk= step needs --gdb, so there is a stub to attach to")
+                    return 3
+                wanted = []
+                for item in value.split(","):
+                    label, _, hexes = item.partition("=")
+                    label, hexes = label.strip(), hexes.strip()
+                    try:
+                        if not label or not hexes:
+                            raise ValueError(item)
+                        wanted.append((label, bytes.fromhex(hexes.replace(" ", "").replace("0x", ""))))
+                    except ValueError:
+                        say("FAIL: brk=%r is not label=hex" % item)
+                        return 3
+                ram = os.path.join(args.out, "brk-ram.bin")
+                got = cmd("human-monitor-command", {"command-line": 'pmemsave 0 0x8000000 "%s"' % ram})
+                if got is None:
+                    say("FAIL: no QMP socket at %s" % sock_path)
+                    return 3
+                with open(ram, "rb") as handle:
+                    blob = handle.read()
+                try:
+                    registers = cmd("human-monitor-command", {"command-line": "info registers"})
+                except Exception:
+                    registers = None
+                match = CR3.search((registers or {}).get("return", "") or "")
+                if not match:
+                    say("FAIL: no CR3 in `info registers`: a pattern has no linear address without the page tables")
+                    return 3
+                cr3 = int(match.group(1), 16)
+                vamap = load_vamap()
+                memory = load_mem()
+                armed, absent = [], []
+                for label, pattern in wanted:
+                    hits, at = [], blob.find(pattern)
+                    while at >= 0 and len(hits) < 8:
+                        hits.append(at)
+                        at = blob.find(pattern, at + 1)
+                    lineas = []
+                    for hit in hits:
+                        for lin, _how, _flags in vamap.linear_for(blob, cr3, hit):
+                            if lin not in lineas:
+                                lineas.append(lin)
+                    say("step %d: brk %s -- %d cop%s of %d byte(s) in %s (%d byte(s) dumped), %d with a linear address"
+                        % (index, label, len(hits), "y" if len(hits) == 1 else "ies", len(pattern),
+                           os.path.basename(ram), len(blob), len(lineas)))
+                    if not hits:
+                        # A name is a second, independent witness: the package's name table is resident whenever its
+                        # functions are, so "the bytes are not here but the name is" and "the dump holds no package at
+                        # all" are different failures, and a 0-copy search cannot tell them apart.
+                        say("         the name %r appears %d time(s) as ASCII in the same dump"
+                            % (label, blob.count(label.encode("ascii"))))
+                    if not hits or not lineas:
+                        absent.append((label, "not in the dump" if not hits else "no linear address"))
+                        continue
+                    for lin in sorted(lineas)[:max(1, args.brk_copies)]:
+                        armed.append((label, lin))
+                if not armed:
+                    say("step %d: brk -- nothing to arm" % index)
+                    continue
+                gdb = memory.Gdb("127.0.0.1", args.gdb)
+                fired, live = {}, []
+                try:
+                    try:
+                        gdb.stop(3.0)
+                    except (IOError, OSError):
+                        pass
+                    try:
+                        gdb.phys_mode(False)
+                    except (IOError, OSError):
+                        pass
+                    for label, lin in armed:
+                        reply = gdb.watch(lin, 1, "exec")
+                        if reply != b"OK":
+                            say("         %s at %#010x: the stub refused Z0 (%r)" % (label, lin, reply[:32]))
+                            continue
+                        live.append((label, lin))
+                    say("         %d breakpoint(s) armed: %s; running up to %.0fs"
+                        % (len(live), " ".join("%s@%#x" % item for item in live), args.brk_wait))
+                    deadline = time.time() + args.brk_wait
+                    while live and time.time() < deadline:
+                        gdb.resume()
+                        try:
+                            stop = gdb.wait_stop(max(1.0, min(args.brk_timeout, deadline - time.time())))
+                        except (IOError, OSError):
+                            # A stub that answers nothing within the timeout has not disproved the breakpoint: keep
+                            # waiting until the step's own deadline, so a stage that fires late is still seen.
+                            say("         no stop within %.0fs, still waiting (%.0fs left)"
+                                % (args.brk_timeout, max(0.0, deadline - time.time())))
+                            continue
+                        regs = gdb.registers()
+                        eip = regs.get("eip")
+                        hit = [item for item in live if eip is not None and item[1] == eip]
+                        if not hit:
+                            say("         a stop at eip %s matches no armed address (%r): ending the wait"
+                                % ("%#010x" % eip if eip is not None else "?", stop[:40]))
+                            break
+                        label, lin = hit[0]
+                        live.remove(hit[0])
+                        try:
+                            gdb.unwatch(lin, 1, "exec")
+                        except (IOError, OSError):
+                            pass
+                        fired[label] = regs
+                        esp = regs.get("esp")
+                        words = ""
+                        if esp:
+                            try:
+                                words = " ".join("%08x" % word for word in
+                                                 struct.unpack("<16I", gdb.read(esp, 0x40)))
+                            except (IOError, OSError):
+                                words = ""
+                        say("         FIRED %s at %#010x, eip %#010x esp %s%s"
+                            % (label, lin, eip, "%#010x" % esp if esp else "?", "; stack " + words if words else ""))
+                except (IOError, OSError) as exc:
+                    say("         the stub did not answer: %s" % exc)
+                finally:
+                    for label, lin in list(live):
+                        try:
+                            gdb.unwatch(lin, 1, "exec")
+                        except (IOError, OSError):
+                            pass
+                    try:
+                        gdb.resume()
+                    except (IOError, OSError):
+                        pass
+                    gdb.close()
+                for label, _lin in armed:
+                    if label in fired:
+                        say("         %-28s fired (eip %#010x)" % (label, fired[label].get("eip", 0)))
+                    else:
+                        say("         %-28s did not fire in %.0fs" % (label, args.brk_wait))
+                for label, why in absent:
+                    say("         %-28s never armed: %s" % (label, why))
                 continue
             if name == "wait":
                 time.sleep(float(value))
