@@ -57,7 +57,10 @@ map list looked inert for two sessions. Two identical keys sent less than ~2 s a
 (a second `pgdn` moved 19 pixels where the first moved 14,203), so a sequence spaces its keys.
 
 It needs `xdotool` and ImageMagick's `import`/`compare`, and an X display: over plain ssh xemu cannot open one at
-all (docs/REGRESSION.md). Exit codes: 0 every shot step repainted, 2 a step did not change the screen (the input
+all (docs/REGRESSION.md). A shot named in `--static-shot` is the inverse: its frame *cannot* change (the stock disc's console draws
+nothing -- it has no `PostRender`), so an identical frame is the expected reading and a repaint is the failure.
+Without it a green console run ends `FAIL: 2 shot step(s) did not repaint` and exit 2, which reads like a lost key.
+Exit codes: 0 every shot step repainted, 2 a step did not change the screen (the input
 never reached the guest, or the screen it was meant to change was already up), 3 the emulator never came up.
 Every frame stays in `--out`: they are frames of the game and must not be committed.
 """
@@ -262,6 +265,10 @@ def main():
     ap.add_argument("--key", default="Tab", help="the single-keystroke form's key (Tab opens the console)")
     ap.add_argument("--settle", type=float, default=4.0, help="the single-keystroke form's wait after the key")
     ap.add_argument("--threshold", type=int, default=200, help="differing pixels that count as a repaint")
+    ap.add_argument("--static-shot", action="append", default=[], metavar="SUBSTR",
+                    help="a shot whose frame cannot change, like a console with no `PostRender`: identical is the "
+                         "expected reading and it does not fail the run; repeatable, matched as a substring of the "
+                         "shot's name")
     ap.add_argument("--step", action="append", metavar="NAME=VALUE", help="one step of a sequence; repeatable")
     ap.add_argument("--crop", metavar="GEOM", help="assert on this ImageMagick crop (WxH+X+Y), not the whole frame")
     ap.add_argument("--fuzz", type=int, default=0, help="ignore pixel differences below this percentage")
@@ -603,6 +610,16 @@ def main():
                     if diff < 0:
                         say("FAIL: could not compare %s with %s" % (path, previous))
                         return 3
+                    static = any(pattern in value for pattern in args.static_shot)
+                    if static:
+                        ok = diff < args.threshold
+                        say("step %d: shot %s differing pixels: %d (expected static) %s"
+                            % (index, value, diff, "PASS" if ok else "FAIL -- a static shot repainted"))
+                        if not ok:
+                            failures.append(value)
+                        previous = path
+                        shots += 1
+                        continue
                     ok = diff >= args.threshold
                     if not measured_noise and diff < args.threshold:
                         say("         (no noise= step ran: the threshold is the default %d, not a measured floor)"
