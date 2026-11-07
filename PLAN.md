@@ -705,8 +705,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       not a `+0x28` chain of property objects there (the best candidate is two `Function` links), so property names
       need that offset measured rather than scanned. `GameHud.uc:1034` shows `SetNotifications` replaces an **empty**
       argument with a fixed 27-character placeholder, which splits the missing-text question in two.
-      **Next**: read `NotificationWindow` (`UITextBox` `0x097b6e00` in that boot) and report its `Text` `FString`'s
-      length -- placeholder or message -- in one boot.
+      **The notification window holds the message, not the placeholder (measured 2026-11-07)**: over a fresh
+      loaded-`M00` boot (`census4`, stub `12511`) `GameHud` is `0x092e2100` (class object `0x01886c00`) with the same
+      three `UITextBox` at `+0x050`/`+0x054`/`+0x058`, and the middle one carries `StaticMesh HUD_Notifywindow` at
+      `+0x040`, so it *is* `NotificationWindow`. Its `DisplayText` `FString` sits at **`+0x394`** with `Count=45
+      Max=45` -- a 44-character objective line, drawn in the frame captured just before the read -- so
+      `SetNotifications` was handed a message and the 27-character placeholder (which would read `Count=28`) is not
+      in play. The dialogue window holds a `Count=53` string at the same `+0x394`, and both boxes hold
+      `TextBoxFontName` at `+0x4c0`. **Two corrections**: the field is `UIWidget.DisplayText`, not a `Text` member of
+      `UITextBox` (`Text` is only `DisplayTextBox`'s parameter), and the tool's `0x200`-byte default read was the
+      reason the string was invisible -- the block runs past `+0x4c0`, so `--size` now defaults to `0x600` and a text
+      triple prints as an `FString` character count with UTF-16 decoded under `--show-text` (`docs/XEMU.md`).
+      **Next**: the `UClass` object's own members past `0x400` -- `Children` and `DefaultObject`: `class+0x4e8` points
+      at an object of the class itself on both class objects read here (`GameHud` -> `0x13c1e00`, `UITextBox` ->
+      `0x01a1d700`), and neither is in the object array, while the object the census called `GameHud`'s class default
+      (`0x0682ab00`) is a second instance under that reading, so which member `+0x4e8` is, and where the property
+      chain head really sits, is one read away.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

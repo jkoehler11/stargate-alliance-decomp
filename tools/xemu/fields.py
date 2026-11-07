@@ -15,7 +15,7 @@ possible without a serialized layout: `UObject::Name` `+0x20` / `Class` `+0x24` 
 A field's *value* is read as dwords, because a property's `Offset` is written by the linker and not serialized: the
 walk reports what each dword holds at the same offset in the live object and in its class default, and resolves any
 dword that is an object pointer. A `TArray` shows as a `(data, num, max)` triple, so an array of object pointers is
-followed and a `FString` (`num` bytes of text) is measured as a length -- the text itself is game state and stays
+followed and a `FString` (`num` characters) is measured as a length -- the text itself is game state and stays
 behind `--show-text`.
 
 Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --linger=SECS` keeps one up):
@@ -191,8 +191,9 @@ def walk_fields(r, addr, size):
                 if kind == "objects":
                     rows.append((off, "array of %d objects: %s" % (num, ", ".join(detail[:6]))))
                 elif kind == "text":
-                    rows.append((off, "text of %d bytes" % (num, ) + (
-                        ": %r" % detail if SHOW_TEXT[0] else "")))
+                    body = detail.decode("utf-16-le", "replace").split("\x00")[0] if SHOW_TEXT[0] else ""
+                    rows.append((off, "FString of %d characters" % (num, ) + (
+                        ": %r" % body if SHOW_TEXT[0] else "")))
         off += 4
     return rows
 
@@ -243,7 +244,7 @@ def main():
     ap.add_argument("--at", type=lambda v: int(v, 0), default=0x006BE0D8, help="GNames array address")
     ap.add_argument("--objects", type=lambda v: int(v, 0), default=names.OBJ_ARRAY, help="GObjObjects address")
     ap.add_argument("--object", type=lambda v: int(v, 0), required=True, help="the UObject to read")
-    ap.add_argument("--size", type=lambda v: int(v, 0), default=0x200, help="bytes of the object to walk")
+    ap.add_argument("--size", type=lambda v: int(v, 0), default=0x600, help="bytes of the object to walk")
     ap.add_argument("--properties", action="store_true", help="measure and print the class's field chain")
     ap.add_argument("--compare", action="store_true", help="find the class default and diff against it")
     ap.add_argument("--show-text", action="store_true", help="print array bytes that read as text (game state)")

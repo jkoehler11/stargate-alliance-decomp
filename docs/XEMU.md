@@ -2859,3 +2859,33 @@ notification text has two candidate causes and they are distinguishable in one r
 placeholder is what the window holds) or a text box that holds the message and draws none of it. Reading
 `NotificationWindow`'s `Text` `FString` is the next measurement; the tool prints a length and, with `--show-text`, the
 bytes, because field contents are game state.
+
+
+## The HUD's notification window holds a message, and the read size was the defect (measured 2026-11-07)
+
+One loaded-`M00` boot (`census4`, stub `12511`, `drive.py --linger`) answers the question the `SetNotifications`
+guard raised. `GameHud` is `0x092e2100`, class object `0x01886c00`, and its three `UITextBox` sit at
+`+0x050`/`+0x054`/`+0x058`; the middle one carries `StaticMesh HUD_Notifywindow` at `+0x040`, which is what makes
+it `NotificationWindow` instead of a guess from field order.
+
+| read | result |
+|---|---|
+| `NotificationWindow` `+0x394` | `FString` `Count=45 Max=45` -- the live objective line, and the frame captured before the read draws it |
+| `DialogueWindow` `+0x394` | `FString` `Count=53` -- a subtitle line, same offset in a second widget |
+| `TextBoxFontName`, both boxes | `+0x4c0`, `Count=31` |
+| the guard's placeholder case | the literal at `GameHud.uc:1034` is 27 characters, so that case reads `Count=28`; **no** window holds it |
+
+So `SetNotifications` was handed a **message** and the placeholder branch is not in play: the notification channel
+carries text and the HUD draws it. Two corrections fall out of the same read.
+
+* **The field is `UIWidget.DisplayText`, at `+0x394`** -- not a `Text` member of `UITextBox`. `Text` is only
+  `DisplayTextBox`'s parameter name; the function assigns `DisplayText = Text` before it fades the window in, and
+  `DisplayText` is declared on `UIWidget`, one class up.
+* **The earlier "the string is missing" reading was the tool's read size.** `fields.py` walked `0x200` bytes of the
+  object and these widgets' field block runs past `+0x4c0`, so every string in them fell outside the window it read
+  -- the same `0x400` window that hid the class default (`UClass`'s own members run past it too). `--size` now
+  defaults to `0x600`, and a text triple is reported as an `FString` with its character count and, under
+  `--show-text`, its decoded UTF-16 text, because `Count` is characters and never bytes.
+
+Strings are game state, so the lengths above are what the tool prints by default; the text itself stays behind
+`--show-text` and out of the tree.
