@@ -1225,6 +1225,18 @@ fixed 206-byte request ran into an **unmapped** page and failed whole. `names.py
 time and parses the prefix; index 5 is **`ObjectProperty`** (5,867 objects) and index 103 is **`Function`** (8,623),
 and a re-run census names 376 classes with no unreadable row.
 
+**The HUD's text windows are live, and the empty-argument guard is in the shipped script (measured 2026-11-07).** A
+live field read (`tools/xemu/fields.py`) over the loaded-`M00` boot puts `GameHud` at `0x09352100` (class object
+`0x01886c00`) and finds **36** pointer/array fields in its first 288 bytes, among them three `UITextBox` objects at
+`+0x050`, `+0x054` and `+0x058` -- the order `StargateGame/GameHud.uc` declares `DialogueWindow`,
+`NotificationWindow` and `InteractionWindow` -- plus the `StaticMesh` `HUD_Notifywindow` at `+0xd4`. So the draw
+object the notification would use exists on this level; the question is what it holds. `GameHud.uc:1034`
+(`SetNotifications`) replaces an **empty** argument with a fixed 27-character placeholder and then calls
+`NotificationWindow.DisplayTextBox`, so the two candidate causes are now separable by one read: the placeholder means
+the caller passed `""`, a message length means the text arrives and the *draw* drops it. **What would settle it** is
+that read -- `NotificationWindow`'s `Text` `FString` length over the same boot, no new external data and no new
+instrument.
+
 Tooling: `names.py --census` now takes `--csv PATH` (every row, so one 4-minute walk answers any class question),
 a comma list for `--grep`, and `--addresses`; and the census uses `OBJECT_HI = 0x10000000` for the object array, with
 `objects.py`'s 128 MiB bound left alone for the dump readers.

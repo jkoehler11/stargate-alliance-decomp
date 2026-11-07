@@ -695,6 +695,18 @@ are limited to expected fields (checksum/timestamp) and documented.
       **376** classes over the loaded `M00` with **no** `<unreadable>` row. **Next** stays the HUD read: `GameHud`
       `0x09332100` and `NotificationManager` `0x096dc340` are both in that census, so `SetNotifications` can be read
       over the stub.
+      **The live field walk works, and the HUD's text windows exist (2026-11-07)**: `tools/xemu/fields.py` reads an
+      object's class from `+0x24` and every dword of its field block, resolving each one that is an object pointer
+      through the name table (`--object`, `--properties`, `--compare`). Over the census3 `M00` boot, `GameHud`
+      `0x09352100` (class object `0x01886c00`) holds **36** pointer/array fields in 288 bytes, and its three
+      `UITextBox` objects sit at `+0x050`, `+0x054`, `+0x058` in the order `GameHud.uc` declares `DialogueWindow`,
+      `NotificationWindow`, `InteractionWindow`, with `StaticMesh HUD_Notifywindow` at `+0xd4`. Two negatives:
+      the class default (`0x0682ab00`) is **not** in the class object's first 0x400 bytes, and the `Children` head is
+      not a `+0x28` chain of property objects there (the best candidate is two `Function` links), so property names
+      need that offset measured rather than scanned. `GameHud.uc:1034` shows `SetNotifications` replaces an **empty**
+      argument with a fixed 27-character placeholder, which splits the missing-text question in two.
+      **Next**: read `NotificationWindow` (`UITextBox` `0x097b6e00` in that boot) and report its `Text` `FString`'s
+      length -- placeholder or message -- in one boot.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
