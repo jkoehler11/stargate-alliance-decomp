@@ -1898,3 +1898,60 @@ differing pixels and `drive.py` raised the threshold to 5,018; `04-tab`, `05-typ
 steps, and this dump holds the typed text — the console line moves about a thousand pixels, which a whole-frame
 threshold derived from a live 3D view cannot see. Read the console's state from RAM or from a cropped counter, never
 from the whole-frame delta.
+
+## A submit reads the line, the dump taken at the watch does not see it, and a repeated key defeats the needle (measured 2026-11-06)
+
+`findtext8` left two questions: whether a submit reads `Console.TypedStr`, and whether xemu's stub separates a read
+watchpoint from a write one. The same boot answers both, and then says something about when a dump is worth taking.
+
+**`ret` reads the line, and the copy goes somewhere else.** `submit2` is `findtext8`'s sequence with one variable
+changed, `--watch-key=ret`. The chain resolved the same field on a third boot's heap — `Console` at `0x02661b00`,
+`+0x44`, `Data` linear `0x0802db6c`, `Count/Max 6/6` — and `Z3` on those bytes took **four stops**, all at
+`EIP=0x1b300` (the same `FString` assignment) with `ESI=0x0802db78` and `EDI=0x0802e61c`. The append (`--watch-key=x`)
+stopped at the same `EIP` with the same `ESI` and `EDI=0x07ffdb78`, the line itself.
+
+**The registers are the state *after* the move, and that corrects the last session's reading.** A `Z3` over the
+two bytes at `line` cannot fire on a `rep movsl` that reads `[line+0xC, line+0x18)` and writes the line: neither
+range touches the watched bytes. Read as advanced by the 12 bytes the move completes, both boots make sense and
+neither needs a store: the source begins at **the line** in both, `ESI = line + 0xC`, while the destination is
+`line - 0xC` for the append and a fresh heap buffer `0x0802e610` for the submit. So the earlier conclusion "the first
+access after a key is a copy *into* the line, and the trap is the write" is wrong twice over — the stub does honour
+a read watchpoint, and the submit's copy-out to a new buffer is the first access a submit makes. (The alternative
+reading, a pre-execution register file, would leave `submit2`'s four stops unexplained: nothing in that instruction
+would touch the watched range, and a watchpoint cannot fire on a range the instruction does not access.)
+
+**The receipt is not in that dump, because the dump races the guest.** The `pmemsave` step that follows the watch
+sees `TypedStr` still `Count/Max 6/6` with `Data` unchanged, and **no `History` field anywhere in the object's first
+`0x200` bytes** — the submit had not executed yet when the dump was written. The watch leaves the guest stopped at
+the instruction it trapped, `drive.py` resumes it in the same second and the monitor command follows immediately, so
+a dump taken there is a *pre-submit* snapshot even though the trigger has been sent. A dump after the submit needs a
+`wait=`, not a longer watch.
+
+**`tools/xemu/console-state.py` is the reader, and it is what a receipt check needs.** `pmemsave` writes physical
+memory while every pointer in it is linear, so the tool takes `--cr3` and decodes each four-aligned offset of the
+named class's objects as an `FString` (`Data`, `Count`, `Max`, then a translated NUL-terminated printable string):
+
+    1 Console object(s)
+      Console at 0x02661b00: 1 string field(s)
+        +0x044 -> 0x0802db6c  Count/Max 6/6  ' hist'
+
+and `--expect TEXT` exits 1 unless some `Console` object holds it, which is the assertion a boot's dump can carry
+without a person reading the output. `--selftest` proves the decode on a synthetic image (CI has no dump).
+
+**The negative: a needle with its terminator is a needle a repeated key invalidates.** `submit3` typed the same eight
+keys into the same sequence and its watch step reported **0 copies** of `hist\0`, so it never armed and `ret` was
+never sent. `console-state.py` on that boot's own two dumps says why: `TypedStr` is ` hist` followed by a run of
+`t` — `Count/Max 55/55` in the watch dump and `104/104` in the one taken four seconds later, in the same boot — so
+the key was still repeating, the string no longer ends after `hist`, and the terminator that made the needle
+unambiguous (`hist` also matches inside `History`) is exactly what stops it matching. The frames agree and are worth
+the warning: `03-dismissed` and `04-tab` both read `absent` while `05-typed` reads `typed` (111 cyan px), because
+`drive.py`'s shot assertions lag their own inputs by one step. `drive.py`'s watch step now falls back to the bare text
+when the terminated form has no copy, and prints which form armed.
+
+**What this settles.** A submit (`ret`) reads `Console.TypedStr`; the first read is the `FString` assignment at
+`0x1b2f4`-`0x1b307` copying the line into a fresh heap buffer; xemu's stub fires `Z3` on reads and the register file
+it reports is post-execution. **What it does not.** `History[HistoryTop]` has still never been observed populated:
+the destination `0x0802e610` is the copy's buffer but the receipt needs a dump after the sequence has finished, and
+the next boot is that dump (`--watch-key=ret`, the prefix fallback, `wait=4`, then
+`console-state.py --expect hist`). Until then "a command was delivered" rests on the line clearing, not on the
+history array.

@@ -486,11 +486,16 @@ are limited to expected fields (checksum/timestamp) and documented.
       `--objects` then censuses every class table over all 128 MiB: 492 tables, 1,606 four-aligned
       occurrences, and the `Console` table appears **twice** -- a `mov` at `0x00291bbc` and the class
       default at `0x02661b00` -- so the negative no longer rests on the object array's pages.
-      **The watch chain runs (2026-11-06)**: `drive.py --step=watch=hist --watch-key=x` resolves the copy
-      to `Console+0x44`, arms `Z3` on its linear address and stops three times in `FUN_0001b2c0+0x40` -- but
-      on the store that rewrites the line, not on a read of it, so the stub accepts `Z3` without separating
-      reads from writes. The next measurement is the same boot with `--watch-key=ret`, whose submit must read
-      the line (`docs/XEMU.md`).
+      **The submit reads the line (2026-11-06)**: the same boot with `--watch-key=ret` takes four `Z3` stops on
+      `Console+0x44`, all at `EIP=0x1b300`, with `ESI=line+0xC` and `EDI=0x0802e610` -- a fresh heap buffer, where
+      the append's stop had `EDI` on the line. Read as the register file *after* the 12-byte move, both boots read
+      the line, so the stub does honour a read watchpoint and the earlier "the trap is the write" was the
+      pre-execution reading of the same registers. `History[HistoryTop]` is still unobserved: the `pmemsave` after
+      a watch is a pre-submit snapshot (`TypedStr` unchanged, no `History` field), so the receipt needs a `wait=`
+      first. `tools/xemu/console-state.py` reads a dump's `Console` string fields and `--expect` asserts one; a
+      second boot measured the needle's own failure (a repeating key grew `TypedStr` to 104 chars, `hist\0` matched
+      0 copies, so `ret` was never sent -- `drive.py` now falls back to the bare text). **Next**: `--watch-key=ret`
+      with `wait=3` before the dump, then `console-state.py --expect hist` (`docs/XEMU.md`).
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -506,6 +511,25 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, a submit reads the line, and the dump taken at the watch is one step too early)
+
+- **`ret` reads `Console.TypedStr`, and the append and the submit differ in where the copy goes.** `submit2` took
+  four `Z3` stops at `EIP=0x1b300` with `ESI=0x0802db78` (`line+0xC`) and `EDI=0x0802e61c`; `findtext8`
+  (`--watch-key=x`) stopped at the same `EIP` and `ESI` with `EDI=the line`. A `Z3` over two bytes at `line` cannot
+  fire for a `rep movsl` that reads `[line+0xC, line+0x18)` and writes the line, so the reported register file is
+  the post-execution one: the source starts at the line in both boots, and the submit's destination is a new heap
+  buffer `0xAB0` above it. The previous note's "the trap is the write" is the pre-execution reading of the same
+  numbers, and it is wrong.
+- **A dump taken immediately after a watch is a pre-submit snapshot.** The step leaves the guest stopped at the
+  instruction it trapped; the resume and the `pmemsave` that follows are milliseconds apart, so
+  `submit2/after.bin` still holds `TypedStr` `Count/Max 6/6` and **no** `History` field in `0x200` decoded bytes.
+  A receipt needs a `wait=` before the dump, not a longer watch.
+- **A repeating key makes the terminated needle match nothing.** `submit3` reported 0 copies of `hist\0`, never
+  armed the watchpoint and never sent `ret`; its own two dumps hold ` hist` + 50 `t` (`Count/Max 55/55`) and then
+  104/104 four seconds later, in the same boot. `drive.py`'s watch step now falls back to the bare text and prints
+  which form armed, and `tools/xemu/console-state.py` reads such a dump without guessing (`--cr3`, FString decode,
+  `--selftest`).
 
 ### Execution notes (2026-11-06, the watchpoint chain runs end to end, and it names a write rather than a reader)
 
