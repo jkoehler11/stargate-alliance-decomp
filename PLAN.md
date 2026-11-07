@@ -460,7 +460,9 @@ are limited to expected fields (checksum/timestamp) and documented.
       (`showdebug`, `stat game`) remain the only readable output until then. The console's prompt is now readable off a frame: `tools/xemu/console-line.py` counts
       its cyan pixels, and a 3x crop of them reads `(>Say at_` -- the `(>` prompt with `Say ` pre-filled and the typed
       text after it, drawn only once there is text (`Tab` alone draws 0). So the console opens and is in **say mode**;
-      `absent` means "no prompt text", not "closed". **Measured: only `stat fps` draws.** `stat game` (554 pixels), `stat physics` (2,293), `showdebug` (0),
+      `absent` means "no prompt text", not "closed". **Measured: only `stat fps` draws** -- and the console's command surface is measured now
+      (`inventory/console_commands.csv`: 336 `exec` declarations over 37 scopes, 292 names, `stat` declared in
+      neither source, so a zero here means "ran and drew nothing" rather than "no such command"). `stat game` (554 pixels), `stat physics` (2,293), `showdebug` (0),
       `behindview 1` (0) and `walk` (0) left no overlay, and `behindview` would be unmistakable if it had run -- so the
       survey is a lower bound, not a table. **The next instrument is `bTyping`**: on the stock disc the console draws
       nothing, so whether it is open has to come from the guest's `Console` object over QMP, like `mem.py`'s other reads.
@@ -520,6 +522,32 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the console's command surface is 336 declarations, and a zero is three facts)
+
+- **The console's command list is measured from two sources that agree**: `tools/console-commands.py` (`make
+  console-commands`) reads every `exec function` out of the shipped `ScriptText` and joins it to `Exec` in
+  `inventory/function_flags.csv` -- **336 declarations over 37 class/state scopes, 292 distinct names, 336 of 336
+  carrying the binary's `Exec` flag, 0 disagreements** (`inventory/console_commands.csv`, 461 rows). The 125
+  `Exec`-flagged functions with no declaration are **122 state-scoped** (the binary's `class` column names the
+  *state* there -- `PlayerBeingElectrocuted`, `Dead`, `GameEnded`, ...) plus three stock natives declared
+  `native function` without the `exec` keyword (`SetProgressMessage`, `SetProgressTime`, `GetCurrentStream`).
+- **`stat` is not in either source**, and neither are `open` or `cheats`: those are engine handlers, so `stat fps`
+  drawing and `stat game` not drawing is a fact about the engine's subcommands, not about console delivery. That
+  withdraws the sentence this page carried ("behindview's zero means the command never entered the console") --
+  `BehindView(bool)`, `ShowMenu()`, `ShowDebug()` and `ShowStats()` are all measured `exec` functions, so a zero on
+  them is "ran, drew nothing".
+- **The cheats exist and are gated, not missing.** `fly`/`ghost`/`walk`/`slomo` are 72 `Engine.CheatManager`
+  commands, the manager is created unconditionally by `PlayerController.AddCheats()` on the way into a level
+  (`PlayerController.uc:591`), and `areCheatsEnabled()` refuses them until `enablecheats` -- with *drawn* messages.
+  So `walk`'s measured 0 px was a movement mode with no movement input, and 7.3's missing output has a real
+  candidate: `ClientMessage`/`Say` reach `HUD.Message`, which draws a line.
+- **The instrument is `tools/xemu/console-commands.sh`** (one boot, a list of `--cmd`s, a frame per command, a
+  whole-RAM dump at the end). **Its measurement is the next run's**: the desktop was rendering another game and both
+  boots were lost to input and timing -- the first `pad=a` on the main menu moved only the highlight (527 px, and
+  4,930 px at a 165 s boot) and no later press left the menu; the second reached a submit (`god`, 27,546 px against a
+  158 px idle floor) and then died on a QMP `sendkey` timeout, and its frames were pruned with the run directory
+  before they were read. Run it on a quiet desktop; `--pad-hold` is the knob if the 0.15 s press is the cause.
 
 ### Execution notes (2026-11-06, `pad=start` reaches no console branch, and a submit moves the counters)
 

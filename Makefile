@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -80,6 +80,7 @@ help:
 	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
 	@echo "  package-check-code  the functions that read the check file, from the image (needs the dump)"
 	@echo "  savegame-paths   the save/load call sites, read from the shipped ScriptText (needs the dump)"
+	@echo "  console-commands the console's exec-function surface, from the scripts and the binary's Exec flag"
 	@echo "  karma-runtime    the Karma (ragdoll physics) functions, from their own strings (needs the dump)"
 	@echo "  module-split     per-function module attribution and per-module lists (dump-free)"
 	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
@@ -473,6 +474,13 @@ savegame-paths:
 	@test -d "$(WORK)/UnrealScript" || { echo "savegame-paths: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
 	@$(PYTHON) tools/savegame-paths.py --src "$(WORK)/UnrealScript" -o inventory
 	@echo "wrote inventory/savegame_paths.csv"
+
+# 7.3/U15: what the console can run at all -- the exec declarations in the shipped scripts, joined to the binary's
+# Exec flag. `stat` is in neither, which is why a zero on it is a fact about the engine's handler and not delivery.
+console-commands:
+	@test -d "$(WORK)/UnrealScript" || { echo "console-commands: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
+	@$(PYTHON) tools/console-commands.py --src "$(WORK)/UnrealScript" -o inventory
+	@echo "wrote inventory/console_commands.csv"
 
 # The third topic of the same scanner: Karma's runtime, which is what the .ka ragdolls are loaded by.
 karma-runtime:

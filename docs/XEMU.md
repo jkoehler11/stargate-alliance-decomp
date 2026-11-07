@@ -2090,3 +2090,74 @@ drive the console, so a scripted console has to be typed into from the guest key
 and the `--state` phrase from the previous revision called that "submitted". `bTyping` now decides first -- a closed
 console holding a line in `History` is a submit, an open one is typing whatever its history contains -- and
 `--selftest` asserts both readings on the same synthetic object.
+
+## The console's command surface, and what a zero means (measured 2026-11-06)
+
+Every probe above read its answer off the frame, and a frame cannot tell "the console ran it and it drew nothing" from
+"there is no such command". `tools/console-commands.py` (`make console-commands`,
+`inventory/console_commands.csv`) measures the second half from two independent sources: the `exec function`
+declarations in the `ScriptText` every class exports, and the `Exec` FunctionFlag in `inventory/function_flags.csv`.
+
+| measure | value |
+|---|---|
+| `exec function` declarations in the shipped text | **336** |
+| class or state scopes that declare one | **37** |
+| distinct command names | **292** |
+| declarations that also carry the binary's `Exec` flag | **336 of 336** (0 disagreements) |
+| `Exec`-flagged functions with no declaration in the text | **125** |
+| artifact rows | **461** |
+
+The 125 undeclared `Exec` functions are not a gap in the text: **a binary row's `class` column names a *state* when the
+function is state-scoped** — `PlayerBeingElectrocuted` 9, `PlayerGrabbed` 9, `PlayerKnockedback` 9,
+`PlayerMeleeDash` 9, `PlayerPrepareGrabbed` 9, `PlayerStaggered` 9, `PlayerUnconscious` 9, `Dead` 8, `GameEnded` 7,
+`PlayerWaiting` 7, `Hacking` 7, `UsingProgressTrigger` 7, `RoundEnded` 6, `Spectating` 4, `PlayerEnterVehicle` 3,
+`PlayerWalking` 3, `WaitingForPawn` 3, `Scripting` 2 — and the declaration sits inside that state in its class's file.
+**122 of the 125 are state-scoped**; the three that are not are `PlayerController.SetProgressMessage`,
+`PlayerController.SetProgressTime` and `StreamInteraction.GetCurrentStream`, stock natives declared `native function`
+with no `exec` keyword, which is why a text parse cannot see them.
+
+**Where a command lives decides whether it can be typed at all.**
+
+| owner | declarations | reachable from a loaded mission |
+|---|---|---|
+| `Engine.PlayerController` | 80 (+26 in its states) | yes — the controller is where `ConsoleCommand` starts |
+| `Engine.CheatManager` | 72 | yes, and gated: see below |
+| `StargateGame.StargatePlayer` | 61 | yes (`SG1Hold`, `ZoomToggle`, `OrderTakeCover`, `AdjustLoadOut`, …) |
+| `StargateGame.UnrealPlayer` | 13 | yes |
+| `StargateGame.StargateWeapon` | 11 | yes |
+| `Engine.Console` | 9 (`Type` twice) | `Talk`, `TeamTalk`, `ConsoleOpen`/`Close`/`Toggle`, `StartRollingDemo`, `StopRollingDemo` |
+| `Engine.HUD` | 8 | `ShowDebug`, `ShowStats`, `NextStats`, `ShowHud`, `ShowScores`, `GrowHUD`/`ShrinkHUD`, `setHUD` |
+
+23 command names are declared by more than one owner, so "which object answers" is a class-chain question and not a
+name-to-handler table.
+
+**`stat` is not a script command.** It has no `exec` declaration in any of the 2,319 classes and no `Exec` flag in the
+binary — nor do `open` or `cheats` — so `stat fps` drawing a counter is the *engine's* handler, and `stat game` /
+`stat physics` printing nothing is that handler not knowing the subcommand. No amount of console-input work changes
+that, which is why a `stat` zero is never evidence about delivery.
+
+**The cheats are one command away, not absent.** `fly`, `ghost`, `walk` and `slomo` are `Engine.CheatManager`
+commands (72 of them), and `PlayerController.AddCheats()` runs unconditionally on the way into a level
+(`PlayerController.uc:591`, straight after the level-enter message), so the manager exists in a mission whether or not
+cheats are on. What gates the commands is `CheatManager.areCheatsEnabled()`: with a game profile loaded it returns
+false until `enablecheats` has run, and it refuses with *drawn* messages ("Cheats are NOT enabled, to enable cheats
+type: EnableCheats"). `walk`'s measured 0 px is therefore "ran, changed no pixel" — a movement mode with no movement
+input draws nothing — and not an unread key.
+
+**A zero is one of three facts, and the doc has to say which:** `History` (`console-state.py`) says the command was
+delivered, this census says a handler exists, and only the frame says it drew. The five-command table earlier in this
+page read its zeros as "the command never entered the console"; **that inference is withdrawn** — `behindview` is
+`Engine.PlayerController.BehindView(bool)`, an exec function, so its zero was a fact about the camera and the frame,
+not about the console.
+
+**The output channel the source names, read and not yet measured.** `Engine.Console` keeps no scrollback (U15), but
+`PlayerController.ClientMessage` and `Say`/`TeamSay` reach `HUD.Message`, which draws a message line — and
+`CheatManager`'s refusal above is one. That makes "type a command that messages the client, read the line" the
+remaining 7.3 measurement, and `render a console line` is *not* the only drawn output on this disc.
+
+`tools/xemu/console-commands.sh` is the instrument for it: one boot, a list of `--cmd`s, a frame per command, and a
+whole-RAM dump at the end, so the same run yields the delivery receipt (`console-state.py`) and the drawing evidence.
+**Two boots of it were lost to input, not to the console**: under a desktop that was rendering another game the first
+`pad=a` on the main menu moved only the highlight (527 px, then 4,930 px at a 165 s boot) and no later `pad` press left
+the menu, so nothing was ever typed into a level. The pad's 0.15 s press is the suspect (`--pad-hold` is its knob) and
+the run needs a quiet desktop; the input path itself is unchanged from the `submit8` boot that measured a submit.
