@@ -1083,6 +1083,21 @@ tables a `.u` package's classes get at load, which no artifact enumerates today)
 `ret` that submits `say hello` rather than ten seconds later -- `M00`'s own dialogue rewrites `SubTitleText`, so the
 absence of `O'Neill: hello` from a late dump is not evidence either way.
 
+**The class-table half is answered, and the answer is that no such table exists (measured 2026-11-07).** The
+resolver this entry asked for would have enumerated "the tables a `.u` package's classes get at load"; there are
+none. `tools/xemu/ramscan.py --headers` groups every object-shaped header in a 128 MiB dump by its first word:
+3,820 of 11,275 sit on one of the inventory's 492 tables (127 distinct), and of the 5,485 distinct words it does not
+know **none** names a block with six or more of its first eight slots inside `.text` -- so `GameHud extends
+Interaction` (a plain script class, no `native`) carries `Interaction`'s table, and a class is simply not a thing an
+object carries. `ramscan.py --fields` then reads the object instead, translating each field through the page tables,
+and on `msg1`'s dump the player names ten objects over seven classes (`Package`, `Pawn` x4, `ScriptedController`,
+`PlayerReplicationInfo`, `AIMsgManager`, `XboxViewport`, `StargateHUD` at `+0x748`) with **no `Interaction` among
+them**: `GameHudPtr` and `NotificationManager` are `none`, so `Say` and `AddNotification` had no sink to reach and
+the frame's timing was never the question. The 19 objects on the `Interaction` table are 52 bytes each (the class's
+`object_size`) against `GameHud`'s 106 properties, so none of them is the HUD actor either. **What remains** is
+where a `GameHud` is supposed to come from: repeat `--fields` after a checkpoint load rather than a
+`QUICK SELECT MAP` entry, since `areCheatsEnabled()` already gates on `Level.Game.CurrentGameProfile`, and if the
+pointer stays `none` the question moves to `InteractionMaster`, which the player's first `Interaction` does name.
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
