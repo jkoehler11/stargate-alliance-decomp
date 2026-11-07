@@ -2677,3 +2677,63 @@ whose class the class tables already name.
 **What this changes.** The armed copies stay unnamed, and `docs/UNKNOWNS.md` U15 says so; but the object array now
 has a measured `Outer` (`+0x18`) and a measured rule for turning a copy into a record, which is what the next
 instrument -- `GNames` -- will read.
+
+## `GNames` is live at `0x006be0d8`, and a loader record's index names its function (measured 2026-11-07)
+
+`UObject::Name` is an `FName` -- an index -- so nothing that names an object could be read until the name table was
+found. It is **`0x006be0d8`**: `data=0x01f30000 num=34,800 max=37,732` in a guest booted to the title, sitting
+immediately after the name system's own `Initialized` dword at `0x006be0c8` (which reads `1`, and is the guard
+`FName::StaticInit` tests at `0x0005c080`). Entries are the shape the property work measured: `+0x00` index,
+`+0x04` flags, `+0x08` hash chain, `+0x0c` UTF-16 name -- and the table is **positional**, so slot `i` carries index
+`i`:
+
+| slot | entry | name |
+| --- | --- | --- |
+| 0 | `0x0091ffd8` | `None` |
+| 1 | `0x0094ffc8` | `ByteProperty` |
+| 2 | `0x0094ffa0` | `IntProperty` |
+| 100 | `0x0091ff00` | `Begin` |
+
+Those are the seventeen reserved type names the initialiser registers at explicit indices (`inventory/property_types.csv`),
+now read out of a running guest rather than out of `.rdata`.
+
+**The shape scan is a negative, and its reason is a read fault, not a shape.** A `--find` sweep of `.data`
+(2,255,828 bytes, 16 s at the stub) yields **4,496** triples that pass the `(Data, Num, Max)` shape, and exactly
+**one** of them resolves to a real pointer array: `UObject::GObjObjects` at `0x006c21b0`
+(`data=0x041e0000 num=42,152 max=51,886`). The name array is rejected by a pointer-array prefilter because
+**21 of its first 64 slot pointers do not read back** -- the stub answers `odd hex length from stub` and a null
+pointer is what a swallowed retry looks like. So the array is found by its **neighbours** (the hash table and the
+`Initialized` flag), never by its shape; a future scan that treats a short read as a zero will re-fail the same way.
+
+The 4,096-slot hash is live too: **4,093 of 4,096 buckets** hold a pointer, and each entry it reaches reads as
+`index | flags | chain | UTF-16 name` (`StaticMeshActor352`, `HUD_statusring`, `Concentratefire_order`, ...).
+
+**The payoff: a loader record's index is the function's name index.** `tools/xemu/owner.py` measured that each
+armed bytecode copy is the third word of a 24-byte loader record whose first pair is `(kind, index)`, and that the
+index was the handle that needed `GNames`. Resolved through the table at `0x006be0d8`, all seven measured records
+name exactly the function the pattern matched:
+
+| function | (kind, index) | resolves to |
+| --- | --- | --- |
+| `PostNetBeginPlay` (copy 1) | (0, 357) | `PostBeginPlay` |
+| `PostNetBeginPlay` (copy 2) | (0, 2014) | `PostNetBeginPlay` |
+| `Timer` | (4, 308) | `Timer` |
+| `PostNetHUDSetup` | (4, 17040) | `PostNetHUDSetup` |
+| `SetupInteractionsFor` | (16, 2757) | `SetupInteractionsFor` |
+| `AddInteraction` | (32, 6823) | `AddInteraction` |
+| `DrawHUD` (control) | (4, 2427) | `DrawHUD` |
+
+Six of the seven agree with the pattern's own label and the seventh is the instructive one: index 357 names
+`PostBeginPlay`, not `PostNetBeginPlay`, so the "second copy of `PostNetBeginPlay`" is a **different function with
+the same bytecode shape** -- which is exactly the ambiguity a pattern match cannot resolve and a name can. A
+copy's identity is therefore no longer an inference: `record[+0x04]` is an `FName` index, `GNames` names it, and
+`UObject`'s `Outer` (`+0x18`, measured by `owner.py`) names the declaring class of whichever object the index
+belongs to.
+
+**Still open.** `UObject::Name`'s own header offset is not yet measured -- `tools/xemu/names.py --at 0x006be0d8
+--verify` is the one command that reads it (sample objects whose first dword names a class, and ask which header
+dword resolves back to that class name). Slots 5 and 16 of the reserved block answered `None` in the run above, a
+read fault rather than an absent name: `--index 0-16` re-reads the block on a fresh connection.
+
+The tool is `tools/xemu/names.py`: `--find` for the shape sweep (and its negative), `--hash` for the hash table's
+occupancy, `--index` for any index list (a loader record, a header field), `--verify` for the object side.
