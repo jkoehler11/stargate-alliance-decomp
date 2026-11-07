@@ -530,6 +530,19 @@ are limited to expected fields (checksum/timestamp) and documented.
       are script classes with **no XBE class table**, so neither can be censused yet. **Next**: a package-class-table
       resolver, and a dump taken *at* the submit -- M00's own dialogue rewrites `SubTitleText`, so a dump ten seconds
       later cannot say whether `Say` reached the HUD.
+      **A script class has no table of its own, and the player names no `GameHud` (measured 2026-11-07)**: the
+      "package-class-table resolver" this item asked for is measured *not* to be the missing piece -- `ramscan.py
+      --headers` groups every object-shaped header in a 128 MiB dump by its first word, and **0 of 5,485** words the
+      inventory does not know name a slot block, so `GameHud extends Interaction` simply carries `Interaction`'s
+      table and a package's classes get no table of their own at load. `ramscan.py --fields` reads one object
+      instead: the player (`0x05aaf800`) names 10 objects over 7 classes -- the anchors `objects.py` measured
+      (`Package`, `Pawn` x4, `ScriptedController`, `PlayerReplicationInfo`, `AIMsgManager`, `XboxViewport`,
+      `StargateHUD` at `+0x748`) -- and **no `Interaction`**, so `GameHudPtr` and `NotificationManager` are unset:
+      the two message channels have no sink, which is why a frame one second after the submit drew nothing. The 19
+      objects on the `Interaction` table are 52 bytes each (the class's `object_size`) against `GameHud`'s 106
+      properties, so none of them is the HUD actor. **Next**: load `M00` the way the game does -- a checkpoint load
+      rather than `QUICK SELECT MAP` -- and repeat `--fields`; a non-`none` `GameHudPtr` makes this a missing
+      `CurrentGameProfile`, one that stays `none` moves the question to `InteractionMaster`.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

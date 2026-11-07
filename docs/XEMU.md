@@ -2272,3 +2272,57 @@ flag, not a new instrument.
 is the failure) and `console-commands.sh` passes `-tab` and `-typed`, so a green console run no longer ends in
 `FAIL: 2 shot step(s) did not repaint`. The tool still reports the pixel count, because "static" is a claim about the
 screen and a repaint on one would be news.
+
+## A script class carries its ancestor's table, and the player names no `GameHud` (measured 2026-11-07)
+
+The previous section left `GameHud` as "not measurable with the tools in this repo yet", on the assumption that a
+`.u` package's classes get class tables of their own at load and that no artifact enumerates them. The first
+question is therefore whether they do at all, and the packages answer the shape of it: `GameHud extends Interaction`
+and `NotificationManager extends Object`, both plain script declarations with no `native`
+(`tools/pkg-script-text.py … --all --write $WORK/scripts2`).
+
+**`ramscan.py --headers` asks the image instead of the inventory.** Every address whose words pass `object_shape`
+is a header; group them by the first word -- the table a `UObject` carries -- and a word the inventory does not
+know is a *candidate*, not a class table. On a loaded `M00` (`~/sg1/work/msg1/try1/ram.bin`, `--cr3 0xf000`):
+
+| reading | count |
+|---|---|
+| object-shaped headers over 131,072 KiB | 11,275 |
+| on one of the 492 inventory tables | 3,820, over **127** distinct tables |
+| on a word the inventory does not know | 7,455, over 5,485 distinct words |
+| ...of those words, naming a block with six or more of its first eight slots inside `.text` | **0** |
+
+So a package class gets no table at load: there is nothing for a resolver to enumerate, and all 5,485 anonymous
+words are the shape screen's false positives (zeroes, small integers, stack words). A script class's objects carry
+their native ancestor's table, which is why `--objects --class Interaction` answers 19 and why those 19 can only be
+counted as "Interaction" -- the class they really are is not in the object at all.
+
+*The bound is `.text`, not the load address.* A UTF-16 word such as `0x00680020` (`"h"` then a NUL) sits below the
+image end (`0x7d95e0`) and passes a "somewhere in RAM" test; the first revision of the slot test did exactly that and
+reported seven string blocks as tables. The bound is now `0x11000`-`0x4190fc` (`tools/xbe.py … sections`).
+
+**What replaces the resolver is `--fields`**: one object's pointer fields, each target named by the table it carries,
+with the field translated through the page tables (`pmemsave` is physical, a field is linear). The anchors
+reproduce the `objects.py --refs` read that named them over the stub, which is what the check is for:
+
+    $ python3 tools/xemu/ramscan.py $D --fields 0x5aaf800 --cr3 0xf000
+    object 0x05aaf800, table 0x004d0b68  StargatePlayer
+      +0x0018 -> ... Package      +0x038c -> ... Pawn           +0x03b8 -> ... ScriptedController
+      +0x04c0 -> ... PlayerReplicationInfo                      +0x04d0 -> ... AIMsgManager
+      +0x0558 -> ... XboxViewport +0x0588, +0x058c, +0x05e8 -> ... Pawn      +0x0748 -> ... StargateHUD
+    10 field(s) naming an object, over 7 class(es)
+
+**No field of the player names an `Interaction`, so `GameHudPtr` is `none` in this state.** The same walk on the HUD
+(`0x05bc6a00`) names `Package`, `StargatePlayer` twice (`+0x44`, `+0x38c`), `Pawn`, `PlayerReplicationInfo`,
+`Console` (`+0x398`), `Movie` and `MovieTexture` -- and no `GameHud` either. Nor is one hiding among the 19:
+`Interaction`'s `object_size` is 52 bytes in `inventory/xbe_class_table_names.csv` and those objects' last named
+field is `+0x30`, while `GameHud` declares 106 properties and so cannot fit. The two channels `SetSubtitle` and
+`AddNotification` end in are therefore **unset, not mistimed**: a frame one second after the submit could not have
+drawn anything, and the ten-second dump was never the obstacle. `NotificationManager` (declared on the player,
+extends `Object`, which has no table of its own) is equally absent from the ten fields.
+
+**What would settle the cause** is where a `GameHud` comes from. `areCheatsEnabled()` already only messages the
+client when `Level.Game.CurrentGameProfile != none`, and this level was opened from `QUICK SELECT MAP`, so the next
+boot loads `M00` the way the game does -- a checkpoint load -- and repeats `--fields` on the player: a non-`none`
+`GameHudPtr` would make the missing HUD a missing profile rather than an unset code path, and one that stays `none`
+moves the question to `InteractionMaster`, which is present (`+0x30` of the first `Interaction`).

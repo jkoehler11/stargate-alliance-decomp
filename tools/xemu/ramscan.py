@@ -35,6 +35,17 @@ class names only -- the same rule as `objects.py`'s string readers.
 image, each hit screened by the words after it (`object_shape`), because a whole-image hit count would call a
 `mov` that mentions a table an object. `--class SUBSTR` prints the hits for the matching classes with their header
 words; the screen is a screen, and `objects.py`'s array walk stays the source of a whole-game object count.
+
+**A script class carries its ancestor's table, and that is why `--objects` cannot see one (`--headers`).** A class
+the build did not compile to C++ (`ucpp`) gets no table of its own when its package loads: `GameHud extends
+Interaction` and `NotificationManager extends Object` are plain script classes, so their objects' first word is the
+*ancestor's* table -- `Interaction`'s `0x0050c880`, which the census does report, for 19 objects that it can only
+call "Interaction". Asking the image the other way settles it: group every object-shaped header by its first word
+and test each unknown word for a slot block (a run of function addresses). Measured on a loaded `M00`: of 5,485
+distinct anonymous words, **7** name a block with six or more of its first eight slots in `.text`, and those seven
+are UTF-16 string data (`GSListObject...`); the rest are zeroes, small integers and stack words that pass the shape
+screen by accident. So the resolver is not a table enumeration -- there is nothing to enumerate -- it is
+`--fields`, which reads one object's pointer fields and names each target by the table the target carries.
 """
 import argparse
 import os
@@ -47,6 +58,7 @@ REPO = os.path.dirname(os.path.dirname(TOOLS))
 CLASS_NAMES = os.path.join(REPO, "inventory", "xbe_class_table_names.csv")
 CLASS_TABLES = os.path.join(REPO, "inventory", "xbe_class_tables.csv")
 OBJECT_INTEGER_MAX = 0x100000   # `ObjectInternalInteger` is a serial number: 0x8d34 at the title, 0xbb0d in a mission
+CODE_LO, CODE_HI = 0x11000, 0x4190FC   # `.text` in this build's section table (VA 0x11000, vsize 0x4080fc)
 
 
 def class_names():
@@ -92,12 +104,11 @@ def load(name):
     return module
 
 
-def linear_pages(blob, cr3):
-    """{physical page: [linear page base, ...]} -- one pass over the page tables, so a ref search is not 33 lookups.
+def forward_pages(blob, cr3):
+    """{linear page base: physical page base} -- one pass over the page tables, in the direction a field needs.
 
-    `vamap.linear_for` walks the whole directory for a single address, which is right for one translation and far
-    too slow for a window of 33 candidate starts per hit; this builds the inverse map once (137 present PDEs, 63 of
-    them 4 MiB) and then every lookup is a dictionary hit.
+    `linear_pages` answers "which linear addresses name this physical page" (for a `--refs` window); reading a field
+    is the other direction, one lookup per field, so it gets its own map rather than an inversion of that one.
     """
     vamap = load("vamap")
     pages = {}
@@ -108,13 +119,106 @@ def linear_pages(blob, cr3):
         if pde & 0x80:
             start = pde & 0xFFC00000
             for page in range(start, start + 0x400000, 0x1000):
-                pages.setdefault(page, []).append(base | (page - start))
+                pages[base | (page - start)] = page
         else:
             table = pde & 0xFFFFF000
             for slot in range(1024):
                 pte = struct.unpack_from("<I", blob, table + slot * 4)[0]
                 if pte & 1:
-                    pages.setdefault(pte & 0xFFFFF000, []).append(base | (slot << 12))
+                    pages[base | (slot << 12)] = pte & 0xFFFFF000
+    return pages
+
+
+def physical_for(pages, va):
+    """The dump address of a linear address, or None when the page is not mapped."""
+    page = pages.get(va & 0xFFFFF000)
+    return None if page is None else page | (va & 0xFFF)
+
+
+def dword(blob, at):
+    """One little-endian word, or None when it would leave the image."""
+    return struct.unpack_from("<I", blob, at)[0] if 0 <= at <= len(blob) - 4 else None
+
+
+def slots_look_like_a_table(blob, pages, table, count=8, need=6):
+    """How many of `table`'s first `count` slots are code addresses -- a class table is a run of them.
+
+    A table is a vtable: its slots point into `.text` (or are `0` for a slot this build never fills), so a block whose
+    first eight words are mostly code is a table and one that holds text or counts is not. The range matters: a
+    UTF-16 word like `0x00680020` (`"h"` then a NUL) sits *below* the image end and would pass a "somewhere in RAM"
+    test, so the bound is `.text` itself (`0x11000`-`0x4190fc`, from `tools/xbe.py … sections`), not the load address.
+    """
+    base = physical_for(pages, table)
+    if base is None:
+        return 0
+    hits = 0
+    for slot in range(count):
+        value = dword(blob, base + 4 * slot)
+        if value is not None and CODE_LO <= value < CODE_HI:
+            hits += 1
+    return hits
+
+
+def fields(blob, base, span, tables, pages):
+    """[(offset, value, target, class_name)] -- every field of the object at `base` that names another object.
+
+    `base` is a dump (physical) address; a field holds a *linear* one, so `pages` translates it. A field names an
+    object when the target's first word is a *mapped address* and the words after it pass `object_shape` -- the same
+    screen `--objects` applies to the image, applied to one object -- which is what keeps a pointer to a string, to a
+    stack slot or to code out of the report. The class comes from the target's own first word, so a class the
+    inventory does not know is reported as such instead of being dropped: that is how a `GameHud` would appear if it
+    carried a table of its own.
+    """
+    out = []
+    for offset in range(0, span, 4):
+        value = dword(blob, base + offset)
+        if value is None or value < 0x1000:
+            continue
+        target = physical_for(pages, value)
+        if target is None or target + 0x18 > len(blob):
+            continue
+        if object_shape(blob, target) != "object":
+            continue
+        table = struct.unpack_from("<I", blob, target)[0]
+        name = tables.get(table)
+        if name is None:
+            if physical_for(pages, table) is None:
+                continue                     # not an address in this guest: a count, a flag, a string pointer
+            name = "table %#010x, not in the inventory" % table
+        out.append((offset, value, target, name))
+    return out
+
+
+def header_census(blob, tables):
+    """(named, anonymous) -- every object-shaped header in the image, grouped by the table its first word names.
+
+    `--objects` asks "where do these 492 tables appear"; this asks the image "what tables does it actually carry",
+    which is the question a class with no inventory table raises. A header only needs `object_shape`, so an anonymous
+    first word is a candidate and not a class table: the ones that survive `slots_look_like_a_table` are tables, and
+    the rest are the shape screen's false positives (a zero, a small integer, a stack word).
+    """
+    counts, first = {}, {}
+    for at in range(0x10000, len(blob) - 0x18, 4):
+        if object_shape(blob, at) != "object":
+            continue
+        table = struct.unpack_from("<I", blob, at)[0]
+        counts[table] = counts.get(table, 0) + 1
+        first.setdefault(table, at)
+    named = {t: c for t, c in counts.items() if t in tables}
+    anonymous = {t: c for t, c in counts.items() if t not in tables}
+    return named, anonymous, first
+
+
+def linear_pages(blob, cr3):
+    """{physical page: [linear page base, ...]} -- one pass over the page tables, so a ref search is not 33 lookups.
+
+    `vamap.linear_for` walks the whole directory for a single address, which is right for one translation and far
+    too slow for a window of 33 candidate starts per hit; this builds the inverse map once (137 present PDEs, 63 of
+    them 4 MiB) and then every lookup is a dictionary hit.
+    """
+    pages = {}
+    for linear, physical in forward_pages(blob, cr3).items():
+        pages.setdefault(physical, []).append(linear)
     return pages
 
 
@@ -237,9 +341,29 @@ def selftest():
     moved = string_copies(raw, "hist".encode("utf-16-le") + b"\x00\x00", {table: "Engine.Console"}, 4, 0x1000,
                           addr_for=lambda phys: [phys + 0x1000])
     assert [copy["field"] for copy in moved] == [None, None], moved  # no field names the shifted address
+
+    # A field that names an object is read through the translation map, and one that names a string is not: the target
+    # has to carry a table *and* pass `object_shape`, and that screen is what keeps a `TypedStr` out of `--fields`.
+    other = 0x2800
+    struct.pack_into("<IIIIII", blob, other, table, 0x8D35, 0, 0, 0, 0xFFFFFFFF)
+    struct.pack_into("<I", blob, obj + 0x140, other)                  # a field naming an object
+    raw = bytes(blob)
+    identity = {page: page for page in range(0, 0x4000, 0x1000)}      # linear == physical, for the test image
+    rows = fields(raw, obj, 0x200, {table: "Engine.Console"}, identity)
+    assert [row[:3] for row in rows] == [(0x140, other, other)], rows
+    assert rows[0][3] == "Engine.Console", rows
+    # A table is a run of code slots, and the block the shape screen guesses wrong is not one: on a loaded level seven
+    # anonymous words name UTF-16 string data and every other anonymous word names nothing at all.
+    code = 0x3000
+    struct.pack_into("<IIIIIIII", blob, code, *[0x20000 + 4 * slot for slot in range(8)])
+    raw = bytes(blob)
+    assert slots_look_like_a_table(raw, identity, code) == 8
+    assert slots_look_like_a_table(raw, identity, text_at) == 0, "a string block is not a class table"
+    assert slots_look_like_a_table(raw, identity, 0x7FFF0000) == 0, "an unmapped table names no slots at all"
     print("ok   ramscan: the ref walk names Engine.Console at +0x%x for a string %d bytes into the match, the "
-          "census separates an object from a table mentioned in code, and the resolver picks the FString's copy "
-          "over a decoy of the same text" % (field, 2))
+          "census separates an object from a table mentioned in code, the resolver picks the FString's copy "
+          "over a decoy of the same text, and `--fields` names only the field that holds an object"
+          % (field, 2))
     return 0
 
 
@@ -330,16 +454,77 @@ def main():
                              "words and whether it looks like a UObject")
     parser.add_argument("--objects-limit", type=int, default=40,
                         help="with --objects: print at most N classes (default 40)")
+    parser.add_argument("--fields", type=lambda x: int(x, 0), default=None, metavar="ADDR",
+                        help="every pointer field of the object at ADDR (a dump address, given physically or "
+                             "linearly) that names another object, with the class the target's table gives; needs "
+                             "--cr3, because a field holds a linear address and the dump is physical")
+    parser.add_argument("--span", type=lambda x: int(x, 0), default=0x1000,
+                        help="with --fields: how many bytes of the object to read (default 0x1000)")
+    parser.add_argument("--headers", action="store_true",
+                        help="group every object-shaped header in the image by the table its first word names, and "
+                             "test each word the inventory does not know for a table-shaped slot block -- the "
+                             "question a class with no inventory table raises")
+    parser.add_argument("--headers-limit", type=int, default=12, help="with --headers: rows per list (default 12)")
     args = parser.parse_args()
 
     with open(args.dump, "rb") as handle:
         blob = handle.read()
     print("dump %s: %d KiB%s" % (args.dump, len(blob) // 1024,
                                  "" if not args.base else " from %#x" % args.base))
-    mapped = None
+    fwd = pages = mapped = None
     if args.cr3 is not None:
-        pages = linear_pages(blob, args.cr3)
-        mapped = lambda va: bool(pages.get(va & 0xFFFFF000))  # noqa: E731 -- a dictionary hit per header word
+        fwd = forward_pages(blob, args.cr3)
+        pages = {}
+        for linear, physical in fwd.items():
+            pages.setdefault(physical, []).append(linear)
+        mapped = lambda va: bool(fwd.get(va & 0xFFFFF000))  # noqa: E731 -- a dictionary hit per header word
+    if args.fields is not None:
+        if fwd is None:
+            raise SystemExit("--fields needs --cr3: a field holds a linear address and the dump is physical")
+        tables = class_names()
+        if not tables:
+            raise SystemExit("no class tables: %s and %s are missing" % (CLASS_NAMES, CLASS_TABLES))
+        base = args.fields
+        if object_shape(blob, base) != "object":        # given linearly (as the notes quote it) rather than physically
+            translated = physical_for(fwd, base)
+            if translated is None or object_shape(blob, translated) != "object":
+                raise SystemExit("%#x is not an object header in this dump, physically or through CR3 %#x"
+                                 % (base, args.cr3))
+            print("object %#x is linear; its dump address is %#x" % (base, translated))
+            base = translated
+        table = struct.unpack_from("<I", blob, base)[0]
+        print("object %#010x, table %#010x  %s"
+              % (base, table, tables.get(table, "not in the inventory")))
+        rows = fields(blob, base, args.span, tables, fwd)
+        for offset, value, target, name in rows:
+            print("  +%#06x -> %#010x (dump %#010x)  %s" % (offset, value, target, name))
+        print("%d field(s) naming an object, over %d class(es)%s"
+              % (len(rows), len({name for _, _, _, name in rows}),
+                 "" if rows else ": no field of this object names another object"))
+        return 0
+    if args.headers:
+        tables = class_names()
+        if not tables:
+            raise SystemExit("no class tables: %s and %s are missing" % (CLASS_NAMES, CLASS_TABLES))
+        named, anonymous, first = header_census(blob, tables)
+        print("%d object-shaped header(s) over %d KiB" % (sum(named.values()) + sum(anonymous.values()),
+                                                          len(blob) // 1024))
+        print("%d on a table the inventory names (%d distinct of %d), %d on a word it does not (%d distinct)"
+              % (sum(named.values()), len(named), len(tables), sum(anonymous.values()), len(anonymous)))
+        for table, count in sorted(named.items(), key=lambda kv: (-kv[1], kv[0]))[:args.headers_limit]:
+            print("  %-34s %#010x  %3d  first %#010x" % (tables[table], table, count, first[table]))
+        if fwd is None:
+            print("no --cr3: the anonymous words are not tested for a slot block")
+        else:
+            scored = [(slots_look_like_a_table(blob, fwd, table), table, count)
+                      for table, count in anonymous.items()]
+            good = sorted([row for row in scored if row[0] >= 6], key=lambda row: (-row[2], row[1]))
+            print("%d of %d anonymous word(s) name a block with six or more of its first eight slots in .text"
+                  % (len(good), len(anonymous)))
+            for hits, table, count in good[:args.headers_limit]:
+                print("  table %#010x  %3d object(s)  first %#010x  code %d/8"
+                      % (table, count, first[table], hits))
+        return 0
     if args.objects or args.class_name:
         tables = class_names()
         if not tables:
