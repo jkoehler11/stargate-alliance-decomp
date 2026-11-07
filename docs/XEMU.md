@@ -1955,3 +1955,43 @@ the destination `0x0802e610` is the copy's buffer but the receipt needs a dump a
 the next boot is that dump (`--watch-key=ret`, the prefix fallback, `wait=4`, then
 `console-state.py --expect hist`). Until then "a command was delivered" rests on the line clearing, not on the
 history array.
+
+## The receipt: `ret` submits and leaves `History[0]` (measured 2026-11-06)
+
+`submit2` proved a submit *reads* `Console.TypedStr` but took its dump before the copy finished, and the register
+file at a `Z3` stop cannot separate "the key submitted" from "a key repeated and appended". The `Console` object
+can, so `submit5` is the same boot with the watch removed and a `pmemsave` after every candidate key. Five dumps,
+one boot, `Console` at `0x02661b00` throughout:
+
+| dump | step | `TypedStr` `+0x44` | `History[0]` `+0x50` | `+0x110` | `+0x114` |
+|---|---|---|---|---|---|
+| `d0-typed` | after `spc` + `hist`, no wait | `0x07fddb78 6/6 ' hist'` | empty | 5 | 1 |
+| `d1-ret` | `ret`, `wait=3` | `0 0 0` (empty) | `0x07fde61c 6/6 ' hist'` | 0 | 0 |
+| `d2-ret-late` | `+3 s` more | empty | same | 0 | 0 |
+| `d3-kpenter` | `kp_enter`, `wait=3` | empty | same | 0 | 0 |
+| `d4-pada` | `pad=a`, `wait=3` | empty | same | 0 | 0 |
+
+**The submit copies the line into the object.** `d0` is the line, `d1` is the same text one slot later with the
+line cleared — `Console.uc:259-272`'s `History[HistoryTop] = TypedStr`, `Temp = TypedStr`, `TypedStr = ""` — and the
+destination `0x07fde61c` is a fresh heap buffer `0xAB0` above the line, which is exactly the `EDI` `submit2`'s stop
+reported. So the receipt is two words, not a register reading: `History` holds the text, `TypedStr` does not.
+
+**`History` is a static inline array, so it is a field of the object.** `Console.uc:10` declares `var string
+TypedStr, History[16]`: sixteen 12-byte `FString` structs laid out after `TypedStr`, `History[i]` at `0x50 + 12i`,
+the last ending at `+0x110`. That boundary is measured — while ` hist` is typed `+0x110` reads 5 and `+0x114` reads
+1, and after the submit they read 0 and 0, which is `var int TypedStrPos` and `var bool bTyping` by declaration
+order (`TypingClose`). Earlier notes called this a `TArray` and reported "no `History` field in the object"; the
+array was simply empty then, and a `TArray` header would have been 12 bytes of zeros as well.
+
+**A submit closes the console, so the keys after it are untested, not negative.** `bTyping` is 0 in `d1`, and
+`d3`/`d4` are the same receipt byte for byte: `kp_enter` and `pad=a` arrived with `TypedStr` empty, and the copy is
+guarded by `if (TypedStr != "")`.
+
+**The last step of the boot timed out, and that is not a reading of Start.** The `pmemsave` immediately after a
+`pad=start` tap never got a QMP answer (`TimeoutError: timed out` in `smoke.py`), leaving `d5` 54 MiB and truncated.
+Nothing is known about `pad=start`; a re-run should put a `wait=` between the tap and the dump.
+
+**Reading it.** `tools/xemu/console-state.py DUMP --cr3 0xf000 --history --receipt hist`: `--history` prints
+`TypedStr` and the populated slots, `--receipt TEXT` exits 0 only when the text is in a slot *and* `TypedStr` is
+empty (1 otherwise, which is what `d0` answers), and `--selftest` proves both on a synthetic object. The measured
+`CR3` on these boots is `0xf000`.
