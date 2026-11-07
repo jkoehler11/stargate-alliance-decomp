@@ -36,8 +36,8 @@ Steps, in order:
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
                 that stopped executing, so every sequence that reads "no change" needs this
     noise=SECS  capture, wait SECS with no input, capture again: the screen's own animation, in pixels
-    watch=TEXT  dump all of guest RAM inside the boot, find TEXT (UTF-16LE with its terminator, the form a script
-                `FString` holds) in it, translate its *physical* address to the *linear* one the CPU uses (the page
+    watch=TEXT  dump all of guest RAM inside the boot, find TEXT (UTF-16LE with its terminator, or — when a repeated
+                key has grown the string, measured 2026-11-06 — as the prefix of a longer one) in it, translate its *physical* address to the *linear* one the CPU uses (the page
                 tables are in the same dump, CR3 from `info registers`, `tools/xemu/vamap.py`), then arm a *read*
                 watchpoint over the string's first `--watch-length` bytes and print each stop's register file, the
                 stack words around ESP that name the address, and EIP. It needs `--gdb`; the dump is written to
@@ -480,13 +480,26 @@ def main():
                     blob = handle.read()
                 # The terminator is part of the pattern: `hist` alone also matches inside `History`, which is how a
                 # first version of this step armed a watchpoint on a class-name string nobody reads (8 hits, no stop).
+                # But a needle that *requires* the terminator is a needle a repeated key invalidates: measured
+                # 2026-11-06, a stuck `t` grew TypedStr to ` histttt…` (Count 55, then 104 in the same boot) and
+                # `hist\0` matched 0 copies, so the step printed "0 copies" and never armed -- and `--watch-key`
+                # never fired, which reads as "the console ignored the submit". Fall back to the bare text: a copy
+                # that begins with it is still resolved to its FString field by `string_copies`, which walks to the
+                # string's first character and counts to its own terminator.
                 needle = value.encode("utf-16-le") + b"\x00\x00"
+                form = "terminated"
                 hits, at = [], blob.find(needle)
                 while at >= 0 and len(hits) < 16:
                     hits.append(at)
                     at = blob.find(needle, at + 1)
-                say("step %d: watch %r -- %s holds %d byte(s), %d%s cop%s of the UTF-16 text%s"
-                    % (index, value, os.path.basename(ram), len(blob), len(hits),
+                if not hits:
+                    needle, form = value.encode("utf-16-le"), "as a prefix of a longer string"
+                    at = blob.find(needle)
+                    while at >= 0 and len(hits) < 16:
+                        hits.append(at)
+                        at = blob.find(needle, at + 1)
+                say("step %d: watch %r (%s) -- %s holds %d byte(s), %d%s cop%s of the UTF-16 text%s"
+                    % (index, value, form, os.path.basename(ram), len(blob), len(hits),
                        "+" if len(hits) == 16 else "", "y" if len(hits) == 1 else "ies",
                        "" if not hits else " (%s)" % ", ".join("%#010x" % hit for hit in hits)))
                 if not hits:
