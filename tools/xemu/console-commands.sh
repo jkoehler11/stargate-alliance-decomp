@@ -190,7 +190,9 @@ while [ "$attempt" -le "$retries" ]; do
   set --
   while IFS= read -r s; do set -- "$@" "$s"; done < "$dir/steps.txt"
   args="--iso=$iso --bios=$bios --hdd=$dir/hdd.qcow2 --out=$dir --eeprom=$eeprom"
-  args="$args --fuzz=10 --seconds=75 --pad-hold=$hold"
+  # The console has no `PostRender` on this disc, so a frame that shows it cannot differ from the one before it:
+  # `*-tab` and `*-typed` are expected identical, and the gate has to be told rather than read as a lost key.
+  args="$args --fuzz=10 --seconds=75 --pad-hold=$hold --static-shot=-tab --static-shot=-typed"
   echo "attempt $attempt: index $index, commands:$cmds -> $dir"
   rc=0
   ( cd "$repo" && python3 tools/xemu/drive.py $args "$@" ) > "$dir/run.log" 2>&1 || rc=$?

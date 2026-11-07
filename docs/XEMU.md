@@ -2266,7 +2266,9 @@ either: 128 MiB holds no `O'Neill: hello` (what `SetSubtitle` would have compose
 immediately after the `ret` that submits `say hello`, before the level's dialogue -- which is a `console-commands.sh`
 flag, not a new instrument.
 
-**A run that draws nothing also cannot repaint.** `drive.py` exits 2 on this run because `042-tab` and `052-typed`
-"did not repaint" -- true, and expected: those frames show a console that has no `PostRender`. The gate is right to
-report it and the shell script does not read `rc`, but a green console run will keep printing `FAIL` until the gate
-learns that a known-invisible console frame is not a failure.
+**A run that draws nothing also cannot repaint, and that is a flag now.** `drive.py` exited 2 on this run because
+`042-tab` and `052-typed` "did not repaint" -- true, and expected: those frames show a console that has no
+`PostRender`. `--static-shot SUBSTR` inverts the gate for a named shot (identical is the expected reading, a repaint
+is the failure) and `console-commands.sh` passes `-tab` and `-typed`, so a green console run no longer ends in
+`FAIL: 2 shot step(s) did not repaint`. The tool still reports the pixel count, because "static" is a claim about the
+screen and a repaint on one would be news.
