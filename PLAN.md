@@ -503,7 +503,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       re-typing the line each time and dumping before and after — round 1 `ret` reproduced the receipt on a second
       heap (`Console` `0x02641b00`, `History[0]` `0x0802e61c`), and round 2's control dump held the line while its
       post-dump did not change, so the A button reaches the console as nothing and a scripted console needs the
-      keyboard. `kp_enter` and `pad=start` are still untested, and the console's *output* still has no sink.
+      keyboard. `kp_enter` is measured from an open console and is not a submit either, `pad=start` is still
+      untested, and the console's *output* still has no sink.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -519,6 +520,24 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, `kp_enter` is not a submit, and the console's counters are readable)
+
+- **`submit7` is `submit6`'s round-1 shape with one key changed**: `Tab`, `spc`, `hist`, a control `pmemsave`,
+  `gkey=kp_enter`, `wait=3`, a receipt `pmemsave`, one boot, `Console` at `0x02661b00`. Both dumps are identical
+  (— `TypedStr` `0x07ffdb78 6/6 ' hist'`, `History` empty, `+0x38` 0, `+0x3C` -1, `+0x40` 0, `+0x110` 5,
+  `+0x114` 1) so the keypad Enter delivers nothing to the console: not a character, not the `Escape` clear, not a
+  submit. The frame after the press moved 1,506 px, the gameplay floor, so the picture was never the evidence.
+- **`HistoryBot`'s own `-1` pins the counter offsets**: `+0x38`/`+0x3C`/`+0x40` (0, -1, 0) sit between the object's
+  `InteractionMaster` at `+0x30` and `TypedStr` at `+0x44`, the declaration order of `Console.uc:8-16`, and
+  `+0x110`/`+0x114` read 5/1 for a five-character line in a console that is typing.
+- **`tools/xemu/console-state.py --state`** prints those five fields plus one phrase for what the key left behind,
+  because `Escape` clears the line too: an empty `TypedStr` with an empty `History` is a cleared line when `bTyping`
+  is 1 and a submit when it is 0. `--selftest` was corrected to the measured layout (it put `HistoryTop` past
+  `History[15]`, which is `TypedStrPos`' offset) and proves typing, submitted and Escape-cleared apart in `make ci`,
+  which has no dump.
+- **A quoting trap cost a step, not a boot**: `"--step=monitor=info\ registers"` inside double quotes keeps the
+  backslash and the monitor answers `unknown command: 'info\'`; the dumps were read with the measured `--cr3 0xf000`.
 
 ### Execution notes (2026-11-06, the receipt: `ret` submits and leaves `History[0]`)
 

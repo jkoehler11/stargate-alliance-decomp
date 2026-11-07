@@ -12,7 +12,13 @@ keypress the guest ignored.
 
     python3 tools/xemu/console-state.py after.bin --cr3 0xf000
     python3 tools/xemu/console-state.py after.bin --cr3 0xf000 --history
+    python3 tools/xemu/console-state.py after.bin --cr3 0xf000 --state
     python3 tools/xemu/console-state.py after.bin --cr3 0xf000 --receipt "hist"
+
+`--state` prints the fields around the strings -- `HistoryTop`/`HistoryBot`/`HistoryCur` at `+0x38`/`+0x3C`/`+0x40`,
+`TypedStrPos` at `+0x110`, `bTyping` at `+0x114` -- with one phrase for what the key left behind, because a
+cleared line and a submitted one are the same two words (`TypedStr` empty, `History` empty) when the key took the
+Escape branch instead of the `IK_Enter` one.
 
 `pmemsave` writes *physical* memory while every pointer in it is *linear*, so `--cr3` (from `info registers`,
 measured `0x0000f000`) is required to follow one; `--flat` disables the translation, which is what `--selftest`
@@ -41,6 +47,14 @@ FSTRING_SIZE = 12           # Data, Count, Max
 TYPED_STR = 0x44            # `var string TypedStr` (measured 2026-11-06)
 HISTORY = 0x50              # `var string History[16]`, immediately after TypedStr: 16 * 12 = 0xC0 bytes
 HISTORY_SLOTS = 16
+# The fields *around* the strings, by declaration order in `Console.uc:8-16` and measured 2026-11-06: the three
+# counters sit in the words between the object's `InteractionMaster` (+0x30) and `TypedStr`, and `HistoryBot`
+# reads -1 until the first submit (`Console.uc` initialises it to -1), which is what pins the three offsets.
+HISTORY_TOP = 0x38          # `var int HistoryTop` -- the slot the next submit writes, 0 before any submit
+HISTORY_BOT = 0x3C          # `var int HistoryBot` -- -1 on a fresh console, then the oldest retained slot
+HISTORY_CUR = 0x40          # `var int HistoryCur` -- the recall cursor
+TYPED_STR_POS = 0x110       # `var int TypedStrPos` at the end of `History[16]`: 5 while ` hist` is typed, 0 cleared
+B_TYPING = 0x114            # `var bool bTyping`: 1 while the console is open for typing, 0 once it closes
 
 
 def load(name):
@@ -49,12 +63,6 @@ def load(name):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-def u32(blob, offset):
-    if offset < 0 or offset + 4 > len(blob):
-        raise IndexError(offset)
-    return struct.unpack_from("<I", blob, offset)[0]
 
 
 def field_at(blob, pos, translate):
@@ -106,6 +114,35 @@ def history(blob, base, translate):
     return out
 
 
+def state(blob, base):
+    """The console's own counters: they say *why* the line is empty, which the line alone cannot.
+
+    A submit clears `TypedStr`; so does `Escape` (`Console.uc`'s Typing state clears the line and returns without
+    submitting). Both leave an empty line and an empty `History`, so a reader that only looks at the strings cannot
+    tell a delivered command from a cleared one -- `bTyping` and the `HistoryTop` counter can.
+    """
+    def word(offset):
+        return struct.unpack_from("<i", blob, base + offset)[0]
+    return {
+        "history_top": word(HISTORY_TOP),
+        "history_bot": word(HISTORY_BOT),
+        "history_cur": word(HISTORY_CUR),
+        "typed_str_pos": word(TYPED_STR_POS),
+        "b_typing": word(B_TYPING),
+    }
+
+
+def describe(state, slots, line):
+    """One phrase for the four outcomes a keypress can leave behind, so a frame or a line is not the whole story."""
+    if slots:
+        return "submitted -- History holds a line"
+    if state["b_typing"]:
+        if state["typed_str_pos"] or line is not None:
+            return "open for typing, line kept -- the key did not reach the console"
+        return "open for typing, line cleared -- cleared without submitting (the Escape branch)"
+    return "closed with nothing submitted"
+
+
 def objects(blob, tables, match, limit):
     """[(base, class_name)] -- four-aligned occurrences of a matching class table that pass `object_shape`."""
     ramscan = load("ramscan")
@@ -121,18 +158,20 @@ def objects(blob, tables, match, limit):
 
 
 def selftest():
-    """A synthetic image: one Console object with TypedStr, History[0] and History[1], and HistoryTop after them."""
+    """A synthetic image: one Console object laid out the way the dump measured it, in all three states."""
     class_table, object_base = 0x100, 0x200
     blob = bytearray(0x4000)
     struct.pack_into("<IIIIII", blob, object_base, class_table, 1, 0, 0, 0, 0xFFFFFFFF)
+    # The counters before TypedStr and the two fields after History[15] -- the declaration order in `Console.uc`,
+    # at the offsets the 2026-11-06 boot measured (`HistoryBot`'s own -1 is what pins the first three).
+    struct.pack_into("<iii", blob, object_base + HISTORY_TOP, 0, -1, 0)
+    struct.pack_into("<ii", blob, object_base + TYPED_STR_POS, 5, 1)
     # TypedStr, and two history slots at exactly the stride the receipt boot measured.
     for offset, text, capacity, where in ((TYPED_STR, " stat fps", 16, 0x1000),
                                           (HISTORY, " hist", 6, 0x2000),
                                           (HISTORY + FSTRING_SIZE, " showdebug", 11, 0x3000)):
         struct.pack_into("<III", blob, object_base + offset, where, len(text) + 1, capacity)
         blob[where:where + len(text) * 2 + 2] = text.encode("utf-16-le") + b"\x00\x00"
-    # HistoryTop, immediately after History[15] -- 16 * 12 bytes from +0x50.
-    struct.pack_into("<I", blob, object_base + HISTORY + HISTORY_SLOTS * FSTRING_SIZE, 2)
     blob = bytes(blob)
 
     found = objects(blob, {class_table: "Engine.Console"}, "Console", 8)
@@ -144,19 +183,42 @@ def selftest():
     assert field_at(blob, object_base + TYPED_STR + 4, lambda va: va) is None, "a Count word must not read as a field"
     slots = history(blob, object_base, lambda va: va)
     assert [(index, field["text"]) for index, field in slots] == [(0, " hist"), (1, " showdebug")], slots
-    assert u32(blob, object_base + HISTORY + HISTORY_SLOTS * FSTRING_SIZE) == 2, "HistoryTop sits past History[15]"
+    measured = state(blob, object_base)
+    assert measured == {"history_top": 0, "history_bot": -1, "history_cur": 0,
+                        "typed_str_pos": 5, "b_typing": 1}, measured
+    assert describe(measured, slots, field_at(blob, object_base + TYPED_STR, lambda va: va)) \
+        == "submitted -- History holds a line", "a populated slot is a submit whatever bTyping says"
     # The receipt: 'hist' in a slot with TypedStr populated is *not* a receipt; clear TypedStr and it is.
     receipt = lambda text: any(text in field["text"] for _index, field in slots) \
         and field_at(blob, object_base + TYPED_STR, lambda va: va) is None
     assert not receipt("hist"), "TypedStr still holds the line: the submit has not run yet"
-    cleared = bytearray(blob)
-    struct.pack_into("<III", cleared, object_base + TYPED_STR, 0, 0, 0)
-    cleared = bytes(cleared)
-    survived = history(cleared, object_base, lambda va: va)
+
+    # A submit, one key later: TypedStr cleared, HistoryTop 1, TypedStrPos 0, bTyping 0.
+    submitted = bytearray(blob)
+    struct.pack_into("<III", submitted, object_base + TYPED_STR, 0, 0, 0)
+    struct.pack_into("<iii", submitted, object_base + HISTORY_TOP, 1, -1, 1)
+    struct.pack_into("<ii", submitted, object_base + TYPED_STR_POS, 0, 0)
+    submitted = bytes(submitted)
+    survived = history(submitted, object_base, lambda va: va)
     assert [(index, field["text"]) for index, field in survived] == [(0, " hist"), (1, " showdebug")], survived
-    assert field_at(cleared, object_base + TYPED_STR, lambda va: va) is None, "cleared TypedStr reads as empty"
-    print("selftest: 1 object, TypedStr + 2 history slots at +0x%02x/+0x%02x stride %d, HistoryTop past slot 15, "
-          "receipt needs the line cleared -- ok" % (TYPED_STR, HISTORY, FSTRING_SIZE))
+    assert field_at(submitted, object_base + TYPED_STR, lambda va: va) is None, "cleared TypedStr reads as empty"
+    after = state(submitted, object_base)
+    assert after["history_top"] == 1 and after["b_typing"] == 0, after
+
+    # The other way a line goes empty: `Escape` clears it and stays open -- same empty line, different console.
+    escaped = bytearray(submitted)
+    struct.pack_into("<ii", escaped, object_base + TYPED_STR_POS, 0, 1)
+    for slot in range(HISTORY_SLOTS):
+        struct.pack_into("<III", escaped, object_base + HISTORY + slot * FSTRING_SIZE, 0, 0, 0)
+    struct.pack_into("<iii", escaped, object_base + HISTORY_TOP, 0, -1, 0)
+    escaped = bytes(escaped)
+    assert not history(escaped, object_base, lambda va: va), "Escape writes no slot"
+    assert describe(state(escaped, object_base), [], None) == \
+        "open for typing, line cleared -- cleared without submitting (the Escape branch)"
+
+    print("selftest: 1 object, counters at +0x%02x..+0x%02x, TypedStrPos/bTyping at +0x%02x/+0x%02x, "
+          "History[%d] at +0x%02x stride %d; typing, submitted and Escape-cleared read apart -- ok"
+          % (HISTORY_TOP, HISTORY_CUR, TYPED_STR_POS, B_TYPING, HISTORY_SLOTS, HISTORY, FSTRING_SIZE))
     return 0
 
 
@@ -179,6 +241,9 @@ def main():
                         help="exit 1 unless some Console object holds this text")
     parser.add_argument("--history", action="store_true",
                         help="print TypedStr and the populated History[16] slots by their measured offsets")
+    parser.add_argument("--state", action="store_true",
+                        help="print the console's own counters (HistoryTop/Bot/Cur, TypedStrPos, bTyping) and what "
+                             "they say a key did -- a cleared line looks the same as a submitted one")
     parser.add_argument("--receipt", metavar="TEXT", default=None,
                         help="exit 0 only if TEXT is in a History slot *and* TypedStr is empty (a submitted command)")
     parser.add_argument("--quiet", action="store_true", help="print only the verdict and the matching field")
@@ -216,7 +281,7 @@ def main():
             print("    +%#05x -> %#010x  Count/Max %d/%d%s  %r"
                   % (offset, field["data"], field["count"], field["capacity"],
                      "  <= %s" % args.expect if hit else "", field["text"]))
-        if args.history or args.receipt:
+        if args.history or args.receipt or args.state:
             line = field_at(blob, base + TYPED_STR, translate)
             slots = history(blob, base, translate)
             print("    History[%d] at +%#05x (stride %d): %d populated; TypedStr at +%#05x: %s"
@@ -225,6 +290,12 @@ def main():
             for index, field in slots:
                 print("      [%d] -> %#010x  Count/Max %d/%d  %r"
                       % (index, field["data"], field["count"], field["capacity"], field["text"]))
+            if args.state:
+                counters = state(blob, base)
+                print("    state: HistoryTop %d  HistoryBot %d  HistoryCur %d  TypedStrPos %d  bTyping %d  -> %s"
+                      % (counters["history_top"], counters["history_bot"], counters["history_cur"],
+                         counters["typed_str_pos"], counters["b_typing"],
+                         describe(counters, slots, line)))
             if args.receipt is not None:
                 hits = [(index, field) for index, field in slots if args.receipt in field["text"]]
                 ok = bool(hits) and line is None

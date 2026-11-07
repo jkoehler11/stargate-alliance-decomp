@@ -919,7 +919,12 @@ pre-submit snapshot because the guest resumes inside the same second. **What rem
 sink at all (`Scrollback` belongs to `ExtendedConsole`, which this build never instantiates), and
 `kp_enter`/`pad=start` were sent after a submit had already closed the console (`bTyping` 0) and remain untested.
 `pad=a` is measured: with the line re-typed and dumped before and after the press, the A button changed neither
-`TypedStr` nor `History`, so the pad has no console submit and a scripted console needs the keyboard.
+`TypedStr` nor `History`, so the pad has no console submit and a scripted console needs the keyboard. **`kp_enter` is measured now, from an open console (2026-11-06).** `submit7` types the line, dumps,
+sends `kp_enter`, waits three seconds and dumps again: `TypedStr` and its `Data` pointer, the `History` slots and the
+three counters are unchanged across the key, so the keypad Enter reaches no branch of `Console` (— it is not the
+`IK_Enter` submit, and not even the `Escape` clear). **What remains** is `pad=start`, which needs the same treatment
+once with a `wait=` before the dump, and the output question, which is structural: `Scrollback` belongs to
+`ExtendedConsole`, which this build never instantiates.
 
 **A loaded level still has no live `Console`, and `Tab` was the variable, not the level (measured 2026-11-06).** With
 the keyboard attached at 75 s and a campaign level up (`48,647 objects over 295 pages`, `StaticMeshActor` 927, the M00

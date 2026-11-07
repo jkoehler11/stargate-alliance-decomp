@@ -2017,5 +2017,41 @@ stop named. So the receipt is not a one-boot coincidence and the offsets `+0x44`
 **Round 2 is a negative with a control.** Its pre-dump shows the reopened console holding the freshly typed line,
 so input reached the console and the state was right; the press then changed neither `TypedStr` nor `History`. The
 A button therefore produces no `IK_Enter` for the console, and a scripted console cannot be driven from the pad.
-`kp_enter` and `pad=start` remain untested — each needs its own console state, and `pad=start` has only ever been
-sent in the boot that then timed out at the next `pmemsave`.
+`kp_enter` is measured below, and `pad=start` remains untested — it needs its own console state, and it has only
+ever been sent in the boot that then timed out at the next `pmemsave`.
+
+## `kp_enter` is not a console submit: the line and all five counters survive it (measured 2026-11-06)
+
+The console's submit is `IK_Enter` (`Console.uc`'s Typing state, `Key==13`), and the emulated keyboard offers two keys
+that claim to be Enter: `ret` submits (measured above), and `kp_enter` sends a different scancode (`E0 1C` rather than
+`1C`). `submit7` is `submit6`'s round-1 shape with that one key changed (— `Tab`, `spc`, `hist`, a control
+`pmemsave`, `gkey=kp_enter`, `wait=3`, a receipt `pmemsave`) in one boot, `Console` at `0x02661b00`:
+
+| dump | step | `TypedStr` `+0x44` | `History` | `+0x38` | `+0x3C` | `+0x40` | `+0x110` | `+0x114` |
+|---|---|---|---|---|---|---|---|---|
+| `kp-pre` | after `Tab` + `spc` + `hist` | `0x07ffdb78 6/6 ' hist'` | 0 populated | 0 | -1 | 0 | 5 | 1 |
+| `kp-post` | `kp_enter`, `wait=3` | `0x07ffdb78 6/6 ' hist'` | 0 populated | 0 | -1 | 0 | 5 | 1 |
+
+**The two dumps are identical in every field, including the `Data` pointer**, so `kp_enter` delivered nothing to the
+console: no character, no `Escape`-style clear, no submit. The first row is the control (had the typing not landed,
+the pre-dump would not hold the line), and the frame is not evidence either way: the shot after the press moved
+1,506 pixels, which is a live view's animation floor. The keypad Enter's scancode therefore reaches no branch of
+`Console`, and a scripted console has exactly one submit key, `ret`.
+
+**The counters around the strings are fields, and the boot measures them.** `Console.uc:8-16` declares
+`ConsoleHotKey`, `HistoryTop`, `HistoryBot`, `HistoryCur`, `TypedStr`, `History[16]`, `TypedStrPos`, `bTyping`, so the
+three ints sit between the object's `InteractionMaster` (`+0x30` = `0x02406720`, the block measured earlier) and
+`TypedStr`: `+0x38` reads 0, `+0x3C` reads **-1**, `+0x40` reads 0. That `-1` is `Console.uc`'s own `HistoryBot`
+initial value, and it is what pins the three offsets; `+0x110` reads 5 (`TypedStrPos`, the length of ` hist`) and
+`+0x114` reads 1 (`bTyping`).
+
+**Why the counters, and not the line.** `Console.uc`'s Typing state clears `TypedStr` on **`Escape`** (`Key==27`) as
+well as on `Enter`, and only the `Enter` branch writes `History`. An empty line therefore has two meanings, and the
+fields separate them: `bTyping` 1 with `TypedStrPos` 0 is a cleared line (`Escape`), `bTyping` 0 with `HistoryTop`
+advanced is a submit. `tools/xemu/console-state.py --state` prints all five with one phrase for them, and its
+`--selftest` now builds a synthetic object at these offsets and proves the three states read apart; the previous one
+placed `HistoryTop` past `History[15]`, which is `TypedStrPos`' offset, so it was proving a layout no boot has.
+
+**One shell trap, measured here.** `--step=monitor=info\ registers` written inside double quotes keeps the backslash,
+so the monitor answers `unknown command: 'info\'` and the step silently does nothing; unquoted in a script file it
+arrives as one argv and runs. The dumps above were read with `--cr3 0xf000`, the value these boots measure.
