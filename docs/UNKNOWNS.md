@@ -1098,6 +1098,30 @@ the frame's timing was never the question. The 19 objects on the `Interaction` t
 where a `GameHud` is supposed to come from: repeat `--fields` after a checkpoint load rather than a
 `QUICK SELECT MAP` entry, since `areCheatsEnabled()` already gates on `Level.Game.CurrentGameProfile`, and if the
 pointer stays `none` the question moves to `InteractionMaster`, which the player's first `Interaction` does name.
+**The route is read, and the profile is not in it (measured 2026-11-07).** `make interaction-setup`
+(`inventory/interaction_setup.csv`) lists every `AddInteraction` call site in the shipped scripts: **7 sites over 5
+interaction classes, all in `StargateGame`**. `GameHudPtr` is written in two of them, both a routine named
+`SetupInteractionsFor` (`StoryModeGame`, `StargateDeathMatch`) — and each of those also installs `CommandInterface`,
+creates the `NotificationManager` and calls `UpdateWeaponMenu`/`UpdateSquadMenu`, which install `WeaponMenu` and
+`SquadMenu`. The five unset player fields are therefore **one unit**: `none` for one predicts `none` for the other
+four.
+
+The chain has exactly one engine-side entry: `StargateHUD.PostNetHUDSetup` resolves the game class from
+`GameReplicationInfo.GameClass` and calls `SetupHUDFor` -> `SetupInteractionsFor`; its only caller is
+`StargateHUD.Timer`, armed by `SetTimer(1.0, True)` in `StargateHUD.PostNetBeginPlay`. Nothing in that chain reads
+`CurrentGameProfile` — the profile is read by `GameInfo.InitGame` (from the travel URL's option, and dropped unless
+the profile is a ladder game) and by `areCheatsEnabled` in `CheatManager`, which only decides whether a refusal is
+messaged to the client. **So the checkpoint load this entry asked for would not have discriminated**, and the
+measurement it named is retired.
+
+What remains is whether the HUD's `PostNetBeginPlay` route ran at all. The `--fields` walk on the HUD (`0x05bc6a00`)
+names 8 fields over 7 classes and neither object the two routines spawn (`MyFont`, `SGInsetCamera`), which is
+consistent with "it did not" but is not proof: a pointer is named only when its target carries an inventory table.
+**What would settle it** is one breakpoint: `UInteractionMaster::AddInteraction` is reached only from these seven
+sites, so a `drive.py --watch` on it during an `M00` load either fires (the setup ran and the class string did not
+resolve) or never does (the route is dead in this boot, and no map will show those five fields). Reading
+`bPostHudSetupCompleted` off the HUD instead needs a property offset the dump does not carry.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
