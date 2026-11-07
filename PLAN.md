@@ -596,6 +596,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `PostNetHUDSetup` are read after `PostNetBeginPlay` -- that is what separates "the route ran and the class string
       did not resolve" from "the read was the loader's copy" (`docs/XEMU.md`).
 
+      **The reader is the loader's walker, so the route needs an effect, not a byte watch (measured 2026-11-07)**:
+      the same boot with the parser fixed recorded all six arms, and every one stopped in the **same** reader --
+      eip `0x0003990f` (`+0x2f` into the slot-11 script walker `0x000398e0`) with identical `esp` `0xd0168a30` and the
+      same return address `0x00039420`, from `t+8.7` to `t+14.9 s`: one loop over a class's functions in one stack
+      frame, where the route's own call chain would deepen `esp` per level and would reach `Timer` (a `SetTimer(1.0)`
+      callback) a second after its setter rather than 0.3 s after `AddInteraction`. `DrawHUD`, the control, is read
+      from `0x00040900` with a different stack in gameplay and not at all at the title, so the two readers are
+      distinguishable. That makes the Z3 measurement above the loader's copy of the scripts, not the VM running them:
+      **the route question needs an effect witness** -- `UInteractionMaster::AddInteraction` (reached only from the
+      seven `AddInteraction` sites) or an exec breakpoint filtered on the reader -- and "the class string did not
+      resolve" stays untested. Harness: each `brk=` hit now prints `t+` since the wait started, and a stop that
+      matches no armed address is reported and survived instead of ending the wait (that break is what truncated the
+      previous boot's chain).
+
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
