@@ -486,6 +486,11 @@ are limited to expected fields (checksum/timestamp) and documented.
       `--objects` then censuses every class table over all 128 MiB: 492 tables, 1,606 four-aligned
       occurrences, and the `Console` table appears **twice** -- a `mov` at `0x00291bbc` and the class
       default at `0x02661b00` -- so the negative no longer rests on the object array's pages.
+      **The watch chain runs (2026-11-06)**: `drive.py --step=watch=hist --watch-key=x` resolves the copy
+      to `Console+0x44`, arms `Z3` on its linear address and stops three times in `FUN_0001b2c0+0x40` -- but
+      on the store that rewrites the line, not on a read of it, so the stub accepts `Z3` without separating
+      reads from writes. The next measurement is the same boot with `--watch-key=ret`, whose submit must read
+      the line (`docs/XEMU.md`).
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -501,6 +506,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, the watchpoint chain runs end to end, and it names a write rather than a reader)
+
+- **The stack works in one boot.** `drive.py --step=watch=hist --watch-key=x` dumps 128 MiB, finds the UTF-16 text,
+  resolves *which* copy an object holds, translates it with `vamap.py`, arms `Z3` on the linear address and sends one
+  guest key. `findtext8` stopped three times, all at `EIP=0x0001b300` with `EDI=0x07ffdb78` (the line) and
+  `ESI=0x07ffdb84` (`line+0xC`). `findtext5` had armed on the first of eight copies and `findtext6` on a physical
+  address; both were arming faults, and the stub was fine.
+- **The copy is resolved, not guessed.** `ramscan.string_copies` accepts a copy when a four-aligned dword names its
+  first character and the next two words are `Count = chars + 1 <= Max`, then names the owner from its vtable with the
+  existing `owner_of` walk. On `findtext8` that answered `Console at 0x02661b00 +0x44, Count/Max 6/6` — the same
+  object and offset two earlier sessions found by hand, on a third boot with a different heap.
+- **A `Z3` on the line stops on the store, so the reader is still unnamed.** `EIP 0x1b300` is `FUN_0001b2c0+0x40`,
+  and the bytes two before it are `f3 a5` (`rep movsl`): the stub reports the PC after the repeated instruction while
+  the register file is its pre-execution state. The function is an `FString` assignment (`Count`/`Max` from `[esi+4]`,
+  `call 0x45ed0`, `rep movsl` + `rep movsb`, `ret 4`) and the 12 bytes it moves land on the line while its source
+  starts at `line+0xC` — outside the eight watched bytes. So the trap is the write, and this boot cannot say whether
+  the stub distinguishes a read watchpoint at all.
+- **7.3's next measurement is one boot, not a new instrument**: the same run with `--watch-key=ret`, because a submit
+  copies `TypedStr` into `History[HistoryTop]` before clearing the line, so *something* must read it. If that also
+  stops only on stores, the read channel is the interpreter's dispatch (`tools/xemu/mem.py --watch` on a `GNative`
+  slot) rather than a data watchpoint.
+- **The frames this run called FAIL are the noise floor.** `noise=3` measured 2,509 pixels, the threshold went to
+  5,018, and `04-tab`/`05-typed`/`06-after` measured 711/1,263/762 while the dump holds the typed text. The console
+  line moves ~1,000 px: assert on a crop or on RAM, never on the whole frame in gameplay.
 
 ### Execution notes (2026-11-06, the dump is physical memory — translate it and the typed line has an owner)
 
