@@ -716,6 +716,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `UITextBox` (`Text` is only `DisplayTextBox`'s parameter), and the tool's `0x200`-byte default read was the
       reason the string was invisible -- the block runs past `+0x4c0`, so `--size` now defaults to `0x600` and a text
       triple prints as an `FString` character count with UTF-16 decoded under `--show-text` (`docs/XEMU.md`).
+      **The class object's address is not reusable across boots, and neither is the recorded `GNames` (measured
+      2026-11-07)**: over a `census6` loaded-`M00` boot (same script as `census4`, gdb `12519`), the address
+      `0x01886c00` census5 reported as `GameHud`'s class object holds UTF-16 package text, and `0x006be0d8` (the
+      tools' default `GNames`) holds the ASCII path `xbox\engine\inc\` rather than a `(Data, Num, Max)` triple;
+      `.data` itself reads at its declared `0x598e00+0x226bd4`, so the slot is wrong for this boot, not the address
+      space. `.data` carries **15,384** TArray-shaped triples, **9,121** of them with a plausible name count, and
+      `names.py --find`'s per-candidate scoring had not finished after ~2.5 minutes. **New instruments**:
+      `tools/xemu/findcls.py` (an object by its own name, one page per 64 KiB page, printing its address and class
+      object) and `tools/xemu/find_names.py` (count-filtered triples, then element 1 must decode as `ByteProperty`).
+      **Next**: boot, locate the `GameHud` and `UITextBox` class objects with `findcls.py` and `GNames` with
+      `find_names.py`, then run `fields.py --members --start 0x800` on both class objects and compare the offset
+      that holds an instance of each class -- agreement there is `DefaultObject`, which the first `0x800` bytes did
+      not contain.
+
       **The class object's own members are a field table, and `+0x4e8` is not the default object (measured
       2026-11-07)**: over one loaded-`M00` boot (`census5`, stub `12515`), `GameHud`'s class object `0x01886c00`
       (class `Class`, name `GameHud`, `Outer` `0x0097e0a8` named `StargateGame`) holds **323** object pointers in
