@@ -2618,3 +2618,62 @@ when `SetupInteractionsFor` executed.
 byte-identical (0 px in `brk7`, 27 px in `brk8`) in both runs, after the `DrawHUD` arm had retired at its cap. The
 same step passed in the previous boot, so a static final frame after a long `--brk-keep` step means the emulator's
 last repaint is not a measurement; the evidence in these runs is the stop log, not the final frame.
+
+
+## A script copy's address is a loader record, not an object's field (measured 2026-11-07)
+
+The `brk` step finds a copy of a function's widened bytecode by matching the pattern, arms a read watchpoint on its
+first byte, and reports who read it. It never says *whose* bytecode the copy is, and `SetupInteractionsFor`,
+`PostNetBeginPlay`, `Timer` and `AddInteraction` are each declared by more than one class, so "the route ran" and
+"the HUD's route ran" are different claims. `tools/xemu/owner.py` asks the ownership question of a dump: walk
+`UObject::GObjObjects` (`0x006c21b0`), then find the dword that names the copy -- a `UFunction` holds its bytecode as
+a pointer, so the object a hit sits in would be the owner, and its `Outer` the declaring class.
+
+**The walk, from `brk6/brk-ram.bin`** (`--brk-freeze` at the arm, `cr3=0xf000`, 128 MiB): 48,606 slots, **9,403
+objects reached**, and 27,444 slots holding a pointer that does not translate in this dump (24,183 unmapped, 2,700 a
+zero first word, 561 a page past the 128 MiB the dump covers). Two readings of the same array say which is right:
+read as physical, **0 of 200** first pointers land on an object-shaped header; read through the page tables, **124
+of 200** do. A dump is physical and a pointer is linear, as the string readers already found.
+
+**The header, and the field that names a class.** The screen every tool here uses is `vtable, ObjectInternalInteger,
+?, ?, 0, 0xffffffff` over 24 bytes. Counting which field of a `Function` object names an object of class `Class`
+gives one field for all of them:
+
+| header field | read as | names a `Class` for |
+| --- | --- | --- |
+| +0x18 | linear | **300 of 300** sampled `Function` objects |
+
+so `Outer` (the declaring class) is reachable: for a `UFunction`, `+0x18` names its `UClass`. `+0x0c` names one for
+none of the 300, which is what makes the field an identification rather than a coincidence.
+
+**None of the six armed copies is a field of a reached object.** Each address is the third word of a 24-byte record
+the loader wrote, and the words around it are numbers -- a kind, an index, two lengths and an offset:
+
+| function | copy | record at | (kind, index) | (len, len, offset) |
+| --- | --- | --- | --- | --- |
+| `PostNetBeginPlay` | `0x016b2800` | `0x019f6a48` | (0, 357) | (186, 259, 3124) |
+| `PostNetBeginPlay` | `0x01c9fdc0` | `0x019c3608` | (0, 2014) | (216, 301, 10712) |
+| `Timer` | `0x016b0140` | `0x01924208` | (4, 308) | (227, 316, 30526) |
+| `PostNetHUDSetup` | `0x01c6af80` | `0x01924148` | (4, 17040) | (124, 174, 29689) |
+| `SetupInteractionsFor` | `0x01a7e000` | `0x018dee48` | (16, 2757) | (574, 793, 7801) |
+| `AddInteraction` | `0x00c26c00` | `0x012d1908` | (32, 6823) | (356, 493, 2121) |
+| `DrawHUD` (control) | `0x01c4cc00` | `0x019c3f08` | (4, 2427) | (1006, 1387, 26184) |
+
+`Timer`'s address also occurs once in the heap, inside a run of script operands, which is a second reading of the
+same value and not an owner. So the copy's owner is **not** a `UObject` field: the loader keeps the code address in
+its own table, with an index, and the object array carries no pointer to it. A record's `index` is the handle that
+would name the function, and it needs the same thing an object's `Name` needs -- `GNames`.
+
+**Why a name is still out of reach, measured rather than assumed.** A `UObject`'s `Name` is an `FName`: an index
+into the engine's global name table. This dump has no such table in the shapes tried: no `(Data, Num, Max)` triple in
+the whole 128 MiB parses as a pointer array of `(index, ASCII name)` entries (0 candidates at a 50% threshold over
+the first 256 entries), and no dword anywhere in the dump names the UTF-16 copies of the class names it holds
+(`StargateHUD` 13 copies, `Console` 112, `DrawHUD` 1), so those strings are `FString` payloads rather than
+`FNameEntry` records. `GNames` lives in the image's `.data`, which is uninitialised on disk (`0x00226bd4` virtual
+against `0x00034b9c` file bytes), so it has to be found in a live guest the way `GObjObjects` was found
+(`objects.py --find`): a shape scan of `.data` for the pointer array, validated by resolving the `Name` of an object
+whose class the class tables already name.
+
+**What this changes.** The armed copies stay unnamed, and `docs/UNKNOWNS.md` U15 says so; but the object array now
+has a measured `Outer` (`+0x18`) and a measured rule for turning a copy into a record, which is what the next
+instrument -- `GNames` -- will read.

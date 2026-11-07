@@ -1168,6 +1168,19 @@ copy's linear address, no boot needed -- and (b) a `--fields` read of `GameHudPt
 an `M00` load, where the route has demonstrably run. Detail: `docs/XEMU.md`.
 
 
+**The copy's owner is a loader record, not an object field (measured 2026-11-07).** `tools/xemu/owner.py` walks
+`GObjObjects` in a dump and looks for the dword that names an armed copy: 9,403 objects reached in `brk6`'s 128 MiB
+(27,444 slots hold pointers that do not translate), `Outer` measured at header `+0x18` (it names a `Class` for 300 of
+300 sampled `Function` objects), and **none of the six copies is a field of any reached object** -- each is the third
+word of a 24-byte loader record, with a kind, an index, two lengths and an offset around it (`docs/XEMU.md`). So
+"which export owns this copy" is not answered by finding the owning object, and the copy is not addressable as a
+function's own code pointer from the array either. A `UObject`'s `Name` is an `FName` index, and this dump has no
+name table to resolve it with: no `(Data, Num, Max)` triple over the whole 128 MiB parses as a name-pointer array,
+and no dword names the UTF-16 class-name strings in it. **What would settle it:** locate `GNames` in a live guest --
+a `.data` shape scan like `objects.py --find`, validated by resolving the `Name` of an object whose class the class
+tables already name -- then a record's index names the function and an object's `Name` names its class. Until then
+U15's five `none` player fields stay unexplained at the class level.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

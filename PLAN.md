@@ -632,6 +632,21 @@ are limited to expected fields (checksum/timestamp) and documented.
       earlier waits ended at the stop cap inside the load window; this one used 3 reads per copy). **Next**: which
       export owns each armed copy -- a dump-side object-array walk for a `UFunction` whose script pointer is the
       copy's linear address, no boot needed -- then a `--fields` read of `GameHudPtr` from a dump taken after t+19 s.
+      **The copy is not an object's field, and the owner channel is a loader record (measured 2026-11-07)**: the
+      "dump-side object-array walk" this note asked for is built (`tools/xemu/owner.py`) and it answers the opposite
+      of what the plan assumed. From `brk6`'s frozen dump (`cr3=0xf000`, 128 MiB): 48,606 array slots, **9,403 objects
+      reached** (27,444 slots hold a pointer that does not translate -- 24,183 unmapped, 2,700 a zero first word, 561
+      past the dump), `Outer` measured at header **`+0x18`** (names a `Class` for 300 of 300 sampled `Function`
+      objects; `+0x0c` for none), and **none of the six armed copies is a field of any reached object**. Each copy is
+      the third word of a 24-byte loader record -- `(kind, index) | copy | (len, len, offset)`, so `Timer` is
+      `(4, 308) | 0x016b0140 | (227, 316, 30526)` and `SetupInteractionsFor` `(16, 2757) | 0x01a7e000 | (574, 793,
+      7801)` -- which means the copy's owner is not reachable as a `UObject` field, and the record's index is the
+      handle that would name it. Naming needs `GNames` (`FName` index -> string), and this dump has no name table in
+      the shapes tried: 0 `(Data, Num, Max)` triples over 128 MiB parse as a name-pointer array, and no dword names
+      the UTF-16 class-name strings the dump holds (`StargateHUD` x13, `Console` x112). **Next**: locate `GNames` in a
+      live guest -- the `objects.py --find` shape scan applied to `.data`, validated by resolving an object `Name`
+      whose class the inventory already names -- then a record's index names the function and `+0x18` names its
+      declaring class, which is the answer 7.3's route order needs.
 
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
