@@ -1181,6 +1181,19 @@ a `.data` shape scan like `objects.py --find`, validated by resolving the `Name`
 tables already name -- then a record's index names the function and an object's `Name` names its class. Until then
 U15's five `none` player fields stay unexplained at the class level.
 
+**`GNames` is located, and a record's index names its function (measured 2026-11-07).** The name array is
+`0x006be0d8` in a live guest -- `data=0x01f30000 num=34,800 max=37,732`, positional (slot 0 `None`, 1
+`ByteProperty`, 2 `IntProperty`, 100 `Begin`), immediately after the `Initialized` dword at `0x006be0c8` -- and
+`tools/xemu/names.py` reads it. So the loader record's `(kind, index)` pair resolves: the seven measured copies come
+back as `Timer` (308), `PostNetBeginPlay` (2014), `PostNetHUDSetup` (17040), `SetupInteractionsFor` (2757),
+`AddInteraction` (6823) and `DrawHUD` (2427), plus the instructive one -- index 357 names **`PostBeginPlay`**, not
+`PostNetBeginPlay`, so the second copy of that pattern is a different function with the same bytecode shape. A
+copy's identity is measured now, not inferred. The shape scan itself is a **negative**: 4,496 `(Data, Num, Max)`
+triples in `.data` pass the shape and only `GObjObjects` resolves to a real pointer array, because 21 of the name
+array's first 64 slot pointers fail to read back (`odd hex length`) and a pointer-array prefilter counts them as
+nulls. What is left in U15 is the object side: `UObject::Name`'s header offset, which `names.py --at 0x006be0d8
+--verify` measures, and with it the `none` player fields become a class-level read.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

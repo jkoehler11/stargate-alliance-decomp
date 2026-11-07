@@ -649,6 +649,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       declaring class, which is the answer 7.3's route order needs.
 
 
+      **`GNames` is measured, and a loader record's index names its function (measured 2026-11-07)**: the "locate
+      `GNames` in a live guest" note above is done, and not by the shape scan it proposed. In a guest booted to the
+      title the name array is **`0x006be0d8`** -- `data=0x01f30000 num=34,800 max=37,732`, immediately after the
+      name system's `Initialized` dword at `0x006be0c8`, entries `+0x00` index / `+0x04` flags / `+0x08` chain /
+      `+0x0c` UTF-16 name, positional (slot 0 `None`, 1 `ByteProperty`, 2 `IntProperty`, 100 `Begin`). The
+      `--find` shape sweep of `.data` (2,255,828 bytes) is a **negative with a cause**: 4,496 triples pass the
+      `(Data, Num, Max)` shape and only `GObjObjects` (`0x006c21b0`) resolves to a real pointer array, because 21
+      of the name array's first 64 slot pointers fail to read back (`odd hex length`) and a prefilter reads a
+      swallowed retry as a null. The 4,096-slot hash at `0x006ba0c8` is live too (4,093 buckets occupied).
+      **The ownership question this closes**: resolving the seven record indices `owner.py` measured names the
+      functions -- 308 `Timer`, 2014 `PostNetBeginPlay`, 17040 `PostNetHUDSetup`, 2757 `SetupInteractionsFor`,
+      6823 `AddInteraction`, 2427 `DrawHUD`, and 357 **`PostBeginPlay`**, not `PostNetBeginPlay`, so that second
+      copy is a different function with the same bytecode shape. Tool: `tools/xemu/names.py` (`--find`, `--hash`,
+      `--index`, `--verify`); doc `docs/XEMU.md`. **Next**: `names.py --at 0x006be0d8 --verify` for `UObject::Name`'s
+      header offset, then U15's five `none` player fields are a class-level read rather than a route question.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
