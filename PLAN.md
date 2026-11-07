@@ -549,6 +549,19 @@ are limited to expected fields (checksum/timestamp) and documented.
       `PostNetBeginPlay` route ran at all: a breakpoint on `UInteractionMaster::AddInteraction` during an `M00` load
       fires (the setup ran, and the class string did not resolve) or never does (the route is dead in this boot, and
       no map will show those five fields).
+      **A script breakpoint is a pattern, not an address (measured 2026-11-07)**: `AddInteraction` is script
+      (`0x00020803`, no `Native`), so the breakpoint this item asked for has no native target; `drive.py --step=brk=`
+      treats a function's bytecode as the pattern instead (`tools/uscript-dis.py --script ... --hex-bytes 48`), finds
+      its copies in a 128 MiB dump taken inside the boot, and arms `Z0` on each (`mem.py`,
+      `watch(kind="exec")`), reporting `FIRED <label>` with EIP/ESP or `did not fire in N s` per label. All five route
+      patterns are verified present in the shipped packages, but the boot meant to arm them never loaded a level (the
+      first `pad=a` moved only the highlight at a 135 s window; the last frame is still `MAIN MENU`), so the step
+      answered **0 copies of every pattern** -- a fact about that dump, not a verdict on the route. The step now
+      prints the dump's length and the label's ASCII name count so the two failures cannot be confused, and the runner
+      uses `--seconds=180 --pad-hold=0.35`. **Next**: the same sequence with those two settings, which either fires
+      `Timer` (the route ran and the class string did not resolve) or fires nothing (the HUD's `PostNetBeginPlay`
+      route is dead in this boot).
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
