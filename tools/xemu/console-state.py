@@ -133,13 +133,17 @@ def state(blob, base):
 
 
 def describe(state, slots, line):
-    """One phrase for the four outcomes a keypress can leave behind, so a frame or a line is not the whole story."""
-    if slots:
-        return "submitted -- History holds a line"
+    """One phrase for what a keypress left behind.
+
+    `bTyping` decides first: the console stays open across many submits, so a populated `History` plus a fresh line is
+    a typing console that has submitted before -- not a submit now. Only a closed console can be read as one.
+    """
     if state["b_typing"]:
         if state["typed_str_pos"] or line is not None:
             return "open for typing, line kept -- the key did not reach the console"
         return "open for typing, line cleared -- cleared without submitting (the Escape branch)"
+    if slots:
+        return "submitted -- History holds a line and the console is closed"
     return "closed with nothing submitted"
 
 
@@ -187,7 +191,8 @@ def selftest():
     assert measured == {"history_top": 0, "history_bot": -1, "history_cur": 0,
                         "typed_str_pos": 5, "b_typing": 1}, measured
     assert describe(measured, slots, field_at(blob, object_base + TYPED_STR, lambda va: va)) \
-        == "submitted -- History holds a line", "a populated slot is a submit whatever bTyping says"
+        == "open for typing, line kept -- the key did not reach the console", \
+        "a history left by an earlier submit does not make a fresh line a submit"
     # The receipt: 'hist' in a slot with TypedStr populated is *not* a receipt; clear TypedStr and it is.
     receipt = lambda text: any(text in field["text"] for _index, field in slots) \
         and field_at(blob, object_base + TYPED_STR, lambda va: va) is None
@@ -204,6 +209,7 @@ def selftest():
     assert field_at(submitted, object_base + TYPED_STR, lambda va: va) is None, "cleared TypedStr reads as empty"
     after = state(submitted, object_base)
     assert after["history_top"] == 1 and after["b_typing"] == 0, after
+    assert describe(after, survived, None) == "submitted -- History holds a line and the console is closed", after
 
     # The other way a line goes empty: `Escape` clears it and stays open -- same empty line, different console.
     escaped = bytearray(submitted)

@@ -503,8 +503,8 @@ are limited to expected fields (checksum/timestamp) and documented.
       re-typing the line each time and dumping before and after — round 1 `ret` reproduced the receipt on a second
       heap (`Console` `0x02641b00`, `History[0]` `0x0802e61c`), and round 2's control dump held the line while its
       post-dump did not change, so the A button reaches the console as nothing and a scripted console needs the
-      keyboard. `kp_enter` is measured from an open console and is not a submit either, `pad=start` is still
-      untested, and the console's *output* still has no sink.
+      keyboard. `kp_enter` and `pad=start` are both measured from an open console and neither is a submit, and the
+      console's *output* still has no sink.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -520,6 +520,24 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, `pad=start` reaches no console branch, and a submit moves the counters)
+
+- **`submit8` is one boot with a positive control and the last untested key**: round 1 `ret` from the console the boot
+  opens, round 2 `pad=start` from the console one `Tab` re-opens, with the `wait=3` before the dump that the earlier
+  attempt timed out on. `Console` at `0x02682b00`, the third base address in three boots.
+- **The counters increment where `Console.uc`'s `IK_Enter` branch puts them**: `HistoryTop` 0 -> 1, `HistoryBot` -1 ->
+  0, `HistoryCur` 0 -> 1, `TypedStrPos`/`bTyping` 55/1 -> 0/0, and `History[0]` copies the whole 56-character line (a
+  repeated `gkey` grew it), so the receipt cannot be a coincidence with the five-character control.
+- **Start reaches no branch of `Console`.** Round 2's pre-dump holds the fresh ` hist` at `TypedStrPos` 5 with
+  `bTyping` 1 and round 1's history in slot 0; after the tap every one of those words is identical while the frame
+  moved 813 px -- not the submit, not the `Escape` clear. With `pad=a` measured the same way, no pad button drives the
+  console.
+- **`--state`'s phrase had the precedence wrong, and round 2 found it**: an open console with a populated `History`
+  read as "submitted". `bTyping` decides first now, and `--selftest` asserts open-with-history and
+  closed-with-history separately.
+- **The submit is invisible**: the shot three seconds after `ret` moved 0 px, because `Engine.Console` has no
+  `PostRender`. That is why the receipt is a dump and not a frame.
 
 ### Execution notes (2026-11-06, `kp_enter` is not a submit, and the console's counters are readable)
 
