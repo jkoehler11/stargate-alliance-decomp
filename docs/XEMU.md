@@ -2566,3 +2566,55 @@ takes the same arms with `--brk-stops=40`: a third read of a route function, fro
 route running; only `0x3990f` and `0x58ad4` through gameplay is the route never running, which is the cause U15's five
 `none` player fields are waiting for.
 
+## A read watchpoint on a script function *does* witness it running, and the HUD route runs (measured 2026-11-07)
+
+The section above ended at the 12-stop cap with the route unobserved through gameplay. The same arms with
+`--brk-stops=40` answer the question, and the answer is the opposite of what a walker-only read suggested: **five of
+the six armed copies are read a third time, by the interpreter.** The third reader is
+`0x00048ce0`/`0x00048ce8` -- an alternating pair inside `UObject::ProcessInternal` (`0x00048bf0`, the bytecode loop,
+`docs/NATIVE_VM.md`) -- which is exactly the pair that reads `DrawHUD` about five times a second while it draws. A
+read of a function's **first byte** from `ProcessInternal` is the function starting to execute; the walker's reads
+(`0x0003990f`, `0x00058ad4`) are its serialise-time walk. So the two readers were the discriminator they were believed
+to be, and the five HUD-setup functions do run.
+
+| function and address | load walk | second load pass | interpreter |
+| --- | --- | --- | --- |
+| `SetupInteractionsFor` `0x01a7e000` | `0x3990f` t+14.8 s | `0x58ad4` t+14.9 s | `0x48ce0` **t+17.8 s** |
+| `AddInteraction` `0x00c26c00` | `0x3990f` t+12.6 s | `0x58ad4` t+12.6 s | `0x48ce0` **t+18.0 s** |
+| `PostNetBeginPlay` (2nd copy) `0x01c9fdc0` | `0x3990f` t+13.2 s | `0x58ad4` t+13.2 s | `0x48ce0` **t+18.2 s** |
+| `Timer` `0x016b0140` | `0x3990f` t+12.8 s | `0x58ad4` t+12.9 s | `0x48ce0` **t+18.9 s** |
+| `PostNetHUDSetup` `0x01c6af80` | `0x3990f` t+13.0 s | `0x58ad4` t+13.1 s | `0x48ce0` **t+19.0 s** |
+| `PostNetBeginPlay` (1st copy) `0x016b2800` | `0x3990f` t+8.6 s | `0x58ad4` t+8.7 s | `0x3990f` t+16.6 s, then retired at the per-copy cap |
+
+Two things follow, and one of them is a correction to the section above.
+
+- **A third read is the route running, and the wait in this boot did not reach it by luck.** The `brk7` log records
+  `PostNetBeginPlay` at `0x01c9fdc0` read by `0x00048ce0`/`0x00048ce8` at t+19.7 s as well, and `AddInteraction`
+  read twenty-two times by that pair (eleven alternating pairs) between t+18.0 and t+20.4 s -- a function under the
+  interpreter is read once per execution, so that is a call path that repeats, not a one-shot setup.
+  The sixth copy, `PostNetBeginPlay` at `0x016b2800`, spent all three of its reads on load passes (a third walker
+  pass at t+16.6 s), which is a fact about that copy rather than a missed fire.
+- **The documented chain is still not the order that runs.** `SetupInteractionsFor` (17.8 s) and `AddInteraction`
+  (18.0 s) execute *before* `Timer` (18.9 s) and `PostNetHUDSetup` (19.0 s), where
+  `PostNetBeginPlay -> SetTimer(1.0) -> Timer -> PostNetHUDSetup -> SetupInteractionsFor -> AddInteraction` requires
+  the reverse. Since the same five names exist in more than one class, the honest reading is that the armed copies
+  are not all the HUD's own functions -- resolving which export each copy belongs to is the next measurement, and it
+  is a dump-side one (the copy's address is in the object array), not another boot.
+
+**The cap, not the arms, was cutting the window.** Both runs above ended their first wait at the stop cap -- 20.4 s
+and 19.0 s of a 150 s window -- because one hot arm (`AddInteraction`, read ~5x/s once it runs) spends the budget on
+its own repetitions. `drive.py --brk-keep-stops=N` retires **one armed copy** after N reads and leaves the rest
+armed, which is what lets a run watch a full window with a hot arm in it: the counting is per (label, address) so the
+second copy of a pattern keeps its own reads, and the step still reports every reader for every copy in its summary.
+The `brk8` boot above used `--brk-keep-stops=3`: five copies reached the interpreter and the sixth spent its three
+reads on load passes, which is a fact about that copy rather than a miss.
+
+**What this changes in the ledger.** U15's five `none` player fields are no longer explained by "the route never
+ran": it runs, ~3 s after the load passes, and `AddInteraction` in particular executes repeatedly. The open question
+moves one step downstream -- whether the setup's *write* reached `GameHudPtr`, i.e. whether the class string resolved
+when `SetupInteractionsFor` executed.
+
+**A limitation of this harness, recorded so it is not read as a guest state:** the `05-final` shot came back
+byte-identical (0 px in `brk7`, 27 px in `brk8`) in both runs, after the `DrawHUD` arm had retired at its cap. The
+same step passed in the previous boot, so a static final frame after a long `--brk-keep` step means the emulator's
+last repaint is not a measurement; the evidence in these runs is the stop log, not the final frame.

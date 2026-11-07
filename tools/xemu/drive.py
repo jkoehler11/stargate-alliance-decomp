@@ -352,6 +352,11 @@ def main():
     ap.add_argument("--brk-stops", type=int, default=8,
                     help="stops to take per brk= step under --brk-keep (a function read every frame reaches this at "
                          "once, which is the point of the control)")
+    ap.add_argument("--brk-keep-stops", type=int, default=0, metavar="N",
+                    help="under --brk-keep, reads to record per armed copy before that copy's watchpoint is removed "
+                         "(0 = keep every copy armed for the whole wait): one hot arm otherwise eats the --brk-stops "
+                         "budget and the wait ends in the load window instead of gameplay -- three load passes are "
+                         "the measurement, the rest is repetition")
     ap.add_argument("--brk-kind", default="read",
                     help="`read` or `exec`, one value per brk= step (comma list, or one for all): `read` puts a Z3 read "
                          "watchpoint on the function's "
@@ -780,6 +785,7 @@ def main():
                 gdb = memory.Gdb("127.0.0.1", args.gdb)
                 kind = BRK_KINDS[min(brk_seen, len(BRK_KINDS) - 1)]
                 fired, live, readers, stops = {}, [], {}, 0
+                copies_read = {}
                 try:
                     try:
                         gdb.stop(3.0)
@@ -868,11 +874,26 @@ def main():
                             # retired, so resuming is enough.)
                             readers.setdefault(label, []).append(eip)
                             stops += 1
+                            copies_read[(label, lin)] = copies_read.get((label, lin), 0) + 1
                             say("         READ %s at %#010x, eip %#010x, t+%.1fs (stop %d of %d)"
                                 % (label, lin, eip if eip is not None else 0, time.time() - started,
                                    stops, args.brk_stops))
+                            if args.brk_keep_stops and copies_read[(label, lin)] >= args.brk_keep_stops:
+                                # Retire this copy, not the step: an arm that runs every frame would otherwise
+                                # spend the whole budget on one label and cut the wait inside the load window.
+                                # The counter is per copy so a second copy of the same pattern keeps its own reads.
+                                try:
+                                    gdb.unwatch(lin, 1, kind)
+                                except (IOError, OSError):
+                                    pass
+                                live[:] = [item for item in live if item != (label, lin)]
+                                say("         %s at %#010x reached --brk-keep-stops=%d: unwatched, %d arm(s) left"
+                                    % (label, lin, args.brk_keep_stops, len(live)))
                             if stops >= args.brk_stops:
                                 say("         %d stop(s) taken: ending the wait" % stops)
+                                break
+                            if not live:
+                                say("         every armed copy reached --brk-keep-stops: ending the wait")
                                 break
                             continue
                         live.remove(hit[0])

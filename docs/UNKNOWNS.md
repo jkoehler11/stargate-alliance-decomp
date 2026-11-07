@@ -1150,6 +1150,23 @@ read watchpoints armed shows each of the five functions plus the second `PostNet
 `0x48ce0`/`0x48ce8` pair, which `DrawHUD` hits about five times a second) or show none through gameplay, and the
 latter is the cause of the five `none` fields this entry is about.
 
+**Answered, and the route runs: five of the six armed copies are read a third time by the interpreter (2026-11-07).**
+With `--brk-stops=40` the two load passes repeat and then, 2-3 s after them, **five of the six copies** are read from
+`0x00048ce0`/`0x00048ce8` -- inside `UObject::ProcessInternal` (`0x00048bf0`), the same pair that reads `DrawHUD`
+every frame -- so the five HUD-setup functions do execute (`SetupInteractionsFor` t+17.8 s, `AddInteraction` t+18.0 s
+and twenty-two more reads, eleven alternating pairs, by t+20.4 s, `PostNetBeginPlay` second copy t+18.2 s, `Timer`
+t+18.9 s, `PostNetHUDSetup` t+19.0 s). The sixth, the first `PostNetBeginPlay` copy, spent its reads on three load
+passes and is a fact about that copy rather than a miss. Two corrections follow. **A `Z3` read watchpoint on a script
+function *can* witness execution**, contrary to the previous paragraph, as long as the reader `eip` is checked:
+`ProcessInternal` is distinguishable from the loader's walker.
+And **the documented chain is still not the order that runs** (`SetupInteractionsFor` and `AddInteraction` execute
+before `Timer` and `PostNetHUDSetup`), so the armed copies are not all the HUD's own functions -- the same five names
+exist in more than one class. The five `none` player fields are therefore an *effect* question, not a dead-route one:
+whether `SetupInteractionsFor`'s write reached `GameHudPtr` when it executed. **What would settle it** is (a) which
+export owns each armed copy -- a dump-side walk of the object array for a `UFunction` whose script pointer is the
+copy's linear address, no boot needed -- and (b) a `--fields` read of `GameHudPtr` from a dump taken *after* t+19 s of
+an `M00` load, where the route has demonstrably run. Detail: `docs/XEMU.md`.
+
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
