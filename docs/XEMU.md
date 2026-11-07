@@ -2748,11 +2748,71 @@ That closes the loop the `GNames` section opened: a loader record's index names 
 names it directly. It also buys the read a vtable census cannot do, because `GameHud extends Interaction` carries
 `Interaction`'s table and no table names a script class -- `names.py --census` names every object's class from its own
 `Class` pointer (one 64 KiB page per page holding an object, the same choice `objects.py`'s walk makes) and reports
-the class histogram, or one substring of it with `--grep`. **Not yet run over a full array**: the census's numbers
-are the next measurement, and `--verify`'s are the ones quoted above.
+the class histogram, or one substring of it with `--grep`. **The first full-array run is the
+section below** (371 classes over a loaded `M00`), and `--verify`'s numbers are the ones quoted above.
 
 Slots 5 and 16 of the reserved block answered `None` in the `--find` run, a read fault rather than an absent name:
 `--index 0-16` re-reads the block on a fresh connection.
 
 The tool is `tools/xemu/names.py`: `--find` for the shape sweep (and its negative), `--hash` for the hash table's
 occupancy, `--index` for any index list (a loader record, a header field), `--verify` for the object side.
+
+## The census over a loaded `M00`: 371 classes, and the object array continues past 128 MiB (measured 2026-11-07)
+
+One boot (`~/sg1/work/xemu/census1`), `M00` at map index 10 loaded from `QUICK SELECT MAP` with the profile EEPROM,
+`drive.py --gdb=12501 --linger=1800`, then `names.py --census` attached to the live stub. The population is a level,
+not a title:
+
+| reading | value |
+| --- | --- |
+| name table `0x006be0d8` | `data=0x07700000 num=41,265 max=51,886` (title read 34,800) |
+| object array `0x006c21b0` | `data=0x041e0000 num=48,646 max=51,886` |
+| array entries below 128 MiB | 45,802 |
+| array entries at or above 128 MiB | **2,835** |
+| zeros | 9 |
+| walk, `objects.py` bound (`< 0x08000000`) | 295 pages, 3 m 56 s, 302 classes, 14,728 objects in 5 unlabeled rows |
+| walk, `OBJECT_HI = 0x10000000` | 346 pages, 48,622 headers read, **371 classes** |
+
+**The bound is the finding.** `objects.py`'s `RAM_HI = 0x08000000` is the physical size of the `pmemsave`, but the
+stub reads *linear* addresses and 2,835 of the array's entries sit just above it. Twenty of twenty sampled read back
+as ordinary objects and name a class through their `Class` pointer -- `StaticMesh` assets (`+0x00 = 0x0051dd28`) and a
+`Class` at `0x082ff600`. A census on the physical bound therefore drops the top of the heap silently, which is exactly
+where this boot's gameplay objects live.
+
+**Script classes are named from their own `Class` pointer, which is the read a vtable census cannot do.** Matching
+classes on this boot, with addresses:
+
+| class | objects | addresses |
+| --- | --- | --- |
+| `GameHud` | 2 | `0x0682ab00` (class default: its `Name` resolves to `GameHud`), **`0x09332100`** (instance, above 128 MiB) |
+| `NotificationManager` | 1 | `0x096dc340` |
+| `StargateTeamHUD` | 1 | `0x08af0a00` |
+| `SGPlayerInput` | 1 | `0x09675500` |
+| `PlayerProfile` | 1 | `0x08a75040` |
+| `PlayerStats` | 1 | `0x0977b900` |
+| `PlayerController` | 1 | `0x01c31000` |
+| `PlayerReplicationInfo` | 3 | `0x02345a00`, `0x08ab6e00`, `0x08ab7800` |
+| `SGInteraction` | 32 | 25 below the bound, 7 at `0x0921xxxx` |
+| `Console` | 1 | `0x02344b00` (the class default, as before) |
+
+Two corrections follow. First, the `Interaction` count a vtable census reports (19 on the older dump) is not the
+script population: `SGInteraction` alone has 32 objects here, and only a `Class`-pointer read can say so. Second, the
+live HUD object on this boot is `StargateTeamHUD`, not `StargateHUD` -- the earlier `StargateHUD` object
+(`0x05bc6a00`) was named from a dump-based read on a different boot, and no `StargateHUD` row appears here.
+
+**U15's five `none` player fields were the bound, not an unset code path.** The `--fields` walk that named no
+`GameHud` on the player ran over the 128 MiB `pmemsave`, and the player's `GameHud`, its `NotificationManager` and
+its `PlayerProfile` all sit **above** it (`0x09332100`, `0x096dc340`, `0x08a75040`). So `AddNotification` and
+`SetSubtitle` had a sink on this level: the channel is not unset, and the missing text has to be explained by the draw
+path (`GameHud.SetNotifications`) or by the frame, not by an absent object.
+
+**Two classes stay unlabeled, and the reason is a read that crosses a 64 KiB page.** The five `<unreadable>` rows are
+class objects in `Core` (`Outer 0x97fa08`): `0x00bc2400` (8,610 objects, `Name` index 103), `0x00bc9000` (5,849,
+index 5), `0x00bcde00` (151), `0x00bc6c00` (80), `0x00bc7800` (38). Their `FNameEntry` pointers end in `...fc0`, so
+the 206-byte entry read starts 64 bytes before a page boundary and the stub refuses it -- the same fault that made 21
+of the name array's first 64 slots unreadable in `--find`, and here it is a *boundary* rather than a flaky read.
+Index 5 is `ObjectProperty` (`inventory/property_types.csv`), which is what 5,849 property objects should be; index
+103 is unresolved. The fix is to split that read at the boundary, which is the next instrument change, not a new boot.
+
+Tool: `names.py --census --csv PATH` keeps every row so one walk answers any class question, `--grep A,B` takes a
+comma list, and `--addresses` prints the matching objects' addresses -- the three additions this measurement needed.

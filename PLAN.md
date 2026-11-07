@@ -676,6 +676,16 @@ are limited to expected fields (checksum/timestamp) and documented.
       *script* class (`GameHud` carries `Interaction`'s table). **Next**: run `--census` over a boot that has loaded
       `M00` and read the class histogram for `GameHud`/`NotificationManager`, which turns U15's five `none` player
       fields into a class census rather than a route question.
+      **The census is measured over a loaded `M00`, and the object array continues past 128 MiB (2026-11-07)**: one
+      boot (`census1`, index 10, gdb stub held open) walks `48,646` array entries into **371** named classes, and
+      `2,835` of those entries sit at or above `0x08000000` -- the bound `objects.py` uses for the 128 MiB
+      `pmemsave`. Sampled, they read as ordinary objects (`StaticMesh`, a `Class` at `0x082ff600`), and they hold the
+      boot's live gameplay objects: `GameHud` at `0x09332100` (plus the class default at `0x0682ab00`),
+      `NotificationManager` `0x096dc340`, `PlayerProfile` `0x08a75040`, `SGInteraction` 32, `StargateTeamHUD`
+      `0x08af0a00`. So U15's five `none` player fields were a bound artifact, not an unset channel. `names.py` gains
+      `--csv`, a comma list for `--grep` and `--addresses`, and its own `OBJECT_HI = 0x10000000` for the array.
+      **Next**: read `GameHud.SetNotifications` on `0x09332100` over the stub (one boot, `--fields`), and split the
+      `FNameEntry` read at the 64 KiB boundary that leaves five `Core` classes unlabeled.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

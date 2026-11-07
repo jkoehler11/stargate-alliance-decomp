@@ -40,6 +40,9 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # name every object's class from its Class pointer (the read a vtable census cannot do)
     python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006be0d8 --census --top 20
 
+    # the same walk, but keep every row: one walk then answers any class question
+    python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006be0d8 --census --csv classes.csv
+
 **Measured (2026-11-07), so start here.** In a guest at the title the array is `0x006be0d8`
 (`data=0x01f30000` num=34,800 max=37,732), immediately after the name system's `Initialized` dword at
 `0x006be0c8`. `--find` is kept because its negative is the measurement: only `GObjObjects` resolves out of
@@ -80,6 +83,16 @@ def load(name, path):
 objects = load("xemu_objects", OBJECTS_PY)
 Guest = objects.Guest
 plausible_pointer = objects.plausible_pointer
+
+# `objects.py`'s bound is the guest's 128 MiB, but the stub reads *linear* addresses and this guest's object array
+# holds 2,835 entries just above that (0x08000000..0x10000000) which read back as ordinary objects -- `StaticMesh`
+# assets and a `Class` at 0x082ff600 among them. A census on the physical bound drops them silently, and they are
+# where several live gameplay objects sit, so the object array gets the wider window (measured 2026-11-07).
+OBJECT_HI = 0x10000000
+
+
+def plausible_object(value):
+    return objects.RAM_LO <= value < OBJECT_HI and value % 4 == 0
 
 
 def read_section(guest, va, size, chunk=0x10000):
@@ -445,7 +458,7 @@ def cmd_census(guest, args):
     nm = Names(guest, data, num)
     odata, onum = object_array(guest, args)
     ptrs = [p for p in struct.unpack("<%dI" % onum, guest.read(odata, onum * 4))
-            if plausible_pointer(p)]
+            if plausible_object(p)]
     span = 0x10000
     pages = {}
     for p in ptrs:
@@ -453,6 +466,7 @@ def cmd_census(guest, args):
     print("walking %d of %d object(s) over %d page(s)" % (len(ptrs), onum, len(pages)))
     class_of = {}
     name_of = {}
+    where = {}
     walked = 0
     missing = 0
     for page in sorted(pages):
@@ -475,31 +489,55 @@ def cmd_census(guest, args):
             idx = struct.unpack_from("<I", buf, off + NAME_OFF)[0]
             class_of[klass] = class_of.get(klass, 0) + 1
             name_of[idx] = name_of.get(idx, 0) + 1
+            where.setdefault(klass, []).append(p)
             walked += 1
     print("read %d object header(s), %d unreadable" % (walked, missing))
 
     by_class = {}
     unnamed = 0
+    addresses = {}
     for klass, count in class_of.items():
+        # The class object's own name is *one* read, and a single short read is what the `--find` sweep
+        # already measured on this stub: 21 of the name array's first 64 slots failed to read back and
+        # counted as absent. Retry it, or a flaky page turns a whole class into "<unreadable>" (14,459
+        # objects over two classes in the first full-array run).
         label = None
-        try:
-            idx = guest.u32(klass + NAME_OFF)
+        for attempt in range(4):
+            try:
+                idx = guest.u32(klass + NAME_OFF)
+            except IOError:
+                continue
             label = nm[idx]
-        except IOError:
-            pass
+            if label:
+                break
         if not label:
             unnamed += count
             label = "<unreadable %#x>" % klass
         by_class[label] = by_class.get(label, 0) + count
+        addresses.setdefault(label, []).extend(where[klass])
     print("%d distinct class(es) over %d object(s), %d object(s) in an unreadable class"
           % (len([b for b in by_class if not b.startswith("<")]), walked, unnamed))
     rows = sorted(by_class.items(), key=lambda kv: -kv[1])
+    if args.csv:
+        with open(args.csv, "w", encoding="utf-8") as fh:
+            fh.write("class,objects\n")
+            for label, count in rows:
+                fh.write("%s,%d\n" % (label, count))
+        print("\nwrote all %d class row(s) to %s" % (len(rows), args.csv))
     if args.grep:
-        needle = args.grep.lower()
-        rows = [r for r in rows if needle in r[0].lower()]
+        needles = [n for n in args.grep.lower().split(",") if n]
+        rows = [r for r in rows if any(n in r[0].lower() for n in needles)]
         print("\nclasses matching %r (count):" % args.grep)
         for label, count in rows[:args.top]:
             print("  %-40s %6d" % (label, count))
+        if args.addresses:
+            print("\naddresses (class, address):")
+            for label, count in rows:
+                addrs = addresses.get(label, [])
+                for p in addrs[:args.limit]:
+                    print("  %-40s %#010x" % (label, p))
+                if len(addrs) > args.limit:
+                    print("  %-40s ... %d more" % (label, len(addrs) - args.limit))
         return
     print("\n%-40s %6s" % ("class", "objects"))
     for label, count in rows[:args.top]:
@@ -529,8 +567,15 @@ def main():
     ap.add_argument("--census", action="store_true",
                     help="name every object's class from its Class pointer (walks the whole array)")
     ap.add_argument("--grep", default=None, metavar="SUBSTR",
-                    help="with --census, print only classes whose name contains this substring")
+                    help="with --census, print only classes whose name contains one of these comma-separated "
+                         "substrings")
     ap.add_argument("--top", type=int, default=12, help="rows to print")
+    ap.add_argument("--csv", default=None, metavar="PATH",
+                    help="with --census, write the whole class histogram (class,objects) to this file, so one "
+                         "walk answers every class question instead of one walk per --grep")
+    ap.add_argument("--addresses", action="store_true",
+                    help="with --census --grep, print the matching objects' addresses as well as their counts")
+    ap.add_argument("--limit", type=int, default=40, help="with --addresses, rows per class")
     args = ap.parse_args()
     if args.section is None:
         args.section = [".data"]
