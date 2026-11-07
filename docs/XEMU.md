@@ -1995,3 +1995,27 @@ Nothing is known about `pad=start`; a re-run should put a `wait=` between the ta
 `TypedStr` and the populated slots, `--receipt TEXT` exits 0 only when the text is in a slot *and* `TypedStr` is
 empty (1 otherwise, which is what `d0` answers), and `--selftest` proves both on a synthetic object. The measured
 `CR3` on these boots is `0xf000`.
+
+## `pad=a` is not a console submit, and the receipt reproduces on a second boot (measured 2026-11-06)
+
+The console closes on a submit (`bTyping` 0), so `submit5`'s later keys arrived with an empty line and proved
+nothing. `submit6` makes each key its own round: `Tab`, `spc`, `hist`, a control dump, the key, `wait=3`, a receipt
+dump — round 1 with `ret`, round 2 with `pad=a` from a console that round 1's submit had closed, so one `Tab`
+re-opens it.
+
+| dump | round | `TypedStr` `+0x44` | `History` |
+|---|---|---|---|
+| `r1-pre` | 1, before `ret` | `0x0802db78 6/6 ' hist'` | 0 populated |
+| `r1-post` | 1, after `ret` | empty | `[0]` `0x0802e61c 6/6 ' hist'` |
+| `r2-pre` | 2, after `Tab` + typing | `0x0802db84 6/6 ' hist'` | `[0]` unchanged |
+| `r2-post` | 2, after `pad=a` | `0x0802db84 6/6 ' hist'` | `[0]` unchanged |
+
+**Round 1 reproduces the submit on a second boot**, and on a different heap: `Console` at `0x02641b00` instead of
+`0x02661b00`, the line at `0x0802db78`, the history copy at `0x0802e61c` — the same `0xAB0` offset the first boot's
+stop named. So the receipt is not a one-boot coincidence and the offsets `+0x44`/`+0x50` hold across heaps.
+
+**Round 2 is a negative with a control.** Its pre-dump shows the reopened console holding the freshly typed line,
+so input reached the console and the state was right; the press then changed neither `TypedStr` nor `History`. The
+A button therefore produces no `IK_Enter` for the console, and a scripted console cannot be driven from the pad.
+`kp_enter` and `pad=start` remain untested — each needs its own console state, and `pad=start` has only ever been
+sent in the boot that then timed out at the next `pmemsave`.

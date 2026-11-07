@@ -917,8 +917,9 @@ in a slot *and* the line is empty; the same dump taken before the submit exits 1
 the write", was the pre-execution interpretation of the same register file, and a dump taken at a watch is a
 pre-submit snapshot because the guest resumes inside the same second. **What remains:** the console's output has no
 sink at all (`Scrollback` belongs to `ExtendedConsole`, which this build never instantiates), and
-`kp_enter`/`pad=a`/`pad=start` were sent after the submit had already closed the console (`bTyping` 0), so they are
-untested rather than negative — a boot that re-types the line before each key would settle them.
+`kp_enter`/`pad=start` were sent after a submit had already closed the console (`bTyping` 0) and remain untested.
+`pad=a` is measured: with the line re-typed and dumped before and after the press, the A button changed neither
+`TypedStr` nor `History`, so the pad has no console submit and a scripted console needs the keyboard.
 
 **A loaded level still has no live `Console`, and `Tab` was the variable, not the level (measured 2026-11-06).** With
 the keyboard attached at 75 s and a campaign level up (`48,647 objects over 295 pages`, `StaticMeshActor` 927, the M00
