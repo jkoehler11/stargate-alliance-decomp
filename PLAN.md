@@ -716,11 +716,21 @@ are limited to expected fields (checksum/timestamp) and documented.
       `UITextBox` (`Text` is only `DisplayTextBox`'s parameter), and the tool's `0x200`-byte default read was the
       reason the string was invisible -- the block runs past `+0x4c0`, so `--size` now defaults to `0x600` and a text
       triple prints as an `FString` character count with UTF-16 decoded under `--show-text` (`docs/XEMU.md`).
-      **Next**: the `UClass` object's own members past `0x400` -- `Children` and `DefaultObject`: `class+0x4e8` points
-      at an object of the class itself on both class objects read here (`GameHud` -> `0x13c1e00`, `UITextBox` ->
-      `0x01a1d700`), and neither is in the object array, while the object the census called `GameHud`'s class default
-      (`0x0682ab00`) is a second instance under that reading, so which member `+0x4e8` is, and where the property
-      chain head really sits, is one read away.
+      **The class object's own members are a field table, and `+0x4e8` is not the default object (measured
+      2026-11-07)**: over one loaded-`M00` boot (`census5`, stub `12515`), `GameHud`'s class object `0x01886c00`
+      (class `Class`, name `GameHud`, `Outer` `0x0097e0a8` named `StargateGame`) holds **323** object pointers in
+      `+0x28..+0x800`, **307** of them in `GObjObjects`. `+0x28` is the `Interaction` class object -- `GameHud
+      extends Interaction` (`StargateGame/GameHud.uc:4`), so that dword is `UStruct::Super` -- and from `+0x98` to
+      `+0x494` (36 rows past `0x400`) runs a nearly dense table of `Function`/`Property` pointers: the class's own
+      fields (`Cleanup`, `DisplayTextBox`, `SetNotifications`), whose `Outer` (`+0x18`) is the class, interleaved
+      with `Object`'s native operators (`Lerp`, `Add_IntInt`), whose `Outer` is the `Object` class `0x00bcf000` --
+      a name-keyed field map, not a `Children` chain. `+0x4b0` is the `Object` class object and `+0x4d0` a
+      `PlayerController`; **`+0x4e8` is not an object**: `0x013c1e00` reads vtable `0x004d4870`, ObjectIndex `-1`,
+      `Outer` 0, Name 0 and every other dword zero -- an unconstructed block carrying only a vtable and a `Class`
+      pointer, so the earlier `DefaultObject` reading is refuted. The live `GameHud` instance the census names
+      (`0x0682ab00`, ObjectIndex `0xa221`, name `GameHud`) is **not** pointed at anywhere in the class object's first
+      `0x800` bytes, so `DefaultObject` is still unlocated. **Next**: the class object past `0x800`, with the same
+      `fields.py --members` scan on `UITextBox`'s class object `0x0197a800` as the control.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
