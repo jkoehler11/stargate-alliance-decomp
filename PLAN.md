@@ -540,9 +540,15 @@ are limited to expected fields (checksum/timestamp) and documented.
       `StargateHUD` at `+0x748`) -- and **no `Interaction`**, so `GameHudPtr` and `NotificationManager` are unset:
       the two message channels have no sink, which is why a frame one second after the submit drew nothing. The 19
       objects on the `Interaction` table are 52 bytes each (the class's `object_size`) against `GameHud`'s 106
-      properties, so none of them is the HUD actor. **Next**: load `M00` the way the game does -- a checkpoint load
-      rather than `QUICK SELECT MAP` -- and repeat `--fields`; a non-`none` `GameHudPtr` makes this a missing
-      `CurrentGameProfile`, one that stays `none` moves the question to `InteractionMaster`.
+      properties, so none of them is the HUD actor. **Next, corrected (2026-11-07)**: the route is read now --
+      `inventory/interaction_setup.csv` (`make interaction-setup`) shows `GameHudPtr` written by
+      `StoryModeGame`/`StargateDeathMatch.SetupInteractionsFor` from `InteractionMaster.AddInteraction`, reached only
+      from `StargateHUD.PostNetHUDSetup` <- `StargateHUD.Timer` <- the `SetTimer` in `StargateHUD.PostNetBeginPlay`
+      -- and nothing in it reads `CurrentGameProfile`, so the checkpoint load this note used to ask for would have
+      measured the same profile-free path and is retired (`docs/XEMU.md`, U15). What is left is whether that
+      `PostNetBeginPlay` route ran at all: a breakpoint on `UInteractionMaster::AddInteraction` during an `M00` load
+      fires (the setup ran, and the class string did not resolve) or never does (the route is dead in this boot, and
+      no map will show those five fields).
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

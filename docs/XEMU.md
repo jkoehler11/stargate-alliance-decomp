@@ -2326,3 +2326,65 @@ client when `Level.Game.CurrentGameProfile != none`, and this level was opened f
 boot loads `M00` the way the game does -- a checkpoint load -- and repeats `--fields` on the player: a non-`none`
 `GameHudPtr` would make the missing HUD a missing profile rather than an unset code path, and one that stays `none`
 moves the question to `InteractionMaster`, which is present (`+0x30` of the first `Interaction`).
+
+## A `GameHud` is an `Interaction` the game installs, and the profile is not in the route (measured 2026-11-07)
+
+The section above left one question open: `GameHudPtr` and `NotificationManager` are `none` on a loaded `M00`, and
+"where a `GameHud` comes from" was left to a checkpoint load. The packages carry their own `ScriptText`, so the
+answer is readable without a boot: `make interaction-setup` writes `inventory/interaction_setup.csv`, one row per
+`InteractionMaster.AddInteraction` call site, with the field the result lands in and the routines that call the
+routine containing it.
+
+| reading | count |
+|---|---|
+| `AddInteraction` call sites | **7** |
+| interaction classes named | **5** (`GameHud`, `CommandInterface`, `WeaponMenu`, `SquadMenu`, `WeaponZoomInteraction`) |
+| packages they live in | **1** (`StargateGame`) |
+| sites that write `GameHudPtr` | **2**, both a routine named `SetupInteractionsFor` |
+
+**The five fields one bug report would have called five problems are one unit.** `StoryModeGame.SetupInteractionsFor`
+writes `GameHudPtr` from `AddInteraction("StargateGame.GameHud", …)`, writes `CommandInterface` from the next
+`AddInteraction`, creates the `NotificationManager` with `new class'NotificationManager'`, and then calls
+`StargatePlayer.UpdateWeaponMenu` and `UpdateSquadMenu` — which are the two other `AddInteraction` sites, installing
+`WeaponMenu` and `SquadMenu`. `StargateDeathMatch` carries the same routine for the multiplayer game class. So a
+`GameHudPtr` of `none` predicts `none` for all four of its neighbours, which is why the field walk found one
+missing pointer rather than five.
+
+**The route into it has one engine-side entry.** `StargateHUD.PostNetHUDSetup` resolves the game class from
+`PlayerOwner.GameReplicationInfo.GameClass` and calls `SetupHUDFor` on it, which calls `SetupInteractionsFor`. The
+only caller of `PostNetHUDSetup` is `StargateHUD.Timer`, and the timer is armed by `SetTimer(1.0, True)` in
+`StargateHUD.PostNetBeginPlay`. In the CSV's `callers` column that reads
+`StoryModeGame.SetupHUDFor <- StargateHUD.PostNetHUDSetup`, with nothing below `PostNetHUDSetup`: it is an engine
+callback, not a script call. (The column is a *name* match, so a neighbour in it — `GameInfo.SetupHUDFor`,
+`GameReplicationInfo.PostNetBeginPlay`, `CheatManager.Walk` — is a same-named routine elsewhere, not this call.)
+
+**`CurrentGameProfile` is not the gate, so the checkpoint load would not have discriminated.** The profile appears
+in two game-package classes: `CTFGame` (match result) and `GameInfo`, where `InitGame` loads it from the travel
+URL's profile option and drops it unless it is a ladder game. The one function that tests it is `areCheatsEnabled`
+in `CheatManager`, and all it decides is whether a refusal is messaged. Nothing between the HUD's
+`PostNetBeginPlay` and `AddInteraction` reads it. That retires the measurement the plan asked for: an `M00` loaded
+from a checkpoint would walk the same fields through the same profile-free code.
+
+**What the existing dump does say.** `--fields` on the HUD (`0x05bc6a00`, `msg1`) names 8 fields over 7 classes and
+none of the objects the two setup routines spawn:
+
+| field | target |
+|---|---|
+| `+0x0018` | `Package` |
+| `+0x0044`, `+0x038c` | `StargatePlayer` |
+| `+0x0390` | `Pawn` |
+| `+0x0394` | `PlayerReplicationInfo` |
+| `+0x0398` | `Console` |
+| `+0x0420` | `Movie` |
+| `+0x0440` | `MovieTexture` |
+
+`PostNetBeginPlay` spawns the HUD's `MyFont` and `PostNetHUDSetup` spawns an `SGInsetCamera`, and neither is in
+that list — consistent with neither routine having run, but **not proof**: a field is named only when its target
+carries a class table the inventory knows, and a script class carries its ancestor's, so an absent name is not an
+absent object.
+
+**What would settle it in one boot** is a breakpoint rather than a dump: `UInteractionMaster::AddInteraction` is
+reached only from these seven call sites, so a `drive.py --watch` on it during an `M00` load either fires (the
+setup ran, and the class string failed to resolve) or never does (the `PostNetBeginPlay` route is dead in this
+boot, and no map will ever show these five fields). The alternative — reading `bPostHudSetupCompleted` off the HUD
+— needs a property offset the dump does not carry, because it is a script bool whose offset is assigned at load.
