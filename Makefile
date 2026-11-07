@@ -167,13 +167,14 @@ ci:
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
 		tools/xemu/objects.py tools/xemu/ramscan.py tools/xemu/vamap.py tools/xemu/console-state.py \
-		tools/xemu/owner.py tools/xemu/names.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py and names.py compile"
+		tools/xemu/owner.py tools/xemu/names.py tools/xemu/fields.py \
+		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py, names.py and fields.py compile"
 	@$(PYTHON) tools/xemu/ramscan.py --selftest
 	@$(PYTHON) tools/xemu/mem.py --selftest
 	@$(PYTHON) tools/xemu/console-state.py --selftest
 	@$(PYTHON) tools/xemu/owner.py --selftest
 	@$(PYTHON) tools/xemu/names.py --selftest
+	@$(PYTHON) tools/xemu/fields.py --selftest
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest

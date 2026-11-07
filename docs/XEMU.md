@@ -2889,3 +2889,42 @@ carries text and the HUD draws it. Two corrections fall out of the same read.
 
 Strings are game state, so the lengths above are what the tool prints by default; the text itself stays behind
 `--show-text` and out of the tree.
+
+
+## A class object's members past `0x400`: a field table, and no default object there (measured 2026-11-07)
+
+`fields.py --members` reads a *class* object the way the name table sees it: every dword from `--start` (default
+`0x400`) to `--size` is resolved as an object, a target whose own `Outer` is the class is labelled a field of it, an
+instance of the class itself is labelled a default-object candidate, and every pointer found is looked up in
+`GObjObjects` so that "allocated but not in the array" is a measurement rather than a failed read. `Outer` is
+`UObject+0x18`, measured here in two directions: `GameHud`'s class object points at an object named `StargateGame`
+(the package that owns it), and every field object's `+0x18` is the class object it belongs to.
+
+One loaded-`M00` boot (`census5`, stub `12515`, `drive.py --linger`) over `GameHud`'s class object `0x01886c00`:
+
+| read | result |
+|---|---|
+| `0x01886c00` | class `Class`, name `GameHud`, `Outer` `0x0097e0a8` (`StargateGame`) |
+| `+0x28` | `0x00c47e00`, the `Interaction` class object -- `GameHud extends Interaction` (`StargateGame/GameHud.uc:4`), so this is `UStruct::Super` |
+| `+0x98 .. +0x494` | a nearly dense table of `Function`/`Property` pointers, `36` rows of it past `0x400`: `Cleanup`, `Lerp`, `FClamp`, `DisplayTextBox`, `SetNotifications`, `HideNotifications`, plus `Object`'s native operators (`Add_IntInt`, `Concat_StrStr`) |
+| each row's `Outer` | the class object for `GameHud`'s own fields, `0x00bcf000` (the `Object` class) for the inherited operators -- `50` of the `323` rows are the class's own |
+| each row's `Next` (`+0x28`) | `0` for every row except two `Function` pairs (`NotifyLevelChange`, `Initialized`), so the table is not a chain |
+| `+0x4b0` | `0x00bcf000`, the `Object` **class** object |
+| `+0x4d0` | `0x019fd800`, a `PlayerController` |
+| `+0x4e8` | `0x013c1e00`, whose header is vtable `0x004d4870`, ObjectIndex `-1`, `Outer` 0, Name 0 and every field zero |
+
+Three things follow, and the first two correct the doc above.
+
+* **The class's fields are a table, not a `Next` chain.** `fields.py --properties` looks for a chain whose links are
+  field objects joined through `+0x28`, and this fork does not store one: the field list is a nearly dense run of
+  pointers from `+0x98` onward, and every element's `Next` is zero. That is why the earlier scan found only a
+  two-link `Function` artefact at `+0x19c` -- those two are a state function and its successor, the one place a
+  `Next` link is real.
+* **`class+0x4e8` is not `DefaultObject`.** A live instance carries an ObjectIndex, an `Outer` and a Name; `0x013c1e00`
+  carries a vtable and a `Class` pointer and nothing else, so the "instance of the class" test that accepted it was
+  reading an unconstructed block. The `GameHud` instance the census names (`0x0682ab00`, ObjectIndex `0xa221`,
+  name `GameHud`) is not pointed at anywhere in the first `0x800` bytes of its class object, so the default-object
+  pointer is still unlocated -- past `0x800`, or not stored on the class object at all.
+* **`fields.py` now bounds its scans instead of assuming.** The field-chain and default-object searches took a
+  hard-coded `0x400`; `--scan` sets it, `--members` walks the members themselves, and `--selftest` holds the
+  member scan and the old bound's miss in `make ci` with a fake reader, no boot needed.
