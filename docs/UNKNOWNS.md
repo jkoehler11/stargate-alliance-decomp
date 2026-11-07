@@ -1191,8 +1191,17 @@ back as `Timer` (308), `PostNetBeginPlay` (2014), `PostNetHUDSetup` (17040), `Se
 copy's identity is measured now, not inferred. The shape scan itself is a **negative**: 4,496 `(Data, Num, Max)`
 triples in `.data` pass the shape and only `GObjObjects` resolves to a real pointer array, because 21 of the name
 array's first 64 slot pointers fail to read back (`odd hex length`) and a pointer-array prefilter counts them as
-nulls. What is left in U15 is the object side: `UObject::Name`'s header offset, which `names.py --at 0x006be0d8
---verify` measures, and with it the `none` player fields become a class-level read.
+nulls. **The object side is measured too (2026-11-07): `UObject::Name` is `+0x20` and `UObject::Class` `+0x24`.**
+`names.py --at 0x006be0d8 --verify` finds the class pointer without assuming a layout -- a `UClass` object's own
+vtable is the `Class` table, so the header dword pointing at one *is* `Class`, and `+0x24` does that for 400 of 400
+sampled objects -- then reads `Name` as the class object's dword that resolves, through `GNames`, to the class name
+the instance's vtable already carries (`+0x20`, 260 of 400 objects with a named vtable, no disagreement; `Outer` stays
+`+0x18`). What that buys U15 is the class-level read the entry asked for and the vtable route cannot give:
+`GameHud extends Interaction` carries `Interaction`'s table, so no table names a *script* class, while every object's
+`Class` pointer reaches a `UClass` object whose `Name` is that script class. `names.py --census` is that walk
+(class histogram, `--grep` for one name); it has not been run over a full array yet, so the five `none` player fields
+still need one census against a boot that has run the HUD route, and the effect question in the paragraph above is
+unchanged.
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
