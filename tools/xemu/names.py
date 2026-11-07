@@ -15,11 +15,15 @@ guess: entry `i` must carry index `i` (the table is positional) and its name mus
 `16` `PointerProperty`, `inventory/property_types.csv`). Seventeen exact strings at seventeen fixed indices is not
 a coincidence a scan can produce.
 
-`--verify` closes the loop the other way: walk `UObject::GObjObjects`, take objects whose first dword is a table in
-`inventory/xbe_class_table_names.csv` (so their class name is known without the name table), and ask which dword of
-the object header resolves, through the candidate table, to exactly that class name. The offset that agrees is
-`UObject::Name`; `+0x18` is the measured `Outer` (`tools/xemu/owner.py`), so a class default object should also name
-its class through `Outer` -> `Name`.
+`--verify` closes the loop the other way, and measures two header fields rather than one. A `UClass` object's own
+vtable is the `Class` table, so a header dword that points at an object on that table *is* `UObject::Class` -- no
+layout assumed. The name offset is then the dword of that class object which resolves, through the name table, to the
+class name the instance's vtable already carries: two independent committed artifacts agreeing over hundreds of
+objects. **Measured (2026-11-07): `Class` `+0x24`, `Name` `+0x20`** (an `FName` index), with `Outer` `+0x18` as
+`owner.py` measured it -- so the header reads `Outer`, `Name`, `Class` in that order.
+
+`--census` uses the pair: it names every object's class from its own `Class` pointer, which is the only way to name a
+*script* class -- `GameHud extends Interaction` carries `Interaction`'s table, so no vtable names it.
 
 Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --linger=SECS` keeps one up):
 
@@ -30,8 +34,11 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006c8a10 --index 0-16
     python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006c8a10 --index 357,2014,308,17040,2757,6823,2427
 
-    # does an object's Name resolve to the class the class table already names?
-    python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006c8a10 --verify
+    # measure UObject::Name and UObject::Class, and cross-check against the class defaults
+    python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006be0d8 --verify
+
+    # name every object's class from its Class pointer (the read a vtable census cannot do)
+    python3 tools/xemu/names.py --port 12345 --xbe ... --at 0x006be0d8 --census --top 20
 
 **Measured (2026-11-07), so start here.** In a guest at the title the array is `0x006be0d8`
 (`data=0x01f30000` num=34,800 max=37,732), immediately after the name system's `Initialized` dword at
@@ -55,6 +62,8 @@ PROPERTY_TYPES = os.path.join(REPO, "inventory", "property_types.csv")
 GNAMES_MIN = 128             # the initialiser registers 325 names before the title, so fewer is not this table
 GNAMES_MAX = 1 << 20
 OBJ_ARRAY = 0x006c21b0       # measured `UObject::GObjObjects` (docs/XEMU.md)
+NAME_OFF = 0x20              # measured `UObject::Name`, an FName index, by `--verify` (2026-11-07)
+CLASS_OFF = 0x24             # measured `UObject::Class`, a UClass object, by `--verify` (2026-11-07)
 HASH_TABLE = 0x006ba0c8      # the 4,096-slot name hash FName::StaticInit clears (docs/NATIVE_PROPERTIES.md)
 NAME_AT = 0x0c               # FNameEntry: index / flags / chain / UTF-16 name
 NAME_MAX = 96
@@ -276,69 +285,228 @@ def class_name_map(sections):
     return names
 
 
-def cmd_verify(guest, args):
+def name_table(guest, args):
+    """(data, num) for the name array at --at, read once."""
     data, num, cap = struct.unpack("<III", guest.read(args.at, 12))
     print("name table %#010x: data=%#010x num=%d max=%d" % (args.at, data, num, cap))
-    names = class_name_map(None)
+    return data, num
+
+
+def object_array(guest, args):
+    """(data, num) for UObject::GObjObjects."""
     odata, onum, omax = struct.unpack("<III", guest.read(args.objects, 12))
     print("object array %#010x: data=%#010x num=%d max=%d" % (args.objects, odata, onum, omax))
     if not (objects.RAM_LO <= odata < objects.RAM_HI) or onum < 512:
-        print("the object array does not read: no verification")
-        return
+        raise SystemExit("the object array does not read: nothing to measure")
+    return odata, onum
+
+
+class Names(object):
+    """FName index -> text, with the whole FNameEntry* array read once.
+
+    One stub round-trip per lookup is what makes an object walk slow: 34,800 pointers are 136 KiB, four
+    bulk reads, and they turn a per-index read into a memory access.
+    """
+
+    def __init__(self, guest, data, num):
+        self.guest = guest
+        self.num = num
+        self.table = b""
+        got = 0
+        while got < num * 4:
+            chunk = guest.read(data + got, min(0x4000, num * 4 - got))
+            self.table += chunk
+            got += len(chunk)
+        self.cache = {}
+
+    def __getitem__(self, idx):
+        if idx in self.cache:
+            return self.cache[idx]
+        text = None
+        if 0 < idx < self.num:
+            ptr = struct.unpack_from("<I", self.table, idx * 4)[0]
+            got = entry(self.guest, ptr)
+            text = got[3] if got else None
+        self.cache[idx] = text
+        return text
+
+
+def cmd_verify(guest, args):
+    """Measure `UObject::Name` and `UObject::Class` in a live guest: two tests, neither of them circular.
+
+    The class pointer is found without knowing any layout: a UClass object's own vtable is the `Class`
+    table, so a header dword that points at an object on that table *is* `Class`. The name offset is then
+    the dword of that class object which resolves, through `GNames`, to the class name the instance's own
+    vtable already carries -- agreement between two independent artifacts (the vtable table and the name
+    table) over hundreds of objects, so one wrong field cannot produce it.
+
+    A class *default* object is also named after its class, which makes CDO agreement a second, weaker
+    signal: it holds for the defaults in a sample and never for their instances, so an offset scoring a
+    handful of hits -- rather than one per object -- is not `Name`.
+    """
+    data, num = name_table(guest, args)
+    names = class_name_map(None)
+    class_tables = set(t for t, n in names.items() if n == "Class")
+    odata, onum = object_array(guest, args)
+    nm = Names(guest, data, num)
+
     take = min(onum, args.sample * 64)
-    raw = guest.read(odata, take * 4)
-    ptrs = [p for p in struct.unpack("<%dI" % take, raw) if plausible_pointer(p)]
-
-    cache = {}
-    def name_of(idx):
-        if idx in cache:
-            return cache[idx]
-        try:
-            got = entry(guest, guest.u32(data + idx * 4))
-        except IOError:
-            got = None
-        cache[idx] = got[3] if got else None
-        return cache[idx]
-
+    ptrs = [p for p in struct.unpack("<%dI" % take, guest.read(odata, take * 4))
+            if plausible_pointer(p)]
     stride = max(1, len(ptrs) // args.sample)
-    sampled = known = 0
-    hits = {}
-    inrange = {}
-    examples = []
+    heads = []
     for ptr in ptrs[::stride][:args.sample]:
         try:
-            head = guest.read(ptr, 0x40)
+            heads.append((ptr, guest.read(ptr, 0x50)))
         except IOError:
             continue
-        sampled += 1
+    OFF = list(range(0x04, 0x50, 4))
+    print("sampled %d object(s)" % len(heads))
+    if not heads or not class_tables:
+        print("  no objects or no `Class` table in inventory/xbe_class_table_names.csv: nothing to measure")
+        return
+
+    # 1. the Class pointer: a header dword pointing at an object whose own vtable is the `Class` table
+    # Count every offset independently and only then pick the winner: several fields point at a `UClass`
+    # object (`Outer` is one -- a function's outer is its class), so a loop that stops at the first match
+    # per object splits the count between them and makes the true offset look like a minority.
+    ptr_hits = {}
+    vals_of = {}
+    for ptr, head in heads:
+        vals = {off: struct.unpack_from("<I", head, off)[0] for off in OFF}
+        vals_of[ptr] = vals
+        for off in OFF:
+            v = vals[off]
+            if not (objects.RAM_LO <= v < objects.RAM_HI):
+                continue
+            try:
+                if guest.u32(v) in class_tables:
+                    ptr_hits[off] = ptr_hits.get(off, 0) + 1
+            except IOError:
+                continue
+    print("\nclass pointer (a header dword on the `Class` table):")
+    for off in sorted(ptr_hits, key=lambda o: -ptr_hits[o])[:4]:
+        print("  +%#04x points at a UClass object for %d of %d object(s)" % (off, ptr_hits[off], len(heads)))
+    if not ptr_hits:
+        print("  no header dword points at a UClass object: no verification")
+        return
+    class_off = max(ptr_hits, key=ptr_hits.get)
+    if ptr_hits[class_off] < len(heads):
+        print("  note: %d object(s) have no class pointer at that offset" % (len(heads) - ptr_hits[class_off]))
+    classes = dict((ptr, vals[class_off]) for ptr, vals in vals_of.items()
+                   if objects.RAM_LO <= vals[class_off] < objects.RAM_HI)
+
+    # 2. the name offset: the class object's name must equal the instance's vtable class name
+    name_hits = {}
+    known = 0
+    for ptr, head in heads:
         vt = struct.unpack_from("<I", head, 0)[0]
         want = names.get(vt)
         if not want:
             continue
         known += 1
-        for off in range(4, 0x40, 4):
-            d = struct.unpack_from("<I", head, off)[0]
-            if not (0 < d < num):
-                continue
-            inrange[off] = inrange.get(off, 0) + 1
-            if name_of(d) == want:
-                hits[off] = hits.get(off, 0) + 1
-                if len(examples) < 6:
-                    examples.append((ptr, off, want))
-    print("sampled %d object(s), %d whose first dword names a class in inventory/xbe_class_table_names.csv"
-          % (sampled, known))
-    if not known:
-        print("  no object reached a named class table: nothing to verify")
+        try:
+            phead = guest.read(classes[ptr], 0x50)
+        except (IOError, KeyError):
+            continue
+        for off in OFF:
+            d = struct.unpack_from("<I", phead, off)[0]
+            if nm[d] == want:
+                name_hits[off] = name_hits.get(off, 0) + 1
+    print("\nname (the class object's own name, against the instance's vtable class):")
+    for off in sorted(name_hits, key=lambda o: -name_hits[o])[:4]:
+        print("  +%#04x names the instance's class for %d of %d object(s) with a known class table"
+              % (off, name_hits[off], known))
+    if not name_hits:
+        print("  no dword of a class object resolved to that class's name")
         return
-    for off in sorted(hits, key=lambda o: -hits[o])[:4]:
-        print("  +%#04x = class-name index for %d of %d known-class objects (%d slots in range)"
-              % (off, hits[off], known, inrange.get(off, 0)))
-    if not hits:
-        print("  no header dword resolved to the object's own class name")
-        print("  offsets holding an in-range index at all: %s"
-              % ", ".join("+%#04x:%d" % (o, inrange[o]) for o in sorted(inrange)[:8]))
-    for ptr, off, want in examples:
-        print("  e.g. object %#010x (+%#04x -> %r)" % (ptr, off, want))
+    name_off = max(name_hits, key=name_hits.get)
+    print("\nUObject header measured here: Class +%#04x, Name +%#04x (Outer +0x18, tools/xemu/owner.py)"
+          % (class_off, name_off))
+
+    # 3. cross-check: a class default object is named after its class
+    cdo = 0
+    for ptr, head in heads:
+        vt = struct.unpack_from("<I", head, 0)[0]
+        if names.get(vt) and nm[struct.unpack_from("<I", head, name_off)[0]] == names[vt]:
+            cdo += 1
+    print("cross-check: %d of %d sampled object(s) are named after their class (class defaults)" % (cdo, len(heads)))
+
+
+def cmd_census(guest, args):
+    """Name every object's class from its `Class` pointer, over the whole object array.
+
+    This is the read a vtable census cannot do: `GameHud extends Interaction` carries `Interaction`'s
+    table, so a script class has no table of its own, while its objects still point at a `UClass` object
+    whose name *is* the script class. Objects are read one 64 KiB page per page that holds one, which is
+    the same choice `objects.py`'s walk makes -- per-object reads cost a stub round-trip each.
+    """
+    data, num = name_table(guest, args)
+    nm = Names(guest, data, num)
+    odata, onum = object_array(guest, args)
+    ptrs = [p for p in struct.unpack("<%dI" % onum, guest.read(odata, onum * 4))
+            if plausible_pointer(p)]
+    span = 0x10000
+    pages = {}
+    for p in ptrs:
+        pages.setdefault(p & ~(span - 1), []).append(p)
+    print("walking %d of %d object(s) over %d page(s)" % (len(ptrs), onum, len(pages)))
+    class_of = {}
+    name_of = {}
+    walked = 0
+    missing = 0
+    for page in sorted(pages):
+        buf = None
+        for attempt in range(3):
+            try:
+                buf = guest.read(page, span)
+                break
+            except IOError:
+                continue
+        if buf is None:
+            missing += len(pages[page])
+            continue
+        for p in pages[page]:
+            off = p - page
+            if off < 0 or off + NAME_OFF + 4 > len(buf):
+                missing += 1
+                continue
+            klass = struct.unpack_from("<I", buf, off + CLASS_OFF)[0]
+            idx = struct.unpack_from("<I", buf, off + NAME_OFF)[0]
+            class_of[klass] = class_of.get(klass, 0) + 1
+            name_of[idx] = name_of.get(idx, 0) + 1
+            walked += 1
+    print("read %d object header(s), %d unreadable" % (walked, missing))
+
+    by_class = {}
+    unnamed = 0
+    for klass, count in class_of.items():
+        label = None
+        try:
+            idx = guest.u32(klass + NAME_OFF)
+            label = nm[idx]
+        except IOError:
+            pass
+        if not label:
+            unnamed += count
+            label = "<unreadable %#x>" % klass
+        by_class[label] = by_class.get(label, 0) + count
+    print("%d distinct class(es) over %d object(s), %d object(s) in an unreadable class"
+          % (len([b for b in by_class if not b.startswith("<")]), walked, unnamed))
+    rows = sorted(by_class.items(), key=lambda kv: -kv[1])
+    if args.grep:
+        needle = args.grep.lower()
+        rows = [r for r in rows if needle in r[0].lower()]
+        print("\nclasses matching %r (count):" % args.grep)
+        for label, count in rows[:args.top]:
+            print("  %-40s %6d" % (label, count))
+        return
+    print("\n%-40s %6s" % ("class", "objects"))
+    for label, count in rows[:args.top]:
+        print("  %-40s %6d" % (label, count))
+    print("\ntop object names:")
+    for idx, count in sorted(name_of.items(), key=lambda kv: -kv[1])[:8]:
+        print("  %-40s %6d" % (nm[idx] or "<unreadable>", count))
 
 
 def main():
@@ -358,7 +526,11 @@ def main():
     ap.add_argument("--hash", type=lambda v: int(v, 0), default=None,
                     help="read the 4,096-slot name hash at this address and report bucket occupancy")
     ap.add_argument("--sample", type=int, default=96, help="objects to sample in --verify")
-    ap.add_argument("--top", type=int, default=6, help="candidates to print")
+    ap.add_argument("--census", action="store_true",
+                    help="name every object's class from its Class pointer (walks the whole array)")
+    ap.add_argument("--grep", default=None, metavar="SUBSTR",
+                    help="with --census, print only classes whose name contains this substring")
+    ap.add_argument("--top", type=int, default=12, help="rows to print")
     args = ap.parse_args()
     if args.section is None:
         args.section = [".data"]
@@ -398,6 +570,9 @@ def main():
         if args.at is not None and args.verify:
             print()
             cmd_verify(guest, args)
+        if args.at is not None and args.census:
+            print()
+            cmd_census(guest, args)
         print("\n%d guest read(s)" % guest.reads)
     finally:
         guest.close()

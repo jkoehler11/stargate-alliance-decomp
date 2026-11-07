@@ -2730,10 +2730,29 @@ copy's identity is therefore no longer an inference: `record[+0x04]` is an `FNam
 `UObject`'s `Outer` (`+0x18`, measured by `owner.py`) names the declaring class of whichever object the index
 belongs to.
 
-**Still open.** `UObject::Name`'s own header offset is not yet measured -- `tools/xemu/names.py --at 0x006be0d8
---verify` is the one command that reads it (sample objects whose first dword names a class, and ask which header
-dword resolves back to that class name). Slots 5 and 16 of the reserved block answered `None` in the run above, a
-read fault rather than an absent name: `--index 0-16` re-reads the block on a fresh connection.
+**The object side is measured: `Name` is `+0x20` and `Class` is `+0x24` (measured 2026-11-07).** Two tests, neither
+circular. First the class pointer, which needs no layout at all: a `UClass` object's own vtable is the `Class` table,
+so a header dword that points at an object sitting on that table **is** `UObject::Class` -- and `+0x24` does that for
+**400 of 400** sampled objects. (Count every offset independently before picking one: `+0x18` also reaches a `Class`
+table for 184 of 400, because a `UFunction`'s `Outer` is its class, so a loop that stops at the first match per
+object splits the count and makes the true field look like a minority.) Then the name: the dword of that class object
+which resolves, through `GNames`, to the class name the instance's vtable already carries -- `+0x20`, **260 of 400**
+of the objects whose vtable has a name, and every one that resolved **agreed** (no counterexample in 400). `+0x44`
+ties at 260 and is not `Name`: it holds a *different* value in 32 of 40 objects while often naming the same string
+(the table carries more than one entry per identifier), and it is an in-range name index for only 117 of 400 objects
+against 399 for `+0x20`. The header therefore reads `Outer` `+0x18`, `Name` `+0x20`, `Class` `+0x24` -- and a class
+*default* object being named after its class is a weak signal, not a test: it scores 0 of 400 here, because a sample
+is instances.
+
+That closes the loop the `GNames` section opened: a loader record's index names a function, and an object's `Name`
+names it directly. It also buys the read a vtable census cannot do, because `GameHud extends Interaction` carries
+`Interaction`'s table and no table names a script class -- `names.py --census` names every object's class from its own
+`Class` pointer (one 64 KiB page per page holding an object, the same choice `objects.py`'s walk makes) and reports
+the class histogram, or one substring of it with `--grep`. **Not yet run over a full array**: the census's numbers
+are the next measurement, and `--verify`'s are the ones quoted above.
+
+Slots 5 and 16 of the reserved block answered `None` in the `--find` run, a read fault rather than an absent name:
+`--index 0-16` re-reads the block on a fresh connection.
 
 The tool is `tools/xemu/names.py`: `--find` for the shape sweep (and its negative), `--hash` for the hash table's
 occupancy, `--index` for any index list (a loader record, a header field), `--verify` for the object side.

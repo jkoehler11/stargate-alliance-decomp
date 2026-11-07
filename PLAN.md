@@ -664,6 +664,18 @@ are limited to expected fields (checksum/timestamp) and documented.
       copy is a different function with the same bytecode shape. Tool: `tools/xemu/names.py` (`--find`, `--hash`,
       `--index`, `--verify`); doc `docs/XEMU.md`. **Next**: `names.py --at 0x006be0d8 --verify` for `UObject::Name`'s
       header offset, then U15's five `none` player fields are a class-level read rather than a route question.
+      **`UObject::Name` is `+0x20` and `UObject::Class` is `+0x24` (measured 2026-11-07)**: `--verify` now measures
+      both, and the class pointer needs no layout assumption -- a `UClass` object's own vtable is the `Class` table,
+      so the header dword pointing at one *is* `Class`, and `+0x24` does it for **400 of 400** sampled objects in a
+      guest at the title. `Name` is the class object's dword that resolves through `GNames` to the class name the
+      instance's vtable already carries: `+0x20`, **260 of 400** and no counterexample. `+0x44` ties at 260 and is
+      not it -- a different value in 32 of 40 objects, and an in-range index for only 117 of 400 against 399 for
+      `+0x20`. The header reads `Outer +0x18`, `Name +0x20`, `Class +0x24`; a class default being named after its
+      class scores 0 of 400 here, so that cross-check is a weak signal and not a test. `names.py --census` is the
+      new walk this enables -- every object's class from its own `Class` pointer, which is the only route to a
+      *script* class (`GameHud` carries `Interaction`'s table). **Next**: run `--census` over a boot that has loaded
+      `M00` and read the class histogram for `GameHud`/`NotificationManager`, which turns U15's five `none` player
+      fields into a class census rather than a route question.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
