@@ -1203,6 +1203,31 @@ the instance's vtable already carries (`+0x20`, 260 of 400 objects with a named 
 still need one census against a boot that has run the HUD route, and the effect question in the paragraph above is
 unchanged.
 
+**The census says the channel is set: `GameHud` and `NotificationManager` exist, above 128 MiB (measured 2026-11-07).**
+One loaded-`M00` boot (`census1`) walked with `names.py --census` against a live stub reads `48,646` array entries into
+**371** named classes -- and 2,835 of those entries are at or above `0x08000000`, the physical bound every dump-based
+read in this project uses. The player's missing objects are all in that top slice: `GameHud` **`0x09332100`** (its class
+default is `0x0682ab00`), `NotificationManager` **`0x096dc340`**, `PlayerProfile` `0x08a75040`, `PlayerStats`
+`0x0977b900`, `SGPlayerInput` `0x09675500`, `StargateTeamHUD` `0x08af0a00`, and the 10 `TeamPlayerReplicationInfo`.
+
+So the earlier reading -- "the player names no `GameHud`, so `GameHudPtr` is `none` in this state" -- is **the bound, not
+the state**: that `--fields` walk ran over the 128 MiB `pmemsave`, and these objects are outside it. `AddNotification`
+and `SetSubtitle` had a sink on this level. What remains open is the draw path (`GameHud.SetNotifications`) and the
+frame, not an absent object.
+
+Two smaller results: `SGInteraction` has **32** objects here, against the 19 an `Interaction` vtable count reports
+(a `Class`-pointer read is the only one that can tell them apart), and the live HUD object is `StargateTeamHUD`, not the
+`StargateHUD` an earlier dump-based read named.
+
+Five classes stay unlabeled for a mechanical reason worth recording: their `FNameEntry` pointers end in `...fc0`, so the
+206-byte entry read crosses a 64 KiB page boundary and the stub refuses it -- the same fault that left 21 of the name
+array's first 64 slots unreadable in `--find`, here a boundary rather than a flaky read. Index 5 is `ObjectProperty`
+(5,849 property objects, which fits); index 103 is unresolved. Splitting that read is the next instrument change.
+
+Tooling: `names.py --census` now takes `--csv PATH` (every row, so one 4-minute walk answers any class question),
+a comma list for `--grep`, and `--addresses`; and the census uses `OBJECT_HI = 0x10000000` for the object array, with
+`objects.py`'s 128 MiB bound left alone for the dump readers.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
