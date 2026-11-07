@@ -1043,6 +1043,17 @@ store, so **what would settle it** is the same run with `--watch-key=ret`, whose
 `History[HistoryTop]` before it clears the line; if that stops only on stores too, the read channel is a breakpoint in
 the interpreter's dispatch rather than a data watchpoint.
 
+**The command list is settled, so "the console did not run it" is no longer a guess (measured 2026-11-06).**
+`tools/console-commands.py` joins the `exec function` declarations in the shipped text to the binary's `Exec`
+FunctionFlag: **336 declarations over 37 class/state scopes, 292 names, and all 336 also carry the flag** -- plus 125
+`Exec` functions with no declaration, 122 of them state-scoped (the binary names the *state* in its `class` column).
+`stat`, `open` and `cheats` appear in neither source, so they are engine handlers: `stat fps` drawing and `stat game`
+not drawing is the handler's business, not delivery. What remains for output is the route this entry's own table left
+out -- `PlayerController.ClientMessage` and `Say`/`TeamSay` reach `HUD.Message`, which draws, and `CheatManager`'s
+refusal messages go through it -- so **a command that messages the client draws a readable line even though
+`Engine.Console` has no `PostRender`**. `tools/xemu/console-commands.sh` types a list of commands in one boot and
+photographs each; it has not yet produced a reading (two boots lost to input on a busy desktop, `docs/XEMU.md`).
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

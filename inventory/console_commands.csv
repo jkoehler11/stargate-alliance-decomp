@@ -1,0 +1,462 @@
+package,class,state,command,args,modifiers,sources
+Engine,AdminBase,,Kick,"string Cmd, string Extra",,both
+Engine,AdminBase,,KickBan,string S,,both
+Engine,AdminBase,,Map,string Cmd,,both
+Engine,AdminBase,,MapList,"string Cmd, string Extra",,both
+Engine,AdminBase,,NextMap,,,both
+Engine,AdminBase,,PlayerList,,,both
+Engine,AdminBase,,RestartMap,,,both
+Engine,AdminBase,,Switch,string URL,,both
+Engine,CheatManager,,AddLogFilter,name N,,both
+Engine,CheatManager,,AllAmmo,,,both
+Engine,CheatManager,,AllWeapons,,,both
+Engine,CheatManager,,Amphibious,,,both
+Engine,CheatManager,,Avatar,string ClassName,,both
+Engine,CheatManager,,CauseEvent,name EventName,,both
+Engine,CheatManager,,ChangeSize,float f,,both
+Engine,CheatManager,,CheatView,"Class<Actor> aClass, optional bool bQuiet",,both
+Engine,CheatManager,,ClearAllDebugLines,,,both
+Engine,CheatManager,,ClearAllLogFilters,,,both
+Engine,CheatManager,,DisableNextObjective,,,both
+Engine,CheatManager,,DisplayLogFilters,,,both
+Engine,CheatManager,,EnableCheats,,,both
+Engine,CheatManager,,EndPath,,,both
+Engine,CheatManager,,Fly,,,both
+Engine,CheatManager,,FreeCamera,bool B,,both
+Engine,CheatManager,,FreezeAll,,,both
+Engine,CheatManager,,FreezeFrame,float Delay,,both
+Engine,CheatManager,,Ghost,,,both
+Engine,CheatManager,,God,,,both
+Engine,CheatManager,,HideDebugIcons,,,both
+Engine,CheatManager,,Invisible,bool B,,both
+Engine,CheatManager,,JumpMatch,int ladderrung,,both
+Engine,CheatManager,,KillPawns,,,both
+Engine,CheatManager,,KillTarget,name Target,,both
+Engine,CheatManager,,KillViewedActor,,,both
+Engine,CheatManager,,ListAllOfType,Class<Actor> actorClass,,both
+Engine,CheatManager,,ListDynamicActors,,,both
+Engine,CheatManager,,Loaded,,,both
+Engine,CheatManager,,LockCamera,,,both
+Engine,CheatManager,,LogScriptedSequences,,,both
+Engine,CheatManager,,LogTimeInfo,bool B,,both
+Engine,CheatManager,,Phil,,,both
+Engine,CheatManager,,PlayersOnly,,,both
+Engine,CheatManager,,RememberSpot,,,both
+Engine,CheatManager,,RemoveLogFilter,name N,,both
+Engine,CheatManager,,ResetWeapon,,,both
+Engine,CheatManager,,ReviewJumpSpots,name TestLabel,,both
+Engine,CheatManager,,SG1God,,,both
+Engine,CheatManager,,SetCameraDist,float f,,both
+Engine,CheatManager,,SetFlash,float f,,both
+Engine,CheatManager,,SetFogB,float f,,both
+Engine,CheatManager,,SetFogG,float f,,both
+Engine,CheatManager,,SetFogR,float f,,both
+Engine,CheatManager,,SetGravity,float f,,both
+Engine,CheatManager,,SetJumpZ,float f,,both
+Engine,CheatManager,,SetSpeed,float f,,both
+Engine,CheatManager,,ShowDebugIcons,,,both
+Engine,CheatManager,,ShowInventory,,,both
+Engine,CheatManager,,SkipMatch,,,both
+Engine,CheatManager,,SloMo,float t,,both
+Engine,CheatManager,,Summon,string ClassName,,both
+Engine,CheatManager,,TakeDamage,"name Target, int Damage",,both
+Engine,CheatManager,,Teleport,,,both
+Engine,CheatManager,,TeleportLoc,Vector Destination,,both
+Engine,CheatManager,,TeleportTo,name ActorName,,both
+Engine,CheatManager,,ViewActor,"name ActorName, optional name TagName, optional name EventName",,both
+Engine,CheatManager,,ViewBot,,,both
+Engine,CheatManager,,ViewClass,"Class<Actor> aClass, optional bool bQuiet, optional bool bCheat",,both
+Engine,CheatManager,,ViewFlag,,,both
+Engine,CheatManager,,ViewPlayer,string S,,both
+Engine,CheatManager,,ViewSelf,optional bool bQuiet,,both
+Engine,CheatManager,,ViewTurret,,,both
+Engine,CheatManager,,Walk,,,both
+Engine,CheatManager,,WeakObjectives,,,both
+Engine,CheatManager,,WinMatch,,,both
+Engine,CheatManager,,WriteToLog,string Param,,both
+Engine,CheatManager,,astral,optional float Distance,,both
+Engine,CheatManager,,puss,optional float Distance,,both
+Engine,CheatManager,,setHUD,bool bVisible,,both
+Engine,CheatManager,,toggleHUD,,,both
+Engine,CheatManager,,toggleWeapon,,,both
+Engine,Console,,ConsoleClose,,,both
+Engine,Console,,ConsoleOpen,,,both
+Engine,Console,,ConsoleToggle,,,both
+Engine,Console,,StartRollingDemo,,,both
+Engine,Console,,StopRollingDemo,,,both
+Engine,Console,,Talk,,,both
+Engine,Console,,TeamTalk,,,both
+Engine,Console,,Type,,,both
+Engine,Console,Typing,Type,,,both
+Engine,Controller,,SwitchToBestWeapon,,,both
+Engine,DemoRecSpectator,,DemoViewNextPlayer,,,both
+Engine,DemoRecSpectator,,ViewClass,"Class<Actor> aClass, optional bool bQuiet, optional bool bCheat",,both
+Engine,DemoRecSpectator,Spectating,AltFire,optional float f,,both
+Engine,DemoRecSpectator,Spectating,Fire,optional float f,,both
+Engine,GameInfo,,AdminSay,string Msg,,both
+Engine,GameInfo,,KillBots,int Num,,both
+Engine,HUD,,GrowHUD,,,both
+Engine,HUD,,NextStats,,,both
+Engine,HUD,,ShowDebug,,,both
+Engine,HUD,,ShowHud,,,both
+Engine,HUD,,ShowScores,,,both
+Engine,HUD,,ShowStats,,,both
+Engine,HUD,,ShrinkHUD,,,both
+Engine,HUD,,setHUD,bool bVisible,,both
+Engine,Inventory,,updaterelative,"int Pitch, int Yaw, int Roll",,both
+Engine,Pawn,,NextItem,,,both
+Engine,Pawn,,SwitchToLastWeapon,,,both
+Engine,PlayerController,,ActivateInventoryItem,Class InvItem,,both
+Engine,PlayerController,,ActivateItem,,,both
+Engine,PlayerController,,Admin,string CommandLine,,both
+Engine,PlayerController,,AdminDebug,string CommandLine,,both
+Engine,PlayerController,,AdminGUI,,,both
+Engine,PlayerController,,AdminLogin,string CmdLine,,both
+Engine,PlayerController,,AdminLogout,,,both
+Engine,PlayerController,,AltFire,optional float f,,both
+Engine,PlayerController,,BehindView,bool B,,both
+Engine,PlayerController,,ChangeTeam,int N,,both
+Engine,PlayerController,,ChatDebug,,,both
+Engine,PlayerController,,CheckpointLoad,string Filename,,both
+Engine,PlayerController,,CheckpointSave,string SaveDescription,,both
+Engine,PlayerController,,ClearProgressMessages,,,both
+Engine,PlayerController,,Command,string RecognizedString,,both
+Engine,PlayerController,,CreateCameraEffect,Class<CameraEffect> EffectClass,,both
+Engine,PlayerController,,DisableVoiceChat,,,both
+Engine,PlayerController,,EnableVoiceChat,,,both
+Engine,PlayerController,,End,,,both
+Engine,PlayerController,,FOV,float f,,both
+Engine,PlayerController,,Fire,optional float f,,both
+Engine,PlayerController,,ForceReload,,,both
+Engine,PlayerController,,GetIntStatByName,name StatName,final,both
+Engine,PlayerController,,GetWeapon,Class<Weapon> NewWeaponClass,,both
+Engine,PlayerController,,GetWeaponStats,,,both
+Engine,PlayerController,,InvertLook,,,both
+Engine,PlayerController,,InvertMouse,optional string Invert,,both
+Engine,PlayerController,,InvertMouseToggle,,final;simulated,both
+Engine,PlayerController,,Join,"string ChanName, string ChanPwd",,both
+Engine,PlayerController,,Jump,optional float f,,both
+Engine,PlayerController,,KillAll,Class<Actor> aClass,,both
+Engine,PlayerController,,Leave,string ChannelTitle,,both
+Engine,PlayerController,,ListSavedGames,,,both
+Engine,PlayerController,,LoadGame,string Filename,,both
+Engine,PlayerController,,LocalTravel,string URL,,both
+Engine,PlayerController,,LogAllStats,string Type,final,both
+Engine,PlayerController,,MapChangeAutoLoad,string Levelname,,both
+Engine,PlayerController,,MapChangeAutoSave,,,both
+Engine,PlayerController,,MatineeAutoSave,,,both
+Engine,PlayerController,,Mutate,string MutateString,,both
+Engine,PlayerController,,NewSaveGame,,,both
+Engine,PlayerController,,NextWeapon,,,both
+Engine,PlayerController,,Pause,,,both
+Engine,PlayerController,,PipedSwitchWeapon,byte f,,both
+Engine,PlayerController,,PrevItem,,,both
+Engine,PlayerController,,PrevWeapon,,,both
+Engine,PlayerController,,QuickLoad,optional bool bBackup,,both
+Engine,PlayerController,,QuickSave,,,both
+Engine,PlayerController,,RestartLevel,,,both
+Engine,PlayerController,,Say,string Msg,,both
+Engine,PlayerController,,SetAutoTaunt,bool Value,,both
+Engine,PlayerController,,SetChatPassword,string NewPassword,,both
+Engine,PlayerController,,SetFlashScaling,float f,,both
+Engine,PlayerController,,SetIntStatByName,"name StatName, int Value",final,both
+Engine,PlayerController,,SetMouseAccel,float f,,both
+Engine,PlayerController,,SetMouseInvert,bool B,final,both
+Engine,PlayerController,,SetMouseSmoothing,int Mode,,both
+Engine,PlayerController,,SetName,coerce string S,,both
+Engine,PlayerController,,SetSensitivity,float f,,both
+Engine,PlayerController,,SetSpectateSpeed,float f,,both
+Engine,PlayerController,,SetVoice,coerce string S,,both
+Engine,PlayerController,,SetWeaponHand,string S,,both
+Engine,PlayerController,,ShowGun,,,both
+Engine,PlayerController,,ShowMenu,,,both
+Engine,PlayerController,,Speak,string ChannelTitle,,both
+Engine,PlayerController,,SpeakDefault,,,both
+Engine,PlayerController,,SpeakLast,,,both
+Engine,PlayerController,,Speech,"name Type, int Index, string Callsign",,both
+Engine,PlayerController,,StatsQuery,"string StatsType, name EntryName",final,both
+Engine,PlayerController,,Suicide,,,both
+Engine,PlayerController,,SwitchLevel,string URL,,both
+Engine,PlayerController,,SwitchTeam,,,both
+Engine,PlayerController,,SwitchWeapon,byte f,,both
+Engine,PlayerController,,TeamSay,string Msg,,both
+Engine,PlayerController,,ThrowWeapon,,,both
+Engine,PlayerController,,ToggleBehindView,,,both
+Engine,PlayerController,,ToggleScreenShotMode,,,both
+Engine,PlayerController,,TraceForMemStats,,,both
+Engine,PlayerController,,UTrace,,,both
+Engine,PlayerController,,Use,,,both
+Engine,PlayerController,Dead,AltFire,optional float f,,both
+Engine,PlayerController,Dead,Fire,optional float f,,both
+Engine,PlayerController,Dead,ThrowWeapon,,,both
+Engine,PlayerController,Dead,Use,,,both
+Engine,PlayerController,GameEnded,AltFire,optional float f,,both
+Engine,PlayerController,GameEnded,Fire,optional float f,,both
+Engine,PlayerController,GameEnded,SwitchWeapon,byte t,,both
+Engine,PlayerController,GameEnded,ThrowWeapon,,,both
+Engine,PlayerController,GameEnded,Use,,,both
+Engine,PlayerController,PlayerWaiting,AltFire,optional float f,,both
+Engine,PlayerController,PlayerWaiting,Fire,optional float f,,both
+Engine,PlayerController,PlayerWaiting,Jump,optional float f,,both
+Engine,PlayerController,PlayerWaiting,Suicide,,,both
+Engine,PlayerController,PlayerWalking,AltFire,optional float f,,both
+Engine,PlayerController,PlayerWalking,Fire,optional float f,,both
+Engine,PlayerController,RoundEnded,AltFire,optional float f,,both
+Engine,PlayerController,RoundEnded,Fire,optional float f,,both
+Engine,PlayerController,RoundEnded,SwitchWeapon,byte t,,both
+Engine,PlayerController,RoundEnded,ThrowWeapon,,,both
+Engine,PlayerController,RoundEnded,Use,,,both
+Engine,PlayerController,Scripting,AltFire,optional float f,,both
+Engine,PlayerController,Scripting,Fire,optional float f,,both
+Engine,PlayerController,Spectating,AltFire,optional float f,,both
+Engine,PlayerController,Spectating,Fire,optional float f,,both
+Engine,PlayerController,WaitingForPawn,AltFire,optional float f,,both
+Engine,PlayerController,WaitingForPawn,Fire,optional float f,,both
+Engine,PlayerInput,,SetSmoothingMode,byte B,,both
+Engine,PlayerInput,,SetSmoothingStrength,float f,,both
+Engine,StreamInteraction,,NextSong,optional bool bForce,,both
+Engine,StreamInteraction,,PauseSong,,,both
+Engine,StreamInteraction,,PlaySong,"string SongName, float InitialTime",,both
+Engine,StreamInteraction,,PrevSong,optional bool bForce,,both
+Engine,StreamInteraction,,SeekStream,float Seconds,,both
+Engine,StreamInteraction,,SetMusicVolume,float NewVolume,,both
+Engine,StreamInteraction,,StopSong,,,both
+Engine,StreamInteraction,,streamdebug,"string Command, string Param",,both
+GUI,ExtendedConsole,,CLS,,,both
+GUI,ExtendedConsole,,ConsoleClose,,,both
+GUI,ExtendedConsole,,ConsoleOpen,,,both
+GUI,ExtendedConsole,,ConsoleToggle,,,both
+GUI,GUIController,,DumpMaps,,,both
+GUI,GUIController,,LockLadders,,final,both
+GUI,GUIController,,ShowFocus,,,both
+GUI,GUIController,,ShowLadderData,,final,both
+GUI,GUIController,,ShowRungData,,final,both
+GUI,GUIController,,ToggleAttract,,final,both
+GUI,GUIController,,UnLockLadders,,final,both
+GUI,GUIController,,UnlockChars,,final,both
+GamePlay,TournamentConsole,Typing,MenuCmd,"int Menu, int Item",,both
+GamePlay,TournamentConsole,UWindow,MenuCmd,"int Menu, int Item",,both
+StargateGame,GameHud,,DebugUpdateHud,,,both
+StargateGame,GameHud,,DisplayTextBox,"string Text, float Duration",,both
+StargateGame,GameHud,,HideHud,bool bHide,,both
+StargateGame,GameHud,,HideProgressBar,optional int idx,,both
+StargateGame,GameHud,,PulseHud,float pulseTime,,both
+StargateGame,GameHud,,ShowProgressBar,optional int idx,,both
+StargateGame,GameHud,,UpdateProgressBar,"float fraction, optional string Text, optional int idx",,both
+StargateGame,GoauldConsoleHud,,Order,"name NewOrders, optional name OrderArg1, optional name OrderArg2",,both
+StargateGame,ReplicatorHUD,,Order,"name NewOrders, optional name OrderArg1, optional name OrderArg2",,both
+StargateGame,StargateHUD,,AddNotification,string Text,,both
+StargateGame,StargateHUD,,SetPeriph,float f,,both
+StargateGame,StargateHUD,,SetSightRadius,float f,,both
+StargateGame,StargateHUD,,ShowDebugVision,,,both
+StargateGame,StargateHUD,,ToggleGameHUD,,,both
+StargateGame,StargatePlayer,,AdjustLoadOut,int NewLoadout,,both
+StargateGame,StargatePlayer,,AdjustSpeed,float Adjustment,,both
+StargateGame,StargatePlayer,,AltFire,optional float f,,both
+StargateGame,StargatePlayer,,AssembleMembers,,,both
+StargateGame,StargatePlayer,,CallForHelp,,,both
+StargateGame,StargatePlayer,,CommandCarter,optional bool bForceSpecial,,both
+StargateGame,StargatePlayer,,CommandJackson,optional bool bForceSpecial,,both
+StargateGame,StargatePlayer,,CommandOneill,optional bool bForceSpecial,,both
+StargateGame,StargatePlayer,,CommandTealc,optional bool bForceSpecial,,both
+StargateGame,StargatePlayer,,CycleCommanded,,,both
+StargateGame,StargatePlayer,,DisableShadows,,final,both
+StargateGame,StargatePlayer,,EditSpeed,"Class<UnrealPawn> WP, float NewSpeed",,both
+StargateGame,StargatePlayer,,EnableShadows,,final,both
+StargateGame,StargatePlayer,,Fire,optional float f,,both
+StargateGame,StargatePlayer,,ForceReload,,,both
+StargateGame,StargatePlayer,,ListPlayer,,,both
+StargateGame,StargatePlayer,,OrderPaintTarget,,,both
+StargateGame,StargatePlayer,,OrderSGAttack,bool bShouldHoldFire,,both
+StargateGame,StargatePlayer,,OrderSGFollow,,,both
+StargateGame,StargatePlayer,,OrderSGHold,,,both
+StargateGame,StargatePlayer,,OrderSGOpenFire,,,both
+StargateGame,StargatePlayer,,OrderSGWait,,,both
+StargateGame,StargatePlayer,,OrderTakeCover,,,both
+StargateGame,StargatePlayer,,SG1Follow,,,both
+StargateGame,StargatePlayer,,SG1Hold,,,both
+StargateGame,StargatePlayer,,SetBloomColour,Color Value,,both
+StargateGame,StargatePlayer,,SetBlurDist,float dist,,both
+StargateGame,StargatePlayer,,SetBlurPasses,int passes,,both
+StargateGame,StargatePlayer,,SetLuminance,float Value,,both
+StargateGame,StargatePlayer,,SetServerSloMo,float t,,both
+StargateGame,StargatePlayer,,SetWalkingPerc,float NewPerc,,both
+StargateGame,StargatePlayer,,ShadowLights,bool bEnable,final,both
+StargateGame,StargatePlayer,,ShowBeacons,,,both
+StargateGame,StargatePlayer,,ShowFloorSurfaceLog,,,both
+StargateGame,StargatePlayer,,ShowHint,string HintText,,both
+StargateGame,StargatePlayer,,ShowSpeeds,,,both
+StargateGame,StargatePlayer,,ShowTeamSelect,string HintText,,both
+StargateGame,StargatePlayer,,ShowTriggers,,,both
+StargateGame,StargatePlayer,,SkipMatinee,,,both
+StargateGame,StargatePlayer,,StopInvisibility,,,both
+StargateGame,StargatePlayer,,SwitchWeapon,byte f,,both
+StargateGame,StargatePlayer,,ToggleBehindView,,,both
+StargateGame,StargatePlayer,,ToggleBloom,,,both
+StargateGame,StargatePlayer,,ToggleBlur,,final,both
+StargateGame,StargatePlayer,,ToggleEmissive,,,both
+StargateGame,StargatePlayer,,ToggleFilter,,,both
+StargateGame,StargatePlayer,,ToggleInGameMenu,,,both
+StargateGame,StargatePlayer,,ToggleInGameScoreboard,"bool bForce, optional ScoreBoard ScoreBoard",,both
+StargateGame,StargatePlayer,,ToggleInfoScreen,,,both
+StargateGame,StargatePlayer,,ToggleInvisibility,,,both
+StargateGame,StargatePlayer,,ToggleMusicState,,,both
+StargateGame,StargatePlayer,,ToggleRestartGameMenu,,,both
+StargateGame,StargatePlayer,,ToggleTeleport,,,both
+StargateGame,StargatePlayer,,UnStick,,,both
+StargateGame,StargatePlayer,,ViewMap,,,both
+StargateGame,StargatePlayer,,WeaponSelectionMoveDown,,,both
+StargateGame,StargatePlayer,,WeaponSelectionMoveUp,,,both
+StargateGame,StargatePlayer,,ZoomToggle,,simulated,both
+StargateGame,StargatePlayer,,lognote,string X,,both
+StargateGame,StargatePlayer,,toggleBinoculars,,,both
+StargateGame,StargatePlayer,GameEnded,Fire,optional float f,,both
+StargateGame,StargateWeapon,,SetMuzzleX,float newX,simulated,both
+StargateGame,StargateWeapon,,SetMuzzleY,float NewY,simulated,both
+StargateGame,StargateWeapon,,SetWeapFOV,float NewFOV,simulated,both
+StargateGame,StargateWeapon,,SetWeapScale,float ns,simulated,both
+StargateGame,StargateWeapon,,SetWeapX,float X,simulated,both
+StargateGame,StargateWeapon,,SetWeapY,float Y,simulated,both
+StargateGame,StargateWeapon,,SetWeapZ,float Z,simulated,both
+StargateGame,StargateWeapon,,ShowMuzzle,,simulated,both
+StargateGame,StargateWeapon,,ShowWeapFOV,,simulated,both
+StargateGame,StargateWeapon,,ShowWeapScale,,simulated,both
+StargateGame,StargateWeapon,,ShowWeapXYZ,,simulated,both
+StargateGame,UnrealPlayer,,AttackPath,,,both
+StargateGame,UnrealPlayer,,ChangeLoadOut,string LoadoutName,,both
+StargateGame,UnrealPlayer,,CycleLoadout,,,both
+StargateGame,UnrealPlayer,,DefendPath,,,both
+StargateGame,UnrealPlayer,,FeignDeath,,,both
+StargateGame,UnrealPlayer,,SoakBots,,,both
+StargateGame,UnrealPlayer,,TAUNT,name Sequence,,both
+StargateGame,UnrealPlayer,,WeaponZoom,,,both
+StargateGame,UnrealPlayer,Dead,Fire,optional float f,,both
+StargateGame,UnrealPlayer,FeigningDeath,AltFire,optional float f,,both
+StargateGame,UnrealPlayer,FeigningDeath,Fire,optional float f,,both
+StargateGame,UnrealPlayer,FeigningDeath,TAUNT,name Sequence,,both
+StargateGame,UnrealPlayer,PlayerWalking,FeignDeath,,,both
+engine,dead,,altfire,,,binary
+engine,dead,,fire,,,binary
+engine,dead,,nextweapon,,,binary
+engine,dead,,prevweapon,,,binary
+engine,dead,,switchweapon,,,binary
+engine,dead,,throwweapon,,,binary
+engine,dead,,use,,,binary
+engine,gameended,,altfire,,,binary
+engine,gameended,,fire,,,binary
+engine,gameended,,suicide,,,binary
+engine,gameended,,switchweapon,,,binary
+engine,gameended,,throwweapon,,,binary
+engine,gameended,,use,,,binary
+engine,playercontroller,,setprogressmessage,,,binary
+engine,playercontroller,,setprogresstime,,,binary
+engine,playerentervehicle,,altfire,,,binary
+engine,playerentervehicle,,fire,,,binary
+engine,playerentervehicle,,switchweapon,,,binary
+engine,playerwaiting,,altfire,,,binary
+engine,playerwaiting,,fire,,,binary
+engine,playerwaiting,,jump,,,binary
+engine,playerwaiting,,nextweapon,,,binary
+engine,playerwaiting,,prevweapon,,,binary
+engine,playerwaiting,,suicide,,,binary
+engine,playerwaiting,,switchtobestweapon,,,binary
+engine,playerwalking,,altfire,,,binary
+engine,playerwalking,,fire,,,binary
+engine,roundended,,altfire,,,binary
+engine,roundended,,fire,,,binary
+engine,roundended,,suicide,,,binary
+engine,roundended,,switchweapon,,,binary
+engine,roundended,,throwweapon,,,binary
+engine,roundended,,use,,,binary
+engine,scripting,,altfire,,,binary
+engine,scripting,,fire,,,binary
+engine,spectating,,restartlevel,,,binary
+engine,spectating,,suicide,,,binary
+engine,spectating,,switchweapon,,,binary
+engine,spectating,,throwweapon,,,binary
+engine,streaminteraction,,getcurrentstream,,,binary
+engine,typing,,type,,,binary
+engine,waitingforpawn,,altfire,,,binary
+engine,waitingforpawn,,fire,,,binary
+engine,waitingforpawn,,switchweapon,,,binary
+stargategame,dead,,switchweapon,,,binary
+stargategame,feigningdeath,,taunt,,,binary
+stargategame,gameended,,fire,,,binary
+stargategame,hacking,,altfire,,,binary
+stargategame,hacking,,fire,,,binary
+stargategame,hacking,,nextweapon,,,binary
+stargategame,hacking,,prevweapon,,,binary
+stargategame,hacking,,switchtobestweapon,,,binary
+stargategame,hacking,,switchweapon,,,binary
+stargategame,hacking,,throwweapon,,,binary
+stargategame,playerbeingelectrocuted,,altfire,,,binary
+stargategame,playerbeingelectrocuted,,fire,,,binary
+stargategame,playerbeingelectrocuted,,nextweapon,,,binary
+stargategame,playerbeingelectrocuted,,prevweapon,,,binary
+stargategame,playerbeingelectrocuted,,suicide,,,binary
+stargategame,playerbeingelectrocuted,,switchtobestweapon,,,binary
+stargategame,playerbeingelectrocuted,,switchweapon,,,binary
+stargategame,playerbeingelectrocuted,,throwweapon,,,binary
+stargategame,playerbeingelectrocuted,,togglebehindview,,,binary
+stargategame,playergrabbed,,altfire,,,binary
+stargategame,playergrabbed,,fire,,,binary
+stargategame,playergrabbed,,nextweapon,,,binary
+stargategame,playergrabbed,,prevweapon,,,binary
+stargategame,playergrabbed,,suicide,,,binary
+stargategame,playergrabbed,,switchtobestweapon,,,binary
+stargategame,playergrabbed,,switchweapon,,,binary
+stargategame,playergrabbed,,throwweapon,,,binary
+stargategame,playergrabbed,,togglebehindview,,,binary
+stargategame,playerknockedback,,altfire,,,binary
+stargategame,playerknockedback,,fire,,,binary
+stargategame,playerknockedback,,nextweapon,,,binary
+stargategame,playerknockedback,,prevweapon,,,binary
+stargategame,playerknockedback,,suicide,,,binary
+stargategame,playerknockedback,,switchtobestweapon,,,binary
+stargategame,playerknockedback,,switchweapon,,,binary
+stargategame,playerknockedback,,throwweapon,,,binary
+stargategame,playerknockedback,,togglebehindview,,,binary
+stargategame,playermeleedash,,altfire,,,binary
+stargategame,playermeleedash,,fire,,,binary
+stargategame,playermeleedash,,nextweapon,,,binary
+stargategame,playermeleedash,,prevweapon,,,binary
+stargategame,playermeleedash,,suicide,,,binary
+stargategame,playermeleedash,,switchtobestweapon,,,binary
+stargategame,playermeleedash,,switchweapon,,,binary
+stargategame,playermeleedash,,throwweapon,,,binary
+stargategame,playermeleedash,,togglebehindview,,,binary
+stargategame,playerpreparegrabbed,,altfire,,,binary
+stargategame,playerpreparegrabbed,,fire,,,binary
+stargategame,playerpreparegrabbed,,nextweapon,,,binary
+stargategame,playerpreparegrabbed,,prevweapon,,,binary
+stargategame,playerpreparegrabbed,,suicide,,,binary
+stargategame,playerpreparegrabbed,,switchtobestweapon,,,binary
+stargategame,playerpreparegrabbed,,switchweapon,,,binary
+stargategame,playerpreparegrabbed,,throwweapon,,,binary
+stargategame,playerpreparegrabbed,,togglebehindview,,,binary
+stargategame,playerstaggered,,altfire,,,binary
+stargategame,playerstaggered,,fire,,,binary
+stargategame,playerstaggered,,nextweapon,,,binary
+stargategame,playerstaggered,,prevweapon,,,binary
+stargategame,playerstaggered,,suicide,,,binary
+stargategame,playerstaggered,,switchtobestweapon,,,binary
+stargategame,playerstaggered,,switchweapon,,,binary
+stargategame,playerstaggered,,throwweapon,,,binary
+stargategame,playerstaggered,,togglebehindview,,,binary
+stargategame,playerunconscious,,altfire,,,binary
+stargategame,playerunconscious,,fire,,,binary
+stargategame,playerunconscious,,nextweapon,,,binary
+stargategame,playerunconscious,,prevweapon,,,binary
+stargategame,playerunconscious,,suicide,,,binary
+stargategame,playerunconscious,,switchtobestweapon,,,binary
+stargategame,playerunconscious,,switchweapon,,,binary
+stargategame,playerunconscious,,throwweapon,,,binary
+stargategame,playerunconscious,,togglebehindview,,,binary
+stargategame,playerwalking,,feigndeath,,,binary
+stargategame,usingprogresstrigger,,altfire,,,binary
+stargategame,usingprogresstrigger,,fire,,,binary
+stargategame,usingprogresstrigger,,nextweapon,,,binary
+stargategame,usingprogresstrigger,,prevweapon,,,binary
+stargategame,usingprogresstrigger,,switchtobestweapon,,,binary
+stargategame,usingprogresstrigger,,switchweapon,,,binary
+stargategame,usingprogresstrigger,,throwweapon,,,binary
