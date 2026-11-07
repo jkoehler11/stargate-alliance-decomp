@@ -907,6 +907,19 @@ per-press retry; and a killed `drive.py` leaves its `SG1 virtual pad` uinput dev
 while every `pad=` step silently does nothing. What remains is one clean run with a single pad and the keyboard early,
 then `--class Console --fstrings` on the instance — not another measurement of the console.
 
+**The output channel is chosen by the HUD class, not by the console (measured 2026-11-06).** Six commands in one boot
+(`god`, `say hello`, `enablecheats`, `god`, `addnotification hello`, `stat fps`) all reached `ConsoleCommand` —
+`console-state.py` reads six populated `History[16]` slots — and only `stat fps` drew (`64 cur FPS`/`60 avg FPS` in a
+2x crop). The reason is in the script text, not in the console: `StargateHUD` overrides both `Engine.HUD.DrawHUD` and
+`Engine.HUD.DisplayMessages`, its `Message` has the engine's `AddTextMessage` call **commented out**, and it routes
+`Say`/`TeamSay` to `SetSubtitle(Msg, 2.0, ...)` and every other type to `AddNotification` ->
+`StargatePlayer.NotificationManager` -> `GameHud.SetNotifications`, a no-op unless the manager and a `GameHUD` both
+exist. `Engine.HUD.TextMessages[8]` — the one message buffer an `Engine.Console` build would fill — is therefore never
+filled on this disc, and the drawn channel is the game's own two-second subtitle. A frame 3 s after the submit cannot
+see it, and the run's dump holds no stored copy of any of the three message strings. **What would settle it now:**
+one boot whose per-command frame is taken *one second* after the submit (the tool does that since this run), plus a
+read of `StargatePlayer.NotificationManager` and `GameHUDPtr` — no new external data, one game run.
+
 **A submit delivers, and the receipt is `History[0]` plus an empty `TypedStr` (measured 2026-11-06).** `ret` reads
 `Console.TypedStr` (`0x02661b00 +0x44`) at the `FString` assignment `EIP=0x1b300`, whose destination is a fresh heap
 buffer, and the state it leaves is the receipt: three seconds later `TypedStr` is `0 0 0` and `History[0]` at `+0x50`

@@ -506,7 +506,14 @@ are limited to expected fields (checksum/timestamp) and documented.
       heap (`Console` `0x02641b00`, `History[0]` `0x0802e61c`), and round 2's control dump held the line while its
       post-dump did not change, so the A button reaches the console as nothing and a scripted console needs the
       keyboard. `kp_enter` and `pad=start` are both measured from an open console and neither is a submit, and the
-      console's *output* still has no sink.
+      console's *output* still has no sink. **The sink is named now (2026-11-06)**: six commands in one boot all
+      reached `ConsoleCommand` (`History[16]`, six slots, `TypedStr` empty, `bTyping` 0) and only `stat fps` drew --
+      because `StargateHUD` overrides `DrawHUD` **and** `DisplayMessages`, comments out `AddTextMessage`, and routes
+      `Say` to a **2.0 s subtitle** and everything else to `NotificationManager` -> `GameHud.SetNotifications` (both
+      conditional). `Engine.HUD.TextMessages[8]` is never filled on this disc. The run's frame comes 3 s after the
+      submit, so a 2 s subtitle is already gone, and the dump holds no copy of any message string. **Next**: a boot
+      with the per-command frame one second after the submit (the tool now does that) and a dump read of
+      `NotificationManager`/`GameHUDPtr`.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
@@ -522,6 +529,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 **Acceptance:** CI is green on a stock machine, the scoreboard moves in the right direction on every PR,
 and a deliberate one-line script break is caught by the boot test.
+
+### Execution notes (2026-11-06, six console commands all delivered, and the message channel is the HUD's)
+
+- **The first run of `console-commands.sh` that loaded a level** (the two lost boots were input, on a desktop that was
+  rendering another game): `M00` on the first attempt with `--pad-hold=0.35` and a 180 s boot, `01-list` 57,224 px and
+  `02-mission` 101,648 px against the title's 18,343 px floor. Six commands, all six in `History[16]`
+  (`console-state.py`, `Console` at `0x02681b00`), `TypedStr` empty and `bTyping` 0 -- and **only `stat fps` drew**
+  (`64 cur FPS`/`60 avg FPS`, 2x crop read by vision). `god`, `say hello`, `enablecheats`, a second `god` and
+  `addnotification hello` left no text anywhere in the frame, and a 128 MiB `pmemsave` holds no UTF-16 copy of
+  `Cheats are NOT enabled`, `God Mode On` or `You feel much lighter`.
+- **Why the two message commands are silent is in the HUD, not the console**: `StargateHUD.Message` comments out
+  `AddTextMessage`, sends `Say`/`TeamSay` to `SetSubtitle(Msg, 2.0, ...)` and everything else to
+  `StargatePlayer.NotificationManager` -> `GameHud.SetNotifications` (both steps return early when the manager or the
+  GameHUD is `None`). The engine's `HUD.TextMessages[8]` is never filled, so the buffer U15 hoped to read does not
+  exist in a mission on this disc.
+- **Two instrument faults, both fixed here.** `--pad-hold` was named in the PLAN note and exists in `drive.py` but was
+  not accepted by `console-commands.sh`, so the run that was meant to try the knob could not have set it; and a
+  `noise=` step set the pass threshold to the **largest** floor the run had seen, so the title's 18,343 px made every
+  gameplay shot (682-754 px of real animation) FAIL -- 18 of them, over six commands that all executed. The script now
+  also takes the per-command frame **one second** after the submit (inside the 2 s subtitle), retries a boot that
+  never leaves the main menu (`--retries`, gated on `frame-diff.py` against the title frame), and forwards `--watch`.
+- **A burst of `gkey` steps can repeat the last character**: `addnotification hello` arrived as
+  `addnotification helloooooooo...` (65 chars) in `History`. The receipt is still exact for the command word, but a
+  command with no argument would be corrupted by the same burst.
 
 ### Execution notes (2026-11-06, the console's command surface is 336 declarations, and a zero is three facts)
 
