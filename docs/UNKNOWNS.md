@@ -922,9 +922,16 @@ sink at all (`Scrollback` belongs to `ExtendedConsole`, which this build never i
 `TypedStr` nor `History`, so the pad has no console submit and a scripted console needs the keyboard. **`kp_enter` is measured now, from an open console (2026-11-06).** `submit7` types the line, dumps,
 sends `kp_enter`, waits three seconds and dumps again: `TypedStr` and its `Data` pointer, the `History` slots and the
 three counters are unchanged across the key, so the keypad Enter reaches no branch of `Console` (— it is not the
-`IK_Enter` submit, and not even the `Escape` clear). **What remains** is `pad=start`, which needs the same treatment
-once with a `wait=` before the dump, and the output question, which is structural: `Scrollback` belongs to
-`ExtendedConsole`, which this build never instantiates.
+`IK_Enter` submit, and not even the `Escape` clear). **What remains** is the output question, which is structural:
+`Scrollback` belongs to `ExtendedConsole`, which this build never instantiates.
+
+ **`pad=start` is measured, and the console answers to the keyboard alone (2026-11-06).** `submit8` runs the
+two-round shape with the `wait=3` before the Start dump: round 1 `ret` submits and moves `HistoryTop` 0 -> 1,
+`HistoryBot` -1 -> 0 and `HistoryCur` 0 -> 1 (the counter map's first measured increment), and round 2 types the line
+afresh into the console one `Tab` re-opens and taps Start. Every word of the object (DASH `TypedStr` and its `Data`,
+`History[0]`, the three counters, `TypedStrPos`, `bTyping`) — is identical afterwards while the frame moved 813 px.
+Start reaches no branch of `Console`, so together with `pad=a` no button on the pad drives it: a scripted console has to
+be typed into from the guest keyboard attached before the title.
 
 **A loaded level still has no live `Console`, and `Tab` was the variable, not the level (measured 2026-11-06).** With
 the keyboard attached at 75 s and a campaign level up (`48,647 objects over 295 pages`, `StaticMeshActor` 927, the M00

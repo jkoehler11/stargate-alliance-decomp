@@ -2055,3 +2055,38 @@ placed `HistoryTop` past `History[15]`, which is `TypedStrPos`' offset, so it wa
 **One shell trap, measured here.** `--step=monitor=info\ registers` written inside double quotes keeps the backslash,
 so the monitor answers `unknown command: 'info\'` and the step silently does nothing; unquoted in a script file it
 arrives as one argv and runs. The dumps above were read with `--cr3 0xf000`, the value these boots measure.
+
+## `pad=start` reaches no console branch, and a submit moves the counters (measured 2026-11-06)
+
+`submit8` puts a positive control and the last untested key in one boot: round 1 is `ret` from a console the boot
+opens (it submits, closes the console and moves the history counters), and round 2 is `pad=start` from the console one
+`Tab` re-opens, this time with a `wait=3` between the tap and the dump that the earlier attempt timed out on. `Console`
+at `0x02682b00`, a third base address across three boots, which is why the reader finds the object by class table:
+
+| dump | round, step | `TypedStr` `+0x44` | `History[0]` `+0x50` | `+0x38` | `+0x3C` | `+0x40` | `+0x110` | `+0x114` |
+|---|---|---|---|---|---|---|---|---|
+| `r1-pre` | 1, after `Tab` + `spc` + `hist` | `0x096565f0 56/56 ' hist'` + 50 `t` | empty | 0 | -1 | 0 | 55 | 1 |
+| `r1-post` | 1, `ret`, `wait=3` | empty | `0x09656510 56/56` | **1** | **0** | **1** | 0 | 0 |
+| `r2-pre` | 2, after `Tab` + `spc` + `hist` | `0x0803db78 6/6 ' hist'` | unchanged | 1 | 0 | 1 | 5 | 1 |
+| `r2-post` | 2, `pad=start`, `wait=3` | `0x0803db78 6/6 ' hist'` | unchanged | 1 | 0 | 1 | 5 | 1 |
+
+**Round 1 is the counter map's measured increment.** `ret` writes `History[0]` and moves all three counters exactly
+where `Console.uc`'s `IK_Enter` branch puts them: `HistoryTop` 0 -> 1, `HistoryBot` -1 -> 0 (`HistoryBot == -1` is the
+value that admits the first submit), `HistoryCur` 0 -> `HistoryTop`, and `TypedStrPos`/`bTyping` 55/1 -> 0/0. The line
+is 56 characters because a repeated `gkey` grew it (the `t`-repeat measured earlier), and that makes the copy
+unmistakable: the history holds the *whole* line, not five characters that a control could also produce.
+
+**Round 2 is a negative with a control.** Its pre-dump holds the freshly typed ` hist` (`6/6`, `TypedStrPos` 5,
+`bTyping` 1) with round 1's history still in slot 0, so the input reached an open console; after Start all seven words
+are identical -- `TypedStr` and its `Data`, the history slot, the three counters, `TypedStrPos`, `bTyping`. The tap
+moved 813 px of frame and nothing in the object: whatever Start did on screen, it reached no branch of `Console`,
+neither the `IK_Enter` submit nor the `Escape` line clear. With `pad=a` measured the same way, no button on the pad can
+drive the console, so a scripted console has to be typed into from the guest keyboard attached before the title.
+
+**A submit is invisible on a stock disc, and this boot shows it again.** The shot three seconds after `ret` moved
+0 pixels, because `Engine.Console` has no `PostRender`; the receipt is a memory read for exactly that reason.
+
+**The phrase a console's state gets had to change.** Round 2's pre-dump is an open console *with* a populated history,
+and the `--state` phrase from the previous revision called that "submitted". `bTyping` now decides first -- a closed
+console holding a line in `History` is a submit, an open one is typing whatever its history contains -- and
+`--selftest` asserts both readings on the same synthetic object.
