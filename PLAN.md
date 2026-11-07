@@ -514,6 +514,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       submit, so a 2 s subtitle is already gone, and the dump holds no copy of any message string. **Next**: a boot
       with the per-command frame one second after the submit (the tool now does that) and a dump read of
       `NotificationManager`/`GameHUDPtr`.
+
+      **The 1 s frame was taken, and the census is why the dump read said zero (2026-11-06)**: `msg1` loaded `M00` on
+      the first attempt and submitted `say hello`, `addnotification hello` and `stat fps` (`Console` `0x02682b00`,
+      `History` 3 slots, `TypedStr` empty, `bTyping` 0); the frame **one second** after the submit still draws nothing
+      for the two message commands and `64 cur FPS` / `60 avg FPS` for `stat fps`. `ramscan --objects --class
+      StargatePlayer` answered six hits and **all six `not-object`** -- including the object itself at physical
+      `0x05aaf800` (`0x4d0b68 0xbb0d 0x7e57640 0x9335d60 0 0xffffffff`): its `ObjectInternalInteger` is `0xbb0d`,
+      twice the screen's `0x10000` bound, and the two header words after it are above the 128 MiB dump, so the "two
+      in-image pointers" rule rejects a real mission object. On the measured pair instead (integer in range, then `0`
+      and `0xffffffff` at `+0x10`) the census names it *and* `StargateHUD`'s object `0x05bc6a00`, and decoding its
+      fields through the page tables gives `Pawn`, `PlayerReplicationInfo`, `AIMsgManager`, `StargateHUD` and
+      `XboxViewport` -- every one a **linear** address, which is also why `--refs`' raw dword comparison named nothing;
+      with `--cr3` it finds `hello`'s owners (`Console+0x5c` is the submitted line). `GameHud` and `NotificationManager`
+      are script classes with **no XBE class table**, so neither can be censused yet. **Next**: a package-class-table
+      resolver, and a dump taken *at* the submit -- M00's own dialogue rewrites `SubTitleText`, so a dump ten seconds
+      later cannot say whether `Say` reached the HUD.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

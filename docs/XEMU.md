@@ -2197,3 +2197,76 @@ written -- `areCheatsEnabled()` only messages when `Level.Game.CurrentGameProfil
 `QUICK SELECT MAP` need not carry one. **The next measurement is one boot that takes its per-command frame one second
 after the submit** (inside the 2.0 s subtitle), on a command whose path is unconditional, and reads
 `StargatePlayer.NotificationManager`/`GameHUDPtr` out of the same dump instead of inferring them from a frame.
+
+## The census was blind to the heap, and the player object is where the zero was (measured 2026-11-06)
+
+`msg1` is one boot of `tools/xemu/console-commands.sh` (`--boot=180 --pad-hold=0.35`, map index 10 = `M00`, desktop
+load 3.1) that loaded a level on the first attempt and submitted three commands: `say hello`, `addnotification hello`,
+`stat fps`. `console-state.py` on the 128 MiB `pmemsave` reads `Console` at `0x02682b00`, `HistoryTop` 3,
+`HistoryBot` 0, `TypedStr` empty, `bTyping` 0 -- all three delivered. The per-command frame is now taken **one second**
+after the submit, inside the 2.0 s subtitle, and it still reads zero for both message commands: the frame shows the
+`O'NEILL` HUD portrait and no text line anywhere; only `stat fps` draws (`64 cur FPS` / `60 avg FPS`).
+
+So the question moved from "was the command delivered" to "what does the drawing need", and the dump could not answer
+it: `tools/xemu/ramscan.py --objects --class StargatePlayer` returned six hits, **all six `not-object`**, on a boot
+where a player must exist. One of those six is the player:
+
+| address | header | verdict |
+|---|---|---|
+| `0x00a416f8` | `0x4d0b68 0x42ac6660 0x42fc6666 0xd01694e0 0x835afa0 0x4c91f8` | a stack pointer where the integer goes |
+| `0x00a41710` | `0x4d0b68 0 0 0 0 0` | a data copy of the table |
+| `0x00a424ac` | `0x4d0b68 0xd0169d9c 0 0x4782f 0 0xd01694d0` | stack |
+| `0x00a5e1c0` | `0x4d0b68 0xd0169158 0x11b33 0xd0167184 0x4c81b8 0xd01651e4` | stack |
+| `0x00a7f05c` | `0x4d0b68 0x1622fb0 0x1622fb0 0x4c293 0xd0166080 0xffffffff` | integer too large |
+| **`0x05aaf800`** | `0x4d0b68 0xbb0d 0x7e57640 0x9335d60 0 0xffffffff` | **the object**, rejected by two bounds |
+
+Both bounds were guesses, and both are wrong on a loaded level:
+
+* `ObjectInternalInteger` is a **serial number**, not a flag. It reads `0x8d34` at the title's Console default and
+  `0xbb0d` (47,885) here, so the `0x10000` cap makes every mission class read zero. The bound is now
+  `OBJECT_INTEGER_MAX = 0x100000`, sixteen times the largest measured value and still far below a code address.
+* the two words after it are **not** two in-image pointers. That rule came from the Console default
+  (`0x230eaf0`, `0x1ffc480`, both under 128 MiB); this object names `0x7e57640` and `0x9335d60`, the second above the
+  dump and neither mapped, so a range test rejects it too. What separates the six is the pair at `+0x10`: `0`, then
+  `0xffffffff` -- measured on all six hits and on the Console default.
+
+With the screen on those two facts the census names the object, and `StargateHUD`'s too (`0x05bc6a00`, integer
+`0xbcc6`). Decoding every four-aligned pointer in the object through the page tables (the `vamap` walk, one
+`physical_for` per candidate) names what it is:
+
+| field | object | class |
+|---|---|---|
+| `+0x018` | `0x06b40000` | `Package` |
+| `+0x38c` | `0x089e0000` | `Pawn` |
+| `+0x3b8` | `0x09738a00` | `ScriptedController` |
+| `+0x4c0` | `0x08af0f00` | `PlayerReplicationInfo` |
+| `+0x4d0` | `0x096bd970` | `AIMsgManager` |
+| `+0x558` | `0x022fe200` | `XboxViewport` |
+| `+0x748` | `0x08b30a00` | `StargateHUD` (physical `0x05bc6a00`, the object the census just named) |
+
+Every value is a **linear** address, and the dump is physical: that is also why `--refs` called all ten copies of
+`hello` ownerless. `--refs --cr3` translates each candidate start through one page-table pass (`linear_pages`) and
+searches both forms, and the same dump then reads:
+
+    at 0x064faa82
+      pointer at 0x02682b5c -> string 0x064faa60 (-34), named as linear 0x098cea60 in object 0x02682b00 +0x05c  Console
+    at 0x06813bca
+      pointer at 0x02682b50 -> string 0x06813bc0 (-10), named as linear 0x0858abc0 in object 0x02682b00 +0x050  Console
+
+`+0x5c` is `History[1]` and `+0x50` is `History[0]`: the submitted command, where the tool previously said no pointer
+existed. The other owners are an `Interaction` (`+0x2d8`), an `Actor` (`+0x394`) and a `ColorModifier` (`+0xe0`).
+
+**What is still open is the drawing, and this dump cannot close it.** `StargateHUD.SetSubtitle` writes `SubTitleText`
+unconditionally and then draws only through `GameHud(StargatePlayer.GameHudPtr).DisplayTextBox`; `AddNotification`
+goes `StargatePlayer.NotificationManager` -> `GameHud.SetNotifications`. Both channels therefore need a **`GameHud`
+actor**, and `GameHud` is a script class with no XBE class table -- the 492-table census cannot name one, so
+"`GameHudPtr` is `none`" is not measurable with the tools in this repo yet. The text itself does not settle it
+either: 128 MiB holds no `O'Neill: hello` (what `SetSubtitle` would have composed), but `M00`'s own dialogue rewrites
+`SubTitleText`, and the dump is taken ten seconds after the submit. One step would settle it -- a `pmemsave`
+immediately after the `ret` that submits `say hello`, before the level's dialogue -- which is a `console-commands.sh`
+flag, not a new instrument.
+
+**A run that draws nothing also cannot repaint.** `drive.py` exits 2 on this run because `042-tab` and `052-typed`
+"did not repaint" -- true, and expected: those frames show a console that has no `PostRender`. The gate is right to
+report it and the shell script does not read `rc`, but a green console run will keep printing `FAIL` until the gate
+learns that a known-invisible console frame is not a failure.
