@@ -610,6 +610,16 @@ are limited to expected fields (checksum/timestamp) and documented.
       matches no armed address is reported and survived instead of ending the wait (that break is what truncated the
       previous boot's chain).
 
+      **Both readers are load passes, and the route is not seen after them (measured 2026-11-07, wait cut at the stop
+      cap)**: with the arms kept (`--brk-keep`) each of the six functions is read **twice**, 0.1 s apart, by
+      `0x0003990f` and `0x00058ad4`, and in the walker's order -- `AddInteraction` at 12.7 s *before* `Timer` at 13.0 s
+      and `SetupInteractionsFor` at 14.9 s, which a chain through `SetTimer(1.0)` cannot produce. `DrawHUD`, kept armed
+      in gameplay, is read from `0x00040900` once and then from `0x00048ce0`/`0x00048ce8` about 5x/s, so the
+      interpreter's reader is identifiable. **Next**: the same arms with `--brk-stops=40`, so the window covers the
+      whole 150 s through gameplay -- a third read is the route running, and only the two load readers is the route
+      dead in this boot. Harness: `--brk-keep`/`--brk-stops` log every reader `eip` of a kept watchpoint, and the
+      per-label "did not fire" line is suppressed under it (it contradicted its own READ lines in this run).
+
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
