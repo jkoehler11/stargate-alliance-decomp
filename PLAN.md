@@ -686,6 +686,15 @@ are limited to expected fields (checksum/timestamp) and documented.
       `--csv`, a comma list for `--grep` and `--addresses`, and its own `OBJECT_HI = 0x10000000` for the array.
       **Next**: read `GameHud.SetNotifications` on `0x09332100` over the stub (one boot, `--fields`), and split the
       `FNameEntry` read at the 64 KiB boundary that leaves five `Core` classes unlabeled.
+      **The five `Core` classes are named, and the fault was an unmapped page rather than a crossing (2026-11-07)**:
+      their `FNameEntry` blocks are the last allocation on a mapped page (`0x95ffc0` -> `0x95ffff`, `0x9affc0` ->
+      `0x9affff`), so the 64 bytes inside the page read and the fixed 206-byte request died on the next, unmapped one.
+      `names.py` reads the entry one page at a time and keeps the prefix (`read_prefix`), a prefix with no
+      NUL-terminated name is still absent, and `--selftest` reproduces the boundary in `make ci` with no guest. Same
+      boot: index 5 = `ObjectProperty` (5,867 objects), index 103 = `Function` (8,623), and a re-run census names
+      **376** classes over the loaded `M00` with **no** `<unreadable>` row. **Next** stays the HUD read: `GameHud`
+      `0x09332100` and `NotificationManager` `0x096dc340` are both in that census, so `SetNotifications` can be read
+      over the stub.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

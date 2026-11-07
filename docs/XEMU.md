@@ -2806,13 +2806,20 @@ its `PlayerProfile` all sit **above** it (`0x09332100`, `0x096dc340`, `0x08a7504
 `SetSubtitle` had a sink on this level: the channel is not unset, and the missing text has to be explained by the draw
 path (`GameHud.SetNotifications`) or by the frame, not by an absent object.
 
-**Two classes stay unlabeled, and the reason is a read that crosses a 64 KiB page.** The five `<unreadable>` rows are
-class objects in `Core` (`Outer 0x97fa08`): `0x00bc2400` (8,610 objects, `Name` index 103), `0x00bc9000` (5,849,
-index 5), `0x00bcde00` (151), `0x00bc6c00` (80), `0x00bc7800` (38). Their `FNameEntry` pointers end in `...fc0`, so
-the 206-byte entry read starts 64 bytes before a page boundary and the stub refuses it -- the same fault that made 21
-of the name array's first 64 slots unreadable in `--find`, and here it is a *boundary* rather than a flaky read.
-Index 5 is `ObjectProperty` (`inventory/property_types.csv`), which is what 5,849 property objects should be; index
-103 is unresolved. The fix is to split that read at the boundary, which is the next instrument change, not a new boot.
+**The five `<unreadable>` classes were an entry block that ends on a page boundary (measured 2026-11-07).** The
+rows are class objects in `Core` (`Outer 0x97fa08`): `0x00bc2400` (8,610 objects, `Name` index 103), `0x00bc9000`
+(5,849, index 5), `0x00bcde00` (151), `0x00bc6c00` (80), `0x00bc7800` (38). Their `FNameEntry` blocks are the last
+allocation on a mapped page -- index 5's is at `0x95ffc0`, index 103's at `0x9affc0` -- and the 64 bytes up to
+`0x960000`/`0x9b0000` read back fine while the next page is **unmapped** (`read 0x960000+0x80 failed after 4
+attempts`). `entry()` asked for 206 bytes in one request, so that short block failed whole and the entry counted as
+absent; it is the same mechanism as the 21 unreadable slots in `--find`, not a flaky read. `read_prefix` now reads one
+page per request and keeps the prefix, and a prefix with no NUL-terminated name still reads as absent, so a real
+mismatch is not waved through. With the fix the same boot resolves both: index 5 is **`ObjectProperty`** (5,867
+objects) and index 103 is **`Function`** (8,623) -- the two largest classes in the census, which is exactly what the
+object histogram implies. A re-run census over the loaded `M00` names **376** distinct classes and leaves **no
+`<unreadable>` row**; `GameHud` 2, `NotificationManager` 1, `Console` 1 (the class default), `SGInteraction` 32 and
+`StargateTeamHUD` as before. `names.py --selftest` reproduces the boundary with a fake guest, so `make ci` now holds
+the fix without a boot.
 
 Tool: `names.py --census --csv PATH` keeps every row so one walk answers any class question, `--grep A,B` takes a
 comma list, and `--addresses` prints the matching objects' addresses -- the three additions this measurement needed.

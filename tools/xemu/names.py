@@ -25,6 +25,13 @@ objects. **Measured (2026-11-07): `Class` `+0x24`, `Name` `+0x20`** (an `FName` 
 `--census` uses the pair: it names every object's class from its own `Class` pointer, which is the only way to name a
 *script* class -- `GameHud extends Interaction` carries `Interaction`'s table, so no vtable names it.
 
+**An entry can end on a page boundary, so the read has to stop there.** Entries are allocated `2*len+0xe` bytes,
+which fills a page exactly: index 5's block runs `0x95ffc0..0x95ffff` and the next page is unmapped, so the fixed
+206-byte `FNameEntry` read ran into nothing and failed whole -- the fault that left five `Core` classes unlabelled in
+the first full census and 21 of the name array's first 64 slots unreadable in `--find`. `read_prefix` reads one page
+at a time and keeps what it got, and `entry` parses that prefix (measured 2026-11-07;
+`--selftest` reproduces it without a guest).
+
 Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --linger=SECS` keeps one up):
 
     # where is the array, and does the shape validate?
@@ -106,6 +113,36 @@ def read_section(guest, va, size, chunk=0x10000):
     return bytes(out)
 
 
+def read_prefix(guest, va, size, page=0x10000):
+    """Read up to `size` bytes at `va`, one page per request, and stop where memory stops.
+
+    xemu's stub serves mapped pages only: a request that crosses into an unmapped one fails *whole*, and
+    `Guest.read` turns that into `IOError`, which every caller here reads as "this entry is not there". An
+    `FNameEntry` is allocated `2*len+0xe` bytes, so its block can end exactly on a page boundary -- index 5's
+    runs `0x95ffc0..0x95ffff` -- and the fixed 206-byte read then answered nothing at all. Read the first page's
+    share, keep it, and treat a later failure as the end of the block: a truncated prefix is parsed, and a
+    prefix with no NUL-terminated name still reads as absent (`wide_name`).
+    """
+    out = bytearray()
+    while len(out) < size:
+        at = va + len(out)
+        want = min(size - len(out), page - (at % page))
+        while True:
+            try:
+                out += guest.read(at, want)
+                break
+            except IOError:
+                if not out:
+                    if want <= 4:
+                        raise
+                    want = max(4, want // 2)
+                elif want <= 4:
+                    return bytes(out)
+                else:
+                    want = max(4, want // 2)
+    return bytes(out)
+
+
 def wide_name(raw, off=NAME_AT, limit=NAME_MAX):
     """The UTF-16 name at `off`, or None when the bytes are not a terminated printable identifier."""
     chars = []
@@ -132,7 +169,7 @@ def entry(guest, ptr, want_name=True):
     if not plausible_pointer(ptr):
         return None
     try:
-        raw = guest.read(ptr, NAME_AT + 2 * NAME_MAX + 2)
+        raw = read_prefix(guest, ptr, NAME_AT + 2 * NAME_MAX + 2)
     except IOError:
         return None
     if len(raw) < NAME_AT + 4:
@@ -547,11 +584,79 @@ def cmd_census(guest, args):
         print("  %-40s %6d" % (nm[idx] or "<unreadable>", count))
 
 
+class PageGuest:
+    """A guest with 64 KiB pages that are either mapped or not, like the stub: a request over an unmapped
+    byte fails whole, which is what made a boundary-terminated entry read as absent."""
+
+    def __init__(self, base, pages):
+        self.base = base
+        self.page = 0x10000
+        self.mem = {p: bytearray(self.page) for p in pages}
+        self.reads = 0
+
+    def poke(self, va, blob):
+        off = va - self.base
+        page, start = self.base + (off - off % self.page), off % self.page
+        self.mem[page][start:start + len(blob)] = blob
+
+    def read(self, addr, size, chunk=0x4000):
+        self.reads += 1
+        got = bytearray()
+        while len(got) < size:
+            at = addr + len(got)
+            off = at - self.base if at >= self.base else -1
+            page = self.base + (off - off % self.page) if off >= 0 else None
+            if page not in self.mem:
+                raise IOError("read %#x+%#x runs into unmapped memory" % (addr, size))
+            inside = off % self.page
+            take = min(size - len(got), self.page - inside)
+            got += self.mem[page][inside:inside + take]
+        return bytes(got)
+
+    def u32(self, addr):
+        return struct.unpack("<I", self.read(addr, 4))[0]
+
+
+def selftest():
+    """The boundary case, without a guest: a complete entry whose block ends on a page edge must still resolve."""
+    base = 0x00600000
+    guest = PageGuest(base, [base])          # exactly one mapped 64 KiB page, like the five `Core` entries
+    text = "ObjectProperty"
+    blob = struct.pack("<III", 5, 0, 4) + text.encode("utf-16-le") + b"\0\0"
+    ptr = base + 0xFFC0                        # the last 64 bytes of the page; past the boundary is unmapped
+    guest.poke(ptr, blob)
+    try:
+        guest.read(ptr, NAME_AT + 2 * NAME_MAX + 2)  # the old fixed read
+    except IOError:
+        pass
+    else:
+        print("selftest FAIL: the fake guest served a read past its last page")
+        return 1
+    got = entry(guest, ptr)
+    if got != (5, 0, 4, text):
+        print("selftest FAIL: a boundary entry read as %r" % (got,))
+        return 1
+    # an entry that is not at a boundary still reads, and a truncated one with no terminator is still absent
+    ptr2 = base + 0x0800
+    guest.poke(ptr2, struct.pack("<III", 103, 0, 0) + "ByteProperty".encode("utf-16-le") + b"\0\0")
+    if entry(guest, ptr2) != (103, 0, 0, "ByteProperty"):
+        print("selftest FAIL: an aligned entry stopped resolving")
+        return 1
+    guest.poke(base + 0xFFE0, struct.pack("<III", 103, 0, 0) + "ByteProper".encode("utf-16-le"))  # no NUL
+    if entry(guest, base + 0xFFE0) is not None:
+        print("selftest FAIL: a truncated entry was read as an entry")
+        return 1
+    print("ok   names: an entry whose block ends on a page boundary resolves (%d = %s)" % (got[0], text))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--port", type=int, required=True, help="xemu's GDB stub port")
+    ap.add_argument("--port", type=int, default=None, help="xemu's GDB stub port")
     ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--xbe", required=True, help="default.xbe of the dump (for the section table)")
+    ap.add_argument("--xbe", default=None, help="default.xbe of the dump (for the section table)")
+    ap.add_argument("--selftest", action="store_true",
+                    help="check the page-boundary read with a fake guest, no boot needed")
     ap.add_argument("--find", action="store_true", help="scan the writable sections for the name array")
     ap.add_argument("--section", action="append", default=None, metavar="NAME",
                     help="section to scan (default .data; repeatable)")
@@ -577,6 +682,10 @@ def main():
                     help="with --census --grep, print the matching objects' addresses as well as their counts")
     ap.add_argument("--limit", type=int, default=40, help="with --addresses, rows per class")
     args = ap.parse_args()
+    if args.selftest:
+        return selftest()
+    if args.port is None or not args.xbe:
+        ap.error("--port and --xbe are required unless --selftest is given")
     if args.section is None:
         args.section = [".data"]
 

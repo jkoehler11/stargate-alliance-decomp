@@ -1219,10 +1219,11 @@ Two smaller results: `SGInteraction` has **32** objects here, against the 19 an 
 (a `Class`-pointer read is the only one that can tell them apart), and the live HUD object is `StargateTeamHUD`, not the
 `StargateHUD` an earlier dump-based read named.
 
-Five classes stay unlabeled for a mechanical reason worth recording: their `FNameEntry` pointers end in `...fc0`, so the
-206-byte entry read crosses a 64 KiB page boundary and the stub refuses it -- the same fault that left 21 of the name
-array's first 64 slots unreadable in `--find`, here a boundary rather than a flaky read. Index 5 is `ObjectProperty`
-(5,849 property objects, which fits); index 103 is unresolved. Splitting that read is the next instrument change.
+Five classes stayed unlabeled for a mechanical reason, and the fix names them (measured 2026-11-07): their
+`FNameEntry` blocks are the last allocation on a mapped page (`0x95ffc0`, `0x9affc0`), so 64 bytes read back and the
+fixed 206-byte request ran into an **unmapped** page and failed whole. `names.py` now reads the entry one page at a
+time and parses the prefix; index 5 is **`ObjectProperty`** (5,867 objects) and index 103 is **`Function`** (8,623),
+and a re-run census names 376 classes with no unreadable row.
 
 Tooling: `names.py --census` now takes `--csv PATH` (every row, so one 4-minute walk answers any class question),
 a comma list for `--grep`, and `--addresses`; and the census uses `OBJECT_HI = 0x10000000` for the object array, with
