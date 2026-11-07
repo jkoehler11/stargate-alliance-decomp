@@ -36,6 +36,12 @@ Steps, in order:
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
                 that stopped executing, so every sequence that reads "no change" needs this
     noise=SECS  capture, wait SECS with no input, capture again: the screen's own animation, in pixels
+    watch=TEXT  dump all of guest RAM inside the boot, find TEXT (UTF-16LE with its terminator, the form a script
+                `FString` holds) in it, translate its *physical* address to the *linear* one the CPU uses (the page
+                tables are in the same dump, CR3 from `info registers`, `tools/xemu/vamap.py`), then arm a *read*
+                watchpoint over the string's first `--watch-length` bytes and print each stop's register file, the
+                stack words around ESP that name the address, and EIP. It needs `--gdb`; the dump is written to
+                `--out` (delete it: 128 MiB).
 
 `key=` and `type=` take target-window input, `xkey=`/`xtype=` take XTEST input; which reaches the guest is a
 measured fact per input type, not a safe assumption (docs/XEMU.md carries the numbers). SDL ignores synthetic
@@ -56,12 +62,30 @@ Every frame stays in `--out`: they are frames of the game and must not be commit
 import argparse
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
 import time
 
 SMOKE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py")
+MEM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mem.py")
+VAMAP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vamap.py")
+CR3 = re.compile(r"CR3=([0-9a-fA-F]{8})")
+
+
+def load_vamap():
+    spec = importlib.util.spec_from_file_location("vamap", VAMAP)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_mem():
+    spec = importlib.util.spec_from_file_location("mem", MEM)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def load_smoke():
@@ -145,7 +169,7 @@ class FocusElsewhere(Exception):
 
 
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
-         "focus", "gkey", "pad")
+         "focus", "gkey", "pad", "watch")
 
 PAD = None          # the virtual pad, when a step needs one (created before xemu starts, see vpad.py)
 PAD_MAPPING = ""    # the pad's SDL mapping, handed to xemu through SDL_GAMECONTROLLERCONFIG
@@ -243,6 +267,13 @@ def main():
     ap.add_argument("--gdb", type=int, default=0,
                     help="open a GDB stub on this port, so tools/xemu/mem.py and objects.py can read the guest "
                          "during the sequence")
+    ap.add_argument("--watch-stops", type=int, default=3, help="watchpoint stops to take per watch= step")
+    ap.add_argument("--watch-window", type=lambda v: int(v, 0), default=0x200,
+                    help="how close a register or stack word must be to the watched address to count as naming it")
+    ap.add_argument("--watch-stack", type=lambda v: int(v, 0), default=0x400, help="stack bytes to read around ESP")
+    ap.add_argument("--watch-timeout", type=float, default=20.0, help="seconds to wait for one watchpoint stop")
+    ap.add_argument("--watch-length", type=lambda v: int(v, 0), default=8,
+                    help="bytes the read watchpoint covers, from the watch= text's first character")
     ap.add_argument("--linger", type=float, default=0,
                     help="after the last step, keep the guest running this many seconds for a memory read "
                          "(xemu is killed on exit, so a read has to happen while this sleeps)")
@@ -420,6 +451,75 @@ def main():
                 say("step %d: vm %s; %d eip samples, %d in kernel: %s"
                     % (index, status.get("return", {}).get("status"), len(eips), kernel,
                        " ".join("0x%08x" % e if e is not None else "?" for e in eips)))
+                continue
+            if name == "watch":
+                if not args.gdb:
+                    say("FAIL: a watch= step needs --gdb, so there is a stub to attach to")
+                    return 3
+                ram = os.path.join(args.out, "watch-ram.bin")
+                got = cmd("human-monitor-command", {"command-line": 'pmemsave 0 0x8000000 "%s"' % ram})
+                if got is None:
+                    say("FAIL: no QMP socket at %s" % sock_path)
+                    return 3
+                with open(ram, "rb") as handle:
+                    blob = handle.read()
+                # The terminator is part of the pattern: `hist` alone also matches inside `History`, which is how a
+                # first version of this step armed a watchpoint on a class-name string nobody reads (8 hits, no stop).
+                needle = value.encode("utf-16-le") + b"\x00\x00"
+                hits, at = [], blob.find(needle)
+                while at >= 0 and len(hits) < 8:
+                    hits.append(at)
+                    at = blob.find(needle, at + 1)
+                say("step %d: watch %r -- %s holds %d byte(s), %d cop%s of the UTF-16 text%s"
+                    % (index, value, os.path.basename(ram), len(blob), len(hits),
+                       "y" if len(hits) == 1 else "ies",
+                       "" if not hits else " (%s)" % ", ".join("%#010x" % hit for hit in hits)))
+                if not hits:
+                    continue
+                # Arm at the *start* of the string: a text pattern matches inside it, and a reader starts at the
+                # first character. Walk back while the bytes are still printable UTF-16.
+                start = hits[0]
+                while start >= 2 and 0x20 <= blob[start - 2] <= 0x7E and blob[start - 1] == 0:
+                    start -= 2
+                if start != hits[0]:
+                    say("         the string starts at %#010x (the match is %#x bytes into it)"
+                        % (start, hits[0] - start))
+                # `pmemsave` writes *physical* memory and the stub watches *linear* addresses: the page tables in
+                # the same dump translate one into the other (CR3 comes from the register file, one QMP call).
+                try:
+                    registers = cmd("human-monitor-command", {"command-line": "info registers"})
+                except Exception:
+                    registers = None
+                match = CR3.search((registers or {}).get("return", "") or "")
+                if not match:
+                    say("         no CR3 in `info registers`: cannot translate %#010x to a linear address" % start)
+                    continue
+                cr3 = int(match.group(1), 16)
+                vamap = load_vamap()
+                linear = vamap.linear_for(blob, cr3, start)
+                if not linear:
+                    say("         CR3 %#x maps no linear address onto %#010x: nothing to watch" % (cr3, start))
+                    continue
+                say("         CR3 %#x: %#010x is linear %s"
+                    % (cr3, start, ", ".join("%#010x (%s)" % (at, how) for at, how, _flags in linear)))
+                watched = linear[0][0]
+                memory = load_mem()
+                gdb = memory.Gdb("127.0.0.1", args.gdb)
+                try:
+                    first, supported, reply, records = memory.watchpoint(
+                        gdb, watched, length=args.watch_length, window=args.watch_window,
+                        stack=args.watch_stack, stops=args.watch_stops, timeout=args.watch_timeout)
+                    for line in memory.format_report(watched, first, supported, reply, records,
+                                                     args.watch_window):
+                        say("         " + line)
+                except (IOError, OSError) as exc:
+                    say("         the stub did not answer: %s" % exc)
+                finally:
+                    try:
+                        gdb.resume()
+                    except (IOError, OSError):
+                        pass
+                    gdb.close()
                 continue
             if name == "wait":
                 time.sleep(float(value))
