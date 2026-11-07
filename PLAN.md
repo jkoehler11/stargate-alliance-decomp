@@ -499,8 +499,11 @@ are limited to expected fields (checksum/timestamp) and documented.
       `History[0]` (`Console+0x50`, 16 inline slots of stride `0xC` ending at `+0x110`, where `TypedStrPos` reads
       5 -> 0 and `bTyping` 1 -> 0) holding the line, so the key is delivered and the command reaches
       `ConsoleCommand`; `console-state.py --receipt hist` asserts it and answers 1 on the pre-submit dump
-      (`docs/XEMU.md`). **Next**: `kp_enter`, `pad=a` and `pad=start` were sent after the submit had closed the
-      console, so they are untested rather than negative, and the console's *output* still has no sink.
+      (`docs/XEMU.md`). **`pad=a` is not a submit (2026-11-06)**: `submit6` repeated the round twice in one boot,
+      re-typing the line each time and dumping before and after — round 1 `ret` reproduced the receipt on a second
+      heap (`Console` `0x02641b00`, `History[0]` `0x0802e61c`), and round 2's control dump held the line while its
+      post-dump did not change, so the A button reaches the console as nothing and a scripted console needs the
+      keyboard. `kp_enter` and `pad=start` are still untested, and the console's *output* still has no sink.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
