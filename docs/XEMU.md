@@ -2928,3 +2928,30 @@ Three things follow, and the first two correct the doc above.
 * **`fields.py` now bounds its scans instead of assuming.** The field-chain and default-object searches took a
   hard-coded `0x400`; `--scan` sets it, `--members` walks the members themselves, and `--selftest` holds the
   member scan and the old bound's miss in `make ci` with a fake reader, no boot needed.
+
+## Locating a live object before reading it (class objects move)
+
+A read that worked on one boot is not an address for the next. Measured over a loaded-`M00` boot (`census6`,
+gdb `12519`, the same script as `census4`):
+
+- `0x01886c00`, the address census5 reported as `GameHud`'s *class object*, holds UTF-16 package text
+  (`...Emitter...`) instead of a `UObject`. A class object is a heap allocation, so that address is a fact about
+  one boot, not about the build.
+- `0x006be0d8`, the tools' default `GNames`, holds the ASCII path `xbox\engine\inc\` rather than a
+  `(Data, Num, Max)` triple. `.data` itself reads at its declared `0x598e00+0x226bd4` (the whole 2.2 MB reads), so
+  this is about the slot, not about the address space.
+
+So both ends of a class-object read are located per boot:
+
+    # which object is named GameHud, and what class object does it point at
+    python3 tools/xemu/findcls.py --port 12519 --want GameHud --want UITextBox
+
+    # where GNames is on this boot: a TArray triple whose element 1 decodes as `ByteProperty`
+    python3 tools/xemu/find_names.py 12519
+
+`findcls.py` walks the object array one 64 KiB page per page -- the same choice `names.py --census` makes, because a
+per-object read costs a stub round-trip -- and prints every object whose *own* name matches, with its index and its
+class object. `find_names.py` is the narrow form of `names.py --find`: `.data` holds **15,384** TArray-shaped
+triples (**9,121** with a plausible name count), and scoring every one of them over the stub had not finished after
+~2.5 minutes, so it filters by count first and then requires element 1 to decode as `ByteProperty` -- index 1 of
+UE2's reserved names, which makes a hit an identification rather than a shape match.
