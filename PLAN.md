@@ -619,6 +619,19 @@ are limited to expected fields (checksum/timestamp) and documented.
       whole 150 s through gameplay -- a third read is the route running, and only the two load readers is the route
       dead in this boot. Harness: `--brk-keep`/`--brk-stops` log every reader `eip` of a kept watchpoint, and the
       per-label "did not fire" line is suppressed under it (it contradicted its own READ lines in this run).
+      **The route runs, and a read watchpoint can witness that (measured 2026-11-07)**: the same arms with
+      `--brk-stops=40` show five of the six copies read a third time from `0x00048ce0`/`0x00048ce8` -- inside
+      `UObject::ProcessInternal` (`0x00048bf0`), the pair that reads `DrawHUD` every frame -- 2-3 s after the load
+      passes: `SetupInteractionsFor` t+17.8 s, `AddInteraction` t+18.0 s (and eleven further executions by t+20.4 s),
+      `PostNetBeginPlay` t+18.2 s, `Timer` t+18.9 s, `PostNetHUDSetup` t+19.0 s. So the five `none` player fields are
+      an *effect* question, not a dead route, and the walker-only reading in the note above is corrected: a `Z3` on a
+      script function's first byte does witness execution once the reader `eip` is checked. The chain's **order**
+      still does not match -- `SetupInteractionsFor` and `AddInteraction` execute before `Timer` and
+      `PostNetHUDSetup` -- so the copies are not all the HUD's own functions. Harness: `--brk-keep-stops=N` retires
+      one armed copy after N reads and leaves the rest armed, so a hot arm cannot spend the whole budget (both
+      earlier waits ended at the stop cap inside the load window; this one used 3 reads per copy). **Next**: which
+      export owns each armed copy -- a dump-side object-array walk for a `UFunction` whose script pointer is the
+      copy's linear address, no boot needed -- then a `--fields` read of `GameHudPtr` from a dump taken after t+19 s.
 
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
