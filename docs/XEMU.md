@@ -2505,3 +2505,36 @@ the pre-load one, so the arms are not stale, and the remaining question is what 
 loader's copy. `Timer` and `PostNetHUDSetup` firing (or not) after it is what decides that, and it needs the fixed
 parser -- the next measurement, not another theory.
 
+**Every route read comes from one walker frame, so the read is the loader's copy (measured 2026-11-07).** The same
+boot with that parser, and one more fix from the first attempt (a stop that matches no armed address is not evidence
+that an armed one will not be read later -- it is now reported and the wait continues), recorded all six arms instead
+of the first:
+
+| t+ in the wait | function | linear address | reader eip | esp |
+| --- | --- | --- | --- | --- |
+| 8.7 s | `PostNetBeginPlay` | `0x016b2800` | `0x0003990f` | `0xd0168a30` |
+| 12.6 s | `AddInteraction` | `0x00c26c00` | `0x0003990f` | `0xd0168a30` |
+| 12.9 s | `Timer` | `0x016b0140` | `0x0003990f` | `0xd0168a30` |
+| 13.1 s | `PostNetHUDSetup` | `0x01c6af80` | `0x0003990f` | `0xd0168a30` |
+| 13.2 s | `PostNetBeginPlay`, second copy | `0x01c9fdc0` | `0x0003990f` | `0xd0168a30` |
+| 14.9 s | `SetupInteractionsFor` | `0x01a7e000` | `0x0003990f` | `0xd0168a30` |
+
+Six functions, **one** reader, the **same `esp`** and the **same return address** (`0x00039420`) on every stop, 6.2 s
+apart from end to end. That is a loop over a class's functions in one stack frame, not the route's call chain:
+`PostNetBeginPlay -> Timer -> PostNetHUDSetup -> SetupInteractionsFor -> AddInteraction` would deepen `esp` at every
+level, and `Timer` is armed by `SetTimer(1.0, True)`, so a chain would reach it a second after its setter rather than
+0.3 s after `AddInteraction` and 3.9 s after `PostNetBeginPlay`. The address names the reader: `0x0003990f` is `+0x2f`
+into **`0x000398e0`**, the slot-11 script walker that `Struct`, `Function` and `Class` all point at, whose body
+validates a script by walking it -- the serialisation path, not the interpreter.
+
+The control in the same boot is what makes that a measurement rather than a guess: `DrawHUD`, which draws every frame
+of gameplay, is read from **`0x00040900`** with a different stack (`esp 0xd0168e08`) 0.2 s into the wait, and not once
+in 8 s at the title. So the two kinds of reader are distinguishable by `eip`, and the route's six reads are all the
+loader's.
+
+Consequence: **a `Z3` on a route function's bytecode cannot witness the route.** The 0.4 s `PostNetBeginPlay` hit in
+the run above was this walker copying the scripts during the load, so "the route ran and the class string did not
+resolve" is untested rather than supported, and no read-arm boot will test it. The instrument that would is an
+*effect* of the route: `UInteractionMaster::AddInteraction`, which only the seven `AddInteraction` sites in the
+shipped scripts reach, a property the setup writes, or an execution breakpoint filtered on the reader `eip`.
+

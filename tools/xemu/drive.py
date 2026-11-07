@@ -802,6 +802,7 @@ def main():
                     taps = list(BRK_TAPS) if brk_seen == args.brk_tap_step else []
                     started = time.time()
                     deadline = started + brk_step_wait
+                    strays = set()
                     while live and time.time() < deadline:
                         # The card is a *wait for input*: with the guest frozen on it, every armed pattern sits behind
                         # a keypress, so a tap scheduled here is what lets the load reach the code under the
@@ -840,9 +841,19 @@ def main():
                             where = watch_address(stop)
                             hit = [(label, lin) for label, lin in live if where is not None and lin == where]
                         if not hit:
-                            say("         a stop at eip %s matches no armed pattern (%r): ending the wait"
-                                % ("%#010x" % eip if eip is not None else "?", stop[:40]))
-                            break
+                            # A stray stop is not evidence that an armed pattern will not be read later, and one
+                            # of these truncated a boot's whole measurement: report each distinct address once and
+                            # keep waiting, with a cap so a stub that stops constantly cannot spin the loop.
+                            where = watch_address(stop)
+                            key = where if where is not None else (eip, stop[:16])
+                            if key not in strays:
+                                strays.add(key)
+                                say("         a stop at eip %s matches no armed pattern (%r): still waiting"
+                                    % ("%#010x" % eip if eip is not None else "?", stop[:40]))
+                            if len(strays) > 8:
+                                say("         %d unmatched stops: ending the wait" % len(strays))
+                                break
+                            continue
                         label, lin = hit[0]
                         live.remove(hit[0])
                         try:
@@ -858,8 +869,9 @@ def main():
                                                  struct.unpack("<16I", gdb.read(esp, 0x40)))
                             except (IOError, OSError):
                                 words = ""
-                        say("         FIRED %s at %#010x, eip %#010x esp %s%s"
-                            % (label, lin, eip, "%#010x" % esp if esp else "?", "; stack " + words if words else ""))
+                        say("         FIRED %s at %#010x, eip %#010x, t+%.1fs esp %s%s"
+                            % (label, lin, eip, time.time() - started,
+                               "%#010x" % esp if esp else "?", "; stack " + words if words else ""))
                 except (IOError, OSError) as exc:
                     say("         the stub did not answer: %s" % exc)
                 finally:

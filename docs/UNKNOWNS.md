@@ -1132,6 +1132,16 @@ On that model `Timer`, `PostNetBeginPlay` and `DrawOrderTarget` each occur exact
 (`0x01573140`, `0x017d8dc0`, `0x019bf600`). What would still settle the route: the same boot with those patterns and
 `drive.py --brk-freeze` (the VM stopped across the dump and the arm), then `Timer` firing or not.
 
+**That breakpoint would read the loader, not the route (measured 2026-11-07), so it cannot settle this entry.** With
+the parser fixed, one `M00` boot armed the five HUD-setup functions plus a `DrawHUD` control and every arm fired --
+**all six from one reader**, `eip 0x0003990f` (`+0x2f` into the slot-11 walker `0x000398e0`), identical `esp`, same
+return address `0x00039420`, inside 6.2 s. That is a loop over a class's functions during the load (the serialiser
+validating scripts), not the interpreter reaching them in call order; `DrawHUD` is read from `0x00040900` instead,
+which is what makes the two readers distinguishable. **What would settle it** is an effect of the route rather than a
+byte the loader also reads: a breakpoint on `UInteractionMaster::AddInteraction` (only the seven `AddInteraction`
+sites reach it), an exec breakpoint filtered on the reader's `eip`, or the HUD-side property the setup writes, whose
+offset the package does not carry.
+
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
