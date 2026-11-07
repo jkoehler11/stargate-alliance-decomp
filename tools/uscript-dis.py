@@ -597,6 +597,118 @@ def start_report(path):
 dis_parse = parse
 
 
+def operand_spans(data, table):
+    """`(start, end, kind)` for every token's own bytes, following the table's grammar.
+
+    kind is `opcode`, `index` or `fixed`. This is a position-aware copy of `parse`'s walk (that one builds a tree and
+    drops operand offsets), and it exists for one reason: a compact index operand is the one thing the package loader
+    rewrites on the way into memory, so a RAM search for a function's code has to leave those bytes open.
+    Measured on a 128 MiB dump of a loaded `M00`: `StargateHUD.DrawOrderTarget`'s log call reads `b8 2a` in the
+    package and `a0 1e 26 01` in the guest, an index widened to four bytes, while its `07 cd 00` jump is unchanged.
+    """
+    spans = []
+
+    def token(pos):
+        if pos >= len(data):
+            raise Refused("%#x: ran off the end" % pos)
+        op = data[pos]
+        pattern, _name = table.pattern(op)
+        if pattern == "bad-token":
+            raise Refused("%#x: opcode %02x is the walker's bad-token case" % (pos, op))
+        spans.append((pos, pos + 1, "opcode"))
+        q = pos + 1
+        for item in (pattern.split(",") if pattern else []):
+            if item == "expr":
+                q, _op = token(q)
+            elif item == "parms":
+                while True:
+                    q, child_op = token(q)
+                    if child_op == 0x16:
+                        break
+            elif item == "case":
+                value = struct.unpack_from("<H", data, q)[0]
+                spans.append((q, q + 2, "fixed"))
+                q += 2
+                if value != 0xFFFF:
+                    q, _op = token(q)
+            elif item == "index":
+                start = q
+                if q >= len(data):
+                    raise Refused("%#x: index of opcode %02x runs off the end" % (pos, op))
+                b = data[q]
+                q += 1
+                cont = b & 0x40
+                while cont and q < len(data):
+                    b = data[q]
+                    q += 1
+                    cont = b & 0x80
+                spans.append((start, q, "index"))
+            elif item.startswith("bytes:"):
+                n = int(item.split(":", 1)[1])
+                if q + n > len(data):
+                    raise Refused("%#x: opcode %02x wants %d operand bytes, %d left" % (pos, op, n, len(data) - q))
+                spans.append((q, q + n, "fixed"))
+                q += n
+            elif item == "str":
+                end = data.find(b"\0", q)
+                if end < 0:
+                    raise Refused("%#x: string operand of %02x is not NUL-terminated" % (pos, op))
+                spans.append((q, end + 1, "fixed"))
+                q = end + 1
+            elif item == "utf16":
+                start = q
+                while True:
+                    if q + 2 > len(data):
+                        raise Refused("%#x: UTF-16 string operand of %02x is not NUL-terminated" % (pos, op))
+                    unit = struct.unpack_from("<H", data, q)[0]
+                    q += 2
+                    if unit == 0:
+                        break
+                spans.append((start, q, "fixed"))
+            elif item == "labeltable":
+                start = q
+                while True:
+                    if q + 8 > len(data):
+                        raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
+                    entry = struct.unpack_from("<I", data, q)[0]
+                    q += 8
+                    if entry == 0:
+                        break
+                spans.append((start, q, "fixed"))
+            else:
+                raise Refused("%#x: unknown pattern item %r in the table" % (pos, item))
+        return q, op
+
+    pos = 0
+    while pos < len(data):
+        pos, _op = token(pos)
+    spans.sort()
+    return spans
+
+
+def hex_pattern(data, spans, limit):
+    """A search pattern for the guest's copy of a script: `??` marks each byte of a widened index operand.
+
+    `limit` is in script bytes, so a pattern for "the first 48 bytes" covers whole operands and the caller cannot
+    accidentally cut a four-byte index slot in half.
+    """
+    out, cursor, used = [], 0, 0
+    for start, end, kind in spans:
+        if start < cursor:
+            continue
+        if kind == "index" and used + (start - cursor) < limit:
+            out.append(data[cursor:start].hex())
+            out.append("??" * 4)
+            used += (start - cursor) + 1
+        elif used + (end - cursor) < limit:
+            out.append(data[cursor:end].hex())
+            used += end - cursor
+        else:
+            break
+        cursor = end
+    return "".join(out)
+
+
 def function_script(path, want_class, want_function, table, hex_bytes=0):
     """One function's script, from the header to the epilogue, as a token tree.
 
@@ -637,16 +749,20 @@ def function_script(path, want_class, want_function, table, hex_bytes=0):
         start = off + 16
         print("%s.%s: payload %d bytes, script %d..%d (%d bytes), header %d bytes"
               % (want_class, want_function, n, start, end, end - start, start))
-        if hex_bytes:
-            # The pattern form: the script bytes are identical in the package and in the guest's loaded copy, so a
-            # RAM dump search for them finds where the interpreter will execute the function (docs/XEMU.md).
-            print(pay[start:start + hex_bytes].hex())
-            return 0
         try:
             nodes = dis_parse(pay[start:end], table)
         except Refused as exc:
             print("  the walk refuses at script offset %s" % exc)
             return 1
+        if hex_bytes:
+            # The pattern form. **The loaded copy is not the package's bytes**: measured on a 128 MiB dump of a
+            # loaded `M00` (2026-11-07), every compact index operand arrives as a **four-byte slot** -- the file's
+            # `b8 2a` at DrawOrderTarget's log call is `a0 1e 26 01` in the guest -- while jump offsets and fixed
+            # operands are unchanged. So the pattern is emitted on that model: opcodes and fixed operands exact,
+            # each index operand four `??` bytes, which `drive.py --step=brk=` matches as "any byte".
+            spans = operand_spans(pay[start:end], table)
+            print(hex_pattern(pay[start:end], spans, hex_bytes))
+            return 0
         for line in render(nodes):
             print("  " + line)
         return 0

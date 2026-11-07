@@ -561,6 +561,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       uses `--seconds=180 --pad-hold=0.35`. **Next**: the same sequence with those two settings, which either fires
       `Timer` (the route ran and the class string did not resolve) or fires nothing (the HUD's `PostNetBeginPlay`
       route is dead in this boot).
+      **The loaded copy is not the package's bytes (measured 2026-11-07)**: that re-run would have answered 0 copies
+      again, and the boot was blamed wrongly — a 128 MiB dump of a boot that *did* load `M00`
+      (`work/msg1/try1/ram.bin`) holds **no 8-byte prefix** of `Timer`'s bytecode, so the byte-exact pattern the step
+      searched for does not exist in a guest at all. The package loader **widens every compact index operand to a
+      four-byte slot**: `StargateHUD.DrawOrderTarget`'s log call reads `b8 2a` in the file and `a0 1e 26 01` in the
+      guest, its one-byte `8a` is `00 62 fe 00`, while its `07 cd 00` jump and fixed operands are unchanged.
+      `uscript-dis.py --hex-bytes` now emits that model — opcodes and fixed operands exact, four `??` per index — and
+      `drive.py --step=brk=` matches `??` as any byte; on it `Timer` (`0x01573140`), `PostNetBeginPlay`
+      (`0x017d8dc0`) and `DrawOrderTarget` (`0x019bf600`) are each found exactly once in the same dump, where the
+      byte-exact form finds none of them (`DrawHUD`, the longest tried at 742 bytes, is still not found, so the model
+      is measured and not proven). **`--brk-freeze`** (new) issues QMP `stop` before the dump and `cont` after the
+      arm: `pmemsave` of 128 MiB is tens of seconds of a *running* guest, so without it a breakpoint on a load-time
+      function is armed into a level that already entered it. **Next**: the same boot with the widened patterns and
+      `--brk-freeze`; `Timer` firing means the route ran and the class string did not resolve, nothing means the
+      HUD's `PostNetBeginPlay` route is dead in this boot.
+
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

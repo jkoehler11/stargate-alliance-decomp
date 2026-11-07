@@ -2428,3 +2428,39 @@ dump holds no package at all" are different failures that a 0-copy search cannot
 Two sequence facts, measured and now in the runner: `--seconds=180` (a boot that shared the desktop lost its first `A`
 at 135-165 s, moving the highlight only) and `--pad-hold=0.35` (the 0.15 s press is the suspect for a menu that
 registers a highlight move and no select).
+
+### The loaded copy is not the package's bytes: every index operand is widened
+
+The 0-copy answer above was blamed on the boot, and that was wrong. A 128 MiB dump of a boot that **did** load `M00`
+(`work/msg1/try1/ram.bin`, the run behind the console survey) holds **no 10-byte window of any of the five patterns**
+and no 8-byte prefix of `Timer`'s: the search was not racing the loader — the bytes it looked for do not exist.
+
+What does exist is the same code with its operands **widened**. `StargateHUD.DrawOrderTarget`'s own log literal is
+resident (`0x019bf65a`), and the instruction stream in front of it reads
+
+    package  28 07 cd 00 84 72 01 b8 2a 16 18 12 00 72 19 01 b8 05 00 04 01 8a 2a 16 16 e7 1f "StargateHUD - DrawOrderTarget: Aborting …"
+    guest    28 07 cd 00 84 72 01 a0 1e 26 01 2a 16 18 12 00 72 19 01 a0 1e 26 01 05 00 04 01 00 62 fe 00 2a 16 16 e7 1f "StargateHUD - DrawOrderTarget: Aborting …"
+
+`b8 2a` (a two-byte UE1/UE2 index) is `a0 1e 26 01` in the guest, and the one-byte `8a` is `00 62 fe 00`: each compact
+index operand arrives in a **four-byte slot**, while the `07 cd 00` jump and every fixed operand are unchanged. So a
+pattern for the guest has to be built on that model — opcodes and fixed operands exact, four wildcards per index — and
+`uscript-dis.py --hex-bytes` now emits exactly that:
+
+    python3 tools/uscript-dis.py --script $SG1_DUMP/System/StargateGame.u StargateHUD Timer --hex-bytes 48
+    073200812d01????????16073200827701????????2a16181200771901????????05000401????????2a16161b????????16076f008484847201????????2a1618
+
+    --step='brk=Timer=0732??…,AddInteraction=0f00??…'
+
+`??` is one wildcard byte, matched in `drive.py` as "any byte". On that model three of the `StargateHUD` functions this
+section names are found **exactly once** in the same dump — `Timer` at `0x01573140`, `PostNetBeginPlay` at
+`0x017d8dc0`, `DrawOrderTarget` at `0x019bf600` — where the byte-exact form finds none of them, and `DrawHUD` (742
+bytes, the longest tried) is still not found. That last miss is why this is a measured model and not a rule: a longer
+stream can carry an operand this description gets wrong, so a 0-copy answer now needs the search widened before it is
+read as "the function is not resident".
+
+**Freeze the guest across the dump and the arm.** A `pmemsave` of 128 MiB is tens of seconds of a guest that is still
+running, so a breakpoint armed after it goes into a level that has already entered the function it is watching — which
+is fatal for the whole HUD route, whose setup runs at level start. `drive.py --brk-freeze` issues QMP `stop` before the
+dump, arms while the CPU is stopped, and `cont` before the wait, so the state that was searched is the state the
+breakpoints go into.
+
