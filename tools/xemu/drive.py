@@ -47,7 +47,11 @@ Steps, in order:
     brk=SPEC    a *script* breakpoint, and the reason this step exists: the interpreter executes a function's
                 bytecode in place, in the copy the package loader made, so the function's own bytes are a pattern whose
                 address in a RAM dump is the address the CPU fetches from. SPEC is `label=hex` repeated and
-                comma-separated; `tools/uscript-dis.py --script PKG CLASS FUNCTION --hex-bytes N` prints the hex. The
+                comma-separated, and the hex is **not** the package's bytes: the loader widens every compact index
+                operand to a four-byte slot, so `tools/uscript-dis.py --script PKG CLASS FUNCTION --hex-bytes N`
+                prints the pattern with `??` where an index was (matched here as one byte each); a byte-exact copy of
+                the file's script occurs nowhere in a loaded guest (docs/XEMU.md). `--brk-freeze` stops the VM across
+                the dump and the arming, which is what makes arming a load-time function possible at all. The
                 step dumps RAM, finds each pattern, translates it through the page tables to a linear address, arms an
                 execution breakpoint (`Z0`) on each copy, then resumes the guest for `--brk-wait` seconds and reports
                 **which labels fired** with EIP/ESP and the first 16 stack words -- so a chain of script functions
@@ -309,6 +313,10 @@ def main():
     ap.add_argument("--brk-timeout", type=float, default=20.0, help="seconds to wait for one breakpoint stop")
     ap.add_argument("--brk-copies", type=int, default=4,
                     help="copies of one pattern to arm (a package's bytecode can have more than one in RAM)")
+    ap.add_argument("--brk-freeze", action="store_true",
+                    help="freeze the VM (QMP `stop`) across a brk= step's dump and arming: the guest runs during a "
+                         "pmemsave, so without this the pattern is searched in a state the CPU has left and the "
+                         "execution being looked for can start before a breakpoint is in")
     ap.add_argument("--linger", type=float, default=0,
                     help="after the last step, keep the guest running this many seconds for a memory read "
                          "(xemu is killed on exit, so a read has to happen while this sleeps)")
@@ -620,11 +628,32 @@ def main():
                     try:
                         if not label or not hexes:
                             raise ValueError(item)
-                        wanted.append((label, bytes.fromhex(hexes.replace(" ", "").replace("0x", ""))))
+                        hexes = hexes.replace(" ", "").replace("0x", "")
+                        # `??` is one wildcard byte. It is what the file and the guest differ in: the loader widens
+                        # every compact index operand to a four-byte slot, so `uscript-dis.py --hex-bytes` emits `??`
+                        # where an index was and the rest exact (docs/XEMU.md).
+                        if "?" in hexes:
+                            parts = []
+                            i = 0
+                            while i < len(hexes):
+                                if hexes[i:i + 2] == "??":
+                                    parts.append(b".")
+                                    i += 2
+                                else:
+                                    parts.append(re.escape(bytes([int(hexes[i:i + 2], 16)])))
+                                    i += 2
+                            wanted.append((label, re.compile(b"".join(parts), re.DOTALL)))
+                        else:
+                            wanted.append((label, bytes.fromhex(hexes)))
                     except ValueError:
-                        say("FAIL: brk=%r is not label=hex" % item)
+                        say("FAIL: brk=%r is not label=hex, where hex may carry ?? wildcards" % item)
                         return 3
                 ram = os.path.join(args.out, "brk-ram.bin")
+                # A dump of a *running* guest is a snapshot the guest has already moved past, and the code this step
+                # is asking about runs during the load in front of it -- so freeze the VM across the dump and the
+                # arming when asked, and the state searched is the state the CPU is in.
+                if args.brk_freeze:
+                    cmd("human-monitor-command", {"command-line": "stop"})
                 got = cmd("human-monitor-command", {"command-line": 'pmemsave 0 0x8000000 "%s"' % ram})
                 if got is None:
                     say("FAIL: no QMP socket at %s" % sock_path)
@@ -644,17 +673,22 @@ def main():
                 memory = load_mem()
                 armed, absent = [], []
                 for label, pattern in wanted:
-                    hits, at = [], blob.find(pattern)
-                    while at >= 0 and len(hits) < 8:
-                        hits.append(at)
-                        at = blob.find(pattern, at + 1)
+                    if isinstance(pattern, re.Pattern):
+                        hits = [m.start() for m in pattern.finditer(blob)][:8]
+                        width = len(pattern.pattern)
+                    else:
+                        hits, at = [], blob.find(pattern)
+                        while at >= 0 and len(hits) < 8:
+                            hits.append(at)
+                            at = blob.find(pattern, at + 1)
+                        width = len(pattern)
                     lineas = []
                     for hit in hits:
                         for lin, _how, _flags in vamap.linear_for(blob, cr3, hit):
                             if lin not in lineas:
                                 lineas.append(lin)
                     say("step %d: brk %s -- %d cop%s of %d byte(s) in %s (%d byte(s) dumped), %d with a linear address"
-                        % (index, label, len(hits), "y" if len(hits) == 1 else "ies", len(pattern),
+                        % (index, label, len(hits), "y" if len(hits) == 1 else "ies", width,
                            os.path.basename(ram), len(blob), len(lineas)))
                     if not hits:
                         # A name is a second, independent witness: the package's name table is resident whenever its
@@ -689,6 +723,9 @@ def main():
                         live.append((label, lin))
                     say("         %d breakpoint(s) armed: %s; running up to %.0fs"
                         % (len(live), " ".join("%s@%#x" % item for item in live), args.brk_wait))
+                    if args.brk_freeze:
+                        # The stub's breakpoints are in; let the guest go on from exactly the state that was searched.
+                        cmd("human-monitor-command", {"command-line": "cont"})
                     deadline = time.time() + args.brk_wait
                     while live and time.time() < deadline:
                         gdb.resume()

@@ -1122,6 +1122,17 @@ sites, so a `drive.py --watch` on it during an `M00` load either fires (the setu
 resolve) or never does (the route is dead in this boot, and no map will show those five fields). Reading
 `bPostHudSetupCompleted` off the HUD instead needs a property offset the dump does not carry.
 
+**The breakpoint this entry asks for has to be a widened pattern (measured 2026-11-07).** The first attempt armed the
+package's own bytes and found **0 copies** of all five functions in a 128 MiB dump — and a second dump, from a boot
+that *did* load `M00`, also holds no 8-byte prefix of any of them, so that zero was never the failed boot it was
+blamed on. The guest's copy widens **every compact index operand to a four-byte slot** (`b8 2a` in
+`StargateHUD.DrawOrderTarget` is `a0 1e 26 01` in the guest; its `07 cd 00` jump is unchanged), so
+`tools/uscript-dis.py --hex-bytes` emits `??` where an index was and `drive.py --step=brk=` matches it as any byte.
+On that model `Timer`, `PostNetBeginPlay` and `DrawOrderTarget` each occur exactly once in the loaded dump
+(`0x01573140`, `0x017d8dc0`, `0x019bf600`). What would still settle the route: the same boot with those patterns and
+`drive.py --brk-freeze` (the VM stopped across the dump and the arm), then `Timer` firing or not.
+
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
