@@ -2823,3 +2823,39 @@ the fix without a boot.
 
 Tool: `names.py --census --csv PATH` keeps every row so one walk answers any class question, `--grep A,B` takes a
 comma list, and `--addresses` prints the matching objects' addresses -- the three additions this measurement needed.
+
+## Reading a live object's fields: `fields.py`
+
+`names.py` names an object from its own `Class` pointer; `tools/xemu/fields.py` reads the contents. Two offsets make it
+possible -- `UObject::Name` `+0x20`, `Class` `+0x24` (`names.py --verify`) and `UField::Next` `+0x28` (the link
+`UStruct::Serialize` walks, `docs/NATIVE_VM.md`) -- and nothing else is assumed: every dword of the object is read at
+the same offset in the object and in a second instance, and any dword that resolves to an object is reported with its
+class, its name and its own address, so a `TArray` shows up as a `(data, num, max)` triple and an array of object
+pointers is followed. Field *names* would need `UProperty::Offset`, which the linker writes and the package does not
+serialize, so the tool reports offsets plus resolved contents instead of guessing a name for each.
+
+Measured on one loaded-`M00` boot (`census3`, stub `12503`, `drive.py --linger`), one read per object:
+
+| read | result |
+|---|---|
+| `GameHud` `0x09352100` | class object `0x01886c00`; **36** pointer/array fields over the first 288 bytes |
+| its three text windows | `UITextBox` at `+0x050`, `+0x054`, `+0x058` -- the order `GameHud.uc` declares `DialogueWindow`, `NotificationWindow`, `InteractionWindow` |
+| its notification mesh | `StaticMesh` `HUD_Notifywindow` at `+0xd4`, beside the rest of the HUD mesh set (`HUD_textwindow` `+0xd0`, `HUD_main_frame_*`, `HUD_Left_ShieldBar2`) |
+| its widget block | four `UIProgressBar` (`+0x03c..+0x048`), six `UIWidget` accuracy indicators (`+0x068..+0x07c`), `ProgressBars` as a one-element array at `+0x080` |
+
+Two negatives, both cheap and both worth having:
+
+* **The class default is not in the class object's first 0x400 bytes.** `GameHud`'s default object is `0x0682ab00`
+  (the census names it), but no pointer in `0x01886c00..0x0196c00` is an instance of the class itself, so a
+  `--compare` against the default needs that pointer's real offset, not a scan.
+* **The `Children` head is not a chain of property objects at `+0x28` links in that window either.** The best
+  candidate (`class+0x19c`) chains **two** `Function` objects (`NotifyLevelChange`, twice), so it is a `Next` tail
+  rather than the field list; a property-name read needs the struct's real `Children` offset, measured the same way
+  `UField::Next` was.
+
+**The `SetNotifications` guard is in the shipped script.** `StargateGame/GameHud.uc:1034` replaces an *empty*
+argument with a fixed 27-character placeholder before it calls `NotificationWindow.DisplayTextBox`, so the missing
+notification text has two candidate causes and they are distinguishable in one read: an empty argument (the
+placeholder is what the window holds) or a text box that holds the message and draws none of it. Reading
+`NotificationWindow`'s `Text` `FString` is the next measurement; the tool prints a length and, with `--show-text`, the
+bytes, because field contents are game state.
