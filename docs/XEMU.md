@@ -3302,3 +3302,31 @@ walked all 48,622 object headers (~13 minutes) to re-confirm the `0x01886c00` th
 `--properties --scan 0x1400` then ran past ten minutes on one row (a chain candidate per dword) and was killed.
 Neither is needed to answer a contents question: identity is `--object <class>` plus a `grep` on its whole output
 (not `head`), and contents are `--find` and `--show-text`.
+
+## The config path writes the HUD scales, and a property's name is not its offset yet
+
+`GameHud`'s three font scales are `var config float` under `config(Tweak_Misc_StargateHUD)`, and the shipped
+`System/tweak/Misc/StargateHUD.ini` sets them in `[StargateGame.GameHUD]` -- `DialogueFontScale=0.85`,
+`NotificationFontScale=0.8`, `InteractionFontScale=0.85`. One loaded-`M00` boot (`census16`, stub `12563`) reads
+those values out of the class default `0x0682ab00`: `0.85` at `+0x168`, `+0x1c4`, `+0x1d0` and `0.8` at `+0x19c`,
+`+0x1e0`, the same six in the live row `0x09372100`. The `0.1`, `0`, `0` at `+0x24c..+0x254` -- the three slots the
+declared order predicted -- are identical on both rows, so they are somebody else's three floats, and the declared
+`1.0`s are not in the object at all. A `config` property's value is therefore **the better fingerprint** for a
+scalar than its declared default: the ini is what overwrote the default, and it names its section after the class.
+
+Two consequences for the tool:
+
+* **A declared name reaches its value slot in one read, once `UProperty::Offset` is calibrated.** `fields.py
+  --properties --prop-bytes 0x28,0x20` dumps the same dword window of every `UProperty` in the class's chain, so
+  the dword position that holds `Offset` is found against an offset already measured off an object's bytes (the
+  `GameHud` default's `SkipMatineeTextString` `FString` at `+0x258`). `--prop-value NAME --prop-at POS` then reads
+  the value at that offset in `--prop-in INSTANCE`. Nothing in the package serializes `Offset`; the linker writes
+  it, so the live guest is the only place it exists.
+* **The chain has to be found, and shape alone is not enough.** On `UITextBox`'s class object `0x0197a800`
+  (class object `0x00bcea00`) the shape test answers `class+0x63c: 1 fields` and that field is a `Function`
+  (`EatStr`) -- a one-link `Next` tail passes "every link ends in `Property`" vacuously. Until the `Children` offset
+  is measured, a named read is only available for a class whose chain the scan actually walks.
+
+`DisplayTextBox` (the function `NotificationWindow.DisplayTextBox` calls) writes its argument to `DisplayText`, a
+`UIWidget` field, so U15's "the notification window's `Text`" is `DisplayText` -- and `GameHud.uc` only ever sets
+`TextFontScale` on the three windows from the three config floats.

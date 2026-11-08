@@ -817,6 +817,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, the config path fills the scales, and the three declaration-order slots are not them)
+
+- **The three scales are `var config float`, the shipped ini sets them, and the class default carries the ini's
+  values — `0.85`, `0.8`, `0.85`, not `1.0`** (measured 2026-11-08, `census16` = `~/sg1/work/xemu/tfs1b.sh`, gdb
+  `12563`, `M00` loaded at 42,103 px, noise 3,175). `System/tweak/Misc/StargateHUD.ini`'s `[StargateGame.GameHUD]`
+  sets `DialogueFontScale=0.85`, `NotificationFontScale=0.8`, `InteractionFontScale=0.85`, and `GameHud.uc:2` is
+  `config(Tweak_Misc_StargateHUD)`, so the config load is what writes those slots. `fields.py --find
+  0x3f59999a,0x3f4ccccd,0x3f800000,0x3dcccccd` over the default's `0x4000` prints `0.85` at `+0x168`, `+0x1c4`,
+  `+0x1d0` and `0.8` at `+0x19c`, `+0x1e0`; the live row `0x09372100` (index 47,914; the default is `0x0682ab00`,
+  index 41,505) holds the same six dwords. The three declaration-order slots at `+0x24c..+0x254` are `0.1`, `0`,
+  `0` on **both** rows, so they are not the scales: the declared `1.0`s are nowhere in the object's own field data
+  (`0x3f800000` appears once, at `+0x180c`, in the deflate stream the previous note identified).
+- **Nothing but the config path can put a scale in a `UITextBox`**: `GameHud.uc:493`, `:511`, `:522` assign
+  `DialogueWindow/NotificationWindow/InteractionWindow.TextFontScale = Dialogue/Notification/InteractionFontScale`
+  after each `Spawn(class'UITextBox')`, and `UITextBox` (`StargateGame.u`) declares `var config float
+  TextFontScale`. Its `DisplayTextBox` writes the body to `DisplayText`, a `UIWidget` field -- so U15's
+  "`NotificationWindow.Text`" is `DisplayText`, and the read it asks for is a name plus that property's offset.
+- **The property-name-to-`Offset` instrument is in, but the field chain is not found by shape on `UITextBox`'s
+  class object.** `fields.py --properties --prop-bytes 0x28,0x20` on `0x0197a800` (`UITextBox`; its class object is
+  `0x00bcea00`) answers `field chain head at class+0x63c: 1 fields`, and that one link is a `Function` (`EatStr`) --
+  `find_field_chain` accepted a `Next` tail, because its rule ("every link ends in `Property`") holds vacuously for a
+  one-link chain. The calibration the next read needs is the `GameHud` chain: its `SkipMatineeTextString`
+  `StrProperty` should carry the already-measured `+0x258` in the dword position that holds `Offset`. The flags
+  (`--prop-bytes OFFSET,LEN`, `--prop-value NAME`, `--prop-at`, `--prop-in`) and their selftest are in this commit;
+  the missing piece is the `Children` offset, measured off a class object, not a new dataset.
+
 ### Execution notes (2026-11-08, the class default's field block ends before `+0x1800`, and the three scales are not in it)
 
 - **All three `1.0` hits are inside an allocation the object array does not hold, so `--near` overstates an object's
