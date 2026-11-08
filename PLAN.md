@@ -817,6 +817,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, a class object holds `Super` at `+0x28`, so its fields are in `GObjObjects`, not in it)
+
+- **The class object is not a field list.** `GameHud` `0x01886c00` (identity re-read this boot) holds, in its first
+  `0x1400` bytes: `Super` at `+0x28` — the chain reads `GameHud` -> `Interaction` -> `Interactions` -> `Object` —
+  the meta-class `Class` at `+0x624`, a `Landed` override at `+0xd74`, and a `Function` (`PlayHUDSound`) at
+  `+0x3c`, the `Children` offset the native reader uses, whose `Next` chain stops after that one link. A scan that
+  walks every dword as a candidate `Children` head and follows `+0x28` as `Next` finds no chain of field objects:
+  the longest candidates are the `Super` chain itself (3 links) and two `Function` tails. So census15's UITextBox
+  result ("field chain head at class+0x63c: 1 fields", a `Function`) is not a truncated chain, it is the shape of
+  this build's class object — and `+0x28` is `Super` on a class object even though it is `Next` on a `UProperty`.
+- **A `UProperty` is found in `GObjObjects` by name, and `Outer` names the declaring class.** The array walk
+  (`--prop-index`, `--prop-up`) answers in the same read what the class-object route could not: the first
+  `DisplayText` hit is index 1647, a `StrProperty` at `0x00fe6f90` whose `Outer` is `SGInteraction` — not the
+  `UIWidget` field U15 wants, which is why the ancestor test is in the tool. The walk costs minutes over 48,646
+  objects (a header page read each), so it runs as a desktop script, not inside a foreground call.
+- **`Offset` is calibrated, not serialized.** `SkipMatineeTextString`'s `FString` sits at `GameHud`'s class default
+  `+0x258`, so the dword position inside that `UProperty` object holding `0x258` is `Offset`; `--prop-at` takes it
+  and `--prop-in` the instance. That read is what remains: this run shipped the instrument and the negative (the
+  class object holds no fields, and the `Children` chain has one link), and the next run's first read is the
+  calibration window plus `DisplayText`'s slot in the live `NotificationWindow` — the U15 answer.
+- **The instrument is `--prop-index`, `--prop-outer`, `--prop-up` and `is_ancestor`, selftested without a boot.** The
+  selftest builds one object array holding a `StrProperty Text` outered to a child class, a `StrProperty
+  DisplayText` outered to its `Super`, and a `Function DisplayText` outered to the child: the name match must take
+  the property and reject the function, `--prop-outer` must separate the two declarations, and `--prop-up` must
+  reach the parent's field.
+
 ### Execution notes (2026-11-08, the config path fills the scales, and the three declaration-order slots are not them)
 
 - **The three scales are `var config float`, the shipped ini sets them, and the class default carries the ini's
