@@ -761,6 +761,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       objects (named by `findcls.py`) -- `DefaultObject` past `0x800` is still unlocated, and no scan is needed to
       locate `GNames`.
 
+      **A walk is 255 pages, and this boot never left the main menu (measured 2026-11-07)**: over a `census9` boot
+      (gdb `12531`, `~/sg1/work/xemu/census9.sh`) the `pad=down`x10 + `pad=a` sequence that reaches `M00` on most
+      boots landed on the **main menu** -- `03-dismissed.png` is `Continue`/`Single Player`, and two one-read
+      counters say the same thing: `GNames.num` `34,800` (title) against `41,265` with `M00`, and
+      `GObjObjects.num` `42,152` of `51,886`. `sendkey ret` over QMP does not take the highlighted `Continue` (the
+      count is unchanged after 40 s), so level entry is a pad step and nothing else. The walk itself is now
+      measured: `42,143` object pointers over **255** 64 KiB pages, `42,135` headers read, `8` unreadable, and the
+      per-object name resolution is the second half of the cost. A read of an unmapped heap page (`0x04000000`)
+      fails whole -- 4 attempts, `0x04100000+0x10000` and a 4 MiB read too -- while `0x006be0d8`, `0x0091ff00`,
+      `0x0095ffc0`, `0x01f30000` and `0x041e0000` read at that moment, so a title-screen gameplay address is a
+      negative about the address and not a broken stub. `findcls.py` now takes a comma list (and repeats) for
+      `--grep`, writes **every** named object to `--csv` as `index,address,class,name`, caches class names by class
+      pointer and flushes its progress lines -- one walk answers every name question, because this boot paid for
+      two walks and finished neither. **Next**: boot to a mission (the pad's `Continue` entry), confirm
+      `GNames.num` > 40,000 before spending a walk, then run
+      `fields.py --members --start 0x800 --size 0x1400` on `GameHud`'s and `UITextBox`'s class objects from that
+      `--csv`; `DefaultObject` past `0x800` is still unlocated, and no scan is needed to locate `GNames`.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
