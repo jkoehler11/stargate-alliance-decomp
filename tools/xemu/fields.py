@@ -439,6 +439,29 @@ def flat_census(r, addr, off, length, step=0x100):
     return rows
 
 
+def find_prop(chain, name):
+    """The chain member declared as `name`, matched case-insensitively: (addr, name, kind) or None.
+
+    A field chain is the class's declaration order, so a property's *name* is readable even though its value slot
+    is not: the name lives in the `UProperty` object, and the object is in the chain.
+    """
+    want = (name or "").lower()
+    for addr, fname, kind in chain:
+        if (fname or "").lower() == want:
+            return addr, fname, kind
+    return None
+
+
+def prop_offset(r, prop, at):
+    """The dword at `at` inside a `UProperty` object, read as the linker's `Offset` once `at` is calibrated.
+
+    Nothing in the package serializes `UProperty::Offset` -- the linker writes it into the live objects -- so `at`
+    is measured, not assumed: the dword position whose value equals an offset this project already read off an
+    object's bytes (the `GameHud` `SkipMatineeTextString` `FString` at `+0x258` is that reference).
+    """
+    return r.try_u32(prop + at)
+
+
 def dump_window(r, addr, off, length):
     """[(offset, value, note)] for a raw byte window of the object: the bytes *beside* a value.
 
@@ -590,8 +613,38 @@ def cmd_object(r, args):
         off, chain = find_field_chain(r, cls, args.scan)
         print("  field chain head at class+%#x: %d fields" % (off or 0, len(chain)) if off
               else "  no field chain found in the class object's first %#x bytes" % args.scan)
+        pb = args.prop_bytes
         for i, (a, fname, kind) in enumerate(chain):
             print("    %3d %#010x %-18s %s" % (i, a, kind, fname))
+            if pb:
+                poff = pb[0]
+                plen = pb[1] if len(pb) > 1 else 0x20
+                for o, value, note in dump_window(r, a, poff, plen):
+                    if value is None:
+                        print("          +%#05x unreadable" % (o,))
+                        break
+                    print("          +%#05x %#010x %12d  %s" % (o, value, value, note))
+        if args.prop_value:
+            got = find_prop(chain, args.prop_value)
+            if not got:
+                print("  no field named `%s` in the chain (%d names)" % (args.prop_value, len(chain)))
+            elif args.prop_at is None:
+                print("  `%s` is %s at %#010x; --prop-at is needed to name its `Offset` dword"
+                      % (args.prop_value, got[2], got[0]))
+            else:
+                a, fname, kind = got
+                slot = prop_offset(r, a, args.prop_at)
+                target = args.prop_in or addr
+                print("  `%s` is %s at %#010x; dword at +%#x is %s"
+                      % (fname, kind, a, args.prop_at,
+                         "unreadable" if slot is None else "%#x" % slot))
+                if slot is not None:
+                    print("  value slot %#x read out of %#010x:" % (slot, target))
+                    for o, value, note in dump_window(r, target, slot, 0x10):
+                        if value is None:
+                            print("    +%#05x unreadable" % (o,))
+                            break
+                        print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
     default = None
     if args.compare:
         default = find_default(r, cls, args.scan)
@@ -845,8 +898,30 @@ def selftest():
     if tail[-1][1] is not None or len(tail) != 2:
         print("selftest FAIL: dump_window padded an unreadable tail: %r" % (tail,))
         return 1
+    # The property-offset route: the chain names the field, the property object holds the linker's `Offset`, and
+    # the value sits at that offset in the instance. A name the chain does not declare must read nothing rather
+    # than fall through to the class object.
+    mem3[default + 0x258] = 0x05050505      # the already-measured `SkipMatineeTextString` slot
+    mem3[prop2 + 0x30] = 0x258              # the linker's `Offset`, calibrated on that measurement
+    chain2 = [(prop1, "Health", "IntProperty"), (prop2, "SkipMatineeTextString", "StrProperty")]
+    got = find_prop(chain2, "skipmatineetextstring")
+    if not got or got[0] != prop2:
+        print("selftest FAIL: find_prop read %r for a case-folded name" % (got,))
+        return 1
+    if find_prop(chain2, "TextFontScale") is not None:
+        print("selftest FAIL: find_prop invented a field the chain does not name")
+        return 1
+    slot = prop_offset(r3, got[0], 0x30)
+    if slot != 0x258:
+        print("selftest FAIL: prop_offset read %r for the calibrated dword" % (slot,))
+        return 1
+    row = dump_window(r3, default, slot, 4)
+    if row[0][1] != 0x05050505:
+        print("selftest FAIL: the value at a property's Offset did not read back: %r" % (row,))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
-          " filters the object array by Class, and a field window names the neighbour it crosses into")
+          " filters the object array by Class, a field window names the neighbour it crosses into, and a"
+          " declared name reaches its value slot through the linker's `Offset`")
     return 0
 
 
@@ -869,6 +944,16 @@ def main():
     ap.add_argument("--selftest", action="store_true",
                     help="check the member scan with a fake reader, no boot needed")
     ap.add_argument("--properties", action="store_true", help="measure and print the class's field chain")
+    ap.add_argument("--prop-bytes", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
+                    help="OFFSET,LENGTH: with --properties, dump that dword window of every field object "
+                         "(UProperty::Offset is one of them; the package serializes none of it)")
+    ap.add_argument("--prop-value", default=None,
+                    help="with --properties: the declared name whose value slot to read (e.g. TextFontScale)")
+    ap.add_argument("--prop-at", type=lambda v: int(v, 0), default=None,
+                    help="with --prop-value: the dword position inside the UProperty object that holds `Offset` "
+                         "(calibrated against an offset already measured off an object's bytes)")
+    ap.add_argument("--prop-in", type=lambda v: int(v, 0), default=None,
+                    help="with --prop-value: read the value out of this instance instead of --object")
     ap.add_argument("--instances", action="store_true",
                     help="with --object <class object>: list every object in GObjObjects whose own Class is it")
     ap.add_argument("--locate", action="store_true",
