@@ -1159,6 +1159,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the four player slots have offsets, and a row's `Outer` names its state)
+
+- **`sink3` did not reach `M00`, and one field says so: the player row's `Outer`.** The one object whose own `Class` is
+  `StargatePlayer` `0x00e47800` is `StargatePlayer0`, index 41,474 at `0x06b30000`, outered to the `MainMenu` object
+  `0x017f0188` -- where `sink1`/`sink2` held an **unnamed** row outered to `M00` (`docs/XEMU.md`). Names 34,800 and
+  array 42,152 against 41,265 / 48,646, and `03-dismissed` -> `04-gameplay` moved 1,901 px (0.15%, threshold 2.5%).
+  So a `StargatePlayer` row's presence is not evidence of gameplay; its `Outer` is, and "one row, unnamed, outer `M00`"
+  is the gameplay signature the previous three notes recorded without a control. The boot, not the read, is what
+  failed: this is `missions.sh`'s documented swallowed-press failure.
+- **The four declarations now answer with their offsets**, `UProperty::Offset` at `+0x48`:
+  `NotificationManager` `+0x1004`, `GameHudPtr` `+0x1008`, `commandInterfacePtr` `+0x100c` (all `StargatePlayer`,
+  objects `0x01748b90` / `0x01748c70` / `0x0192c2b0`, indices 22,180 / 22,178 / 23,782), and `Pawn` `+0x38c`
+  (`Controller` `0x00d9a800`, object `0x00fe6200`, index 1,689). **The three sink fields are adjacent in declaration
+  order**, so one 12-byte window covers them; `Pawn` had to come off the super chain.
+- **The menu row's values**: `+0x1004` `0x05a28c00`, `+0x1008` `0x0682ab00`, `+0x100c` `0x05c3c1c0`, `+0x38c` `0`.
+  `0x0682ab00` is address-identical to the `GameHud` **class default** (index 41,505) two earlier boots read, so on a
+  menu row `GameHudPtr` is the class default the block was initialised from, not a live HUD; `Pawn` `0` is a
+  controller with no possession. **Next**: the same four slots on an `M00`-outered row, read as
+  `--bytes 0x1004,0x10` plus `--bytes 0x38c,0x8` off the row (one page each) instead of an array pass -- the run above
+  cost ~6 minutes in `--instances --prop-name` over 42,152 objects -- and gate the read on
+  `names.py --at 0x006be0d8`'s `num=` (34,800 menu vs 41,265 level) so a menu boot is never read as gameplay again.
+
 ### Execution notes (2026-11-08, a class object is its own struct, and the declaration is in the array)
 
 - **`GameHudPtr` is a `UProperty` object outered to the class, not a dword of the class object** (measured 2026-11-08,

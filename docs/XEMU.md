@@ -3723,3 +3723,52 @@ could be pointed at the live row. Next is one gameplay boot with
 `python3 tools/xemu/fields.py --port <p> --at 0x006be0d8 --object 0x00e47800 --instances --prop-name GameHudPtr,commandInterfacePtr,NotificationManager,Pawn`
 (~3 min: one array pass, four slots), which states whether `SetupInteractionsFor`'s write reached the three sink
 fields on a row that exists, and gives `Pawn` as the possession control.
+
+## The four player slots have offsets, and a row's `Outer` names its state (measured 2026-11-08, PLAN 7.3)
+
+`sink3` (debug flash, `--gdb 12603`, title, `Continue`, ten `down`s, `A`, 70 s settle, dismiss, 12 s) was meant to be
+the gameplay boot #242 asked for. **It did not reach the level, and the read says so in one field**: the one object
+whose own `Class` is `StargatePlayer` `0x00e47800` is `StargatePlayer0`, index 41,474 at `0x06b30000`, whose `Outer` is
+the `MainMenu` object `0x017f0188` -- against `sink1`/`sink2`'s **unnamed** row outered to `M00`. The array agrees:
+34,800 names and 42,152 objects here, against 41,265 and 48,646 in the two gameplay boots, and `04-gameplay` differs
+from `03-dismissed` by 1,901 px (0.15%), under the frame stage's 2.5% threshold. So **the presence of a
+`StargatePlayer` row is not evidence of gameplay -- its `Outer` is.** That is the control the three earlier notes could
+not have, because they only ever held the gameplay case; the press that was supposed to open `M00` was swallowed or the
+selection did not take, which is the failure `missions.sh` documents as one index in six.
+
+**The declarations resolve, and they carry their link-time `Offset`.** `--prop-name` against the class object now
+answers all four through #242's `Outer` pass, and `UProperty::Offset` at `+0x48` gives the slot:
+
+| property | declared by | `UProperty` object | array index | offset |
+|---|---|---|---|---|
+| `NotificationManager` | `StargatePlayer` | `0x01748b90` | 22,180 | `+0x1004` |
+| `GameHudPtr` | `StargatePlayer` | `0x01748c70` | 22,178 | `+0x1008` |
+| `commandInterfacePtr` | `StargatePlayer` | `0x0192c2b0` | 23,782 | `+0x100c` |
+| `Pawn` | `Controller` | `0x00fe6200` | 1,689 | `+0x38c` |
+
+The three sink fields are **adjacent in declaration order** (`0x1004`, `0x1008`, `0x100c`), so one 12-byte window
+covers all three, and `Pawn` sits where `Controller` declares it rather than on `StargatePlayer` -- which is why the
+super chain has to be walked, not just the class.
+
+**What the slots hold on the menu row** (`--instances --prop-name A,B,C,D`, one array pass):
+
+| slot | `StargatePlayer0` `0x06b30000` |
+|---|---|
+| `+0x1004` `NotificationManager` | `0x05a28c00` |
+| `+0x1008` `GameHudPtr` | `0x0682ab00` |
+| `+0x100c` `commandInterfacePtr` | `0x05c3c1c0` |
+| `+0x38c` `Pawn` | `0` |
+
+`+0x1008` holds `0x0682ab00`, **address-identical to the `GameHud` class default** (index 41,505) that two earlier boots
+read in "the class default is the row that holds the declared text": class-default objects are package-data addresses
+and did not move across those boots, so on a menu row the pointer is the class default its block was initialised from,
+not a live HUD. `Pawn` is `0`, which a `PlayerController` with no possession should be. Neither value says anything
+about the gameplay row.
+
+**Not measured, and the instrument for it.** The same four slots on an `M00`-outered row are still unread, so whether
+`SetupInteractionsFor`'s write reaches the sink is open. Two things make that read cheap and hard to mis-take: the
+declaration now *gives* the offset, so the value is one `--bytes 0x1004,0x10` (and `0x38c,0x8` for `Pawn`) on the row
+rather than an array pass -- `--instances --prop-name` cost ~6 minutes over 42,152 objects here; and a boot script
+should read `names.py --at 0x006be0d8`'s `num=` **before** the field read, because 34,800 against 41,265 is one dword
+and it separates a menu boot from a level. `census16`'s `--prop-bytes` work is what turned `Offset` from a flag into a
+column, so this is the same instrument applied to a value.
