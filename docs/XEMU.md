@@ -3072,3 +3072,64 @@ the pad sequence: the same `pad=a` / `down`x10 / `pad=a` sequence reached `M00` 
 - So the member scan past `0x800` reads *inherited natives*, not the class's own default. The label is also the
   tool's: `--members` prints that dword as `instance of this class`, which `0x00bcf000` is not — its own `Class` is
   `Class`. A default-object test has to be `Class == this class object`, or a superclass's class object reads as one.
+
+## Two `GameHud` objects, and what separates them (measured 2026-11-07)
+
+The class default has been "past `0x800`, still unlocated" for three sessions because it was hunted as a *pointer
+inside the class object*. It is not one: a default object is an ordinary object in `GObjObjects` whose own `Class`
+pointer is the class, so the question is a filter over the object array, not a scan of the class. `fields.py
+--instances` asks it that way, and the answer is that **the class has two instances, and both are named after it**.
+
+`census11` (`~/sg1/work/xemu/census11.sh`, gdb `12543`) is census10's sequence unchanged, so the class-object
+address can be trusted again: `GameHud`'s class object is **`0x01886c00`** -- class `Class` (`0x00bcea00`), `Outer`
+`Package` `StargateGame` (`0x0097e0a8`), the same address census4, census5 and census10 all reported. With
+`GObjObjects` at `data=0x041e0000 num=48,646` and `GNames` at `data=0x07730000 num=41,265`:
+
+    index 41505   0x0682ab00  name `GameHud`  outer 0x0097f928 (`Package`)
+    index 47914   0x09322100  name `GameHud`  outer 0x0097f928 (`Package`)
+
+Two rows, not three, and **neither is outered to the level**: both name the same `Package` outer, so "the level-created
+one and the package one" is not the split. `--diff` over `0x600` bytes separates them on **34 of 65** pointer/array
+rows:
+
+* `0x0682ab00` carries a `StaticMeshActor` at `+0x008` and no pointer from `+0x324` to `+0x470`;
+* `0x09322100` carries `ObjectProperty` (`Canvas`) at `+0x324`, `+0x340`, `+0x350`, `+0x36c`, `+0x3c8` and `+0x468`,
+  `FloatProperty` (`ClipX`) `+0x348`, `FloatProperty` (`ClipY`) `+0x470`, `StructProperty` (`DrawColor`) `+0x358`,
+  `IntProperty` (`TeamIndex`) `+0x3b8` and `Function` (`SetPos`) `+0x374` where the first has no pointer at all.
+* both carry the same widget family at the same offsets -- `UITextBox` at `+0x050`/`+0x054`/`+0x058`, `UIWidget`
+  and `UIProgressBar` rows from `+0x034` to `+0x078` -- and each has its own `HitEffectManager` (`+0x268`) and
+  `TeamMemberStatusIcon` (`+0x298`).
+
+Reading `0x09322100`'s `Canvas`/`ClipX`/`DrawColor`/`TeamIndex` slots as *property and function objects* is the one
+thing that says "default": a class's defaults are its field values, and a slot holding the field's own
+`ObjectProperty` record is metadata, not state. That reading is **not settled** here -- the alternative is that
+`0x09322100` is a second live HUD whose tail block is an adjacent allocation, and the alternate reading is exactly
+what a `0x600` window over a sparse heap makes easy to believe. What would settle it: decode `+0x324..+0x470` of both
+objects against `GameHud.uc`'s declared field list, or find the code that reads the slot (the loader that builds a
+default is the same route `docs/NATIVE_PROPERTIES.md` took for the tag format).
+
+**A correction that matters for the next scan.** A class object's own `Class` is the `Class` metaclass
+(`0x00bcea00` on this boot), not itself, which is why `--members`' `Class == this class` test can never fire on a
+class object and why a class object cannot be mistaken for its own default. The census10 note named `0x00bcf000` as
+"the `Object` class object ... which `--members` labels `instance of this class`"; if that label was real, the dword
+it read is an object whose own `Class` is `0x01886c00`, i.e. a `GameHud` -- and `0x00bcf000` sits one digit from the
+`Class` class object at `0x00bcea00`, so check the transcription before reading that row as a class object again.
+`--members` now prints *which* half a row measured (`name matches the class` / `name X, not the class's`) instead of
+calling every instance a default candidate.
+
+## The instrument: an instance walk and page-cached field reads
+
+    python3 tools/xemu/fields.py --port PORT --at GNAMES --object <class object> --instances
+    python3 tools/xemu/fields.py --port PORT --at GNAMES --object A --diff B --size 0x600
+
+* `--instances` filters the whole object array by `Class` and prints `index, address, name, outer`. It reads the
+  array in 64 KiB chunks and each heap page **once**, parsing every header in the page locally, because 48,646
+  per-object reads is the latency bill that made the named census 13 minutes.
+* `--diff` compares two objects field by field over `--size`.
+* `Reader.try_u32` is now page-cached: a `0x600` walk is two 64 KiB reads plus name lookups instead of 1,536 stub
+  round trips. Measured: the same diff **exceeded a 300 s timeout** before the cache and takes **235 s** after it --
+  the residue is name resolution, since every row resolves two `FName`s through sparse heap pages. A failed page
+  read falls back to single dwords rather than reporting the address as absent (the `FNameEntry` page trap).
+* `--selftest` covers the new rule without a boot: a three-entry object array whose first entry is the default.
+
+None of these read a value; the fields printed above are object pointers and resolved names.

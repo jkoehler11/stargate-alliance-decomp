@@ -51,6 +51,7 @@ NAMES_PY = os.path.join(HERE, "names.py")
 NEXT_OFF = 0x28              # UField::Next, the link UStruct::Serialize walks (docs/NATIVE_VM.md)
 NAME_OFF = 0x20              # UObject::Name, an FName index (names.py --verify)
 CLASS_OFF = 0x24             # UObject::Class, a UClass object (names.py --verify)
+OUTER_OFF = 0x18             # UObject::Outer (PLAN 4.3 census notes: a class object's `+0x18` names its package)
 PROPERTY_SUFFIX = "Property"
 FIELD_KINDS = ("Function", "State", "ScriptStruct")
 
@@ -75,11 +76,29 @@ class Reader(object):
         self.objects_data = objects_data
         self.objects_num = objects_num
         self._classes = {}
+        self._pages = {}
 
     def u32(self, addr):
         return struct.unpack("<I", self.guest.read(addr, 4))[0]
 
+    def page(self, addr):
+        """The 64 KiB page holding `addr`, read once, or None when that page will not read whole.
+
+        A 0x600-byte object is 1,536 dwords, and one stub round trip per dword is what made a field-by-field
+        diff outlast a 300 s timeout. The stub serves 64 KiB pages (PacketSize 0x20020), so a walk reads two
+        pages and parses them locally; a page that fails falls back to single dwords, because a failed wide
+        read is a statement about the *request*, not about the address (the `FNameEntry` page trap).
+        """
+        base = addr & ~0xffff
+        if base not in self._pages:
+            self._pages[base] = self.try_read(base, 0x10000)
+        return base, self._pages[base]
+
     def try_u32(self, addr):
+        base, blob = self.page(addr)
+        off = addr - base
+        if blob is not None and off + 4 <= len(blob):
+            return struct.unpack_from("<I", blob, off)[0]
         try:
             return self.u32(addr)
         except (IOError, OSError):
@@ -170,7 +189,13 @@ def scan_members(r, cls, start=0x400, size=0x600):
             continue
         kind, oname = got
         if r.try_u32(value + CLASS_OFF) == cls:
-            rows.append((off, "instance of this class: `%s` at %#010x" % (oname or "?", value)))
+            # The target's own `Class` is the class being scanned, so it is *an* instance of it. Only a
+            # default object is also named after the class, so say which half a row measured rather than
+            # letting every instance read as a `DefaultObject` candidate.
+            cname = r.text(r.try_u32(cls + NAME_OFF))
+            note = "name matches the class" if (oname and cname and oname == cname) else (
+                "name `%s`, not the class's" % oname)
+            rows.append((off, "instance of this class: `%s` at %#010x (%s)" % (oname or "?", value, note)))
         elif kind.endswith(PROPERTY_SUFFIX) or kind in FIELD_KINDS:
             chain, addr, seen = [], value, set()
             while addr and addr not in seen and len(chain) < 512:
@@ -213,6 +238,45 @@ def array_membership(guest, data, num, targets, chunk=0x10000):
                 hits[value] = (done + i * 4) // 4
         done += take
     return hits
+
+
+def walk_instances(r, cls, page=0x10000):
+    """[(index, address)] for every object in `GObjObjects` whose own `Class` pointer is `cls`.
+
+    A default object is an object like any other: nothing in the class object has to point at it, and its
+    own `Class` is the only thing that says which class it belongs to. So the question "how many instances
+    of this class are there" is a filter over the whole object array, and it is asked here the cheap way --
+    the array reads in chunks and each 64 KiB page of the heap reads **once**, with every header in it
+    parsed locally. Per-object reads are what made the named census 13 minutes: latency, not bytes.
+    """
+    hits = []
+    whole = r.objects_num * 4
+    done = 0
+    while done < whole:
+        take = min(page, whole - done)
+        blob = r.try_read(r.objects_data + done, take)
+        if blob is None:
+            done += take
+            continue
+        for i in range(len(blob) // 4):
+            value = struct.unpack_from("<I", blob, i * 4)[0]
+            if names.plausible_object(value):
+                hits.append(((done + i * 4) // 4, value))
+        done += take
+    pages = {}
+    for index, addr in hits:
+        pages.setdefault(addr & ~(page - 1), []).append((index, addr))
+    found = []
+    for base, objs in sorted(pages.items()):
+        blob = r.try_read(base, page)
+        if blob is None:
+            continue
+        for index, addr in objs:
+            off = addr - base
+            if off + CLASS_OFF + 4 <= len(blob):
+                if struct.unpack_from("<I", blob, off + CLASS_OFF)[0] == cls:
+                    found.append((index, addr))
+    return found
 
 
 def find_field_chain(r, cls, limit=0x400):
@@ -295,6 +359,27 @@ def cmd_object(r, args):
     cls = r.u32(addr + CLASS_OFF)
     print("object %#010x: class `%s`%s" % (addr, cls_name, " name `%s`" % oname if oname else ""))
     print("  class object %#010x" % cls)
+    if args.instances:
+        found = walk_instances(r, addr)
+        print("  %d object(s) whose own Class pointer is %#010x:" % (len(found), addr))
+        for index, target in found:
+            got = r.object(target)
+            outer = r.try_u32(target + OUTER_OFF)
+            ogot = r.object(outer) if outer else None
+            print("    index %-7d %#010x  name `%s`  outer %#010x%s" % (
+                index, target, got[1] if got and got[1] else "?",
+                outer or 0, " (`%s`)" % ogot[1] if ogot and ogot[1] else ""))
+        return
+    if args.diff:
+        a = dict(walk_fields(r, addr, args.size))
+        b = dict(walk_fields(r, args.diff, args.size))
+        offsets = sorted(set(a) | set(b))
+        differ = [o for o in offsets if a.get(o) != b.get(o)]
+        print("  %d of %d pointer/array fields differ from %#010x:" % (len(differ), len(offsets), args.diff))
+        for o in differ[:args.limit]:
+            print("    +%#05x %s" % (o, a.get(o, "no pointer")))
+            print("             %s" % b.get(o, "no pointer"))
+        return
     if args.properties:
         off, chain = find_field_chain(r, cls, args.scan)
         print("  field chain head at class+%#x: %d fields" % (off or 0, len(chain)) if off
@@ -336,14 +421,22 @@ def cmd_object(r, args):
 
 
 class FakeReader(object):
-    """A dict-backed reader with the three methods the scans need, so their rules are testable without a boot."""
+    """A dict-backed reader with the four methods the scans need, so their rules are testable without a boot."""
 
-    def __init__(self, mem, objs):
+    def __init__(self, mem, objs, objects_data=0, objects_num=0):
         self.mem = mem
         self.objs = objs
+        self.objects_data = objects_data
+        self.objects_num = objects_num
 
     def try_u32(self, addr):
         return self.mem.get(addr, 0)          # a real guest serves every dword of an allocated object
+
+    def try_read(self, addr, size):
+        return b"".join(struct.pack("<I", self.mem.get(addr + o, 0)) for o in range(0, size, 4))
+
+    def text(self, idx):
+        return None
 
     def object(self, addr):
         return self.objs.get(addr)
@@ -390,7 +483,22 @@ def selftest():
     if find_default(r, cls, 0x800) != default:
         print("selftest FAIL: the wide bound did not find the default object at +0x4e8")
         return 1
-    print("ok   fields: a class member past 0x400 resolves, and the old bound missed it")
+    # The instance walk: an object array with three entries, one of them a second instance of the class.
+    # The page read is what makes it cheap, so the fake has to serve bytes rather than single dwords.
+    arr, other = 0x04000000, 0x03001000
+    mem2 = dict(mem)
+    mem2[arr], mem2[arr + 4], mem2[arr + 8] = default, other, 0
+    mem2[other + CLASS_OFF] = 0x02000000      # some other class
+    r2 = FakeReader(mem2, objs, arr, 3)
+    found = walk_instances(r2, cls)
+    if [a for _i, a in found] != [default]:
+        print("selftest FAIL: the instance walk returned %r" % ([a for _i, a in found],))
+        return 1
+    if [i for i, _a in found] != [0]:
+        print("selftest FAIL: the instance walk lost the array index (%r)" % ([i for i, _a in found],))
+        return 1
+    print("ok   fields: a class member past 0x400 resolves, the old bound missed it, and the instance walk"
+          " filters the object array by Class")
     return 0
 
 
@@ -413,6 +521,11 @@ def main():
     ap.add_argument("--selftest", action="store_true",
                     help="check the member scan with a fake reader, no boot needed")
     ap.add_argument("--properties", action="store_true", help="measure and print the class's field chain")
+    ap.add_argument("--instances", action="store_true",
+                    help="with --object <class object>: list every object in GObjObjects whose own Class is it")
+    ap.add_argument("--diff", type=lambda v: int(v, 0), default=None,
+                    help="diff --object's pointer/array fields against this object, field by field")
+    ap.add_argument("--limit", type=int, default=200, help="with --diff, how many differing offsets to print")
     ap.add_argument("--compare", action="store_true", help="find the class default and diff against it")
     ap.add_argument("--show-text", action="store_true", help="print array bytes that read as text (game state)")
     args = ap.parse_args()
