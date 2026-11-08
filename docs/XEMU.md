@@ -3380,3 +3380,70 @@ Two consequences for the tool:
 `DisplayTextBox` (the function `NotificationWindow.DisplayTextBox` calls) writes its argument to `DisplayText`, a
 `UIWidget` field, so U15's "the notification window's `Text`" is `DisplayText` -- and `GameHud.uc` only ever sets
 `TextFontScale` on the three windows from the three config floats.
+
+## The typed line is in the console's `TypedStr`, and the stock console never draws it (measured 2026-11-08)
+
+Two runs answered U15's remaining console questions at once, and the second one first had to fix how the keyboard
+gets attached.
+
+**The attach has to follow the USB hub, not the emulator's launch.** `plr2` issued
+`--step=monitor=device_add usb-kbd,port=1.3.2,id=kbd` as its **first** step and the monitor answered
+`-> Error: usb port 1.3.2 (bus usb-bus.1) not found (in use?)`; every key it sent afterwards went nowhere, which is
+indistinguishable from a game that ignores keys. `plr3` sent `wait=10` first, and the same command answered nothing
+(success):
+
+    step 2: monitor info usb -> Device 1.1, Port 1, ... QEMU USB Hub
+      Device 1.2, Port 1.3, ... QEMU USB Hub
+      Device 1.3, Port 1.3.1, ... Microsoft Xbox Controller, ID: gamepad_0
+    step 3: monitor device_add usb-kbd,port=1.3.2,id=kbd -> (no output)
+    step 5: monitor info usb -> ... Device 1.0, Port 1.3.2, ... QEMU USB Keyboard, ID: kbd
+
+So the failure is a race with machine init, not a busy port: at t=0 the hub the keyboard hangs off does not exist yet,
+and the attach answers the same message a genuinely occupied port would.
+
+**The boot the numbers come from.** `plr3`: stub `12370`, the stock disc (md5 `109fff2a5a0091932f4262eefda41855`;
+`System/Default.ini` read *inside* the image says `Console=Engine.Console`), `M00` loaded, object array `0x041e0000`
+`num=48,646`, names `41,265` `max=51,886` at `0x07730000`, live player `0x01fb9bc0` (class `XboxClient`, class object
+`0x00dcea00`, index `35,581`).
+
+**The line is in the console object at `+0x44`.** One `Tab`, one `spc`, then `h i s t`:
+
+    $ objects.py --port 12370 --object 0x02344b00 --object-size 0x400 --fstrings
+    2 FString-shaped pair(s) read, 1 carried text
+      +0x044 count=6    ' hist'
+
+`0x02344b00` is the address the 2026-11-06 note named as the console the interaction master points at, and this is
+its `TypedStr`: the space and all four letters are there, count includes the terminator, and nothing was lost to
+`bIgnoreKeys` in this sequence. On the same boot `--find 0x02344b00,0x02406720` over the live player's first `0x1400`
+bytes puts the **console pointer nowhere** and the `InteractionMaster` `0x02406720` at `+0x0c0`, so the console is
+reached through the master (its `+0x030` block), not from a `Client` member in that window.
+
+**And the frame never changes.** `03-dismissed` (after the tutorial modal) reads `absent`; `04-tab` reads
+`prompt (56 cyan pixels, 64x32 at +34+209)`; `05-typed` is **byte-identical** to `04-tab` (PIL
+`ImageChops.difference(...).getbbox()` is `None`) although `TypedStr` changed between them. On the stock disc that is
+the expected shape -- `Engine.Console` declares no `PostRender` -- and it also means the 56-pixel band **is not the
+console's line**: it appears between two steps that differ only by a dismissed modal, and `console-line.py`'s
+`prompt` verdict on a loaded `M00` is therefore a false positive. The memory read is the witness for input; the frame
+is not.
+
+**Why `--compare` could not answer it.** `fields.py --object 0x01fb9bc0 --compare` prints `class default not found`,
+and the reason is one read away: `--instances` on the class object `0x00dcea00` finds **exactly one** object whose own
+`Class` is that class -- the live row itself (`index 35,581 0x01fb9bc0`, `outer` the `StargateGame` package). A class
+with one row has no second row to diff against, so the CDO is not reachable from the class object by the dword scan
+`--compare` uses (`--members`' `instance of this class` cannot fire on a class object for the same reason). The tool
+now says so and names `--instances` in its message.
+
+**The player's transient slots, in the same window.** `--bytes 0x28,0x10` reads `+0x028 0x00c25c00` (`GameEngine`),
+`+0x02c 0x009e7454 num=1 max=5` -- the one-element `TArray<UViewport*>` the `--properties` block calls `XboxViewport`,
+so its single element pointer lives at `0x009e7454` -- and `+0x034 5` as the array's max.
+
+**`mem.py --dump` is not the reader that resolves objects.** `--dump 0x01fb9bc0:0x30` wrote 48 bytes whose first
+dwords are `0x41bfbf5a 0x405a7c29 0x4069e490 0xddef3ed1`, while `fields.py` at the same address resolves class
+`XboxClient` and its header; and one element read through it (`0x009e7454:0x10`) came back all zero where
+`walk_fields` had just followed that dword to an `XboxViewport`. Whatever translation the two use differs, and a raw
+dword read of an arbitrary address has no CLI that agrees with the object reader yet -- that is the one instrument
+gap this run leaves.
+
+**Costs, for the next run's budget.** `--instances`/`--children` on a class object is one page-cached header pass,
+about **3 min** for 48,646 objects; `--compare`'s scan is `--scan` bytes and returns at once when the class object
+holds no instance; `--find` alone is a page read (seconds). The frame tools need no guest at all.

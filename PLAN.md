@@ -817,6 +817,31 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, the typed line is in the console's `TypedStr`, and the key never draws)
+
+- **The keyboard attach is a race with machine init, and it is what plr2 lost** (measured 2026-11-08):
+  `device_add usb-kbd,port=1.3.2,id=kbd` as the run's first step answers `usb port 1.3.2 (bus usb-bus.1) not found
+  (in use?)`; with `wait=10` first the same command answers nothing and `info usb` then lists
+  `QEMU USB Keyboard, ID: kbd` at `1.3.2` beside `gamepad_0` at `1.3.1` (`plr3`, stub `12370`). The message is the
+  one a busy port gives, so "in use" is not evidence of another device -- the hub does not exist yet at t=0.
+- **The console object holds the typed line** (measured 2026-11-08, same boot: stock disc md5 `109fff2a…`,
+  `System/Default.ini` inside the image says `Console=Engine.Console`, `M00` loaded, `48,646` objects, names `41,265`):
+  one `Tab`, one `spc`, `h i s t` leaves `' hist'` at `0x02344b00 +0x044` (`count=6`, `objects.py --fstrings`), and
+  the frame is **byte-identical** to the one before the letters (`05-typed` vs `04-tab`, PIL `getbbox()` `None`). So
+  the band `console-line.py` reads as `prompt` on a loaded `M00` (56 cyan px, 64x32 at `+34+209`) is a HUD element,
+  not the console line: it is present with an empty `TypedStr` and unchanged with text in it.
+- **`--compare` has no default to diff on this class** (measured 2026-11-08): `--object 0x01fb9bc0 --compare` prints
+  `class default not found`, and `--instances` on the class object `0x00dcea00` finds exactly one object of class
+  `XboxClient` -- the live row `0x01fb9bc0` (index `35,581`). The route the previous note proposed ("the transient
+  slot is null in the class default and set in the live instance") has no second row here; the console is reached
+  through `InteractionMaster` `0x02406720` at player `+0x0c0` (its `+0x030` block), and `--find` over the player's
+  first `0x1400` bytes puts the console pointer itself nowhere.
+- **Next**: read the master's `+0x030` and the `TArray<UViewport*>` element (`+0x02c data 0x009e7454 num=1 max=5`)
+  on one boot, then `--bytes 0x040,0x200` on `0x02344b00` after a `ret` submit for the `History[16]` receipt.
+  `mem.py --dump` is not the reader for either: it returned `0x41bfbf5a…` for `0x01fb9bc0` and zeros for
+  `0x009e7454`, both of which `fields.py` resolves, so a raw dword read needs a `fields.py` mode that does not exist
+  yet.
+
 ### Execution notes (2026-11-08, the live player is `XboxClient : Client` and declares no `Console` property)
 
 - **`--prop-name Console` on the live player answers "no property named Console in the chain", and the chain is
