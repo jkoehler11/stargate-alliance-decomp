@@ -174,6 +174,29 @@ class Reader(object):
         return "bytes", None
 
 
+def declared_objects(r, cls, limit=400):
+    """[(index, address, kind, name)] for every object whose `Outer` is `cls` -- what that class declares.
+
+    A class object does not link its fields (`+0x28` is `Super`, measured 2026-11-08), and a `UProperty` is an
+    ordinary object whose `Outer` names the class that declares it -- so the object array *is* the field list.
+    Ask it by `Outer`: that dword comes out of the cached 64 KiB page, one array pass, no stub round trip.
+    Asking by *name* instead costs a round trip per object, because `object()` resolves the class name with a
+    direct `u32(cls + Name)` before it looks at the object's own name -- 48,646 of those did not finish in five
+    minutes on a live stub (measured 2026-11-08), while this answered 158 `GameHud` objects in about 80 s.
+    """
+    out = []
+    for index, addr in walk_headers(r):
+        if r.try_u32(addr + OUTER_OFF) != cls:
+            continue
+        got = r.object(addr)
+        if not got:
+            continue
+        out.append((index, addr, got[0], got[1]))
+        if len(out) >= limit:
+            break
+    return out
+
+
 def scan_members(r, cls, start=0x400, size=0x600):
     """[(offset, text)] for every dword in `[start, size)` of a class object that reads as an object pointer.
 
@@ -641,6 +664,14 @@ def cmd_object(r, args):
             if not held:
                 print("    none: nothing past the `UStruct` header points at an instance of this class")
         return
+    if args.children:
+        kids = declared_objects(r, addr, args.limit)
+        print("  %d object(s) outered to %#010x (what this class declares):" % (len(kids), addr))
+        for index, target, kind, name in kids:
+            print("    index %-7d %#010x %-18s `%s`" % (index, target, kind or "?", name or "?"))
+        if not kids:
+            print("    none: no object in GObjObjects carries this class as its `Outer`")
+        return
     if args.diff:
         a = dict(walk_fields(r, addr, args.size))
         b = dict(walk_fields(r, args.diff, args.size))
@@ -1023,6 +1054,15 @@ def selftest():
     if row[0][1] != 0x05050505:
         print("selftest FAIL: the value at a property's Offset did not read back: %r" % (row,))
         return 1
+    # A class's declared objects are the ones outered to it -- and only those. `Outer` reads from the cached page,
+    # so the scan is one array pass; an object outered to another class must not appear.
+    mem3[mid + OUTER_OFF] = cls
+    mem3[after + OUTER_OFF] = 0x02000000
+    mem3[default + OUTER_OFF] = 0x02000000
+    kids = declared_objects(r3, cls)
+    if [a for _i, a, _c, _n in kids] != [mid]:
+        print("selftest FAIL: declared_objects returned %r" % ([a for _i, a, _c, _n in kids],))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, a field window names the neighbour it crosses into, a declared"
           " name is matched by `Outer` and reached through `Super`, and it reaches its value slot through the"
@@ -1066,6 +1106,10 @@ def main():
     ap.add_argument("--locate", action="store_true",
                     help="with --instances: which class-object dwords in +0x28..--size hold one of those "
                          "addresses (the default-object back-pointer, found by address not by class)")
+    ap.add_argument("--children", action="store_true",
+                    help="with --object <class object>: list the objects whose `Outer` is it (what the class "
+                         "declares) -- one page-cached array pass, where a name-first walk costs a stub round "
+                         "trip per object")
     ap.add_argument("--diff", type=lambda v: int(v, 0), default=None,
                     help="diff --object's pointer/array fields against this object, field by field")
     ap.add_argument("--limit", type=int, default=200, help="with --diff, how many differing offsets to print")
