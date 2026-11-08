@@ -1331,6 +1331,17 @@ inside the frame for any glyph shorter than 468 px. The body passes no clip rect
 to the canvas' own `ClipX/ClipY`. `tools/hud-console-font.py` (`make hud-console-font`) is the whole chain and
 `inventory/hud_console_font.csv` its artifact: no boot and no breakpoint needed.
 
+**The sink read is gated on the player object's class and on possession, both measured without a boot (2026-11-08).**
+`findcls.py --csv`'s class column is each object's own `Class` pointer, so the two level-shaped censuses
+(`ghud1`/`ghud2`: 41,265 names, 48,646 array entries) answer what #244 could only caveat: the guest's player object,
+`PlayerController0` (index 35,783, `0x01c31000`), is a **stock `PlayerController`** (`0x00d9ae00`), and neither census
+holds a `StargatePlayer` or a `Pawn` row. The three slots the console's sink was expected to live in are declared on
+`StargatePlayer`, so on such a row they are not fields -- `tools/xemu/sink-slots.py` now checks each slot's declaring
+class against the row's `UStruct::Super` chain and prints `n/a` instead of a neighbouring allocation's dword, and
+`--class-from PlayerController0` reads the row class off the guest rather than assuming it. **What would settle the
+sink:** a boot whose `PlayerController0` carries a `Pawn` (`--expect Pawn=live`) -- the state in which a
+`StargatePlayer` controller, and therefore a live `GameHud` / `NotificationManager` / command interface, exists at all.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
