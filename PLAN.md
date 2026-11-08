@@ -797,6 +797,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `fields.py --members --start 0x800 --size 0x1400` on `GameHud`'s and `UITextBox`'s class objects from that
       `--csv`; `DefaultObject` past `0x800` is still unlocated, and no scan is needed to locate `GNames`.
 
+
+      **Two `GameHud` objects, both named after the class, and neither outered to the level (measured 2026-11-07)**:
+      the class default is not a pointer inside the class object -- it is an ordinary object whose own `Class` is the
+      class, so the question is a filter over `GObjObjects`, which `fields.py --instances` now asks. Over `census11`
+      (gdb `12543`, census10's sequence unchanged) `GameHud`'s class object is `0x01886c00` again (class `Class`
+      `0x00bcea00`, `Outer` `Package` `StargateGame`) and exactly **two** of 48,646 objects carry it:
+      `0x0682ab00` (index 41,505) and `0x09322100` (index 47,914), **both named `GameHud` and both outered to the
+      same `Package`** (`0x0097f928`), so "the level one and the package one" is not the split. `--diff` over `0x600`
+      separates them on **34 of 65** pointer/array rows: the first carries a `StaticMeshActor` at `+0x008` and no
+      pointer from `+0x324` to `+0x470`; the second carries `ObjectProperty` (`Canvas`), `FloatProperty` (`ClipX`),
+      `StructProperty` (`DrawColor`), `IntProperty` (`TeamIndex`) and `Function` (`SetPos`) records there -- metadata
+      rather than state, which is what a default looks like, but **which one is the default is not settled**: the
+      alternative is a second live HUD with an adjacent allocation in its window. What would settle it: decode
+      `+0x324..+0x470` against `GameHud.uc`'s declared fields. Two corrections: a class object's own `Class` is the
+      `Class` metaclass, so `--members`' `Class == this class` test can never fire on a class object (the census10
+      row read as `0x00bcf000` "the `Object` class object" is one digit from `Class` at `0x00bcea00` -- check that
+      transcription), and `--members` now says whether a row's target is named after the class instead of calling
+      every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
+      **235 s**; the residue is name resolution.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
