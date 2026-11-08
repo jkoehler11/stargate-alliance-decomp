@@ -746,6 +746,21 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x800` bytes, so `DefaultObject` is still unlocated. **Next**: the class object past `0x800`, with the same
       `fields.py --members` scan on `UITextBox`'s class object `0x0197a800` as the control.
 
+      **`GNames` is static at `0x006be0d8`, and the locators were reading the wrong thing (measured 2026-11-07)**: over
+      one loaded-`M00` boot (`census8`, gdb `12523`), the slot reads `data=0x07720000 num=41,265 max=51,886` right
+      after the `Initialized` dword at `0x006be0c8`, and slots 0/1/2/3/5/16/100 resolve to
+      `None`/`ByteProperty`/`IntProperty`/`BoolProperty`/`ObjectProperty`/`PointerProperty`/`Begin` with `Index`
+      equal to the slot -- so the census6 paragraph that called `GNames` per-boot was a read fault, and only the
+      `Data` pointer moves. `findcls.py` walked 48,622 of 48,646 object headers over 347 pages and named none of them
+      because its `hasattr(nm, "text")` guard is always false (`names.Names` answers through `__getitem__`); fixed,
+      and `names.Names` now caches 64 KiB entry pages (`names.py --selftest`: two entries in one page cost 2 reads),
+      because one stub read per object put the walk past ten minutes. `name_table` also refuses a slot that is not a
+      `(Data, Num, Max)` triple: the old default answered `num=1735288156` and turned the next read into a 6.9 GB
+      walk that never finished -- the 16:00 run died there, with no measurement and no lock release. **Next**: the same
+      boot, `fields.py --members --start 0x800 --size 0x1400 --at 0x006be0d8` on `GameHud`'s and `UITextBox`'s class
+      objects (named by `findcls.py`) -- `DefaultObject` past `0x800` is still unlocated, and no scan is needed to
+      locate `GNames`.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

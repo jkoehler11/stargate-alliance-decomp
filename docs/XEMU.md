@@ -2931,6 +2931,9 @@ Three things follow, and the first two correct the doc above.
 
 ## Locating a live object before reading it (class objects move)
 
+**Corrected in "`GNames` does not move" at the end of this file (2026-11-07): the `GNames` slot is static, and the
+census6 read below returned other memory. Class objects do move; the name table does not.**
+
 A read that worked on one boot is not an address for the next. Measured over a loaded-`M00` boot (`census6`,
 gdb `12519`, the same script as `census4`):
 
@@ -2955,3 +2958,43 @@ class object. `find_names.py` is the narrow form of `names.py --find`: `.data` h
 triples (**9,121** with a plausible name count), and scoring every one of them over the stub had not finished after
 ~2.5 minutes, so it filters by count first and then requires element 1 to decode as `ByteProperty` -- index 1 of
 UE2's reserved names, which makes a hit an identification rather than a shape match.
+
+## `GNames` does not move: the slot is static and the entries are paged (measured 2026-11-07)
+
+The previous section read `0x006be0d8` on a `census6` boot and got the ASCII path `xbox\engine\inc\`, and concluded
+that `GNames` is per boot. It is not. Over one loaded-`M00` boot (`census8`, same step sequence as `census6`, gdb
+`12523`, `~/sg1/work/xemu/census8.sh`):
+
+- `0x006be0d8` reads `(Data, Num, Max) = 0x07720000 / 41,265 / 51,886` -- the name array -- immediately after the
+  name system's own `Initialized` dword at `0x006be0c8`, which reads `1`.
+- slots `0`/`1`/`2`/`3`/`5`/`16`/`100` resolve to `None`/`ByteProperty`/`IntProperty`/`BoolProperty`/
+  `ObjectProperty`/`PointerProperty`/`Begin`, each with its `FNameEntry.Index` equal to its slot.
+- `GObjObjects` at `0x006c21b0` reads `0x041e0000 / 48,646 / 51,886`.
+
+So what moves between boots is the `Data` pointer -- a heap allocation, `0x01f30000` at the title and `0x07720000`
+with `M00` loaded -- not the slot that holds it. **The `0x006be0d8` refutation is a read fault, not a relocation**:
+the same stub drops 21 of the first 64 slot pointers of this array (above), and a slot read that returns unrelated
+bytes is that fault landing on the address. A scan is not the instrument this needs: `.data` holds **4,522**
+TArray-shaped triples and a shape scan cannot pick the name array out of them.
+
+**Two instrument defects this boot found, both fixed here.**
+
+- `findcls.py` walked the whole object array -- **48,622** of **48,646** headers over **347** pages, **15** unreadable
+  -- and named **none** of them: its name lookup was guarded by `hasattr(nm, "text")`, while `names.Names` answers
+  through `__getitem__` and has no `text` method, so the guard was always false and every object was skipped. It now
+  reads `nm[idx]` through one `name_of` helper that catches the read faults.
+- `names.Names` paid **one stub round-trip per object** for the entries, which is what put the walk past the
+  ten-minute mark. `FNameEntry` records are packed into a handful of pages (the reserved block runs through
+  `0x0091ff00..0x0095ffff`), so the table caches 64 KiB pages and dereferences an entry out of the cached page, with
+  the old per-entry read kept for a boundary or over-long name. `page_reads` counts the page reads, and
+  `names.py --selftest` holds the rule: two entries in one page cost **2** reads, not one each.
+
+**A wrong slot must be refused, not walked.** `names.name_table` now rejects an `--at` that does not read as a
+`(Data, Num, Max)` triple with a plausible count. Without it, the default slot answered `num=1735288156` and the
+next read became a **6.9 GB** walk over the stub that never finished -- the reason the 16:00 run died inside
+`Names.__init__` with no measurement and no lock release.
+
+**Still open**: `DefaultObject` past `0x800` is not located yet -- the class-object scan this boot was started for was
+still walking the object array when the run budget ran out, and the object names are the instrument it needs.
+`find_names.py` is refuted as a locator (0 hits on a boot whose slot is known); the next run should scan with
+`fields.py --members --start 0x800 --size 0x1400` against `--at 0x006be0d8` instead of locating anything.
