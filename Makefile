@@ -179,6 +179,7 @@ ci:
 	@$(PYTHON) tools/xemu/owner.py --selftest
 	@$(PYTHON) tools/xemu/names.py --selftest
 	@$(PYTHON) tools/xemu/fields.py --selftest
+	@$(PYTHON) tools/xemu/sink-slots.py --selftest
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) -m py_compile tools/hud-console-font.py && echo "ok   hud-console-font: tools/hud-console-font.py compiles"
 	@$(PYTHON) tools/hud-console-font.py --selftest

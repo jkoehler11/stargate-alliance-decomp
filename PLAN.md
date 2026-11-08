@@ -1159,6 +1159,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, a level boot held no `StargatePlayer` row, and the gate that says so)
+
+- **The `num=` gate is measured on both sides and costs one dword.** `names.py --at 0x006be0d8` read **41,265** on a
+  boot that had loaded `M00` (array 48,646) and **34,800** on `sink3`'s menu boot (42,152) -- so a field read can be
+  refused before it happens, instead of after a six-minute array pass. `tools/xemu/sink-slots.py` refuses below
+  40,000 names unless `--any-state` is passed.
+- **That boot holds no object whose own `Class` is `StargatePlayer` `0x00e47800`.** The walk (48,637 plausible array
+  pointers, **347 page reads**) answers 0 rows, while `0x00e47800` reads back in the same boot as the class object
+  named `StargatePlayer` (name index 1,773) -- so the class resolved and the array was complete; the instance is what
+  is missing, against `sink1`/`sink2`'s one unnamed row outered to `M00`. The four sink slots therefore have no
+  gameplay value yet; #243's menu row (`+0x1004 0x05a28c00`, `+0x1008 0x0682ab00` = the `GameHud` class default,
+  `+0x100c 0x05c3c1c0`, `+0x38c 0`) remains the only measured state.
+- **Caveat, stated rather than removed:** a *subclass* instance carries its own class pointer, so this is "no
+  `StargatePlayer` instance", not "no player controller". The next read is the class of the boot's own player object
+  (`PlayerController0`'s address from a census row, one `fields.py` read); that class is the `--class` the slots are
+  then read through, with `--default` naming the class default so the mark is explicit.
+- **Instrument** `tools/xemu/sink-slots.py` (`--selftest`, `make ci`): the gate, a page-cached class walk, and the
+  two windows the four offsets allow (`+0x1000..+0x1010`, `+0x380..+0x390`), with `--expect SLOT=live|null|default`
+  as the assertion a future boot can make. `docs/XEMU.md` carries the numbers.
+
 ### Execution notes (2026-11-08, the four player slots have offsets, and a row's `Outer` names its state)
 
 - **`sink3` did not reach `M00`, and one field says so: the player row's `Outer`.** The one object whose own `Class` is

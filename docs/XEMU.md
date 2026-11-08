@@ -3772,3 +3772,29 @@ rather than an array pass -- `--instances --prop-name` cost ~6 minutes over 42,1
 should read `names.py --at 0x006be0d8`'s `num=` **before** the field read, because 34,800 against 41,265 is one dword
 and it separates a menu boot from a level. `census16`'s `--prop-bytes` work is what turned `Offset` from a flag into a
 column, so this is the same instrument applied to a value.
+
+## A level boot held no `StargatePlayer` row, so the sink slots had nothing to read (measured 2026-11-08, PLAN 7.3)
+
+**A level boot holds no `StargatePlayer` row at all, so the sink slots had nothing to read (measured 2026-11-08,
+`sink4`, and it is a negative with a control on both sides).** #243 left the four slots measured on a *menu* row
+(`GameHudPtr` = the `GameHud` class default, `Pawn` 0) and named the next read as the same four slots on an
+`M00`-outered row, gated on `names.py`'s `num=` so a menu boot is never read as gameplay. The gate works and was the
+first thing this boot answered: **41,265 names** and **48,646** array entries, i.e. a level (`sink3`'s menu boot read
+34,800 / 42,152). The row is not there: `tools/xemu/sink-slots.py` (new) reads object headers through a 64 KiB page
+cache -- 48,637 plausible pointers in **347 page reads** -- and finds **0** objects whose own `Class` pointer is
+`0x00e47800`, while the same boot's `0x00e47800` reads back as the class object named `StargatePlayer` (name index
+1,773, metaclass `0x00bcea00`). So the class resolved and the walk had every object the array holds; what is absent is
+an instance. `sink1` and `sink2` held exactly one unnamed row outered to `M00`, so **the row's presence is per-boot**
+and this run's four slots would have been a read of an address that does not exist. The caveat is the one the tool
+cannot remove: an instance of a *subclass* carries its own class pointer, so this says "no `StargatePlayer` instance",
+not "no player controller" -- the next read is the class of the boot's own player object
+(`fields.py --row` over `PlayerController0`'s address, one read), and the class it names is the `--class` the four
+slots should be read through. The menu row stays the control: `+0x1004 0x05a28c00`, `+0x1008 0x0682ab00` (the class
+default), `+0x100c 0x05c3c1c0`, `+0x38c 0` (#243), against nothing at all on this level.
+
+Instrument: `tools/xemu/sink-slots.py --port P --at 0x006be0d8 [--class 0x00e47800] [--default 0x0682ab00]
+[--expect GameHudPtr=live]`; `--selftest` runs the gate, the walk and the marks in `make ci` with no boot. What it
+buys over `fields.py --instances --prop-name` is the three costs #243's note named: the `num=` gate before any slot
+read (34,800 against 41,265), a walk in pages rather than in objects (347 reads against ~48,000, the ~6 minutes that
+note measured), and the two windows the four offsets allow -- `+0x1000..+0x1010` for the three adjacent sink fields
+and `+0x380..+0x390` for `Pawn`.
