@@ -817,6 +817,43 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, the class default's field block ends before `+0x1800`, and the three scales are not in it)
+
+- **All three `1.0` hits are inside an allocation the object array does not hold, so `--near` overstates an object's
+  extent** (measured 2026-11-08, `census15` = `~/sg1/work/xemu/ghud7.sh`, gdb `12561`, `M00` loaded at 42,644 px).
+  `--find 0x3f800000,0x00000001 --size 0x5500` on the class default `0x0682ab00` (identity re-checked this boot,
+  `class \`GameHud\` name \`GameHud\``) prints three `1.0`s -- `+0x180c`, `+0x420c`, `+0x4288` -- and the bytes say
+  what they are: `+0x17e0..+0x17fc` are **zero** and `+0x1800` starts `0x6dd00119 0x000800fe 0x1e006200 0x0119e516
+  0x00fe64a0 0x1b0c0006`, a deflate-shaped stream with no object pointer and no field-sized value in it. So
+  census14's "one `1.0` at `+0x180c`, no run of three, therefore either non-adjacent offsets or an unwritten
+  `Float`" was reading a **neighbour's bytes**: `--near` bounds an object by the next *object*, and a plain heap
+  allocation between the two reads as part of the object (this is why `+0x5500` looked like the object's extent
+  while its own field data stops before `+0x1800`).
+- **The declared order is exactly adjacent, and the three slots it names hold `0.1`, `0`, `0`.** At `+0x230` the
+  field block holds `0.9` (`+0x234`), `0.97` (`+0x238`), `0.05` (`+0x248`), `0.1` (`+0x24c`), `0` (`+0x250`), `0`
+  (`+0x254`), then the `SkipMatineeTextString` `FString` at `+0x258` (`Data 0x059254c0`, `Count 16`, `Max 16`) --
+  the 16 characters `class-defaults.py` reports, and immediately after it `3.0f` (`+0x264`) and `2.2f` (`+0x274`).
+  `class-defaults.py --class GameHud --walk` reads the block as three consecutive `Float` records (`info=0x24`,
+  5 bytes each) then the `Str` (`info=0x5d`), so the declaration order puts the three scales at
+  `+0x24c..+0x254` whatever the linker does with direction -- and those three dwords are `0.1`, `0`, `0`, not
+  `1.0`. **There is no `0x3f800000` anywhere in the object's own field data.**
+- **The three are `var config float`, which is the standing explanation and not yet a settled one.** `GameHud.uc:90`,
+  `:96` and `:102` declare all three `var config float` (and `:493`, `:511`, `:522` copy them into the windows'
+  `TextFontScale` at run time), and no shipped `System/*.ini` sets a `FontScale` key -- so the serialised `1.0` need
+  never reach the field slots, the config path being what fills a `config` property. The competing explanation is
+  that these three slots are not the scales at all (a property the block does not serialise sitting between them and
+  the string), which the same read cannot rule out. **Next**: `DialogueWindow.TextFontScale` (the live HUD's
+  `+0x050` `UITextBox`) over one boot -- `0.1` there makes the `config` route measured instead of argued, and the
+  same read answers U15's `NotificationWindow` `Text` question.
+- **The instrument is `--bytes` and `--flat` on `fields.py`, both selftested without a boot.** `--bytes OFFSET,LEN`
+  hexdumps a window of the object with the float reading of every dword (`1.0f` for `0x3f800000`, nothing for the
+  integer `1`, whose float is `1.4e-45`) and the ASCII of a printable dword; `--find` says a dword is there but
+  never what sits beside it, and that is the whole of this measurement. `--flat OFFSET` counts zeros, flats
+  (small integers and floats), object pointers and *other* dwords per `0x100` window, because a field block's end
+  is where the other dwords start -- the boundary `--near` cannot see. `--flat -1` over `0x2000` on one object
+  costs minutes against a live stub (every dword is tried as an object pointer), so read it over a bounded
+  `--size` and expect a slow call rather than a hung one.
+
 ### Execution notes (2026-11-07, a class object holds no pointer to its own instance, so the default-object scan is closed)
 
 - **`DefaultObject` is not in the class object's first `0x1400` bytes, and that ends the search rather than another
