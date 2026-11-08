@@ -11,7 +11,8 @@
 #   tools/xemu/console-receipt.sh OUTDIR [COMMAND]     (default COMMAND: hist)
 #
 # Environment: WORK (default ~/sg1/work), SG1_BIOS (default ~/nfs/sg1-dump/bios), DISPLAY/XAUTHORITY.
-# Options via env: SG1_ISO, SG1_HDD, SG1_EEPROM, SG1_GDB (default 12390), SG1_KEEP=1 to keep the dumps.
+# Options via env: SG1_ISO, SG1_HDD, SG1_EEPROM, SG1_GDB (default 12390), SG1_KEEP=1 to keep the dumps,
+# SG1_DRY_RUN=1 to print the key list and steps without booting.
 #
 # Exit 0 only when the post dump carries the receipt and the pre dump does not. The dumps are 128 MiB each and
 # are removed unless SG1_KEEP=1; the frames stay.
@@ -25,6 +26,23 @@ EEPROM=${SG1_EEPROM:-$WORK/xemu/smoke1/eeprom.bin}
 BIOS=${SG1_BIOS:-$HOME/nfs/sg1-dump/bios}
 GDB=${SG1_GDB:-12390}
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
+
+# A `gkey` step takes ONE key name, so the command has to arrive key by key: `for k in hist` is a single step
+# named `hist`, which drive.py refuses, and the run then types nothing at all. `SG1_DRY_RUN=1` prints the key
+# list and the steps without a boot, which is the only way to check this half without four minutes of xemu.
+KEYS=$(python3 - "$CMD" <<'PY'
+import sys
+print(" ".join("spc" if c == " " else c for c in sys.argv[1]))
+PY
+)
+if [ "${SG1_DRY_RUN:-0}" = 1 ]; then
+  echo "command: $CMD"
+  echo "keys:    $KEYS"
+  printf 'steps:'
+  for k in $KEYS; do printf ' gkey=%s' "$k"; done
+  echo
+  exit 0
+fi
 
 [ -f "$ISO" ] || { echo "no iso at $ISO" >&2; exit 2; }
 [ -f "$HDD" ] || { echo "no hdd at $HDD" >&2; exit 2; }
@@ -56,7 +74,7 @@ set -- "$@" --step=pad=a --step=wait=4 --step=shot=03-dismissed
 # one Tab opens the console; the dummy key spends bIgnoreKeys; then the command, one key per step
 set -- "$@" --step=gkey=tab --step=wait=2 --step=shot=04-tab
 set -- "$@" --step=gkey=spc --step=wait=0.6
-for k in $(printf '%s' "$CMD" | sed 's/ / spc /g' | tr ' ' '\n'); do
+for k in $KEYS; do
   set -- "$@" --step=gkey="$k"
 done
 set -- "$@" --step=wait=1 --step=shot=05-typed

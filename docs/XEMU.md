@@ -3510,4 +3510,8 @@ straight out of a physical dump (`144d8be8 f53bd3e8 ...` at both), so the vtable
 from `Interaction` is the draw. One dump-side read, no boot.
 
 **Costs.** One boot, 4 m 40 s from launch to the post-dump; the two dumps are 128 MiB each and
-`tools/xemu/console-receipt.sh OUTDIR [COMMAND]` reproduces the whole thing and prints both states.
+`tools/xemu/console-receipt.sh OUTDIR [COMMAND]` reproduces the whole thing and prints both states. Its
+typing half is checkable with no boot at all (`SG1_DRY_RUN=1` prints the key list): the first version
+passed the command as a single `gkey` step -- `for k in hist` is one step named `hist`, which `drive.py`
+refuses -- so it would have typed nothing and read a clean-looking negative, which is why the dry run
+exists.
