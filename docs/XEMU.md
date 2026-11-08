@@ -3685,3 +3685,41 @@ target for a property read: `fields.py --object <class object> --prop-name X` re
 for a class object is the metaclass, and answers along `Class -> State -> Struct -> Field -> Object`. The read that
 matters for PLAN 7.3's sink is `fields.py --object <the live row> --prop-name GameHudPtr`, against
 `StargatePlayer`'s own chain (`StargatePlayer.uc:26`).
+
+## A class object is its own struct, and its declarations live in the object array (measured 2026-11-08, PLAN 7.3)
+
+`sink2` (same boot as `sink1`: title, ten `down`s, `M00`, dismiss, gameplay; `04-gameplay` differed by 1,903 px,
+names 41,265, array `0x041e0000` 48,646 objects) puts one object whose own `Class` is `StargatePlayer` `0x00e47800`
+in front of the field read again -- index 47,885 at `0x08842800`, name unresolved, `Outer` the `M00` object -- so the
+row is the same one, on fresh addresses.
+
+**The class object was the wrong *target* only because the tool resolved the wrong class.** `fields.py --object X`
+takes `X`'s own `Class` word (`+0x24`) as the struct that declares `X`'s fields. That is right for an instance and
+wrong for a class object, whose `+0x24` is the **metaclass**: the walk went `Class -> State -> Struct -> Field ->
+Object` and answered "no property named `GameHudPtr`" for every class, which is a statement about the metaclass, not
+about `StargatePlayer`. Read as itself, the class object's super chain is the real one:
+
+    `StargatePlayer` 0x00e47800 -> `UnrealPlayer` 0x00e47200 -> `PlayerController` 0x00d9ae00
+      -> `Controller` 0x00d9a800 -> `Actor` 0x00c46000 -> `Object` 0x00bcf000
+
+**That chain still declared no `GameHudPtr`, and the package says it should.** The class object's own dwords carry a
+header (`LinkerLoad`, `Package`, `Class`, `Super`) and a table of `Function` pointers (`Say`, `SetPause`,
+`GetViewRotation`, ...); scanning all 1,536 bytes for a `*Property` object named `GameHudPtr` whose `Outer` is the
+class finds **0**, while `inventory/class_properties.csv` (parsed from the package) has
+`StargateGame,StargatePlayer,GameHudPtr,UObjectProperty,0x2000:Transient;`. So the declaration is **an object in
+`GObjObjects`, not a dword in the class object** -- which is what `declared_objects`' own docstring says and what the
+`--children` listing already used: a `UProperty` names its declaring class in `Outer`, so the object array *is* the
+field list.
+
+`--prop-name` now answers that way: a comma-separated list of names shares **one** page-cached `Outer` pass over the
+whole super chain, with the name resolution spent only on the objects outered to one of those classes, and
+`--instances --prop-name A,B` reads each slot out of every row of the class in the same call. The inline dword scan
+is kept as the negative it is (a test asserts the `Outer` route finds a property that the class object's bytes do not
+hold).
+
+**Still open, and one call away**: the value read did not land inside this run's budget -- the boot above ran the
+*pre-fix* binary, so its declaration calls answered "no property" and the stub was released before the `Outer` route
+could be pointed at the live row. Next is one gameplay boot with
+`python3 tools/xemu/fields.py --port <p> --at 0x006be0d8 --object 0x00e47800 --instances --prop-name GameHudPtr,commandInterfacePtr,NotificationManager,Pawn`
+(~3 min: one array pass, four slots), which states whether `SetupInteractionsFor`'s write reached the three sink
+fields on a row that exists, and gives `Pawn` as the possession control.

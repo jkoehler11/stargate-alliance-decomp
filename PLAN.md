@@ -1159,6 +1159,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, a class object is its own struct, and the declaration is in the array)
+
+- **`GameHudPtr` is a `UProperty` object outered to the class, not a dword of the class object** (measured 2026-11-08,
+  `sink2`; the value read is the next call, not this one). `fields.py --object <class object>` resolved `+0x24`, which
+  on a class object is the **metaclass**, so every `--prop-name` answered along `Class -> State -> Struct -> Field ->
+  Object` and the last note's "0 declared `GameHudPtr`" was a statement about `Class`. A class object is now read as
+  its own struct, and the chain it prints is the real one (`StargatePlayer` `0x00e47800` -> `UnrealPlayer` ->
+  `PlayerController` -> `Controller` -> `Actor` -> `Object`, on a boot that again holds exactly one row, index 47,885
+  at `0x08842800`, outer `M00`). That chain still holds **0** `GameHudPtr` dwords in the class object's 1,536 bytes
+  while `inventory/class_properties.csv` says the class declares one (`UObjectProperty`, flags `0x2000:Transient;`),
+  so the declaration is an object outered to the class -- exactly what `declared_objects`' docstring says. `--prop-name`
+  now answers from one page-cached `Outer` pass over `GObjObjects` for the whole super chain, comma-separated names
+  sharing the pass, and `--instances --prop-name A,B` reads the slots for every row in one call. **Next**: one gameplay
+  boot with `--object 0x00e47800 --instances --prop-name GameHudPtr,commandInterfacePtr,NotificationManager,Pawn`,
+  which states whether `SetupInteractionsFor`'s write reached the sink and gives `Pawn` as the possession control
+  (`docs/XEMU.md`).
+
 ### Execution notes (2026-11-08, the sink's owner is in the guest, and a census CSV cannot say so)
 
 - **The two loaded-`M00` object censuses hold no `StargatePlayer` instance and no `Pawn`, and a boot holds one of the
