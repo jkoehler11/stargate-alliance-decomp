@@ -336,9 +336,19 @@ def class_name_map(sections):
 
 
 def name_table(guest, args):
-    """(data, num) for the name array at --at, read once."""
+    """(data, num) for the name array at --at, read once -- and refuse a slot that does not hold one.
+
+    A wrong `--at` is not a small error: the three dwords there can be a path's bytes, and reading `num` of them as
+    a name count turns the next read into a multi-gigabyte walk over the stub that never finishes (measured: a
+    default `GNames` slot answered `num=1735288156`, and the tool then sat in `Names.__init__` reading chunks of a
+    6.9 GB table). `GNames` is per boot, so the caller passes an address `find_names.py` just measured; anything that
+    does not read as a `(Data, Num, Max)` triple with a plausible count is refused here, not walked.
+    """
     data, num, cap = struct.unpack("<III", guest.read(args.at, 12))
     print("name table %#010x: data=%#010x num=%d max=%d" % (args.at, data, num, cap))
+    if not plausible_pointer(data) or not (GNAMES_MIN <= num <= GNAMES_MAX) or cap < num:
+        raise SystemExit("name table %#010x is not a GNames triple (data=%#010x num=%d max=%d); measure it with "
+                         "tools/xemu/find_names.py --port <stub> and pass --at" % (args.at, data, num, cap))
     return data, num
 
 
@@ -352,10 +362,16 @@ def object_array(guest, args):
 
 
 class Names(object):
-    """FName index -> text, with the whole FNameEntry* array read once.
+    """FName index -> text: the pointer array read once, then the entries one 64 KiB page at a time.
 
-    One stub round-trip per lookup is what makes an object walk slow: 34,800 pointers are 136 KiB, four
-    bulk reads, and they turn a per-index read into a memory access.
+    One stub round-trip per lookup is what makes an object walk slow: 34,800 pointers are 136 KiB, four bulk reads,
+    and they turn a per-index read into a memory access. The entries are the other half of the cost, and it is the
+    larger half: a walk over 48,622 objects was 48,622 per-entry reads, which is minutes of stub latency for bytes
+    that sit in a handful of pages. FNameEntry records are packed into a few pages (the reserved block runs through
+    0x0091ff00..0x0095ffff), so `entry_at` caches the page: one read per page, and a per-entry read only when the
+    entry crosses the page edge or does not parse as an entry.
+
+    `page_reads` counts the page reads, so a caller can see what a walk cost instead of timing it by feel.
     """
 
     def __init__(self, guest, data, num):
@@ -368,6 +384,31 @@ class Names(object):
             self.table += chunk
             got += len(chunk)
         self.cache = {}
+        self.pages = {}
+        self.page_reads = 0
+
+    def entry_at(self, ptr):
+        """The text of the FNameEntry at `ptr`, through the page cache."""
+        if not plausible_pointer(ptr):
+            return None
+        page = ptr & ~0xFFFF
+        buf = self.pages.get(page)
+        if buf is None:
+            try:
+                buf = self.guest.read(page, 0x10000)
+                self.page_reads += 1
+            except (IOError, OSError):
+                got = entry(self.guest, ptr)
+                return got[3] if got else None
+            self.pages[page] = buf
+        off = ptr - page
+        want = NAME_AT + 2 * NAME_MAX + 2
+        if off + want <= len(buf):
+            text = wide_name(buf[off:off + want])
+            if text is not None:
+                return text
+        got = entry(self.guest, ptr)          # a boundary or long name: one read, the slower path
+        return got[3] if got else None
 
     def __getitem__(self, idx):
         if idx in self.cache:
@@ -375,8 +416,7 @@ class Names(object):
         text = None
         if 0 < idx < self.num:
             ptr = struct.unpack_from("<I", self.table, idx * 4)[0]
-            got = entry(self.guest, ptr)
-            text = got[3] if got else None
+            text = self.entry_at(ptr)
         self.cache[idx] = text
         return text
 
@@ -647,6 +687,26 @@ def selftest():
         print("selftest FAIL: a truncated entry was read as an entry")
         return 1
     print("ok   names: an entry whose block ends on a page boundary resolves (%d = %s)" % (got[0], text))
+
+    # The page cache: three indices into one page cost one page read, not three per-entry reads.
+    tbl_page, ent_page = 0x00610000, 0x00700000
+    g2 = PageGuest(tbl_page, [tbl_page, ent_page])
+    table = struct.pack("<4I", ent_page + 0x100, ent_page + 0x140, ent_page + 0x180, 0)
+    g2.poke(tbl_page, table)
+    for i, name in enumerate(("None", "ByteProperty", "IntProperty")):
+        g2.poke(ent_page + 0x100 + i * 0x40,
+                struct.pack("<III", i, 0, 0) + name.encode("utf-16-le") + b"\0\0")
+    before = g2.reads
+    nm = Names(g2, tbl_page, 3)
+    got3 = [nm[i] for i in (1, 2)]
+    if got3 != ["ByteProperty", "IntProperty"]:
+        print("selftest FAIL: the page-cached table read %r" % (got3,))
+        return 1
+    spent = g2.reads - before
+    if spent > 3 or nm.page_reads != 1:
+        print("selftest FAIL: two lookups into one page cost %d read(s), %d page read(s)" % (spent, nm.page_reads))
+        return 1
+    print("ok   names: two entries in one page cost %d read(s), not one each" % spent)
     return 0
 
 

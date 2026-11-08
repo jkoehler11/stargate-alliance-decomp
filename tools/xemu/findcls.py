@@ -23,17 +23,33 @@ sys.path.insert(0, os.path.join(REPO, "tools", "xemu"))
 import names  # noqa: E402
 
 
+def name_of(table, idx):
+    """The text of one FName index, or None.
+
+    names.Names answers through __getitem__ and has no text method, so the hasattr guard this tool shipped with was
+    always false and every object was skipped: the walk read 48,622 headers over a loaded M00 and named none of
+    them. Read the index through the interface the table actually has.
+    """
+    try:
+        return table[idx]
+    except (IOError, OSError, IndexError):
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, required=True)
     ap.add_argument("--xbe", default=None)
-    ap.add_argument("--at", type=lambda v: int(v, 0), default=0x006BE0D8, help="GNames array address")
+    ap.add_argument("--at", type=lambda v: int(v, 0), default=None,
+                    help="GNames array address, as tools/xemu/find_names.py measured it on this boot")
     ap.add_argument("--objects", type=lambda v: int(v, 0), default=names.OBJ_ARRAY, help="GObjObjects address")
     ap.add_argument("--want", action="append", default=[], metavar="NAME", help="object name to report")
     ap.add_argument("--grep", default=None, help="substring match on the object name instead of --want")
     ap.add_argument("--limit", type=int, default=40, help="rows per name")
     args = ap.parse_args()
+    if args.at is None:
+        ap.error("--at is required: pass the GNames address find_names.py measured on this boot")
 
     guest = names.Guest(args.host, args.port)
     try:
@@ -71,7 +87,7 @@ def main():
         print("read %d header(s), %d unreadable" % (len(rows), missing))
         seen = {}
         for i, p, klass, idx in rows:
-            oname = nm.text(idx) if hasattr(nm, "text") else None
+            oname = name_of(nm, idx)
             if not oname:
                 continue
             hit = oname in args.want or (args.grep and args.grep.lower() in oname.lower())
@@ -80,10 +96,7 @@ def main():
             if seen.get(oname, 0) >= args.limit:
                 continue
             seen[oname] = seen.get(oname, 0) + 1
-            try:
-                kind = nm.text(struct.unpack("<I", guest.read(klass + names.NAME_OFF, 4))[0])
-            except (IOError, OSError):
-                kind = None
+            kind = name_of(nm, guest.u32(klass + names.NAME_OFF))
             print("  name `%s` at %#010x index %d -> class object %#010x%s"
                   % (oname, p, i, klass, " (%s)" % kind if kind else ""))
         for w in args.want:

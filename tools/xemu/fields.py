@@ -399,7 +399,8 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=None, help="xemu's GDB stub port")
     ap.add_argument("--xbe", default=None, help="default.xbe of the dump (for the section table)")
-    ap.add_argument("--at", type=lambda v: int(v, 0), default=0x006BE0D8, help="GNames array address")
+    ap.add_argument("--at", type=lambda v: int(v, 0), default=None,
+                    help="GNames array address, as tools/xemu/find_names.py measured it on this boot")
     ap.add_argument("--objects", type=lambda v: int(v, 0), default=names.OBJ_ARRAY, help="GObjObjects address")
     ap.add_argument("--object", type=lambda v: int(v, 0), default=None, help="the UObject to read")
     ap.add_argument("--size", type=lambda v: int(v, 0), default=0x600, help="bytes of the object to walk")
@@ -420,6 +421,8 @@ def main():
         return selftest()
     if args.port is None:
         ap.error("--port is required: this tool reads a live guest")
+    if args.at is None:
+        ap.error("--at is required: pass the GNames address find_names.py measured on this boot")
     if args.object is None:
         ap.error("--object is required unless --selftest is given")
 
