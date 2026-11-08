@@ -168,9 +168,10 @@ ci:
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
 		tools/xemu/objects.py tools/xemu/ramscan.py tools/xemu/vamap.py tools/xemu/console-state.py \
-		tools/xemu/owner.py tools/xemu/names.py tools/xemu/fields.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py, names.py and fields.py compile"
+		tools/xemu/owner.py tools/xemu/names.py tools/xemu/fields.py tools/xemu/hud-link.py \
+		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py, names.py, fields.py and hud-link.py compile"
 	@$(PYTHON) tools/xemu/ramscan.py --selftest
+	@$(PYTHON) tools/xemu/hud-link.py --selftest
 	@$(PYTHON) tools/xemu/mem.py --selftest
 	@$(PYTHON) tools/xemu/console-state.py --selftest
 	@$(PYTHON) tools/xemu/owner.py --selftest
@@ -507,6 +508,12 @@ karma-runtime:
 stat-fps:
 	@$(PYTHON) tools/image-strings.py --topic stat-fps --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/stat_fps_render.csv"
+
+# PLAN 7.3: which console the live HUD holds, out of a RAM dump (`make hud-link DUMP=~/sg1/work/.../ram.bin`).
+hud-link:
+	@test -n "$(DUMP)" || { echo "hud-link: pass DUMP=<RAM image from monitor=pmemsave> CR3=$(or $(CR3),0xf000)"; exit 2; }
+	@$(PYTHON) tools/xemu/hud-link.py "$(DUMP)" --cr3 $(or $(CR3),0xf000) --csv - -o inventory
+	@echo "wrote inventory/hud_console_link.csv"
 
 # PLAN 4.5's input: which functions belong to which module, and an address list per module for the exporter.
 module-split:
