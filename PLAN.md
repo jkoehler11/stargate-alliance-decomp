@@ -1159,6 +1159,31 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the player object is a stock `PlayerController`, and a slot is read only where its class declares it)
+
+- **#244's caveat is answered by two censuses, no boot: the guest's own player object is the stock `PlayerController`.**
+  `findcls.py --csv`'s class column is each object's own `Class` pointer through `GNames`, so `ghud1`/`ghud2` -- each
+  41,265 names, 48,646 array entries, 48,637 pointers walked over 347 pages, i.e. the same level-shaped boot as
+  #244's -- put `PlayerController0` at index 35,783 `0x01c31000` with class `PlayerController` (`0x00d9ae00`) and hold
+  **0** rows of `StargatePlayer` and **0** of `Pawn`. So `--class 0x00e47800` was not a wrong name: there is no row of
+  that class on this boot, and the three slots declared on `StargatePlayer` have no object to attach to.
+- **That is a fact about the offsets, and the instrument now refuses to paper over it.** `+0x1004`/`+0x1008`/`+0x100c`
+  are fields only on a class whose chain reaches `StargatePlayer`; on a stock `PlayerController` those dwords belong to
+  a neighbouring allocation and often read back as plausible object pointers -- the shape a garbage read takes when it
+  is reported as a live HUD. `sink-slots.py` resolves each slot's declaring class by name in the boot, checks it
+  against the row's `UStruct::Super` chain (`+0x28`) and prints `n/a` where the chain does not reach it; `+0x38c Pawn`
+  is on `Controller`, so it stays valid on every controller. `--class-from NAME` takes the row class off the guest's
+  own object, and `--census FILE --class-from NAME --want-class C` asks the same two questions of a saved census, so
+  the paragraph above is one command with no boot. All of it is in `--selftest` (`make ci`).
+- **What the sink read waits on is possession, not the level.** A `StargatePlayer` exists only once the game spawns the
+  mission's player controller; these boots stop at the mission-load screen with no `Pawn` row at all, so
+  `Controller+0x38c` has nothing to point at. The gate for the next read is `--expect Pawn=live` on `PlayerController0`
+  (`num=` stays the cheap pre-gate, but this boot passed it and still had no player of the slots' class). Six boot
+  attempts in this run did not reach that state: two were cut by the 75 s title window (`wait-stub 76s`, a cold
+  `hdd-val.qcow2` copy booting past it), and the two retries stalled after `window:` appeared with no further log line
+  (one before `step 1`, one at the 70 s wait after the mission-list presses) while `drive.py` noted X input focus was
+  on another window. The cause of the stalls was not measured, and a run may not take the owner's focus to find out.
+
 ### Execution notes (2026-11-08, a level boot held no `StargatePlayer` row, and the gate that says so)
 
 - **The `num=` gate is measured on both sides and costs one dword.** `names.py --at 0x006be0d8` read **41,265** on a

@@ -3798,3 +3798,49 @@ buys over `fields.py --instances --prop-name` is the three costs #243's note nam
 read (34,800 against 41,265), a walk in pages rather than in objects (347 reads against ~48,000, the ~6 minutes that
 note measured), and the two windows the four offsets allow -- `+0x1000..+0x1010` for the three adjacent sink fields
 and `+0x380..+0x390` for `Pawn`.
+
+## The guest's player object is a stock `PlayerController`, so three of the four slots are not fields on it (measured 2026-11-08, PLAN 7.3)
+
+**The caveat #244 left is answered, and the answer moves the blocker from the walk to the class.** #244 measured a
+level-shaped boot with **0** rows whose own `Class` was `StargatePlayer` and named its own limit: a subclass instance
+carries its own class pointer, so the walk proved "no `StargatePlayer` instance", not "no player controller". Two
+censuses already on disk settle it without a boot. `findcls.py --csv`'s `class` column is each object's own `Class`
+pointer resolved through `GNames`, and `sink-slots.py --census` asks the same two questions of one that a live boot
+would:
+
+    python3 tools/xemu/sink-slots.py --census $WORK/xemu/ghud1/cls.csv --class-from PlayerController0 \
+        --want-class StargatePlayer --want-class Pawn
+
+| census | names / array | object named `PlayerController0` | its own class | rows of `StargatePlayer` | rows of `Pawn` |
+|---|---|---|---|---|---|
+| `ghud1` | 41,265 / 48,646 | index 35,783, `0x01c31000` | `PlayerController` `0x00d9ae00` | 0 | 0 |
+| `ghud2` | 41,265 / 48,646 | index 35,783, `0x01c31000` | `PlayerController` `0x00d9ae00` | 0 | 0 |
+
+Both censuses are the same level-shaped boot as #244's (`findcls.log`: 48,637 plausible pointers walked over **347**
+pages, 47,742 named objects each). So the guest's player object is the **stock** `PlayerController`, not a
+`StargatePlayer` subclass: reading the slots with `--class 0x00e47800` was not the wrong class *name*, there is simply
+no row of that class on the boot.
+
+**That makes the offsets the problem, not the walk.** `+0x1004 NotificationManager`, `+0x1008 GameHudPtr` and
+`+0x100c commandInterfacePtr` are declared on `StargatePlayer`, so on a stock `PlayerController` they are not fields at
+all: the dwords there belong to whatever allocation sits beside the object, and on this heap that is usually a
+plausible object pointer -- the shape a garbage read takes when it is reported as a live HUD. `+0x38c Pawn` is the one
+slot that survives, because `Controller` declares it and every `PlayerController` is a `Controller`.
+
+**The instrument refuses the wrong read now instead of printing it.** `sink-slots.py` resolves each slot's declaring
+class by name in the boot, checks it against the row's own `UStruct::Super` chain (`+0x28`) and prints `n/a` for a slot
+whose declaring class the chain does not reach; `--class-from NAME` reads the row's class off the guest's own object
+(`PlayerController0`) rather than assuming one. `--selftest` covers the name lookup, the chain and the `n/a` gate in
+`make ci`, and `--census FILE` gives the table above with no boot.
+
+**What the sink read waits on is possession, not the level.** A `StargatePlayer` controller exists only once the game
+spawns the mission's player; these boots stop at the mission-load screen, where there is no `Pawn` row at all, so
+`Controller+0x38c` has nothing to point at. The gate for the next read is therefore `--expect Pawn=live` on
+`PlayerController0` -- `num=` (34,800 menu against 41,265 level) stays the cheap pre-gate, but it is not sufficient:
+this boot passed it and still had no player of the class the slots are declared on. Six boot attempts in this run did
+not reach that state: two were cut by the 75 s title window (`wait-stub 76s`, a cold `hdd-val.qcow2` copy booting past
+it), and the two retries stalled after `window:` appeared with no further log line (one before `step 1`, one at the
+70 s wait after the mission-list presses) while `drive.py` noted X input focus was on another window and would refuse
+XTEST there. The cause of the stalls was not measured; the desktop is in use by its owner and a run may not take the
+focus to find out. `tools/xemu/sink-slots.py --port P --class-from PlayerController0 --default 0x0682ab00 --expect
+Pawn=live` is the command the next boot that reaches a possessed controller should answer.
