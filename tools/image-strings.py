@@ -3,12 +3,19 @@
 
 Each subsystem in this image announces itself: LIPSinc logs through `[LIPSinc]:` lines, the package check carries
 `Packages.md5` and `PackageCheckInfo` (and still the `PackageCheckInfo.cpp` assert path), Karma carries `Karma*` strings
-and `KarmaSupport.cpp`. This finds the strings, attributes each `push` to the function containing it, walks callers
-where the question needs it, and writes one artifact per topic.
+and `KarmaSupport.cpp`, and the console's one readable output carries `cur FPS` / `avg FPS`. This finds the strings,
+attributes each `push` to the function containing it, walks callers where the question needs it, and writes one
+artifact per topic.
+
+A needle is a substring, so the address it is found at is *not* the address the code pushes (`cur FPS` sits at
+`0x0051f35e`, eight bytes into `%u cur FPS` at `0x0051f358`). `needles()` therefore resolves every hit back to the
+first character of its string -- without that, a topic whose needle is a suffix of the pushed literal reports zero
+pushers, which reads as "nothing in the code uses this string" rather than "the search looked at the wrong address".
 
     python3 tools/image-strings.py --topic lipsinc        --xbe DUMP/.../default.xbe -o inventory
     python3 tools/image-strings.py --topic package-check  --xbe DUMP/.../default.xbe -o inventory --callers
     python3 tools/image-strings.py --topic karma          --xbe DUMP/.../default.xbe -o inventory
+    python3 tools/image-strings.py --topic stat-fps       --xbe DUMP/.../default.xbe -o inventory
     python3 tools/image-strings.py --check                # every committed artifact, dump-free (in `make ci`)
 
 A topic is a table entry, not a copy of this file: it names the artifacts, the needles, the columns and how to decide a
@@ -52,6 +59,17 @@ TOPICS = {
         "strip": "",
         "columns": ["address", "size", "name", "evidence", "callers"],
         "callers": True,
+        "name_rule": None,
+    },
+    # PLAN 7.3's last question: what draws the console's one readable output. Both formats are UTF-16 in the
+    # code section's own `.rdata`, and both are `push`ed, so this topic needs no boot -- see docs/XEMU.md.
+    "stat-fps": {
+        "artifact": "stat_fps_render.csv",
+        "needles": ("cur FPS", "avg FPS"),
+        "strip": "",
+        "columns": ["address", "size", "name", "evidence", "callers"],
+        "callers": True,
+        "caller_names": True,
         "name_rule": None,
     },
 }
@@ -101,8 +119,34 @@ class Image:
             off += step
         return "".join(out)
 
+    def string_start(self, va, wide):
+        """The address of the first character of the string a needle hit landed inside.
+
+        A needle may be a suffix of the pushed literal (`cur FPS` sits inside `%u cur FPS`), while `push imm32`
+        names the first character -- so a hit is walked back to the terminator behind it. The 256-unit cap keeps a
+        needle found in a run of unterminated data from walking back to the start of the section; a non-printable
+        unit stops the walk for the same reason (these literals are ASCII, stored wide).
+        """
+        off = self.off_of(va)
+        if off is None:
+            return va
+        step = 2 if wide else 1
+        for _ in range(256):
+            prev = off - step
+            if prev < 0:
+                break
+            unit = self.data[prev:prev + step]
+            if unit == b"\x00" * step:
+                break
+            char = unit.decode("utf-16-le" if wide else "latin1", "replace")
+            if char < " " or char > "~":
+                break
+            off = prev
+        back = self.va_of(off)
+        return va if back is None else back
+
     def needles(self, needles):
-        """{va: text} for every string occurrence, ascii and utf-16."""
+        """{string start va: text} for every string occurrence, ascii and utf-16."""
         found = {}
         for needle in needles:
             for enc, wide in (("ascii", False), ("utf-16-le", True)):
@@ -114,7 +158,8 @@ class Image:
                         break
                     va = self.va_of(i)
                     if va is not None:
-                        found[va] = self.string_at(va, wide)
+                        first = self.string_start(va, wide)
+                        found[first] = self.string_at(first, wide)
                     start = i + 1
         return found
 
@@ -202,7 +247,10 @@ def build(topic_name, xbe_path):
             row["proposed_name"] = propose_lipsinc(texts)
         if topic.get("callers"):
             callers = sorted(first.get(f, set()))
-            row["callers"] = " ".join("0x%08x" % c for c in callers[:6])
+            if topic.get("caller_names"):
+                row["callers"] = " ".join("0x%08x %s" % (c, image.funcs.get(c, (0, "?"))[1]) for c in callers[:6])
+            else:
+                row["callers"] = " ".join("0x%08x" % c for c in callers[:6])
             if topic.get("depth2"):
                 row["depth2"] = " ".join("0x%08x" % g for g in sorted(second.get(f, set()))[:6])
                 chain = callers + sorted(second.get(f, set()))

@@ -3523,3 +3523,58 @@ typing half is checkable with no boot at all (`SG1_DRY_RUN=1` prints the key lis
 passed the command as a single `gkey` step -- `for k in hist` is one step named `hist`, which `drive.py`
 refuses -- so it would have typed nothing and read a clean-looking negative, which is why the dry run
 exists.
+
+## What draws `stat fps`: a native format string, one function, and a script that never mentions it (measured 2026-11-08, PLAN 7.3)
+
+The console's one readable output is the FPS counter -- `stat fps` drew `60 cur FPS` / `59 avg FPS` in `seq13` and
+`64`/`60` in `seq14`. No boot is needed to name the draw: both lines are built from two UTF-16 literals in the code
+section's own `.rdata` (the image's first section covers `0x00011000`-`0x00419100`, so `0x0051f358` is inside it), and
+both addresses are pushed as immediates.
+
+| literal | address | what pushes it |
+|---|---|---|
+| `%u cur FPS` | `0x0051f358` | `0x00256405`, `0x002564e5` (`68 58 f3 51 00`) |
+| `%u avg FPS` | `0x0051f374` | `0x0025635a` (`68 74 f3 51 00`) |
+
+All three push sites are inside **one** function, `0x00256280`, and that function has exactly one caller in the image:
+`0x001daed0` **`Engine_UnRender`** (`symbols/xbox_functions.csv`, 4,081 bytes). `make stat-fps` writes the census as
+`inventory/stat_fps_render.csv`:
+
+```
+address,size,name,evidence,callers
+0x00256280,38716,FUN_00256280,%u avg FPS | %u cur FPS,0x001daed0 Engine_UnRender
+```
+
+The `size` column is the symbol map's span to the next analysed entry, not a measured extent -- `0x00256280` opens
+with an SEH frame (`and $0xfffffff8,%esp` / `push $0xffffffff` / handler `0x00405d5c` / `sub $0x7e0,%esp`) and the three
+refs all land below `0x002564f0`, inside that frame's body.
+
+**The shape of the draw, from the bytes.** Each line is formatted with a `printf`-style helper, `FUN_00059180`
+(82 bytes), called at `0x00256376`, `0x00256413` and `0x002564f0` with the wide format and an integer argument that is
+itself a `cvttss2si` of a float (`0x00256344`, `0x0025636d`) -- so the counter is a float frame rate truncated to the
+`%u` the format asks for. The formatted string is then handed to a virtual call through the object at `(%esi)`:
+`call *0x90(%ecx)` at `0x002563ca` and `call *0x98(%edx)` at `0x00256440`, with X/Y scale written at `+0x4c`/`+0x50`
+and a four-byte colour at `+0x60`. **The colour is chosen from the counter's own value**: `cmp $0x14,%ebx` (20),
+`cmp $0x1e` (30), `cmp $0x28` (40) at `0x0025645d`, `0x0025646e`, `0x00256490` select one of three colours before the
+`cur` line is drawn and again before the `avg` line.
+
+**Script never touches it, and that is the answer 7.3 wanted.** All 2,319 classes' `ScriptText` were searched
+(`~/sg1/work/source-tree`): `cur FPS` and `avg FPS` appear in **none**, and the only case-insensitive `fps` matches are
+129 files containing `#ifdefPS2` (the `fPS` of `ifdefPS2`), i.e. false positives. `stat` is declared in neither script
+source (`inventory/console_commands.csv`: 336 `exec` declarations over 37 scopes, `stat` not among them). So `stat fps`
+is native end to end -- command, counter and draw -- and no script-side hook can turn it into a console output channel.
+Script can draw arbitrary text (`Canvas.DrawText` is used by `Engine/AIController.uc`), so a second readable output has
+to be named in script or measured in the guest, not derived from this one.
+
+**The instrument had to be fixed to see any of it, and the failure is the reusable part.** `tools/image-strings.py`
+attributes a string to the function that `push imm32`s it, but it searched for the needle's address -- and a needle is
+a substring: `cur FPS` is found at `0x0051f35e`, three wide characters into the literal at `0x0051f358`, so the pre-fix
+scan reported **zero pushers for a string the code pushes three times**, which reads as "the renderer does not use this
+string" rather than "the search looked at the wrong address". `Image.string_start()` now walks a hit back to the first
+character of its string (bounded, printable-only), and the topic's evidence is the whole format (`%u cur FPS`).
+The three existing topics re-check unchanged (`--check`: karma 8, lipsinc 19, package-check 6).
+
+**Next**: whether the HUD's prompt should have drawn on the stock disc at all is decided by the guest's own
+`bTyping`/`PlayerConsole` -- read `PlayerController.Player.Console` and `Console.bTyping` after a `tab` in one boot
+(`tools/xemu/console-receipt.sh` already boots to the submit; the pointer chain is `tools/xemu/fields.py`'s). That is
+the one measurement standing between 7.3 and a named cause.

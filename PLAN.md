@@ -1137,6 +1137,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       **Next**: the same script-text route names what draws the one readable output (`stat fps`'s `60 cur FPS`), which
       would give the console a second proven output channel; the receiver is a HUD function, one grep away.
       Instrument: `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
+      **Measured 2026-11-08, no boot:** there is no receiver in script. `%u cur FPS` (`0x0051f358`) and `%u avg FPS`
+      (`0x0051f374`) are UTF-16 literals in the code section's own `.rdata`, pushed at `0x0025635a`, `0x00256405` and
+      `0x002564e5`, all inside one function `0x00256280` whose only caller is `Engine_UnRender` (`0x001daed0`) --
+      `inventory/stat_fps_render.csv` (`tools/image-strings.py --topic stat-fps`). All 2,319 classes were searched:
+      neither literal appears, and the 129 case-insensitive `fps` hits are `#ifdefPS2`. So `stat fps` is native end to
+      end (command, counter, draw) and cannot be a script output channel. **Next**: the guest's own `bTyping` -- read
+      `PlayerController.Player.Console` and `Console.bTyping` after a `tab` in one boot -- decides whether the HUD's
+      prompt should have drawn at all; instrument `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
+
+### Execution notes (2026-11-08, `stat fps` is native end to end, and the scanner was reading the wrong address)
+
+- **The one readable output has a native owner, and script never names it** (measured 2026-11-08, no boot):
+  `tools/image-strings.py --topic stat-fps` (`make stat-fps`) finds `%u cur FPS` / `%u avg FPS` and attributes both to
+  **one** function, `0x00256280`, whose only caller in the image is `Engine_UnRender` (`0x001daed0`, 4,081 bytes).
+  All three `push` sites (`0x0025635a`, `0x00256405`, `0x002564e5`) are inside that function's SEH frame body. The
+  counter is a float truncated by `cvttss2si` and formatted by `FUN_00059180` (82 bytes), then drawn through virtual
+  slots `+0x90`/`+0x98` of the object at `(%esi)` with X/Y at `+0x4c`/`+0x50`, a colour at `+0x60`, and the colour
+  switched on the counter's own value at 20/30/40 (`cmp $0x14/$0x1e/$0x28` at `0x0025645d`/`0x0025646e`/`0x00256490`).
+  Script text: 0 of 2,319 classes carry either literal (the 129 `fps` hits are `#ifdefPS2`), and `stat` is not among
+  the 336 `exec` declarations -- so the console's single readable output is closed to script, which is why a second
+  output channel has to come from script (`Canvas.DrawText` is available: `Engine/AIController.uc`) or from the guest.
+- **The scanner's needle was matching a substring, so it read zero for a string the code pushes three times**: `cur FPS`
+  is found at `0x0051f35e`, three wide characters into the literal at `0x0051f358`, while `push imm32` names the first
+  character. `Image.string_start()` now walks a hit back to its string's first character (bounded at 256 units,
+  printable-only), and the topic's evidence is the whole format. The three older topics are unchanged (`--check`:
+  karma 8, lipsinc 19, package-check 6) and `inventory/stat_fps_render.csv` is the new artifact.
 
 ### Execution notes (2026-11-08, the console line is drawn by the HUD, and a class table carries native dispatch only)
 
