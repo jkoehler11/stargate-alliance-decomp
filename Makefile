@@ -503,6 +503,11 @@ karma-runtime:
 	@$(PYTHON) tools/image-strings.py --topic karma --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/karma_runtime.csv"
 
+# PLAN 7.3's last question: what draws `stat fps`, the console's one readable output. No boot; docs/XEMU.md.
+stat-fps:
+	@$(PYTHON) tools/image-strings.py --topic stat-fps --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/stat_fps_render.csv"
+
 # PLAN 4.5's input: which functions belong to which module, and an address list per module for the exporter.
 module-split:
 	@$(PYTHON) tools/module-split.py
