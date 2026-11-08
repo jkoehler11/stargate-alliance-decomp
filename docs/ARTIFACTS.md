@@ -19,6 +19,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 13 | `make class-reach` |
 | `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
+| `inventory/class_virtual_overrides.csv` | 1145 | 14 | `make class-overrides` |
 | `inventory/classes.csv` | 2319 | 15 | `make help` |
 | `inventory/compile_readiness.csv` | 2319 | 10 | `make compile-readiness` |
 | `inventory/compile_readiness_by_package.csv` | 18 | 7 | `make compile-readiness` |
@@ -81,8 +82,8 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/xbe_assert_residual.csv` | 6 | 9 | `make assert-residual` |
 | `inventory/xbe_block_seeds.csv` | 26 | 4 | `make ci` |
 | `inventory/xbe_class_table_names.csv` | 492 | 8 | `make ci` |
-| `inventory/xbe_class_table_slots.csv` | 159 | 6 | `make class-tables` |
-| `inventory/xbe_class_tables.csv` | 492 | 8 | `make serialize-slots` |
+| `inventory/xbe_class_table_slots.csv` | 159 | 6 | `make class-overrides` |
+| `inventory/xbe_class_tables.csv` | 492 | 8 | `make class-overrides` |
 | `inventory/xbe_functions_by_module.csv` | 16 | 5 | `make ci` |
 | `inventory/xbe_game_modules.csv` | 43 | 7 | `make game-modules` |
 | `inventory/xbe_gap_seeds.csv` | 12 | 4 | `make ghidra` |
@@ -93,5 +94,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-86 artifacts, 115344 rows in total. 0 with no generator.
+87 artifacts, 116489 rows in total. 0 with no generator.
 

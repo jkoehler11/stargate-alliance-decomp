@@ -1123,9 +1123,46 @@ are limited to expected fields (checksum/timestamp) and documented.
       -- control and receipt are the same object, 20 s apart. The address is per-boot heap (`plr3`'s `0x02344b00`
       is unrelated bytes here), and `Engine.Console` has no `PostRender` row in the binary either, so the "no
       `PostRender` therefore no picture" inference is retired: the engine draws it and the swap's tell is the
-      pre-filled `Say `. **Next**: name that draw by translating `0x0050cb80` and `0x0050c880` through `vamap.py`
-      and diffing the slots -- one dump-side read, no boot. Instrument: `tools/xemu/console-receipt.sh OUTDIR
-      [COMMAND]`.
+      pre-filled `Say `. **Measured 2026-11-08: the draw is `Engine.HUD.PostRender`, and no `Console` virtual is
+      involved** (script text on the disc; no boot). `Engine/HUD.uc:299` is `simulated event PostRender( canvas
+      Canvas )`, lines 424-425 call `DrawTypingPrompt(Canvas, PlayerConsole.TypedStr, PlayerConsole.TypedStrPos)` while
+      `PlayerConsole.bTyping`, and line 629 composes the prompt from the two-byte literal `"(>"`, a `chr(4)` caret and a
+      trailing `_` only at the end of the line -- so the earlier scan for the byte pair `(> ` had nothing to find.
+      `PlayerConsole` is `HUD`'s own `var() Console`, linked from `PlayerOwner.Player.Console`; `StargateHUD`,
+      `GoauldConsoleHud` and `ReplicatorHUD` all extend `HUD` and none overrides `PostRender`, so every HUD class
+      reaches one draw. The route the previous note named is measured and closed: `inventory/class_virtual_overrides.csv`
+      (`tools/class-overrides.py`) diffs all 492 tables against their parent's, and `Console` (`0x0050cb80`) vs
+      `Interaction` (`0x0050c880`) differ on slot 3 alone -- the per-class slot that differs in all 492 -- while
+      `Interaction`'s `PreRender`/`PostRender` slots are `c2 04 00` stubs; a script override never reaches the table.
+      **Next**: the same script-text route names what draws the one readable output (`stat fps`'s `60 cur FPS`), which
+      would give the console a second proven output channel; the receiver is a HUD function, one grep away.
+      Instrument: `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
+
+### Execution notes (2026-11-08, the console line is drawn by the HUD, and a class table carries native dispatch only)
+
+- **The draw is `Engine.HUD.PostRender` and the console is not in the path** (measured 2026-11-08 off the disc's own
+  script text, no boot): `HUD.uc:299` declares `simulated event PostRender( canvas Canvas )`, line 424 reads
+  `if ((PlayerConsole != None) && PlayerConsole.bTyping)`, line 425 calls
+  `DrawTypingPrompt(Canvas, PlayerConsole.TypedStr, PlayerConsole.TypedStrPos)`, and `DrawTypingPrompt` (629) draws
+  `"(>"@Left(Text, Pos)$chr(4)$Eval(Pos < Len(Text), Mid(Text, Pos), "_")` in `ConsoleColor` at `ConsoleMessagePosX/Y`.
+  Three earlier readings fall out of that one body: the prompt literal is `"(>"` joined by `@`, so a scan for the byte
+  pair `(> ` had nothing to find; the caret is `chr(4)` and the `_` appears only at the end of the line; and the colour
+  is a HUD `var() Color`, which is what `console-line.py` counts as cyan pixels. `PlayerConsole` is the HUD's own
+  `var() Console` (27), linked in `LinkActors` from `PlayerOwner.Player.Console` (683); `StargateHUD`,
+  `GoauldConsoleHud` and `ReplicatorHUD` extend `HUD` and none of them overrides `PostRender`.
+- **`tools/class-overrides.py` is the census the question wanted, and its answer was a negative** (`make
+  class-overrides`, artifact `inventory/class_virtual_overrides.csv`): 302 parent/child pairs resolve out of 492
+  tables, 200 classes override 658 slots, 102 override nothing but slot 3, and 39 add 185 slots. `Console` and
+  `Interaction` are both 36 slots and identical except slot 3 -- the per-class slot -- although `Console.uc` overrides
+  five of Interaction's functions. **A script override never reaches the table**: the six slots Interaction adds are
+  one real body (`0x0014f790`) and five two-instruction stubs whose `ret` immediates match `KeyType`/`KeyEvent`/
+  `PreRender`/`PostRender`/`Tick` (`33 c0 c2 08 00`, `33 c0 c2 0c 00`, three `c2 04 00`), and subclasses inherit
+  those same addresses. So no vtable diff can name a script draw, which is why the `vamap.py` route the previous note
+  proposed was the wrong instrument rather than an unfinished one.
+- **`vamap.py` was never needed for this**: the tables are image `.rdata` at their virtual addresses, so the read is
+  the image file, not a physical dump. The earlier attempt read a 128 MiB RAM dump at `0x0050cb80` and got bytecode
+  because that is a linear address the page tables have to translate; `tools/class-overrides.py --class Console` reads
+  the same table out of `default.xbe` in one pass.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

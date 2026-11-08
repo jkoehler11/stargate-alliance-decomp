@@ -3504,10 +3504,18 @@ picture: this build draws the typed line anyway. The 2026-11-06 inference -- no 
 therefore a drawn line means the swapped image -- is retired; the swap's real tell is the pre-filled `Say `
 (`(>Say at fps_`), which `(> hist_` does not carry. What draws it is engine-side and unnamed.
 
-**What would name it:** the `Console` (`0x0050cb80`) and `Interaction` (`0x0050c880`) tables read as bytecode
-straight out of a physical dump (`144d8be8 f53bd3e8 ...` at both), so the vtable diff has to translate first:
-`vamap.py` the two table addresses through the dump's `CR3`, diff the slots, and the slot where `Console` departs
-from `Interaction` is the draw. One dump-side read, no boot.
+**Named 2026-11-08: the draw is `Engine.HUD.PostRender`, and no `Console` virtual is involved.**
+`Engine/HUD.uc:299` is `simulated event PostRender( canvas Canvas )`; lines 424-425 call
+`DrawTypingPrompt(Canvas, PlayerConsole.TypedStr, PlayerConsole.TypedStrPos)` while `PlayerConsole.bTyping`, and
+`DrawTypingPrompt` (line 629) draws `"(>"@Left(Text, Pos)$chr(4)$...` in `ConsoleColor` at `ConsoleMessagePosX/Y` --
+the literal is `"(>"`, not `(> `, which is why no package string scan could find it. `PlayerConsole` is the HUD's own
+`var() Console` linked from `PlayerOwner.Player.Console`, and no HUD subclass in the build overrides `PostRender`.
+
+**The vtable route this paragraph used to name is measured and closed.** The two tables are image `.rdata`, so they need
+no `vamap` translation and no boot: `tools/class-overrides.py --class Console` prints both, and they are **36 slots each
+and identical except slot 3**, the per-class slot that differs in all 492 tables, although `Console.uc` overrides five of
+Interaction's functions. A class table carries native dispatch only -- `Interaction`'s own `PreRender`/`PostRender` slots
+are `c2 04 00` stubs -- so no vtable diff can name a script-side draw. Artifact: `inventory/class_virtual_overrides.csv`.
 
 **Costs.** One boot, 4 m 40 s from launch to the post-dump; the two dumps are 128 MiB each and
 `tools/xemu/console-receipt.sh OUTDIR [COMMAND]` reproduces the whole thing and prints both states. Its
