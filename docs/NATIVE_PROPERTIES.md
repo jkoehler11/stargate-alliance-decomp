@@ -306,3 +306,47 @@ Two lessons a consumer inherits. **An object has no serialized size**, so a fiel
 window that is safe on the default reads four neighbours on the live HUD. And **a scalar default is not a layout**:
 `1` and `1.0` are the commonest dwords an object holds, so a single hit proves nothing and a *run* of one value at
 consecutive offsets is the weakest shape worth calling a measurement, which is why `--find` prints runs.
+
+## 9. A `UProperty` is an object in `GObjObjects`, and `Offset` is a runtime field (measured 2026-11-08)
+
+A class's declared fields are **not** reachable from its class object. `GameHud` (`0x01886c00`, identity re-read
+this boot) holds, in its first `0x1400` bytes, `Super` at `+0x28` (the chain reads `GameHud` -> `Interaction` ->
+`Interactions` -> `Object`, three links), its own meta-class `Class` at `+0x624`, a `Landed` override at `+0xd74`,
+and a `Function` (`PlayHUDSound`) at `+0x3c` — the offset the native reader (`0x0003bdc0`) calls `Children`, whose
+`Next` chain stops after that one link. Every other dword in the window is a scalar, a zero, or a class pointer:
+`tools/xemu/fields.py --object 0x01886c00 --bytes 0x28,0x48` prints the window, and a scan that walks each dword as
+a candidate `Children` head and follows `+0x28` as `Next` finds **no** chain of field objects at all (the longest
+are the `Super` chain and the `Function` tails). Two corrections follow from that one read:
+
+- **`+0x28` on a class object is `Super`, not `UField::Next`.** The measurement is the chain itself: three links
+  ending at `Object`. `NEXT_OFF` stays right for a `UProperty` (it is what `find_field_chain` follows), but a
+  class's parent is at the same offset, so a scan that treats `+0x28` as `Next` reports the parent class as a
+  "field chain of 3".
+- **`--prop-name`-style naming off the class object cannot work here.** `UITextBox`'s class object gave the same
+  shape earlier (one link, `EatStr`, a `Function`), and the scan accepted it only because "every link ends in
+  `Property`" holds vacuously for a one-link chain.
+
+What *is* true is that a `UProperty` is an ordinary object: it has a name, a `Class` whose name ends in `Property`,
+and an `Outer` that names the class declaring it. So the object array is the index, and `fields.py --prop-index`
+reads it:
+
+    # which classes declare `DisplayText`, and does any of them sit on UITextBox's `Super` chain?
+    python3 tools/xemu/fields.py --port PORT --at 0x006be0d8 --object 0x00bcea00 \
+        --prop-index DisplayText,TextFontScale --prop-up --prop-at 0x2c --prop-in <live window>
+
+`--prop-up` walks `Super` (at `+0x28`) from `--object`'s class, so an inherited field resolves for a subclass's
+instance. The first hit measured on this route is `DisplayText` at index 1647 (`StrProperty`, `Outer`
+`SGInteraction`) — a different class than the `UIWidget` field U15 wants, which is exactly why the `Outer` /
+ancestor test is part of the tool rather than a name match.
+
+**`Offset` is not serialized.** The package carries the property's name, kind and flags; the linker writes the
+offset into the live object. The dword position is calibrated against a value this project already read off an
+object's bytes: `GameHud`'s class default holds the declared `SkipMatineeTextString` `FString` at `+0x258`, so the
+position inside that `UProperty` object whose dword is `0x258` is `Offset` for every property. `--prop-at` takes
+that position and `--prop-in` the instance to read.
+
+**What this run did not finish.** The array walk that finds the properties takes minutes (each object's header is
+a page read, and `GObjObjects` holds 48,646 entries on this boot), so the calibration window and the live
+`DisplayText` read were not in hand when this note was written. `--prop-index`, `--prop-outer`, `--prop-up` and the
+selftest are in; the numbers they produce (`Offset`, the live `NotificationWindow`'s `FString` count) are the next
+read, and the negative is that the class-object route is closed.

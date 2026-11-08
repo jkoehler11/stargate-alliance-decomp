@@ -60,6 +60,7 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 NAMES_PY = os.path.join(HERE, "names.py")
 
 NEXT_OFF = 0x28              # UField::Next, the link UStruct::Serialize walks (docs/NATIVE_VM.md)
+SUPER_OFF = 0x28             # UStruct::Super on this build (measured 2026-11-08: GameHud -> Interaction -> Interactions -> Object)
 NAME_OFF = 0x20              # UObject::Name, an FName index (names.py --verify)
 CLASS_OFF = 0x24             # UObject::Class, a UClass object (names.py --verify)
 OUTER_OFF = 0x18             # UObject::Outer (PLAN 4.3 census notes: a class object's `+0x18` names its package)
@@ -452,6 +453,47 @@ def find_prop(chain, name):
     return None
 
 
+def find_declared(r, cls, name, limit=0x1400, depth=8):
+    """`([(class_addr, class_kind, class_name)], [(class_addr, member_off, addr, name, kind)], match)`.
+
+    A class object's declared fields are the objects its member dwords point at, and each one names its *declaring*
+    class in `Outer` -- so a name match is checked against `Outer` instead of trusted, which is what keeps a
+    `Function` with the same name (`UITextBox.EatStr`) from passing for a property. Inheritance is `Super` at
+    `+0x2c`, walked here because the `Children`-shape scan cannot see a parent's fields: `UITextBox`'s own chain is
+    one link, so `DisplayText` (a `UIWidget` field) is not in it (measured 2026-11-08).
+
+    `limit` must cover the member area the class object uses: `GameHud`'s fields run to `+0x63c`-class offsets, so
+    the default window is `0x1400`, not the `0x400` header a `DefaultObject` search wanted.
+    """
+    want = (name or "").lower()
+    seen, hits, found = [], [], None
+    while cls and depth > 0:
+        got = r.object(cls)
+        if not got:
+            break
+        seen.append((cls, got[0], got[1]))
+        for off in range(NEXT_OFF, limit, 4):
+            value = r.try_u32(cls + off)
+            if value is None:
+                break
+            obj = r.object(value)
+            if not obj or not (obj[0] or "").endswith(PROPERTY_SUFFIX):
+                continue
+            if (obj[1] or "").lower() != want:
+                continue
+            if r.try_u32(value + OUTER_OFF) != cls:
+                continue                      # a same-named field of some other class, not this one's
+            hits.append((cls, off, value, obj[1], obj[0]))
+            if found is None:
+                found = (cls, off, value, obj[1], obj[0])
+        nxt = r.try_u32(cls + SUPER_OFF)
+        if not nxt or nxt in [a for a, _k, _n in seen]:
+            break
+        cls = nxt
+        depth -= 1
+    return seen, hits, found
+
+
 def prop_offset(r, prop, at):
     """The dword at `at` inside a `UProperty` object, read as the linker's `Offset` once `at` is calibrated.
 
@@ -609,6 +651,33 @@ def cmd_object(r, args):
             print("    +%#05x %s" % (o, a.get(o, "no pointer")))
             print("             %s" % b.get(o, "no pointer"))
         return
+    if args.prop_name:
+        seen, hits, found = find_declared(r, cls, args.prop_name, args.scan)
+        print("  super chain of class %#010x: %s" % (
+            cls, " -> ".join("`%s` %#010x" % (n or "?", a) for a, _k, n in seen) or "none"))
+        print("  %d declared `%s` propert%s with `Outer` = its class:" % (
+            len(hits), args.prop_name, "y" if len(hits) == 1 else "ies"))
+        for klass, off, addr2, fname, kind in hits:
+            print("    class %#010x member +%#05x -> %s `%s` at %#010x" % (klass, off, kind, fname, addr2))
+        if not found:
+            print("  no property named `%s` in the chain: name it from the object array instead" %
+                  args.prop_name)
+        elif args.prop_at is None:
+            print("  --prop-at is needed to name its `Offset` dword")
+        else:
+            klass, mob, addr2, fname, kind = found
+            slot = prop_offset(r, addr2, args.prop_at)
+            target = args.prop_in or addr
+            print("  `%s` is %s at %#010x; dword at +%#x is %s" % (
+                fname, kind, addr2, args.prop_at,
+                "unreadable" if slot is None else "%#x" % slot))
+            if slot is not None:
+                print("  value slot %#x read out of %#010x:" % (slot, target))
+                for o, value, note in dump_window(r, target, slot, 0x10):
+                    if value is None:
+                        print("    +%#05x unreadable" % (o,))
+                        break
+                    print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
     if args.properties:
         off, chain = find_field_chain(r, cls, args.scan)
         print("  field chain head at class+%#x: %d fields" % (off or 0, len(chain)) if off
@@ -788,6 +857,41 @@ def selftest():
     if find_default(r, cls, 0x800) != default:
         print("selftest FAIL: the wide bound did not find the default object at +0x4e8")
         return 1
+    # A declared property is named by `Outer`, not by a chain's shape. `Text` is declared on the child, a
+    # `Function` of the same name sits beside it (census15's one-link "chain"), and `DisplayText` only exists on
+    # the parent that `Super` (+0x2c) reaches -- the exact `UITextBox`/`UIWidget` case of U15.
+    parent, child = 0x01001000, 0x01002000
+    textp, dispp, eatf = 0x02000300, 0x02000400, 0x02000500
+    mem4 = dict(mem)
+    mem4[child + SUPER_OFF] = parent
+    mem4[parent + SUPER_OFF] = 0
+    mem4[child + 0x600] = textp
+    mem4[child + 0x63c] = eatf
+    mem4[parent + 0x340] = dispp
+    mem4[textp + OUTER_OFF] = child
+    mem4[dispp + OUTER_OFF] = parent
+    mem4[eatf + OUTER_OFF] = child
+    objs4 = dict(objs)
+    objs4.update({parent: ("Class", "UIWidget"), child: ("Class", "UITextBox"),
+                  textp: ("StrProperty", "Text"), dispp: ("StrProperty", "DisplayText"),
+                  eatf: ("Function", "Text")})
+    r4 = FakeReader(mem4, objs4)
+    _seen, hits, found = find_declared(r4, child, "Text")
+    if not found or found[2] != textp or found[0] != child:
+        print("selftest FAIL: find_declared named `Text` as %r" % (found,))
+        return 1
+    if len(hits) != 1:
+        print("selftest FAIL: find_declared accepted %d `Text` rows; the same-named `Function` passed" %
+              len(hits))
+        return 1
+    _seen, _hits, found = find_declared(r4, child, "DisplayText")
+    if not found or found[2] != dispp or found[0] != parent:
+        print("selftest FAIL: find_declared did not reach `DisplayText` through `Super` (%r)" % (found,))
+        return 1
+    _seen, _hits, found = find_declared(r4, child, "NoSuchField")
+    if found is not None:
+        print("selftest FAIL: find_declared invented `NoSuchField`")
+        return 1
     # The instance walk: an object array with three entries, one of them a second instance of the class.
     # The page read is what makes it cheap, so the fake has to serve bytes rather than single dwords.
     arr, other = 0x04000000, 0x03001000
@@ -920,8 +1024,9 @@ def selftest():
         print("selftest FAIL: the value at a property's Offset did not read back: %r" % (row,))
         return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
-          " filters the object array by Class, a field window names the neighbour it crosses into, and a"
-          " declared name reaches its value slot through the linker's `Offset`")
+          " filters the object array by Class, a field window names the neighbour it crosses into, a declared"
+          " name is matched by `Outer` and reached through `Super`, and it reaches its value slot through the"
+          " linker's `Offset`")
     return 0
 
 
@@ -952,6 +1057,8 @@ def main():
     ap.add_argument("--prop-at", type=lambda v: int(v, 0), default=None,
                     help="with --prop-value: the dword position inside the UProperty object that holds `Offset` "
                          "(calibrated against an offset already measured off an object's bytes)")
+    ap.add_argument("--prop-name", default=None,
+                    help="name a declared property by walking the class object's members and its `Super` chain")
     ap.add_argument("--prop-in", type=lambda v: int(v, 0), default=None,
                     help="with --prop-value: read the value out of this instance instead of --object")
     ap.add_argument("--instances", action="store_true",
