@@ -817,6 +817,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-07, `GNames` is a `.data` triple that does not move, and a field window needs its extent)
+
+- **`names.py --find` costs more than it saves on a loaded level**: it scanned `.data` for **over fifteen minutes**
+  without printing a candidate (killed by hand), while `tools/xemu/gnames-find.py` reads the section in 64 KiB
+  chunks and finds the triple in seconds. Measured on `near12` (`census11`'s script, a mission): `GNames` triple
+  `0x006be0d8` -> `Data 0x07740000` / 41,265 / cap 51,886; `GObjObjects` triple `0x006c21b0` -> `Data 0x041e0000` /
+  48,646. The **triples are static and the arrays are not** (`census11` had `GNames` at `0x07730000`), so a stored
+  `--at` from a previous boot fails whole -- `read 0x7730000+0xc failed after 4 attempts` was this run's first
+  error, not a dead stub.
+- **`fields.py --near` is the instrument the two-`GameHud` question needed, and the question is still open.** A
+  `--diff` over `0x600` compares dwords past the object's own extent -- nothing readable states a size -- so
+  `--near` sorts the object array by address and names the object that starts at each boundary; `next - ADDR` is an
+  upper bound on the extent, and a `--selftest` covers it without a boot. **The measurement did not land**:
+  `near12` reached a mission (the `02-mission` frame differs from the title by 100,594 px) and the array read, but
+  the name walk that locates the instances was still running at the end of the budget. Next run:
+  `findcls.py --grep GameHud --at 0x006be0d8`, then `fields.py --near <both addresses> --size 0x600`.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

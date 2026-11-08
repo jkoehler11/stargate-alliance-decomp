@@ -36,10 +36,14 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # a *class* object's members past the UStruct header: `Children` heads and the default object
     python3 tools/xemu/fields.py --port 12345 --xbe ... --at 0x006be0d8 --object 0x01886c00 --members --size 0x800
 
+    # which objects occupy the bytes a field window covers -- the question a `--diff` cannot answer
+    python3 tools/xemu/fields.py --port 12345 --at 0x07730000 --near 0x0682ab00,0x09322100 --size 0x600
+
 Names are engine identifiers; field contents are game state, so nothing here is written to a file and text is only
 printed with `--show-text`.
 """
 import argparse
+import bisect
 import os
 import struct
 import sys
@@ -240,14 +244,13 @@ def array_membership(guest, data, num, targets, chunk=0x10000):
     return hits
 
 
-def walk_instances(r, cls, page=0x10000):
-    """[(index, address)] for every object in `GObjObjects` whose own `Class` pointer is `cls`.
+def walk_headers(r, page=0x10000):
+    """[(index, address)] for every plausible object pointer in `GObjObjects`, in array order.
 
-    A default object is an object like any other: nothing in the class object has to point at it, and its
-    own `Class` is the only thing that says which class it belongs to. So the question "how many instances
-    of this class are there" is a filter over the whole object array, and it is asked here the cheap way --
-    the array reads in chunks and each 64 KiB page of the heap reads **once**, with every header in it
-    parsed locally. Per-object reads are what made the named census 13 minutes: latency, not bytes.
+    The array reads in chunks and each 64 KiB page of the heap reads **once**, with every header in it parsed
+    locally. Per-object reads are what made the named census 13 minutes: latency, not bytes. This is the walk
+    every other question is a filter over -- a class filter (`walk_instances`) and an address-order view
+    (`span_rows`) are two readings of the same list, so a second question costs a local pass, not a second walk.
     """
     hits = []
     whole = r.objects_num * 4
@@ -263,20 +266,53 @@ def walk_instances(r, cls, page=0x10000):
             if names.plausible_object(value):
                 hits.append(((done + i * 4) // 4, value))
         done += take
-    pages = {}
-    for index, addr in hits:
-        pages.setdefault(addr & ~(page - 1), []).append((index, addr))
-    found = []
-    for base, objs in sorted(pages.items()):
-        blob = r.try_read(base, page)
-        if blob is None:
-            continue
-        for index, addr in objs:
-            off = addr - base
-            if off + CLASS_OFF + 4 <= len(blob):
-                if struct.unpack_from("<I", blob, off + CLASS_OFF)[0] == cls:
-                    found.append((index, addr))
-    return found
+    return hits
+
+
+def walk_instances(r, cls, page=0x10000):
+    """[(index, address)] for every object in `GObjObjects` whose own `Class` pointer is `cls`.
+
+    A default object is an object like any other: nothing in the class object has to point at it, and its
+    own `Class` is the only thing that says which class it belongs to. So the question "how many instances
+    of this class are there" is a filter over the whole object array, asked over `walk_headers` -- and the
+    class dword reads out of the page cache, so the filter costs no extra stub round trip.
+    """
+    return [(index, addr) for index, addr in walk_headers(r, page)
+            if r.try_u32(addr + CLASS_OFF) == cls]
+
+
+def span_rows(r, hits, targets, size):
+    """[(target, prev, rows)]: which objects occupy `[target, target+size)` in address order.
+
+    An object's *extent* is not stored anywhere this tool can read -- a `UObject` header carries no size, and
+    the class's `PropertiesSize` offset is not measured -- but the object array is address-ordered evidence
+    for it anyway: the next allocation above an object starts where that object ended (or later), so
+    `next - target` is an **upper bound** on the object's size, and every dword in a window past that bound
+    belongs to a different object rather than to a field.
+
+    That is the question a `--diff` over `--size` cannot answer: a sparse heap padded with recyclable gaps
+    makes a window read as "this object's fields" when the tail of it is the neighbour's header, its
+    property records or its own field block. `rows` names the occupier of every byte from `target` on, so a
+    field offset can be checked against a boundary instead of assumed to be inside.
+    """
+    ordered = sorted(hits, key=lambda t: t[1])
+    addrs = [a for _i, a in ordered]
+    out = []
+    for target in targets:
+        pos = bisect.bisect_left(addrs, target)
+        rows, end = [], target + size
+        for index, addr in ordered[pos:]:
+            if addr >= end:
+                break
+            got = r.object(addr)
+            rows.append((index, addr, got[0] if got else "?", got[1] if got else "?"))
+        prev = None
+        if pos:
+            index, addr = ordered[pos - 1]
+            got = r.object(addr)
+            prev = (index, addr, got[0] if got else "?", got[1] if got else "?")
+        out.append((target, prev, rows))
+    return out
 
 
 def find_field_chain(r, cls, limit=0x400):
@@ -348,6 +384,32 @@ def walk_fields(r, addr, size):
 
 
 SHOW_TEXT = [False]
+
+
+def cmd_near(r, args):
+    """Which object owns each byte of a field window, read off the object array's address order."""
+    hits = walk_headers(r)
+    if not hits:
+        raise SystemExit("GObjObjects read as no objects: check --objects")
+    for target, prev, rows in span_rows(r, hits, args.near, args.size):
+        got = r.object(target)
+        print("object %#010x: class `%s`%s" % (target, got[0] if got else "?",
+                                               " name `%s`" % got[1] if got and got[1] else ""))
+        if prev:
+            print("  below    index %-7d %#010x  -%#05x  class `%s` name `%s`" % (
+                prev[0], prev[1], target - prev[1], prev[2], prev[3] or "?"))
+        for index, addr, cname, oname in rows:
+            print("  %s index %-7d %#010x  +%#05x  class `%s` name `%s`" % (
+                "self " if addr == target else "cross", index, addr, addr - target,
+                cname, oname or "?"))
+        others = rows[1:]
+        if others:
+            print("  extent at most %#x: %d byte(s) of the window from +%#x belong to %d other object(s)" % (
+                others[0][1] - target, args.size - (others[0][1] - target), others[0][1] - target,
+                len(others)))
+        else:
+            print("  no other object starts inside the window: all %#x bytes are this object's or a gap"
+                  % args.size)
 
 
 def cmd_object(r, args):
@@ -497,8 +559,32 @@ def selftest():
     if [i for i, _a in found] != [0]:
         print("selftest FAIL: the instance walk lost the array index (%r)" % ([i for i, _a in found],))
         return 1
-    print("ok   fields: a class member past 0x400 resolves, the old bound missed it, and the instance walk"
-          " filters the object array by Class")
+    # The span rule: an object whose 0x600 field window runs into the next allocation at +0x300. That is the
+    # GameHud question -- a window that reads as "property records" when the tail belongs to a neighbour.
+    mid, after = 0x03002000, 0x03002300
+    mem3 = dict(mem2)
+    mem3[arr], mem3[arr + 4], mem3[arr + 8] = default, mid, after
+    mem3[mid + CLASS_OFF] = cls
+    mem3[after + CLASS_OFF] = 0x02000000
+    objs3 = dict(objs)
+    objs3.update({mid: ("GameHud", "GameHud"), after: ("ObjectProperty", "Canvas")})
+    r3 = FakeReader(mem3, objs3, arr, 3)
+    spans = span_rows(r3, walk_headers(r3), [mid], 0x600)
+    if not spans:
+        print("selftest FAIL: span_rows returned nothing")
+        return 1
+    _target, prev, rows = spans[0]
+    if [a for _i, a, _c, _n in rows] != [mid, after]:
+        print("selftest FAIL: span_rows saw %r in the window" % ([a for _i, a, _c, _n in rows],))
+        return 1
+    if rows[1][2] != "ObjectProperty" or rows[1][3] != "Canvas":
+        print("selftest FAIL: span_rows did not name the occupier past the boundary")
+        return 1
+    if prev is None or prev[1] != default:
+        print("selftest FAIL: span_rows lost the object below the target")
+        return 1
+    print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
+          " filters the object array by Class, and a field window names the neighbour it crosses into")
     return 0
 
 
@@ -528,6 +614,8 @@ def main():
     ap.add_argument("--limit", type=int, default=200, help="with --diff, how many differing offsets to print")
     ap.add_argument("--compare", action="store_true", help="find the class default and diff against it")
     ap.add_argument("--show-text", action="store_true", help="print array bytes that read as text (game state)")
+    ap.add_argument("--near", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
+                    help="for each comma-separated address, which objects occupy [ADDR, ADDR+--size)")
     args = ap.parse_args()
     SHOW_TEXT[0] = args.show_text
     if args.selftest:
@@ -536,15 +624,18 @@ def main():
         ap.error("--port is required: this tool reads a live guest")
     if args.at is None:
         ap.error("--at is required: pass the GNames address find_names.py measured on this boot")
-    if args.object is None:
-        ap.error("--object is required unless --selftest is given")
+    if args.object is None and not args.near:
+        ap.error("--object is required unless --selftest or --near is given")
 
     guest = names.Guest(args.host, args.port)
     try:
         data, num = names.name_table(guest, args)
         odata, onum = names.object_array(guest, args)
         r = Reader(guest, names.Names(guest, data, num), odata, onum)
-        cmd_object(r, args)
+        if args.near:
+            cmd_near(r, args)
+        else:
+            cmd_object(r, args)
     finally:
         guest.close()
 
