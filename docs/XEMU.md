@@ -3133,3 +3133,36 @@ calling every instance a default candidate.
 * `--selftest` covers the new rule without a boot: a three-entry object array whose first entry is the default.
 
 None of these read a value; the fields printed above are object pointers and resolved names.
+
+## Locating `GNames` in seconds, and an instrument for an object's extent (measured 2026-11-07)
+
+`names.py --find` validates its way through `.data`: on the `near12` boot (a mission, `census11`'s script) it ran
+**over fifteen minutes without printing a candidate** and was killed by hand. The triple it is looking for is in
+`.data` and reading that section whole is **2.2 MB in 64 KiB chunks, seconds**: `tools/xemu/gnames-find.py` reads
+the writable sections once, filters aligned `(Data, Num, Max)` triples by shape, and validates entry 0. Measured:
+
+| triple | `Data` | `Num` | `Cap` | entry 0 |
+|---|---|---|---|---|
+| `GNames` `0x006be0d8` | `0x07740000` | 41,265 | 51,886 | `0x0091ffd8`, index 0 (`None`) |
+| `GObjObjects` `0x006c21b0` | `0x041e0000` | 48,646 | 51,886 | `0x0097fa40` |
+
+**The triples do not move; the arrays do.** `census11`'s `GNames` data was `0x07730000` and this boot's is
+`0x07740000` -- one 64 KiB page higher -- which is why a previous boot's `Data` passed as `--at` fails whole
+(`read 0x7730000+0xc failed after 4 attempts`, measured here). `GObjObjects` landed on the same `0x041e0000`
+with the same 48,646 objects as `census11`, so that boot and this mission boot agree on the object count.
+
+### `--near`: which object owns the bytes a field window covers
+
+`fields.py --diff --size 0x600` compares dwords over a window that is **not** bounded by the object's size: a
+`UObject` header carries no size, and the class's `PropertiesSize` offset is not measured, so a window can run into
+the next allocation and read the neighbour's header, property records or field block as if they were this object's
+fields -- which is exactly the ambiguity the two-`GameHud` reading stalled on. `--near ADDR[,ADDR]` walks the
+object array once, sorts it by address, and names every object that starts inside `[ADDR, ADDR+--size)`, so
+`next - ADDR` is an **upper bound** on the extent and every dword past that bound belongs to somebody else.
+`--selftest` covers the rule without a boot, and `walk_headers` is now the single walk `--instances` and `--near`
+are both filters over.
+
+**Not measured yet**: the two `GameHud` objects. `near12` reached a mission (the `02-mission` frame differs from
+the title by 100,594 px) and the object array read at `0x041e0000`, but the name walk that locates the instances
+(`findcls.py --grep GameHud`) was still running when the run's budget ended. Next read:
+`fields.py --near <the two instances> --size 0x600`, then decode which of `+0x324..+0x470` is inside the object.
