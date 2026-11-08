@@ -27,6 +27,16 @@
 #                   and a swallowed press looks identical to a map that will not load -- measured, one index in six
 #                   failed that way in a six-index run, with the highlight frame still showing the main menu. Each
 #                   attempt is a fresh boot, and the TSV records how many it took.
+#   --sink-read     after a PASS, hold the guest (`--linger`) and read the four sink slots off the boot's own player
+#                   object with tools/xemu/sink-slots.py: `--gdb PORT` is then required, `--expect SLOT=STATE` is
+#                   passed through, and the read lands in `$dir/slots.txt`. The boot that proves the level also
+#                   answers what the level's player row holds, instead of spending a second boot on the read.
+#   --gdb PORT      GDB stub port for `--sink-read` (one port per boot, so two runs never share it).
+#   --linger SECS   how long the guest is held for the read (default 900).
+#   --expect S=V    an assertion for `--sink-read` (`--expect=Pawn=live`), passed through to sink-slots.py.
+#   --default ADDR  the address to mark as a class default in the read (`--default=0x0682ab00`, `GameHud`'s).
+#   --pad-hold SECS seconds a pad button is held (default 0.15 in drive.py; 0.35 is the value the 2026-11-06 run
+#                   reached `M00` with, and a swallowed press is the failure this project keeps hitting).
 # One run per index: a boot, `Continue`, N d-pad presses, `A`, a settle, one screenshot. Missions do not share an
 # emulator session because a level that fails to load leaves the guest in a state the next index cannot trust.
 set -eu
@@ -42,6 +52,12 @@ dry_run=0
 out=""
 indices=""
 names=""
+sink_read=0
+gdb=""
+linger=900
+expect=""
+slot_default=""
+pad_hold=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --iso=*) iso=${1#*=}; shift ;;
@@ -55,6 +71,17 @@ while [ $# -gt 0 ]; do
     --name=*) names="$names ${1#*=}"; shift ;;
     --name) names="$names $2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
+    --sink-read) sink_read=1; shift ;;
+    --gdb=*) gdb=${1#*=}; shift ;;
+    --linger=*) linger=${1#*=}; shift ;;
+    --expect=*) expect="$expect ${1#*=}"; shift ;;
+    --default=*) slot_default=${1#*=}; shift ;;
+    --pad-hold=*) pad_hold=${1#*=}; shift ;;
+    --gdb) gdb="$2"; shift 2 ;;
+    --linger) linger="$2"; shift 2 ;;
+    --expect) expect="$expect $2"; shift 2 ;;
+    --default) slot_default="$2"; shift 2 ;;
+    --pad-hold) pad_hold="$2"; shift 2 ;;
     --iso) iso="$2"; shift 2 ;;
     --bios) bios="$2"; shift 2 ;;
     --hdd) hdd="$2"; shift 2 ;;
@@ -75,6 +102,7 @@ if [ -n "$names" ]; then
   done
 fi
 [ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...] | --all" >&2; exit 2; }
+[ "$sink_read" = 1 ] && [ -z "$gdb" ] && { echo "--sink-read needs --gdb PORT: the read happens over the boot's own stub" >&2; exit 2; }
 if [ "$dry_run" = 1 ]; then
   echo "$(echo $indices | wc -w | tr -d ' ') indices, one boot each:"
   echo "$indices"
@@ -99,6 +127,8 @@ for index in $indices; do
   cp --reflink=auto "$hdd" "$dir/hdd.qcow2"
   args="--iso=$iso --bios=$bios --hdd=$dir/hdd.qcow2 --out=$dir --eeprom=$eeprom"
   args="$args --fuzz=10 --seconds=$boot --crop=480x520+760+210"
+  if [ -n "$pad_hold" ]; then args="$args --pad-hold=$pad_hold"; fi
+  if [ "$sink_read" = 1 ]; then args="$args --gdb=$gdb --linger=$linger"; fi
   set -- --step=shot=00-title --step=noise=3 --step=pad=a --step=wait=4
   i=0
   while [ "$i" -lt "$index" ]; do
@@ -110,11 +140,45 @@ for index in $indices; do
   ok=0
   while [ "$attempt" -le "$retries" ]; do
     echo "index $index: attempt $attempt of $retries, booting, $index d-pad presses, then select"
-    if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" python3 tools/xemu/drive.py $args "$@" ) \
-         > "$dir/run.log" 2>&1; then
-      ok=1
-      break
+    if [ "$sink_read" = 1 ]; then
+      # `--linger` makes drive.py sleep with the guest up and kill it on exit, so the read has to happen while it
+      # sleeps: run the sequence in the background and wait for the line that says every step finished.
+      ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" \
+          python3 -u tools/xemu/drive.py $args "$@" ) > "$dir/run.log" 2>&1 &
+      dpid=$!
+      n=0
+      while [ "$n" -lt 900 ]; do
+        grep -q "lingering" "$dir/run.log" 2>/dev/null && break
+        kill -0 "$dpid" 2>/dev/null || break
+        sleep 2
+        n=$((n+1))
+      done
+      if grep -q "lingering" "$dir/run.log" 2>/dev/null; then
+        ok=1
+        # The boot that proves the level also answers what its player row holds. `sink-slots.py` gates itself on the
+        # level-sized name table, so a run that slipped past the frame checks cannot be read as gameplay.
+        def=""
+        if [ -n "$slot_default" ]; then def="--default=$slot_default"; fi
+        exp=""
+        for e in $expect; do exp="$exp --expect=$e"; done
+        echo "index $index: reading the sink slots over gdb $gdb (guest held)"
+        if python3 "$here/sink-slots.py" --port "$gdb" --class-from PlayerController0 $def $exp > "$dir/slots.txt" 2>&1; then
+          echo "index $index: sink PASS -- $(tr '\n' '|' < "$dir/slots.txt")"
+        else
+          echo "index $index: sink FAIL -- $(tr '\n' '|' < "$dir/slots.txt")"
+          failed=$((failed+1))
+        fi
+      fi
+      kill -9 "$dpid" 2>/dev/null || true
+      pkill -x AppRun 2>/dev/null || true
+      sleep 2
+    else
+      if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" python3 tools/xemu/drive.py $args "$@" ) \
+           > "$dir/run.log" 2>&1; then
+        ok=1
+      fi
     fi
+    if [ "$ok" = 1 ]; then break; fi
     attempt=$((attempt+1))
   done
   # A guest that fell back to the BIOS screen still repaints, so the shot assertion passes for a crash (measured
