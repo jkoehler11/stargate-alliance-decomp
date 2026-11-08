@@ -217,8 +217,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       declarations in the shipped text (256 carrying an explicit index) and 92 operator declarations, against 685
       function records in `inventory/natives.csv` — **672 matched (98.1%) and 0 index disagreements**, so every
       `native(N)` agrees with its record. 22 records over 14 classes still disagree (`PlayerController` 4,
-      `Core.Object` 2, four others 2 each); which side is right needs the C++ side. Marking the bodies and the
-      `src/Native` cross-links remain.
+      `Core.Object` 2, four others 2 each); which side is right needs the C++ side. **The token side is closed per
+      record** (`inventory/native_tokens.csv`, `docs/NATIVE_CLASSES.md` *Every token has a basis*): of the 274 records
+      that carry a token, 166 spell it in their class's text, 107 are operator signatures the compiler expands, 0 come
+      from a declaration that spelled no index (`Core.Object`'s "17" are all operator records) and 1 is an artefact of
+      the editor package `UPreview`. Marking the bodies and the `src/Native` cross-links remain.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
@@ -1158,6 +1161,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       disc ships (`UWindowFontsTex.TahomaB30` on the override branch, `Engine.DefaultFont` on the base one) and puts
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
+
+### Execution notes (2026-11-08, every token has a basis, and `Core.Object`'s 17 are operator records)
+
+- **U3's guess is falsified corpus-wide, and the question it left open is now a per-record column.** `native-reconcile.py`
+  gained `--tokens` / `inventory/native_tokens.csv` (274 rows: package, class, function, token, basis) and `--selftest`
+  (in `make ci`): **166** records spell their index on a declaration in the class's own text, **107** are `operator`
+  signatures no declaration names, **0** belong to a declaration that named a function and spelled no index, **0**
+  disagree, and **1** is unresolved (`UPreview.UPreviewMapListClient.Created`). So the compiler never invents an index
+  for an index-less `native` on this build — the rule "the record's token is authoritative, the text's index is not
+  exhaustive" survives only in its narrow form: the *text* of the runtime packages is incomplete, indices are not.
+- **`Core.Object`'s 17 close arithmetically.** 160 token records = 57 function records that spell their index + 103
+  operator records, against 143 spelled indices = 57 functions + 86 `operator` statements; the surplus is 103 − 86 =
+  **17**, all of it per-signature operator records (`Add_IntInt` 146, `Concat_StrStr` 112,
+  `EqualEqual_ObjectObject` 114). U1's own wording ("mostly … operator records") was one record short of "all".
+- **The one unresolved row is an artifact of an editor package, not an index.** `UPreview` ships `Created` as a script
+  function **with a body**; the package's two `Created` `Function` exports have outers that resolve to a `FloatProperty`
+  and a `TextBuffer` — impossible for a function — every function export in the file shares the flag word `0x70004`, and
+  both payloads end in the same eight bytes `47 00 00 00 02 00 02 00`. So index 2 is the second dword of a script
+  function's tail, and `UPreview` is excluded from naming in any case.
+- **Numbers, docs and the note ship together**: `docs/NATIVE_CLASSES.md` gains *Every token has a basis* (the table and
+  both cases), `docs/UNKNOWNS.md` U1 and U3 are corrected in place, and `make native-reconcile` writes both CSVs.
 
 ### Execution notes (2026-11-08, the player object is a stock `PlayerController`, and a slot is read only where its class declares it)
 

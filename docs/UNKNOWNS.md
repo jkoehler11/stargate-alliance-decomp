@@ -63,7 +63,10 @@ and `_StringString` in the pool, so they need no name. The 114 pool names no dec
 
 **Status.** Answered. The index question is settled (the 523 claim no slot), the binding route is the binder at
 `0x0003a030`, and the shipped prototype resolves every game-side declaration because the names it looks up are in the
-image.
+image. **And the records that *do* carry a token are now explained one by one** (`inventory/native_tokens.csv`,
+*Every token has a basis* in `docs/NATIVE_CLASSES.md`): 166 spell their index in the class's own text, 107 are
+operator signatures the compiler expands, 0 come from a declaration that spelled no index, 1 is an artefact of the
+editor package `UPreview` — so a token never means "the compiler filled this in".
 
 ## U2. Three `Engine.Actor` natives declare indices beyond the table — closed
 
@@ -95,8 +98,9 @@ global index space, so their small indices are unrelated to the runtime table.
 or the same test on a second editor package with indexed natives (`UnrealEd` and `Editor` have none
 with an index here, which is consistent with the hypothesis but does not prove it).
 
-**Status.** Open, low priority. `Editor`, `UPreview` and `UnrealEd` are excluded from naming
-(`tools/native-names.py`), so nothing depends on the answer.
+**Status.** **Answered 2026-11-08** — see *Answered* below; the index is not a compiler assignment, and the entry's
+guess was wrong. `Editor`, `UPreview` and `UnrealEd` are excluded from naming (`tools/native-names.py`), so nothing
+depended on the answer.
 
 
 **Measured 2026-10-26.** The class is one of exactly **two** where the record carries a token and the shipped text
@@ -109,6 +113,29 @@ index is not exhaustive**, so a rebuild must read indices from the packages, nev
 
 Still open: which 17 of `Object`'s records are compiler-synthesised and which are hand-declared without an index —
 the class's own text does not distinguish them.
+
+**Corrected and answered 2026-11-08, no boot: neither half of the 2026-10-26 sentence holds.**
+`tools/native-reconcile.py --tokens` (`inventory/native_tokens.csv`, one row per token-carrying record) classifies
+all **274** records against the class's own text: **166** spell their index on a declaration of that name, **107**
+are `operator` signatures no declaration names, **0** belong to a declaration that named a function and spelled no
+index, **0** disagree, and **1** — this class's `Created` — is unresolved. So the compiler never assigns an index to
+an index-less `native` on this build.
+
+* **`Core.Object`'s 17 are all operator records.** 160 token records = **57** function records that spell their
+  index + **103** operator records; the text spells 143 indices = **57** functions + **86** `operator` statements, so
+  the surplus is 103 − 86 = 17 — `Add_IntInt` (146), `Concat_StrStr` (112), `EqualEqual_ObjectObject` (114) and the
+  like. None is a hand-declared function without an index.
+* **`Created` is not a native declaration at all.** The class's shipped text carries `function Created()` **with a
+  body** (`Super.Created()`), and the package holds two `Function` exports of that name (indices 59 and 78) whose
+  outers resolve to a `FloatProperty` (`XL`, export 7) and a `TextBuffer` (`ScriptText`, export 81) — neither can be
+  a function's outer — while every function export in the file shares the flag word `0x70004` and both payloads end
+  in the same eight bytes `47 00 00 00 02 00 02 00`. The token 2 is therefore the second dword of a tail that belongs
+  to a script function, i.e. an artefact of `UPreview`'s export table rather than an index the compiler assigned.
+  Depth: `docs/NATIVE_CLASSES.md`, *Every token has a basis*.
+
+What survives for a rebuild is narrower and still actionable: read indices from the package records, because the
+runtime packages' **text** is incomplete (13 records with no declaration, 9 declarations with no record — the
+reconciliation table above), not because the text omits indices it should have spelled.
 
 ## U4. The `.lad` payload layout is not established
 

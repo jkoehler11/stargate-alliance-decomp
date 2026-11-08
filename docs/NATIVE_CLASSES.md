@@ -147,3 +147,50 @@ them, so truncation is a candidate cause, not a demonstrated one.
 
 Not measured: which side is right where they disagree. Settling that needs the C++ side (Phase 4), which is why the
 residual is a list of names and counts rather than a verdict.
+
+## Every token has a basis (per record, UNKNOWNS U1/U3)
+
+The table above answers "do the two halves agree class by class". The finer question — **for every record that
+carries a token, which declaration in the class's own text put it there?** — is the one U1 left open ("the 523 claim
+no slot") and U3 guessed at ("the compiler assigns an index to a declaration that does not spell one out").
+`tools/native-reconcile.py` now classifies all 274 token-carrying records and writes
+`inventory/native_tokens.csv` (one row per record: `package, class, function, native_token, basis`):
+
+    python3 tools/native-reconcile.py DUMP/System -o inventory     # both CSVs, and the summary below
+    python3 tools/native-reconcile.py --selftest                   # the classifier on fixtures; in `make ci`
+
+| basis | records | what it is |
+|---|---:|---|
+| `text-index` | **166** | the class's text spells this index on a declaration of that name |
+| `operator-expansion` | **107** | no declaration names it: one `operator` statement expanded into typed signatures |
+| `unindexed-declaration` | **0** | a declaration that named the function and spelled no index |
+| `index-mismatch` | **0** | text and record both spell an index and disagree |
+| `unresolved` | **1** | `UPreview.UPreviewMapListClient.Created` — see below |
+
+**The guess in U3 is falsified, corpus-wide.** Not one of the 274 records belongs to a declaration that named a
+function without spelling its index, so on this build the compiler never invents an index for an index-less
+`native`; a token-carrying record always has a declaration that spelled it out or an `operator` behind it. The
+practical rule that survives is narrower than the one U3 stated: a rebuild reads indices from the package records
+because the *text* of the runtime packages is incomplete (9 declarations without a record, 13 records without a
+declaration), not because the text omits indices.
+
+**`Core.Object`'s "17" is the operator expansion, exactly.** The class carries 160 token-carrying records and its
+text spells 143 indices — 57 on `native function` declarations and 86 on `operator` statements — and
+57 + 103 = 160 while 57 + 86 = 143, so the surplus is 103 − 86 = **17**: per-signature operator records such as
+`Add_IntInt` (146), `Concat_StrStr` (112) and `EqualEqual_ObjectObject` (114), none of which any declaration names.
+So the 17 that U1 counted as "mostly … operator records, the compiler synthesises" are *all* operator records; there
+is no hand-declared index-less function among them.
+
+**The single unresolved row is in the one package the game never loads.** `UPreview`'s class text ships `Created` as
+a **script function with a body** (`function Created()` … `Super.Created()`), so no declaration of that class is
+native at all. The package carries two `Function` exports named `Created` (indices 59 and 78) whose outers resolve to
+a `FloatProperty` (`XL`, export 7) and a `TextBuffer` (`ScriptText`, export 81) — neither can be a function's outer,
+and every function export in the file carries the same flag word `0x70004` — while both "payloads" end in the same
+eight bytes `47 00 00 00 02 00 02 00`. So the token 2 is the second dword of a word that belongs to a script
+function's end, not a declaration: the row is an artefact of an editor package's export table, and `UPreview`,
+`Editor` and `UnrealEd` are excluded from native naming anyway.
+
+The consequence for 3.9/6.1: `inventory/native_tokens.csv` is the per-record form of the rule the compile loop
+needs — an index is trustworthy when its basis is `text-index`, and a record whose basis is not is either a
+synthesised operator body (no script to compile) or a defect worth reading.
+
