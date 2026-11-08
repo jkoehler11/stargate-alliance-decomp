@@ -838,9 +838,10 @@ are limited to expected fields (checksum/timestamp) and documented.
   first `0x1400` bytes puts the console pointer itself nowhere.
 - **Next**: read the master's `+0x030` and the `TArray<UViewport*>` element (`+0x02c data 0x009e7454 num=1 max=5`)
   on one boot, then `--bytes 0x040,0x200` on `0x02344b00` after a `ret` submit for the `History[16]` receipt.
-  `mem.py --dump` is not the reader for either: it returned `0x41bfbf5a…` for `0x01fb9bc0` and zeros for
-  `0x009e7454`, both of which `fields.py` resolves, so a raw dword read needs a `fields.py` mode that does not exist
-  yet.
+  The array element is a *bare address*, which no mode could read (`--object` needs an object, `--bytes` is an
+  offset inside one), so `fields.py --read ADDR[:LEN]` now reads one and names any dword that resolves -- and the
+  `mem.py --dump` reads this run took after the linger expired (`0x41bfbf5a…`, zeros) are a reset guest, not a
+  reader defect: the name table read garbage at the same moment.
 
 ### Execution notes (2026-11-08, the live player is `XboxClient : Client` and declares no `Console` property)
 

@@ -3437,12 +3437,13 @@ now says so and names `--instances` in its message.
 `+0x02c 0x009e7454 num=1 max=5` -- the one-element `TArray<UViewport*>` the `--properties` block calls `XboxViewport`,
 so its single element pointer lives at `0x009e7454` -- and `+0x034 5` as the array's max.
 
-**`mem.py --dump` is not the reader that resolves objects.** `--dump 0x01fb9bc0:0x30` wrote 48 bytes whose first
-dwords are `0x41bfbf5a 0x405a7c29 0x4069e490 0xddef3ed1`, while `fields.py` at the same address resolves class
-`XboxClient` and its header; and one element read through it (`0x009e7454:0x10`) came back all zero where
-`walk_fields` had just followed that dword to an `XboxViewport`. Whatever translation the two use differs, and a raw
-dword read of an arbitrary address has no CLI that agrees with the object reader yet -- that is the one instrument
-gap this run leaves.
+**The two `mem.py` reads that looked like a broken reader were the guest, not the tool.** `--dump 0x01fb9bc0:0x30`
+wrote 48 bytes starting `0x41bfbf5a 0x405a7c29`, and `--dump 0x009e7454:0x10` came back all zero, where `fields.py`
+had resolved `XboxClient` and followed that dword minutes earlier -- but both reads were taken **after** the boot's
+linger had run out, and at that same moment `fields.py` itself read the name table at `0x006be0d8` as
+`data=0x430c0000 num=1124073472`: the guest had reset, and every address meant something else. So neither read says
+anything about `mem.py`, and the correction is narrower than the first reading of it -- what was missing is a way to
+read a *bare address* through the object reader, which is `fields.py --read ADDR[:LEN]` now.
 
 **Costs, for the next run's budget.** `--instances`/`--children` on a class object is one page-cached header pass,
 about **3 min** for 48,646 objects; `--compare`'s scan is `--scan` bytes and returns at once when the class object

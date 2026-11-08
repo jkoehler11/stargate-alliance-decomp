@@ -640,6 +640,42 @@ def cmd_near(r, args):
                   % args.size)
 
 
+def read_window(r, addr, length):
+    """[(offset, value, note)] at an absolute guest address, each dword named when it is an object pointer.
+
+    `--object` walks an object's fields and `--bytes` a window inside one, so neither can read a bare address --
+    and that is what following a `TArray` element needs, because a `(data, num, max)` triple names its data
+    pointer and not an object. Each dword is resolved through the object graph first (class and name), and
+    anything else gets the float/ascii reading `--bytes` prints. A resolving dword costs one stub round trip, so
+    keep the window small.
+    """
+    rows = []
+    for o in range(0, length, 4):
+        value = r.try_u32(addr + o)
+        if value is None:
+            rows.append((o, None, "unreadable"))
+            break
+        got = r.object(value) if value else None
+        if got:
+            note = "object `%s`%s" % (got[0], " (%s)" % got[1] if got[1] else "")
+        else:
+            note = " ".join(x for x in (_float_note(value), _ascii_note(value)) if x)
+        rows.append((o, value, note))
+    return rows
+
+
+def cmd_read(r, args):
+    """Hexdump an absolute address, so an array element or a bare slot can be followed without a fake object."""
+    addr = args.read[0]
+    length = args.read[1] if len(args.read) > 1 else 0x40
+    print("  raw window %#010x..%#010x:" % (addr, addr + length))
+    for o, value, note in read_window(r, addr, length):
+        if value is None:
+            print("    %#010x unreadable" % (addr + o))
+            break
+        print("    %#010x +%#05x %#010x %12d  %s" % (addr + o, o, value, value, note))
+
+
 def cmd_object(r, args):
     addr = args.object
     got = r.object(addr)
@@ -1075,10 +1111,19 @@ def selftest():
     if [a for _i, a, _c, _n in kids] != [mid]:
         print("selftest FAIL: declared_objects returned %r" % ([a for _i, a, _c, _n in kids],))
         return 1
+    mem[0x05000000] = default              # a bare address holding an object pointer
+    mem[0x05000004] = 0x3f800000           # and a float beside it
+    rows = dict((o, (value, note)) for o, value, note in read_window(r, 0x05000000, 8))
+    if "Default__FakeClass" not in rows[0][1]:
+        print("selftest FAIL: --read did not name the object a bare address holds: %r" % (rows[0][1],))
+        return 1
+    if "1.0f" not in rows[4][1]:
+        print("selftest FAIL: --read did not annotate a float slot: %r" % (rows[4][1],))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, a field window names the neighbour it crosses into, a declared"
-          " name is matched by `Outer` and reached through `Super`, and it reaches its value slot through the"
-          " linker's `Offset`")
+          " name is matched by `Outer` and reached through `Super`, it reaches its value slot through the"
+          " linker's `Offset`, and `--read` names the object a bare address holds")
     return 0
 
 
@@ -1134,6 +1179,9 @@ def main():
     ap.add_argument("--flat", type=lambda v: int(v, 0), default=None,
                     help="OFFSET: per-window census of zeros/flats/pointers/other from OFFSET --set-size"
                          " bytes (-1 = the whole --size), so a field block's end is visible")
+    ap.add_argument("--read", type=lambda v: [int(x, 0) for x in v.split(":")], default=None,
+                    help="ADDR[:LEN]: hexdump that absolute guest address (an array element or a bare slot); "
+                         "every dword that resolves is named as an object")
     ap.add_argument("--near", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
                     help="for each comma-separated address, which objects occupy [ADDR, ADDR+--size)")
     args = ap.parse_args()
@@ -1144,8 +1192,8 @@ def main():
         ap.error("--port is required: this tool reads a live guest")
     if args.at is None:
         ap.error("--at is required: pass the GNames address find_names.py measured on this boot")
-    if args.object is None and not args.near:
-        ap.error("--object is required unless --selftest or --near is given")
+    if args.object is None and not args.near and not args.read:
+        ap.error("--object is required unless --selftest, --near or --read is given")
 
     guest = names.Guest(args.host, args.port)
     try:
@@ -1154,6 +1202,8 @@ def main():
         r = Reader(guest, names.Names(guest, data, num), odata, onum)
         if args.near:
             cmd_near(r, args)
+        elif args.read:
+            cmd_read(r, args)
         else:
             cmd_object(r, args)
     finally:
