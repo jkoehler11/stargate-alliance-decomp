@@ -817,6 +817,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, a class's declared fields are the objects outered to it, and `Outer` is one array pass)
+
+- **A class declares its fields as objects outered to its class object, so `Outer` is the field index** (measured
+  2026-11-08, `census19` on the `prp2` boot: gdb `12571`, `M00` loaded at 116,782 px, `GObjObjects`
+  `data 0x041e0000` num 48,646, `GNames` `data 0x07730000` num 41,265; `GameHud`'s class object `0x01886c00`, its
+  two rows `0x0682ab00` index 41,505 and `0x09322100` index 47,914). Every object in the array whose `Outer`
+  (`+0x18`) is the class object is something that class declares: `GameHud` has **158**, and the list holds its
+  whole declared surface -- `DialogueWindowMesh`, `NotificationWindowMesh`, the three `FloatProperty` scales
+  (`DialogueFontScale` index 26,915, `NotificationFontScale` 26,918, `InteractionFontScale` 26,920),
+  `SkipMatineeIcon`/`SkipMatineeIconSize`/`SkipMatineeTextString` (26,928, a `StrProperty` at `0x019c5400`)/
+  `SkipMatineeTextOffset`, `numWaypoints`, the `crosshair*` fields, and ~40 `Function`s. `fields.py --object
+  <class object> --children` prints it.
+- **The name-first walk is the trap that route replaces.** `Reader.object()` resolves the *class* name with an
+  uncached `u32(cls + 0x20)` before it reads the object's own name, so filtering the whole array by name costs one
+  stub round trip per object: `census18` had not reached its first `DisplayText` after five minutes and was
+  killed. The `Outer` test is `try_u32` -- page-cached -- for all 48,646 entries except the matches, so the same
+  question answered in about **80 s** on the same stub. A whole-array question asks a cached dword first.
+- **`InitProperties` copies the declared `FString` into the instance.** Both `GameHud` rows hold
+  `'Press A to Skip'` at `+0x258` (`Count 16`), with *different* `Data` pointers -- `0x059254c0` on the default,
+  `0x091b63e0` on the live row -- so the calibration reference is valid on either object, and the string is not
+  shared state.
+- **`UProperty::Offset` is still uncalibrated, and this is the one read left.** The window dump inside
+  `SkipMatineeTextString`'s `UProperty` was still in flight at the run's cap, so `--prop-at` stays a guess and
+  U15's live `NotificationWindow` `DisplayText` slot is unread. What changed is the cost: the property objects
+  are now listed with their addresses, so the calibration is one `--bytes 0x28,0x180` on the `StrProperty`
+  address this list names (address per boot, never carried across), with no walk behind it.
+
 ### Execution notes (2026-11-08, a class object holds `Super` at `+0x28`, so its fields are in `GObjObjects`, not in it)
 
 - **The class object is not a field list.** `GameHud` `0x01886c00` (identity re-read this boot) holds, in its first

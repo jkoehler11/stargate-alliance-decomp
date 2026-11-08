@@ -332,7 +332,7 @@ reads it:
 
     # which classes declare `DisplayText`, and does any of them sit on UITextBox's `Super` chain?
     python3 tools/xemu/fields.py --port PORT --at 0x006be0d8 --object 0x00bcea00 \
-        --prop-index DisplayText,TextFontScale --prop-up --prop-at 0x2c --prop-in <live window>
+        --prop-name DisplayText --prop-at <calibrated Offset position> --prop-in <live window>
 
 `--prop-up` walks `Super` (at `+0x28`) from `--object`'s class, so an inherited field resolves for a subclass's
 instance. The first hit measured on this route is `DisplayText` at index 1647 (`StrProperty`, `Outer`
@@ -345,8 +345,21 @@ object's bytes: `GameHud`'s class default holds the declared `SkipMatineeTextStr
 position inside that `UProperty` object whose dword is `0x258` is `Offset` for every property. `--prop-at` takes
 that position and `--prop-in` the instance to read.
 
-**What this run did not finish.** The array walk that finds the properties takes minutes (each object's header is
-a page read, and `GObjObjects` holds 48,646 entries on this boot), so the calibration window and the live
-`DisplayText` read were not in hand when this note was written. `--prop-index`, `--prop-outer`, `--prop-up` and the
-selftest are in; the numbers they produce (`Offset`, the live `NotificationWindow`'s `FString` count) are the next
-read, and the negative is that the class-object route is closed.
+**The field list is the objects outered to the class, and that one is cheap (measured 2026-11-08).** A class
+object links no fields, but a `UProperty` is an ordinary object whose `Outer` names the class that declares it, so
+`fields.py --object <class object> --children` reads the declaration list out of `GObjObjects`: `GameHud` has
+**158** declared objects, including the three `FloatProperty` scales (`DialogueFontScale` 26,915,
+`NotificationFontScale` 26,918, `InteractionFontScale` 26,920) and `SkipMatineeTextString` (26,928, a
+`StrProperty`), and the live row and the class default both hold `'Press A to Skip'` at `+0x258` with different
+`Data` pointers, so `InitProperties` copies the string into each instance.
+
+The same question asked *by name* is a trap worth naming: `Reader.object()` resolves the class name with an
+uncached `u32(cls + 0x20)` before it reads the object's own name, so a name filter over 48,646 objects is 48,646
+stub round trips -- one such walk had not finished after five minutes and was killed, while the `Outer` test (a
+page-cached `try_u32` for every non-match) answered in about 80 s on the same stub. Ask a cached dword first.
+
+**`Offset` stays uncalibrated until one window is read.** The calibration -- the dword position inside
+`SkipMatineeTextString`'s `UProperty` that holds `0x258` -- was still in flight at the run's cap, so `--prop-at`
+is required and still a guess, and the live `NotificationWindow`'s `DisplayText` slot (U15) is unread. The
+instrument is no longer the cost: the field list names that property's address, per boot, and `--bytes
+0x28,0x180` on it is one read.
