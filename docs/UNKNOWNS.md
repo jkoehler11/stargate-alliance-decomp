@@ -1305,6 +1305,15 @@ is not needed for this read**: the tables are image `.rdata`, so `tools/class-ov
 from `default.xbe` with no boot; the earlier attempt translated nothing because it read a *physical* RAM dump at a
 virtual address. Reproduce the boot half with `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
 
+**The font and the clip are measured, so the draw path has no unknown left (2026-11-08).** `GetConsoleFont` is
+script, not native: `Engine/HUD.uc:847` reads `OverrideConsoleFontName`/`ConsoleFontSize` and `StargateHUD` re-declares
+it to return `GetSmallFontFor(C)`, which on this disc ends on `UWindowFontsTex.TahomaB30` (override branch) or
+`Engine.DefaultFont` (base branch) -- both shipped, so the canvas font is never `None`. The position is
+`ConsoleMessagePosX/Y * HudCanvasScale * Size + (1-HudCanvasScale)/2 * Size`, which at 640x480 is X 16 and Y 468 - YL:
+inside the frame for any glyph shorter than 468 px. The body passes no clip rectangle at all -- `DrawTextClipped` clips
+to the canvas' own `ClipX/ClipY`. `tools/hud-console-font.py` (`make hud-console-font`) is the whole chain and
+`inventory/hud_console_font.csv` its artifact: no boot and no breakpoint needed.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
