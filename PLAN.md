@@ -1159,6 +1159,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the binder's names are in the image, and 769 of 797 declarations have one)
+
+- **The index-less `native` binding is measured end to end now** (2026-11-08, no boot):
+  `tools/native-binder.py` (`make native-binder`, `inventory/native_binder_names.csv`) extracts every
+  `int<prefix><Class>exec<Function>` wide literal from `default.xbe` -- **883 distinct names in one 440.8 KB span**
+  (median gap 30 characters, so a pool the build ships) -- and joins them with `inventory/natives.csv`: **769 of 797**
+  declarations have a name to bind to, including **508 of the 523** that serialise no index. The one-letter prefix is
+  `A` exactly when the class descends from `Actor` in **769 of 769** rows, so the join is a measurement rather than a
+  convention, and `exec` is a literal in the format, not a mark of an `exec` function (`Actor.KWake` is index-less and
+  not `exec`).
+- **The misses are a fact about the image, not the packages**: all 15 index-less declarations with no name are
+  `Editor.BrushBuilder` (13), `Editor.MaterialFactory` (1) and `UPreview.UPreviewSkinnedButton` (1) -- modules that ship
+  as script in the dump but whose C++ side is not in the Xbox image. Every declaration the game's own modules make has
+  one (`Engine` 444/444, `GUI` 81/81, `IpDrv` 32/32, `StargateGame` 17/17, `StargateVehicles` 4/4), which answers U1's
+  last question: the lookup succeeds in a shipped build with no map or PDB.
+- **The twelve misses that do carry an index are spelling, not absence**: every `Core.Object` string operator the join
+  misses is `_StrStr` in script and has a `_StringString` twin in the pool (`Concat_StrStr` ->
+  `intUObjectexecConcat_StringString`), and all 114 unmatched pool names are `UObject` -- those twelve twins,
+  `HighNative0`..`HighNative15` and `Iterator`.
+
 ### Execution notes (2026-11-08, the prompt's font is script, and it ends on a shipped object)
 
 - **`GetConsoleFont` was recorded as native twice; it is script, and the engine's own override chain picks the font**

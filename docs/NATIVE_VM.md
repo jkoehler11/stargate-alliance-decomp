@@ -162,6 +162,48 @@ not dispatched through `GNatives` at all: for a `FUNC_Native` function with `iNa
 resolves an implementation *by name* at bind time (`"int%sexec%s"`) and stores the result. They are
 still unreachable from the index table, but they are no longer unexplained.
 
+#### What the two `%s` hold, and the pool they are looked up in (measured 2026-11-08)
+
+The binder's name is not built from a map or a PDB: the names are **in the image**, as wide literals packed into one
+440.8 KB span of the wide-string data (median 30 characters apart, so one blob rather than scattered literals).
+`tools/native-binder.py` (`make native-binder`, `inventory/native_binder_names.csv`) extracts them and joins them with
+`inventory/natives.csv`:
+
+```
+intAActorexecKWake..intAActorexecKIsAwake..intUGUIControllerexecGetMapList
+```
+
+So the second `%s` is the function's own name, the first is a one-letter C++ type prefix **followed by the class name**,
+and the literal `exec` sits between them whatever the function's `exec` flag says -- `Actor.KWake` is not `exec`. The
+prefix is `A` exactly when the class descends from `Actor`, and that holds in **769 of 769** joined rows against
+`inventory/classes.csv`, which is what makes the join a measurement and not a convention.
+
+| package | declarations | with a binder name |
+|---|---:|---:|
+| Engine | 444 | 444 |
+| Core | 203 | 191 |
+| GUI | 81 | 81 |
+| IpDrv | 32 | 32 |
+| StargateGame | 17 | 17 |
+| StargateVehicles | 4 | 4 |
+| Editor | 14 | 0 |
+| UPreview | 2 | 0 |
+| **total** | **797** | **769** |
+
+**So the lookup succeeds in a shipped build** -- U1's last open question -- for every declaration the game's own modules
+make, including all 17 `StargateGame` and all 4 `StargateVehicles` natives, and for **508 of the 523** index-less ones.
+The 15 index-less names it cannot resolve are `Editor.BrushBuilder` (13), `Editor.MaterialFactory` (1) and
+`UPreview.UPreviewSkinnedButton` (1): packages that ship as script in the dump but whose C++ side is not in the Xbox
+image, so no name was ever baked in. That is a fact about the image rather than about the packages, and it is why an
+editor class binds to nothing at load.
+
+The pool also carries 114 names no declaration in the 18 packages matches, all of them `UObject`: `Iterator`,
+`HighNative0`..`HighNative15` (16, the VM's own boundary entries) and the operators under the engine's own spelling. The
+twelve declarations the join misses that *do* carry an index are all `Core.Object` string operators spelled `_StrStr` in
+script -- `Concat_StrStr`, `AtEqual_StrStr`, ... -- and every one of them has a `_StringString` twin in the pool
+(`intUObjectexecConcat_StringString`), so those twelve are not missing at all: they dispatch through `GNatives` on their
+own index and the binder never forms a name for them.
+
 ### `UObject::ProcessInternal` at `0x00048bf0`
 
 The address every script `UFunction::Func` is set to. Its body is the interpreter, and it says so
