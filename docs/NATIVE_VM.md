@@ -335,6 +335,25 @@ against "keeps the empty default", not abstract against concrete.
 4. Signature libraries for the CRT/XAPI/D3D8 majority (4.2) — blocked on signature data that this
    repository may not carry (`docs/UNKNOWNS.md` U9).
 
+## What a class table does not carry: a script override
+
+`tools/class-overrides.py` diffs every class table against its parent's and commits the result
+(`inventory/class_virtual_overrides.csv`, `make class-overrides` with the dump set): of the 492 tables, 466 are named,
+**302 pairs** resolve through `inventory/classes.csv`, and **200 classes override 658 slots** between them while 102
+override nothing but slot 3; 39 classes *add* 185 slots their parent does not have. Slot 3 is reported once per pair as
+`class-slot` because it holds a different function in every table and is never an override. The busiest slots are 30
+(62 classes), 31 (41), 18 and 42 (33 each); `Serialize` (slot 11) is overridden by four classes.
+
+The negative is the useful half: **a script override never reaches the table.** `Engine.Console` (`0x0050cb80`) and
+`Engine.Interaction` (`0x0050c880`) are both 36 slots and agree on every index except slot 3 -- although `Console.uc`
+re-declares five of Interaction's functions (`Initialized`, `KeyType`, `KeyEvent`, `Message`, `NotifyLevelChange`) and
+carries 23 functions of its own. The slots a class adds are its *native* defaults: Interaction's
+six (30-35) are one real body at `0x0014f790` and five two-instruction stubs whose `ret` immediates match the parameter
+sizes of `KeyType` (`33 c0 c2 08 00`), `KeyEvent` (`33 c0 c2 0c 00`), `PreRender`, `PostRender` and `Tick` (`c2 04 00`),
+and every subclass inherits those same five addresses. So a table answers "does this class replace a *native* virtual",
+never "does it override a script function": read the script text for that
+(`tools/pkg-script-text.py <dump>/System --tree --write $WORK/scripts`, 2,319 classes in under a second).
+
 ## `Serialize`: slot 11 of every class table, and the struct's own reader
 
 PLAN 3.7 has been blocked on where a function's bytecode lives in its export, and the two previous attempts tried to

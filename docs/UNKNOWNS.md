@@ -1287,9 +1287,23 @@ band does track the console -- 0 cyan px at `04-tab`, 52 px reading `(> hist_` a
 `ret` -- so "the frame is a false positive" holds only for `plr3`'s pair, where the band was already 56 px
 before a character was sent. `Engine.Console` carries no `PostRender` row in `inventory/function_flags.csv`
 either, so the "no `PostRender`, therefore no picture" inference is retired: the engine draws it and the
-swap's tell is the pre-filled `Say `. **What would name the draw** is the `Console`/`Interaction` vtable
-diff read through `vamap.py` (both tables read as bytecode out of a physical dump). Reproduce with
-`tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
+swap's tell is the pre-filled `Say `. **Measured 2026-11-08: the draw is `Engine.HUD.PostRender`, not the console.**
+`Engine/HUD.uc:299` declares `simulated event PostRender( canvas Canvas )` and one branch of it (lines 424-425) reads
+`if ((PlayerConsole != None) && PlayerConsole.bTyping) DrawTypingPrompt(Canvas, PlayerConsole.TypedStr, PlayerConsole.TypedStrPos);`.
+`DrawTypingPrompt` (line 629) sets `C.DrawColor = ConsoleColor`, positions by `ConsoleMessagePosX/Y` and draws
+`"(>"@Left(Text, Pos)$chr(4)$Eval(Pos < Len(Text), Mid(Text, Pos), "_")` -- so the prompt is the two-byte literal `"(>"`
+joined by `@` (which is why the earlier scan for the byte pair `(> ` found nothing in any package or in the image), the
+caret is `chr(4)`, and the trailing `_` appears only when the cursor sits at the end of the line. `PlayerConsole` is
+`HUD`'s own `var() Console` (line 27), linked in `LinkActors` from `PlayerOwner.Player.Console` (line 683), and
+`StargateHUD`, `GoauldConsoleHud` and `ReplicatorHUD` all extend `HUD` and none of them overrides `PostRender`, so every
+HUD class in this build reaches that one draw. **The console class cannot be the source**: a class table carries native
+dispatch only (`inventory/class_virtual_overrides.csv`). `Console` (`0x0050cb80`) and `Interaction` (`0x0050c880`) are
+both 36 slots and agree on every index except slot 3 -- the per-class slot that is a different function in all 492
+tables -- although `Console.uc` re-declares five of Interaction's functions (`Initialized`, `KeyType`, `KeyEvent`,
+`Message`, `NotifyLevelChange`, three of them `event`s), and `Interaction`'s `PreRender`/`PostRender` slots are two-instruction stubs (`c2 04 00`). **`vamap.py`
+is not needed for this read**: the tables are image `.rdata`, so `tools/class-overrides.py --class Console` reads both
+from `default.xbe` with no boot; the earlier attempt translated nothing because it read a *physical* RAM dump at a
+virtual address. Reproduce the boot half with `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 

@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -26,6 +26,7 @@ help:
 	@echo "  call-census   direct callers of one function from the Ghidra export (needs ghidra)"
 	@echo "  ghidra        import default.xbe, carve sections, auto-analyse, name from asserts"
 	@echo "  class-tables  find the per-class code-pointer tables and ProcessEvent's slot"
+	@echo "  class-overrides  which slots each class replaces relative to its parent (needs the dump)"
 	@echo "  class-names   name those tables from the build's class registrations (needs capstone)"
 	@echo "  symbols       emit symbols/xbox.map and the assembler form a debugger loads"
 	@echo "  libraries     list the libraries the XBE was linked against (PLAN 2.6)"
@@ -360,6 +361,9 @@ native-reconcile:
 	@echo "wrote inventory/native_reconcile.csv"
 
 # Which classes override Serialize, and where the code is (docs/NATIVE_VM.md, PLAN 3.7). Needs the image.
+class-overrides:
+	@$(PYTHON) tools/class-overrides.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
 serialize-slots:
 	@$(PYTHON) tools/class-serialize-slots.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/class_serialize_slots.csv"
