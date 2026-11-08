@@ -9,9 +9,11 @@ possible without a serialized layout: `UObject::Name` `+0x20` / `Class` `+0x24` 
   objects, each chained through `Next`. The offset is not assumed: every dword in the class object is tried as the
   head and a candidate is only accepted when its chain links are objects whose own `Class` name ends in `Property`
   (or is `Function`/`State`), so two independent reads -- the object header and the name table -- have to agree.
-* **the class default object** -- an instance whose `Class` pointer is the class itself. Found the same way, by
-  scanning the class object for a pointer that is its own instance, and `--scan` sets how far that search runs
-  because a live class object carries members past the `UStruct` header (measured: `+0x4e8`).
+* **the class default object** -- an instance whose `Class` pointer is the class itself. Found by scanning the
+  class object for a pointer that is its own instance, and `--scan` sets how far that search runs because a live
+  class object carries members past the `UStruct` header (measured: `+0x4e8`). A class that has **no** such
+  pointer has no default to diff: on `XboxClient` (`0x00dcea00`) the object array holds exactly one object of
+  that class -- the live row itself -- so `--compare` says so and `--instances` is the filter that measures it.
 * **a class object's own members** -- `--members` walks the dwords from `--start` (default `0x400`) to `--size` and
   labels every one that resolves through the name table: an *instance of this class* is a default-object candidate,
   a target whose own class is a `*Property` (or `Function`/`State`/`ScriptStruct`) is a `Children` head and its
@@ -382,7 +384,12 @@ def find_field_chain(r, cls, limit=0x400):
 
 
 def find_default(r, cls, limit=0x400):
-    """The class default object: an instance whose own `Class` pointer is `cls`."""
+    """The class default object: an instance whose own `Class` pointer is `cls`.
+
+    `None` is a measurement, not a failure: a class object that holds no pointer to an instance of itself has
+    no default row this way (measured 2026-11-08 on `XboxClient` `0x00dcea00`, whose only instance in
+    `GObjObjects` is the live row). Use `--instances` to see how many rows the class actually has.
+    """
     for cand in range(NEXT_OFF, limit, 4):
         ptr = r.try_u32(cls + cand)
         if ptr is None or not names.plausible_object(ptr):
@@ -748,7 +755,12 @@ def cmd_object(r, args):
     default = None
     if args.compare:
         default = find_default(r, cls, args.scan)
-        print("  class default %s" % ("%#010x" % default if default else "not found"))
+        if default:
+            print("  class default %#010x" % default)
+        else:
+            print("  class default not found: no dword in the class object's first %#x bytes is an instance of"
+                  " it" % args.scan)
+            print("               ask `--instances`: it counts the objects whose Class is this class")
     size = args.size
     if args.members:
         rows = scan_members(r, cls, args.start, size)

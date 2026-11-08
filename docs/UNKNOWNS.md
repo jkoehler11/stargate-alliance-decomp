@@ -1268,6 +1268,19 @@ holds it, and the draw path renders it. `DialogueWindow` (`'General, would you m
 53) and `InteractionWindow` (`'default'`, 8) read at the same offset. What stays open in this entry is the
 `History[16]` command-line read and the effect question above; "the HUD window draws nothing" is retired.
 
+**The typed line lands in the console's `TypedStr`, and the frame is not a witness for it (measured 2026-11-08).** One
+`Tab`, one `spc` and `h i s t` on a stock-disc `M00` boot (`plr3`, stub `12370`) leave `' hist'` in the console object
+`0x02344b00` at `+0x044` (an `FString` pair with `count=6`, `objects.py --fstrings`), while `05-typed.png` is
+**byte-identical** to `04-tab.png` (PIL `ImageChops` bbox `None`). The band `console-line.py` reports as `prompt`
+(56 cyan px, 64x32 at `+34+209`) is already there before a character is sent, and the image's own
+`System/Default.ini` says `Console=Engine.Console`, which declares no `PostRender` -- so on a loaded `M00` that verdict
+is a false positive and the input question is a memory question. The console is one hop from the player
+(`InteractionMaster` `0x02406720` at player `+0x0c0`, the console pointer nowhere in the player's first `0x1400` bytes),
+and the diff-against-default route is closed for this class: `--instances` on `0x00dcea00` finds exactly one object
+whose class is `XboxClient` -- the live row -- so there is no second row to compare. **What would settle the rest** is
+the console's own field block: `History[16]` sits beside `TypedStr`, so one `--bytes 0x040,0x200` on `0x02344b00` after
+a `ret` submit reads the submit receipt on the console object itself, with no new external data.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
