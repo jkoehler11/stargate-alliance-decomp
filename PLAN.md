@@ -839,6 +839,39 @@ are limited to expected fields (checksum/timestamp) and documented.
   freezes the guest (`03-dismissed` is the live frame, 102,774 px). Judge a load from the last frame and
   `GObjObjects.num`, never from the shot taken while the modal is up.
 
+### Execution notes (2026-11-07, the class default is the `GameHud` row that holds the declared text)
+
+- **`GameHud`'s class default is `0x0682ab00` (index 41,505), and the row the census called live is the live one**
+  (measured 2026-11-07, `census13` = `~/sg1/work/xemu/ghud2.sh`, gdb `12553`). The run loaded `M00` (`03-dismissed`
+  44,522 px against a 4,076 threshold, noise 1,778), `GNames` `0x006be0d8` -> `data 0x07740000 num 41,265`,
+  `GObjObjects` `0x006c21b0` -> `data 0x041e0000 num 48,646`. `fields.py --near` puts **no other object inside
+  either row's `0x600` bytes** (previous neighbours `0x06829600` `ParticleMaterial0` at `-0x1500` and `0x092e0000`
+  `SquadMenu` at `-0x42100`), so census11's `--diff` compared two objects' own bytes after all, and the "property
+  records at `+0x324`" are inside the second row rather than a neighbour's. By contents `0x0682ab00` carries **37**
+  pointer/array rows, every one a *package* asset (`StaticMesh`/`Texture`/`Shader` at `0x01xxxxxx`), no runtime
+  widget, and the declared `SkipMatineeTextString` at `+0x258` -- `FString of 16 characters: 'Press A to Skip'`,
+  which is the value `class-defaults.py` reports. `0x09322100` (index 47,914) carries **65**, including a widget
+  tree allocated during this load at `+0x034..+0x07c` (`UIWidget`/`UIProgressBar`/`UITextBox` at `0x0974xxxx`, one
+  `0x500` apart), a `Waypoint`, a `StaticMeshActor333` and a live `HitEffectManager` at `0x0974af00` -- state a
+  class default cannot hold. The default-object question is therefore settled by contents, and census4/census5's
+  "the live `GameHud` at `0x0682ab00`" was the pointer scan's label rather than the object's.
+- **The three `1.0` font scales are not in either row's first `0x600`.** `--find 0x3f800000` finds no such dword in
+  either row (both hold `0x00000001` at `+0x084`, `+0x088` and `+0x240`), so the scalar half of the six declared
+  defaults still needs a wider window. **Next**: `--object 0x0682ab00 --size 0x1400 --near` and
+  `--find 0x3f800000` over that bound, then the same on `0x09322100` -- one boot, four reads.
+- **The instrument is `--find` plus a text read that is not truncated.** `fields.py --find 0x3f800000,0x00000001`
+  prints where requested dwords sit, because `walk_fields` follows pointers, arrays and text and cannot see a
+  scalar at all. And `--show-text` printed `'Press A '` for a 16-character string: `array_at` read `min(num, 64)`
+  *bytes* while `num` counts characters, so a 16-character UTF-16 string showed its first eight. Both are in this
+  commit and `--selftest` covers each without a boot.
+- **Two reads cost this run its time: the identity check and `--properties`.** `ident()` piped `fields.py` through
+  `head -2`, which drops the object line (census12's first attempt "lost" the class object the same way), so the
+  check failed and the script walked all 48,622 object headers with `findcls` -- 13 minutes -- to re-confirm
+  `0x01886c00`, which five previous boots already agreed on (sixth now). `--properties --scan 0x1400` then ran past
+  ten minutes on one row and was killed: a chain candidate is tried per dword. Neither is needed for a contents
+  question -- `--object <class>` plus `grep` on its whole output answers identity, and `--find`/`--show-text`
+  answer contents.
+
 ### Execution notes (2026-11-07, `GNames` is a `.data` triple that does not move, and a field window needs its extent)
 
 - **`names.py --find` costs more than it saves on a loaded level**: it scanned `.data` for **over fifteen minutes**
