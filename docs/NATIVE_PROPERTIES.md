@@ -284,3 +284,25 @@ Three things follow that the reader alone could not settle:
 - **The rest of `UObject`/`UStruct`.** Only the fields a consumer was seen reading are listed;
   `Children` at `+0x3c` is read by `0x0003bdc0` off the struct itself and nothing here claims the
   full layout.
+
+## 8. What a class default object's own bytes hold (measured 2026-11-07)
+
+A class default is an ordinary `UObject` whose own `Class` is the class — not a pointer inside the class object, so
+it is found by filtering `GObjObjects` (`tools/xemu/fields.py --instances`), and which of a class's objects is the
+default has to be read off **contents**. `GameHud` is the worked example: two objects carry its class, the one whose
+fields are package-asset pointers plus the declared `SkipMatineeTextString` (`+0x258`, `'Press A to Skip'`) is the
+default, and the one holding a widget tree built during the load is the live HUD.
+
+| what | measurement |
+|---|---|
+| the class object | `0x01886c00` on seven boots — the only address in this question that does not move |
+| the default's extent | at least `+0x5500`; the first foreign object is a `Sound` at that offset |
+| a live instance's extent | at most `+0x600`; a `ParticleMaterial` starts there and four more follow every `0x300` |
+| pointer/array rows, first `0x600` | 37 on the default (all `StaticMesh`/`Texture`/`Shader` at `0x01xxxxxx`), 65 on the live HUD |
+| a `Float` default (`1.0`) | **not** in the default's first `0x4000` as a run: exactly one `0x3f800000`, at `+0x180c` |
+
+Two lessons a consumer inherits. **An object has no serialized size**, so a field window means nothing until
+`--near` bounds it with the next object's address — and the two `GameHud` rows bound at `0x5500` and `0x600`, so a
+window that is safe on the default reads four neighbours on the live HUD. And **a scalar default is not a layout**:
+`1` and `1.0` are the commonest dwords an object holds, so a single hit proves nothing and a *run* of one value at
+consecutive offsets is the weakest shape worth calling a measurement, which is why `--find` prints runs.

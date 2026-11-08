@@ -413,6 +413,34 @@ def find_dwords(r, addr, size, needles):
     return hits
 
 
+def find_runs(hits):
+    """Maximal runs of a dword repeated at consecutive offsets: [(value, offset, count)].
+
+    One `1.0` somewhere in a field block says little -- `1` is the commonest dword an object holds -- but three
+    *adjacent* dwords of the same value is a declaration order no allocator invents. `GameHud` declares
+    `DialogueFontScale`/`NotificationFontScale`/`InteractionFontScale`, so the signature to look for is a run of
+    three `0x3f800000`, and reading that off a bare offset list is guesswork.
+    """
+    by_value = {}
+    for off, value in hits:
+        by_value.setdefault(value, []).append(off)
+    runs = []
+    for value, offs in sorted(by_value.items()):
+        start = prev = None
+        count = 0
+        for off in sorted(offs):
+            if start is not None and off == prev + 4:
+                count += 1
+            else:
+                if count >= 2:
+                    runs.append((value, start, count))
+                start, count = off, 1
+            prev = off
+        if start is not None and count >= 2:
+            runs.append((value, start, count))
+    return sorted(runs, key=lambda run: (run[1], run[0]))
+
+
 def cmd_near(r, args):
     """Which object owns each byte of a field window, read off the object array's address order."""
     hits = walk_headers(r)
@@ -522,6 +550,17 @@ def cmd_object(r, args):
                                               " (+%d more)" % (len(offs) - 24) if len(offs) > 24 else ""))
             else:
                 print("    %#010x nowhere in the object" % (needle,))
+        runs = find_runs(hits)
+        if runs:
+            print("  %d run(s) of one value at consecutive offsets:" % len(runs))
+            for value, start, count in runs:
+                print("    %#010x x%d at +%#05x..+%#05x" % (value, count, start, start + 4 * (count - 1)))
+        # A scalar question does not need the field walk, and the walk is what makes a wide window expensive:
+        # every dword is resolved as an object and then as a possible array head, so a 0x1c00 read over a
+        # window whose tail is a neighbour's bytes ran past ten minutes without printing anything. `--find`
+        # alone is a page read; `--show-text`/`--diff`/`--compare` keep the walk they need.
+        if not (args.show_text or args.diff or args.compare):
+            return
     rows = walk_fields(r, addr, size)
     if default:
         drows = dict(walk_fields(r, default, size))
@@ -658,9 +697,20 @@ def selftest():
     # A scalar default: `--find` has to see a dword `walk_fields` never reports.
     mem3[default + 0x40] = 0x3f800000
     mem3[default + 0x44] = 0x3f800000
+    mem3[default + 0x48] = 0x3f800000
     found = find_dwords(r3, default, 0x600, {0x3f800000})
-    if [off for off, _v in found] != [0x40, 0x44]:
+    if [off for off, _v in found] != [0x40, 0x44, 0x48]:
         print("selftest FAIL: find_dwords read %r for a declared float" % (found,))
+        return 1
+    # Three adjacent `1.0`s are the signature of three consecutive Float declarations; the run is what makes
+    # a value a layout, so `--find` prints it instead of leaving three offsets to be read as a coincidence.
+    runs = find_runs(found)
+    if runs != [(0x3f800000, 0x40, 3)]:
+        print("selftest FAIL: find_runs read %r for three adjacent floats" % (runs,))
+        return 1
+    split = find_dwords(r3, default, 0x600, {0x3f800000, 0x00000001})
+    if [run for run in find_runs(split) if run[0] == 0x3f800000] != [(0x3f800000, 0x40, 3)]:
+        print("selftest FAIL: a second needle broke the first one's run: %r" % (find_runs(split),))
         return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, and a field window names the neighbour it crosses into")

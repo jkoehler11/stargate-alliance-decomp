@@ -839,6 +839,39 @@ are limited to expected fields (checksum/timestamp) and documented.
   freezes the guest (`03-dismissed` is the live frame, 102,774 px). Judge a load from the last frame and
   `GObjObjects.num`, never from the shot taken while the modal is up.
 
+### Execution notes (2026-11-07, a class default extends past `0x1400`, and the three `1.0` scales are not adjacent)
+
+- **The `GameHud` class default's own bytes run to at least `+0x5500`, and the live row's stop at `+0x600`**
+  (measured 2026-11-07, `census14` = `~/sg1/work/xemu/ghud3.sh`, gdb `12557`, then `ghud5.sh`/`ghud6.sh` on the same
+  stub). `--near 0x0682ab00 --size 0x8000` puts the first foreign object at `+0x5500` (`Sound`
+  `te_enmyvehkilld_dg_n_01`, `0x06830000`), so every `--find` hit up to there is the default's own dword;
+  `--near 0x09352100 --size 0x1400` finds a `ParticleMaterial` at `+0x600` and four more at `+0x900`, `+0xc00`,
+  `+0xf00`, `+0x1200`, so the live row's extent is **at most `0x600`** and a wider window on it reads a neighbour.
+  Two consequences for earlier notes: census11's `--diff` over `0x600` compared the live row's own bytes after all,
+  and any `--show-text` past `0x600` on the live row was reading widgets it does not own.
+- **The three `1.0` font scales are not three adjacent dwords, and only one `0x3f800000` exists in the default's
+  first `0x4000`** (same boot). `--find 0x3f800000,0x00000001 --size 0x4000` on `0x0682ab00` prints **one** `1.0` at
+  `+0x180c` and `0x00000001` at 25 offsets (`+0x084`, `+0x088`, `+0x240`, `+0xf30`, `+0xff0`, `+0x1224` … `+0x2b30`),
+  with **no run of three** anywhere; the live row holds neither value past `+0x240` inside its own `0x600`. So the
+  scalar half of the six declared defaults is still open, and the naive signature ("three `1.0`s in a row") is
+  refuted: either the scales land at non-adjacent offsets (the class declares many fields between them) or a
+  `Float` default is not written into the object's block at load. **Next**: compare the declared property order —
+  `tools/class-defaults.py StargateGame.u --class GameHud` — against the offsets the block actually holds, and read
+  `+0x180c`'s neighbours; that needs one boot and no new data.
+- **The instrument is `--find` without the walk, and it is what made the measurement affordable.** `--find` used to
+  fall through to `walk_fields` unconditionally, which resolves every dword as an object and again as an array head:
+  the same query over `0x1c00` on a window that crossed into a neighbour's bytes ran **past ten minutes** and printed
+  nothing (killed by hand). `--find` alone now returns before the walk — `0x1400` in **2.5 s** — while
+  `--show-text`/`--diff`/`--compare` keep it. `--find` also groups its hits into **runs of one value at consecutive
+  offsets**, because that is the only shape in which a dword is evidence of declaration order rather than a
+  coincidence. `--selftest` covers both.
+- **An instance address carried across boots is not an address.** `census13`'s live row `0x09322100` read as
+  "does not read as an object (`Class +0x24`)" this boot, while the class object `0x01886c00` was `GameHud` for the
+  seventh time; `--instances` then named `0x0682ab00` (index 41,505) and `0x09352100` (index 47,914). Resolve the
+  rows with `--instances` every boot — this is the third distinct address the live row has taken (`0x09322100`,
+  `0x09352100`, `0x09332100`). The live row's own `+0x050`/`+0x054`/`+0x058` are again the three `UITextBox`
+  windows, on a `--show-text` read of `0x600` (`docs/UNKNOWNS.md` U15's read is reachable from these).
+
 ### Execution notes (2026-11-07, the class default is the `GameHud` row that holds the declared text)
 
 - **`GameHud`'s class default is `0x0682ab00` (index 41,505), and the row the census called live is the live one**
