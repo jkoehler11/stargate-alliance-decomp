@@ -431,6 +431,22 @@ def cmd_object(r, args):
             print("    index %-7d %#010x  name `%s`  outer %#010x%s" % (
                 index, target, got[1] if got and got[1] else "?",
                 outer or 0, " (`%s`)" % ogot[1] if ogot and ogot[1] else ""))
+        if args.locate:
+            # Which of those addresses the class object itself holds -- by *address membership*, not by a
+            # class test: `--members`' "an instance of this class" is `Class == this class`, which a
+            # superclass's class object also answers, so it cannot name a default object.
+            by_addr = {target: index for index, target in found}
+            held = []
+            for off in range(NEXT_OFF, args.size, 4):
+                value = r.try_u32(addr + off)
+                if value in by_addr:
+                    held.append((off, by_addr[value], value))
+            print("  %d class-object dword(s) in +%#x..+%#x hold one of them:" % (
+                len(held), NEXT_OFF, args.size))
+            for off, index, value in held:
+                print("    +%#05x index %-7d %#010x" % (off, index, value))
+            if not held:
+                print("    none: nothing past the `UStruct` header points at an instance of this class")
         return
     if args.diff:
         a = dict(walk_fields(r, addr, args.size))
@@ -609,6 +625,9 @@ def main():
     ap.add_argument("--properties", action="store_true", help="measure and print the class's field chain")
     ap.add_argument("--instances", action="store_true",
                     help="with --object <class object>: list every object in GObjObjects whose own Class is it")
+    ap.add_argument("--locate", action="store_true",
+                    help="with --instances: which class-object dwords in +0x28..--size hold one of those "
+                         "addresses (the default-object back-pointer, found by address not by class)")
     ap.add_argument("--diff", type=lambda v: int(v, 0), default=None,
                     help="diff --object's pointer/array fields against this object, field by field")
     ap.add_argument("--limit", type=int, default=200, help="with --diff, how many differing offsets to print")

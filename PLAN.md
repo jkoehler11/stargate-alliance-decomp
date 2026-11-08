@@ -817,6 +817,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-07, a class object holds no pointer to its own instance, so the default-object scan is closed)
+
+- **`DefaultObject` is not in the class object's first `0x1400` bytes, and that ends the search rather than another
+  window** (measured 2026-11-07, `census12` = `~/sg1/work/xemu/ghud1.sh`, gdb `12549`, census10's pad sequence).
+  `fields.py --object 0x01886c00 --instances --locate --size 0x1400` finds the same **two** `GameHud` rows
+  (`index 41505 0x0682ab00`, `index 47914 0x09322100`, both outered `0x0097f928` `Package`) and then **zero**
+  class-object dwords in `+0x28..+0x1400` whose value is either address. `--locate` is address membership over the
+  instance walk's own output, not `Class == this class`, so unlike the `--members` label that earlier notes read as a
+  candidate it cannot be a superclass's class object. Consequence: the census5 + census10 scans could not have
+  succeeded, `Outer` does not split the rows, and the default has to be identified by *contents* -- the six declared
+  defaults `tools/class-defaults.py StargateGame.u --class GameHud` reports (three font scales `1.0`,
+  `SkipMatineeTextString` `Press A to Skip`, `bShowWeapon`/`bVisible` `True`) against each row's live field block,
+  with `--near` deciding whether a `0x600` window's tail is a neighbour's. **Next**: read `+0x600..+0x600` of both rows
+  field by field with `--show-text` and pick the row that holds the declared defaults with no live text -- the class
+  object will not name it.
+- Two smaller readings from the same boot, both of which change how a run is written: **the class-object address did
+  not move** (`GameHud` `0x01886c00` on census4, 5, 10, 11 and now 12), so a boot that "loses" it was read badly, not
+  moved -- this run first reported otherwise because its identity check piped `fields.py` through `head -2` and threw
+  away the object line; and **`02-mission` can measure 0 px on a boot that loaded fine**, because M00's tutorial modal
+  freezes the guest (`03-dismissed` is the live frame, 102,774 px). Judge a load from the last frame and
+  `GObjObjects.num`, never from the shot taken while the modal is up.
+
 ### Execution notes (2026-11-07, `GNames` is a `.data` triple that does not move, and a field window needs its extent)
 
 - **`names.py --find` costs more than it saves on a loaded level**: it scanned `.data` for **over fifteen minutes**

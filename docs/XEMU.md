@@ -3166,3 +3166,57 @@ are both filters over.
 the title by 100,594 px) and the object array read at `0x041e0000`, but the name walk that locates the instances
 (`findcls.py --grep GameHud`) was still running when the run's budget ended. Next read:
 `fields.py --near <the two instances> --size 0x600`, then decode which of `+0x324..+0x470` is inside the object.
+
+## A class object holds no pointer to its own instances, so `DefaultObject` is not in it (measured 2026-11-07)
+
+Three sessions hunted `GameHud`'s class default as a *pointer inside the class object*: `census5` scanned
+`+0x28..+0x800`, `census10` `+0x800..+0x1400`, and both came back empty while a `Class == this class` label kept
+offering a superclass's class object as the answer. The question was being asked the wrong way round, and reversing it
+closes the search rather than continuing it.
+
+`census12` (`~/sg1/work/xemu/ghud1.sh`, gdb `12549`, census10's pad sequence) loaded `M00`: `02-mission` measured
+**0 px** because the tutorial modal had the guest frozen (the modal trap above), and `03-dismissed` is the live frame --
+O'NEILL's portrait, the sidearm, no assert. On it `GNames` (`0x006be0d8`) reads `data=0x07740000 num=41,265` and
+`GObjObjects` (`0x006c21b0`) `data=0x041e0000 num=48,646`, and a 47,742-row name walk
+(`findcls.py --grep GameHud,UITextBox`, ~13 minutes) again puts `GameHud`'s class object at **`0x01886c00`** -- the
+fifth boot in a row (census4, 5, 10, 11, 12). The class-object address survives a reboot; the one boot tonight that
+seemed to refute it was read through `head -2`, which dropped the object line and looked like a moved address.
+
+    $ fields.py --port 12549 --at 0x006be0d8 --object 0x01886c00 --instances --locate --size 0x1400
+    object 0x01886c00: class `Class` name `GameHud`
+      2 object(s) whose own Class pointer is 0x01886c00:
+        index 41505   0x0682ab00  name `GameHud`  outer 0x0097f928 (`Package`)
+        index 47914   0x09322100  name `GameHud`  outer 0x0097f928 (`Package`)
+      0 class-object dword(s) in +0x28..+0x1400 hold one of them:
+        none: nothing past the `UStruct` header points at an instance of this class
+
+**`--locate` is a different test from `--members`**, and that is the point: it compares every dword of the class object
+against the addresses the instance walk *just produced*, so a pointer to a `GameHud` can only be one of the class's own
+instances. `--members`' older test (`Class == this class`) is satisfied by anything whose class is that class, which is
+why a superclass's class object could be printed as a default-object candidate and why that label was never evidence.
+The result above is the first reading of this question that cannot be a mislabel.
+
+Three consequences, each of which retires something:
+
+* **The scan cannot succeed on this build, at any window.** `DefaultObject` is not stored in the class object's first
+  `0x1400` bytes, so widening `--start`/`--size` again is not a next step -- that is what census5 and census10 each
+  spent a session on. The constructor-side route (`docs/NATIVE_PROPERTIES.md`'s shape: find the code that builds it)
+  is what is left.
+* **`Outer` does not separate the two rows either.** Both are outered to the same `Package` `StargateGame`
+  (`0x0097f928`), so "the level-created one and the package one" is not the split; the rows differ only in object-array
+  index (41,505 vs 47,914, six thousand allocations apart) and in contents.
+* **A class default has to be identified by its contents.** `tools/class-defaults.py StargateGame.u --class GameHud`
+  measures six declared defaults -- `DialogueFontScale`/`NotificationFontScale`/`InteractionFontScale` `1.0`,
+  `SkipMatineeTextString` `Press A to Skip`, `bShowWeapon` and `bVisible` `True` -- so the row that holds those values
+  **and** no live state is the default, and the row that has been painted is not. `--near` is the control: a `0x600`
+  window whose tail belongs to the next allocation cannot be read as this object's fields, which is the ambiguity the
+  two-`GameHud` reading stalled on.
+
+The instrument, in `tools/xemu/fields.py`:
+
+    python3 tools/xemu/fields.py --port PORT --at GNAMES --object <class object> --instances --locate --size 0x1400
+
+`--instances` filters the object array by `Class` and prints `index, address, name, outer`; `--locate` then walks the
+class object's dwords from `+0x28` to `--size` and prints every one whose *value* is one of those addresses, with the
+index it belongs to. It reads through the page cache the field reader already keeps, so the second half of the answer
+costs no stub round trips beyond the pages it touches, and `--selftest` still covers the instance walk without a boot.
