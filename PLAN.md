@@ -216,8 +216,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
       declarations in the shipped text (256 carrying an explicit index) and 92 operator declarations, against 685
       function records in `inventory/natives.csv` — **672 matched (98.1%) and 0 index disagreements**, so every
-      `native(N)` agrees with its record. 22 records over 14 classes still disagree (`PlayerController` 4,
-      `Core.Object` 2, four others 2 each); which side is right needs the C++ side. **The token side is closed per
+      `native(N)` agrees with its record. 22 residual rows over 14 classes (`PlayerController` 4, `Core.Object` 4,
+      `Weapon`/`GUIController`/`StargateWeapon`/`HitEffectManager` 2 each) **each carry a verdict from the image's
+      own binder pool now** (`inventory/native_residual.csv`): 13 records the text lacks but the image binds, 2
+      records the image binds that the record table lacks (`Core.Object.Divide`/`Round`), 7 declarations nothing
+      binds. **The token side is closed per
       record** (`inventory/native_tokens.csv`, `docs/NATIVE_CLASSES.md` *Every token has a basis*): of the 274 records
       that carry a token, 166 spell it in their class's text, 107 are operator signatures the compiler expands, 0 come
       from a declaration that spelled no index (`Core.Object`'s "17" are all operator records) and 1 is an artefact of
@@ -1161,6 +1164,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       disc ships (`UWindowFontsTex.TahomaB30` on the override branch, `Engine.DefaultFont` on the base one) and puts
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
+
+### Execution notes (2026-11-08, the 22 native residual rows get a verdict from the image's own binder pool)
+
+- **"Which side is right needs the C++ side" was already answerable, and the answer splits 15 / 7.** The C++ side is
+  `inventory/native_binder_names.csv` — the build's own `int<prefix><Class>exec<Function>` literals, which is exactly
+  the name the binder at `0x3a030` looks up. `native-reconcile.py` now joins the residual against it and writes
+  `inventory/native_residual.csv` (22 rows, `verdict` column): **13 `text-missing`** (record right, the class's
+  shipped text just lacks the declaration), **7 `declaration-unbound`** (declared, no record, no binder name —
+  `Weapon.GetErrorVec`/`GetFireStart`, `ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`/`updateLeadLag`,
+  `HitEffectManager.Update`/`SetupFade`), and **2 `binder-only`** — `Core.Object.Divide` and `Round` are declared
+  *and* bound in the image, so the record table is the half that is missing them.
+- **The truncation hypothesis is only partly right.** 3 of the 13 owning texts end unbalanced (`Actor`, `GUIFont`,
+  `UPreviewMapListClient`), but `PlayerController`'s 245 KB text is balanced and still declares none of its four
+  `Client*`/`Server*` records, so "text truncated" explains a third of the record-only rows and not the rest.
+  `--selftest` covers both verdicts and the no-binder case (11 cases, `make ci`), so a future build whose binder pool
+  moves cannot silently turn every row into `record-unbound`.
 
 ### Execution notes (2026-11-08, every token has a basis, and `Core.Object`'s 17 are operator records)
 
