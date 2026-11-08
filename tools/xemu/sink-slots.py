@@ -48,6 +48,7 @@ import argparse
 import os
 import struct
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES_PY = os.path.join(HERE, "names.py")
@@ -83,15 +84,51 @@ def plausible_object(value):
     return names.objects.RAM_LO <= value < OBJECT_HI and value % 4 == 0
 
 
-class Pages(object):
-    """One 64 KiB read per page: the difference between a walk in pages and a walk in objects."""
+def die(text, code=4):
+    """A named stop: the read says what ended it, instead of an empty traceback or a silent wait."""
+    print("FAIL " + text)
+    raise SystemExit(code)
 
-    def __init__(self, guest):
+
+class Pages(object):
+    """One 64 KiB read per page: the difference between a walk in pages and a walk in objects.
+
+    A walk that takes minutes needs to be able to say two things about a run that never finishes: whether the
+    guest is still there, and how far it got. `probe` is an address known to be mapped (the name table's own
+    data), re-read every `PROBE_EVERY` pages -- a guest that has died takes the stub with it, and those reads
+    fail, whereas an unmapped page inside the array is ordinary and must keep the walk going. `deadline` is the
+    wall-clock bound; both raise a message instead of returning nothing.
+    """
+
+    PROBE_EVERY = 128
+    PROGRESS_EVERY = 64
+
+    def __init__(self, guest, probe=None, progress=False, deadline=None):
         self.guest = guest
         self.buf = {}
         self.reads = 0
+        self.probe = probe
+        self.progress = progress
+        self.deadline = deadline
+        self.started = time.monotonic()
+        self.lost = 0
+        self.walked = 0
+
+    def _check(self):
+        if self.deadline and time.monotonic() - self.started > self.deadline:
+            die("the read passed its %.0fs deadline after %d page read(s): the walk over %d objects is the cost, "
+                "and a boot that has to be held this long is not the boot to measure on. `--deadline` raises the "
+                "bound, `--row ADDR` skips the walk" % (self.deadline, self.reads, self.walked))
+        if self.probe is not None and self.reads and self.reads % self.PROBE_EVERY == 0:
+            try:
+                self.guest.read(self.probe, 4)
+            except (IOError, OSError):
+                die("the stub stopped answering after %d page read(s): %#010x, which read at the start, no longer "
+                    "does -- the guest is gone (look for xemu's own exit line), so the row cannot be found and no "
+                    "slot is read" % (self.reads, self.probe))
 
     def page(self, addr):
+        self._check()
         base = addr & ~(SPAN - 1)
         if base not in self.buf:
             got = None
@@ -103,6 +140,12 @@ class Pages(object):
                     got = None
             self.buf[base] = got
             self.reads += 1
+            if got is None:
+                self.lost += 1
+            if self.progress and self.reads % self.PROGRESS_EVERY == 0:
+                sys.stderr.write("walk: %d page read(s), %d unmapped, %.0fs\n"
+                                 % (self.reads, self.lost, time.monotonic() - self.started))
+                sys.stderr.flush()
         return base, self.buf[base]
 
     def u32(self, addr):
@@ -133,6 +176,7 @@ def walk(guest, pages, odata, onum, off, value):
     (`off=NAME_OFF`) -- and both are a dword compare against headers that cost one stub read per 64 KiB page,
     not one per object.
     """
+    pages.walked = onum
     raw = b""
     got = 0
     while got < onum * 4:                       # one bulk read: the array is ~190 KiB
@@ -271,6 +315,12 @@ def main():
                          "are declared on exists at all")
     ap.add_argument("--want-class", action="append", default=[], metavar="NAME",
                     help="with --census: a class name to count (`--want-class StargatePlayer --want-class Pawn`)")
+    ap.add_argument("--deadline", type=float, default=900.0,
+                    help="seconds the walk may take before it stops and names itself (default 900; 0 disables); "
+                         "a boot held this long is the boot where xemu has already been seen to die mid-read")
+    ap.add_argument("--progress", action="store_true",
+                    help="a line per %d page reads on stderr, so a minutes-long walk is visible while it runs"
+                         % Pages.PROGRESS_EVERY)
     ap.add_argument("--selftest", action="store_true", help="check the gate, the walk and the marks, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -294,7 +344,7 @@ def main():
                   "`StargatePlayer` row outered to `MainMenu` too (sink3). `--any-state` overrides." % num)
             return 2
         odata, onum, _omax = table(guest, args.objects, "object array")
-        pages = Pages(guest)
+        pages = Pages(guest, probe=data, progress=args.progress, deadline=args.deadline)
         klass = args.klass
         if args.class_from:
             idx = name_index(nm, args.class_from)
@@ -457,6 +507,29 @@ def selftest():
     assert default_verdict == "default", default_verdict
     assert describe(pages, nm, 0, [])[0] == "null"
     assert describe(pages, nm, base - 4, [])[0] == "unreadable"
+    # A read that would never finish names itself instead of waiting: the deadline, then the probe that says the
+    # guest is gone. Both print their message and exit 4 -- the code `drive.py` reads as a named stop, not a crash.
+    import io
+    def stopped(pages, guest):
+        saved = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            walk(guest, pages, data_at, 6, CLASS_OFF, at(0x5100))
+        except SystemExit as exc:
+            text = sys.stdout.getvalue()
+            assert exc.code == 4, exc.code
+            return text
+        finally:
+            sys.stdout = saved
+        raise AssertionError("the walk finished; it should have stopped")
+
+    overdue = FakeGuest(bytes(image))
+    assert "deadline" in stopped(Pages(overdue, deadline=1e-9), overdue)
+    gone = FakeGuest(bytes(image))
+    probe_pages = Pages(gone, probe=0x7FFF0000, deadline=0)
+    probe_pages.reads = Pages.PROBE_EVERY - 1          # the next page read is the one that probes
+    assert "stopped answering" in stopped(probe_pages, gone)
+    assert probe_pages.lost == 0, probe_pages.lost
     # The gate: a menu-sized table must be refused before any slot is read.
     assert MENU_NAMES < LEVEL_FLOOR <= LEVEL_NAMES
     # The census half: a CSV parse and two counts, from a literal, so the check writes nothing.

@@ -1165,6 +1165,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the boot that proves a level also answers what its player row holds)
+
+- **`--pad-hold=0.35` with a 180 s window reaches a level on the sink path, and the boot says so twice.** `sink8`:
+  `02-mission` **10,235** differing pixels against a noise-set threshold of **1,620**, `cpu=2` samples both in
+  `.text` (`0x00062ff0`, `0x00047000`, **0 in kernel** -- `sink7`'s were `0x0003fb80`/`0x80024a97`), and the sink
+  gate's own read of `GNames` is **num=41,265**, the level reference exactly (34,800 is the menu). So the level was
+  loaded, not merely repainted: this is the first sink-path boot whose gate agrees with its frame. `01-highlight`
+  still failed (441 px) while the mission shot ten seconds later passed -- the list's repaint is late, not absent,
+  which is the reason the frame checks are on named steps rather than on one screenshot.
+- **The read is the cost, and the guest has to outlive it.** `sink-slots.py` ran **9.5 minutes** without reaching a
+  slot (the walk is one 64 KiB stub read per page over 48,646 array entries) and then found the stub dead: xemu's own
+  log ends `AppRun: GLib: g_source_destroy: assertion ... failed`, the crash signature this project has seen when two
+  boots collide, here with no second boot. A reader that reports nothing when its guest dies at minute nine is the
+  same defect the harness just fixed for its steps, so it now does: `--progress` prints a page count per 64 pages,
+  `--deadline` (default 900 s) stops a walk that will not finish, and a probe of the name table's own data every 128
+  pages names a dead stub (`exit 4`) instead of returning an empty result. `--row ADDR` and `--census` remain the
+  cheap routes.
+- **Instrument** `tools/xemu/missions.sh --sink-read --gdb PORT [--expect Pawn=live] [--default ADDR]`: the boot that
+  proves the level reads the four slots off its own player object while the guest is held, because `--linger` makes
+  `drive.py` sleep -- so the sequence runs in the background, the read happens when the `lingering` line appears, and
+  the emulator is killed after it. `--pad-hold` is exposed for the value above. Both paths keep their old behaviour
+  when `--sink-read` is absent, and `--sink-read` without `--gdb` is refused rather than silently unread.
+
 ### Execution notes (2026-11-08, the harness could lose its subject and say nothing)
 
 - **Six sink-slot boots failed at three defects in `tools/xemu/drive.py`, not in the game.** An external call had **no

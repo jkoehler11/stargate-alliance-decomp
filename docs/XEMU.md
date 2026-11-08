@@ -3877,3 +3877,26 @@ EEPROM did.
 `--selftest` (18 cases, `make ci`) covers all three halves without an emulator: a hung tool raises inside its deadline
 and names itself, the deadline table (base / x3 / x12), the report's text and `stall.txt` when X answers nothing, a dead
 emulator reported with its status at its step, and a blocking probe abandoned rather than inherited.
+
+## The read after the level: `missions.sh --sink-read` (2026-11-08)
+
+`sink8` is the boot that settled what the input path can do and what the read costs.
+
+- **The sequence that reaches a level is the proven one**, and the boot can prove it twice: `--pad-hold=0.35`, a 180 s
+  window, ten `d-pad` presses and `A` gave `02-mission` **10,235** differing pixels against a **1,620** threshold
+  (noise 810 over 3 s), `cpu=2` samples both in `.text` (`0x00062ff0`, `0x00047000`, 0 in kernel), and the sink gate's
+  read of `GNames` came back **num=41,265** -- the level reference, against 34,800 at the menu. A repaint alone cannot
+  say this; the name count can.
+- **`01-highlight` fails on that boot and the mission shot passes ten seconds later** (441 px against 1,620, then
+  10,235). The map list's repaint is late, not missing, so a frame assertion belongs on the step whose state is being
+  asked about -- the `PASS`/`FAIL` on an early step is not a failed boot.
+- **The walk was still the whole cost.** The slot read ran 9.5 minutes and never printed a row, then the stub was
+  gone: `xemu.log` ends `AppRun: GLib: g_source_destroy: assertion 'g_atomic_int_get (&source->ref_count) > 0'
+  failed`, with one emulator and one boot. A read that takes minutes has to say where it is and has to notice a dead
+  guest, so `sink-slots.py` now prints a progress line per 64 pages (`--progress`), stops a walk past
+  `--deadline` (default 900 s), and probes an address it already read once every 128 pages -- both stops print the
+  reason and exit 4, and `--selftest` covers them without a boot.
+- **One boot can answer both questions.** `tools/xemu/missions.sh --sink-read --gdb 12610 --expect Pawn=live
+  --default 0x0682ab00 --pad-hold 0.35 --boot 180 OUTDIR --name M00` runs the sequence, waits for drive.py's
+  `lingering` line, reads the four slots off the boot's own player object, and prints the verdict per slot; the read
+  lands in `index-NN/slots.txt` beside the frames. `--sink-read` without `--gdb` is refused.
