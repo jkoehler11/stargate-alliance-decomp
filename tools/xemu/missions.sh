@@ -151,6 +151,7 @@ for index in $indices; do
   set -- "$@" --step=shot=01-highlight --step=pad=a --step=wait="$settle" --step=shot=02-mission --step=cpu=2
   attempt=1
   ok=0
+  gate=0
   while [ "$attempt" -le "$retries" ]; do
     echo "index $index: attempt $attempt of $retries, booting, $index d-pad presses, then select"
     if [ "$sink_read" = 1 ]; then
@@ -170,7 +171,24 @@ for index in $indices; do
         # Ask the frame before the read: a boot that never left the main menu still repaints, still hands out its
         # stub, and still holds a level-sized name table (`sink9`: `num=41,265` on a frame `frame-diff` calls the
         # main menu), so the name count cannot separate the two states and the read would describe a menu row.
-        if ! tools/xemu/frame-diff.py "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1; then
+        # `frame-diff.py` answers 0 changed / 2 unchanged and **1 when it cannot read a frame at all**. The first
+        # version of this branch read any non-zero as "still the main menu", and the one time the gate could not run
+        # (its file is tracked 644, so `frame-diff.py` here is a permission-denied no-op, exit 126) it threw away a
+        # boot and spent the remaining attempt on a retry (`sink10`). Call it through `python3` and keep the three
+        # answers apart: a broken instrument is not a bad boot, and it must not be retried as one.
+        fdiff=0
+        python3 "$here/frame-diff.py" "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1 || fdiff=$?
+        if [ "$fdiff" != 0 ] && [ "$fdiff" != 2 ]; then
+          echo "index $index: the frame gate itself failed (exit $fdiff), so this boot is neither proven nor refuted"
+          echo "  -- not spending another boot on a broken instrument: $(tr '\n' '|' < "$dir/menu.log")"
+          gate=1
+          attempt=$((retries+1))
+          kill -9 "$dpid" 2>/dev/null || true
+          pkill -x AppRun 2>/dev/null || true
+          sleep 2
+          continue
+        fi
+        if [ "$fdiff" = 2 ]; then
           echo "index $index: the post-load frame is still the main menu, so the guest never left it -- retrying"
           kill -9 "$dpid" 2>/dev/null || true
           pkill -x AppRun 2>/dev/null || true
@@ -211,17 +229,30 @@ for index in $indices; do
   done
   # A guest that fell back to the BIOS screen still repaints, so the shot assertion passes for a crash (measured
   # 2026-11-04: a truncated map put the BIOS prompt up and the frame diff read 176,832 pixels). Ask the frame too.
+  # Through `python3`, never by its own path: nine of `tools/xemu/`'s scripts are tracked 644 in git, so
+  # `tools/xemu/guest-halt.py ...` is a permission-denied no-op in every clone -- and `if` reads that as "not the
+  # BIOS screen", which turns the halt check off without a word. The tool's own three answers (0 halt / 2 running /
+  # 3 unreadable) are kept apart for the same reason.
   halt=0
-  if [ -f "$dir/02-mission.png" ] && tools/xemu/guest-halt.py "$dir/02-mission.png" > "$dir/halt.log" 2>&1; then
-    halt=1
+  if [ -f "$dir/02-mission.png" ]; then
+    hrc=0
+    python3 "$here/guest-halt.py" "$dir/02-mission.png" > "$dir/halt.log" 2>&1 || hrc=$?
+    if [ "$hrc" = 0 ]; then halt=1; fi
+    if [ "$hrc" = 3 ]; then
+      echo "index $index: the halt check could not read the frame (exit 3): $(tr '\n' '|' < "$dir/halt.log")"
+    fi
   fi
   # A load that bounces back to the main menu repaints and is not the BIOS screen, so the pixel and halt assertions both
   # pass for it (measured 2026-11-05: `MainMenu.unr` at index 71 does exactly this). Ask the frame that it really
   # changed from the boot frame, which is the main menu.
   menu=0
-  if [ -f "$dir/00-title.png" ] && [ -f "$dir/02-mission.png" ] && \
-     ! tools/xemu/frame-diff.py "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1; then
-    menu=1
+  if [ -f "$dir/00-title.png" ] && [ -f "$dir/02-mission.png" ]; then
+    mrc=0
+    python3 "$here/frame-diff.py" "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1 || mrc=$?
+    if [ "$mrc" = 2 ]; then menu=1; fi
+    if [ "$mrc" = 1 ]; then
+      echo "index $index: the frame gate could not run (exit 1), so 'not the main menu' is unproven here: $(tr '\n' '|' < "$dir/menu.log")"
+    fi
   fi
   if [ "$ok" = 1 ] && [ "$halt" = 1 ]; then
     printf '%s\tFAIL\t%s\t%s attempts\tBIOS screen\n' "$index" "$dir/halt.log" "$((attempt))" >> "$out/missions.tsv"
@@ -230,6 +261,10 @@ for index in $indices; do
   elif [ "$ok" = 1 ] && [ "$menu" = 1 ]; then
     printf '%s\tFAIL\t%s\t%s attempts\tmain menu\n' "$index" "$dir/menu.log" "$((attempt))" >> "$out/missions.tsv"
     echo "index $index: FAIL -- the post-load frame is the main menu ($dir/menu.log)"
+    failed=$((failed+1))
+  elif [ "$gate" = 1 ]; then
+    printf '%s\tFAIL\t%s\t%s attempts\tframe gate\n' "$index" "$dir/menu.log" "$((attempt))" >> "$out/missions.tsv"
+    echo "index $index: FAIL -- the frame gate could not run, so nothing about this boot is known ($dir/menu.log)"
     failed=$((failed+1))
   elif [ "$ok" = 1 ]; then
     printf '%s\tPASS\t%s\t%s attempts\n' "$index" "$dir/02-mission.png" "$((attempt))" >> "$out/missions.tsv"

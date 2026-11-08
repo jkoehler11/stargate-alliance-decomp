@@ -1165,6 +1165,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, a gate that cannot run is not a verdict, and the sink values are still unread)
+
+- **The frame gate in front of the sink read never ran: `tools/xemu/frame-diff.py` is tracked 644.** `sink10`'s
+  attempt 1 reached the list (`01-highlight` 657 px) and was discarded because `tools/xemu/frame-diff.py …` answered
+  `Permission denied` (126), which `if ! …` read as "the frame is still the main menu". Attempt 2 then booted fresh,
+  never left the menu (0 px against `00-title`, `guest-halt` `running`), and the four slot values are still unread.
+- **Instruments**: `missions.sh` now calls `frame-diff.py` and `guest-halt.py` through `python3`, keeps
+  `frame-diff`'s 0/2/1 apart (only 2 means "still the menu"), ends an index with a `FAIL … frame gate` row when the
+  gate itself fails rather than retrying into a second boot, and passes `guest-halt`'s exit 3 through as a printed
+  warning instead of a silent "not the BIOS screen". Both tools are 755 in git now. `docs/XEMU.md` carries the
+  measurement.
+- **What the next boot is**: unchanged -- a boot whose `02-mission` frame passes, then the tail read. What changed
+  is that a passing frame can no longer be mistaken for a menu frame by a broken gate.
+
 ### Execution notes (2026-11-08, the sink read is 64 pages, and a level-sized name table is not a level)
 
 - **Reading the array from its end is 64 page reads instead of 347.** `GObjObjects` appends, so the row a level
