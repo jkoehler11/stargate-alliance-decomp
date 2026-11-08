@@ -1,0 +1,2 @@
+dump,hud,hud_class,field_offset,target,target_class,same_object_as_typed_console,typed_str_pos,b_typing,refs_in_image
+findtext4/ram.bin,0x05c5ca00,StargateHUD,0x398,0x02344b00,Console,yes,5,1,9

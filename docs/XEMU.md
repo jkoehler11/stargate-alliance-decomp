@@ -3578,3 +3578,44 @@ The three existing topics re-check unchanged (`--check`: karma 8, lipsinc 19, pa
 `bTyping`/`PlayerConsole` -- read `PlayerController.Player.Console` and `Console.bTyping` after a `tab` in one boot
 (`tools/xemu/console-receipt.sh` already boots to the submit; the pointer chain is `tools/xemu/fields.py`'s). That is
 the one measurement standing between 7.3 and a named cause.
+
+## The HUD holds the console, and it was open: the prompt's silence is downstream of the link (measured 2026-11-08, PLAN 7.3)
+
+`Engine/HUD.uc:424` draws the prompt only when `(PlayerConsole != None) && PlayerConsole.bTyping`, and `PlayerConsole`
+is the HUD's own `var() Console`, linked once from `PlayerOwner.Player.Console` (`LinkActors`, line 683). The obvious
+suspect for a console that accepts typing and draws nothing was that link. It is not the link: in the very dump where
+the console holds `' hist'` with `TypedStrPos 5` and `bTyping 1` and no frame drew a prompt (`findtext4`, taken
+2026-11-06), the live `StargateHUD` holds **that same console**.
+
+`make hud-link DUMP=~/sg1/work/xemu/findtext4/ram.bin` (`tools/xemu/hud-link.py`) walks the HUD instance's dwords,
+keeps the ones that name an object whose class table is `Console`, and reads the target's own counters:
+
+```
+dump,hud,hud_class,field_offset,target,target_class,same_object_as_typed_console,typed_str_pos,b_typing,refs_in_image
+findtext4/ram.bin,0x05c5ca00,StargateHUD,0x398,0x02344b00,Console,yes,5,1,9
+```
+
+So `PlayerConsole` is at **`+0x398`** of the HUD, it is **`0x02344b00`**, and that address is the console
+`console-state.py` reads as the typed-into one (`TypedStr ' hist'`, `TypedStrPos 5`, `bTyping 1`). The address is
+named by nine dwords in the image. The same read on the two closed dumps gives the same field and the same target
+with `bTyping 0` (`xemu/findtext3`, `msg1/try1`), which is the control: the field does not move, only the console's
+state does.
+
+**Two details made the read possible, and both were wrong on the first try.** A class-table word is the object's
+*first* dword in this build (the typed-into `Console` opens `00 50 cb 80 ...`, and `symbols/` maps that table to
+`Console`), which is what lets a bare pointer be screened as "points at a `Console`" without resolving a property
+chain -- `Engine/HUD.uc:27` declares exactly one `Console`-typed field, so the only such pointer inside the HUD is
+`PlayerConsole`. And `pmemsave` writes *physical* memory while the pointers stored in it are *linear*: comparing the
+two spaces directly found **zero** references to the console (`refs to 0x2661b00: 0`), which reads as "nothing links
+it" and is why the first pass called the link broken. `vamap.physical_for` is the match, and the tool prints both
+addresses.
+
+**What that leaves.** `HUD.uc`'s condition is satisfied in the dump that drew nothing, and the values `DrawTypingPrompt`
+consumes are not suspicious: `tools/class-defaults.py --class HUD` reads `ConsoleColor (253, 216, 153, 255)` (opaque),
+`HudCanvasScale 0.95` and `ConsoleMessagePosY 1.0` off the disc's own `Engine.u`, so the prompt is positioned near the
+bottom edge of a 0.95-scaled canvas and drawn in an opaque colour, and none of the four names is set in any shipped
+`.ini` file. The remaining variables are the two inside
+`DrawTypingPrompt` that no dump can name on its own: `C.Font = GetConsoleFont(C)` (a native call whose result is not
+in the object) and `C.DrawTextClipped`'s clip region. **Next**: break where the prompt's draw is reached -- a
+breakpoint on the `DrawTypingPrompt` body with `tab` held open, reading `Canvas.Font` and the clip rect -- instead of
+another frame diff, because the frame is where the answer stops being visible.

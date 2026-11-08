@@ -1145,6 +1145,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       end (command, counter, draw) and cannot be a script output channel. **Next**: the guest's own `bTyping` -- read
       `PlayerController.Player.Console` and `Console.bTyping` after a `tab` in one boot -- decides whether the HUD's
       prompt should have drawn at all; instrument `tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
+      **Measured 2026-11-08, no boot, from the dumps already on disk:** that read did not need a boot, and the answer
+      flips the suspect. In `findtext4` -- the dump where the console holds `' hist'` with `TypedStrPos 5`/`bTyping 1`
+      and no frame drew a prompt -- the live `StargateHUD` (`0x05c5ca00`) holds **that same console** at `+0x398`
+      (`0x02344b00`), so `(PlayerConsole != None) && PlayerConsole.bTyping` is already true and the silence is
+      *downstream* of the link (`inventory/hud_console_link.csv`, `make hud-link DUMP=<ram.bin>`). The two closed dumps
+      give the same field and target with `bTyping 0`, and the values `DrawTypingPrompt` consumes are ordinary
+      (`ConsoleColor (253,216,153,255)`, `HudCanvasScale 0.95`, `ConsoleMessagePosY 1.0`, no `.ini` override).
+      **Next**: the two variables no dump holds -- `GetConsoleFont(C)`'s result and `DrawTextClipped`'s clip region --
+      read at a breakpoint on the `DrawTypingPrompt` body with `tab` open, not from another frame diff.
+
+### Execution notes (2026-11-08, the HUD holds the open console, so the prompt's silence is downstream of the link)
+
+- **The link is not broken; the dump says so twice over** (measured 2026-11-08, no boot): `tools/xemu/hud-link.py`
+  (`make hud-link DUMP=...`) reads the live `StargateHUD` out of a whole-RAM dump and screens its dwords for pointers
+  to an object whose class table is `Console`. In `findtext4` the HUD's `+0x398` is `0x02344b00`, exactly the console
+  `console-state.py` reads as typed-into, with `bTyping 1`; `xemu/findtext3` and `msg1/try1` are the control (same
+  field, same target, `bTyping 0`). `inventory/hud_console_link.csv`.
+- **Two measured details, each of which produced a wrong first answer**: an object's class-table word is its *first*
+  dword in this build (the typed-into `Console` opens `00 50 cb 80`), so a bare pointer can be screened by class
+  without resolving a property chain -- and `HUD.uc:27` declares exactly one `Console`-typed field, which is what
+  makes the screen the field; and `pmemsave` writes physical memory while the pointers in it are linear, so comparing
+  the two spaces finds zero references to a console that nine dwords name. `vamap.physical_for` is the match.
+- **`DrawTypingPrompt`'s inputs are already ordinary** (`tools/class-defaults.py --class HUD` on the disc's
+  `Engine.u`): `ConsoleColor (253,216,153,255)`, `HudCanvasScale 0.95`, `ConsoleMessagePosY 1.0`, and none of those
+  names is set in any shipped `.ini`. What is left is `GetConsoleFont(C)` (native, result not in the object) and the
+  clip rect `DrawTextClipped` uses -- which is why the next instrument is a breakpoint, not a screenshot.
 
 ### Execution notes (2026-11-08, `stat fps` is native end to end, and the scanner was reading the wrong address)
 
