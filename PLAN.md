@@ -817,6 +817,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, the live player is `XboxClient : Client` and declares no `Console` property)
+
+- **`--prop-name Console` on the live player answers "no property named Console in the chain", and the chain is
+  printed** (measured 2026-11-08, `plr1`: `M00` loaded, keyboard at 75 s, one `Tab` and `h i s t`, prompt frame
+  `95x32` at `+34+209` = 67 cyan px, object array `0x041e0000` 48,646 objects, names 41,265). `0x01fb9bc0` is class
+  `XboxClient` (class object `0x00dcea00`) and the super chain is `XboxClient` -> `Client` -> `Object`, so U15's
+  "read it from a `Player` object" is closed as well as the `PlayerController` arm.
+- **`Client`'s 32 declared objects contain no `Console`** (`--children` on `0x00d40600`: array indices 308--339,
+  `ETextureDetail` ... `DrawDistanceLOD`, viewport and renderer settings). The CSV row U15 relied on
+  (`inventory/class_properties.csv:2907`) is a script class whose `Console`/`GUIController`/`InteractionMaster`/
+  `LocalInteractions` fields are all `0x2000:Transient`, so no offset is serialized; the native constructor wires
+  them and the live window holds `InteractionMaster` `0x02406720` at `+0x0c0` -- the same master the console default
+  names at `+0x030`.
+- **Budget, measured:** `--children` on a class object is one page-cached array pass, **3 m 5 s** for 48,646
+  objects; `--prop-name` is seconds. This run's typing was lost to `bIgnoreKeys` (four `gkey` presses straight after
+  `Tab` leave an *empty* prompt), so a text read needs the spent key the earlier sequences used. **Next**:
+  `fields.py --object 0x01fb9bc0 --compare` -- the transient slot is null in the class default and set in the live
+  instance, so the diff names the console without a property chain -- then `--fstrings` on that pointer.
+  `docs/XEMU.md` "The player object is `XboxClient : Client`" carries the numbers.
+
 ### Execution notes (2026-11-08, `UProperty::Offset` is `+0x48`, and the HUD's windows are named by property)
 
 - **`Offset` is the dword at property `+0x48`, from two independent witnesses on one boot** (measured 2026-11-08,
