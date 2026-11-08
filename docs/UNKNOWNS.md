@@ -1009,6 +1009,22 @@ buffer it finds is the FString `Data` pointer whose owner is then one window loo
 same session: fifteen minutes into a linger, two of these addresses answered all zeros while the emulator still ran
 -- a failed stub reply padded to zero, not a freed object, which is why `--object` now warns on an all-zero window.
 
+**The `Player` arm is closed too: the live player is `XboxClient : Client`, and that chain declares no `Console`
+(measured 2026-11-08).** With `M00` loaded and the prompt open (`console-line.py`: `prompt`, 67 cyan px, `95x32` at
+`+34+209`), `fields.py --object 0x01fb9bc0 --prop-name Console` prints the chain `XboxClient` `0x00dcea00` ->
+`Client` `0x00d40600` -> `Object` `0x00bcf000` and answers *0 declared `Console` properties ... no property named
+`Console` in the chain*. `fields.py --object 0x00d40600 --children` shows what `Client` does declare: 32 objects, array
+indices 308--339, `ETextureDetail` through `DrawDistanceLOD` -- viewport and renderer settings only, with no `Console`,
+`GUIController`, `InteractionMaster` or `LocalInteractions` among them. The row this entry leaned on,
+`inventory/class_properties.csv:2907`, is a *script* class whose transient fields all carry `0x2000:Transient`, which is
+why no offset is serialized for any of them; the native `Client`'s constructor wires them instead, and the live window
+does hold `InteractionMaster` `0x02406720` at `+0x0c0`. So `--prop-name` cannot reach the console from any object on
+this build. **What would settle where the live console is** is a diff against the class default
+(`fields.py --object 0x01fb9bc0 --compare`): the transient slot is null in the default and set in the instance, so the
+differing dword names it without a property chain -- then `--fstrings` on that pointer, in a sequence that types after
+one spent key (`bIgnoreKeys` swallowed this run's four characters, which is why the prompt read empty and the `FString`
+pairs carried nothing).
+
 **The object pages do not hold it (measured 2026-11-06).** The bounded scan proposed above was run with the
 prompt open and `hist` typed and unsubmitted: the 295 64 KiB pages `GObjObjects`' pointers cover (18,880 KiB) were
 searched in 2.5 min for the UTF-16LE payload *with* its NUL terminator and returned **0 hits** over 18,624 KiB read,

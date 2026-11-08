@@ -1627,13 +1627,63 @@ eleven the closed-prompt walk named: `ObjectProperty`, `Package`, three `Class` 
 `InteractionMaster` `0x02406720` at `+0x030`; that object's `+0x028`..`+0x034` name `XboxClient` `0x01fb9bc0`,
 `GUIController` `0x02345500`, `Console` `0x02344b00` (the class default again) and `UIXInteraction` `0x05b10a80`. So
 the console's registration is a list of interactions, one slot of which is the class default rather than an instance:
-whatever draws and executes the prompt is in that list, and `Player.Console` is not where U15's `History` will come
-from.
+whatever draws and executes the prompt is in that list, and `Player.Console` is not where U15's `History` will
+come from -- the player object is not a `Player` at all but `XboxClient : Client`, and that chain declares
+no `Console` property (next section).
 
 **What this changes.** `Tab` + `stat fps` + `ret` remain a working console on the shipped disc; the drawn line is no
 longer evidence of a swapped image; and the next read is `objects.py --object 0x2406720 --refs --object-size 0x200`,
 one step past the console default's `InteractionMaster`.
 
+
+## The player object is `XboxClient : Client`, and neither class declares `Console` (measured 2026-11-08)
+
+U15's remaining route was "read `Engine.Player.Console` from a `Player` object", after three sessions had closed the
+`PlayerController` arm. Both arms are closed now, and the second one for a reason that also retires the property the
+route was built on.
+
+**The boot's state, so the read has a context.** `plr1`: keyboard attached at 75 s, `M00` loaded (`Continue` -> ten
+d-pad presses -> `A`, intro card, tutorial modal), one `Tab`, then `h i s t` and **no** submit. `console-line.py` reads
+the `05-typed` frame as `prompt` -- 67 cyan pixels in a `95x32` band at `+34+209`, i.e. an open console with an *empty*
+line -- and the object array is `0x041e0000 num=48,646 max=51,886` with names `41,265` at `0x07730000`.
+
+**The super chain, printed by the tool that walks it.** `fields.py --at 0x006be0d8 --object 0x01fb9bc0 --prop-name
+Console` names the live player object -- class `XboxClient` (class object `0x00dcea00`) -- and then:
+
+    super chain of class 0x00dcea00: `XboxClient` 0x00dcea00 -> `Client` 0x00d40600 -> `Object` 0x00bcf000
+    0 declared `Console` properties with `Outer` = its class:
+    no property named `Console` in the chain: name it from the object array instead
+
+So `Engine.Player` is not on the live player's chain either: this build instantiates `XboxClient`, whose parent is
+`Client` and whose grandparent is `Object`.
+
+**What `Client` declares is 32 objects, and `Console` is not one of them.** `fields.py --object 0x00d40600 --children`
+lists them by array index -- `308 ETextureDetail`, then `WindowedViewportX/Y`, `FullscreenViewportX/Y`,
+`MenuViewportX/Y`, `Brightness`, `Contrast`, `Gamma`, `CaptureMouse`, seven `TextureDetail*` bytes, `ScreenFlashes`,
+`NoLighting`, `MinDesiredFrameRate`, `Decals`, `NoDynamicLights`, `NoFractalAnim`, `Coronas`, `DecoLayers`,
+`Projectors`, `ReportDynamicUploads`, `WeatherEffects`, `ScaleHUDX`, `AnimMeshDynamicLOD`, `DrawDistanceLOD` (index
+339) -- viewport and renderer settings, every one of them. No `Console`, no `GUIController`, no `InteractionMaster`, no
+`LocalInteractions`.
+
+**Why the file said otherwise.** `inventory/class_properties.csv:2907` is `Engine,Player,Console,UObjectProperty,
+0x2000:Transient;,Console` -- a *script* class, and the four fields that matter (`Console`, `GUIController`,
+`InteractionMaster`, `LocalInteractions`) all carry `0x2000:Transient`, so nothing in the package fixes their offset:
+the linker never serializes a native class's transient fields and the offsets come from the C++ constructor. The live
+window proves the constructor wires the same fields anyway -- `XboxClient`'s `--properties` block holds
+`InteractionMaster` `0x02406720` at `+0x0c0` and a one-element `XboxViewport` array at `+0x02c`, and `0x02406720` is
+the master the console default names at `+0x030` (its `+0x028`..`+0x034` block still reads `XboxClient`,
+`GUIController`, `Console` = the class default `0x02344b00`, `UIXInteraction`, as on 2026-11-06).
+
+**The console's own window carries no text while the prompt is drawn.** `0x02344b00` reads 1 `FString`-shaped pair with
+0 carrying text, and the master's block reads 3 pairs with 0 carrying text. That is uninformative this run because the
+characters never arrived: four `gkey` presses straight after `Tab` lost the line to `bIgnoreKeys`, the swallow the
+earlier sequences spent a key on before typing.
+
+**What this changes.** `--prop-name` cannot reach `Console` on this build from any object: the property is in neither
+the controller's chain nor the player's. The read has to come from the object graph -- the transient slots are null in
+the class default and set in the live instance, so a `--compare` of the two names them without a property chain. Cost,
+for the next run's budget: `--children` on a class object is one page-cached array pass, **3 m 5 s** for 48,646
+objects, where `--prop-name` is seconds.
 
 ## The typed command is not in the pages the object array covers (measured 2026-11-06)
 
