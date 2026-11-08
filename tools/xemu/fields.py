@@ -64,6 +64,9 @@ SUPER_OFF = 0x28             # UStruct::Super on this build (measured 2026-11-08
 NAME_OFF = 0x20              # UObject::Name, an FName index (names.py --verify)
 CLASS_OFF = 0x24             # UObject::Class, a UClass object (names.py --verify)
 OUTER_OFF = 0x18             # UObject::Outer (PLAN 4.3 census notes: a class object's `+0x18` names its package)
+OFFSET_AT = 0x48             # UProperty::Offset, written by the linker, never serialized (measured 2026-11-08:
+                             # `SkipMatineeTextString` +0x48 = 0x258, `DialogueFontScale` = 0x168,
+                             # `NotificationFontScale` = 0x19c -- see docs/NATIVE_PROPERTIES.md §10)
 PROPERTY_SUFFIX = "Property"
 FIELD_KINDS = ("Function", "State", "ScriptStruct")
 
@@ -517,12 +520,14 @@ def find_declared(r, cls, name, limit=0x1400, depth=8):
     return seen, hits, found
 
 
-def prop_offset(r, prop, at):
-    """The dword at `at` inside a `UProperty` object, read as the linker's `Offset` once `at` is calibrated.
+def prop_offset(r, prop, at=OFFSET_AT):
+    """The dword at `at` (default `+0x48`) inside a `UProperty` object: the linker's `Offset`.
 
     Nothing in the package serializes `UProperty::Offset` -- the linker writes it into the live objects -- so `at`
-    is measured, not assumed: the dword position whose value equals an offset this project already read off an
-    object's bytes (the `GameHud` `SkipMatineeTextString` `FString` at `+0x258` is that reference).
+    is measured, not assumed. It is `+0x48` on this build, from three witnesses read on one boot: the
+    `SkipMatineeTextString` `StrProperty` holds `0x258` there (the `FString` `'Press A to Skip'` this project
+    read off `GameHud`'s class default), `DialogueFontScale` holds `0x168` and `NotificationFontScale` `0x19c`
+    (the two config scales, measured off the same object's bytes). Pass `at` only to re-test the position.
     """
     return r.try_u32(prop + at)
 
@@ -693,8 +698,6 @@ def cmd_object(r, args):
         if not found:
             print("  no property named `%s` in the chain: name it from the object array instead" %
                   args.prop_name)
-        elif args.prop_at is None:
-            print("  --prop-at is needed to name its `Offset` dword")
         else:
             klass, mob, addr2, fname, kind = found
             slot = prop_offset(r, addr2, args.prop_at)
@@ -728,9 +731,6 @@ def cmd_object(r, args):
             got = find_prop(chain, args.prop_value)
             if not got:
                 print("  no field named `%s` in the chain (%d names)" % (args.prop_value, len(chain)))
-            elif args.prop_at is None:
-                print("  `%s` is %s at %#010x; --prop-at is needed to name its `Offset` dword"
-                      % (args.prop_value, got[2], got[0]))
             else:
                 a, fname, kind = got
                 slot = prop_offset(r, a, args.prop_at)
@@ -1037,7 +1037,7 @@ def selftest():
     # the value sits at that offset in the instance. A name the chain does not declare must read nothing rather
     # than fall through to the class object.
     mem3[default + 0x258] = 0x05050505      # the already-measured `SkipMatineeTextString` slot
-    mem3[prop2 + 0x30] = 0x258              # the linker's `Offset`, calibrated on that measurement
+    mem3[prop2 + OFFSET_AT] = 0x258         # the linker's `Offset` (`+0x48`), calibrated on that measurement
     chain2 = [(prop1, "Health", "IntProperty"), (prop2, "SkipMatineeTextString", "StrProperty")]
     got = find_prop(chain2, "skipmatineetextstring")
     if not got or got[0] != prop2:
@@ -1046,7 +1046,7 @@ def selftest():
     if find_prop(chain2, "TextFontScale") is not None:
         print("selftest FAIL: find_prop invented a field the chain does not name")
         return 1
-    slot = prop_offset(r3, got[0], 0x30)
+    slot = prop_offset(r3, got[0])          # no `at`: the measured `+0x48` default has to be the one used
     if slot != 0x258:
         print("selftest FAIL: prop_offset read %r for the calibrated dword" % (slot,))
         return 1
@@ -1094,9 +1094,9 @@ def main():
                          "(UProperty::Offset is one of them; the package serializes none of it)")
     ap.add_argument("--prop-value", default=None,
                     help="with --properties: the declared name whose value slot to read (e.g. TextFontScale)")
-    ap.add_argument("--prop-at", type=lambda v: int(v, 0), default=None,
-                    help="with --prop-value: the dword position inside the UProperty object that holds `Offset` "
-                         "(calibrated against an offset already measured off an object's bytes)")
+    ap.add_argument("--prop-at", type=lambda v: int(v, 0), default=OFFSET_AT,
+                    help="the dword position inside a UProperty object that holds `Offset` (default %#x, the "
+                         "position three witnesses agree on; override only to re-test it)" % OFFSET_AT)
     ap.add_argument("--prop-name", default=None,
                     help="name a declared property by walking the class object's members and its `Super` chain")
     ap.add_argument("--prop-in", type=lambda v: int(v, 0), default=None,
