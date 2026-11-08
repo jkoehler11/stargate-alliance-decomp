@@ -817,6 +817,34 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+### Execution notes (2026-11-08, `UProperty::Offset` is `+0x48`, and the HUD's windows are named by property)
+
+- **`Offset` is the dword at property `+0x48`, from two independent witnesses on one boot** (measured 2026-11-08,
+  `prp3`: gdb `12,573`, `M00` loaded at 89,499 px, object array `0x041e0000` 48,646 objects, names 41,265).
+  `SkipMatineeTextString` (`StrProperty` `0x019c5400`, index 26,928) holds `0x258` there -- the offset its `FString`
+  occupies on both `GameHud` rows -- and the three config scales hold the offsets they were measured at on the class
+  default: `DialogueFontScale` `0x168`, `NotificationFontScale` `0x19c`, `InteractionFontScale` `0x1d0`. Two value
+  sets that could not both be coincidence is the calibration. `fields.py` now defaults `--prop-at` to
+  `OFFSET_AT = 0x48`, so `--prop-name`/`--prop-value` name a value slot with no calibration read, and the selftest
+  runs on the default so the position cannot drift.
+- **A window is named by its property's `Offset`, not by its place in the declaration list.** `GameHud`'s 158
+  declared objects list `DialogueWindow` (26,717), `InteractionWindow` (26,718), `NotificationWindow` (26,719), but
+  the offsets are `0x50`, `0x58`, `0x54` -- so index order would have read `InteractionWindow` as the notification.
+  The live row `0x09362100` resolves all three to `UITextBox` objects (`0x097c7300`, `0x097c6900`, `0x097c6e00`),
+  chain `UITextBox` `0x0197a800` -> `UIWidget` `0x0197b400` -> `Actor` -> `Object`; the class default `0x0682ab00`
+  holds `0` in all three slots because `GameHud.uc:493/:511/:522` spawn them.
+- **U15's window question is answered: the text arrives and it is drawn.** `UIWidget` declares 65 objects and
+  `DisplayText` (`StrProperty` `0x019c2450`) is at `Offset 0x394`; the live `NotificationWindow` holds
+  `'New Objective : Open the door for the doctor'` (Count 45) there, not the 27-character
+  `NO NOTIFICATION TEXT SET!!!!` placeholder, and `prp3/02-mission.png` from the same boot draws that identical
+  line at the bottom of the instruction panel. `DialogueWindow` holds `'General, would you mind getting the door for
+  me sir?'` (53) and `InteractionWindow` `'default'` (8) at the same offset.
+- **One `--children` pass over the array is about 200 s, and its names compare exactly.** The `StrProperty` reads
+  back as `'SkipMatineeTextString'` with `Outer` `0x01886c00` on both a `repr` read and the list, yet one pass over
+  that same boot missed the entry and the next found it -- so a name-keyed filter that finds nothing is worth one
+  re-read before the object is called absent. The windows' `DisplayText` read is the whole of U15's remaining
+  measurement; `docs/NATIVE_PROPERTIES.md` §10 is the record.
+
 ### Execution notes (2026-11-08, a class's declared fields are the objects outered to it, and `Outer` is one array pass)
 
 - **A class declares its fields as objects outered to its class object, so `Outer` is the field index** (measured

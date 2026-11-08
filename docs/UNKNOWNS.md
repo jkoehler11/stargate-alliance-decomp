@@ -1241,6 +1241,17 @@ Tooling: `names.py --census` now takes `--csv PATH` (every row, so one 4-minute 
 a comma list for `--grep`, and `--addresses`; and the census uses `OBJECT_HI = 0x10000000` for the object array, with
 `objects.py`'s 128 MiB bound left alone for the dump readers.
 
+**The notification's text is in memory and on the frame, so that half of the question is closed (measured
+2026-11-08).** `UProperty::Offset` is calibrated (the dword at property `+0x48`; `docs/NATIVE_PROPERTIES.md` §10), so
+the windows can be named by *property* instead of by slot order: on the live row `0x09362100`, `NotificationWindow`'s
+`Offset 0x54` is the `UITextBox` `0x097c6e00`, and `UIWidget.DisplayText` (`StrProperty` `0x019c2450`, `Offset 0x394`)
+holds `'New Objective : Open the door for the doctor'` — 45 characters, not the 27-character
+`NO NOTIFICATION TEXT SET!!!!` that `SetNotifications` substitutes for an empty argument. The same boot's frame
+(`02-mission.png`) draws the identical line at the bottom of the instruction panel, so the text arrives, the field
+holds it, and the draw path renders it. `DialogueWindow` (`'General, would you mind getting the door for me sir?'`,
+53) and `InteractionWindow` (`'default'`, 8) read at the same offset. What stays open in this entry is the
+`History[16]` command-line read and the effect question above; "the HUD window draws nothing" is retired.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

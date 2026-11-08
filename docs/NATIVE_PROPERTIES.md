@@ -358,8 +358,47 @@ uncached `u32(cls + 0x20)` before it reads the object's own name, so a name filt
 stub round trips -- one such walk had not finished after five minutes and was killed, while the `Outer` test (a
 page-cached `try_u32` for every non-match) answered in about 80 s on the same stub. Ask a cached dword first.
 
-**`Offset` stays uncalibrated until one window is read.** The calibration -- the dword position inside
-`SkipMatineeTextString`'s `UProperty` that holds `0x258` -- was still in flight at the run's cap, so `--prop-at`
-is required and still a guess, and the live `NotificationWindow`'s `DisplayText` slot (U15) is unread. The
-instrument is no longer the cost: the field list names that property's address, per boot, and `--bytes
-0x28,0x180` on it is one read.
+**`Offset` was uncalibrated when this section was written; §10 has the calibration.**
+
+## 10. `UProperty::Offset` is `+0x48`, and the HUD's windows are named by property (measured 2026-11-08)
+
+One loaded-`M00` boot (`prp3`, gdb `12,573`; `GObjObjects` `0x041e0000`, 48,646 objects, `GNames` 41,265) reads the
+position and then uses it. The calibration is two *independent* value sets sitting in one dword position, which is
+what makes it a measurement rather than a coincidence:
+
+| property | address | dword at `+0x48` | the object offset that value is already known to be |
+|---|---|---|---|
+| `SkipMatineeTextString` (`StrProperty`) | `0x019c5400` | `0x258` | the `FString` `'Press A to Skip'`, on both `GameHud` rows |
+| `DialogueFontScale` (`FloatProperty`) | `0x019c59b0` | `0x168` | the `0.85` config value on the class default |
+| `NotificationFontScale` | `0x019c5860` | `0x19c` | the `0.8` config value |
+| `InteractionFontScale` | `0x019c5780` | `0x1d0` | the second `0.85` |
+| `DialogueWindow` / `InteractionWindow` / `NotificationWindow` | `0x019c9d10` / `0x019c9ca0` / `0x019c9c30` | `0x50` / `0x58` / `0x54` | the three window slots |
+| `UIWidget.DisplayText` (`StrProperty`) | `0x019c2450` | `0x394` | `DisplayText`'s slot on a `UITextBox` |
+
+`tools/xemu/fields.py` therefore defaults `--prop-at` to `OFFSET_AT = 0x48`: `--prop-name`/`--prop-value` name a
+property's value slot with no calibration read, and the selftest uses the default so the position cannot drift
+silently.
+
+**The declaration order is not the offset order.** `GameHud`'s 158 declared objects list `DialogueWindow` (index
+26,717), `InteractionWindow` (26,718) and `NotificationWindow` (26,719) in that order, but the linker's `Offset`s are
+`0x50`, `0x58` and `0x54`. Reading a window by its position in the list would have put `InteractionWindow` where
+`NotificationWindow` is; reading each property's own `Offset` names it. On the live row `0x09362100` all three slots
+resolve to `UITextBox` objects — `0x097c7300`, `0x097c6900` and `0x097c6e00` — whose class chain is `UITextBox`
+(`0x0197a800`) -> `UIWidget` (`0x0197b400`) -> `Actor` -> `Object`. The class default `0x0682ab00` holds `0` in all
+three slots, because `GameHud.uc:493`, `:511` and `:522` spawn the windows after the class default is built, so a
+class-default read can never answer a question about them.
+
+**`DisplayText` holds real text, and the frame draws the same string.** `UIWidget` declares 65 objects and
+`DisplayText` is `0x019c2450` at `Offset 0x394`; read on the live windows of that boot:
+
+| window | `DisplayText` | Count |
+|---|---|---|
+| `DialogueWindow` `0x097c7300` | `'General, would you mind getting the door for me sir?'` | 53 |
+| `NotificationWindow` `0x097c6e00` | `'New Objective : Open the door for the doctor'` | 45 |
+| `InteractionWindow` `0x097c6900` | `'default'` | 8 |
+
+The notification is **not** the 27-character `NO NOTIFICATION TEXT SET!!!!` placeholder that `GameHud.uc:1034`
+substitutes for an empty argument, so `SetNotifications` was given real text; and the same boot's frame
+(`$WORK/xemu/prp3/02-mission.png`) draws that identical line at the bottom of the instruction panel. The text
+reaches the field and the field reaches the screen: the console's "draws nothing" reading does not extend to the
+notification path (U15).
