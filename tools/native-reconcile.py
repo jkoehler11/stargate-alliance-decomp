@@ -60,6 +60,50 @@ def is_operator_record(name):
     return bool(OPERATOR_RECORD.match(name))
 
 
+RESIDUAL_COLS = ["package", "class", "function", "direction", "native_token", "binder", "verdict"]
+
+
+def residual_rows(pkg_name, cls, decls, records, binder):
+    """[(function, direction, token, binder, verdict)] for the rows where the two halves do not meet.
+
+    `record-only` is a native record the class's text never declares; `declaration-only` is a `native function`
+    the package carries no record for. `binder` is the image's own `int<prefix><Class>exec<Function>` literal for
+    that class and function, when the native binder (`tools/native-binder.py`) found one -- which is what decides
+    the verdict, because it is the build's C++ side speaking rather than either of the two package halves.
+    """
+    declared = {n.lower(): n for n, _i, k in decls if n and k == "function"}
+    out = []
+    for name in sorted(records):
+        if nr_lower(name) in declared or is_operator_record(name):
+            continue
+        have = binder.get((cls.lower(), name.lower()))
+        out.append((name, "record-only", (records[name].get("native_token") or "0").strip() or "0",
+                    have or "", "text-missing" if have else "record-unbound"))
+    for low, name in sorted(declared.items()):
+        if low in {k.lower() for k in records}:
+            continue
+        have = binder.get((cls.lower(), low))
+        out.append((name, "declaration-only", "", have or "", "binder-only" if have else "declaration-unbound"))
+    return out
+
+
+def nr_lower(name):
+    return name.lower()
+
+
+def load_binder(path=None):
+    """{(class, function): binder literal} from inventory/native_binder_names.csv (empty when it is absent)."""
+    path = path or os.path.join(ROOT, "inventory", "native_binder_names.csv")
+    out = {}
+    if not os.path.isfile(path):
+        return out
+    with open(path, newline="") as fh:
+        for r in csv.DictReader(fh):
+            out[(r["class"].lower(), r["function"].lower())] = r.get("binder") or "int%s%s" % (
+                r.get("prefix_expected", ""), r["function"])
+    return out
+
+
 TOKEN_COLS = ["package", "class", "function", "native_token", "basis"]
 
 # What explains a record's token. `text-index` is the class spelling it out; `operator-expansion` is one
@@ -138,7 +182,22 @@ def selftest():
                          ("GotoState", False), ("Created", False), ("P90Prototype", False)):
         assert is_operator_record(name) is expect, "%s: operator rule answered %r" % (name, not expect)
         cases += 1
-    print("ok   native-reconcile: %d cases (five bases, spelled operator index, the operator-name rule)" % cases)
+    # The residual table decides "which side is right" from the image's binder, not from either package half.
+    recs2 = {"DeclWithRecord": {"native_token": "5"}, "OnlyRecord": {"native_token": "0"}}
+    decls2 = declarations(" native(5) final function DeclWithRecord( int A );"
+                          " native function OnlyDecl( int B ); ")
+    got2 = [(n, d, v) for n, d, _t, _b, v in
+            residual_rows("P", "Cls", decls2, recs2, {("cls", "onlyrecord"): "intAclsexecOnlyRecord"})]
+    want2 = [("OnlyRecord", "record-only", "text-missing"),
+             ("OnlyDecl", "declaration-only", "declaration-unbound")]
+    assert got2 == want2, "residual rows %r, expected %r" % (got2, want2)
+    cases += 1
+    # Without the binder the same record side flips to `record-unbound`: the verdict is the image's, not a default.
+    got3 = [(n, v) for n, _d, _t, _b, v in residual_rows("P", "Cls", decls2, recs2, {})]
+    assert ("OnlyRecord", "record-unbound") in got3, "a record with no binder must not read as text-missing"
+    cases += 1
+    print("ok   native-reconcile: %d cases (five bases, spelled operator index, the operator-name rule, "
+          "a record explained by the binder, a declaration the image does not bind)" % cases)
     return 0
 
 
@@ -194,8 +253,10 @@ COLS = ["package", "class", "class_is_native", "text_functions", "text_indexed",
 def run(system_dir, outdir, only=None, walk=False):
     pst = load_script_text()
     known = csv_natives()
+    binder = load_binder()
     rows = []
     token_rows = []
+    residual = []
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
@@ -238,6 +299,10 @@ def run(system_dir, outdir, only=None, walk=False):
             for name, token, basis in token_basis(decls, records_all):
                 token_rows.append({"package": pkg_name, "class": cls, "function": name,
                                    "native_token": token, "basis": basis})
+            for name, direction, token, bind, verdict in residual_rows(pkg_name, cls, decls, records, binder):
+                residual.append({"package": pkg_name, "class": cls, "function": name,
+                                 "direction": direction, "native_token": token, "binder": bind,
+                                 "verdict": verdict})
             rows.append({"package": pkg_name, "class": cls,
                          "class_is_native": int(bool(CLASS_NATIVE.search(text))),
                          "text_functions": len(names), "text_indexed": len(indexed), "operators": operators,
@@ -274,6 +339,13 @@ def run(system_dir, outdir, only=None, walk=False):
             for r in token_rows:
                 w.writerow(r)
         print("wrote %s" % path)
+        path = os.path.join(outdir, "native_residual.csv")
+        with open(path, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=RESIDUAL_COLS, lineterminator="\n")
+            w.writeheader()
+            for r in residual:
+                w.writerow(r)
+        print("wrote %s" % path)
     total = collections.Counter()
     for r in rows:
         for k in COLS[3:]:
@@ -289,6 +361,13 @@ def run(system_dir, outdir, only=None, walk=False):
     for r in token_rows:
         if r["basis"] in ("unresolved", "index-mismatch", "unindexed-declaration"):
             print("  %-10s %-24s %-22s token %s" % (r["basis"], r["class"], r["function"], r["native_token"]))
+    verdict = collections.Counter(r["verdict"] for r in residual)
+    print("%d residual row(s): %s"
+          % (len(residual), ", ".join("%s %d" % (v, verdict[v]) for v in sorted(verdict))))
+    for r in residual:
+        print("  %-16s %-10s %-22s %-24s token=%-4s %s"
+              % (r["direction"], r["package"], r["class"], r["function"], r["native_token"] or "-",
+                 r["verdict"]))
     return rows
 
 

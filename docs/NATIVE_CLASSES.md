@@ -139,14 +139,14 @@ Three wrinkles, each handled explicitly instead of being smoothed over:
   `Concat_StrStr`, `LessLess_VectorRotator`, …), so those 112 records have no declaration to match by design and are
   counted apart.
 
-**The residual is 22 records over 14 classes**, and it is named rather than explained: `PlayerController` has 4
-records with no declaration (the `Client*`/`Server*` pairs, where the shipped text looks truncated), `Core.Object`
-has 2 declarations with no record, `Weapon`, `GUIController`, `StargateWeapon` and `HitEffectManager` two each. The
-same two classes whose text the extraction flagged as truncated (`GameInfo`, `WarpZoneMarker`) are **not** among
-them, so truncation is a candidate cause, not a demonstrated one.
+**The residual is 22 records over 14 classes, and the image now decides 15 of them** — see *The 22 residual rows,
+each with a verdict* below: `PlayerController` has 4 records with no declaration (the `Client*`/`Server*` pairs),
+`Core.Object` has 2 declarations with no record, `Weapon`, `GUIController`, `StargateWeapon` and `HitEffectManager`
+two each. The binder pool in the image settles which side is right where one exists and leaves 7 declarations the
+build does not bind at all.
 
-Not measured: which side is right where they disagree. Settling that needs the C++ side (Phase 4), which is why the
-residual is a list of names and counts rather than a verdict.
+Not measured: whether the 7 unbound declarations were compiled in some other build of the class — nothing in the
+image binds them, so there is no third witness to ask; everything else in the residual is decided.
 
 ## Every token has a basis (per record, UNKNOWNS U1/U3)
 
@@ -193,4 +193,26 @@ function's end, not a declaration: the row is an artefact of an editor package's
 The consequence for 3.9/6.1: `inventory/native_tokens.csv` is the per-record form of the rule the compile loop
 needs — an index is trustworthy when its basis is `text-index`, and a record whose basis is not is either a
 synthesised operator body (no script to compile) or a defect worth reading.
+
+## The 22 residual rows, each with a verdict
+
+The table's residual — 13 records with no declaration, 9 declarations with no record — was left as "which side is
+right needs the C++ side". The C++ side is already committed: `tools/native-binder.py` extracts the build's own
+`int<prefix><Class>exec<Function>` literals (`inventory/native_binder_names.csv`), which is exactly the name the
+engine's binder looks up for a native. So the same run now writes `inventory/native_residual.csv`
+(`package, class, function, direction, native_token, binder, verdict`), and every row gets one of three:
+
+| verdict | rows | what the image says |
+|---|---:|---|
+| `text-missing` | **13** | the record **is right**: the image carries `int⋯exec<Function>` for that class and name, and the record's token, so only the class's shipped text lacks the declaration |
+| `declaration-unbound` | **7** | no record and no binder name: the `native function` declaration has no counterpart in the build at all |
+| `binder-only` | **2** | `Core.Object.Divide` and `Core.Object.Round` are declared *and* bound in the image, so the **record** table is what is missing |
+
+So the residual is not 22 undecided disagreements: 15 of the 22 are decided by the image (13 text gaps, 2 record
+gaps — both `Core.Object`), and the remaining 7 are declarations (`Weapon.GetErrorVec`, `Weapon.GetFireStart`,
+`ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`, `StargateWeapon.updateLeadLag`,
+`HitEffectManager.Update`, `HitEffectManager.SetupFade`) that nothing in the build binds. The truncation hypothesis
+is only partly right: 3 of the 13 owning classes' texts end unbalanced (`Actor`, `GUIFont`, `UPreviewMapListClient`),
+while `PlayerController`'s 245 KB text is balanced and still declares none of its four `Client*`/`Server*` records.
+
 
