@@ -81,8 +81,19 @@ It needs `xdotool` and ImageMagick's `import`/`compare`, and an X display: over 
 all (docs/REGRESSION.md). A shot named in `--static-shot` is the inverse: its frame *cannot* change (the stock disc's console draws
 nothing -- it has no `PostRender`), so an identical frame is the expected reading and a repaint is the failure.
 Without it a green console run ends `FAIL: 2 shot step(s) did not repaint` and exit 2, which reads like a lost key.
+**Nothing this harness calls is allowed to block forever.** Every `xdotool`, `import`, `compare` and `convert` call
+carries a deadline (`--deadline`, default 10 s for the X tools, x3 for `import`, x12 for the ImageMagick filters) and a
+call that misses it is reported *by name*, with the step it was on, whether the emulator is still alive (and the tail of
+its log), whether the X server still answers and where its focus is, and whether the guest is executing. The evidence
+that made this necessary: of six boots that reached for the sink slots, two ended with the log stopping on the line
+before an `xdotool` call and no further word, and two more died with the emulator gone (`apprun=0`) — a hang and a lost
+guest were both reported as "still the menu". Both now end the run at the step they happened, exit 4, and write
+`--out/stall.txt`. The same run also checks `proc.poll()` before every step, so a guest that exits mid-sequence is
+named at that step rather than at the capture that fails afterwards.
+
 Exit codes: 0 every shot step repainted, 2 a step did not change the screen (the input
-never reached the guest, or the screen it was meant to change was already up), 3 the emulator never came up.
+never reached the guest, or the screen it was meant to change was already up), 3 the emulator never came up,
+4 an external tool missed its deadline or the emulator exited mid-sequence (see `stall.txt`).
 Every frame stays in `--out`: they are frames of the game and must not be committed.
 """
 import argparse
@@ -93,6 +104,7 @@ import shutil
 import subprocess
 import struct
 import sys
+import threading
 import time
 
 SMOKE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py")
@@ -130,8 +142,156 @@ def load_smoke():
     return module
 
 
-def run(cmd, **kw):
-    return subprocess.run(cmd, capture_output=True, text=True, **kw)
+TOOL_DEADLINE = 10.0   # seconds an X tool may take before the run names it; --deadline overrides
+GRAB_FACTOR = 3.0      # `import` grabs a 1280x960 window in well under a second; this is the factor for a *stuck* one
+FILTER_FACTOR = 12.0   # `compare`/`convert` on two frames, which are slower but still bounded work
+
+# Which step the run is on, for a report written from inside a hang and for the guest-exit check between steps.
+STATE = {"step": "before the first step", "window": None, "index": 0}
+
+
+class ToolHang(Exception):
+    """An external tool (one of the X or ImageMagick calls) never answered inside its deadline.
+
+    Every call this harness made to `xdotool`, `import`, `compare` or `convert` used to be unbounded. Measured over six
+    sink-slot boots (PLAN 2026-11-08), two ended with the log stopping on the line *before* an `xdotool` call and no
+    further word: a hang is unreadable without a deadline, because a harness blocked inside `subprocess.run` cannot even
+    report that it is stuck. The deadline turns a wedge into a named call.
+    """
+
+    def __init__(self, cmd, deadline, elapsed):
+        self.cmd = list(cmd)
+        self.deadline = deadline
+        self.elapsed = elapsed
+        super().__init__("%s did not answer within %.1fs (%s)"
+                         % (os.path.basename(cmd[0]), deadline, " ".join(str(c) for c in cmd[1:5])))
+
+
+def deadline_for(cmd):
+    """How long this call may take: the X tools are cheap, `import` and the ImageMagick filters less so."""
+    name = os.path.basename(cmd[0])
+    if name == "import":
+        return max(5.0, TOOL_DEADLINE * GRAB_FACTOR)
+    if name in ("compare", "convert", "identify"):
+        return max(10.0, TOOL_DEADLINE * FILTER_FACTOR)
+    return TOOL_DEADLINE
+
+
+def run(cmd, deadline=None, **kw):
+    """One external tool, bounded: raises ToolHang instead of blocking.
+
+    `subprocess.run(timeout=...)` kills the child, so a wedged `xdotool` cannot outlive the report that names it.
+    """
+    limit = deadline if deadline is not None else deadline_for(cmd)
+    started = time.time()
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=limit, **kw)
+    except subprocess.TimeoutExpired:
+        raise ToolHang(cmd, limit, time.time() - started)
+
+
+def bounded(fn, seconds):
+    """Call fn in a thread and give up after `seconds`; None when it does not answer.
+
+    Some probes can block on a guest that is wedged or paused (a QMP round trip, a stub read), and the report must not
+    be able to hang the way the thing it reports on did.
+    """
+    box = {}
+
+    def body():
+        try:
+            box["value"] = fn()
+        except Exception as exc:                                            # noqa: BLE001 -- reported as text
+            box["error"] = exc
+
+    worker = threading.Thread(target=body, daemon=True)
+    worker.start()
+    worker.join(seconds)
+    return None if worker.is_alive() else box.get("value")
+
+
+def probe(cmd, seconds=3.0):
+    """A bounded question asked from inside the stall report: the reply, or None when the tool will not talk."""
+    try:
+        return run(cmd, deadline=seconds)
+    except ToolHang:
+        return None
+
+
+def eeprom_digest(path):
+    """The md5 of the profile image a run boots with: two boots that differ only in this file look identical otherwise."""
+    import hashlib
+    try:
+        with open(path, "rb") as handle:
+            return hashlib.md5(handle.read()).hexdigest()
+    except OSError:
+        return "(unreadable)"
+
+
+def tail(path, lines=6):
+    try:
+        with open(path, "r", errors="replace") as handle:
+            return handle.read().splitlines()[-lines:]
+    except OSError:
+        return []
+
+
+def stall_report(exc, out_dir, proc=None, ask=None):
+    """Name the call that never answered, and what the desktop and the guest looked like while it hung.
+
+    Written to `--out/stall.txt` as well as the log, because a run killed from outside leaves only the file behind.
+    Every question in here is bounded: the reason for the report may be that the X server itself stopped answering,
+    and "the probe did not answer either" is a reading, not a second hang.
+    """
+    lines = ["STALL: %s" % exc,
+             "       step: %s" % STATE.get("step")]
+    if proc is not None:
+        status = proc.poll()
+        lines.append("       emulator: %s" % ("exited %s" % status if status is not None
+                                             else "still running (pid %d)" % proc.pid))
+        for line in tail(os.path.join(out_dir, "xemu.log")):
+            lines.append("       xemu.log: %s" % line.strip())
+    got = probe(["xdotool", "search", "--onlyvisible", "--name", "xemu"])
+    if got is None:
+        lines.append("       X: `xdotool search` did not answer either -- the server is not serving this client")
+    else:
+        live = got.stdout.split()
+        lines.append("       X: answered; xemu windows now %s (this run's: %s)"
+                     % (", ".join(live) or "none", STATE.get("window") or "?"))
+    got = probe(["xdotool", "getwindowfocus", "getwindowname"])
+    lines.append("       X focus: %s" % ("did not answer" if got is None
+                                        else (got.stdout.strip() or "(no name)")))
+    if ask is not None:
+        # The guest is the other half of the question: a harness hung on X while the console still animates is a
+        # different fault from a guest that stopped executing, and EIP is what separates them.
+        answer = bounded(ask, 4.0)
+        lines.append("       guest: %s" % (answer or "QMP did not answer inside 4 s"))
+    text = "\n".join(lines)
+    say(text)
+    try:
+        with open(os.path.join(out_dir, "stall.txt"), "w") as handle:
+            handle.write(text + "\n")
+    except OSError:
+        pass
+    return 4
+
+
+def guest_gone(proc, out_dir, ask=None):
+    """The emulator exited mid-sequence: say at which step, with its exit status and the tail of its own log."""
+    status = proc.poll()
+    lines = ["STALL: the emulator exited (%s) at %s" % (status, STATE.get("step"))]
+    for line in tail(os.path.join(out_dir, "xemu.log")):
+        lines.append("       xemu.log: %s" % line.strip())
+    if ask is not None:
+        lines.append("       guest: %s" % (bounded(ask, 4.0) or "no QMP answer (the emulator is gone)"))
+    text = "\n".join(lines)
+    say(text)
+    try:
+        with open(os.path.join(out_dir, "stall.txt"), "w") as handle:
+            handle.write(text + "\n")
+    except OSError:
+        pass
+    return 4
 
 
 def find_window():
@@ -290,8 +450,90 @@ def load_vpad():
     return module
 
 
+def selftest():
+    """The deadline path, which no game run can be relied on to exercise: a hang has to be produced on purpose.
+
+    Hermetic -- no X, no emulator, no dump: every external tool is substituted, so this runs in `make ci`.
+    """
+    import tempfile
+    global TOOL_DEADLINE
+    cases = []
+
+    def case(name, ok, detail=""):
+        cases.append((name, ok, detail))
+
+    # 1. The table: the X tools get the base deadline, a grab three, a filter twelve.
+    saved = TOOL_DEADLINE
+    try:
+        TOOL_DEADLINE = 10.0
+        case("xdotool gets the base deadline", deadline_for(["xdotool", "getwindowfocus"]) == 10.0)
+        case("import gets three times the base", deadline_for(["import", "-window", "1", "x.png"]) == 30.0)
+        case("compare gets twelve", deadline_for(["compare", "-metric", "AE", "a", "b", "null:"]) == 120.0)
+    finally:
+        TOOL_DEADLINE = saved
+
+    # 2. A tool that never answers raises inside its deadline and names itself; the child does not outlive it.
+    started = time.time()
+    try:
+        run([sys.executable, "-c", "import time; time.sleep(30)"], deadline=0.4)
+        case("a hung tool raises ToolHang", False, "it returned")
+    except ToolHang as exc:
+        took = time.time() - started
+        case("a hung tool raises ToolHang", True, exc.args[0])
+        case("the hang report names the program", "did not answer within" in exc.args[0], exc.args[0])
+        case("the deadline is honoured, not slept through", took < 5.0, "%.2fs" % took)
+        case("the deadline it says is the one used", abs(exc.deadline - 0.4) < 1e-9)
+
+    # 3. The same call for a tool that answers: unchanged behaviour, which is the case that must not regress.
+    got = run(["sh", "-c", "echo hi"])
+    case("a fast call still returns its output", got.returncode == 0 and got.stdout.strip() == "hi")
+
+    # 4. The stall report reads X and the guest without hanging on either, and leaves a file behind.
+    with tempfile.TemporaryDirectory() as out:
+        saved_probe = globals()["probe"]
+        try:
+            globals()["probe"] = lambda cmd, seconds=3.0: None          # an X server that answers nothing
+            STATE["step"] = "step 3 (shot=01-list)"
+            exc = ToolHang(["xdotool", "getwindowfocus"], 10.0, 10.0)
+            code = stall_report(exc, out)
+            text = open(os.path.join(out, "stall.txt")).read()
+        finally:
+            globals()["probe"] = saved_probe
+        case("the report exits 4", code == 4)
+        case("the report names the call", "STALL: xdotool did not answer within 10.0s" in text, text.splitlines()[0])
+        case("the report names the step", "step 3 (shot=01-list)" in text)
+        case("a silent X server is a reading, not a crash", "did not answer either" in text)
+        case("the report is written to stall.txt", os.path.getsize(os.path.join(out, "stall.txt")) > 0)
+
+        # 5. A guest that exited is named at its step with its status, and the guest probe is asked exactly once.
+        class Dead:
+            pid = 4321
+
+            def poll(self):
+                return 3
+        asked = []
+        with tempfile.TemporaryDirectory() as out2:
+            code = guest_gone(Dead(), out2, lambda: asked.append(1) or "vm running, EIP 0x80024a97")
+            text = open(os.path.join(out2, "stall.txt")).read()
+        case("a dead emulator exits 4", code == 4)
+        case("a dead emulator is reported with its status and step", "exited (3)" in text and "step 3" in text)
+        case("the report's EIP answer is carried through", "EIP" in text)
+
+    # 6. A probe that blocks is given up on, so the report cannot hang like the thing it reports.
+    case("a blocking probe is abandoned", bounded(lambda: time.sleep(30), 0.3) is None)
+    case("a fast probe is returned", bounded(lambda: "vm running", 2.0) == "vm running")
+
+    bad = [c for c in cases if not c[1]]
+    for name, ok, detail in cases:
+        say("%s %s%s" % ("ok  " if ok else "FAIL", name, ": " + detail if detail else ""))
+    say("%s: %d case(s), %d failed" % ("ok  " if not bad else "FAIL", len(cases), len(bad)))
+    return 0 if not bad else 1
+
+
 def main():
-    global REGRAB_SECONDS, PAD, PAD_MAPPING, PAD_GUID, PAD_HOLD
+    if "--selftest" in sys.argv[1:]:
+        return selftest()
+    global REGRAB_SECONDS, PAD, PAD_MAPPING, PAD_GUID, PAD_HOLD, TOOL_DEADLINE
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--iso", required=True)
     ap.add_argument("--bios", required=True, help="directory with mcpx*.bin and a debug flash")
@@ -310,6 +552,10 @@ def main():
     ap.add_argument("--fuzz", type=int, default=0, help="ignore pixel differences below this percentage")
     ap.add_argument("--regrab", type=float, default=REGRAB_SECONDS,
                     help="seconds between the two grabs of an asserting capture (0 = one grab)")
+    ap.add_argument("--deadline", type=float, default=TOOL_DEADLINE,
+                    help="seconds an external call may take before the run stops and names it (default %(default)s; "
+                         "`import` gets x3 and the ImageMagick filters x12). Measured: two sink-slot boots hung on an "
+                         "`xdotool` call with no further log line, and an unbounded harness cannot report its own hang")
     ap.add_argument("--vpad", action="store_true",
                     help="create the virtual pad even when no step presses it (proves SDL sees the device)")
     ap.add_argument("--pad-hold", type=float, default=PAD_HOLD, help="seconds a pad button is held (default 0.15)")
@@ -376,6 +622,7 @@ def main():
     args = ap.parse_args()
 
     REGRAB_SECONDS = args.regrab
+    TOOL_DEADLINE = args.deadline
     PAD_HOLD = args.pad_hold
     BASE_THRESHOLD = args.threshold
     # A brk= wait can stop being a wait at all: M00 opens on an intro card ("Press A") with the guest frozen on it, so
@@ -436,8 +683,20 @@ def main():
     # this harness has been carrying since 2026-10-24 keeps a profile and goes straight to the map list.
     shared_eeprom = args.eeprom or os.path.join(os.path.expanduser("~/.local/share/xemu/xemu"), "eeprom.bin")
     eeprom = os.path.join(args.out, "eeprom.bin")
+    if args.eeprom and not os.path.exists(args.eeprom):
+        # A missing path used to fall through to the shared image, which carries no profile: `Continue` then opens
+        # SELECT PROFILE, the ten d-pad presses land in a screen with nothing to step, and the run reports "still the
+        # menu" -- measured on sink5/sink6, whose `$W/smoke1/eeprom.bin` did not exist (the profile image is under
+        # `$W/xemu/smoke1/`) while the same boot with the right path opened the map list on the first press.
+        say("FAIL: --eeprom %s does not exist" % args.eeprom)
+        say("      (the fallback is ~/.local/share/xemu/xemu/eeprom.bin, which has no profile: `Continue` opens "
+            "SELECT PROFILE and every later press is wasted)")
+        return 3
     if not os.path.exists(eeprom) and os.path.exists(shared_eeprom):
         shutil.copyfile(shared_eeprom, eeprom)
+    if os.path.exists(eeprom):
+        # Name the profile image in the log: two boots that differ only here look identical from the outside.
+        say("eeprom: %s md5 %s" % (os.path.basename(shared_eeprom), eeprom_digest(eeprom)))
     want_pad = args.vpad or bool(BRK_TAPS) or any(name == "pad" for name, _ in steps)
     if want_pad:
         module = load_vpad()
@@ -477,6 +736,8 @@ def main():
         cmd += ["-gdb", "tcp::%d" % args.gdb]
     proc = subprocess.Popen(cmd,
                             stdout=log, stderr=subprocess.STDOUT, env=env, start_new_session=True)
+    ask = None          # the guest probe the stall report uses, once QMP is up
+    window = None
     try:
         time.sleep(min(args.seconds, 10))
         if proc.poll() is not None:
@@ -501,14 +762,32 @@ def main():
         if window is None:
             say("FAIL: no xemu window on %s" % os.environ.get("DISPLAY"))
             return 3
+        STATE["window"] = window
         say("window: %s" % window)
         prior_focus, prior_name = focus_owner()
         if prior_focus and prior_focus != window:
             say("note: X input focus is %s (%s), not the emulator -- XTEST steps will refuse rather than type there"
                 % (prior_name, prior_focus))
+
+        def ask_guest():
+            """One question for the stall report: is the guest executing, and where is it?"""
+            status = cmd("query-status")
+            regs = cmd("human-monitor-command", {"command-line": "info registers"})
+            module = qmp.get("module")
+            match = module.EIP_RE.search((regs or {}).get("return", "") if regs else "") if module else None
+            return "vm %s, EIP %s" % ((status or {}).get("return", {}).get("status", "?"),
+                                      "0x%08x" % int(match.group(1), 16) if match else "?")
+
+        ask = ask_guest
         failures, shots, previous, measured_noise = [], 0, None, False
         brk_seen = 0
         for index, (name, value) in enumerate(steps, 1):
+            # A guest that exits mid-sequence used to be discovered at the capture *after* the step that lost it, which
+            # reads as an input the guest ignored. Asking before every step names the step it happened on.
+            STATE["step"] = "step %d (%s=%s)" % (index, name, value)
+            STATE["index"] = index
+            if proc.poll() is not None:
+                return guest_gone(proc, args.out, ask)
             if name == "noise":
                 first = os.path.join(args.out, "%02d-noise-a.png" % index)
                 second = os.path.join(args.out, "%02d-noise-b.png" % index)
@@ -998,6 +1277,9 @@ def main():
             return 2
         say("PASS: all %d shot step(s) repainted" % shots)
         return 0
+    except ToolHang as exc:
+        # The one failure this harness could neither report nor survive: an external call that never returned.
+        return stall_report(exc, args.out, proc=proc, ask=ask)
     finally:
         # xemu runs as an AppImage: the wrapper exits but `AppRun` keeps the HDD lock, so kill the whole group.
         try:

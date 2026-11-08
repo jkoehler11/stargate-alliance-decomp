@@ -3844,3 +3844,36 @@ it), and the two retries stalled after `window:` appeared with no further log li
 XTEST there. The cause of the stalls was not measured; the desktop is in use by its owner and a run may not take the
 focus to find out. `tools/xemu/sink-slots.py --port P --class-from PlayerController0 --default 0x0682ab00 --expect
 Pawn=live` is the command the next boot that reaches a possessed controller should answer.
+
+## The harness could lose its subject and say nothing (measured 2026-11-08, PLAN 7.2/7.3)
+
+Three defects kept six sink-slot boots from telling anyone what happened to them, and all three are in
+`tools/xemu/drive.py` rather than in the game.
+
+- **An external call had no deadline.** `xdotool`, `import`, `compare` and `convert` were all `subprocess.run` without a
+  timeout, so a stuck X call blocks the harness inside it: no log line, no exit, no artifact. Two of the six attempts
+  end exactly there (`sink5`/`sink6`: the log's last line is `window: <id>`, whose next statement is
+  `xdotool getwindowfocus`). Every call is bounded now (`--deadline`, default 10 s for the X tools, x3 for `import`,
+  x12 for the filters); a missed deadline raises, is reported **by name** with the step it was on, whether the emulator
+  is still alive and the tail of its own log, whether the X server still answers and where its focus is, and the guest's
+  VM state and EIP -- then exits 4 and writes `--out/stall.txt`. Every question *inside* that report is bounded too
+  (probes in a thread, 3-4 s), because the reason for the report can be that the X server stopped answering.
+- **A guest that exited mid-sequence was discovered one step too late.** `sink5` attempt 2 polled the emulator every
+  2 s and saw `apprun=0` for 332 s while the harness slept through its remaining steps; the next capture then failed and
+  the run was recorded as "still the menu". `drive.py` now polls the emulator before **every** step and reports the exit
+  status at the step it happened (`sink7`: `cpu=2` samples confirm the guest separately).
+- **`--eeprom` naming a missing file fell back silently to a profile-less image.** `sink5`/`sink6` passed
+  `$W/smoke1/eeprom.bin`; the profile image lives at `$W/xemu/smoke1/`, so the path did not exist, `drive.py` copied
+  `~/.local/share/xemu/xemu/eeprom.bin` instead (md5 `d0f50547…` against the profile's `aaa061bd…`, both 256 bytes) and
+  `Continue` opened `SELECT PROFILE` -- where the ten d-pad presses step nothing and the select press does nothing, which
+  is the reported "still the menu" exactly. A missing `--eeprom` is a `FAIL` now, and every run logs the image's
+  basename and md5, so two boots that differ only in this file can no longer look identical from the outside.
+
+The control is the same script with the right path (`sink7`, 2026-11-08): the first press after the title moved
+**22,272** px in the list crop (threshold 622, noise floor 311) -- the map list opens -- ten d-pad presses and a select
+moved **20,748** px into a level, and `03-dismissed` moved 6,540. Nothing about the map or the pad changed; the run's
+EEPROM did.
+
+`--selftest` (18 cases, `make ci`) covers all three halves without an emulator: a hung tool raises inside its deadline
+and names itself, the deadline table (base / x3 / x12), the report's text and `stall.txt` when X answers nothing, a dead
+emulator reported with its status at its step, and a blocking probe abandoned rather than inherited.
