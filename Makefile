@@ -91,6 +91,7 @@ help:
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  hud-console-font  which font the console's input line is drawn in (needs the dump; no boot)"
+	@echo "  native-binder    the names the binder resolves index-less natives from (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -181,6 +182,8 @@ ci:
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) -m py_compile tools/hud-console-font.py && echo "ok   hud-console-font: tools/hud-console-font.py compiles"
 	@$(PYTHON) tools/hud-console-font.py --selftest
+	@$(PYTHON) -m py_compile tools/native-binder.py && echo "ok   native-binder: tools/native-binder.py compiles"
+	@$(PYTHON) tools/native-binder.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
@@ -506,6 +509,13 @@ interaction-setup:
 karma-runtime:
 	@$(PYTHON) tools/image-strings.py --topic karma --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/karma_runtime.csv"
+
+# U1's last open question: the names the binder looks up, and which declarations they can bind (`make native-binder`).
+native-binder:
+	@test -f "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" || \
+		{ echo "native-binder: no default.xbe under $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/native-binder.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/native_binder_names.csv"
 
 # PLAN 7.3's last question: what draws `stat fps`, the console's one readable output. No boot; docs/XEMU.md.
 stat-fps:

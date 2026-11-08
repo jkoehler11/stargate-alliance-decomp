@@ -49,12 +49,21 @@ first dword of the result as `Func`. So an index-less `native()` declaration cla
 because it is bound by *name*, not by index — which is also why no amount of reading `GNatives` will
 name them (`docs/NATIVE_VM.md`, *The body of a script function*).
 
-**Still open.** What the two `%s` arguments contain, whether the lookup succeeds in a debug build
-(the string suggests a debug symbol lookup, which would mean the binding only exists when a map/PDB is
-present), and therefore whether the shipped prototype resolves those functions at all.
+**Answered 2026-11-08, no boot: the two `%s` are the class's C++ name and the function's own name, and the names are
+in the image.** `tools/native-binder.py` (`make native-binder`, `inventory/native_binder_names.csv`) extracts every
+`int<prefix><Class>exec<Function>` wide literal from `default.xbe`: **883 distinct names in one 440.8 KB span**, i.e. a
+pool shipped with the build rather than a symbol lookup that needs a map. The prefix is `A` exactly when the class
+descends from `Actor` (**769 of 769** joined rows agree with `inventory/classes.csv`), and the literal `exec` is part of
+the format rather than a mark of an `exec` function -- `Actor.KWake` is index-less, not `exec`. **769 of 797**
+declarations have a name, including **508 of the 523** without an index; all 15 index-less misses are
+`Editor.BrushBuilder` (13), `Editor.MaterialFactory` (1) and `UPreview.UPreviewSkinnedButton` (1), whose C++ side is not
+in the Xbox image. The twelve misses that carry an index are `Core.Object` string operators spelled `_StrStr` in script
+and `_StringString` in the pool, so they need no name. The 114 pool names no declaration matches are all `UObject`:
+`Iterator`, `HighNative0`..`HighNative15`, and those twins. Depth: `docs/NATIVE_VM.md`, *What the two `%s` hold*.
 
-**Status.** Partially answered; the index question (U1's original wording) is settled, the binding
-route for the 523 is measured, the name construction is not.
+**Status.** Answered. The index question is settled (the 523 claim no slot), the binding route is the binder at
+`0x0003a030`, and the shipped prototype resolves every game-side declaration because the names it looks up are in the
+image.
 
 ## U2. Three `Engine.Actor` natives declare indices beyond the table — closed
 
