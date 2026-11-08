@@ -39,6 +39,10 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # which objects occupy the bytes a field window covers -- the question a `--diff` cannot answer
     python3 tools/xemu/fields.py --port 12345 --at 0x07730000 --near 0x0682ab00,0x09322100 --size 0x600
 
+    # where a declared *scalar* default sits: `--find` takes the dwords the guest has to hold
+    # (`0x3f800000` is 1.0f, the value three `GameHud` font scales declare) and prints their offsets
+    python3 tools/xemu/fields.py --port 12345 --at 0x006be0d8 --object 0x0682ab00 --find 0x3f800000
+
 Names are engine identifiers; field contents are game state, so nothing here is written to a file and text is only
 printed with `--show-text`.
 """
@@ -155,7 +159,9 @@ class Reader(object):
                     got = self.object(p)
                     out.append(got[0] if got else "?")
                 return "objects", out
-        blob = self.try_read(data, min(num, 64))
+        # An `FString`'s `num` counts *characters*, so the probe has to ask for two bytes each: reading `num`
+        # bytes truncated "Press A to Skip" to "Press A " and made a declared default look like live text.
+        blob = self.try_read(data, max(4, min(num * 2, 128)))
         if blob:
             if blob[:1] == b"\x00" or blob[:2] == b"\xff\xfe":
                 return "text", blob
@@ -386,6 +392,27 @@ def walk_fields(r, addr, size):
 SHOW_TEXT = [False]
 
 
+def find_dwords(r, addr, size, needles):
+    """[(offset, value)] for every dword of the object that equals one of `needles`.
+
+    `walk_fields` follows pointers, arrays and text -- it cannot see a scalar, so a declared default like
+    `GameHud`'s three `1.0` font scales has no fingerprint in its output. The *value* is the only thing the guest
+    stores for a `Float`/`Int`, and a class default object carries the declared value, so searching the field block
+    for a known dword is how a scalar default is checked without a property-offset table (the linker writes
+    `UProperty::Offset`, nothing serializes it).
+    """
+    hits = []
+    off = 0
+    while off + 4 <= size:
+        value = r.try_u32(addr + off)
+        if value is None:
+            break
+        if value in needles:
+            hits.append((off, value))
+        off += 4
+    return hits
+
+
 def cmd_near(r, args):
     """Which object owns each byte of a field window, read off the object array's address order."""
     hits = walk_headers(r)
@@ -483,6 +510,18 @@ def cmd_object(r, args):
             print("  in GObjObjects (%d objects): %s" % (r.objects_num, ", ".join(inside) if inside else "none"))
             print("  not in GObjObjects: %s" % (", ".join(outside) if outside else "none"))
         return
+    if args.find:
+        needles = set(args.find)
+        hits = find_dwords(r, addr, size, needles)
+        print("  %d dword(s) in %#x bytes equal one of %d requested value(s):" % (len(hits), size, len(needles)))
+        for needle in args.find:
+            offs = [off for off, value in hits if value == needle]
+            if offs:
+                shown = ", ".join("+%#05x" % o for o in offs[:24])
+                print("    %#010x at %s%s" % (needle, shown,
+                                              " (+%d more)" % (len(offs) - 24) if len(offs) > 24 else ""))
+            else:
+                print("    %#010x nowhere in the object" % (needle,))
     rows = walk_fields(r, addr, size)
     if default:
         drows = dict(walk_fields(r, default, size))
@@ -518,6 +557,8 @@ class FakeReader(object):
 
     def object(self, addr):
         return self.objs.get(addr)
+
+    array_at = Reader.array_at          # the text probe's own rule, reused so `--show-text` is covered too
 
 
 def selftest():
@@ -599,6 +640,28 @@ def selftest():
     if prev is None or prev[1] != default:
         print("selftest FAIL: span_rows lost the object below the target")
         return 1
+    # An `FString` is characters, not bytes: `--show-text` has to print past the eighth one.
+    text = "Press A to Skip\x00"
+    buf = 0x03100000
+    raw = text.encode("utf-16-le")
+    for i in range(0, len(raw), 4):
+        mem3[buf + i] = struct.unpack("<I", raw[i:i + 4])[0]
+    mem3[default + 0x100] = buf
+    mem3[default + 0x104] = len(text)
+    mem3[default + 0x108] = len(text)
+    SHOW_TEXT[0] = True
+    shown = dict(walk_fields(r3, default, 0x200))
+    SHOW_TEXT[0] = False
+    if "Skip" not in shown.get(0x100, ""):
+        print("selftest FAIL: --show-text printed %r for a 16-character FString" % (shown.get(0x100),))
+        return 1
+    # A scalar default: `--find` has to see a dword `walk_fields` never reports.
+    mem3[default + 0x40] = 0x3f800000
+    mem3[default + 0x44] = 0x3f800000
+    found = find_dwords(r3, default, 0x600, {0x3f800000})
+    if [off for off, _v in found] != [0x40, 0x44]:
+        print("selftest FAIL: find_dwords read %r for a declared float" % (found,))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, and a field window names the neighbour it crosses into")
     return 0
@@ -633,6 +696,8 @@ def main():
     ap.add_argument("--limit", type=int, default=200, help="with --diff, how many differing offsets to print")
     ap.add_argument("--compare", action="store_true", help="find the class default and diff against it")
     ap.add_argument("--show-text", action="store_true", help="print array bytes that read as text (game state)")
+    ap.add_argument("--find", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
+                    help="comma-separated dwords; print the offsets in the object that hold one (a scalar default)")
     ap.add_argument("--near", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
                     help="for each comma-separated address, which objects occupy [ADDR, ADDR+--size)")
     args = ap.parse_args()

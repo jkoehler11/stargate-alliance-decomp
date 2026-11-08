@@ -3162,10 +3162,9 @@ object array once, sorts it by address, and names every object that starts insid
 `--selftest` covers the rule without a boot, and `walk_headers` is now the single walk `--instances` and `--near`
 are both filters over.
 
-**Not measured yet**: the two `GameHud` objects. `near12` reached a mission (the `02-mission` frame differs from
-the title by 100,594 px) and the object array read at `0x041e0000`, but the name walk that locates the instances
-(`findcls.py --grep GameHud`) was still running when the run's budget ended. Next read:
-`fields.py --near <the two instances> --size 0x600`, then decode which of `+0x324..+0x470` is inside the object.
+**Measured on `census13`** ("The class default is the row that holds the declared text", below): no other object
+starts inside either row's `0x600` window, and the row that holds the declared `SkipMatineeTextString` is the
+class default.
 
 ## A class object holds no pointer to its own instances, so `DefaultObject` is not in it (measured 2026-11-07)
 
@@ -3220,3 +3219,86 @@ The instrument, in `tools/xemu/fields.py`:
 class object's dwords from `+0x28` to `--size` and prints every one whose *value* is one of those addresses, with the
 index it belongs to. It reads through the page cache the field reader already keeps, so the second half of the answer
 costs no stub round trips beyond the pages it touches, and `--selftest` still covers the instance walk without a boot.
+
+## The class default is the row that holds the declared text (measured 2026-11-07)
+
+`census12` closed the pointer route -- the class object `0x01886c00` holds no dword equal to either `GameHud`
+instance -- so the row has to be named by what it *contains*. That is now measured, and the answer is the row the
+earlier censuses called live.
+
+`census13` (`~/sg1/work/xemu/ghud2.sh`, gdb `12553`) is `ghud1`'s pad sequence again: `02-mission` is the tutorial
+modal (0 px on a good load, the modal trap), `03-dismissed` is the live frame at **44,522 px** against a 4,076
+threshold with a 1,778-pixel noise floor. `GNames` `0x006be0d8` reads `data=0x07740000 num=41,265`, `GObjObjects`
+`0x006c21b0` `data=0x041e0000 num=48,646`, and `findcls.py --grep GameHud` (48,622 headers over 347 pages) puts the
+class object at **`0x01886c00`** for the sixth boot in a row.
+
+### `--near` first: each row owns its whole window
+
+    $ fields.py --port 12553 --at 0x006be0d8 --near 0x0682ab00,0x09322100 --size 0x600
+    object 0x0682ab00: class `GameHud` name `GameHud`
+      below    index 41853   0x06829600  -0x1500  class `ParticleMaterial` name `ParticleMaterial0`
+      self  index 41505   0x0682ab00  +0x000  class `GameHud` name `GameHud`
+      no other object starts inside the window: all 0x600 bytes are this object's or a gap
+    object 0x09322100: class `GameHud` name `GameHud`
+      below    index 47997   0x092e0000  -0x42100  class `SquadMenu` name `SquadMenu`
+      self  index 47914   0x09322100  +0x000  class `GameHud` name `GameHud`
+      no other object starts inside the window: all 0x600 bytes are this object's or a gap
+
+So the extent question is answered by measurement: nothing else starts inside either `0x600` window, so
+`census11`'s `--diff` really did compare two objects' own bytes, and the "property records at `+0x324`" belong to
+the second row rather than to a neighbour allocation. That removes the alternative the earlier note was holding
+open ("a second live HUD with an adjacent allocation in its window").
+
+### Contents: one row is a template, the other has been painted
+
+| | `0x0682ab00` (index 41,505) | `0x09322100` (index 47,914) |
+|---|---|---|
+| pointer/array rows in `0x600` | **37** | **65** |
+| `+0x008` | `FloatProperty` (`ZoomIndicOffsetFromLeft`) | `StaticMeshActor333` |
+| widget tree `+0x034..+0x07c` | none | `UIWidget`/`UIProgressBar`/`UITextBox` at `0x0974xxxx`, `0x500` apart |
+| HUD assets `+0x098..+0x228` | `StaticMesh`/`Texture`/`Shader` from the package (`0x01xxxxxx`) | the same package assets |
+| `+0x258` | `FString of 16 characters: 'Press A to Skip'` | `FString of 16 characters: 'Press A '` (read by the truncated tool: 8 of 16 characters) |
+| `+0x268` | `HitEffectManager` `0x070de100` | `HitEffectManager` `0x0974af00` |
+| `+0x324..+0x3b8` | nothing | `ObjectProperty` (`Canvas`, `Font`), `FloatProperty` (`ClipX`), `StructProperty` (`DrawColor`), `Function` (`SetPos`), `IntProperty` (`TeamIndex`) |
+| `0x3f800000` (1.0f) in `0x600` | absent | absent |
+
+`0x0682ab00` is the class default: its object-pointer fields are the *declared* defaults, which are package assets
+(`HUD_Reticle_Bar`, `HUD_textwindow`, `HUD_Interaction_S`, ...), it allocates no widget, and `+0x258` holds exactly
+the `SkipMatineeTextString` that `tools/class-defaults.py StargateGame.u --class GameHud` reports. `0x09322100` is
+the live HUD: it carries a widget tree allocated during this level load (a chain of `0x500`-strided allocations at
+`0x0974xxxx`), a `Waypoint`, a level `StaticMeshActor`, and a live `HitEffectManager` -- objects a class default
+cannot own because they do not exist when the class is loaded. `census4`/`census5`'s "the live `GameHud` instance
+`0x0682ab00`" was the pointer scan's label, not the object's contents.
+
+**Correction to the earlier reading**: `+0x324..+0x3b8` of the live row hold pointers to `UProperty` objects
+(`Canvas`, `ClipX`, `DrawColor`, `TeamIndex`, `SetPos`). They are inside the object's own bytes, so they are not a
+neighbour's field chain; what an instance's field block means by them is still open, and it is not needed to settle
+which row is the default.
+
+### The instrument: `--find`, and a text read that is not truncated
+
+`walk_fields` follows pointers, arrays and text; a `Float`/`Int` has no fingerprint in its output at all, so a
+declared scalar default (`DialogueFontScale`/`NotificationFontScale`/`InteractionFontScale`, all `1.0`) can only be
+checked by value:
+
+    $ fields.py --port 12553 --at 0x006be0d8 --object 0x0682ab00 --find 0x3f800000,0x00000001
+      3 dword(s) in 0x600 bytes equal one of 2 requested value(s):
+        0x3f800000 nowhere in the object
+        0x00000001 at +0x084, +0x088, +0x240
+
+Neither row holds `0x3f800000` in its first `0x600`, so the three `1.0` scales live further out; the follow-up is
+one wider window on both rows.
+
+The other half was a defect in `--show-text`: it printed `'Press A '` for a 16-character string because `array_at`
+read `min(num, 64)` **bytes** while `num` counts characters -- eight UTF-16 characters. It now reads
+`min(num * 2, 128)` bytes and prints `'Press A to Skip'`; `--selftest` covers both this and `--find` with a fake
+reader, no boot needed.
+
+### Two reads that cost the run its time
+
+`ident()` piped `fields.py` through `head -2`, which drops the object line -- the same way `census12`'s first
+attempt "lost" the class object -- so the identity check failed, and the script fell back to `findcls.py`, which
+walked all 48,622 object headers (~13 minutes) to re-confirm the `0x01886c00` that five boots already agreed on.
+`--properties --scan 0x1400` then ran past ten minutes on one row (a chain candidate per dword) and was killed.
+Neither is needed to answer a contents question: identity is `--object <class>` plus a `grep` on its whole output
+(not `head`), and contents are `--find` and `--show-text`.
