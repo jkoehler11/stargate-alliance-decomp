@@ -41,6 +41,10 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # which objects occupy the bytes a field window covers -- the question a `--diff` cannot answer
     python3 tools/xemu/fields.py --port 12345 --at 0x07730000 --near 0x0682ab00,0x09322100 --size 0x600
 
+    # a *class* object is its own struct: --object <class object> --prop-name reads its own declarations, and
+    # --instances --prop-name reads the slot out of every row the object array holds for that class
+    python3 tools/xemu/fields.py --port 12345 --at 0x006be0d8 --object 0x00e47800 --instances --prop-name GameHudPtr
+
     # where a declared *scalar* default sits: `--find` takes the dwords the guest has to hold
     # (`0x3f800000` is 1.0f, the value three `GameHud` font scales declare) and prints their offsets
     python3 tools/xemu/fields.py --port 12345 --at 0x006be0d8 --object 0x0682ab00 --find 0x3f800000
@@ -676,6 +680,99 @@ def cmd_read(r, args):
         print("    %#010x +%#05x %#010x %12d  %s" % (addr + o, o, value, value, note))
 
 
+def struct_for(addr, cls_name, cls):
+    """The object whose member dwords declare `addr`'s fields: itself when `addr` *is* a class.
+
+    An instance's fields are declared by its class (`+0x24`), so `find_declared` starts there. A **class object's**
+    own `Class` word points at the metaclass instead -- `StargatePlayer` `0x00e47800` answers ``class `Class` `` --
+    and that walk visits `Class -> State -> Struct -> Field -> Object`, which declares the metaclass's four fields
+    and never the class's own. So a class object is its own struct: its declarations are in it, outered to it.
+    Measured 2026-11-08: the metaclass route answered "no property named `GameHudPtr`" against a live
+    `StargatePlayer` row, while the class object's own member table is where `StargatePlayer.uc:26` puts it.
+    """
+    if (cls_name or "").lower() == "class":
+        return addr, True
+    return cls, False
+
+
+def find_declared_outer(r, struct, names, depth=8):
+    """`(chain, {name: [(class_addr, where, addr, name, kind)]})` from one `Outer` pass over the object array.
+
+    `find_declared` reads the class object's *own dwords*, which is only where a declaration happens to sit: on
+    `StargatePlayer` `0x00e47800` that scan walks the header and a table of `Function` pointers and answers "no
+    property named `GameHudPtr`" while `inventory/class_properties.csv` says the class declares one (an
+    `ObjectProperty`, flags `0x2000:Transient;`). A `UProperty` names its declaring class in `Outer`, so the object
+    array is the complete field list -- one page-cached pass over `Outer` for the whole `Super` chain, with the name
+    resolution spent only on the handful of objects that carry one of those classes as `Outer`.
+
+    Several names cost one pass: the walk is the expensive half, and a PLAN 7.3 read wants four fields off the same
+    class (`GameHudPtr`, `commandInterfacePtr`, `NotificationManager`, `Pawn`).
+    """
+    seen = []
+    cls = struct
+    while cls and depth > 0:
+        got = r.object(cls)
+        if not got:
+            break
+        seen.append((cls, got[0], got[1]))
+        nxt = r.try_u32(cls + SUPER_OFF)
+        if not nxt or nxt in [a for a, _k, _n in seen]:
+            break
+        cls = nxt
+        depth -= 1
+    chain = set(a for a, _k, _n in seen)
+    want = dict((n.lower(), n) for n in names)
+    hits = dict((n.lower(), []) for n in names)
+    for index, addr in walk_headers(r):
+        klass = r.try_u32(addr + OUTER_OFF)
+        if klass not in chain:
+            continue
+        got = r.object(addr)
+        if not got or not (got[0] or "").endswith(PROPERTY_SUFFIX):
+            continue
+        low = (got[1] or "").lower()
+        if low not in want:
+            continue
+        hits[low].append((klass, "index %d" % index, addr, got[1], got[0]))
+    return seen, hits
+
+
+def report_prop(r, struct, args, target):
+    """`--prop-name`: name each declaration in `struct` and read its value slot out of `target`.
+
+    `names` is comma-separated and shares one array pass. `target` is `None` when only the declarations are readable
+    (a class object holds no values, so the caller has to name an instance with `--prop-in`).
+    """
+    names = [n.strip() for n in (args.prop_name or "").split(",") if n.strip()]
+    seen, hits = find_declared_outer(r, struct, names)
+    print("  super chain of class %#010x: %s" % (
+        struct, " -> ".join("`%s` %#010x" % (n or "?", a) for a, _k, n in seen) or "none"))
+    for name in names:
+        rows = hits.get(name.lower(), [])
+        print("  %d declared `%s` propert%s in the object array (`Outer` = its class):" % (
+            len(rows), name, "y" if len(rows) == 1 else "ies"))
+        for klass, where, addr2, fname, kind in rows:
+            print("    class %#010x %-11s -> %s `%s` at %#010x" % (klass, where, kind, fname, addr2))
+        if not rows:
+            print("  no property named `%s` in the chain, by `Outer` or in the class object's own dwords" % name)
+            continue
+        klass, where, addr2, fname, kind = rows[0]
+        slot = prop_offset(r, addr2, args.prop_at)
+        print("  `%s` is %s at %#010x; dword at +%#x is %s" % (
+            fname, kind, addr2, args.prop_at, "unreadable" if slot is None else "%#x" % slot))
+        if slot is None:
+            continue
+        if target is None:
+            print("  a class object holds declarations, not values: pass --prop-in <instance>")
+            continue
+        print("  value slot %#x read out of %#010x:" % (slot, target))
+        for o, value, note in dump_window(r, target, slot, 0x10):
+            if value is None:
+                print("    +%#05x unreadable" % (o,))
+                break
+            print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
+
+
 def cmd_object(r, args):
     addr = args.object
     got = r.object(addr)
@@ -683,8 +780,10 @@ def cmd_object(r, args):
         raise SystemExit("%#x does not read as an object (Class +%#x)" % (addr, CLASS_OFF))
     cls_name, oname = got
     cls = r.u32(addr + CLASS_OFF)
+    struct, is_class = struct_for(addr, cls_name, cls)
     print("object %#010x: class `%s`%s" % (addr, cls_name, " name `%s`" % oname if oname else ""))
-    print("  class object %#010x" % cls)
+    print("  class object %#010x%s" % (
+        cls, "" if not is_class else " (this object is itself a class: its own declarations are read from it)"))
     if args.instances:
         found = walk_instances(r, addr)
         print("  %d object(s) whose own Class pointer is %#010x:" % (len(found), addr))
@@ -711,6 +810,11 @@ def cmd_object(r, args):
                 print("    +%#05x index %-7d %#010x" % (off, index, value))
             if not held:
                 print("    none: nothing past the `UStruct` header points at an instance of this class")
+        if args.prop_name:
+            print("  one declared-chain read per instance row (the chain is walked per row, the slot follows it):")
+            for index, target in found:
+                print("  ## instance index %d %#010x" % (index, target))
+                report_prop(r, struct, args, target)
         return
     if args.children:
         kids = declared_objects(r, addr, args.limit)
@@ -731,32 +835,9 @@ def cmd_object(r, args):
             print("             %s" % b.get(o, "no pointer"))
         return
     if args.prop_name:
-        seen, hits, found = find_declared(r, cls, args.prop_name, args.scan)
-        print("  super chain of class %#010x: %s" % (
-            cls, " -> ".join("`%s` %#010x" % (n or "?", a) for a, _k, n in seen) or "none"))
-        print("  %d declared `%s` propert%s with `Outer` = its class:" % (
-            len(hits), args.prop_name, "y" if len(hits) == 1 else "ies"))
-        for klass, off, addr2, fname, kind in hits:
-            print("    class %#010x member +%#05x -> %s `%s` at %#010x" % (klass, off, kind, fname, addr2))
-        if not found:
-            print("  no property named `%s` in the chain: name it from the object array instead" %
-                  args.prop_name)
-        else:
-            klass, mob, addr2, fname, kind = found
-            slot = prop_offset(r, addr2, args.prop_at)
-            target = args.prop_in or addr
-            print("  `%s` is %s at %#010x; dword at +%#x is %s" % (
-                fname, kind, addr2, args.prop_at,
-                "unreadable" if slot is None else "%#x" % slot))
-            if slot is not None:
-                print("  value slot %#x read out of %#010x:" % (slot, target))
-                for o, value, note in dump_window(r, target, slot, 0x10):
-                    if value is None:
-                        print("    +%#05x unreadable" % (o,))
-                        break
-                    print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
+        report_prop(r, struct, args, args.prop_in or (None if is_class else addr))
     if args.properties:
-        off, chain = find_field_chain(r, cls, args.scan)
+        off, chain = find_field_chain(r, struct, args.scan)
         print("  field chain head at class+%#x: %d fields" % (off or 0, len(chain)) if off
               else "  no field chain found in the class object's first %#x bytes" % args.scan)
         pb = args.prop_bytes
@@ -777,11 +858,15 @@ def cmd_object(r, args):
             else:
                 a, fname, kind = got
                 slot = prop_offset(r, a, args.prop_at)
-                target = args.prop_in or addr
+                target = args.prop_in or (None if is_class else addr)
                 print("  `%s` is %s at %#010x; dword at +%#x is %s"
                       % (fname, kind, a, args.prop_at,
                          "unreadable" if slot is None else "%#x" % slot))
-                if slot is not None:
+                if slot is None:
+                    pass
+                elif target is None:
+                    print("  a class object holds declarations, not values: pass --prop-in <instance>")
+                else:
                     print("  value slot %#x read out of %#010x:" % (slot, target))
                     for o, value, note in dump_window(r, target, slot, 0x10):
                         if value is None:
@@ -790,7 +875,7 @@ def cmd_object(r, args):
                         print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
     default = None
     if args.compare:
-        default = find_default(r, cls, args.scan)
+        default = find_default(r, struct, args.scan)
         if default:
             print("  class default %#010x" % default)
         else:
@@ -799,11 +884,11 @@ def cmd_object(r, args):
             print("               ask `--instances`: it counts the objects whose Class is this class")
     size = args.size
     if args.members:
-        rows = scan_members(r, cls, args.start, size)
+        rows = scan_members(r, struct, args.start, size)
         print("  %d object pointer(s) in class+%#x..%#x:" % (len(rows), args.start, size))
         for off, text in rows:
             print("    +%#05x %s" % (off, text))
-        targets = [r.try_u32(cls + off) for off, _t in rows]
+        targets = [r.try_u32(struct + off) for off, _t in rows]
         targets = [t for t in targets if t]
         if targets:
             hits = array_membership(r.guest, r.objects_data, r.objects_num, targets)
@@ -1120,10 +1205,71 @@ def selftest():
     if "1.0f" not in rows[4][1]:
         print("selftest FAIL: --read did not annotate a float slot: %r" % (rows[4][1],))
         return 1
+    # A class object is its own struct. `StargatePlayer` `0x00e47800` answers `class \`Class\`` -- its `+0x24` is
+    # the metaclass -- so the old walk visited `Class -> State -> Struct -> Field -> Object` and reported no
+    # `GameHudPtr` while the declaration sits in the class object itself, outered to it.
+    meta, klassobj, inst = 0x01004000, 0x01005000, 0x03002000
+    ghp = 0x02000600
+    mem5 = dict(mem2)
+    mem5[klassobj + CLASS_OFF] = meta
+    mem5[meta + CLASS_OFF] = meta
+    mem5[klassobj + 0x600] = ghp
+    mem5[ghp + OUTER_OFF] = klassobj
+    mem5[ghp + OFFSET_AT] = 0x1c0
+    mem5[inst + 0x1c0] = 0x03004000
+    objs5 = dict(objs3)
+    objs5.update({meta: ("Class", "Class"), klassobj: ("Class", "StargatePlayer"),
+                  ghp: ("ObjectProperty", "GameHudPtr"), 0x03004000: ("GameHud", "GameHud")})
+    r5 = FakeReader(mem5, objs5, arr, 3)
+    struct5, is_class5 = struct_for(klassobj, r5.object(klassobj)[0], r5.try_u32(klassobj + CLASS_OFF))
+    if not is_class5 or struct5 != klassobj:
+        print("selftest FAIL: struct_for read %#x (is_class=%r) for a class object" % (struct5, is_class5))
+        return 1
+    struct6, is_class6 = struct_for(inst, "StargatePlayer", klassobj)
+    if is_class6 or struct6 != klassobj:
+        print("selftest FAIL: struct_for read %#x for an instance's own class" % (struct6,))
+        return 1
+    _seen, _hits, found = find_declared(r5, struct5, "GameHudPtr")
+    if not found or found[2] != ghp:
+        print("selftest FAIL: the class object's own declaration was not found: %r" % (found,))
+        return 1
+    _seen, _hits, meta_found = find_declared(r5, meta, "GameHudPtr")
+    if meta_found is not None:
+        print("selftest FAIL: the metaclass route found a field the metaclass does not declare")
+        return 1
+    slot5 = prop_offset(r5, found[2])
+    if r5.try_u32(inst + slot5) != 0x03004000:
+        print("selftest FAIL: the instance slot did not read back through the class's own chain")
+        return 1
+    # ... and the declaration need not sit in the class object at all: the shipped `StargatePlayer` declares
+    # `GameHudPtr` (in `inventory/class_properties.csv`) while the inline dword scan answers nothing, so the object
+    # array's `Outer` index is the route. Here the property is deliberately absent from the class object's bytes.
+    arr5 = 0x04010000
+    mem6 = dict(mem2)
+    mem6[klassobj + CLASS_OFF] = meta
+    mem6[meta + CLASS_OFF] = meta
+    mem6[ghp + OUTER_OFF] = klassobj
+    mem6[ghp + OFFSET_AT] = 0x1c0
+    mem6[arr5], mem6[arr5 + 4], mem6[arr5 + 8] = default, klassobj, ghp
+    r6 = FakeReader(mem6, objs5, arr5, 3)
+    _seen, _hits, inl = find_declared(r6, klassobj, "GameHudPtr")
+    if inl is not None:
+        print("selftest FAIL: the inline scan found a declaration that is not in the class object's bytes")
+        return 1
+    seen7, hits7 = find_declared_outer(r6, klassobj, ["GameHudPtr"])
+    found7 = hits7["gamehudptr"][0] if hits7["gamehudptr"] else None
+    if not found7 or found7[2] != ghp or found7[3] != "GameHudPtr":
+        print("selftest FAIL: the `Outer` route read %r for a declared property" % (found7,))
+        return 1
+    if len(hits7["gamehudptr"]) != 1 or seen7[0][0] != klassobj:
+        print("selftest FAIL: the `Outer` route read %d hit(s) over chain %r" %
+              (len(hits7["gamehudptr"]), [a for a, _k, _n in seen7]))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, a field window names the neighbour it crosses into, a declared"
           " name is matched by `Outer` and reached through `Super`, it reaches its value slot through the"
-          " linker's `Offset`, and `--read` names the object a bare address holds")
+          " linker's `Offset`, a class object is read as its own struct rather than through its metaclass,"
+          " and `--read` names the object a bare address holds")
     return 0
 
 

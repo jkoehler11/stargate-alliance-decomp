@@ -1190,7 +1190,15 @@ exist in more than one class. The five `none` player fields are therefore an *ef
 whether `SetupInteractionsFor`'s write reached `GameHudPtr` when it executed. **What would settle it** is (a) which
 export owns each armed copy -- a dump-side walk of the object array for a `UFunction` whose script pointer is the
 copy's linear address, no boot needed -- and (b) a `--fields` read of `GameHudPtr` from a dump taken *after* t+19 s of
-an `M00` load, where the route has demonstrably run. Detail: `docs/XEMU.md`.
+an `M00` load, where the route has demonstrably run. **The declaration is an object outered to the class, so the field read has a route (measured 2026-11-08).** The class
+object's `+0x24` is the *metaclass*, so `fields.py --object <class object> --prop-name X` was reading `Class ->
+State -> Struct -> Field -> Object`; a class object is now read as its own struct and prints the real chain
+(`StargatePlayer` -> `UnrealPlayer` -> `PlayerController` -> `Controller` -> `Actor` -> `Object`). That chain holds
+**no** `GameHudPtr` dword in the class object's bytes even though `inventory/class_properties.csv` says the class
+declares one, so a declaration is a `UProperty` object in `GObjObjects` whose `Outer` is the class -- `--prop-name`
+now answers from one `Outer` pass and takes a comma-separated list. **What would settle it:** one gameplay boot with
+`--object 0x00e47800 --instances --prop-name GameHudPtr,commandInterfacePtr,NotificationManager,Pawn`, one array pass
+for the four slots on the row whose own `Class` is `StargatePlayer`. Detail: `docs/XEMU.md`.
 
 
 **The copy's owner is a loader record, not an object field (measured 2026-11-07).** `tools/xemu/owner.py` walks
