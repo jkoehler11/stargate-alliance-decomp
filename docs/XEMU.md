@@ -3448,3 +3448,66 @@ read a *bare address* through the object reader, which is `fields.py --read ADDR
 **Costs, for the next run's budget.** `--instances`/`--children` on a class object is one page-cached header pass,
 about **3 min** for 48,646 objects; `--compare`'s scan is `--scan` bytes and returns at once when the class object
 holds no instance; `--find` alone is a page read (seconds). The frame tools need no guest at all.
+
+## The input line is drawn, and one boot holds both sides of a submit
+
+The 2026-11-08 note above withdrew the frame as a witness for console input. A second boot of the same sequence
+says it is one: on `vp1` (stub `12390`, 2026-11-08, the stock disc -- md5 `109fff2a5a0091932f4262eefda41855`, its
+own `System/Default.ini` read *inside* the image saying `Console=Engine.Console`) the band tracks the console
+across three consecutive shots:
+
+| shot | when | `console-line.py` |
+|---|---|---|
+| `04-tab.png` | 2 s after one `Tab` | `absent`, 0 cyan px |
+| `05-typed.png` | after `spc h i s t` | `typed`, 52 cyan px, `105x32` at `+34+209` |
+| `06-ret1s.png` | 1 s after `ret` | `absent`, 0 cyan px |
+| `07-ret4s.png` | 4 s after `ret` | `absent`, 0 cyan px |
+
+The band is the console's own line and not HUD art: cropped at 6x it reads `(> hist_` -- prompt, the typed text,
+the caret. Note the width: 105 px for five characters where `(> stat fps_` measured 176, so a *typed* line's extent
+follows the character count rather than a fixed 176, and `console-line.py`'s 96-px text threshold is a floor rather
+than a shape.
+
+Why `plr3` read the other way: in that boot the band was already 56 cyan px in a `64x32` box at the same
+coordinates **before** a character was sent, and `05-typed` came back byte-identical to `04-tab` -- which fits an
+open, empty console in both frames (the empty prompt is 50--64 px wide) as well as it fits HUD art. This run
+separates the two readings: 0 px with the console open but unsent, 52 px with text in it, 0 px once the submit
+closes it. So "the frame never draws it" is withdrawn; what is still true is narrower -- an *empty* console drew
+nothing in this boot, so a 0 is not "closed".
+
+**The memory half, in the same boot.** Both dumps hold exactly one object on the `Console` table `0x0050cb80`
+(`ramscan.py --objects --class Console`: two hits, the `mov`'s own immediate in `.text` at `0x00291bbc` and the
+object at `0x02641b00`), so the control and the receipt are the same object twenty seconds apart:
+
+| dump | `TypedStr` `+0x44` | `History[16]` `+0x50` | counters |
+|---|---|---|---|
+| `pre.bin` (typed, unsubmitted) | `' hist'`, `Count/Max 6/6`, `Data 0x0802db78` | 0 populated | `Top 0`, `Bot -1`, `Cur 0`, `TypedStrPos 5`, `bTyping 1` |
+| `post.bin` (3 s after `ret`) | empty | 1 populated: `[0] ' hist'`, `6/6`, `Data 0x0802db84` | `Top 1`, `Bot 0`, `Cur 1`, `TypedStrPos 0`, `bTyping 0` |
+
+`console-state.py post.bin --cr3 0xf000 --receipt hist` prints `receipt 'hist' DELIVERED` and exits 0, and the same
+tool names the pre-dump `open for typing, line kept` -- the control is not an assertion about a missing object, it
+is the same object before the key. The `History[0]` `Data` sits six bytes past the pre-dump's `TypedStr` `Data`
+(`0x0802db78` -> `0x0802db84`) because the submit copies the line out into a fresh buffer and clears the slot: the
+line is not moved in place, so the two pointers differ by the length of `' hist'`.
+
+**The address is per-boot heap, so a stored one is wrong.** `plr3` left the line at `0x02344b00`; in this boot
+that address holds unrelated heap (`01fb3091 8270800a 00818cb9 003cf7d7 ...`) and the console is at `0x02641b00`,
+which is also the address `submit6` read. Both are RAM addresses of an object created when the viewport is, so a
+tool must *find* the object (as `console-state.py` does by class table) rather than be handed one by an earlier
+note.
+
+**And the draw is not a script override.** `inventory/function_flags.csv` has twelve rows for `Engine.Console`
+(`Chat`, `ConnectFailure`, `ConsoleClose`, `ConsoleOpen`, `ConsoleToggle`, `DelayedConsoleCommand`, `Initialized`,
+`KeyEvent`, `Message`, `NativeConsoleOpen`, `NotifyLevelChange`, `SetInitialMusic`) and **no `PostRender`**, so the
+doc's "the only class in the tree without a `PostRender`" is right about the script text and wrong about the
+picture: this build draws the typed line anyway. The 2026-11-06 inference -- no `PostRender`, therefore no picture,
+therefore a drawn line means the swapped image -- is retired; the swap's real tell is the pre-filled `Say `
+(`(>Say at fps_`), which `(> hist_` does not carry. What draws it is engine-side and unnamed.
+
+**What would name it:** the `Console` (`0x0050cb80`) and `Interaction` (`0x0050c880`) tables read as bytecode
+straight out of a physical dump (`144d8be8 f53bd3e8 ...` at both), so the vtable diff has to translate first:
+`vamap.py` the two table addresses through the dump's `CR3`, diff the slots, and the slot where `Console` departs
+from `Interaction` is the draw. One dump-side read, no boot.
+
+**Costs.** One boot, 4 m 40 s from launch to the post-dump; the two dumps are 128 MiB each and
+`tools/xemu/console-receipt.sh OUTDIR [COMMAND]` reproduces the whole thing and prints both states.

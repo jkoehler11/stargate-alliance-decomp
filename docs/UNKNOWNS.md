@@ -1277,9 +1277,19 @@ holds it, and the draw path renders it. `DialogueWindow` (`'General, would you m
 is a false positive and the input question is a memory question. The console is one hop from the player
 (`InteractionMaster` `0x02406720` at player `+0x0c0`, the console pointer nowhere in the player's first `0x1400` bytes),
 and the diff-against-default route is closed for this class: `--instances` on `0x00dcea00` finds exactly one object
-whose class is `XboxClient` -- the live row -- so there is no second row to compare. **What would settle the rest** is
-the console's own field block: `History[16]` sits beside `TypedStr`, so one `--bytes 0x040,0x200` on `0x02344b00` after
-a `ret` submit reads the submit receipt on the console object itself, with no new external data.
+whose class is `XboxClient` -- the live row -- so there is no second row to compare. **Measured 2026-11-08: the field block answers it, and the frame is a witness after all.** `vp1` typed ` hist` on a
+stock-disc `M00`, dumped, sent `ret` and dumped again: the console object (`0x02641b00` in this boot -- `plr3`'s
+`0x02344b00` holds unrelated heap here, so the address is per-boot) carries `History[0] ' hist'` with `TypedStr` empty and
+`HistoryTop/Bot/Cur` `0 -> 1` / `-1 -> 0` / `0 -> 1`, `bTyping 0`, against a pre-dump that holds the line and an empty
+`History` (`console-state.py --receipt hist` exits 0 and calls the pre-dump `open for typing, line kept`); both dumps
+hold exactly one object on the `Console` table, so the control and the receipt are one object 20 s apart. And the drawn
+band does track the console -- 0 cyan px at `04-tab`, 52 px reading `(> hist_` at `05-typed`, 0 px one second after
+`ret` -- so "the frame is a false positive" holds only for `plr3`'s pair, where the band was already 56 px
+before a character was sent. `Engine.Console` carries no `PostRender` row in `inventory/function_flags.csv`
+either, so the "no `PostRender`, therefore no picture" inference is retired: the engine draws it and the
+swap's tell is the pre-filled `Say `. **What would name the draw** is the `Console`/`Interaction` vtable
+diff read through `vamap.py` (both tables read as bytecode out of a physical dump). Reproduce with
+`tools/xemu/console-receipt.sh OUTDIR [COMMAND]`.
 
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 

@@ -1112,6 +1112,21 @@ are limited to expected fields (checksum/timestamp) and documented.
   the name walk that locates the instances was still running at the end of the budget. Next run:
   `findcls.py --grep GameHud --at 0x006be0d8`, then `fields.py --near <both addresses> --size 0x600`.
 
+      **The frame draws it, and one boot holds both sides of the submit (2026-11-08)**: `vp1` (stub `12390`, the
+      stock disc -- md5 `109fff2a…`, `Console=Engine.Console` read inside the image) typed ` hist` on a loaded
+      `M00` and the band `console-line.py` watches read **0 cyan px at `04-tab`, 52 px in a `105x32` box at
+      `+34+209` once the text was in (`(> hist_` at 6x), 0 again one second after `ret`** -- so the drawn line
+      tracks the console, and the previous note's "the frame never draws it" is withdrawn (`plr3`'s pair fits an
+      open-and-empty console in both frames). In the same boot both dumps hold one `Console` object, `0x02641b00`:
+      pre `TypedStr ' hist'` with `History` empty and `bTyping 1`; post 3 s after `ret`, `History[0] ' hist'`,
+      `TypedStr` empty, `Top 0 -> 1`, `Bot -1 -> 0`, `bTyping 0`, which `console-state.py --receipt hist` asserts
+      -- control and receipt are the same object, 20 s apart. The address is per-boot heap (`plr3`'s `0x02344b00`
+      is unrelated bytes here), and `Engine.Console` has no `PostRender` row in the binary either, so the "no
+      `PostRender` therefore no picture" inference is retired: the engine draws it and the swap's tell is the
+      pre-filled `Say `. **Next**: name that draw by translating `0x0050cb80` and `0x0050c880` through `vamap.py`
+      and diffing the slots -- one dump-side read, no boot. Instrument: `tools/xemu/console-receipt.sh OUTDIR
+      [COMMAND]`.
+
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
