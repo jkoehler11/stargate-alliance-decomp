@@ -1152,8 +1152,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       *downstream* of the link (`inventory/hud_console_link.csv`, `make hud-link DUMP=<ram.bin>`). The two closed dumps
       give the same field and target with `bTyping 0`, and the values `DrawTypingPrompt` consumes are ordinary
       (`ConsoleColor (253,216,153,255)`, `HudCanvasScale 0.95`, `ConsoleMessagePosY 1.0`, no `.ini` override).
-      **Next**: the two variables no dump holds -- `GetConsoleFont(C)`'s result and `DrawTextClipped`'s clip region --
-      read at a breakpoint on the `DrawTypingPrompt` body with `tab` open, not from another frame diff.
+      **Measured 2026-11-08, no boot: neither variable needed the breakpoint.** `GetConsoleFont` is not native --
+      `Engine/HUD.uc:847` is `static function font GetConsoleFont(Canvas C)`, and `StargateHUD` re-declares it to return
+      `GetSmallFontFor(C)`; `tools/hud-console-font.py` (`make hud-console-font`) follows both branches to a font this
+      disc ships (`UWindowFontsTex.TahomaB30` on the override branch, `Engine.DefaultFont` on the base one) and puts
+      the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
+      left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
+
+### Execution notes (2026-11-08, the prompt's font is script, and it ends on a shipped object)
+
+- **`GetConsoleFont` was recorded as native twice; it is script, and the engine's own override chain picks the font**
+  (measured 2026-11-08, no boot): `Engine/HUD.uc:847` is `static function font GetConsoleFont(Canvas C)` -- it reads
+  `OverrideConsoleFontName`, then `ConsoleFontSize` plus one per `ClipX` threshold, and returns
+  `LoadFontStatic(Clamp(8-FontSize, 0, 8))` -- while `StargateHUD.uc` **re-declares it**, returning `GetSmallFontFor(C)`
+  instead. `tools/hud-console-font.py` (`make hud-console-font`, every input read through `tools/class-defaults.py`)
+  resolves both branches at the console's own 640-wide output: the override branch gives `LoadFontStatic(8)` ->
+  `UWindowFontsTex.TahomaB30`, the base branch `LoadFontStatic(4)` -> `Engine.DefaultFont`, and **both objects are in
+  the dump** (6 and 1 `Font` exports). `StargateHUD`'s `FontArrayNames` is TahomaB30 in 8 of its 9 slots and
+  `FontScreenWidthSmall` runs 4096..640, so the font is the same whichever way the array order reads.
+  `inventory/hud_console_font.csv`.
+- **The position is inside the frame, and there is no clip rectangle to find**: `HudCanvasScale 0.95`,
+  `ConsoleMessagePosX` unset (0 -- `Engine.HUD` does not set it) and `ConsoleMessagePosY 1.0` put the line at X 16,
+  Y 468 of 640x480 minus `TextSize("A")`'s glyph height; only a glyph taller than 468 px would push it off, and the
+  drawn band measures 32 px tall at 1280 wide. The body passes no rect -- `DrawTextClipped` clips to the canvas' own
+  `ClipX/ClipY`, which the engine sets to the viewport every frame.
+- **The colour cross-checks the counter**: `ConsoleColor` is `(253, 216, 153)` in the `color` struct's **B,G,R** order
+  -- RGB 153,216,253, a pale cyan -- which is the colour `tools/xemu/console-line.py` counts, so the class default and
+  the 52-px `(> hist_` band on `vp1` are the same line drawn twice over.
 
 ### Execution notes (2026-11-08, the HUD holds the open console, so the prompt's silence is downstream of the link)
 

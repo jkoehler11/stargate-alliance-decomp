@@ -1,0 +1,16 @@
+class,item,value
+HUD,declares GetConsoleFont,yes
+StargateHUD,declares GetConsoleFont,yes
+HUD,ConsoleColor,"(253, 216, 153, 255)"
+HUD,ConsoleMessagePosY,1.0
+HUD,HudCanvasScale,0.949999988079071
+HUD,FontArrayNames,"9 entries: Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont,Engine.DefaultFont"
+StargateHUD,FontArrayNames,"9 entries: UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB30,UWindowFontsTex.TahomaB20,UWindowFontsTex.TahomaB30"
+StargateHUD,FontScreenWidthSmall,"9 entries: 4096,3200,2560,2048,1600,1280,1024,800,640"
+resolved,OverrideConsoleFontName,(empty: the array path runs)
+resolved,StargateHUD.GetSmallFontFor(640) -> LoadFontStatic(8),"UWindowFontsTex.TahomaB30 -> in UWindowFontsTex.utx, 4367 bytes (found)"
+resolved,HUD.GetConsoleFont(640) -> LoadFontStatic(4),"Engine.DefaultFont -> in Engine.u, 4368 bytes (found)"
+geometry,prompt X,16.0 of 640
+geometry,prompt Y,438.0 of 480 (438.0 after -= YL 30.0)
+geometry,inside the frame,yes
+geometry,"colour (B,G,R)","(253, 216, 153, 255)"

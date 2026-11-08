@@ -90,6 +90,7 @@ help:
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
+	@echo "  hud-console-font  which font the console's input line is drawn in (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -178,6 +179,8 @@ ci:
 	@$(PYTHON) tools/xemu/names.py --selftest
 	@$(PYTHON) tools/xemu/fields.py --selftest
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
+	@$(PYTHON) -m py_compile tools/hud-console-font.py && echo "ok   hud-console-font: tools/hud-console-font.py compiles"
+	@$(PYTHON) tools/hud-console-font.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
@@ -514,6 +517,13 @@ hud-link:
 	@test -n "$(DUMP)" || { echo "hud-link: pass DUMP=<RAM image from monitor=pmemsave> CR3=$(or $(CR3),0xf000)"; exit 2; }
 	@$(PYTHON) tools/xemu/hud-link.py "$(DUMP)" --cr3 $(or $(CR3),0xf000) --csv - -o inventory
 	@echo "wrote inventory/hud_console_link.csv"
+
+# PLAN 7.3's other variable: which font the console's input line is drawn in. Reads the packages, so no boot.
+hud-console-font:
+	@test -d "$(SG1_DUMP)" || { echo "hud-console-font: SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/hud-console-font.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" \
+		--text-height $(or $(TEXT_HEIGHT),30) -o inventory
+	@echo "wrote inventory/hud_console_font.csv"
 
 # PLAN 4.5's input: which functions belong to which module, and an address list per module for the exporter.
 module-split:
