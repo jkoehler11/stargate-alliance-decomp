@@ -43,6 +43,9 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
     # (`0x3f800000` is 1.0f, the value three `GameHud` font scales declare) and prints their offsets
     python3 tools/xemu/fields.py --port 12345 --at 0x006be0d8 --object 0x0682ab00 --find 0x3f800000
 
+    # the bytes *beside* one of those hits: `--find` says a dword is there, `--bytes` shows its neighbours
+    python3 tools/xemu/fields.py --port 12345 --at 0x006be0d8 --object 0x0682ab00 --bytes 0x1780,0x100
+
 Names are engine identifiers; field contents are game state, so nothing here is written to a file and text is only
 printed with `--show-text`.
 """
@@ -392,6 +395,76 @@ def walk_fields(r, addr, size):
 SHOW_TEXT = [False]
 
 
+def _float_note(value):
+    """A dword's float reading, when it has one worth printing.
+
+    `1` is the commonest dword an object holds and reads as 1.4e-45, an object pointer reads as a denormal, so a
+    magnitude gate is what keeps the annotation from printing a "float" beside every field.
+    """
+    if value == 0:
+        return ""
+    f = struct.unpack("<f", struct.pack("<I", value))[0]
+    if not (0.0001 <= abs(f) <= 1e7):
+        return ""
+    if abs(f - int(f)) < 1e-6:
+        return "%d.0f" % int(f)
+    return "%g" % f
+
+
+def flat_census(r, addr, off, length, step=0x100):
+    """[(start, zero, flat, pointer, other)] per `step`-byte window: where an object's field block stops.
+
+    `--near` bounds an object by its *neighbours*, so any allocation the object array does not hold -- a compressed
+    script buffer, a texture mip chain -- reads as part of the object and inflates its extent (measured: the
+    `GameHud` default's bytes turn from zeros into deflate-shaped dwords at +0x1800, but the next *object* is at
+    +0x5500). A field block is made of zeros, small integers/floats and object pointers, so counting those per
+    window shows the boundary: a window full of `other` is not this object's field data.
+    """
+    rows = []
+    for start in range(off, off + length, step):
+        zero = flat = pointer = other = unreadable = 0
+        for o in range(start, min(start + step, off + length), 4):
+            value = r.try_u32(addr + o)
+            if value is None:
+                unreadable += 1
+            elif value == 0:
+                zero += 1
+            elif r.object(value) is not None:
+                pointer += 1
+            elif _float_note(value) or value < 0x100000:
+                flat += 1
+            else:
+                other += 1
+        rows.append((start, zero, flat, pointer, other, unreadable))
+    return rows
+
+
+def dump_window(r, addr, off, length):
+    """[(offset, value, note)] for a raw byte window of the object: the bytes *beside* a value.
+
+    `--find` answers whether a scalar is there and `walk_fields` follows pointers, arrays and text -- neither shows
+    the dwords in between, which is where a layout question lives (three `1.0`s two dwords apart, an `FString`
+    header next to a float). Nothing is resolved through the object graph: this prints what the guest holds, so the
+    reading is the same whether or not a pointer happens to translate.
+    """
+    rows = []
+    for o in range(off, off + length, 4):
+        value = r.try_u32(addr + o)
+        if value is None:
+            rows.append((o, None, "unreadable"))
+            break
+        note = " ".join(x for x in (_float_note(value), _ascii_note(value)) if x)
+        rows.append((o, value, note))
+    return rows
+
+
+def _ascii_note(value):
+    raw = struct.pack("<I", value)
+    if all(0x20 <= b < 0x7f for b in raw):
+        return "'%s'" % raw.decode("ascii")
+    return ""
+
+
 def find_dwords(r, addr, size, needles):
     """[(offset, value)] for every dword of the object that equals one of `needles`.
 
@@ -561,6 +634,27 @@ def cmd_object(r, args):
         # alone is a page read; `--show-text`/`--diff`/`--compare` keep the walk they need.
         if not (args.show_text or args.diff or args.compare):
             return
+    if args.flat is not None:
+        off = 0 if args.flat < 0 else args.flat
+        end = size if args.flat < 0 else min(off + 0x1000, size)
+        rows = flat_census(r, addr, off, end - off, 0x100)
+        print("  field census per 0x100 window, +%#05x..+%#05x of %#010x:" % (off, end, addr))
+        print("    %-8s %6s %6s %8s %6s %s" % ("window", "zero", "flat", "pointer", "other", "reading"))
+        for start, zero, flatc, pointer, other, unreadable in rows:
+            note = "unreadable" if unreadable else ("field" if other <= 8 else "NOT field data")
+            print("    +%#05x %6d %6d %8d %6d %s" % (start, zero, flatc, pointer, other, note))
+        return
+    if args.bytes:
+        off = args.bytes[0]
+        length = args.bytes[1] if len(args.bytes) > 1 else 0x80
+        rows = dump_window(r, addr, off, length)
+        print("  raw window +%#05x..+%#05x of %#010x:" % (off, off + length, addr))
+        for o, value, note in rows:
+            if value is None:
+                print("    +%#05x unreadable" % (o,))
+                break
+            print("    +%#05x %#010x %12d  %s" % (o, value, value, note))
+        return
     rows = walk_fields(r, addr, size)
     if default:
         drows = dict(walk_fields(r, default, size))
@@ -712,6 +806,45 @@ def selftest():
     if [run for run in find_runs(split) if run[0] == 0x3f800000] != [(0x3f800000, 0x40, 3)]:
         print("selftest FAIL: a second needle broke the first one's run: %r" % (find_runs(split),))
         return 1
+    # The bytes beside a value: a float prints as a float, a small integer does not print as a denormal, and an
+    # unreadable tail stops the window instead of inventing zeros.
+    mem3[default + 0x200] = 0x00000004
+    mem3[default + 0x204] = 0x3f800000
+    mem3[default + 0x208] = 0
+    rows = dump_window(r3, default, 0x200, 0xc)
+    if [o for o, _v, _n in rows] != [0x200, 0x204, 0x208]:
+        print("selftest FAIL: dump_window read %r for a three-dword window" % (rows,))
+        return 1
+    if rows[1][2] != "1.0f":
+        print("selftest FAIL: dump_window annotated %r for 0x3f800000" % (rows[1][2],))
+        return 1
+    if rows[0][2]:
+        print("selftest FAIL: dump_window called the integer 4 a float: %r" % (rows[0][2],))
+        return 1
+    class BriefReader(object):
+        def __init__(self, mem):
+            self.mem = mem
+
+        def try_u32(self, addr):
+            return self.mem.get(addr)
+
+    # A field block ends where the flat data ends: a window of zeros/ints is field data, a window of dwords that
+    # resolve to nothing is not, and that boundary is what `--near` cannot see (it only knows objects).
+    census = flat_census(r3, default, 0x200, 0x10, 0x10)
+    if census[0][1] != 2 or census[0][2] != 2 or census[0][4] != 0:
+        print("selftest FAIL: flat_census miscounted a flat window: %r" % (census[0],))
+        return 1
+    mem3[default + 0x210] = 0x6dd00119
+    mem3[default + 0x214] = 0x1e006200
+    census = flat_census(r3, default, 0x210, 0x8, 0x8)
+    if census[0][4] != 2:
+        print("selftest FAIL: flat_census read %r for two non-field dwords" % (census[0],))
+        return 1
+    brief = BriefReader({0x1000: 0x41c00000})
+    tail = dump_window(brief, 0x1000, 0, 0x8)
+    if tail[-1][1] is not None or len(tail) != 2:
+        print("selftest FAIL: dump_window padded an unreadable tail: %r" % (tail,))
+        return 1
     print("ok   fields: a class member past 0x400 resolves, the old bound missed it, the instance walk"
           " filters the object array by Class, and a field window names the neighbour it crosses into")
     return 0
@@ -748,6 +881,11 @@ def main():
     ap.add_argument("--show-text", action="store_true", help="print array bytes that read as text (game state)")
     ap.add_argument("--find", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
                     help="comma-separated dwords; print the offsets in the object that hold one (a scalar default)")
+    ap.add_argument("--bytes", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
+                    help="OFFSET,LENGTH: hexdump that raw window of the object (the bytes beside a value)")
+    ap.add_argument("--flat", type=lambda v: int(v, 0), default=None,
+                    help="OFFSET: per-window census of zeros/flats/pointers/other from OFFSET --set-size"
+                         " bytes (-1 = the whole --size), so a field block's end is visible")
     ap.add_argument("--near", type=lambda v: [int(x, 0) for x in v.split(",")], default=None,
                     help="for each comma-separated address, which objects occupy [ADDR, ADDR+--size)")
     args = ap.parse_args()
