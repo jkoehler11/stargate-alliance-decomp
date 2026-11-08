@@ -3929,3 +3929,33 @@ slots: the frame it took is the main menu.
 - **What is still open is the four values.** `sink9` scanned the newest 3,000 entries and found **0** rows of
   `StargatePlayer` `0x00e47800` -- the same shape `sink3` had at the menu. Reading them off a gameplay row is the
   next boot, not a new instrument.
+
+### A gate that cannot run is not a verdict (`sink10`, 2026-11-08)
+
+The frame gate #250 put in front of the sink read did not work in a clone, and its failure was read as a verdict.
+`tools/xemu/frame-diff.py` and `tools/xemu/guest-halt.py` were tracked **644** in git -- nine of `tools/xemu/`'s
+scripts are, and `git ls-files -s` is the only authority on the mode a clone gets -- so `missions.sh`'s
+`tools/xemu/frame-diff.py …` was a *permission denied* (shell exit 126). No frame was compared at all, every
+non-zero answer was taken for "still the main menu", and a boot that had reached a level was thrown away with the
+index's remaining attempt spent on a retry.
+
+`sink10` measures both halves of that:
+
+- **Attempt 1 reached the level and was discarded by a gate that never ran.** `01-highlight` moved **657** px
+  against a 200 threshold (so the presses landed, unlike `sink9`'s 5 px), and `menu.log` holds one line:
+  `tools/xemu/missions.sh: line 223: tools/xemu/frame-diff.py: Permission denied`. The retry started from a fresh
+  boot and the first one's frames were overwritten, which is why the discarded boot cannot be re-read.
+- **Attempt 2 never left the menu, and it did not crash.** `02-mission` differed from `00-title` by **0** px, and
+  `guest-halt.py` on that same frame reads `black=0.0000 p99=125 running` -- the menu picture with a live scene
+  behind it, not the BIOS screen. The select press was swallowed, which is the failure this project keeps hitting
+  and not a load failure.
+- **The gate's three answers are now kept apart.** `frame-diff.py` exits 0 changed / 2 unchanged / **1 unreadable**
+  (`sys.exit(<message>)`), so `missions.sh` reads only **2** as "the guest never left the menu" and ends the index
+  with a `FAIL … frame gate` row when it gets **1**: a broken instrument is not a bad boot, and it is not retried as
+  one. `guest-halt.py`'s 0 halt / 2 running / 3 unreadable is split the same way -- 3 used to fall through the same
+  `if` as "not the BIOS screen" and now says so -- and both tools are called through `python3`, plus marked 755, so
+  neither an exec bit nor a missing one can decide whether a check happens.
+
+Two rules worth carrying past this tool: **call a tool through its interpreter, not by its mode**, and **a gate owes
+three answers** -- pass, fail, and could-not-run. Two of the three were conflated here, and the cost was a boot that
+had already reached the level.
