@@ -14,6 +14,12 @@ read cheap and hard to mis-take, and each was measured the hard way:
   in `fields.py` answers the same question in about six minutes because it resolves a name per object.
 * **The slots.** The offsets are known, so the values are two windows -- `+0x1000..+0x1010` covers the three
   adjacent sink fields and `+0x380..+0x390` covers `Pawn` -- and nothing about the class has to be walked again.
+* **Newest first.** `GObjObjects` appends, so the row a level spawns at load sits at the *end* of the array
+  (`sink1`: index 47,885 of 48,646). `--tail N` scans the last N entries from the end backwards, which is tens of
+  page reads instead of 347 -- and it is a shortcut, not a census: zero rows from it never means "no row".
+* **The slot gate needs no walk at all.** Whether `+0x1004` is a field on a row is a question about the row's own
+  super chain, so the declaring class is matched by *name* along the chain (one page per link) instead of being
+  looked up in `GObjObjects` -- the lookup was four full array passes per row.
 * **The row's class is not the class you name.** A subclass instance carries its own class pointer, so a boot with
   no `StargatePlayer` row can still hold the player controller -- under whatever class the game actually spawned.
   `--class-from NAME` reads that class off the guest's own object (`PlayerController0`) instead of assuming it: one
@@ -169,30 +175,39 @@ def table(guest, addr, what):
     raise SystemExit("%s %#010x does not read; is the stub up?" % (what, addr))
 
 
-def walk(guest, pages, odata, onum, off, value):
+def walk(guest, pages, odata, onum, off, value, tail=None):
     """[(array index, address)] for every object whose header dword at `off` is `value`.
 
     Two questions share this walk -- "rows of class C" (`off=CLASS_OFF`) and "the object named N"
     (`off=NAME_OFF`) -- and both are a dword compare against headers that cost one stub read per 64 KiB page,
     not one per object.
+
+    `tail` scans only the last N entries, from the end backwards: the array appends, so a level's freshly
+    spawned objects are the newest ones, and the row `sink1` held was index 47,885 of 48,646 -- 761 from the
+    end, against 347 page reads for the whole pass. Matches come back newest-first. A tail scan is a
+    *shortcut, not a census*: `[]` from it says the row is not among the newest N objects, never that it is
+    absent, and the caller prints which of the two it is holding.
     """
-    pages.walked = onum
+    first = 0 if tail is None else max(0, onum - tail)
+    pages.walked = onum - first
     raw = b""
     got = 0
     while got < onum * 4:                       # one bulk read: the array is ~190 KiB
         chunk = guest.read(odata + got, min(SPAN, onum * 4 - got))
         raw += chunk
         got += len(chunk)
+    values = struct.unpack("<%dI" % onum, raw[:onum * 4])
     out = []
-    for i, ptr in enumerate(struct.unpack("<%dI" % onum, raw[:onum * 4])):
+    for i in range(onum - 1, first - 1, -1):
+        ptr = values[i]
         if plausible_object(ptr) and pages.u32(ptr + off) == value:
             out.append((i, ptr))
     return out
 
 
-def rows_of_class(guest, pages, odata, onum, klass):
-    """[(array index, address)] for every object whose own `Class` pointer is `klass`."""
-    return walk(guest, pages, odata, onum, CLASS_OFF, klass)
+def rows_of_class(guest, pages, odata, onum, klass, tail=None):
+    """[(array index, address)] for every object whose own `Class` pointer is `klass` (newest first)."""
+    return walk(guest, pages, odata, onum, CLASS_OFF, klass, tail=tail)
 
 
 def name_index(nm, want):
@@ -210,9 +225,9 @@ def name_index(nm, want):
     return None
 
 
-def rows_of_name(guest, pages, odata, onum, idx):
-    """[(array index, address)] for every object whose own `Name` index is `idx`."""
-    return walk(guest, pages, odata, onum, NAME_OFF, idx)
+def rows_of_name(guest, pages, odata, onum, idx, tail=None):
+    """[(array index, address)] for every object whose own `Name` index is `idx` (newest first)."""
+    return walk(guest, pages, odata, onum, NAME_OFF, idx, tail=tail)
 
 
 def class_named(guest, pages, odata, onum, nm, want):
@@ -231,6 +246,16 @@ def super_chain(pages, klass, limit=64):
         out.append(klass)
         klass = pages.u32(klass + SUPER_OFF)
     return out
+
+
+def chain_names(pages, nm, chain):
+    """The class names along a super chain, its own first -- one page per link.
+
+    This is the slot gate without an array walk: "is `+0x1004` a field on this row" is a question about the
+    row's chain, and the chain already names its classes. `class_named` answered the same question by searching
+    `GObjObjects` for the declaring class object, which is 347 page reads *per slot*.
+    """
+    return [nm[pages.u32(k + NAME_OFF)] or "?" for k in chain]
 
 
 def describe(pages, nm, value, defaults):
@@ -315,6 +340,9 @@ def main():
                          "are declared on exists at all")
     ap.add_argument("--want-class", action="append", default=[], metavar="NAME",
                     help="with --census: a class name to count (`--want-class StargatePlayer --want-class Pawn`)")
+    ap.add_argument("--tail", type=int, default=None, metavar="N",
+                    help="scan only the last N object-array entries, newest first: the row a level spawns at "
+                         "load sits at the end (the whole array is 347 page reads). A shortcut, not a census")
     ap.add_argument("--deadline", type=float, default=900.0,
                     help="seconds the walk may take before it stops and names itself (default 900; 0 disables); "
                          "a boot held this long is the boot where xemu has already been seen to die mid-read")
@@ -345,6 +373,12 @@ def main():
             return 2
         odata, onum, _omax = table(guest, args.objects, "object array")
         pages = Pages(guest, probe=data, progress=args.progress, deadline=args.deadline)
+        if args.tail is not None:
+            if args.tail <= 0:
+                ap.error("--tail wants a positive entry count")
+            print("tail scan: the last %d of %d array entries, newest first (`GObjObjects` appends, so the row a "
+                  "level spawns at load is at the end) -- a zero here says the row is not among them, not that "
+                  "it is absent" % (min(args.tail, onum), onum))
         klass = args.klass
         if args.class_from:
             idx = name_index(nm, args.class_from)
@@ -352,6 +386,7 @@ def main():
                 raise SystemExit("no `%s` in this boot's %d-name table: --class-from names an object's own name, "
                                  "and the table it would have to be in does not hold it"
                                  % (args.class_from, num))
+            # A named object is not necessarily a new one, so this walk is the whole array even under --tail.
             found = rows_of_name(guest, pages, odata, onum, idx)
             print("object named `%s` (name index %d): %d row(s) %s"
                   % (args.class_from, idx, len(found),
@@ -370,9 +405,14 @@ def main():
         if args.row is not None:
             rows = [(None, args.row)]
         else:
-            rows = rows_of_class(guest, pages, odata, onum, klass)
-        print("object array %#010x: data=%#010x num=%d; %d row(s) of class %#010x"
-              % (args.objects, odata, onum, len(rows), klass))
+            rows = rows_of_class(guest, pages, odata, onum, klass, tail=args.tail)
+        print("object array %#010x: data=%#010x num=%d, %s; %d row(s) of class %#010x"
+              % (args.objects, odata, onum,
+                 "scanned all" if args.tail is None else "scanned the last %d (newest first)" % min(args.tail, onum),
+                 len(rows), klass))
+        if not rows and args.tail is not None:
+            print("no row in the newest %d objects: drop `--tail` to walk all %d before calling the row absent"
+                  % (min(args.tail, onum), onum))
         seen = []
         for index, row in rows:
             cls = pages.u32(row + CLASS_OFF)
@@ -386,16 +426,15 @@ def main():
                      outer or 0, oname or "?", nm[own] if own is not None else "?"))
             verdicts = {}
             chain = super_chain(pages, cls)
+            names_on_chain = chain_names(pages, nm, chain)
             for offset, prop, decl in SLOTS:
-                owner = class_named(guest, pages, odata, onum, nm, decl)
-                if owner is not None and owner not in chain:
+                if decl not in names_on_chain:
                     # The slot's address is only a field on a row whose class chain declares it. Reading it
                     # anywhere else returns whatever object occupies that offset -- often a plausible
                     # pointer, which is exactly how a neighbouring heap block gets reported as a live HUD.
                     verdicts[prop] = "n/a"
-                    print("  +%#06x %-20s %-10s declared on `%s` %#010x, which is not on this row's chain (%s)"
-                          % (offset, prop, "n/a", decl, owner,
-                             " -> ".join(nm[k] or "?" for k in chain)))
+                    print("  +%#06x %-20s %-10s declared on `%s`, which is not on this row's chain (%s)"
+                          % (offset, prop, "n/a", decl, " -> ".join(names_on_chain)))
                     continue
                 value = pages.u32(row + offset)
                 verdict, text = describe(pages, nm, value, args.default)
@@ -404,7 +443,8 @@ def main():
                       % (offset, prop, verdict, text, decl))
             seen.append(verdicts)
         print()
-        print("%d page read(s), %d guest read(s)" % (pages.reads, guest.reads))
+        print("%d page read(s), %d guest read(s), %.0fs"
+              % (pages.reads, guest.reads, time.monotonic() - pages.started))
         bad = []
         for want in args.expect:
             if "=" not in want:
@@ -487,7 +527,11 @@ def selftest():
     pages = Pages(guest)
     assert nm[1] == "GameHud" and nm[4] == "Default__GameHud", (nm[1], nm[4])
     rows = rows_of_class(guest, pages, data_at, 4, at(0x5100))
-    assert rows == [(2, row), (3, player)], rows
+    assert rows == [(3, player), (2, row)], rows          # newest first
+    # `--tail N` scans the last N entries only, and says nothing about the ones it did not read.
+    assert rows_of_class(guest, pages, data_at, 4, at(0x5100), tail=1) == [(3, player)]
+    assert rows_of_class(guest, pages, data_at, 4, at(0x5100), tail=4) == [(3, player), (2, row)]
+    assert pages.walked == 4, pages.walked
     # `--class-from`: the player object's own name resolves to an index, and its `Class` dword is the row class.
     assert name_index(nm, "playercontroller0") == 5
     assert name_index(nm, "nobody-at-all") is None
@@ -500,6 +544,9 @@ def selftest():
     assert at(0x5100) in super_chain(pages, at(0x5300))
     assert class_named(guest, pages, data_at, 6, nm, "StargatePlayer") == at(0x5100)
     assert class_named(guest, pages, data_at, 6, nm, "Controller") is None
+    # The gate is answered by the chain's own names, so a slot read costs no array walk at all.
+    assert chain_names(pages, nm, super_chain(pages, at(0x5300))) == ["SGPlayerController", "StargatePlayer"]
+    assert chain_names(pages, nm, super_chain(pages, at(0x5100))) == ["StargatePlayer"]
     assert pages.u32(row + 0x1004) == live and pages.u32(row + 0x100c) == 0
     live_verdict, live_text = describe(pages, nm, live, [])
     assert live_verdict == "live" and "`GameHud`" in live_text, live_text
@@ -543,8 +590,9 @@ def selftest():
     assert "class `PlayerController`" in report[1], report
     assert report[2].startswith("rows of class `StargatePlayer`: 0"), report
     assert report[3].startswith("rows of class `Pawn`: 1"), report
-    print("ok   sink-slots: the walk finds the row by class, `--class-from` reads the class off a named object, "
-          "the marks separate live from class default, and %d names is below the %d level floor"
+    print("ok   sink-slots: the walk finds the row by class (newest first, `--tail` bounded), `--class-from` "
+          "reads the class off a named object, the slot gate is the chain's own names, the marks separate live "
+          "from class default, and %d names is below the %d level floor"
           % (MENU_NAMES, LEVEL_FLOOR))
     return 0
 

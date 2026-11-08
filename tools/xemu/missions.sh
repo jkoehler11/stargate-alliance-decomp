@@ -35,6 +35,13 @@
 #   --linger SECS   how long the guest is held for the read (default 900).
 #   --expect S=V    an assertion for `--sink-read` (`--expect=Pawn=live`), passed through to sink-slots.py.
 #   --default ADDR  the address to mark as a class default in the read (`--default=0x0682ab00`, `GameHud`'s).
+#   --sink-class ADDR
+#                   read rows of this class instead of `--class-from PlayerController0`. A class table address is
+#                   package data and does not move between boots (`0x00e47800` is `StargatePlayer`), where the named
+#                   walk is a full pass over `GObjObjects` for an object that need not be a new one.
+#   --sink-tail N   scan only the last N object-array entries, newest first: the row a level spawns at load is at the
+#                   end of the array, and the full pass is 347 page reads (measured: 9.5 minutes, and the guest died
+#                   before the walk reached a slot).
 #   --pad-hold SECS seconds a pad button is held (default 0.15 in drive.py; 0.35 is the value the 2026-11-06 run
 #                   reached `M00` with, and a swallowed press is the failure this project keeps hitting).
 # One run per index: a boot, `Continue`, N d-pad presses, `A`, a settle, one screenshot. Missions do not share an
@@ -53,6 +60,8 @@ out=""
 indices=""
 names=""
 sink_read=0
+sink_class=""
+sink_tail=""
 gdb=""
 linger=900
 expect=""
@@ -72,6 +81,10 @@ while [ $# -gt 0 ]; do
     --name) names="$names $2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
     --sink-read) sink_read=1; shift ;;
+    --sink-class) sink_class="$2"; shift 2 ;;
+    --sink-class=*) sink_class="${1#*=}"; shift ;;
+    --sink-tail) sink_tail="$2"; shift 2 ;;
+    --sink-tail=*) sink_tail="${1#*=}"; shift ;;
     --gdb=*) gdb=${1#*=}; shift ;;
     --linger=*) linger=${1#*=}; shift ;;
     --expect=*) expect="$expect ${1#*=}"; shift ;;
@@ -154,15 +167,30 @@ for index in $indices; do
         n=$((n+1))
       done
       if grep -q "lingering" "$dir/run.log" 2>/dev/null; then
+        # Ask the frame before the read: a boot that never left the main menu still repaints, still hands out its
+        # stub, and still holds a level-sized name table (`sink9`: `num=41,265` on a frame `frame-diff` calls the
+        # main menu), so the name count cannot separate the two states and the read would describe a menu row.
+        if ! tools/xemu/frame-diff.py "$dir/00-title.png" "$dir/02-mission.png" > "$dir/menu.log" 2>&1; then
+          echo "index $index: the post-load frame is still the main menu, so the guest never left it -- retrying"
+          kill -9 "$dpid" 2>/dev/null || true
+          pkill -x AppRun 2>/dev/null || true
+          sleep 2
+          attempt=$((attempt+1))
+          continue
+        fi
         ok=1
-        # The boot that proves the level also answers what its player row holds. `sink-slots.py` gates itself on the
-        # level-sized name table, so a run that slipped past the frame checks cannot be read as gameplay.
+        # The boot that proves the level also answers what its player row holds.
         def=""
         if [ -n "$slot_default" ]; then def="--default=$slot_default"; fi
         exp=""
         for e in $expect; do exp="$exp --expect=$e"; done
-        echo "index $index: reading the sink slots over gdb $gdb (guest held)"
-        if python3 "$here/sink-slots.py" --port "$gdb" --class-from PlayerController0 $def $exp > "$dir/slots.txt" 2>&1; then
+        # The row is found by class table unless a name is asked for, and `--sink-tail` says how much of the array
+        # that search reads: newest first, because a level spawns its player at the end of `GObjObjects`.
+        sel="--class-from PlayerController0"
+        if [ -n "$sink_class" ]; then sel="--class=$sink_class"; fi
+        if [ -n "$sink_tail" ]; then sel="$sel --tail=$sink_tail"; fi
+        echo "index $index: reading the sink slots over gdb $gdb (guest held; $sel)"
+        if python3 "$here/sink-slots.py" --port "$gdb" $sel $def $exp > "$dir/slots.txt" 2>&1; then
           echo "index $index: sink PASS -- $(tr '\n' '|' < "$dir/slots.txt")"
         else
           echo "index $index: sink FAIL -- $(tr '\n' '|' < "$dir/slots.txt")"

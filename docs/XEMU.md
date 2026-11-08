@@ -3900,3 +3900,32 @@ emulator reported with its status at its step, and a blocking probe abandoned ra
   --default 0x0682ab00 --pad-hold 0.35 --boot 180 OUTDIR --name M00` runs the sequence, waits for drive.py's
   `lingering` line, reads the four slots off the boot's own player object, and prints the verdict per slot; the read
   lands in `index-NN/slots.txt` beside the frames. `--sink-read` without `--gdb` is refused.
+
+## The sink read is 64 page reads, and a level-sized name table is not a level (measured 2026-11-08, PLAN 7.3)
+
+`sink9` is the boot that says what the sink read costs and what its gate is worth. It reached the read, not the
+slots: the frame it took is the main menu.
+
+- **The row a level spawns is at the *end* of `GObjObjects`, and scanning from there is 64 page reads.** The array
+  appends, so `sink1`'s `StargatePlayer` row sat at index 47,885 of 48,646 -- 761 entries from the end, while the
+  full class walk is **347** page reads (measured at 9.5 minutes on `sink8`, where the guest died before it
+  finished). `sink-slots.py --tail N` scans the last N entries from the end backwards: `sink9` read **64 pages /
+  77 guest reads** for the last 3,000 of 48,646. It is a shortcut and prints as one -- zero rows from it says the
+  row is not among the newest N, never that it is absent, and the tool says which of the two it is holding.
+- **The slot gate was four array walks per row and is now none.** "Is `+0x1004` a field on this row" is a question
+  about the row's own super chain, and the chain already names its classes, so `chain_names` answers it in one page
+  per link. The old path searched `GObjObjects` for the declaring class object once per slot -- four full passes,
+  per row -- which is what made a single-row read cost minutes.
+- **A menu boot holds 41,265 names.** `sink9`'s read: `name table 0x006be0d8: data=0x07730000 num=41265 max=51886
+  -> level` with array 48,646, and its own `02-mission` frame is the main menu: `frame-diff.py 00-title 02-mission`
+  stayed under the 2.5% floor, and `01-highlight` moved **5 px** against a 200 threshold, so the select press never
+  opened the list. The count is therefore *state*, not a level test -- #249's boot agreeing with its frame was that
+  boot, and `--require-level` cannot tell the two apart. What it does still buy is the cheap refusal of a boot that
+  never got past `SELECT PROFILE` (34,800).
+- **So the frame gates the read.** `missions.sh --sink-read` now runs `frame-diff.py 00-title 02-mission` before it
+  touches the stub and retries the boot when that frame is the main menu, instead of reading a menu row and
+  reporting it. The per-slot verdicts are unchanged: a value equal to `--default` is `default`, `0` is `null`, and a
+  slot whose declaring class is off the row's chain is `n/a`.
+- **What is still open is the four values.** `sink9` scanned the newest 3,000 entries and found **0** rows of
+  `StargatePlayer` `0x00e47800` -- the same shape `sink3` had at the menu. Reading them off a gameplay row is the
+  next boot, not a new instrument.

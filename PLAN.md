@@ -1165,6 +1165,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the sink read is 64 pages, and a level-sized name table is not a level)
+
+- **Reading the array from its end is 64 page reads instead of 347.** `GObjObjects` appends, so the row a level
+  spawns is the newest one (`sink1`: index 47,885 of 48,646); `sink-slots.py --tail N` scans the last N from the end
+  backwards, and `sink9` read the last 3,000 of 48,646 in **64 page reads / 77 guest reads**. It reports itself as a
+  shortcut: a zero says the row is not among the newest N, never that it is absent.
+- **The slot gate cost four array walks per row and now costs none.** The declaring class is matched by name along
+  the row's own super chain (`chain_names`), which is one page per link, instead of being looked up in `GObjObjects`
+  once per slot. `--selftest` covers the tail bound, the newest-first order and the chain names.
+- **A menu boot holds 41,265 names, so `--require-level` is not a level test.** `sink9` read `num=41265` on a boot
+  whose `02-mission` frame is the main menu (`frame-diff.py` under the 2.5% floor; `01-highlight` 5 px against a
+  200 threshold, so the select press never opened the list) -- #249's "the gate agrees with its frame" was that
+  boot, not a rule. The count still separates the profile screen's 34,800 from a booted menu, and nothing more.
+- **Instruments**: `missions.sh --sink-class ADDR --sink-tail N` choose the class table and the scan bound, and
+  `--sink-read` now runs the frame diff **before** it touches the stub and retries a boot whose frame is the main
+  menu, instead of reading a menu row and calling it gameplay. The four slot values remain unread: `sink9` found 0
+  rows of `StargatePlayer` in the newest 3,000, the menu shape `sink3` had. The next boot is a level whose frame
+  passes, not a new instrument.
+
 ### Execution notes (2026-11-08, the boot that proves a level also answers what its player row holds)
 
 - **`--pad-hold=0.35` with a 180 s window reaches a level on the sink path, and the boot says so twice.** `sink8`:
