@@ -185,6 +185,8 @@ ci:
 	@$(PYTHON) tools/hud-console-font.py --selftest
 	@$(PYTHON) -m py_compile tools/native-binder.py && echo "ok   native-binder: tools/native-binder.py compiles"
 	@$(PYTHON) tools/native-binder.py --selftest
+	@$(PYTHON) -m py_compile tools/native-reconcile.py && echo "ok   native-reconcile: tools/native-reconcile.py compiles"
+	@$(PYTHON) tools/native-reconcile.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
@@ -364,9 +366,10 @@ defaults-per-class:
 	@echo "wrote inventory/class_defaults_per_class.csv"
 
 # Native declarations in the shipped script against inventory/natives.csv (docs/NATIVE_CLASSES.md, PLAN 3.9).
+# Writes two artifacts: the class-by-class reconciliation and the per-record token basis (UNKNOWNS U1/U3).
 native-reconcile:
 	@$(PYTHON) tools/native-reconcile.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
-	@echo "wrote inventory/native_reconcile.csv"
+	@echo "wrote inventory/native_reconcile.csv and inventory/native_tokens.csv"
 
 # Which classes override Serialize, and where the code is (docs/NATIVE_VM.md, PLAN 3.7). Needs the image.
 class-overrides:
