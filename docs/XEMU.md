@@ -3660,3 +3660,28 @@ order -- RGB 153,216,253, a pale cyan -- which is what `tools/xemu/console-line.
 **output** sink, already measured unset (`GameHudPtr`/`NotificationManager`, 2026-11-07).
 
     make hud-console-font SG1_DUMP=...        # inventory/hud_console_font.csv
+
+## A census row needs a name, so an absent class is a question for `--instances` (measured 2026-11-08, PLAN 7.3)
+
+The object census `findcls.py --csv` / `names.py --census --csv` writes is the only record of a boot that outlives it,
+and until now the questions asked of it were `awk -F,` pipelines. `tools/xemu/census-query.py` answers them and keeps
+the two readings apart: an object **of** class C -- its own `Class` pointer is C -- from the class **object** C, which
+is a `Class`-classed object named C and exists whether or not any instance does.
+
+    python3 tools/xemu/census-query.py ~/sg1/work/xemu/ghud2/cls.csv --class StargatePlayer --class-object StargatePlayer
+    python3 tools/xemu/census-query.py cls.csv --counts 20
+
+**The measurement, and the trap in it.** Over both loaded-`M00` censuses (`ghud1`, `ghud2`, 47,742 rows each) the
+instances of `StargatePlayer` are **0** and of `Pawn` **0**, while every class object is present (`StargatePlayer`
+`0x00e47800`, `Pawn` `0x00caa800`) -- so the names resolve and the walk had them available. That zero is the *file's*
+shape: the CSV keeps a row only when the object's own name resolves (43,681 of 43,741 reachable headers in `ghud2`).
+The `sink1` boot -- same array shape (`0x041e0000`, 48,646 objects, names 41,265), `03-dismissed` 43,074 px,
+`04-gameplay` +1,949 px -- holds **one** object whose own `Class` pointer is `0x00e47800`: index 47,885 at
+`0x08842800`, name **unresolved** (`?`), `Outer` `0x06b40000` (an object named `M00`). It is precisely the row a
+name-keyed CSV cannot carry, so "no `StargatePlayer` in the census" was never evidence about the guest.
+
+`--instances` on the class object is the arbiter because it needs no name. The class *object* is also the wrong
+target for a property read: `fields.py --object <class object> --prop-name X` resolves the object's own class, which
+for a class object is the metaclass, and answers along `Class -> State -> Struct -> Field -> Object`. The read that
+matters for PLAN 7.3's sink is `fields.py --object <the live row> --prop-name GameHudPtr`, against
+`StargatePlayer`'s own chain (`StargatePlayer.uc:26`).
