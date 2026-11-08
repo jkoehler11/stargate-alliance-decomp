@@ -761,6 +761,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       objects (named by `findcls.py`) -- `DefaultObject` past `0x800` is still unlocated, and no scan is needed to
       locate `GNames`.
 
+      **A loaded `M00` reads 36,281 names, so that counter is not a load gate (measured 2026-11-07)**: the `census10`
+      boot (`~/sg1/work/xemu/census10.sh`, gdb `12541`) is census9's sequence with the first pad press at **145 s**
+      instead of 95 s, and it loaded the level -- `02-mission.png` is the gameplay HUD (O'NEILL, `P90` 250, no assert,
+      no BIOS prompt), the select moved 111,008 pixels and `GObjObjects` holds 43,741 objects -- while `GNames.num`
+      reads **36,281** there, against census9's 34,800 (main menu) and census8's 41,265 (`M00`). The figure moves with
+      the level but sits *below* 40,000 in a real mission, so the gate the previous note proposed would have thrown a
+      loaded boot away; decide a load from the frame or the object count. `findcls.py --csv` names **43,681** of
+      43,741 objects over 289 pages in ~13 minutes (2 min 14 s CPU: stub-latency bound, and the CSV appears only at
+      the end), and on it `GameHud`'s class object is **0x01886c00** and `UITextBox`'s **0x0197a800** -- the
+      census4/census5 addresses, so class objects are stable for a level while the instances move (two `GameHud`
+      instances, three `UITextBox` here, all above 128 MiB). `fields.py --members --start 0x800 --size 0x1400` on
+      `0x01886c00` finds no default object either: `+0x800..+0xab0` is the **`Object`** class's native operator table
+      (`Split`, `Lerp`, `VRand`, `Rand`) with `Struct` objects beside it, ending in `0x00bcf000`, the `Object` class
+      object, which `--members` labels `instance of this class` because its test is wider than `Class == this class`.
+      **Next**: stop scanning past `0x800` and settle which `GameHud` row is the class default -- compare
+      `0x0682ab00` and `0x080e0000` field by field (a default object carries the class's defaults and no instance
+      state), and fix `--members`' label test first so a superclass's class object cannot pass as a CDO.
+
       **A walk is 255 pages, and this boot never left the main menu (measured 2026-11-07)**: over a `census9` boot
       (gdb `12531`, `~/sg1/work/xemu/census9.sh`) the `pad=down`x10 + `pad=a` sequence that reaches `M00` on most
       boots landed on the **main menu** -- `03-dismissed.png` is `Continue`/`Single Player`, and two one-read
