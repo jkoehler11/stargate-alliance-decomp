@@ -2998,3 +2998,45 @@ next read became a **6.9 GB** walk over the stub that never finished -- the reas
 still walking the object array when the run budget ran out, and the object names are the instrument it needs.
 `find_names.py` is refuted as a locator (0 hits on a boot whose slot is known); the next run should scan with
 `fields.py --members --start 0x800 --size 0x1400` against `--at 0x006be0d8` instead of locating anything.
+
+## A walk is pages, not objects, and one walk has to answer every name (measured 2026-11-07)
+
+`findcls.py` locates an object by its *own* name, which is what a class-object read needs, and the walk it takes is
+the expensive half: 42,143 object pointers over a title-screen boot land on **255** 64 KiB pages, ~16 MiB over the
+stub, and the per-object name resolution runs after that. Measured over a `census9` boot (`~/sg1/work/xemu/census9.sh`,
+same step sequence as `census8`, gdb `12531`, `--linger=2700`):
+
+| read | result |
+|---|---|
+| `0x006be0d8` | `(Data, Num, Max) = 0x01f30000 / 34,800 / 37,732` -- the **title-screen** name array, against `0x07720000 / 41,265` with `M00` loaded |
+| `0x006c21b0` | `(Data, Num, Max) = 0x041e0000 / 42,152 / 51,886` |
+| object walk | `42,143` pointers over `255` pages, `42,135` headers read, **8** unreadable |
+
+**The boot did not reach a mission.** `03-dismissed.png` is the **main menu** (`Continue`/`Single Player`/...), not a
+loaded level, and the name count confirms it: `num` stays at the title's `34,800`. The ten `pad=down` steps followed
+by three `pad=a` taps that reach `M00` on most boots landed on the menu this time -- the d-pad step is the unreliable
+one, as the 11-06 notes say. Two cheap discriminators for the next run, both one read: `GNames.num` (`34,800` title,
+`41,265` with `M00`) and `GObjObjects.num` (`42,152` here, `48,646` with `M00`).
+
+**A failing read is a fact about the address.** `0x04000000+0x40`, `0x04100000+0x10000` and a 4 MiB read at
+`0x04000000` all answer `failed after 4 attempts`, while `0x006be0d8`, `0x0091ff00`, `0x0095ffc0`, `0x01f30000` and
+`0x041e0000` read at the same moment: the heap above `0x04000000` is not mapped on a title-screen boot, and the stub
+refuses the whole request rather than short-reading it. So a title-screen read of a gameplay address is a negative
+about the address, not a broken stub -- and the read that *works* is the one that says which.
+
+**A keypress is not a menu step.** `sendkey ret` over QMP at the main menu leaves the name count at `34,800` after a
+40 s settle, so the highlighted `Continue` is not taken by Return. The menus move from the virtual pad only, which is
+what `vpad.py` exists for (`U14`).
+
+**The instrument change this motivated.** One walk now answers several name questions instead of one walk per name:
+`--grep` takes a comma list and repeats, `--csv` writes `index,address,class,name` for **every** named object the walk
+saw (so a later question about another name is a local grep), class names are cached by class pointer -- hundreds of
+objects share one -- and the progress lines are flushed, because a ten-minute walk that dies says nothing at all when
+its log is block-buffered.
+
+**Still open**: `DefaultObject` past `0x800` is not located. The class object this run needed never existed, because
+no `GameHud` is installed at the main menu -- the walk started before that was visible. The next run should load a
+level first (the `Continue` entry, from the pad) and check `GNames.num` before spending a walk, then read
+`fields.py --members --start 0x800 --size 0x1400` on `GameHud`'s and `UITextBox`'s class objects from the `--csv`
+the same walk writes.
+
