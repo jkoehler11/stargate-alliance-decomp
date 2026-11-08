@@ -1165,6 +1165,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the harness could lose its subject and say nothing)
+
+- **Six sink-slot boots failed at three defects in `tools/xemu/drive.py`, not in the game.** An external call had **no
+  deadline** (`xdotool`, `import`, `compare`, `convert` were all `subprocess.run` without a timeout): two attempts end
+  with the log's last line `window: <id>`, whose next statement is `xdotool getwindowfocus`, so a stuck X call blocked
+  the harness inside itself with no log, no exit and no artifact. A guest that **exited mid-sequence** was found one
+  step too late (`sink5` attempt 2 saw `apprun=0` for 332 s while the harness slept through its remaining steps, and the
+  next capture's failure was recorded as "still the menu"). And **`--eeprom` naming a missing file fell back silently**
+  to the profile-less `~/.local/share/xemu/xemu/eeprom.bin` (md5 `d0f50547…` against the profile's `aaa061bd…`), so
+  `Continue` opened `SELECT PROFILE` and the ten d-pad presses stepped nothing -- `sink5`/`sink6` passed
+  `$W/smoke1/eeprom.bin`, and the profile image is at `$W/xemu/smoke1/`.
+- **All three are instruments now.** Every call carries `--deadline` (default 10 s for the X tools, x3 for `import`,
+  x12 for the filters) and a missed deadline is reported **by name** with the step, the emulator's liveness and its log
+  tail, whether the X server still answers and where its focus is, and the guest's VM state and EIP -- exit 4, and the
+  same text in `--out/stall.txt`; the probes inside that report are themselves bounded (a thread, 3-4 s), because the
+  reason for the report may be that X stopped answering. The emulator is polled before **every** step, so a lost guest
+  is named at the step it was lost at. A missing `--eeprom` is a `FAIL`, and every run logs the image's basename and
+  md5, so two boots that differ only here cannot look identical from outside.
+- **The control is one boot with the right EEPROM path** (`sink7`, 2026-11-08): the first press after the title moved
+  **22,272** px in the list crop (noise floor 311, threshold 622) -- the map list opens -- ten d-pad presses and a
+  select moved **20,748** px into a level, `03-dismissed` 6,540. So the earlier "still the menu" was the run's EEPROM
+  and not the map, the pad or the select press; the next sink read is the one `--expect Pawn=live` gates, not another
+  attempt at the same input.
+- **`--selftest` (18 cases, `make ci`)** proves the deadline path, the table, the report's text and `stall.txt`, the
+  dead-emulator report and the abandonment of a blocking probe -- none of it needs X, an emulator or the dump.
+  `docs/XEMU.md` carries the three defects, the two EEPROMs and the control boot's numbers.
+
 ### Execution notes (2026-11-08, the 22 native residual rows get a verdict from the image's own binder pool)
 
 - **"Which side is right needs the C++ side" was already answerable, and the answer splits 15 / 7.** The C++ side is
