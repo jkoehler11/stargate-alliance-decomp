@@ -3040,3 +3040,35 @@ level first (the `Continue` entry, from the pad) and check `GNames.num` before s
 `fields.py --members --start 0x800 --size 0x1400` on `GameHud`'s and `UITextBox`'s class objects from the `--csv`
 the same walk writes.
 
+## A loaded `M00` reads 36,281 names, so the name count is not a load gate (measured 2026-11-07)
+
+`census10` (`~/sg1/work/xemu/census10.sh`, gdb `12541`) is census9's sequence with **one** change: the first pad
+press at **145 s** instead of 95 s. It loaded the level — `02-mission.png` is a gameplay frame (O'NEILL portrait,
+`P90` / `250`, crosshair, no assert dialog, no BIOS prompt), the select step moved 111,008 pixels (threshold 486),
+and the object array holds **43,741** objects — and on that loaded boot one read of the name table says:
+
+    table at 0x006be0d8: data=0x01f30000 num=36281 max=37732
+           0  None   1  ByteProperty   2  IntProperty   3  BoolProperty
+
+**36,281** names, against census9's 34,800 on the main menu and census8's 41,265 with `M00`. The count moves with the
+level but is *not* a title/mission discriminator: a real mission sits **below** the 40,000 line an earlier note
+proposed as a gate, so that gate would have thrown a loaded boot away. Decide a load from the frame (the HUD) or from
+`GObjObjects.num`, never from the name count. The earlier census9 miss was the press landing in the title fade, not
+the pad sequence: the same `pad=a` / `down`x10 / `pad=a` sequence reached `M00` here.
+
+## One walk over a loaded `M00`: 43,681 names, ~13 minutes, and the class objects did not move (measured 2026-11-07)
+
+`findcls.py --grep GameHud,UITextBox --csv` over that stub: **289** pages, 43,728 headers read, 13 unreadable,
+**43,681** rows written, 1.8 MB. Name resolution is the other half of the cost — 13 minutes wall clock against
+**2 min 14 s** of CPU — so a walk is stub-latency bound and the CSV only appears when the walk ends.
+
+- `GameHud`'s class object is **`0x01886c00`** (`Class`) and `UITextBox`'s **`0x0197a800`** — the census4/census5
+  addresses, so the class objects are stable for a given level while the instances move: two `GameHud` instances here
+  (`0x0682ab00`, `0x080e0000`) and three `UITextBox` (`0x08205a00`, `0x08205500`, `0x08205000`), all above 128 MiB.
+- `fields.py --members --start 0x800 --size 0x1400` on `0x01886c00` finds **no default object** past `0x800` either.
+  The block is the **`Object`** class's native operator table — `Split`, `Lerp`, `VRand`, `Rand`, `Clamp` … each with
+  its `Struct` objects beside it — and it ends at `+0xab0` in `0x00bcf000`, the `Object` class object itself (the
+  census resolves a class object's `Class` to `0x00bcea00`, `Class`).
+- So the member scan past `0x800` reads *inherited natives*, not the class's own default. The label is also the
+  tool's: `--members` prints that dword as `instance of this class`, which `0x00bcf000` is not — its own `Class` is
+  `Class`. A default-object test has to be `Class == this class object`, or a superclass's class object reads as one.
