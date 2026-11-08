@@ -1159,6 +1159,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the sink's owner is in the guest, and a census CSV cannot say so)
+
+- **The two loaded-`M00` object censuses hold no `StargatePlayer` instance and no `Pawn`, and a boot holds one of the
+  first** (measured 2026-11-08; `tools/xemu/census-query.py`, new, `--selftest`; no boot for the census half). The
+  query separates the two readings a `grep` conflates -- an object *of* class C (its own `Class` pointer is C) from
+  the class *object* C. Over `~/sg1/work/xemu/ghud1/cls.csv` and `ghud2/cls.csv` (47,742 rows each,
+  `findcls.py --csv`): instances of `StargatePlayer` **0**, of `Pawn` **0**, of `PlayerController` 1
+  (`PlayerController0`), `StoryModeGame` 1, `InteractionMaster` 1, `GameHud` 2 -- while the class objects are all
+  present (`StargatePlayer` `0x00e47800`, `Pawn` `0x00caa800`), so the names resolve and the walk had them available.
+- **That zero is the file's shape, not the guest's content**: `findcls.py --csv` writes a row only when the object's
+  own name resolves (43,681 of 43,741 reachable headers in `ghud2`). The `sink1` boot (`03-dismissed` 43,074 px,
+  `04-gameplay` +1,949 px, array `0x041e0000` 48,646 objects, names 41,265 -- the same shape as the censuses) holds
+  **one** object whose own `Class` pointer is `0x00e47800`: index 47,885 at `0x08842800`, **name unresolved (`?`)**,
+  `Outer` `0x06b40000` (an object named `M00`). It is exactly the row a name-keyed CSV cannot carry.
+- **The read is a property read on the instance, not on the class object**: `fields.py --object <class object>
+  --prop-name X` resolves the object's own class -- the metaclass -- so it printed the chain
+  `Class -> State -> Struct -> Field -> Object` and answered "no property named `GameHudPtr`", then fell through to
+  the class object's 271-entry member table. `--object 0x08842800 --prop-name GameHudPtr` is the same call against
+  `StargatePlayer`'s own chain, which is where `StargatePlayer.uc:26` declares it. **Next**: that read, plus
+  `commandInterfacePtr` and `NotificationManager`, on a `--instances` row resolved in the same boot (the address is
+  per-boot and the row is unnamed, so the class object is the only handle).
+
 ### Execution notes (2026-11-08, the binder's names are in the image, and 769 of 797 declarations have one)
 
 - **The index-less `native` binding is measured end to end now** (2026-11-08, no boot):
