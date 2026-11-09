@@ -860,6 +860,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the 85 refusals are rows now, and two families are most of them)
+
+- **The bytecode walk's residue is measured per payload, not described.** `tools/uscript-refusals.py`
+  (`make opcode-refusals`, `inventory/opcode_refusals.csv`, `--check` in `make ci`) writes one row per refusal:
+  package, class, function, script length, the offset the walk stopped at, the opcode there, the case, and the
+  walker's sentence. **11,602 walk clean and 85 refuse**, the same counts the prose carried, now with rows —
+  46 `bad-token`, 20 `parameter-list`, 16 `label-table`, 2 `operand-bytes`, 1 `string`, over nine packages
+  (`StargateMenus.u` 27, `Engine.u` 23, `StargateGame.u` 11, `UWindow.u` 11).
+- **The refusals sit late in their scripts, and the tail is not the cause.** The median refusal is at 71% of its
+  own script, 40 of 85 stop inside the last 16 bytes and none inside the last 2 — but `--tail-cut` re-walks each
+  one with its last 3, 7 and 11 bytes removed and rescues **0, 0 and 4** (the four whose failing token was the cut
+  itself). So the offsets are real token boundaries, not a range that runs one token long.
+- **Two families are 16 of the 85.** All 13 label-table refusals with exactly **11 bytes left** are
+  `StargateMenus.u`'s `InternalOnXControllerEvent` — one function, one token shape, one fix — and that function is
+  15 of the 85 on its own. `InternalOnChange` is three 11-byte scripts stopping at offset 5, and the failing byte
+  differs between them (`0x42`, `0x49`, `0x54`), which is a bad operand width in the token *before* offset 5 rather
+  than three opcode gaps.
+- **The rest is a per-function tail**: 45 distinct function names, no offset repeated more than three times, and
+  the `bad-token` rows spread over 37 opcodes. Worth individual reads, not another table-wide correction.
+
 ### Execution notes (2026-11-09, the channels are an ordered bone list and the pose's last float is an angle)
 
 - **The only ordered bone list in the format is the channel table, and it is stable.** `tools/lad-bones.py`

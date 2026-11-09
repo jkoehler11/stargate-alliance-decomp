@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-bones lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-bones lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
 
 help:
 	@echo "targets:"
@@ -77,6 +77,7 @@ help:
 	@echo "  lipsinc-tracks the .lad body past the pose frames: named clips, then a track table (needs the dump)"
 	@echo "  lipsinc-keys   each track's key block: 26 groups of (time, value) keys (needs the dump)"
 	@echo "  lipsinc-groups the 26 groups as a slot table: weights vs signed values, redundant pairs (needs the dump)"
+	@echo "  opcode-refusals the 85 scripts the bytecode walker still refuses, one row each (needs the packages)"
 	@echo "  lipsinc-bones  the channel table as an ordered bone list, and the pose record's angle (needs the dump)"
 	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
 	@echo "  campaign-matrix  missions x maps x speech x music x chapters (dump-free: reads committed CSVs)"
@@ -457,6 +458,11 @@ lipsinc-groups:
 lipsinc-bones:
 	@$(PYTHON) tools/lad-bones.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
 	@echo "wrote inventory/lipsinc_bones.csv"
+
+# Every script the bytecode walker still refuses, with the offset, the opcode and the case (docs/BYTECODE.md).
+opcode-refusals:
+	@$(PYTHON) tools/uscript-refusals.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/opcode_refusals.csv"
 
 # Every function's FunctionFlags, read from its export payload (docs/systems/NETWORK.md). Needs the packages.
 function-flags:

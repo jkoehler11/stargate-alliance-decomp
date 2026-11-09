@@ -319,5 +319,53 @@ The comparator is now the part that does not wait.
   leading-byte skips and both zlib framings, looking for an inflate that starts with a `Return` opcode or ends on the
   marker: **none decodes**. A class carries no epilogue either (2,319 of 2,319), so a class's script is not stored the
   way a function's is — this table describes the uncompressed walk, and that is the whole of it.
-* **Whether every shipped script walks clean.** The engine asserts on a mismatch, so the corpus is presumably
-  self-consistent, but that has not been tested here — it follows from U13.
+* ~~**Whether every shipped script walks clean.**~~ **Measured** (`make opcode-refusals`): 11,602 of 11,687 payloads
+  walk clean and the **85 that do not are now rows** — package, class, function, offset, opcode and case — in
+  `inventory/opcode_refusals.csv`. The engine does not assert on these, so they are the table's gaps and not the
+  corpus's damage; two families account for 16 of them (below).
+## The 85 refusals, one row each (measured 2026-11-09)
+
+The section above counts the corpus and names the tail of failures in a sentence. `tools/uscript-refusals.py`
+(`make opcode-refusals`, `inventory/opcode_refusals.csv`, `--check` in `make ci`) holds every payload with an
+epilogue against the table and writes the row a fix needs: package, class, function, script length, the offset the
+walk stopped at, the opcode there, the refusal case, and the walker's own sentence.
+
+**11,602 scripts walk clean and 85 refuse**, which settles the "not measured" item below — it is the same 11,602/85
+the payload census reported, now with rows.
+
+| case | refusals | what stops |
+|---|---:|---|
+| `bad-token` | 46 | an opcode the table calls the walker's bad-token case |
+| `parameter-list` | 20 | a `0x16`-terminated list that never reaches its terminator |
+| `label-table` | 16 | a `0x0c` label table whose entries do not reach a zero entry |
+| `operand-bytes` | 2 | an opcode with fewer operand bytes left than the table says |
+| `string` | 1 | a string operand with no NUL |
+
+| package | refusals |
+|---|---:|
+| `StargateMenus.u` | 27 |
+| `Engine.u` | 23 |
+| `StargateGame.u` | 11 |
+| `UWindow.u` | 11 |
+| `GUI.u` | 5 |
+| `StargateContent.u`, `UDebugMenu.u` | 3 each |
+| `GamePlay.u`, `IpDrv.u` | 1 each |
+
+**They are not spread evenly through the scripts.** The median script is 168 bytes and the median refusal is at
+**71% of its own script**; 40 of the 85 stop inside the last 16 bytes, none inside the last 2, and the smallest
+remainder is 4. So the walk consumes most of a body and dies on a token near the end. The obvious hypothesis is
+therefore that the walker's range is one token too long — **and that is wrong**: `--tail-cut` re-walks each refused
+script with its last 3, 7 and 11 bytes removed and rescues **0, 0 and 4**, the four being the rows whose failing
+token *is* the bytes cut. The offsets stand.
+
+**Two families account for 16 of the 85, and one of them is a single function.** All 13 label-table refusals that
+stop with exactly **11 bytes left** are `StargateMenus.u`'s `InternalOnXControllerEvent` — 13 scripts, one function,
+one token shape, one fix. Its other two refusals are at different offsets, so the function is the corpus's worst
+single case (15 of 85). The other family is `InternalOnChange`, three 11-byte scripts that stop at offset 5 with 6
+bytes left, and there the failing byte differs between them — `0x42`, `0x49`, `0x54` — which is what a bad operand
+width in the token *before* offset 5 looks like, not three separate opcode gaps.
+
+The remaining 69 are a long tail: 45 distinct function names, no offset repeated more than three times, and the
+`bad-token` rows alone spread over 37 distinct opcodes with 1–6 rows each. That is the honest shape of the residue —
+a per-function tail, which is why the table correction that took the corpus from 3,444 to 11,602 was worth the
+session and the last 85 are not one more such correction.
