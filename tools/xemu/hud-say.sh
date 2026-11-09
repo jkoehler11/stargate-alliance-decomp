@@ -48,6 +48,15 @@
 # report still called the markers ABSENT. `--deadline` is now the run's own budget, and a report that finds the
 # deadline line refuses the per-marker verdict instead of turning "not read" into "not there".
 #
+# **The four markers were ABSENT with the panel gone, and the boxes never said why** (measured 2026-11-09): the
+# run's own frames proved the dismissal (40,532 px then 34,096 px) and the reader was alive (its deadline now
+# derives from the sequence), so "the keys never arrived" and "the command ran and drew nothing" stayed
+# indistinguishable. `--receipt` answers it from the guest's own state: after the watch the reader walks the
+# `Console` class table (`0x0050cb80` in the census) and prints `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`,
+# which separates a sink that draws nothing from a keystroke that never landed. The receipt polls for
+# `--receipt-wait` seconds because the commands are typed at the very end of the sequence, and `--linger` keeps
+# the emulator (and its stub) up long enough for that read to finish.
+#
 # Usage: hud-say.sh [options] OUTDIR
 #   --iso PATH       disc image                (default $WORK/sg1.iso)
 #   --bios DIR       directory with mcpx*.bin (default $SG1_DUMP/bios)
@@ -65,6 +74,9 @@
 #   --gap SECS       seconds between commands (default 6)
 #   --follow SECS    the reader's rebind cadence (default 2; 0 disables, which is only right for a menu boot)
 #   --watch SECS     how long the reader keeps polling after resolving (default 0 = derived from --post)
+#   --receipt-wait SECS the receipt's poll window, for a marker typed late (default 90)
+#   --linger SECS    seconds drive.py keeps the emulator up after the last step (default 0 = derived, so the
+#                    receipt's walk lands inside the run)
 #   --retries N      fresh boots before giving up (default 2)
 #   --say TEXT       submit `say TEXT` (repeatable; default `say sg1txt1`)
 #   --note TEXT      submit `addnotification TEXT` (repeatable; default `addnotification sg1txt2`)
@@ -85,6 +97,8 @@ post=200
 gap=6
 follow=2
 watch=0
+receipt_wait=90
+linger=0
 retries=2
 cmds=""
 out=""
@@ -103,6 +117,8 @@ while [ $# -gt 0 ]; do
     --gap=*) gap=${1#*=}; shift ;;
     --follow=*) follow=${1#*=}; shift ;;
     --watch=*) watch=${1#*=}; shift ;;
+    --receipt-wait=*) receipt_wait=${1#*=}; shift ;;
+    --linger=*) linger=${1#*=}; shift ;;
     --retries=*) retries=${1#*=}; shift ;;
     --say=*) cmds="$cmds|say ${1#*=}"; shift ;;
     --note=*) cmds="$cmds|addnotification ${1#*=}"; shift ;;
@@ -117,8 +133,17 @@ done
 ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
 # The watch has to outlive the sequence, not the resolve: the commands are typed after the intro hands over,
 # which is ~200 s past the level gate, so a 180 s window ends before the first keystroke (measured 2026-11-09:
-# the log's last line was the intro's HUD dying, at 437.5 s, and no command had landed yet).
-[ "$watch" != 0 ] || watch=$((180 + post + 20 * ncmd))
+# the log's last line was the intro's HUD dying, at 437.5 s, and no command had landed yet). The receipt is what
+# polls past the last keystroke, so this window only has to cover the typing: `post` plus one command's own
+# cost. The resolve lands 20-60 s after the gate, which is the slack a shorter window needs.
+[ "$watch" != 0 ] || watch=$((post + (gap + 15) * ncmd))
+[ "$watch" -ge 120 ] || watch=120
+# The receipt walks the object array for the `Console` after the watch, and drive.py's linger is the only thing
+# holding the stub up by then: 120 s covers the walk (a 2,000-object tail costs ~20-40 s) plus the typing of one
+# more command. Without it the reader is killed 2 s after drive.py exits and a typed marker reads as unread.
+[ -n "$linger" ] || linger=$((120 + 30 * ncmd))
+# The markers, one per command: the receipt asks the console's own `History` about each of them.
+marks=$(printf '%s' "$cmds" | tr '|' '\n' | sed 's/.* //' | grep -v '^$' | paste -sd, - 2>/dev/null || true)
 [ -n "$hdd" ] || hdd="${WORK:-$HOME/sg1/work}/hdd-val.qcow2"
 [ -n "$eeprom" ] || eeprom="${WORK:-$HOME/sg1/work}/xemu/smoke1/eeprom.bin"
 [ -f "$hdd" ] || { echo "no HDD image at $hdd (pass --hdd): a run needs a copy it may write" >&2; exit 2; }
@@ -280,8 +305,11 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     IFS=$oldIFS
     [ -n "$cmd" ] || continue
     mark=$(printf '%s' "$cmd" | sed 's/.* //')
-    if grep -q "$mark" "$1/hud.log"; then
-      echo "FOUND  $mark  ($(grep -c "$mark" "$1/hud.log") line(s), first: $(grep -m1 "$mark" "$1/hud.log"))"
+    # The receipt lines carry the marker too, so a box verdict has to read only the box lines: a `FOUND` that
+    # was really `RECEIPT sg1txt1 IN HISTORY` would report the message path as painting when it painted nothing.
+    inbox=$(grep -v "RECEIPT \|HIST \|CONSOLE " "$1/hud.log" 2>/dev/null | grep "$mark" || true)
+    if [ -n "$inbox" ]; then
+      echo "FOUND  $mark  ($(printf '%s\n' "$inbox" | grep -c .) line(s), first: $(printf '%s\n' "$inbox" | grep -m1 .))"
     elif [ "$deadline" = 1 ]; then
       echo "UNREAD $mark  (the reader hit its page-cache deadline before the watch ended: the commands after"
       echo "          that point were typed with nothing reading, so this says nothing about the message)"
@@ -290,6 +318,17 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     else
       echo "UNREAD $mark  (no live \`GameHud\` was resolved: the boot's level never loaded, so a zero here is " \
            "about the boot and not about the message)"
+    fi
+    # The second question, from the console's own state: a delivered line with an empty box is the sink drawing
+    # nothing, and an empty history is a keystroke that never arrived. Both read `ABSENT` above.
+    if grep -q "RECEIPT $mark IN HISTORY" "$1/hud.log" 2>/dev/null; then
+      echo "DELIVERED $mark  (the console's own \`History\` holds the line, so the submit ran: a box that never"
+      echo "          held it is the message path drawing nothing, not a lost keystroke)"
+    elif grep -q "RECEIPT $mark NOT IN HISTORY" "$1/hud.log" 2>/dev/null; then
+      echo "NOT DELIVERED $mark  (no submit ran: the keys never reached the console -- the modal, the focus or a"
+      echo "          dropped character. Nothing here is about the message path)"
+    else
+      echo "UNREAD $mark  (no \`Console.History\` read in this log: the receipt did not run, so delivery is unmeasured)"
     fi
     IFS='|'
   done
@@ -329,14 +368,14 @@ while [ "$attempt" -le "$retries" ]; do
   # the last command and not at the settle -- and `--post` is part of the sequence.
   budget=$((boot + settle + 90 + post + (gap + 15) * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
-    --deadline "$budget" \
+    --deadline "$budget" --receipt "$marks" --receipt-wait "$receipt_wait" \
     --follow "$follow" --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1
   echo "attempt $attempt: index $index, gdb $gport, commands:$cmds -> $dir" | tee "$dir/attempt.log"
   rc=0
   ( cd "$repo" && python3 tools/xemu/drive.py --iso="$iso" --bios="$bios" --hdd="$dir/hdd.qcow2" --out="$dir" \
-      --eeprom="$eeprom" --gdb="$gport" --linger=30 --fuzz=10 --seconds=75 --pad-hold="$hold" \
+      --eeprom="$eeprom" --gdb="$gport" --linger="$linger" --fuzz=10 --seconds=75 --pad-hold="$hold" \
       --static-shot=-tab --static-shot=-typed "$@" ) > "$dir/run.log" 2>&1 || rc=$?
   echo "drive.py exit $rc" >> "$dir/run.log"
   sleep 2
