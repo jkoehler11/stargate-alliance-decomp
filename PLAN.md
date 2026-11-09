@@ -823,6 +823,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       every instance a default. `Reader.try_u32` is page-cached, so this diff (a 300 s timeout before) takes
       **235 s**; the residue is name resolution.
 
+      **The sink is measured on a level (2026-11-08)**: `sink13` read row `0x08842800` (index 47,885 of 48,646) on a
+      loaded `M00` and all four slots are live objects -- `NotificationManager` `0x0968c340`, `GameHudPtr`
+      `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
+      a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
+      hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, the sink is live on a level, and a page with a hole is not a page that is gone)
+
+- **The four sink slots are live on a loaded `M00`** (measured 2026-11-08, `sink13`: disc `$WORK/xemu/sg1.iso`, gdb
+  `12650`, `02-mission` changed from `00-title` by 80,489 px / 6.55%, names `41,265`): one row of class
+  `StargatePlayer` in the last 5,000 of 48,646 objects, at index **47,885** (`0x08842800` -- the same index `sink1`
+  held), and `+0x1004` `NotificationManager` `0x0968c340`, `+0x1008` `GameHudPtr` `0x09322100` (`GameHud`), `+0x100c`
+  `commandInterfacePtr` `0x096ff230` (`CommandInterface`), `+0x038c` `Pawn` `0x089e0000` are **all live objects**. So
+  the console's silent `say`/`addnotification` is not a null sink; what is left is the HUD's own guards (U15).
+- **`sink12`'s 9.7 s a page was the retry path, not the stub.** The stub answers `E` for a request that touches one
+  unmapped byte, `Guest.read` reconnected for each of four attempts and `Pages.page` repeated that three times, so a
+  page with a hole cost ~12 attempts; and the whole page was cached `None`, which also hid the objects in its mapped
+  half. `sink13`'s read cost **85 pages / 352 requests / 38.7 s in reads / 43 s total**, 3 pages with a hole, slowest
+  page 0.6 s -- the same tail bound that did not finish in 900 s.
+- **Instruments**: `sink-slots.py` reads a page in 16 KiB chunks, re-reads a failed chunk in 4 KiB sub-pages and marks
+  only those missing (`u32` returns None per address), reports requests/unanswered/split/holes and the slowest page,
+  and probes the guest only after a page with a hole; `objects.py`'s `Guest.read` takes `attempts=1` so an `E` costs
+  one round trip instead of a reconnect and a sleep. `--selftest` gains the hole case (7 assertions) and `make ci`
+  passes. `docs/XEMU.md` carries the two-run table and the slot values.
+
 ### Execution notes (2026-11-08, the typed line is in the console's `TypedStr`, and the key never draws)
 
 - **The keyboard attach is a race with machine init, and it is what plr2 lost** (measured 2026-11-08):
