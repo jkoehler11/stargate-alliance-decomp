@@ -1443,6 +1443,27 @@ receipt -- `Console.History[16]` after the last command (`hud-say.sh --receipt`,
 the fixed walk). `IN HISTORY` puts the string in the queue and makes the 4 s lifetime the suspect; `NOT IN HISTORY`
 means the exec edge never ran, which is the console's submit rather than any HUD guard.
 
+
+**The client route reaches the `Console`, and the object it reaches is the class default (measured 2026-11-09,
+`hudsay6`).** One `hud-say.sh` boot with `--console-client=0x01fb9bc0` loaded `M00` (name table 40,427 at 281.8 s),
+resolved the level's row `0x087c2800` (object 47,885 of 48,494, outer `M00`) with `+0x1008 -> GameHud 0x09322100`,
+read six box changes off it (the intro's turns, then the game's own `New Objective : Open the door for the doctor`
+at 480.5 s) and dismissed the tutorial panel (42,083 px, 3.42%) -- so the boot was live -- and the receipt's client
+route then read a `Console` in **4.3 s with 0 array walks**: the client's `InteractionMaster` `0x02406720` holds it
+at `+0x30`. The object is at **`0x02344b00`**, the address `docs/XEMU.md` records as the **class default** on two
+earlier boots, and its fields are the shipped defaults (`HistoryTop 0`, `bTyping 0`, `TypedStr` empty, 0 populated
+slots), so both markers printed `NOT IN HISTORY` -- a true statement about the default and no statement about the
+keys. The slot's class screen cannot separate the two, because the default is of that class, and the frames cannot
+either: the marker shot is 0.7 s after `ret`, and a submit clears `TypedStr` and closes the console, so a successful
+submit also leaves a blank frame (measured: `06-dismissed -> 041` = 314 px, 0 cyan pixels on both marker shots).
+`hud-text.py` now tests the discriminator structurally -- `is_class_default()` reads `UObject::Outer` (`+0x18`) and
+compares the outer's first dword with the `Package` class table (`0x004de088`) -- refuses the client route's default
+object in favour of the array walk, prints the outer on the first-sight line, and answers `UNMEASURED` when every
+object it read is a default. **What would settle it:** the same boot with that instrument. If the walk finds a second
+`Console` with a non-`Package` outer, `IN HISTORY` / `NOT IN HISTORY` is the submit verdict; if it finds only the
+default, the live console is outside `GObjObjects` and the read has to move to the master's other slots, since the
+one that answered names a default rather than the instance.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

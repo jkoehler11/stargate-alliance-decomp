@@ -378,6 +378,41 @@ would be game data.
   `IN HISTORY` / `NOT IN HISTORY` decides between "the exec edge never ran" and "the string was queued and the box
   was read after the 4 s queue had moved on".
 
+## Measured state (2026-11-09, the client route reaches a `Console` -- the class default)
+
+- **`hudsay6` answered half the receipt's question: the route works, and the object it reaches is the class
+  default.** One `hud-say.sh` boot with `--console-client=0x01fb9bc0` loaded `M00` (name table 40,427 at 281.8 s),
+  resolved the level's row `0x087c2800` (object 47,885 of 48,494, outer `M00`) with
+  `+0x1008 -> GameHud 0x09322100`, read six box changes off it -- the intro's turns at counts 14, 35, 33, 50, 56 and
+  53 through 465.7 s, then the game's own `New Objective : Open the door for the doctor` at 480.5 s -- and the
+  post-resolve `pad=a` repainted **42,083 px (3.42%)**, so the tutorial panel was dismissed and every part of the
+  boot the marker needed was live.
+- **The route costs 7 page reads and finds a `Console` at `0x02344b00`**: the client's `InteractionMaster`
+  `0x02406720` holds the pointer at `+0x30`, the object opens with the `Console` class table, and the receipt read
+  it in **4.3 s with 0 array walks**. Its state is `HistoryTop 0`, `bTyping 0`, `TypedStr` empty, 0 populated
+  slots, so both markers printed `RECEIPT ... NOT IN HISTORY`.
+- **That address is the class default**, which `docs/XEMU.md` recorded on two earlier boots with the prompt open
+  (`0x02344b00`, a `defaultproperties` block with no text in its `FString` pairs). A class default's fields *are*
+  the shipped defaults, so `NOT IN HISTORY` is true of the default and says nothing about the keys -- and the
+  slot's class screen cannot tell the two apart, because the default is of that class.
+- **The frames cannot settle it, which is why the receipt exists.** `06-dismissed -> 041-say-sg1txt1` differs by
+  **314 px** (0.03% of the frame) and `console-line.py` counts **0** cyan pixels on both marker shots -- but each
+  marker shot is taken 0.7 s *after* `ret`, and a submit clears `TypedStr` and closes the console, so the frame
+  after a successful submit is blank as well.
+- **The receipt now refuses a class default.** `is_class_default()` reads `UObject::Outer` (`+0x18`) and tests the
+  outer's own first dword against the `Package` class table from the census (`0x004de088`): a class default is
+  outered to its package, a live object to an actor or a viewport. The client route's default prints that its outer
+  is a `Package` and falls through to the array walk rather than answering; the first-sight `CONSOLE` line prints
+  the outer and marks a default; and a verdict whose every object read is a default prints `UNMEASURED`, not
+  `NOT IN HISTORY`. The selftest builds that shape and asserts the refusal beside the live shape it already asserts.
+- **Instruments**: `tools/xemu/hud-text.py` (`class_table`, `is_class_default`, the client-route fallback, the outer
+  on the first-sight line, the default-object verdict, one selftest case), `docs/UNKNOWNS.md` U15. No artifact and
+  no new file.
+- **Next**: one boot with the fixed instrument. A second `Console` object with a non-`Package` outer makes
+  `RECEIPT ... IN HISTORY` / `NOT IN HISTORY` the submit verdict at last; only the default means the live console is
+  outside `GObjObjects`, and the read has to move to the master's other slots -- the one that answered names the
+  default, so the field may hold a class reference rather than the instance.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
