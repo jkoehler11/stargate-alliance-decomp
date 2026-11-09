@@ -1423,6 +1423,26 @@ owns it; `hudsay3`'s zero is therefore void as evidence about the console. **Wha
 `NOT IN HISTORY` is the submit verdict, and only then is the `SetSubtitle`/`SetNotifications` guard the next
 question.
 
+**There is no guard left in the sink chain, so a marker that drew nothing never reached it (measured 2026-11-09, no
+boot).** `tools/hud-messages.py --sink-callers` counts the call sites of every sink over all **2,317** classes in the
+shipped `ScriptText`: `GameHud.SetNotifications` (`GameHud:1034`) has exactly **one** caller,
+`NotificationManager.DisplayMessages` (`NotificationManager:40`); that has exactly **one**, `StargateHUD.DisplayMessages`
+(`StargateHUD:1316`), which is the engine's dispatch because `Hud.PostRender` (`Hud:299`) calls `DisplayMessages(Canvas)`.
+`GameHud.DisplayTextBox` writes `DialogueWindow`, `SetNotifications` writes `NotificationWindow`, `SetInteractionText`
+writes `InteractionWindow`. The only conditions on the path are `GH == None`, `DeltaTime <= 0.0`, the head-of-queue
+`MessageLife <= 0.0` test and the `NotificationLifeTime` eviction -- configured to **4.0 s**
+(`System/tweak/Misc/StargateHUD.ini:216`) -- and `SetNotifications` substitutes `NO NOTIFICATION TEXT SET!!!!` for an
+empty string rather than dropping it, then draws with duration **0**. Both windows were measurably live on `hudsay3`'s
+level: `NotificationWindow` held the game's own `New Objective : Complete fitness Examination` (count 45) and, at
+479.3 s, `New Objective : Open the door for the doctor`; `DialogueWindow` held the intro's turns. So `SetSubtitle`'s and
+`SetNotifications`' guards are **retired as the cause** of the silent markers, and what is left is the edge a console
+command has to cross: `StargateHUD`'s `exec function AddNotification` (`StargateHUD:277`) -> `DisplayNotification` ->
+`StargatePlayer.AddNotification` -> `NotificationManager.AddNotification` (9 call sites in the tree), and for `say` the
+engine's `PlayerController.TeamMessage` -> `myHUD.Message` -> `SetSubtitle`. **What would settle it:** the submit
+receipt -- `Console.History[16]` after the last command (`hud-say.sh --receipt`, with `--console-client=0x01fb9bc0` or
+the fixed walk). `IN HISTORY` puts the string in the queue and makes the 4 s lifetime the suspect; `NOT IN HISTORY`
+means the exec edge never ran, which is the console's submit rather than any HUD guard.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

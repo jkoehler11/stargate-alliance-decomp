@@ -344,6 +344,40 @@ would be game data.
   `RECEIPT ... IN HISTORY` / `NOT IN HISTORY` is the submit verdict the last three boots have been circling; if the
   submits ran, what is left is the `SetSubtitle`/`SetNotifications` guard.
 
+## Measured state (2026-11-09, the sink chain is closed, so a marker that did not draw never arrived)
+
+- **The question U15 left was "which guard refuses the message", and the shipped scripts answer it: there is no guard
+  to find.** `tools/hud-messages.py --sink-callers` walks all **2,317** classes in the extracted tree and counts every
+  body that calls each sink. The chain is closed and entirely script-driven: `GameHud.SetNotifications`
+  (`GameHud:1034`) has exactly **one** call site, `NotificationManager.DisplayMessages` (`NotificationManager:40`);
+  `NotificationManager.DisplayMessages` has exactly **one**, `StargateHUD.DisplayMessages` (`StargateHUD:1316`); and
+  that one is the override the engine dispatches, because `Hud.PostRender` (`Hud:299`) calls `DisplayMessages(Canvas)`.
+  `GameHud.DisplayTextBox` (`GameHud:900`) writes `DialogueWindow`, `SetNotifications` writes `NotificationWindow`,
+  `SetInteractionText` writes `InteractionWindow` -- one call site each, no branch that drops a non-empty string.
+- **What the guards actually are.** `GameHud.SetNotifications` replaces an *empty* text with
+  `NO NOTIFICATION TEXT SET!!!!` and then calls `NotificationWindow.DisplayTextBox(ViewportOwner, Text, 0)` -- a
+  duration of **0**. `NotificationManager.DisplayMessages` returns early on `GH == None` (the HUD link) and on
+  `DeltaTime <= 0.0` (its own clock), draws the head of the queue only while `Notifications[0].MessageLife <= 0.0`,
+  and drops it after `NotificationLifeTime`, which the disc configures as **4.0 s**
+  (`System/tweak/Misc/StargateHUD.ini:216`). So a delivered notification is a short entry in a queue, drawn once with
+  duration 0 -- the receipt, not a frame, is what can say whether it was queued.
+- **Both windows are measurably live on a level, in the same boots the markers were typed into.** On `hudsay3`'s
+  `M00` the level HUD's `NotificationWindow` held the game's own `New Objective : Complete fitness Examination`
+  (count 45) and `New Objective : Open the door for the doctor` at 479.3 s, and its `DialogueWindow` held the intro's
+  turns -- so `NotificationManager` -> `SetNotifications` -> `NotificationWindow` and
+  `SetSubtitle` -> `DisplayTextBox` -> `DialogueWindow` both ran on that HUD. A marker that never appeared there did
+  not reach `AddNotification`, and the remaining question is the console command, not the sink.
+- **`say` and `addnotification` arrive by two different edges, and only one is measured.** `say` is engine-side
+  (`PlayerController.TeamMessage` -> `myHUD.Message` -> `SetSubtitle`, 10 call sites of `SetSubtitle` in the tree);
+  `addnotification` is `StargateHUD`'s `exec function AddNotification` (`StargateHUD:277`) -> `DisplayNotification` ->
+  `StargatePlayer.AddNotification` -> `NotificationManager.AddNotification` (9 call sites), which is the edge a
+  console command has to cross and the one the receipt tests.
+- **Instruments**: `tools/hud-messages.py` (`--sink-callers`, a selftest case for declarations, qualified calls and
+  commented-out calls), `docs/UNKNOWNS.md` U15. No artifact, no new file.
+- **Next**: the receipt, unchanged -- one `hud-say.sh` run with `--console-client=0x01fb9bc0` or the fixed walk. Its
+  `IN HISTORY` / `NOT IN HISTORY` decides between "the exec edge never ran" and "the string was queued and the box
+  was read after the 4 s queue had moved on".
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the

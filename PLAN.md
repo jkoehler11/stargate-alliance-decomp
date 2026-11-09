@@ -831,6 +831,38 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, U15's guard hypothesis is retired by the scripts' own call sites)
+
+- **The question U15 carried into this run -- "which guard refuses the message" -- is answerable from the disc, and
+  the answer is "none of them".** `tools/hud-messages.py --sink-callers` walks all **2,317** classes of the extracted
+  `ScriptText` and counts the bodies that call each message sink. The chain is closed and script-driven:
+  `GameHud.SetNotifications` (`GameHud:1034`) has exactly **one** call site -- `NotificationManager.DisplayMessages`
+  (`NotificationManager:40`) -- and that has exactly **one**, `StargateHUD.DisplayMessages` (`StargateHUD:1316`), which
+  is the override the engine dispatches because `Hud.PostRender` (`Hud:299`) calls `DisplayMessages(Canvas)`.
+  `GameHud.DisplayTextBox` (`GameHud:900`) writes `DialogueWindow`, `SetNotifications` writes `NotificationWindow`,
+  `SetInteractionText` writes `InteractionWindow`, one call site each.
+- **The guards that do exist are three and none of them drops a non-empty string**: `GH == None` (the HUD link),
+  `DeltaTime <= 0.0` (the manager's own clock), and the head-of-queue `MessageLife <= 0.0` test; an entry is evicted
+  after `NotificationLifeTime`, which the disc sets to **4.0 s** (`System/tweak/Misc/StargateHUD.ini:216`).
+  `SetNotifications` substitutes `NO NOTIFICATION TEXT SET!!!!` for an *empty* text, and draws with duration **0** --
+  so a delivered notification is a short queue entry drawn once, and a frame taken later can miss it while the receipt
+  would not.
+- **Both windows were live on the level the markers were typed into.** `hudsay3`'s `NotificationWindow` held the game's
+  own `New Objective : Complete fitness Examination` (count 45) and `New Objective : Open the door for the doctor` at
+  479.3 s; its `DialogueWindow` held the intro's turns (14, 35, 33, 50, 56, 53). So `NotificationManager` ->
+  `SetNotifications` -> `NotificationWindow` and `SetSubtitle` -> `DisplayTextBox` -> `DialogueWindow` both ran on that
+  HUD during that boot, and the two sinks stop being candidates for the silent markers.
+- **The console edge is the one left, and it differs by command**: `addnotification` needs `StargateHUD`'s
+  `exec function AddNotification` (`StargateHUD:277`) -> `DisplayNotification` -> `StargatePlayer.AddNotification` ->
+  `NotificationManager.AddNotification` (9 call sites in the tree); `say` is engine-side,
+  `PlayerController.TeamMessage` -> `myHUD.Message` -> `SetSubtitle` (10 call sites).
+- **Instruments**: `tools/hud-messages.py` (`--sink-callers`; the selftest now also asserts that a declaration is not a
+  call site, that a qualified call is one, and that a commented-out call is not), `docs/HUD_TEXT.md`,
+  `docs/UNKNOWNS.md` U15. No artifact and no new file.
+- **Next**: the receipt, unchanged -- one `hud-say.sh` run with `--console-client=0x01fb9bc0` or the fixed walk. Its
+  `IN HISTORY` / `NOT IN HISTORY` decides between "the exec edge never ran" and "the string was queued and the box was
+  read after the 4 s queue moved on".
+
 ### Execution notes (2026-11-09, the walk screened a class pointer with a class table)
 
 - **`hudsay3` finished the boot the last run could not wait for, and every console route missed on it.** `M00`
