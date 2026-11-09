@@ -312,9 +312,8 @@ What is still open:
 
 * **Which curve a group is.** The key block decodes (below): 26 groups of `(time, value)` keys per track. What a
   group indexes and what a value means is the rest of U4.
-* **The two bytes before the first track header** — `00 03` in `grey.lad`, `60 09` in the 1.3 MB pack — and the six
-  bytes in the same place in `sg1_crew_jackson.lad`, which has no track table at all. They are counted
-  (`gap_bytes`) and not identified.
+* ~~The bytes before the first track header~~ — **closed**: they are the table's own count (below). The six bytes in
+  the same place in `sg1_crew_jackson.lad`, which has no table at all, are that file's own residue (`000002000000`).
 * **Names are not unique keys.** `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name indexes more than one
   record and a reader cannot key on it alone.
 
@@ -422,3 +421,29 @@ length-prefixed name pair, a `u32 1`, two `f32` and any count byte — and finds
 exactly one tuple, `(160.0, 220.0, 26)`, and zero records the strict reader refuses**. A duration, a sample rate or
 a value range would vary with the clip; these do not vary in the corpus at all, so they are format constants and
 the question is what the *format* means by them, not what a track's `160.0` is.
+
+## The track table is preceded by its own count (measured 2026-11-09)
+
+The `gap_bytes` the walk counted before the first `<Map>.<Animation>` header are **the table's record count**, in the
+same 7-bit varint the key counts use: one byte under 64, two when the first byte carries the `0x40` continuation bit
+and contributes `<< 6`.
+
+| file | bytes before the first header | count | records the walk found |
+|---|---|---:|---:|
+| `Controllers/sg1_crew_carter.lad` | `60 09` | `0x20 + (9 << 6)` = 608 | 608 |
+| `Controllers/sg1_crew_oneill.lad` | `52 0c` | `0x12 + (12 << 6)` = 786 | 786 |
+| `Controllers/sg1_crew_jackson.lad` | `65 07` | `0x25 + (7 << 6)` = 485 | 485 |
+| `Controllers/sg1_crew_tealc.lad` | `58 05` | `0x18 + (5 << 6)` = 344 | 344 |
+| `Controllers/grey.lad` | `00 03` | 3 | 3 |
+| `JAnderson.lad` | `00 03` | 3 | 3 |
+| `sg1_crew_carter.lad` | `00 02` | 2 | 2 |
+
+Seven of eight files, every count exact. The leading `0x00` in four of them is the previous section's last byte, not
+part of the count — the count **ends** where the first record begins, so `tools/lad-tracks.py` decodes it backwards
+from a record the pattern walk already found. That order matters: the count **verifies** the walk instead of steering
+it, so a disagreement would be a finding rather than something to silently obey, and `--check` refuses a CSV whose
+`declared` column disagrees with its `tracks` column. `sg1_crew_jackson.lad` has no table and its six bytes
+(`000002000000`) are not a count; they stay recorded as that file's residue.
+
+This closes one of U4's two "recorded rather than explained" items, and it is the third place the same varint codec
+appears — the group key counts, the track count, and the two-byte counts a group of 69 keys already needed.

@@ -388,8 +388,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       of the 208 file × slot rows (widest `1.33783`) and slots 19–25 are signed (−9.45942 to 9.45942), so the table is
       **19 weight curves and 7 signed curves**; and six slots are recoverable from the others (24 = 25 in 2,230 tracks,
       17 = 18 in 1,845, 22 = 23 in 883, 19 = −24 in 1,890, 21 = −22 in 193), leaving **at most 20 independent curves**
-      (`tools/lad-groups.py`, `make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`). What
-      remains is which weight slot is which bone and what the 7 signed slots mean — not the encoding or the layout.
+      (`tools/lad-groups.py`, `make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`).
+      **The table's extent is declared too**: the bytes before the first header are its record count in the same 7-bit
+      varint the key counts use — `60 09` = 608 for the carter pack, `52 0c` = 786, `65 07` = 485, `58 05` = 344,
+      `00 03` = 3 — matching the walk's record count in all seven files that have a table (`gap_hex`/`declared` in
+      `inventory/lipsinc_tracks.csv`). What remains is which weight slot is which bone and what the 7 signed slots
+      mean — not the encoding, the layout or the table's extent.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -850,6 +854,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the track table declares its own count in the key counts' varint)
+
+- **The bytes before the first track header are the table's count, not padding.** `tools/lad-tracks.py` now decodes
+  them in the *same* 7-bit varint `tools/lad-keys.py` uses (bit `0x40` in the first byte means a second follows and
+  contributes `<< 6`): `60 09` is `0x20 + (9 << 6)` = **608** in `Controllers/sg1_crew_carter.lad`, `52 0c` = 786,
+  `65 07` = 485, `58 05` = 344, and `00 03` = 3 in `Controllers/grey.lad` and `JAnderson.lad` while `00 02` = 2 in
+  `sg1_crew_carter.lad`. **Seven files with a table, seven exact counts** — the third appearance of this varint in the
+  format, after a group's key count and the two bytes a 69-key group already needed.
+- **It verifies the walk instead of steering it.** The count ends where the first record begins, so it is read
+  backwards from a record the marker-and-signature scan already found; `inventory/lipsinc_tracks.csv` gains `gap_hex`
+  and `declared`, and `--check` refuses a row whose `declared` disagrees with its `tracks`. A count read forwards
+  would have made the walk trust a number before testing it — this way a disagreement is a finding. The leading
+  `0x00` in four of the seven is the previous section's last byte, not part of the count.
+- **The negative stays a negative.** `sg1_crew_jackson.lad` has no track table and its six bytes
+  (`000002000000`) are not a count of zero; they remain recorded as that file's residue. `JAnderson.lad` listing
+  `AlkeshBomber.Beware` twice is still the one unexplained item in the table.
+- **Next**: read `LIPSincReadAnimFile`'s loop at `0x000b8340` with the count and the group codec in hand — it should
+  now be a short loop (a count, then per-record names and a group walk) rather than a parser to guess.
 
 ### Execution notes (2026-11-09, the slots are 19 weights and 7 signed curves, and six of them repeat)
 

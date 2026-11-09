@@ -12,6 +12,13 @@ channel -- 20 frames in all eight files. It left 96-99% of the big `Controllers/
   `AlkeshBomber.ca_firing_ge_s_02` -- each with a constant header (`u32 2`, the two names, `u32 1`, `160.0`, `220.0`,
   and a key count of **26**) followed by a block of key bytes.
 
+The table is preceded by **its own count**, in the same 7-bit varint the key counts use (`tools/lad-keys.py`):
+`60 09` is `0x20 | (9 << 6)` = **608** for the carter pack, `65 07` is `0x25 | (7 << 6)` = **485**, and the two
+bytes before `grey.lad`'s first header are a `0x00` that closes the previous section plus `0x03` = 3 tracks. It is
+decoded backwards from a record the pattern walk already found, so it **verifies** the walk rather than steering
+it; `--check` refuses a CSV whose count disagrees with its record count. `sg1_crew_jackson.lad` has no table at
+all, and its six trailing bytes (`315abfe33661`) are not a count -- recorded as the file's own residue.
+
 The clip walk is strict: every clip must parse or the section is refused. The track table is *located*, not walked --
 each record's header is a ten-field signature and the bytes between one header and the next are counted as an unread
 key block, with the number of `u32 2` markers inside it reported so the next reader has the shape. What the key bytes
@@ -33,7 +40,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV = "lipsinc_tracks.csv"
 COLUMNS = ["path", "bytes", "channels", "pose_frames", "pose_records", "clips", "clip_names", "clip_bones",
-           "clip_frames", "tracks", "maps", "unique_names", "gap_bytes", "block_min", "block_max", "block_median",
+           "clip_frames", "tracks", "maps", "unique_names", "gap_bytes", "gap_hex", "declared", "block_min",
+           "block_max", "block_median",
            "markers_min", "markers_max", "key_count", "trailer_names"]
 RECORD = 32
 FRAME_HEADER = 5
@@ -158,6 +166,21 @@ def track_at(d, p, end):
     return {"short": short, "full": full, "owner": owner, "name": name, "keys_offset": q + 13}
 
 
+def track_count(d, offset):
+    """The table's own count, in the 7-bit varint the key counts use (`tools/lad-keys.py`'s `varint_count`).
+
+    The count ends where the first record begins: one byte for a count under 64, two when the first byte
+    carries the `0x40` continuation bit. It is read *backwards* from a record the pattern walk already
+    found, so it verifies the walk instead of steering it -- a count that disagrees with the number of
+    records is a finding, not something to silently obey.
+    """
+    if offset < 1 or offset > len(d):
+        return None
+    if offset >= 2 and d[offset - 2] & 0x40:
+        return (d[offset - 2] & 0x3F) | (d[offset - 1] << 6)
+    return d[offset - 1]
+
+
 def track_table(d, start, end):
     """Locate the track records and measure the key block between one header and the next."""
     tracks, scan = [], start
@@ -177,7 +200,8 @@ def track_table(d, start, end):
         rec["block"] = stop - rec["keys_offset"]
         rec["markers"] = d.count(MARKER, rec["keys_offset"], stop)
     gap = (tracks[0]["offset"] - start) if tracks else (end - start)
-    return tracks, gap
+    declared = track_count(d, tracks[0]["offset"]) if tracks else None
+    return tracks, gap, declared
 
 
 def measure(path):
@@ -195,7 +219,8 @@ def measure(path):
         got = clip_section(d, stop, end, channels)
         if got is not None:
             clips, stop = got
-    tracks, gap = track_table(d, stop, end)
+    tracks, gap, declared = track_table(d, stop, end)
+    gap_start = tracks[0]["offset"] - gap if tracks else stop
     blocks = [t["block"] for t in tracks]
     marks = [t["markers"] for t in tracks]
     owners = sorted(set(t["owner"] for t in tracks))
@@ -213,6 +238,8 @@ def measure(path):
         "maps": ";".join(owners),
         "unique_names": len(set(t["full"] for t in tracks)),
         "gap_bytes": gap,
+        "gap_hex": d[gap_start:(gap_start + gap)].hex() if gap else "",
+        "declared": "" if declared is None else declared,
         "block_min": min(blocks) if blocks else "",
         "block_max": max(blocks) if blocks else "",
         "block_median": sorted(blocks)[len(blocks) // 2] if blocks else "",
@@ -287,7 +314,12 @@ def check():
                                                                            int(r["pose_records"]), ch))
         if int(r["gap_bytes"]) > 8:
             bad.append("%s: %d bytes between the walk and the first track header" % (r["path"], int(r["gap_bytes"])))
+        if r.get("gap_hex") and len(r["gap_hex"]) != 2 * int(r["gap_bytes"]):
+            bad.append("%s: gap hex %r is not %s bytes" % (r["path"], r["gap_hex"], r["gap_bytes"]))
         tracks = int(r["tracks"])
+        if tracks and str(r.get("declared", "")) != str(tracks):
+            bad.append("%s: the table declares %s tracks and the walk found %d"
+                       % (r["path"], r.get("declared") or "nothing", tracks))
         if tracks:
             if int(r["key_count"]) != TRACK_KEY_COUNT:
                 bad.append("%s: key count %s" % (r["path"], r["key_count"]))
@@ -315,6 +347,8 @@ def check():
         bad.append("selftest: pose walk read %r frames / %r records" % (srow["pose_frames"], srow["pose_records"]))
     if srow["clips"] != 1 or srow["clip_names"] != "test_clip" or srow["clip_bones"] != "2":
         bad.append("selftest: clip walk read %r" % (srow["clip_names"],))
+    if str(srow.get("declared", "")) != "1" or srow["gap_hex"] != "0001":
+        bad.append("selftest: declared %r / gap %r" % (srow.get("declared"), srow.get("gap_hex")))
     if srow["tracks"] != 1 or srow["gap_bytes"] != 2 or srow["block_min"] != 48:
         bad.append("selftest: track table read %r tracks, gap %r, block %r"
                    % (srow["tracks"], srow["gap_bytes"], srow["block_min"]))
@@ -383,9 +417,10 @@ def main():
             w.writerow({k: r[k] for k in COLUMNS})
     print("wrote %s (%d files)" % (dest, len(rows)))
     for r in rows:
-        print("  %-40s ch %2d pose %2d/%4d clips %d tracks %4d blocks %5s..%-5s gap %d  %s"
+        print("  %-40s ch %2d pose %2d/%4d clips %d tracks %4d (declared %s) blocks %5s..%-5s gap %d %s  %s"
               % (os.path.basename(r["path"]), r["channels"], r["pose_frames"], r["pose_records"], r["clips"],
-                 r["tracks"], r["block_min"], r["block_max"], r["gap_bytes"], r["clip_names"]))
+                 r["tracks"], r["declared"] or "-", r["block_min"], r["block_max"], r["gap_bytes"],
+                 r["gap_hex"] or "-", r["clip_names"]))
     return 0
 
 
