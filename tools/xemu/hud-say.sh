@@ -22,12 +22,13 @@
 # in front before the first press; a boot that still fails the level gate is retried fresh (`--retries`), because
 # a swallowed select press looks exactly like a map that did not load.
 #
-# **A free screen is not enough on this desktop** (measured 2026-11-08): with nothing fullscreen -- the Steam
-# client was the only window and the desktop held `_NET_ACTIVE_WINDOW` -- every frame was still blank (a
+# **A blank capture here was the reader, not the screen** (settled 2026-11-09): with nothing fullscreen -- the
+# Steam client the only window and the desktop holding `_NET_ACTIVE_WINDOW` -- every frame was still blank (a
 # 7,556-byte PNG, black with one green pixel, five shot steps at 0 differing pixels) while the guest and the stub
-# answered. So a blank capture here is a property of the capture path, not of what is in front of the window, and
-# a shot step's `0 differing pixels` is not evidence that input was lost. What the read is gated on is the name
-# table, never a frame.
+# answered. That was read as a property of the capture path, and it was the watcher: attaching to the stub
+# interrupts the CPU and the reader never resumed it, so the guest was frozen at 4.5 s and the frames were one
+# picture. `--live` (stop/read/resume) fixes that and the next boot reached `M00` and read all three boxes. What
+# the read is gated on is the name table, never a frame.
 #
 # **Two things then made a boot unreadable for reasons that had nothing to do with the boxes** (measured
 # 2026-11-08, both fixed here). The watcher's window was bounded by the *process* clock, so a run that spent
@@ -256,7 +257,10 @@ while [ "$attempt" -le "$retries" ]; do
   while IFS= read -r s; do set -- "$@" "$s"; done < "$dir/steps.txt"
   gport=$((port + attempt - 1))
   # The watcher has to be up before the guest is: it waits for the stub to accept a connection and for the name
-  # table to reach a level's size, so its clock is the boot's, not this script's.
+  # table to reach a level's size, so its clock is the boot's, not this script's. `--live` is not optional here:
+  # attaching to the stub interrupts the CPU, and the reader used to leave it stopped -- the guest it was
+  # watching was frozen from the first poll, which is the blank frame and the name table that never grew
+  # (measured 2026-11-09, six boots). The live reader stops, reads and resumes, so the boot proceeds.
   # The watcher's deadline has to land *inside* the run. `--wait` used to be `boot + settle + 150` (450 s at the
   # defaults) against a sequence that finishes in about `boot - 75 + settle + 40` s, so the watcher was killed
   # while still waiting and a boot that never loaded a level left no verdict at all -- `UNREAD` with no cause
@@ -268,7 +272,7 @@ while [ "$attempt" -le "$retries" ]; do
   # the last command and not at the settle.
   budget=$((boot + settle + 90 + 15 * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
-      --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
+    --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1
   echo "attempt $attempt: index $index, gdb $gport, commands:$cmds -> $dir" | tee "$dir/attempt.log"

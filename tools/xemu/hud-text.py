@@ -35,7 +35,11 @@ Usage, against a guest booted with `-gdb tcp::PORT` (`drive.py --gdb=PORT --ling
 
 `--wait SECS` polls the name table until the boot looks like a *level* (`GNames` 41,265 against 34,800 at the
 menu) and only then resolves -- that is what lets a watcher start before the boot and still attach to the row
-a level spawns. `--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
+a level spawns. **A watcher started before the boot must also pass `--live`**: attaching to the stub interrupts
+the CPU, and the default reader never resumes it, so the guest is frozen from the first poll (a blank frame and a
+name table that never reaches a level's size, while every poll answers). `--live` makes each read a
+stop/read/resume, which leaves the guest's own clock running -- the 2 s `DisplayText` window needs that.
+`--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
 Field contents are game state, so nothing here writes a file.
 """
 import argparse
@@ -67,6 +71,51 @@ def load(name, path):
 
 names = load("xemu_names", NAMES_PY)
 sink = load("xemu_sink", SINK_PY)
+
+
+class LiveGuest(object):
+    """A reader that leaves the guest **running**: stop, read, resume -- one swap per read.
+
+    `objects.Guest` interrupts the CPU on connect and never resumes it. That is right for a dump taken after a
+    run has finished and wrong for a watcher that starts before a boot: the guest it attaches to is frozen from
+    that moment, so every frame is blank and `GNames` never grows past whatever the `.data` triple held when the
+    attach landed (measured 2026-11-08/09: six `hud-say.sh` boots reported one frozen picture and a name table
+    that never reached a level's size, while the same stub answered every poll -- the reader was the freeze).
+    The stub serves `m` packets only while the CPU is stopped, so a live read is a stop/read/resume triple; the
+    guest's own clock then advances between polls, which a 2 s `DisplayText` window needs.
+    """
+
+    def __init__(self, host=None, port=None, inner=None):
+        self.inner = inner if inner is not None else names.Guest(host, port)
+        self.stopped = True              # `objects.Guest` interrupts on connect, so the CPU starts stopped
+        self.reads = 0
+        self.resumes = 0
+
+    def _stop(self):
+        if not self.stopped:
+            self.inner.g.stop(3.0)
+            self.stopped = True
+
+    def _resume(self):
+        if self.stopped:
+            self.inner.g.resume()
+            self.stopped = False
+            self.resumes += 1
+
+    def read(self, addr, size, chunk=0x4000, attempts=None):
+        self._stop()
+        try:
+            out = self.inner.read(addr, size, chunk=chunk, attempts=attempts)
+        finally:
+            self._resume()
+        self.reads += 1
+        return out
+
+    def u32(self, addr):
+        return struct.unpack("<I", self.read(addr, 4))[0]
+
+    def close(self):
+        self.inner.close()
 
 
 def u32(guest, addr):
@@ -306,6 +355,45 @@ def selftest():
           "one (%d stub read(s))" % ram.reads)
     print("ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts "
           "is reported, %d change(s) on %d poll(s)" % (changes, polls["n"]))
+
+    # A live reader must hand the CPU back after every read. The failure this guards: `objects.Guest`
+    # interrupts on connect and never resumes, so a watcher started before a boot froze the guest it was
+    # watching -- six boots of blank frames and a name table that never grew, while every poll answered.
+    class FakeStub(object):
+        def __init__(self):
+            self.log = []
+
+        def stop(self, timeout=3.0):
+            self.log.append("stop")
+            return b"T05"
+
+        def resume(self):
+            self.log.append("resume")
+
+        def read(self, addr, size, chunk=0x4000, attempts=None):
+            self.log.append("read")
+            return struct.pack("<I", 0x1234)
+
+    class FakeInner(object):
+        def __init__(self):
+            self.g = FakeStub()
+            self.reads = 0
+
+        def read(self, addr, size, chunk=0x4000, attempts=None):
+            return self.g.read(addr, size)
+
+        def close(self):
+            pass
+
+    live_inner = FakeInner()
+    live = LiveGuest(inner=live_inner)
+    live.read(0x006be0d8, 12)
+    live.read(0x006be0d8, 12)
+    want = ["read", "resume", "stop", "read", "resume"]
+    assert live_inner.g.log == want, (live_inner.g.log, want)
+    assert live.resumes == 2, live.resumes
+    print("ok   hud-text: a live reader resumes the guest after every read (%d read(s), %d resume(s), "
+          "stop/read/resume on each)" % (live.reads, live.resumes))
     return 0
 
 
@@ -338,6 +426,10 @@ def main():
     ap.add_argument("--connect-wait", type=float, default=90.0,
                     help="seconds to wait for the stub to accept a connection (a watcher starts before the boot)")
     ap.add_argument("--deadline", type=float, default=300.0, help="seconds the resolve walk may take")
+    ap.add_argument("--live", action="store_true",
+                    help="leave the guest running between reads (stop/read/resume). Required when the watcher "
+                         "starts before the boot: attaching alone interrupts the CPU, and a reader that never "
+                         "resumes freezes the boot it is watching")
     ap.add_argument("--selftest", action="store_true", help="check the field walk and the text decode, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -348,7 +440,7 @@ def main():
     started = time.monotonic()
     while True:
         try:
-            guest = names.Guest(args.host, args.port)
+            guest = LiveGuest(args.host, args.port) if args.live else names.Guest(args.host, args.port)
             break
         except (IOError, OSError) as exc:
             if time.monotonic() - started > args.connect_wait:
@@ -356,7 +448,10 @@ def main():
                       % (args.tag, args.host, args.port, args.connect_wait, exc))
                 return 3
             time.sleep(2.0)
-    print("%s: stub up on %s:%d after %.1fs" % (args.tag, args.host, args.port, time.monotonic() - started))
+    print("%s: stub up on %s:%d after %.1fs (%s)"
+          % (args.tag, args.host, args.port, time.monotonic() - started,
+             "live reader: the guest is resumed after every read" if args.live
+             else "the guest is left stopped -- wrong for a watcher started before a boot, see --live"))
     row, hud = args.row, args.hud
     pages = nm = None
     if row is None:
