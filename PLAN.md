@@ -375,8 +375,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `KarmaGlobals` initialiser called from `Engine_UnGame`, the safe-time/debug toggle, a
       `KarmaGravScale`/`KarmaTimeScale` reader, and a 10,539-byte body called from the same `0x1226a0` function the
       save/load work found. Ragdoll setup is level-load state, which is what `XLevel->Ragdolls` implied.
-      `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
-      `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
+      `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives).
+      **`.lad` is now located end to end except its key bytes**: three parts — 20 pose frames, a clip section (17 named
+      clips in the four 19-channel packs, each 20 frames, bone lists of 19/11/9/5/3), and a track table of 2,231
+      `<Map>.<Animation>` records whose key blocks are 4.36 MiB of the 6.5 MiB corpus (`inventory/lipsinc_tracks.csv`).
+      **The key block is decoded, so `.lad` reads end to end** (U4): a track's block is **26 groups** — `u32 2`, a zero
+      byte, a 7-bit varint key count, then that many `u32 2` / `i32` time / `f64` value keys — and a `0x00` terminator
+      (`tools/lad-keys.py`, `make lipsinc-keys`, `inventory/lipsinc_keys.csv`, `--check` in `make ci`). All 2,231 blocks
+      parse (263,900 keys, 58,006 groups, 4,572,880 key bytes, the same bytes the track table counted), the time never
+      runs backwards inside a group, and the groups come in mirrored pairs. What remains is which group is which curve
+      and what a value means — not the encoding.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -837,6 +845,51 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the .lad body is three parts and the mass is in the key blocks)
+
+- **PLAN 5.5's "second section" is two parts, and neither is padding.** `tools/lad-tracks.py` (`make lipsinc-tracks`,
+  `inventory/lipsinc_tracks.csv`, `--check` in `make ci`) walks on from the twentieth pose frame. The four 19-channel
+  packs carry a **clip section** first — a count, then clips of `u32 2` + a bone subset + 20 frames + a **clip name**
+  (`carter_happy`, `carter_worried`, `carter_yelling`, `carter_frown`; `oneill_squint`; `tealc_perplexed`) — 17 clips in
+  all, every one 20 frames, bone lists of 19, 11, 9, 5 or 3 against a 19-name channel table, so a clip is a partial
+  pose, not a copy of the pose frames. Then **2,231 track records** named `<Map>.<Animation>`
+  (`AlkeshBomber.ca_firing_ge_s_02`), each with an invariant ten-field header (`u32 2`, both names, `u32 1`, `160.0`,
+  `220.0`, key count **26**) and a key block behind it.
+- **The number that changes the estimate: 4,572,880 bytes of key data, 4.36 MiB of the 6.5 MiB corpus, all of it inside
+  a named track.** The packs are 89-94% key bytes rather than 96-99% unexplained, and the 21-channel clips hold two or
+  three tracks each because a speech clip is one line, not a character's animation set. Nothing in the body is left
+  unaccounted: `gap_bytes` is 2 everywhere except the 6 bytes of `sg1_crew_jackson.lad`, which has no track table.
+- **The negative is the key count.** 26 keys in a 269-byte block and 26 in a 19,568-byte one, with the `u32 2` marker
+  recurring 33-1,247 times at 11-15 bytes per marker: the entries are variable-length, so no stride can be assumed and
+  the tool stops at each header rather than guessing past it. Also recorded, not explained: the two bytes before the
+  first track header (`00 03`, `60 09`), and `JAnderson.lad` listing `AlkeshBomber.Beware` twice — a name is not a
+  unique key. **The next measurement is the key block's own encoding**, from `LIPSincReadAnimFile`'s loop at
+  `0x000b8340` (already located, 4,977 bytes) or a value check against the `160.0`-`220.0` time range 26 keys imply.
+
+### Execution notes (2026-11-09, the 37 was a frame header, and the .lad body has two sections)
+
+- **PLAN 5.5's `.lad` payload is a frame stream, and the "five bytes past a record" question is closed.** The census
+  that produced `37 = 32 + 5` had no instrument that could read the five bytes; `tools/lad-frames.py` walks the body
+  and reads them as a **frame header** -- `u32 2` plus a `u8` equal to the channel count -- followed by exactly
+  `channel_count` records of 32 bytes, each opening with the same `u32 2`. Measured on all eight files: **20 frames
+  each, 3,200 records, records-per-frame exactly the channel count (19 or 21), zero short or empty frames**, so the
+  header is a per-frame count and not a record's extra field. Two corrections fall out and are now in
+  `docs/formats/lipsinc-lad.md`: the "10-byte prelude (532, 0, 0x21500, 0)" was this header read two bytes late -- the
+  body opens with one byte, `0x14` = 20, the frame count in every file -- and the "bind pose block, one record per
+  channel" is simply frame 0 of 20.
+- **The negative is the largest number in the run: six of the eight files do not close.** `sg1_crew_jackson.lad` leaves
+  6 bytes after its twentieth frame, but the 1.3 MB and 1.8 MB `Controllers/` packs leave **96-99% of their bodies
+  unread** -- and where the twentieth frame ends the body starts a *second section that repeats the channel table*
+  (`04 02 00 00 00 13` then `0b "BN-Blink_L"` at `Controllers/sg1_crew_carter.lad` 12,613) -- which is what
+  `LIPSincReadControllerFile` filling a pose array and a per-bone `ValuesAtTime` reader already implied: a table of
+  20 pose frames, then per-bone key lists. **The next measurement is that section's
+  own record shape**, walked the same way.
+- Also measured, because the doc claimed otherwise: `-1.0f` is present in 84% of one file's records (352 of 420), so it
+  is the pose weight and not a per-record terminator, and the twelve bytes in front of it take 125-145 distinct values
+  per file, so they are data rather than padding. `make lipsinc-frames` regenerates the CSV and `--check` keeps its
+  invariants (no short frame, no empty frame, a frame never wider than the channel count, and every body byte either
+  consumed or counted as unread).
 
 ### Execution notes (2026-11-09, the master's block is seven pointers, and the text is not one of them)
 
@@ -2065,7 +2118,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `UObject::Outer` (`+0x18`) against the `Package` class table and refuses a default object, walking instead.
       The next boot's verdict is the submit: `IN HISTORY` if the walk finds a live console, otherwise the console
       instance is outside `GObjObjects` and the read moves to the master's other slots.
-- [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
+      **A title screen has no console to type into (measured 2026-11-09, `hudq3`, `hudq4`)**: the four-state read
+      this item asked for cannot be taken at the title. `--console-at 0x02344b00` reads one object in **3 page reads
+      / 1.3 s** (the walk a miss falls back to is 347 pages / ~227 s), `--no-walk` keeps a census from turning into
+      that walk, and `--trace 400` polled the object and the client's `+0x30` slot while `drive.py` pressed `Tab`, `a`
+      and `ret` -- all three `-> ok` -- and printed **one change, the opening line**: slot `0x02344b00`, `bTyping 0`,
+      `TypedStr` empty, `HistoryTop 0` throughout. So the title screen's block is the same seven pointers as the
+      level's, the console in it is the class default, and no keypress creates one; `hudq1`'s `bTyping 3` reads 0 on
+      both title boots, so it is a level-boot reading. **Next**: the same trace on a loaded level, started before the
+      boot and bound to the HUD's `+0x398` console once it is non-null (`--trace` reads the client slot, so a live
+      console appearing there is a change it already reports).
+      **Instruments**: `tools/xemu/hud-text.py` (`--console-at`, `--no-walk`, `--trace`, `trace_types`),
+      `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md` U15. No artifact.
+
+- [~] 7.4 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
       **The harness has now actually run** (`tools/nightly.sh`, `docs/REGRESSION.md`): the first run against the full

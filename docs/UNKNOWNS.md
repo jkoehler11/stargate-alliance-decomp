@@ -207,6 +207,46 @@ readers, and `ValuesAtTime, m_nEndTime = %i, time = %f` in `0xb24f0` says the co
 end time — which is what the 32-byte stride and the `-1.0f` sentinel are. The names are evidence for a rename, not
 applied: the symbol map only changes in a Ghidra run.
 
+**Answered for the container, and the `37` was a header (2026-11-09).** `tools/lad-frames.py`
+(`make lipsinc-frames`, `inventory/lipsinc_frames.csv`) walks the body instead of pattern-matching it, and the five
+bytes past a record are a **frame header**: `u32 2` (the same word that opens a record) followed by a `u8` equal to the
+channel count, then exactly `channel_count` 32-byte records. All eight files, **160 frames, 3,200 records, no short
+frame, no empty frame**, and every record's first word is `2`. The earlier "10-byte prelude -- 532, 0, 0x21500, 0" was
+this header read two bytes late (`0x14` is a single leading byte equal to 20, the frame count in all eight), and the
+"bind pose block, one record per channel" is **frame 0 of 20**. What is left is a second section: where the twentieth
+frame ends, six of the eight files continue into a body that repeats the channel table (`04 02 00 00 00 13` then
+`0b "BN-Blink_L"` at `Controllers/sg1_crew_carter.lad` 12,613), leaving 6 bytes to 1.8 MB of the body unread by this
+walk; the two 1.3 MB and 1.8 MB `Controllers/` packs are 96-99% second section. `-1.0f` recurs in 84% of one file's
+records, so it is the pose weight, not a terminator, and the twelve bytes before it take 125-145 distinct values per
+file, so they are not padding. **The open question is now the second section's records, not the 37.**
+
+**The second section is a clip section and a track table (2026-11-09).** `tools/lad-tracks.py` (`make lipsinc-tracks`,
+`inventory/lipsinc_tracks.csv`, `--check` in `make ci`) walks on from the twentieth frame and the body's remaining 96-99%
+splits into two parts rather than one. In the four 19-channel packs, a **clip section**: a count, then that many clips,
+each `u32 2`, a bone count, that many `BN-` names, a frame section, and a **clip name** (`carter_happy`,
+`tealc_yelling`, `oneill_squint`) — 17 clips, every one 20 frames, and each clip's bone list a subset of the channel
+table (19, 11, 9, 5 or 3 bones). In seven of the eight files, a **track table**: 2,231 records named
+`<Map>.<Animation>` (`AlkeshBomber.ca_firing_ge_s_02`), each with a constant ten-field header — `u32 2`, short name,
+qualified name, `u32 1`, `160.0`, `220.0`, key count **26** — followed by a key block. Those key blocks are
+**4,572,880 bytes, 4.36 MiB of the 6.5 MiB corpus**, which is where the mass that this entry called "96-99% unread"
+actually lives. **What is left of U4 is the key block alone**: its `u32 2` marker recurs 33-1,247 times per block at
+11-15 bytes per marker, which with a constant key count of 26 means variable-length key entries, not a struct array.
+Two smaller unknowns are recorded rather than explained: the two bytes before the first track header (`00 03` in
+`grey.lad`, `60 09` in the 1.3 MB pack, six bytes in `sg1_crew_jackson.lad`, which has no track table at all), and the
+fact that `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name is not a unique key. **What would settle the key
+block:** the same route that has worked three times on this format — read `LIPSincReadAnimFile`'s loop at `0x000b8340`
+for the entry stride (it is 4,977 bytes and already located), or count `ValuesAtTime` lookups against a clip whose
+end time is known, since 26 keys over `160.0`-`220.0` milliseconds gives a 2.4 ms step to test against.
+
+**The key block decodes (2026-11-09).** `tools/lad-keys.py` (`make lipsinc-keys`, `inventory/lipsinc_keys.csv`,
+`--check` in `make ci`) walks all 2,231 blocks: a block is **26 groups**, each `u32 2`, a `0` byte and a 7-bit varint key
+count, then that many 16-byte keys of `u32 2`, `i32` time, `f64` value, and a `0x00` terminator. All 2,231 parse with
+none refused — 263,900 keys, 58,006 groups, 4,572,880 bytes, exactly the key bytes the track table counted — the time
+field is non-decreasing in all 58,006 groups, the values stay inside the pose range (−9.45942 to 9.45942), and the groups
+come in mirrored pairs (`0.4289, 4.887` against `-0.4289, -4.887`). The `26` in the track header is therefore the group
+count, not a key count. Still open: which group is which curve, what a value means, and the header's invariant
+`160.0`/`220.0`.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
@@ -1497,7 +1537,15 @@ receipt, reading the `bTyping` **byte** before `Tab`, after `Tab`, after the fir
 `0 -> 2|3 -> 1 -> 0` is a packed bool byte (`bIgnoreKeys` is declared next to `bTyping` and swallows the first
 keypress), while `0 -> 1` keeps it a plain field and puts the contradiction back on `+0x18`.
 
-## U16 -- why `QUICK SELECT MAP` stops at `M15B`
+**A title screen has no live console (measured 2026-11-09, `hudq3`, `hudq4`).** The client's `InteractionMaster`
+`0x02406720` holds the same seven pointers at the title as on a level boot and its `+0x30` is the `Console` **class
+default** (`0x02344b00`, outer a `Package`), and a 400 s `--trace` across `Tab`, `a` and `ret` -- all three delivered
+(`gkey -> ok`) -- shows the slot and the byte unmoved (`bTyping 0`, `TypedStr` empty, `HistoryTop 0`). So the four-state
+`bTyping` curve has to be measured on a loaded level, not at the title, and `hudq1`'s `bTyping 3` (same address, level
+boot) is not reproducible at the title. **What would settle it:** the same trace on a level boot, bound to the console the
+HUD's `+0x398` names once it is non-null.
+
+## U16## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
 campaign maps and nothing after them" reading came from a fifth page that held a single item (`docs/XEMU.md`,
