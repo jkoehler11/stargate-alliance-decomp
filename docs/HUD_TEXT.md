@@ -73,29 +73,40 @@ the sink it writes drew nothing. `--receipt MARKS` asks the guest which one, in 
 
 `Console.uc`'s `IK_Enter` branch copies `TypedStr` into `History[HistoryTop]` and only then calls
 `ConsoleCommand`, so a line in a slot is proof the submit ran, and an empty history after the typing window is
-proof the keys did not arrive. The reader walks the `Console` class table — `0x0050cb80` in
-`inventory/xbe_class_table_names.csv`, object size 1088 — newest-first over the `--tail` window: a class table is
-package data, so the address does not move per boot, and that is what keeps the read at one tail walk instead of
-a name lookup that costs minutes. The slots are `FString`s at `+0x50`, stride 12, through `+0x110`; the counters
-are printed beside them (`HistoryTop`, `bTyping`, `TypedStr`) because a populated history plus a line still being
-typed is not a submit (`console-state.py` measured that distinction on the 2026-11-06 boot).
+proof the keys did not arrive. The slots are `FString`s at `+0x50`, stride 12, through `+0x110`; the counters are
+printed beside them (`HistoryTop`, `bTyping`, `TypedStr`) because a populated history plus a line still being typed
+is not a submit (`console-state.py` measured that distinction on the 2026-11-06 boot). The class key is
+`0x0050cb80` from `inventory/xbe_class_table_names.csv` (object size 1088); a class table is package data, so the
+address does not move per boot.
+
+**Two routes to the object, cheapest first (measured 2026-11-09).** The live HUD holds its console in one
+`Console`-typed field, `PlayerConsole` (`Engine/HUD.uc:27`), at `+0x398`, and `inventory/hud_console_link.csv`
+measured that field on a whole-RAM dump naming the very console `console-state.py` had typed into (`bTyping 1`).
+UE2 lays base-class fields out first, so the offset is the same in every HUD subclass (`StargateHUD`,
+`GoauldConsoleHud`, `GameHud`). The receipt reads the pointer the HUD holds *now*, screens it by class (`+0x24`
+`UObject::Class`, or the object's first dword — the word `hud-link.py` screened the dump by), and falls back to the
+object array when the field is null or names another class. `--receipt-walk` skips the field and forces the walk:
+the control that shows the one-read route read the same object.
 
 | reading | what it is |
 |---|---|
 | `RECEIPT <mark> IN HISTORY` | the submit ran: a box that never held the line is the message path drawing nothing |
 | `RECEIPT <mark> NOT IN HISTORY` | no submit ran: the keys never reached the console (modal, focus, dropped character) |
-| `CONSOLE none among the newest N of M object(s)` | the console never opened, or it is older than the shortcut: delivery is unmeasured, not absent |
+| `CONSOLE none in <window> of M object(s)` | the console never opened, or it is outside the walk's window: delivery is unmeasured, not absent |
+| `RECEIPT read N console object(s) by <route>` | the cost line: which route found the console, how many array walks and page reads it took |
 
-**A miss must not become a verdict (measured 2026-11-09, `hudr2`).** The receipt walks the *newest* `--tail`
-objects, and on a loaded `M00` (48,646 objects) that window held no `Console` at all: 18 walks of the newest 2,000
-printed `CONSOLE none`, and the first version then answered `NOT IN HISTORY` for both markers -- a claim about the
-keys drawn from a search that never read the object. The console is created with the viewport, so it can sit
-anywhere in the array; `--tail` is only a shortcut, and the tool now says `RECEIPT <mark> UNMEASURED` when no walk
-read a `Console`, with `hud-say.sh` reporting `UNREAD` rather than `NOT DELIVERED` for that case. What this boot
-measured is therefore the negative: at a level whose HUD is live and whose boxes were read (`GameHudPtr` ->
-`0x09362100`, seven text changes including the intro's dialogue), the newest 2,000 of 48,646 objects do not hold
-the console, so the receipt has to be given a wider window (a whole-array walk, or the console's index read off a
-dump with `tools/xemu/obj-index.py`) before `History` can answer anything.
+**A miss must not become a verdict (measured 2026-11-09, `hudr2`).** The first receipt walked the *newest*
+`--tail` objects, and on a loaded `M00` (48,646 objects) that window held no `Console` at all: 18 walks of the
+newest 2,000 printed `CONSOLE none`, and the first version then answered `NOT IN HISTORY` for both markers -- a
+claim about the keys drawn from a search that never read the object. It now says `RECEIPT <mark> UNMEASURED` when
+no route read a `Console`, with `hud-say.sh` reporting `UNREAD` rather than `NOT DELIVERED` for it.
+
+**Where the console actually is (measured 2026-11-09, no boot).** A saved census of a loaded level
+(`xemu/ghud1/cls.csv`, 47,742 named objects) holds **one** `Console` instance, at **index 36,148 of 48,646**, and
+the HUD's own field named the same object (`0x02344b00`) in `findtext4` (`inventory/hud_console_link.csv`). So the
+console is mid-array: outside a 2,000-entry tail window and outside a 2,000-entry head window alike, which is why
+neither shortcut could ever have found it. The receipt therefore prefers the HUD field (one read) and walks the
+**whole** array when that fails (`--receipt-tail` restores a window; `0`, the default, walks everything).
 
 `hud-say.sh` prints `DELIVERED` / `NOT DELIVERED` / `UNREAD` beside each marker's box verdict for that reason, and
 its `FOUND` test reads the box lines only — the receipt's own lines carry the marker, and a `FOUND` that was really
@@ -278,7 +289,10 @@ would be game data.
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
 `FString` decode (`count` includes the NUL; `count` 1 is the empty string), the refusal of a `+0x1008` that names a
 non-`GameHud`, the null slot, and that a watch reports a subtitle that lands after it starts on a clock that already
-looks ten minutes old. It runs in `make ci` and needs no emulator or dump:
+looks ten minutes old. The receipt has its own cases: a console at index 5 of 400 is `UNMEASURED` under a
+100-entry tail window and `IN HISTORY` under the whole-array walk; the HUD's `+0x398` reads it with **0** array
+walks; and a `+0x398` that names another class prints the reason and falls back instead of reading the wrong
+object. It runs in `make ci` and needs no emulator or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one
     ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts is reported

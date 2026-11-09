@@ -42,11 +42,14 @@ stop/read/resume, which leaves the guest's own clock running -- the 2 s `Display
 `--follow SECS` re-reads the row's `+0x1008` while watching and rebinds when it holds a different `GameHud`:
 a level destroys its intro HUD when the cinematic hands over to gameplay, so a read bound once reports three
 empty boxes for a HUD that no longer exists.
-`--receipt MARKS` answers the question a box cannot: after the watch it reads the console's own `History[16]`
-(`Console`'s class table is `0x0050cb80` in the census, so this is one tail walk, not a name lookup) and prints,
-per marker, `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`. A delivered line with an empty box is the sink
-drawing nothing; an empty history is a keystroke that never arrived -- two failures that otherwise read alike.
-`--receipt-wait SECS` keeps polling the slots, because the commands are typed near the end of the run.
+`--receipt MARKS` answers the question a box cannot: after the watch it reads the console's own `History[16]` and
+prints, per marker, `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`. A delivered line with an empty box is the
+sink drawing nothing; an empty history is a keystroke that never arrived -- two failures that otherwise read
+alike. The console is found from the live HUD's own `PlayerConsole` field (`+0x398`, `inventory/hud_console_link.csv`)
+in one read, and by a whole-array walk when that field is empty (`--receipt-walk` forces the walk): the first
+receipt searched the newest 2,000 of 48,646 objects and the console sits at index 36,148, so its `NOT IN HISTORY`
+was about the window. `--receipt-wait SECS` keeps polling the located object, because the commands are typed near
+the end of the run.
 `--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
 Field contents are game state, so nothing here writes a file.
 """
@@ -80,6 +83,11 @@ CONSOLE_SLOTS = 16
 CONSOLE_TOP = 0x38
 CONSOLE_B_TYPING = 0x114
 CONSOLE_CLASS_NAME = "Console"        # `inventory/xbe_class_table_names.csv`: table `0x0050cb80`, size 1088
+# `Engine/HUD.uc:27` declares one `Console`-typed field, `PlayerConsole`, and it sits at `+0x398` in every HUD
+# subclass (`inventory/hud_console_link.csv`: a whole-RAM dump read the live `StargateHUD`'s field as the console
+# `console-state.py` had typed into, `bTyping 1`). Base-class fields come first in UE2, so a `GameHud` subclass
+# carries the field at the same offset -- which is one read where the object-array walk is 347 page reads.
+CONSOLE_FIELD = 0x398
 
 
 def load(name, path):
@@ -204,7 +212,45 @@ def console_slots(guest, base):
     return out
 
 
-def receipt(guest, args, marks, out=print, wait=0.0):
+def holds_class(pages, base, table):
+    """`(True, offset)` when the object at `base` opens with `table`, else `(False, None)`.
+
+    Two offsets name a class in this project's evidence: `UObject::Class` at `+0x24`, which is the walk's own
+    test (`names.py --verify`), and the object's first dword, which is what `hud-link.py` screened a whole-RAM
+    dump by. Both are accepted so a screen never calls a real console "another class".
+    """
+    for off in (sink.CLASS_OFF, 0x00):
+        if pages.u32(base + off) == table:
+            return True, off
+    return False, None
+
+
+def console_from_hud(guest, pages, hud, table):
+    """`(base, why)` for the `Console` the live HUD holds, or `(None, reason)`.
+
+    `Engine/HUD.uc:424` draws the prompt only when `(PlayerConsole != None) && PlayerConsole.bTyping`, and
+    `HUD.uc:27` declares that one `Console`-typed field. `inventory/hud_console_link.csv` measured where it sits
+    (`+0x398`) on a whole-RAM dump, where the field named the very console `console-state.py` had typed into.
+    UE2 lays base-class fields out first, so every HUD subclass -- `StargateHUD`, `GoauldConsoleHud`, `GameHud` --
+    carries the field at the same offset, and one read beats the 347 page reads of a whole-array walk.
+
+    The pointer is screened by class (an object's first dword is its class table in this build), so a null, a
+    stale address or an object of another class comes back as a reason instead of a console.
+    """
+    value = pages.u32(hud + CONSOLE_FIELD)
+    if not value:
+        return None, "holds a null `PlayerConsole`"
+    if not names.plausible_object(value):
+        return None, "holds %#010x, which is not an object address" % value
+    ok, _off = holds_class(pages, value, table)
+    if not ok:
+        got = pages.u32(value + sink.CLASS_OFF)
+        return None, ("names %#010x, whose class is %s, not `Console` (%#010x)"
+                      % (value, "unreadable" if got is None else "%#010x" % got, table))
+    return value, "via the HUD's own `PlayerConsole` field (+%#x)" % CONSOLE_FIELD
+
+
+def receipt(guest, args, marks, out=print, wait=0.0, hud=None):
     """Read the console's own `History[16]` and say, per marker, whether its submit ran.
 
     A text box that never held the marker has two causes that look identical from the box: the keys never
@@ -213,10 +259,15 @@ def receipt(guest, args, marks, out=print, wait=0.0):
     branch copies `TypedStr` into `History[HistoryTop]` and only then calls `ConsoleCommand`, so a line in a slot
     is proof the submit ran, and an empty history after the typing window is proof the keys did not arrive.
 
-    The console object is the newest object on the `Console` class table (`0x0050cb80`, from the census), so the
-    walk is the `--tail` shortcut, and `[]` is printed as "not among the newest N", never as absent. `wait`
-    polls the slots: the commands are typed near the end of a 500 s sequence, and a receipt that starts early
-    has to outlast them instead of reading an empty console and calling it a lost keystroke.
+    **Two routes, and the cheap one first.** The live HUD's own `PlayerConsole` (`+0x398`) names the console in
+    one read; `--receipt-walk` skips it, and a field that is null or names something else falls back to the
+    object array. The array walk used to be the `--tail` shortcut (the newest 2,000 objects), and the console is
+    not there: `xemu/ghud1/cls.csv` puts the only `Console` instance at **index 36,148 of 48,646**, which is why
+    the first live receipt answered `NOT IN HISTORY` about its search window rather than about the keys. Now
+    `--receipt-tail 0` (the default) walks every entry, and the only shortcut the receipt takes is the HUD field.
+
+    `wait` polls the located object -- not the array -- because the commands are typed near the end of a 500 s
+    sequence and a receipt that starts early has to outlast them.
     """
     table, hits = console_table()
     if table is None:
@@ -224,27 +275,45 @@ def receipt(guest, args, marks, out=print, wait=0.0):
             % (len(hits), " (" + ", ".join("%#010x" % h for h in hits) + ")" if hits else ""))
         return {}
     data, num, _cap = sink.table(guest, args.at, "name table")
-    nm = names.Names(guest, data, num)
     odata, onum, _omax = sink.table(guest, args.objects, "object array")
     pages = sink.Pages(guest, probe=data, deadline=args.deadline)
+    window = args.receipt_tail or None          # 0 = walk the whole array, which is where the console is
+    phrase = "the newest %d" % window if window else "any"
+    route = None
+    bases = []
+    if hud is not None and not args.receipt_walk:
+        base, why = console_from_hud(guest, pages, hud, table)
+        if base:
+            bases, route = [base], why
+        else:
+            out("CONSOLE hud %#010x+%#x: %s -- falling back to the object-array walk"
+                % (hud, CONSOLE_FIELD, why))
     stop = time.monotonic() + max(0.0, wait)
     seen = {}
     verdicts = {}
     walks = 0
     while True:
-        walks += 1
-        found = sink.rows_of_class(guest, pages, odata, onum, table, tail=args.tail)
-        if not found:
-            out("CONSOLE none among the newest %s of %d object(s) (walk %d): a console that never opened, or "
-                "one older than the shortcut -- this says where it is not" % (args.tail or "all", onum, walks))
-        for index, base in found:
-            line = fstring(guest, base + CONSOLE_TYPED)
+        if bases:
+            live = [base for base in bases if holds_class(pages, base, table)[0]]
+            if len(live) != len(bases):
+                out("CONSOLE %d of %d object(s) no longer open with the `Console` class table: destroyed between "
+                    "reads" % (len(bases) - len(live), len(bases)))
+            bases = live
+        if not bases:
+            walks += 1
+            found = sink.rows_of_class(guest, pages, odata, onum, table, tail=window)
+            if not found:
+                out("CONSOLE none in %s of %d object(s) (walk %d): a console that never opened, or one outside "
+                    "the window -- this says where it is not" % (phrase, onum, walks))
+            bases = [base for _index, base in found]
+            route = "object array (%s of %d)" % (phrase, onum)
+        for base in bases:
+            typed = fstring(guest, base + CONSOLE_TYPED)
             slots = console_slots(guest, base)
             if base not in seen:
-                out("CONSOLE %#010x (object %d of %d): HistoryTop %s, bTyping %s, TypedStr %s, %d populated "
-                    "slot(s)" % (base, index, onum, u32(guest, base + CONSOLE_TOP),
-                                 u32(guest, base + CONSOLE_B_TYPING),
-                                 "empty" if not line or not line[1] else repr(line[1]), len(slots)))
+                out("CONSOLE %#010x (%s): HistoryTop %s, bTyping %s, TypedStr %s, %d populated slot(s)"
+                    % (base, route, u32(guest, base + CONSOLE_TOP), u32(guest, base + CONSOLE_B_TYPING),
+                       "empty" if not typed or not typed[1] else repr(typed[1]), len(slots)))
             for slot, text in slots:
                 if seen.get(base, {}).get(slot) != text:
                     out("HIST [%d] %#010x count %d %r"
@@ -259,20 +328,23 @@ def receipt(guest, args, marks, out=print, wait=0.0):
         if time.monotonic() >= stop:
             break
         time.sleep(2.0)
+    out("RECEIPT read %d console object(s) by %s: %d array walk(s), %d page read(s), %.1f s"
+        % (len(seen), route or "nothing", walks, pages.reads, pages.spent))
     for mark in marks:
         if mark in verdicts:
-            out("RECEIPT %s IN HISTORY (%d walk(s)): the submit ran, so the console's own history holds the line"
-                " -- a box that never held it is the sink drawing nothing, not a lost keystroke" % (mark, walks))
+            out("RECEIPT %s IN HISTORY (%d walk(s), route %s): the submit ran, so the console's own history holds "
+                "the line -- a box that never held it is the sink drawing nothing, not a lost keystroke"
+                % (mark, walks, route or "nothing"))
         elif not seen:
             # `seen` is empty only when no walk ever read a `Console` object: `History` was not looked at, so a
-            # verdict about the keys would be a verdict about the search window (`--tail`) instead.
-            out("RECEIPT %s UNMEASURED (%d walk(s), newest %s of %d object(s)): no `Console` object was read, so "
-                "its `History` was never looked at -- this is where the search stopped, not what the keys did"
-                % (mark, walks, args.tail or "all", onum))
+            # verdict about the keys would be a verdict about the search window instead.
+            out("RECEIPT %s UNMEASURED (%d walk(s), route %s, %s of %d object(s)): no `Console` object was read, "
+                "so its `History` was never looked at -- this is where the search stopped, not what the keys did"
+                % (mark, walks, route or "nothing", phrase, onum))
         else:
-            out("RECEIPT %s NOT IN HISTORY (%d walk(s), newest %s of %d object(s)): no submit ran, so the keys "
-                "never reached the console -- the modal, the focus or a dropped character, not the sink"
-                % (mark, walks, args.tail or "all", onum))
+            out("RECEIPT %s NOT IN HISTORY (%d walk(s), route %s): no submit ran, so the keys never reached the "
+                "console -- the modal, the focus or a dropped character, not the sink"
+                % (mark, walks, route or "nothing"))
     return verdicts
 
 
@@ -492,7 +564,8 @@ def selftest():
         return ram, row, hud, win
 
     ram, row, hud, win = build(0x01510000, "UITextBox")
-    args = argparse.Namespace(at=0x006be0d8, objects=0x006c21b0, klass=PLAYER_CLASS, tail=16, deadline=30.0)
+    args = argparse.Namespace(at=0x006be0d8, objects=0x006c21b0, klass=PLAYER_CLASS, tail=16, deadline=30.0,
+                              receipt_tail=0, receipt_walk=False)
     say = []
     got_row, got_hud, _pages, _nm = resolve(ram, args, out=say.append)
     assert got_row == row and got_hud == hud, (got_row, got_hud, say)
@@ -639,7 +712,40 @@ def selftest():
     ram6, _r6, _h6, _w6 = build(0x01510000, "UITextBox")
     said = []
     assert receipt(ram6, args, ["sg1txt1"], out=said.append, wait=0.0) == {}, said
-    assert any("CONSOLE none among the newest" in s for s in said), said
+    assert any("CONSOLE none in any of" in s for s in said), said
+    # An array where the console is *older* than a tail window: the shortcut the first live receipt used said
+    # `NOT IN HISTORY` about its window, so the window is now the whole array by default -- and the HUD's own
+    # `PlayerConsole` is one read where the walk is 347 page reads.
+    ram7, _r7, hud7, _w7 = build(0x01510000, "UITextBox")
+    ram7.u32(0x006c21b0 + 4, 400)                 # 400 objects, the console at index 5
+    ram7.u32(0x01200000 + 4 * 5, con)
+    ram7.u32(con + names.CLASS_OFF, 0x0050cb80)
+    ram7.put(0x017a0000, "say sg1txt1\x00".encode("utf-16-le"))
+    ram7.u32(con + CONSOLE_TOP, 1)
+    ram7.u32(con + CONSOLE_HISTORY, 0x017a0000)
+    ram7.u32(con + CONSOLE_HISTORY + 4, 12)
+    ram7.u32(con + CONSOLE_HISTORY + 8, 16)
+    args.receipt_tail = 100                       # newest 100 of 400: indices 300-399, so the console is outside it
+    said = []
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0)
+    assert got == {} and any("UNMEASURED" in s for s in said), (got, said)
+    args.receipt_tail = 0                         # the whole array finds it
+    said = []
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0)
+    assert got == {"sg1txt1": 0}, (got, said)
+    assert any("object array (any of 400)" in s for s in said), said
+    # The cheap route: the HUD's `+0x398` names the console, and the receipt reads it in a walk-free pass.
+    ram7.u32(hud7 + CONSOLE_FIELD, con)
+    said = []
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=hud7)
+    assert got == {"sg1txt1": 0}, (got, said)
+    assert any("PlayerConsole" in s and "0 array walk" in s for s in said), said
+    # A HUD whose field is stale or of another class is a reason, not a console: it falls back to the walk.
+    ram7.u32(hud7 + CONSOLE_FIELD, 0x01520000)
+    said = []
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=hud7)
+    assert got == {"sg1txt1": 0}, (got, said)
+    assert any("not `Console`" in s and "falling back" in s for s in said), said
     print("ok   hud-text: a marker's submit is read off `Console.History` (delivered) and a console that never "
           "opened is a walk that found nothing, not a lost keystroke")
 
@@ -738,6 +844,12 @@ def main():
     ap.add_argument("--receipt-wait", type=float, default=60.0,
                     help="seconds the receipt may keep polling for a marker to appear (default 60: the commands "
                          "are typed near the end of the sequence and a read that starts early must outlast them)")
+    ap.add_argument("--receipt-tail", type=int, default=0,
+                    help="array entries the receipt may scan, newest first (default 0 = the whole array: the "
+                         "console sits at index 36,148 of 48,646, so a 2,000-entry window cannot see it)")
+    ap.add_argument("--receipt-walk", action="store_true",
+                    help="skip the HUD's own `PlayerConsole` field (+0x398) and locate the console by walking "
+                         "the object array -- the control for a receipt that reads one object in one read")
     ap.add_argument("--selftest", action="store_true", help="check the field walk and the text decode, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -825,7 +937,7 @@ def main():
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             print(line(args.tag, now - started, label, addr, count, text, name))
         if marks:
-            receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait)
+            receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=hud)
         return 0
     changes, _final, rebounds = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started,
                                       row=row, follow=args.follow, args=args, rewrites=8)
@@ -836,7 +948,10 @@ def main():
     # either a submit that ran into a sink drawing nothing or keys that never arrived, and only `History` says
     # which. It runs here, in the same boot, because a dump taken afterwards cannot tell the two apart either.
     if marks:
-        receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait)
+        # A level replaces its `GameHud` when the intro hands over (`watch --follow` rebinds mid-run), so the
+        # console is read from the row's slot *now* rather than from the HUD the watch started on.
+        final = u32(guest, row + HUD_SLOT) if row else None
+        receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=final or hud)
     return 0
 
 

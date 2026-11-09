@@ -831,6 +831,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the console is at index 36,148, and the HUD's own field names it)
+
+- **The window was never going to contain it** (measured 2026-11-09, no boot): a saved census of a loaded level
+  (`xemu/ghud1/cls.csv`, 47,742 named objects) holds exactly one `Console` instance, at **index 36,148 of 48,646**,
+  and it is the object (`0x02344b00`) that `inventory/hud_console_link.csv` read out of the live HUD's own field in
+  `findtext4`. A 2,000-entry tail window and a 2,000-entry head window are both outside it, so the first receipt's
+  `NOT IN HISTORY` was a fact about its search, which is what its `UNMEASURED` wording already said.
+- **The cheap route is the HUD's `PlayerConsole`** (`Engine/HUD.uc:27`, at `+0x398`): one read against 347 page
+  reads for the whole array, and the pointer is screened by class (`+0x24`, or the object's first dword) so a null
+  or a stale value prints a reason instead of reading the wrong object. `--receipt-tail` (default 0, the whole
+  array) keeps the walk as the fallback and `--receipt-walk` forces it -- the control for the next boot, which is
+  now one `hud-say.sh` run whose `RECEIPT ... IN HISTORY` (or `NOT IN HISTORY` with a `Console` actually read) is
+  the measurement the last three boots have been circling.
+- **The receipt polls the located object, not the array**: once a console is found each poll re-reads its slots, a
+  base whose class word moved is reported as destroyed, and the report carries its own cost line (`RECEIPT read N
+  console object(s) by <route>: X array walk(s), Y page read(s), Z s`).
+- **Instruments**: `tools/xemu/hud-text.py` (`console_from_hud`, `holds_class`, `--receipt-tail`, `--receipt-walk`,
+  three selftest cases), `docs/HUD_TEXT.md` (the receipt section). No artifact and no new file.
+
 ### Execution notes (2026-11-09, the receipt ran -- and found no console in its window)
 
 - **The receipt's first live run answered a different question than it was built to**: `hudr2` loaded `M00`, the
