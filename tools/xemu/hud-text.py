@@ -395,6 +395,47 @@ def outer_text(pages, nm, base, pkg_table):
                                          " (the class default)" if default else ""))
 
 
+def trace_types(guest, args, base, seconds, client=None, interval=0.25, out=print):
+    """Poll one console and the block that names it, printing every change.
+
+    Four snapshots of `bTyping` need the four keys to land inside the four gaps, and a boot that types while the
+    reader is elsewhere answers "0, 0, 0, 0" for a console that opened and closed. A trace needs no timing: it
+    reads the byte every `interval` while `drive.py` presses the keys on its own clock, and prints a line only
+    when something moved. The client's `+0x30` slot is polled too, because a console created by the keypress
+    would replace the default in the block rather than change the default's byte.
+    """
+    master = u32(guest, client + INTERACTION_MASTER) if client is not None else 0
+    start = time.monotonic()
+    last = object()
+    changes = 0
+    while True:
+        slot = u32(guest, master + 0x30) if master else None
+        raw = guest.read(base + CONSOLE_B_TYPING, 1)
+        byte = None if raw is None or len(raw) != 1 else raw[0]
+        typed = fstring(guest, base + CONSOLE_TYPED)
+        top = u32(guest, base + CONSOLE_TOP)
+        moved = None
+        if slot and slot != base:
+            # A console the keypress created lives where the block points now, so its own byte is the reading.
+            other = guest.read(slot + CONSOLE_B_TYPING, 1)
+            moved = None if other is None or len(other) != 1 else other[0]
+        row = (slot, byte, typed[1] if typed else None, top, moved)
+        if row != last:
+            changes += 1
+            out("TRACE t=%.1f slot %s bTyping %s TypedStr %s HistoryTop %s%s"
+                % (time.monotonic() - start, "?" if slot is None else "%#010x" % slot,
+                   typing_text(guest, base), "" if not typed or not typed[1] else repr(typed[1]), top,
+                   "" if slot in (None, base) else
+                   " (the block named a different object, bTyping %s there)" % (
+                       "?" if moved is None else "%d" % moved)))
+            last = row
+        if time.monotonic() - start >= seconds:
+            break
+        time.sleep(interval)
+    out("TRACE %d change(s) over %.0f s on %#010x" % (changes, seconds, base))
+    return changes
+
+
 def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=None):
     """Read the console's own `History[16]` and say, per marker, whether its submit ran.
 
@@ -438,6 +479,11 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     # (one read, but only a HUD that has linked its console names it), and the object-array walk (347 page
     # reads). `--receipt-walk` skips the first two, which is the control for a receipt that read one object.
     client = client if client is not None else getattr(args, "console_client", None)
+    # A fixed object is the only route that costs nothing: `--console-at` is how the four-state read asks the
+    # *same* console four times in one boot, and the answer is the byte, not a census.
+    fixed = getattr(args, "console_at", None)
+    if fixed is not None and not args.receipt_walk:
+        bases, route, client = [fixed], "`--console-at` (one object, no route and no walk)", None
     if client is not None and not args.receipt_walk:
         # The census needs the name table: this is the one route that reads class and object names, and it is
         # the route that has to say *which* the block holds when none of them is a live console.
@@ -453,6 +499,11 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
                ", %d dword(s) that name no class (the block's own text, not slots)" % screened))
         if found:
             bases, route = found, why
+        elif getattr(args, "no_walk", False):
+            # A census is often the whole question (which object does the block hold?), and the 347-page walk
+            # that follows it answers a different one 227 s later. `--no-walk` keeps the answer that exists.
+            out("CONSOLE client: %s -- stopping, as `--no-walk` asks: no array walk" % why)
+            return {}
         else:
             # Nothing live in the block: the verdict has to come from the array, so say what the block held
             # and walk -- never answer about the default object it may contain.
@@ -481,6 +532,12 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
                 out("CONSOLE %d of %d object(s) no longer open with the `Console` class table: destroyed between "
                     "reads" % (len(bases) - len(live), len(bases)))
             bases = live
+        if not bases and fixed is not None:
+            # A fixed address that no longer opens with the class table is the answer (destroyed, or never a
+            # console), not a reason to spend 347 page reads looking for a different object.
+            out("CONSOLE --console-at %#010x: does not open with the `Console` table (%#010x) -- a wrong address "
+                "or an object destroyed since; no walk" % (fixed, table))
+            break
         if not bases:
             walks += 1
             found = sink.rows_holding(guest, pages, odata, onum, table, tail=window)
@@ -1148,6 +1205,18 @@ def main():
                     help="the `Client` object whose `InteractionMaster` (+0xc0) names the console. The slot is "
                          "`Client`'s, not the level row's: `XboxClient` sat at `0x01fb9bc0` on two level boots "
                          "(`plr1`, `ghud1`), and a level row holds null at `+0xc0` (`hudsay3`)")
+    ap.add_argument("--console-at", type=lambda v: int(v, 0), default=None, metavar="ADDR",
+                    help="read this `Console` object and nothing else: no route and no array walk. The "
+                         "four-state read (before/after `Tab`, after a key, after `ret`) uses it so each state "
+                         "costs a handful of page reads instead of the 347 a fallback walk spends")
+    ap.add_argument("--trace", type=float, default=0.0, metavar="SECS",
+                    help="after the read, poll the same object (and the client's `+0x30` slot, with "
+                         "`--console-client`) for SECS and print a line per change: the byte's own curve, which "
+                         "needs no agreement between the reader's clock and the keys' timing. Needs `--live`, "
+                         "because a non-live reader leaves the guest stopped")
+    ap.add_argument("--no-walk", action="store_true",
+                    help="never fall back to the object-array walk: print what the client's block holds and "
+                         "stop. The fallback costs 347 page reads (~227 s) and turns a census into a boot-ender")
     ap.add_argument("--selftest", action="store_true", help="check the field walk and the text decode, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -1177,6 +1246,17 @@ def main():
              else "the guest is left stopped -- wrong for a watcher started before a boot, see --live"))
     row, hud = args.row, args.hud
     pages = nm = None
+    if args.console_at is not None or (args.console_client is not None and args.receipt is not None
+                                       and hud is None):
+        # A console read needs no level and no row: it is one object (or one block), read now. Reading it
+        # through the level gate below would refuse a title screen, which is exactly where the four-state read
+        # happens -- and `--receipt ""` (an explicit empty mark list) is how a caller asks for the census alone.
+        marks = [mark.strip() for mark in (args.receipt or "").split(",") if mark.strip()]
+        receipt(guest, args, marks, out=lambda s: print("%s: %s" % (args.tag, s)), wait=0.0)
+        if args.trace:
+            trace_types(guest, args, args.console_at, args.trace, client=args.console_client,
+                        out=lambda s: print("%s: %s" % (args.tag, s)))
+        return 0
     if row is None:
         deadline = started + args.wait
         last = None
@@ -1234,7 +1314,7 @@ def main():
     if not args.watch:
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             print(line(args.tag, now - started, label, addr, count, text, name))
-        if marks:
+        if marks or args.receipt is not None:
             receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=hud, row=row,
                     client=args.console_client)
         return 0

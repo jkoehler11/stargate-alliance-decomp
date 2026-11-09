@@ -2058,7 +2058,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `UObject::Outer` (`+0x18`) against the `Package` class table and refuses a default object, walking instead.
       The next boot's verdict is the submit: `IN HISTORY` if the walk finds a live console, otherwise the console
       instance is outside `GObjObjects` and the read moves to the master's other slots.
-- [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
+      **A title screen has no console to type into (measured 2026-11-09, `hudq3`, `hudq4`)**: the four-state read
+      this item asked for cannot be taken at the title. `--console-at 0x02344b00` reads one object in **3 page reads
+      / 1.3 s** (the walk a miss falls back to is 347 pages / ~227 s), `--no-walk` keeps a census from turning into
+      that walk, and `--trace 400` polled the object and the client's `+0x30` slot while `drive.py` pressed `Tab`, `a`
+      and `ret` -- all three `-> ok` -- and printed **one change, the opening line**: slot `0x02344b00`, `bTyping 0`,
+      `TypedStr` empty, `HistoryTop 0` throughout. So the title screen's block is the same seven pointers as the
+      level's, the console in it is the class default, and no keypress creates one; `hudq1`'s `bTyping 3` reads 0 on
+      both title boots, so it is a level-boot reading. **Next**: the same trace on a loaded level, started before the
+      boot and bound to the HUD's `+0x398` console once it is non-null (`--trace` reads the client slot, so a live
+      console appearing there is a change it already reports).
+      **Instruments**: `tools/xemu/hud-text.py` (`--console-at`, `--no-walk`, `--trace`, `trace_types`),
+      `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md` U15. No artifact.
+
+- [~] 7.4 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.
       **The harness has now actually run** (`tools/nightly.sh`, `docs/REGRESSION.md`): the first run against the full
