@@ -207,6 +207,19 @@ readers, and `ValuesAtTime, m_nEndTime = %i, time = %f` in `0xb24f0` says the co
 end time — which is what the 32-byte stride and the `-1.0f` sentinel are. The names are evidence for a rename, not
 applied: the symbol map only changes in a Ghidra run.
 
+**Answered for the container, and the `37` was a header (2026-11-09).** `tools/lad-frames.py`
+(`make lipsinc-frames`, `inventory/lipsinc_frames.csv`) walks the body instead of pattern-matching it, and the five
+bytes past a record are a **frame header**: `u32 2` (the same word that opens a record) followed by a `u8` equal to the
+channel count, then exactly `channel_count` 32-byte records. All eight files, **160 frames, 3,200 records, no short
+frame, no empty frame**, and every record's first word is `2`. The earlier "10-byte prelude -- 532, 0, 0x21500, 0" was
+this header read two bytes late (`0x14` is a single leading byte equal to 20, the frame count in all eight), and the
+"bind pose block, one record per channel" is **frame 0 of 20**. What is left is a second section: where the twentieth
+frame ends, six of the eight files continue into a body that repeats the channel table (`04 02 00 00 00 13` then
+`0b "BN-Blink_L"` at `Controllers/sg1_crew_carter.lad` 12,613), leaving 6 bytes to 1.8 MB of the body unread by this
+walk; the two 1.3 MB and 1.8 MB `Controllers/` packs are 96-99% second section. `-1.0f` recurs in 84% of one file's
+records, so it is the pose weight, not a terminator, and the twelve bytes before it take 125-145 distinct values per
+file, so they are not padding. **The open question is now the second section's records, not the 37.**
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

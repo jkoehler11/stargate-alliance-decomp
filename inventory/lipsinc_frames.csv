@@ -1,0 +1,9 @@
+path,bytes,channels,lead_byte,frames,records,records_min,records_max,short_frames,empty_frames,record_bytes,frame_header_bytes,weight_minus_one,middle_triples,coverage_bytes,trailer_names
+Controllers/grey.lad,40650,21,0x14,20,420,21,21,0,0,32,5,352,145,26693,BN-Head;undefined;undefined
+Controllers/sg1_crew_carter.lad,1301681,19,0x14,20,380,19,19,0,0,32,5,311,131,1289037,BN-Head;undefined;undefined
+Controllers/sg1_crew_jackson.lad,1068447,19,0x14,20,380,19,19,0,0,32,5,319,125,1055803,BN-Head;undefined;undefined
+Controllers/sg1_crew_oneill.lad,1832579,19,0x14,20,380,19,19,0,0,32,5,323,125,1819935,BN-Head;undefined;undefined
+Controllers/sg1_crew_tealc.lad,650509,19,0x14,20,380,19,19,0,0,32,5,323,131,637865,BN-Head;undefined;undefined
+JAnderson.lad,34140,21,0x14,20,420,21,21,0,0,32,5,352,135,20183,BN-Head;undefined;undefined
+sg1_crew_carter.lad,27378,21,0x14,20,420,21,21,0,0,32,5,346,145,13421,BN-Head;undefined;undefined
+sg1_crew_jackson.lad,13963,21,0x14,20,420,21,21,0,0,32,5,352,145,6,BN-Head;undefined;undefined
