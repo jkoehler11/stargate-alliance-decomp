@@ -1404,6 +1404,25 @@ finds that line prints UNREAD. **What would settle it now:** the submit receipt 
 different instrument from the `--watch-key=ret` store watchpoint named above) says whether the commands were
 executed; if they were, what is left is the `SetSubtitle`/`SetNotifications` guard, not the input.
 
+**Every console route missed on one boot, and the walk's key was the instrument (measured 2026-11-09, `hudsay3`).** On a
+loaded `M00` the level's row `0x08822800` resolved (object 47,885 of 48,494, outer `M00`) with
+`+0x1008 -> GameHud 0x092e2100`, and seven box changes came off it -- the intro's turns, then the game's own
+`New Objective : Open the door for the doctor` -- so the sink read is live and the frames repainted (42,959 / 32,704
+px across the dismissal, against 0 / 0 on `hudsay2`). All three console routes still missed: the row's
+`InteractionMaster` (`+0xc0`) read **null**; the HUD's `PlayerConsole` (`+0x398`) read `0x00050967`, a number and
+not an address; and a whole-array walk of **48,646** objects read **zero** `Console` objects in 347 page reads /
+215.1 s, so both markers printed `UNMEASURED`. The walk is the instrument: it screened `UObject::Class` (`+0x24`)
+against `0x0050cb80`, which is the `Console` **class table** in `.rdata`, while a table is the object's **first**
+dword (`hud-link.py` measured the typed-into `Console` opening `00 50 cb 80 ...`) and `+0x24` holds the `UClass`
+*object* (`ghud1` census: `275,0x00d48a00,Class,Console`; instance `36148,0x02344b00,Console,Console`). The `+0xc0`
+slot is `Client`'s, measured on the `XboxClient` object `0x01fb9bc0` (`plr1`, and `ghud1`'s census names the same
+address on a second level boot), so a level row's null there says nothing about a console. `sink.rows_holding`
+screens both header dwords and `hud-text.py --console-client ADDR` reads `InteractionMaster` from the object that
+owns it; `hudsay3`'s zero is therefore void as evidence about the console. **What would settle it:** the same
+`hud-say.sh` run with the fixed walk (or `--console-client=0x01fb9bc0`) -- `RECEIPT ... IN HISTORY` or
+`NOT IN HISTORY` is the submit verdict, and only then is the `SetSubtitle`/`SetNotifications` guard the next
+question.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

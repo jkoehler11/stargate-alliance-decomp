@@ -77,6 +77,9 @@
 #   --receipt-wait SECS the receipt's poll window, for a marker typed late (default 90)
 #   --linger SECS    seconds drive.py keeps the emulator up after the last step (default 0 = derived, so the
 #                    receipt's walk lands inside the run)
+#   --console-client ADDR  the `Client` object whose `InteractionMaster` (+0xc0) names the console. The slot is
+#                    `Client`'s, not the level row's: `XboxClient` sat at `0x01fb9bc0` on two level boots, and a
+#                    row holds null there (`hudsay3`). Without it the receipt goes straight to the walk
 #   --retries N      fresh boots before giving up (default 2)
 #   --say TEXT       submit `say TEXT` (repeatable; default `say sg1txt1`)
 #   --note TEXT      submit `addnotification TEXT` (repeatable; default `addnotification sg1txt2`)
@@ -99,6 +102,7 @@ follow=2
 watch=0
 receipt_wait=90
 linger=0
+client=""
 retries=2
 cmds=""
 out=""
@@ -119,6 +123,8 @@ while [ $# -gt 0 ]; do
     --watch=*) watch=${1#*=}; shift ;;
     --receipt-wait=*) receipt_wait=${1#*=}; shift ;;
     --linger=*) linger=${1#*=}; shift ;;
+    --console-client=*) client=${1#*=}; shift ;;
+    --console-client) client=$2; shift 2 ;;
     --retries=*) retries=${1#*=}; shift ;;
     --say=*) cmds="$cmds|say ${1#*=}"; shift ;;
     --note=*) cmds="$cmds|addnotification ${1#*=}"; shift ;;
@@ -374,7 +380,8 @@ while [ "$attempt" -le "$retries" ]; do
   budget=$((boot + settle + 90 + post + (gap + 15) * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
     --deadline "$budget" --receipt "$marks" --receipt-wait "$receipt_wait" \
-    --follow "$follow" --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
+    --follow "$follow" --live --tag "try$attempt" --tries 12 ${client:+--console-client} ${client:-} \
+    > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1
   echo "attempt $attempt: index $index, gdb $gport, commands:$cmds -> $dir" | tee "$dir/attempt.log"

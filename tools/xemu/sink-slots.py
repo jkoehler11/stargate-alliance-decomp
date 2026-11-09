@@ -232,7 +232,8 @@ def walk(guest, pages, odata, onum, off, value, tail=None):
 
     Two questions share this walk -- "rows of class C" (`off=CLASS_OFF`) and "the object named N"
     (`off=NAME_OFF`) -- and both are a dword compare against headers that cost one stub read per 64 KiB page,
-    not one per object.
+    not one per object. `off` may be a tuple of offsets, compared in one pass: the pages are cached, so a second
+    dword costs no read, and `rows_holding` needs both (`+0x00` holds a class *table*, `+0x24` a `UClass`).
 
     `tail` scans only the last N entries, from the end backwards: the array appends, so a level's freshly
     spawned objects are the newest ones, and the row `sink1` held was index 47,885 of 48,646 -- 761 from the
@@ -242,6 +243,7 @@ def walk(guest, pages, odata, onum, off, value, tail=None):
     """
     first = 0 if tail is None else max(0, onum - tail)
     pages.walked = onum - first
+    offs = tuple(off) if isinstance(off, (tuple, list)) else (off,)
     raw = b""
     got = 0
     while got < onum * 4:                       # one bulk read: the array is ~190 KiB
@@ -252,7 +254,7 @@ def walk(guest, pages, odata, onum, off, value, tail=None):
     out = []
     for i in range(onum - 1, first - 1, -1):
         ptr = values[i]
-        if plausible_object(ptr) and pages.u32(ptr + off) == value:
+        if plausible_object(ptr) and any(pages.u32(ptr + o) == value for o in offs):
             out.append((i, ptr))
     return out
 
@@ -260,6 +262,19 @@ def walk(guest, pages, odata, onum, off, value, tail=None):
 def rows_of_class(guest, pages, odata, onum, klass, tail=None):
     """[(array index, address)] for every object whose own `Class` pointer is `klass` (newest first)."""
     return walk(guest, pages, odata, onum, CLASS_OFF, klass, tail=tail)
+
+
+def rows_holding(guest, pages, odata, onum, table, tail=None):
+    """[(array index, address)] for every object that *opens* with `table`, or carries it at `+0x24`.
+
+    A class **table** -- the `.rdata` vtable `inventory/xbe_class_table_names.csv` names, `Console` `0x0050cb80`
+    -- is the object's **first** dword: the typed-into `Console` opens `00 50 cb 80 ...` (`hud-link.py`, a
+    whole-RAM dump). `+0x24` is `UObject::Class`, which is a `UClass` *object* (`names.py --verify`), so a walk
+    that screens `+0x24` for a table address cannot match a live object at all: `hudsay3` walked all 48,646
+    entries of a loaded `M00` for `0x0050cb80` and read zero `Console` rows, while `ghud1`'s census of another
+    level boot names one at index 36,148. Both dwords are compared per page, so the second test is free.
+    """
+    return walk(guest, pages, odata, onum, (0x00, CLASS_OFF), table, tail=tail)
 
 
 def name_index(nm, want):
@@ -610,6 +625,11 @@ def selftest():
     struct.pack_into("<III", image, row + 0x1004, live, default, 0)
     struct.pack_into("<I", image, row + 0x38c, at(0x6200))
 
+    # A class *table* is the object's first dword (`hud-link.py`), and `+0x24` holds the `UClass` *object*, so a
+    # walk that screens `+0x24` for a table address matches nothing -- `hudsay3` walked 48,646 objects for
+    # `Console`'s table and read zero. The live HUD opens with the table here, and `rows_holding` finds it.
+    struct.pack_into("<I", image, live, 0x0050cb80)
+
     guest = FakeGuest(bytes(image))
     nm = names.Names(guest, table_at, num)
     pages = Pages(guest)
@@ -620,6 +640,9 @@ def selftest():
     assert rows_of_class(guest, pages, data_at, 4, at(0x5100), tail=1) == [(3, player)]
     assert rows_of_class(guest, pages, data_at, 4, at(0x5100), tail=4) == [(3, player), (2, row)]
     assert pages.walked == 4, pages.walked
+    # The same array, keyed on a class *table*: `+0x24` holds no table address, so only the first dword matches.
+    assert rows_of_class(guest, pages, data_at, 4, 0x0050cb80) == [], rows_of_class(guest, pages, data_at, 4, 0x0050cb80)
+    assert rows_holding(guest, pages, data_at, 4, 0x0050cb80) == [(1, live)]
     # `--class-from`: the player object's own name resolves to an index, and its `Class` dword is the row class.
     assert name_index(nm, "playercontroller0") == 5
     assert name_index(nm, "nobody-at-all") is None
