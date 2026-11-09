@@ -108,25 +108,30 @@ exactly like a working run from the outside:
   unreadable polls" are different facts about a boot, and the deadline is the sequence's whole length
   (`boot + settle + 90 s + 15 s per command`) rather than a settle plus a hundred seconds.
 
-## Measured state (2026-11-08)
+## Measured state (2026-11-08, superseded by the 2026-11-09 section below)
 
-**No live read has landed yet, and this page does not claim one.** Three boots ran the sequence and every one of
+**No live read had landed at this point.** Three boots ran the sequence and every one of
 them captured blank frames (2,331-2,688-byte PNGs -- a black window with one green pixel -- against tens of KB for a
 real 1,280 x 960 frame) and never reached a level-sized name table, so `hud-text.py` refused all three at its
-`--wait` gate instead of reporting a message result. What is verified is the instrument: `--selftest` resolves a
-`StargatePlayer` row to its `GameHud`, reads two boxes and refuses a slot that is not a HUD, and both scripts parse
-in `make ci`. What the field holds after a `say` is still the next boot's measurement -- on a desktop that is
-showing the emulator, at `--boot=240`.
+`--wait` gate instead of reporting a message result. What was verified then was the instrument: `--selftest`
+resolves a `StargatePlayer` row to its `GameHud`, reads two boxes and refuses a slot that is not a HUD, and both
+scripts parse in `make ci`. The cause of all of it was the reader interrupting the CPU without resuming it; the
+boxes were read live on 2026-11-09.
 
-**The next boot failed differently, and the two failures are now told apart (measured 2026-11-08).** A second run
+**The blank capture was the reader, not the capture path (settled 2026-11-09).** A second run
 had the screen to itself -- the Steam client was the only window on the display and `_NET_ACTIVE_WINDOW` was the
 desktop -- and still captured blank frames: every shot a 7,556-byte PNG, black with one green pixel, five shot
-steps at `0 differing pixels`, against tens of KB for a real frame. So the blank capture is a property of this
-capture path rather than of what is in front of the window, and `0 differing pixels` is not evidence that the pad
-presses were lost. That run also produced **no level verdict at all**: `--wait` was `boot + settle + 150` (450 s)
-against a sequence that finishes in about `boot - 75 + settle + 40` s, so the watcher was killed mid-wait and its
-log held neither a resolved `GameHud` nor the "no level within Ns" line. `hud-say.sh` now derives the deadline from
-the sequence (`boot - 75 + settle + 30 + 12 s per command`) and prints `NO VERDICT` when a log holds neither, so
+steps at `0 differing pixels`, against tens of KB for a real frame. That was written up as a property of the
+capture path, and it is not. `hud-text.py` attaches to the stub, and `objects.Guest` **interrupts the CPU on
+connect and never resumes it**: a watcher started one second before the boot freezes the guest at 4.5 s, before the
+video is initialised. Everything the earlier runs measured follows from that -- one identical frame per run, a
+`GNames` triple that answers every poll with a boot-time value, a boot that never reaches a level, and pad presses
+that land on a stopped CPU. Six boots were spent on it. The reader is now `LiveGuest` (`--live`, stop/read/resume),
+and the first boot with it on reaches a level and reads the boxes (next section). That run also produced **no level
+verdict at all** in its predecessor: `--wait` was `boot + settle + 150` (450 s) against a sequence that finishes in
+about `boot - 75 + settle + 40` s, so the watcher was killed mid-wait and its log held neither a resolved `GameHud`
+nor the "no level within Ns" line. `hud-say.sh` derives the deadline from the sequence
+(`boot - 75 + settle + 30 + 12 s per command`) and prints `NO VERDICT` when a log holds neither, so
 "the boot did not load a level" can never again be inferred from a run that stopped looking. It also refuses to
 start while another emulator or a leftover `SG1 virtual pad` is present, because a second boot on the same GDB port
 exits with `Address already in use` and `drive.py` reports that as `xemu exited immediately` — which reads like a
@@ -135,19 +140,43 @@ broken emulator and is a collision.
 **And the second failure mode has a name now: `FAIL: no xemu window on :0`.** A `hud-say.sh` run started with no
 emulator already up reported `waiting 75s for the title` and then that line, with `drive.py exit 3` — the emulator
 never put a window on the display it was pointed at, so every capture and every window-targeted step had nothing
-to act on. That is the honest reading of "blank frames on a free screen": on this desktop a boot launched over
-`ssh` with `DISPLAY=:0` does not reliably get a window, which is a property of the launch, not of the game and not
-of `say`. `drive.py` names it (`no xemu window on :0`) and `hud-say.sh` now reports the attempt rather than the
-message.
+to act on. `drive.py` names it (`no xemu window on :0`) and `hud-say.sh` reports the attempt rather than the
+message. It is a separate fault from the frozen guest above; a boot can have either, and the two read differently:
+a frozen guest has a window and captures the same small frame every time, while this one has no frame to capture.
 
 **Two more boots, and what failed is named (measured 2026-11-08, `hud7` and `hud8`).** Both took the focus, attached
 the keyboard at 75 s, ran the whole sequence and typed both markers; both read nothing. `hud7` stopped looking at a
 300 s deadline -- after the watch fix, but with a budget that did not cover the sequence -- and `hud8` at 420 s with
 the name table still uninitialized, so the deadline now derives from the whole sequence. The eleven frozen frames
-above are the same boot's evidence that the capture path was not showing the game, and `GNames`' 84 empty polls are
-the guest's own agreement. **The field this page exists for is still unmeasured**: what `say sg1txt1` leaves in
-`DialogueWindow` needs a boot whose game starts, and `missions.sh` produced real frames on this desktop two hours
-before `hud8` did not.
+above are the same boot's evidence, and `GNames`' 84 empty polls are that freeze seen from the guest: a stopped CPU
+serves reads but runs no code. The field this page exists for was measured on the next boot (below).
+
+## Measured state (2026-11-09, the boxes read live, and `say` is still absent)
+
+The first boot whose game started while a watcher was attached (`hud-say.sh` with `--live`, one attempt, `M00` at
+index 10). Read the counts, not the strings: field contents are game state from that boot, and quotable lines here
+would be game data.
+
+- **The boot runs, and the name table proves it**: stub up at 4.5 s, level-sized table at 281.7 s (40,427 names),
+  47,042 objects on the next walk and 48,494 on the one that found the row, and frames of 590-644 KB. The 8 KB
+  frozen frames belong to the reader that was freezing the guest, not to the capture path.
+- **The row and the HUD resolve by walking, never by a carried address.** Two `--tail=2000` walks found no
+  `StargatePlayer` while the guest was still on the list (42,438 and 47,042 objects); the third, at 48,494, found
+  `0x08842800` (object 47,885) with outer `M00` and `+0x1008 -> GameHud 0x09312100`. The retries are load-bearing:
+  the row does not exist until the level has spawned it, so a single walk at the name-table floor is a menu read
+  (`sink9`'s trap, measured again here).
+- **All three boxes read live, and `DialogueWindow` carries the level's own dialogue.** It held `count 14` -- the
+  intro card's line, already quoted in `docs/XEMU.md` -- then four speaker turns at counts 35, 33, 50 and 56, each
+  in the same object `0x09737300` and each replacing the previous one while the watch polled. `NotificationWindow`
+  and `InteractionWindow` held the class placeholder `default` (count 8) at the same `+0x394`. That is U15's field
+  read on a live level: the offset, the `FString` shape (`count` includes the NUL, so 14 is 13 units of text) and
+  the `GameHud+0x050` window map are confirmed by traffic the game produced itself.
+- **`say sg1txt1` and `addnotification sg1txt2` are still ABSENT, and the same boot says why that is not the
+  reader.** At 437.5 s all three window slots read `0x00000000` -- the `GameHud` the read had resolved was
+  destroyed, so the level changed under it -- and the three shots around the two commands did not repaint (521 px
+  against a 2,254 threshold). The commands were typed into the intro, whose end tears the HUD down; the boxes the
+  read was watching were gone before they landed. **Next**: submit after that hand-over (a settle past the intro,
+  then the console) and read the two markers in the window that follows -- timing, not a new instrument.
 
 ## Selftest
 
@@ -158,5 +187,6 @@ looks ten minutes old. It runs in `make ci` and needs no emulator or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one
     ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts is reported
+    ok   hud-text: a live reader resumes the guest after every read (stop/read/resume on each)
 
 The tool prints field addresses and text and writes no file; a marker in a log is game state from that boot only.

@@ -831,6 +831,31 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the watcher was freezing the boot it watched, and the boxes read live on a level)
+
+- **A stub reader that never resumes froze six boots** (`tools/xemu/hud-text.py`): `objects.Guest` interrupts the
+  CPU on connect (`_connect` -> `mem.Gdb.interrupt`) and nothing ever sends `c`, so a watcher started one second
+  before the boot halted the guest at 4.5 s -- before video init. That is every blank-frame symptom in one cause:
+  one identical frame per run, `GNames` answering all 84 polls with a boot-time value, no level, and pad presses
+  landing on a stopped CPU. It was written up twice as "a property of the capture path"; the capture path was
+  never at fault. `LiveGuest` (`--live`) makes each read a stop/read/resume triple and `hud-say.sh` passes it.
+- **The first live boot reached the level, and the boxes hold the level's own dialogue**: `M00` at index 10, stub
+  up at 4.5 s, level-sized name table at 281.7 s (40,427 names), row `0x08842800` (object 47,885 of 48,494, outer
+  `M00`), `+0x1008 -> GameHud 0x09312100`, and `DialogueWindow` (`0x09737300`, `+0x394`) went `count 14` (the
+  intro card's line) then four speaker turns at counts 35, 33, 50 and 56 while the watch polled; the other two
+  boxes held the `default` placeholder (count 8). U15's field is read; the counts are in `docs/HUD_TEXT.md` and
+  the strings are not, because they are game content.
+- **A `--tail=2000` walk at the name-table floor is a menu read**: the first two walks (42,438 and 47,042 objects)
+  found no `StargatePlayer` because the level had not spawned the row yet; the third, 1,452 objects later, found
+  it. `--tries` is load-bearing, and the row's index moves by ~1,400 objects between the list and the level.
+- **Still ABSENT: `say sg1txt1` and `addnotification sg1txt2`**, and this boot says why it is not the reader: all
+  three window slots read `0` at 437.5 s (the `GameHud` the read had resolved was destroyed as the intro handed
+  over) and the two commands' shots did not repaint (521 px against a 2,254 threshold). **Next**: type them after
+  that hand-over instead of into the cutscene, and read the two markers in the window that follows.
+- **Instruments**: `tools/xemu/hud-text.py` (`LiveGuest`, `--live`, a selftest case that fails if a read stops
+  resuming), `tools/xemu/hud-say.sh` (`--live`, corrected header), `docs/HUD_TEXT.md`. No artifact and no new
+  file, so `inventory/artifact_hashes.csv` is untouched.
+
 ### Execution notes (2026-11-08, the HUD-text watcher's window is its own clock, and a blank capture is one frozen frame)
 
 - **The watcher could not see what it was built for** (`tools/xemu/hud-text.py`): `--watch` was bounded by the
