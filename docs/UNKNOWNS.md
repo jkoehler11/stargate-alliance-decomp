@@ -1541,3 +1541,25 @@ page opens (breakpoint `0x2fe8e0`). There is no cap to patch, and no map needs a
 
 This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
 `Continue` (a save that starts inside one of those maps) and checkpoint loads.
+
+## U17 -- which compiler can write, and read, version 130 / licensee 4
+
+**Measured, and it narrows the question (2026-11-09, `docs/COMPILER.md`).** A UE2 compiler now runs here: Epic's
+UE2 Runtime build 2226, under Wine, emits **version 126 / licensee 0** packages from source. Pointed at this build's
+packages it stops in `UStruct`'s default-property expression reader -- `Bad expr token 03` in `SerializeExpr` on
+`Core.Object` -- before it parses a line of script. So the gap is the **token grammar**, not a version guard: no stock
+compiler from any public UE2.5 release can consume these packages, and patching the version constant cannot close it.
+
+**What would settle it.** Two things, and the first is a question about data rather than code:
+
+1. whether the privately held 2006 studio tree contains the UnrealScript compiler's *sources* -- the toolchain that
+   wrote these packages is the only compiler guaranteed to agree with them;
+2. failing that, a front end written here against the measured format (`docs/BYTECODE.md`, PLAN 3.7), which does not
+   depend on data this repository may not carry.
+
+The deciding test is the same either way: one trivial class compiled and byte-compared against the shipped package,
+i.e. L1 by the mapping tiers in `AGENTS.md`, with PLAN 3.8's comparator for the tiers above it.
+
+**Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
+same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
+`UStruct::Serialize` at `0x000392b0` is the reader that would decide it.

@@ -8,12 +8,13 @@ WORK     ?= $(HOME)/sg1/work
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 RESIZE_BYTES ?= 64
+UE2RT    ?= $(HOME)/tools/ue2rt/x
 # the privately held reference decompile, only the token map needs it
 ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
 
 help:
 	@echo "targets:"
@@ -49,6 +50,7 @@ help:
 	@echo "  nightly       run the dump-free gate plus every dump-side check, one summary per run (PLAN 7.5)"
 	@echo "  pkg-exports   list a class's exports and their sizes from a package (PKG=... CLASS=...)"
 	@echo "  extract-script write every class's shipped source into $WORK (never the repo)"
+	@echo "  ue2rt-probe   can a UE2 compiler read this build? (docs/COMPILER.md)"
 	@echo "  map-actors    histogram every .unr's export classes (PLAN 5.2, class-level)"
 	@echo "  sfx-index     count the Sound exports in every .uax (PLAN 5.3)"
 	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
@@ -317,6 +319,10 @@ package-names:
 # Nightly regression: the checks CI cannot run (docs/REGRESSION.md).
 nightly:
 	@sh tools/nightly.sh
+
+# Can a UE2 compiler read this build? Drives Wine on an unpacked runtime; writes only under $WORK (docs/COMPILER.md).
+ue2rt-probe:
+	@$(PYTHON) tools/ue2rt-probe.py --runtime "$(UE2RT)" --work "$(or $(WORK),work)/ue2rt" $(if $(SG1_DUMP),--dump "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15")
 
 # One class's exports (names, kinds, sizes) straight from a package (docs/PACKAGE_SCRIPT_TEXT.md).
 pkg-exports:

@@ -16,16 +16,16 @@ assets, and boot the game in xemu.
 | shipped source for every class | **2,319 of 2,319** | `inventory/package_script_text.csv` |
 | every input a rebuild needs, per class | **1,826 of 2,319 (78.7%)** | `inventory/compile_readiness.csv`, `docs/COMPILE.md` |
 | defaults readable, or nothing to set | 957 read + 869 not-applicable; **493 blocked** | same |
-| a UE2 compiler (`ucc`) | **absent**. Wine is installed on the desktop; no UE2 runtime anywhere | this session, measured |
+| a UE2 compiler (`ucc`) | **a stock one runs and cannot read the build**: UE2 Runtime 2226 under Wine emits 126/0 and stops in `SerializeExpr` on these 130/4 packages | `docs/COMPILER.md` |
 | package integrity check (`Packages.md5`) | not reproducible; **bypass is the plan** | `docs/PACKAGE_CHECK.md` |
 | a boot harness | **works**: the title boots in xemu and executes game code | `docs/XEMU.md` |
 | mission-load automation | absent — no input injection; `screendump` unavailable | `docs/XEMU.md`, PLAN 7.2 |
 
-**Estimate: 2–4 months of steady work, and the range is dominated by one unknown.** If a compiler build matching
-this package version (130, licensee 4) works under Wine, the remaining work is mechanical: 607 default blocks, a
-package writer, the check bypass, and a boot-and-diff loop. If no matching compiler exists — the version/licensee
-pair is from a December 2005 Xbox prototype — then the hybrid goal has no path at all short of writing a compiler,
-and no estimate is honest.
+**Estimate: 2–4 months of steady work, and the range is dominated by one unknown.** If a compiler that reads this
+package version (130, licensee 4) works under Wine — the fork's own, or one written here — the remaining work is
+mechanical: the classes whose defaults block is not yet located, the package-check bypass, and a boot-and-diff loop. If no such compiler exists the
+hybrid goal has no path short of writing one, and no estimate is honest. A stock public `ucc` is measured not to be
+that compiler (`docs/COMPILER.md`).
 
 Confidence: moderate on the work *after* the compiler, low on obtaining it. That is why the next actionable step is
 not more measuring but acquiring `ucc` and trying to compile one trivial class.
@@ -56,8 +56,9 @@ time is not.
 
 ## The critical path, in order
 
-1. **Get `ucc` running.** One trivial class compiled and byte-compared against the shipped package decides whether
-   Goal A is months or never. Nothing else should be scheduled ahead of it.
+1. **Get a `ucc` that can read this build.** A stock compiler is measured not to (`docs/COMPILER.md`), so the
+   question is now whether the fork's own compiler exists in the privately held tree, and one trivial class compiled
+   and byte-compared decides whether Goal A is months or never. Nothing else should be scheduled ahead of it.
 2. **Close the 607 default blocks** (`docs/CLASS_DEFAULTS.md`) — the only remaining data gap for a rebuild, and the
    one thing more measuring can fix without outside inputs.
 3. **Write the package writer + check bypass** (`docs/PACKAGE_CHECK.md`, PLAN 6.1/6.2) — the bypass is decided;

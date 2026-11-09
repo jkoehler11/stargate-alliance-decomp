@@ -186,6 +186,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the disagreements are recorded, not explained. **The defaults half of the input now exists**: the packages
       yield 15,491 rendered properties over 1,666 classes and `make defaults-tree` merges them into the extracted
       tree, so the compile loop is blocked on `ucc` alone, not on its inputs.
+      **And `ucc` turns out not to be the answer** (2026-11-09, `docs/COMPILER.md`, `tools/ue2rt-probe.py`): Epic's
+      UE2 Runtime build 2226 runs under Wine, compiles a scratch package, and writes **version 126 / licensee 0** --
+      but pointed at this build's 130/4 packages it stops in `SerializeExpr` (`Bad expr token 03` on `Core.Object`)
+      before parsing any script. The gap is the token grammar, not a version guard, so a stock compiler from any
+      public UE2.5 release (129 or earlier) cannot be the tool, and patching a constant cannot make it one. What 3.6
+      is missing is therefore not "a `ucc`" but the fork's own compiler -- the toolchain that wrote these packages --
+      or a front end written here against `docs/BYTECODE.md`. Open as U17.
 - [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as
