@@ -39,6 +39,9 @@ a level spawns. **A watcher started before the boot must also pass `--live`**: a
 the CPU, and the default reader never resumes it, so the guest is frozen from the first poll (a blank frame and a
 name table that never reaches a level's size, while every poll answers). `--live` makes each read a
 stop/read/resume, which leaves the guest's own clock running -- the 2 s `DisplayText` window needs that.
+`--follow SECS` re-reads the row's `+0x1008` while watching and rebinds when it holds a different `GameHud`:
+a level destroys its intro HUD when the cinematic hands over to gameplay, so a read bound once reports three
+empty boxes for a HUD that no longer exists.
 `--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
 Field contents are game state, so nothing here writes a file.
 """
@@ -57,7 +60,9 @@ PLAYER_CLASS = 0x00e47800            # `StargatePlayer`'s class table (package d
 WINDOWS = ((0x050, "DialogueWindow"), (0x054, "NotificationWindow"), (0x058, "InteractionWindow"))
 TEXT_OFF = 0x394                     # UIWidget.DisplayText, an FString (`census4`)
 HUD_NAME = "GameHud"
-LEVEL_FLOOR = 40000                  # `sink-slots.py`: 34,800 names at the menu, 41,265 on a level
+MENU_OUTER = "MainMenu"              # the menu's player row: `rows_of_class` order puts it newest while a map loads
+LEVEL_FLOOR = 40000                  # `sink-slots.py`: 34,800 names at the menu, 41,265 on a level -- but a
+                                     # loading boot read 40,427, so this is a pre-gate and `MENU_OUTER` is the gate
 OBJ_SIZE_MAX = 0x40000               # a text data block this large is not a message
 
 
@@ -185,10 +190,24 @@ def resolve(guest, args, out=print):
         out("no row of class %#010x among the last %s of %d object(s): `--tail` is a shortcut, so this says "
             "where the row is not" % (args.klass, args.tail if args.tail else "all", onum))
         return None, None, pages, nm
-    index, row = rows[0]
+    # A menu boot holds a `StargatePlayer` row too, outered to `MainMenu`, and it is the *newest* object while
+    # the level is still loading -- this boot resolved `0x06b30000` (object 41,474 of 42,401, outer `MainMenu`)
+    # 35 s after the name table crossed 40,000 names, and that row and its `GameHud` were destroyed when the
+    # map finished loading (measured 2026-11-09). So the floor is a pre-gate and the row's own `Outer` is the
+    # level gate: skip the menu's row instead of reading a HUD that is about to be torn down.
+    outer = None
+    for index, row in rows:
+        outer = sink.object_name(pages, nm, pages.u32(row + 0x18)) or "?"
+        if outer != MENU_OUTER:
+            break
+        out("row %#010x (object %d of %d) is outered to `%s`: the menu's own `StargatePlayer`, which the map "
+            "load destroys, not a level's" % (row, index, onum, outer))
+    else:
+        out("all %d row(s) of class %#010x are outered to `%s`: no level's player row exists yet (a level "
+            "spawns it when the map finishes loading)" % (len(rows), args.klass, outer))
+        return None, None, pages, nm
     out("row %#010x (object %d of %d) class %s outer %s"
-        % (row, index, onum, sink.class_name(pages, nm, row) or "?",
-           sink.object_name(pages, nm, pages.u32(row + 0x18)) or "?"))
+        % (row, index, onum, sink.class_name(pages, nm, row) or "?", outer))
     hud = pages.u32(row + HUD_SLOT)
     if hud is None or not hud:
         out("`+%#x GameHudPtr` is %s: `SetSubtitle` ends in a null, so a `say` has nowhere to draw"
@@ -215,13 +234,36 @@ def line(tag, elapsed, label, addr, count, text, name=None):
         "  name `%s`" % name if name else "")
 
 
-def watch(guest, hud, pages, nm, seconds, interval, tag, started, out=print):
+def slot_hud(guest, row, pages, nm, want=None):
+    """`(address, name)` for the `GameHud` the row's `+0x1008` holds now, or `(None, None)`.
+
+    The slot is the route, so it is what a rebind has to read: on `M00` the intro's `GameHud` is destroyed
+    when the cinematic hands over to gameplay and the row's slot then holds a *different* `GameHud` object.
+    A read bound once keeps reading the dead one -- all three window slots read `0` at 437.5 s, which was
+    reported as a message that never arrived (measured 2026-11-09). Following the slot is the difference
+    between "no box ever held the marker" and "the marker went to a HUD nobody was reading".
+    """
+    got = u32(guest, row + HUD_SLOT)
+    if not got or not names.plausible_object(got):
+        return None, None
+    if want is not None and got == want:
+        return got, None
+    return got, sink.object_name(pages, nm, got)
+
+
+def watch(guest, hud, pages, nm, seconds, interval, tag, started, out=print, row=None, follow=0.0, args=None,
+          rewrites=None):
     """Poll the three boxes for `seconds` and print one line per change: `[(label, address, text)]`.
 
     The clock that bounds the watch starts **here**, not when the process did. A boot resolves its row and its
     `GameHud` minutes in (a 240 s title wait, a settle, a 20-85 s walk), so a guard on `started` expired before
     the first poll on every real boot -- the run printed a baseline and `watched 0s` while the commands it was
     started for were still being typed, which read as "nothing paints the boxes" (measured 2026-11-08).
+
+    `follow` (seconds, 0 = off) re-reads `row + 0x1008` on that cadence: when the slot holds a different
+    `GameHud` the watch rebinds and prints the new baseline, because a level replaces its intro HUD mid-run.
+    A slot that is empty for three polls is not a message result either -- the row may have been replaced with
+    it -- so the row is walked for again once (`args` carries the walk's parameters; `rewrites` caps it).
     """
     now = time.monotonic()
     state = {}
@@ -229,15 +271,54 @@ def watch(guest, hud, pages, nm, seconds, interval, tag, started, out=print):
         state[label] = (addr, count, text)
         out(line(tag, now - started, label, addr, count, text, name))
     stop = now + seconds
-    changes = 0
+    changes = rebounds = 0
+    miss = 0
+    rewrites = 1 if rewrites is None else rewrites
+    tick = follow if (follow and row) else None
+    next_follow = now + tick if tick else None
     while time.monotonic() < stop:
         time.sleep(interval)
+        at = time.monotonic()
+        if next_follow is not None and at >= next_follow:
+            next_follow = at + tick
+            got, oname = slot_hud(guest, row, pages, nm, want=hud)
+            if got is None:
+                miss += 1
+                if miss >= 3 and rewrites > 0:
+                    miss = 0
+                    rewrites -= 1
+                    out("[%s %6.1fs] follow          `+%#x` reads no object; walking for the level's own row "
+                        "(%d walk(s) left)" % (tag, at - started, HUD_SLOT, rewrites + 1))
+                    if args is not None:
+                        row2, hud2, pages2, nm2 = resolve(guest, args,
+                                                          out=lambda s: out("[%s %6.1fs] rewalk          %s"
+                                                                            % (tag, time.monotonic() - started, s)))
+                        if hud2:
+                            row, hud, pages, nm = row2, hud2, pages2 or pages, nm2 or nm
+                            rebounds += 1
+                            state = {}
+                            out("[%s %6.1fs] rebind          -> %#010x (row re-walked for it)"
+                                % (tag, time.monotonic() - started, hud))
+            elif oname is not None and oname != HUD_NAME:
+                miss = 0
+                out("[%s %6.1fs] follow          `+%#x` holds %#010x named `%s`, not a `GameHud`: keeping %#010x"
+                    % (tag, at - started, HUD_SLOT, got, oname or "?", hud))
+            elif oname == HUD_NAME:
+                miss = 0
+                out("[%s %6.1fs] rebind          %#010x -> %#010x (the row's `+%#x` holds a new `GameHud`)"
+                    % (tag, at - started, hud, got, HUD_SLOT))
+                hud, rebounds = got, rebounds + 1
+                state = {}
+            if hud != 0 and state == {}:
+                for label, addr, name, count, text in boxes(guest, hud, pages, nm):
+                    state[label] = (addr, count, text)
+                    out(line(tag, at - started, label, addr, count, text, name))
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             if (addr, count, text) != state.get(label):
                 state[label] = (addr, count, text)
                 changes += 1
                 out(line(tag, time.monotonic() - started, label, addr, count, text, name))
-    return changes, [(label, addr, text) for label, (addr, _count, text) in sorted(state.items())]
+    return changes, [(label, addr, text) for label, (addr, _count, text) in sorted(state.items())], rebounds
 
 
 def selftest():
@@ -347,14 +428,85 @@ def selftest():
 
     ram.read = late
     said = []
-    changes, final = watch(ram, hud, None, None, 0.8, 0.05, "t", time.monotonic() - 600, out=said.append)
+    changes, final, _rb = watch(ram, hud, None, None, 0.8, 0.05, "t", time.monotonic() - 600, out=said.append)
     assert changes >= 1 and any("LATER1" in s for s in said), (changes, said)
     assert dict((label, text) for label, _a, text in final)["DialogueWindow"] == "LATER1", final
+
+    # The intro's HUD is destroyed mid-run and the row's slot then holds a different `GameHud` (measured on
+    # `M00`: all three windows read 0 at 437.5 s while the row lived on). A watch bound once reports that as
+    # three empty boxes for the rest of the run, which is exactly the `ABSENT` this test must not allow.
+    class FakePages(object):
+        def __init__(self, ram):
+            self.ram = ram
+
+        def u32(self, addr):
+            try:
+                return struct.unpack("<I", self.ram.read(addr, 4))[0]
+            except (IOError, OSError):
+                return None
+
+    table = {7: "StargatePlayer", 8: "GameHud", 9: "UITextBox"}
+    ram, row, hud, win = build(0x01510000, "UITextBox")
+    hud2, win2 = 0x01540000, 0x01550000
+    ram.u32(hud2 + 0x18, 0)
+    ram.u32(hud2 + names.CLASS_OFF, 0x0099aa00)
+    ram.u32(hud2 + names.NAME_OFF, 8)
+    ram.u32(hud2 + 0x050, win2)
+    ram.u32(hud2 + 0x054, 0)
+    ram.u32(hud2 + 0x058, 0)
+    ram.u32(win2 + names.CLASS_OFF, 0x00bcea00)
+    ram.u32(win2 + names.NAME_OFF, 9)
+    ram.put(0x01780000, "AFTER1\x00".encode("utf-16-le"))
+    ram.u32(win2 + TEXT_OFF, 0x01780000)
+    ram.u32(win2 + TEXT_OFF + 4, 7)
+    ram.u32(win2 + TEXT_OFF + 8, 16)
+    orig, seen = ram.read, {"n": 0}
+
+    def swap(addr, size, chunk=None, attempts=1):
+        if addr == row + HUD_SLOT and size == 4:
+            seen["n"] += 1
+            if seen["n"] == 2:                       # the hand-over, on the second follow tick
+                ram.u32(row + HUD_SLOT, hud2)
+                return struct.pack("<I", hud2)
+        return orig(addr, size)
+
+    ram.read = swap
+    said = []
+    _changes, final, rebounds = watch(ram, hud, FakePages(ram), table, 1.2, 0.05, "f", time.monotonic(),
+                                      out=said.append, row=row, follow=0.1)
+    assert rebounds == 1 and any("rebind" in s for s in said), (rebounds, said)
+    assert dict((label, text) for label, _a, text in final)["DialogueWindow"] == "AFTER1", final
+    assert any("AFTER1" in s for s in said), said
+
+    # A menu boot holds a `StargatePlayer` row too, outered to `MainMenu`, and it is the *newest* object while a
+    # map loads. Resolving it reads a `GameHud` the map load destroys (measured 2026-11-09: row `0x06b30000`,
+    # outer `MainMenu`, HUD `0x0682ab00`, three boxes empty 1 s into the watch). The outer is the level gate.
+    ram4, level_row, hud4, _w4 = build(0x01510000, "UITextBox")
+    array, menu_row, menu_hud = 0x01200000, 0x01560000, 0x01570000
+    ram4.name(0x01000000, 11, "MainMenu")
+    ram4.u32(level_row + 0x18, 0x01590000)          # the level row's own outer, `M00`
+    ram4.u32(0x01590000 + names.NAME_OFF, 10)
+    ram4.u32(array + 4, level_row)
+    ram4.u32(array + 8, menu_row)
+    ram4.u32(0x006c21b0 + 4, 3)
+    ram4.u32(menu_row + 0x18, 0x01530000)
+    ram4.u32(menu_row + names.CLASS_OFF, PLAYER_CLASS)
+    ram4.u32(menu_row + names.NAME_OFF, 7)
+    ram4.u32(menu_row + HUD_SLOT, menu_hud)
+    ram4.u32(menu_hud + names.NAME_OFF, 8)
+    ram4.u32(0x01530000 + names.NAME_OFF, 11)     # the row's outer, renamed `MainMenu`
+    said = []
+    got_row, got_hud, _p, _n = resolve(ram4, args, out=said.append)
+    assert got_row == level_row and got_hud == hud4, (got_row, got_hud, said)
+    assert any("MainMenu" in s for s in said), said
+    print("ok   hud-text: the menu's own `StargatePlayer` row is skipped for the level's (outer `MainMenu`)")
 
     print("ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not "
           "one (%d stub read(s))" % ram.reads)
     print("ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts "
           "is reported, %d change(s) on %d poll(s)" % (changes, polls["n"]))
+    print("ok   hud-text: a watch follows the row's `+0x1008` when the level replaces its `GameHud` "
+          "(%d rebind(s), and the marker on the new HUD is reported)" % rebounds)
 
     # A live reader must hand the CPU back after every read. The failure this guards: `objects.Guest`
     # interrupts on connect and never resumes, so a watcher started before a boot froze the guest it was
@@ -420,6 +572,10 @@ def main():
     ap.add_argument("--watch", type=float, default=0.0,
                     help="seconds to keep polling the three boxes, printing one line per change")
     ap.add_argument("--interval", type=float, default=0.2, help="poll interval while watching (default 0.2 s)")
+    ap.add_argument("--follow", type=float, default=0.0,
+                    help="while watching, re-read the row's `+0x1008` every SECS and rebind when it holds a "
+                         "different `GameHud` (0 = off). A level replaces its intro HUD when the cinematic hands "
+                         "over, and a read bound once reports three empty boxes for a HUD that is gone")
     ap.add_argument("--tag", default="hud", help="a label in the report, so two boots' logs cannot be confused")
     ap.add_argument("--tries", type=int, default=6,
                     help="resolve attempts, 5 s apart, while the row a level spawns is still appearing")
@@ -482,11 +638,21 @@ def main():
             if hud is not None:
                 break
             tries += 1
-            if tries >= args.tries:
+            # A level spawns its own player row when the map finishes loading, which is **after** the name
+            # table crosses its floor: this boot resolved a row outered to `MainMenu` at 316.9 s and the
+            # level's row was still not among 46,169 objects at 343 s (measured 2026-11-09). So `--tries` caps
+            # a run with no deadline, and a `--wait` run keeps walking until the budget is spent instead of
+            # giving up 60 s after the first row appeared.
+            deadline = started + args.wait if args.wait > 0 else None
+            if deadline is None and tries >= args.tries:
                 print("%s: %d resolve attempt(s) and no live `GameHud`; the slot is what `say` would end in, "
                       "so there is nothing to watch" % (args.tag, tries))
                 return 2
-            time.sleep(5.0)
+            if deadline is not None and time.monotonic() > deadline:
+                print("%s: %d resolve attempt(s) and no level's `GameHud` by the deadline: every row found was "
+                      "the menu's, so nothing was read (a boot that never loaded a level)" % (args.tag, tries))
+                return 2
+            time.sleep(10.0)
     elif hud is None:
         got = u32(guest, row + HUD_SLOT)
         if not got:
@@ -500,9 +666,11 @@ def main():
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             print(line(args.tag, now - started, label, addr, count, text, name))
         return 0
-    changes, _final = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started)
-    print("%s: watched %.0fs, %d change(s), %d stub read(s)" % (args.tag, args.watch, changes,
-                                                                 guest.reads if hasattr(guest, "reads") else 0))
+    changes, _final, rebounds = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started,
+                                      row=row, follow=args.follow, args=args, rewrites=8)
+    print("%s: watched %.0fs, %d change(s), %d rebind(s), %d stub read(s)"
+          % (args.tag, args.watch, changes, rebounds,
+             guest.reads if hasattr(guest, "reads") else 0))
     return 0
 
 
