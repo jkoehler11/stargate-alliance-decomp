@@ -141,7 +141,7 @@ ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
 # The receipt walks the object array for the `Console` after the watch, and drive.py's linger is the only thing
 # holding the stub up by then: 120 s covers the walk (a 2,000-object tail costs ~20-40 s) plus the typing of one
 # more command. Without it the reader is killed 2 s after drive.py exits and a typed marker reads as unread.
-[ -n "$linger" ] || linger=$((120 + 30 * ncmd))
+[ "$linger" != 0 ] || linger=$((120 + 30 * ncmd))
 # The markers, one per command: the receipt asks the console's own `History` about each of them.
 marks=$(printf '%s' "$cmds" | tr '|' '\n' | sed 's/.* //' | grep -v '^$' | paste -sd, - 2>/dev/null || true)
 [ -n "$hdd" ] || hdd="${WORK:-$HOME/sg1/work}/hdd-val.qcow2"
