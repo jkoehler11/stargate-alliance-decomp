@@ -828,6 +828,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, the outer column names its object, and the level says so)
+
+- **`sink16` names the row's `Outer`** (measured 2026-11-08, `sink15`'s script unchanged, gdb 12653): `row 0x08842800`
+  (index 47,885) **class `StargatePlayer` outer `0x06b40000` `M00`** name `None`, slots unchanged --
+  `NotificationManager` `0x0968c340`, `GameHud` `0x09322100`, `CommandInterface` `0x096ff230`, Pawn `0x089e0000`
+  class `Oneill`. `M00` is the level object, so the report now says "a level, not the menu" in the row itself.
+- **The bug was `class_name`'s one column over**: `Outer` is an object pointer and the report resolved it as
+  `nm[outer]`, i.e. asked the name table for entry `0x06b40000`. `object_name` reads the outer object's own `Name`
+  -- one read -- and `--selftest` pins both sides (the pointer read as an index answers nothing, the object's own
+  name answers `M00`).
+- **Cost: 89 pages / 368 requests / 41.6 s in reads / 46 s total** against `sink15`'s 87 / 360 / 39.7 s / 44 s --
+  the two extra pages are the outer objects' names, inside the noise.
+- **The pawn's own `Name` stays `?`**: it is empty on this build, a fact about the pawn, not the printer. The
+  class column is what names it.
+- **Boot**: `--boot=240 --retries=3` reached `M00` on attempt 1 again (two runs in a row), so the 240 s window is
+  the setting `sink14` was missing rather than a lucky boot.
+
 ### Execution notes (2026-11-08, the class column names the row, the slots and the pawn's class)
 
 - **`sink15` reached `M00` on attempt 1 and printed the classes** (measured 2026-11-08): `--boot=240 --retries=3`
