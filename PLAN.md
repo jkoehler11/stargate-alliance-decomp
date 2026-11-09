@@ -394,6 +394,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `00 03` = 3 — matching the walk's record count in all seven files that have a table (`gap_hex`/`declared` in
       `inventory/lipsinc_tracks.csv`). What remains is which weight slot is which bone and what the 7 signed slots
       mean — not the encoding, the layout or the table's extent.
+      **The channel table is an ordered bone list and the pose record's last word is an angle** (below): the eight
+      files share an eighteen-name prefix and the two shapes differ by exactly the two tongue bones, and the
+      record's eighth word is `-cos(theta)` on a half-degree grid in 95-99% of 3,200 records (2,678 exactly 0°). The
+      weight slots are **not** one per channel — the 21-channel clips carry the same 26-group blocks — so a slot's
+      bone is not recoverable by counting; `LIPSincReadAnimFile`/`LIPSincReadControllerFile` is the only witness left.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -854,6 +859,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the channels are an ordered bone list and the pose's last float is an angle)
+
+- **The only ordered bone list in the format is the channel table, and it is stable.** `tools/lad-bones.py`
+  (`make lipsinc-bones`, `inventory/lipsinc_bones.csv`, `--check` in `make ci`) reads the table as an index → name
+  list over all eight files (160 rows). The first **eighteen** names are identical everywhere; the 21-channel shapes
+  then carry `BN-Tongue-back`, `BN-Tongue-front`, `BN-Head` and the 19-channel packs carry `BN-Head` alone — so the
+  controller packs are the speech list minus two bones, in the same relative order. `--check` refuses any other tail.
+- **A clip's bone list is an explicit order.** Sixteen of seventeen clip lists follow the table; `jackson_frown` in
+  `Controllers/sg1_crew_jackson.lad` lists `BN-Head` first (`18, 4, 5, 6, 7`). Its frames carry one record per listed
+  bone in that order, so a clip says what a record is by *position in its own list*, and nothing in the file stores a
+  slot number beside a name.
+- **The pose record's eighth word is a rotation angle.** All 3,200 records have their last float in `[-1, 0]`, and
+  `-acos` of it snaps to a **half-degree grid** in 95.0-99.0% of records per file; 2,678 of 3,200 are exactly 0° and
+  the corpus maximum is 38.5°. So the `-1.0` that two earlier pages read as a terminator and then as "the pose weight"
+  is the zero-angle case; the record's real payload is a position (three floats that move, up to 3.4 units over the
+  twenty frames) plus this angle.
+- **The negative is the slot-to-bone link.** The 21-channel clips carry the same 26-group key blocks as the 19-channel
+  packs, so "19 weight slots, 19 channel names" is a coincidence of the controller packs and not a schema: counting
+  cannot name a slot's bone. That leaves the reader (`LIPSincReadAnimFile` `0x000b8340`, `LIPSincReadControllerFile`
+  `0x000b7260`) as the only witness, which is the next task rather than another file-side guess.
+- **Still unread, and now bounded**: the three words between the position and the angle (`0x0f000004`, `0x9e12217c`
+  and denormals in the samples, constant per bone across frames in 8 of 19 bones), which no reading of them as `f32`
+  explains.
 
 ### Execution notes (2026-11-09, the track table declares its own count in the key counts' varint)
 
