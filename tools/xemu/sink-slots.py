@@ -26,6 +26,9 @@ read cheap and hard to mis-take, and each was measured the hard way:
   no `StargatePlayer` row can still hold the player controller -- under whatever class the game actually spawned.
   `--class-from NAME` reads that class off the guest's own object (`PlayerController0`) instead of assuming it: one
   name-index lookup, the same page-cached header walk, and the class is printed with the row it selects.
+* **A class pointer is not a name index.** `UObject::Class` names an object, not an `FName`, so the class name is
+  that object's own `Name` -- read as an index it answers `?` for a class table the boot can name perfectly well
+  (`sink13`, and every class in its report). `class_name` is one extra read per object.
 * **A slot is a field only where its class declares it.** `+0x1004`.. are `StargatePlayer` fields: read off a row
   whose own super chain never reaches that class, they are whatever occupies the offset, and that is often a
   plausible object pointer -- the way a neighbouring heap block gets reported as a live HUD. Each slot is therefore
@@ -304,6 +307,22 @@ def chain_names(pages, nm, chain):
     return [nm[pages.u32(k + NAME_OFF)] or "?" for k in chain]
 
 
+def class_name(pages, nm, obj):
+    """The *class* name of an object: `UObject::Class` is a class object, and that object's own `Name` is the index.
+
+    `nm[pages.u32(obj + CLASS_OFF)]` was the first version, and it read a class *pointer* as an `FName` index -- so
+    every class came back `?` on a boot whose class table is named (`sink13`: `row 0x08842800 class ?`, and the live
+    `GameHud` at `+0x1008` printed `class ?` beside its own name). A class object is named after its class, the same
+    rule `class_named` uses, so this is one extra read per object and no new assumption -- and the class object's
+    own `Class` is the metaclass, which is not what a caller wants here.
+    """
+    cls = pages.u32(obj + CLASS_OFF)
+    if not plausible_object(cls):
+        return None
+    idx = pages.u32(cls + NAME_OFF)
+    return nm[idx] if idx is not None else None
+
+
 def describe(pages, nm, value, defaults):
     """(verdict, text) for one slot: `live`, `default`, `null` or `unreadable`, plus its class and name."""
     if value is None:
@@ -312,9 +331,8 @@ def describe(pages, nm, value, defaults):
         return "null", "0"
     if not plausible_object(value):
         return "unreadable", "%#010x is not an object address" % value
-    cls = pages.u32(value + CLASS_OFF)
+    cname = class_name(pages, nm, value)
     idx = pages.u32(value + NAME_OFF)
-    cname = nm[cls] if cls else None
     oname = nm[idx] if idx is not None else None
     text = "object %#010x class %s name %s" % (value, "`%s`" % cname if cname else "?", "`%s`" % oname if oname else "?")
     if value in defaults:
@@ -464,7 +482,7 @@ def main():
             cls = pages.u32(row + CLASS_OFF)
             outer = pages.u32(row + OUTER_OFF)
             own = pages.u32(row + NAME_OFF)
-            cname = nm[cls] if cls else None
+            cname = class_name(pages, nm, row)
             oname = nm[outer] if outer else None
             print()
             print("row %#010x%s class `%s` outer %#010x `%s` name `%s`"
@@ -598,6 +616,12 @@ def selftest():
     assert pages.u32(row + 0x1004) == live and pages.u32(row + 0x100c) == 0
     live_verdict, live_text = describe(pages, nm, live, [])
     assert live_verdict == "live" and "`GameHud`" in live_text, live_text
+    # A class pointer is not a name index: the class's own `Name` is what the report prints (`sink13` printed `?`
+    # for a `GameHud` object it had just named, and for the row's own class).
+    assert class_name(pages, nm, live) == "GameHud"
+    assert class_name(pages, nm, row) == "StargatePlayer"
+    assert class_name(pages, nm, at(0x6200)) is None            # not an object at all
+    assert "class `GameHud`" in live_text, live_text
     default_verdict, _ = describe(pages, nm, default, [default])
     assert default_verdict == "default", default_verdict
     assert describe(pages, nm, 0, [])[0] == "null"

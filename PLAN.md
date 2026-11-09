@@ -828,6 +828,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, a class pointer is not a name index, and the confirming boot did not arrive)
+
+- **`sink13`'s report called every class `?`, the row's own included** (`row 0x08842800 class ?`, and a live object it
+  had just named `GameHud` printed `class ?` beside it): `UObject::Class` at `+0x24` is a class *object*, and the report
+  read that pointer as an `FName` index into a 41,265-entry table. `class_name` now reads the class object's own
+  `Name` (the rule `class_named` already used), so the row and each slot name their class for one extra read.
+- **The negative costs a boot, and this run did not get one**: `sink14` (same sequence, fixed tool) booted twice on
+  index 10 and neither attempt reached the level -- `missions.tsv` never got a row and the run was stopped inside
+  attempt 2 -- so the printed `class StargatePlayer` is the next run's measurement, not this note's claim.
+  `--selftest` pins the regression without a guest: `class_name` on the synthetic row and a live `GameHud`, which the
+  old `nm[cls]` answered `?` for.
+- **Instruments**: `tools/xemu/sink-slots.py` (`class_name`, used by the row line and by `describe`), `--selftest` and
+  `make ci` green. `docs/XEMU.md` carries the output this note reads.
+
 ### Execution notes (2026-11-08, the sink is live on a level, and a page with a hole is not a page that is gone)
 
 - **The four sink slots are live on a loaded `M00`** (measured 2026-11-08, `sink13`: disc `$WORK/xemu/sg1.iso`, gdb
