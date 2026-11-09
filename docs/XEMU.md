@@ -2232,13 +2232,17 @@ Command 5's line grew a tail of `o`s: a burst of successive `gkey` steps repeats
 longer than the typed text is a burst artefact rather than a mismatch.
 
 **The message channel the source describes, and the two conditions on it.** `StargateHUD.Message` does not use
-`Engine.HUD`'s buffer at all (`AddTextMessage` is commented out there): `Say`/`TeamSay` take `SetSubtitle(Msg, 2.0,
-PRI.GetHumanReadableName(), icon)` -- a **2.0 s** subtitle -- and every other type takes `AddNotification(Msg)`, which
-is `StargatePlayer.NotificationManager.AddNotification` (a no-op when that manager is `None`), whose `DisplayMessages`
-returns early unless `GameHUD(PC.GameHUDPtr) != None` and then hands the text to `GH.SetNotifications`. The engine's
-own buffer is not the channel on this disc either: `HUD.TextMessages[8]` is filled by `HUD.AddTextMessage` and painted
-by `HUD.DisplayMessages`, but `StargateHUD` overrides both `DrawHUD` and `DisplayMessages`, so nothing fills or paints
-it in a mission.
+`Engine.HUD`'s buffer at all (`AddTextMessage` does not appear in its shipped text in any form, called or commented):
+`Say`/`TeamSay` take `SetSubtitle(Msg, 2.0, PRI.GetHumanReadableName(), icon)` -- a **2.0 s** subtitle -- and every
+other type takes `AddNotification(Msg)`, which is `StargatePlayer.NotificationManager.AddNotification` (a no-op when
+that manager is `None`), whose `DisplayMessages` returns early unless `GameHUD(PC.GameHUDPtr) != None` and then hands
+the text to `GH.SetNotifications`. `SetSubtitle` hands the string on again, to
+`GameHud.DisplayTextBox(SubTitleText, Duration)` -- the live `GameHud` the sink read holds at `+0x1008` -- so a
+subtitle is an assertion on that object, not a canvas draw. **`TextMessages[]` is painted by nothing and filled by the
+two HUDs a mission does not use**: `HUD.AddTextMessage` fills it and `HUD.DisplayMessages` is its only painter, but all
+four HUDs that override `DisplayMessages` do so without `Super`, so `StargateHUD` neither fills nor paints it while
+`GoauldConsoleHud`/`ReplicatorHUD` fill it and then replace the painter. The route class by class, with line numbers,
+is `make hud-messages` and `docs/HUD_MESSAGES.md`.
 
 That makes this run's zero a timing-and-condition question rather than a delivery one, and the dump agrees with it: a
 128 MiB `pmemsave` after the run holds **no** UTF-16 copy of `Cheats are NOT enabled` (the `areCheatsEnabled`
@@ -4042,8 +4046,8 @@ scan finished.
 `NotificationManager`, a live `GameHud`, the command interface and a possessed `Pawn` -- four non-null objects, three
 of them named by their own `UObject::Name`. So the silence `stat fps`-and-nothing-else measured is not a message
 channel with nowhere to go: `StargateHUD` sends to `NotificationManager` and the object is there, which puts the
-remaining cause in the HUD's own guards (`DisplayMessages` overridden with `AddTextMessage` commented out, and
-`GameHud.SetNotifications` conditional -- the earlier note in this file and U15).
+remaining cause in the HUD's own guards (`DisplayMessages` overridden without `Super` on every HUD, and
+`GameHud.SetNotifications` conditional -- `docs/HUD_MESSAGES.md`, the earlier note in this file and U15).
 
 **The row sits 761 entries from the end of a 48,646-object array, the same index `sink1` held.** `--tail 5000` covers
 it twice over, so the tail bound was never what was wrong with this read; a per-page cost was.

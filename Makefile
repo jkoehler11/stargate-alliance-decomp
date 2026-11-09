@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -91,6 +91,7 @@ help:
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
 	@echo "  assert-residual  classify the assert sites that are still in no function (needs asserts.tsv)"
 	@echo "  hud-console-font  which font the console's input line is drawn in (needs the dump; no boot)"
+	@echo "  hud-messages     which HUD class draws which message, from the scripts (needs the dump; no boot)"
 	@echo "  native-binder    the names the binder resolves index-less natives from (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
@@ -184,6 +185,8 @@ ci:
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) -m py_compile tools/hud-console-font.py && echo "ok   hud-console-font: tools/hud-console-font.py compiles"
 	@$(PYTHON) tools/hud-console-font.py --selftest
+	@$(PYTHON) -m py_compile tools/hud-messages.py && echo "ok   hud-messages: tools/hud-messages.py compiles"
+	@$(PYTHON) tools/hud-messages.py --selftest
 	@$(PYTHON) -m py_compile tools/native-binder.py && echo "ok   native-binder: tools/native-binder.py compiles"
 	@$(PYTHON) tools/native-binder.py --selftest
 	@$(PYTHON) -m py_compile tools/native-reconcile.py && echo "ok   native-reconcile: tools/native-reconcile.py compiles"
@@ -532,6 +535,12 @@ hud-link:
 	@test -n "$(DUMP)" || { echo "hud-link: pass DUMP=<RAM image from monitor=pmemsave> CR3=$(or $(CR3),0xf000)"; exit 2; }
 	@$(PYTHON) tools/xemu/hud-link.py "$(DUMP)" --cr3 $(or $(CR3),0xf000) --csv - -o inventory
 	@echo "wrote inventory/hud_console_link.csv"
+
+# PLAN 7.3/U15: which HUD class draws which message -- every class under `Engine.HUD`, what its `Message` and
+# `DisplayMessages` bodies sink to, and whether `Super` ever runs. Reads the extracted scripts, so no boot.
+hud-messages:
+	@test -d "$(WORK)/UnrealScript" || { echo "hud-messages: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
+	@$(PYTHON) tools/hud-messages.py --src "$(WORK)/UnrealScript"
 
 # PLAN 7.3's other variable: which font the console's input line is drawn in. Reads the packages, so no boot.
 hud-console-font:
