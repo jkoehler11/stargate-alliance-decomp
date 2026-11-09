@@ -195,6 +195,8 @@ ci:
 	@$(PYTHON) tools/native-binder.py --selftest
 	@$(PYTHON) -m py_compile tools/native-reconcile.py && echo "ok   native-reconcile: tools/native-reconcile.py compiles"
 	@$(PYTHON) tools/native-reconcile.py --selftest
+	@$(PYTHON) -m py_compile tools/map-list-order.py && echo "ok   map-list-order: tools/map-list-order.py compiles"
+	@$(PYTHON) tools/map-list-order.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
 	@$(PYTHON) tools/pkg-write.py --selftest
 	@$(PYTHON) tools/inventory-index.py --check
