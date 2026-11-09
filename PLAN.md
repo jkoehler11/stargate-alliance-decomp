@@ -880,6 +880,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the evaluator holds both ends and a segment is a smoothstep)
+
+- **The per-slot evaluator is `Engine_LIPSincSupport` (`0x000b2230`, 435 bytes)**, called once per slot from
+  `ValuesAtTime` at `0x000b2560` with the group record in `ecx`, the one `double` on the stack and the result in
+  `st(0)`; `0x000b4710` is the single-slot accessor that calls it directly. **Outside a slot's own extent it
+  holds**: before the first key it returns `[keys+8]` and after the last `[keys + count*16 - 8]` with no
+  arithmetic in between -- no extrapolation and no clamp to a range -- no keys returns the `0x4c8848` zero and one
+  key returns that value everywhere. Between two keys it is a **cubic smoothstep**,
+  `v0 + (v1-v0)(3a^2-2a^3)`, built from `3.0` (`0x4ea138`) and `6.0` (`0x4ea130`) with `a = (t-t0)/(t1-t0)`; the
+  endpoint identity (`a=0 -> v0`, `a=1 -> v1`) is the check that fixes the reading. A segment is therefore not a
+  lerp: at `a = 1/4` the sample is 9.375% of the span inside the lerp, at `3/4` 9.375% outside. `|v| < 2^-51`
+  snaps to exactly 0 on the common exit (holds and key hits included), and the segment search is
+  `t0 <= time < t1` with a **strict** upper test, so an equal-tick pair is never a segment.
+- **The corpus is answered by the hold most of the time.** `tools/lad-sampler.py` (`make lipsinc-sampler`,
+  `inventory/lipsinc_sampler.csv`, `--check` covering the sampler and the CSV) puts **57.4%** of the 26 x domain
+  rectangle of 2,231 tracks / 35,031 populated slots on the hold path, median track **75.4%** (p10 48.7, p90 82.8,
+  max 94.4); **0** tracks have every populated slot covering the domain and **2,111** have no slot starting at
+  tick 0; the least-held column is slot 2 at 10% and the most-held is slot 7 at 88%; **0** adjacent pairs
+  decrease, **2** share a tick (slot 2, `m07_17_h_carter` @4086 and `m21_09_b_carter` @4022, within 0.002 of each
+  other), and no key value is a non-zero magnitude below `2^-51`.
+- **Next**: the consumer of the 26 doubles, which is where a signed slot acquires a meaning. Two callers of
+  `ValuesAtTime` exist -- `0x000b5f10` (a pose-pair blend: it calls the sampler only for its `alpha == 0` side and
+  lerps positions afterwards) and `0x000b63f0` (1,411 bytes) -- and the accessor `0x000b4710` writes one slot into
+  an array of `0x48`-byte records through the lookup `0x000b45c0`. Read those four bodies next, then the
+  per-column values. Instruments: `tools/lad-sampler.py --track`, `inventory/lipsinc_groups.csv`,
+  `docs/formats/lipsinc-runtime.md`, U4. No boot, no xemu.
+
 ### Execution notes (2026-11-09, the sampler reads one vector, and no track shares a time axis)
 
 - **`ValuesAtTime` answers "what does the runtime ask", not "what does a slot mean".** `0x000b24f0` (235 bytes,

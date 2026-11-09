@@ -554,3 +554,14 @@ channels, 3,200 pose records, 17 clips, 2,231 tracks, 58,006 key groups, 263,900
 are the ones the shape-matching tools counted, so the two walks corroborate each other, but this one fails a file
 rather than skipping bytes. The grammar is at the top of this page; what a pose record's three opaque dwords and its
 `-1.0f` mean is still U4's open half.
+## The runtime's answer where a curve has no keys (measured 2026-11-09)
+
+The per-slot evaluator (`Engine_LIPSincSupport`, `0x000b2230`) holds both ends -- the first key's value before the
+first key, the last key's after the last -- and between keys interpolates with a smoothstep
+`v0 + (v1-v0)(3a^2 - 2a^3)`, not a lerp ([lipsinc-runtime.md](lipsinc-runtime.md)). `tools/lad-sampler.py`
+(`make lipsinc-sampler`, `inventory/lipsinc_sampler.csv`) measures the files against that: **57.4%** of the
+26 x domain rectangle of all 2,231 tracks is answered by a hold (median track 75.4%), no track has every slot
+covering its own domain, 0 adjacent key pairs decrease and 2 share a tick (slot 2, two `carter` clips). That is
+what the per-curve extents above mean in practice -- each curve stops where its keys stop and the runtime repeats
+its last value for the rest of the clip.
+

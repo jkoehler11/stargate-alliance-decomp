@@ -337,6 +337,19 @@ median 10; median spread between the earliest and latest slot start 696 ticks in
 would settle the remaining half: the evaluator the sampler calls (what it answers outside a curve's own extent —
 hold, clamp or extrapolate) and the code that consumes the 26 doubles, where a signed slot would acquire one.
 
+**Answered: the evaluator holds, and a segment is a smoothstep (2026-11-09).** `ValuesAtTime` calls
+`Engine_LIPSincSupport` (`0x000b2230`, 435 bytes) once per slot, and its body settles the hold/clamp/extrapolate
+question: before a slot's first key and after its last it returns that key's value with no arithmetic in between
+(hold, not extrapolation), no keys returns `0.0`, one key returns that value, and between keys it computes
+`v0 + (v1-v0)(3a^2-2a^3)` with `a = (t-t0)/(t1-t0)` -- `3.0` at `0x4ea138`, `6.0` at `0x4ea130` -- then snaps
+`|v| < 2^-51` to zero on the common exit, which is the `0x4ea0c8` constant. `tools/lad-sampler.py`
+(`inventory/lipsinc_sampler.csv`) implements it and counts the corpus: 57.4% of the 26 x domain rectangle over
+2,231 tracks is a hold (median track 75.4%, p10 48.7, p90 82.8, max 94.4), 0 tracks have every populated slot
+covering the domain, 0 adjacent key pairs decrease, 2 pairs share a tick (slot 2 of `m07_17_h_carter` at 4086 and
+`m21_09_b_carter` at 4022 in `sg1_crew_carter.lad`), and no key value is a non-zero magnitude below `2^-51`. What
+is left of U4 is not the format or the sampler: it is what a slot means, which lives in the two consumers of the
+vector (`0x000b5f10`, `0x000b63f0`) and the accessor `0x000b4710` with its lookup `0x000b45c0`.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

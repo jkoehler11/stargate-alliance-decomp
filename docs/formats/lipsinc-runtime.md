@@ -123,8 +123,9 @@ an earlier note's "the reader is the only witness left" was pointing at the wron
   record's first dword without comparing it -- so `2` is a tag the parser carries rather than a count or a
   marker, and neither constant is explained by its serialiser.
 * **What the 7 signed slots mean.** Nothing in the name path touches them: the link is one dword per channel and
-  the signed slots are not channels. `ValuesAtTime` samples them like any other slot (`0x000b24f0`, below), so
-  the remaining route is the code that consumes the 26 doubles.
+  the signed slots are not channels. `ValuesAtTime` samples them like any other slot (`0x000b24f0`, below) and the
+  evaluator holds them like any other slot (`0x000b2230`, below), so the remaining route is the code that consumes
+  the 26 doubles: `0x000b5f10` and `0x000b63f0`.
 
 ## The sampler reads one vector at one time, and no track shares a time axis (measured 2026-11-09)
 
@@ -149,3 +150,56 @@ So the runtime asks a whole vector for a value at one time while the file gives 
 its own extent, and the single bound is per track. Every one of the 2,231 tracks therefore asks the evaluator
 about times some of its curves do not cover; whether that is a hold, a clamp or an extrapolation is in the
 evaluator's body, not in these bytes.
+## The evaluator holds outside a curve's extent, and a segment is a smoothstep (measured 2026-11-09)
+
+`ValuesAtTime` calls one evaluator per slot -- `call 0x000b2230` at `0x000b2560`, with the group record in `ecx`,
+the one `double time` on the stack and the result returned in `st(0)` -- and that function is
+`Engine_LIPSincSupport` (`0x000b2230`, 435 bytes, module prefix from its assert path
+`\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\LIPSincSupport.cpp`). Its body answers the question the
+sampler left open:
+
+* **Before the first key and after the last it holds.** Both exits are a single `fldl` of the nearest key's
+  `double` -- `[keys+8]` for the first, `[keys + count*16 - 8]` for the last -- with no arithmetic between the test
+  and the return, so there is neither extrapolation nor a clamp to a range: the answer *is* the endpoint's value.
+* **No keys returns 0.0** (the same `0x4c8848` zero the track gate uses) and **one key returns that value** at
+  every time.
+* **Between two keys it is a cubic smoothstep**, `v0 + (v1 - v0) * (3a^2 - 2a^3)` with `a = (t - t0)/(t1 - t0)`.
+  The constants sit in `.rdata` beside the function -- `3.0` at `0x4ea138`, `6.0` at `0x4ea130` -- and the body's
+  terms reduce to `v0 + 3(v1-v0)a^2 - 2(v1-v0)a^3`, which reproduces both endpoints (`a=0 -> v0`, `a=1 -> v1`; that
+  check is what fixes the reading, because three of the intermediate `st` slots are duplicates of each other). A
+  segment is therefore **not** a linear lerp: at `a = 1/4` the sample is `0.15625` of the span above `v0` where a
+  lerp would be `0.25` -- 9.375% of the span inside it -- and 9.375% outside it at `a = 3/4`. Both numbers are
+  properties of the curve shape, independent of the keys.
+* **`|v| < 2^-51` becomes exactly 0.0** (`0x4ea0c8 = 4.44e-16`), and the snap is on the common exit, so it applies
+  to a held endpoint and to an exact key hit as well as to an interpolated value.
+* **Two asserts** guard the search: `time == (DOUBLE)(m_akKeys(( m_akKeys.Num() - 1 )).Time())` at line `0x161`,
+  because the only legal way to find no segment is a time equal to the last key's, and `time2 > time1` at `0x16c`,
+  which is what keeps a segment's divisor non-zero.
+
+The search is the one a key list implies -- scan segments until `t0 <= time < t1` -- and the upper test is
+**strict**, so two keys on the same tick are never a segment and the `0x16c` assert cannot fire from one.
+
+## The hold is the common case, not the edge (measured 2026-11-09)
+
+`tools/lad-sampler.py` (`make lipsinc-sampler`, `inventory/lipsinc_sampler.csv`, `--check` in `make ci`) implements
+that sampler and counts what the shipped data asks of it, over all **2,231** tracks and **35,031** populated slots
+-- 5,478,460 slot-ticks of domain, the sum of 26 x each track's own end:
+
+* **57.4%** of that rectangle is answered by a hold, before a slot's first key or after its last. Per track the
+  **median is 75.4%** (p10 48.7, p90 82.8, max 94.4): in a typical clip three quarters of the vector a slot
+  contributes at any time is a frozen endpoint value.
+* **0 of 2,231 tracks** have every populated slot covering the whole domain, and **2,111** have no slot that
+  starts at tick 0, so every track in the corpus enters the hold path.
+* Per column the least-held slot is **2** (10% of the domain) and the most-held is **7** (88%); the signed columns
+  19-25 hold 21-69%, so they are ordinary slots in this respect too.
+* **0** adjacent key pairs decrease -- the `0x16c` assert has no input in this corpus -- and **2** pairs share a
+  tick, both slot 2 of a `carter` clip (`m07_17_h_carter` at 4086, `m21_09_b_carter` at 4022, values within 0.002
+  of each other): duplicate keys from the writer, unreachable as a segment because the upper bound is strict.
+* **0** key values are a non-zero magnitude below `2^-51`, so the snap changes nothing here; it exists for the
+  runtime's own arithmetic, not for these bytes.
+
+What a slot *means* is still open, but the route is now two addresses rather than a guess: `0x000b5f10` (a
+pose-pair blend that calls `ValuesAtTime` only for its `alpha == 0` side and lerps positions afterwards) and
+`0x000b63f0` (1,411 bytes, the other consumer), with the single-slot accessor `0x000b4710` and its group lookup
+`0x000b45c0` beside them.
+
