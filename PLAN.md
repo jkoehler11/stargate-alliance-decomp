@@ -831,6 +831,18 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, `missions.sh` resolves its own display, so a cron shell can boot a sweep)
+
+- **The sweep the bisect wanted could not start from a cron shell**: `missions.sh` passed `XAUTHORITY="$XAUTHORITY"`
+  to `drive.py` under `set -eu`, so an unset variable aborted the first index *after* its HDD copy had been taken,
+  with `XAUTHORITY: parameter not set` -- which reads like a harness fault and not like an environment one. It now
+  resolves `DISPLAY` and `XAUTHORITY` itself, the way `hud-say.sh` and `console-commands.sh` do, and both call
+  sites take `${XAUTHORITY:-}` as a second guard.
+- **The receipt needs no boot**: `env -u XAUTHORITY -u DISPLAY sh tools/xemu/missions.sh OUT 10 --dry-run` prints
+  `display :0, xauthority /run/user/1000/xauth_jpxZPb`, so the resolution is visible in the dry run.
+- **Instruments**: `tools/xemu/missions.sh` (`--dry-run` prints the pair; `sh -n` in `make ci`), `docs/XEMU.md`.
+  No artifact and no new file.
+
 ### Execution notes (2026-11-09, the watcher was freezing the boot it watched, and the boxes read live on a level)
 
 - **A stub reader that never resumes froze six boots** (`tools/xemu/hud-text.py`): `objects.Guest` interrupts the
