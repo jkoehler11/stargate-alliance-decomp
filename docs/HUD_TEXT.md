@@ -284,6 +284,31 @@ would be game data.
   arrived" from "the command ran and drew nothing" -- the two cases this boot cannot yet tell apart
   (`docs/UNKNOWNS.md`, U15). The boxes' death at 677 s also bounds the watch: a marker typed after it has no sink.
 
+## Measured state (2026-11-09, the HUD's field held a number and the walk outlived the linger)
+
+- **The level's HUD does not name its console at `+0x398`.** `hudsay2/try1` resolved the level's row `0x08842800`
+  (object 47,885 of 48,494, outer `M00`) at 360 s and `+0x1008 -> GameHud 0x09382100`, read six box changes off it,
+  and then the receipt read that HUD's `PlayerConsole` as **`0x00050975`** -- not an object address, so the
+  one-read route printed `CONSOLE hud 0x09382100+0x398: holds 0x00050975, which is not an object address` and fell
+  back. `inventory/hud_console_link.csv` measured `+0x398` on `findtext4`'s HUD (a `StargateHUD` that had typed into
+  its console); a level's own HUD is a different state, and the field is a *candidate*, not a link.
+- **A whole-array walk does not fit a 180 s linger.** The fallback was still reading when the stub stopped:
+  `the stub stopped answering at page 0x012e0000: 0x07730000, which read at the start, no longer does -- the guest
+  is gone` -- both markers printed `UNREAD` with no `History` read at all, so this boot's submit question went
+  unanswered. `hud-say.sh`'s derived linger is now `300 + 30/command` s, and the failure is a fact about the walk's
+  cost (347 page reads) rather than about the console.
+- **The panel press is not deterministic in either direction.** The same pair that read 40,532 and 34,096 px on
+  `hudm1` read **0 and 0** here, and both command shots read 0 px, on a boot whose boxes were demonstrably live
+  (six changes through 458.8 s). So "the press landed" cannot be assumed from one run, and a 0 px command shot is
+  not evidence the keys were dropped -- which is exactly why the receipt, not a frame, is the instrument.
+- **The route to read now is one hop from the row.** The console is registered as an interaction when the viewport
+  is made, so it is not a field of the player row; `PlayerController.InteractionMaster` at `+0xc0` (measured at
+  `0x02406720` on `plr3`, whose own fields name `XboxClient`, `GUIController`, `Console` and `UIXInteraction`) is
+  the object that has it. `console_from_player` screens that object's first `0x100` bytes for a pointer whose
+  target opens with the `Console` class table (`0x0050cb80`) -- at most 66 reads, independent of the array index --
+  and the receipt tries it before the HUD field and the walk. Its reason strings distinguish a null master, a
+  master that is not an object, and a master with no console pointer, so a miss names what to read next.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
@@ -291,8 +316,10 @@ would be game data.
 non-`GameHud`, the null slot, and that a watch reports a subtitle that lands after it starts on a clock that already
 looks ten minutes old. The receipt has its own cases: a console at index 5 of 400 is `UNMEASURED` under a
 100-entry tail window and `IN HISTORY` under the whole-array walk; the HUD's `+0x398` reads it with **0** array
-walks; and a `+0x398` that names another class prints the reason and falls back instead of reading the wrong
-object. It runs in `make ci` and needs no emulator or dump:
+walks; a `+0x398` that names another class prints the reason and falls back instead of reading the wrong object;
+and the player route finds a console one hop out (`row +0xc0` -> `InteractionMaster` -> the screen), says why when
+that master holds no `Console` pointer, and says a null master is null. It runs in `make ci` and needs no emulator
+or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one
     ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts is reported
