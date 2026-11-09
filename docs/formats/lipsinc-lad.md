@@ -505,7 +505,13 @@ seventeenth does not: `Controllers/sg1_crew_jackson.lad`'s `jackson_frown` lists
 brows (`18, 4, 5, 6, 7`). That is the useful negative, because it says the file never states "slot *i* is bone *i*":
 a clip states its order by position in its own list, and a track's key block states nothing of the kind at all.
 
-**The pose record's eighth word is a rotation angle, not a sentinel.** Every one of the 3,200 records in the corpus
+**The pose record's eighth word is a rotation angle, not a sentinel.** *Superseded in part by the reading at the top
+of this page (`tools/lad-bones.py`, 2026-11-09): the four floats from 16 are a **unit quaternion**, so the last word is
+its `w` and the angle is `2*atan2(|v|, -w)`, twice the figure below. The table's "0.5° grid" and its 38.5°
+maximum are the halved-angle artefacts of `-acos` and are kept as the record of that measurement — as is the
+"151 of 160 bones" peak-angle count beside it; on the corrected
+reading the corpus lands on a **whole-degree** grid in 97.6% of records (3,124 of 3,200) and tops out at **77.0°**.*
+Every one of the 3,200 records in the corpus
 has its last float in `[−1, 0]`, and `-acos` of it lands on a **half-degree grid** in 95.0–99.0% of records per file:
 
 | file | records | last word outside `[-1,0]` | on the 0.5° grid | at exactly 0° | commonest non-zero |
@@ -530,13 +536,15 @@ the 19-channel packs (`inventory/lipsinc_keys.csv`), so the weight-slot count is
 of the channel table; the "19 weights, 19 channel names" coincidence the slot section recorded does not survive this
 measurement, and the group-to-bone question is not answered by counting.
 
-What remains is smaller and named: the **three words between the position and the angle** (`0x0f000004`, `0x9e12217c`
-and denormals in the samples — not plausible floats, and constant per bone across frames in 8 of 19 bones), and **which
-curve a group is**. The reader half is now answered in [lipsinc-runtime.md](lipsinc-runtime.md): the loader links
+What remains is smaller and named: **which curve a group is**. The four floats from 16 are read (above), so the
+"three words between the position and the angle" are no longer open — they are the quaternion's vector part, and
+the bytes this page first listed (`0x0f000004`, `0x9e12217c`, denormals) are that part seen as integers. The reader
+half is now answered in [lipsinc-runtime.md](lipsinc-runtime.md): the loader links
 the channel table to the mesh's bone names (`_wcsicmp`) and writes one mesh bone index per channel, so a channel is a
 bone and a key-block slot is not; the two functions this page used to name (`LIPSincReadAnimFile` `0x000b8340`,
 `LIPSincReadControllerFile` `0x000b7260`) parse the middleware's **text** LTF/LBP files and never see a `.lad` byte.
-The three words between the position and the angle are still unread.
+Which slot is which bone is not in the file at all: a key group's name field is empty in all 58,006 groups
+(`inventory/lipsinc_keys.csv`).
 
 ## The schema is the loader's, and the walk ends at the last byte (measured 2026-11-09)
 
