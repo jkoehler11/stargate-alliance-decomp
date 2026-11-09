@@ -447,3 +447,59 @@ it, so a disagreement would be a finding rather than something to silently obey,
 
 This closes one of U4's two "recorded rather than explained" items, and it is the third place the same varint codec
 appears — the group key counts, the track count, and the two-byte counts a group of 69 keys already needed.
+## The channels are an ordered bone list, and a pose record's last word is an angle (measured 2026-11-09)
+
+The slot table above left "which weight slot is which bone", and the format has only one place that names a bone in
+order: the channel table. `tools/lad-bones.py` (`make lipsinc-bones`, `inventory/lipsinc_bones.csv`, `--check` in
+`make ci`) reads that table as a list, then reads each channel's twenty frame records, and two of the three answers
+were already in the bytes.
+
+**The list is stable, and the two shapes differ by exactly two bones.** All eight files share the same **eighteen-name
+prefix**, and the difference between the shapes is at the end:
+
+| shape | indices 18–20 |
+|---|---|
+| 19 channels (the four `Controllers/` packs) | `BN-Head` |
+| 21 channels (the four speech clips) | `BN-Tongue-back`, `BN-Tongue-front`, `BN-Head` |
+
+So the controller packs are the speech list **minus the two tongues**, in the same relative order — the same
+skeleton, differently covered. `--check` holds both tails: a 21-channel file must end with the two tongues and
+`BN-Head`, a 19-channel one with `BN-Head`, and any file whose first eighteen names differ from the others fails.
+160 bone rows over 8 files.
+
+**A clip's bone list is an explicit order, not the table's.** Each of the 17 clips names its own bones and its frames
+carry one record per *listed* bone, in list order. Sixteen of the seventeen lists happen to follow table order; the
+seventeenth does not: `Controllers/sg1_crew_jackson.lad`'s `jackson_frown` lists `BN-Head` **first**, then the four
+brows (`18, 4, 5, 6, 7`). That is the useful negative, because it says the file never states "slot *i* is bone *i*":
+a clip states its order by position in its own list, and a track's key block states nothing of the kind at all.
+
+**The pose record's eighth word is a rotation angle, not a sentinel.** Every one of the 3,200 records in the corpus
+has its last float in `[−1, 0]`, and `-acos` of it lands on a **half-degree grid** in 95.0–99.0% of records per file:
+
+| file | records | last word outside `[-1,0]` | on the 0.5° grid | at exactly 0° | commonest non-zero |
+|---|---:|---:|---:|---:|---|
+| `Controllers/grey.lad` | 420 | 0 | 98.6% | 352 | 10° (26) |
+| `Controllers/sg1_crew_carter.lad` | 380 | 0 | 95.0% | 311 | 10° (17) |
+| `Controllers/sg1_crew_jackson.lad` | 380 | 0 | 98.4% | 319 | 10° (16) |
+| `Controllers/sg1_crew_oneill.lad` | 380 | 0 | 98.4% | 323 | 10° (16) |
+| `Controllers/sg1_crew_tealc.lad` | 380 | 0 | 98.4% | 323 | 10° (16) |
+| `JAnderson.lad` | 420 | 0 | 99.0% | 352 | 10° (26) |
+| `sg1_crew_carter.lad` | 420 | 0 | 96.7% | 346 | 10° (26) |
+| `sg1_crew_jackson.lad` | 420 | 0 | 98.6% | 352 | 10° (26) |
+
+2,678 of 3,200 records are exactly 0° — the `-1.0` the earlier page called a sentinel, and 98.6% of one file's
+records, is the **zero-angle case of the same value**. The largest angle in the corpus is 38.5°, and per bone the
+peak angle is on the grid for 151 of 160 bones. The earlier reading of the twelve bytes before it as "a pose weight"
+is corrected here: the record is `u32 2`, a position (three `f32` that move across the twenty frames — 17 or 18 of
+19 bones move, by up to 3.4 units), three words that are not float data, and `-cos(theta)`.
+
+**The 19 weight slots are not one per channel.** The 21-channel speech clips carry the *same* 26-group key blocks as
+the 19-channel packs (`inventory/lipsinc_keys.csv`), so the weight-slot count is a property of the key schema and not
+of the channel table; the "19 weights, 19 channel names" coincidence the slot section recorded does not survive this
+measurement, and the group-to-bone question is not answered by counting.
+
+What remains is smaller and named: the **three words between the position and the angle** (`0x0f000004`, `0x9e12217c`
+and denormals in the samples — not plausible floats, and constant per bone across frames in 8 of 19 bones), and **which
+curve a group is** — for which the reader is the only witness left: `LIPSincReadAnimFile` (`0x000b8340`) over a track,
+or `LIPSincReadControllerFile` (`0x000b7260`) filling the pose array, which is where a slot number would have to be
+written next to a bone name.
