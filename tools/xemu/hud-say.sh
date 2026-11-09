@@ -49,7 +49,12 @@
 #                    fade and is lost -- the `sink14` boots failed twice at 180 and passed first time at 240)
 #   --pad-hold SECS  seconds a pad button is held (default 0.35)
 #   --settle SECS    wait after the map select (default 60)
-#   --watch SECS     how long the reader keeps polling after resolving (default 150)
+#   --post SECS      extra seconds after the level gate before the first command (default 200: on `M00` the
+#                    intro runs to ~437 s and tears its `GameHud` down as it hands over, so a command typed
+#                    earlier is typed into a HUD that is about to be destroyed)
+#   --gap SECS       seconds between commands (default 6)
+#   --follow SECS    the reader's rebind cadence (default 2; 0 disables, which is only right for a menu boot)
+#   --watch SECS     how long the reader keeps polling after resolving (default 0 = derived from --post)
 #   --retries N      fresh boots before giving up (default 2)
 #   --say TEXT       submit `say TEXT` (repeatable; default `say sg1txt1`)
 #   --note TEXT      submit `addnotification TEXT` (repeatable; default `addnotification sg1txt2`)
@@ -66,7 +71,10 @@ port=12620
 boot=240
 hold=0.35
 settle=60
-watch=180
+post=200
+gap=6
+follow=2
+watch=0
 retries=2
 cmds=""
 out=""
@@ -81,6 +89,9 @@ while [ $# -gt 0 ]; do
     --boot=*) boot=${1#*=}; shift ;;
     --pad-hold=*) hold=${1#*=}; shift ;;
     --settle=*) settle=${1#*=}; shift ;;
+    --post=*) post=${1#*=}; shift ;;
+    --gap=*) gap=${1#*=}; shift ;;
+    --follow=*) follow=${1#*=}; shift ;;
     --watch=*) watch=${1#*=}; shift ;;
     --retries=*) retries=${1#*=}; shift ;;
     --say=*) cmds="$cmds|say ${1#*=}"; shift ;;
@@ -93,6 +104,11 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$out" ] || { echo "usage: hud-say.sh [options] OUTDIR" >&2; exit 2; }
 [ -n "$cmds" ] || cmds="|say sg1txt1|addnotification sg1txt2"
+ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
+# The watch has to outlive the sequence, not the resolve: the commands are typed after the intro hands over,
+# which is ~200 s past the level gate, so a 180 s window ends before the first keystroke (measured 2026-11-09:
+# the log's last line was the intro's HUD dying, at 437.5 s, and no command had landed yet).
+[ "$watch" != 0 ] || watch=$((180 + post + 20 * ncmd))
 [ -n "$hdd" ] || hdd="${WORK:-$HOME/sg1/work}/hdd-val.qcow2"
 [ -n "$eeprom" ] || eeprom="${WORK:-$HOME/sg1/work}/xemu/smoke1/eeprom.bin"
 [ -f "$hdd" ] || { echo "no HDD image at $hdd (pass --hdd): a run needs a copy it may write" >&2; exit 2; }
@@ -157,8 +173,10 @@ write_steps() {  # $1 = attempt directory
   step "--step=wait=4"
   step "--step=shot=03-dismissed"
   step "--step=noise=3"
-  # The reader needs a resolved row before the first submit; twenty seconds is what the sink walk costs.
-  step "--step=wait=20"
+  # The reader needs a resolved row before the first submit; twenty seconds is what the sink walk costs, and
+  # `--post` is the wait for the level's own hand-over: `M00` runs an intro to ~437 s whose end destroys the
+  # `GameHud` the read resolved, so a command typed before it is typed into a HUD that is about to be gone.
+  step "--step=wait=$((20 + post))"
   n=0
   oldIFS=$IFS
   IFS='|'
@@ -195,7 +213,7 @@ write_steps() {  # $1 = attempt directory
     step "--step=gkey=ret"
     step "--step=wait=0.7"
     step "--step=shot=04$n-$slug"
-    step "--step=wait=6"
+    step "--step=wait=$gap"
     IFS='|'
   done
   IFS=$oldIFS
@@ -243,6 +261,12 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     IFS='|'
   done
   IFS=$oldIFS
+  # A rebind is the difference between "no box held the marker" and "the marker went to a HUD nobody read":
+  # the intro tears its `GameHud` down mid-level, so print every slot change the watch saw.
+  if grep -q " rebind  \| follow  " "$1/hud.log" 2>/dev/null; then
+    echo "SLOT   the read followed the row's \`+0x1008\`:"
+    grep " rebind  \| follow  \| rewalk  " "$1/hud.log" | sed 's/^/          /'
+  fi
   return "$resolved"
 }
 
@@ -269,10 +293,10 @@ while [ "$attempt" -le "$retries" ]; do
   # Measured 2026-11-08: `boot - 75 + settle + 45` (300 s at the defaults) expired while the boot was still
   # loading -- the watcher said `unreadable` and stopped looking six seconds before the level it was waiting
   # for. The clock is the sequence's whole length from the launch, plus its typing, so the deadline lands after
-  # the last command and not at the settle.
-  budget=$((boot + settle + 90 + 15 * ncmd))
+  # the last command and not at the settle -- and `--post` is part of the sequence.
+  budget=$((boot + settle + 90 + post + (gap + 15) * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
-    --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
+    --follow "$follow" --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1
   echo "attempt $attempt: index $index, gdb $gport, commands:$cmds -> $dir" | tee "$dir/attempt.log"

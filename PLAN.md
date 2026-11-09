@@ -831,6 +831,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the "hand-over" was the menu's row dying, and the level's HUD reads live)
+
+- **The 40,000-name floor is a pre-gate, and the row's own `Outer` is the level gate.** A `hud-say.sh` boot read
+  40,427 names at 281.7 s and resolved `row 0x06b30000` (object 41,474 of 42,401) **outered to `MainMenu`** -- the
+  menu's `StargatePlayer`, which the map load destroys. Its `GameHud` `0x0682ab00` was gone one second into the
+  watch (three slots `0x00000000` at 317.9 s), `+0x1008` then held a `ColorModifier`, an `Other` and finally no
+  object, and a walk at 343.2 s found no `StargatePlayer` among the last 2,000 of 46,169 objects. So the previous
+  note's "the intro's `GameHud` was destroyed as the intro handed over" is the map load tearing down the *menu's*
+  row -- the level's row does not exist yet, and the marker was being read against a HUD nobody would ever paint.
+- **`resolve` now skips a row outered `MainMenu`, and a `--wait` run keeps walking until its budget** (10 s
+  between attempts) instead of stopping after `--tries` 60 s after the first row appeared. The same boot then
+  resolved the level's row `0x08832800` (object 47,885 of 48,494, outer `M00`) with `+0x1008 -> GameHud
+  0x09362100`, and read the level's own dialogue live (counts 14 then 35, 33, 50, 56, 53) and the game's own
+  objective banner in `NotificationWindow` at 479.2 s -- the field `addnotification` would write.
+- **`--follow SECS` (`hud-text.py`) and `--post SECS` / `--gap SECS` (`hud-say.sh`)**: the watch re-reads the row's
+  `+0x1008` on that cadence and rebinds when it holds a different `GameHud`, and the harness's commands can be
+  scheduled past the level's own hand-over instead of into the intro. `--watch` now derives from `--post`, and the
+  reader's deadline includes it. `--selftest` covers the rebind and the menu-row skip, in `make ci`.
+- **The four markers are still ABSENT, and this boot names the next blocker**: the command steps ran after the
+  level's HUD resolved, and `drive.py` recorded `4 shot step(s) did not repaint` with a noise floor of `0 differing
+  pixels` -- the `M00` tutorial modal freezes the picture and holds input. **Next**: dismiss the modal *after* the
+  resolve (a `pad=a` between resolve and the first command), then the four markers; the reader is no longer the
+  open question.
+- **Instruments**: `tools/xemu/hud-text.py` (outer gate, budget-bounded resolve retries, `--follow`),
+  `tools/xemu/hud-say.sh` (`--post`, `--gap`, `--follow`, derived `--watch`, `SLOT` lines in the report),
+  `docs/HUD_TEXT.md`. No artifact and no new file.
+
 ### Execution notes (2026-11-09, `missions.sh` resolves its own display, so a cron shell can boot a sweep)
 
 - **The sweep the bisect wanted could not start from a cron shell**: `missions.sh` passed `XAUTHORITY="$XAUTHORITY"`

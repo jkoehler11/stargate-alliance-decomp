@@ -178,6 +178,31 @@ would be game data.
   read was watching were gone before they landed. **Next**: submit after that hand-over (a settle past the intro,
   then the console) and read the two markers in the window that follows -- timing, not a new instrument.
 
+## Measured state (2026-11-09, the hand-over is the menu's row dying, and the level's HUD reads live)
+
+- **The name table's floor is not the level gate; the row's own `Outer` is.** The boot read 40,427 names at
+  281.7 s -- above the 40,000 floor -- and resolved `row 0x06b30000` (object 41,474 of 42,401) **outered to
+  `MainMenu`**: the menu's own `StargatePlayer`, which the map load destroys. Its `GameHud` `0x0682ab00` was gone
+  one second into the watch (all three window slots `0x00000000` at 317.9 s), two follow ticks later `+0x1008`
+  held a `ColorModifier`, then an `Other`, then no object, and the walk at 343.2 s found no `StargatePlayer` among
+  the last 2,000 of 46,169 objects. So the earlier reading -- "the intro's `GameHud` was destroyed as the intro
+  handed over" -- is precisely *the map load destroying the menu's row and its HUD*; the level's own row does not
+  exist yet at that moment. `resolve` now skips a row outered `MainMenu`, and a `--wait` run keeps walking (10 s
+  apart) until its budget instead of giving up 60 s after the first row appeared.
+- **The level's row resolves by the same walk, later and outered to the map.** `0x08832800` (object 47,885 of
+  48,494) with outer `M00` and `+0x1008 -> GameHud 0x09362100`; the first attempt at 291 s found nothing in the
+  last 2,000 of 42,438, which is why the retries are load-bearing.
+- **The boxes read the level's own dialogue, and the notification box paints the game's objective banner.** One
+  line in `DialogueWindow` `0x097c7300` (`count 14`), then speaker turns at counts 35, 33, 50, 56 and 53, and at
+  479.2 s `NotificationWindow` `0x097c6e00` held `count 45` with an objective banner -- the game's own
+  `AddNotification` output arriving in the same field `addnotification` would write. Counts, not strings: the
+  text is game content.
+- **The four markers are still ABSENT, and the boot says why it is not the reader this time.** The command steps
+  ran after the level's HUD was resolved, and `drive.py` reports `4 shot step(s) did not repaint` with a noise
+  floor of `0 differing pixels` -- the tutorial modal, which is up on `M00` and freezes the picture, so the
+  keystrokes had nowhere to go (`docs/XEMU.md`: the panel holds input until `A` dismisses it). The next
+  measurement is the same sequence with the modal dismissed *after* the resolve, then the markers.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
