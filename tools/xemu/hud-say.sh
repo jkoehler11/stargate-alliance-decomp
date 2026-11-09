@@ -324,6 +324,9 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     if grep -q "RECEIPT $mark IN HISTORY" "$1/hud.log" 2>/dev/null; then
       echo "DELIVERED $mark  (the console's own \`History\` holds the line, so the submit ran: a box that never"
       echo "          held it is the message path drawing nothing, not a lost keystroke)"
+    elif grep -q "RECEIPT $mark UNMEASURED" "$1/hud.log" 2>/dev/null; then
+      echo "UNREAD $mark  (the receipt walked the object array and read no \`Console\` object, so \`History\` was"
+      echo "          never seen: delivery is unmeasured here, not a keystroke that failed)"
     elif grep -q "RECEIPT $mark NOT IN HISTORY" "$1/hud.log" 2>/dev/null; then
       echo "NOT DELIVERED $mark  (no submit ran: the keys never reached the console -- the modal, the focus or a"
       echo "          dropped character. Nothing here is about the message path)"
