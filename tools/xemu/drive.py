@@ -2,8 +2,9 @@
 """Drive the game with a scripted input sequence and assert on each step (PLAN 7.2).
 
 The boot smoke test proves the guest executes game code by sampling `EIP`. It cannot tell whether the *display*
-is alive or whether input reaches the guest, which is what a gameplay-level regression needs. xemu has no
-`screendump` in its QMP, so this drives the X window it opens instead: capture, send input, capture again, compare.
+is alive or whether input reaches the guest, which is what a gameplay-level regression needs. xemu's QMP has no
+`screendump` (measured 2026-11-09: 228 commands, `CommandNotFound` for every argument shape, `tools/xemu/qmp-caps.py`),
+so this drives the X window it opens instead: capture, send input, capture again, compare.
 
 One keystroke (`--key`) is the original single-step form. Mission loading needs a *sequence* of inputs with an
 assertion per step, which is `--step`:
@@ -70,6 +71,14 @@ Steps, in order:
 measured fact per input type, not a safe assumption (docs/XEMU.md carries the numbers). SDL ignores synthetic
 `XSendEvent` keys, so a targeted `key=` that "repaints" may be the background animating rather than input
 arriving: run a `noise=` step first and give `--crop` the region the input is supposed to change.
+
+**A shot is evidence, and `--soft-shots` stops it from being the verdict.** From the map select on, this desktop's
+xemu window serves a uniform `(13,13,13)` frame and then stops answering `import -window` altogether while the guest
+is demonstrably alive (`hudsay7`/`hudsay8`, 2026-11-09). A run whose question is a guest read (the HUD's text boxes,
+`Console.History`) was killed by the shot gate two steps before its first keystroke. Under `--soft-shots` an
+uncaptured shot and a uniform frame are recorded and reported, the sequence carries on, and the exit status is about
+the shots that were actually compared. `hud-say.sh` passes it; the mission loader does not, because there the frame
+*is* the pass criterion.
 
 **Every asserting capture is taken twice, 1.5 s apart (`--regrab`).** The window's pixmap lags a keypress:
 measured, a grab taken immediately after `sendkey ret` on the title is *byte-identical* to the pre-key frame while the
@@ -412,6 +421,45 @@ def difference(a, b, fuzz=0):
         return -1
 
 
+def shot_outcome(captured, diff, static, threshold):
+    """Which verdict a shot step gets, as `(word, passed)`.
+
+    `captured` False is a frame the desktop never gave, and `diff` None is a frame with one colour in it -- neither
+    is a repaint failure, which is the distinction that cost `hudsay7` its whole run: the capture gate returned 3
+    at `05-precommands`, two steps before the first keystroke, so the boot's `Console.History` was never read.
+    """
+    if not captured:
+        return "UNCAPTURED", False
+    if diff is None:
+        return "UNIFORM", False
+    if static:
+        return ("STATIC", True) if diff < threshold else ("REPAINTED", False)
+    return ("PASS", True) if diff >= threshold else ("FAIL", False)
+
+
+def uniform(path):
+    """The frame's one colour as ImageMagick spells it (`srgb(13,13,13)`), or None when it has more than one.
+
+    A window whose pixmap stops updating serves a single colour, and every comparison against it is meaningless:
+    measured 2026-11-09, `hudsay7` and `hudsay8` wrote `(13,13,13)` into every shot from the map select on while
+    the same boot read the level's `GameHud` and its dialogue. No ImageMagick means no verdict here (None), never
+    a guess.
+    """
+    if not os.path.isfile(path):
+        return None
+    got = run(["convert", path, "-format", "%k", "info:"])
+    if got.returncode != 0:
+        return None
+    try:
+        colors = int((got.stdout or "").strip())
+    except ValueError:
+        return None
+    if colors != 1:
+        return None
+    got = run(["convert", path, "-format", "%[pixel:p{0,0}]", "info:"])
+    return (got.stdout or "").strip() or "one colour"
+
+
 class FocusElsewhere(Exception):
     """Raised instead of sending XTEST keys into a window that is not the emulator."""
 
@@ -572,7 +620,17 @@ def selftest():
         case("a dead emulator is reported with its status and step", "exited (3)" in text and "step 3" in text)
         case("the report's EIP answer is carried through", "EIP" in text)
 
-    # 6. A probe that blocks is given up on, so the report cannot hang like the thing it reports.
+    # 6. A frame the desktop never gave is not a repaint failure (the `hudsay7` exit-3 shape).
+    case("an uncaptured shot is UNCAPTURED, not FAIL", shot_outcome(False, None, False, 200) == ("UNCAPTURED", False))
+    case("a uniform frame is UNIFORM, not FAIL", shot_outcome(True, None, False, 200) == ("UNIFORM", False))
+    case("a static shot that differs is a failure", shot_outcome(True, 900, True, 200) == ("REPAINTED", False))
+    case("a static shot that does not differ passes", shot_outcome(True, 3, True, 200) == ("STATIC", True))
+    case("a repaint still has to reach the threshold", shot_outcome(True, 199, False, 200) == ("FAIL", False))
+    case("a repaint above the threshold passes", shot_outcome(True, 200, False, 200) == ("PASS", True))
+    case("a missing frame is not a uniform one", uniform(os.path.join(tempfile.gettempdir(),
+                                                                     "sg1-no-such-frame.png")) is None)
+
+    # 7. A probe that blocks is given up on, so the report cannot hang like the thing it reports.
     case("a blocking probe is abandoned", bounded(lambda: time.sleep(30), 0.3) is None)
     case("a fast probe is returned", bounded(lambda: "vm running", 2.0) == "vm running")
 
@@ -614,6 +672,10 @@ def main():
                          "expected reading and it does not fail the run; repeatable, matched as a substring of the "
                          "shot's name")
     ap.add_argument("--step", action="append", metavar="NAME=VALUE", help="one step of a sequence; repeatable")
+    ap.add_argument("--soft-shots", action="store_true",
+                    help="a shot that could not be captured, or whose frame is one colour, is recorded and the "
+                         "sequence continues instead of exiting 3: for a run whose verdict is a guest read, where "
+                         "the frame is evidence and not the pass criterion (measured 2026-11-09, `hudsay7`)")
     ap.add_argument("--crop", metavar="GEOM", help="assert on this ImageMagick crop (WxH+X+Y), not the whole frame")
     ap.add_argument("--fuzz", type=int, default=0, help="ignore pixel differences below this percentage")
     ap.add_argument("--regrab", type=float, default=REGRAB_SECONDS,
@@ -846,7 +908,7 @@ def main():
             say("FAIL: no xemu window on %s" % os.environ.get("DISPLAY"))
             return 3
         STATE["window"] = window
-        say("window: %s" % window)
+        say("window: %s (frame source: X11 `import`; xemu's QMP has no `screendump`, measured 2026-11-09)" % window)
         prior_focus, prior_name = focus_owner()
         if prior_focus and prior_focus != window:
             say("note: X input focus is %s (%s), not the emulator -- XTEST steps will refuse rather than type there"
@@ -863,6 +925,7 @@ def main():
 
         ask = ask_guest
         failures, shots, previous, measured_noise = [], 0, None, False
+        uncaptured, uniform_frames = [], []
         brk_seen = 0
         for index, (name, value) in enumerate(steps, 1):
             # A guest that exits mid-sequence used to be discovered at the capture *after* the step that lost it, which
@@ -1313,8 +1376,21 @@ def main():
                 path = os.path.join(args.out, "%s.png" % value)
                 ok, window = regrab(window, path)
                 if not ok:
-                    say("FAIL: could not capture %s" % path)
-                    return 3
+                    if not args.soft_shots:
+                        say("FAIL: could not capture %s" % path)
+                        return 3
+                    say("step %d: shot %s UNCAPTURED -- the run continues, and no frame was compared"
+                        % (index, value))
+                    uncaptured.append(value)
+                    previous = None
+                    continue
+                if args.soft_shots:
+                    shade = uniform(path)
+                    if shade:
+                        say("step %d: shot %s is a uniform %s frame -- no repaint test" % (index, value, shade))
+                        uniform_frames.append(value)
+                        previous = None
+                        continue
                 if previous is None:
                     say("step %d: shot %s (first frame, nothing to compare)" % (index, value))
                 else:
@@ -1324,22 +1400,17 @@ def main():
                         say("FAIL: could not compare %s with %s" % (path, previous))
                         return 3
                     static = any(pattern in value for pattern in args.static_shot)
+                    verdict, ok = shot_outcome(True, diff, static, args.threshold)
                     if static:
-                        ok = diff < args.threshold
                         say("step %d: shot %s differing pixels: %d (expected static) %s"
                             % (index, value, diff, "PASS" if ok else "FAIL -- a static shot repainted"))
-                        if not ok:
-                            failures.append(value)
-                        previous = path
-                        shots += 1
-                        continue
-                    ok = diff >= args.threshold
-                    if not measured_noise and diff < args.threshold:
-                        say("         (no noise= step ran: the threshold is the default %d, not a measured floor)"
-                            % args.threshold)
+                    else:
+                        if not measured_noise and diff < args.threshold:
+                            say("         (no noise= step ran: the threshold is the default %d, not a measured "
+                                "floor)" % args.threshold)
+                        say("step %d: shot %s differing pixels: %d (threshold %d) %s"
+                            % (index, value, diff, args.threshold, verdict))
                     shots += 1
-                    say("step %d: shot %s differing pixels: %d (threshold %d) %s"
-                        % (index, value, diff, args.threshold, "PASS" if ok else "FAIL"))
                     if not ok:
                         failures.append(value)
                 previous = path
@@ -1355,6 +1426,10 @@ def main():
             # The guest is alive and the stub is up: this is the window a memory read attaches in.
             say("lingering %.0fs for a memory read: gdb 127.0.0.1:%d" % (args.linger, args.gdb))
             time.sleep(args.linger)
+        if uncaptured or uniform_frames:
+            say("NOTE: %d shot(s) never captured (%s), %d uniform frame(s) (%s): the frames are not this run's "
+                "verdict" % (len(uncaptured), ", ".join(uncaptured) or "-", len(uniform_frames),
+                             ", ".join(uniform_frames) or "-"))
         if failures:
             say("FAIL: %d shot step(s) did not repaint: %s" % (len(failures), ", ".join(failures)))
             return 2

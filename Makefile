@@ -185,6 +185,8 @@ ci:
 	@$(PYTHON) -m py_compile tools/xemu/hud-text.py && echo "ok   hud-text: tools/xemu/hud-text.py compiles"
 	@$(PYTHON) tools/xemu/hud-text.py --selftest
 	@sh -n tools/xemu/hud-say.sh && echo "ok   hud-say: tools/xemu/hud-say.sh parses"
+	@$(PYTHON) -m py_compile tools/xemu/qmp-caps.py && echo "ok   qmp-caps: tools/xemu/qmp-caps.py compiles"
+	@$(PYTHON) tools/xemu/qmp-caps.py --selftest
 	@$(PYTHON) tools/xemu/drive.py --selftest
 	@$(PYTHON) -m py_compile tools/lad-scan.py && echo "ok   lad-scan: tools/lad-scan.py compiles"
 	@$(PYTHON) -m py_compile tools/hud-console-font.py && echo "ok   hud-console-font: tools/hud-console-font.py compiles"

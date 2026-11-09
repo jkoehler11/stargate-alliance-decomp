@@ -831,6 +831,41 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the frame gate stops being the verdict, and the census is finally asked)
+
+- **The question had an answer before the run: xemu's QMP has no `screendump`, measured.** `tools/xemu/qmp-caps.py
+  --launch` reports **228 commands** and `screendump` refused for a bare `filename`, for QEMU 5's `format: png` and
+  for a `device` argument (`CommandNotFound`, three shapes). So "read the framebuffer over QMP" is closed, and the
+  X window is the only frame source this build has -- which makes the previous note's next step a negative, not a
+  route. The tool is the deliverable: `--sock` for a live run, `--launch` for a 15 s probe, `--has NAME` as an exit
+  status, and a `--selftest` that answers like this build in `make ci`.
+- **A shot that the desktop will not give is now a reading, not a dead run.** `drive.py --soft-shots` reports
+  `UNCAPTURED` (no frame produced) or `UNIFORM` (one colour, `convert -format %k` = 1) and carries on; captured
+  frames are compared exactly as before. `hud-say.sh` passes it, `missions.sh` does not -- there the frame is the
+  pass criterion. The outcome is decided by `shot_outcome()`, which has six selftest cases.
+- **`hudq1` asked the census that `hudsay7` died before.** One boot, `--console-client=0x01fb9bc0`, `M00` at index
+  10: the level row and `+0x1008 -> GameHud` resolved, all four commands typed (`041`/`042` shots), the receipt ran
+  (365 page reads, 227.0 s, inside the 360 s linger), and the run ended `FAIL: 3 shot step(s) did not repaint`
+  instead of exiting 3. The frames behave exactly as the last two boots said: `02-mission` and `03-dismissed` read
+  **0 px** (a real, frozen picture -- not one colour, so `UNIFORM` does not catch it), then `05-precommands` repaints
+  **94,415 px** and `06-dismissed` **40,250 px** once the level settles, and `042-addnotification` **1,383 px**.
+- **The census answers with the class default, three ways.** The client's `InteractionMaster` (`0x02406720`) holds
+  `+0x30 -> 0x02344b00`, class `Console`, **outer `Package`**: 1 slot on the `Console` table and **0 live**, so
+  `consoles_from_client()` falls through. The level HUD's `+0x398` holds `0x00050971`, not an object address. The
+  whole-array walk over 48,646 objects finds that same default and nothing else.
+- **The negative is a contradiction, and it is the next measurement.** That object reads `bTyping 3` -- a field the
+  class default cannot hold, since a CDO carries the compiled default (`bTyping 0` on every earlier read) -- beside
+  `HistoryTop 0` and an empty `TypedStr`. So on `0x02344b00` at least one of `+0x114` (the byte) or `+0x18` (the
+  outer) is not the field this build uses, and the receipt's default test is what turned that into a visible
+  disagreement instead of a `NOT IN HISTORY` verdict. **Next**: read `0x02344b00`'s `+0x18`/`+0x114` against the
+  same object's record in the `ghud1` census (index 36,148, which names it `Console`), then the class's own
+  `UStruct::Serialize` if they still disagree -- one dump, no boot.
+- **The `MASTER` census over-reports.** It screens every aligned dword in the block, so a UTF-16 fragment
+  (`0x007c0020`, `0x00410020`) prints as `class ? name ?` beside the six real slots (`XboxClient`, `GUIController`,
+  `Console`, `UIXInteraction`, `ObjectProperty CriticalBreathIn`, the `InteractionMaster` class). A candidate whose
+  target names no class is not an object, and the census should say so -- the six it can name are the block's
+  slots.
+
 ### Execution notes (2026-11-09, the census names the master's slots, and the frames go uniform at the map select)
 
 - **The instrument this run needed is in place and the boot that would have asked it never reached the question.**

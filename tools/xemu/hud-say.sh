@@ -386,9 +386,13 @@ while [ "$attempt" -le "$retries" ]; do
   sleep 1
   echo "attempt $attempt: index $index, gdb $gport, commands:$cmds -> $dir" | tee "$dir/attempt.log"
   rc=0
+  # `--soft-shots`: from the map select on this desktop's xemu window serves a uniform `(13,13,13)` frame and then
+  # stops answering `import -window`, while the guest is alive and its HUD reads fine (`hudsay7`/`hudsay8`,
+  # 2026-11-09). The old gate returned 3 at `05-precommands`, two steps before the first keystroke, so the boot
+  # never reached its `Console.History` read. Here the frames are evidence; the guest read is the verdict.
   ( cd "$repo" && python3 tools/xemu/drive.py --iso="$iso" --bios="$bios" --hdd="$dir/hdd.qcow2" --out="$dir" \
       --eeprom="$eeprom" --gdb="$gport" --linger="$linger" --fuzz=10 --seconds=75 --pad-hold="$hold" \
-      --static-shot=-tab --static-shot=-typed "$@" ) > "$dir/run.log" 2>&1 || rc=$?
+      --soft-shots --static-shot=-tab --static-shot=-typed "$@" ) > "$dir/run.log" 2>&1 || rc=$?
   echo "drive.py exit $rc" >> "$dir/run.log"
   sleep 2
   kill "$wpid" 2>/dev/null || true
