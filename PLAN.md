@@ -831,6 +831,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the master's block is seven pointers, and the text is not one of them)
+
+- **The census the last run built over-reported by 20 rows, and the reason was in its own input.** `hudq1`'s
+  `MASTER` lines are 27; only **seven** name a class (`+0x08` an `ObjectProperty` `CriticalBreathIn`, `+0x18` a
+  `Package`, `+0x24` the `InteractionMaster` class object, `+0x28`..`+0x34` the `XboxClient`/`GUIController`/
+  `Console`/`UIXInteraction` defaults). The other 20 are the block's own UTF-16 (`0x007c0020` is `" |"`) and one
+  dword inside the `Console` class table (`0x0050cc68`). `master_slots()` now refuses a target that names no class,
+  returns the count, and prints `MASTER ...: 7 object pointer(s) ... 20 dword(s) that name no class (the block's own
+  text, not slots)`.
+- **The outer test does not separate this block's objects.** All seven read a `Package` outer, the block's own
+  `+0x18` included, and the test also fires on a class object (a class object's outer is a package too), so
+  `outer a Package (the class default)` was describing the block and not the object beside it. The census now prints
+  the outer's **class name** with the verdict.
+- **`bTyping 3` is narrowed, not explained.** `class-defaults.py $SG1_DUMP/System/Engine.u --class Console` reads
+  Console's five defaults and no bool of its own (the single bool, `bRequiresTick True`, is `Interaction`'s), so a
+  `Console` default's `bTyping` byte must be 0. The receipt therefore reads the **byte** and prints `bTyping 0x03
+  (not a bool: bit(s) 0,1 set)`; the census row `36148,0x02344b00,Console,Console` cannot decide default-vs-live
+  because a viewport-created console is named `Console` too.
+- **Next**: one boot with `--console-client`, `bTyping` read before `Tab`, after `Tab`, after the first key and after
+  `ret` -- `0 -> 2|3 -> 1 -> 0` makes the byte packed (`bIgnoreKeys` is declared next to `bTyping`), `0 -> 1` keeps
+  it a bool and moves the contradiction to `+0x18`.
+- **Instruments**: `tools/xemu/hud-text.py` (`master_slots` screening and the `screened` count, `typing_text`,
+  `outer_text`, two selftest cases), `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md` U15. No boot, no artifact, no new file.
+
 ### Execution notes (2026-11-09, the frame gate stops being the verdict, and the census is finally asked)
 
 - **The question had an answer before the run: xemu's QMP has no `screendump`, measured.** `tools/xemu/qmp-caps.py

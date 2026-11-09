@@ -1479,6 +1479,24 @@ object it read is a default. **What would settle it:** the same boot with that i
 default, the live console is outside `GObjObjects` and the read has to move to the master's other slots, since the
 one that answered names a default rather than the instance.
 
+**The master's block is seven pointers, and the census was reading its own text (measured 2026-11-09, no boot).**
+`hudq1`'s census printed **27** rows for the `InteractionMaster` block and **20 named no class** -- the block's own
+UTF-16 (`0x007c0020` is `" |"`, `0x00410020` is `" A"`) plus `0x0050cc68`, a dword inside the `Console` class table --
+so `master_slots()` now refuses a target that names no class and prints the count (`7 object pointer(s) ... 20
+dword(s) that name no class (the block's own text, not slots)`). The seven are `+0x08` an `ObjectProperty`
+(`CriticalBreathIn`), `+0x18` a `Package`, `+0x24` the `InteractionMaster` **class object**, and `+0x28`..`+0x34` the
+`XboxClient`/`GUIController`/`Console`/`UIXInteraction` defaults -- and **every one of them has a `Package` outer,
+the block's own `+0x18` included**, so "a `Package`: the class default" separates nothing in this block (it also
+fires on a class object, whose outer is a package); the census now prints the outer's class name beside it. The
+contradiction is narrowed, not closed: `class-defaults.py … --class Console` reads Console's five defaults
+(`HistoryBot -1`, `TimePerDemo 300`, `TimeTooIdle 60`, `TimeBeforeReboot 5`, `bRequiresTick True` -- the one bool is
+`Interaction`'s) and none of its own, so a `Console` default's `bTyping` byte must be 0, and the 3 that object read is
+not a default value. The census row `36148,0x02344b00,Console,Console` cannot decide it either: a live console
+created by the viewport is also named `Console`. **What would settle it:** one boot, `--console-client` and the
+receipt, reading the `bTyping` **byte** before `Tab`, after `Tab`, after the first key and after `ret` --
+`0 -> 2|3 -> 1 -> 0` is a packed bool byte (`bIgnoreKeys` is declared next to `bTyping` and swallows the first
+keypress), while `0 -> 1` keeps it a plain field and puts the contradiction back on `+0x18`.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
