@@ -29,6 +29,14 @@
 # a shot step's `0 differing pixels` is not evidence that input was lost. What the read is gated on is the name
 # table, never a frame.
 #
+# **Two things then made a boot unreadable for reasons that had nothing to do with the boxes** (measured
+# 2026-11-08, both fixed here). The watcher's window was bounded by the *process* clock, so a run that spent
+# 240 s on the title and 85 s resolving its `GameHud` printed a baseline and `watched 0s` while the commands it
+# was started for were still being typed -- the read could not see the thing it was built to see. And the pad
+# presses were sent after `raise`/`activate` without asking who owned the focus, so three boots pressed at a
+# window another application was drawing and read as "the map never loaded". `focus=30` now asks X and refuses
+# the run (exit 2) instead.
+#
 # Usage: hud-say.sh [options] OUTDIR
 #   --iso PATH       disc image                (default $WORK/sg1.iso)
 #   --bios DIR       directory with mcpx*.bin (default $SG1_DUMP/bios)
@@ -57,7 +65,7 @@ port=12620
 boot=240
 hold=0.35
 settle=60
-watch=150
+watch=180
 retries=2
 cmds=""
 out=""
@@ -121,6 +129,11 @@ write_steps() {  # $1 = attempt directory
   # harness has no picture to assert on and the presses are unverified: raise and focus it before the first press.
   step "--step=raise=1"
   step "--step=activate"
+  # Raising a window and *owning* the focus are different things, and only the second makes a pad press
+  # arrive: drive.py's `focus=` step asks X who owns the focus and refuses (exit 2) rather than pressing into
+  # a screen another application is drawing. Three boots pressed at a blank, unfocused window and read as
+  # "the map never loaded" (measured 2026-11-08).
+  step "--step=focus=30"
   step "--step=wait=$((boot - 75))"
   step "--step=shot=00-title"
   step "--step=noise=3"
@@ -133,6 +146,7 @@ write_steps() {  # $1 = attempt directory
     step "--step=wait=0.9"
     i=$((i+1))
   done
+  step "--step=shot=01-highlight"
   step "--step=pad=a"
   step "--step=wait=6"
   step "--step=pad=a"
@@ -194,6 +208,17 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
   verdict=0
   grep -q "GameHudPtr\` holds the live" "$1/hud.log" && resolved=1
   grep -q "no level within" "$1/hud.log" && verdict=1
+  # A refused focus is neither a bad boot nor a message that missed: nothing was pressed, and the run says so
+  # instead of leaving the map's absence to be read as the pad's fault.
+  if grep -q "never got the focus" "$1/run.log" 2>/dev/null; then
+    echo "NO FOCUS  (the emulator never owned the X focus, so no press was sent: bring the desktop to a state"
+    echo "          where xemu can be focused -- a fullscreen application on the same display is the usual cause)"
+    return 0
+  fi
+  if grep -q "REFUSED" "$1/run.log" 2>/dev/null && [ "$resolved" = 0 ]; then
+    echo "REFUSED  (drive.py stopped at a step it would not fake: $(grep -m1 'REFUSED' "$1/run.log"))"
+    return 0
+  fi
   # A `--wait` longer than the run leaves no verdict at all: the watcher is killed mid-wait, and "no live
   # GameHud" then reads as a level that failed to load when it may have loaded after the run stopped looking.
   if [ "$resolved" = 0 ] && [ "$verdict" = 0 ]; then
@@ -237,7 +262,11 @@ while [ "$attempt" -le "$retries" ]; do
   # while still waiting and a boot that never loaded a level left no verdict at all -- `UNREAD` with no cause
   # (measured 2026-11-08). Ten seconds per command is the typing cost, plus a little slack.
   ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
-  budget=$((boot - 75 + settle + 30 + 12 * ncmd))
+  # Measured 2026-11-08: `boot - 75 + settle + 45` (300 s at the defaults) expired while the boot was still
+  # loading -- the watcher said `unreadable` and stopped looking six seconds before the level it was waiting
+  # for. The clock is the sequence's whole length from the launch, plus its typing, so the deadline lands after
+  # the last command and not at the settle.
+  budget=$((boot + settle + 90 + 15 * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
       --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!

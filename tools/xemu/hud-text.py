@@ -166,6 +166,31 @@ def line(tag, elapsed, label, addr, count, text, name=None):
         "  name `%s`" % name if name else "")
 
 
+def watch(guest, hud, pages, nm, seconds, interval, tag, started, out=print):
+    """Poll the three boxes for `seconds` and print one line per change: `[(label, address, text)]`.
+
+    The clock that bounds the watch starts **here**, not when the process did. A boot resolves its row and its
+    `GameHud` minutes in (a 240 s title wait, a settle, a 20-85 s walk), so a guard on `started` expired before
+    the first poll on every real boot -- the run printed a baseline and `watched 0s` while the commands it was
+    started for were still being typed, which read as "nothing paints the boxes" (measured 2026-11-08).
+    """
+    now = time.monotonic()
+    state = {}
+    for label, addr, name, count, text in boxes(guest, hud, pages, nm):
+        state[label] = (addr, count, text)
+        out(line(tag, now - started, label, addr, count, text, name))
+    stop = now + seconds
+    changes = 0
+    while time.monotonic() < stop:
+        time.sleep(interval)
+        for label, addr, name, count, text in boxes(guest, hud, pages, nm):
+            if (addr, count, text) != state.get(label):
+                state[label] = (addr, count, text)
+                changes += 1
+                out(line(tag, time.monotonic() - started, label, addr, count, text, name))
+    return changes, [(label, addr, text) for label, (addr, _count, text) in sorted(state.items())]
+
+
 def selftest():
     """A four-object guest in RAM: the row, its `GameHud`, two text boxes, and a row whose slot is not one."""
     class FakeRAM(object):
@@ -252,8 +277,35 @@ def selftest():
     said = []
     got_row, got_hud, _p, _n = resolve(ram, args, out=said.append)
     assert got_hud is None and any("is 0" in s for s in said), said
+
+    # The watch window is measured from when the watch starts, not from when the process did: a real boot
+    # resolves its level and its `GameHud` minutes in, so a guard on the process clock (`started`) expired
+    # before the first poll and every run reported a baseline and `watched 0s` while its commands were still
+    # being typed. This test starts the watch as if 600 s had already gone by and lands a subtitle on the
+    # fifth poll, so the early-exit path fails it.
+    ram, _r3, hud, win = build(0x01510000, "UITextBox")
+    orig = ram.read
+    polls = {"n": 0}
+
+    def late(addr, size, chunk=None, attempts=1):
+        if addr == win + TEXT_OFF:
+            polls["n"] += 1
+            if polls["n"] == 5:
+                ram.put(0x01700000, "LATER1\x00".encode("utf-16-le"))
+                ram.u32(win + TEXT_OFF, 0x01700000)
+                ram.u32(win + TEXT_OFF + 4, 7)
+        return orig(addr, size)
+
+    ram.read = late
+    said = []
+    changes, final = watch(ram, hud, None, None, 0.8, 0.05, "t", time.monotonic() - 600, out=said.append)
+    assert changes >= 1 and any("LATER1" in s for s in said), (changes, said)
+    assert dict((label, text) for label, _a, text in final)["DialogueWindow"] == "LATER1", final
+
     print("ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not "
           "one (%d stub read(s))" % ram.reads)
+    print("ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts "
+          "is reported, %d change(s) on %d poll(s)" % (changes, polls["n"]))
     return 0
 
 
@@ -310,6 +362,7 @@ def main():
     if row is None:
         deadline = started + args.wait
         last = None
+        fails = 0
         while True:
             try:
                 data, num, cap = struct.unpack("<III", guest.read(args.at, 12))
@@ -319,11 +372,13 @@ def main():
                     print("%s: level-sized name table after %.1fs: %d names" % (args.tag, time.monotonic() - started, num))
                     break
             except (IOError, OSError):
-                pass
+                # A failed fetch is not a small name table: the stub answers, the guest starves it, and a run
+                # that counted those as zero would report "the menu" for a boot that was never read at all.
+                fails += 1
             if time.monotonic() > deadline:
                 print("%s: no level within %.0fs (the name table still reads %s names, against %d on a level "
-                      "and 34,800 at the menu); nothing to read"
-                      % (args.tag, args.wait, "unreadable" if last is None else "%d" % last, LEVEL_FLOOR))
+                      "and 34,800 at the menu; %d of the polls could not read it at all); nothing to read"
+                      % (args.tag, args.wait, "unreadable" if last is None else "%d" % last, LEVEL_FLOOR, fails))
                 return 3
             time.sleep(5.0)
         tries = 0
@@ -346,24 +401,13 @@ def main():
         print("%s: row %#010x -> GameHud %#010x" % (args.tag, row, hud))
 
     now = time.monotonic()
-    state = {}
-    for label, addr, name, count, text in boxes(guest, hud, pages, nm):
-        state[label] = (addr, count, text)
-        print(line(args.tag, now - started, label, addr, count, text, name))
     if not args.watch:
-        return 0
-    stop = now + args.watch
-    while time.monotonic() < stop:
-        time.sleep(args.interval)
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
-            if (addr, count, text) != state.get(label):
-                state[label] = (addr, count, text)
-                print(line(args.tag, time.monotonic() - started, label, addr, count, text, name))
-        if now != started and time.monotonic() - started > args.watch + 30:
-            break
-        now = time.monotonic()
-    print("%s: watched %.0fs, %d stub read(s)" % (args.tag, time.monotonic() - started, guest.reads
-                                                  if hasattr(guest, "reads") else 0))
+            print(line(args.tag, now - started, label, addr, count, text, name))
+        return 0
+    changes, _final = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started)
+    print("%s: watched %.0fs, %d change(s), %d stub read(s)" % (args.tag, args.watch, changes,
+                                                                 guest.reads if hasattr(guest, "reads") else 0))
     return 0
 
 
