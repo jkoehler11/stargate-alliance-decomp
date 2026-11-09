@@ -203,6 +203,31 @@ would be game data.
   keystrokes had nowhere to go (`docs/XEMU.md`: the panel holds input until `A` dismisses it). The next
   measurement is the same sequence with the modal dismissed *after* the resolve, then the markers.
 
+## Measured state (2026-11-09, the panel is dismissed and the boxes stay empty)
+
+- **The dismissal has to be its own press, and the two shots around it prove it landed.** `hud-say.sh` now presses
+  the pad's `A` once `--post` has passed the intro's hand-over, immediately before the first command, and brackets
+  it with `shot=05-precommands` / `shot=06-dismissed`. On `hudm1/try1` that pair read 40,532 and 34,096 differing
+  pixels, and `06-dismissed` is gameplay -- the "Press the X button to open the door / A Continue" panel is gone.
+  The `pad=a` inside the mission sequence is *not* that press: it lands on the intro card ("10 days later /
+  Press A"), which waits on its own clock, and its shot reads 0 px.
+- **The page cache's 300 s deadline, not the watch window, ended the read early.** `hudf2`'s watch died at 479 s
+  (`the read passed its 300s deadline after 58 page read(s)`) with two of its four commands still to be typed, and
+  the report called every marker ABSENT. `hud-text.py`'s `--deadline` now derives from `--wait + --watch + 60`
+  (at least 300 s), `hud-say.sh` passes the run's own budget, and a log that still hits it reports `UNREAD` with
+  the reason instead of turning "not read" into "not there".
+- **All four markers are still ABSENT with the panel gone**: `say sg1txt1` (shot 6,289 differing px),
+  `addnotification sg1txt2` (8,466), `say sg1txt3` (272) and `addnotification sg1txt4` (0). The level's three boxes
+  were read live throughout -- intro turns at counts 14, 35, 33, 50, 56 and 53, and the game's own
+  `New Objective : Open the door for the doctor` banner at count 45 (480.4 s) -- and at 677.7-678.5 s all three
+  slots read `0` (`DialogueWindow` `0x09737300` -> `0x00000000`): that `GameHud` was destroyed while the boot was
+  still running. So "the modal swallowed the keys" is retired as the explanation; what is still unknown is whether
+  the four commands were *executed* at all.
+- **Next: a submit receipt in the same boot.** `Engine.Console.KeyType` copies `TypedStr` into `History[HistoryTop]`
+  on a submit, before it clears the line, so one `History[16]` read after the last command splits "the keys never
+  arrived" from "the command ran and drew nothing" -- the two cases this boot cannot yet tell apart
+  (`docs/UNKNOWNS.md`, U15). The boxes' death at 677 s also bounds the watch: a marker typed after it has no sink.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
