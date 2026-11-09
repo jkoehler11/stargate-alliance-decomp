@@ -225,3 +225,43 @@ that same 32-byte structure dumped -- which is why the file's records line up wi
 **Not measured, and not claimed**: which of the eight floats is time, which are a rotation and which are a translation.
 The decompilation of this function is heavily inlined logging, so the field order needs the *writer* -- the offline tool
 that produced the `.lad` -- or a value-by-value check against a known clip.
+
+## The five bytes past a record are a frame header, and a frame is one record per channel (measured 2026-11-09)
+
+The census above left one question: `37 = 32 + 5`, so five bytes sit between some records and no record was five bytes
+longer than another. `tools/lad-frames.py` (`make lipsinc-frames`, `inventory/lipsinc_frames.csv`) walks the body
+instead of pattern-matching it, and the five bytes read as a **frame header**: the same `u32 2` that opens a record,
+followed by a `u8` **equal to the channel count**, and after it exactly `channel_count` records of 32 bytes.
+
+| file | channels | frames | records | records/frame | short frames | `-1.0f` records | body bytes unread |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `sg1_crew_jackson.lad` | 21 | 20 | 420 | 21 | 0 | 352 | 6 |
+| `sg1_crew_carter.lad` | 21 | 20 | 420 | 21 | 0 | 346 | 13,421 |
+| `JAnderson.lad` | 21 | 20 | 420 | 21 | 0 | 352 | 20,183 |
+| `Controllers/grey.lad` | 21 | 20 | 420 | 21 | 0 | 352 | 26,693 |
+| `Controllers/sg1_crew_tealc.lad` | 19 | 20 | 380 | 19 | 0 | 323 | 637,865 |
+| `Controllers/sg1_crew_jackson.lad` | 19 | 20 | 380 | 19 | 0 | 319 | 1,055,803 |
+| `Controllers/sg1_crew_carter.lad` | 19 | 20 | 380 | 19 | 0 | 311 | 1,289,037 |
+| `Controllers/sg1_crew_oneill.lad` | 19 | 20 | 380 | 19 | 0 | 323 | 1,819,935 |
+
+Three things follow, and the first is a correction.
+
+* **There is no separate 10-byte prelude and no separate pose block.** The bytes this document used to read as
+  `532, 0, 0x21500, 0` are `0x14` (a single leading byte), then `02 00 00 00` (the first frame header's `u32 2`) and
+  `0x15`. `532` was `0x14` read with the next three bytes, and `0x21500` was the frame header read two bytes late.
+  The "pose block, one record per channel" is the **first frame** -- frame 0 of 20, the bind pose.
+* **A frame holds exactly the channel count**, in all eight files, 160 frames in total, with **no short frame and no
+  empty frame**, and every record's first word is `2`. That is what `37` was: `32 + 5`, a frame header, not a longer
+  record. The leading byte is `0x14` = 20 in every file, the same number as the frames, so it is most likely the frame
+  count; all eight clips holding 20 frames means the identity is not proven by variety.
+* **The stream does not close at the trailer in six of the eight files.** `sg1_crew_jackson.lad` ends 6 bytes past its
+  twentieth frame; the two 1.3 MB and 1.8 MB `Controllers/` packs leave 96-99% of their bodies unread by this walk.
+  Where the twentieth frame ends the body starts a **second section with its own channel table**: at
+  `Controllers/sg1_crew_carter.lad` offset 12,613 the bytes are `04 02 00 00 00 13` and then `0b "BN-Blink_L\0"`,
+  `0b "BN-Blink_R\0"`, ... -- the same 19 names again. So the body is at least *a table of 20 pose frames* followed by
+  *a per-bone section*, which is what `LIPSincReadControllerFile` filling a pose array and a separate per-bone
+  `ValuesAtTime` reader had already implied.
+
+`-1.0f` recurs in 84% of one file's records, so it is a value (the pose weight), not a record terminator; the twelve
+bytes between the third float and it take 125-145 distinct values per file, so they are not padding either. What the
+seven floats *mean* is still U4.
