@@ -138,10 +138,12 @@ ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
 # cost. The resolve lands 20-60 s after the gate, which is the slack a shorter window needs.
 [ "$watch" != 0 ] || watch=$((post + (gap + 15) * ncmd))
 [ "$watch" -ge 120 ] || watch=120
-# The receipt walks the object array for the `Console` after the watch, and drive.py's linger is the only thing
-# holding the stub up by then: 120 s covers the walk (a 2,000-object tail costs ~20-40 s) plus the typing of one
-# more command. Without it the reader is killed 2 s after drive.py exits and a typed marker reads as unread.
-[ "$linger" != 0 ] || linger=$((120 + 30 * ncmd))
+# The receipt locates the `Console` after the watch, and drive.py's linger is the only thing holding the stub up
+# by then. **A whole-array walk does not fit in 180 s**: on `hudsay2` the walk was still reading when the guest
+# went away (`the stub stopped answering at page 0x012e0000 ... the guest is gone`), so the receipt printed
+# UNMEASURED for both markers and the run's submit question was lost. 300 s covers the 347-page walk plus the
+# typing of one more command; the cheap routes (row `+0xc0` -> `InteractionMaster`, HUD `+0x398`) need seconds.
+[ "$linger" != 0 ] || linger=$((300 + 30 * ncmd))
 # The markers, one per command: the receipt asks the console's own `History` about each of them.
 marks=$(printf '%s' "$cmds" | tr '|' '\n' | sed 's/.* //' | grep -v '^$' | paste -sd, - 2>/dev/null || true)
 [ -n "$hdd" ] || hdd="${WORK:-$HOME/sg1/work}/hdd-val.qcow2"

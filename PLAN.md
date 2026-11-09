@@ -831,6 +831,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the HUD's field is not the console on a live level)
+
+- **The one-read route the last note expected does not hold on a level's own HUD** (measured 2026-11-09, `hudsay2`,
+  stock disc, `M00`, two markers). The boot resolved the level's row `0x08842800` (object 47,885 of 48,494, outer
+  `M00`) at 360 s and `+0x1008 -> GameHud 0x09382100`, and the boxes read the intro's turns and the game's own
+  objective banner (counts 14/35/33/50/56/53, then 45) -- the sink read works. The receipt then read the HUD's
+  `PlayerConsole` (`+0x398`) as **`0x00050975`**, which is not an object address, so the shortcut fell back:
+  `hud-link.py`'s `+0x398 -> console` was measured on `findtext4`'s HUD, and this level HUD carries a number there.
+  The field is therefore a *candidate* route that has to be screened by a fallback, not an assumption.
+- **The fallback walk did not fit the linger either**: `the stub stopped answering at page 0x012e0000: 0x07730000,
+  which read at the start, no longer does -- the guest is gone`, i.e. the 347-page walk was still reading when
+  `drive.py`'s 180 s linger expired, and both markers printed `UNREAD` with no `History` read at all. `hud-say.sh`
+  now lingers `300 + 30/command` s for it, which is the walk plus one more typed command.
+- **The marker frames repeated the panel negative, in the other direction**: `05-precommands`/`06-dismissed` both
+  read 0 px on this boot against 40,532/34,096 on `hudm1`, and both command shots read 0 px -- so "the post-resolve
+  `pad=a` lands" is not deterministic, and a frame cannot say whether the keys arrived. The receipt is still the
+  only instrument for that question, which is why the next boot is worth its four minutes.
+- **The route that should work is one hop from the row, not from the HUD**: a viewport-created console is
+  registered as an interaction, so the row never names it -- but `PlayerController.InteractionMaster` at `+0xc0`
+  was measured at `0x02406720` on `plr3`, whose own fields name `XboxClient`, `GUIController`, `Console` and
+  `UIXInteraction`. `console_from_player` now screens the master's first `0x100` bytes for a pointer that opens
+  with the `Console` class table: at most 66 reads, no dependence on the console's array index, tried before the
+  HUD field, and both fall back to the walk.
+- **Instruments**: `tools/xemu/hud-text.py` (`console_from_player`, `receipt(..., row=)`, three new selftest cases:
+  one hop out, a master with no console, a null master), `tools/xemu/hud-say.sh` (linger), `docs/HUD_TEXT.md`.
+  No artifact and no new file.
+
 ### Execution notes (2026-11-09, the console is at index 36,148, and the HUD's own field names it)
 
 - **The window was never going to contain it** (measured 2026-11-09, no boot): a saved census of a loaded level
