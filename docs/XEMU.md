@@ -4053,3 +4053,31 @@ finer grain (4 KiB sub-pages) instead of paying a reconnect and a sleep, and let
 alive". *An instrument that reports a page absent hides the objects that are in it*: keep the prefix, one sub-page at
 a time, and report how many pages had a hole so the next run knows the difference between "not there" and "not
 readable".
+
+## A class pointer is not a name index, and the sink report called every class `?` (`sink13` measured 2026-11-08)
+
+`sink13`'s report named every slot object correctly and called every one of them `class ?`, the row's own class
+included:
+
+    row 0x08842800 (index 47885) class `?` outer 0x06b40000 `?` name `None`
+      +0x1008 GameHudPtr  live  object 0x09322100 class ? name `GameHud`
+
+The name is right because `UObject::Name` at `+0x20` is an `FName` index. The class is not: `UObject::Class` at
+`+0x24` is a **class object**, and the report read that pointer as an index into a 41,265-entry table -- `0x00e47800`
+is orders of magnitude past its end, so the lookup answered `None` and every class printed `?`. A class object is
+named after its class, the rule `class_named` and `--class-from` already relied on, so the name costs one more read
+of the class object's own `Name`:
+
+    cls = pages.u32(obj + CLASS_OFF);  idx = pages.u32(cls + NAME_OFF);  nm[idx]
+
+**Measured as a negative, not yet as a picture.** `sink13` is the boot that showed the `?` (all four slots live:
+`NotificationManager` `0x0968c340`, `GameHudPtr` `0x09322100`, `commandInterfacePtr` `0x096ff230`, `Pawn`
+`0x089e0000`). The confirming boot, `sink14`, booted twice on the fixed tool and neither attempt reached the level
+(`missions.tsv` never got a row; attempt 1 was retried as attempt 2 and the run was stopped there), so the printed
+`class StargatePlayer` is what the next boot is for, not something this note saw. The regression itself is pinned
+without a guest: `--selftest` asserts `class_name` on the synthetic row and on a live `GameHud`, which the old
+`nm[cls]` answered `?` for.
+
+**The rule:** a field that is a pointer needs a read to become a name; only `FName` fields are indices. This is the
+second time the same confusion cost a report its class column (`names.py --census` reads `Class` as a pointer for
+exactly that reason), and both times the wrong version looked like a *missing* class rather than a wrong one.
