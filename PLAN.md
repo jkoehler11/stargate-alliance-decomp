@@ -828,6 +828,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, three HUDs, three answers to `say`, and nothing paints the buffer)
+
+- **The message route is per HUD class, and the disc ships three of them** (measured 2026-11-08 from the shipped
+  `ScriptText`, `tools/hud-messages.py`, no boot; 2,317 named classes, 5 under `Engine.HUD`): `HUD.Message` ->
+  `AddTextMessage`; `GoauldConsoleHud`/`ReplicatorHUD` -> `LocalizedMessage` -> `AddTextMessage`; `StargateHUD` ->
+  `LocalizedMessage` -> **`SetSubtitle(Msg, 2.0s)`** for `Say`/`TeamSay`, `AddNotification` for everything else;
+  `StargateTeamHUD` declares none of them and inherits `StargateHUD`'s. **One feed in the whole tree**:
+  `PlayerController.TeamMessage` (line 1543) calls `myHUD.Message(...)`; `ClientMessage` hands to it at 1505.
+- **`AddTextMessage` is not "commented out" in `StargateHUD` -- it is absent** (0 occurrences of the identifier in
+  its shipped text), which corrects the sentence `docs/XEMU.md` carried; the two other HUDs do call it.
+- **`TextMessages[]` is filled by three HUDs and painted by none.** `HUD.DisplayMessages` is its only painter and all
+  four `DisplayMessages` overrides (HUD, StargateHUD, GoauldConsoleHud, ReplicatorHUD) replace it without `Super`, so
+  the two console HUDs fill the engine's buffer and then override the painter: it is write-only there.
+- **`StargateHUD.SetSubtitle` hands the text on to `GameHud.DisplayTextBox(SubTitleText, Duration)`** (line 309), the
+  live `GameHud` the sink read holds at `+0x1008` -- so `say <marker>` draws, or does not, through an object the sink
+  report already names, and the 1 s frame `console-commands.sh` already takes is inside the 2 s window.
+- **Instrument**: `tools/hud-messages.py` (`--selftest` in `make ci`, `make hud-messages`); `docs/HUD_MESSAGES.md`
+  carries the class-by-class table. It prints class, function and call names with line numbers, never source text,
+  and writes no file.
+
 ### Execution notes (2026-11-08, the outer column names its object, and the level says so)
 
 - **`sink16` names the row's `Outer`** (measured 2026-11-08, `sink15`'s script unchanged, gdb 12653): `row 0x08842800`
