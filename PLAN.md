@@ -831,6 +831,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the census names the master's slots, and the frames go uniform at the map select)
+
+- **The instrument this run needed is in place and the boot that would have asked it never reached the question.**
+  `tools/xemu/hud-text.py`'s receipt now censuses the client's `InteractionMaster` block instead of returning its
+  first match: `master_slots()` prints `offset -> target, class, name` per object pointer, marks a target whose
+  `Outer` is a `Package` and one that opens with the `Console` class table, and `consoles_from_client()` offers only
+  **non-default** targets as a console. So `hudsay6`'s shape -- the default at `+0x30`, a live console somewhere else
+  -- answers with the live one, and a block holding only the default prints what it does hold and falls back to the
+  array walk. Two selftest cases build both shapes.
+- **`hudsay7` loaded `M00` and lost every frame from the map select on.** Name table 40,427 at 281.8 s; row
+  `0x08842800` (object 47,885 of 48,494, outer `M00`); `+0x1008 -> GameHud 0x09382100`; six intro turns and
+  `New Objective : Open the door for the doctor` at 480.6 s off `DialogueWindow`. Meanwhile `02-mission.png` and
+  `03-dismissed.png` are a uniform `(13,13,13)` (black 0.9965, p99 13, 0 differing px between them), and
+  `05-precommands.png` could not be captured: `drive.py` exited 3 at 07:22 and killed the guest, so the receipt
+  never ran and the boot has no `CONSOLE`/`MASTER`/`RECEIPT` line. The marker question is exactly where `hudsay6`
+  left it.
+- **The blank frame is not window selection.** `hudsay8` ran a 20 s `xdotool search --onlyvisible --class xemu`
+  census beside the boot and recorded **one** window throughout (`67108917`, 1280x960 at `+2560+232`), with the same
+  uniform frames (3,824 bytes). So the one X pixmap stops receiving frames at the level's video-mode change; the
+  frame source, not the id, is what fails. `drive.py` now takes the largest visible xemu window and tries every
+  candidate in `capture()`, which is a hardening rather than this fix.
+- **Next**: a frame source that does not go through XWayland -- QMP `screendump` on the socket the run already
+  opens -- or a sequence with no post-load shots, so the commands are typed and the census is read. Then
+  `IN HISTORY` / `NOT IN HISTORY` is the submit verdict; a block holding only the default means the live console is
+  outside `GObjObjects` and the read moves to the master's other slots.
+- **Instruments**: `tools/xemu/hud-text.py` (`master_slots`, `consoles_from_client`, the `MASTER` lines, two selftest
+  cases), `tools/xemu/drive.py` (`windows`, `find_window`, `capture`), `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md` U15. No
+  artifact and no new file. Two boots were spent; no xemu, HDD copy or pad was left behind.
+
 ### Execution notes (2026-11-09, the client route reaches a `Console` -- the class default)
 
 - **`hudsay6` answered half the receipt's question: the route works, and the object it reaches is the class

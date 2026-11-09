@@ -314,27 +314,60 @@ def guest_gone(proc, out_dir, ask=None):
     return 4
 
 
-def find_window():
-    """The xemu window, by title. SDL sets it from the executable name, so it may be 'xemu' or the AppImage's name."""
+def windows():
+    """`[(id, width, height)]` for every visible window xemu owns, largest first.
+
+    One boot showed the cost of taking *any* match: frames were a uniform 13,13,13 from the map select on while
+    the guest was demonstrably alive (the reader had the level's `GameHud` and the intro's dialogue), then the
+    grab failed outright and `drive.py` exited 3 before the first keystroke (`hudsay7`, 2026-11-09). The old
+    `find_window` returned the **last** id `xdotool` printed, so with more than one mapped window the run read
+    whichever came last -- and a level load re-creates xemu's window. The drawn one is the largest, and the size
+    is also what the crop arithmetic assumes, so that is the choice.
+    """
+    ids = []
     for pattern in ("xemu", "Stargate", ""):
         args = ["xdotool", "search", "--onlyvisible", "--name", pattern] if pattern else \
                ["xdotool", "search", "--onlyvisible", "--class", "xemu"]
         got = run(args).stdout.split()
         if got:
-            return got[-1]
-    return None
+            ids = got
+            break
+    out = []
+    for wid in ids:
+        geo = run(["xdotool", "getwindowgeometry", "--shell", wid]).stdout
+        w = h = 0
+        for line in geo.splitlines():
+            if line.startswith("WIDTH="):
+                w = int(line.split("=", 1)[1] or 0)
+            elif line.startswith("HEIGHT="):
+                h = int(line.split("=", 1)[1] or 0)
+        if w and h:
+            out.append((wid, w, h))
+    out.sort(key=lambda t: t[1] * t[2], reverse=True)
+    return out
+
+
+def find_window():
+    """The xemu window, by title. SDL sets it from the executable name, so it may be 'xemu' or the AppImage's name."""
+    got = windows()
+    return got[0][0] if got else None
 
 
 def capture(window, path):
-    """Capture the window, re-finding it once: the guest can destroy and re-create its window."""
-    for _ in range(2):
-        got = run(["import", "-window", window, path])
+    """Capture the window, re-finding it: the guest can destroy and re-create its window.
+
+    Every candidate is tried, largest first, and the id that answered is returned so the caller's later grabs
+    do not keep asking a destroyed window. The old loop gave up when `find_window()` returned the same id it
+    already had, which is exactly the case a re-created window with an unchanged title produces.
+    """
+    tried = []
+    for wid in [window] + [w for w, _width, _height in windows()]:
+        if wid in tried:
+            continue
+        tried.append(wid)
+        got = run(["import", "-window", wid, path])
         if got.returncode == 0 and os.path.isfile(path):
-            return True, window
-        fresh = find_window()
-        if not fresh or fresh == window:
-            break
-        window = fresh
+            return True, wid
     return False, window
 
 

@@ -413,6 +413,45 @@ would be game data.
   outside `GObjObjects`, and the read has to move to the master's other slots -- the one that answered names the
   default, so the field may hold a class reference rather than the instance.
 
+## Measured state (2026-11-09, the master's slots get a census -- and the frames go uniform at the map select)
+
+- **`hudsay7` reproduced the reader and lost the frames.** `M00` loaded (name table 40,427 at 281.8 s), the level's
+  row `0x08842800` (object 47,885 of 48,494, outer `M00`) held `+0x1008 -> GameHud 0x09382100`, and the six intro
+  turns plus the game's own `New Objective : Open the door for the doctor` (480.6 s) came off `DialogueWindow` -- so
+  the level was live and the boxes were readable. **Every frame from the map select on was a uniform `(13,13,13)`**:
+  `02-mission.png` black 0.9965 / p99 13, `03-dismissed.png` identical (0 differing px), the noise pair 3,824 and
+  6,910 bytes, and then `05-precommands.png` could not be captured at all -- `drive.py` exited 3 at 07:22 and killed
+  the guest **before the first keystroke**. The boot has no `CONSOLE`/`MASTER`/`RECEIPT` line, so it says nothing
+  about `History`: the census was never asked.
+- **The window was not ambiguous, which rules out the obvious cause.** A 20 s `xdotool search --onlyvisible
+  --class xemu` census during the second boot (`hudsay8`) recorded exactly **one** window -- `67108917`, 1280x960 at
+  `+2560+232` -- for the whole run, and its frames were the same uniform shape (3,824 bytes). So `import -window`
+  is not reading a stale or hidden window: the guest's one X pixmap stops receiving frames at the level's video-mode
+  change, and the grab fails outright once the run outlives that. `drive.py`'s shot gate therefore cannot certify a
+  post-load step on this desktop, and a run that needs to reach its commands has to survive a blank frame.
+- **`windows()` / `find_window()` now take the largest visible xemu window and `capture()` tries every candidate**
+  (largest first, keeping the id that answered). The old code returned the **last** id `xdotool` printed and gave up
+  when the re-find answered the same id it already had -- exactly the shape a re-created window with an unchanged
+  title produces. `hudsay8`'s census says this was not the failure here, so the change is a hardening, not the fix:
+  the frame source is.
+- **The next instrument is QMP's `screendump`, not `import`.** The run already holds
+  `-qmp unix:<out>/qmp.sock` (that is what `--step=cpu=` drives), and `screendump` reads the emulated framebuffer
+  inside xemu -- no compositor, no X pixmap, no window id. Until a frame comes from there, a live-level shot is a
+  measurement of the desktop, as this pair of boots shows.
+- **The census itself is now the client route's answer.** `master_slots()` names every object pointer in the
+  `InteractionMaster` block (`offset -> target, class, name`, marked when its outer is a `Package` and when it sits
+  on the `Console` table), and `consoles_from_client()` offers **only non-default** targets as a console -- so a
+  block that holds the class default first and a live console second answers with the live one (`hudsay6`'s shape,
+  built in the selftest), and a block that holds only the default prints what it does hold and falls through to the
+  array walk instead of reading `defaultproperties`.
+- **Instruments**: `tools/xemu/hud-text.py` (`master_slots`, `consoles_from_client`, the `MASTER` lines, two
+  selftest cases), `tools/xemu/drive.py` (`windows`, `find_window`, `capture`), `docs/UNKNOWNS.md` U15. No artifact
+  and no new file.
+- **Next**: one boot whose frames come from QMP `screendump` (or whose post-load steps carry no shot at all), so the
+  census is asked and `History` is read. The question it answers is unchanged: a live `Console` with a non-`Package`
+  outer makes `IN HISTORY` / `NOT IN HISTORY` the submit verdict; only the default means the live console is outside
+  `GObjObjects`.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
