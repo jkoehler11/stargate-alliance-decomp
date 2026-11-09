@@ -581,7 +581,10 @@ def main():
                     help="resolve attempts, 5 s apart, while the row a level spawns is still appearing")
     ap.add_argument("--connect-wait", type=float, default=90.0,
                     help="seconds to wait for the stub to accept a connection (a watcher starts before the boot)")
-    ap.add_argument("--deadline", type=float, default=300.0, help="seconds the resolve walk may take")
+    ap.add_argument("--deadline", type=float, default=-1.0,
+                    help="seconds the page cache may live, bounding the resolve walk and the watch's re-reads "
+                         "(default: derived from --wait + --watch + 60, at least 300 -- a fixed 300 died at "
+                         "479 s of a 520 s sequence and the commands after it were typed unread)")
     ap.add_argument("--live", action="store_true",
                     help="leave the guest running between reads (stop/read/resume). Required when the watcher "
                          "starts before the boot: attaching alone interrupts the CPU, and a reader that never "
@@ -592,6 +595,11 @@ def main():
         return selftest()
     if args.port is None:
         ap.error("--port is required unless --selftest is given")
+    # The page cache's deadline used to be a flat 300 s, which expired in the middle of a real sequence:
+    # `hudf2` died at 479 s with a 520 s run still typing, and the two commands after it were never read.
+    # A caller that knows its own clock still passes `--deadline`; this default scales with the run instead.
+    if args.deadline < 0:
+        args.deadline = max(300.0, args.wait + args.watch + 60.0)
 
     started = time.monotonic()
     while True:

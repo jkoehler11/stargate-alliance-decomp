@@ -38,6 +38,16 @@
 # window another application was drawing and read as "the map never loaded". `focus=30` now asks X and refuses
 # the run (exit 2) instead.
 #
+# **The markers were typed into a modal and the reader had already stopped** (measured 2026-11-09, `hudf2`).
+# `M00`'s tutorial panel ("Press the X button to open the door / A Continue") is up when the intro ends and holds
+# input until it is dismissed, so all four commands went nowhere: four shot steps read 0 differing pixels while
+# the screen showed the panel. The dismissal press in the mission sequence is not enough -- it lands on the intro
+# card ("10 days later / Press A"), minutes before the panel appears -- so the press belongs immediately before
+# the first command, after `--post`. The same boot also showed a second, independent stop: the reader's page cache
+# has a 300 s deadline of its own, so the watch died at 479 s, *before* the last two commands were typed, and the
+# report still called the markers ABSENT. `--deadline` is now the run's own budget, and a report that finds the
+# deadline line refuses the per-marker verdict instead of turning "not read" into "not there".
+#
 # Usage: hud-say.sh [options] OUTDIR
 #   --iso PATH       disc image                (default $WORK/sg1.iso)
 #   --bios DIR       directory with mcpx*.bin (default $SG1_DUMP/bios)
@@ -177,6 +187,14 @@ write_steps() {  # $1 = attempt directory
   # `--post` is the wait for the level's own hand-over: `M00` runs an intro to ~437 s whose end destroys the
   # `GameHud` the read resolved, so a command typed before it is typed into a HUD that is about to be gone.
   step "--step=wait=$((20 + post))"
+  # The intro ends on the tutorial panel, which freezes the picture and swallows keys until the pad's `A`
+  # dismisses it (docs/XEMU.md). The `pad=a` in the mission sequence above lands on the intro card minutes
+  # earlier, so the press has to be repeated once `--post` has passed the hand-over: two shots around it turn
+  # "the commands went nowhere" into "the press did / did not move the frame".
+  step "--step=shot=05-precommands"
+  step "--step=pad=a"
+  step "--step=wait=3"
+  step "--step=shot=06-dismissed"
   n=0
   oldIFS=$IFS
   IFS='|'
@@ -225,6 +243,8 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
   sed -n '1,200p' "$1/hud.log"
   resolved=0
   verdict=0
+  deadline=0
+  grep -q "passed its .* deadline" "$1/hud.log" && deadline=1
   grep -q "GameHudPtr\` holds the live" "$1/hud.log" && resolved=1
   grep -q "no level within" "$1/hud.log" && verdict=1
   # A refused focus is neither a bad boot nor a message that missed: nothing was pressed, and the run says so
@@ -244,6 +264,16 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     echo "NO VERDICT  (the watcher was killed before its deadline: hud.log holds neither a resolved \`GameHud\`"
     echo "            nor 'no level within'. Nothing here says whether a level loaded -- see killed.log)"
   fi
+  # The tutorial panel is the difference between "the message never painted" and "nothing typed after the
+  # intro was ever delivered": its dismissal is a `pad=a` whose two surrounding shots say whether it landed.
+  if grep -q "shot 06-dismissed" "$1/run.log" 2>/dev/null; then
+    if grep -q "shot 06-dismissed .*PASS" "$1/run.log"; then
+      echo "PANEL  the post-resolve \`pad=a\` repainted the frame: the tutorial panel was dismissed"
+    else
+      echo "PANEL  the post-resolve \`pad=a\` did NOT repaint the frame: the panel (or a frozen picture) still holds"
+      echo "       input, so every marker below is about the modal and not about the message"
+    fi
+  fi
   oldIFS=$IFS
   IFS='|'
   for cmd in $cmds; do
@@ -252,6 +282,9 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
     mark=$(printf '%s' "$cmd" | sed 's/.* //')
     if grep -q "$mark" "$1/hud.log"; then
       echo "FOUND  $mark  ($(grep -c "$mark" "$1/hud.log") line(s), first: $(grep -m1 "$mark" "$1/hud.log"))"
+    elif [ "$deadline" = 1 ]; then
+      echo "UNREAD $mark  (the reader hit its page-cache deadline before the watch ended: the commands after"
+      echo "          that point were typed with nothing reading, so this says nothing about the message)"
     elif [ "$resolved" = 1 ]; then
       echo "ABSENT $mark  ('$cmd' was submitted and no box ever held it, on a boot whose HUD was read)"
     else
@@ -296,6 +329,7 @@ while [ "$attempt" -le "$retries" ]; do
   # the last command and not at the settle -- and `--post` is part of the sequence.
   budget=$((boot + settle + 90 + post + (gap + 15) * ncmd))
   python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
+    --deadline "$budget" \
     --follow "$follow" --live --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1

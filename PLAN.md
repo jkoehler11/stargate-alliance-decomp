@@ -831,6 +831,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the tutorial panel is dismissed before the commands, and the boxes stay empty)
+
+- **The panel needed its own press and the instrument now measures it**: `hud-say.sh` presses the pad's `A` once
+  `--post` has passed the intro's hand-over, immediately before the first command, and brackets it with two shots.
+  `hudm1/try1` read 40,532 differing pixels on `05-precommands` and 34,096 on `06-dismissed`, and the second frame
+  is gameplay with the "Press the X button to open the door" panel gone. The mission sequence's own `pad=a` lands
+  on the intro card ("10 days later / Press A") and is not that press (its shot reads 0 px).
+- **The watch was still being cut short by the reader's page cache, and the report hid it**: a flat 300 s deadline
+  killed `hudf2`'s read at 479 s with two of its four commands still untyped, and every marker printed ABSENT.
+  `hud-text.py`'s `--deadline` now derives from `--wait + --watch + 60` (>= 300 s), `hud-say.sh` passes the run's own
+  budget, and a log that hits it reports UNREAD with the reason.
+- **The four markers are ABSENT with the panel gone, on a boot whose boxes read live**: intro turns at counts
+  14/35/33/50/56/53 and the game's own `New Objective : Open the door for the doctor` at count 45 (480.4 s), then
+  all three window slots read 0 at 677.7-678.5 s -- the level's `GameHud` was destroyed while the boot ran.
+  **Next**: a `Console.History[16]` read after the last command in the same boot, which separates "the keys never
+  arrived" from "the command ran and drew nothing".
+- **Instruments**: `tools/xemu/hud-say.sh` (post-resolve dismissal, `PANEL` verdict, `--deadline`),
+  `tools/xemu/hud-text.py` (deadline derived from the sequence), `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md` (U15).
+
 ### Execution notes (2026-11-09, the "hand-over" was the menu's row dying, and the level's HUD reads live)
 
 - **The 40,000-name floor is a pre-gate, and the row's own `Outer` is the level gate.** A `hud-say.sh` boot read

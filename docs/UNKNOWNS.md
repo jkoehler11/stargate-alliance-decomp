@@ -1391,6 +1391,19 @@ the reads agree, which points at the boot. So `say`'s sink is still unmeasured, 
 is the launch: `missions.sh` produced real, differing frames on the same desktop two hours earlier and differs from
 `hud-say.sh` in its step list (`docs/HUD_TEXT.md`).
 
+**The panel is out of the way and the boxes stay empty (measured 2026-11-09, `hudm1`).** After `--post` the harness
+presses the pad's `A` once more and measures the effect with two shots (40,532 / 34,096 differing pixels); the frame
+after it is the lab with the "Press the X button to open the door / A Continue" panel gone, so M00's modal no longer
+explains a silent `say`. The level's `GameHud` `0x09312100` (row `0x08842800`, outer `M00`) held the intro dialogue
+(counts 14, 35, 33, 50, 56, 53) and the game's own `New Objective : Open the door for the doctor` banner (count 45 at
+480.4 s), then all three window slots read `0` at 677.7-678.5 s, and no box ever held `sg1txt1`, `sg1txt2`, `sg1txt3`
+or `sg1txt4`. The same boot retired the reader's 300 s page-cache deadline: `hudf2` died at 479 s with two commands
+still untyped and the report still printed ABSENT, so `--deadline` now scales with the sequence and a report that
+finds that line prints UNREAD. **What would settle it now:** the submit receipt -- `Console.KeyType` copies
+`TypedStr` into `History[HistoryTop]` before clearing the line, so a `History[16]` read after the last command (a
+different instrument from the `--watch-key=ret` store watchpoint named above) says whether the commands were
+executed; if they were, what is left is the `SetSubtitle`/`SetNotifications` guard, not the input.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
