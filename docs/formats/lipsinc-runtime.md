@@ -27,18 +27,22 @@ and the directory is presentation only.
 through `FUN_000b9d50`, and releases it again. `FUN_000b9d50` in turn calls `FUN_000bce40(object, stem)`, which
 is the parse: a chain of stages, each handed the object and writing at a fixed offset —
 
-| stage | writes at |
-|---|---|
-| `FUN_00037110` (twice) | `+0x00`, `+0x14` |
-| `FUN_00035b60` | `+0x18`, `+0x30`, `+0x48`, `+0x54` |
-| `FUN_000bc470` | (returns the next stage's object) |
-| `FUN_000bcb60` | (returns the next stage's object) |
-| `FUN_000bcd30` | (returns the next stage's object) |
-| `FUN_00037110` | `+0x60` |
-| `FUN_00058850` (three times) | `+0x64`, `+0x70`, `+0x7c` |
+| stage | what it is | the object | the file |
+|---|---|---|---|
+| `FUN_00037110` ×2 | a 4-byte scalar | `+0x00`, `+0x14` | `0x00`/`0x04`: version `2`, `2` |
+| `FUN_00035b60` | an array of strings, element `FUN_00058850` | `+0x18` | `0x08`: the channel table |
+| `FUN_000bc470` | an array of `{u32, array of 32-byte records}`, record `FUN_000b1bf0` | — | the pose block: 20 frames × one record per channel |
+| `FUN_000bcb60` | an array of clips `{u32, bone names, pose array, name}` | — | the clip section |
+| `FUN_000bcd30` | an array of tracks `{u32, name, Map.Anim, u32, f32, f32, key block}` | — | the track table |
+| `FUN_00037110`, `FUN_00058850` ×3 | a `u32` and three strings | `+0x60`…`+0x7c` | the tail: `2`, `BN-Head`, `undefined`, `undefined` |
 
-which stage is the channel table and which is the track section is **not** read yet; it is a five-function
-question against a chain that is already located (see *What is left*).
+which **is** the file, in order, so the stages are no longer five variables in one equation: `tools/lad-parse.py`
+(`make lipsinc-parse`, `inventory/lipsinc_parse.csv`) replays exactly this sequence and all eight `.lad` files end on
+their last byte (docs/formats/lipsinc-lad.md). The leaves it calls are as explicit as the chain: `FUN_000637e0` is
+the **7-bit count reader** every array uses (bit `0x40` = a second byte, `<< 6`; bit `0x80` = a sign) and it re-encodes
+what it read on the save path, logging `Mismatch: %08X %08X` when the two disagree; `FUN_00037040`, `FUN_00037080` and
+`FUN_00037110` are one-, two- and four-byte raw reads through the archive's `Serialize(void*, length)`; and
+`FUN_00058850` is one string, its count signed: a negative count means two-byte characters.
 
 ## The channel table is linked to bones by name
 
@@ -104,9 +108,9 @@ an earlier note's "the reader is the only witness left" was pointing at the wron
 
 ## What is left
 
-* **Which stage of `FUN_000bce40` is which section** — five stages (`0x00035b60`, `0x000bc470`, `0x000bcb60`,
-  `0x000bcd30`, `0x00058850`) for five parts of the file (channel table, pose frames, clip section, track table,
-  key blocks). Mapping stage to section is the read that would put the record fields of the container on a
-  *writer's* footing instead of a census.
+* **What a pose record's three opaque dwords and its `-1.0f` mean.** The record's extent and field order are the
+  loader's (`u32 2`, three floats, three words, `-1.0f`); the words are `0`, `7c21129e`, `049c2b99` in frame 0 of
+  every file and nothing in the name path reads them. `FUN_000b1bf0` serialises the record but its stages are not
+  read yet.
 * **What the 7 signed slots mean.** Nothing in the name path touches them: the link is one dword per channel and
   the signed slots are not channels.

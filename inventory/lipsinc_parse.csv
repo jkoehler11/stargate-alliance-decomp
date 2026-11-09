@@ -1,0 +1,9 @@
+path,bytes,version,version2,channels,names_bytes,frames,frame_records,clips,clip_names,clip_bones,clip_frames,tracks,groups,keys,tail_offset,tail_left,trailing
+Controllers/grey.lad,40650,2,2,21,385,20,420,0,,,,3,78,1627,40615,0,BN-Head;undefined;undefined
+Controllers/sg1_crew_carter.lad,1301681,2,2,19,352,20,380,4,carter_happy;carter_worried;carter_yelling;carter_frown,19;5;19;5,20;20;20;20,608,15808,69966,1301646,0,BN-Head;undefined;undefined
+Controllers/sg1_crew_jackson.lad,1068447,2,2,19,352,20,380,3,jackson_yelling;jackson_frown;jackson_default,19;5;19,20;20;20,485,12610,57316,1068412,0,BN-Head;undefined;undefined
+Controllers/sg1_crew_oneill.lad,1832579,2,2,19,352,20,380,6,default;frown;yelling;happy;oneill_perplexed;oneill_squint,19;5;19;11;5;3,20;20;20;20;20;20,786,20436,100133,1832544,0,BN-Head;undefined;undefined
+Controllers/sg1_crew_tealc.lad,650509,2,2,19,352,20,380,4,tealc_frowning;tealc_happy;tealc_yelling;tealc_perplexed,9;19;19;5,20;20;20;20,344,8944,32823,650474,0,BN-Head;undefined;undefined
+JAnderson.lad,34140,2,2,21,385,20,420,0,,,,3,78,1222,34105,0,BN-Head;undefined;undefined
+sg1_crew_carter.lad,27378,2,2,21,385,20,420,0,,,,2,52,813,27343,0,BN-Head;undefined;undefined
+sg1_crew_jackson.lad,13963,2,2,21,385,20,420,0,,,,0,0,0,13928,0,BN-Head;undefined;undefined

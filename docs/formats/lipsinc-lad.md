@@ -30,82 +30,94 @@ The header and the channel table parse identically in every file, which makes th
 | `0x09` | `n` × (u8 length + name) | channel names, each a NUL-terminated ASCII string; they are bone names (`BN-Blink_L`, `BN-Jaw`, `BN-Head`, …) |
 | — | — | the table ends at `0x181` for `n = 21` and `0x160` for `n = 19` |
 
-Everything after the table is float-heavy keyframe data. Two measurements constrain it (both recorded
-as leads, not as a layout):
+## The container in the loader's own order
 
-- the payload opens with two integers: `532` in all eight files, then `0x21500` when there are 21
-  channels and `0x21300` when there are 19 — the second byte of that word *is* the channel count, so
-  the field packs a count with something else;
-- the last 128 bytes of every file end in `-1.0f` sentinels and a run of `undefined` name strings.
+`tools/lad-parse.py` (`make lipsinc-parse`, `inventory/lipsinc_parse.csv`, `--check` in `make ci`) reads a `.lad`
+the way the loader does: it replays the order in which `FUN_000bce40` serialises its controller object
+(`docs/formats/lipsinc-runtime.md`) instead of recognising a section by its shape. Each of that function's five
+stages is one leaf of the grammar:
 
-File size tracks clip length, not channel count: the `Controllers/` packs are 16–130× larger than the
-speech clips while carrying *fewer* channels (19 vs 21), so they hold far more frames.
+| stage | what it serialises | which section |
+|---|---|---|
+| `FUN_00037110` ×2 | four raw bytes each | `0x00`, `0x04`: version `2`, `2` |
+| `FUN_00035b60` (element `FUN_00058850`) | an array of strings | `0x08`: the channel table, `n` names |
+| `FUN_000bc470` (record `FUN_000b1bf0`) | an array of `{u32, array of 32-byte records}` | the pose block: 20 frames × `n` records |
+| `FUN_000bcb60` | an array of `{u32, bone names, pose array, name}` | the clip section |
+| `FUN_000bcd30` | an array of `{u32, name, Map.Anim, u32, f32, f32, key block}` | the track table |
+| `FUN_00037110`, `FUN_00058850` ×3 | a `u32` and three strings | the tail: `2`, `BN-Head`, `undefined`, `undefined` |
 
-**The record structure is measured; the meaning of its fields is not.** The stride, the prelude and the trailer
-are below, and the parse is reproducible, but what the three floats *are* needs either the middleware's own
-documentation or the loader from PLAN 4.8 — it is tracked as U4 in `docs/UNKNOWNS.md`.
+and the file is
 
-## The leading records are a bind pose, one per channel
+    lad    := u32 version, u32 version2, names, frames, clips, tracks, u32, string x3
+    names  := count, count x string
+    frames := count, count x { u32, count, count x pose }    pose := u32 2, 3 x f32, 3 x u32, f32 -1.0
+    clips  := count, count x { u32, names, frames, string }
+    tracks := count, count x { u32, string, string, u32, f32, f32, groups, groups x key-group, 0x00 }
 
-`tools/lipsinc-index.py` (`make lipsinc-index`) measures the payload without guessing at it. After the channel table
-there is a **10-byte prelude** — `532` (u32), `0` (u8), then `0x21500` for 21 channels or `0x21300` for 19 (u32),
-`0` (u8), so the second word packs the channel count with a flag rather than being a plain count — and after the
-prelude comes a **pose block: exactly one 32-byte record per channel name**, in every one of the eight files.
+where `count` is the loader's 7-bit varint — `FUN_000637e0`, the same reader the key counts and the track table's
+declared extent already use: bit `0x40` in the first byte means a second byte follows and contributes `<< 6`, bit
+`0x80` is a sign. Every count in the file is one of those, and the byte at `0x08` the earlier reading called a `u8`
+channel count is simply the smallest of them.
 
-| file | channels | pose block starts | poses | animation payload after it |
-|---|---:|---:|---:|---:|
-| `sg1_crew_jackson.lad` | 21 | 395 | 21 | 12,896 |
-| `sg1_crew_carter.lad` | 21 | 395 | 21 | 26,311 |
-| `JAnderson.lad` | 21 | 395 | 21 | 33,073 |
-| `Controllers/grey.lad` | 21 | 395 | 21 | 39,583 |
-| `Controllers/sg1_crew_tealc.lad` | 19 | 362 | 19 | 649,732 |
-| `Controllers/sg1_crew_jackson.lad` | 19 | 362 | 19 | 1,067,713 |
-| `Controllers/sg1_crew_carter.lad` | 19 | 362 | 19 | 1,300,403 |
-| `Controllers/sg1_crew_oneill.lad` | 19 | 362 | 19 | 1,831,589 |
+**All eight files walk to their last byte** under that grammar, and the walk refuses a file whose bytes do not fit,
+naming the offset. The counts agree with the shape-matching tools where the two overlap — 2,231 tracks, 58,006 key
+groups and 263,900 keys, the same totals `lad-tracks.py` and `lad-keys.py` counted — but nothing here is found by
+pattern:
 
-The block is recognised, not assumed: `inventory/lipsinc_pose.csv` (one row per file, `--check` keeps its invariants)
-counts the leading 32-byte records that look like a pose — three plausible floats followed by a `-1.0f` at bytes
-24–27 — and stops at the first one that does not. On all eight files that count is exactly the channel count, and the
-first pose is the *same* in every file: `(3.0464, 8.6571, 10.3889)` for channel 0, `Controllers/` files included. A
-shared bind pose for a shared skeleton, then per-character animation.
+| file | channels | pose frames | records | clips | tracks | key groups | keys | tail |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sg1_crew_jackson.lad` | 21 | 20 | 420 | 0 | 0 | 0 | 0 | 35 |
+| `sg1_crew_carter.lad` | 21 | 20 | 420 | 0 | 2 | 52 | 813 | 35 |
+| `JAnderson.lad` | 21 | 20 | 420 | 0 | 3 | 78 | 1,222 | 35 |
+| `Controllers/grey.lad` | 21 | 20 | 420 | 0 | 3 | 78 | 1,627 | 35 |
+| `Controllers/sg1_crew_tealc.lad` | 19 | 20 | 380 | 4 | 344 | 8,944 | 32,823 | 35 |
+| `Controllers/sg1_crew_jackson.lad` | 19 | 20 | 380 | 3 | 485 | 12,610 | 57,316 | 35 |
+| `Controllers/sg1_crew_carter.lad` | 19 | 20 | 380 | 4 | 608 | 15,808 | 69,966 | 35 |
+| `Controllers/sg1_crew_oneill.lad` | 19 | 20 | 380 | 6 | 786 | 20,436 | 100,133 | 35 |
+| **all eight** | **160** | **160** | **3,200** | **17** | **2,231** | **58,006** | **263,900** | **35 each** |
 
-A pose's 32 bytes, at the observed offsets:
+**Corrections to the earlier reading of this page.** The payload does not open with `532`/`0x21500`; those bytes are
+`14 02 00 00 00 15 02 00 00 00`, i.e. a varint `20` (the frame count), a `u32 2`, the varint `21` (the channel count)
+and another `u32 2` — the first frame of the pose block. Read as `u32`s that landed the pose block four bytes late,
+which is also why the old record table put its trailing `2` at bytes 28–31: that word is the *next* record's leading
+field. And the "32-byte-strided runs with gaps of 37" were a scan over walked data: 37 is one 32-byte record plus the
+5-byte header that opens the next frame.
+
+## The pose block, and what a record holds
+
+The block is **20 frames of one 32-byte record per channel** (21 in the speech files and `grey`, 19 in the controller
+packs) — 3,200 records in the corpus — and each frame opens with a `u32 2` before its record array. The frames are not
+copies of each other (247 of `sg1_crew_jackson.lad`'s 420 records are distinct), but frame 0's record for channel 0 is
+the same three floats in all eight files, `(3.0464, 8.6571, 10.3889)`: a shared bind position for the shared skeleton.
+
+A record, in the loader's order (`FUN_000b1bf0` is its serialiser):
 
 | bytes | content |
 |---|---|
-| 0–11 | three float32, small and signed (`\|x\| < 12`), the bind position |
-| 12–23 | twelve bytes that are **not** float data — `80000000` (`-0.0f`) and words that read as byte pairs when printed as hex |
-| 24–27 | `-1.0f` |
-| 28–31 | `2` (u32) |
+| 0–3 | `u32` `2` |
+| 4–15 | three float32, small and signed (`\|x\| < 12`) — the bind position |
+| 16–27 | three dwords that are not float data (`0`, `7c21129e`, `049c2b99` in frame 0) |
+| 28–31 | `-1.0f` |
 
-**Correction to an earlier reading of this page.** A previous revision called the whole body a 32-byte-strided record
-stream, because the `-1.0f` recurs at 32-byte steps and only 352 of 424 records in the smallest clip did not fit. That
-stopped being defensible once the count was compared with the channel table: the stride holds **inside the pose
-block** (21 or 19 records) and nowhere else. The old `records` and `residue_bytes` columns in
-`inventory/lipsinc_lad.csv` are the body length divided by 32 and its remainder; the remainder is the signal that the
-stride fails, not a damaged final record. They are kept because they bound the payload's size, but they no longer
-claim a layout.
+What the three dwords and the `-1.0f` *mean* is still open (U4); what is settled is where a record starts and ends,
+which is what a writer needs.
 
-What the animation payload *is* remains unread, and the honest description of its shape is narrower than "32-byte
-records" and wider than "not strided at all": it is **32-byte-strided runs, not a uniform array**. Only one of the eight
-payloads is a whole number of 32-byte records, and the 12-byte block every record carries recurs at gaps of 32, 37, 64,
-128 and 192:
+## The clip section is in the container, and a clip carries its own bones
 
-| file | payload bytes | mod 32 | most common gaps between records |
-|---|---:|---:|---|
-| `sg1_crew_jackson.lad` | 12,896 | 0 | 32:123, 64:30, 128:19 |
-| `sg1_crew_carter.lad` | 26,311 | 7 | 32:123, 64:30, 128:19 |
-| `JAnderson.lad` | 33,073 | 17 | 32:123, 64:30, 128:19 |
-| `Controllers/grey.lad` | 39,583 | 31 | 32:123, 64:30, 128:19 |
-| `Controllers/sg1_crew_tealc.lad` | 649,539 | 3 | 32:494, 37:69, 128:39 |
-| `Controllers/sg1_crew_jackson.lad` | 1,067,477 | 21 | 32:385, 128:59, 192:56 |
-| `Controllers/sg1_crew_carter.lad` | 1,300,711 | 7 | 32:414, 37:69, 128:39 |
-| `Controllers/sg1_crew_oneill.lad` | 1,831,609 | 25 | 32:273, 128:59, 192:37 |
+`FUN_000bcb60`'s array holds the clips: 17 across the four controller packs, none in the five speech files, and each
+one is `{u32 2, an array of bone names, 20 frames of one record per listed bone, its own name as a string}`. The bone
+lists are a subset of the channel table — 19, 11, 9, 5 or 3 bones — so a clip animates the bones it needs rather than
+all channels: `oneill` carries `default`, `frown`, `yelling`, `happy`, `oneill_perplexed`, `oneill_squint` at 19, 5,
+19, 11, 5 and 3 bones, each 20 frames deep. A clip's frames are indexed by the *clip's* bone list, not by the channel
+table, so the same 32-byte record layout appears at two strides in one file.
 
-A gap of 37 (the two `Controllers` files where it appears) is the interesting one: it says some records are five bytes
-longer than the common case, which is what a per-record flag or a variable-length tail would do. So the remaining
-question is not "what is the stride" but "what does a record hold, and what makes one 37 bytes instead of 32" — a
-keyframe decoder's problem, and U4's remaining half.
+## The track table
+
+`FUN_000bcd30`'s array is the 2,231 `<Map>.<Animation>` records the track census found, and each record is
+`{u32 2, short name, <Map>.<Animation>, u32 1, f32 160.0, f32 220.0, 26 key groups, 0x00}`: the short name is the
+animation (`Beware`), the long one prefixes the level (`AlkeshBomber.Beware` — `AlkeshBomber` is the only map named
+in all eight files), and `160.0`/`220.0` are the same two floats in every one of the 2,231 records, so they are a
+default time range, not a measurement. The 26 groups and their keys are decoded below and in `inventory/lipsinc_keys.csv`.
 
 ## The `.map` files are the viseme set, and they are text
 
@@ -505,3 +517,12 @@ the channel table to the mesh's bone names (`_wcsicmp`) and writes one mesh bone
 bone and a key-block slot is not; the two functions this page used to name (`LIPSincReadAnimFile` `0x000b8340`,
 `LIPSincReadControllerFile` `0x000b7260`) parse the middleware's **text** LTF/LBP files and never see a `.lad` byte.
 The three words between the position and the angle are still unread.
+
+## The schema is the loader's, and the walk ends at the last byte (measured 2026-11-09)
+
+`tools/lad-parse.py` (`make lipsinc-parse`, `inventory/lipsinc_parse.csv`, `--check` in `make ci`) reads all eight
+files in the order `FUN_000bce40`'s chain serialises them and consumes every byte of every one: 8 files, 160
+channels, 3,200 pose records, 17 clips, 2,231 tracks, 58,006 key groups, 263,900 keys, 35-byte tail each. The totals
+are the ones the shape-matching tools counted, so the two walks corroborate each other, but this one fails a file
+rather than skipping bytes. The grammar is at the top of this page; what a pose record's three opaque dwords and its
+`-1.0f` mean is still U4's open half.
