@@ -29,6 +29,9 @@ read cheap and hard to mis-take, and each was measured the hard way:
 * **A class pointer is not a name index.** `UObject::Class` names an object, not an `FName`, so the class name is
   that object's own `Name` -- read as an index it answers `?` for a class table the boot can name perfectly well
   (`sink13`, and every class in its report). `class_name` is one extra read per object.
+* **`Outer` is a pointer too.** The row's outer column resolved `nm[outer]`, i.e. an object address read as an
+  `FName` index, so every outer printed `?` (`sink15`: `outer 0x06b40000 ?` while the same boot names that
+  object `M00`. `object_name` resolves the outer object's own `Name`, one read.
 * **A slot is a field only where its class declares it.** `+0x1004`.. are `StargatePlayer` fields: read off a row
   whose own super chain never reaches that class, they are whatever occupies the offset, and that is often a
   plausible object pointer -- the way a neighbouring heap block gets reported as a live HUD. Each slot is therefore
@@ -323,6 +326,20 @@ def class_name(pages, nm, obj):
     return nm[idx] if idx is not None else None
 
 
+def object_name(pages, nm, obj):
+    """An object's own `Name`, resolved from the object pointer -- one read, and the report's `Outer` column.
+
+    `UObject::Outer` is a pointer to an object, not an `FName` index, so `nm[outer]` asks the name table for entry
+    number 0x06b40000 and answers `?` for an outer the boot can name perfectly well (`sink15`: the row's outer
+    `0x06b40000`, the `M00` object, printed `?` on a row whose class was already named). This is the same bug
+    `class_name` had one column over, and the same one-read fix.
+    """
+    if not plausible_object(obj):
+        return None
+    idx = pages.u32(obj + NAME_OFF)
+    return nm[idx] if idx is not None else None
+
+
 def describe(pages, nm, value, defaults):
     """(verdict, text) for one slot: `live`, `default`, `null` or `unreadable`, plus its class and name."""
     if value is None:
@@ -483,7 +500,7 @@ def main():
             outer = pages.u32(row + OUTER_OFF)
             own = pages.u32(row + NAME_OFF)
             cname = class_name(pages, nm, row)
-            oname = nm[outer] if outer else None
+            oname = object_name(pages, nm, outer)
             print()
             print("row %#010x%s class `%s` outer %#010x `%s` name `%s`"
                   % (row, "" if index is None else " (index %d)" % index, cname or "?",
@@ -585,6 +602,11 @@ def selftest():
     struct.pack_into("<I", image, at(0x5300) + CLASS_OFF, at(0x5200))
     struct.pack_into("<I", image, at(0x5300) + SUPER_OFF, at(0x5100))
     # The row's slots: a live HUD, the class default, no command interface, a possessed Pawn.
+    # `Outer` is a pointer to an object, not an `FName` index: the row's outer is a `M00` object, and the report
+    # must print that object's own name (`sink15` printed `?` for `0x06b40000`, which the boot names `M00`).
+    struct.pack_into("<I", image, at(0x6300) + NAME_OFF, 3)
+    struct.pack_into("<I", image, at(0x6300) + CLASS_OFF, at(0x5200))
+    struct.pack_into("<I", image, row + OUTER_OFF, at(0x6300))
     struct.pack_into("<III", image, row + 0x1004, live, default, 0)
     struct.pack_into("<I", image, row + 0x38c, at(0x6200))
 
@@ -621,6 +643,11 @@ def selftest():
     assert class_name(pages, nm, live) == "GameHud"
     assert class_name(pages, nm, row) == "StargatePlayer"
     assert class_name(pages, nm, at(0x6200)) is None            # not an object at all
+    # The report's `Outer` column is resolved the same way, from the outer object's own `Name`. Read as an index
+    # the pointer asks the name table for entry 0x6300 and gets nothing, which is what `sink15` printed.
+    assert object_name(pages, nm, pages.u32(row + OUTER_OFF)) == "M00"
+    assert nm[pages.u32(row + OUTER_OFF)] is None
+    assert object_name(pages, nm, 0) is None and object_name(pages, nm, at(0x6200)) is None
     assert "class `GameHud`" in live_text, live_text
     default_verdict, _ = describe(pages, nm, default, [default])
     assert default_verdict == "default", default_verdict

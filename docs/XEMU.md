@@ -4112,3 +4112,33 @@ report gained four class reads (90 pages one boot, 87 the next), so the class co
 **The row's `Outer` is still `?`** (`0x06b40000`): `Outer` is an object pointer exactly like `Class`, but the report
 prints it through the name table. That is the same bug one column over and it is not fixed here -- a bytecode-free
 follow-up, since the rule is already in `class_name`.
+
+## The outer column names its object, and that is the level (`sink16`, measured 2026-11-08)
+
+The `?` in the three reports above is the same bug `class_name` had, one column over: `Outer` is an object pointer,
+and the printer resolved it as `nm[outer]` -- it asked the name table for entry `0x06b40000`. `object_name` reads the
+outer object's own `Name` (one read) and `--selftest` pins both sides: the pointer read as an index still answers
+nothing, the object's own `Name` answers `M00`. `sink16` is `sink15`'s script unchanged, so the two runs compare:
+
+    index 10: sink PASS -- name table num=41265 -> level (34800 menu / 41265 level)
+    row 0x08842800 (index 47885) class `StargatePlayer` outer 0x06b40000 `M00` name `None`
+      +0x1004 NotificationManager  live  object 0x0968c340 class `NotificationManager` name `NotificationManager`
+      +0x1008 GameHudPtr           live  object 0x09322100 class `GameHud`             name `GameHud`
+      +0x100c commandInterfacePtr  live  object 0x096ff230 class `CommandInterface`    name `CommandInterface`
+      +0x038c Pawn                 live  object 0x089e0000 class `Oneill`              name `?`
+
+| | `sink15` (2026-11-08) | `sink16` (2026-11-08) |
+|---|---|---|
+| the row | `0x08802800`, class `StargatePlayer` | `0x08842800`, class `StargatePlayer` |
+| `Outer` | `0x06b40000` `?` | `0x06b40000` **`M00`** |
+| page reads / requests | 87 / 360 | **89 / 368** (6 unanswered, 3 re-read in 4 KiB, 3 pages with a hole) |
+| read time | 39.7 s in reads, 44 s total | **41.6 s in reads, 46 s total** |
+| Pawn | `0x089a0000`, class `Oneill` | `0x089e0000`, class `Oneill` |
+
+**`M00` is the level object**, so the row's outer now says "a level, not the menu" in the report itself -- the test
+that a `findcls.py` census could not carry two sessions ago, because the row's own `Name` is empty and its class and
+outer are the only handles there are. The two pages and eight requests the column costs are the outer objects' names
+(`M00` and the four slots), which is inside the noise this report has been measuring at 85-89 pages for four runs.
+
+**The pawn's `Name` stays `?` and that is not this bug**: `0x089e0000`'s own `UObject::Name` is empty on this build,
+so `Oneill` -- its class -- is the only name it has.
