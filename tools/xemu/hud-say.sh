@@ -22,6 +22,13 @@
 # in front before the first press; a boot that still fails the level gate is retried fresh (`--retries`), because
 # a swallowed select press looks exactly like a map that did not load.
 #
+# **A free screen is not enough on this desktop** (measured 2026-11-08): with nothing fullscreen -- the Steam
+# client was the only window and the desktop held `_NET_ACTIVE_WINDOW` -- every frame was still blank (a
+# 7,556-byte PNG, black with one green pixel, five shot steps at 0 differing pixels) while the guest and the stub
+# answered. So a blank capture here is a property of the capture path, not of what is in front of the window, and
+# a shot step's `0 differing pixels` is not evidence that input was lost. What the read is gated on is the name
+# table, never a frame.
+#
 # Usage: hud-say.sh [options] OUTDIR
 #   --iso PATH       disc image                (default $WORK/sg1.iso)
 #   --bios DIR       directory with mcpx*.bin (default $SG1_DUMP/bios)
@@ -81,6 +88,18 @@ done
 [ -n "$eeprom" ] || eeprom="${WORK:-$HOME/sg1/work}/xemu/smoke1/eeprom.bin"
 [ -f "$hdd" ] || { echo "no HDD image at $hdd (pass --hdd): a run needs a copy it may write" >&2; exit 2; }
 [ -f "$iso" ] || { echo "no disc image at $iso (pass --iso)" >&2; exit 2; }
+# One boot at a time. The HDD copy is per attempt but the GDB port is not: two emulators on one desktop answer
+# `-gdb tcp::N: Address already in use` and the second exits, which drive.py reports as `xemu exited immediately`
+# and exit 3 -- a broken-looking emulator that is really a collision (measured 2026-11-08, when a hand-launched
+# boot met this script's own retry). A leftover uinput pad is the quieter half: every `pad=` step does nothing.
+if pgrep -x AppRun >/dev/null 2>&1; then
+  echo "another emulator is running: one boot per desktop (xemu holds the GDB port and the HDD copy)" >&2
+  exit 2
+fi
+if grep -q "SG1 virtual pad" /proc/bus/input/devices 2>/dev/null; then
+  echo "a leftover 'SG1 virtual pad' is bound: every pad= step would do nothing -- clear /proc/bus/input/devices first" >&2
+  exit 2
+fi
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../.." && pwd)
 
@@ -172,7 +191,15 @@ report() {  # $1 = attempt directory -- what the run is for, and what it refuses
   printf '%s\n' "--- hud.log ($1)"
   sed -n '1,200p' "$1/hud.log"
   resolved=0
+  verdict=0
   grep -q "GameHudPtr\` holds the live" "$1/hud.log" && resolved=1
+  grep -q "no level within" "$1/hud.log" && verdict=1
+  # A `--wait` longer than the run leaves no verdict at all: the watcher is killed mid-wait, and "no live
+  # GameHud" then reads as a level that failed to load when it may have loaded after the run stopped looking.
+  if [ "$resolved" = 0 ] && [ "$verdict" = 0 ]; then
+    echo "NO VERDICT  (the watcher was killed before its deadline: hud.log holds neither a resolved \`GameHud\`"
+    echo "            nor 'no level within'. Nothing here says whether a level loaded -- see killed.log)"
+  fi
   oldIFS=$IFS
   IFS='|'
   for cmd in $cmds; do
@@ -205,7 +232,13 @@ while [ "$attempt" -le "$retries" ]; do
   gport=$((port + attempt - 1))
   # The watcher has to be up before the guest is: it waits for the stub to accept a connection and for the name
   # table to reach a level's size, so its clock is the boot's, not this script's.
-  python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$((boot + settle + 150))" --watch "$watch" \
+  # The watcher's deadline has to land *inside* the run. `--wait` used to be `boot + settle + 150` (450 s at the
+  # defaults) against a sequence that finishes in about `boot - 75 + settle + 40` s, so the watcher was killed
+  # while still waiting and a boot that never loaded a level left no verdict at all -- `UNREAD` with no cause
+  # (measured 2026-11-08). Ten seconds per command is the typing cost, plus a little slack.
+  ncmd=$(printf '%s' "$cmds" | tr '|' '\n' | grep -c . || true)
+  budget=$((boot - 75 + settle + 30 + 12 * ncmd))
+  python3 -u "$repo/tools/xemu/hud-text.py" --port "$gport" --wait "$budget" --watch "$watch" \
       --tag "try$attempt" --tries 12 > "$dir/hud.log" 2>&1 &
   wpid=$!
   sleep 1

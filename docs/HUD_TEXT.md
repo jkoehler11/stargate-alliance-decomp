@@ -90,6 +90,28 @@ real 1,280 x 960 frame) and never reached a level-sized name table, so `hud-text
 in `make ci`. What the field holds after a `say` is still the next boot's measurement -- on a desktop that is
 showing the emulator, at `--boot=240`.
 
+**The next boot failed differently, and the two failures are now told apart (measured 2026-11-08).** A second run
+had the screen to itself -- the Steam client was the only window on the display and `_NET_ACTIVE_WINDOW` was the
+desktop -- and still captured blank frames: every shot a 7,556-byte PNG, black with one green pixel, five shot
+steps at `0 differing pixels`, against tens of KB for a real frame. So the blank capture is a property of this
+capture path rather than of what is in front of the window, and `0 differing pixels` is not evidence that the pad
+presses were lost. That run also produced **no level verdict at all**: `--wait` was `boot + settle + 150` (450 s)
+against a sequence that finishes in about `boot - 75 + settle + 40` s, so the watcher was killed mid-wait and its
+log held neither a resolved `GameHud` nor the "no level within Ns" line. `hud-say.sh` now derives the deadline from
+the sequence (`boot - 75 + settle + 30 + 12 s per command`) and prints `NO VERDICT` when a log holds neither, so
+"the boot did not load a level" can never again be inferred from a run that stopped looking. It also refuses to
+start while another emulator or a leftover `SG1 virtual pad` is present, because a second boot on the same GDB port
+exits with `Address already in use` and `drive.py` reports that as `xemu exited immediately` — which reads like a
+broken emulator and is a collision.
+
+**And the second failure mode has a name now: `FAIL: no xemu window on :0`.** A `hud-say.sh` run started with no
+emulator already up reported `waiting 75s for the title` and then that line, with `drive.py exit 3` — the emulator
+never put a window on the display it was pointed at, so every capture and every window-targeted step had nothing
+to act on. That is the honest reading of "blank frames on a free screen": on this desktop a boot launched over
+`ssh` with `DISPLAY=:0` does not reliably get a window, which is a property of the launch, not of the game and not
+of `say`. `drive.py` names it (`no xemu window on :0`) and `hud-say.sh` now reports the attempt rather than the
+message.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the

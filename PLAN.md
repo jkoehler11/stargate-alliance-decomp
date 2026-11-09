@@ -831,6 +831,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-08, a HUD-text boot now says why it failed: one boot at a time, and a verdict inside the run)
+
+- **The blank frame is not the screen** (measured 2026-11-08, `docs/HUD_TEXT.md`): with the Steam client the
+  display's only window and the desktop holding `_NET_ACTIVE_WINDOW`, a `--boot=240` hud-say boot still
+  captured blank frames -- 7,556-byte PNGs, black with one green pixel, five shot steps at `0 differing pixels`
+  -- while the stub answered and the vpad was bound. So `0 differing pixels` says nothing about the pad, and
+  the previous note's "wants the screen to itself" was half the story.
+- **The watcher outlived its own deadline, so a failed boot had no cause**: `--wait` was
+  `boot + settle + 150` (450 s) against a sequence that finishes in about `boot - 75 + settle + 40` s, so the
+  watcher was killed mid-wait and `hud-say.sh` reported `UNREAD` for a question nobody had asked. The deadline
+  is now derived from the sequence (`boot - 75 + settle + 30 + 12 s per command`) and a log holding neither a
+  resolved `GameHud` nor "no level within" prints `NO VERDICT` instead of a cause.
+- **Two boots on one desktop read as a broken emulator**: a second boot on a GDB port this script's own retry
+  held answered `-gdb tcp::N: Address already in use`, and `drive.py` reported it as `xemu exited immediately`
+  (exit 3). `hud-say.sh` now refuses to start while `pgrep -x AppRun` or a leftover `SG1 virtual pad` is
+  present, naming the collision instead of the emulator.
+- **Still unread**: what `say sg1txt1` leaves in `DialogueWindow`, and whether `addnotification sg1txt2` reaches
+  `NotificationWindow`. The read needs one boot whose name table reaches 41,265 *and* whose watcher is still
+  alive to report it; that is the next run's measurement.
+
 ### Execution notes (2026-11-08, the map list is the disc's 73 in sorted order, and two pad positions pin the order)
 
 - **Nothing truncates the list, and the "41 names" was a scrolled page table** (`docs/MAP_LIST.md`,
