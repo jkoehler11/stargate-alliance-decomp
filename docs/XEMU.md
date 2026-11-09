@@ -4081,3 +4081,34 @@ without a guest: `--selftest` asserts `class_name` on the synthetic row and on a
 **The rule:** a field that is a pointer needs a read to become a name; only `FName` fields are indices. This is the
 second time the same confusion cost a report its class column (`names.py --census` reads `Class` as a pointer for
 exactly that reason), and both times the wrong version looked like a *missing* class rather than a wrong one.
+
+## The class column names the row and every slot, and the possessed pawn is `Oneill` (`sink15`, measured 2026-11-08)
+
+`class_name`'s fix (the previous section) had a negative and no picture: `sink14` booted twice and neither attempt
+reached a level. `sink15` is the same script with a 240 s boot window and three retries, and it reached `M00` on
+**attempt 1** -- so the two failures were the boot window, not the tool:
+
+    index 10: sink PASS -- name table num=41265 -> level (34800 menu / 41265 level)
+    row 0x08802800 (index 47885) class `StargatePlayer` outer 0x06b40000 `?` name `None`
+      +0x1004 NotificationManager  live  object 0x096ec340 class `NotificationManager` name `NotificationManager`
+      +0x1008 GameHudPtr           live  object 0x09342100 class `GameHud`             name `GameHud`
+      +0x100c commandInterfacePtr  live  object 0x0975f230 class `CommandInterface`    name `CommandInterface`
+      +0x038c Pawn                 live  object 0x089a0000 class `Oneill`              name `?`
+
+| | `sink13` (2026-11-08) | `sink15` (2026-11-08) |
+|---|---|---|
+| class of the row | `?` | **`StargatePlayer`** |
+| class of each slot | `?` | **named**, one read each |
+| page reads / requests | 85 / 352 | **87 / 360** (6 unanswered, 3 re-read in 4 KiB, 3 pages with a hole) |
+| read time | 43 s | **39.7 s in reads, 44 s total** |
+| `Pawn` | `0x089e0000`, name `?` | `0x089a0000`, class **`Oneill`**, name `?` |
+
+**Two things this settles and one it opens.** A class pointer read as a pointer names correctly on both the row and
+the slots, so the sink report has no `?` left in its class column; and the possessed pawn's *class* is `Oneill` (the
+game's player pawn), which the slot line could not say before -- the object's own `Name` is empty on this build, so
+the name column still reads `?` for it and the class is the only handle there is. The cost did not move when the
+report gained four class reads (90 pages one boot, 87 the next), so the class column is free.
+
+**The row's `Outer` is still `?`** (`0x06b40000`): `Outer` is an object pointer exactly like `Class`, but the report
+prints it through the name table. That is the same bug one column over and it is not fixed here -- a bytecode-free
+follow-up, since the rule is already in `class_name`.

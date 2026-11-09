@@ -828,6 +828,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, the class column names the row, the slots and the pawn's class)
+
+- **`sink15` reached `M00` on attempt 1 and printed the classes** (measured 2026-11-08): `--boot=240 --retries=3`
+  and the fixed `class_name` -- row `0x08802800` (index 47,885) **class `StargatePlayer`**, `+0x1004`
+  `NotificationManager` `0x096ec340`, `+0x1008` `GameHud` `0x09342100`, `+0x100c` `CommandInterface` `0x0975f230`,
+  `+0x038c` Pawn `0x089a0000` **class `Oneill`** -- every slot live, every class named. `sink14`'s two failed attempts
+  were the 180 s boot window, not the tool: the same script with 240 s passed first time.
+- **Class names cost nothing measurable**: 87 pages / 360 requests / 39.7 s in reads / 44 s total against `sink13`'s
+  85 / 352 / 43 s, so the four extra reads are inside the noise and the class column is free.
+- **`Outer` is still `?`** (`0x06b40000`): the report prints that pointer through the name table, the same bug
+  `Class` had, so the same one-read fix applies and is the next instrument change.
+- **Next**: the HUD's message route, read statically from the shipped `ScriptText` (no boot): `Engine/PlayerController.uc`
+  TeamMessage calls `myHUD.Message`, `StargateHUD.Message` comments out `AddTextMessage` and sends `Say` to
+  `SetSubtitle` (2 s) and everything else to `AddNotification`, while `StargateHUD.DisplayMessages` overrides
+  `Engine.HUD.DisplayMessages` without `Super` -- so `say <marker>` is the on-screen assertion a console probe can
+  frame-diff, and `TextMessages[]` is never drawn.
+
 ### Execution notes (2026-11-08, a class pointer is not a name index, and the confirming boot did not arrive)
 
 - **`sink13`'s report called every class `?`, the row's own included** (`row 0x08842800 class ?`, and a live object it
