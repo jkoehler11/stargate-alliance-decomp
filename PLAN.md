@@ -383,8 +383,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       byte, a 7-bit varint key count, then that many `u32 2` / `i32` time / `f64` value keys — and a `0x00` terminator
       (`tools/lad-keys.py`, `make lipsinc-keys`, `inventory/lipsinc_keys.csv`, `--check` in `make ci`). All 2,231 blocks
       parse (263,900 keys, 58,006 groups, 4,572,880 key bytes, the same bytes the track table counted), the time never
-      runs backwards inside a group, and the groups come in mirrored pairs. What remains is which group is which curve
-      and what a value means — not the encoding.
+      runs backwards inside a group, and the groups come in mirrored pairs.
+      **The 26 slots are a table, and a value's sign says what it is**: slots 0–18 never carry a negative value in any
+      of the 208 file × slot rows (widest `1.33783`) and slots 19–25 are signed (−9.45942 to 9.45942), so the table is
+      **19 weight curves and 7 signed curves**; and six slots are recoverable from the others (24 = 25 in 2,230 tracks,
+      17 = 18 in 1,845, 22 = 23 in 883, 19 = −24 in 1,890, 21 = −22 in 193), leaving **at most 20 independent curves**
+      (`tools/lad-groups.py`, `make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`). What
+      remains is which weight slot is which bone and what the 7 signed slots mean — not the encoding or the layout.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -845,6 +850,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the slots are 19 weights and 7 signed curves, and six of them repeat)
+
+- **PLAN 5.5's open half was a question about values, and the values answer it on their own.** `tools/lad-groups.py`
+  (`make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`) measures every group against every
+  other group in the same track — 208 file × slot rows over the 58,006 groups. **Slots 0–18 never carry a negative
+  value in any row**, and their widest is `1.33783`; **slots 19–25 are signed**, −9.45942 to 9.45942. The split is at
+  exactly the nineteenth slot, which is also the channel count of the four `Controllers/` packs — recorded, not
+  explained. That is the first statement the format has yielded about *what a value is*: a weight for 19 of the 26
+  slots, a signed offset for the other 7.
+- **Six slots are redundant, so the block's information is at most 20 curves.** The test is exact: two slots are
+  compared only when they carry the same time sequence, and then every `f64` must be bitwise equal or the exact
+  negation — a near miss is reported as `other` and would disqualify the claim. Result: 24 = 25 in 2,230 of 2,231
+  tracks, 17 = 18 in 1,845, 22 = 23 in 883, 15 = 16 in 2, and 19 = −24 = −25 in 1,890 while 21 = −22 = −23 in 193.
+  The counts fall short of 2,231 because a pair says nothing where the grids differ (19 and 24 meet in 1,890 of the
+  2,230 tracks where both are populated), which is reported as silence rather than as "different". Slots 19, 24 and
+  25 are populated in 2,230 tracks, 20 and 21 in 598 and 596.
+- **The negative is the header constants.** `--headers` re-scans every `u32 2` marker under a *relaxed* test (a name
+  pair, a `u32 1`, two `f32`, any count byte) and finds 2,231 track-like records with exactly one tuple
+  `(160.0, 220.0, 26)` and **zero** the strict reader refuses — so the earlier claim that they are invariant is not an
+  artefact of the matcher, and no reading of them as per-clip data (a duration, a sample rate, a range) survives.
+- `--check` holds the CSV to the split (a slot below 19 may never carry a negative value, a slot from 19 up must leave
+  the weight range somewhere), to `lipsinc_keys.csv`'s key totals per file, to the relation symmetry, and to a
+  hand-built three-slot case for the relation test itself. **Next**: index the 19 weight slots against an ordered
+  bone list — the clip sections' bone subsets are the only one in the file — and read the 7 signed slots' values
+  against the pose records' eight floats.
 
 ### Execution notes (2026-11-09, the .lad body is three parts and the mass is in the key blocks)
 

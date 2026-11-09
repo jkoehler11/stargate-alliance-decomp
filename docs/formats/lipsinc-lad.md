@@ -372,3 +372,53 @@ angle, a coordinate — the eight-float pose record is the only other numeric st
 header constants `160.0`/`220.0`, invariant across all 2,231 records and unexplained. The runtime half is unchanged:
 `LIPSincReadControllerFile` fills a pose array and a separate `ValuesAtTime` reader interpolates
 (`ValuesAtTime, m_nEndTime = %i, time = %f`), which is what a table of per-group key lists feeds.
+
+## The 26 slots are a slot table, and a value's sign says what it is (2026-11-09)
+
+`tools/lad-groups.py` (`make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`) measures
+every group against every other group **in the same track** — 208 file × slot rows over the 58,006 groups — and
+two things fall out that the per-track census could not see.
+
+**Slots 0–18 carry weights, slots 19–25 carry signed values.** Across all 208 rows no slot below 19 ever holds a
+negative value, and the widest one holds at most `1.33783`; every slot from 19 up holds a negative value somewhere
+and reaches past the weight range. So the table is **19 weight curves and 7 signed curves**, split exactly at the
+nineteenth slot — which is also the channel count of the four `Controllers/` packs. That coincidence is recorded,
+not explained.
+
+| slot | corpus value range | reading |
+|---|---|---:|
+| 0–9 | 0 to 0.850–1.181 | weight |
+| 10, 11 | 0 to 1.146, 1.338 | weight |
+| 12–14 | 0 to 0.862, 0.863, 0.231 | weight |
+| 15, 16 | 0 to 1.215, 1.216 | weight |
+| 17, 18 | 0 to **1** exactly | weight, saturating at 1 |
+| 19 | −2.97284 to 9.45942 | signed |
+| 20 | −4.18694 to 4.66299 | signed |
+| 21 | −6.22496 to 5.56291 | signed |
+| 22, 23 | −6.12772 to 6.82496 | signed |
+| 24, 25 | −9.45942 to 3.88037 | signed |
+
+**Six of the 26 slots are recoverable from the others, so a track carries at most 20 independent curves.** The
+test is exact — two slots are compared only when they carry the *same* time sequence, and then every `f64` must
+match bitwise or be its exact negation; a near miss is reported as `other`, and no pair is `other` in any track:
+
+| relation | slots | tracks where it holds |
+|---|---|---:|
+| identical | 24 = 25 | 2,230 (of 2,231) |
+| identical | 17 = 18 | 1,845 |
+| identical | 22 = 23 | 883 |
+| identical | 15 = 16 | 2 |
+| negated | 19 = −24 = −25 | 1,890 |
+| negated | 21 = −22 = −23 | 193 |
+
+The counts differ from 2,231 because a pair is only compared where both grids agree: slot 19 and slot 24 share a
+grid in 1,890 of the 2,230 tracks where both are populated, and the other 340 are not evidence either way. Slots
+19, 24 and 25 are the table's workhorses — populated in 2,230 of 2,231 tracks — while 20 and 21 appear in 598 and
+596, and the pairs 15/16 in 1,637. One pair is recorded without an explanation: slots 20 and 21 share a grid in a
+handful of tracks and are then neither equal nor negated, which is the only `other` relation in the corpus.
+
+**The header constants are not data.** `--headers` re-scans every `u32 2` marker with a *relaxed* test — a
+length-prefixed name pair, a `u32 1`, two `f32` and any count byte — and finds **2,231 track-like records carrying
+exactly one tuple, `(160.0, 220.0, 26)`, and zero records the strict reader refuses**. A duration, a sample rate or
+a value range would vary with the clip; these do not vary in the corpus at all, so they are format constants and
+the question is what the *format* means by them, not what a track's `160.0` is.
