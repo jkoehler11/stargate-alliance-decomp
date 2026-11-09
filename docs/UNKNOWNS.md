@@ -934,6 +934,21 @@ the `History[16]` read: at the title the only object on the `Console` class tabl
 which reads as the class default object, so the live console appears with a level. The remaining measurement is one
 in-game run — `Tab`, a command, `Enter` — then `--class Console --strings` on the instance that run creates.
 
+**The census names the master's slots, and the frame source failed the run (measured 2026-11-09).** `hudsay6` left one
+question -- the client route reaches a `Console` that is the class default, so is there a *live* one anywhere? -- and
+the answer needs a boot whose receipt runs. The instrument for it is now a census rather than a first-match screen:
+`tools/xemu/hud-text.py`'s `master_slots()` reads every object pointer in the `InteractionMaster`'s block and prints
+`offset -> target, class, name`, marking a target whose `Outer` is a `Package` (a class default) and one that sits on
+the `Console` table; `consoles_from_client()` offers only non-default targets as a console, so a block holding the
+default *and* a live console answers with the live one, and a block holding only the default says what it holds and
+falls back to the array walk. Both shapes are in `--selftest`. The boot that would ask it did not get there: in
+`hudsay7` the level loaded and the reader held the `GameHud` and its dialogue, while every frame from the map select
+on was a uniform `(13,13,13)` (`02-mission.png` black 0.9965) and `05-precommands` could not be captured at all, so
+`drive.py` exited 3 and killed the guest before the first keystroke; `hudsay8` reproduced the blank frames with one
+visible xemu window throughout, so the X window is not the fix. **What would settle U15 now:** a run whose frames come
+from QMP `screendump` (the emulated framebuffer, not `import -window`) -- or one with no post-load shots at all -- so
+the census is reached and `History` is read.
+
 **The read instrument exists and the three input traps are measured (2026-11-06).** `objects.py --fstrings` resolves
 a UE2 `string` as the `(Data, Count)` pair it is, so a console's `History[16]` is readable once an instance exists
 (validated on a live `PlayerProfile`: 21 pairs, 6 with text). Three negatives stand between that and the read, and

@@ -293,8 +293,30 @@ def console_from_hud(guest, pages, hud, table):
     return value, "via the HUD's own `PlayerConsole` field (+%#x)" % CONSOLE_FIELD
 
 
-def console_from_client(pages, client, table):
-    """`(base, why)` for the `Console` one hop from a `Client` object, or `(None, reason)`.
+def master_slots(pages, nm, master, table, pkg_table, block=IM_BLOCK):
+    """`[(offset, target, class, name, is_default, on_console)]` for the object pointers in `master`'s block.
+
+    One 4-byte read per dword, then four per pointer that lands in the object window. This is a *census* and
+    not a first-match screen because the first match is the wrong answer on this build: `hudsay6`'s block named
+    the `Console` class default (`0x02344b00`, outer a `Package`) at `+0x30`, and a route that stopped there
+    read `defaultproperties` and called it the keys' verdict. Naming every pointer also makes a boot that finds
+    no live console say what the block *does* hold, which is the difference between "the read has to move" and
+    "the read has to move to the master's other slots".
+    """
+    rows = []
+    for off in range(0, block, 4):
+        value = pages.u32(master + off)
+        if not value or not names.plausible_object(value):
+            continue
+        default, _outer = is_class_default(pages, value, pkg_table)
+        rows.append((off, value, sink.class_name(pages, nm, value),
+                     sink.object_name(pages, nm, value), default,
+                     holds_class(pages, value, table)[0]))
+    return rows
+
+
+def consoles_from_client(pages, nm, client, table, pkg_table):
+    """`(bases, why, rows)` for the `Console`s a `Client`'s `InteractionMaster` holds.
 
     A viewport-created console is registered as an interaction, so no actor names it: `plr3` held no pointer on
     the `Console` table in its first 0x1400 bytes, while the `XboxClient` object's `InteractionMaster` at
@@ -303,23 +325,25 @@ def console_from_client(pages, client, table):
     level row is not screened at all: `hudsay3` read row `0x08822800` at `+0xc0` and got null, which is a fact
     about the offset, not about a console that never opened.
 
-    The slot is **screened, not assumed**: 64 dwords of the master's own block, one 4-byte read each, and the
-    first whose target opens with the `Console` class table wins. That is two reads plus a handful where the
-    object-array walk is 347 page reads, and it does not depend on the console's array index.
+    **Every slot, and only a non-default counts** (measured 2026-11-09): the default object sits in this block,
+    so a live target wins even when the default comes first, and `bases` is empty only when the block holds no
+    console at all. `rows` is the census itself, which the receipt prints -- a boot that finds no live console
+    then names what the block holds instead of only what it lacks.
     """
     master = pages.u32(client + INTERACTION_MASTER)
     if not master:
-        return None, "client %#010x holds a null `InteractionMaster` (+%#x)" % (client, INTERACTION_MASTER)
+        return [], "client %#010x holds a null `InteractionMaster` (+%#x)" % (client, INTERACTION_MASTER), []
     if not names.plausible_object(master):
-        return None, ("client %#010x+%#x holds %#010x, which is not an object address"
-                      % (client, INTERACTION_MASTER, master))
-    for off in range(0, IM_BLOCK, 4):
-        value = pages.u32(master + off)
-        if value and names.plausible_object(value) and holds_class(pages, value, table)[0]:
-            return value, ("via the client's `InteractionMaster` %#010x (+%#x -> +%#x)"
-                           % (master, INTERACTION_MASTER, off))
-    return None, ("its `InteractionMaster` %#010x holds no pointer on the `Console` table (%#010x) in its "
-                  "first %#x bytes" % (master, table, IM_BLOCK))
+        return [], ("client %#010x+%#x holds %#010x, which is not an object address"
+                    % (client, INTERACTION_MASTER, master)), []
+    rows = master_slots(pages, nm, master, table, pkg_table)
+    bases = [value for _off, value, _cls, _name, default, on_console in rows
+             if on_console and not default]
+    why = ("via the client's `InteractionMaster` %#010x: %d slot(s) on the `Console` table, %d live"
+           % (master, sum(1 for row in rows if row[5]), len(bases)))
+    if not any(row[5] for row in rows):
+        why += ", no pointer on the `Console` table in its first %#x bytes" % IM_BLOCK
+    return bases, why, rows
 
 
 def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=None):
@@ -363,19 +387,21 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     # reads). `--receipt-walk` skips the first two, which is the control for a receipt that read one object.
     client = client if client is not None else getattr(args, "console_client", None)
     if client is not None and not args.receipt_walk:
-        base, why = console_from_client(pages, client, table)
-        if base:
-            default, outer = is_class_default(pages, base, pkg_table)
-            if default:
-                # The slot is a *field*, and on this build it has held the class default: refuse it and walk,
-                # so the verdict is about a live console or about nothing -- never about `defaultproperties`.
-                out("CONSOLE client: %s names %#010x, whose `Outer` %#010x is a `Package` -- that is the "
-                    "class's default object, not a live console; falling back to the object-array walk"
-                    % (why, base, outer))
-            else:
-                bases, route = [base], why
+        # The census needs the name table: this is the one route that reads class and object names, and it is
+        # the route that has to say *which* the block holds when none of them is a live console.
+        nm = names.Names(guest, data, num)
+        found, why, rows = consoles_from_client(pages, nm, client, table, pkg_table)
+        for off, value, cls, got, default, on_console in rows:
+            out("MASTER %#010x+%#04x -> %#010x class %s name %s%s%s"
+                % (pages.u32(client + INTERACTION_MASTER), off, value, cls or "?", got or "?",
+                   ", outer a `Package` (the class default)" if default else "",
+                   ", on the `Console` table" if on_console else ""))
+        if found:
+            bases, route = found, why
         else:
-            out("CONSOLE client: %s" % why)
+            # Nothing live in the block: the verdict has to come from the array, so say what the block held
+            # and walk -- never answer about the default object it may contain.
+            out("CONSOLE client: %s -- falling back to the object-array walk" % why)
     elif row is not None and not args.receipt_walk:
         # The row's `+0xc0` is `Client`'s slot: reading it off a `StargatePlayer` row measures whatever occupies
         # the offset there (`hudsay3` got null), so the row is not screened and the reason says why.
@@ -896,6 +922,36 @@ def selftest():
     got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=None, client=client)
     assert got == {"sg1txt1": 0}, (got, said)
     assert any("no pointer on the `Console` table" in s for s in said), said
+    # A master whose block holds the class default *and* a live console: `hudsay6`'s shape, where the first
+    # match was the default. The live target wins, and both are named so the census is the evidence.
+    ram9, _r9, _h9, _w9 = build(0x01510000, "UITextBox")
+    c9, m9, live9 = 0x01540000, 0x01550000, 0x015b0000
+    ram9.u32(c9 + INTERACTION_MASTER, m9)
+    ram9.u32(m9 + 0x08, con)                      # first match: a `Console`-classed default object
+    ram9.u32(con + 0x00, 0x0050cb80)
+    ram9.u32(con + names.CLASS_OFF, CONSOLE_UCLASS)
+    ram9.u32(con + OUTER_OFF, 0x01800000)
+    ram9.u32(0x01800000, pkg)                     # its outer is a `Package`, so it is the default
+    ram9.u32(m9 + 0x0c, live9)                    # second match: a live console
+    ram9.u32(live9 + 0x00, 0x0050cb80)
+    ram9.u32(live9 + names.CLASS_OFF, CONSOLE_UCLASS)
+    ram9.u32(live9 + OUTER_OFF, 0x01510000)       # a live object's outer is not a `Package`
+    ram9.u32(0x01200000 + 4 * 3, con)             # the array holds only the default: the census is the route
+    ram9.u32(0x006c21b0 + 4, 4)
+    said = []
+    got = receipt(ram9, args, ["sg1txt1"], out=said.append, wait=0.0, client=c9)
+    assert got == {}, (got, said)
+    assert not any("UNMEASURED" in s for s in said), said
+    assert any("2 slot(s) on the `Console` table, 1 live" in s for s in said), said
+    assert any("-> 0x015a0000" in s and "outer a `Package` (the class default)" in s for s in said), said
+    assert any("-> 0x015b0000" in s and "class default" not in s for s in said), said
+    # And a block that holds only the default is a reason to walk, never a `NOT IN HISTORY`.
+    ram9.u32(m9 + 0x0c, 0)
+    said = []
+    got = receipt(ram9, args, ["sg1txt1"], out=said.append, wait=0.0, client=c9)
+    assert any("0 live" in s and "falling back to the object-array walk" in s for s in said), said
+    assert not any("RECEIPT sg1txt1 NOT IN HISTORY" in s for s in said), said
+
     # A client that names no master says so instead of reading through a null.
     ram7.u32(client + INTERACTION_MASTER, 0)
     said = []
