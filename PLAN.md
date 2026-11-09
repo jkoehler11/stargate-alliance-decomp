@@ -368,8 +368,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `KarmaGlobals` initialiser called from `Engine_UnGame`, the safe-time/debug toggle, a
       `KarmaGravScale`/`KarmaTimeScale` reader, and a 10,539-byte body called from the same `0x1226a0` function the
       save/load work found. Ragdoll setup is level-load state, which is what `XLevel->Ragdolls` implied.
-      `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives);
-      `.lad` has its header and channel table but not its payload (U4), which needs 4.8.
+      `.ka`/`.kaw` are Karma XML and fully documented (8 assets / 141 parts / 133 joints / 256 primitives).
+      **`.lad` is now located end to end except its key bytes**: three parts — 20 pose frames, a clip section (17 named
+      clips in the four 19-channel packs, each 20 frames, bone lists of 19/11/9/5/3), and a track table of 2,231
+      `<Map>.<Animation>` records whose key blocks are 4.36 MiB of the 6.5 MiB corpus (`inventory/lipsinc_tracks.csv`).
+      What remains is the key-block encoding alone (U4), which needs `LIPSincReadAnimFile`'s loop or the writer.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -830,6 +833,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the .lad body is three parts and the mass is in the key blocks)
+
+- **PLAN 5.5's "second section" is two parts, and neither is padding.** `tools/lad-tracks.py` (`make lipsinc-tracks`,
+  `inventory/lipsinc_tracks.csv`, `--check` in `make ci`) walks on from the twentieth pose frame. The four 19-channel
+  packs carry a **clip section** first — a count, then clips of `u32 2` + a bone subset + 20 frames + a **clip name**
+  (`carter_happy`, `carter_worried`, `carter_yelling`, `carter_frown`; `oneill_squint`; `tealc_perplexed`) — 17 clips in
+  all, every one 20 frames, bone lists of 19, 11, 9, 5 or 3 against a 19-name channel table, so a clip is a partial
+  pose, not a copy of the pose frames. Then **2,231 track records** named `<Map>.<Animation>`
+  (`AlkeshBomber.ca_firing_ge_s_02`), each with an invariant ten-field header (`u32 2`, both names, `u32 1`, `160.0`,
+  `220.0`, key count **26**) and a key block behind it.
+- **The number that changes the estimate: 4,572,880 bytes of key data, 4.36 MiB of the 6.5 MiB corpus, all of it inside
+  a named track.** The packs are 89-94% key bytes rather than 96-99% unexplained, and the 21-channel clips hold two or
+  three tracks each because a speech clip is one line, not a character's animation set. Nothing in the body is left
+  unaccounted: `gap_bytes` is 2 everywhere except the 6 bytes of `sg1_crew_jackson.lad`, which has no track table.
+- **The negative is the key count.** 26 keys in a 269-byte block and 26 in a 19,568-byte one, with the `u32 2` marker
+  recurring 33-1,247 times at 11-15 bytes per marker: the entries are variable-length, so no stride can be assumed and
+  the tool stops at each header rather than guessing past it. Also recorded, not explained: the two bytes before the
+  first track header (`00 03`, `60 09`), and `JAnderson.lad` listing `AlkeshBomber.Beware` twice — a name is not a
+  unique key. **The next measurement is the key block's own encoding**, from `LIPSincReadAnimFile`'s loop at
+  `0x000b8340` (already located, 4,977 bytes) or a value check against the `160.0`-`220.0` time range 26 keys imply.
 
 ### Execution notes (2026-11-09, the 37 was a frame header, and the .lad body has two sections)
 

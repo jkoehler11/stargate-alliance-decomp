@@ -165,8 +165,9 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 ## Status
 
 - Header + channel table: parsed in all 8 files, no exceptions.
-- Payload: the leading pose block is measured (one 32-byte pose per channel); the animation data after it is
-  32-byte-strided **runs** (1 of 8 payloads is a whole number of records; gaps of 32/37/64/128/192) and is unread.
+- Body: **three parts, all located** — 20 pose frames (one 32-byte record per channel), a clip section in the four
+  19-channel packs (17 clips, named, each 20 frames), and a track table of 2,231 `<Map>.<Animation>` records. The key
+  blocks that follow each track header are 4.36 MiB across the corpus and are the unread part.
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
 - Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.
@@ -265,3 +266,56 @@ Three things follow, and the first is a correction.
 `-1.0f` recurs in 84% of one file's records, so it is a value (the pose weight), not a record terminator; the twelve
 bytes between the third float and it take 125-145 distinct values per file, so they are not padding either. What the
 seven floats *mean* is still U4.
+
+## The body is three parts: pose frames, a clip section, and a track table (measured 2026-11-09)
+
+The frame walk above closed the first part and left 96–99% of the `Controllers/` packs counted as `coverage_bytes`.
+`tools/lad-tracks.py` (`make lipsinc-tracks`, `inventory/lipsinc_tracks.csv`, `--check` in `make ci`) walks on from
+where it stops, and the rest of the body is **two more parts**, not padding:
+
+* a **clip section**, present in the four 19-channel packs. A count, then that many clips, each `u32 2`, a bone count,
+  that many `BN-` names, a frame count with the same 5-byte header and 32-byte records as the pose section, and finally
+  a **clip name** (`carter_happy`, `tealc_yelling`, `oneill_squint`). 17 clips in total, every one exactly 20 frames,
+  and the bone list is a *subset* of the file's channel table — 19, 11, 9, 5 or 3 bones, not all 19.
+* a **track table**, present in seven of the eight files. One record per `<Map>.<Animation>` name
+  (`AlkeshBomber.ca_firing_ge_s_02`), each with a constant header — `u32 2`, the short name, the qualified name,
+  `u32 1`, `160.0`, `220.0`, and a key count of **26** — followed by the record's key bytes.
+
+| file | channels | clips (bones) | tracks | key bytes | of the file |
+|---|---:|---|---:|---:|---:|
+| `Controllers/sg1_crew_carter.lad` | 19 | 4 (19, 5, 19, 5) | 608 | 1,214,974 | 93.3% |
+| `Controllers/sg1_crew_jackson.lad` | 19 | 3 (19, 5, 19) | 485 | 993,252 | 93.0% |
+| `Controllers/sg1_crew_oneill.lad` | 19 | 6 (19, 5, 19, 11, 5, 3) | 786 | 1,725,593 | 94.2% |
+| `Controllers/sg1_crew_tealc.lad` | 19 | 4 (9, 19, 19, 5) | 344 | 579,194 | 89.0% |
+| `Controllers/grey.lad` | 21 | 0 | 3 | 26,511 | 65.2% |
+| `JAnderson.lad` | 21 | 0 | 3 | 20,029 | 58.7% |
+| `sg1_crew_carter.lad` | 21 | 0 | 2 | 13,327 | 48.7% |
+| `sg1_crew_jackson.lad` | 21 | 0 | 0 | 0 | 0% |
+
+Three things this settles, and three it does not.
+
+* **The unread mass is named.** 4,572,880 bytes (4.36 MiB) of the 6.5 MiB corpus sit inside the key block of a track
+  named after an animation — the four packs are 89–94% key bytes, not 96–99% mysterious. The 21-channel clips are
+  small because they carry two or three tracks each, which is what a speech clip is: one line of dialogue, not a
+  character's whole animation set.
+* **The track header is invariant, which is what makes the table findable.** All 2,231 records agree on `u32 2`, the
+  `u32 1`, both sentinel times `160.0`/`220.0`, and the key count **26** — with a single map owner (`AlkeshBomber`) in
+  every file. The key count is 26 in a 269-byte block and 26 in a 19,568-byte one, and that is the useful negative: it
+  is a fixed *number* of keys over a variable-length payload, so the keys are variable-length entries, not one struct.
+* **A clip's bones are a subset, so a clip is not a copy of the pose frames.** `carter_worried` and `carter_frown` are
+  five bones (the brows, the lids and the jaw); `carter_happy` and `carter_yelling` are all nineteen.
+
+What is still open:
+
+* **The key block itself.** The `u32 2` marker recurs 33–1,247 times per block at 11–15 bytes per marker, so the entries
+  are variable-length and the walk stops at each header instead of decoding them. This is now the *whole* of what
+  remains of U4.
+* **The two bytes before the first track header** — `00 03` in `grey.lad`, `60 09` in the 1.3 MB pack — and the six
+  bytes in the same place in `sg1_crew_jackson.lad`, which has no track table at all. They are counted
+  (`gap_bytes`) and not identified.
+* **Names are not unique keys.** `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name indexes more than one
+  record and a reader cannot key on it alone.
+
+The reader this matches is `LIPSincReadAnimFile` (`0x000b8340`, `Read Track %s`): a table keyed by
+`<Map>.<Animation>` with a per-track key list is exactly what its log line and its `ValuesAtTime, m_nEndTime` assert
+describe, and `26` is then the number of keys such a lookup walks.
