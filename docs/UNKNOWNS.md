@@ -1369,6 +1369,14 @@ class against the row's `UStruct::Super` chain and prints `n/a` instead of a nei
 sink:** a boot whose `PlayerController0` carries a `Pawn` (`--expect Pawn=live`) -- the state in which a
 `StargatePlayer` controller, and therefore a live `GameHud` / `NotificationManager` / command interface, exists at all.
 
+**The message channels are live, so the remaining cause is a guard, not a null (`sink13`, measured 2026-11-08).** On a
+loaded `M00` the player row `0x08842800` holds `NotificationManager` `0x0968c340`, `GameHudPtr` `0x09322100`
+(`GameHud`), `commandInterfacePtr` `0x096ff230` (`CommandInterface`) and `Pawn` `0x089e0000` -- four non-null objects,
+three named by their own `UObject::Name` (`docs/XEMU.md`). So `StargateHUD`'s `Say`/`AddNotification` path has a sink
+to send to, and the `NotificationWindow` on that HUD is measurably drawing text it is given; what is left is which
+guard on the console's own path refuses the message (`DisplayMessages`' commented-out `AddTextMessage`, or the
+`SetNotifications` condition), not a missing object.
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

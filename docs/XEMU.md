@@ -4006,3 +4006,50 @@ name table read `num=41265` -- the level reference, exactly -- but the tail read
 **93 page reads in the 900 s deadline** (9.7 s per page) and stopped there with its own FAIL; the walk over 48,646
 objects is the cost, not the disc. So the boot is proven and the read is the next instrument's problem: `--row ADDR`
 skips the walk, and a page read at this speed puts any full tail scan of a live level out of one boot's reach.
+
+## The sink is live on a level, and one unmapped page cost 9.7 s of a read (`sink13`, measured 2026-11-08)
+
+`sink12` proved the boot -- frame gate PASS, `num=41265`, the level reference exactly -- and then died in the read:
+93 page reads in the 900 s deadline, 9.7 s each. That number is not this stub's throughput (`mem.py` measures 512 KiB
+in 1.7 s), it is the page cache paying for memory that is not there:
+
+- **The stub answers `E` for a request that touches one unmapped byte, and the whole request fails.** A 64 KiB page
+  holding an object header *and* a hole answered nothing for either, so `Pages.page` cached `None` and every object
+  in the page's mapped half read as absent -- the fault `names.py`'s `read_prefix` was written for, one level up.
+- **`Guest.read` reconnected for each failed attempt** -- a socket, an `interrupt` and a growing sleep -- and
+  `Pages.page` repeated that three times. Twelve attempts at ~0.8 s is the 9.7 s: the page was charged for being
+  partly absent, not for being slow.
+
+`sink13` is `sink12`'s sequence with the page cache fixed (`--iso` set, index 10, `--sink-class=0x00e47800
+--sink-tail=5000`, one boot): `02-mission` differs from `00-title` by **80,489 px** (6.55%), `num=41265`, and the tail
+scan finished.
+
+| | `sink12` (2026-11-08) | `sink13` (2026-11-08) |
+|---|---|---|
+| tail scan | stopped at 93 pages / 900 s deadline | **85 pages, 43 s total** |
+| requests | not reported | **352** (6 unanswered, 3 chunks re-read as 4 KiB sub-pages) |
+| pages with a hole | not reported | 3 (slowest page `0x09780000`, 0.6 s) |
+| rows of `StargatePlayer` in the last 5,000 | not reached | **1**, index 47,885, `0x08842800` |
+| the four slots | not read | **all live** |
+
+    row 0x08842800 (index 47885) class `?` outer 0x06b40000 `?` name `None`
+      +0x1004 NotificationManager  live  object 0x0968c340 class ? name `NotificationManager`
+      +0x1008 GameHudPtr           live  object 0x09322100 class ? name `GameHud`
+      +0x100c commandInterfacePtr  live  object 0x096ff230 class ? name `CommandInterface`
+      +0x038c Pawn                 live  object 0x089e0000 class ? name ?
+
+**That is the sink question answered, and it was never a null.** On a loaded `M00` the player row holds a
+`NotificationManager`, a live `GameHud`, the command interface and a possessed `Pawn` -- four non-null objects, three
+of them named by their own `UObject::Name`. So the silence `stat fps`-and-nothing-else measured is not a message
+channel with nowhere to go: `StargateHUD` sends to `NotificationManager` and the object is there, which puts the
+remaining cause in the HUD's own guards (`DisplayMessages` overridden with `AddTextMessage` commented out, and
+`GameHud.SetNotifications` conditional -- the earlier note in this file and U15).
+
+**The row sits 761 entries from the end of a 48,646-object array, the same index `sink1` held.** `--tail 5000` covers
+it twice over, so the tail bound was never what was wrong with this read; a per-page cost was.
+
+**Two rules, both measured here.** *A failed read is a verdict about the address, not about the stub*: retry it at a
+finer grain (4 KiB sub-pages) instead of paying a reconnect and a sleep, and let a separate probe answer "is the guest
+alive". *An instrument that reports a page absent hides the objects that are in it*: keep the prefix, one sub-page at
+a time, and report how many pages had a hole so the next run knows the difference between "not there" and "not
+readable".

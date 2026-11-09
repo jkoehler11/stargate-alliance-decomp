@@ -96,7 +96,14 @@ mem = load("xemu_mem", MEM)
 
 
 class Guest:
-    """A retrying virtual-memory reader: one RSP round trip per chunk, one fresh connection per bad read."""
+    """A retrying virtual-memory reader: one RSP round trip per chunk, one fresh connection per bad read.
+
+    `attempts` overrides the retry count for one call, and `attempts=1` is the mode a *page walk* wants: the stub
+    answers `E` for memory that is not mapped and the connection survives that answer, so an unmapped page is not a
+    dead stub and reconnecting for it (a socket, an `interrupt`, a growing sleep) is the cost that made a 64 KiB page
+    read take 9.7 s on a live level (`sink12`). A caller that means "give me this or nothing" says `attempts=1` and
+    decides for itself what a miss means.
+    """
 
     def __init__(self, host, port, retries=4):
         self.host, self.port, self.retries = host, port, retries
@@ -108,17 +115,21 @@ class Guest:
         g.interrupt()
         return g
 
-    def read(self, addr, size, chunk=0x4000):
-        for attempt in range(self.retries):
+    def read(self, addr, size, chunk=0x4000, attempts=None):
+        tries = self.retries if attempts is None else attempts
+        for attempt in range(tries):
             try:
                 out = self.g.read(addr, size, chunk=chunk)
                 self.reads += 1
                 return out
             except (IOError, OSError):
+                if tries == 1:
+                    # One request, no reconnect: the stub answered, and the answer was `E`. The socket is fine.
+                    raise
                 self.g.close()
                 time.sleep(0.2 * (attempt + 1))
                 self.g = self._connect()
-        raise IOError("read %#x+%#x failed after %d attempts" % (addr, size, self.retries))
+        raise IOError("read %#x+%#x failed after %d attempts" % (addr, size, tries))
 
     def u32(self, addr):
         return struct.unpack("<I", self.read(addr, 4))[0]

@@ -11,7 +11,9 @@ read cheap and hard to mis-take, and each was measured the hard way:
   level (`docs/XEMU.md`). One dword, read before any slot, and `--require-level` refuses the read below 40,000.
 * **The walk.** Finding the row is a class-pointer match over `GObjObjects`; read object *headers* through a 64 KiB
   page cache and 48,000 objects cost a few hundred stub round trips instead of 48,000. `--instances --prop-name`
-  in `fields.py` answers the same question in about six minutes because it resolves a name per object.
+  in `fields.py` answers the same question in about six minutes because it resolves a name per object. A page is
+  16 KiB requests, and a request the stub cannot answer is re-read in 4 KiB sub-pages, because one unmapped byte
+  used to make the whole page -- and every object in it -- read as absent (`sink12`: 9.7 s a page, 93 pages in 900 s).
 * **The slots.** The offsets are known, so the values are two windows -- `+0x1000..+0x1010` covers the three
   adjacent sink fields and `+0x380..+0x390` covers `Pawn` -- and nothing about the class has to be walked again.
 * **Newest first.** `GObjObjects` appends, so the row a level spawns at load sits at the *end* of the array
@@ -74,7 +76,9 @@ CLASS_OFF = names.CLASS_OFF         # UObject::Class, a UClass object (`names.py
 OUTER_OFF = 0x18                    # UObject::Outer (`owner.py`, `fields.py`)
 SUPER_OFF = 0x28                    # UStruct::Super (`fields.py`, measured 2026-11-08)
 OBJECT_HI = names.OBJECT_HI         # the array's own bound: live gameplay objects sit above 128 MiB
-SPAN = 0x10000                      # one stub read per page, the unit a header walk is cheap in
+SPAN = 0x10000                      # one cached page: the unit an object-header walk is cheap in
+CHUNK = 0x4000                      # the request size inside a page: 4 requests, measured 0.2 s of a 64 KiB page
+FINE = 0x1000                       # the sub-page a failed chunk is re-read in, so one hole costs 4 KiB, not 64
 
 # (`offset`, property, declaring class) -- #243's four declarations, `UProperty::Offset` at `+0x48`.
 SLOTS = ((0x1004, "NotificationManager", "StargatePlayer"),
@@ -97,16 +101,24 @@ def die(text, code=4):
 
 
 class Pages(object):
-    """One 64 KiB read per page: the difference between a walk in pages and a walk in objects.
+    """One cached page per region the walk touches: the difference between a walk in pages and a walk in objects.
 
     A walk that takes minutes needs to be able to say two things about a run that never finishes: whether the
     guest is still there, and how far it got. `probe` is an address known to be mapped (the name table's own
-    data), re-read every `PROBE_EVERY` pages -- a guest that has died takes the stub with it, and those reads
+    data), re-read after a page that had holes -- a guest that has died takes the stub with it, and those reads
     fail, whereas an unmapped page inside the array is ordinary and must keep the walk going. `deadline` is the
     wall-clock bound; both raise a message instead of returning nothing.
+
+    **A 64 KiB request that crosses one unmapped byte fails whole, and `sink12` paid for that twice.** The stub
+    answers `E` for a request that touches memory that is not mapped, so a page holding a mapped object *and* a hole
+    answered nothing for either -- and the retry path reconnected, interrupted and slept for each attempt, which
+    `page()` then repeated three times. That is the 9.7 s a page cost in `sink12`'s tail walk (93 pages in the 900 s
+    deadline), and it hid objects as well as time: the row in the mapped half read as absent. Two changes: a failed
+    16 KiB chunk is re-read in 4 KiB sub-pages and only the sub-pages that do not answer are marked missing (`u32`
+    answers None for an address inside one, and the bytes around it still read), and every request is
+    `attempts=1` -- an `E` is a verdict about *memory*, not about the stub, so it is not worth a reconnect.
     """
 
-    PROBE_EVERY = 128
     PROGRESS_EVERY = 64
 
     def __init__(self, guest, probe=None, progress=False, deadline=None):
@@ -117,51 +129,85 @@ class Pages(object):
         self.progress = progress
         self.deadline = deadline
         self.started = time.monotonic()
-        self.lost = 0
+        self.lost = 0              # pages that had at least one unmapped 4 KiB sub-page
         self.walked = 0
+        self.requests = 0          # stub requests made by page reads
+        self.unanswered = 0        # requests the stub could not answer (unmapped, not dead)
+        self.split = 0             # chunks that failed and were re-read as 4 KiB sub-pages
+        self.spent = 0.0           # seconds inside `page()`
+        self.slowest = (0.0, 0, 0)  # (seconds, page base, holes) of the worst page so far
 
     def _check(self):
         if self.deadline and time.monotonic() - self.started > self.deadline:
             die("the read passed its %.0fs deadline after %d page read(s): the walk over %d objects is the cost, "
                 "and a boot that has to be held this long is not the boot to measure on. `--deadline` raises the "
                 "bound, `--row ADDR` skips the walk" % (self.deadline, self.reads, self.walked))
-        if self.probe is not None and self.reads and self.reads % self.PROBE_EVERY == 0:
-            try:
-                self.guest.read(self.probe, 4)
-            except (IOError, OSError):
-                die("the stub stopped answering after %d page read(s): %#010x, which read at the start, no longer "
-                    "does -- the guest is gone (look for xemu's own exit line), so the row cannot be found and no "
-                    "slot is read" % (self.reads, self.probe))
+
+    def _read(self, addr, size):
+        """One request, one attempt: an `E` here means "not mapped", and the stub is still answering."""
+        self.requests += 1
+        try:
+            got = self.guest.read(addr, size, chunk=size, attempts=1)
+        except (IOError, OSError):
+            self.unanswered += 1
+            return None
+        if got is None or len(got) != size:
+            self.unanswered += 1
+            return None
+        return got
 
     def page(self, addr):
         self._check()
         base = addr & ~(SPAN - 1)
         if base not in self.buf:
-            got = None
-            for _attempt in range(3):
-                try:
-                    got = self.guest.read(base, SPAN)
-                    break
-                except (IOError, OSError):
-                    got = None
-            self.buf[base] = got
+            started = time.monotonic()
+            data = bytearray(SPAN)
+            missing = set()
+            for off in range(0, SPAN, CHUNK):
+                got = self._read(base + off, CHUNK)
+                if got is not None:
+                    data[off:off + CHUNK] = got
+                    continue
+                self.split += 1
+                for j in range(CHUNK // FINE):
+                    at = off + j * FINE
+                    sub = self._read(base + at, FINE)
+                    if sub is None:
+                        missing.add(at // FINE)
+                    else:
+                        data[at:at + FINE] = sub
+            self.buf[base] = (bytes(data), missing)
             self.reads += 1
-            if got is None:
+            if missing:
                 self.lost += 1
+            took = time.monotonic() - started
+            self.spent += took
+            if took > self.slowest[0]:
+                self.slowest = (took, base, len(missing))
+            if self.probe is not None and missing:
+                # A hole is ordinary; a hole on a page whose probe *also* fails is a guest that has gone away.
+                try:
+                    self.guest.read(self.probe, 4, attempts=1)
+                except (IOError, OSError):
+                    die("the stub stopped answering at page %#010x: %#010x, which read at the start, no longer "
+                        "does -- the guest is gone (look for xemu's own exit line), so the row cannot be found "
+                        "and no slot is read" % (base, self.probe))
             if self.progress and self.reads % self.PROGRESS_EVERY == 0:
-                sys.stderr.write("walk: %d page read(s), %d unmapped, %.0fs\n"
-                                 % (self.reads, self.lost, time.monotonic() - self.started))
+                sys.stderr.write("walk: %d page read(s), %d request(s), %d unanswered, %d hole page(s), %.0fs\n"
+                                 % (self.reads, self.requests, self.unanswered, self.lost,
+                                    time.monotonic() - self.started))
                 sys.stderr.flush()
         return base, self.buf[base]
 
     def u32(self, addr):
-        base, buf = self.page(addr)
-        if buf is None:
-            return None
+        base, (buf, missing) = self.page(addr)
         off = addr - base
         if off < 0 or off + 4 > len(buf):
             return None
+        if (off // FINE) in missing or ((off + 3) // FINE) in missing:
+            return None
         return struct.unpack_from("<I", buf, off)[0]
+
 
 
 def table(guest, addr, what):
@@ -443,8 +489,10 @@ def main():
                       % (offset, prop, verdict, text, decl))
             seen.append(verdicts)
         print()
-        print("%d page read(s), %d guest read(s), %.0fs"
-              % (pages.reads, guest.reads, time.monotonic() - pages.started))
+        print("%d page read(s), %d request(s) (%d unanswered, %d re-read in 4 KiB sub-pages, %d page(s) with a hole), "
+              "%.1fs in reads (slowest page %#010x: %.1fs, %d hole(s)), %.0fs total"
+              % (pages.reads, pages.requests, pages.unanswered, pages.split, pages.lost, pages.spent,
+                 pages.slowest[1], pages.slowest[0], pages.slowest[2], time.monotonic() - pages.started))
         bad = []
         for want in args.expect:
             if "=" not in want:
@@ -468,7 +516,7 @@ class FakeGuest(object):
         self.image = image
         self.reads = 0
 
-    def read(self, addr, size, chunk=None):
+    def read(self, addr, size, chunk=None, attempts=None):
         if addr >= len(self.image):
             raise IOError("unmapped")
         self.reads += 1
@@ -557,11 +605,11 @@ def selftest():
     # A read that would never finish names itself instead of waiting: the deadline, then the probe that says the
     # guest is gone. Both print their message and exit 4 -- the code `drive.py` reads as a named stop, not a crash.
     import io
-    def stopped(pages, guest):
+    def stopped(pages, guest, data=0x4000, count=6):
         saved = sys.stdout
         sys.stdout = io.StringIO()
         try:
-            walk(guest, pages, data_at, 6, CLASS_OFF, at(0x5100))
+            walk(guest, pages, at(data), count, CLASS_OFF, at(0x5100))
         except SystemExit as exc:
             text = sys.stdout.getvalue()
             assert exc.code == 4, exc.code
@@ -572,11 +620,27 @@ def selftest():
 
     overdue = FakeGuest(bytes(image))
     assert "deadline" in stopped(Pages(overdue, deadline=1e-9), overdue)
-    gone = FakeGuest(bytes(image))
+    # **A hole costs 4 KiB, not the whole page.** The image ends 0x8500 bytes into the page at `base`, so the last
+    # 4 KiB sub-page is not there: an object in the mapped part still reads and is still found, and the address in
+    # the hole answers None -- against the old cache, the one failed 64 KiB request made the whole page absent.
+    holed = bytearray(base + 0x8500)
+    struct.pack_into("<III", holed, at(0x3000), at(0x4000), 2, 2)
+    struct.pack_into("<II", holed, at(0x4000), at(0x4100), at(0x8100))
+    for obj in (at(0x4100), at(0x8100)):
+        struct.pack_into("<I", holed, obj + CLASS_OFF, at(0x5100))
+    hole_guest = FakeGuest(bytes(holed))
+    hole_pages = Pages(hole_guest)
+    assert rows_of_class(hole_guest, hole_pages, at(0x4000), 2, at(0x5100)) == [(0, at(0x4100))]
+    assert hole_pages.u32(at(0x4100) + CLASS_OFF) == at(0x5100)
+    assert hole_pages.u32(at(0x8400)) is None                  # inside the sub-page that is not mapped
+    assert hole_pages.split == 2, hole_pages.split             # the two chunks past the end of the image
+    assert hole_pages.lost == 1, hole_pages.lost               # one page with a hole, not one dead page
+    assert hole_pages.requests == 12, hole_pages.requests      # 4 chunks + 8 sub-pages: no reconnect churn
+    assert hole_pages.unanswered == 10, hole_pages.unanswered  # 2 chunks + the 8 sub-pages past the image
+    # The hole is a verdict about memory; a probe that fails on the same page is a guest that has gone away.
+    gone = FakeGuest(bytes(holed))
     probe_pages = Pages(gone, probe=0x7FFF0000, deadline=0)
-    probe_pages.reads = Pages.PROBE_EVERY - 1          # the next page read is the one that probes
-    assert "stopped answering" in stopped(probe_pages, gone)
-    assert probe_pages.lost == 0, probe_pages.lost
+    assert "stopped answering" in stopped(probe_pages, gone, 0x4000, 2)
     # The gate: a menu-sized table must be refused before any slot is read.
     assert MENU_NAMES < LEVEL_FLOOR <= LEVEL_NAMES
     # The census half: a CSV parse and two counts, from a literal, so the check writes nothing.
@@ -592,8 +656,9 @@ def selftest():
     assert report[3].startswith("rows of class `Pawn`: 1"), report
     print("ok   sink-slots: the walk finds the row by class (newest first, `--tail` bounded), `--class-from` "
           "reads the class off a named object, the slot gate is the chain's own names, the marks separate live "
-          "from class default, and %d names is below the %d level floor"
-          % (MENU_NAMES, LEVEL_FLOOR))
+          "from class default, a page with a hole still reads the objects around it, and %d names is below the "
+          "%d level floor" % (MENU_NAMES, LEVEL_FLOOR))
+
     return 0
 
 
