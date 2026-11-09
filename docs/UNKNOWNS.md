@@ -291,6 +291,22 @@ by five `Animations/*_anim.ukx` skeletons and by no other package in the corpus.
 `__wtof`, `Read Track %s`, `not a valid LTF file!`, `obsolete .LBP file!` — so no `.lad` byte goes through
 either; what stays open is which parse stage reads which section, and what the 7 signed slots mean.
 
+**The five stages are the file's sections, and the walk ends at the last byte (2026-11-09).** `tools/lad-parse.py`
+(`make lipsinc-parse`, `inventory/lipsinc_parse.csv`, `--check` in `make ci`) replays `FUN_000bce40`'s order instead
+of recognising sections by shape: two 4-byte scalars (the `2`, `2` header), the channel table, the pose block (20
+frames of one 32-byte record per channel), the clip array (`{u32, bone names, 20-frame pose array, name}`), the track
+array (`{u32, name, Map.Anim, u32, f32, f32, 26-group key block}`), then a `u32` and three strings as the 35-byte
+tail. Every count in the file is `FUN_000637e0`'s 7-bit varint, which is why the channel count reads as a `u8` and the
+track table's extent is two bytes. **All eight files parse to their last byte** — 8 files, 160 channels, 3,200 pose
+records, 17 clips, 2,231 tracks, 58,006 groups, 263,900 keys — and the totals match the shape-matching tools, so the
+container half of U4 is closed: `docs/formats/lipsinc-lad.md` carries the grammar and `docs/formats/lipsinc-runtime.md`
+the stage-to-section table. Two readings are corrected by it: the payload does not open with `532`/`0x21500` (those
+bytes are the first frame's `20`, `u32 2`, `21`, `u32 2`), and the pose record begins with a `u32 2` and ends with
+`-1.0f`, so the `2` the old table put at bytes 28–31 is the next record's leading word.
+**What would settle the rest:** `FUN_000b1bf0` (the 32-byte record's serialiser) for what the three opaque dwords and
+the `-1.0f` are, and a read of the clip record's `u32 2` and the track record's constant `160.0`/`220.0` pair. The
+7 signed key slots are a separate question, unchanged.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

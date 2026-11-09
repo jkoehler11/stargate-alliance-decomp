@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
 
 help:
 	@echo "targets:"
@@ -74,6 +74,7 @@ help:
 	@echo "  function-flags  every function's FunctionFlags from its export payload (docs/systems/NETWORK.md; needs the dump)"
 	@echo "  lipsinc-index  the LIPSinc .map phonemes and .lad containers (docs/formats/lipsinc-lad.md; needs the dump)"
 	@echo "  lipsinc-frames the .lad body as frames of one 32-byte record per channel (needs the dump)"
+	@echo "  lipsinc-parse  the whole .lad replayed in the loader's order, every byte accounted for (needs the dump)"
 	@echo "  lipsinc-tracks the .lad body past the pose frames: named clips, then a track table (needs the dump)"
 	@echo "  lipsinc-keys   each track's key block: 26 groups of (time, value) keys (needs the dump)"
 	@echo "  lipsinc-groups the 26 groups as a slot table: weights vs signed values, redundant pairs (needs the dump)"
@@ -436,6 +437,12 @@ lipsinc-index:
 lipsinc-frames:
 	@$(PYTHON) tools/lad-frames.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
 	@echo "wrote inventory/lipsinc_frames.csv"
+
+# The whole `.lad` replayed in the order the loader (`FUN_000bce40`) serialises it: header, channel table,
+# pose block, clips, tracks, tail. Every byte has to be consumed (docs/formats/lipsinc-lad.md, U4).
+lipsinc-parse:
+	@$(PYTHON) tools/lad-parse.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
+	@echo "wrote inventory/lipsinc_parse.csv"
 
 # The .lad body past the pose frames: a clip section, then a track table of <Map>.<Animation> records
 # (docs/formats/lipsinc-lad.md).

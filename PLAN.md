@@ -403,6 +403,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       channel, so a channel is a bone and a key-block slot is not; `tools/lad-bone-owners.py`
       (`inventory/lipsinc_bone_owners.csv`) finds all 21 names declared by five `Animations/*_anim.ukx` skeletons
       and by no other package. What is left is which parse stage is which section, not the link.
+      **The stages are the sections, and the container is closed** (`tools/lad-parse.py`, `make lipsinc-parse`,
+      `inventory/lipsinc_parse.csv`, `--check` in `make ci`): replaying `FUN_000bce40`'s order — two 4-byte scalars,
+      channel table, pose block (20 frames × one 32-byte record per channel), clip array, track array, `u32` + three
+      strings — consumes **all 8 files to their last byte** (160 channels, 3,200 pose records, 17 clips, 2,231
+      tracks, 58,006 groups, 263,900 keys, the same totals the shape-matching tools counted). Every count is the
+      loader's 7-bit varint, so the "10-byte prelude" was the first frame's header (`20`, `u32 2`, `21`, `u32 2`) and
+      a pose record starts with its `u32 2` and ends with `-1.0f`. What remains is what a record's three opaque
+      dwords and its `-1.0f` mean, and the 7 signed key slots.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
