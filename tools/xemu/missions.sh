@@ -44,6 +44,9 @@
 #                   before the walk reached a slot).
 #   --pad-hold SECS seconds a pad button is held (default 0.15 in drive.py; 0.35 is the value the 2026-11-06 run
 #                   reached `M00` with, and a swallowed press is the failure this project keeps hitting).
+# Environment: WORK (default ~/.local/share/xemu/sg1) and SG1_BIOS (default $HOME/nfs/sg1-dump/bios);
+# `DISPLAY`/`XAUTHORITY` are resolved here (`:0` and the session's own xauth file), because a cron shell sets
+# neither and an unset `XAUTHORITY` used to abort the first index under `set -u` (`--dry-run` prints both).
 # One run per index: a boot, `Continue`, N d-pad presses, `A`, a settle, one screenshot. Missions do not share an
 # emulator session because a level that fails to load leaves the guest in a state the next index cannot trust.
 set -eu
@@ -116,9 +119,20 @@ if [ -n "$names" ]; then
 fi
 [ -n "$out" ] && [ -n "$indices" ] || { echo "usage: missions.sh OUTDIR INDEX [INDEX ...] | --all" >&2; exit 2; }
 [ "$sink_read" = 1 ] && [ -z "$gdb" ] && { echo "--sink-read needs --gdb PORT: the read happens over the boot's own stub" >&2; exit 2; }
+# `DISPLAY`/`XAUTHORITY` are resolved here, once, the way `hud-say.sh` and `console-commands.sh` do it. The drive.py
+# calls below pass both through, and under `set -eu` a bare `XAUTHORITY="$XAUTHORITY"` aborts the index *after* the
+# HDD copy has been taken -- `XAUTHORITY: parameter not set`, which reads like a harness fault rather than an
+# environment one (measured 2026-11-09 from a cron shell, where neither variable is set). The default is this
+# desktop's own user session; `--dry-run` prints what was resolved, so the fix is visible without a boot.
+export DISPLAY="${DISPLAY:-:0}"
+if [ -z "${XAUTHORITY:-}" ]; then
+  XA=$(ls /run/user/1000/xauth_* 2>/dev/null | head -1) || true
+  [ -n "$XA" ] && export XAUTHORITY="$XA"
+fi
 if [ "$dry_run" = 1 ]; then
   echo "$(echo $indices | wc -w | tr -d ' ') indices, one boot each:"
   echo "$indices"
+  echo "display $DISPLAY, xauthority ${XAUTHORITY:-<none found>}"
   exit 0
 fi
 # The disc is the game, and xemu only *warns* about a missing one (`Could not open ...: No such file or directory`)
@@ -169,7 +183,7 @@ for index in $indices; do
     if [ "$sink_read" = 1 ]; then
       # `--linger` makes drive.py sleep with the guest up and kill it on exit, so the read has to happen while it
       # sleeps: run the sequence in the background and wait for the line that says every step finished.
-      ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" \
+      ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-}" \
           python3 -u tools/xemu/drive.py $args "$@" ) > "$dir/run.log" 2>&1 &
       dpid=$!
       n=0
@@ -231,7 +245,7 @@ for index in $indices; do
       pkill -x AppRun 2>/dev/null || true
       sleep 2
     else
-      if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="$XAUTHORITY" python3 tools/xemu/drive.py $args "$@" ) \
+      if ( cd "$repo" && DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-}" python3 tools/xemu/drive.py $args "$@" ) \
            > "$dir/run.log" 2>&1; then
         ok=1
       fi
