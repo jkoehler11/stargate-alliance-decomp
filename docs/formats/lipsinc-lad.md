@@ -359,7 +359,7 @@ refuses the whole block rather than consuming a guess.
 
 | bytes | field |
 |---|---|
-| 4, 1 | group header: `u32 2`, and a `u8` that is `0` in all 58,006 groups |
+| 4, 1 | group header: `u32 2`, then the group's **name** as an `FString` — a count byte of `0` in all 58,006 groups, so no group in the corpus is named |
 | 1 or 2 | key count, a 7-bit varint: bit `0x40` in the first byte means a second byte follows and contributes `<< 6`, so the 69-key group 2 of `AlkeshBomber.Beware` stores its count as `45 01`, and a group of 261 keys needs the second byte |
 | count × 16 | one key: `u32 2`, `i32` time, `f64` value |
 | 1 | block terminator, `0x00` |
@@ -377,7 +377,12 @@ All 2,231 blocks parse, none refused, and the blocks consume exactly the key byt
 | `sg1_crew_carter.lad` | 2 | 13,327 | 52 | 813 | 2 | 69 |
 
 **2,231 blocks, 58,006 groups, 263,900 keys, 4,572,880 key bytes** — the same 4.36 MiB the track table counted, now
-attributed to a structure. Keys per track run 7 to 1,213 (mean 118.3) and 39.6% of groups are empty, which is what a
+attributed to a structure. A group is not anonymous in the schema: `FUN_000bc330` reads each one as a **28-byte
+record** — a `u32` tag, a 12-byte `FString` **name** and a 12-byte `TArray` of keys (`FUN_00058850` and
+`FUN_000bb650`) — so the `u8 0` at offset 4 is that name's count byte and the varint after it is the array's
+count, in the same encoding every string in the file uses. **All 58,006 names are empty** (`named` in
+`inventory/lipsinc_keys.csv`, `--check` refuses a row that says otherwise): the one field that could name a curve
+is unused in this corpus. Keys per track run 7 to 1,213 (mean 118.3) and 39.6% of groups are empty, which is what a
 bone subset looks like: a group with no keys is a channel that does not move in this clip.
 
 Three measured facts say the middle field is a time and not an index:

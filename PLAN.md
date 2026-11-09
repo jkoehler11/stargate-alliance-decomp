@@ -416,6 +416,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are its vector part and the `-1.0f` is its `w` — a pitch of at most 77.0° on a whole-degree grid (506 of the
       522 turning records about `±X`). What remains is which weight slot is which bone, what the 7 signed key
       slots mean, and the clip/track constants (`u32 2`, `160.0`/`220.0`), which their serialisers only carry.
+      **And the slot's own name field is empty everywhere**: `FUN_000bc330` reads a key group as a 28-byte
+      record — `u32`, a 12-byte `FString`, a 12-byte `TArray` — so the `u8 0` is the name's count byte, and all
+      58,006 groups are unnamed (`named` in `inventory/lipsinc_keys.csv`, `--check` refuses a named row).
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -876,6 +879,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, a key group is a named array and the name is empty everywhere)
+
+- **The group's `u8 0` is a name, not a flag.** `FUN_000bc330` -- the reader `FUN_000bc620` calls for a track's
+  key block -- walks 26 elements of a **28-byte** record: a `u32` tag, a 12-byte `FString` and a 12-byte
+  `TArray` of keys, the latter two through `FUN_00058850` and `FUN_000bb650`. On disk the empty `FString` is the
+  single `0` byte the format page called a flag, and the varint after it is the array's count in the same
+  encoding every string and count in the file uses, so the reading does not move a byte.
+- **The corpus never fills it.** `tools/lad-keys.py` now parses the name and writes a `named` column:
+  **58,006 groups over 2,231 tracks, 0 named**, the totals unchanged (263,900 keys, 4,572,880 key bytes, no
+  block refused) and `--check` refuses a row with a named group, so the claim is enforced rather than printed.
+- **That closes the file-side route to a slot's bone.** The group record is where a curve could be named; it is
+  empty in every shipped block, so "which weight slot is which bone" has to come from the runtime or from the
+  values, which is where the next read starts.
 
 ### Execution notes (2026-11-09, the pose record is a position and a unit quaternion)
 

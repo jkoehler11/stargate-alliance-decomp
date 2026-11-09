@@ -113,6 +113,11 @@ an earlier note's "the reader is the only witness left" was pointing at the wron
   `(6.3e-30, -0, 3.6e-30, -1)` and a record carries a position plus a rotation (`docs/formats/lipsinc-lad.md`).
   `FUN_000b1bf0` is the confirmation and not the evidence: its eight reads go through `FUN_00037110` and
   `FUN_00037170`, which are the same 48 bytes, so the image cannot tell a `u32` from a `float` here.
+* **A group has a name, and the corpus leaves it empty.** `FUN_000bc330` is the key block's reader, and it
+  reads each group as a **28-byte record**: a `u32` tag, a 12-byte `FString` and a 12-byte `TArray` of keys
+  (through `FUN_00058850` and `FUN_000bb650`). On disk the empty name is the single `0` byte the format notes
+  called a flag, and all **58,006** groups carry it — so the one field that could name a curve is unused in this
+  corpus, and "which weight slot is which bone" cannot be answered from the file.
 * **What the clip record's `u32 2` and the track header's `160.0`/`220.0` mean.** `FUN_000bc620` reads the pair
   into two consecutive float fields with no test, and every record reader stores its leading `u32 2` into the
   record's first dword without comparing it -- so `2` is a tag the parser carries rather than a count or a

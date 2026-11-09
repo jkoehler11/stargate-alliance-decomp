@@ -313,6 +313,15 @@ and 42 distinct values, 506 of the turns about `±X` and 16 about `(0.008, 0.239
 loses small angles to float resolution. **`FUN_000b1bf0` cannot name the fields**: `FUN_00037110` and
 `FUN_00037170` are byte-identical 4-byte reads through the archive's `Serialize`, so its eight reads say "one tag
 and seven scalars" and the 3 + 4 grouping is measured from the data.
+**A group is a named key array, and the name is empty everywhere (2026-11-09).** `FUN_000bc330` reads the key
+block as 26 elements of a **28-byte** record -- a `u32` tag, a 12-byte `FString` and a 12-byte `TArray` of keys
+(`FUN_00058850` and `FUN_000bb650`) -- so the `u8 0` the format notes called a group flag is the **name's count
+byte**, and the varint after it is the key array's count, in the same encoding the strings use. `lad-keys.py`
+now reads the name and counts it: **58,006 groups in 2,231 tracks, 0 named** (`inventory/lipsinc_keys.csv`, a
+`named` column, `--check` refusing a named row), with the corpus totals unchanged and no block refused. That is
+a format-level negative for this entry's oldest question: the one place a group could say which curve it is, is
+present in the schema and empty in every shipped block, so the slot-to-bone link has to come from the runtime
+or from the values themselves.
 **What would settle the rest:** the clip record's `u32 2` and the track header's `160.0`/`220.0` are read by
 `FUN_000bc620` and the four record readers into their first dwords and two float fields **without any test**, so
 the serialisers answer only that the tag is carried and the pair is constant; naming them needs a caller that

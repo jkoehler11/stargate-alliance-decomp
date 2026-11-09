@@ -7,13 +7,16 @@ track and 19,568 in another rule out a fixed key struct. They are not 26 keys --
 with its own key count:
 
     block   := group x 26, then 0x00
-    group   := u32 2, u8 0, varint count, count x key
+    group   := u32 2, string name, varint count, count x key
     key     := u32 2, i32 time, f64 value
 
 `26` is the byte the track header already carried and this document used to call a key count; it is the group
-count, and it holds in all 2,231 blocks. The varint sets bit `0x40` in its first byte when a second byte
-follows and contributes `<< 6`, so a group of 69 keys opens `45 01`. Times are non-decreasing inside every
-group -- that is the test that says the middle field is time -- and the block's last byte is `0x00`.
+count, and it holds in all 2,231 blocks. A group opens with a tag, then a **name** -- an `FString`, whose count
+byte is `0` in all 58,006 groups, so no group in the corpus is named -- then its key array. `FUN_000bc330` is the
+reader: a 28-byte record (`u32`, a 12-byte `FString`, a 12-byte `TArray`) whose string and key array go through
+`FUN_00058850` and `FUN_000bb650`. The varint sets bit `0x40` in its first byte when a second byte follows and
+contributes `<< 6`, so a group of 69 keys opens `45 01`. Times are non-decreasing inside every group -- that is
+the test that says the middle field is time -- and the block's last byte is `0x00`.
 
     tools/lad-keys.py FILE.lad [...]                       # one line per file
     tools/lad-keys.py --dir "$SG1_DUMP/.../LIPSincData" -o inventory
@@ -32,7 +35,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CSV = "lipsinc_keys.csv"
-COLUMNS = ["path", "track", "block_bytes", "groups", "keys", "empty_groups", "min_keys", "max_keys",
+COLUMNS = ["path", "track", "block_bytes", "groups", "named", "keys", "empty_groups", "min_keys", "max_keys",
            "time_min", "time_max", "value_min", "value_max"]
 MARKER = b"\x02\x00\x00\x00"
 GROUPS = 26
@@ -59,17 +62,32 @@ def varint_count(d, p, end):
     return b, 1
 
 
+def group_name(d, p, end):
+    """A group's `FString`: the 7-bit count, then that many bytes (a negative count means two-byte characters)."""
+    count, n = varint_count(d, p, end)
+    wide = count < 0
+    count = abs(count)
+    width = 2 if wide else 1
+    if count == 0:
+        return "", n
+    if p + n + count * width > end:
+        raise ValueError("truncated group name at %#x" % p)
+    raw = d[p + n:p + n + count * width]
+    try:
+        return raw.decode("utf-16-le" if wide else "latin-1"), n + count * width
+    except UnicodeDecodeError:
+        raise ValueError("group name at %#x is not text" % p)
+
+
 def key_block(d, start, end):
     """Walk one track's key block strictly; every group and key must parse or the whole block is refused."""
-    groups, p = [], start
+    groups, names, p = [], [], start
     for _ in range(GROUPS):
         if p + 6 > end or d[p:p + 4] != MARKER:
             raise ValueError("no group marker at %#x" % p)
-        flag = d[p + 4]
-        if flag != 0:
-            raise ValueError("group flag %#x at %#x" % (flag, p))
-        count, n = varint_count(d, p + 5, end)
-        q = p + 5 + n
+        name, n = group_name(d, p + 4, end)
+        count, m = varint_count(d, p + 4 + n, end)
+        q = p + 4 + n + m
         keys = []
         for _ in range(count):
             if q + 16 > end or d[q:q + 4] != MARKER:
@@ -77,16 +95,17 @@ def key_block(d, start, end):
             keys.append((struct.unpack_from("<i", d, q + 4)[0], struct.unpack_from("<d", d, q + 8)[0]))
             q += 16
         groups.append(keys)
+        names.append(name)
         p = q
     if p + 1 > end or d[p] != TERMINATOR:
         raise ValueError("block does not end with 0x00 at %#x" % p)
-    return groups, p + 1
+    return groups, names, p + 1
 
 
 def measure_track(d, rec):
     """One track record's key block as aggregates: group and key counts, time and value ranges."""
     start, end = rec["keys_offset"], rec["keys_offset"] + rec["block"]
-    groups, stop = key_block(d, start, end)
+    groups, names, stop = key_block(d, start, end)
     times = [t for g in groups for t, _ in g]
     values = [v for g in groups for _, v in g]
     for g in groups:                                    # the invariant that makes the middle field time
@@ -98,6 +117,7 @@ def measure_track(d, rec):
         "track": rec["full"],
         "block_bytes": rec["block"],
         "groups": len(groups),
+        "named": sum(1 for n in names if n),
         "keys": len(times),
         "empty_groups": sizes.count(0),
         "min_keys": min(sizes),
@@ -120,7 +140,7 @@ def measure(path):
         try:
             got = measure_track(d, rec)
         except ValueError as exc:
-            got = {"track": rec["full"], "block_bytes": rec["block"], "groups": 0, "keys": 0,
+            got = {"track": rec["full"], "block_bytes": rec["block"], "groups": 0, "named": "", "keys": 0,
                    "empty_groups": "", "min_keys": "", "max_keys": "", "time_min": "", "time_max": "",
                    "value_min": "", "value_max": "", "left_bytes": "", "error": str(exc), "_groups": []}
         got["path"] = path
@@ -159,7 +179,8 @@ def synthetic():
     body += struct.pack("<I", 1) + struct.pack("<ff", 160.0, 220.0) + bytes([GROUPS])
     keys = bytearray()
     for g in range(GROUPS):
-        keys += struct.pack("<I", 2) + bytes([0])
+        name = b"Jaw" if g == 0 else b""                          # one named group: the name field must parse
+        keys += struct.pack("<I", 2) + bytes([len(name)]) + name
         if g == 0:                                               # 69 keys: the two-byte count
             keys += bytes([(69 & 0x3F) | 0x40, 69 >> 6])
             count = 69
@@ -197,6 +218,8 @@ def check():
     for r in rows:
         if int(r["groups"]) != GROUPS:
             bad.append("%s %s: %s groups" % (r["path"], r["track"], r["groups"]))
+        if r["named"] != "0":
+            bad.append("%s %s: %s named groups" % (r["path"], r["track"], r["named"]))
         if int(r["keys"]) and int(r["keys"]) > int(r["groups"]) * int(r["max_keys"]):
             bad.append("%s %s: %s keys over %s groups of at most %s"
                        % (r["path"], r["track"], r["keys"], r["groups"], r["max_keys"]))
@@ -213,14 +236,17 @@ def check():
         if s["groups"] != GROUPS or s["keys"] != 69 or s["max_keys"] != 69 or s["time_max"] != 680:
             bad.append("selftest: read %r groups / %r keys / max %r / time %r"
                        % (s["groups"], s["keys"], s["max_keys"], s["time_max"]))
+        if s["named"] != 1:
+            bad.append("selftest: a named group read as %r named" % (s["named"],))
         if s["value_max"] != "0.85":
             bad.append("selftest: value %r" % (s["value_max"],))
     if bad:
         for b in bad[:20]:
             print("FAIL lipsinc-keys: " + b)
         return 1
-    print("ok   lipsinc-keys: %d tracks, %d groups, %d keys, blocks %d..%d bytes"
-          % (len(rows), sum(int(r["groups"]) for r in rows), sum(int(r["keys"]) for r in rows),
+    print("ok   lipsinc-keys: %d tracks, %d groups (%d named), %d keys, blocks %d..%d bytes"
+          % (len(rows), sum(int(r["groups"]) for r in rows), sum(int(r["named"]) for r in rows),
+             sum(int(r["keys"]) for r in rows),
              min(int(r["block_bytes"]) for r in rows), max(int(r["block_bytes"]) for r in rows)))
     return 0
 
@@ -232,14 +258,15 @@ def walk(path, want, limit=None):
     for rec in rows["_tracks"]:
         if rec["full"] != want:
             continue
-        groups, stop = key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
+        groups, names, stop = key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
         print("%s: block %d bytes at %#x, %d groups, ends at +%d with 0x00"
               % (rec["full"], rec["block"], rec["keys_offset"], len(groups), stop - rec["keys_offset"]))
         for i, g in enumerate(groups):
-            print("  group %2d: %3d keys%s" % (i, len(g), "" if not g else
-                                               "  time %d..%d  value %s"
-                                               % (g[0][0], g[-1][0],
-                                                  " ".join("%.4g" % v for _, v in g[:3]))))
+            print("  group %2d: %3d keys%s%s" % (i, len(g), " name=%r" % names[i] if names[i] else "",
+                                                "" if not g else
+                                                "  time %d..%d  value %s"
+                                                % (g[0][0], g[-1][0],
+                                                   " ".join("%.4g" % v for _, v in g[:3]))))
         return 0
     print("no track named %r in %s" % (want, path))
     return 1
