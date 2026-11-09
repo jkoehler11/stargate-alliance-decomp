@@ -396,7 +396,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       mean — not the encoding, the layout or the table's extent.
       **The channel table is an ordered bone list and the pose record's last word is an angle** (below): the eight
       files share an eighteen-name prefix and the two shapes differ by exactly the two tongue bones, and the
-      record's eighth word is `-cos(theta)` on a half-degree grid in 95-99% of 3,200 records (2,678 exactly 0°). The
+      record's last four floats are a unit quaternion whose angle is `2*acos(-w)` -- a whole-degree grid in 97.6% of the
+      3,200 records, 2,678 exactly 0°, 77.0° at most. The
       weight slots are **not** one per channel — the 21-channel clips carry the same 26-group blocks — so a slot's
       bone is not recoverable by counting. **The runtime half is read** (`docs/formats/lipsinc-runtime.md`): the
       loader links the channel table to the mesh's bone names with `_wcsicmp` and writes one mesh bone index per
@@ -409,8 +410,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       strings — consumes **all 8 files to their last byte** (160 channels, 3,200 pose records, 17 clips, 2,231
       tracks, 58,006 groups, 263,900 keys, the same totals the shape-matching tools counted). Every count is the
       loader's 7-bit varint, so the "10-byte prelude" was the first frame's header (`20`, `u32 2`, `21`, `u32 2`) and
-      a pose record starts with its `u32 2` and ends with `-1.0f`. What remains is what a record's three opaque
-      dwords and its `-1.0f` mean, and the 7 signed key slots.
+      a pose record starts with its `u32 2` and ends with `-1.0f`.
+      **The record is a position and a unit quaternion** (U4): `tools/lad-bones.py` reads all seven floats and the
+      last four have `|q| = 1` to `5.5e-7` in all 3,200 records with `w <= 0` always, so the three "opaque dwords"
+      are its vector part and the `-1.0f` is its `w` — a pitch of at most 77.0° on a whole-degree grid (506 of the
+      522 turning records about `±X`). What remains is which weight slot is which bone, what the 7 signed key
+      slots mean, and the clip/track constants (`u32 2`, `160.0`/`220.0`), which their serialisers only carry.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -871,6 +876,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the pose record is a position and a unit quaternion)
+
+- **The three "opaque" dwords are a quaternion's vector part, and the `-1.0f` is its `w`.** `tools/lad-bones.py`
+  (`make lipsinc-bones`, `inventory/lipsinc_bones.csv`, `--check` in `make ci`) now reads all seven floats of a
+  record: the last four have `|q| = 1` within `5.5e-7` in **all 3,200** records and `w` is never positive, so a
+  record is a position plus a rotation in the negated convention. The rest pose's "garbage" words
+  `6.3e-30, -0, 3.6e-30` are that quaternion's `x, y, z` -- denormal-small, not zero, which is why four earlier
+  readings took them for integers.
+- **`FUN_000b1bf0` cannot settle the split, and that is the finding.** It calls `FUN_00037110` once and
+  `FUN_00037170` seven times, but the two are **byte-identical** (48 bytes: a 4-byte read through the archive's
+  `Serialize` vtable slot plus a running byte counter), so the image says "one tag and seven 4-byte scalars" and
+  nothing more; the 3 + 4 grouping is measured from the data, which is the stronger witness here.
+- **The angle is twice what the last float alone suggested.** `w = -cos(theta/2)`, so `2*atan2(|v|, -w)` puts
+  3,124 of 3,200 records on a **whole-degree** grid (97.6%), 522 turn at all, the maximum is `77.0` degrees and
+  the alphabet is 42 values; 506 of the 522 turn about `±X`, the other 16 about `(0.008, 0.239, 0.971)`. The
+  earlier half-degree grid was this one read with `acos`, which reports half a rotation and loses small angles
+  to float resolution near `w = -1`.
+- **The record is closed; the file's tag and constants are not.** `FUN_000bc620` reads a track's `160.0`/`220.0`
+  into two consecutive float fields without testing them, and each of the four record readers stores its leading
+  `u32 2` into the record's first dword without comparing it -- so `2` is a tag the parser carries, and neither
+  question is answered from the serialiser side. **Next**: the 7 signed slots' meaning, and a caller that reads
+  those two float fields.
 
 ### Execution notes (2026-11-09, the 85 refusals are rows now, and two families are most of them)
 

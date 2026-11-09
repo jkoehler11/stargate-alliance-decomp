@@ -108,9 +108,14 @@ an earlier note's "the reader is the only witness left" was pointing at the wron
 
 ## What is left
 
-* **What a pose record's three opaque dwords and its `-1.0f` mean.** The record's extent and field order are the
-  loader's (`u32 2`, three floats, three words, `-1.0f`); the words are `0`, `7c21129e`, `049c2b99` in frame 0 of
-  every file and nothing in the name path reads them. `FUN_000b1bf0` serialises the record but its stages are not
-  read yet.
+* **What a pose record's three "opaque" words and its `-1.0f` are -- a unit quaternion.** The last four floats
+  are `x, y, z, w` with `|q| = 1` in all 3,200 records and `w <= 0` always, so the rest pose stores
+  `(6.3e-30, -0, 3.6e-30, -1)` and a record carries a position plus a rotation (`docs/formats/lipsinc-lad.md`).
+  `FUN_000b1bf0` is the confirmation and not the evidence: its eight reads go through `FUN_00037110` and
+  `FUN_00037170`, which are the same 48 bytes, so the image cannot tell a `u32` from a `float` here.
+* **What the clip record's `u32 2` and the track header's `160.0`/`220.0` mean.** `FUN_000bc620` reads the pair
+  into two consecutive float fields with no test, and every record reader stores its leading `u32 2` into the
+  record's first dword without comparing it -- so `2` is a tag the parser carries rather than a count or a
+  marker, and neither constant is explained by its serialiser.
 * **What the 7 signed slots mean.** Nothing in the name path touches them: the link is one dword per channel and
   the signed slots are not channels.

@@ -12,10 +12,15 @@ the file actually carries -- the channel table -- and what a pose record holds b
   sequence and its frames hold one record per *listed* bone: 16 of 17 lists happen to follow table order, and
   `Controllers/sg1_crew_jackson.lad`'s `jackson_frown` lists `BN-Head` first (indices 18, 4, 5, 6, 7). So the file
   never states "bone = slot number"; a clip says it by position in its own list.
-* **The pose record's eighth word is an angle, not a sentinel.** Every one of the 3,200 records has its last float in
-  `[-1, 0]`, and `-acos` of it snaps to a **half-degree grid** in 96-98% of the records (352 of 420 in a 21-channel
-  clip are exactly 0 degrees, i.e. `-1.0`). Reading it as `-cos(theta)` replaces the "pose weight" of the earlier
-  page with a rotation angle.
+* **The pose record's last four floats are a unit quaternion, and the three "opaque" words are its vector part.**
+  `FUN_000b1bf0` reads a record as eight consecutive 4-byte scalars -- a tag, then three, then four -- through a
+  leaf that is byte-identical for a `u32` and a `float` (`FUN_00037110` and `FUN_00037170` are the same 48 bytes),
+  so the 3 + 4 split comes from the data, not from the code. The data is decisive: `|q| = 1` to within `5.5e-7` in
+  all 3,200 records, so bytes 16-31 are a rotation. The `-1.0f` that earlier pages read as a terminator, then as a
+  pose weight, then as `-cos(theta)` is its `w`; the denormal words at rest (`6.3e-30, -0, 3.6e-30`) are `x, y, z`.
+  The stored quaternion always has `w <= 0` -- the canonical form negated, the same rotation -- so the angle is
+  `2*atan2(|v|, -w)`, **twice** the `-acos` reading: a whole-degree grid, 77.0 degrees at most, and 522 of the
+  3,200 records turning at all.
 * **The 19 weight slots are not one-per-channel.** The 21-channel clips carry the same 26-slot key blocks as the
   19-channel packs, so the weight-slot count is a property of the key schema, not of the channel table -- the
   "19 weights, 19 channels" coincidence the slot page recorded does not survive this measurement.
@@ -23,10 +28,12 @@ the file actually carries -- the channel table -- and what a pose record holds b
     tools/lad-bones.py FILE.lad [...]                        # one line per file
     tools/lad-bones.py --dir "$SG1_DUMP/.../System/LIPSincData" -o inventory
     tools/lad-bones.py --bones FILE.lad                      # the ordered bone list with clip membership
-    tools/lad-bones.py --angles FILE.lad [...]               # where the last float lands on the degree grid
+    tools/lad-bones.py --angles FILE.lad [...]               # each file's rotation alphabet, grid and axes
+    tools/lad-bones.py --records FILE.lad                    # every frame's position and quaternion, one file
     tools/lad-bones.py --check                               # dump-free, validates the committed CSV
 
-It measures names, order and one field; it does not claim what the three words between position and angle are.
+It measures names, order and the record's seven floats; the clip record's `u32 2` and the track header's
+`160.0`/`220.0` are a separate question (U4).
 """
 import argparse
 import collections
@@ -41,12 +48,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CSV = "lipsinc_bones.csv"
 COLUMNS = ["path", "index", "name", "channels", "slot", "clips", "clip_positions", "frames",
-           "pose_x", "pose_y", "pose_z", "angle_deg", "angle_max", "dx", "dy", "dz"]
+           "pose_x", "pose_y", "pose_z", "qx", "qy", "qz", "qw", "axis", "angle_deg", "angle_max",
+           "norm_err", "dx", "dy", "dz"]
 RECORD = 32
 WEIGHT_SLOTS = 19
-ANGLE_WORD = 28                       # the record's last float, -cos(theta)
+POINTER = 4                           # three floats: the position
+QUATERNION = 16                       # four floats: a unit quaternion, always negated (w <= 0)
+NORM_TOL = 1e-5                       # the unit-length error a float32 quaternion can carry
 PREFIX = 18                           # names shared, in order, by all eight files
-GRID = 0.5                            # the degree grid the angle lands on
+GRID = 1.0                            # the degree grid the rotations are authored on
 
 
 def _mod(name, filename):
@@ -56,16 +66,39 @@ def _mod(name, filename):
     return mod
 
 
-def angle_of(word):
-    """`-cos(theta)` -> theta in degrees; None when the word is not in the cosine's range."""
-    if not -1.0000001 <= word <= 0.0000001:
-        return None
-    return math.degrees(math.acos(min(1.0, max(-1.0, -word))))
+def angle_of(quat):
+    """`2*atan2(|v|, -w)` in degrees: the rotation a stored quaternion carries.
+
+    `atan2` keeps the small angles that `acos` loses -- near `w = -1.0` a float's resolution is coarser than the
+    angle's, and a zero rotation is stored with denormal words, not with exact zeros.
+    """
+    v = math.sqrt(quat[0] * quat[0] + quat[1] * quat[1] + quat[2] * quat[2])
+    return math.degrees(2.0 * math.atan2(v, -quat[3]))
+
+
+def norm_err(quat):
+    """How far a stored quaternion is from unit length."""
+    return abs(math.sqrt(sum(c * c for c in quat)) - 1.0)
+
+
+def axis_of(quat):
+    """The rotation axis as a rounded unit vector, or '' for a zero rotation."""
+    v = math.sqrt(quat[0] * quat[0] + quat[1] * quat[1] + quat[2] * quat[2])
+    if v < 1e-12:
+        return ""
+    return ",".join("%.3f" % (c / v) for c in quat[:3])
+
+
+def quat_for(deg, axis=(1.0, 0.0, 0.0)):
+    """A rotation of `deg` about a unit `axis`, in the file's negated convention (`w <= 0`)."""
+    half = math.radians(deg) / 2.0
+    s = math.sin(half)
+    return (axis[0] * s, axis[1] * s, axis[2] * s, -math.cos(half))
 
 
 def on_grid(deg):
-    """True when a degree value lands on the half-degree grid the poses are authored on."""
-    return abs(deg * 2 - round(deg * 2)) < 0.02
+    """True when a rotation angle lands on the whole-degree grid the poses are authored on."""
+    return abs(deg - round(deg)) < 0.02
 
 
 def walk(d):
@@ -102,14 +135,16 @@ def measure(path, label=None):
         recs = per_channel.get(i, [])
         if not recs:
             raise ValueError("%s: channel %d carries no record" % (path, i))
-        x, y, z = struct.unpack_from("<3f", recs[0], 4)
-        word = struct.unpack_from("<f", recs[0], ANGLE_WORD)[0]
-        deg = angle_of(word)
-        angles = [a for a in (angle_of(struct.unpack_from("<f", r, ANGLE_WORD)[0]) for r in recs)
-                  if a is not None]
+        x, y, z = struct.unpack_from("<3f", recs[0], POINTER)
+        quat = struct.unpack_from("<4f", recs[0], QUATERNION)
+        deg = angle_of(quat)
+        angles = [angle_of(struct.unpack_from("<4f", r, QUATERNION)) for r in recs]
+        err = max(norm_err(struct.unpack_from("<4f", r, QUATERNION)) for r in recs)
+        peak = max(recs, key=lambda r: angle_of(struct.unpack_from("<4f", r, QUATERNION)))
+        axis = axis_of(struct.unpack_from("<4f", peak, QUATERNION))
         span = []
-        for axis in (0, 1, 2):
-            vs = [struct.unpack_from("<3f", r, 4)[axis] for r in recs]
+        for axis_i in (0, 1, 2):
+            vs = [struct.unpack_from("<3f", r, POINTER)[axis_i] for r in recs]
             span.append(max(vs) - min(vs))
         in_clips, positions = [], []
         for cname, bones, _ in clips or []:
@@ -128,8 +163,14 @@ def measure(path, label=None):
             "pose_x": "%.5g" % x,
             "pose_y": "%.5g" % y,
             "pose_z": "%.5g" % z,
-            "angle_deg": "" if deg is None else "%.2f" % deg,
-            "angle_max": "" if not angles else "%.2f" % max(angles),
+            "qx": "%.3g" % quat[0],
+            "qy": "%.3g" % quat[1],
+            "qz": "%.3g" % quat[2],
+            "qw": "%.3g" % quat[3],
+            "axis": axis,
+            "angle_deg": "%.4f" % deg,
+            "angle_max": "%.4f" % max(angles),
+            "norm_err": "%.3g" % err,
             "dx": "%.5g" % span[0],
             "dy": "%.5g" % span[1],
             "dz": "%.5g" % span[2],
@@ -162,17 +203,25 @@ def by_file(rows):
 
 
 def selftest():
-    """The angle decode and the grid test on hand-built values, so `--check` tests the reader, not just the CSV."""
+    """The quaternion decode and the grid test on hand-built values, so `--check` tests the reader."""
     bad = []
-    cases = [(0.0, -1.0), (10.0, -0.984807753012208), (15.0, -0.965925826289068), (38.5, -0.782608156852414)]
-    for deg, word in cases:
-        got = angle_of(word)
-        if got is None or abs(got - deg) > 0.01:
-            bad.append("angle_of(%r) = %r, wanted %.2f" % (word, got, deg))
+    for deg in (0.0, 1.0, 10.0, 38.0, 77.0):
+        q = quat_for(deg)
+        got = angle_of(q)
+        if abs(got - deg) > 1e-4:
+            bad.append("angle_of(%r) = %r, wanted %.2f" % (q, got, deg))
         if not on_grid(got):
             bad.append("%.2f does not test as on-grid" % deg)
-    if angle_of(-1.5) is not None or angle_of(0.5) is not None:
-        bad.append("a word outside [-1, 0] was read as an angle")
+        if norm_err(q) > 1e-6 or q[3] > 0:
+            bad.append("%r is not a stored-convention unit quaternion" % (q,))
+    if on_grid(0.5):
+        bad.append("a half-degree rotation tests as on-grid")
+    if abs(angle_of(quat_for(30.0, (0.0, 0.0, 1.0))) - 30.0) > 1e-6:
+        bad.append("an axis other than x does not decode")
+    if axis_of((0.0, 0.0, 0.0, -1.0)) != "":
+        bad.append("a zero rotation reports an axis")
+    if on_grid(20.4):
+        bad.append("the grid test accepts 20.4 degrees")
     return bad
 
 
@@ -203,10 +252,14 @@ def check():
                     bad.append("%s index %s: slot %r" % (p, r["index"], r["slot"]))
             elif r["slot"]:
                 bad.append("%s index %s: a slot above the weight table" % (p, r["index"]))
-            if r["angle_deg"] == "":
-                bad.append("%s %s: the last word is not a cosine" % (p, r["name"]))
-            elif not 0.0 <= float(r["angle_deg"]) <= 180.0:
+            if not 0.0 <= float(r["angle_deg"]) <= 180.0:
                 bad.append("%s %s: %.2f degrees" % (p, r["name"], float(r["angle_deg"])))
+            if float(r["norm_err"]) > NORM_TOL:
+                bad.append("%s %s: |q| - 1 = %s" % (p, r["name"], r["norm_err"]))
+            if float(r["qw"]) > 0:
+                bad.append("%s %s: the stored quaternion has w > 0" % (p, r["name"]))
+            if r["axis"] and abs(math.sqrt(sum(float(c) ** 2 for c in r["axis"].split(","))) - 1.0) > 2e-3:
+                bad.append("%s %s: axis %r is not a unit vector" % (p, r["name"], r["axis"]))
             if len(r["clips"].split(";")) != len(r["clip_positions"].split(";")) and r["clips"]:
                 bad.append("%s %s: %d clips but %d positions" % (p, r["name"], len(r["clips"].split(";")),
                                                                  len(r["clip_positions"].split(";"))))
@@ -253,16 +306,15 @@ def check():
         for b in bad[:20]:
             print("FAIL lipsinc-bones: " + b)
         return 1
-    angles = [float(r["angle_max"]) for r in rows if r["angle_max"]]
+    angles = [float(r["angle_max"]) for r in rows]
     zero = sum(1 for a in angles if a == 0.0)
     grid = sum(1 for a in angles if on_grid(a))
     if grid < 0.9 * len(angles):
-        bad.append("only %d of %d bones peak on the half-degree grid" % (grid, len(angles)))
-    if not any(a > 0 for a in [float(r["angle_deg"]) for r in rows if r["angle_deg"]]):
-        pass                      # frame 0 is the bind pose: a zero angle there is the expected reading
-    print("ok   lipsinc-bones: %d files, %d bone rows, %d-name prefix stable, angles 0..%.1f (%.0f%% at 0), "
-          "%d of %d on the half-degree grid, %d out-of-order clip lists"
-          % (len(files), len(rows), PREFIX, max(angles), 100.0 * zero / len(angles), grid, len(angles),
+        bad.append("only %d of %d bones peak on the whole-degree grid" % (grid, len(angles)))
+    errs = [float(r["norm_err"]) for r in rows]
+    print("ok   lipsinc-bones: %d files, %d bone rows, %d-name prefix stable, rotations 0..%.1f "
+          "(%d still), |q|-1 <= %.1e, %d of %d peaks on the whole-degree grid, %d out-of-order clip lists"
+          % (len(files), len(rows), PREFIX, max(angles), zero, max(errs), grid, len(angles),
              len(out_of_order)))
     return 0
 
@@ -271,25 +323,44 @@ def print_bones(path):
     rows = measure(path)
     print("%s: %d channels" % (os.path.basename(path), len(rows)))
     for r in rows:
-        print("  %2s %-22s %s x=%-8s y=%-8s z=%-8s angle=%-6s dz=%-8s %s"
+        print("  %2s %-22s %s pos=(%-8s %-8s %-8s) q=(%-9s %-9s %-9s %-7s) angle=%-7s axis=%-16s %s"
               % (r["index"], r["name"], r["slot"] or "-", r["pose_x"], r["pose_y"], r["pose_z"],
-                 r["angle_deg"], r["dz"], r["clips"]))
+                 r["qx"], r["qy"], r["qz"], r["qw"], r["angle_max"], r["axis"] or "-", r["clips"]))
+    return 0
+
+
+def print_records(path):
+    """Every record of one file: the frame's position and quaternion, the angle it carries and its axis."""
+    d = open(path, "rb").read()
+    names, nframes, per_channel, _ = walk(d)
+    print("%s: %d channels, %d frames" % (os.path.basename(path), len(names), nframes))
+    for c, name in enumerate(names):
+        print("  %2d %-22s" % (c, name))
+        for f, rec in enumerate(per_channel[c]):
+            pos = struct.unpack_from("<3f", rec, POINTER)
+            quat = struct.unpack_from("<4f", rec, QUATERNION)
+            print("     f%02d pos=(%8.4f %8.4f %8.4f) q=(%11.4g %11.4g %11.4g %9.6f) angle=%6.2f axis=%s"
+                  % (f, pos[0], pos[1], pos[2], quat[0], quat[1], quat[2], quat[3],
+                     angle_of(quat), axis_of(quat) or "-"))
     return 0
 
 
 def print_angles(files):
+    """Each file's rotation alphabet: how many records turn, how many land on the degree grid, about what."""
     for path in files:
         d = open(path, "rb").read()
         names, nframes, per_channel, clips = walk(d)
-        words = [struct.unpack_from("<f", r, ANGLE_WORD)[0] for recs in per_channel.values() for r in recs]
-        degs = [angle_of(w) for w in words]
-        bad = sum(1 for x in degs if x is None)
-        degs = [x for x in degs if x is not None]
+        quats = [struct.unpack_from("<4f", rec, QUATERNION)
+                 for recs in per_channel.values() for rec in recs]
+        degs = [angle_of(q) for q in quats]
+        err = max(norm_err(q) for q in quats)
         grid = sum(1 for x in degs if on_grid(x))
-        c = collections.Counter(round(x, 1) for x in degs)
-        print("%-34s records=%4d outside=%d grid=%.3f zero=%d top=%s"
-              % (os.path.basename(path), len(words), bad, grid / len(degs),
-                 sum(1 for x in degs if x == 0.0), c.most_common(5)))
+        moving = [x for x in degs if x > 1e-3]
+        axes = collections.Counter(axis_of(q) for q in quats if angle_of(q) > 1e-3)
+        c = collections.Counter(round(x, 1) for x in moving)
+        print("%-34s records=%4d |q|-1<=%.1e moving=%3d grid=%.3f zero=%4d max=%5.1f axes=%s top=%s"
+              % (os.path.basename(path), len(quats), err, len(moving), grid / len(degs),
+                 sum(1 for x in degs if x <= 1e-3), max(degs), axes.most_common(2), c.most_common(3)))
     return 0
 
 
@@ -299,7 +370,8 @@ def main():
     ap.add_argument("--dir", help="directory of .lad files (walked recursively)")
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
     ap.add_argument("--bones", action="store_true", help="print one file's ordered bone list")
-    ap.add_argument("--angles", action="store_true", help="where each file's last float lands on the degree grid")
+    ap.add_argument("--angles", action="store_true", help="each file's rotation alphabet, grid and axes")
+    ap.add_argument("--records", action="store_true", help="every frame's record for one file")
     ap.add_argument("--check", action="store_true", help="dump-free: validate the committed CSV")
     args = ap.parse_args()
 
@@ -318,15 +390,19 @@ def main():
         if len(files) != 1:
             ap.error("--bones takes exactly one file")
         return print_bones(files[0])
+    if args.records:
+        if len(files) != 1:
+            ap.error("--records takes exactly one file")
+        return print_records(files[0])
     if args.angles:
         return print_angles(files)
     rows = collect(files, args.out, args.dir)
     for p, rs in by_file(rows).items():
         clips = sorted({c for r in rs for c in r["clips"].split(";") if c})
-        print("%-34s channels=%2d bones=%2d clips=%d angles=%.1f..%.1f"
+        print("%-34s channels=%2d bones=%2d clips=%d rotations=%.1f..%.1f |q|-1<=%.1e"
               % (os.path.basename(p), len(rs), len(rs), len(clips),
-                 min(float(r["angle_deg"]) for r in rs if r["angle_deg"]),
-                 max(float(r["angle_deg"]) for r in rs if r["angle_deg"])))
+                 min(float(r["angle_max"]) for r in rs), max(float(r["angle_max"]) for r in rs),
+                 max(float(r["norm_err"]) for r in rs)))
     print("wrote %s" % os.path.join(args.out, CSV))
     return 0
 

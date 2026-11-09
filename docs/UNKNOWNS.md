@@ -303,9 +303,20 @@ container half of U4 is closed: `docs/formats/lipsinc-lad.md` carries the gramma
 the stage-to-section table. Two readings are corrected by it: the payload does not open with `532`/`0x21500` (those
 bytes are the first frame's `20`, `u32 2`, `21`, `u32 2`), and the pose record begins with a `u32 2` and ends with
 `-1.0f`, so the `2` the old table put at bytes 28–31 is the next record's leading word.
-**What would settle the rest:** `FUN_000b1bf0` (the 32-byte record's serialiser) for what the three opaque dwords and
-the `-1.0f` are, and a read of the clip record's `u32 2` and the track record's constant `160.0`/`220.0` pair. The
-7 signed key slots are a separate question, unchanged.
+**The record is a position and a unit quaternion (2026-11-09).** `tools/lad-bones.py` now reads all seven floats:
+the last four have `|q| = 1` to within `5.5e-7` in **all 3,200** records and `w` is never positive, so
+bytes 16-31 are a rotation in the negated convention and the three "opaque dwords" are its `x, y, z`
+(`6.3e-30, -0, 3.6e-30` at rest -- denormal, not zero, which is why they did not read as float data). The angle
+is `2*atan2(|v|, -w)`: a whole-degree grid in 3,124 of 3,200 records, 522 turning at all, `77.0` degrees at most
+and 42 distinct values, 506 of the turns about `±X` and 16 about `(0.008, 0.239, 0.971)`. The earlier
+"half-degree grid" was this grid read with `acos`, which reports half the rotation (`w = -cos(theta/2)`) and
+loses small angles to float resolution. **`FUN_000b1bf0` cannot name the fields**: `FUN_00037110` and
+`FUN_00037170` are byte-identical 4-byte reads through the archive's `Serialize`, so its eight reads say "one tag
+and seven scalars" and the 3 + 4 grouping is measured from the data.
+**What would settle the rest:** the clip record's `u32 2` and the track header's `160.0`/`220.0` are read by
+`FUN_000bc620` and the four record readers into their first dwords and two float fields **without any test**, so
+the serialisers answer only that the tag is carried and the pair is constant; naming them needs a caller that
+consults those fields. The 7 signed key slots are a separate question, unchanged.
 
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
