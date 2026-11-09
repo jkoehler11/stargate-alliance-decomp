@@ -231,9 +231,8 @@ qualified name, `u32 1`, `160.0`, `220.0`, key count **26** — followed by a ke
 **4,572,880 bytes, 4.36 MiB of the 6.5 MiB corpus**, which is where the mass that this entry called "96-99% unread"
 actually lives. **What is left of U4 is the key block alone**: its `u32 2` marker recurs 33-1,247 times per block at
 11-15 bytes per marker, which with a constant key count of 26 means variable-length key entries, not a struct array.
-Two smaller unknowns are recorded rather than explained: the two bytes before the first track header (`00 03` in
-`grey.lad`, `60 09` in the 1.3 MB pack, six bytes in `sg1_crew_jackson.lad`, which has no track table at all), and the
-fact that `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name is not a unique key. **What would settle the key
+One smaller unknown is recorded rather than explained: `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name
+is not a unique key. **What would settle the key
 block:** the same route that has worked three times on this format — read `LIPSincReadAnimFile`'s loop at `0x000b8340`
 for the entry stride (it is 4,977 bytes and already located), or count `ValuesAtTime` lookups against a clip whose
 end time is known, since 26 keys over `160.0`-`220.0` milliseconds gives a 2.4 ms step to test against.
@@ -263,6 +262,19 @@ finds 2,231 track-like records with exactly one tuple `(160.0, 220.0, 26)` and z
 they cannot be per-clip data (a duration or a rate would vary) and the open question is what the *format* means by
 them. What is left of U4: which weight slot is which bone (the clip sections' bone subsets are the only ordered
 bone list in the file), and the meaning of the 7 signed slots' values.
+
+**The track table's extent is declared, not inferred (2026-11-09).** The bytes the walk counted before the first
+header are the table's **record count**, in the same 7-bit varint the key counts use (`0x40` in the first byte means a
+second follows and contributes `<< 6`): `60 09` is `0x20 + (9 << 6)` = **608** in the carter pack, `52 0c` = 786,
+`65 07` = 485, `58 05` = 344, and `00 03` = 3 in `grey.lad` and `JAnderson.lad`, `00 02` = 2 in
+`sg1_crew_carter.lad`. **Seven files, every count exactly the number of records the pattern walk found**, which
+retires one of the two items this entry recorded as unexplained and turns the table's extent from a pattern into a
+declared one. The count is decoded *backwards* from a record the walk already found and `--check` refuses a CSV whose
+`declared` column disagrees with its `tracks` column, so it verifies the walk rather than steering it. The leading
+`0x00` in four of the seven is the previous section's last byte, not part of the count.
+`sg1_crew_jackson.lad`, which has no table, keeps its six bytes (`000002000000`) as that file's residue -- they are
+not a count of 0. This is the third appearance of the same varint in the format (a group's key count, a group of 69
+keys' two-byte count, and now the table's count), which is worth knowing before reading `LIPSincReadAnimFile`.
 
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
