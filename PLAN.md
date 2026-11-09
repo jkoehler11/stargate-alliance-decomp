@@ -831,6 +831,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-08, the HUD-text watcher's window is its own clock, and a blank capture is one frozen frame)
+
+- **The watcher could not see what it was built for** (`tools/xemu/hud-text.py`): `--watch` was bounded by the
+  *process* clock (`started`), and a boot resolves its `GameHud` 300+ s in, so the early-exit guard ended the
+  watch before its first poll on every real run -- the log showed a baseline and nothing after it. The loop is
+  `watch()` now, measured from its own start, and `--selftest` fails if the early exit comes back.
+- **The focus is not the blank frame**: `--step=focus=30` reports `the emulator owns the focus after 0s` on both
+  boots of this session (`hud7`, `hud8`) and the frames are still blank, so "a HUD-text boot wants the screen to
+  itself" is retired. **The blank frame is one frozen picture**: all eleven frames `hud8` saved are the same
+  8,021-byte PNG (md5 `1860677834e7a3c214fd295018442c91`) -- a black 1,280x960 field with one green dot, no
+  menu and no error dialog -- across four minutes and twenty-six input steps.
+- **Those boots' guest never initialized `GNames`**: 84 polls over 420 s, 0 that could not read it at all, and
+  never a plausible table (a menu boot reads 34,800, a level 41,265), so the frames and the guest agree that the
+  boot, not the message, failed. `--wait` now prints how many polls could not read the table, and
+  `hud-say.sh`'s deadline is the sequence's whole length (`boot + settle + 90 + 15 s per command`) because
+  300 s expired while the boot was still loading.
+- **Still unread**: what `say sg1txt1` leaves in `DialogueWindow`. The next measurement needs a boot whose game
+  starts, and the launch that did produce real frames today (`missions.sh` at 20:34) differs from this one in its
+  step list -- that difference is the next thing to bisect.
+
 ### Execution notes (2026-11-08, a HUD-text boot now says why it failed: one boot at a time, and a verdict inside the run)
 
 - **The blank frame is not the screen** (measured 2026-11-08, `docs/HUD_TEXT.md`): with the Steam client the

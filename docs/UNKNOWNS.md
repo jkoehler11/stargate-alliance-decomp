@@ -1377,6 +1377,20 @@ to send to, and the `NotificationWindow` on that HUD is measurably drawing text 
 guard on the console's own path refuses the message (`DisplayMessages`' commented-out `AddTextMessage`, or the
 `SetNotifications` condition), not a missing object.
 
+**The blocker was the instrument twice, and the boot that was left never started the game (measured 2026-11-08).**
+`hud-text.py` bounded its `--watch` by its *process* clock, so a boot that resolves its `GameHud` 300+ s in printed
+a baseline and ended the watch before its first poll -- the boxes were never observed while the commands ran; the
+loop now measures its own window and `--selftest` fails if the old early exit returns. `hud-say.sh`'s watcher
+deadline was then too short twice (300 s, then 420 s) and now derives from the whole sequence
+(`boot + settle + 90 s + 15 s per command`). What the two boots measured instead is a boot that never started: the
+window owned the X focus (`the emulator owns the focus after 0s`), eleven saved frames were the *same* 8,021-byte
+PNG -- a black 1,280x960 field with one green dot, no menu and no error dialog -- and `GNames` read no plausible
+table in 84 polls over 420 s with 0 polls that could not read it at all (a menu boot reads 34,800, a level
+41,265). Either the game never started or the stub answered a zero window for seven minutes; the frozen frames and
+the reads agree, which points at the boot. So `say`'s sink is still unmeasured, and the next measurement's problem
+is the launch: `missions.sh` produced real, differing frames on the same desktop two hours earlier and differs from
+`hud-say.sh` in its step list (`docs/HUD_TEXT.md`).
+
 ## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31

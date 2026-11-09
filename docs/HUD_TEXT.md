@@ -80,6 +80,34 @@ exactly like a working run from the outside:
   letter is dropped, the console receives a shorter command, and the run reads exactly like a message that never
   arrived. Markers are lower-case and digits, and the script refuses anything else rather than dropping it.
 
+## Four more failures, three of them in the instrument (measured 2026-11-08)
+
+- **The watch window was bounded by the process clock.** `--watch` looked like "watch for N seconds", but the only
+  guard in the loop compared `time.monotonic() - started` -- when the *process* began -- against `--watch + 30`. A
+  HUD-text boot spends 240 s on the title and 60 s on the settle before the watcher resolves anything, so the
+  guard had already expired when the watch began: the run printed the `GameHud` baseline and `watched 0s` while the
+  commands it was started for had not been typed yet. The loop is a function (`watch()`) that measures its own
+  window, and `--selftest` now runs one that *looks* 600 s old and lands a subtitle on its fifth poll, so the old
+  early exit fails the test instead of hiding behind a plausible log.
+- **`focus` is measured, and it is not the blank frame.** `hud-say.sh` now sends `--step=focus=30` after `raise`
+  and `activate`. Both boots of this session answered `step 4: the emulator owns the focus after 0s`, and the
+  frames were still blank -- so "a HUD-text boot wants the screen to itself" is retired: a window can own the X
+  focus and still capture nothing.
+- **The blank frame is one frozen picture, not a dark screen.** `hud8` saved eleven frames -- title, list,
+  highlight, mission, dismissed tutorial, both per-command frames and two noise pairs -- and all eleven are the
+  *same* 8,021-byte PNG, md5 `1860677834e7a3c214fd295018442c91`, across four minutes and twenty-six input steps.
+  The picture is 1,280 x 960 with `mean=25.9` and 516 colours: a black field with one soft green dot, no menu and
+  no error dialog. A screen that never changes is a window whose pixmap never updates, which is why the noise
+  floor is 0 px and every shot step fails, and a working boot differs (`sink16`'s title, highlight and mission are
+  three different files tens of KB in size). This is the measurement that closes "blank frames mean the map did
+  not load".
+- **And the guest agreed the boot never started.** In the same boot the watcher polled `GNames` 84 times over
+  420 s and never once read a plausible data pointer -- with `0 of the polls could not read it at all`, so the stub
+  answered every time. A menu boot reads 34,800 names and a level 41,265; this boot read neither for seven
+  minutes. `--wait` now prints the count of polls it could not read at all, because "0 unreadable polls" and "some
+  unreadable polls" are different facts about a boot, and the deadline is the sequence's whole length
+  (`boot + settle + 90 s + 15 s per command`) rather than a settle plus a hundred seconds.
+
 ## Measured state (2026-11-08)
 
 **No live read has landed yet, and this page does not claim one.** Three boots ran the sequence and every one of
@@ -112,12 +140,23 @@ to act on. That is the honest reading of "blank frames on a free screen": on thi
 of `say`. `drive.py` names it (`no xemu window on :0`) and `hud-say.sh` now reports the attempt rather than the
 message.
 
+**Two more boots, and what failed is named (measured 2026-11-08, `hud7` and `hud8`).** Both took the focus, attached
+the keyboard at 75 s, ran the whole sequence and typed both markers; both read nothing. `hud7` stopped looking at a
+300 s deadline -- after the watch fix, but with a budget that did not cover the sequence -- and `hud8` at 420 s with
+the name table still uninitialized, so the deadline now derives from the whole sequence. The eleven frozen frames
+above are the same boot's evidence that the capture path was not showing the game, and `GNames`' 84 empty polls are
+the guest's own agreement. **The field this page exists for is still unmeasured**: what `say sg1txt1` leaves in
+`DialogueWindow` needs a boot whose game starts, and `missions.sh` produced real frames on this desktop two hours
+before `hud8` did not.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
 `FString` decode (`count` includes the NUL; `count` 1 is the empty string), the refusal of a `+0x1008` that names a
-non-`GameHud`, and the null slot. It runs in `make ci` and needs no emulator or dump:
+non-`GameHud`, the null slot, and that a watch reports a subtitle that lands after it starts on a clock that already
+looks ten minutes old. It runs in `make ci` and needs no emulator or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one
+    ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts is reported
 
 The tool prints field addresses and text and writes no file; a marker in a log is game state from that boot only.
