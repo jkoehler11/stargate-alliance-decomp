@@ -263,6 +263,12 @@ def receipt(guest, args, marks, out=print, wait=0.0):
         if mark in verdicts:
             out("RECEIPT %s IN HISTORY (%d walk(s)): the submit ran, so the console's own history holds the line"
                 " -- a box that never held it is the sink drawing nothing, not a lost keystroke" % (mark, walks))
+        elif not seen:
+            # `seen` is empty only when no walk ever read a `Console` object: `History` was not looked at, so a
+            # verdict about the keys would be a verdict about the search window (`--tail`) instead.
+            out("RECEIPT %s UNMEASURED (%d walk(s), newest %s of %d object(s)): no `Console` object was read, so "
+                "its `History` was never looked at -- this is where the search stopped, not what the keys did"
+                % (mark, walks, args.tail or "all", onum))
         else:
             out("RECEIPT %s NOT IN HISTORY (%d walk(s), newest %s of %d object(s)): no submit ran, so the keys "
                 "never reached the console -- the modal, the focus or a dropped character, not the sink"

@@ -86,6 +86,17 @@ typed is not a submit (`console-state.py` measured that distinction on the 2026-
 | `RECEIPT <mark> NOT IN HISTORY` | no submit ran: the keys never reached the console (modal, focus, dropped character) |
 | `CONSOLE none among the newest N of M object(s)` | the console never opened, or it is older than the shortcut: delivery is unmeasured, not absent |
 
+**A miss must not become a verdict (measured 2026-11-09, `hudr2`).** The receipt walks the *newest* `--tail`
+objects, and on a loaded `M00` (48,646 objects) that window held no `Console` at all: 18 walks of the newest 2,000
+printed `CONSOLE none`, and the first version then answered `NOT IN HISTORY` for both markers -- a claim about the
+keys drawn from a search that never read the object. The console is created with the viewport, so it can sit
+anywhere in the array; `--tail` is only a shortcut, and the tool now says `RECEIPT <mark> UNMEASURED` when no walk
+read a `Console`, with `hud-say.sh` reporting `UNREAD` rather than `NOT DELIVERED` for that case. What this boot
+measured is therefore the negative: at a level whose HUD is live and whose boxes were read (`GameHudPtr` ->
+`0x09362100`, seven text changes including the intro's dialogue), the newest 2,000 of 48,646 objects do not hold
+the console, so the receipt has to be given a wider window (a whole-array walk, or the console's index read off a
+dump with `tools/xemu/obj-index.py`) before `History` can answer anything.
+
 `hud-say.sh` prints `DELIVERED` / `NOT DELIVERED` / `UNREAD` beside each marker's box verdict for that reason, and
 its `FOUND` test reads the box lines only — the receipt's own lines carry the marker, and a `FOUND` that was really
 a `RECEIPT` line would report the message path as painting when it painted nothing.

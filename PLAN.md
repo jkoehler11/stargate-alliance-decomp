@@ -831,6 +831,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the receipt ran -- and found no console in its window)
+
+- **The receipt's first live run answered a different question than it was built to**: `hudr2` loaded `M00`, the
+  read resolved the live `GameHud` (`0x09362100`) and recorded seven text changes (the intro's dialogue, then
+  `New Objective : Open the door for the doctor`), the tutorial panel was dismissed (`05-precommands` 88,237 px,
+  `06-dismissed` 0 px -- a frozen intro frame, as measured before), and `drive.py` then lingered its derived
+  180 s so the receipt could run. It ran 18 walks over the newest 2,000 of 48,646 objects and found **no
+  `Console` object at all**, so both markers printed `NOT IN HISTORY` -- a verdict about the search window,
+  not about the keys.
+- **The fix is the verdict, and it is in both halves of the instrument**: `hud-text.py` prints
+  `RECEIPT <mark> UNMEASURED` when no walk read a `Console` (an empty `seen`, which is what the tail shortcut
+  leaves), and `hud-say.sh` reports `UNREAD` instead of `NOT DELIVERED` for it. A `Console` is created with the
+  viewport, before the level's actors, so "not among the newest 2,000" is expected rather than remarkable; the
+  shortcut needs a wider window or an index, not another boot.
+- **Boots cost what they cost**: this run's own frames also repeat two negatives -- `03-dismissed` reads 0 px
+  because the intro card is a frozen picture (a pad press into it changes nothing), and the marker shots are
+  whole-frame deltas in a live 3D view (53,752 and 1,502 px), so a shot can only say "the screen moved", never
+  "the message painted".
+- **Instruments**: `tools/xemu/hud-text.py` (`UNMEASURED` verdict), `tools/xemu/hud-say.sh` (`UNREAD` for it),
+  `docs/HUD_TEXT.md` (the receipt section). No artifact and no new file.
+
 ### Execution notes (2026-11-09, the box verdict gets a second half: did the submit run at all?)
 
 - **A box that never held the marker had two causes and no way to tell them apart**: the keys never reached the
