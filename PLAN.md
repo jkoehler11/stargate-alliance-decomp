@@ -831,6 +831,39 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the client route reaches a `Console` -- the class default)
+
+- **`hudsay6` answered half the receipt's question: the route works, and the object it reaches is the class
+  default.** `M00` loaded (name table 40,427 at 281.8 s), the level's row `0x087c2800` (object 47,885 of 48,494,
+  outer `M00`) held `+0x1008 -> GameHud 0x09322100`, six box changes came off it -- the intro's turns at counts 14,
+  35, 33, 50, 56 and 53 through 465.7 s, then the game's own `New Objective : Open the door for the doctor` at
+  480.5 s -- and the post-resolve `pad=a` repainted **42,083 px (3.42%)**, so the panel was dismissed and the boot
+  was live in every part the markers needed.
+- **The client route works mechanically and costs 7 page reads**: `--console-client=0x01fb9bc0` -> the client's
+  `InteractionMaster` `0x02406720` -> `+0x30` -> a `Console` at **`0x02344b00`**, `HistoryTop 0`, `bTyping 0`,
+  `TypedStr` empty, 0 populated slots, in 4.3 s with **0** array walks. Both markers printed `NOT IN HISTORY`.
+- **`0x02344b00` is the address `docs/XEMU.md` records as the `Console` class default** (measured twice with the
+  prompt open), and a default's fields are the shipped `defaultproperties` -- so `NOT IN HISTORY` is true of the
+  default and says nothing about the keys. The route's class screen cannot separate them, because the default is of
+  that class.
+- **The frames cannot settle it either**, which is why the receipt exists: `06-dismissed -> 041-say-sg1txt1`
+  differs by **314 px** (0.03%) and `console-line.py` reads **0** cyan px on both marker shots -- but each marker
+  shot is 0.7 s *after* `ret`, and a submit clears `TypedStr` and closes the console, so the frame after a successful
+  submit is blank too.
+- **The receipt now refuses a class default**: `is_class_default()` reads `UObject::Outer` (`+0x18`) and tests the
+  outer's own first dword against the `Package` class table from the census (`0x004de088`). The client route's
+  default prints that its outer is a `Package` and falls through to the array walk instead of answering, the
+  first-sight `CONSOLE` line prints the outer, and a verdict whose every object is a default prints `UNMEASURED`.
+  The selftest builds the shape (an object whose outer is `Package`-classed) and asserts the refusal beside the
+  live shape it already asserts.
+- **Instruments**: `tools/xemu/hud-text.py` (`class_table`, `is_class_default`, the client-route fallback, the outer
+  on the first-sight line, the default-object verdict, one selftest case), `docs/HUD_TEXT.md`, `docs/UNKNOWNS.md`
+  U15. No artifact and no new file.
+- **Next**: one boot with the fixed instrument. A second `Console` object with a non-`Package` outer makes
+  `RECEIPT ... IN HISTORY` / `NOT IN HISTORY` the submit verdict at last; only the default means the live console is
+  outside `GObjObjects` and the read has to move to the master's other slots -- the one that answered names the
+  default, so the field may hold a class reference rather than the instance.
+
 ### Execution notes (2026-11-09, U15's guard hypothesis is retired by the scripts' own call sites)
 
 - **The question U15 carried into this run -- "which guard refuses the message" -- is answerable from the disc, and
@@ -1930,6 +1963,13 @@ are limited to expected fields (checksum/timestamp) and documented.
       the difference between "the keys never arrived" and "the command ran and drew nothing" -- the two failures
       every box verdict so far conflated.
 
+      **The route reaches a `Console` and it is the class default (measured 2026-11-09, `hudsay6`)**: with
+      `--console-client=0x01fb9bc0` the client's `InteractionMaster` `0x02406720` names a `Console` at `+0x30`
+      -- **`0x02344b00`**, the class default `docs/XEMU.md` records -- in 4.3 s and 0 array walks, so both markers
+      read `NOT IN HISTORY` about `defaultproperties` rather than about the keys. `hud-text.py` now tests
+      `UObject::Outer` (`+0x18`) against the `Package` class table and refuses a default object, walking instead.
+      The next boot's verdict is the submit: `IN HISTORY` if the walk finds a live console, otherwise the console
+      instance is outside `GObjObjects` and the read moves to the master's other slots.
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.
 - [~] 7.5 Nightly regression: rebuild + xemu boot test; fail on any new assert dialog or missing class.

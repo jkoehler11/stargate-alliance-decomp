@@ -215,6 +215,36 @@ def console_table():
     return (hits[0] if len(hits) == 1 else None), hits
 
 
+OUTER_OFF = 0x18                         # UObject::Outer (`hud-text.py`'s row gate reads `M00` there)
+
+
+def class_table(name):
+    """The one `.rdata` class table the disc census calls `name`, or `None` when it names none/several."""
+    tables = load("xemu_ramscan", RAMSCAN_PY).class_names()
+    want = name.lower()
+    hits = sorted(table for table, got in tables.items() if (got or "").split(".")[-1].lower() == want)
+    return hits[0] if len(hits) == 1 else None
+
+
+def is_class_default(pages, base, pkg_table):
+    """`(True, outer)` when the object at `base` is a *class default object*, else `(False, outer)`.
+
+    A CDO is allocated by the package loader while a class is deserialised, and UE2 sets its `Outer` to the
+    `Package` it came from; a live object's outer is an actor, a viewport or a controller. That is a
+    structural test, so it needs no name resolution: the outer's own first dword is its class table.
+
+    This matters because a CDO's fields are the shipped `defaultproperties` -- `Console`'s default is
+    `HistoryTop 0`, `History` empty and `TypedStr` empty -- so a receipt that read one answered
+    `NOT IN HISTORY` about the default rather than about the keys (measured 2026-11-09, `hudsay6`: the
+    client route named `0x02344b00`, the address two earlier boots recorded as the class default, after two
+    submits whose frame showed no prompt either).
+    """
+    outer = pages.u32(base + OUTER_OFF)
+    if not outer or pkg_table is None or not names.plausible_object(outer):
+        return False, outer
+    return holds_class(pages, outer, pkg_table)[0], outer
+
+
 def console_slots(guest, base):
     """[(index, text)] for the populated `History[16]` slots of the console object at `base`."""
     out = []
@@ -323,6 +353,7 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     data, num, _cap = sink.table(guest, args.at, "name table")
     odata, onum, _omax = sink.table(guest, args.objects, "object array")
     pages = sink.Pages(guest, probe=data, deadline=args.deadline)
+    pkg_table = class_table("Package")
     window = args.receipt_tail or None          # 0 = walk the whole array, which is where the console is
     phrase = "the newest %d" % window if window else "any"
     route = None
@@ -334,7 +365,15 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     if client is not None and not args.receipt_walk:
         base, why = console_from_client(pages, client, table)
         if base:
-            bases, route = [base], why
+            default, outer = is_class_default(pages, base, pkg_table)
+            if default:
+                # The slot is a *field*, and on this build it has held the class default: refuse it and walk,
+                # so the verdict is about a live console or about nothing -- never about `defaultproperties`.
+                out("CONSOLE client: %s names %#010x, whose `Outer` %#010x is a `Package` -- that is the "
+                    "class's default object, not a live console; falling back to the object-array walk"
+                    % (why, base, outer))
+            else:
+                bases, route = [base], why
         else:
             out("CONSOLE client: %s" % why)
     elif row is not None and not args.receipt_walk:
@@ -374,9 +413,13 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
             typed = fstring(guest, base + CONSOLE_TYPED)
             slots = console_slots(guest, base)
             if base not in seen:
-                out("CONSOLE %#010x (%s): HistoryTop %s, bTyping %s, TypedStr %s, %d populated slot(s)"
+                out("CONSOLE %#010x (%s): HistoryTop %s, bTyping %s, TypedStr %s, %d populated slot(s), "
+                    "outer %#010x%s"
                     % (base, route, u32(guest, base + CONSOLE_TOP), u32(guest, base + CONSOLE_B_TYPING),
-                       "empty" if not typed or not typed[1] else repr(typed[1]), len(slots)))
+                       "empty" if not typed or not typed[1] else repr(typed[1]), len(slots),
+                       pages.u32(base + OUTER_OFF),
+                       " (a `Package`: the class default)" if is_class_default(
+                           pages, base, pkg_table)[0] else ""))
             for slot, text in slots:
                 if seen.get(base, {}).get(slot) != text:
                     out("HIST [%d] %#010x count %d %r"
@@ -404,6 +447,12 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
             out("RECEIPT %s UNMEASURED (%d walk(s), route %s, %s of %d object(s)): no `Console` object was read, "
                 "so its `History` was never looked at -- this is where the search stopped, not what the keys did"
                 % (mark, walks, route or "nothing", phrase, onum))
+        elif seen and all(is_class_default(pages, base, pkg_table)[0] for base in seen):
+            # `Console`'s default is `HistoryTop 0` with an empty `History`, so this object answers
+            # `NOT IN HISTORY` whatever the keys did: the read never touched a live console.
+            out("RECEIPT %s UNMEASURED (%d walk(s), route %s): every `Console` object read has a `Package` "
+                "outer, so each is a class's default object and its `History` is the shipped default -- "
+                "nothing here is about the keys" % (mark, walks, route or "nothing"))
         else:
             out("RECEIPT %s NOT IN HISTORY (%d walk(s), route %s): no submit ran, so the keys never reached the "
                 "console -- the modal, the focus or a dropped character, not the sink"
@@ -777,6 +826,23 @@ def selftest():
     said = []
     assert receipt(ram6, args, ["sg1txt1"], out=said.append, wait=0.0) == {}, said
     assert any("CONSOLE none in any of" in s for s in said), said
+    # A `Console` whose `Outer` is a `Package` is the class's default object: its `History` is the shipped
+    # `defaultproperties`, so `NOT IN HISTORY` there would be a verdict about the default (measured 2026-11-09,
+    # `hudsay6`: the client route named `0x02344b00` -- two earlier boots' class-default address -- and read
+    # `HistoryTop 0` after two submits).
+    pkg = class_table("Package")
+    assert pkg, "the disc census names no `Package` class table"
+    ram8, _r8, hud8, _w8 = build(0x01510000, "UITextBox")
+    ram8.u32(con + 0x00, 0x0050cb80)
+    ram8.u32(con + names.CLASS_OFF, CONSOLE_UCLASS)
+    ram8.u32(con + OUTER_OFF, 0x01800000)         # Outer -> an object whose class table is `Package`
+    ram8.u32(0x01800000, pkg)
+    ram8.u32(0x01200000 + 4 * 3, con)             # a fourth object: the default
+    ram8.u32(0x006c21b0 + 4, 4)
+    said = []
+    assert receipt(ram8, args, ["sg1txt1"], out=said.append, wait=0.0) == {}, said
+    assert any("a `Package`: the class default" in s for s in said), said
+    assert any("RECEIPT sg1txt1 UNMEASURED" in s and "class's default object" in s for s in said), said
     # An array where the console is *older* than a tail window: the shortcut the first live receipt used said
     # `NOT IN HISTORY` about its window, so the window is now the whole array by default -- and the HUD's own
     # `PlayerConsole` is one read where the walk is 347 page reads.
