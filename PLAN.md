@@ -372,7 +372,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **`.lad` is now located end to end except its key bytes**: three parts — 20 pose frames, a clip section (17 named
       clips in the four 19-channel packs, each 20 frames, bone lists of 19/11/9/5/3), and a track table of 2,231
       `<Map>.<Animation>` records whose key blocks are 4.36 MiB of the 6.5 MiB corpus (`inventory/lipsinc_tracks.csv`).
-      What remains is the key-block encoding alone (U4), which needs `LIPSincReadAnimFile`'s loop or the writer.
+      **The key block is decoded, so `.lad` reads end to end** (U4): a track's block is **26 groups** — `u32 2`, a zero
+      byte, a 7-bit varint key count, then that many `u32 2` / `i32` time / `f64` value keys — and a `0x00` terminator
+      (`tools/lad-keys.py`, `make lipsinc-keys`, `inventory/lipsinc_keys.csv`, `--check` in `make ci`). All 2,231 blocks
+      parse (263,900 keys, 58,006 groups, 4,572,880 key bytes, the same bytes the track table counted), the time never
+      runs backwards inside a group, and the groups come in mirrored pairs. What remains is which group is which curve
+      and what a value means — not the encoding.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the

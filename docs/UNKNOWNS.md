@@ -238,6 +238,15 @@ block:** the same route that has worked three times on this format — read `LIP
 for the entry stride (it is 4,977 bytes and already located), or count `ValuesAtTime` lookups against a clip whose
 end time is known, since 26 keys over `160.0`-`220.0` milliseconds gives a 2.4 ms step to test against.
 
+**The key block decodes (2026-11-09).** `tools/lad-keys.py` (`make lipsinc-keys`, `inventory/lipsinc_keys.csv`,
+`--check` in `make ci`) walks all 2,231 blocks: a block is **26 groups**, each `u32 2`, a `0` byte and a 7-bit varint key
+count, then that many 16-byte keys of `u32 2`, `i32` time, `f64` value, and a `0x00` terminator. All 2,231 parse with
+none refused — 263,900 keys, 58,006 groups, 4,572,880 bytes, exactly the key bytes the track table counted — the time
+field is non-decreasing in all 58,006 groups, the values stay inside the pose range (−9.45942 to 9.45942), and the groups
+come in mirrored pairs (`0.4289, 4.887` against `-0.4289, -4.887`). The `26` in the track header is therefore the group
+count, not a key count. Still open: which group is which curve, what a value means, and the header's invariant
+`160.0`/`220.0`.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

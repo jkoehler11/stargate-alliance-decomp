@@ -167,7 +167,8 @@ Ghidra run, so the rename is its own commit. `inventory/lipsinc_runtime.csv` is 
 - Header + channel table: parsed in all 8 files, no exceptions.
 - Body: **three parts, all located** — 20 pose frames (one 32-byte record per channel), a clip section in the four
   19-channel packs (17 clips, named, each 20 frames), and a track table of 2,231 `<Map>.<Animation>` records. The key
-  blocks that follow each track header are 4.36 MiB across the corpus and are the unread part.
+  blocks that follow each track header are 4.36 MiB across the corpus and decode as **26 groups of (time, value)
+  keys** per track (`tools/lad-keys.py`, `inventory/lipsinc_keys.csv`).
 - `Mappings/*.map`: parsed, text, 43 phonemes × 15 targets, identical across characters.
 - Runtime: 19 functions located from the module's own log strings, 9 self-evident names proposed (not applied).
 - Consumer: native (PLAN 4.8); the script-facing API is the five `LIPSinc` natives above.
@@ -279,7 +280,8 @@ where it stops, and the rest of the body is **two more parts**, not padding:
   and the bone list is a *subset* of the file's channel table — 19, 11, 9, 5 or 3 bones, not all 19.
 * a **track table**, present in seven of the eight files. One record per `<Map>.<Animation>` name
   (`AlkeshBomber.ca_firing_ge_s_02`), each with a constant header — `u32 2`, the short name, the qualified name,
-  `u32 1`, `160.0`, `220.0`, and a key count of **26** — followed by the record's key bytes.
+  `u32 1`, `160.0`, `220.0`, and a count of **26** — followed by the record's key block, which the walk below
+  reads as 26 groups.
 
 | file | channels | clips (bones) | tracks | key bytes | of the file |
 |---|---:|---|---:|---:|---:|
@@ -300,16 +302,16 @@ Three things this settles, and three it does not.
   character's whole animation set.
 * **The track header is invariant, which is what makes the table findable.** All 2,231 records agree on `u32 2`, the
   `u32 1`, both sentinel times `160.0`/`220.0`, and the key count **26** — with a single map owner (`AlkeshBomber`) in
-  every file. The key count is 26 in a 269-byte block and 26 in a 19,568-byte one, and that is the useful negative: it
-  is a fixed *number* of keys over a variable-length payload, so the keys are variable-length entries, not one struct.
+  every file. The count is 26 in a 269-byte block and 26 in a 19,568-byte one: a fixed *number* of records over a
+  variable-length payload. They are **groups**, each with its own key list, so 26 is the group count and not a key
+  count — which is what the walk below measures.
 * **A clip's bones are a subset, so a clip is not a copy of the pose frames.** `carter_worried` and `carter_frown` are
   five bones (the brows, the lids and the jaw); `carter_happy` and `carter_yelling` are all nineteen.
 
 What is still open:
 
-* **The key block itself.** The `u32 2` marker recurs 33–1,247 times per block at 11–15 bytes per marker, so the entries
-  are variable-length and the walk stops at each header instead of decoding them. This is now the *whole* of what
-  remains of U4.
+* **Which curve a group is.** The key block decodes (below): 26 groups of `(time, value)` keys per track. What a
+  group indexes and what a value means is the rest of U4.
 * **The two bytes before the first track header** — `00 03` in `grey.lad`, `60 09` in the 1.3 MB pack — and the six
   bytes in the same place in `sg1_crew_jackson.lad`, which has no track table at all. They are counted
   (`gap_bytes`) and not identified.
@@ -318,4 +320,55 @@ What is still open:
 
 The reader this matches is `LIPSincReadAnimFile` (`0x000b8340`, `Read Track %s`): a table keyed by
 `<Map>.<Animation>` with a per-track key list is exactly what its log line and its `ValuesAtTime, m_nEndTime` assert
-describe, and `26` is then the number of keys such a lookup walks.
+describe, and `26` is then the number of **groups** such a lookup walks — each group a curve with its own keys, not
+one key (below).
+
+## The key block is 26 groups of `(time, value)` keys (measured 2026-11-09)
+
+The track table above stopped at each header because 26 keys over a 269-byte block and 26 over a 19,568-byte one rule
+out a fixed key struct. They are not 26 keys: a block is **26 groups**, and each group carries its own key count — so
+the `26` the header stores is a group count, and it holds in all 2,231 blocks. `tools/lad-keys.py` (`make lipsinc-keys`,
+`inventory/lipsinc_keys.csv`, `--check` in `make ci`) walks a block strictly: a group or key that does not parse
+refuses the whole block rather than consuming a guess.
+
+| bytes | field |
+|---|---|
+| 4, 1 | group header: `u32 2`, and a `u8` that is `0` in all 58,006 groups |
+| 1 or 2 | key count, a 7-bit varint: bit `0x40` in the first byte means a second byte follows and contributes `<< 6`, so the 69-key group 2 of `AlkeshBomber.Beware` stores its count as `45 01`, and a group of 261 keys needs the second byte |
+| count × 16 | one key: `u32 2`, `i32` time, `f64` value |
+| 1 | block terminator, `0x00` |
+
+All 2,231 blocks parse, none refused, and the blocks consume exactly the key bytes the track table counted:
+
+| file | tracks | key bytes | groups | keys | empty groups | largest group |
+|---|---:|---:|---:|---:|---:|---:|
+| `Controllers/sg1_crew_carter.lad` | 608 | 1,214,974 | 15,808 | 69,966 | 6,588 | 261 |
+| `Controllers/sg1_crew_oneill.lad` | 786 | 1,725,593 | 20,436 | 100,133 | 7,664 | 183 |
+| `Controllers/sg1_crew_jackson.lad` | 485 | 993,252 | 12,610 | 57,316 | 5,116 | 186 |
+| `Controllers/sg1_crew_tealc.lad` | 344 | 579,194 | 8,944 | 32,823 | 3,597 | 136 |
+| `Controllers/grey.lad` | 3 | 26,511 | 78 | 1,627 | 5 | 137 |
+| `JAnderson.lad` | 3 | 20,029 | 78 | 1,222 | 3 | 70 |
+| `sg1_crew_carter.lad` | 2 | 13,327 | 52 | 813 | 2 | 69 |
+
+**2,231 blocks, 58,006 groups, 263,900 keys, 4,572,880 key bytes** — the same 4.36 MiB the track table counted, now
+attributed to a structure. Keys per track run 7 to 1,213 (mean 118.3) and 39.6% of groups are empty, which is what a
+bone subset looks like: a group with no keys is a channel that does not move in this clip.
+
+Three measured facts say the middle field is a time and not an index:
+
+* **it never runs backwards** — inside all 58,006 groups the `i32` is non-decreasing, and only 2 groups repeat a time;
+* **its range suits a clip** — −304 to 23,876, read as milliseconds a track of up to 24 s, which is the order a table of
+  `<Map>.<Animation>` names implies;
+* **the value is the pose-like number, stored wider than a pose** — −9.45942 to 9.45942, inside the `|x| < 12` the pose
+  records occupy, but as an **`f64`** where a pose record's eight values are `f32`.
+
+The groups are also paired, which is the first evidence about what they *are*: in `AlkeshBomber.Beware` group 19 carries
+`0.4289, 4.887` and group 24 carries `-0.4289, -4.887`; groups 22 and 23 are identical at `-0.6`; groups 15 and 16
+differ in exactly one value (0.4602 against 0.4735). Two curves that mirror each other is what a left/right bone pair
+looks like, and a pair that differs in one value is what a shared bone with one differing component looks like.
+
+What is still open is no longer the encoding: **which group is which curve**, **what a value means** (a weight, an
+angle, a coordinate — the eight-float pose record is the only other numeric structure in the format), and the two
+header constants `160.0`/`220.0`, invariant across all 2,231 records and unexplained. The runtime half is unchanged:
+`LIPSincReadControllerFile` fills a pose array and a separate `ValuesAtTime` reader interpolates
+(`ValuesAtTime, m_nEndTime = %i, time = %f`), which is what a table of per-group key lists feeds.
