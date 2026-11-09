@@ -18,6 +18,8 @@ capstone            >=5.0         pypi                         tools/class-table
 as                  >=2.38        binutils                     make symbols assembles symbols/xbox.sym.s
 xbox-sigs           none          --                           Phase 4.2 blocked: signature databases come from MS SDK
                                                                output (docs/UNKNOWNS.md U9). Supply locally; never commit.
+ue2rt-ucc           ==2226        Epic UE2 Runtime release     tools/ue2rt-probe.py (docs/COMPILER.md): runs under
+                                                               Wine, emits 126/0, cannot read this build's 130/4 packages
 umodel              UNPINNED      --                           Phase 5.1 has not been run, so there is nothing to pin
 xemu                UNPINNED      --                           Phase 7.1 boot harness: the version that booted is not
                                                                recorded, which is why its captures are not comparable yet
