@@ -3959,3 +3959,50 @@ index's remaining attempt spent on a retry.
 Two rules worth carrying past this tool: **call a tool through its interpreter, not by its mode**, and **a gate owes
 three answers** -- pass, fail, and could-not-run. Two of the three were conflated here, and the cost was a boot that
 had already reached the level.
+
+## A boot without a disc is xemu's own dialog, and every frame gate passes it (`sink10`/`sink11`, measured 2026-11-08)
+
+`sink10` and `sink11` were the two boots that the previous note read as "a level the gate threw away" and "a swallowed
+select press". Neither is true, and neither boot ever ran the game: **the disc was not in the drive.** Both passed
+`--hdd` and `--eeprom` explicitly and left `--iso` at `missions.sh`'s default, `$WORK/sg1.iso`, while the disc on this
+machine is `$WORK/xemu/sg1.iso` -- one directory down. xemu does not treat that as a failure:
+
+    AppRun: -drive index=1,media=cdrom,file=/home/james/sg1/work/sg1.iso: warning: Could not open
+            '/home/james/sg1/work/sg1.iso': No such file or directory
+
+and the same log's next line is the launch it built with that same path in it, so the guest boots the HDD alone. What
+came back was not the game:
+
+- **`00-title.png` is xemu's error dialog**, not a title screen: *"Please insert an Xbox disc..."* behind *"Error --
+  Failed to open DVD image file '/home/james/sg1/work/sg1.iso'. Please check machine settings."* with an `Ok` button.
+  The ten d-pad presses move nothing in the game; the frame that `01-highlight` names is that dialog.
+- **`02-mission.png` is the empty-disc screen.** The select press dismissed the dialog onto a black screen with 1,548
+  text pixels: `guest-halt.py` reads `black=0.9974 p99=0 text=1548 BIOS SCREEN`, and `frame-diff.py 00-title 02-mission`
+  reads **8,321 px (0.68%)**, under the 2.5% floor -- which the harness reports, correctly and uselessly, as "the
+  post-load frame is still the main menu".
+- **The bytes were there to see it either way**: `sink10`'s log carries the same warning, so its attempt 1 (657 px
+  highlight) was the dialog repainting too. A boot with no disc has no level to lose.
+
+The contrast is the whole measurement, because the sequence and the emulator are identical:
+
+| run | disc mounted | `01-highlight` | `02-mission` | frame gate |
+|---|---|---|---|---|
+| `sink8` (2026-11-08) | `$WORK/xemu/sg1.iso` | passes | 10,235 px | PASS, level |
+| `sink11` attempt 1/2 | **no** (`$WORK/sg1.iso` missing) | dialog | 8,321 px, BIOS screen | "still the menu", retry |
+| `sink12` (2026-11-08) | `$WORK/xemu/sg1.iso` | **23,533 px** (threshold 1,582) | **22,076 px** | PASS, level |
+
+**The instrument now says which of those two it is, before any frame is judged.** `drive.py` refuses a `--iso` that is
+not there (exit 3, naming the path) and, after the emulator starts, reads xemu's own log for `Could not open` and fails
+the run on the image it names -- the second check is there because a path that exists can still be unopenable
+(permissions, a truncated copy), and xemu would run on just the same. `missions.sh` fails before the first copy of the
+HDD, and names the disc that does exist in this WORK. `--selftest` covers the log read (21 cases).
+
+Two rules worth carrying past this run: **an emulator's warning is a boot's premise**, and **a frame assertion is only
+as meaningful as the disc, the EEPROM and the pad it was taken with** -- this gate has now been fooled once by a
+permission bit and once by an empty drive, and both times the boot looked like a boot.
+
+**And the read on that boot ran out of time, which is itself the measurement.** `sink12`'s frame gate passed and its
+name table read `num=41265` -- the level reference, exactly -- but the tail read of the 5,000 newest entries reached
+**93 page reads in the 900 s deadline** (9.7 s per page) and stopped there with its own FAIL; the walk over 48,646
+objects is the cost, not the disc. So the boot is proven and the read is the next instrument's problem: `--row ADDR`
+skips the walk, and a page read at this speed puts any full tail scan of a live level out of one boot's reach.

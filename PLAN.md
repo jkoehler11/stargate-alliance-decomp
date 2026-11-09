@@ -1165,6 +1165,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       the prompt at X 16, Y 468 - YL of a 640x480 canvas -- so the draw path has no null font and no clip rectangle
       left to find. What remains open in 7.3 is the **output** sink, not the input line (`docs/XEMU.md`).
 
+### Execution notes (2026-11-08, the two failed sink boots had no disc in the drive)
+
+- **`sink10` and `sink11` never ran the game.** Both left `--iso` at `missions.sh`'s default, `$WORK/sg1.iso`, which
+  does not exist in this WORK (the disc is `$WORK/xemu/sg1.iso`); xemu logs `warning: Could not open ...: No such file
+  or directory` and boots the HDD alone. So `sink10` attempt 1's 657 px highlight and `sink11`'s 8,321 px post-select
+  frame were **xemu's own "Failed to open DVD image file" dialog** (`00-title.png` reads "Please insert an Xbox disc…"
+  behind it) and, after the select, the empty-disc screen (`guest-halt.py`: `black=0.9974 text=1548 BIOS SCREEN`). The
+  previous note's "a level the gate threw away" and "a swallowed select press" both describe that dialog.
+- **The same sequence with the disc mounted differs by an order of magnitude.** `sink12` (2026-11-08, `--iso` set):
+  `01-highlight` **23,533 px** against a 1,582 threshold and `02-mission` **22,076 px** -- against 657 px and 8,321 px
+  on the disc-less boots. Nothing else about the run changed.
+- **Instruments**: `drive.py` refuses a `--iso` that is not there (exit 3, named) and, after the emulator starts, reads
+  xemu's log for `Could not open '…'` and fails on the image it names -- the second check covers a path that exists but
+  cannot be opened, which xemu also only warns about. `missions.sh` fails before it copies the HDD and names the disc
+  that does exist. `--selftest` gains three cases (21 total, `make ci`). `docs/XEMU.md` carries the frames, the two
+  xemu.log lines and the three-run table.
+- **What the next boot is**: unchanged in its goal -- the four `StargatePlayer` slot values off a live level -- but it
+  is now gated on the disc as well as on the frame, so a boot that cannot be the game costs nothing.
+
 ### Execution notes (2026-11-08, a gate that cannot run is not a verdict, and the sink values are still unread)
 
 - **The frame gate in front of the sink read never ran: `tools/xemu/frame-diff.py` is tracked 644.** `sink10`'s
