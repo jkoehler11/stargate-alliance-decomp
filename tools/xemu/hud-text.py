@@ -294,7 +294,7 @@ def console_from_hud(guest, pages, hud, table):
 
 
 def master_slots(pages, nm, master, table, pkg_table, block=IM_BLOCK):
-    """`[(offset, target, class, name, is_default, on_console)]` for the object pointers in `master`'s block.
+    """`([(offset, target, class, name, is_default, on_console)], screened)` for `master`'s block.
 
     One 4-byte read per dword, then four per pointer that lands in the object window. This is a *census* and
     not a first-match screen because the first match is the wrong answer on this build: `hudsay6`'s block named
@@ -302,21 +302,33 @@ def master_slots(pages, nm, master, table, pkg_table, block=IM_BLOCK):
     read `defaultproperties` and called it the keys' verdict. Naming every pointer also makes a boot that finds
     no live console say what the block *does* hold, which is the difference between "the read has to move" and
     "the read has to move to the master's other slots".
+
+    **A dword is a slot only when its target names a class** (measured 2026-11-09, `hudq1`): the block also
+    holds the object's own text, and 21 of its 26 printed rows were UTF-16 fragment pairs (`0x007c0020` is
+    `" |"`, `0x00410020` is `" A"`) whose targets resolve to no class because no object is there. Counting
+    them as slots made a six-pointer block read as a twenty-six-pointer one, and every one of them was
+    "classified" `class ? name ?`. `screened` is how many dwords the class test refused, so the census can say
+    how much of the block it did not read as pointers instead of quietly dropping them.
     """
     rows = []
+    screened = 0
     for off in range(0, block, 4):
         value = pages.u32(master + off)
         if not value or not names.plausible_object(value):
             continue
+        cls = sink.class_name(pages, nm, value)
+        if cls is None:                          # no class table at the target: text, not an object
+            screened += 1
+            continue
         default, _outer = is_class_default(pages, value, pkg_table)
-        rows.append((off, value, sink.class_name(pages, nm, value),
+        rows.append((off, value, cls,
                      sink.object_name(pages, nm, value), default,
                      holds_class(pages, value, table)[0]))
-    return rows
+    return rows, screened
 
 
 def consoles_from_client(pages, nm, client, table, pkg_table):
-    """`(bases, why, rows)` for the `Console`s a `Client`'s `InteractionMaster` holds.
+    """`(bases, why, rows, screened)` for the `Console`s a `Client`'s `InteractionMaster` holds.
 
     A viewport-created console is registered as an interaction, so no actor names it: `plr3` held no pointer on
     the `Console` table in its first 0x1400 bytes, while the `XboxClient` object's `InteractionMaster` at
@@ -332,18 +344,55 @@ def consoles_from_client(pages, nm, client, table, pkg_table):
     """
     master = pages.u32(client + INTERACTION_MASTER)
     if not master:
-        return [], "client %#010x holds a null `InteractionMaster` (+%#x)" % (client, INTERACTION_MASTER), []
+        return [], "client %#010x holds a null `InteractionMaster` (+%#x)" % (client, INTERACTION_MASTER), [], 0
     if not names.plausible_object(master):
         return [], ("client %#010x+%#x holds %#010x, which is not an object address"
-                    % (client, INTERACTION_MASTER, master)), []
-    rows = master_slots(pages, nm, master, table, pkg_table)
+                    % (client, INTERACTION_MASTER, master)), [], 0
+    rows, screened = master_slots(pages, nm, master, table, pkg_table)
     bases = [value for _off, value, _cls, _name, default, on_console in rows
              if on_console and not default]
     why = ("via the client's `InteractionMaster` %#010x: %d slot(s) on the `Console` table, %d live"
            % (master, sum(1 for row in rows if row[5]), len(bases)))
     if not any(row[5] for row in rows):
         why += ", no pointer on the `Console` table in its first %#x bytes" % IM_BLOCK
-    return bases, why, rows
+    if screened:
+        why += (", %d dword(s) in the block name no class (the object's own text)" % screened)
+    return bases, why, rows, screened
+
+
+def typing_text(guest, base):
+    """The `bTyping` byte, and a refusal to call anything but 0/1 a bool.
+
+    `hudq1` read **3** at `+0x114` on the object the client route reached, beside `HistoryTop 0` and an empty
+    `TypedStr`. A `var bool` cannot hold 3, so either the object is not the class default the outer test says it
+    is, or that byte packs more than one flag -- and reading it as a dword hid both readings behind one number.
+    A byte plus the bits that are set is the reading the next boot can settle: `bTyping` alone is 1 while a
+    console is typing (measured four times on three heaps), and `bIgnoreKeys` is the flag that swallows the
+    first keypress, so 3 is either "typing with the first key still to come" or not this field at all.
+    """
+    raw = guest.read(base + CONSOLE_B_TYPING, 1)
+    if raw is None or len(raw) != 1:
+        return "unreadable"
+    value = raw[0]
+    if value in (0, 1):
+        return "%d" % value
+    bits = [str(bit) for bit in range(8) if value & (1 << bit)]
+    return "0x%02x (not a bool: bit(s) %s set)" % (value, ",".join(bits))
+
+
+def outer_text(pages, nm, base, pkg_table):
+    """`outer %#010x class X` and, when the test fires, `(the class default)`.
+
+    The class name is the measurement, not the verdict: on `hudq1` **every** named slot in the master's block
+    answered "a `Package`: the class default", the block's own `+0x18` included, so that phrase described the
+    block and not the object it was printed beside. A live object's outer is an actor, a viewport or a
+    controller, and its class name says which.
+    """
+    outer = pages.u32(base + OUTER_OFF)
+    cls = sink.class_name(pages, nm, outer) if outer else None
+    default = is_class_default(pages, base, pkg_table)[0] if outer else False
+    return ("outer %#010x class %s%s" % (outer, cls or "?",
+                                         " (the class default)" if default else ""))
 
 
 def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=None):
@@ -378,6 +427,9 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     odata, onum, _omax = sink.table(guest, args.objects, "object array")
     pages = sink.Pages(guest, probe=data, deadline=args.deadline)
     pkg_table = class_table("Package")
+    # The name table is needed by every route now: the census names each slot's class and its outer's class, and
+    # `typing_text`/`outer_text` are printed for a console found by the HUD field and by the array walk too.
+    nm = names.Names(guest, data, num)
     window = args.receipt_tail or None          # 0 = walk the whole array, which is where the console is
     phrase = "the newest %d" % window if window else "any"
     route = None
@@ -389,13 +441,16 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
     if client is not None and not args.receipt_walk:
         # The census needs the name table: this is the one route that reads class and object names, and it is
         # the route that has to say *which* the block holds when none of them is a live console.
-        nm = names.Names(guest, data, num)
-        found, why, rows = consoles_from_client(pages, nm, client, table, pkg_table)
+        found, why, rows, screened = consoles_from_client(pages, nm, client, table, pkg_table)
+        master = pages.u32(client + INTERACTION_MASTER)
         for off, value, cls, got, default, on_console in rows:
-            out("MASTER %#010x+%#04x -> %#010x class %s name %s%s%s"
-                % (pages.u32(client + INTERACTION_MASTER), off, value, cls or "?", got or "?",
-                   ", outer a `Package` (the class default)" if default else "",
+            out("MASTER %#010x+%#04x -> %#010x class %s name %s, %s%s"
+                % (master, off, value, cls, got or "?", outer_text(pages, nm, value, pkg_table),
                    ", on the `Console` table" if on_console else ""))
+        out("MASTER %#010x: %d object pointer(s) in its first %#x bytes%s"
+            % (master, len(rows), IM_BLOCK,
+               "" if not screened else
+               ", %d dword(s) that name no class (the block's own text, not slots)" % screened))
         if found:
             bases, route = found, why
         else:
@@ -439,13 +494,10 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=
             typed = fstring(guest, base + CONSOLE_TYPED)
             slots = console_slots(guest, base)
             if base not in seen:
-                out("CONSOLE %#010x (%s): HistoryTop %s, bTyping %s, TypedStr %s, %d populated slot(s), "
-                    "outer %#010x%s"
-                    % (base, route, u32(guest, base + CONSOLE_TOP), u32(guest, base + CONSOLE_B_TYPING),
+                out("CONSOLE %#010x (%s): HistoryTop %s, bTyping %s, TypedStr %s, %d populated slot(s), %s"
+                    % (base, route, u32(guest, base + CONSOLE_TOP), typing_text(guest, base),
                        "empty" if not typed or not typed[1] else repr(typed[1]), len(slots),
-                       pages.u32(base + OUTER_OFF),
-                       " (a `Package`: the class default)" if is_class_default(
-                           pages, base, pkg_table)[0] else ""))
+                       outer_text(pages, nm, base, pkg_table)))
             for slot, text in slots:
                 if seen.get(base, {}).get(slot) != text:
                     out("HIST [%d] %#010x count %d %r"
@@ -673,8 +725,12 @@ def selftest():
         ram.u32(gnames, table)
         ram.u32(gnames + 4, 40)
         ram.u32(gnames + 8, 64)
-        for index, text in ((7, "StargatePlayer"), (8, "GameHud"), (9, target_name), (10, "M00")):
+        for index, text in ((7, "StargatePlayer"), (8, "GameHud"), (9, target_name), (10, "M00"),
+                            (12, "Console")):
             ram.name(table, index, text)
+        # The `Console` class object's own name index: `sink.class_name` resolves an object's class through it, and
+        # the census now refuses a target that names no class, so every fake guest needs it.
+        ram.u32(CONSOLE_UCLASS + names.NAME_OFF, 12)
         ram.u32(objs, array)
         ram.u32(objs + 4, 3)
         ram.u32(objs + 8, 8)
@@ -847,6 +903,13 @@ def selftest():
     assert any("RECEIPT sg1txt1 IN HISTORY" in s for s in said), said
     assert any("RECEIPT sg1txt2 NOT IN HISTORY" in s for s in said), said
     assert any("HistoryTop 1" in s and "bTyping 0" in s for s in said), said
+    # `bTyping` is read as a byte, and a value that no `var bool` can hold is reported as what it is: `hudq1`
+    # read 3 at `+0x114` on the object the client route reached, beside `HistoryTop 0` and an empty `TypedStr`.
+    ram5.put(con + CONSOLE_B_TYPING, b"\x03")
+    said = []
+    receipt(ram5, args, [], out=said.append, wait=0.0)
+    assert any("bTyping 0x03 (not a bool: bit(s) 0,1 set)" in s for s in said), said
+    ram5.u32(con + CONSOLE_B_TYPING, 0)
     # A console that never opened is a walk that found nothing, and it must not read as a lost keystroke.
     ram6, _r6, _h6, _w6 = build(0x01510000, "UITextBox")
     said = []
@@ -867,7 +930,7 @@ def selftest():
     ram8.u32(0x006c21b0 + 4, 4)
     said = []
     assert receipt(ram8, args, ["sg1txt1"], out=said.append, wait=0.0) == {}, said
-    assert any("a `Package`: the class default" in s for s in said), said
+    assert any("outer 0x01800000 class ? (the class default)" in s for s in said), said
     assert any("RECEIPT sg1txt1 UNMEASURED" in s and "class's default object" in s for s in said), said
     # An array where the console is *older* than a tail window: the shortcut the first live receipt used said
     # `NOT IN HISTORY` about its window, so the window is now the whole array by default -- and the HUD's own
@@ -943,8 +1006,16 @@ def selftest():
     assert got == {}, (got, said)
     assert not any("UNMEASURED" in s for s in said), said
     assert any("2 slot(s) on the `Console` table, 1 live" in s for s in said), said
-    assert any("-> 0x015a0000" in s and "outer a `Package` (the class default)" in s for s in said), said
+    assert any("-> 0x015a0000" in s and "outer 0x01800000 class ? (the class default)" in s for s in said), said
     assert any("-> 0x015b0000" in s and "class default" not in s for s in said), said
+    assert any("2 object pointer(s)" in s and "name no class" not in s for s in said), said
+    # A dword whose target names no class is the block's own text, not a slot: `hudq1` printed 21 of them as
+    # `class ? name ?` beside six real pointers (`0x007c0020` is the UTF-16 pair `" |"`).
+    ram9.u32(m9 + 0x10, 0x007c0020)
+    said = []
+    receipt(ram9, args, ["sg1txt1"], out=said.append, wait=0.0, client=c9)
+    assert not any("-> 0x007c0020" in s for s in said), said
+    assert any("1 dword(s) that name no class" in s for s in said), said
     # And a block that holds only the default is a reason to walk, never a `NOT IN HISTORY`.
     ram9.u32(m9 + 0x0c, 0)
     said = []

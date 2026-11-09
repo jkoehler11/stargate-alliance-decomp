@@ -471,6 +471,39 @@ would be game data.
   is not the field this build uses on this object. The receipt's outer test is what made the disagreement visible
   instead of printing `NOT IN HISTORY` from a class default.
 
+## Measured state (2026-11-09, the master's block is seven pointers and its own text)
+
+- **The census was reading the block's text as pointers.** `hudq1`'s `MASTER` lines are 27 rows, and **20 of them
+  name no class**: they are the `Console` class table's neighbourhood and the block's own UTF-16 (`0x007c0020` is
+  `" |"`, `0x00410020` is `" A"`, `0x006f004c` is `" L"`). A dword whose target has no class table is not an
+  object pointer, so `master_slots()` now refuses it and counts it: the block reads **7 object pointer(s)** and
+  `20 dword(s) that name no class (the block's own text, not slots)`. The seven are `+0x08` an `ObjectProperty`
+  (`CriticalBreathIn`), `+0x18` a `Package`, `+0x24` the `InteractionMaster` **class object**, and `+0x28`/`+0x2c`/
+  `+0x30`/`+0x34` the `XboxClient`, `GUIController`, `Console` and `UIXInteraction` defaults. The `+0x00` row the
+  old code printed as `class ? name ?` was `0x0050cc68`, one dword inside the `Console` class table's `.rdata`.
+- **`outer a Package` describes the block, not the object.** Every one of those seven rows answers that, and the
+  block's own `+0x18` reads a `Package` too — by the same test the master that *holds* the block is a default
+  object, so the route's "0 live" is a fact about where it starts as much as about what the console is.
+  The test also cannot tell a *class object* from a *class default object* (both are
+  outered to a package; `ghud1`'s census names the `Package` class's own default `59,0x0097f928,Package,Package`,
+  and the address the console's outer resolved to is that object), so the census now prints the outer's **class
+  name** beside the verdict rather than the verdict alone.
+- **A `Console` class's default `bTyping` has to be 0, measured from the disc:**
+  `python3 tools/class-defaults.py $SG1_DUMP/System/Engine.u --class Console` reads **5 defaults** (`HistoryBot -1`,
+  `TimePerDemo 300.0`, `TimeTooIdle 60.0`, `TimeBeforeReboot 5.0`, `bRequiresTick True` — the one bool is
+  `Interaction`'s), and `bTyping` is not among them. That is the second half of the contradiction: the object the
+  client route reached read `bTyping 3`, and no default of its class can make that byte 3.
+- **So the reading is now a byte with its bits, and the census row cannot decide it.**
+  `36148,0x02344b00,Console,Console` (`ghud1`) says the object is a `Console` — and a live console is *also* named
+  `Console`, because UE2 names a new object after its class, so the row separates neither candidate. The receipt
+  now prints the **byte**: `bTyping 1` and `bTyping 0` unchanged (the four live readings across three heaps are 1
+  while typing and 0 once closed), and `bTyping 0x03 (not a bool: bit(s) 0,1 set)` for the `hudq1` object, so a
+  second bit shows up as a second bit instead of as a dword value nothing can use.
+- **Next measurement, one boot, no map:** read `bTyping` before `Tab`, after `Tab`, after the first key and after
+  `ret`. `0 -> 2|3 -> 1 -> 0` is a bitfield (`bIgnoreKeys` is declared immediately after `bTyping` and is the flag
+  that swallows the first keypress); `0 -> 1` throughout is the plain field and puts the contradiction back on
+  `+0x18`. The same run prints the outer's class name, which is what says whether the object is a default.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
@@ -481,7 +514,9 @@ looks ten minutes old. The receipt has its own cases: a console at index 5 of 40
 walks; a `+0x398` that names another class prints the reason and falls back instead of reading the wrong object;
 and a `Client`'s `+0xc0` finds a console one hop out (`InteractionMaster` -> the screen), says why when that master
 holds no `Console` pointer, says a null master is null, and refuses to screen a level row at that offset; and the
-whole-array walk finds a console keyed on a class *table*, which the `+0x24`-only walk cannot. It runs in `make ci` and needs no emulator
+whole-array walk finds a console keyed on a class *table*, which the `+0x24`-only walk cannot. Two more cases are the
+census's own: a dword whose target names no class (`0x007c0020`) is not printed as a slot and is counted, and a
+`bTyping` byte of 3 prints as "not a bool: bit(s) 0,1 set". It runs in `make ci` and needs no emulator
 or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one
