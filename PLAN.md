@@ -398,7 +398,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       files share an eighteen-name prefix and the two shapes differ by exactly the two tongue bones, and the
       record's eighth word is `-cos(theta)` on a half-degree grid in 95-99% of 3,200 records (2,678 exactly 0°). The
       weight slots are **not** one per channel — the 21-channel clips carry the same 26-group blocks — so a slot's
-      bone is not recoverable by counting; `LIPSincReadAnimFile`/`LIPSincReadControllerFile` is the only witness left.
+      bone is not recoverable by counting. **The runtime half is read** (`docs/formats/lipsinc-runtime.md`): the
+      loader links the channel table to the mesh's bone names with `_wcsicmp` and writes one mesh bone index per
+      channel, so a channel is a bone and a key-block slot is not; `tools/lad-bone-owners.py`
+      (`inventory/lipsinc_bone_owners.csv`) finds all 21 names declared by five `Animations/*_anim.ukx` skeletons
+      and by no other package. What is left is which parse stage is which section, not the link.
 - [x] 5.6 Produce a "cut content report" merging 3.4 (script), 5.2 (maps), 5.3 (dialogue) and the DM/CTF maps
       that shipped in a single-player prototype. Done: `docs/CUT_CONTENT.md` carries seven findings, each citing a
       committed artifact, and a reachability census (`inventory/class_reach.csv`, `make class-reach`) that asks the
@@ -879,6 +883,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   than three opcode gaps.
 - **The rest is a per-function tail**: 45 distinct function names, no offset repeated more than three times, and
   the `bad-token` rows spread over 37 opcodes. Worth individual reads, not another table-wide correction.
+
+### Execution notes (2026-11-09, a `.lad` channel is a bone by name, and the reader was the wrong two functions)
+
+- **The container's other half is the engine's, and it is read.** `LIPSincInitLevel` (`0xba750`) finds `*.lad`
+  itself (`FUN_000192a0(L"*.lad")`) and matches each name against the level's controller-prefix list with
+  `_wcsstr`; `LIPSincLoadDBFromDisk` (`0xb9e90`) strips the directory and extension to a **stem** (the controller's
+  name) and parses the file through an object of the class at `PTR_005bf508` — `FUN_000bce40` is that parse, a
+  chain of five stages (`0x35b60`, `0xbc470`, `0xbcb60`, `0xbcd30`, `0x58850`) writing at `+0x14`..`+0x7c`.
+- **Channel → bone is a name comparison, and it is the only place the two meet.** `LIPSincLinkBones` (`0x225cd0`)
+  finds the controller by `_wcscmp` over `count * 0x94` records (`0xb5250`), then `FUN_000b4930` compares each
+  channel name (`FUN_000b48e0`, 0xc-byte name entries) with the mesh's bone names (0x40-byte entries at `+0x1dc`,
+  count `+0x1e0`) using **`_wcsicmp`**, and writes the **mesh bone index** into a dword array at controller `+0x10`,
+  one entry per channel. A channel that matches nothing goes to a caller list and the controller is
+  `NOT VALID CONTROLLER!`; `is valid controller` is logged only when every channel matched. After that the pipeline
+  is index/id-based (`FUN_000b3880` searches the mesh's id array and indexes 0x20-byte transforms).
+- **The names exist in the data, in exactly five skeletons.** `tools/lad-bone-owners.py` (`make
+  lipsinc-bone-owners`, `inventory/lipsinc_bone_owners.csv`, `--check` in `make ci`) scans the name table of every
+  package in the dump (482 parse) and finds **all 21 channel names declared by `Grey_anim.ukx`,
+  `SGC_soldiers_anim.ukx`, `jaffa_anim.ukx`, `sg1_anim.ukx` and `tokra_anim.ukx`, and by nothing else**; the two
+  tongue bones are in all five skeletons but in only four `.lad` packs.
+- **The witness the format notes named is the wrong one.** `LIPSincReadAnimFile` (`0x8340`) and
+  `LIPSincReadControllerFile` (`0x7260`) tokenize wide strings on spaces and convert with `__wtof`/`__wtol` — they
+  read the middleware's **text** LTF/LBP files (`Read Track %s`, `not a valid LTF file!`, `obsolete .LBP file!`),
+  not the binary container. The LTF track loop does flush every **26** (time, value) pairs, the same 26 the binary
+  key block uses for its group count — recorded, not explained.
 
 ### Execution notes (2026-11-09, the channels are an ordered bone list and the pose's last float is an angle)
 

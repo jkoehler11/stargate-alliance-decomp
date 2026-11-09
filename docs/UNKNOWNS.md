@@ -276,6 +276,21 @@ declared one. The count is decoded *backwards* from a record the walk already fo
 not a count of 0. This is the third appearance of the same varint in the format (a group's key count, a group of 69
 keys' two-byte count, and now the table's count), which is worth knowing before reading `LIPSincReadAnimFile`.
 
+**The runtime half is measured, and the reader the entry kept naming is the wrong two functions (2026-11-09).**
+`docs/formats/lipsinc-runtime.md` reads the engine side: `LIPSincInitLevel` (`0xba750`) finds `*.lad` itself and
+matches the names against the level's prefix list; `LIPSincLoadDBFromDisk` (`0xb9e90`) reduces each file to its
+**stem** (the controller name) and parses it through an object of the class at `PTR_005bf508`, whose parse is
+`FUN_000bce40` (a five-stage chain, not yet mapped to sections). **The channel-to-bone link is a name match**:
+`FUN_000b4930` compares each channel name with the mesh's bone names using `_wcsicmp` and writes the matching
+**mesh bone index** into a dword array at controller `+0x10`, one per channel, and rejects a pack
+(`NOT VALID CONTROLLER!`) unless every channel matched. So the channel table is a bone list because the loader
+resolves it as one, and **the 26 key-block slots are not channels** — the link writes channel entries only.
+The names are real, too: `tools/lad-bone-owners.py` (`inventory/lipsinc_bone_owners.csv`) finds all 21 declared
+by five `Animations/*_anim.ukx` skeletons and by no other package in the corpus. And `LIPSincReadAnimFile`
+(`0x8340`) / `LIPSincReadControllerFile` (`0x7260`) are **text** readers — `Core_UnTemplate(..., L" ")`,
+`__wtof`, `Read Track %s`, `not a valid LTF file!`, `obsolete .LBP file!` — so no `.lad` byte goes through
+either; what stays open is which parse stage reads which section, and what the 7 signed slots mean.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

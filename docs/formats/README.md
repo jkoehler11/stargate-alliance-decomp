@@ -13,7 +13,7 @@ a sample directory (container detection):
 | `.PRO` | 1 | INI | `configparser` | [sgp-profile.md](sgp-profile.md) |
 | `.ka` | 3 | XML, `KARMA` 1.0 | `xml.etree` | [ragdoll-ka.md](ragdoll-ka.md) |
 | `.kaw` | 1 | XML, `KAT_WORKSPACE` | `xml.etree` | [ragdoll-ka.md](ragdoll-ka.md) |
-| `.lad` | 8 | opaque binary | not parsed yet | [lipsinc-lad.md](lipsinc-lad.md) |
+| `.lad` | 8 | binary keyframe container | `lad-*` tools | [lipsinc-lad.md](lipsinc-lad.md), [lipsinc-runtime.md](lipsinc-runtime.md) |
 | `.u` / `.unr` / `.utx` / `.ukx` / `.usx` / `.uax` | 18 / 73 / 170 / 83 / 91 / 55 | Unreal package | UELib, umodel | `docs/INVENTORY.md`, PLAN 5.1 |
 
 Two surprises worth knowing before planning work:

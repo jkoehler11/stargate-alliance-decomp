@@ -500,6 +500,8 @@ measurement, and the group-to-bone question is not answered by counting.
 
 What remains is smaller and named: the **three words between the position and the angle** (`0x0f000004`, `0x9e12217c`
 and denormals in the samples — not plausible floats, and constant per bone across frames in 8 of 19 bones), and **which
-curve a group is** — for which the reader is the only witness left: `LIPSincReadAnimFile` (`0x000b8340`) over a track,
-or `LIPSincReadControllerFile` (`0x000b7260`) filling the pose array, which is where a slot number would have to be
-written next to a bone name.
+curve a group is**. The reader half is now answered in [lipsinc-runtime.md](lipsinc-runtime.md): the loader links
+the channel table to the mesh's bone names (`_wcsicmp`) and writes one mesh bone index per channel, so a channel is a
+bone and a key-block slot is not; the two functions this page used to name (`LIPSincReadAnimFile` `0x000b8340`,
+`LIPSincReadControllerFile` `0x000b7260`) parse the middleware's **text** LTF/LBP files and never see a `.lad` byte.
+The three words between the position and the angle are still unread.
