@@ -247,6 +247,23 @@ come in mirrored pairs (`0.4289, 4.887` against `-0.4289, -4.887`). The `26` in 
 count, not a key count. Still open: which group is which curve, what a value means, and the header's invariant
 `160.0`/`220.0`.
 
+**A value's sign splits the slots at 19, and six of the 26 are redundant (2026-11-09).** `tools/lad-groups.py`
+(`make lipsinc-groups`, `inventory/lipsinc_groups.csv`, `--check` in `make ci`) measures every group against every
+other group in the same track, 208 file x slot rows over the 58,006 groups. **Slots 0-18 never carry a negative
+value in any row** and their widest is `1.33783`; **slots 19-25 are signed**, -9.45942 to 9.45942. So the table is
+19 weight curves and 7 signed curves, split exactly at the nineteenth slot -- the same 19 as the channel count of
+the four `Controllers/` packs, which is recorded rather than explained. And the slots repeat: 24 = 25 in 2,230 of
+2,231 tracks, 17 = 18 in 1,845, 22 = 23 in 883, 15 = 16 in 2, while 19 = -24 = -25 in 1,890 and 21 = -22 = -23 in
+193. A pair is compared only when both slots carry the *same* time sequence and then every `f64` must be bitwise
+equal or the exact negation, so those counts are evidence and the gaps are silence: 19 and 24 share a grid in 1,890
+of the 2,230 tracks where both are populated, and the other 340 say nothing either way. **At most 20 of the 26
+slots are independent curves**, which is what a decoder has to read. The header constants are now a negative:
+`--headers` re-scans every `u32 2` marker under a relaxed test (name pair, `u32 1`, two `f32`, any count byte) and
+finds 2,231 track-like records with exactly one tuple `(160.0, 220.0, 26)` and zero the strict reader refuses, so
+they cannot be per-clip data (a duration or a rate would vary) and the open question is what the *format* means by
+them. What is left of U4: which weight slot is which bone (the clip sections' bone subsets are the only ordered
+bone list in the file), and the meaning of the 7 signed slots' values.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
