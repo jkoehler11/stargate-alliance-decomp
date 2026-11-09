@@ -121,6 +121,18 @@ if [ "$dry_run" = 1 ]; then
   echo "$indices"
   exit 0
 fi
+# The disc is the game, and xemu only *warns* about a missing one (`Could not open ...: No such file or directory`)
+# before booting the HDD alone -- so a wrong path here is not a failed boot, it is a boot of xemu's own error dialog.
+# Measured on sink10/sink11, which left `--iso` at this script's default while the disc in that WORK is one level
+# down under `xemu/`: four boots spent arguing with a dialog, and the sink read's frame gate called it "the main menu".
+if [ ! -f "$iso" ]; then
+  echo "missions.sh: no disc at '$iso' (--iso)" >&2
+  cand="$(dirname "$iso")/xemu/sg1.iso"
+  [ -f "$cand" ] && echo "  the disc in this WORK is $cand" >&2
+  echo "  xemu would only warn and boot without it, so every frame would come from its 'Failed to open DVD image" >&2
+  echo "  file' dialog (docs/XEMU.md, sink10/sink11)" >&2
+  exit 2
+fi
 mkdir -p "$out"
 : > "$out/missions.tsv"  # fresh: one row per index for this invocation
 avail=$(df -Pk "$out" | awk 'NR == 2 {print $4}')

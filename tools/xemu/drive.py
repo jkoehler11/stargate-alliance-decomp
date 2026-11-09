@@ -236,6 +236,26 @@ def tail(path, lines=6):
         return []
 
 
+IMG_LOST = re.compile(r"Could not open '([^']+)'")
+
+
+def lost_images(path):
+    """The images xemu gave up on, read from its own log.
+
+    xemu does not fail a boot over an image it cannot open: it prints `warning: Could not open '<path>': No such file
+    or directory` and runs the guest anyway, which then sits on xemu's own *Failed to open DVD image file* dialog.
+    `sink11`'s entire `00-title`/`01-highlight` pair is that dialog, and the sink read's frame gate called it "the
+    main menu" (8,321 px, 0.68%, against the 2.5% floor) -- so a boot with no disc has to be refused by name, not
+    judged by its pixels.
+    """
+    try:
+        with open(path, "r", errors="replace") as handle:
+            text = handle.read()
+    except OSError:
+        return []
+    return IMG_LOST.findall(text)
+
+
 def stall_report(exc, out_dir, proc=None, ask=None):
     """Name the call that never answered, and what the desktop and the guest looked like while it hung.
 
@@ -523,6 +543,19 @@ def selftest():
     case("a blocking probe is abandoned", bounded(lambda: time.sleep(30), 0.3) is None)
     case("a fast probe is returned", bounded(lambda: "vm running", 2.0) == "vm running")
 
+    # 7. A disc xemu could not open is named out of its own log, because it is a warning to xemu and not a failure.
+    with tempfile.TemporaryDirectory() as out3:
+        log = os.path.join(out3, "xemu.log")
+        with open(log, "w") as handle:
+            handle.write("xemu_version: 0.8.139\n"
+                         "AppRun: -drive index=1,media=cdrom,file=/w/sg1.iso: warning: Could not open '/w/sg1.iso': "
+                         "No such file or directory\n")
+        case("a disc xemu could not open is named", lost_images(log) == ["/w/sg1.iso"], str(lost_images(log)))
+        with open(log, "w") as handle:
+            handle.write("xemu_version: 0.8.139\nAppRun: terminating on signal 15 from pid 1 ()\n")
+        case("a clean log names no image", lost_images(log) == [])
+        case("a log that is not there names no image", lost_images(os.path.join(out3, "absent.log")) == [])
+
     bad = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
         say("%s %s%s" % ("ok  " if ok else "FAIL", name, ": " + detail if detail else ""))
@@ -660,6 +693,15 @@ def main():
         say("FAIL: %s is not installed" % tool)
         return 3
 
+    # The disc is the game. A path that is not there used to be xemu's `warning: Could not open ...` and nothing else,
+    # so the run booted the HDD alone, photographed xemu's own "Failed to open DVD image file" dialog and spent its
+    # retries on it -- measured on sink10/sink11, whose `--iso` was left at missions.sh's default `$WORK/sg1.iso` while
+    # the disc in that WORK is `$WORK/xemu/sg1.iso`. Four boots, and no frame in them is a frame of the game.
+    if not os.path.exists(args.iso):
+        say("FAIL: --iso %s does not exist" % args.iso)
+        say("      (xemu only warns about that and boots anyway, so the frames would be its own \"Failed to open "
+            "DVD image file\" dialog, and every frame assertion would be a judgement on that dialog)")
+        return 3
     os.makedirs(args.out, exist_ok=True)
     # The same discovery rule smoke.py uses: an mcpx boot ROM and a *debug* flash, which is what the boot needs.
     mcpx = next((os.path.join(args.bios, f) for f in sorted(os.listdir(args.bios))
@@ -742,6 +784,14 @@ def main():
         time.sleep(min(args.seconds, 10))
         if proc.poll() is not None:
             say("FAIL: xemu exited immediately (see %s/xemu.log)" % args.out)
+            return 3
+        # The disc's own answer, in case it existed and could not be opened (permissions, a truncated copy, a
+        # half-written image): xemu runs on regardless, and no frame after this is a frame of the game.
+        lost = lost_images(os.path.join(args.out, "xemu.log"))
+        if lost:
+            say("FAIL: xemu could not open %s, so this guest is not running the game" % ", ".join(lost))
+            say("      (a missing image is a `warning` to xemu, not an error: it boots on and shows its own "
+                "\"Failed to open DVD image file\" dialog, which repaints and passes frame checks)")
             return 3
         say("waiting %ds for the title" % args.seconds)
         time.sleep(max(0, args.seconds - 10))
