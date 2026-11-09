@@ -42,7 +42,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/interaction_setup.csv` | 7 | 7 | `make interaction-setup` |
 | `inventory/karma_runtime.csv` | 8 | 5 | `make karma-runtime` |
 | `inventory/lipsinc_bone_owners.csv` | 21 | 5 | `make lipsinc-bone-owners` |
-| `inventory/lipsinc_bones.csv` | 160 | 16 | `make lipsinc-bones` |
+| `inventory/lipsinc_bones.csv` | 160 | 22 | `make lipsinc-bones` |
 | `inventory/lipsinc_files.csv` | 18 | 5 | `make lipsinc-index` |
 | `inventory/lipsinc_frames.csv` | 8 | 16 | `make lipsinc-frames` |
 | `inventory/lipsinc_groups.csv` | 208 | 14 | `make lipsinc-groups` |

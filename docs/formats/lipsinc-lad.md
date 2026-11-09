@@ -41,7 +41,7 @@ stages is one leaf of the grammar:
 |---|---|---|
 | `FUN_00037110` ×2 | four raw bytes each | `0x00`, `0x04`: version `2`, `2` |
 | `FUN_00035b60` (element `FUN_00058850`) | an array of strings | `0x08`: the channel table, `n` names |
-| `FUN_000bc470` (record `FUN_000b1bf0`) | an array of `{u32, array of 32-byte records}` | the pose block: 20 frames × `n` records |
+| `FUN_000bc470` (record `FUN_000b1bf0`) | an array of `{u32, array of 32-byte records}`; a record is a tag, a position and a quaternion | the pose block: 20 frames × `n` records |
 | `FUN_000bcb60` | an array of `{u32, bone names, pose array, name}` | the clip section |
 | `FUN_000bcd30` | an array of `{u32, name, Map.Anim, u32, f32, f32, key block}` | the track table |
 | `FUN_00037110`, `FUN_00058850` ×3 | a `u32` and three strings | the tail: `2`, `BN-Head`, `undefined`, `undefined` |
@@ -50,7 +50,7 @@ and the file is
 
     lad    := u32 version, u32 version2, names, frames, clips, tracks, u32, string x3
     names  := count, count x string
-    frames := count, count x { u32, count, count x pose }    pose := u32 2, 3 x f32, 3 x u32, f32 -1.0
+    frames := count, count x { u32, count, count x pose }    pose := u32 2, 3 x f32 (position), 4 x f32 (quaternion)
     clips  := count, count x { u32, names, frames, string }
     tracks := count, count x { u32, string, string, u32, f32, f32, groups, groups x key-group, 0x00 }
 
@@ -96,11 +96,26 @@ A record, in the loader's order (`FUN_000b1bf0` is its serialiser):
 |---|---|
 | 0–3 | `u32` `2` |
 | 4–15 | three float32, small and signed (`\|x\| < 12`) — the bind position |
-| 16–27 | three dwords that are not float data (`0`, `7c21129e`, `049c2b99` in frame 0) |
-| 28–31 | `-1.0f` |
+| 16–27 | three float32 — the quaternion's vector part (denormal-small at rest, not zero) |
+| 28–31 | the quaternion's `w`: `-1.0f` at rest |
 
-What the three dwords and the `-1.0f` *mean* is still open (U4); what is settled is where a record starts and ends,
-which is what a writer needs.
+The last four floats are a **unit quaternion, in the negated convention**. `tools/lad-bones.py`
+(`make lipsinc-bones`, `inventory/lipsinc_bones.csv`, `--check` in `make ci`) reads all seven floats of every
+record: `|q| = 1` to within `5.5e-7` in **all 3,200**, `w` is never positive (the stored rotation is the
+canonical one negated, which is the same rotation), and the rest pose's words `6.3e-30, -0, 3.6e-30` are its
+`x, y, z` — denormal-small rather than zero, which is why four earlier readings looked at them as integers.
+So a record is a position plus a rotation about an axis, `angle = 2*atan2(|v|, -w)`: the `-1.0f` at rest is a
+zero rotation, the corpus maximum is `77.0` degrees, and 522 of the 3,200 records turn at all — 506 about
+`±X` and 16 about `(0.008, 0.239, 0.971)`. The angles land on a **whole-degree** grid in 97.6% of the corpus
+and take 42 distinct values, so the pose block is a pose set rather than a curve. Two corrections follow: the
+"three dwords that are not float data" are the quaternion's vector part, and the angle an earlier page read
+as `-cos(theta)` with `acos` is **twice** that (`w = -cos(theta/2)`), which halved every angle and made the
+grid look like half a degree.
+
+`FUN_000b1bf0` reads those fields but cannot name them: `FUN_00037110` and `FUN_00037170` are **byte-identical**
+(48 bytes, a 4-byte read through the archive's `Serialize` plus a running byte counter), so the serialiser says
+"one tag and seven 4-byte scalars" and the 3 + 4 grouping is measured from the data. Its eight reads are the
+confirmation, not the evidence.
 
 ## The clip section is in the container, and a clip carries its own bones
 
