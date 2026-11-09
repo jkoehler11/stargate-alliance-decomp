@@ -452,6 +452,25 @@ would be game data.
   outer makes `IN HISTORY` / `NOT IN HISTORY` the submit verdict; only the default means the live console is outside
   `GObjObjects`.
 
+## Measured state (2026-11-09, the frames are no longer the verdict -- and the census is asked)
+
+- **What changed is the gate, not the desktop.** `drive.py --soft-shots` records an `UNCAPTURED` or `UNIFORM` shot
+  and continues; `hud-say.sh` passes it. The boot that needed it (`hudsay7`) died at `05-precommands`, two steps
+  before its first keystroke, so the census and the `Console.History` read it was built for were never asked.
+- **`hudq1` reached the question.** `M00`, the level row, `+0x1008 -> GameHud`, six box changes, all four markers
+  typed, the receipt's whole-array walk finished (365 page reads, 227.0 s) inside the run's 360 s linger, and the
+  exit was `3 shot step(s) did not repaint` -- a shot verdict, not a lost run. The frozen frames are real pictures:
+  `02-mission` and `03-dismissed` read 0 px, `05-precommands` 94,415 and `06-dismissed` 40,250, so a post-load shot
+  is usable again once the level settles, and only the select-and-load window is dark.
+- **The console is still not reachable, and now for a stated reason.** The client's `InteractionMaster` block holds
+  one `Console`-table slot (`+0x30 -> 0x02344b00`) whose outer is a `Package`; the HUD's `+0x398` holds
+  `0x00050971`, not an address; the array walk finds the same default and no other. So `RECEIPT ... UNMEASURED` is
+  the honest answer here, and the markers stay `ABSENT`/`UNREAD` rather than becoming a delivery verdict.
+- **The default reads `bTyping 3`, which a default cannot.** Beside `HistoryTop 0` and an empty `TypedStr`, that is
+  a contradiction between two fields of one object, and it is the next thing to settle: either `+0x114` or `+0x18`
+  is not the field this build uses on this object. The receipt's outer test is what made the disagreement visible
+  instead of printing `NOT IN HISTORY` from a class default.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the

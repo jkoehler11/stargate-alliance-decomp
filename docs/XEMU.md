@@ -195,7 +195,7 @@ Five things in these scripts did not survive the pinned emulator, and each one c
 | `AppRun: -mcpx_path: invalid option`, no guest | xemu 0.8.139 forwards everything after `-display xemu` to QEMU, which has no `-mcpx_path` | `tools/xemu/smoke.py` writes the TOML form `play.sh` uses; `boot-test.sh` is marked stale |
 | `-serial <path>: not a valid char driver` | QEMU's `-serial` wants a protocol | pass `file:<path>` |
 | `extract-xiso produced no image`, exit 0 | extract-xiso 2.7.1 takes `-c <dir> [name]`, not `-o <path>`; the old form is silently ignored | `build-xiso.sh` tries the positional form first |
-| `screendump` → `CommandNotFound` over QMP | this QEMU build carries no display commands; xemu's renderer is not a QEMU console | not available — do not plan around host screenshots |
+| `screendump` → `CommandNotFound` over QMP | xemu reimplements QEMU's QMP and carries no display commands: measured 2026-11-09 it answers **228 commands and `screendump` is not one of them**, refused for a bare filename, for QEMU 5's `format: png` and for a `device` argument alike (`tools/xemu/qmp-caps.py --has screendump`) | the X window is the only frame source, so a run whose verdict is a guest read has to survive without one (`drive.py --soft-shots`, below) |
 | machine boots but the CPU sits at `EIP=0x8001d1ea`, `HLT=1`, forever | a **zero-filled `eeprom_path`**; a freshly created HDD image does the same | **omit `eeprom_path`** so xemu writes its own default, and boot from a prepared HDD image |
 
 The last one is the important one: both the XISO and a directory mount idle in the kernel with a blank
@@ -390,8 +390,10 @@ of a previous instance; starting from a clean display session, as the first two 
 ## Driving the game: a sequence of inputs, and an assertion that is not animation (PLAN 7.2)
 
 Sampling `EIP` proves the guest executes code; it says nothing about whether the display is alive or whether input
-reaches the game. xemu has no `screendump` in its QMP, so the window is the channel. `tools/xemu/drive.py` boots with
-the same TOML `smoke.py` writes and then runs a scripted **sequence**, one step at a time:
+reaches the game. xemu has no `screendump` in its QMP (228 commands, measured 2026-11-09 — the count is the
+tool's, `tools/xemu/qmp-caps.py`, because "xemu has no `screendump`" is a fact about a build and not about QEMU), so
+the window is the channel. `tools/xemu/drive.py` boots with the same TOML `smoke.py` writes and then runs a scripted
+**sequence**, one step at a time:
 
     DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_XXXX python3 tools/xemu/drive.py \
         --iso=$WORK/sg1.iso --bios=$SG1_DUMP/bios --hdd=$WORK/hdd.qcow2 --out=$WORK/drive \
@@ -403,6 +405,23 @@ the same TOML `smoke.py` writes and then runs a scripted **sequence**, one step 
 `shot=NAME` captures and asserts against the previous shot; `key=`/`type=` target the window, `xkey=`/`xtype=` go
 through XTEST; `wait=SECS`, `activate`; `noise=SECS` measures the screen's own animation; `cpu=COUNT` samples `EIP`
 over QMP; and `monitor=CMD` runs one QMP `human-monitor-command` (`info usb`, `device_add …`). Exit codes: 0 every shot repainted, 2 a step did not, 3 the emulator never came up.
+
+### A frame the desktop will not give is a reading, not a failure
+
+From the map select on, one boot's xemu window served the same picture for the rest of the run and then stopped
+answering `import -window` altogether, while that same boot read the level's `GameHud` and its own dialogue off the
+stub (`hudsay7`/`hudsay8`, 2026-11-09): every post-load frame `(13,13,13)` or a byte-identical 3,824-byte PNG, one
+visible xemu window throughout (id `67108917`, 1280 x 960), and a guest that was demonstrably executing. So a
+post-load shot on this desktop measures the desktop, and the shot gate returning 3 on it killed the run two steps
+before its first keystroke — the census and the `Console.History` read were never asked.
+
+`--soft-shots` makes a shot's outcome explicit and, for these two cases, non-fatal: `UNCAPTURED` for a frame the
+grab never produced, `UNIFORM` for a frame with one colour in it (`convert -format %k` = 1, printed with the colour),
+and the closing report names every shot it never got. Frames that *are* captured are still compared exactly as
+before — a frozen-but-real picture still reads `0 differing pixels FAIL`, which is the honest verdict and what this
+boot's `02-mission`/`03-dismissed` printed. What changes is that a run whose pass criterion is a guest read no
+longer dies of a failed screenshot. `hud-say.sh` passes `--soft-shots`; `missions.sh` does not, because there the
+frame *is* the criterion.
 
 ### The title screen animates, so a raw pixel diff proves nothing
 
