@@ -831,6 +831,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the box verdict gets a second half: did the submit run at all?)
+
+- **A box that never held the marker had two causes and no way to tell them apart**: the keys never reached the
+  console (the `M00` tutorial modal, a press into an unfocused window, a dropped character -- each measured here) or
+  the command ran and the sink drew nothing (the message path is the other half of this unknown). `hud-text.py
+  --receipt MARKS` reads the console's own `History[16]` in the same boot, after the typing, and answers per
+  marker: `RECEIPT <mark> IN HISTORY` (a submit ran) or `NOT IN HISTORY` (the keys never arrived). It is reached
+  from the census's class table (`0x0050cb80`, `inventory/xbe_class_table_names.csv`) instead of a name lookup, so
+  the read is one `--tail` walk rather than a walk of every object; the slots are `FString`s at `+0x50`, stride 12
+  through `+0x110`, and `HistoryTop`/`bTyping`/`TypedStr` print beside them because a populated history plus a line
+  still being typed is not a submit (`console-state.py`, 2026-11-06).
+- **`hud-say.sh` runs the receipt on every boot** and prints `DELIVERED`/`NOT DELIVERED`/`UNREAD` beside each
+  marker's box verdict. Its `FOUND` test now reads box lines only: the receipt's own lines carry the marker, so a
+  `FOUND` that was really a `RECEIPT` line would report the message path as painting when it painted nothing. The
+  receipt lands *after* the watch, so `drive.py --linger` derives as `120 s + 30 s per command` -- the reader is
+  killed two seconds after `drive.py` exits, and a cut-off receipt reads as an unmeasured one.
+- **Still unread on this run**: the boot it was built for reached `M00` (name table 40,427 at 281.8 s, row
+  `0x08812800` outered `M00`, `+0x1008` -> live `GameHud` `0x09342100`, three boxes reading `default` at 366.8 s)
+  and was still typing its commands when this run's budget ran out, so the receipt's own verdict is the next run's
+  first read -- one boot, no new instrument.
+- **Instruments**: `tools/xemu/hud-text.py` (`--receipt`, `--receipt-wait`, a selftest case), `tools/xemu/hud-say.sh`
+  (receipt on every run, derived linger, box-only `FOUND`), `docs/HUD_TEXT.md` (the receipt section). No artifact and
+  no new file.
+
 ### Execution notes (2026-11-09, the tutorial panel is dismissed before the commands, and the boxes stay empty)
 
 - **The panel needed its own press and the instrument now measures it**: `hud-say.sh` presses the pad's `A` once
@@ -1768,6 +1792,10 @@ are limited to expected fields (checksum/timestamp) and documented.
   the image file, not a physical dump. The earlier attempt read a 128 MiB RAM dump at `0x0050cb80` and got bytecode
   because that is a linear address the page tables have to translate; `tools/class-overrides.py --class Console` reads
   the same table out of `default.xbe` in one pass.
+      **The receipt is the next read, not a new instrument (2026-11-09)**: `hud-text.py --receipt MARKS` reads
+      `Console.History[16]` in the same boot and prints `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`, which is
+      the difference between "the keys never arrived" and "the command ran and drew nothing" -- the two failures
+      every box verdict so far conflated.
 
 - [~] 7.4 CI job per commit: manifest verify → package parse → decompile coverage → compile status →
       bytecode match % → asset count. Publish the scoreboard as the repo's README badge/table.

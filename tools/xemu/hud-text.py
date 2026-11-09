@@ -42,6 +42,11 @@ stop/read/resume, which leaves the guest's own clock running -- the 2 s `Display
 `--follow SECS` re-reads the row's `+0x1008` while watching and rebinds when it holds a different `GameHud`:
 a level destroys its intro HUD when the cinematic hands over to gameplay, so a read bound once reports three
 empty boxes for a HUD that no longer exists.
+`--receipt MARKS` answers the question a box cannot: after the watch it reads the console's own `History[16]`
+(`Console`'s class table is `0x0050cb80` in the census, so this is one tail walk, not a name lookup) and prints,
+per marker, `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`. A delivered line with an empty box is the sink
+drawing nothing; an empty history is a keystroke that never arrived -- two failures that otherwise read alike.
+`--receipt-wait SECS` keeps polling the slots, because the commands are typed near the end of the run.
 `--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
 Field contents are game state, so nothing here writes a file.
 """
@@ -54,6 +59,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES_PY = os.path.join(HERE, "names.py")
 SINK_PY = os.path.join(HERE, "sink-slots.py")
+RAMSCAN_PY = os.path.join(HERE, "ramscan.py")
 
 HUD_SLOT = 0x1008                    # StargatePlayer.GameHudPtr (`sink-slots.py`, docs/XEMU.md)
 PLAYER_CLASS = 0x00e47800            # `StargatePlayer`'s class table (package data: does not move per boot)
@@ -64,6 +70,16 @@ MENU_OUTER = "MainMenu"              # the menu's player row: `rows_of_class` or
 LEVEL_FLOOR = 40000                  # `sink-slots.py`: 34,800 names at the menu, 41,265 on a level -- but a
                                      # loading boot read 40,427, so this is a pre-gate and `MENU_OUTER` is the gate
 OBJ_SIZE_MAX = 0x40000               # a text data block this large is not a message
+# `Console`'s own counters and inline strings (`Console.uc:8-16`, measured 2026-11-06 on the receipt boot):
+# `TypedStr` at +0x44, `History[16]` as sixteen 12-byte `FString`s from +0x50 to +0x110 (where `TypedStrPos`
+# reads), `HistoryTop` at +0x38 and `bTyping` at +0x114.
+CONSOLE_TYPED = 0x44
+CONSOLE_HISTORY = 0x50
+CONSOLE_STRIDE = 12
+CONSOLE_SLOTS = 16
+CONSOLE_TOP = 0x38
+CONSOLE_B_TYPING = 0x114
+CONSOLE_CLASS_NAME = "Console"        # `inventory/xbe_class_table_names.csv`: table `0x0050cb80`, size 1088
 
 
 def load(name, path):
@@ -163,6 +179,95 @@ def fstring(guest, addr):
         return None
     text = raw[:2 * count].decode("utf-16-le", "replace")
     return (count, text.split("\x00", 1)[0])
+
+
+def console_table():
+    """`Console`'s class table from the disc census, or `(None, candidates)`.
+
+    `inventory/xbe_class_table_names.csv` names 492 `.rdata` vtables from their registration evidence, and one
+    of them is `Console` (object size 1088). A class table is package data, so the address is the same on every
+    boot -- which is what makes the console reachable without the full object-array walk a name lookup needs.
+    """
+    tables = load("xemu_ramscan", RAMSCAN_PY).class_names()
+    want = CONSOLE_CLASS_NAME.lower()
+    hits = sorted(table for table, name in tables.items() if (name or "").split(".")[-1].lower() == want)
+    return (hits[0] if len(hits) == 1 else None), hits
+
+
+def console_slots(guest, base):
+    """[(index, text)] for the populated `History[16]` slots of the console object at `base`."""
+    out = []
+    for index in range(CONSOLE_SLOTS):
+        got = fstring(guest, base + CONSOLE_HISTORY + index * CONSOLE_STRIDE)
+        if got and got[1]:
+            out.append((index, got[1]))
+    return out
+
+
+def receipt(guest, args, marks, out=print, wait=0.0):
+    """Read the console's own `History[16]` and say, per marker, whether its submit ran.
+
+    A text box that never held the marker has two causes that look identical from the box: the keys never
+    reached the console (a modal holding input, a press into an unfocused window, a dropped character), or the
+    command ran and the sink it writes drew nothing. `Console.History` separates them: `Console.uc`'s `IK_Enter`
+    branch copies `TypedStr` into `History[HistoryTop]` and only then calls `ConsoleCommand`, so a line in a slot
+    is proof the submit ran, and an empty history after the typing window is proof the keys did not arrive.
+
+    The console object is the newest object on the `Console` class table (`0x0050cb80`, from the census), so the
+    walk is the `--tail` shortcut, and `[]` is printed as "not among the newest N", never as absent. `wait`
+    polls the slots: the commands are typed near the end of a 500 s sequence, and a receipt that starts early
+    has to outlast them instead of reading an empty console and calling it a lost keystroke.
+    """
+    table, hits = console_table()
+    if table is None:
+        out("CONSOLE none: the census names %d `Console` class table(s)%s, so the walk has no key"
+            % (len(hits), " (" + ", ".join("%#010x" % h for h in hits) + ")" if hits else ""))
+        return {}
+    data, num, _cap = sink.table(guest, args.at, "name table")
+    nm = names.Names(guest, data, num)
+    odata, onum, _omax = sink.table(guest, args.objects, "object array")
+    pages = sink.Pages(guest, probe=data, deadline=args.deadline)
+    stop = time.monotonic() + max(0.0, wait)
+    seen = {}
+    verdicts = {}
+    walks = 0
+    while True:
+        walks += 1
+        found = sink.rows_of_class(guest, pages, odata, onum, table, tail=args.tail)
+        if not found:
+            out("CONSOLE none among the newest %s of %d object(s) (walk %d): a console that never opened, or "
+                "one older than the shortcut -- this says where it is not" % (args.tail or "all", onum, walks))
+        for index, base in found:
+            line = fstring(guest, base + CONSOLE_TYPED)
+            slots = console_slots(guest, base)
+            if base not in seen:
+                out("CONSOLE %#010x (object %d of %d): HistoryTop %s, bTyping %s, TypedStr %s, %d populated "
+                    "slot(s)" % (base, index, onum, u32(guest, base + CONSOLE_TOP),
+                                 u32(guest, base + CONSOLE_B_TYPING),
+                                 "empty" if not line or not line[1] else repr(line[1]), len(slots)))
+            for slot, text in slots:
+                if seen.get(base, {}).get(slot) != text:
+                    out("HIST [%d] %#010x count %d %r"
+                        % (slot, base + CONSOLE_HISTORY + slot * CONSOLE_STRIDE, len(text) + 1, text))
+            seen.setdefault(base, {}).update(dict(slots))
+            for mark in marks:
+                hit = [slot for slot, text in slots if mark in text]
+                if hit and mark not in verdicts:
+                    verdicts[mark] = hit[0]
+        if not marks or all(mark in verdicts for mark in marks):
+            break
+        if time.monotonic() >= stop:
+            break
+        time.sleep(2.0)
+    for mark in marks:
+        if mark in verdicts:
+            out("RECEIPT %s IN HISTORY (%d walk(s)): the submit ran, so the console's own history holds the line"
+                " -- a box that never held it is the sink drawing nothing, not a lost keystroke" % (mark, walks))
+        else:
+            out("RECEIPT %s NOT IN HISTORY (%d walk(s), newest %s of %d object(s)): no submit ran, so the keys "
+                "never reached the console -- the modal, the focus or a dropped character, not the sink"
+                % (mark, walks, args.tail or "all", onum))
+    return verdicts
 
 
 def boxes(guest, hud, pages=None, nm=None):
@@ -501,6 +606,37 @@ def selftest():
     assert any("MainMenu" in s for s in said), said
     print("ok   hud-text: the menu's own `StargatePlayer` row is skipped for the level's (outer `MainMenu`)")
 
+    # The receipt is the question a box cannot answer: a marker that a submit delivered but no box painted
+    # (a sink drawing nothing) against one that never reached the console (keys into a modal). `Console.History`
+    # separates them, and it is reachable from the census's `Console` class table rather than a name walk.
+    assert console_table()[0] == 0x0050cb80, console_table()
+    ram5, _row5, _hud5, _win5 = build(0x01510000, "UITextBox")
+    array5, con = 0x01200000, 0x015a0000
+    ram5.name(0x01000000, 12, "Console")
+    ram5.u32(0x006c21b0 + 4, 4)
+    ram5.u32(array5 + 0x0c, con)
+    ram5.u32(con + names.CLASS_OFF, 0x0050cb80)
+    ram5.u32(con + names.NAME_OFF, 12)
+    ram5.u32(con + CONSOLE_TOP, 1)
+    ram5.u32(con + CONSOLE_B_TYPING, 0)
+    ram5.put(0x017a0000, "say sg1txt1\x00".encode("utf-16-le"))
+    ram5.u32(con + CONSOLE_HISTORY, 0x017a0000)
+    ram5.u32(con + CONSOLE_HISTORY + 4, 12)
+    ram5.u32(con + CONSOLE_HISTORY + 8, 16)
+    said = []
+    got = receipt(ram5, args, ["sg1txt1", "sg1txt2"], out=said.append, wait=0.0)
+    assert got == {"sg1txt1": 0}, (got, said)
+    assert any("RECEIPT sg1txt1 IN HISTORY" in s for s in said), said
+    assert any("RECEIPT sg1txt2 NOT IN HISTORY" in s for s in said), said
+    assert any("HistoryTop 1" in s and "bTyping 0" in s for s in said), said
+    # A console that never opened is a walk that found nothing, and it must not read as a lost keystroke.
+    ram6, _r6, _h6, _w6 = build(0x01510000, "UITextBox")
+    said = []
+    assert receipt(ram6, args, ["sg1txt1"], out=said.append, wait=0.0) == {}, said
+    assert any("CONSOLE none among the newest" in s for s in said), said
+    print("ok   hud-text: a marker's submit is read off `Console.History` (delivered) and a console that never "
+          "opened is a walk that found nothing, not a lost keystroke")
+
     print("ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not "
           "one (%d stub read(s))" % ram.reads)
     print("ok   hud-text: the watch window is the watch's own clock -- a subtitle that lands after it starts "
@@ -589,6 +725,13 @@ def main():
                     help="leave the guest running between reads (stop/read/resume). Required when the watcher "
                          "starts before the boot: attaching alone interrupts the CPU, and a reader that never "
                          "resumes freezes the boot it is watching")
+    ap.add_argument("--receipt", metavar="MARKS", default=None,
+                    help="comma-separated markers: after the watch, read the `Console`'s own `History[16]` and "
+                         "report each marker as delivered (its submit ran) or not (the keys never reached the "
+                         "console). A box that never held a delivered line is the sink drawing nothing")
+    ap.add_argument("--receipt-wait", type=float, default=60.0,
+                    help="seconds the receipt may keep polling for a marker to appear (default 60: the commands "
+                         "are typed near the end of the sequence and a read that starts early must outlast them)")
     ap.add_argument("--selftest", action="store_true", help="check the field walk and the text decode, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -670,15 +813,24 @@ def main():
         print("%s: row %#010x -> GameHud %#010x" % (args.tag, row, hud))
 
     now = time.monotonic()
+    marks = [mark.strip() for mark in (args.receipt or "").split(",") if mark.strip()]
+    receipt_out = lambda s: print("%s: %s" % (args.tag, s))
     if not args.watch:
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             print(line(args.tag, now - started, label, addr, count, text, name))
+        if marks:
+            receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait)
         return 0
     changes, _final, rebounds = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started,
                                       row=row, follow=args.follow, args=args, rewrites=8)
     print("%s: watched %.0fs, %d change(s), %d rebind(s), %d stub read(s)"
           % (args.tag, args.watch, changes, rebounds,
              guest.reads if hasattr(guest, "reads") else 0))
+    # The receipt is the second question, and it is asked after the typing: a box that never held the marker is
+    # either a submit that ran into a sink drawing nothing or keys that never arrived, and only `History` says
+    # which. It runs here, in the same boot, because a dump taken afterwards cannot tell the two apart either.
+    if marks:
+        receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait)
     return 0
 
 

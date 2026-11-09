@@ -62,6 +62,40 @@ result:
 `hud-say.sh` prints `FOUND`, `ABSENT` or `UNREAD` per marker for the same reason: only the middle word is a
 measurement about the message.
 
+## The receipt: `Console.History` says whether the submit ran
+
+A box that never held the marker has two causes that look identical from the box: the keys never reached the
+console (a modal holding input, a press into an unfocused window, a dropped character), or the command ran and
+the sink it writes drew nothing. `--receipt MARKS` asks the guest which one, in the same boot, after the typing:
+
+    tools/xemu/hud-say.sh ~/sg1/work/hudsay1                  # every run of the harness carries the receipt now
+    python3 tools/xemu/hud-text.py --port 12620 --receipt sg1txt1,sg1txt2 --receipt-wait 90
+
+`Console.uc`'s `IK_Enter` branch copies `TypedStr` into `History[HistoryTop]` and only then calls
+`ConsoleCommand`, so a line in a slot is proof the submit ran, and an empty history after the typing window is
+proof the keys did not arrive. The reader walks the `Console` class table — `0x0050cb80` in
+`inventory/xbe_class_table_names.csv`, object size 1088 — newest-first over the `--tail` window: a class table is
+package data, so the address does not move per boot, and that is what keeps the read at one tail walk instead of
+a name lookup that costs minutes. The slots are `FString`s at `+0x50`, stride 12, through `+0x110`; the counters
+are printed beside them (`HistoryTop`, `bTyping`, `TypedStr`) because a populated history plus a line still being
+typed is not a submit (`console-state.py` measured that distinction on the 2026-11-06 boot).
+
+| reading | what it is |
+|---|---|
+| `RECEIPT <mark> IN HISTORY` | the submit ran: a box that never held the line is the message path drawing nothing |
+| `RECEIPT <mark> NOT IN HISTORY` | no submit ran: the keys never reached the console (modal, focus, dropped character) |
+| `CONSOLE none among the newest N of M object(s)` | the console never opened, or it is older than the shortcut: delivery is unmeasured, not absent |
+
+`hud-say.sh` prints `DELIVERED` / `NOT DELIVERED` / `UNREAD` beside each marker's box verdict for that reason, and
+its `FOUND` test reads the box lines only — the receipt's own lines carry the marker, and a `FOUND` that was really
+a `RECEIPT` line would report the message path as painting when it painted nothing.
+
+Two costs are part of the instrument. The receipt runs *after* the watch, so `drive.py`'s `--linger` has to hold
+the stub (and the emulator) up past it: the harness derives `120 s + 30 s per command`, because the reader is
+killed two seconds after `drive.py` exits and a cut-off receipt reads as an unmeasured one. And `--receipt-wait`
+(90 s in the harness) keeps polling the slots, because the commands are typed at the very end of the sequence and
+a receipt that starts early would read an empty console and call it a lost keystroke.
+
 ## The boot-failure negatives this instrument cost
 
 Three boots went into the first version, and two of the failures are worth carrying forward because each one looks
