@@ -831,6 +831,40 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the walk screened a class pointer with a class table)
+
+- **`hudsay3` finished the boot the last run could not wait for, and every console route missed on it.** `M00`
+  loaded, the level's row `0x08822800` resolved (object 47,885 of 48,494, outer `M00`) with
+  `+0x1008 -> GameHud 0x092e2100`, and seven box changes came off it -- the intro's turns (counts 14, 35, 33, 50,
+  56, 53) and then the game's own `New Objective : Open the door for the doctor` at 479.3 s -- so the sink read is
+  live. `05-precommands`/`06-dismissed` repainted 42,959 / 32,704 px, so this boot's dismissal landed (`hudsay2`:
+  0 / 0). Then: the row's `InteractionMaster` (`+0xc0`) read **null**, the level HUD's `PlayerConsole` (`+0x398`)
+  read `0x00050967` (a number, not an object address), and a whole-array walk of **48,646** objects read **zero**
+  `Console` objects -- 1 walk, 347 page reads, 215.1 s -- leaving both markers `UNMEASURED`.
+- **The walk's zero is the instrument's.** It screened `UObject::Class` (`+0x24`) against `0x0050cb80`, the
+  `Console` **class table** in `.rdata` (`inventory/xbe_class_table_names.csv`, 1088 bytes). A class table is the
+  object's **first** dword -- `hud-link.py` measured the typed-into `Console` opening `00 50 cb 80 ...`, which is
+  the screen `inventory/hud_console_link.csv` rests on -- while `+0x24` holds the `UClass` *object*
+  (`ghud1` census: `275,0x00d48a00,Class,Console`, instance `36148,0x02344b00,Console,Console`; `names.py --verify`
+  measured `+0x24` as a `UClass` pointer). A table address therefore cannot sit at `+0x24`, and the walk could
+  match nothing: the selftest had written the table to `+0x24` as well, so the test agreed with the bug.
+  `sink.rows_holding` compares both dwords in one pass (pages are cached, so the second compare is free), the
+  selftest now writes the measured shape (table at `+0x00`, `UClass` at `+0x24`) and asserts the old route's `[]`
+  beside the new route's hit.
+- **`+0xc0` is `Client`'s slot, not the level row's.** It was measured on the `XboxClient` object `0x01fb9bc0`
+  (`plr1`), and `ghud1`'s census names the same address on a second level boot -- two boots, same object address --
+  but a `StargatePlayer` row holds null there (`hudsay3`), which is a fact about the offset on that class. The route
+  is now `console_from_client` behind `--console-client ADDR` (`hud-say.sh --console-client=ADDR`), and a level row
+  is not screened at all: the receipt prints that the slot is `Client`'s rather than reporting a null master as a
+  console that never opened.
+- **Instruments**: `tools/xemu/sink-slots.py` (`rows_holding`; `walk` takes an offset tuple; both routes asserted in
+  `--selftest`), `tools/xemu/hud-text.py` (`console_from_client`, `--console-client`, the row caveat,
+  `rows_holding` in the receipt, two new selftest cases), `tools/xemu/hud-say.sh` (pass-through), `docs/HUD_TEXT.md`,
+  `docs/UNKNOWNS.md` U15. No artifact and no new file.
+- **Next**: one `hud-say.sh` run with `--console-client=0x01fb9bc0` or the fixed walk. Its
+  `RECEIPT ... IN HISTORY` / `NOT IN HISTORY` is the submit verdict four boots have been circling; if the submits
+  ran, the remaining question is the `SetSubtitle`/`SetNotifications` guard.
+
 ### Execution notes (2026-11-09, the HUD's field is not the console on a live level)
 
 - **The one-read route the last note expected does not hold on a level's own HUD** (measured 2026-11-09, `hudsay2`,

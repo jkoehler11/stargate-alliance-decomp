@@ -309,6 +309,41 @@ would be game data.
   and the receipt tries it before the HUD field and the walk. Its reason strings distinguish a null master, a
   master that is not an object, and a master with no console pointer, so a miss names what to read next.
 
+## Measured state (2026-11-09, the walk keyed a class pointer with a class table, and `+0xc0` is a `Client` slot)
+
+- **`hudsay3` answered every console route with a miss, on a boot that was demonstrably live.** `hudsay3/try1`
+  loaded `M00`, resolved the level's row `0x08822800` (object 47,885 of 48,494, outer `M00`) and
+  `+0x1008 -> GameHud 0x092e2100`, and read seven box changes off it -- the intro's turns at counts 14, 35, 33, 50,
+  56 and 53 (through 464.4 s), then the game's own `New Objective : Open the door for the doctor` at 479.3 s. The
+  frame pair `05-precommands`/`06-dismissed` repainted 42,959 / 32,704 px, so the dismissal landed here (it read
+  0 / 0 on `hudsay2`). All three console routes then missed: the row's `InteractionMaster` (`+0xc0`) read **null**,
+  the level HUD's `PlayerConsole` (`+0x398`) read `0x00050967`, a number and not an address, and a whole-array walk
+  of **48,646** objects read **zero** `Console` objects (347 page reads, 215.1 s), so both markers came back
+  `UNMEASURED`.
+- **The walk's zero is the instrument's, not the guest's.** The walk screened `UObject::Class` (`+0x24`) against
+  `0x0050cb80` -- the `Console` **class table** in `.rdata` (`inventory/xbe_class_table_names.csv`, 1088 bytes) --
+  and a table is the object's **first** dword: `hud-link.py` measured the typed-into `Console` opening
+  `00 50 cb 80 ...` on a whole-RAM dump, which is how `inventory/hud_console_link.csv` found `+0x398` at all. `+0x24`
+  holds the `UClass` *object*, not a table address: `ghud1`'s census names it `275,0x00d48a00,Class,Console` and the
+  instance `36148,0x02344b00,Console,Console`, and `names.py --verify` measured `+0x24` as a `UClass` pointer. So the
+  walk could only ever match an object whose class *object* sits in `.rdata`, and the selftest agreed with it because
+  it wrote the table to `+0x24` too. `sink.rows_holding` now compares both dwords in one pass (pages are cached, so
+  the second compare costs no read), and the selftest writes the live shape instead: table at `+0x00`, `UClass` at
+  `+0x24`, with the old route's `[]` asserted beside the new route's hit.
+- **`InteractionMaster` at `+0xc0` is `Client`'s slot, not the level row's.** It was measured on the `XboxClient`
+  object `0x01fb9bc0` (`plr1`), and `ghud1`'s census names the same address on a second level boot -- but `hudsay3`
+  read row `0x08822800`, a `StargatePlayer`, at `+0xc0` and got null, which is a fact about that offset on that
+  class rather than about a console. The route now takes the client object (`--console-client`, `hud-say.sh
+  --console-client=ADDR`) and a level row is not screened: the receipt prints that the slot is `Client`'s instead of
+  reporting a null master as a console that never opened.
+- **Instruments**: `tools/xemu/sink-slots.py` (`rows_holding`, `walk` takes an offset tuple, both routes' assertions
+  in `--selftest`), `tools/xemu/hud-text.py` (`console_from_client`, `--console-client`, the row caveat, the
+  both-dword walk, two selftest cases), `tools/xemu/hud-say.sh` (pass-through), `docs/UNKNOWNS.md` U15. No artifact
+  and no new file.
+- **Next**: one `hud-say.sh` run -- `--console-client=0x01fb9bc0` or the fixed walk -- and its
+  `RECEIPT ... IN HISTORY` / `NOT IN HISTORY` is the submit verdict the last three boots have been circling; if the
+  submits ran, what is left is the `SetSubtitle`/`SetNotifications` guard.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
@@ -317,8 +352,9 @@ non-`GameHud`, the null slot, and that a watch reports a subtitle that lands aft
 looks ten minutes old. The receipt has its own cases: a console at index 5 of 400 is `UNMEASURED` under a
 100-entry tail window and `IN HISTORY` under the whole-array walk; the HUD's `+0x398` reads it with **0** array
 walks; a `+0x398` that names another class prints the reason and falls back instead of reading the wrong object;
-and the player route finds a console one hop out (`row +0xc0` -> `InteractionMaster` -> the screen), says why when
-that master holds no `Console` pointer, and says a null master is null. It runs in `make ci` and needs no emulator
+and a `Client`'s `+0xc0` finds a console one hop out (`InteractionMaster` -> the screen), says why when that master
+holds no `Console` pointer, says a null master is null, and refuses to screen a level row at that offset; and the
+whole-array walk finds a console keyed on a class *table*, which the `+0x24`-only walk cannot. It runs in `make ci` and needs no emulator
 or dump:
 
     ok   hud-text: resolves the row and its `GameHud`, reads both boxes, and refuses a slot that is not one

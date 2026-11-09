@@ -45,10 +45,11 @@ empty boxes for a HUD that no longer exists.
 `--receipt MARKS` answers the question a box cannot: after the watch it reads the console's own `History[16]` and
 prints, per marker, `RECEIPT <mark> IN HISTORY` or `NOT IN HISTORY`. A delivered line with an empty box is the
 sink drawing nothing; an empty history is a keystroke that never arrived -- two failures that otherwise read
-alike. The console is found from the live HUD's own `PlayerConsole` field (`+0x398`, `inventory/hud_console_link.csv`)
-in one read, and by a whole-array walk when that field is empty (`--receipt-walk` forces the walk): the first
-receipt searched the newest 2,000 of 48,646 objects and the console sits at index 36,148, so its `NOT IN HISTORY`
-was about the window. `--receipt-wait SECS` keeps polling the located object, because the commands are typed near
+alike. The console is found from a `Client`'s own `InteractionMaster` (`--console-client`, `+0xc0`) or from the
+live HUD's `PlayerConsole` field (`+0x398`, `inventory/hud_console_link.csv`) in one read, and by a whole-array
+walk when neither names it (`--receipt-walk` forces the walk). The walk screens both header dwords -- a class
+*table* is an object's first dword -- because keying `+0x24` alone matched nothing on a live level (`hudsay3`).
+`--receipt-wait SECS` keeps polling the located object, because the commands are typed near
 the end of the run.
 `--selftest` builds a four-object guest in RAM: no emulator, no dump, and it runs in `make ci`.
 Field contents are game state, so nothing here writes a file.
@@ -83,16 +84,21 @@ CONSOLE_SLOTS = 16
 CONSOLE_TOP = 0x38
 CONSOLE_B_TYPING = 0x114
 CONSOLE_CLASS_NAME = "Console"        # `inventory/xbe_class_table_names.csv`: table `0x0050cb80`, size 1088
+CONSOLE_TABLE = 0x0050cb80            # that table: a `.rdata` vtable, which is an object's **first** dword
+CONSOLE_UCLASS = 0x00d48a00           # the `Console` `UClass` object (`ghud1` census: `275,0x00d48a00,Class,Console`),
+                                      # which is what `+0x24` holds -- identities for the selftest, not a route
 # `Engine/HUD.uc:27` declares one `Console`-typed field, `PlayerConsole`, and it sits at `+0x398` in every HUD
 # subclass (`inventory/hud_console_link.csv`: a whole-RAM dump read the live `StargateHUD`'s field as the console
 # `console-state.py` had typed into, `bTyping 1`). Base-class fields come first in UE2, so a `GameHud` subclass
 # carries the field at the same offset -- which is one read where the object-array walk is 347 page reads.
 CONSOLE_FIELD = 0x398
 # The console is not a field of the player row -- `plr3` held no pointer on the `Console` table in its first
-# 0x1400 bytes -- but it is one hop out: `PlayerController.InteractionMaster` sits at `+0xc0` on a loaded `M00`
-# and that object's own fields name `XboxClient`, `GUIController`, `Console` and `UIXInteraction`
-# (`docs/XEMU.md`). A viewport-created console is registered as an interaction, which is why the row never
-# names it directly.
+# 0x1400 bytes -- so the route is one hop out: `InteractionMaster` sits at `+0xc0` and that object's own fields
+# name `XboxClient`, `GUIController`, `Console` and `UIXInteraction` (`docs/XEMU.md`). **The slot is `Client`'s,
+# not the level row's**: it was measured on the `XboxClient` object `0x01fb9bc0` (`plr1`), which `ghud1`'s census
+# names at the same address on a second level boot, while a level's own row holds null there (`hudsay3`:
+# `0x08822800+0xc0`). A viewport-created console is registered as an interaction, which is why nothing names it
+# directly; `--console-client` is the object this route reads.
 INTERACTION_MASTER = 0x0c0
 IM_BLOCK = 0x100                     # 64 dword slots screened, one 4-byte read each: cheaper than 347 page reads
 
@@ -257,32 +263,36 @@ def console_from_hud(guest, pages, hud, table):
     return value, "via the HUD's own `PlayerConsole` field (+%#x)" % CONSOLE_FIELD
 
 
-def console_from_player(pages, row, table):
-    """`(base, why)` for the `Console` one hop from the player row, or `(None, reason)`.
+def console_from_client(pages, client, table):
+    """`(base, why)` for the `Console` one hop from a `Client` object, or `(None, reason)`.
 
-    A viewport-created console is registered as an interaction, so the row never names it: `plr3` held no
-    pointer on the `Console` table in its first 0x1400 bytes, while `PlayerController.InteractionMaster` at
+    A viewport-created console is registered as an interaction, so no actor names it: `plr3` held no pointer on
+    the `Console` table in its first 0x1400 bytes, while the `XboxClient` object's `InteractionMaster` at
     `+0xc0` is the object whose own fields name `XboxClient`, `GUIController`, `Console` and `UIXInteraction`
-    (`docs/XEMU.md`). The slot is **screened, not assumed**: 64 dwords of the master's own block, one 4-byte
-    read each, and the first whose target opens with the `Console` class table wins. That is two reads plus a
-    handful where the object-array walk is 347 page reads, and it does not depend on the console's array index.
+    (`docs/XEMU.md`). **The slot is `Client`'s, not the level row's**, so this takes the client object and a
+    level row is not screened at all: `hudsay3` read row `0x08822800` at `+0xc0` and got null, which is a fact
+    about the offset, not about a console that never opened.
+
+    The slot is **screened, not assumed**: 64 dwords of the master's own block, one 4-byte read each, and the
+    first whose target opens with the `Console` class table wins. That is two reads plus a handful where the
+    object-array walk is 347 page reads, and it does not depend on the console's array index.
     """
-    master = pages.u32(row + INTERACTION_MASTER)
+    master = pages.u32(client + INTERACTION_MASTER)
     if not master:
-        return None, "row %#010x holds a null `InteractionMaster` (+%#x)" % (row, INTERACTION_MASTER)
+        return None, "client %#010x holds a null `InteractionMaster` (+%#x)" % (client, INTERACTION_MASTER)
     if not names.plausible_object(master):
-        return None, ("row %#010x+%#x holds %#010x, which is not an object address"
-                      % (row, INTERACTION_MASTER, master))
+        return None, ("client %#010x+%#x holds %#010x, which is not an object address"
+                      % (client, INTERACTION_MASTER, master))
     for off in range(0, IM_BLOCK, 4):
         value = pages.u32(master + off)
         if value and names.plausible_object(value) and holds_class(pages, value, table)[0]:
-            return value, ("via the row's `InteractionMaster` %#010x (+%#x -> +%#x)"
+            return value, ("via the client's `InteractionMaster` %#010x (+%#x -> +%#x)"
                            % (master, INTERACTION_MASTER, off))
     return None, ("its `InteractionMaster` %#010x holds no pointer on the `Console` table (%#010x) in its "
                   "first %#x bytes" % (master, table, IM_BLOCK))
 
 
-def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None):
+def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None, client=None):
     """Read the console's own `History[16]` and say, per marker, whether its submit ran.
 
     A text box that never held the marker has two causes that look identical from the box: the keys never
@@ -291,13 +301,16 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None):
     branch copies `TypedStr` into `History[HistoryTop]` and only then calls `ConsoleCommand`, so a line in a slot
     is proof the submit ran, and an empty history after the typing window is proof the keys did not arrive.
 
-    **Three routes, cheapest first.** The player row's own `InteractionMaster` (`+0xc0`) names the console
-    inside its field block within a few reads (`console_from_player`); the live HUD's `PlayerConsole`
-    (`+0x398`) names it in one read, but only a HUD that has linked its console does; `--receipt-walk` skips
-    both and is the control. The array walk used to be the only route, and the `--tail` shortcut (the newest
-    2,000 objects) cannot see the console: `xemu/ghud1/cls.csv` puts the only `Console` instance at **index
-    36,148 of 48,646**, which is why the first live receipt answered `NOT IN HISTORY` about its search window
-    rather than about the keys. `--receipt-tail 0` (the default) walks every entry and is the last resort.
+    **Three routes, cheapest first.** A `Client` object's `InteractionMaster` (`+0xc0`, `--console-client`)
+    names the console inside its field block within a few reads (`console_from_client`); the live HUD's
+    `PlayerConsole` (`+0x398`) names it in one read, but only a HUD that has linked its console does;
+    `--receipt-walk` skips both and is the control. The whole-array walk is the last resort and screens **both**
+    header dwords (`sink.rows_holding`): the table `inventory/xbe_class_table_names.csv` names is a `.rdata`
+    vtable, which is the object's *first* dword, while `+0x24` holds the `UClass` **object** -- so the walk this
+    receipt used to run answered `[]` on an array that held the console (`hudsay3`: 48,646 entries, no `Console`
+    row, on a boot whose `hud`/`say` frames repainted). The `--tail` shortcut (the newest 2,000 objects) cannot
+    see it either: `xemu/ghud1/cls.csv` puts the only `Console` instance at **index 36,148 of 48,646**.
+    `--receipt-tail 0` (the default) walks every entry.
 
     `wait` polls the located object -- not the array -- because the commands are typed near the end of a 500 s
     sequence and a receipt that starts early has to outlast them.
@@ -314,15 +327,22 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None):
     phrase = "the newest %d" % window if window else "any"
     route = None
     bases = []
-    # Three routes, cheapest first: the row's `InteractionMaster` (two reads), the HUD's own `PlayerConsole`
+    # Three routes, cheapest first: a `Client`'s `InteractionMaster` (two reads), the HUD's own `PlayerConsole`
     # (one read, but only a HUD that has linked its console names it), and the object-array walk (347 page
     # reads). `--receipt-walk` skips the first two, which is the control for a receipt that read one object.
-    if row is not None and not args.receipt_walk:
-        base, why = console_from_player(pages, row, table)
+    client = client if client is not None else getattr(args, "console_client", None)
+    if client is not None and not args.receipt_walk:
+        base, why = console_from_client(pages, client, table)
         if base:
             bases, route = [base], why
         else:
-            out("CONSOLE player: %s" % why)
+            out("CONSOLE client: %s" % why)
+    elif row is not None and not args.receipt_walk:
+        # The row's `+0xc0` is `Client`'s slot: reading it off a `StargatePlayer` row measures whatever occupies
+        # the offset there (`hudsay3` got null), so the row is not screened and the reason says why.
+        out("CONSOLE player: row %#010x is not screened for a console -- `+%#x` `InteractionMaster` is a `Client` "
+            "slot (measured on `XboxClient`), so name that object with `--console-client`"
+            % (row, INTERACTION_MASTER))
     if not bases and hud is not None and not args.receipt_walk:
         base, why = console_from_hud(guest, pages, hud, table)
         if base:
@@ -343,10 +363,11 @@ def receipt(guest, args, marks, out=print, wait=0.0, hud=None, row=None):
             bases = live
         if not bases:
             walks += 1
-            found = sink.rows_of_class(guest, pages, odata, onum, table, tail=window)
+            found = sink.rows_holding(guest, pages, odata, onum, table, tail=window)
             if not found:
-                out("CONSOLE none in %s of %d object(s) (walk %d): a console that never opened, or one outside "
-                    "the window -- this says where it is not" % (phrase, onum, walks))
+                out("CONSOLE none in %s of %d object(s) (walk %d): no object opens with the `Console` table "
+                    "(%#010x) or carries it at `+0x24` -- a console that never opened, or one outside the "
+                    "window; this says where it is not" % (phrase, onum, walks, table))
             bases = [base for _index, base in found]
             route = "object array (%s of %d)" % (phrase, onum)
         for base in bases:
@@ -736,7 +757,8 @@ def selftest():
     ram5.name(0x01000000, 12, "Console")
     ram5.u32(0x006c21b0 + 4, 4)
     ram5.u32(array5 + 0x0c, con)
-    ram5.u32(con + names.CLASS_OFF, 0x0050cb80)
+    ram5.u32(con + 0x00, 0x0050cb80)              # a class *table* is the object's first dword (`hud-link.py`)
+    ram5.u32(con + names.CLASS_OFF, CONSOLE_UCLASS)   # `+0x24` is the `UClass` *object*, not a table address
     ram5.u32(con + names.NAME_OFF, 12)
     ram5.u32(con + CONSOLE_TOP, 1)
     ram5.u32(con + CONSOLE_B_TYPING, 0)
@@ -761,7 +783,8 @@ def selftest():
     ram7, row7, hud7, _w7 = build(0x01510000, "UITextBox")
     ram7.u32(0x006c21b0 + 4, 400)                 # 400 objects, the console at index 5
     ram7.u32(0x01200000 + 4 * 5, con)
-    ram7.u32(con + names.CLASS_OFF, 0x0050cb80)
+    ram7.u32(con + 0x00, 0x0050cb80)
+    ram7.u32(con + names.CLASS_OFF, CONSOLE_UCLASS)
     ram7.put(0x017a0000, "say sg1txt1\x00".encode("utf-16-le"))
     ram7.u32(con + CONSOLE_TOP, 1)
     ram7.u32(con + CONSOLE_HISTORY, 0x017a0000)
@@ -788,29 +811,42 @@ def selftest():
     got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=hud7)
     assert got == {"sg1txt1": 0}, (got, said)
     assert any("not `Console`" in s and "falling back" in s for s in said), said
-    # The route the first live receipt did not have: the console is one hop from the row, in the
-    # `InteractionMaster` at `+0xc0`, and it is *screened* out of that object's own field block rather than
-    # assumed at an offset -- the first live boot's HUD field held a non-pointer (`0x00050975`).
-    ram7.u32(hud7 + CONSOLE_FIELD, 0x01520000)     # the HUD route still wrong: the player route has to carry it
+    # The client route: the console is one hop from a `Client`'s `InteractionMaster` at `+0xc0`, and it is
+    # *screened* out of that object's own field block rather than assumed at an offset -- the first live boot's
+    # HUD field held a non-pointer (`0x00050975`).
+    ram7.u32(hud7 + CONSOLE_FIELD, 0x01520000)     # the HUD route still wrong: the client route has to carry it
     master = 0x01540000
-    ram7.u32(row7 + INTERACTION_MASTER, master)
+    client, client_master = 0x01540000, 0x01550000
+    ram7.u32(client + INTERACTION_MASTER, master)
     ram7.u32(master + 0x08, con)
     said = []
-    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=hud7, row=row7)
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=hud7, client=client)
     assert got == {"sg1txt1": 0}, (got, said)
     assert any("InteractionMaster" in s and "0 array walk" in s for s in said), said
     # A master whose block names no console is a reason, and the receipt still falls through to the HUD/walk.
     ram7.u32(master + 0x08, 0)
-    ram7.u32(row7 + INTERACTION_MASTER, 0x01560000)
+    ram7.u32(client + INTERACTION_MASTER, client_master)
     said = []
-    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=None, row=row7)
+    got = receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=None, client=client)
     assert got == {"sg1txt1": 0}, (got, said)
     assert any("no pointer on the `Console` table" in s for s in said), said
-    # A row that names no master at all says so instead of reading through a null.
+    # A client that names no master says so instead of reading through a null.
+    ram7.u32(client + INTERACTION_MASTER, 0)
+    said = []
+    receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=None, client=client)
+    assert any("null `InteractionMaster`" in s for s in said), said
+    # And a level *row* is not screened: `+0xc0` is `Client`'s slot, so a null there is a fact about the offset,
+    # not about a console that never opened (`hudsay3`: row `0x08822800` held null while the game was repainting).
     ram7.u32(row7 + INTERACTION_MASTER, 0)
     said = []
     receipt(ram7, args, ["sg1txt1"], out=said.append, wait=0.0, hud=None, row=row7)
-    assert any("null `InteractionMaster`" in s for s in said), said
+    assert any("is a `Client` slot" in s and "not screened" in s for s in said), said
+    assert not any("null `InteractionMaster`" in s for s in said), said
+    # The walk screens both header dwords: a class *table* is the object's first dword, so keying `+0x24` alone
+    # answers `[]` on an array that holds the console -- the `hudsay3` negative, reproduced with no guest.
+    pages7 = sink.Pages(ram7)
+    assert sink.rows_of_class(ram7, pages7, 0x01200000, 400, CONSOLE_TABLE) == [], "the old route's negative"
+    assert sink.rows_holding(ram7, pages7, 0x01200000, 400, CONSOLE_TABLE) == [(5, con)]
     print("ok   hud-text: a marker's submit is read off `Console.History` (delivered) and a console that never "
           "opened is a walk that found nothing, not a lost keystroke")
 
@@ -915,6 +951,10 @@ def main():
     ap.add_argument("--receipt-walk", action="store_true",
                     help="skip the HUD's own `PlayerConsole` field (+0x398) and locate the console by walking "
                          "the object array -- the control for a receipt that reads one object in one read")
+    ap.add_argument("--console-client", type=lambda v: int(v, 0), default=None, metavar="ADDR",
+                    help="the `Client` object whose `InteractionMaster` (+0xc0) names the console. The slot is "
+                         "`Client`'s, not the level row's: `XboxClient` sat at `0x01fb9bc0` on two level boots "
+                         "(`plr1`, `ghud1`), and a level row holds null at `+0xc0` (`hudsay3`)")
     ap.add_argument("--selftest", action="store_true", help="check the field walk and the text decode, no boot")
     args = ap.parse_args()
     if args.selftest:
@@ -1002,7 +1042,8 @@ def main():
         for label, addr, name, count, text in boxes(guest, hud, pages, nm):
             print(line(args.tag, now - started, label, addr, count, text, name))
         if marks:
-            receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=hud, row=row)
+            receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=hud, row=row,
+                    client=args.console_client)
         return 0
     changes, _final, rebounds = watch(guest, hud, pages, nm, args.watch, args.interval, args.tag, started,
                                       row=row, follow=args.follow, args=args, rewrites=8)
@@ -1016,7 +1057,8 @@ def main():
         # A level replaces its `GameHud` when the intro hands over (`watch --follow` rebinds mid-run), so the
         # console is read from the row's slot *now* rather than from the HUD the watch started on.
         final = u32(guest, row + HUD_SLOT) if row else None
-        receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=final or hud, row=row)
+        receipt(guest, args, marks, out=receipt_out, wait=args.receipt_wait, hud=final or hud, row=row,
+                 client=args.console_client)
     return 0
 
 
