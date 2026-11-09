@@ -449,10 +449,12 @@ are limited to expected fields (checksum/timestamp) and documented.
       a map. The stage now defaults to a 135-second boot window (`--boot=`), which turned 14 from a failure into a pass, and
       retries a failed index (`--retries`, default 2) because a swallowed press and a map that will not load look the
       same from outside -- proven by cutting the boot window to 25 s, which fails three attempts in a row and says so.
-      **Still open**: the 30 campaign maps past `M15B`, which `QUICK SELECT MAP` never offers. The routine behind the
-      list is `UGUIController::execGetMapList` at `0x002fe5f0` and it has no cap, and the list is the first 41 names
-      of the disc's own order (`docs/XEMU.md`, `docs/UNKNOWNS.md` U16) -- so the truncation is in the fill, one
-      measurement short of a cause.
+      **The truncation is retired, and the list is 73 entries in sorted name order** (2026-11-08,
+      `docs/MAP_LIST.md`): `GetMapList` has no cap, the file layer hands it 73 names, and the controller's array
+      reads `count=73` -- so the "41 names" was a scrolled page table, not the list. The order is the disc's own
+      sort, and the two measured highlights pin it: 10 presses reach `M00` (index 10) and 40 reach `M15B`
+      (index 40). The 30 campaign maps past `M15B` are at indices 41-70, which more presses reach; what is still
+      untested is whether they *load* -- no run has gone past 40.
 - [~] 7.3 **The console works and draws its input line on a stock disc; `ret` submits it, only `stat fps` is
       readable, and no `Console` instance is in the object array in any state measured**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
@@ -828,6 +830,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-08, the map list is the disc's 73 in sorted order, and two pad positions pin the order)
+
+- **Nothing truncates the list, and the "41 names" was a scrolled page table** (`docs/MAP_LIST.md`,
+  `tools/map-list-order.py`): U16's breakpoint read (73 names returned at `0x2fe809`, `count=73 max=76` at
+  `0x2fe8e0`) had already retired the cap; what was missing was the *order*, and the shipped `Maps/` directory
+  answers it without a boot -- sorted 0-based index 10 is `M00` and index 40 is `M15B`, exactly the two
+  highlight positions a frame measured after 10 and 40 `pad=down` presses. So the list is the disc's own sort,
+  and the 30 campaign maps past `M15B` sit at indices 41-70.
+- **Census**: 73 `.unr` -- 61 campaign `M*`, 7 `DM-`, 3 CTF (two `CTF-`, one `SGCTF-`), 2 shell maps
+  (`Entry`, `MainMenu`).
+- **A prediction, not a census**: the sort routine (`0x000f8ab0`) is not read, so the two anchors are the whole
+  evidence for plain byte order, and case sensitivity is unread (`DM-Ha'tak` is the only name outside
+  `[A-Za-z0-9]`). `--check` fails if either anchor moves or the count stops being 73.
+- **Instrument**: `tools/map-list-order.py` (`--selftest` in `make ci`); it reads file names only and writes
+  nothing, so no artifact and no boot.
+
 ### Execution notes (2026-11-08, the HUD's text boxes have a live reader, and three boots never reached a level)
 
 - **The sink `say` needs is four offsets, and each is gated** (`docs/HUD_TEXT.md`, `tools/xemu/hud-text.py`):
