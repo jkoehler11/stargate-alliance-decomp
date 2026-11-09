@@ -828,6 +828,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+### Execution notes (2026-11-08, the HUD's text boxes have a live reader, and three boots never reached a level)
+
+- **The sink `say` needs is four offsets, and each is gated** (`docs/HUD_TEXT.md`, `tools/xemu/hud-text.py`):
+  `StargatePlayer+0x1008` `GameHudPtr` (the target's own `Name` must read `GameHud`, which is what keeps a heap
+  neighbour from being read as the HUD), then `GameHud+0x050`/`+0x054`/`+0x058` for `DialogueWindow`/
+  `NotificationWindow`/`InteractionWindow`, then `UIWidget+0x394` `DisplayText` as an `FString` whose `count`
+  includes the NUL. The route's texts are `docs/HUD_MESSAGES.md`'s; this is the object they end in.
+- **The field is cleared, not just faded, so the read has a two-second deadline**: `UITextBox.DisplayTextBox` sets
+  `StartFadeTime = TimeSeconds + FadeOffsetTime + Duration` and `Update` calls `Hide(t, true)` past it, which zeroes
+  `DisplayText` -- with `Duration` 2.0 s. That is why `msg1`'s 128 MiB dump ten seconds late held no copy of the
+  string, and why the per-command frame one second after the submit is inside the window and still empty.
+- **No live read yet, and the gate is what kept that honest**: three boots (two at `--boot=180`, one at 240 with
+  `raise`/`activate`) captured blank frames -- 2,331-2,688-byte PNGs, a black window with one green pixel, against
+  tens of KB for a real frame -- while the guest and the stub were alive, and none reached a level-sized `GNames`
+  (34,800 at the menu, 41,265 on a level). `hud-text.py` refused all three with the measured count instead of
+  printing an empty `DisplayText`, and `hud-say.sh` reports `UNREAD`, not `ABSENT`, for that case.
+- **Two input facts carried forward**: 180 s is too early for the first `A` (`sink14`'s failure, reproduced twice
+  here; 240 s passes first time on the sink script), and an upper-case marker letter is not a QEMU key name
+  (`guest key T -> invalid parameter: T`) -- the character is dropped and the run reads exactly like a message that
+  never arrived, so markers are lower case and digits and the script refuses anything else.
+- **Instruments**: `tools/xemu/hud-text.py` (`--selftest` in `make ci`, `make hud-text`), `tools/xemu/hud-say.sh`
+  (`sh -n` in `make ci`), `docs/HUD_TEXT.md`. Neither writes a file.
+
 ### Execution notes (2026-11-08, three HUDs, three answers to `say`, and nothing paints the buffer)
 
 - **The message route is per HUD class, and the disc ships three of them** (measured 2026-11-08 from the shipped
