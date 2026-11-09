@@ -220,6 +220,24 @@ walk; the two 1.3 MB and 1.8 MB `Controllers/` packs are 96-99% second section. 
 records, so it is the pose weight, not a terminator, and the twelve bytes before it take 125-145 distinct values per
 file, so they are not padding. **The open question is now the second section's records, not the 37.**
 
+**The second section is a clip section and a track table (2026-11-09).** `tools/lad-tracks.py` (`make lipsinc-tracks`,
+`inventory/lipsinc_tracks.csv`, `--check` in `make ci`) walks on from the twentieth frame and the body's remaining 96-99%
+splits into two parts rather than one. In the four 19-channel packs, a **clip section**: a count, then that many clips,
+each `u32 2`, a bone count, that many `BN-` names, a frame section, and a **clip name** (`carter_happy`,
+`tealc_yelling`, `oneill_squint`) — 17 clips, every one 20 frames, and each clip's bone list a subset of the channel
+table (19, 11, 9, 5 or 3 bones). In seven of the eight files, a **track table**: 2,231 records named
+`<Map>.<Animation>` (`AlkeshBomber.ca_firing_ge_s_02`), each with a constant ten-field header — `u32 2`, short name,
+qualified name, `u32 1`, `160.0`, `220.0`, key count **26** — followed by a key block. Those key blocks are
+**4,572,880 bytes, 4.36 MiB of the 6.5 MiB corpus**, which is where the mass that this entry called "96-99% unread"
+actually lives. **What is left of U4 is the key block alone**: its `u32 2` marker recurs 33-1,247 times per block at
+11-15 bytes per marker, which with a constant key count of 26 means variable-length key entries, not a struct array.
+Two smaller unknowns are recorded rather than explained: the two bytes before the first track header (`00 03` in
+`grey.lad`, `60 09` in the 1.3 MB pack, six bytes in `sg1_crew_jackson.lad`, which has no track table at all), and the
+fact that `JAnderson.lad` lists `AlkeshBomber.Beware` twice, so a name is not a unique key. **What would settle the key
+block:** the same route that has worked three times on this format — read `LIPSincReadAnimFile`'s loop at `0x000b8340`
+for the entry stride (it is 4,977 bytes and already located), or count `ValuesAtTime` lookups against a clip whose
+end time is known, since 26 keys over `160.0`-`220.0` milliseconds gives a 2.4 ms step to test against.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

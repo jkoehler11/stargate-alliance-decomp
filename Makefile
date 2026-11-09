@@ -13,7 +13,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
+.PHONY: defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-tracks lipsinc-runtime native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean
 
 help:
 	@echo "targets:"
@@ -72,6 +72,7 @@ help:
 	@echo "  function-flags  every function's FunctionFlags from its export payload (docs/systems/NETWORK.md; needs the dump)"
 	@echo "  lipsinc-index  the LIPSinc .map phonemes and .lad containers (docs/formats/lipsinc-lad.md; needs the dump)"
 	@echo "  lipsinc-frames the .lad body as frames of one 32-byte record per channel (needs the dump)"
+	@echo "  lipsinc-tracks the .lad body past the pose frames: named clips, then a track table (needs the dump)"
 	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
 	@echo "  campaign-matrix  missions x maps x speech x music x chapters (dump-free: reads committed CSVs)"
 	@echo "  content-census   which game classes are placed in a map (needs the dump and WORK/UnrealScript)"
@@ -424,6 +425,12 @@ lipsinc-index:
 lipsinc-frames:
 	@$(PYTHON) tools/lad-frames.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
 	@echo "wrote inventory/lipsinc_frames.csv"
+
+# The .lad body past the pose frames: a clip section, then a track table of <Map>.<Animation> records
+# (docs/formats/lipsinc-lad.md).
+lipsinc-tracks:
+	@$(PYTHON) tools/lad-tracks.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
+	@echo "wrote inventory/lipsinc_tracks.csv"
 
 # Every function's FunctionFlags, read from its export payload (docs/systems/NETWORK.md). Needs the packages.
 function-flags:

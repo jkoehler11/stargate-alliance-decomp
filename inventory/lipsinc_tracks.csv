@@ -1,0 +1,9 @@
+path,bytes,channels,pose_frames,pose_records,clips,clip_names,clip_bones,clip_frames,tracks,maps,unique_names,gap_bytes,block_min,block_max,block_median,markers_min,markers_max,key_count,trailer_names
+Controllers/grey.lad,40650,21,20,420,0,,,,3,AlkeshBomber,3,2,2829,12403,11279,198,800,26,BN-Head;undefined;undefined
+Controllers/sg1_crew_carter.lad,1301681,19,20,380,4,carter_happy;carter_worried;carter_yelling;carter_frown,19;5;19;5,20;20;20;20,608,AlkeshBomber,608,2,333,19568,1101,38,1247,26,BN-Head;undefined;undefined
+Controllers/sg1_crew_jackson.lad,1068447,19,20,380,3,jackson_yelling;jackson_frown;jackson_default,19;5;19,20;20;20,485,AlkeshBomber,485,2,269,14849,1197,33,944,26,BN-Head;undefined;undefined
+Controllers/sg1_crew_oneill.lad,1832579,19,20,380,6,default;frown;yelling;happy;oneill_perplexed;oneill_squint,19;5;19;11;5;3,20;20;20;20;20;20,786,AlkeshBomber,786,2,317,18303,1293,36,1162,26,BN-Head;undefined;undefined
+Controllers/sg1_crew_tealc.lad,650509,19,20,380,4,tealc_frowning;tealc_happy;tealc_yelling;tealc_perplexed,9;19;19;5,20;20;20;20,344,AlkeshBomber,344,2,317,12799,1197,36,827,26,BN-Head;undefined;undefined
+JAnderson.lad,34140,21,20,420,0,,,,3,AlkeshBomber,2,2,4737,7758,7534,318,507,26,BN-Head;undefined;undefined
+sg1_crew_carter.lad,27378,21,20,420,0,,,,2,AlkeshBomber,2,2,5777,7550,7550,390,499,26,BN-Head;undefined;undefined
+sg1_crew_jackson.lad,13963,21,20,420,0,,,,0,,0,6,,,,,,,BN-Head;undefined;undefined
