@@ -327,6 +327,16 @@ or from the values themselves.
 the serialisers answer only that the tag is carried and the pair is constant; naming them needs a caller that
 consults those fields. The 7 signed key slots are a separate question, unchanged.
 
+**The sampler fills one vector from one bound, and the file never shares a time axis (2026-11-09).**
+`ValuesAtTime` (`0x000b24f0`) fills `*(this + 0x34)` doubles at one `double time`, bounded by a single int at
+`+0x1c` (its own warning names it `m_nEndTime`) and a global floor, with no per-slot branch and no slot index —
+so the seven signed slots are sampled exactly like the nineteen weights, and their meaning is downstream of the
+sampler, not a file property. `tools/lad-groups.py --vector` adds the matching negative: **0 of 2,231 tracks**
+share a start, an end, an extent or a key grid across their populated slots (3–23 distinct grids per track,
+median 10; median spread between the earliest and latest slot start 696 ticks in an 8,688-tick corpus). What
+would settle the remaining half: the evaluator the sampler calls (what it answers outside a curve's own extent —
+hold, clamp or extrapolate) and the code that consumes the 26 doubles, where a signed slot would acquire one.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

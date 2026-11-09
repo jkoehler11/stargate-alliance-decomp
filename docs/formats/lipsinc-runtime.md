@@ -123,4 +123,29 @@ an earlier note's "the reader is the only witness left" was pointing at the wron
   record's first dword without comparing it -- so `2` is a tag the parser carries rather than a count or a
   marker, and neither constant is explained by its serialiser.
 * **What the 7 signed slots mean.** Nothing in the name path touches them: the link is one dword per channel and
-  the signed slots are not channels.
+  the signed slots are not channels. `ValuesAtTime` samples them like any other slot (`0x000b24f0`, below), so
+  the remaining route is the code that consumes the 26 doubles.
+
+## The sampler reads one vector at one time, and no track shares a time axis (measured 2026-11-09)
+
+`ValuesAtTime` (`0x000b24f0`, 235 bytes) is the middleware's own sampler, and its body settles what the runtime
+asks for, if not what a slot means. It accepts its `double time` only when `time <= *(int *)(this + 0x1c)` and
+`time >= DAT_004c8848` (a float64 global floor), logging `m_nEndTime = %i, time = %f` for the two values when it
+refuses; then it fills `*(int *)(this + 0x34)` doubles in **one** loop, `out + 8 + i*8`, calling a single
+evaluator per slot with no slot index and no branch. The count is the group count, and the object it samples is
+the key-block array itself — `+0x30` base, `+0x34` count, `+0x38` capacity, stride `0x1c` — the same 28-byte
+group record `FUN_000bc330` fills and `tools/lad-keys.py` reads. So slots 19–25 are **ordinary slots of one
+26-double vector**: nothing in the sampler treats them as curves of another kind, and "what a signed slot means"
+is a property of whatever consumes the vector.
+
+The file then says the other half as a negative. If a track were one keyframe table, every populated slot would
+live on the same time axis; `tools/lad-groups.py --vector` (dump-side; its `vector_shape()` is covered by the
+`--check` that `make ci` runs) walks all **2,231** tracks and finds **none**: 0 share an extent, 0 share a start,
+0 share an end, 0 share a grid, with **3–23 distinct key grids per track (median 10)**. The disagreement is not
+rounding — inside one track the earliest and latest slot *starts* are a median of **696** ticks apart (max
+15,133) and the *ends* a median of **1,187** (max 17,404), in a corpus whose key times span −32 to 8,688.
+
+So the runtime asks a whole vector for a value at one time while the file gives every curve its own key list and
+its own extent, and the single bound is per track. Every one of the 2,231 tracks therefore asks the evaluator
+about times some of its curves do not cover; whether that is a hold, a clamp or an extrapolation is in the
+evaluator's body, not in these bytes.

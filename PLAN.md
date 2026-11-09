@@ -880,6 +880,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the sampler reads one vector, and no track shares a time axis)
+
+- **`ValuesAtTime` answers "what does the runtime ask", not "what does a slot mean".** `0x000b24f0` (235 bytes,
+  `lip7`) gates on one bound — `*(int *)(this + 0x1c)` against its `double time`, logged as
+  `m_nEndTime = %i, time = %f`, plus a float64 global floor at `0x4c8848` — and then fills `*(this + 0x34)`
+  doubles in a single loop (`out + 8 + i*8`) through one evaluator call per slot, with no slot index and no
+  branch. The array it fills is the key-block array: base `+0x30`, count `+0x34`, capacity `+0x38`, stride
+  `0x1c`, i.e. the 28-byte group record `FUN_000bc330` reads. So the 7 signed slots are ordinary slots of one
+  26-double vector — a code-level negative for "the signed slots are a separate curve type", and a redirection:
+  their meaning is in the consumer of the vector.
+- **The file's half is a negative with a distribution.** `tools/lad-groups.py --vector` (new mode; `--check`
+  still dump-free and now covers `vector_shape()` on hand-built tracks) walks every track: **0 of 2,231** tracks
+  share an extent, a start, an end or a key grid across their populated slots; distinct key grids per track
+  **3–23, median 10**; inside one track the earliest and latest slot start differ by a median of **696** ticks
+  (max 15,133) and the ends by a median of **1,187** (max 17,404), in a corpus spanning −32..8,688. There is no
+  shared keyframe table: each curve owns its key list and its extent, and the sampler's one bound is per track.
+- **The reader's struct agrees with the file, from the writer's side.** `LIPSincReadAnimFile` (`0x000b8340`, the
+  *text* LTF reader) builds exactly the on-disk record while parsing: a 28-byte element (`u32 2`, 12-byte
+  `FString`, 12-byte `TArray`) whose keys are `u32 2`, an `i32` at `+4` and a `double` at `+8` — the same 16
+  bytes `lad-keys.py` reads — so the container stores the runtime structure and there is no re-encoding on load.
+  It also flushes its key array every **26** text pairs (`(i / 2 + 1) % 0x1a == 0`), the same 26 the binary key
+  block uses. Recorded, not explained: `160.0`/`220.0` are still untouched by any body read so far.
+- **Next**: the evaluator `ValuesAtTime` calls (what it answers for a time outside a curve's own extent — hold,
+  clamp or extrapolate), then the code that consumes the 26 doubles, which is where a signed slot acquires a
+  meaning. Instruments: `tools/lad-groups.py --vector`, `docs/formats/lipsinc-runtime.md`,
+  `docs/formats/lipsinc-lad.md`, U4. No boot, no artifact change.
+
 ### Execution notes (2026-11-09, a key group is a named array and the name is empty everywhere)
 
 - **The group's `u8 0` is a name, not a flag.** `FUN_000bc330` -- the reader `FUN_000bc620` calls for a track's

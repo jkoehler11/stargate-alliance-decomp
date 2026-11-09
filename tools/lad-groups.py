@@ -178,6 +178,80 @@ def read_csv(path):
         return list(csv.DictReader(f))
 
 
+def vector_shape(groups):
+    """One track's slots as the sampler sees them: one width, and one time axis or 26 of them?
+
+    `one_extent` is the strongest form -- every populated slot starts and ends on the same tick;
+    `same_start`/`same_end` split that in two, because a per-curve key list may begin together and end
+    apart. `grids` counts distinct full key-time sequences, `width` distinct first-and-last pairs.
+    """
+    grids = [tuple(t for t, _ in g) for g in groups if g]
+    out = {"width": len(groups), "populated": len(grids), "grids": 0, "extent": 0,
+           "same_start": 1, "same_end": 1, "start": None, "end": None}
+    if not grids:
+        return out
+    starts = sorted(set(g[0] for g in grids))
+    ends = sorted(set(g[-1] for g in grids))
+    out.update({
+        "grids": len(set(grids)),
+        "extent": len(set((g[0], g[-1]) for g in grids)),
+        "same_start": starts[0] == starts[-1],
+        "same_end": ends[0] == ends[-1],
+        "start": (starts[0], starts[-1]),
+        "end": (ends[0], ends[-1]),
+    })
+    return out
+
+
+def vector_census(files):
+    """Every track against the sampler's model: one vector, sampled at one time (`--vector`).
+
+    `ValuesAtTime` (0x000b24f0) fills `*(this+0x34)` doubles in a single loop and refuses a `time`
+    outside `[global min, *(int*)(this+0x1c)]` before filling any of them, so the runtime holds **one**
+    bound for the whole 26-slot vector. If the file is that vector, every populated slot of a track
+    should live on the same time axis. This counts how often that holds, and how far a track's slots
+    disagree about where they start and end.
+    """
+    lt = _mod("lad_tracks", "lad-tracks.py")
+    lk = _mod("lad_keys", "lad-keys.py")
+    out = []
+    for path in files:
+        d = open(path, "rb").read()
+        recs = lt.measure(path)["_tracks"]
+        got = {"path": path, "tracks": 0, "extent": 0, "grid": 0, "same_start": 0, "same_end": 0,
+               "widths": collections.Counter(), "grids": collections.Counter(),
+               "start_spread": [], "end_spread": []}
+        for rec in recs:
+            try:
+                groups, _names, _stop = lk.key_block(d, rec["keys_offset"],
+                                                     rec["keys_offset"] + rec["block"])
+            except ValueError:
+                continue
+            shape = vector_shape(groups)
+            got["tracks"] += 1
+            got["widths"][shape["width"]] += 1
+            if not shape["populated"]:
+                continue
+            got["extent"] += 1 if shape["extent"] == 1 else 0
+            got["grid"] += 1 if shape["grids"] == 1 else 0
+            got["same_start"] += 1 if shape["same_start"] else 0
+            got["same_end"] += 1 if shape["same_end"] else 0
+            got["grids"][shape["grids"]] += 1
+            got["start_spread"].append(shape["start"][1] - shape["start"][0])
+            got["end_spread"].append(shape["end"][1] - shape["end"][0])
+        out.append(got)
+    return out
+
+
+def percentile(values, q):
+    """The q-th percentile of a small list, nearest-rank: the report prints spreads, not averages."""
+    if not values:
+        return 0
+    ordered = sorted(values)
+    i = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * q))))
+    return ordered[i]
+
+
 def selftest():
     """`relations()` on hand-built groups: a duplicate, a negation, an unrelated slot and an empty one."""
     g0 = [(0, 1.5), (10, -2.25), (20, 0.0)]
@@ -194,6 +268,18 @@ def selftest():
         bad.append("relations() compared a pair with different time grids")
     if any(4 in k or 5 in k for k in got):
         bad.append("relations() compared a slot with itself/empty")
+    # vector_shape(): the sampler's model, on hand-built tracks.
+    one = vector_shape([[(0, 1.0), (10, 2.0)], [(0, 3.0), (10, 4.0)], []])
+    if (one["grids"], one["extent"], one["same_start"], one["same_end"]) != (1, 1, 1, 1):
+        bad.append("vector_shape() read one grid as %r" % (one,))
+    two = vector_shape([[(0, 1.0), (10, 2.0)], [(0, 3.0), (20, 4.0)]])
+    if (two["grids"], two["extent"], two["same_start"], two["same_end"]) != (2, 2, 1, 0):
+        bad.append("vector_shape() read two extents as %r" % (two,))
+    apart = vector_shape([[(5, 1.0), (10, 2.0)], [(0, 3.0), (10, 4.0)]])
+    if (apart["extent"], apart["same_start"], apart["same_end"], apart["start"]) != (2, 0, 1, (0, 5)):
+        bad.append("vector_shape() read a late start as %r" % (apart,))
+    if vector_shape([[], []])["populated"] != 0:
+        bad.append("vector_shape() counted an empty track as populated")
     return bad
 
 
@@ -297,6 +383,8 @@ def main():
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
     ap.add_argument("--pairs", action="store_true", help="print the slot relation table only")
     ap.add_argument("--headers", action="store_true", help="scan every track-like header, strict and relaxed")
+    ap.add_argument("--vector", action="store_true",
+                    help="one vector at one time: do a track's slots share a time axis?")
     ap.add_argument("--track", metavar="TRACK", help="print one track's 26 slots")
     ap.add_argument("--check", action="store_true", help="validate the committed CSV without the dump")
     args = ap.parse_args()
@@ -323,6 +411,32 @@ def main():
         print("distinct (f32, f32, count) headers in %d files:" % len(files))
         for k, v in total.most_common(10):
             print("   %.6g %.6g %d  x %d" % (k[0], k[1], k[2], v))
+        return 0
+    if args.vector:
+        total = collections.Counter()
+        grids = collections.Counter()
+        widths = collections.Counter()
+        start_spread, end_spread = [], []
+        for got in vector_census(files):
+            total["tracks"] += got["tracks"]
+            for k in ("extent", "grid", "same_start", "same_end"):
+                total[k] += got[k]
+            grids.update(got["grids"])
+            widths.update(got["widths"])
+            start_spread += got["start_spread"]
+            end_spread += got["end_spread"]
+            print("%s: %d tracks, %d one extent, %d same start, %d same end, %d one grid"
+                  % (os.path.basename(got["path"]), got["tracks"], got["extent"],
+                     got["same_start"], got["same_end"], got["grid"]))
+        print("widths (slots per track): %s"
+              % ", ".join("%d x %d" % (w, widths[w]) for w in sorted(widths)))
+        print("distinct key grids per track: %s"
+              % ", ".join("%d x %d" % (g, grids[g]) for g in sorted(grids)))
+        print("of %d tracks: %d one extent, %d one grid, %d share a start, %d share an end"
+              % (total["tracks"], total["extent"], total["grid"], total["same_start"], total["same_end"]))
+        print("spread inside one track (ticks): start median %d max %d, end median %d max %d"
+              % (percentile(start_spread, 0.5), max(start_spread or [0]),
+                 percentile(end_spread, 0.5), max(end_spread or [0])))
         return 0
     measured = [measure(f) for f in files]
     if args.pairs:
