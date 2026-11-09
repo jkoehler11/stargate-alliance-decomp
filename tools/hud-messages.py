@@ -14,6 +14,16 @@ reaches `TextMessages[]` -- the engine's eight-slot buffer, which only `HUD.AddT
 
     python3 tools/hud-messages.py --src $WORK/UnrealScript
     python3 tools/hud-messages.py --src $WORK/UnrealScript --class StargateHUD
+    python3 tools/hud-messages.py --src $WORK/UnrealScript --sink-callers
+
+`--sink-callers` answers the other half of U15: *which condition refuses a message that reached no window*. The
+chain is measured rather than guessed -- for each sink (`SetSubtitle`, `AddNotification`, `SetNotifications`,
+`DisplayTextBox`, `DisplayMessages`) it lists the classes that declare it and every body in the tree that calls it.
+A sink with exactly one caller is a closed chain: nothing between that caller and the window can drop the string, so
+a message that never drew did not arrive, and the question moves upstream to the console that was supposed to send
+it. The same tree carries the answer for this disc: `GameHud.SetNotifications` is called only by
+`NotificationManager.DisplayMessages`, and `NotificationManager.DisplayMessages` only by
+`StargateHUD.DisplayMessages`.
 
 The scripts are game-derived: this prints class, function and call names and line numbers only, never source text,
 and writes no files (`-o` is deliberately absent -- the report is small and belongs in a doc, not an artifact).
@@ -36,6 +46,11 @@ SINKS = ("AddTextMessage", "SetSubtitle", "AddNotification", "LocalizedMessage",
          "DrawText", "DrawTextMessages", "DisplayTextBox")
 
 DECLARING = "Engine.HUD"
+
+# The message chain, in the order a string travels it. `--sink-callers` counts the bodies that call each one.
+SINK_CHAIN = ("AddNotification", "SetNotifications", "DisplayTextBox", "SetSubtitle", "DisplayMessages")
+SINK_CALL = re.compile(r"\b(?:\w+\s*\.\s*)?(AddNotification|SetNotifications|DisplayTextBox|SetSubtitle|"
+                       r"DisplayMessages)\s*\(")
 
 
 def read_text(path):
@@ -183,6 +198,40 @@ def report(classes, only=None, out=print):
     return 0
 
 
+def sink_callers(classes, out=print):
+    """Every call site of each message sink in the tree, and the classes that declare it.
+
+    U15's last question was "which guard refuses the message". A guard can only refuse a string that arrived, so the
+    chain's shape answers it: count the callers. A sink with one caller is closed -- nothing else in the tree can
+    drop the string between that caller and the window -- and a sink with no script caller can only be driven from
+    native code, which is a different measurement.
+
+    Comments are stripped before the scan for the same reason `calls_in` strips them: the shipped text carries
+    commented-out calls, and `Super.DisplayMessages(...)` counts as a caller of `DisplayMessages`.
+    """
+    declared = dict((name, []) for name in SINK_CHAIN)
+    calls = dict((name, []) for name in SINK_CHAIN)
+    for cls in sorted(classes):
+        for name, line, body in classes[cls][2]:
+            if name in declared:
+                declared[name].append((cls, line))
+            for match in SINK_CALL.finditer(re.sub(r"//[^\n]*", "", body)):
+                calls[match.group(1)].append((cls, name, line))
+    out("hud-messages: %d class(es) in the tree, %d sink function(s) in the chain" % (len(classes), len(SINK_CHAIN)))
+    for name in SINK_CHAIN:
+        sites = sorted(set(calls[name]))
+        out("")
+        out("%-16s declared by %s" % (name, ", ".join("%s:%d" % (c, l) for c, l in declared[name])
+                                      or "no class in the tree"))
+        if not sites:
+            out("  no call site in the tree: only native code can call it")
+            continue
+        out("  %d call site(s)" % len(sites))
+        for cls, fn, line in sites:
+            out("    %s.%s  line %d" % (cls, fn, line))
+    return 0
+
+
 def selftest():
     """A synthetic tree: two HUD subclasses that disagree, one class that is not a HUD, and brace traps."""
     import tempfile
@@ -270,6 +319,17 @@ def selftest():
     assert "calls `Super.DisplayMessages`: none" in text, text
     assert "NotAHud  (" not in text, text          # not a HUD, so no table entry -- but it is a feeder
     assert "call sites of `myHUD.Message(...)`: 1" in text and "NotAHud.ClientMessage" in text, text
+    # The sink chain: the declaration is not a call site, a commented-out call is not one, and a qualified call
+    # (`NM.DisplayMessages`) is. `SetNotifications` is declared nowhere in this tree, so it is reported as such.
+    call_out = []
+    assert sink_callers(classes, out=call_out.append) == 0
+    chain = "\n".join(call_out)
+    assert "AddNotification  declared by no class in the tree" in chain, chain
+    assert "SetNotifications declared by no class in the tree" in chain, chain
+    assert "  no call site in the tree: only native code can call it" in chain, chain
+    assert "PlainHUD.DisplayMessages" in chain, chain            # a qualified call is a call site
+    assert chain.count("PlainHUD.Message") == 2, chain          # `SetSubtitle` and `AddNotification`, one each
+    assert "declared by HUD:9, PlainHUD:16" in chain, chain     # declarations, in both HUD classes
     print("ok   hud-messages: the lineage is `extends` names, a body is brace-matched, `SetSubtitle`'s duration is "
           "read, `Super` is a call on the parent, and the class that fills `TextMessages[]` is named")
     return 0
@@ -279,6 +339,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="which HUD class draws which message (shipped ScriptText)")
     parser.add_argument("--src", help="the extracted script tree (`pkg-script-text.py --all --write ...`)")
     parser.add_argument("--class", dest="only", help="report one HUD class by name")
+    parser.add_argument("--sink-callers", action="store_true",
+                        help="every call site of each message sink in the tree -- a sink with one caller is a "
+                             "closed chain, so nothing between it and the window can drop the string")
     parser.add_argument("--selftest", action="store_true", help="synthetic tree; needs no dump")
     args = parser.parse_args(argv)
     if args.selftest:
@@ -289,6 +352,8 @@ def main(argv=None):
         print("hud-messages: no script tree at %s (run `pkg-script-text.py --all --write %s`)"
               % (args.src, args.src), file=sys.stderr)
         return 2
+    if args.sink_callers:
+        return sink_callers(census(args.src))
     return report(census(args.src), only=args.only)
 
 
