@@ -1497,7 +1497,15 @@ receipt, reading the `bTyping` **byte** before `Tab`, after `Tab`, after the fir
 `0 -> 2|3 -> 1 -> 0` is a packed bool byte (`bIgnoreKeys` is declared next to `bTyping` and swallows the first
 keypress), while `0 -> 1` keeps it a plain field and puts the contradiction back on `+0x18`.
 
-## U16 -- why `QUICK SELECT MAP` stops at `M15B`
+**A title screen has no live console (measured 2026-11-09, `hudq3`, `hudq4`).** The client's `InteractionMaster`
+`0x02406720` holds the same seven pointers at the title as on a level boot and its `+0x30` is the `Console` **class
+default** (`0x02344b00`, outer a `Package`), and a 400 s `--trace` across `Tab`, `a` and `ret` -- all three delivered
+(`gkey -> ok`) -- shows the slot and the byte unmoved (`bTyping 0`, `TypedStr` empty, `HistoryTop 0`). So the four-state
+`bTyping` curve has to be measured on a loaded level, not at the title, and `hudq1`'s `bTyping 3` (same address, level
+boot) is not reproducible at the title. **What would settle it:** the same trace on a level boot, bound to the console the
+HUD's `+0x398` names once it is non-null.
+
+## U16## U16 -- why `QUICK SELECT MAP` stops at `M15B`
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
 campaign maps and nothing after them" reading came from a fifth page that held a single item (`docs/XEMU.md`,

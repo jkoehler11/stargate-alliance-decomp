@@ -504,6 +504,28 @@ would be game data.
   that swallows the first keypress); `0 -> 1` throughout is the plain field and puts the contradiction back on
   `+0x18`. The same run prints the outer's class name, which is what says whether the object is a default.
 
+## Measured state (2026-11-09, a fixed console reads in three page reads, and a title screen has no live console)
+
+- **`--console-at ADDR` reads one `Console` and nothing else** -- no route, no array walk. `hudq3`'s read of
+  `0x02344b00` cost **3 page reads in 1.3 s**, against the 347-page (~227 s) walk a miss falls back to. `--no-walk`
+  keeps that fallback from ending a boot: it prints what the client's block holds and stops, instead of walking the
+  array to answer a different question.
+- **A title screen's block is the level's block** (`hudq3`, `hudq4`): master `0x02406720`, **7 pointers** and 20 text
+  dwords, `+0x30 -> 0x02344b00 class Console name Console, outer 0x0097f928 class Package (the class default)`, and
+  **0 live**. The same seven addresses as `hudsay6`'s level boot -- so the client route names the same class default
+  on both, and a title screen adds no console of its own.
+- **The byte does not move, and the trace says so without a timing hand-off.** `--trace SECS` polls the object (and
+  the block's `+0x30` slot) and prints one line per change. `hudq4` traced 400 s across `Tab`, `a` and `ret`, all
+  three pressed by `drive.py` (`step 6/8/10: guest key ... -> ok`): **1 change, the opening line** -- slot
+  `0x02344b00`, `bTyping 0`, `TypedStr` empty, `HistoryTop 0`, unchanged to the last poll.
+- **That retires the title-screen four-state read.** On the title screen the keys reach no console at all: nothing is
+  created and the block keeps naming the default, so `0 -> 2|3 -> 1 -> 0` has nowhere to be observed. The curve has to
+  be taken where a live console exists -- a loaded level, the boot shape `hudsay6`/`hudq1` had when they found the
+  level row and the HUD's `+0x1008`.
+- **`hudq1`'s `bTyping 3` is a level-boot reading, not the object's.** The same address reads **0** on two title
+  boots (`hudq3` before `Tab`, `hudq4` for 400 s), so the packed byte is still unexplained and the reading that will
+  explain it needs the level, not a cheaper boot.
+
 ## Selftest
 
 `--selftest` builds a four-object guest in RAM -- the row, its `GameHud`, two text boxes -- and asserts the walk, the
