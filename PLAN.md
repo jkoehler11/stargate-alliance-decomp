@@ -464,7 +464,8 @@ report cites file-level evidence for each claim.
       and the readers behind `0x126860`. Still open: which path invokes it (runtime probe) and the digest transform.
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
-      cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 18 of 18 byte-identical), but a
+      cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
+      `.sgs` and `.unr` byte-identical), but a
       *build* is not, because generated payloads (the compiler's output, its timestamps and name ordering) do not
       exist yet. 6.3 closes with stage 5 of the pipeline, not before.
 - [~] 6.4 Produce two build targets: `rebuild-hybrid` (our scripts + original assets) and `rebuild-full`
@@ -1094,6 +1095,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   `sgs-write.py --check` does the same with no dump. `docs/formats/sgs-checkpoint.md` has the entry layout, the
   numbers and the checks. What is left on the save path is content, not container: a rebuilt package's payloads
   come from a compiler, and PLAN 6.2's package check still has to accept a rebuilt save.
+
+### Execution notes (2026-11-09, the writer rebuilds every container kind, not just the game packages)
+
+- **The stage-2 claim was scoped to `.u` because the writer's file list was.** `pkg-write` filtered
+  `endswith(".u")`, so "18 of 18 byte-identical" was a statement about game packages; a checkpoint is a `.sgs`
+  and a map a `.unr`, and both go through the same three tables. `--ext` takes the extension set now, so the same
+  writer is asked about every container the build ships: **100 of 100 rebuild byte for byte** — 18 `.u`, 9 `.sgs`
+  checkpoints, 73 `.unr` maps — 100% of bytes accounted for and zero gaps in every file (`make pkg-rebuild-all`).
+- **The checkpoints only join it because of the entry rule** (note above): a zero serial size writes no offset, and
+  a save export is where that happens (316 of 1,776). Before it, all nine rebuilt *differently*, which is why this
+  row could not be written earlier.
+- **Two variables the package targets needed were undefined.** `SYSTEM_DIR` is used by `pkg-rebuild`, `pkg-layout`,
+  `pkg-resize`, `package-census` and `squad-rosters` but was never defined, so each of those ran its tool on the
+  empty string unless the caller passed it; `docs/REBUILD.md`'s "reproducing each claim" block therefore only
+  worked with a variable on the command line. `GAME_DIR`/`SYSTEM_DIR` are `?=`-defined next to `SG1_DUMP` now, and
+  every arm reads the same two names.
+- **What this does not prove**: payload contents are still copied, so stage 2 says the container is exact, not that
+  a build is reproducible (6.3 stays open on the compiler). `docs/REBUILD.md` says so in place rather than banking
+  the wider number.
 
 ### Execution notes (2026-11-09, the play path picks a track and no name can ever match)
 
