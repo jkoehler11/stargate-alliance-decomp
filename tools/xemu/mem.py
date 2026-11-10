@@ -467,6 +467,9 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=12345, help="xemu's -gdb tcp::PORT")
     ap.add_argument("--dump", metavar="ADDR:SIZE", help="region to write out (e.g. 0x1000:0x10000)")
+    ap.add_argument("--virtual", action="store_true",
+                    help="read the current context's LINEAR space, not physical RAM: one address can be a"
+                         " different page in each, and a table can straddle that boundary")
     ap.add_argument("-o", "--out", help="file for --dump (use $WORK)")
     ap.add_argument("--scan", action="store_true", help="list the strings in RAM, counts by default")
     ap.add_argument("--find", metavar="TEXT", action="append", default=[],
@@ -522,7 +525,9 @@ def main():
     gdb = Gdb(args.host, args.port)
     try:
         gdb.interrupt()
-        if not gdb.phys_mode():
+        if args.virtual:
+            gdb.phys_mode(False)          # `m` then answers in the context's own linear space
+        elif not gdb.phys_mode():
             sys.exit("the stub refused Qqemu.PhyMemMode:1 — reads would come back E14")
         if args.dump:
             addr, size = (int(x, 0) for x in args.dump.split(":"))

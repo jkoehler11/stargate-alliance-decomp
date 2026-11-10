@@ -96,6 +96,16 @@ media-patched XISO and 128 MB. Two things that cost time and are worth knowing:
 The dump is guest memory (game-derived): keep it under `$WORK`, commit only the derived address map
 (`inventory/gnatives_slots.csv`, `symbols/xbe_dispatch.csv`).
 
+**A second read — with a mission loaded — is scripted**, and its two traps are not in the recipe above.
+`tools/xemu/gnatives-mission.sh 10` does the pad sequence, the frame gate and the dump; `make gnatives-mission` writes
+the diff (`inventory/gnatives_mission.csv`). The traps:
+
+- `mem.py --dump` takes `ADDR:SIZE`, not two addresses: `0x6313e8:0x6353e8` dumps **6.5 MB** from the table's start
+  (harmless — the 16 KB are at the front — but it is not what it looks like).
+- a **physical** read of this address is a different page from the linear one. Measured: 353 of 356 bodies matched,
+  and the array's last page (`0x635000`, 3,846 slots in) read zeros, which looks like a zeroed tail. Pass
+  `--virtual`; `gdb`'s `dump binary memory` above reads linearly already.
+
 ## Input automation: open problem
 
 Driving the menu (to reach `Continue` → mission load) is not working yet, and the failure mode is

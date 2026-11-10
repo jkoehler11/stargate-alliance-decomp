@@ -668,9 +668,15 @@ three low-band bodies whose bytes fix the stock numbering (11 = bare `ret 8`, 29
 66-68 at tokens `0x42`-`0x44`. Their behaviour is recorded in `docs/NATIVE_VM.md`; a name needs a dump taken while a
 mission's scripts run, because no shipped package references an index below 112.
 
-**Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
-and the table is incomplete because natives are registered with the class that declares them: a full
-map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
+**Closed 2026-11-10: a mission load registers nothing, so 356 slots is the whole table.** A second dump taken with
+`M00` loaded (`tools/xemu/gnatives-mission.sh 10`, `make gnatives-mission`, `inventory/gnatives_mission.csv`) holds
+**the same 356 slots with the same bodies as the menu dump — 0 gained, 0 lost, 0 replaced**. Registration finishes
+at startup, before any map, so the map needs no further boot, and the 83 registered slots with no declarer are
+engine-internal execs registered at the same time (named `Native_<index>`), not natives waiting for a mission.
+Two instrument notes worth carrying to any later guest read: the table must be read in the context's **linear**
+space (`tools/xemu/mem.py --virtual`; a physical read of `0x6313e8` lands on another frame whose tail page reads
+zeros, which looks like a zeroed array), and a boot that never left the menu still serves its stub — the read is
+gated on `tools/xemu/frame-diff.py`, because a failed boot would otherwise "confirm" the menu table.
 
 ## U8. Which slot dispatches `ProcessEvent`, and the assert sites with no function
 
