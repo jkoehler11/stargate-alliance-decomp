@@ -912,6 +912,28 @@ are limited to expected fields (checksum/timestamp) and documented.
   none is a native, so none has a `native_targets.csv` row. They are read as script (`tools/pkg-script-text.py`), and
   the body to decompile is the exec they all funnel into. Measured in the note below.
 
+### Execution notes (2026-11-09, `0x001226a0` is the engine's name table, not the save reader)
+
+- **The 7,486-byte body U5 pointed at is startup code.** `0x001226a0` builds **290** `FName`s (one
+  `CALL 0x0005bed0` with find mode `2` each) and stores them into 296 globals across
+  `0x007aae9c`–`0x007b5dbc` (`0x001226bf`–`0x00124171`), in alphabetical order from `Accept` to `ZoneChange`,
+  then resolves the `Engine` and `Core` packages, walks the global class array with flag `0x2002`, and logs
+  `Unreal engine initialized` (`0x0050494c`, site `0x001243b9`).
+- **`LoadSaveGameInfo` is row 118 of 290** (`0x00505b14`, site `0x0012318a`), between `LIPSincAnimEnd` and
+  `Login`; `PostLoadSavedGame` is row 176 and `PreSaveGame` row 189. The save names are ordinary rows in the
+  engine's vocabulary, not a module marker.
+- **Why the lead looked real**: a wide literal has one xref, and every engine name is in this table exactly
+  once, so the body an xref search finds is always the one that appears to "start" that subsystem. The lesson is
+  the same one the `vtable-reach.py` note carries — a single xref identifies *a* user of a string, not the
+  function that implements it.
+- **Consequence**: the save/load native half has no missing reader (loader `0x00134d40`, writer `0x00138680`,
+  profile writer `FUN_001be520`); what is open is the writer's serializer arity and whether the profile row's
+  slot `+0x34` is a `SetString`.
+- **Next**: the serializer's arity. A `C2 xx xx` scan of `0x0006f4b0`'s whole declared body (5,552 bytes, ending
+  `0x00070aa0`) finds no `RET n` at all — only `c2` bytes inside instructions — and the two `C2 28 00` at
+  `0x00070b0f`/`0x00070b26` sit past the declared end, so they belong to the next function. The arity has to come
+  from the call graph (an argument-count pass over the serializer's callers), not from a byte scan of its tail.
+
 ### Execution notes (2026-11-09, the write is whole and the index row is a second artefact)
 
 - **The writer's literals, read from the image instead of the decompiler's text.** `ExportAt` labels this
@@ -936,8 +958,8 @@ are limited to expected fields (checksum/timestamp) and documented.
   (count `+0x38`, names `+0x28`, descriptions `+0x34`).
 - **Instrument**: `tools/sgs-profile.py` (`make sgs-profile`) counts the index and reconciles it with the `.sgs`
   files on disc; `--check` is a synthetic self-test, so `make ci` keeps it honest without the dump.
-- **Next**: `0x001226a0`'s `LoadSaveGameInfo` reader (7,486 bytes, exported but unread) — what the script's
-  `GameInfo.LoadSaveGameInfo` / `StoryModeGame` override consume from a checkpoint before `PostLogin` resumes.
+- **Next**: answered in the note above — `0x001226a0` is the engine's startup name table, not a save reader, so
+  the native half has no hole; the next measurement is the serializer's arity.
 
 ### Execution notes (2026-11-09, the save path's dispatcher is a console command and its writer is vtable slot 59)
 
