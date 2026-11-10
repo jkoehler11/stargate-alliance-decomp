@@ -210,6 +210,42 @@ The 56 index-less declarations with no `-1` stub are **41 `Object`**, 13 `BrushB
 class), 1 `MaterialFactory` and 1 `UPreviewSkinnedButton`. The tool prints that composition rather than folding the
 remainder into the total.
 
+### The 56 without a stub: three channels, and two packages the build never loads
+
+That remainder is measured too (`tools/native-channels.py`, `make native-channels`, `inventory/native_channels.csv`,
+`--check` in `make ci`): one row per index-less declaration, joining the `-1` stub, the `{name, body}` record and the
+class's store-registered slots, and asking the image itself whether the binder literal exists. All 523 resolve, and
+none of them is missing from the registration file:
+
+| Channel | Declarations | What carries them |
+|---|---|---|
+| stub + record (a `-1` stub) | **467** | the stub, each with its own `{name, body}` record |
+| record only | **41**, all `Object` | the `{name, body}` record; no stub |
+| neither | **15** | nothing: `Editor` (13 `BrushBuilder` + 1 `MaterialFactory`) and `UPreview` (1) |
+| rows whose binder literal the image carries | **508 of 508** named rows | the name is in the pool for every declaration that has one |
+
+The 41 are not a hole, and `Object` is why. All **230** of its live `GNatives` slots are **store-registered**
+(`mov [slot], reg`), **0** of its 160 indexed natives has an indexed stub, and exactly **one** of its 42 index-less
+declarations (`GetReferencers`) has a `-1` stub. `Object` is the class the build registers through the store table,
+so its index-less half carrying no stub is the same fact rather than a second one; what binds those 41 is the
+record, read by the `int%sexec%s` lookup at `0x0003a030` (`tools/native-binder.py`, U1).
+
+The 15 have nothing to bind. `BrushBuilder` (13 declarations), `MaterialFactory` (1) and `UPreviewSkinnedButton` (1)
+occur **0** times in the image -- not as a class name, not as a function name, not as an
+`int<prefix><Class>exec<Function>` literal -- and `Editor` and `UPreview` are the **only two packages with 0 of
+their declarations bound by name** (0 of 14 and 0 of 2; every other package is fully bound). The word `Editor` does
+appear five times, and none of them is a class prefix: a property metatype label, two log messages
+(`Initialising Karma In Editor.`, `LIPSincShutdownEditor`), never `intUEditorexec…`. Both packages are listed in
+`System/Default.ini` under `EditPackages` and in neither runtime list, so their editor-side natives are declared in
+packages the shipped build never loads: nothing to register, so nothing registers.
+
+**One instrument fed the other's blind spot.** `tools/native-reconcile.py`'s `load_binder` filled an empty binder
+with `"int%s%s" % (prefix_expected, function)` -- a literal the image does not carry -- and the residual table then
+read its own fabrication as evidence. That is why `inventory/native_residual.csv` listed `UPreview`'s two records as
+`text-missing` (`intUCreated`, `intUSetRenderInfo`); with the fill removed they read `record-unbound`, which is what
+the tool's own self-test already said they must ("a record with no binder must not read as text-missing"),
+and what `native_channels.csv` measures per declaration.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.

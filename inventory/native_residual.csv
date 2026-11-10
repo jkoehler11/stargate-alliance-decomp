@@ -8,5 +8,5 @@ StargateGame,StargateWeapon,DrawReticule,declaration-only,,,declaration-unbound
 StargateGame,StargateWeapon,updateLeadLag,declaration-only,,,declaration-unbound
 StargateGame,HitEffectManager,SetupFade,declaration-only,,,declaration-unbound
 StargateGame,HitEffectManager,Update,declaration-only,,,declaration-unbound
-UPreview,UPreviewMapListClient,Created,record-only,2,intUCreated,text-missing
-UPreview,UPreviewSkinnedButton,SetRenderInfo,record-only,0,intUSetRenderInfo,text-missing
+UPreview,UPreviewMapListClient,Created,record-only,2,,record-unbound
+UPreview,UPreviewSkinnedButton,SetRenderInfo,record-only,0,,record-unbound
