@@ -90,6 +90,34 @@ pushes the argument — the standard UE2 exec prologue for reading an immediate.
 here is inferred from ordering: every address came out of the runtime table at the index the script
 declaration names.
 
+## The same table, read statically: 233 slots the image writes itself
+
+U7's option 2 -- follow the `mov [slot], reg` sites -- is measured now, and it needs no boot
+(`tools/gnatives-writes.py`, `make gnatives-writes`, artifact `inventory/gnatives_write_sites.csv`, `--check` in
+`make ci`):
+
+| Measurement | Value |
+|---|---|
+| store sites into `GNatives` in the image | **233**, each writing a different slot |
+| slots they cover | 233 of the runtime table's 356, every one of them inside it (0 static-only) |
+| of those 233, store the address the runtime dump holds at that slot | **233 (100%)** |
+| runtime slots with no static store | **123** |
+| slot range covered | 0 to 543, not one contiguous block |
+| store sites inside a symbolised function | 2 of 233 |
+
+All 233 share one form -- `mov [disp32], ecx` (`89 0d`) -- and one shape: the value is loaded by the instruction
+that *ends* at the store (`mov ecx, [0x005c2xxx]`), a pointer table in `.data`, and then stored into
+`GNatives[slot]`. Resolving that second hop through `Xbe.read_va` is what makes the values comparable, and they
+agree exactly: the same numbers, one read from the file and one from guest memory.
+
+Two things the numbers settle. **The static route validates the runtime dump over two thirds of itself and cannot
+complete it:** 233 of 356 slots are visible, all 233 right, and the 123 that are missing are registered by a fill
+through `mov [ecx+eax*4], edx`, whose modrm byte encodes no absolute address -- no store-instruction scan can see
+them, whatever it is written to look for. And **the stores live outside the function map**: 2 of 233 sites fall
+inside a symbolised function, because they are compiler-generated accessor pairs in `0x0040cb1e`-`0x00413ab2`, one
+setter per slot, each with a branch that also writes the same value 16 KB later at `0x006353e8`. That second array
+is *not* a mirror of the table (614 stores over 9 offsets), so do not read one as the other.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.

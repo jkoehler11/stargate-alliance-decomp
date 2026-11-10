@@ -1004,6 +1004,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, U7's static half: the image writes 233 of the 356 slots, and all of them right)
+
+- **Following the store sites buys two thirds of the table with no boot.** `tools/gnatives-writes.py`
+  (`make gnatives-writes`, `inventory/gnatives_write_sites.csv`, `--check` in `make ci`) scans for the two store
+  forms that name an absolute slot -- `C7 05 <disp32> <imm32>` and `89 <modrm> <disp32>` -- and resolves the second
+  one's value through the instruction that *ends* at the store. Measured: **233 sites over 233 different slots,
+  every one of them storing exactly the address the xemu dump holds there (233 of 233), 0 static-only slots, and
+  123 runtime slots with no static store.**
+- **The 123 are a structural blind spot, not a gap in the scan.** All 233 share one form -- `mov [disp32], ecx` with
+  the value read from a `.data` pointer table first -- while the missing slots are filled through
+  `mov [ecx+eax*4], edx`, whose modrm byte encodes no absolute address. So option 2 validates the runtime map over
+  two thirds of itself and cannot complete it; U7 now says that, with the numbers.
+- **The stores sit outside the function map.** 2 of 233 sites fall inside a symbolised function: they are
+  compiler-generated accessor pairs across `0x0040cb1e`-`0x00413ab2`, one setter per slot, each with a branch that
+  also writes the same value 16 KB later at `0x006353e8`. That second array is *not* a mirror of the table (614
+  stores over 9 offsets), recorded so a later reader does not conflate them.
+
 ### Execution notes (2026-11-10, the 31 class-table stores that sat in no function are seeded by their own evidence)
 
 - **A store names both the class and the entry.** `SeedStores.java` (new, in the Ghidra chain after
