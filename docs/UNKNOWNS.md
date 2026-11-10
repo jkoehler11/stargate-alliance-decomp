@@ -613,6 +613,15 @@ menu gives 356 registered slots (3,740 still hold the startup default `0x000404a
 and inside `.text`, and **all 273 declared indices are present**. `inventory/gnatives_slots.csv` and
 `symbols/xbe_dispatch.csv` carry the map; `docs/NATIVE_VM.md` has the validation and the procedure.
 
+**Option 2 is measured too, and it is a validation rather than a substitute (2026-11-10).**
+`tools/gnatives-writes.py` scans the image for the two store forms that name an absolute slot and resolves each
+`mov [slot], reg` value through the pointer table the preceding instruction loads from: **233 store sites, 233
+different slots, and all 233 store exactly the address the runtime dump holds there** (`0 slots the dump does not
+have`). The **123** runtime slots with no static store are registered through `mov [ecx+eax*4], edx`, which encodes
+no absolute address -- so a store scan can see two thirds of the table and can never see the rest
+(`docs/NATIVE_VM.md`, `inventory/gnatives_write_sites.csv`). A partial static map used to be one of the three ways
+this entry could have been closed; it is now a check on the way it was closed.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
