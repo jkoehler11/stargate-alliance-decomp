@@ -63,10 +63,15 @@ and `_StringString` in the pool, so they need no name. The 114 pool names no dec
 
 **Status.** Answered. The index question is settled (the 523 claim no slot), the binding route is the binder at
 `0x0003a030`, and the shipped prototype resolves every game-side declaration because the names it looks up are in the
-image. **And the records that *do* carry a token are now explained one by one** (`inventory/native_tokens.csv`,
-*Every token has a basis* in `docs/NATIVE_CLASSES.md`): 166 spell their index in the class's own text, 107 are
-operator signatures the compiler expands, 0 come from a declaration that spelled no index, 1 is an artefact of the
-editor package `UPreview` — so a token never means "the compiler filled this in".
+image. **And the map those names are looked up in is in the image too (2026-11-09).** A `{name, body}` record per
+registration — 1,104 records in 203 contiguous runs of `.data`, 883 distinct names — gives every declaration an
+address with no boot, and the 261 records whose declaration also carries an index agree with the runtime
+`GNatives` dump 261 of 261. `tools/native-table.py`, `inventory/native_targets.csv`, `docs/NATIVE_VM.md`
+*The registration table*. 275 of the named bodies are addresses `inventory/function_modules.csv` has no function at,
+so the records also seed the function map. **And the records that *do* carry a token are now explained one by one**
+(`inventory/native_tokens.csv`, *Every token has a basis* in `docs/NATIVE_CLASSES.md`): 166 spell their index in the
+class's own text, 107 are operator signatures the compiler expands, 0 come from a declaration that spelled no index,
+1 is an artefact of the editor package `UPreview` — so a token never means "the compiler filled this in".
 
 ## U2. Three `Engine.Actor` natives declare indices beyond the table — closed
 
@@ -448,6 +453,12 @@ filename is composed there, `c_<mission>_<checkpoint>.sgs`. `GameInfo.PostLogin`
 `bIsSaveGame` is set it calls `LoadSaveGame(SaveGameFileName)` for the filename a console command left pending.
 Eligibility is opt-in and per-class: `MarkForSaveGame` is called from six places, four of them the engine's own
 `PreSaveGame` hook, which is consistent with the exporter's actor set rather than a bespoke selection pass.
+
+**Addresses, with no boot (2026-11-09).** The registration table (`inventory/native_targets.csv`, `docs/NATIVE_VM.md`
+*The registration table*) names both bodies: `GameInfo.SavePackage` is `0x00298bb0` and `GameInfo.LoadSaveGame` is
+`0x00149370`. So the `0x0012xxxx` neighbourhood search is no longer the way in — these are the two functions to read,
+and `0x001226a0` (the one body that references the wide string `LoadSaveGameInfo`) is where the save/load/check
+module begins.
 
 **Still open.** The native bodies behind `SavePackage`/`LoadSaveGame` — whether the writer is the engine's generic
 package serializer and what the console path's handler does with the name. The `.sgs` literals in the image are

@@ -1,0 +1,1105 @@
+block,block_va,record_va,name,class,function,body,module,declared,token,runtime_index,runtime_address,agrees,prefix_ok
+0,0x00599e08,0x00599e08,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+1,0x00599e18,0x00599e18,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+1,0x00599e18,0x00599e20,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+2,0x00599e30,0x00599e30,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+3,0x00599e40,0x00599e40,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+3,0x00599e40,0x00599e48,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+4,0x00599e58,0x00599e58,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+4,0x00599e58,0x00599e60,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+4,0x00599e58,0x00599e68,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+4,0x00599e58,0x00599e70,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+5,0x00599e80,0x00599e80,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+5,0x00599e80,0x00599e88,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+5,0x00599e80,0x00599e90,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+5,0x00599e80,0x00599e98,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+6,0x00599ea8,0x00599ea8,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+7,0x00599eb8,0x00599eb8,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+8,0x00599ec8,0x00599ec8,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+9,0x00599ed8,0x00599ed8,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+9,0x00599ed8,0x00599ee0,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+10,0x00599ef0,0x00599ef0,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+10,0x00599ef0,0x00599ef8,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c1a58,intUObjectexecLocalVariable,Object,LocalVariable,0x00046f80,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a60,intUObjectexecInstanceVariable,Object,InstanceVariable,0x00047000,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a68,intUObjectexecDefaultVariable,Object,DefaultVariable,0x00047070,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a70,intUObjectexecClassContext,Object,ClassContext,0x000470c0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a78,intUObjectexecArrayElement,Object,ArrayElement,0x000471f0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a80,intUObjectexecDynArrayElement,Object,DynArrayElement,0x000472e0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a88,intUObjectexecDynArrayLength,Object,DynArrayLength,0x000405d0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a90,intUObjectexecDynArrayInsert,Object,DynArrayInsert,0x00047410,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1a98,intUObjectexecDynArrayRemove,Object,DynArrayRemove,0x00047540,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1aa0,intUObjectexecPrimitiveCast,Object,PrimitiveCast,0x00040be0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1aa8,intUObjectexecBoolVariable,Object,BoolVariable,0x00040630,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ab0,intUObjectexecStructMember,Object,StructMember,0x000490e0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ab8,intUObjectexecNothing,Object,Nothing,0x00040690,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ac0,intUObjectexecEndOfScript,Object,EndOfScript,0x000406a0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ac8,intUObjectexecNativeParm,Object,NativeParm,0x000406c0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ad0,intUObjectexecEndFunctionParms,Object,EndFunctionParms,0x00040710,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ad8,intUObjectexecStop,Object,Stop,0x00040730,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ae0,intUObjectexecSwitch,Object,Switch,0x0004ca20,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ae8,intUObjectexecCase,Object,Case,0x00040740,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1af0,intUObjectexecJump,Object,Jump,0x000476e0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1af8,intUObjectexecJumpIfNot,Object,JumpIfNot,0x000477a0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b00,intUObjectexecAssert,Object,Assert,0x000407b0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b08,intUObjectexecGotoLabel,Object,GotoLabel,0x00047850,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b10,intUObjectexecLet,Object,Let,0x000478c0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b18,intUObjectexecLetBool,Object,LetBool,0x00040820,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b20,intUObjectexecLetDelegate,Object,LetDelegate,0x00047b70,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b28,intUObjectexecSelf,Object,Self,0x000408f0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b30,intUObjectexecContext,Object,Context,0x00047a70,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b38,intUObjectexecVirtualFunction,Object,VirtualFunction,0x00040900,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b40,intUObjectexecFinalFunction,Object,FinalFunction,0x00040940,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b48,intUObjectexecGlobalFunction,Object,GlobalFunction,0x00040960,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b50,intUObjectexecStructCmpEq,Object,StructCmpEq,0x000491e0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b58,intUObjectexecStructCmpNe,Object,StructCmpNe,0x000492c0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b60,intUObjectexecIntConst,Object,IntConst,0x00040a60,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b68,intUObjectexecFloatConst,Object,FloatConst,0x00040a80,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b70,intUObjectexecStringConst,Object,StringConst,0x00047bf0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b78,intUObjectexecUnicodeStringConst,Object,UnicodeStringConst,0x00047c40,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b80,intUObjectexecObjectConst,Object,ObjectConst,0x00040aa0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b88,intUObjectexecNameConst,Object,NameConst,0x00040ac0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b90,intUObjectexecByteConst,Object,ByteConst,0x00040ae0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1b98,intUObjectexecIntZero,Object,IntZero,0x00040b00,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ba0,intUObjectexecIntOne,Object,IntOne,0x00040b10,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1ba8,intUObjectexecTrue,Object,True,0x00040b20,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bb0,intUObjectexecFalse,Object,False,0x00040b30,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bb8,intUObjectexecNoObject,Object,NoObject,0x00040b40,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bc0,intUObjectexecIntConstByte,Object,IntConstByte,0x00040b50,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bc8,intUObjectexecDynamicCast,Object,DynamicCast,0x00040b70,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bd0,intUObjectexecMetaCast,Object,MetaCast,0x00047ca0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1bd8,intUObjectexecByteToInt,Object,ByteToInt,0x00040c00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1be0,intUObjectexecByteToBool,Object,ByteToBool,0x00040c40,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1be8,intUObjectexecByteToFloat,Object,ByteToFloat,0x00040c80,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1bf0,intUObjectexecByteToString,Object,ByteToString,0x000493a0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1bf8,intUObjectexecIntToByte,Object,IntToByte,0x00040cc0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c00,intUObjectexecIntToBool,Object,IntToBool,0x00040d00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c08,intUObjectexecIntToFloat,Object,IntToFloat,0x00040d40,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c10,intUObjectexecIntToString,Object,IntToString,0x00049450,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c18,intUObjectexecBoolToByte,Object,BoolToByte,0x00040d80,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c20,intUObjectexecBoolToInt,Object,BoolToInt,0x00040dc0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c28,intUObjectexecBoolToFloat,Object,BoolToFloat,0x00040e00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c30,intUObjectexecBoolToString,Object,BoolToString,0x00047d50,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c38,intUObjectexecFloatToByte,Object,FloatToByte,0x00040e40,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c40,intUObjectexecFloatToInt,Object,FloatToInt,0x00040e80,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c48,intUObjectexecFloatToBool,Object,FloatToBool,0x00040ec0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c50,intUObjectexecFloatToString,Object,FloatToString,0x00049500,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c58,intUObjectexecObjectToBool,Object,ObjectToBool,0x00040f20,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c60,intUObjectexecObjectToString,Object,ObjectToString,0x00047da0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c68,intUObjectexecNameToBool,Object,NameToBool,0x00040f60,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c70,intUObjectexecNameToString,Object,NameToString,0x00047e00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c78,intUObjectexecStringToByte,Object,StringToByte,0x000495b0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c80,intUObjectexecStringToInt,Object,StringToInt,0x00049660,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c88,intUObjectexecStringToBool,Object,StringToBool,0x00049710,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c90,intUObjectexecStringToFloat,Object,StringToFloat,0x00049860,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1c98,intUObjectexecNot_PreBool,Object,Not_PreBool,0x00040fa0,(dispatch: declared),1,129,129,0x00040fa0,yes,1
+11,0x005c1a58,0x005c1ca0,intUObjectexecEqualEqual_BoolBool,Object,EqualEqual_BoolBool,0x00041000,(dispatch: declared),1,242,242,0x00041000,yes,1
+11,0x005c1a58,0x005c1ca8,intUObjectexecNotEqual_BoolBool,Object,NotEqual_BoolBool,0x00041090,(dispatch: declared),1,243,243,0x00041090,yes,1
+11,0x005c1a58,0x005c1cb0,intUObjectexecAndAnd_BoolBool,Object,AndAnd_BoolBool,0x00041120,(dispatch: declared),1,130,130,0x00041120,yes,1
+11,0x005c1a58,0x005c1cb8,intUObjectexecXorXor_BoolBool,Object,XorXor_BoolBool,0x000411c0,(dispatch: declared),1,131,131,0x000411c0,yes,1
+11,0x005c1a58,0x005c1cc0,intUObjectexecOrOr_BoolBool,Object,OrOr_BoolBool,0x00041250,(dispatch: declared),1,132,132,0x00041250,yes,1
+11,0x005c1a58,0x005c1cc8,intUObjectexecMultiplyEqual_ByteByte,Object,MultiplyEqual_ByteByte,0x000412f0,(dispatch: declared),1,133,133,0x000412f0,yes,1
+11,0x005c1a58,0x005c1cd0,intUObjectexecDivideEqual_ByteByte,Object,DivideEqual_ByteByte,0x000413a0,(dispatch: declared),1,134,134,0x000413a0,yes,1
+11,0x005c1a58,0x005c1cd8,intUObjectexecAddEqual_ByteByte,Object,AddEqual_ByteByte,0x00041460,(dispatch: declared),1,135,135,0x00041460,yes,1
+11,0x005c1a58,0x005c1ce0,intUObjectexecSubtractEqual_ByteByte,Object,SubtractEqual_ByteByte,0x00041510,(dispatch: declared),1,136,136,0x00041510,yes,1
+11,0x005c1a58,0x005c1ce8,intUObjectexecAddAdd_PreByte,Object,AddAdd_PreByte,0x000415c0,(dispatch: declared),1,137,137,0x000415c0,yes,1
+11,0x005c1a58,0x005c1cf0,intUObjectexecSubtractSubtract_PreByte,Object,SubtractSubtract_PreByte,0x00041650,(dispatch: declared),1,138,138,0x00041650,yes,1
+11,0x005c1a58,0x005c1cf8,intUObjectexecAddAdd_Byte,Object,AddAdd_Byte,0x000416e0,(dispatch: declared),1,139,139,0x000416e0,yes,1
+11,0x005c1a58,0x005c1d00,intUObjectexecSubtractSubtract_Byte,Object,SubtractSubtract_Byte,0x00041770,(dispatch: declared),1,140,140,0x00041770,yes,1
+11,0x005c1a58,0x005c1d08,intUObjectexecComplement_PreInt,Object,Complement_PreInt,0x00041800,(dispatch: declared),1,141,141,0x00041800,yes,1
+11,0x005c1a58,0x005c1d10,intUObjectexecGreaterGreaterGreater_IntInt,Object,GreaterGreaterGreater_IntInt,0x00041860,(dispatch: declared),1,196,196,0x00041860,yes,1
+11,0x005c1a58,0x005c1d18,intUObjectexecSubtract_PreInt,Object,Subtract_PreInt,0x000418e0,(dispatch: declared),1,143,143,0x000418e0,yes,1
+11,0x005c1a58,0x005c1d20,intUObjectexecMultiply_IntInt,Object,Multiply_IntInt,0x00041940,(dispatch: declared),1,144,144,0x00041940,yes,1
+11,0x005c1a58,0x005c1d28,intUObjectexecDivide_IntInt,Object,Divide_IntInt,0x000419c0,(dispatch: declared),1,145,145,0x000419c0,yes,1
+11,0x005c1a58,0x005c1d30,intUObjectexecAdd_IntInt,Object,Add_IntInt,0x00041a50,(dispatch: declared),1,146,146,0x00041a50,yes,1
+11,0x005c1a58,0x005c1d38,intUObjectexecSubtract_IntInt,Object,Subtract_IntInt,0x00041ad0,(dispatch: declared),1,147,147,0x00041ad0,yes,1
+11,0x005c1a58,0x005c1d40,intUObjectexecLessLess_IntInt,Object,LessLess_IntInt,0x00041b50,(dispatch: declared),1,148,148,0x00041b50,yes,1
+11,0x005c1a58,0x005c1d48,intUObjectexecGreaterGreater_IntInt,Object,GreaterGreater_IntInt,0x00041bd0,(dispatch: declared),1,149,149,0x00041bd0,yes,1
+11,0x005c1a58,0x005c1d50,intUObjectexecLess_IntInt,Object,Less_IntInt,0x00041c50,(dispatch: declared),1,150,150,0x00041c50,yes,1
+11,0x005c1a58,0x005c1d58,intUObjectexecGreater_IntInt,Object,Greater_IntInt,0x00041ce0,(dispatch: declared),1,151,151,0x00041ce0,yes,1
+11,0x005c1a58,0x005c1d60,intUObjectexecLessEqual_IntInt,Object,LessEqual_IntInt,0x00041d70,(dispatch: declared),1,152,152,0x00041d70,yes,1
+11,0x005c1a58,0x005c1d68,intUObjectexecGreaterEqual_IntInt,Object,GreaterEqual_IntInt,0x00041e00,(dispatch: declared),1,153,153,0x00041e00,yes,1
+11,0x005c1a58,0x005c1d70,intUObjectexecEqualEqual_IntInt,Object,EqualEqual_IntInt,0x00041e90,(dispatch: declared),1,154,154,0x00041e90,yes,1
+11,0x005c1a58,0x005c1d78,intUObjectexecNotEqual_IntInt,Object,NotEqual_IntInt,0x00041f20,(dispatch: declared),1,155,155,0x00041f20,yes,1
+11,0x005c1a58,0x005c1d80,intUObjectexecAnd_IntInt,Object,And_IntInt,0x00041fb0,(dispatch: declared),1,156,156,0x00041fb0,yes,1
+11,0x005c1a58,0x005c1d88,intUObjectexecXor_IntInt,Object,Xor_IntInt,0x00042030,(dispatch: declared),1,157,157,0x00042030,yes,1
+11,0x005c1a58,0x005c1d90,intUObjectexecOr_IntInt,Object,Or_IntInt,0x000420b0,(dispatch: declared),1,158,158,0x000420b0,yes,1
+11,0x005c1a58,0x005c1d98,intUObjectexecMultiplyEqual_IntFloat,Object,MultiplyEqual_IntFloat,0x00042130,(dispatch: declared),1,159,159,0x00042130,yes,1
+11,0x005c1a58,0x005c1da0,intUObjectexecDivideEqual_IntFloat,Object,DivideEqual_IntFloat,0x000421f0,(dispatch: declared),1,160,160,0x000421f0,yes,1
+11,0x005c1a58,0x005c1da8,intUObjectexecAddEqual_IntInt,Object,AddEqual_IntInt,0x000422c0,(dispatch: declared),1,161,161,0x000422c0,yes,1
+11,0x005c1a58,0x005c1db0,intUObjectexecSubtractEqual_IntInt,Object,SubtractEqual_IntInt,0x00042370,(dispatch: declared),1,162,162,0x00042370,yes,1
+11,0x005c1a58,0x005c1db8,intUObjectexecAddAdd_PreInt,Object,AddAdd_PreInt,0x00042420,(dispatch: declared),1,163,163,0x00042420,yes,1
+11,0x005c1a58,0x005c1dc0,intUObjectexecSubtractSubtract_PreInt,Object,SubtractSubtract_PreInt,0x000424b0,(dispatch: declared),1,164,164,0x000424b0,yes,1
+11,0x005c1a58,0x005c1dc8,intUObjectexecAddAdd_Int,Object,AddAdd_Int,0x00042540,(dispatch: declared),1,165,165,0x00042540,yes,1
+11,0x005c1a58,0x005c1dd0,intUObjectexecSubtractSubtract_Int,Object,SubtractSubtract_Int,0x000425d0,(dispatch: declared),1,166,166,0x000425d0,yes,1
+11,0x005c1a58,0x005c1dd8,intUObjectexecRand,Object,Rand,0x00042660,(dispatch: declared),1,167,167,0x00042660,yes,1
+11,0x005c1a58,0x005c1de0,intUObjectexecMin,Object,Min,0x00047e50,(dispatch: declared),1,249,249,0x00047e50,yes,1
+11,0x005c1a58,0x005c1de8,intUObjectexecMax,Object,Max,0x00047ee0,(dispatch: declared),1,250,250,0x00047ee0,yes,1
+11,0x005c1a58,0x005c1df0,intUObjectexecClamp,Object,Clamp,0x00047f70,(dispatch: declared),1,251,251,0x00047f70,yes,1
+11,0x005c1a58,0x005c1df8,intUObjectexecSubtract_PreFloat,Object,Subtract_PreFloat,0x000426d0,(dispatch: declared),1,169,169,0x000426d0,yes,1
+11,0x005c1a58,0x005c1e00,intUObjectexecMultiplyMultiply_FloatFloat,Object,MultiplyMultiply_FloatFloat,0x00042730,(dispatch: declared),1,170,170,0x00042730,yes,1
+11,0x005c1a58,0x005c1e08,intUObjectexecMultiply_FloatFloat,Object,Multiply_FloatFloat,0x000427c0,(dispatch: declared),1,171,171,0x000427c0,yes,1
+11,0x005c1a58,0x005c1e10,intUObjectexecDivide_FloatFloat,Object,Divide_FloatFloat,0x00042850,(dispatch: declared),1,172,172,0x00042850,yes,1
+11,0x005c1a58,0x005c1e18,intUObjectexecPercent_FloatFloat,Object,Percent_FloatFloat,0x000428e0,(dispatch: declared),1,173,173,0x000428e0,yes,1
+11,0x005c1a58,0x005c1e20,intUObjectexecAdd_FloatFloat,Object,Add_FloatFloat,0x00042970,(dispatch: declared),1,174,174,0x00042970,yes,1
+11,0x005c1a58,0x005c1e28,intUObjectexecSubtract_FloatFloat,Object,Subtract_FloatFloat,0x00042a00,(dispatch: declared),1,175,175,0x00042a00,yes,1
+11,0x005c1a58,0x005c1e30,intUObjectexecLess_FloatFloat,Object,Less_FloatFloat,0x00042a90,(dispatch: declared),1,176,176,0x00042a90,yes,1
+11,0x005c1a58,0x005c1e38,intUObjectexecGreater_FloatFloat,Object,Greater_FloatFloat,0x00042b30,(dispatch: declared),1,177,177,0x00042b30,yes,1
+11,0x005c1a58,0x005c1e40,intUObjectexecLessEqual_FloatFloat,Object,LessEqual_FloatFloat,0x00042bd0,(dispatch: declared),1,178,178,0x00042bd0,yes,1
+11,0x005c1a58,0x005c1e48,intUObjectexecGreaterEqual_FloatFloat,Object,GreaterEqual_FloatFloat,0x00042c70,(dispatch: declared),1,179,179,0x00042c70,yes,1
+11,0x005c1a58,0x005c1e50,intUObjectexecEqualEqual_FloatFloat,Object,EqualEqual_FloatFloat,0x00042d10,(dispatch: declared),1,180,180,0x00042d10,yes,1
+11,0x005c1a58,0x005c1e58,intUObjectexecNotEqual_FloatFloat,Object,NotEqual_FloatFloat,0x00042db0,(dispatch: declared),1,181,181,0x00042db0,yes,1
+11,0x005c1a58,0x005c1e60,intUObjectexecComplementEqual_FloatFloat,Object,ComplementEqual_FloatFloat,0x00048030,(dispatch: declared),1,210,210,0x00048030,yes,1
+11,0x005c1a58,0x005c1e68,intUObjectexecMultiplyEqual_FloatFloat,Object,MultiplyEqual_FloatFloat,0x00042e50,(dispatch: declared),1,182,182,0x00042e50,yes,1
+11,0x005c1a58,0x005c1e70,intUObjectexecDivideEqual_FloatFloat,Object,DivideEqual_FloatFloat,0x00042f10,(dispatch: declared),1,183,183,0x00042f10,yes,1
+11,0x005c1a58,0x005c1e78,intUObjectexecAddEqual_FloatFloat,Object,AddEqual_FloatFloat,0x00042fd0,(dispatch: declared),1,184,184,0x00042fd0,yes,1
+11,0x005c1a58,0x005c1e80,intUObjectexecSubtractEqual_FloatFloat,Object,SubtractEqual_FloatFloat,0x00043090,(dispatch: declared),1,185,185,0x00043090,yes,1
+11,0x005c1a58,0x005c1e88,intUObjectexecAbs,Object,Abs,0x000480f0,(dispatch: declared),1,186,186,0x000480f0,yes,1
+11,0x005c1a58,0x005c1e90,intUObjectexecSin,Object,Sin,0x00043150,(dispatch: declared),1,187,187,0x00043150,yes,1
+11,0x005c1a58,0x005c1e98,intUObjectexecCos,Object,Cos,0x00043210,(dispatch: declared),1,188,188,0x00043210,yes,1
+11,0x005c1a58,0x005c1ea0,intUObjectexecTan,Object,Tan,0x000432d0,(dispatch: declared),1,189,189,0x000432d0,yes,1
+11,0x005c1a58,0x005c1ea8,intUObjectexecAtan,Object,Atan,0x00043330,(dispatch: declared),1,190,190,0x00043330,yes,1
+11,0x005c1a58,0x005c1eb0,intUObjectexecExp,Object,Exp,0x000433b0,(dispatch: declared),1,191,191,0x000433b0,yes,1
+11,0x005c1a58,0x005c1eb8,intUObjectexecLoge,Object,Loge,0x00043420,(dispatch: declared),1,192,192,0x00043420,yes,1
+11,0x005c1a58,0x005c1ec0,intUObjectexecSqrt,Object,Sqrt,0x00043480,(dispatch: declared),1,193,193,0x00043480,yes,1
+11,0x005c1a58,0x005c1ec8,intUObjectexecSquare,Object,Square,0x00048170,(dispatch: declared),1,194,194,0x00048170,yes,1
+11,0x005c1a58,0x005c1ed0,intUObjectexecFRand,Object,FRand,0x000434e0,(dispatch: declared),1,195,195,0x000434e0,yes,1
+11,0x005c1a58,0x005c1ed8,intUObjectexecFMin,Object,FMin,0x000481e0,(dispatch: declared),1,244,244,0x000481e0,yes,1
+11,0x005c1a58,0x005c1ee0,intUObjectexecFMax,Object,FMax,0x00048280,(dispatch: declared),1,245,245,0x00048280,yes,1
+11,0x005c1a58,0x005c1ee8,intUObjectexecFClamp,Object,FClamp,0x00048320,(dispatch: declared),1,246,246,0x00048320,yes,1
+11,0x005c1a58,0x005c1ef0,intUObjectexecLerp,Object,Lerp,0x00048400,(dispatch: declared),1,247,247,0x00048400,yes,1
+11,0x005c1a58,0x005c1ef8,intUObjectexecSmerp,Object,Smerp,0x00043520,(dispatch: declared),1,248,248,0x00043520,yes,1
+11,0x005c1a58,0x005c1f00,intUObjectexecCeil,Object,Ceil,0x00043600,(dispatch: declared),1,253,253,0x00043600,yes,1
+11,0x005c1a58,0x005c1f08,intUObjectexecRound,Object,Round,0x00043670,(dispatch: declared),1,257,257,0x00043670,yes,1
+11,0x005c1a58,0x005c1f10,intUObjectexecRotationConst,Object,RotationConst,0x000436f0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1f18,intUObjectexecVectorConst,Object,VectorConst,0x00043730,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c1f20,intUObjectexecStringToName,Object,StringToName,0x00049910,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f28,intUObjectexecStringToVector,Object,StringToVector,0x000499f0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f30,intUObjectexecStringToRotator,Object,StringToRotator,0x00049b00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f38,intUObjectexecVectorToBool,Object,VectorToBool,0x00043760,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f40,intUObjectexecVectorToString,Object,VectorToString,0x00049c00,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f48,intUObjectexecVectorToRotator,Object,VectorToRotator,0x000437f0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f50,intUObjectexecRotatorToBool,Object,RotatorToBool,0x00043850,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f58,intUObjectexecRotatorToVector,Object,RotatorToVector,0x000438d0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f60,intUObjectexecRotatorToString,Object,RotatorToString,0x00049cc0,(unnamed),0,,,,,1
+11,0x005c1a58,0x005c1f68,intUObjectexecSubtract_PreVector,Object,Subtract_PreVector,0x00043950,(dispatch: declared),1,211,211,0x00043950,yes,1
+11,0x005c1a58,0x005c1f70,intUObjectexecMultiply_VectorFloat,Object,Multiply_VectorFloat,0x000439e0,(dispatch: declared),1,212,212,0x000439e0,yes,1
+11,0x005c1a58,0x005c1f78,intUObjectexecMultiply_FloatVector,Object,Multiply_FloatVector,0x00043aa0,(dispatch: declared),1,213,213,0x00043aa0,yes,1
+11,0x005c1a58,0x005c1f80,intUObjectexecMultiply_VectorVector,Object,Multiply_VectorVector,0x00043b60,(dispatch: declared),1,296,296,0x00043b60,yes,1
+11,0x005c1a58,0x005c1f88,intUObjectexecDivide_VectorFloat,Object,Divide_VectorFloat,0x00043c10,(dispatch: declared),1,214,214,0x00043c10,yes,1
+11,0x005c1a58,0x005c1f90,intUObjectexecAdd_VectorVector,Object,Add_VectorVector,0x00043cd0,(dispatch: declared),1,215,215,0x00043cd0,yes,1
+11,0x005c1a58,0x005c1f98,intUObjectexecSubtract_VectorVector,Object,Subtract_VectorVector,0x00043d80,(dispatch: declared),1,216,216,0x00043d80,yes,1
+11,0x005c1a58,0x005c1fa0,intUObjectexecLessLess_VectorRotator,Object,LessLess_VectorRotator,0x00043e30,(dispatch: declared),1,275,275,0x00043e30,yes,1
+11,0x005c1a58,0x005c1fa8,intUObjectexecGreaterGreater_VectorRotator,Object,GreaterGreater_VectorRotator,0x00043f00,(dispatch: declared),1,276,276,0x00043f00,yes,1
+11,0x005c1a58,0x005c1fb0,intUObjectexecEqualEqual_VectorVector,Object,EqualEqual_VectorVector,0x00043fd0,(dispatch: declared),1,217,217,0x00043fd0,yes,1
+11,0x005c1a58,0x005c1fb8,intUObjectexecNotEqual_VectorVector,Object,NotEqual_VectorVector,0x00044080,(dispatch: declared),1,218,218,0x00044080,yes,1
+11,0x005c1a58,0x005c1fc0,intUObjectexecDot_VectorVector,Object,Dot_VectorVector,0x00044130,(dispatch: declared),1,219,219,0x00044130,yes,1
+11,0x005c1a58,0x005c1fc8,intUObjectexecCross_VectorVector,Object,Cross_VectorVector,0x000441d0,(dispatch: declared),1,220,220,0x000441d0,yes,1
+11,0x005c1a58,0x005c1fd0,intUObjectexecMultiplyEqual_VectorFloat,Object,MultiplyEqual_VectorFloat,0x000442b0,(dispatch: declared),1,221,221,0x000442b0,yes,1
+11,0x005c1a58,0x005c1fd8,intUObjectexecMultiplyEqual_VectorVector,Object,MultiplyEqual_VectorVector,0x00044390,(dispatch: declared),1,297,297,0x00044390,yes,1
+11,0x005c1a58,0x005c1fe0,intUObjectexecDivideEqual_VectorFloat,Object,DivideEqual_VectorFloat,0x00044470,(dispatch: declared),1,222,222,0x00044470,yes,1
+11,0x005c1a58,0x005c1fe8,intUObjectexecAddEqual_VectorVector,Object,AddEqual_VectorVector,0x00044560,(dispatch: declared),1,223,223,0x00044560,yes,1
+11,0x005c1a58,0x005c1ff0,intUObjectexecSubtractEqual_VectorVector,Object,SubtractEqual_VectorVector,0x00044640,(dispatch: declared),1,224,224,0x00044640,yes,1
+11,0x005c1a58,0x005c1ff8,intUObjectexecVSize,Object,VSize,0x00044720,(dispatch: declared),1,225,225,0x00044720,yes,1
+11,0x005c1a58,0x005c2000,intUObjectexecNormal,Object,Normal,0x00044790,(dispatch: declared),1,226,226,0x00044790,yes,1
+11,0x005c1a58,0x005c2008,intUObjectexecInvert,Object,Invert,0x00044860,(dispatch: declared),1,227,227,0x00044860,yes,1
+11,0x005c1a58,0x005c2010,intUObjectexecVRand,Object,VRand,0x00044a30,(dispatch: declared),1,252,252,0x00044a30,yes,1
+11,0x005c1a58,0x005c2018,intUObjectexecRotRand,Object,RotRand,0x00044a80,(dispatch: declared),1,320,320,0x00044a80,yes,1
+11,0x005c1a58,0x005c2020,intUObjectexecMirrorVectorByNormal,Object,MirrorVectorByNormal,0x00044b30,(dispatch: declared),1,300,300,0x00044b30,yes,1
+11,0x005c1a58,0x005c2028,intUObjectexecEqualEqual_RotatorRotator,Object,EqualEqual_RotatorRotator,0x00044cb0,(dispatch: declared),1,142,142,0x00044cb0,yes,1
+11,0x005c1a58,0x005c2030,intUObjectexecNotEqual_RotatorRotator,Object,NotEqual_RotatorRotator,0x00044d50,(dispatch: declared),1,203,203,0x00044d50,yes,1
+11,0x005c1a58,0x005c2038,intUObjectexecMultiply_RotatorFloat,Object,Multiply_RotatorFloat,0x00044df0,(dispatch: declared),1,287,287,0x00044df0,yes,1
+11,0x005c1a58,0x005c2040,intUObjectexecMultiply_FloatRotator,Object,Multiply_FloatRotator,0x00044ea0,(dispatch: declared),1,288,288,0x00044ea0,yes,1
+11,0x005c1a58,0x005c2048,intUObjectexecDivide_RotatorFloat,Object,Divide_RotatorFloat,0x00044f50,(dispatch: declared),1,289,289,0x00044f50,yes,1
+11,0x005c1a58,0x005c2050,intUObjectexecMultiplyEqual_RotatorFloat,Object,MultiplyEqual_RotatorFloat,0x00045000,(dispatch: declared),1,290,290,0x00045000,yes,1
+11,0x005c1a58,0x005c2058,intUObjectexecDivideEqual_RotatorFloat,Object,DivideEqual_RotatorFloat,0x000450f0,(dispatch: declared),1,291,291,0x000450f0,yes,1
+11,0x005c1a58,0x005c2060,intUObjectexecAdd_RotatorRotator,Object,Add_RotatorRotator,0x000451e0,(dispatch: declared),1,316,316,0x000451e0,yes,1
+11,0x005c1a58,0x005c2068,intUObjectexecSubtract_RotatorRotator,Object,Subtract_RotatorRotator,0x00045270,(dispatch: declared),1,317,317,0x00045270,yes,1
+11,0x005c1a58,0x005c2070,intUObjectexecAddEqual_RotatorRotator,Object,AddEqual_RotatorRotator,0x00045300,(dispatch: declared),1,318,318,0x00045300,yes,1
+11,0x005c1a58,0x005c2078,intUObjectexecSubtractEqual_RotatorRotator,Object,SubtractEqual_RotatorRotator,0x000453d0,(dispatch: declared),1,319,319,0x000453d0,yes,1
+11,0x005c1a58,0x005c2080,intUObjectexecGetAxes,Object,GetAxes,0x000454a0,(dispatch: declared),1,229,229,0x000454a0,yes,1
+11,0x005c1a58,0x005c2088,intUObjectexecGetUnAxes,Object,GetUnAxes,0x00045640,(dispatch: declared),1,230,230,0x00045640,yes,1
+11,0x005c1a58,0x005c2090,intUObjectexecOrthoRotation,Object,OrthoRotation,0x000457e0,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2098,intUObjectexecSpiderOrthoRotation,Object,SpiderOrthoRotation,0x00045900,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c20a0,intUObjectexecNormalize,Object,Normalize,0x00045a20,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c20a8,intUObjectexecClockwiseFrom_IntInt,Object,ClockwiseFrom_IntInt,0x00048520,,1,0,,,,1
+11,0x005c1a58,0x005c20b0,intUObjectexecEatString,Object,EatString,0x00049d80,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c20b8,intUObjectexecConcat_StringString,Object,Concat_StringString,0x00049e10,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20c0,intUObjectexecConcatEqual_StringString,Object,ConcatEqual_StringString,0x00049f50,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20c8,intUObjectexecAt_StringString,Object,At_StringString,0x0004a0a0,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20d0,intUObjectexecAtEqual_StringString,Object,AtEqual_StringString,0x0004a220,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20d8,intUObjectexecLess_StringString,Object,Less_StringString,0x0004a3b0,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20e0,intUObjectexecGreater_StringString,Object,Greater_StringString,0x0004a4e0,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20e8,intUObjectexecLessEqual_StringString,Object,LessEqual_StringString,0x0004a610,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20f0,intUObjectexecGreaterEqual_StringString,Object,GreaterEqual_StringString,0x0004a740,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c20f8,intUObjectexecEqualEqual_StringString,Object,EqualEqual_StringString,0x0004a870,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c2100,intUObjectexecNotEqual_StringString,Object,NotEqual_StringString,0x0004a9a0,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c2108,intUObjectexecComplementEqual_StringString,Object,ComplementEqual_StringString,0x0004aad0,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c2110,intUObjectexecSubtractEqual_StringString,Object,SubtractEqual_StringString,0x0004cb90,(dispatch: declared),0,,,,,1
+11,0x005c1a58,0x005c2118,intUObjectexecLen,Object,Len,0x0004ac00,(dispatch: declared),1,125,125,0x0004ac00,yes,1
+11,0x005c1a58,0x005c2120,intUObjectexecInStr,Object,InStr,0x0004acc0,(dispatch: declared),1,126,126,0x0004acc0,yes,1
+11,0x005c1a58,0x005c2128,intUObjectexecMid,Object,Mid,0x0004ce70,(dispatch: declared),1,127,127,0x0004ce70,yes,1
+11,0x005c1a58,0x005c2130,intUObjectexecLeft,Object,Left,0x0004cfb0,(dispatch: declared),1,128,128,0x0004cfb0,yes,1
+11,0x005c1a58,0x005c2138,intUObjectexecRight,Object,Right,0x0004ade0,(dispatch: declared),1,234,234,0x0004ade0,yes,1
+11,0x005c1a58,0x005c2140,intUObjectexecCaps,Object,Caps,0x0004aef0,(dispatch: declared),1,235,235,0x0004aef0,yes,1
+11,0x005c1a58,0x005c2148,intUObjectexecLocs,Object,Locs,0x0004afe0,(dispatch: declared),1,238,238,0x0004afe0,yes,1
+11,0x005c1a58,0x005c2150,intUObjectexecChr,Object,Chr,0x000485d0,(dispatch: declared),1,236,236,0x000485d0,yes,1
+11,0x005c1a58,0x005c2158,intUObjectexecAsc,Object,Asc,0x0004b400,(dispatch: declared),1,237,237,0x0004b400,yes,1
+11,0x005c1a58,0x005c2160,intUObjectexecDivide,Object,Divide,0x0004d6a0,(dispatch: declared),1,239,239,0x0004d6a0,yes,1
+11,0x005c1a58,0x005c2168,intUObjectexecSplit,Object,Split,0x0004e500,(dispatch: declared),1,240,240,0x0004e500,yes,1
+11,0x005c1a58,0x005c2170,intUObjectexecRemoveWhitespace,Object,RemoveWhitespace,0x0004b4c0,(dispatch: declared),1,241,241,0x0004b4c0,yes,1
+11,0x005c1a58,0x005c2178,intUObjectexecStrCmp,Object,StrCmp,0x0004b0d0,(dispatch: declared),1,200,200,0x0004b0d0,yes,1
+11,0x005c1a58,0x005c2180,intUObjectexecRepl,Object,Repl,0x0004d0c0,(dispatch: declared),1,201,201,0x0004d0c0,yes,1
+11,0x005c1a58,0x005c2188,intUObjectexecEval,Object,Eval,0x0004b2d0,(dispatch: declared),1,202,202,0x0004b2d0,yes,1
+11,0x005c1a58,0x005c2190,intUObjectexecEqualEqual_NameName,Object,EqualEqual_NameName,0x00046210,(dispatch: declared),1,254,254,0x00046210,yes,1
+11,0x005c1a58,0x005c2198,intUObjectexecNotEqual_NameName,Object,NotEqual_NameName,0x000462a0,(dispatch: declared),1,255,255,0x000462a0,yes,1
+11,0x005c1a58,0x005c21a0,intUObjectexecEqualEqual_ObjectObject,Object,EqualEqual_ObjectObject,0x00046330,(dispatch: declared),1,114,114,0x00046330,yes,1
+11,0x005c1a58,0x005c21a8,intUObjectexecNotEqual_ObjectObject,Object,NotEqual_ObjectObject,0x000463f0,(dispatch: declared),1,119,119,0x000463f0,yes,1
+11,0x005c1a58,0x005c21b0,intUObjectexecLog,Object,Log,0x0004d8b0,(dispatch: declared),1,231,231,0x0004d8b0,yes,1
+11,0x005c1a58,0x005c21b8,intUObjectexecListLogFilters,Object,ListLogFilters,0x000464b0,,1,0,,,,1
+11,0x005c1a58,0x005c21c0,intUObjectexecSetLogFilter,Object,SetLogFilter,0x000464c0,,1,0,,,,1
+11,0x005c1a58,0x005c21c8,intUObjectexecClearLogFilter,Object,ClearLogFilter,0x000464d0,,1,0,,,,1
+11,0x005c1a58,0x005c21d0,intUObjectexecEmptyLogFilters,Object,EmptyLogFilters,0x000464e0,,1,0,,,,1
+11,0x005c1a58,0x005c21d8,intUObjectexecWarn,Object,Warn,0x0004b5b0,(dispatch: declared),1,232,232,0x0004b5b0,yes,1
+11,0x005c1a58,0x005c21e0,intUObjectexecLocalize,Object,Localize,0x0004b680,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c21e8,intUObjectexecNew,Object,New,0x0004b810,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c21f0,intUObjectexecClassIsChildOf,Object,ClassIsChildOf,0x00048640,(dispatch: declared),1,258,258,0x00048640,yes,1
+11,0x005c1a58,0x005c21f8,intUObjectexecGotoState,Object,GotoState,0x000486f0,(dispatch: declared),1,113,113,0x000486f0,yes,1
+11,0x005c1a58,0x005c2200,intUObjectexecEnable,Object,Enable,0x00048900,(dispatch: declared),1,117,117,0x00048900,yes,1
+11,0x005c1a58,0x005c2208,intUObjectexecDisable,Object,Disable,0x000489f0,(dispatch: declared),1,118,118,0x000489f0,yes,1
+11,0x005c1a58,0x005c2210,intUObjectexecGetPropertyText,Object,GetPropertyText,0x0004dba0,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2218,intUObjectexecSetPropertyText,Object,SetPropertyText,0x0004dd00,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2220,intUObjectexecSaveConfig,Object,SaveConfig,0x000467f0,(dispatch: declared),1,536,536,0x000467f0,yes,1
+11,0x005c1a58,0x005c2228,intUObjectexecStaticSaveConfig,Object,StaticSaveConfig,0x00048ab0,,1,0,,,,1
+11,0x005c1a58,0x005c2230,intUObjectexecResetConfig,Object,ResetConfig,0x0004b9c0,(dispatch: slot only),1,0,,,,1
+11,0x005c1a58,0x005c2238,intUObjectexecClearConfig,Object,ClearConfig,0x0004bac0,(dispatch: declared),1,537,537,0x0004bac0,yes,1
+11,0x005c1a58,0x005c2240,intUObjectexecStaticClearConfig,Object,StaticClearConfig,0x0004bbc0,Core,1,0,,,,1
+11,0x005c1a58,0x005c2248,intUObjectexecGetPerObjectNames,Object,GetPerObjectNames,0x0004de60,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2250,intUObjectexecGetEnum,Object,GetEnum,0x00048b20,,1,0,,,,1
+11,0x005c1a58,0x005c2258,intUObjectexecDynamicLoadObject,Object,DynamicLoadObject,0x0004bcf0,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2260,intUObjectexecFindObject,Object,FindObject,0x0004be30,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2268,intUObjectexecIsInState,Object,IsInState,0x00046830,(dispatch: declared),1,281,281,0x00046830,yes,1
+11,0x005c1a58,0x005c2270,intUObjectexecGetStateName,Object,GetStateName,0x000468c0,(dispatch: declared),1,284,284,0x000468c0,yes,1
+11,0x005c1a58,0x005c2278,intUObjectexecHighNative0,Object,HighNative0,0x000464f0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c2280,intUObjectexecHighNative1,Object,HighNative1,0x00046520,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c2288,intUObjectexecHighNative2,Object,HighNative2,0x00046550,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c2290,intUObjectexecHighNative3,Object,HighNative3,0x00046580,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c2298,intUObjectexecHighNative4,Object,HighNative4,0x000465b0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22a0,intUObjectexecHighNative5,Object,HighNative5,0x000465e0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22a8,intUObjectexecHighNative6,Object,HighNative6,0x00046610,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22b0,intUObjectexecHighNative7,Object,HighNative7,0x00046640,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22b8,intUObjectexecHighNative8,Object,HighNative8,0x00046670,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22c0,intUObjectexecHighNative9,Object,HighNative9,0x000466a0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22c8,intUObjectexecHighNative10,Object,HighNative10,0x000466d0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22d0,intUObjectexecHighNative11,Object,HighNative11,0x00046700,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22d8,intUObjectexecHighNative12,Object,HighNative12,0x00046730,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22e0,intUObjectexecHighNative13,Object,HighNative13,0x00046760,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22e8,intUObjectexecHighNative14,Object,HighNative14,0x00046790,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22f0,intUObjectexecHighNative15,Object,HighNative15,0x000467c0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c22f8,intUObjectexecIsA,Object,IsA,0x00046920,(dispatch: declared),1,303,303,0x00046920,yes,1
+11,0x005c1a58,0x005c2300,intUObjectexecIterator,Object,Iterator,0x000469a0,(dispatch: slot only),0,,,,,1
+11,0x005c1a58,0x005c2308,intUObjectexecFindObject,Object,FindObject,0x0004be30,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2310,intUObjectexecClockwiseFrom_IntInt,Object,ClockwiseFrom_IntInt,0x00048520,,1,0,,,,1
+11,0x005c1a58,0x005c2318,intUObjectexecInterpCurveEval,Object,InterpCurveEval,0x0004e9e0,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2320,intUObjectexecInterpCurveGetOutputRange,Object,InterpCurveGetOutputRange,0x0004e830,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2328,intUObjectexecInterpCurveGetInputDomain,Object,InterpCurveGetInputDomain,0x0004e690,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2330,intUObjectexecQuatProduct,Object,QuatProduct,0x00045ac0,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2338,intUObjectexecQuatInvert,Object,QuatInvert,0x00045c30,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2340,intUObjectexecQuatRotateVector,Object,QuatRotateVector,0x00045cd0,,1,0,,,,1
+11,0x005c1a58,0x005c2348,intUObjectexecQuatFindBetween,Object,QuatFindBetween,0x00045d70,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2350,intUObjectexecQuatFromAxisAndAngle,Object,QuatFromAxisAndAngle,0x00045f30,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2358,intUObjectexecQuatFromRotator,Object,QuatFromRotator,0x00046070,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2360,intUObjectexecQuatToRotator,Object,QuatToRotator,0x000460e0,,1,0,,,,1
+11,0x005c1a58,0x005c2368,intUObjectexecQuatSlerp,Object,QuatSlerp,0x00046150,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c2370,intUObjectexecAcos,Object,Acos,0x00043270,,1,0,,,,1
+11,0x005c1a58,0x005c2378,intUObjectexecAsin,Object,Asin,0x000431b0,,1,0,,,,1
+11,0x005c1a58,0x005c2380,intUObjectexecDeleteObject,Object,DeleteObject,0x00046dc0,,1,0,,,,1
+11,0x005c1a58,0x005c2388,intUObjectexecIsOnConsole,Object,IsOnConsole,0x00046ab0,,1,0,,,,1
+11,0x005c1a58,0x005c2390,intUObjectexecStopWatch,Object,StopWatch,0x000469b0,(dispatch: declared),1,535,535,0x000469b0,yes,1
+11,0x005c1a58,0x005c2398,intUObjectexecIsSoaking,Object,IsSoaking,0x00046be0,,1,0,,,,1
+11,0x005c1a58,0x005c23a0,intUObjectexecAllObjects,Object,AllObjects,0x0004e330,(dispatch: declared),1,197,197,0x0004e330,yes,1
+11,0x005c1a58,0x005c23a8,intUObjectexecGetReferencers,Object,GetReferencers,0x00068890,(unnamed),1,0,,,,1
+11,0x005c1a58,0x005c23b0,intUObjectexecPlatformIsMacOS,Object,PlatformIsMacOS,0x00046ae0,,1,0,,,,1
+11,0x005c1a58,0x005c23b8,intUObjectexecPlatformIsUnix,Object,PlatformIsUnix,0x00046b20,,1,0,,,,1
+11,0x005c1a58,0x005c23c0,intUObjectexecPlatformIsWindows,Object,PlatformIsWindows,0x00046b60,,1,0,,,,1
+11,0x005c1a58,0x005c23c8,intUObjectexecPlatformIs64Bit,Object,PlatformIs64Bit,0x00046ba0,,1,0,,,,1
+11,0x005c1a58,0x005c23d0,intUObjectexecSetUTracing,Object,SetUTracing,0x00040510,,1,0,,,,1
+11,0x005c1a58,0x005c23d8,intUObjectexecIsUTracing,Object,IsUTracing,0x00040590,,1,0,,,,1
+11,0x005c1a58,0x005c23e0,intUObjectexecMarkForSaveGame,Object,MarkForSaveGame,0x00046c20,,1,0,,,,1
+12,0x005c23f0,0x005c23f0,intUCommandletexecMain,Commandlet,Main,0x00066be0,(unnamed),1,0,,,,1
+13,0x005c3340,0x005c3340,intUStreamTagexecDumpTag,StreamTag,DumpTag,0x002950e0,,1,0,,,,1
+14,0x005c3350,0x005c3350,intUStreamBaseexecIsCaseSensitive,StreamBase,IsCaseSensitive,0x002926e0,,1,0,,,,1
+14,0x005c3350,0x005c3358,intUStreamBaseexecGetPathSeparator,StreamBase,GetPathSeparator,0x00292970,,1,0,,,,1
+14,0x005c3350,0x005c3360,intUStreamBaseexecMultiplyEqual_StrStr,StreamBase,MultiplyEqual_StrStr,0x00292e90,(unnamed),1,0,,,,1
+14,0x005c3350,0x005c3368,intUStreamBaseexecMultiply_StrStr,StreamBase,Multiply_StrStr,0x00292d50,(unnamed),1,0,,,,1
+15,0x005c3378,0x005c3378,intUStreamexecLoadID3Tag,Stream,LoadID3Tag,0x002957e0,,1,0,,,,1
+15,0x005c3378,0x005c3380,intUStreamexecSaveID3Tag,Stream,SaveID3Tag,0x00295820,,1,0,,,,1
+16,0x005c3390,0x005c3390,intUStreamInterfaceexecLoadPlaylist,StreamInterface,LoadPlaylist,0x00294880,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c3398,intUStreamInterfaceexecValidFile,StreamInterface,ValidFile,0x00293440,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33a0,intUStreamInterfaceexecCreateStream,StreamInterface,CreateStream,0x00295880,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33a8,intUStreamInterfaceexecValidDirectory,StreamInterface,ValidDirectory,0x00293300,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33b0,intUStreamInterfaceexecRemoveDirectory,StreamInterface,RemoveDirectory,0x00293220,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33b8,intUStreamInterfaceexecCreateDirectory,StreamInterface,CreateDirectory,0x00293100,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33c0,intUStreamInterfaceexecGetDirectoryContents,StreamInterface,GetDirectoryContents,0x00294a00,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33c8,intUStreamInterfaceexecGetDriveLetters,StreamInterface,GetDriveLetters,0x00294760,(unnamed),1,0,,,,1
+16,0x005c3390,0x005c33d0,intUStreamInterfaceexecGetBaseDirectory,StreamInterface,GetBaseDirectory,0x00292ff0,,1,0,,,,1
+17,0x005c33e0,0x005c33e0,intUStreamInteractionexecIsPaused,StreamInteraction,IsPaused,0x00292730,,1,0,,,,1
+18,0x005c33f0,0x005c33f0,intUInteractionexecScreenToWorld,Interaction,ScreenToWorld,0x0014f0e0,,1,0,,,,1
+18,0x005c33f0,0x005c33f8,intUInteractionexecWorldToScreen,Interaction,WorldToScreen,0x0014edc0,,1,0,,,,1
+18,0x005c33f0,0x005c3400,intUInteractionexecConsoleCommand,Interaction,ConsoleCommand,0x0014f8a0,(unnamed),1,0,,,,1
+18,0x005c33f0,0x005c3408,intUInteractionexecInitialize,Interaction,Initialize,0x0014eb70,,1,0,,,,1
+19,0x005c3418,0x005c3418,intUSplineexecNextSplineRot,Spline,NextSplineRot,0x00291c50,(unnamed),1,0,,,,1
+19,0x005c3418,0x005c3420,intUSplineexecNextSplinePos,Spline,NextSplinePos,0x00291710,(unnamed),1,0,,,,1
+19,0x005c3418,0x005c3428,intUSplineexecInitSplineRot,Spline,InitSplineRot,0x00291280,(unnamed),1,0,,,,1
+19,0x005c3418,0x005c3430,intUSplineexecInitSplinePath,Spline,InitSplinePath,0x00290ef0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3440,intAActorexecMultiply_ColorFloat,Actor,Multiply_ColorFloat,0x002102e0,(dispatch: declared),1,552,552,0x002102e0,yes,1
+20,0x005c3440,0x005c3448,intAActorexecAdd_ColorColor,Actor,Add_ColorColor,0x00210480,(dispatch: declared),1,551,551,0x00210480,yes,1
+20,0x005c3440,0x005c3450,intAActorexecMultiply_FloatColor,Actor,Multiply_FloatColor,0x002103b0,(dispatch: declared),1,550,550,0x002103b0,yes,1
+20,0x005c3440,0x005c3458,intAActorexecSubtract_ColorColor,Actor,Subtract_ColorColor,0x00210510,(dispatch: declared),1,549,549,0x00210510,yes,1
+20,0x005c3440,0x005c3460,intAActorexecCollidingActors,Actor,CollidingActors,0x00215110,(dispatch: declared),1,321,321,0x00215110,yes,1
+20,0x005c3440,0x005c3468,intAActorexecVisibleCollidingActors,Actor,VisibleCollidingActors,0x00214da0,(dispatch: declared),1,312,312,0x00214da0,yes,1
+20,0x005c3440,0x005c3470,intAActorexecVisibleActors,Actor,VisibleActors,0x00214a30,(dispatch: declared),1,311,311,0x00214a30,yes,1
+20,0x005c3440,0x005c3478,intAActorexecRadiusActors,Actor,RadiusActors,0x00214720,(dispatch: declared),1,310,310,0x00214720,yes,1
+20,0x005c3440,0x005c3480,intAActorexecTraceActors,Actor,TraceActors,0x002143d0,(dispatch: declared),1,309,309,0x002143d0,yes,1
+20,0x005c3440,0x005c3488,intAActorexecTouchingActors,Actor,TouchingActors,0x002141e0,(dispatch: declared),1,307,307,0x002141e0,yes,1
+20,0x005c3440,0x005c3490,intAActorexecBasedActors,Actor,BasedActors,0x00213ff0,(dispatch: declared),1,306,306,0x00213ff0,yes,1
+20,0x005c3440,0x005c3498,intAActorexecChildActors,Actor,ChildActors,0x00213df0,(dispatch: declared),1,305,305,0x00213df0,yes,1
+20,0x005c3440,0x005c34a0,intAActorexecDynamicActors,Actor,DynamicActors,0x00213be0,(dispatch: declared),1,313,313,0x00213be0,yes,1
+20,0x005c3440,0x005c34a8,intAActorexecAllActors,Actor,AllActors,0x002139d0,(dispatch: declared),1,304,304,0x002139d0,yes,1
+20,0x005c3440,0x005c34b0,intAActorexecMoveCacheEntry,Actor,MoveCacheEntry,0x0014b430,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34b8,intAActorexecGetCacheEntry,Actor,GetCacheEntry,0x0014b0f0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34c0,intAActorexecGetAllIntDesc,Actor,GetAllIntDesc,0x0014a910,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34c8,intAActorexecGetAllInt,Actor,GetAllInt,0x0014a360,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34d0,intAActorexecGetNextIntDesc,Actor,GetNextIntDesc,0x0014a5d0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34d8,intAActorexecGetNextInt,Actor,GetNextInt,0x0014a180,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c34e0,intAActorexecGetURLMap,Actor,GetURLMap,0x00149280,(dispatch: declared),1,547,547,0x00149280,yes,1
+20,0x005c3440,0x005c34e8,intAActorexecGetNextSkin,Actor,GetNextSkin,0x0014ac60,(dispatch: declared),1,545,545,0x0014ac60,yes,1
+20,0x005c3440,0x005c34f0,intAActorexecGetMapName,Actor,GetMapName,0x00149460,(dispatch: declared),1,539,539,0x00149460,yes,1
+20,0x005c3440,0x005c34f8,intAActorexecAddToPackageMap,Actor,AddToPackageMap,0x00215d20,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3500,intAActorexecResetStaticFilterState,Actor,ResetStaticFilterState,0x0020c380,,1,0,,,,1
+20,0x005c3440,0x005c3508,intAActorexecSuggestFallVelocity,Actor,SuggestFallVelocity,0x00112270,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3510,intAActorexecPlayerCanSeeMe,Actor,PlayerCanSeeMe,0x0019e510,(dispatch: declared),1,532,532,0x0019e510,yes,1
+20,0x005c3440,0x005c3518,intAActorexecMakeNoise,Actor,MakeNoise,0x00199580,(dispatch: declared),1,512,512,0x00199580,yes,1
+20,0x005c3440,0x005c3520,intAActorexecForceFeedbackSupported,Actor,ForceFeedbackSupported,0x00218fc0,,1,0,,,,1
+20,0x005c3440,0x005c3528,intAActorexecChangeBaseParamsFeedbackEffect,Actor,ChangeBaseParamsFeedbackEffect,0x002180c0,(dispatch: declared),1,569,569,0x002180c0,yes,1
+20,0x005c3440,0x005c3530,intAActorexecChangeSpringFeedbackEffect,Actor,ChangeSpringFeedbackEffect,0x00217f40,(dispatch: declared),1,568,568,0x00217f40,yes,1
+20,0x005c3440,0x005c3538,intAActorexecStopFeedbackEffect,Actor,StopFeedbackEffect,0x00217dc0,(dispatch: declared),1,567,567,0x00217dc0,yes,1
+20,0x005c3440,0x005c3540,intAActorexecPlayFeedbackEffect,Actor,PlayFeedbackEffect,0x00217ca0,(dispatch: declared),1,566,566,0x00217ca0,yes,1
+20,0x005c3440,0x005c3548,intAActorexecGetSoundDuration,Actor,GetSoundDuration,0x0020f090,,1,0,,,,1
+20,0x005c3440,0x005c3550,intAActorexecDemoPlaySound,Actor,DemoPlaySound,0x002126f0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3558,intAActorexecPlayOwnedSound,Actor,PlayOwnedSound,0x00212cd0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3560,intAActorexecPlaySound,Actor,PlaySound,0x00212960,(dispatch: declared),1,264,264,0x00212960,yes,1
+20,0x005c3440,0x005c3568,intAActorexecSetTimer,Actor,SetTimer,0x0020fc50,(dispatch: declared),1,280,280,0x0020fc50,yes,1
+20,0x005c3440,0x005c3570,intAActorexecDestroy,Actor,Destroy,0x0020fc10,(dispatch: declared),1,279,279,0x0020fc10,yes,1
+20,0x005c3440,0x005c3578,intAActorexecSpawn,Actor,Spawn,0x002137e0,(dispatch: declared),1,278,278,0x002137e0,yes,1
+20,0x005c3440,0x005c3580,intAActorexecTraceThisActor,Actor,TraceThisActor,0x0020fa10,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3588,intAActorexecFastTrace,Actor,FastTrace,0x0020f8e0,(dispatch: declared),1,548,548,0x0020f8e0,yes,1
+20,0x005c3440,0x005c3590,intAActorexecTrace,Actor,Trace,0x00213450,(dispatch: declared),1,277,277,0x00213450,yes,1
+20,0x005c3440,0x005c3598,intAActorexecStopAllMusic,Actor,StopAllMusic,0x0020ee60,,1,0,,,,1
+20,0x005c3440,0x005c35a0,intAActorexecStopMusic,Actor,StopMusic,0x0020ed40,,1,0,,,,1
+20,0x005c3440,0x005c35a8,intAActorexecPlayMusic,Actor,PlayMusic,0x00216ed0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c35b0,intAActorexecGetStreamDuration,Actor,GetStreamDuration,0x0020eed0,,1,0,,,,1
+20,0x005c3440,0x005c35b8,intAActorexecSetNextStream,Actor,SetNextStream,0x00216ff0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c35c0,intAActorexecPauseStream,Actor,PauseStream,0x0020ef50,,1,0,,,,1
+20,0x005c3440,0x005c35c8,intAActorexecAdjustVolume,Actor,AdjustVolume,0x0020efe0,,1,0,,,,1
+20,0x005c3440,0x005c35d0,intAActorexecSeekStream,Actor,SeekStream,0x0020ec90,,1,0,,,,1
+20,0x005c3440,0x005c35d8,intAActorexecStopStream,Actor,StopStream,0x0020edd0,,1,0,,,,1
+20,0x005c3440,0x005c35e0,intAActorexecPlayStream,Actor,PlayStream,0x00216cf0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c35e8,intAActorexecAllowMusicPlayback,Actor,AllowMusicPlayback,0x0020ec20,,1,0,,,,1
+20,0x005c3440,0x005c35f0,intAActorexecUnClock,Actor,UnClock,0x002108d0,,1,0,,,,1
+20,0x005c3440,0x005c35f8,intAActorexecClock,Actor,Clock,0x00210820,,1,0,,,,1
+20,0x005c3440,0x005c3600,intAActorexecKIsRagdollAvailable,Actor,KIsRagdollAvailable,0x000a4670,,1,0,,,,1
+20,0x005c3440,0x005c3608,intAActorexecKMakeRagdollAvailable,Actor,KMakeRagdollAvailable,0x000a6bb0,Engine,1,0,,,,1
+20,0x005c3440,0x005c3610,intAActorexecKRemoveAllBoneLifters,Actor,KRemoveAllBoneLifters,0x000a6570,,1,0,,,,1
+20,0x005c3440,0x005c3618,intAActorexecKRemoveLifterFromBone,Actor,KRemoveLifterFromBone,0x000a63e0,Engine,1,0,,,,1
+20,0x005c3440,0x005c3620,intAActorexecKAddBoneLifter,Actor,KAddBoneLifter,0x000a51d0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3628,intAActorexecKScaleJointLimits,Actor,KScaleJointLimits,0x000a9310,,1,0,,,,1
+20,0x005c3440,0x005c3630,intAActorexecKFreezeRagdoll,Actor,KFreezeRagdoll,0x000a4640,,1,0,,,,1
+20,0x005c3440,0x005c3638,intAActorexecKGetSkelMass,Actor,KGetSkelMass,0x000a4a20,,1,0,,,,1
+20,0x005c3440,0x005c3640,intAActorexecKSetSkelVel,Actor,KSetSkelVel,0x000a48d0,,1,0,,,,1
+20,0x005c3440,0x005c3648,intAActorexecKEnableCollision,Actor,KEnableCollision,0x000a4780,,1,0,,,,1
+20,0x005c3440,0x005c3650,intAActorexecKDisableCollision,Actor,KDisableCollision,0x000a46e0,,1,0,,,,1
+20,0x005c3440,0x005c3658,intAActorexecKGetActorGravScale,Actor,KGetActorGravScale,0x000a6390,,1,0,,,,1
+20,0x005c3440,0x005c3660,intAActorexecKSetActorGravScale,Actor,KSetActorGravScale,0x000a6310,,1,0,,,,1
+20,0x005c3440,0x005c3668,intAActorexecKSetBlockKarma,Actor,KSetBlockKarma,0x000a4390,,1,0,,,,1
+20,0x005c3440,0x005c3670,intAActorexecKSetStayUprightParams,Actor,KSetStayUprightParams,0x000a6760,,1,0,,,,1
+20,0x005c3440,0x005c3678,intAActorexecKSetStayUpright,Actor,KSetStayUpright,0x000a6690,,1,0,,,,1
+20,0x005c3440,0x005c3680,intAActorexecKAddAngularImpulse,Actor,KAddAngularImpulse,0x000a45d0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3688,intAActorexecKAddImpulse,Actor,KAddImpulse,0x000a4500,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3690,intAActorexecKIsAwake,Actor,KIsAwake,0x000a44c0,,1,0,,,,1
+20,0x005c3440,0x005c3698,intAActorexecKWake,Actor,KWake,0x000a4490,,1,0,,,,1
+20,0x005c3440,0x005c36a0,intAActorexecKGetImpactThreshold,Actor,KGetImpactThreshold,0x000a4350,,1,0,,,,1
+20,0x005c3440,0x005c36a8,intAActorexecKSetImpactThreshold,Actor,KSetImpactThreshold,0x000a42e0,,1,0,,,,1
+20,0x005c3440,0x005c36b0,intAActorexecKGetCOMPosition,Actor,KGetCOMPosition,0x000a40d0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c36b8,intAActorexecKGetCOMOffset,Actor,KGetCOMOffset,0x000a6af0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c36c0,intAActorexecKSetCOMOffset,Actor,KSetCOMOffset,0x000a6a60,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c36c8,intAActorexecKGetRestitution,Actor,KGetRestitution,0x000a41f0,,1,0,,,,1
+20,0x005c3440,0x005c36d0,intAActorexecKSetRestitution,Actor,KSetRestitution,0x000a4180,,1,0,,,,1
+20,0x005c3440,0x005c36d8,intAActorexecKGetFriction,Actor,KGetFriction,0x000a42a0,,1,0,,,,1
+20,0x005c3440,0x005c36e0,intAActorexecKSetFriction,Actor,KSetFriction,0x000a4230,,1,0,,,,1
+20,0x005c3440,0x005c36e8,intAActorexecKGetDampingProps,Actor,KGetDampingProps,0x000a6200,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c36f0,intAActorexecKSetDampingProps,Actor,KSetDampingProps,0x000a6150,,1,0,,,,1
+20,0x005c3440,0x005c36f8,intAActorexecKGetInertiaTensor,Actor,KGetInertiaTensor,0x000a6810,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3700,intAActorexecKSetInertiaTensor,Actor,KSetInertiaTensor,0x000a6980,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3708,intAActorexecKGetMass,Actor,KGetMass,0x000a6100,,1,0,,,,1
+20,0x005c3440,0x005c3710,intAActorexecKSetMass,Actor,KSetMass,0x000a6080,,1,0,,,,1
+20,0x005c3440,0x005c3718,intAActorexecKRBVecFromVector,Actor,KRBVecFromVector,0x000a4040,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3720,intAActorexecKRBVecToVector,Actor,KRBVecToVector,0x000a3fb0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3728,intAActorexecKDrawRigidBodyState,Actor,KDrawRigidBodyState,0x000a3f30,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3730,intAActorexecKGetRigidBodyState,Actor,KGetRigidBodyState,0x000a3ea0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3738,intAActorexecKGetRBQuaternion,Actor,KGetRBQuaternion,0x000a3db0,,1,0,,,,1
+20,0x005c3440,0x005c3740,intAActorexecKSetSimParams,Actor,KSetSimParams,0x000a3d40,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3748,intAActorexecKGetSimParams,Actor,KGetSimParams,0x000a3cb0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3750,intAActorexecOnlyAffectPawns,Actor,OnlyAffectPawns,0x0020e790,,1,0,,,,1
+20,0x005c3440,0x005c3758,intAActorexecSetPhysics,Actor,SetPhysics,0x001a6e50,(dispatch: declared),1,3970,3970,0x001a6e50,yes,1
+20,0x005c3440,0x005c3760,intAActorexecFinishInterpolation,Actor,FinishInterpolation,0x0020cb30,(dispatch: declared),1,301,301,0x0020cb30,yes,1
+20,0x005c3440,0x005c3768,intAActorexecDebugUnclock,Actor,DebugUnclock,0x002109e0,,1,0,,,,1
+20,0x005c3440,0x005c3770,intAActorexecDebugClock,Actor,DebugClock,0x00210990,,1,0,,,,1
+20,0x005c3440,0x005c3778,intAActorexecClearStayingDebugLines,Actor,ClearStayingDebugLines,0x00217950,,1,0,,,,1
+20,0x005c3440,0x005c3780,intAActorexecDrawDebugSphere,Actor,DrawDebugSphere,0x00217b60,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3788,intAActorexecDrawDebugCircle,Actor,DrawDebugCircle,0x002179c0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3790,intAActorexecDrawStayingDebugLine,Actor,DrawStayingDebugLine,0x00217830,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3798,intAActorexecDrawDebugLine,Actor,DrawDebugLine,0x00217710,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37a0,intAActorexecGetRenderBoundingSphere,Actor,GetRenderBoundingSphere,0x00215c50,,1,0,,,,1
+20,0x005c3440,0x005c37a8,intAActorexecGetUrlOption,Actor,GetUrlOption,0x00217510,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37b0,intAActorexecUpdateURL,Actor,UpdateURL,0x002172f0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37b8,intAActorexecHasBoneSurfaces,Actor,HasBoneSurfaces,0x0020d5c0,,1,0,,,,1
+20,0x005c3440,0x005c37c0,intAActorexecGetBoneSurface,Actor,GetBoneSurface,0x00211ab0,,1,0,,,,1
+20,0x005c3440,0x005c37c8,intAActorexecGetClosestBone,Actor,GetClosestBone,0x00211b90,,1,0,,,,1
+20,0x005c3440,0x005c37d0,intAActorexecAnimIsInGroup,Actor,AnimIsInGroup,0x0020e5c0,,1,0,,,,1
+20,0x005c3440,0x005c37d8,intAActorexecGetAnimParams,Actor,GetAnimParams,0x0020e400,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37e0,intAActorexecSetBoneRotation,Actor,SetBoneRotation,0x0020e150,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37e8,intAActorexecSetBoneLocation,Actor,SetBoneLocation,0x0020e060,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37f0,intAActorexecSetBoneDirection,Actor,SetBoneDirection,0x0020e260,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c37f8,intAActorexecSetBoneScale,Actor,SetBoneScale,0x0020df90,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3800,intAActorexecLockRootMotion,Actor,LockRootMotion,0x0020dab0,,1,0,,,,1
+20,0x005c3440,0x005c3808,intAActorexecDetachFromBone,Actor,DetachFromBone,0x0020f800,,1,0,,,,1
+20,0x005c3440,0x005c3810,intAActorexecAttachToBone,Actor,AttachToBone,0x0020f700,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3818,intAActorexecGetRootRotationDelta,Actor,GetRootRotationDelta,0x0020d9f0,,1,0,,,,1
+20,0x005c3440,0x005c3820,intAActorexecGetRootLocationDelta,Actor,GetRootLocationDelta,0x0020d930,,1,0,,,,1
+20,0x005c3440,0x005c3828,intAActorexecGetRootRotation,Actor,GetRootRotation,0x0020d870,,1,0,,,,1
+20,0x005c3440,0x005c3830,intAActorexecGetRootLocation,Actor,GetRootLocation,0x0020d7b0,,1,0,,,,1
+20,0x005c3440,0x005c3838,intAActorexecGetBoneRotation,Actor,GetBoneRotation,0x0020d650,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3840,intAActorexecGetBonePos,Actor,GetBonePos,0x0020d3e0,,1,0,,,,1
+20,0x005c3440,0x005c3848,intAActorexecGetBoneCoords,Actor,GetBoneCoords,0x0020d240,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3850,intAActorexecAnimBlendToAlpha,Actor,AnimBlendToAlpha,0x0020dcd0,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3858,intAActorexecAnimBlendParams,Actor,AnimBlendParams,0x0020db80,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3860,intAActorexecBoneRefresh,Actor,BoneRefresh,0x002119f0,,1,0,,,,1
+20,0x005c3440,0x005c3868,intAActorexecLinkMesh,Actor,LinkMesh,0x00211870,,1,0,,,,1
+20,0x005c3440,0x005c3870,intAActorexecLinkSkelAnim,Actor,LinkSkelAnim,0x002116c0,,1,0,,,,1
+20,0x005c3440,0x005c3878,intAActorexecGetNotifyChannel,Actor,GetNotifyChannel,0x0020ddf0,,1,0,,,,1
+20,0x005c3440,0x005c3880,intAActorexecEnableChannelNotify,Actor,EnableChannelNotify,0x0020dea0,,1,0,,,,1
+20,0x005c3440,0x005c3888,intAActorexecCurrentLIPSincAnim,Actor,CurrentLIPSincAnim,0x00216b10,,1,0,,,,1
+20,0x005c3440,0x005c3890,intAActorexecIsPlayingLIPSincAnim,Actor,IsPlayingLIPSincAnim,0x002113b0,,1,0,,,,1
+20,0x005c3440,0x005c3898,intAActorexecHasLIPSincAnim,Actor,HasLIPSincAnim,0x00211470,,1,0,,,,1
+20,0x005c3440,0x005c38a0,intAActorexecStopLIPSincAnim,Actor,StopLIPSincAnim,0x00211560,,1,0,,,,1
+20,0x005c3440,0x005c38a8,intAActorexecPlayLIPSincAnim,Actor,PlayLIPSincAnim,0x00211210,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c38b0,intAActorexecAnimStopLooping,Actor,AnimStopLooping,0x0020cf20,,1,0,,,,1
+20,0x005c3440,0x005c38b8,intAActorexecIsTweening,Actor,IsTweening,0x0020d110,,1,0,,,,1
+20,0x005c3440,0x005c38c0,intAActorexecSetAnimFrame,Actor,SetAnimFrame,0x0020d040,,1,0,,,,1
+20,0x005c3440,0x005c38c8,intAActorexecFreezeAnimAt,Actor,FreezeAnimAt,0x0020cfa0,,1,0,,,,1
+20,0x005c3440,0x005c38d0,intAActorexecStopAnimating,Actor,StopAnimating,0x00211620,,1,0,,,,1
+20,0x005c3440,0x005c38d8,intAActorexecHasAnim,Actor,HasAnim,0x0020d1a0,(dispatch: declared),1,263,263,0x0020d1a0,yes,1
+20,0x005c3440,0x005c38e0,intAActorexecFinishAnim,Actor,FinishAnim,0x0020c8a0,(dispatch: declared),1,261,261,0x0020c8a0,yes,1
+20,0x005c3440,0x005c38e8,intAActorexecIsAnimating,Actor,IsAnimating,0x0020ceb0,(dispatch: declared),1,282,282,0x0020ceb0,yes,1
+20,0x005c3440,0x005c38f0,intAActorexecTweenAnim,Actor,TweenAnim,0x0020cdf0,(dispatch: declared),1,294,294,0x0020cdf0,yes,1
+20,0x005c3440,0x005c38f8,intAActorexecLoopAnim,Actor,LoopAnim,0x0020cd00,(dispatch: declared),1,260,260,0x0020cd00,yes,1
+20,0x005c3440,0x005c3900,intAActorexecPlayAnim,Actor,PlayAnim,0x0020cc10,(dispatch: declared),1,259,259,0x0020cc10,yes,1
+20,0x005c3440,0x005c3908,intAActorexecGetMeshName,Actor,GetMeshName,0x00216a50,,1,0,,,,1
+20,0x005c3440,0x005c3910,intAActorexecSetMeshMaterials,Actor,SetMeshMaterials,0x00219190,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3918,intAActorexecResetSkins,Actor,ResetSkins,0x00218350,,1,0,,,,1
+20,0x005c3440,0x005c3920,intAActorexecIsJoinedTo,Actor,IsJoinedTo,0x0020e9a0,,1,0,,,,1
+20,0x005c3440,0x005c3928,intAActorexecSetOwner,Actor,SetOwner,0x0020f870,(dispatch: declared),1,272,272,0x0020f870,yes,1
+20,0x005c3440,0x005c3930,intAActorexecSetBase,Actor,SetBase,0x0020e8e0,(dispatch: declared),1,298,298,0x0020e8e0,yes,1
+20,0x005c3440,0x005c3938,intAActorexecAutonomousPhysics,Actor,AutonomousPhysics,0x001a6ef0,(dispatch: declared),1,3971,3971,0x001a6ef0,yes,1
+20,0x005c3440,0x005c3940,intAActorexecMoveSmooth,Actor,MoveSmooth,0x001b25b0,(dispatch: declared),1,3969,3969,0x001b25b0,yes,1
+20,0x005c3440,0x005c3948,intAActorexecSetRelativeLocation,Actor,SetRelativeLocation,0x0020f310,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3950,intAActorexecSetRelativeRotation,Actor,SetRelativeRotation,0x002130a0,,1,0,,,,1
+20,0x005c3440,0x005c3958,intAActorexecSetRotation,Actor,SetRotation,0x0020f5f0,(dispatch: declared),1,299,299,0x0020f5f0,yes,1
+20,0x005c3440,0x005c3960,intAActorexecSetLocationNoCollision,Actor,SetLocationNoCollision,0x0020f280,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3968,intAActorexecSetLocation,Actor,SetLocation,0x0020f1f0,(dispatch: declared),1,267,267,0x0020f1f0,yes,1
+20,0x005c3440,0x005c3970,intAActorexecMove,Actor,Move,0x0020f100,(dispatch: declared),1,266,266,0x0020f100,yes,1
+20,0x005c3440,0x005c3978,intAActorexecGetCollisionBoundingBox,Actor,GetCollisionBoundingBox,0x0020ebc0,,1,0,,,,1
+20,0x005c3440,0x005c3980,intAActorexecSetDrawType,Actor,SetDrawType,0x0020eae0,,1,0,,,,1
+20,0x005c3440,0x005c3988,intAActorexecSetStaticMesh,Actor,SetStaticMesh,0x0020ea80,,1,0,,,,1
+20,0x005c3440,0x005c3990,intAActorexecSetDrawScale3D,Actor,SetDrawScale3D,0x0020eb40,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c3998,intAActorexecSetDrawScale,Actor,SetDrawScale,0x0020ea10,,1,0,,,,1
+20,0x005c3440,0x005c39a0,intAActorexecSetCollisionSize,Actor,SetCollisionSize,0x0020e840,(dispatch: declared),1,283,283,0x0020e840,yes,1
+20,0x005c3440,0x005c39a8,intAActorexecSetCollision,Actor,SetCollision,0x0020e6c0,(dispatch: declared),1,262,262,0x0020e6c0,yes,1
+20,0x005c3440,0x005c39b0,intAActorexecSleep,Actor,Sleep,0x0020c830,(dispatch: declared),1,256,256,0x0020c830,yes,1
+20,0x005c3440,0x005c39b8,intAActorexecShouldBeHidden,Actor,ShouldBeHidden,0x0020c3c0,,1,0,,,,1
+20,0x005c3440,0x005c39c0,intAActorexecError,Actor,Error,0x002162e0,(dispatch: declared),1,233,233,0x002162e0,yes,1
+20,0x005c3440,0x005c39c8,intAActorexecTextToSpeech,Actor,TextToSpeech,0x00216200,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c39d0,intAActorexecCopyObjectToClipboard,Actor,CopyObjectToClipboard,0x00215f80,(unnamed),1,0,,,,1
+20,0x005c3440,0x005c39d8,intAActorexecConsoleCommand,Actor,ConsoleCommand,0x002184f0,(unnamed),1,0,,,,1
+21,0x005c39e8,0x005c39e8,intUTrailEmitterexecResetTrail,TrailEmitter,ResetTrail,0x002837b0,,1,0,,,,1
+22,0x005c39f8,0x005c39f8,intUParticleEmitterexecReset,ParticleEmitter,Reset,0x00187b10,,1,0,,,,1
+22,0x005c39f8,0x005c3a00,intUParticleEmitterexecTrigger,ParticleEmitter,Trigger,0x00187a30,(unnamed),1,0,,,,1
+22,0x005c39f8,0x005c3a08,intUParticleEmitterexecSpawnParticle,ParticleEmitter,SpawnParticle,0x00187f70,(unnamed),1,0,,,,1
+23,0x005c3a18,0x005c3a18,intUMaterialexecMaterialVSize,Material,MaterialVSize,0x00169a20,,1,0,,,,1
+23,0x005c3a18,0x005c3a20,intUMaterialexecMaterialUSize,Material,MaterialUSize,0x001699e0,,1,0,,,,1
+24,0x005c3a30,0x005c3a30,intATerrainInfoexecPokeTerrain,TerrainInfo,PokeTerrain,0x00270db0,(unnamed),1,0,,,,1
+25,0x005c3a40,0x005c3a40,intASVehicleexecUpdateVehicle,SVehicle,UpdateVehicle,0x00260aa0,,1,0,,,,1
+25,0x005c3a40,0x005c3a48,intASVehicleexecGraphData,SVehicle,GraphData,0x00261770,(unnamed),1,0,,,,1
+26,0x005c3a58,0x005c3a58,intAPawnexecForceCrouch,Pawn,ForceCrouch,0x0019e5f0,,1,0,,,,1
+26,0x005c3a58,0x005c3a60,intAPawnexecReachedDestination,Pawn,ReachedDestination,0x0019e620,(unnamed),1,0,,,,1
+26,0x005c3a58,0x005c3a68,intAPawnexecUpdateTwistLook,Pawn,UpdateTwistLook,0x001a3eb0,,1,0,,,,1
+26,0x005c3a58,0x005c3a70,intAPawnexecSetTwistLook,Pawn,SetTwistLook,0x001a1080,,1,0,,,,1
+26,0x005c3a58,0x005c3a78,intAPawnexecSetViewPitch,Pawn,SetViewPitch,0x00195340,,1,0,,,,1
+27,0x005c3a88,0x005c3a88,intAShadowProjectorexecUpdateShadow,ShadowProjector,UpdateShadow,0x0021dbb0,,1,0,,,,1
+28,0x005c3a98,0x005c3a98,intAProjectorexecDetachActor,Projector,DetachActor,0x001ce1d0,,1,0,,,,1
+28,0x005c3a98,0x005c3aa0,intAProjectorexecAttachActor,Projector,AttachActor,0x001ce530,(unnamed),1,0,,,,1
+28,0x005c3a98,0x005c3aa8,intAProjectorexecAbandonProjector,Projector,AbandonProjector,0x001cbb00,,1,0,,,,1
+28,0x005c3a98,0x005c3ab0,intAProjectorexecDetachProjector,Projector,DetachProjector,0x001cbaa0,,1,0,,,,1
+28,0x005c3a98,0x005c3ab8,intAProjectorexecAttachProjector,Projector,AttachProjector,0x001cba40,,1,0,,,,1
+29,0x005c3ac8,0x005c3ac8,intASecurityexecLocalPerform,Security,LocalPerform,0x0021b5f0,(unnamed),1,0,,,,1
+29,0x005c3ac8,0x005c3ad0,intASecurityexecNativePerform,Security,NativePerform,0x0021ada0,(unnamed),1,0,,,,1
+30,0x005c3ae0,0x005c3ae0,intUScriptedTextureexecDrawPortal,ScriptedTexture,DrawPortal,0x0021a590,(unnamed),1,0,,,,1
+30,0x005c3ae0,0x005c3ae8,intUScriptedTextureexecDrawTile,ScriptedTexture,DrawTile,0x00219c40,(unnamed),1,0,,,,1
+30,0x005c3ae0,0x005c3af0,intUScriptedTextureexecTextSize,ScriptedTexture,TextSize,0x0021a390,(unnamed),1,0,,,,1
+30,0x005c3ae0,0x005c3af8,intUScriptedTextureexecDrawText,ScriptedTexture,DrawText,0x0021a1e0,(unnamed),1,0,,,,1
+30,0x005c3ae0,0x005c3b00,intUScriptedTextureexecSetSize,ScriptedTexture,SetSize,0x00219b90,,1,0,,,,1
+31,0x005c3b10,0x005c3b10,intASceneManagerexecAbortScene,SceneManager,AbortScene,0x00204000,,1,0,,,,1
+31,0x005c3b10,0x005c3b18,intASceneManagerexecGetTotalSceneTime,SceneManager,GetTotalSceneTime,0x00204710,,1,0,,,,1
+32,0x005c3b28,0x005c3b28,intUPlayInfoexecSort,PlayInfo,Sort,0x001c7fe0,(dispatch: declared),1,709,709,0x001c7fe0,yes,1
+32,0x005c3b28,0x005c3b30,intUPlayInfoexecFindIndex,PlayInfo,FindIndex,0x001c7cc0,(dispatch: declared),1,708,708,0x001c7cc0,yes,1
+32,0x005c3b28,0x005c3b38,intUPlayInfoexecGetSettings,PlayInfo,GetSettings,0x001c8a10,(dispatch: declared),1,707,707,0x001c8a10,yes,1
+32,0x005c3b28,0x005c3b40,intUPlayInfoexecStoreSetting,PlayInfo,StoreSetting,0x001c9570,(dispatch: declared),1,706,706,0x001c9570,yes,1
+32,0x005c3b28,0x005c3b48,intUPlayInfoexecSaveSettings,PlayInfo,SaveSettings,0x001c8700,(dispatch: declared),1,705,705,0x001c8700,yes,1
+32,0x005c3b28,0x005c3b50,intUPlayInfoexecAddSetting,PlayInfo,AddSetting,0x001c6a30,(dispatch: declared),1,704,704,0x001c6a30,yes,1
+32,0x005c3b28,0x005c3b58,intUPlayInfoexecPopClass,PlayInfo,PopClass,0x001c6940,(dispatch: declared),1,703,703,0x001c6940,yes,1
+32,0x005c3b28,0x005c3b60,intUPlayInfoexecRemoveClass,PlayInfo,RemoveClass,0x001c82e0,(dispatch: declared),1,702,702,0x001c82e0,yes,1
+32,0x005c3b28,0x005c3b68,intUPlayInfoexecAddClass,PlayInfo,AddClass,0x001c66f0,(dispatch: declared),1,701,701,0x001c66f0,yes,1
+32,0x005c3b28,0x005c3b70,intUPlayInfoexecClear,PlayInfo,Clear,0x001c8270,(dispatch: declared),1,700,700,0x001c8270,yes,1
+33,0x005c3b80,0x005c3b80,intUStatsWriteexecSubmit,StatsWrite,Submit,0x001c0a00,,1,0,,,,1
+33,0x005c3b80,0x005c3b88,intUStatsWriteexecAddUser,StatsWrite,AddUser,0x001c45f0,,1,0,,,,1
+34,0x005c3b98,0x005c3b98,intUStatsQueryexecHasPendingData,StatsQuery,HasPendingData,0x001c04b0,,1,0,,,,1
+34,0x005c3b98,0x005c3ba0,intUStatsQueryexecSubmit,StatsQuery,Submit,0x001c44b0,,1,0,,,,1
+34,0x005c3b98,0x005c3ba8,intUStatsQueryexecAddCharacter,StatsQuery,AddCharacter,0x001c43b0,,1,0,,,,1
+34,0x005c3b98,0x005c3bb0,intUStatsQueryexecAddWeapon,StatsQuery,AddWeapon,0x001c4430,,1,0,,,,1
+34,0x005c3b98,0x005c3bb8,intUStatsQueryexecAddMap,StatsQuery,AddMap,0x001c4330,,1,0,,,,1
+34,0x005c3b98,0x005c3bc0,intUStatsQueryexecAddGeneralStats,StatsQuery,AddGeneralStats,0x001c4300,,1,0,,,,1
+35,0x005c3bd0,0x005c3bd0,intUPlayerStatCacheexecGetQueriedStats,PlayerStatCache,GetQueriedStats,0x001c1500,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3be0,intUPlayerStatsexecPrintTable,PlayerStats,PrintTable,0x001c0c30,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3be8,intUPlayerStatsexecGetFloatStatByMap,PlayerStats,GetFloatStatByMap,0x001c3490,,1,0,,,,1
+36,0x005c3be0,0x005c3bf0,intUPlayerStatsexecSetFloatStatByMap,PlayerStats,SetFloatStatByMap,0x001c3520,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3bf8,intUPlayerStatsexecGetIntStatByMap,PlayerStats,GetIntStatByMap,0x001c3610,,1,0,,,,1
+36,0x005c3be0,0x005c3c00,intUPlayerStatsexecSetIntStatByMap,PlayerStats,SetIntStatByMap,0x001c36a0,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c08,intUPlayerStatsexecGetFloatStatByWeapon,PlayerStats,GetFloatStatByWeapon,0x001c37a0,,1,0,,,,1
+36,0x005c3be0,0x005c3c10,intUPlayerStatsexecSetFloatStatByWeapon,PlayerStats,SetFloatStatByWeapon,0x001c3830,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c18,intUPlayerStatsexecGetIntStatByWeapon,PlayerStats,GetIntStatByWeapon,0x001c3920,,1,0,,,,1
+36,0x005c3be0,0x005c3c20,intUPlayerStatsexecSetIntStatByWeapon,PlayerStats,SetIntStatByWeapon,0x001c39b0,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c28,intUPlayerStatsexecGetFloatStatByCharacter,PlayerStats,GetFloatStatByCharacter,0x001c3ab0,,1,0,,,,1
+36,0x005c3be0,0x005c3c30,intUPlayerStatsexecSetFloatStatByCharacter,PlayerStats,SetFloatStatByCharacter,0x001c3b40,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c38,intUPlayerStatsexecGetIntStatByCharacter,PlayerStats,GetIntStatByCharacter,0x001c3c30,,1,0,,,,1
+36,0x005c3be0,0x005c3c40,intUPlayerStatsexecSetIntStatByCharacter,PlayerStats,SetIntStatByCharacter,0x001c3cc0,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c48,intUPlayerStatsexecGetIntStat,PlayerStats,GetIntStat,0x001c0f60,,1,0,,,,1
+36,0x005c3be0,0x005c3c50,intUPlayerStatsexecSetIntStatIfHigher,PlayerStats,SetIntStatIfHigher,0x001c06f0,,1,0,,,,1
+36,0x005c3be0,0x005c3c58,intUPlayerStatsexecSetIntStat,PlayerStats,SetIntStat,0x001c0fe0,(unnamed),1,0,,,,1
+36,0x005c3be0,0x005c3c60,intUPlayerStatsexecResetValues,PlayerStats,ResetValues,0x001c10c0,,1,0,,,,1
+36,0x005c3be0,0x005c3c68,intUPlayerStatsexecInitialize,PlayerStats,Initialize,0x001c4c40,,1,0,,,,1
+37,0x005c3c78,0x005c3c78,intUPlayerProfileexecGetSavedGames,PlayerProfile,GetSavedGames,0x001bf0b0,(unnamed),1,0,,,,1
+37,0x005c3c78,0x005c3c80,intUPlayerProfileexecLoadProfile,PlayerProfile,LoadProfile,0x001bfd00,(unnamed),1,0,,,,1
+37,0x005c3c78,0x005c3c88,intUPlayerProfileexecSaveProfile,PlayerProfile,SaveProfile,0x001bf660,(unnamed),1,0,,,,1
+37,0x005c3c78,0x005c3c90,intUPlayerProfileexecDeleteProfile,PlayerProfile,DeleteProfile,0x001bea60,(unnamed),1,0,,,,1
+37,0x005c3c78,0x005c3c98,intUPlayerProfileexecListProfiles,PlayerProfile,ListProfiles,0x001bef40,(unnamed),1,0,,,,1
+38,0x005c3ca8,0x005c3ca8,intAEmitterexecKill,Emitter,Kill,0x0018d860,,1,0,,,,1
+39,0x005c3cb8,0x005c3cb8,intUMovieTextureexecInitializeMovie,MovieTexture,InitializeMovie,0x0017cbe0,,1,0,,,,1
+40,0x005c3cc8,0x005c3cc8,intUMovieexecGetHeight,Movie,GetHeight,0x0017c5f0,,1,0,,,,1
+40,0x005c3cc8,0x005c3cd0,intUMovieexecGetWidth,Movie,GetWidth,0x0017c5b0,,1,0,,,,1
+40,0x005c3cc8,0x005c3cd8,intUMovieexecIsPlaying,Movie,IsPlaying,0x0017c570,,1,0,,,,1
+40,0x005c3cc8,0x005c3ce0,intUMovieexecStopAtEnd,Movie,StopAtEnd,0x0017c530,,1,0,,,,1
+40,0x005c3cc8,0x005c3ce8,intUMovieexecStopNow,Movie,StopNow,0x0017c4f0,,1,0,,,,1
+40,0x005c3cc8,0x005c3cf0,intUMovieexecIsPaused,Movie,IsPaused,0x0017c4b0,,1,0,,,,1
+40,0x005c3cc8,0x005c3cf8,intUMovieexecPause,Movie,Pause,0x0017c440,,1,0,,,,1
+40,0x005c3cc8,0x005c3d00,intUMovieexecPlay,Movie,Play,0x0017ce50,(unnamed),1,0,,,,1
+41,0x005c3d10,0x005c3d10,intUInteractionMasterexecTravel,InteractionMaster,Travel,0x0014fff0,(unnamed),1,0,,,,1
+42,0x005c3d20,0x005c3d20,intAFluidSurfaceInfoexecPling,FluidSurfaceInfo,Pling,0x0012c3b0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d30,intUCanvasexecGetTextWinCursor,Canvas,GetTextWinCursor,0x000ff040,,1,0,,,,1
+43,0x005c3d30,0x005c3d38,intUCanvasexecSetTextWinMaterials,Canvas,SetTextWinMaterials,0x000fedf0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d40,intUCanvasexecScrollTextWindow,Canvas,ScrollTextWindow,0x000ff3b0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d48,intUCanvasexecDrawTextWindow,Canvas,DrawTextWindow,0x000ff1d0,,1,0,,,,1
+43,0x005c3d30,0x005c3d50,intUCanvasexecDrawTextInWin,Canvas,DrawTextInWin,0x00105eb0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d58,intUCanvasexecSetTextWinCursor,Canvas,SetTextWinCursor,0x000fefb0,,1,0,,,,1
+43,0x005c3d30,0x005c3d60,intUCanvasexecSetTextWinScroll,Canvas,SetTextWinScroll,0x000feeb0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d68,intUCanvasexecGetTextWinDimensions,Canvas,GetTextWinDimensions,0x000fec40,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d70,intUCanvasexecSetTextWinDimensions,Canvas,SetTextWinDimensions,0x000feb40,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d78,intUCanvasexecDrawActorClipped,Canvas,DrawActorClipped,0x00102310,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d80,intUCanvasexecDrawTextJustified,Canvas,DrawTextJustified,0x00104840,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d88,intUCanvasexecDrawTileScaled,Canvas,DrawTileScaled,0x00100d20,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d90,intUCanvasexecDrawTileJustified,Canvas,DrawTileJustified,0x00100fb0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3d98,intUCanvasexecDrawTileStretched,Canvas,DrawTileStretched,0x000ffce0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3da0,intUCanvasexecDrawTilePartialStretched,Canvas,DrawTilePartialStretched,0x000ffc10,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3da8,intUCanvasexecWrapText,Canvas,WrapText,0x001066a0,Engine,1,0,,,,1
+43,0x005c3d30,0x005c3db0,intUCanvasexecWrapStringToArray,Canvas,WrapStringToArray,0x00106aa0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3db8,intUCanvasexecClear,Canvas,Clear,0x000ffb40,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3dc0,intUCanvasexecDrawScreenActor,Canvas,DrawScreenActor,0x00103310,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3dc8,intUCanvasexecSetScreenProjector,Canvas,SetScreenProjector,0x000ffa70,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3dd0,intUCanvasexecSetScreenLight,Canvas,SetScreenLight,0x000ff9a0,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3dd8,intUCanvasexecGetCameraLocation,Canvas,GetCameraLocation,0x00102d20,(unnamed),1,0,,,,1
+43,0x005c3d30,0x005c3de0,intUCanvasexecWorldToScreen,Canvas,WorldToScreen,0x00102a30,,1,0,,,,1
+43,0x005c3d30,0x005c3de8,intUCanvasexecDrawPortal,Canvas,DrawPortal,0x000ff550,(dispatch: declared),1,480,480,0x000ff550,yes,1
+43,0x005c3d30,0x005c3df0,intUCanvasexecTextSize,Canvas,TextSize,0x001046c0,(dispatch: declared),1,470,470,0x001046c0,yes,1
+43,0x005c3d30,0x005c3df8,intUCanvasexecDrawTextClipped,Canvas,DrawTextClipped,0x00104470,(dispatch: declared),1,469,469,0x00104470,yes,1
+43,0x005c3d30,0x005c3e00,intUCanvasexecDrawTileClipped,Canvas,DrawTileClipped,0x001026d0,(dispatch: declared),1,468,468,0x001026d0,yes,1
+43,0x005c3d30,0x005c3e08,intUCanvasexecDrawActor,Canvas,DrawActor,0x00102210,(dispatch: declared),1,467,467,0x00102210,yes,1
+43,0x005c3d30,0x005c3e10,intUCanvasexecDrawTile,Canvas,DrawTile,0x00101a00,(dispatch: declared),1,466,466,0x00101a00,yes,1
+43,0x005c3d30,0x005c3e18,intUCanvasexecDrawText,Canvas,DrawText,0x00105590,(dispatch: declared),1,465,465,0x00105590,yes,1
+43,0x005c3d30,0x005c3e20,intUCanvasexecStrLen,Canvas,StrLen,0x00103df0,(dispatch: declared),1,464,464,0x00103df0,yes,1
+44,0x005c3e30,0x005c3e30,intUCacheManagerexecGetAnnouncerRecord,CacheManager,GetAnnouncerRecord,0x000f64c0,(dispatch: declared),1,883,883,0x000f64c0,yes,1
+44,0x005c3e30,0x005c3e38,intUCacheManagerexecGetVehicleRecord,CacheManager,GetVehicleRecord,0x000f6320,(dispatch: declared),1,882,882,0x000f6320,yes,1
+44,0x005c3e30,0x005c3e40,intUCacheManagerexecGetWeaponRecord,CacheManager,GetWeaponRecord,0x000f63f0,(dispatch: declared),1,881,881,0x000f63f0,yes,1
+44,0x005c3e30,0x005c3e48,intUCacheManagerexecGetMutatorRecord,CacheManager,GetMutatorRecord,0x000f6250,(dispatch: declared),1,880,880,0x000f6250,yes,1
+44,0x005c3e30,0x005c3e50,intUCacheManagerexecGetMapRecord,CacheManager,GetMapRecord,0x000f6180,(dispatch: declared),1,819,819,0x000f6180,yes,1
+44,0x005c3e30,0x005c3e58,intUCacheManagerexecGetGameRecord,CacheManager,GetGameRecord,0x000f60b0,(dispatch: declared),1,818,818,0x000f60b0,yes,1
+44,0x005c3e30,0x005c3e60,intUCacheManagerexecGetTeamSymbolList,CacheManager,GetTeamSymbolList,0x000ee710,(dispatch: declared),1,811,811,0x000ee710,yes,1
+44,0x005c3e30,0x005c3e68,intUCacheManagerexecGetAnnouncerList,CacheManager,GetAnnouncerList,0x000f5450,(dispatch: declared),1,810,810,0x000f5450,yes,1
+44,0x005c3e30,0x005c3e70,intUCacheManagerexecGetMutatorList,CacheManager,GetMutatorList,0x000f4c30,(dispatch: declared),1,809,809,0x000f4c30,yes,1
+44,0x005c3e30,0x005c3e78,intUCacheManagerexecGetCrosshairList,CacheManager,GetCrosshairList,0x000f52e0,(dispatch: declared),1,808,808,0x000f52e0,yes,1
+44,0x005c3e30,0x005c3e80,intUCacheManagerexecGetVehicleList,CacheManager,GetVehicleList,0x000f5170,(dispatch: declared),1,807,807,0x000f5170,yes,1
+44,0x005c3e30,0x005c3e88,intUCacheManagerexecGetWeaponList,CacheManager,GetWeaponList,0x000f5000,(dispatch: declared),1,806,806,0x000f5000,yes,1
+44,0x005c3e30,0x005c3e90,intUCacheManagerexecGetMapList,CacheManager,GetMapList,0x000f4da0,(dispatch: declared),1,805,805,0x000f4da0,yes,1
+44,0x005c3e30,0x005c3e98,intUCacheManagerexecGetGameTypeList,CacheManager,GetGameTypeList,0x000f4ad0,(dispatch: declared),1,804,804,0x000f4ad0,yes,1
+44,0x005c3e30,0x005c3ea0,intUCacheManagerexecIsDefaultContent,CacheManager,IsDefaultContent,0x000edc70,(dispatch: declared),1,830,830,0x000edc70,yes,1
+44,0x005c3e30,0x005c3ea8,intUCacheManagerexecIsBPContent,CacheManager,IsBPContent,0x000eb210,(dispatch: declared),1,803,803,0x000eb210,yes,1
+44,0x005c3e30,0x005c3eb0,intUCacheManagerexecIs2004Content,CacheManager,Is2004Content,0x000eb2f0,(dispatch: declared),1,802,802,0x000eb2f0,yes,1
+44,0x005c3e30,0x005c3eb8,intUCacheManagerexecIs2003Content,CacheManager,Is2003Content,0x000eb130,(dispatch: declared),1,801,801,0x000eb130,yes,1
+44,0x005c3e30,0x005c3ec0,intUCacheManagerexecInitCache,CacheManager,InitCache,0x000f4a60,(dispatch: declared),1,800,800,0x000f4a60,yes,1
+45,0x005c3ed0,0x005c3ed0,intAVolumeexecEncompasses,Volume,Encompasses,0x002105a0,,1,0,,,,1
+46,0x005c3ee0,0x005c3ee0,intANavigationPointexecSetBaseDistance,NavigationPoint,SetBaseDistance,0x0017f7f0,,1,0,,,,1
+47,0x005c3ef0,0x005c3ef0,intAIMusicActorexecSetTransitionIndex,IMusicActor,SetTransitionIndex,0x0014c1b0,(unnamed),1,0,,,,1
+47,0x005c3ef0,0x005c3ef8,intAIMusicActorexecHasTransition,IMusicActor,HasTransition,0x0014c090,,1,0,,,,1
+47,0x005c3ef0,0x005c3f00,intAIMusicActorexecSetFlag,IMusicActor,SetFlag,0x0014c120,,1,0,,,,1
+48,0x005c3f10,0x005c3f10,intAPickupexecRemoveFromNavigation,Pickup,RemoveFromNavigation,0x00112040,,1,0,,,,1
+48,0x005c3f10,0x005c3f18,intAPickupexecAddToNavigation,Pickup,AddToNavigation,0x00111e00,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f28,intAPlayerControllerexecClientHearSound,PlayerController,ClientHearSound,0x0020c620,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f30,intAPlayerControllerexecFindStairRotation,PlayerController,FindStairRotation,0x001142d0,(dispatch: declared),1,524,524,0x001142d0,yes,1
+49,0x005c3f28,0x005c3f38,intAPlayerControllerexecSetVibrate,PlayerController,SetVibrate,0x00111830,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f40,intAPlayerControllerexecSetBloom,PlayerController,SetBloom,0x001117a0,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f48,intAPlayerControllerexecCheckSpeedHack,PlayerController,CheckSpeedHack,0x00111510,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f50,intAPlayerControllerexecServerValidationResponse,PlayerController,ServerValidationResponse,0x00218280,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f58,intAPlayerControllerexecClientValidate,PlayerController,ClientValidate,0x00219090,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f60,intAPlayerControllerexecRegisterUIX,PlayerController,RegisterUIX,0x00111db0,,1,0,,,,1
+49,0x005c3f28,0x005c3f68,intAPlayerControllerexecUpdateLocalStatsCache,PlayerController,UpdateLocalStatsCache,0x00111c50,,1,0,,,,1
+49,0x005c3f28,0x005c3f70,intAPlayerControllerexecGetDisconnectFlagValue,PlayerController,GetDisconnectFlagValue,0x00111d40,,1,0,,,,1
+49,0x005c3f28,0x005c3f78,intAPlayerControllerexecSetDisconnectFlagValue,PlayerController,SetDisconnectFlagValue,0x00111cd0,,1,0,,,,1
+49,0x005c3f28,0x005c3f80,intAPlayerControllerexecPasteFromClipboard,PlayerController,PasteFromClipboard,0x00216780,,1,0,,,,1
+49,0x005c3f28,0x005c3f88,intAPlayerControllerexecCopyToClipboard,PlayerController,CopyToClipboard,0x002166c0,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f90,intAPlayerControllerexecGetDefaultURL,PlayerController,GetDefaultURL,0x00119960,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3f98,intAPlayerControllerexecGetURLProtocol,PlayerController,GetURLProtocol,0x00216820,,1,0,,,,1
+49,0x005c3f28,0x005c3fa0,intAPlayerControllerexecClientTravel,PlayerController,ClientTravel,0x002163c0,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3fa8,intAPlayerControllerexecSetViewTarget,PlayerController,SetViewTarget,0x00113680,,1,0,,,,1
+49,0x005c3f28,0x005c3fb0,intAPlayerControllerexecResetInput,PlayerController,ResetInput,0x00113770,,1,0,,,,1
+49,0x005c3f28,0x005c3fb8,intAPlayerControllerexecResetKeyboard,PlayerController,ResetKeyboard,0x00113720,(dispatch: declared),1,544,544,0x00113720,yes,1
+49,0x005c3f28,0x005c3fc0,intAPlayerControllerexecGetEntryLevel,PlayerController,GetEntryLevel,0x001135a0,,1,0,,,,1
+49,0x005c3f28,0x005c3fc8,intAPlayerControllerexecConsoleCommand,PlayerController,ConsoleCommand,0x001196a0,(unnamed),1,0,,,,1
+49,0x005c3f28,0x005c3fd0,intAPlayerControllerexecGetServerNetworkAddress,PlayerController,GetServerNetworkAddress,0x00216600,,1,0,,,,1
+49,0x005c3f28,0x005c3fd8,intAPlayerControllerexecGetPlayerNetworkAddress,PlayerController,GetPlayerNetworkAddress,0x00216500,,1,0,,,,1
+49,0x005c3f28,0x005c3fe0,intAPlayerControllerexecGetPlayerIDHash,PlayerController,GetPlayerIDHash,0x00119330,,1,0,,,,1
+49,0x005c3f28,0x005c3fe8,intAPlayerControllerexecSetNetSpeed,PlayerController,SetNetSpeed,0x00113500,,1,0,,,,1
+50,0x005c3ff8,0x005c3ff8,intAControllerexecCanMakePathTo,Controller,CanMakePathTo,0x00115f10,(unnamed),1,0,,,,1
+50,0x005c3ff8,0x005c4000,intAControllerexecEndClimbLadder,Controller,EndClimbLadder,0x00115e60,,1,0,,,,1
+50,0x005c3ff8,0x005c4008,intAControllerexecStopWaiting,Controller,StopWaiting,0x00112090,,1,0,,,,1
+50,0x005c3ff8,0x005c4010,intAControllerexecInLatentExecution,Controller,InLatentExecution,0x001127e0,,1,0,,,,1
+50,0x005c3ff8,0x005c4018,intAControllerexecPickAnyTarget,Controller,PickAnyTarget,0x001188d0,(dispatch: declared),1,534,534,0x001188d0,yes,1
+50,0x005c3ff8,0x005c4020,intAControllerexecPickTarget,Controller,PickTarget,0x00113a10,(dispatch: declared),1,531,531,0x00113a10,yes,1
+50,0x005c3ff8,0x005c4028,intAControllerexecRemoveController,Controller,RemoveController,0x00112120,(dispatch: declared),1,530,530,0x00112120,yes,1
+50,0x005c3ff8,0x005c4030,intAControllerexecAddController,Controller,AddController,0x001120e0,(dispatch: declared),1,529,529,0x001120e0,yes,1
+50,0x005c3ff8,0x005c4038,intAControllerexecFindBestSuperPickup,Controller,FindBestSuperPickup,0x00114f10,(unnamed),1,0,,,,1
+50,0x005c3ff8,0x005c4040,intAControllerexecFindBestInventoryPath,Controller,FindBestInventoryPath,0x001137c0,(dispatch: declared),1,540,540,0x001137c0,yes,1
+50,0x005c3ff8,0x005c4048,intAControllerexecWaitForLanding,Controller,WaitForLanding,0x001121a0,(dispatch: declared),1,527,527,0x001121a0,yes,1
+50,0x005c3ff8,0x005c4050,intAControllerexecPickWallAdjust,Controller,PickWallAdjust,0x001141b0,(dispatch: declared),1,526,526,0x001141b0,yes,1
+50,0x005c3ff8,0x005c4058,intAControllerexecactorReachable,Controller,actorReachable,0x00114a10,(dispatch: declared),1,520,520,0x00114a10,yes,1
+50,0x005c3ff8,0x005c4060,intAControllerexecpointReachable,Controller,pointReachable,0x00114c30,(dispatch: declared),1,521,521,0x00114c30,yes,1
+50,0x005c3ff8,0x005c4068,intAControllerexecEAdjustJump,Controller,EAdjustJump,0x00112380,(dispatch: declared),1,523,523,0x00112380,yes,1
+50,0x005c3ff8,0x005c4070,intAControllerexecFindRandomDest,Controller,FindRandomDest,0x00115800,(dispatch: declared),1,525,525,0x00115800,yes,1
+50,0x005c3ff8,0x005c4078,intAControllerexecFindPathTowardNearest,Controller,FindPathTowardNearest,0x00115690,(unnamed),1,0,,,,1
+50,0x005c3ff8,0x005c4080,intAControllerexecFindPathToIntercept,Controller,FindPathToIntercept,0x001152d0,(unnamed),1,0,,,,1
+50,0x005c3ff8,0x005c4088,intAControllerexecFindPathToward,Controller,FindPathToward,0x001151b0,(dispatch: declared),1,517,517,0x001151b0,yes,1
+50,0x005c3ff8,0x005c4090,intAControllerexecFindPathTo,Controller,FindPathTo,0x00115130,(dispatch: declared),1,518,518,0x00115130,yes,1
+50,0x005c3ff8,0x005c4098,intAControllerexecCanSee,Controller,CanSee,0x00119890,(dispatch: declared),1,533,533,0x00119890,yes,1
+50,0x005c3ff8,0x005c40a0,intAControllerexecLineOfSightTo,Controller,LineOfSightTo,0x00118b50,(dispatch: declared),1,514,514,0x00118b50,yes,1
+50,0x005c3ff8,0x005c40a8,intAControllerexecStopMoving,Controller,StopMoving,0x00112940,(dispatch: declared),1,560,560,0x00112940,yes,1
+50,0x005c3ff8,0x005c40b0,intAControllerexecFinishRotation,Controller,FinishRotation,0x001128d0,(dispatch: declared),1,508,508,0x001128d0,yes,1
+50,0x005c3ff8,0x005c40b8,intAControllerexecMoveToward,Controller,MoveToward,0x00116290,(dispatch: declared),1,502,502,0x00116290,yes,1
+50,0x005c3ff8,0x005c40c0,intAControllerexecMoveTo,Controller,MoveTo,0x001125b0,(dispatch: declared),1,500,500,0x001125b0,yes,1
+51,0x005c40d0,0x005c40d0,intAAIControllerexecWaitToSeeEnemy,AIController,WaitToSeeEnemy,0x00112480,(dispatch: declared),1,510,510,0x00112480,yes,1
+52,0x005c40e0,0x005c40e0,intAPlayerReplicationInfoexecUnregisterPlayerOnline,PlayerReplicationInfo,UnregisterPlayerOnline,0x000c4e50,,1,0,,,,1
+52,0x005c40e0,0x005c40e8,intAPlayerReplicationInfoexecRegisterPlayerOnline,PlayerReplicationInfo,RegisterPlayerOnline,0x000c4e00,,1,0,,,,1
+53,0x005c40f8,0x005c40f8,intAHUDexecStaticDrawCanvasLine,HUD,StaticDrawCanvasLine,0x00210620,(unnamed),1,0,,,,1
+53,0x005c40f8,0x005c4100,intAHUDexecDrawCanvasLine,HUD,DrawCanvasLine,0x002159e0,(unnamed),1,0,,,,1
+53,0x005c40f8,0x005c4108,intAHUDexecDraw3DCircle,HUD,Draw3DCircle,0x00215820,(unnamed),1,0,,,,1
+53,0x005c40f8,0x005c4110,intAHUDexecDraw3DArrow,HUD,Draw3DArrow,0x002156c0,(unnamed),1,0,,,,1
+53,0x005c40f8,0x005c4118,intAHUDexecDraw3DLine,HUD,Draw3DLine,0x00215590,,1,0,,,,1
+53,0x005c40f8,0x005c4120,intAHUDexecDraw3DBox,HUD,Draw3DBox,0x00215b60,,1,0,,,,1
+54,0x005c4130,0x005c4130,intAWarpZoneInfoexecUnWarp,WarpZoneInfo,UnWarp,0x0020ff00,(dispatch: declared),1,315,315,0x0020ff00,yes,1
+54,0x005c4130,0x005c4138,intAWarpZoneInfoexecWarp,WarpZoneInfo,Warp,0x0020fd00,(dispatch: declared),1,314,314,0x0020fd00,yes,1
+55,0x005c4148,0x005c4148,intAZoneInfoexecZoneActors,ZoneInfo,ZoneActors,0x00215380,(dispatch: declared),1,308,308,0x00215380,yes,1
+56,0x005c4158,0x005c4158,intAGameInfoexecLoadSRGrammar,GameInfo,LoadSRGrammar,0x00217210,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4160,intAGameInfoexecParseKillMessage,GameInfo,ParseKillMessage,0x00218b50,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4168,intAGameInfoexecGetNetworkNumber,GameInfo,GetNetworkNumber,0x00217130,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4170,intAGameInfoexecLoadMapList,GameInfo,LoadMapList,0x00149d20,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4178,intAGameInfoexecLoadSaveGame,GameInfo,LoadSaveGame,0x00149370,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4180,intAGameInfoexecDeletePackage,GameInfo,DeletePackage,0x00298980,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4188,intAGameInfoexecSavePackage,GameInfo,SavePackage,0x00298bb0,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4190,intAGameInfoexecAllDataObjects,GameInfo,AllDataObjects,0x00298ac0,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c4198,intAGameInfoexecLoadDataObject,GameInfo,LoadDataObject,0x00298890,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c41a0,intAGameInfoexecDeleteDataObject,GameInfo,DeleteDataObject,0x002987a0,(unnamed),1,0,,,,1
+56,0x005c4158,0x005c41a8,intAGameInfoexecCreateDataObject,GameInfo,CreateDataObject,0x00298630,(unnamed),1,0,,,,1
+57,0x005c41b8,0x005c41b8,intALevelInfoexecIsPendingConnection,LevelInfo,IsPendingConnection,0x00211150,,1,0,,,,1
+57,0x005c41b8,0x005c41c0,intALevelInfoexecGetAddressURL,LevelInfo,GetAddressURL,0x00216990,,1,0,,,,1
+57,0x005c41b8,0x005c41c8,intALevelInfoexecIsSoftwareRendering,LevelInfo,IsSoftwareRendering,0x0020c560,,1,0,,,,1
+57,0x005c41b8,0x005c41d0,intALevelInfoexecIsXBox,LevelInfo,IsXBox,0x0020c520,,1,0,,,,1
+57,0x005c41b8,0x005c41d8,intALevelInfoexecIsDemoBuild,LevelInfo,IsDemoBuild,0x0020c4e0,,1,0,,,,1
+57,0x005c41b8,0x005c41e0,intALevelInfoexecGetLocalMapName,LevelInfo,GetLocalMapName,0x00216950,,1,0,,,,1
+57,0x005c41b8,0x005c41e8,intALevelInfoexecGetLocalURL,LevelInfo,GetLocalURL,0x002168a0,,1,0,,,,1
+57,0x005c41b8,0x005c41f0,intALevelInfoexecGetPhysicsVolume,LevelInfo,GetPhysicsVolume,0x0020c5a0,(unnamed),1,0,,,,1
+57,0x005c41b8,0x005c41f8,intALevelInfoexecForceLoadTexture,LevelInfo,ForceLoadTexture,0x00211050,,1,0,,,,1
+57,0x005c41b8,0x005c4200,intALevelInfoexecUpdateDistanceFogLOD,LevelInfo,UpdateDistanceFogLOD,0x0020c480,,1,0,,,,1
+57,0x005c41b8,0x005c4208,intALevelInfoexecIsEntry,LevelInfo,IsEntry,0x002110e0,,1,0,,,,1
+57,0x005c41b8,0x005c4210,intALevelInfoexecDetailChange,LevelInfo,DetailChange,0x0020c420,,1,0,,,,1
+58,0x005c4220,0x005c4220,intUTextureEditableexecEditTextureFunction,TextureEditable,EditTextureFunction,0x000c0060,(unnamed),1,0,,,,1
+59,0x005c4230,0x005c4230,intAKVehicleexecGraphData,KVehicle,GraphData,0x000a25f0,(unnamed),1,0,,,,1
+60,0x005c4240,0x005c4240,intUKarmaParamsCollisionexecCalcContactRegion,KarmaParamsCollision,CalcContactRegion,0x000a2be0,,1,0,,,,1
+61,0x005c4250,0x005c4250,intAKConstraintexecKGetConstraintTorque,KConstraint,KGetConstraintTorque,0x00092dc0,(unnamed),1,0,,,,1
+61,0x005c4250,0x005c4258,intAKConstraintexecKGetConstraintForce,KConstraint,KGetConstraintForce,0x00092d10,(unnamed),1,0,,,,1
+61,0x005c4250,0x005c4260,intAKConstraintexecKUpdateConstraintParams,KConstraint,KUpdateConstraintParams,0x00092e70,,1,0,,,,1
+62,0x005c4270,0x005c4270,intAxProcMeshexecProcPling,xProcMesh,ProcPling,0x00087b20,,1,0,,,,1
+63,0x005c4280,0x005c4280,intASceneSubtitlesexecProcessEvent,SceneSubtitles,ProcessEvent,0x000811e0,,1,0,,,,1
+64,0x005c4290,0x005c4290,intAGameStatsexecGetMapFileName,GameStats,GetMapFileName,0x00080be0,,1,0,,,,1
+64,0x005c4290,0x005c4298,intAGameStatsexecGetStatsIdentifier,GameStats,GetStatsIdentifier,0x00080c20,(unnamed),1,0,,,,1
+65,0x005c42a8,0x005c42a8,intAFileLogexecLogf,FileLog,Logf,0x000807e0,(unnamed),1,0,,,,1
+65,0x005c42a8,0x005c42b0,intAFileLogexecCloseLog,FileLog,CloseLog,0x000807b0,,1,0,,,,1
+65,0x005c42a8,0x005c42b8,intAFileLogexecOpenLog,FileLog,OpenLog,0x00080260,,1,0,,,,1
+66,0x005c44bc,0x005c44bc,intAUdpLinkexecReadBinary,UdpLink,ReadBinary,0x002d7310,,1,0,,,,1
+66,0x005c44bc,0x005c44c4,intAUdpLinkexecReadText,UdpLink,ReadText,0x002d7660,,1,0,,,,1
+66,0x005c44bc,0x005c44cc,intAUdpLinkexecSendBinary,UdpLink,SendBinary,0x002d6f70,,1,0,,,,1
+66,0x005c44bc,0x005c44d4,intAUdpLinkexecSendText,UdpLink,SendText,0x002d74d0,(unnamed),1,0,,,,1
+66,0x005c44bc,0x005c44dc,intAUdpLinkexecBindPort,UdpLink,BindPort,0x002d7130,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c44f0,intAInternetLinkexecGetLocalIP,InternetLink,GetLocalIP,0x002c6050,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c44f8,intAInternetLinkexecGameSpyGameName,InternetLink,GameSpyGameName,0x002c5e70,,1,0,,,,1
+67,0x005c44f0,0x005c4500,intAInternetLinkexecGameSpyValidate,InternetLink,GameSpyValidate,0x002c5f10,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c4508,intAInternetLinkexecStringToIpAddr,InternetLink,StringToIpAddr,0x002c5d50,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c4510,intAInternetLinkexecIpAddrToString,InternetLink,IpAddrToString,0x002c5c60,,1,0,,,,1
+67,0x005c44f0,0x005c4518,intAInternetLinkexecGetLastError,InternetLink,GetLastError,0x002c46c0,,1,0,,,,1
+67,0x005c44f0,0x005c4520,intAInternetLinkexecResolve,InternetLink,Resolve,0x002c5af0,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c4528,intAInternetLinkexecParseURL,InternetLink,ParseURL,0x002c6a90,(unnamed),1,0,,,,1
+67,0x005c44f0,0x005c4530,intAInternetLinkexecIsDataPending,InternetLink,IsDataPending,0x002c4680,,1,0,,,,1
+68,0x005c4540,0x005c4540,intATcpLinkexecReadBinary,TcpLink,ReadBinary,0x002d0550,,1,0,,,,1
+68,0x005c4540,0x005c4548,intATcpLinkexecReadText,TcpLink,ReadText,0x002d0c70,(unnamed),1,0,,,,1
+68,0x005c4540,0x005c4550,intATcpLinkexecSendBinary,TcpLink,SendBinary,0x002d0b30,,1,0,,,,1
+68,0x005c4540,0x005c4558,intATcpLinkexecSendText,TcpLink,SendText,0x002d0e50,(unnamed),1,0,,,,1
+68,0x005c4540,0x005c4560,intATcpLinkexecIsConnected,TcpLink,IsConnected,0x002d0270,,1,0,,,,1
+68,0x005c4540,0x005c4568,intATcpLinkexecClose,TcpLink,Close,0x002d0410,,1,0,,,,1
+68,0x005c4540,0x005c4570,intATcpLinkexecOpen,TcpLink,Open,0x002d0940,(unnamed),1,0,,,,1
+68,0x005c4540,0x005c4578,intATcpLinkexecListen,TcpLink,Listen,0x002d0870,,1,0,,,,1
+68,0x005c4540,0x005c4580,intATcpLinkexecBindPort,TcpLink,BindPort,0x002d06b0,(unnamed),1,0,,,,1
+69,0x005c4590,0x005c4590,intAMasterServerUplinkexecLogStatLine,MasterServerUplink,LogStatLine,0x002cd490,(unnamed),1,0,,,,1
+69,0x005c4590,0x005c4598,intAMasterServerUplinkexecReconnect,MasterServerUplink,Reconnect,0x002cd3a0,,1,0,,,,1
+70,0x005c45a8,0x005c45a8,intAMasterServerLinkexecPoll,MasterServerLink,Poll,0x002c7810,,1,0,,,,1
+71,0x005c45b8,0x005c45b8,intAMasterServerClientexecLaunchAutoUpdate,MasterServerClient,LaunchAutoUpdate,0x002c7aa0,,1,0,,,,1
+71,0x005c45b8,0x005c45c0,intAMasterServerClientexecStop,MasterServerClient,Stop,0x002c7a50,,1,0,,,,1
+71,0x005c45b8,0x005c45c8,intAMasterServerClientexecStartQuery,MasterServerClient,StartQuery,0x002c8200,,1,0,,,,1
+72,0x005c45d8,0x005c45d8,intAServerQueryClientexecNetworkError,ServerQueryClient,NetworkError,0x002c7fe0,,1,0,,,,1
+72,0x005c45d8,0x005c45e0,intAServerQueryClientexecCancelPings,ServerQueryClient,CancelPings,0x002c8030,,1,0,,,,1
+72,0x005c45d8,0x005c45e8,intAServerQueryClientexecPingServer,ServerQueryClient,PingServer,0x002c7df0,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c58d0,intUXboxLiveInterfaceexecStartExtraInfoQuery,XboxLiveInterface,StartExtraInfoQuery,0x0030ab30,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c58d8,intUXboxLiveInterfaceexecClearQueryResults,XboxLiveInterface,ClearQueryResults,0x0030a500,,1,0,,,,1
+73,0x005c58d0,0x005c58e0,intUXboxLiveInterfaceexecUpdateServerListInfo,XboxLiveInterface,UpdateServerListInfo,0x0030ac40,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c58e8,intUXboxLiveInterfaceexecGetHostAddr,XboxLiveInterface,GetHostAddr,0x0030a990,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c58f0,intUXboxLiveInterfaceexecGetExchangeKey,XboxLiveInterface,GetExchangeKey,0x0030a850,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c58f8,intUXboxLiveInterfaceexecGetSessionID,XboxLiveInterface,GetSessionID,0x0030a710,(unnamed),1,0,,,,1
+73,0x005c58d0,0x005c5900,intUXboxLiveInterfaceexecGetNdx,XboxLiveInterface,GetNdx,0x0030a5d0,(unnamed),1,0,,,,1
+74,0x005c5910,0x005c5910,intUUIXInteractionexecUpdateOnlineState,UIXInteraction,UpdateOnlineState,0x00306f20,,1,0,,,,1
+74,0x005c5910,0x005c5918,intUUIXInteractionexecStartDownloader,UIXInteraction,StartDownloader,0x00306ef0,,1,0,,,,1
+74,0x005c5910,0x005c5920,intUUIXInteractionexecGetUIXInteraction,UIXInteraction,GetUIXInteraction,0x00306e10,,1,0,,,,1
+74,0x005c5910,0x005c5928,intUUIXInteractionexecRebootXbox,UIXInteraction,RebootXbox,0x00307c50,,1,0,,,,1
+74,0x005c5910,0x005c5930,intUUIXInteractionexecJoinFriend,UIXInteraction,JoinFriend,0x00306ff0,,1,0,,,,1
+74,0x005c5910,0x005c5938,intUUIXInteractionexecUnregisterPlayerOnline,UIXInteraction,UnregisterPlayerOnline,0x00308840,,1,0,,,,1
+74,0x005c5910,0x005c5940,intUUIXInteractionexecRegisterPlayerOnline,UIXInteraction,RegisterPlayerOnline,0x00309740,,1,0,,,,1
+74,0x005c5910,0x005c5948,intUUIXInteractionexecEndFeature,UIXInteraction,EndFeature,0x00306fc0,,1,0,,,,1
+74,0x005c5910,0x005c5950,intUUIXInteractionexecShowPlayers,UIXInteraction,ShowPlayers,0x003096e0,,1,0,,,,1
+74,0x005c5910,0x005c5958,intUUIXInteractionexecShowFriends,UIXInteraction,ShowFriends,0x00309680,,1,0,,,,1
+74,0x005c5910,0x005c5960,intUUIXInteractionexecEndSession,UIXInteraction,EndSession,0x00307070,,1,0,,,,1
+74,0x005c5910,0x005c5968,intUUIXInteractionexecRegisterSession,UIXInteraction,RegisterSession,0x00307040,,1,0,,,,1
+74,0x005c5910,0x005c5970,intUUIXInteractionexecfindGUIController,UIXInteraction,findGUIController,0x00307c10,,1,0,,,,1
+74,0x005c5910,0x005c5978,intUUIXInteractionexecgetGamerTag,UIXInteraction,getGamerTag,0x003078f0,(unnamed),1,0,,,,1
+74,0x005c5910,0x005c5980,intUUIXInteractionexecStartSignOut,UIXInteraction,StartSignOut,0x00308460,,1,0,,,,1
+74,0x005c5910,0x005c5988,intUUIXInteractionexecSignedIn,UIXInteraction,SignedIn,0x00306f80,,1,0,,,,1
+74,0x005c5910,0x005c5990,intUUIXInteractionexecStartSignIn,UIXInteraction,StartSignIn,0x00309620,,1,0,,,,1
+74,0x005c5910,0x005c5998,intUUIXInteractionexecDestroyed,UIXInteraction,Destroyed,0x00307bc0,,1,0,,,,1
+74,0x005c5910,0x005c59a0,intUUIXInteractionexecInitUIX,UIXInteraction,InitUIX,0x00308420,,1,0,,,,1
+75,0x005c59b0,0x005c59b0,intUGUIScrollTextexecGetWordUnderCursor,GUIScrollText,GetWordUnderCursor,0x00303840,,1,0,,,,1
+76,0x005c59c0,0x005c59c0,intUGUIListBaseexecSortList,GUIListBase,SortList,0x00303e60,,1,0,,,,1
+77,0x005c59d0,0x005c59d0,intUGUIComponentexecSpecialHit,GUIComponent,SpecialHit,0x002f6570,,1,0,,,,1
+77,0x005c59d0,0x005c59d8,intUGUIComponentexecGetMenuPath,GUIComponent,GetMenuPath,0x002fa620,,1,0,,,,1
+77,0x005c59d0,0x005c59e0,intUGUIComponentexecKillTimer,GUIComponent,KillTimer,0x002f7110,,1,0,,,,1
+77,0x005c59d0,0x005c59e8,intUGUIComponentexecSetTimer,GUIComponent,SetTimer,0x002fa6a0,,1,0,,,,1
+77,0x005c59d0,0x005c59f0,intUGUIComponentexecClientXControllerEvent,GUIComponent,ClientXControllerEvent,0x002f6810,,1,0,,,,1
+77,0x005c59d0,0x005c59f8,intUGUIComponentexecNeedsRender,GUIComponent,NeedsRender,0x002f6500,,1,0,,,,1
+77,0x005c59d0,0x005c5a00,intUGUIComponentexecAllInnerObjects,GUIComponent,AllInnerObjects,0x002ff2e0,(dispatch: declared),1,901,901,0x002ff2e0,yes,1
+77,0x005c59d0,0x005c5a08,intUGUIComponentexecGetReferencedObjects,GUIComponent,GetReferencedObjects,0x002fb120,(unnamed),1,0,,,,1
+77,0x005c59d0,0x005c5a10,intUGUIComponentexecSafeDelete,GUIComponent,SafeDelete,0x002faa90,,1,0,,,,1
+77,0x005c59d0,0x005c5a18,intUGUIComponentexecGetProfileCharacterName,GUIComponent,GetProfileCharacterName,0x002fa7d0,(unnamed),1,0,,,,1
+77,0x005c59d0,0x005c5a20,intUGUIComponentexecRelativeHeight,GUIComponent,RelativeHeight,0x002f6bb0,,1,0,,,,1
+77,0x005c59d0,0x005c5a28,intUGUIComponentexecRelativeWidth,GUIComponent,RelativeWidth,0x002f6b40,,1,0,,,,1
+77,0x005c59d0,0x005c5a30,intUGUIComponentexecRelativeTop,GUIComponent,RelativeTop,0x002f6ad0,,1,0,,,,1
+77,0x005c59d0,0x005c5a38,intUGUIComponentexecRelativeLeft,GUIComponent,RelativeLeft,0x002f6a60,,1,0,,,,1
+77,0x005c59d0,0x005c5a40,intUGUIComponentexecActualTop,GUIComponent,ActualTop,0x002f69f0,,1,0,,,,1
+77,0x005c59d0,0x005c5a48,intUGUIComponentexecActualLeft,GUIComponent,ActualLeft,0x002f6980,,1,0,,,,1
+77,0x005c59d0,0x005c5a50,intUGUIComponentexecActualHeight,GUIComponent,ActualHeight,0x002f6910,,1,0,,,,1
+77,0x005c59d0,0x005c5a58,intUGUIComponentexecActualWidth,GUIComponent,ActualWidth,0x002f68a0,,1,0,,,,1
+78,0x005c5a68,0x005c5a68,intUGUIexecAllObjectProperties,GUI,AllObjectProperties,0x002ff090,(dispatch: declared),1,900,900,0x002ff090,yes,1
+79,0x005c5a78,0x005c5a78,intUGUIMultiColumnListexecSortList,GUIMultiColumnList,SortList,0x00304780,Gui,1,0,,,,1
+79,0x005c5a78,0x005c5a80,intUGUIMultiColumnListexecRemovedItem,GUIMultiColumnList,RemovedItem,0x00303ef0,,1,0,,,,1
+79,0x005c5a78,0x005c5a88,intUGUIMultiColumnListexecUpdatedItem,GUIMultiColumnList,UpdatedItem,0x003032a0,(unnamed),1,0,,,,1
+79,0x005c5a78,0x005c5a90,intUGUIMultiColumnListexecAddedItem,GUIMultiColumnList,AddedItem,0x003030b0,(unnamed),1,0,,,,1
+79,0x005c5a78,0x005c5a98,intUGUIMultiColumnListexecChangeSortOrder,GUIMultiColumnList,ChangeSortOrder,0x003033c0,,1,0,,,,1
+79,0x005c5a78,0x005c5aa0,intUGUIMultiColumnListexecGetListIndex,GUIMultiColumnList,GetListIndex,0x00302fa0,,1,0,,,,1
+80,0x005c5ab0,0x005c5ab0,intUGUIMultiComponentexecInitializeControls,GUIMultiComponent,InitializeControls,0x002f7160,,1,0,,,,1
+81,0x005c5ac0,0x005c5ac0,intUGUIControllerexecMouseEmulation,GUIController,MouseEmulation,0x002f7a90,,1,0,,,,1
+81,0x005c5ac0,0x005c5ac8,intUGUIControllerexecResetKeyboard,GUIController,ResetKeyboard,0x002f7a40,,1,0,,,,1
+81,0x005c5ac0,0x005c5ad0,intUGUIControllerexecGetMapList,GUIController,GetMapList,0x002fe5f0,(unnamed),1,0,,,,1
+81,0x005c5ac0,0x005c5ad8,intUGUIControllerexecResetInput,GUIController,ResetInput,0x002f6110,,1,0,,,,1
+81,0x005c5ac0,0x005c5ae0,intUGUIControllerexecSetMoveControl,GUIController,SetMoveControl,0x002fe400,,1,0,,,,1
+81,0x005c5ac0,0x005c5ae8,intUGUIControllerexecResetDesigner,GUIController,ResetDesigner,0x002f7c90,,1,0,,,,1
+81,0x005c5ac0,0x005c5af0,intUGUIControllerexecGetBuildStamp,GUIController,GetBuildStamp,0x002f9400,(unnamed),1,0,,,,1
+81,0x005c5ac0,0x005c5af8,intUGUIControllerexecGetMainMenuClass,GUIController,GetMainMenuClass,0x002f7b60,,1,0,,,,1
+81,0x005c5ac0,0x005c5b00,intUGUIControllerexecGetCurrentRes,GUIController,GetCurrentRes,0x002f92d0,,1,0,,,,1
+81,0x005c5ac0,0x005c5b08,intUGUIControllerexecGetStyle,GUIController,GetStyle,0x002f96b0,(unnamed),1,0,,,,1
+81,0x005c5ac0,0x005c5b10,intUGUIControllerexecGetMenuFont,GUIController,GetMenuFont,0x002f9550,(unnamed),1,0,,,,1
+81,0x005c5ac0,0x005c5b18,intUGUIControllerexecPassAlongKeystroke,GUIController,PassAlongKeystroke,0x002f7d00,(unnamed),1,0,,,,1
+81,0x005c5ac0,0x005c5b20,intUGUIControllerexecFindViewportIndex,GUIController,FindViewportIndex,0x002f7bd0,,1,0,,,,1
+81,0x005c5ac0,0x005c5b28,intUGUIControllerexecFindControllerPortIndex,GUIController,FindControllerPortIndex,0x002f5fc0,,1,0,,,,1
+82,0x005c5b38,0x005c5b38,intUStatsManagerexecBeginRungQuery,StatsManager,BeginRungQuery,0x0030a560,,1,0,,,,1
+82,0x005c5b38,0x005c5b40,intUStatsManagerexecBeginLadderQuery,StatsManager,BeginLadderQuery,0x0030b750,(unnamed),1,0,,,,1
+82,0x005c5b38,0x005c5b48,intUStatsManagerexecGetInstance,StatsManager,GetInstance,0x0030ac10,,1,0,,,,1
+83,0x005c5b58,0x005c5b58,intUGUIScrollingPanelexecRender,GUIScrollingPanel,Render,0x002ec9e0,,1,0,,,,1
+84,0x005c5b68,0x005c5b68,intUGUIMenuOptionexecDraw,GUIMenuOption,Draw,0x002f2cb0,,1,0,,,,1
+84,0x005c5b68,0x005c5b70,intUGUIMenuOptionexecPreDraw,GUIMenuOption,PreDraw,0x002f2bf0,,1,0,,,,1
+85,0x005c5b80,0x005c5b80,intUGUIStylesexecTextSize,GUIStyles,TextSize,0x002f9c60,(unnamed),1,0,,,,1
+85,0x005c5b80,0x005c5b88,intUGUIStylesexecDrawImage,GUIStyles,DrawImage,0x002f9a50,(unnamed),1,0,,,,1
+85,0x005c5b80,0x005c5b90,intUGUIStylesexecDrawText,GUIStyles,DrawText,0x002ffa80,(unnamed),1,0,,,,1
+85,0x005c5b80,0x005c5b98,intUGUIStylesexecDraw,GUIStyles,Draw,0x002f9920,(unnamed),1,0,,,,1
+86,0x005c5ba8,0x005c5ba8,intUGUIFontexecGetFont,GUIFont,GetFont,0x002f8090,,1,0,,,,1
+87,0x005c5bb8,0x005c5bb8,intUGUIPageexecInitExecution,GUIPage,InitExecution,0x002ec240,,1,0,,,,1
+87,0x005c5bb8,0x005c5bc0,intUGUIPageexecSleep,GUIPage,Sleep,0x002ec180,(dispatch: declared),1,332,332,0x002ec180,yes,1
+88,0x005c5c2c,0x005c5c2c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+89,0x005c5c3c,0x005c5c3c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+89,0x005c5c3c,0x005c5c44,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+90,0x005c5c54,0x005c5c54,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+91,0x005c5c64,0x005c5c64,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+91,0x005c5c64,0x005c5c6c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+92,0x005c5c7c,0x005c5c7c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+92,0x005c5c7c,0x005c5c84,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+92,0x005c5c7c,0x005c5c8c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+92,0x005c5c7c,0x005c5c94,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+93,0x005c5ca4,0x005c5ca4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+93,0x005c5ca4,0x005c5cac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+93,0x005c5ca4,0x005c5cb4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+93,0x005c5ca4,0x005c5cbc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+94,0x005c5ccc,0x005c5ccc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+95,0x005c5cdc,0x005c5cdc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+96,0x005c5cec,0x005c5cec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+97,0x005c5cfc,0x005c5cfc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+97,0x005c5cfc,0x005c5d04,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+98,0x005c5d14,0x005c5d14,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+98,0x005c5d14,0x005c5d1c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+99,0x005c5d2c,0x005c5d2c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+100,0x005c5d3c,0x005c5d3c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+100,0x005c5d3c,0x005c5d44,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+101,0x005c5d54,0x005c5d54,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+102,0x005c5d64,0x005c5d64,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+102,0x005c5d64,0x005c5d6c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+103,0x005c5d7c,0x005c5d7c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+103,0x005c5d7c,0x005c5d84,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+103,0x005c5d7c,0x005c5d8c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+103,0x005c5d7c,0x005c5d94,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+104,0x005c5da4,0x005c5da4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+104,0x005c5da4,0x005c5dac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+104,0x005c5da4,0x005c5db4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+104,0x005c5da4,0x005c5dbc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+105,0x005c5dcc,0x005c5dcc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+106,0x005c5ddc,0x005c5ddc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+107,0x005c5dec,0x005c5dec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+108,0x005c5dfc,0x005c5dfc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+108,0x005c5dfc,0x005c5e04,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+109,0x005c5e14,0x005c5e14,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+109,0x005c5e14,0x005c5e1c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+110,0x005c5e2c,0x005c5e2c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+111,0x005c5e3c,0x005c5e3c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+111,0x005c5e3c,0x005c5e44,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+112,0x005c5e54,0x005c5e54,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+113,0x005c5e64,0x005c5e64,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+113,0x005c5e64,0x005c5e6c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+114,0x005c5e7c,0x005c5e7c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+114,0x005c5e7c,0x005c5e84,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+114,0x005c5e7c,0x005c5e8c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+114,0x005c5e7c,0x005c5e94,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+115,0x005c5ea4,0x005c5ea4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+115,0x005c5ea4,0x005c5eac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+115,0x005c5ea4,0x005c5eb4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+115,0x005c5ea4,0x005c5ebc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+116,0x005c5ecc,0x005c5ecc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+117,0x005c5edc,0x005c5edc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+118,0x005c5eec,0x005c5eec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+119,0x005c5efc,0x005c5efc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+119,0x005c5efc,0x005c5f04,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+120,0x005c5f14,0x005c5f14,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+120,0x005c5f14,0x005c5f1c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+121,0x005c5f2c,0x005c5f2c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+122,0x005c5f3c,0x005c5f3c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+122,0x005c5f3c,0x005c5f44,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+123,0x005c5f54,0x005c5f54,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+124,0x005c5f64,0x005c5f64,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+124,0x005c5f64,0x005c5f6c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+125,0x005c5f7c,0x005c5f7c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+125,0x005c5f7c,0x005c5f84,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+125,0x005c5f7c,0x005c5f8c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+125,0x005c5f7c,0x005c5f94,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+126,0x005c5fa4,0x005c5fa4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+126,0x005c5fa4,0x005c5fac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+126,0x005c5fa4,0x005c5fb4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+126,0x005c5fa4,0x005c5fbc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+127,0x005c5fcc,0x005c5fcc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+128,0x005c5fdc,0x005c5fdc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+129,0x005c5fec,0x005c5fec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+130,0x005c5ffc,0x005c5ffc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+130,0x005c5ffc,0x005c6004,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+131,0x005c6014,0x005c6014,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+131,0x005c6014,0x005c601c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+132,0x005c602c,0x005c602c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+133,0x005c603c,0x005c603c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+133,0x005c603c,0x005c6044,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+134,0x005c6054,0x005c6054,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+135,0x005c6064,0x005c6064,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+135,0x005c6064,0x005c606c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+136,0x005c607c,0x005c607c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+136,0x005c607c,0x005c6084,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+136,0x005c607c,0x005c608c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+136,0x005c607c,0x005c6094,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+137,0x005c60a4,0x005c60a4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+137,0x005c60a4,0x005c60ac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+137,0x005c60a4,0x005c60b4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+137,0x005c60a4,0x005c60bc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+138,0x005c60cc,0x005c60cc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+139,0x005c60dc,0x005c60dc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+140,0x005c60ec,0x005c60ec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+141,0x005c60fc,0x005c60fc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+141,0x005c60fc,0x005c6104,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+142,0x005c6114,0x005c6114,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+142,0x005c6114,0x005c611c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+143,0x005c612c,0x005c612c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+144,0x005c613c,0x005c613c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+144,0x005c613c,0x005c6144,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+145,0x005c6154,0x005c6154,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+146,0x005c6164,0x005c6164,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+146,0x005c6164,0x005c616c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+147,0x005c617c,0x005c617c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+147,0x005c617c,0x005c6184,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+147,0x005c617c,0x005c618c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+147,0x005c617c,0x005c6194,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+148,0x005c61a4,0x005c61a4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+148,0x005c61a4,0x005c61ac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+148,0x005c61a4,0x005c61b4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+148,0x005c61a4,0x005c61bc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+149,0x005c61cc,0x005c61cc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+150,0x005c61dc,0x005c61dc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+151,0x005c61ec,0x005c61ec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+152,0x005c61fc,0x005c61fc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+152,0x005c61fc,0x005c6204,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+153,0x005c6214,0x005c6214,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+153,0x005c6214,0x005c621c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+154,0x005c622c,0x005c622c,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+155,0x005c623c,0x005c623c,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+155,0x005c623c,0x005c6244,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+156,0x005c6254,0x005c6254,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+157,0x005c6264,0x005c6264,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+157,0x005c6264,0x005c626c,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+158,0x005c627c,0x005c627c,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+158,0x005c627c,0x005c6284,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+158,0x005c627c,0x005c628c,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+158,0x005c627c,0x005c6294,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+159,0x005c62a4,0x005c62a4,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+159,0x005c62a4,0x005c62ac,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+159,0x005c62a4,0x005c62b4,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+159,0x005c62a4,0x005c62bc,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+160,0x005c62cc,0x005c62cc,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+161,0x005c62dc,0x005c62dc,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+162,0x005c62ec,0x005c62ec,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+163,0x005c62fc,0x005c62fc,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+163,0x005c62fc,0x005c6304,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+164,0x005c6314,0x005c6314,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+164,0x005c6314,0x005c631c,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+165,0x005c6360,0x005c6360,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+166,0x005c6370,0x005c6370,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+166,0x005c6370,0x005c6378,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+167,0x005c6388,0x005c6388,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+168,0x005c6398,0x005c6398,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+168,0x005c6398,0x005c63a0,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+169,0x005c63b0,0x005c63b0,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+169,0x005c63b0,0x005c63b8,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+169,0x005c63b0,0x005c63c0,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+169,0x005c63b0,0x005c63c8,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+170,0x005c63d8,0x005c63d8,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+170,0x005c63d8,0x005c63e0,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+170,0x005c63d8,0x005c63e8,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+170,0x005c63d8,0x005c63f0,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+171,0x005c6400,0x005c6400,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+172,0x005c6410,0x005c6410,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+173,0x005c6420,0x005c6420,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+174,0x005c6430,0x005c6430,intAStargateCopterexecUpdateKValuesFromActor,StargateCopter,UpdateKValuesFromActor,0x00313d30,(unnamed),1,0,,,,1
+174,0x005c6430,0x005c6438,intAStargateCopterexecKSleep,StargateCopter,KSleep,0x00313ce0,(unnamed),1,0,,,,1
+175,0x005c6448,0x005c6448,intADeathGliderexecUpdateKValuesFromActor,DeathGlider,UpdateKValuesFromActor,0x0030e160,(unnamed),1,0,,,,1
+175,0x005c6448,0x005c6450,intADeathGliderexecKSleep,DeathGlider,KSleep,0x0030e110,(unnamed),1,0,,,,1
+176,0x005c6460,0x005c6460,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+177,0x005c6470,0x005c6470,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+177,0x005c6470,0x005c6478,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+178,0x005c6488,0x005c6488,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+179,0x005c6498,0x005c6498,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+179,0x005c6498,0x005c64a0,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+180,0x005c64b0,0x005c64b0,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+180,0x005c64b0,0x005c64b8,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+180,0x005c64b0,0x005c64c0,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+180,0x005c64b0,0x005c64c8,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+181,0x005c64d8,0x005c64d8,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+181,0x005c64d8,0x005c64e0,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+181,0x005c64d8,0x005c64e8,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+181,0x005c64d8,0x005c64f0,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+182,0x005c6500,0x005c6500,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+183,0x005c6510,0x005c6510,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+184,0x005c6520,0x005c6520,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+185,0x005c6554,0x005c6554,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+186,0x005c6564,0x005c6564,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+186,0x005c6564,0x005c656c,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+187,0x005c657c,0x005c657c,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+188,0x005c658c,0x005c658c,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+188,0x005c658c,0x005c6594,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+189,0x005c65a4,0x005c65a4,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+189,0x005c65a4,0x005c65ac,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+189,0x005c65a4,0x005c65b4,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+189,0x005c65a4,0x005c65bc,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+190,0x005c65cc,0x005c65cc,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+190,0x005c65cc,0x005c65d4,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+190,0x005c65cc,0x005c65dc,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+190,0x005c65cc,0x005c65e4,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+191,0x005c65f4,0x005c65f4,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+192,0x005c6604,0x005c6604,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+193,0x005c6614,0x005c6614,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1
+194,0x005c6680,0x005c6680,intAShadowManagerexecGetShadowLights,ShadowManager,GetShadowLights,0x0031e4f0,(unnamed),1,0,,,,1
+195,0x005c6690,0x005c6690,intAFarClipChangeexecSetFarClipDistance,FarClipChange,SetFarClipDistance,0x0031d6b0,(unnamed),1,0,,,,1
+195,0x005c6690,0x005c6698,intAFarClipChangeexecGetFarClipDistance,FarClipChange,GetFarClipDistance,0x0031d710,(unnamed),1,0,,,,1
+196,0x005c66a8,0x005c66a8,intABotBaseexecCoverActors,BotBase,CoverActors,0x003205a0,(unnamed),1,0,,,,1
+197,0x005c66b8,0x005c66b8,intAElectrocutorexecWankTick,Electrocutor,WankTick,0x0031fa20,(unnamed),1,0,,,,1
+197,0x005c66b8,0x005c66c0,intAElectrocutorexecStartArcing,Electrocutor,StartArcing,0x0031f510,(unnamed),1,0,,,,1
+198,0x005c66d0,0x005c66d0,intUSGOrderexecDrawIcon,SGOrder,DrawIcon,0x0031d220,(unnamed),1,0,,,,1
+198,0x005c66d0,0x005c66d8,intUSGOrderexecDrawDesc,SGOrder,DrawDesc,0x0031e320,(unnamed),1,0,,,,1
+198,0x005c66d0,0x005c66e0,intUSGOrderexecupdateCondition,SGOrder,updateCondition,0x0031d300,(unnamed),1,0,,,,1
+198,0x005c66d0,0x005c66e8,intUSGOrderexecIsValid,SGOrder,IsValid,0x0031da80,(unnamed),1,0,,,,1
+199,0x005c66f8,0x005c66f8,intABotEnemyexecFindBestHideNode,BotEnemy,FindBestHideNode,0x00322540,(unnamed),1,0,,,,1
+199,0x005c66f8,0x005c6700,intABotEnemyexecEvaluateBestHideLocation,BotEnemy,EvaluateBestHideLocation,0x00321720,(unnamed),1,0,,,,1
+199,0x005c66f8,0x005c6708,intABotEnemyexecEvaluateBestForwardHideLocation,BotEnemy,EvaluateBestForwardHideLocation,0x00321e30,(unnamed),1,0,,,,1
+199,0x005c66f8,0x005c6710,intABotEnemyexecCalcBestCoverLoc,BotEnemy,CalcBestCoverLoc,0x003216a0,(unnamed),1,0,,,,1
+200,0x005c6720,0x005c6720,intAStargateHUDexecDrawOrdersHud,StargateHUD,DrawOrdersHud,0x0031d670,(unnamed),1,0,,,,1
+201,0x005c6730,0x005c6730,intASGFontInfoexecbendover,SGFontInfo,bendover,0x0031d680,(unnamed),1,0,,,,1
+202,0x005c6740,0x005c6740,intUSGScreenBloomexecSelectFilter,SGScreenBloom,SelectFilter,0x00318c20,(unnamed),1,0,,,,1

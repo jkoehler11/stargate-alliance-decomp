@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
 
 help:
 	@echo "targets:"
@@ -106,6 +106,7 @@ help:
 	@echo "  hud-messages     which HUD class draws which message, from the scripts (needs the dump; no boot)"
 	@echo "  hud-text         read the HUD's three text boxes over a live stub (needs a boot: tools/xemu/hud-text.py)"
 	@echo "  native-binder    the names the binder resolves index-less natives from (needs the dump; no boot)"
+	@echo "  native-table     each of those names' body address, from the image's own registration table (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
 	@echo "  check         verify-dump + inventory drift check"
 
@@ -207,6 +208,8 @@ ci:
 	@$(PYTHON) tools/hud-messages.py --selftest
 	@$(PYTHON) -m py_compile tools/native-binder.py && echo "ok   native-binder: tools/native-binder.py compiles"
 	@$(PYTHON) tools/native-binder.py --selftest
+	@$(PYTHON) -m py_compile tools/native-table.py && echo "ok   native-table: tools/native-table.py compiles"
+	@$(PYTHON) tools/native-table.py --check
 	@$(PYTHON) -m py_compile tools/native-reconcile.py && echo "ok   native-reconcile: tools/native-reconcile.py compiles"
 	@$(PYTHON) tools/native-reconcile.py --selftest
 	@$(PYTHON) -m py_compile tools/map-list-order.py && echo "ok   map-list-order: tools/map-list-order.py compiles"
@@ -604,6 +607,13 @@ native-binder:
 		{ echo "native-binder: no default.xbe under $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/native-binder.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 	@echo "wrote inventory/native_binder_names.csv"
+
+# U1/U5: the registration table behind that lookup -- every name's body address, no boot (`make native-table`).
+native-table:
+	@test -f "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" || \
+		{ echo "native-table: no default.xbe under $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/native-table.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+	@echo "wrote inventory/native_targets.csv"
 
 # PLAN 7.3's last question: what draws `stat fps`, the console's one readable output. No boot; docs/XEMU.md.
 stat-fps:
