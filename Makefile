@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
 
 help:
 	@echo "targets:"
@@ -100,6 +100,7 @@ help:
 	@echo "  game-modules     per-module function counts from a native index (needs WORK/native)"
 	@echo "  package-check    the Packages.md5 check objects (needs the dump)"
 	@echo "  package-check-code  the functions that read the check file, from the image (needs the dump)"
+	@echo "  package-check-pairs  pair each check record with the package its GUID names (needs the dump)"
 	@echo "  savegame-paths   the save/load call sites, read from the shipped ScriptText (needs the dump)"
 	@echo "  console-commands the console's exec-function surface, from the scripts and the binary's Exec flag"
 	@echo "  interaction-setup  every Interaction the game installs on the player, and the routine that does it"
@@ -613,6 +614,9 @@ versions:
 # PLAN 6.2: the code behind the check file, so "bypass" has an address instead of an intention.
 package-check-code:
 	@$(PYTHON) tools/image-strings.py --topic package-check --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+
+package-check-pairs:
+	@$(PYTHON) tools/package-check-pairs.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" -o inventory
 	@echo "wrote inventory/package_check_code.csv"
 
 # U5: the save surface read out of the scripts the packages carry. Needs the extraction step first.

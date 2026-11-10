@@ -454,14 +454,16 @@ report cites file-level evidence for each claim.
       *generation*: a compiler producing the bytes we currently copy.
 - [~] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
       off in the XBE for dev builds. Document both paths in `docs/PACKAGE_CHECK.md`.
-      **The file is measured, the transform is not, and the check's code is located.** The check data is 168 records of
-      78 bytes, two 32-hex fields each, with no filename field; ~500 files and 89 framing variants were searched for a
-      digest match and none was found, so regenerating it needs the transform. What was missing was whether the build
-      even reads it: `tools/package-check-code.py` (`inventory/package_check_code.csv`) finds **six functions** carrying
-      the check's strings — a named `Engine_UnPackageCheckInfo` class-native at `0x187350`, three readers of
-      `Packages.md5` behind one dispatcher at `0x126860`, and `Engine_UnGame` itself — and the two families connect at
-      depth two, so the check is live code, not a leftover. The bypass path therefore has an address now: `0x187350`
-      and the readers behind `0x126860`. Still open: which path invokes it (runtime probe) and the digest transform.
+      **The records now pair with files, and the digest is a header-and-name hash.** The first 32-hex field is the
+      package's own header GUID (`GUID = [%08X%08X%08X%08X]`, `0x001219d0`), so `tools/package-check-pairs.py`
+      (`inventory/package_check_pairs.csv`) pairs **168 of 168** records with shipped files — 499 packages carry a UE2
+      header, 8 header GUIDs are shared by copies, and every record's GUID is one of them. The second field is the
+      **quick** digest: `0x00121cf0` hashes the header dwords plus one 8-byte record per name-table entry, which is the
+      same routine the `-q` switch prints; the full pass `0x001219d0` is a chunked `md5(file)` and matches none of the
+      168. Both live behind the `MD5` console command family at `0x00126860` (`-a -c -s -r -f -q -g -l -j -w`), which
+      saves through the engine's own `SavePackage` (`0x0006df00`) — that is why the file is a package. Regenerating the
+      check therefore needs no cook inputs: it needs the quick transform, whose only unknown is the name-entry layout
+      it digests. Still open: that layout, and which path invokes the check at runtime (probe).
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
@@ -1095,6 +1097,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   `sgs-write.py --check` does the same with no dump. `docs/formats/sgs-checkpoint.md` has the entry layout, the
   numbers and the checks. What is left on the save path is content, not container: a rebuilt package's payloads
   come from a compiler, and PLAN 6.2's package check still has to accept a rebuilt save.
+
+### Execution notes (2026-11-09, the check file's records pair with files)
+
+- **The "no filename field" conclusion was about the record, not about the data.** A record carries two 32-hex
+  values; `0x001219d0` prints a package's first one as `GUID = [%08X%08X%08X%08X]` read straight out of the header at
+  `+0x24`, and every record's uppercase field is exactly that text for a file that ships. Pairing all 168:
+  499 packages in the dump carry a UE2 header, **168 of 168 records match one**, and the only fan-out is 8 header
+  GUIDs shared by copies (`M05ATex.utx`, `M16Tex.utx`, `xx_old_m17tex.utx`, … 17 files under one GUID) whose headers
+  were never regenerated. So the record order is the cooker's own GUID order, not an assumption.
+- **The digest is not `md5(file)` — and the code says why.** The `MD5` console command (`0x00126860`,
+  `MD5 Database Management`) has two hash passes: `-f` (`0x001219d0`) reads the file in `0xFFFF`-byte chunks and
+  hashes it, `-q` (`0x00122430` → `0x00121cf0`) reads only the header with `0x00051720`, appends thirteen header
+  dwords, then one 8-byte record per name entry, and hashes that with `FUN_00058b40`. The database builder
+  (`0x00125a90`, `-a`/`-c`) writes records through the **quick** routine, so zero of the 168 digests equal
+  `md5(file)` of the file they are filed against — a measured negative that the format page had read as "the
+  digests describe something else entirely".
+- **What that costs the old conclusion.** "Regenerate is out of reach" was a statement about hashing the whole
+  package. The check covers header and names, so a rebuild that preserves both reproduces it; only a changed name
+  set needs `-a` against a patched build. 1,360 framings of the header/name *file bytes* still miss, so the digest
+  is over re-serialized fields — the last unknown is the name-entry layout `0x00121cf0` reads at `esp+0xc4`
+  (`+0x0C` dword, `+0x1C` word, `+0x26` word).
+- **Instruments**: `tools/package-check-pairs.py` (`make package-check-pairs`) writes
+  `inventory/package_check_pairs.csv` and `--check` is a synthetic self-test with no dump. `docs/PACKAGE_CHECK.md`
+  now carries the switch table with each routine's address and every negative above.
 
 ### Execution notes (2026-11-09, the writer rebuilds every container kind, not just the game packages)
 
