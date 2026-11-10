@@ -145,6 +145,28 @@ wrong is not settled from the file: it needs one object read (`UClass` name vs `
 `docs/UNKNOWNS.md` U8), and until then this page reports the contradiction rather than renaming an
 artifact entry the other tools read.
 
+### The read that would settle it is now a tool, and this run could not take it
+
+`tools/xemu/class-tables-live.py` is the object read U8 asked for, and it needs **no literal, no window and no
+constructor tree**: it walks `GObjObjects` in a booted guest, reads each object's `+0x00` table and its `+0x24`
+`UClass`, resolves the class object's `+0x20` `FName` through `GNames`, and writes one `table_va,class,objects` row
+per table -- so a table is named by the objects that *carry* it rather than by the site that installed it. Every
+class has a default object in the array, so a table in use always gets a row, and a table whose rows disagree names
+a hierarchy the static name disagrees with, which is exactly this `WaterTexture` question. `--table` prints the
+pair (`0x004cfba0`, `0x004cfe68`), and `--selftest` runs the same walk over a synthetic world, so the instrument is
+checkable without a boot.
+
+**It read nothing this run, and the reason is the emulator, not the address.** Two launches of the prepared image
+(`~/tools/xemu.AppImage -config_path <toml> -qmp unix:<out>/qmp.sock,server,nowait -gdb tcp::12383`, the TOML
+`drive.py` writes) each left an `AppRun` process with **no QMP socket, no `serial.log` and no `-gdb` listener**,
+while `xemu.log`/`xemu.out` stop after `xemu_settings_set_path` -- xemu never started QEMU -- and `xdpyinfo` still
+answers on `:0` with an `xemu | v0.8.139 Debug` window findable by name. That signature is written down here so the
+next run recognises it instead of re-deriving it. Until a guest gives a read, this page keeps reporting the
+contradiction rather than renaming a row the other tools read.
+
+    python3 tools/xemu/class-tables-live.py --port 12383 --xbe $SG1_DUMP/default.xbe \
+        --csv $WORK/ct.live.csv --table 0x004cfba0 --table 0x004cfe68
+
 ## Status
 
 The constructor tree is a real second instrument (375/391 agreement) and it confirms three of the 26

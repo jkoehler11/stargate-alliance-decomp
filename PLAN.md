@@ -1022,6 +1022,18 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the table->class read: instrument shipped, no guest)
+
+- **The instrument exists now.** `tools/xemu/class-tables-live.py` answers U8's "one object read" without a
+  literal, a window or a tree: it walks `GObjObjects` and pairs each object's `+0x00` table with its `+0x24`
+  `UClass` name (`+0x20` through `GNames`), writing `table_va,class,objects` -- so a table is named by the objects
+  that carry it, and `--table 0x004cfba0 --table 0x004cfe68` is the WaterTexture pair. `--selftest` covers the walk
+  (a table shared by two classes, an object header at a page edge) with no boot.
+- **No read: xemu never started QEMU.** Two launches with the prepared image left `AppRun` alive with no QMP
+  socket, no `serial.log` and no `-gdb` listener while `xemu.log` stopped at `xemu_settings_set_path`, and `:0`
+  answered `xdpyinfo` with the xemu window findable -- so the next run knows the emulator, not the address, is the
+  blocker, and the WaterTexture pair stays open with the command above one call from an answer.
+
 ### Execution notes (2026-11-10, the 15 class-tree conflicts are four causes, and one of them is a name)
 
 - **The tool now says why, and the answer is mostly "no script row".** `tools/class-tree-edges.py
