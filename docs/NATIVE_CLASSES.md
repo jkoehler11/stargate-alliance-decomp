@@ -220,8 +220,9 @@ while `PlayerController`'s 245 KB text is balanced and still declares none of it
 ## Every body, marked (PLAN 3.9)
 
 The declarations are reconciled above; this is the other half — a reader opening `Pawn.uc` should not have to
-guess that a `native function` has no script to compile. `tools/native-mark.py` writes one line above every
-`native function` declaration in the extracted tree and one row to `inventory/native_bodies.csv`:
+guess that a `native function` has no script to compile. `tools/native-mark.py` writes one line above every native
+declaration in the extracted tree — `native function` and `operator` alike — and one row to
+`inventory/native_bodies.csv`:
 
 ```
 // native - see src/Native/Engine/Pawn.cpp  token 0 binder intAPawnexecSetViewPitch body 0x00195340
@@ -248,7 +249,11 @@ one join away; `binder`/`binder_va` are the image's own `int<prefix><Class>exec<
 | … with a body address | **660** |
 | … whose body is a function in `symbols/xbox_functions.csv` | **389** |
 | … with no body anywhere in the image | **21** |
-| marker lines written | **681** (0 unmarked) |
+| `operator` declarations in the shipped text | **97**, in 3 classes |
+| … composing a record of their own class | **97** |
+| … with the image's binder literal | **85** |
+| … with a body address | **97** |
+| marker lines written | **778** (681 functions + 97 operators, 0 unmarked) |
 
 **The 21 without a body are two known sets, not a new mystery.** Fourteen are **editor-only** — `BrushBuilder`'s 13
 and `MaterialFactory.ConsoleCommand`, classes whose natives are compiled into the editor build rather than into the
@@ -318,8 +323,23 @@ registration pool writes `String` (`At_StringString`, 12 records), and the alias
 rather than silently corrected.
 
 Marking an operator is therefore the same shape as marking a function — one line per declaration naming its record
-and token — and the mapping it needs is now a committed table; wiring it into the tree writer is the remaining
-step.
+and token — and it is part of the same pass (**measured 2026-11-10**):
+
+```
+// native - see src/Native/Core/Object.cpp  token 242 record EqualEqual_BoolBool binder intUObjectexecEqualEqual_BoolBool body 0x00041000
+native(242) static final operator(24) bool == ( bool A, bool B );
+```
+
+The operator line adds one field, `record`, because the declaration's own name is a symbol: the symbol alone cannot
+identify the row — `Core.Object` declares `==` **eight** times (`bool`, `int`, `float`, `vector`, `rotator`,
+`string`, `Object`, `name`) and each composes a different record. So the pass joins the ordered declaration list to
+`inventory/native_operators.csv` by declaration text; a text the table does not carry raises and the tree is not
+written, rather than a marker landing on the wrong declaration. All 97 compose a record, all 97 carry a body
+address, and 85 carry the image's binder literal — the twelve without one are the string operators, which the
+registration pool spells `_StringString` where the script writes `_StrStr`. Ninety-six of the 97 bodies are in the
+function census; the exception is `Object.ClockwiseFrom_IntInt`, the operator-expansion record the census note above
+already singles out. The thirteen records the compiler synthesises have no declaration, so there is nothing to mark
+for them — that is `inventory/native_tokens.csv`'s `operator-expansion` basis, not a gap in the tree.
 
 The marker pass is **idempotent by construction** — every line carrying the prefix is removed before the fresh
 markers are inserted, so it is a pure function of the package text: a second run over the 2,319 files hashes
@@ -327,8 +347,9 @@ identically, and a marker whose module or address changed is replaced rather tha
 
 ## `tools/native-mark.py`'s `--check`
 
-`--check` answers from `inventory/native_bodies.csv` alone (no dump, no write): every `(package, class, function)`
-appears once, `src_native` follows the row's own package and class, and `marker` is the render of its own row — so
+`--check` answers from `inventory/native_bodies.csv` alone (no dump, no write): every `(package, class, kind,
+function, record)` appears once, an operator row names a record and a function row does not, `src_native` follows
+the row's own package and class, and `marker` is the render of its own row — so
 a hand-edited row, or a row regenerated after the marker format changed, fails the gate instead of shipping a table
 the tree does not match. `--selftest` covers the parser (a wrapped declaration, a commented-out one, native *data*
 `var native const int`, an operator) and the pass itself (marker text, offsets, idempotency, a stale marker).

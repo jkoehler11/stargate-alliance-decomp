@@ -62,7 +62,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/maps.csv` | 73 | 6 | `make help` |
 | `inventory/music_index.csv` | 16 | 7 | `make campaign-matrix` |
 | `inventory/native_binder_names.csv` | 797 | 8 | `make native-binder` |
-| `inventory/native_bodies.csv` | 681 | 11 | `make native-bodies` |
+| `inventory/native_bodies.csv` | 778 | 13 | `make native-bodies` |
 | `inventory/native_census.csv` | 883 | 13 | `make native-census` |
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_names.csv` | 273 | 4 | `make natives` |
@@ -116,5 +116,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-109 artifacts, 128094 rows in total. 0 with no generator.
+109 artifacts, 128191 rows in total. 0 with no generator.
 

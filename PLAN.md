@@ -219,10 +219,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       at 3,352. Chase L2→L3 on the small packages first (`Core`, `Fire`,
       `UnrealEd`, `IpDrv`, `AmbientCreatures`),
       then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
-- [~] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
+- [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
-      declarations in the shipped text (256 carrying an explicit index) and 92 operator declarations, against 685
+      declarations in the shipped text (256 carrying an explicit index) and 97 operator declarations, against 685
       function records in `inventory/natives.csv` — **672 matched (98.1%) and 0 index disagreements**, so every
       `native(N)` agrees with its record. 22 residual rows over 14 classes (`PlayerController` 4, `Core.Object` 4,
       `Weapon`/`GUIController`/`StargateWeapon`/`HitEffectManager` 2 each) **each carry a verdict from the image's
@@ -236,8 +236,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/native_bodies.csv`, `docs/NATIVE_CLASSES.md` *Every body, marked*): 681 of 681 `native function`
       declarations carry a `// native - see src/Native/<Package>/<Class>.cpp` line naming their token, binder and body
       address, and 660 of them resolve to a body in the image (271 of those 660 bodies are absent from the function
-      census, which no caller list could supply). **Remaining: the 92 `operator` declarations carry no marker** — one
-      statement expands into several records, so a single line would name one and lie about the rest.
+      census, which no caller list could supply). **Every `operator` declaration is marked too** (778 lines in 2,319
+      files — 681 functions + 97 operators, 0 unmarked, byte-identical on a second pass): 97 of 97 compose a record,
+      85 carry the image's binder literal, and all 97 carry a body address, so a declaration is cross-linked to the
+      C++ that implements it exactly as a function is. This closes 3.9: what is left is the C++ at the target path,
+      which is Phase 4's reconstruction and what the marker names.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
@@ -925,6 +928,34 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, every native declaration is marked — 778 lines, 681 functions and 97 operators)
+
+- **One pass, both kinds, no removals.** `tools/native-mark.py` marks `operator` declarations now: **778 marker lines
+  in 2,319 class files, 0 unmarked**, and the tree is byte-identical on a second pass (`d0aa6c05…` over 2,319 files).
+  Diffed against the tree the previous pass wrote, the change is **97 added lines and 0 removed**, every added line a
+  marker — so the 681 function markers are untouched and the function half of the table still reads
+  674/660/660/389.
+- **The join cannot be by symbol.** `Core.Object` declares `==` eight times (`bool`, `int`, `float`, `vector`,
+  `rotator`, `string`, `Object`, `name`), each composing a different record, so `(package, class, function)` cannot be
+  the key for an operator. `inventory/native_bodies.csv` gains `kind` and `record`, the marker gains `record <name>`
+  between the token and the binder, and the pass joins the ordered declaration list to
+  `inventory/native_operators.csv` **by declaration text** — a text the table does not carry raises and the tree is
+  not written, so a marker cannot land on the wrong declaration.
+- **Operators cover better than functions do.** All 97 compose a record and **all 97 carry a body address** (the
+  function side has 21 with no body anywhere in the image); 85 carry the image's binder literal, and the twelve that
+  do not are the string operators the pool spells `_StringString` where the script writes `_StrStr`. 96 of the 97
+  bodies are in the function census — the exception is `Object.ClockwiseFrom_IntInt`, the operator-expansion record
+  the census note already names, which is why `not-in-census` reads 272 here against 271 on the function rows alone.
+- **The 92-to-97 gap was the span parser, not the table.** `declaration_spans` counted operators with
+  `native-reconcile`'s one- or two-character symbol class, which cannot spell `$`, `$=`, `>>>`, `ClockwiseFrom`,
+  `Dot` or `Cross`; operator spans come from `native-operators`' own `DECL` now, and `--selftest` pins those six. The
+  five missed declarations are all `Core.Object`'s (86 there against the text's 91; 92 in total against 97), which is
+  why "0 unmarked" read 0 before: the missing declarations were not spans, so nothing counted them as missed.
+- **3.9 is closed by this.** What it does not cover, by construction: the thirteen operator records the compiler
+  synthesises from other operators (no declaration exists to mark; they are in `inventory/native_tokens.csv` under
+  `operator-expansion`), the 21 declarations whose bodies are not in the shipped image (14 editor-only, 7 unbound —
+  `inventory/native_residual.csv`), and the C++ itself, which is Phase 4.
 
 ### Execution notes (2026-11-10, an `operator` declaration is one record, not a set: 97 declarations, 97 records)
 
