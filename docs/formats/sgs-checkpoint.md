@@ -114,16 +114,76 @@ script callers are `GameProfile.StartNewMatch` and `GameProfile.ContinueSinglePl
     [VL:SAVEGAME]: SaveGame Summary Names=%d Import=%d Export=%d   literal 0x004df8e8, site 0x00070938
 
 `FUN_00138680` (2,278 bytes) is the save routine — the 2,278-byte counterpart of the loader's 2,472 — and it has no
-direct call site in the image, so it is dispatched rather than called (both execs above are reached the same way,
-through the registration table). The `SaveGame Summary` literal lives at `0x00070938`, inside `Core_UnObjBas`
+direct call site in the image, because it is a **virtual**: the only dword in the whole image equal to its address is
+slot 59 of the `GameEngine` vtable. The console command that reaches that slot is measured in *The console path*
+below. The `SaveGame Summary` literal lives at `0x00070938`, inside `Core_UnObjBas`
 (5,552 bytes), i.e. the exporter that prints those counts is the engine's own package serializer, which is what U5
 asked.
 
 **Consequence for the rebuild.** A checkpoint can be read — `LoadSaveGame` is complete and is what
-`PlayerController.RestartCheckpoint` reaches through `ConsoleCommand("LoadSaveGame …")` — but the shipped build's
-script path cannot write one, so the nine `.sgs` files on the disc are authoring output rather than something the
-build regenerates. A rebuild that wants to save writes the package itself (PLAN 6.4) instead of restoring this
-native.
+`PlayerController.RestartCheckpoint` reaches through `ConsoleCommand("LoadSaveGame …")`. Writing is split: the
+**stubbed** half is only the script-visible `GameInfo.SavePackage` that `GameProfile` calls, while the engine's own
+writer behind the `SaveGame` console command is whole (`The console path`, below). So a rebuild does not have to
+reimplement saving to keep the checkpoint key working; it has to keep — or re-point — the `SavePackage` native.
+The nine `.sgs` files on the disc are still authoring output rather than something this build demonstrably writes.
+
+## The console path, measured (2026-11-09)
+
+**The three console commands are UnrealScript, and none of them is a native.** `CheckpointSave`, `QuickSave` and
+`NewSaveGame` are `exec function`s on `PlayerController` (`inventory/console_commands.csv`; `function_flags.csv` lists
+them `Defined;Exec;Public`), so there is no registration-table record to look up — "one `native_targets.csv` lookup
+each" was the wrong instrument. Their extracted bodies (`tools/pkg-script-text.py` on `Engine.u`,
+`$WORK/save2/PlayerController.uc`) are the dispatch, and every one of them ends in a `ConsoleCommand` string:
+
+    NewSaveGame            ConsoleCommand("SaveGame Manual Save")
+    QuickSave              ConsoleCommand("SaveGame Q Quicksave")   after a Pawn / Health / NetMode guard
+    CheckpointSave(desc)   ConsoleCommand("SaveGame C" @ desc)      same guard, and skips a repeated desc
+    MapChangeAutoSave      ConsoleCommand("SaveGame A")
+    MatineeAutoSave        ConsoleCommand("SaveGame M")
+
+The kind of save is therefore the **second token, one letter**, and `NewSaveGame` sends none at all.
+
+**The handler is `FUN_00139d50` (4,829 bytes).** It walks a fixed command list with `FUN_00056dd0`, which takes a wide
+literal and an `FString` by pointer, answers nonzero on a match and strips the token (an `FParse::Command`). The
+literals, in the order the body tests them:
+
+| literal | VA | what the body does with it |
+|---|---|---|
+| `SAVEGAME` | `0x00509854` | reads the second token `A` / `C` / `M` / `Q` into four booleans, then dispatches the writer |
+| `DELETESAVEGAME` | `0x0050a56c` | calls `0x001347d0` |
+| `LOADCHECKPOINT` | `0x0050a54c` | calls `0x00136a40` with one mode flag set |
+| `LOADQUICK` (+ optional `BACKUP`) | `0x0050a538` / `0x0050a528` | two more calls to `0x00136a40`, different flags |
+| `LOADTRAVEL` | `0x0050a510` | a third |
+| `LOADSAVEGAME` | `0x0050a4f4` | a fourth, all flags clear |
+| `CANCEL` | `0x0050a4e4` | a guarded travel-cancel branch |
+| `GSPYLITE` | `0x0050a5b4` | takes a `GSpyLite.exe` argument |
+
+**`SAVEGAME` reaches the writer through a vtable slot, which is why no caller exists.** At `0x0013a5bb` the body does
+
+    13a5a5  mov  eax,[esi-0x28]        ; the GameEngine object's vtable
+    13a5b7  lea  ecx,[esi-0x28]        ; this
+    13a5bb  call DWORD PTR [eax+0xec]  ; slot 59
+
+and slot 59 of the `GameEngine` vtable (`0x00509438`, 66 slots, named by `inventory/xbe_class_table_names.csv` from
+the registration literal and the constructor's store) is `0x00138680` — the `[VL:SAVEGAME]: Saving game to file: %s`
+writer. Two independent structures agree, and neither is a guess: `0x00509438 + 59*4 = 0x00509524` is the **only**
+dword in the image equal to `0x00138680`, and `0x0013a5bb` is the only `call [reg+0xec]` inside the exec body. The
+call passes an `FString` (the description, copied out of the command tail at `0x0013a58e`) and four booleans — the
+kind flags, so `SaveGame C <desc>` and `SaveGame Q Quicksave` differ only in that word.
+
+**The name is composed on the load side, in `0x00136a40` (1,053 bytes).** All five load commands call it directly
+(`E8` sites `0x0013a613`, `0x0013a657`, `0x0013a66e`, `0x0013a697`, `0x0013a6c3`, all inside the exec body) with
+different flag words; it is `FString` concatenation and compares the same `SAVEGAME` / `CHECKPOINT` / `QUICKSAVE`
+literals (`0x00509854`, `0x00509868`, `0x00509880`) twice each. Nothing else in the image calls it. What the write
+side does with the name is inside the writer, which is the remaining read.
+
+**The instrument, and the trap it exists for.** `tools/vtable-reach.py --va <addr>` runs the three scans a "zero
+callers" result hides behind: `E8 rel32` call sites (a direct call is relative, so no dword scan can see it —
+`0x00136a40` has five and `tools/xbe.py xrefs` answers none), dword references (what a dispatcher table or a vtable
+looks like), and — for a reference that lands inside a known class table — the class, the slot index and the
+`call [reg+slot*4]` sites for that offset. The offset alone never names a class: every object's slot 59 answers to
+`+0xec`, which is why the tool prints those sites as *candidates* and the surrounding literal (`SAVEGAME` at
+`0x0013a4f2`) is what fixes the object.
 
 ## Using this for the rebuild (PLAN 6.4 / 7.2)
 

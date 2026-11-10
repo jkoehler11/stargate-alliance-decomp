@@ -908,8 +908,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   same shape as the two execs, which are reached through the registration table. The exporter's own summary literal
   (`SaveGame Summary Names=%d Import=%d Export=%d`, site `0x00070938`) is inside `Core_UnObjBas`, so the serializer
   behind a checkpoint is the engine's, as U5 suspected.
-- **Next**: `CheckpointSave`, `QuickSave` and `NewSaveGame` are the three `PlayerController` console commands that
-  could dispatch it; each is one `native_targets.csv` lookup and one decompile away.
+- **Correction**: the three `PlayerController` console commands were the right candidates and the wrong instrument —
+  none is a native, so none has a `native_targets.csv` row. They are read as script (`tools/pkg-script-text.py`), and
+  the body to decompile is the exec they all funnel into. Measured in the note below.
+
+### Execution notes (2026-11-09, the save path's dispatcher is a console command and its writer is vtable slot 59)
+
+- **`SaveGame <letter> <text>` is the whole write interface.** `PlayerController.NewSaveGame`, `QuickSave`,
+  `CheckpointSave`, `MapChangeAutoSave` and `MatineeAutoSave` are `exec function`s with no native body; each builds
+  that console string (`"SaveGame Manual Save"`, `"SaveGame Q Quicksave"`, `"SaveGame C" @ desc`, `... A`, `... M`).
+  So the second token — the letter — is the kind of save, and `NewSaveGame` sends none.
+- **The chain is closed without a boot.** `FUN_00139d50` (4,829 bytes, `this` = the `GameEngine` object) walks a fixed
+  command list with an `FParse::Command`-style matcher (`FUN_00056dd0`): `SAVEGAME`, `DELETESAVEGAME`,
+  `LOADCHECKPOINT`, `LOADQUICK` (+`BACKUP`), `LOADTRAVEL`, `LOADSAVEGAME`, `CANCEL`, `GSPYLITE`. `SAVEGAME` turns the
+  letter into four booleans and then does `call DWORD PTR [eax+0xec]` at `0x0013a5bb` — slot 59 of the `GameEngine`
+  vtable `0x00509438`, which is `0x00138680`, the `[VL:SAVEGAME]: Saving game to file: %s` writer.
+- **The agreement is the evidence, and both halves are structural.** `0x00509438 + 59*4 = 0x00509524` is the only
+  dword in the whole image equal to `0x00138680`, and `0x0013a5bb` is the only `call [reg+0xec]` inside the exec body.
+  A stored address alone proves nothing (`.rdata` is full of plausible pointers); the call offset matching the table
+  index is a boundary no coincidence passes.
+- **Instrument: `tools/vtable-reach.py`** (`--va`, repeatable; `--check` is a synthetic self-test with no dump). It
+  exists because "zero callers" hides two things a dword scan cannot see: a direct call is `E8 rel32` (`0x00136a40`
+  has five, `tools/xbe.py xrefs` answers none) and a virtual call stores an *offset*. It prints vcall sites as
+  candidates, not answers — every object's slot 59 answers to `+0xec`; the surrounding literal names the object.
+- **Next**: the write side's name composition inside `0x00138680` (it compares the same `SAVEGAME`/`CHECKPOINT`/
+  `QUICKSAVE` literals at `0x001386dc`/`0x001386ec`/`0x001386f3`), and `0x00136a40`'s five flag words.
 
 ### Execution notes (2026-11-09, the binder's map is a table in the image, so a name is an address)
 

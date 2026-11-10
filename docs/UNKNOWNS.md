@@ -471,16 +471,20 @@ pointer — no call, no log, no writer — so `bool SavePackage(string)` answers
 `[VL:SAVEGAME]: Saving game to file: %s` (literal `0x00509b50`, site `0x00138c7b`) — the counterpart of the loader —
 and it has no direct call site, so it is dispatched rather than called. The `SaveGame Summary Names=%d Import=%d
 Export=%d` literal (`0x004df8e8`, site `0x00070938`) is inside `Core_UnObjBas`'s 5,552-byte body, i.e. the exporter
-is the engine's own package serializer. What remains open is *who dispatches* `FUN_00138680`: the console commands
-`CheckpointSave`, `QuickSave` and `NewSaveGame` are the candidates, and each is settled by reading its own exec body
-with the same table. Depth: `docs/formats/sgs-checkpoint.md`, *The two natives, measured*.
+is the engine's own package serializer. Depth: `docs/formats/sgs-checkpoint.md`, *The two natives, measured*.
 
-**Still open.** The console side of the write path (the three `PlayerController` commands above), and what the console
-path's handler does with the name. The `.sgs` literals in the image are
-**name-table strings, not log strings**: they have no `push` xrefs, so the code has to be found another way. One
-measured lead: the wide string `LoadSaveGameInfo` is referenced by a single function at `0x001226a0` (7,486 bytes),
-inside the same `0x0012xxxx` region that holds the package-check readers (PLAN 6.2) — the save/load/check neighbourhood
-is one place, which is worth knowing before decompiling anything there.
+**Answered 2026-11-09: the dispatcher is the engine's exec body, and the writer is a vtable slot.** The three
+`PlayerController` commands are UnrealScript only — `NewSaveGame`, `QuickSave`, `CheckpointSave`,
+`MapChangeAutoSave` and `MatineeAutoSave` each end in `ConsoleCommand("SaveGame <letter> <text>")`, so the write path
+begins as a *console string*, not as a call. `FUN_00139d50` (4,829 bytes) parses it: `SAVEGAME` takes the letter
+`A`/`C`/`M`/`Q` into four booleans and dispatches through `call [eax+0xec]` on the `GameEngine` object (`0x0013a5bb`),
+and slot 59 of the `GameEngine` vtable `0x00509438` is `0x00138680` — agreeing with the one dword in the image that
+holds that address (`0x00509524`). The load commands (`LOADSAVEGAME`, `LOADCHECKPOINT`, `LOADQUICK`, `LOADTRAVEL`) go
+to `0x00136a40`, which composes the name and compares the `SAVEGAME`/`CHECKPOINT`/`QUICKSAVE` literals; the
+`.sgs` strings are name-table strings with no `push` xrefs, which is why neither side was findable that way.
+**Still open:** what the writer does with the name and the four flags (its own name composition and the
+`[VL:SAVEGAME]` sites inside `0x00138680`), and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the
+save/load/check neighbourhood beside the package-check readers of PLAN 6.2).
 
 ## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 
