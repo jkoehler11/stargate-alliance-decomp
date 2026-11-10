@@ -364,7 +364,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
       A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and
-      indexes the checkpoints in its `[Saved Games]` section.
+      indexes the checkpoints in its `[Saved Games]` section. The container is now fully read and written:
+      `tools/sgs-write.py` rebuilds all nine byte-identically (a zero serial size writes no serial offset).
 - [~] 5.5 Parse `.ka`/`.kaw` ragdolls and `LIPSincData/*.lad`; document formats, map to the native loaders from 4.8.
       **The `.lad` container is now measured to a bind pose.** `.ka`/`.kaw` are Karma XML, fully documented; `.lad`
       has its header, channel table, 10-byte prelude and then **one 32-byte pose record per channel** (21 or 19, the
@@ -1061,6 +1062,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   surrogate pairs collapse two units into one character and shift every later index: all 769 addresses were wrong
   (752 exactly 2,970 bytes short of their name, 17 outside every file-backed section). The column is regenerated and
   every address now lands on its own name — which is what made the table findable at all.
+
+### Execution notes (2026-11-09, the checkpoint package rebuilds byte-identically: a zero size writes no offset)
+
+- **The save export table was never a different layout, only a different termination rule.** The entry is
+  `Class(idx) Super(idx) Outer(int32) Name(idx) Flags(u32) SerialSize(idx) SerialOffset(idx)` — the same seven
+  fields as the game's own packages — except that **an export whose serial size is 0 writes no serial offset at
+  all**. A checkpoint exports objects with no serialised data (class defaults, `Squad` markers, states) and
+  **316 of its 1,776 exports are zero-size**, so assuming the offset loses a byte per such entry: the walk
+  desyncs mid-table and leaves the file, which is what made a 16.2-byte average entry look like an unknown
+  encoding for a whole session.
+- **Why the earlier searches could not have found it.** 256 uniform width combinations and 15,120 ordered field
+  layouts are all *present-field* hypotheses; the rule is about a field being **absent**, which no order or width
+  search can express. The tell was in the bytes and was read the wrong way round: a run of 13-byte entries whose
+  own `Class` resolved (`-7` → `SQUAD_JaffaSerpentL_Single`) while the next entry started on the byte the parse
+  called the offset.
+- **Three checks, all structural.** The walk ends exactly at EOF in 9 of 9 files (210/208/198/198/212/178/114/213/
+  245 entries); all 1,776 class indices name an import whose own class is `Class`/`State`; and the `SerialSize`s
+  sum to exactly `export_offset - first_payload_offset` in 9 of 9, so the payloads tile their region with no gap
+  and no overlap.
+- **The rebuild is now exact.** `tools/sgs-write.py` (`make sgs-write`) rebuilds every checkpoint from the parsed
+  model — header, three tables, every payload at its offset — and reports **9 of 9 byte-identical**, with a
+  per-table column (names/imports/exports all `yes`) that is what localised this. The `[Saved Games]` row half was
+  already exact; both halves of a resumable checkpoint now round-trip.
+- **The rule is additive, not a reinterpretation.** The dump's other 407 packages (279,280 exports) encode
+  identically with and without it; the one file that answers differently, `M01A_sounds.uax`, reads as 20
+  zero-size entries under either rule and resolves 0 of 20 classes, so its 20-entry table is unread on its own
+  terms and is neither fixed nor broken here.
+- **Instruments**: `ue2pkg.Package.read_exports` now carries the rule (and is what every package-side tool uses);
+  `pkg-write.encode_exports` mirrors it and `--selftest` gains a synthetic package with a zero-size export;
+  `sgs-write.py --check` does the same with no dump. `docs/formats/sgs-checkpoint.md` has the entry layout, the
+  numbers and the checks. What is left on the save path is content, not container: a rebuilt package's payloads
+  come from a compiler, and PLAN 6.2's package check still has to accept a rebuilt save.
 
 ### Execution notes (2026-11-09, the play path picks a track and no name can ever match)
 

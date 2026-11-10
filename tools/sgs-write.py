@@ -16,15 +16,14 @@ This tool exercises both without a boot and without trusting either one's output
   CRLF and every other byte, then re-read: the section count must go up by exactly one, the key must be in that
   section, and adding it twice must change nothing. A duplicate key is refused, because the index is a map.
 
-**What it measures on the shipped checkpoints (2026-11-09): the row half works, the package half stops at the
-export table.** `ue2pkg` reads a checkpoint's header exactly as `docs/formats/sgs-checkpoint.md` records it
-(1,072 names / 93 imports / 210 exports for `C_M02A_Drillsite`) and parses the name and import tables, but the
-export walk desyncs inside the table: 3,401 bytes for 210 entries is ~16.2 bytes each, where the game's own
-packages use 24–32, and no uniform encoding of the seven export fields reproduces 210 plausible entries (a
-search over every combination of compact/`u32`/`u16`/`u8` field widths finds none). A `.unr` map parses with the
-same reader in the same run (5,078 exports), so this is a save-package layout, not a reader regression. The tool
-therefore reports *where* it stops instead of guessing, and a rebuilt checkpoint needs that layout measured
-first — which is what this tool's table is for.
+**What it measures on the shipped checkpoints (2026-11-09): both halves work.** `ue2pkg` reads a checkpoint's
+header exactly as `docs/formats/sgs-checkpoint.md` records it (1,072 names / 93 imports / 210 exports for
+`C_M02A_Drillsite`), parses all three tables and rebuilds the file **byte-identically** — 9 of 9. The last
+missing piece was the save package's export entry: an export whose serial size is 0 carries no serial offset,
+which is why an earlier walk lost a byte per zero-size export and ran off the end of the file. With that rule
+the nine tables walk to exactly EOF (1,776 exports, 316 of them zero-size) and every export's class resolves
+to a `Class`/`State` import. A `.unr` map parses with the same reader in the same run, so the rule is additive
+rather than a reinterpretation of the game's own packages.
 
 Everything this writes goes under `--out` (a work directory, never the repository).
 
@@ -60,10 +59,10 @@ pkg_write = _load("pkg_write", os.path.join(HERE, "pkg-write.py"))
 
 
 def read_package(path):
-    """Parse what this reader can, and record *where* it stops instead of raising.
+    """Parse a package, recording *where* it stops instead of raising.
 
-    On a shipped checkpoint the export table is the stopping point (below), so a rebuild has to report that
-    rather than crash: the header and the name and import tables parse, and the export walk desyncs mid-table.
+    The export table used to be the stopping point on every checkpoint (the zero-size entry rule was unread);
+    it now parses, so the error path is only there for a package whose tables genuinely disagree with the model.
     """
     pkg = Package(path)
     pkg.read_names()
@@ -109,29 +108,33 @@ def rebuilt_path(path, out_dir):
 
 
 def table_roundtrip(pkg):
-    """Re-encode the two tables that parse, and compare them with the file's own bytes.
+    """Re-encode the three tables and compare them with the file's own bytes.
 
-    Half a rebuild is still a measurement: if the name and import tables come back byte-identical, those two
-    regions are pinned and the export table is the only one this reader does not explain.
+    Per-table rather than per-file is what makes a diff actionable: the name and import tables re-encoded
+    identically long before the export table did, and saying so was the measurement that localised the blocker.
     """
     enc_names = pkg_write.encode_names(pkg.names or [])
     names_ok = pkg.data[pkg.name_offset:pkg.name_offset + len(enc_names)] == enc_names
     enc_imports = pkg_write.encode_imports(pkg.imports or [])
     imports_ok = pkg.data[pkg.import_offset:pkg.import_offset + len(enc_imports)] == enc_imports
-    return names_ok, imports_ok, len(enc_names), len(enc_imports)
+    exports_ok = None
+    if pkg.exports is not None:
+        enc_exports = pkg_write.encode_exports(pkg.exports)
+        exports_ok = pkg.data[pkg.export_offset:pkg.export_offset + len(enc_exports)] == enc_exports
+    return names_ok, imports_ok, exports_ok, len(enc_names), len(enc_imports)
 
 
 def roundtrip(path, out_dir):
     """Rebuild one package, compare it, and read the rebuilt file back: one row of the report."""
     pkg = read_package(path)
-    names_ok, imports_ok, names_bytes, imports_bytes = table_roundtrip(pkg)
+    names_ok, imports_ok, exports_ok, names_bytes, imports_bytes = table_roundtrip(pkg)
     if pkg.exports is None:
         return {"file": os.path.basename(path), "bytes": len(pkg.data), "rebuilt": 0,
                 "identical": False, "first_diff": None, "gaps": 0, "gap_bytes": 0,
                 "covered": 0, "names": len(pkg.names or []), "imports": len(pkg.imports or []),
                 "exports": None, "reparsed": False, "out": None,
                 "export_error": pkg.export_error,
-                "names_ok": names_ok, "imports_ok": imports_ok,
+                "names_ok": names_ok, "imports_ok": imports_ok, "exports_ok": exports_ok,
                 "names_bytes": names_bytes, "imports_bytes": imports_bytes}
     data, gaps, covered = pkg_write.rebuild(pkg)
     want = pkg.data
@@ -139,7 +142,8 @@ def roundtrip(path, out_dir):
            "identical": data == want, "first_diff": first_diff(want, data),
            "gaps": len(gaps), "gap_bytes": sum(n for _o, n in gaps),
            "covered": covered, "names": len(pkg.names or []),
-           "imports": len(pkg.imports or []), "exports": len(pkg.exports or [])}
+           "imports": len(pkg.imports or []), "exports": len(pkg.exports or []),
+           "names_ok": names_ok, "imports_ok": imports_ok, "exports_ok": exports_ok}
     dest = rebuilt_path(path, out_dir)
     with open(dest, "wb") as fh:
         fh.write(data)
@@ -147,6 +151,7 @@ def roundtrip(path, out_dir):
     row["reparsed"] = census(again) == census(pkg)
     row["out"] = dest
     row["export_error"] = None
+    row["exports_ok"] = exports_ok
     return row
 
 
@@ -241,8 +246,8 @@ def index_test(profile_path, key, value, out_dir):
 
 def report(rows, idx):
     bad = 0
-    print("%-32s %8s %6s %5s  %-4s %-4s  %s"
-          % ("file", "bytes", "names", "impt", "n.tb", "i.tb", "package rebuild"))
+    print("%-32s %8s %6s %5s  %-4s %-4s %-4s  %s"
+          % ("file", "bytes", "names", "impt", "n.tb", "i.tb", "e.tb", "package rebuild"))
     for r in rows:
         if r["exports"] is None:
             status = "export table unread (%s)" % r["export_error"]
@@ -251,15 +256,17 @@ def report(rows, idx):
                      ("" if r["reparsed"] else ", does not re-parse")
             if not r["identical"] or not r["reparsed"]:
                 bad += 1
-        print("%-32s %8d %6d %5d  %-4s %-4s  %s"
+        print("%-32s %8d %6d %5d  %-4s %-4s %-4s  %s"
               % (r["file"][:32], r["bytes"], r["names"], r["imports"],
-                 "yes" if r.get("names_ok") else "no", "yes" if r.get("imports_ok") else "no", status))
+                 "yes" if r.get("names_ok") else "no", "yes" if r.get("imports_ok") else "no",
+                 "yes" if r.get("exports_ok") else ("no" if r.get("exports_ok") is False else "-"), status))
     same = sum(1 for r in rows if r["identical"])
     print("\n%d of %d checkpoints rebuild byte-identically; %d of %d parse to a full export table"
           % (same, len(rows), sum(1 for r in rows if r["exports"] is not None), len(rows)))
-    print("name table re-encodes identically in %d of %d; import table in %d of %d"
+    print("tables re-encode identically -- names %d of %d, imports %d of %d, exports %d of %d"
           % (sum(1 for r in rows if r.get("names_ok")), len(rows),
-             sum(1 for r in rows if r.get("imports_ok")), len(rows)))
+             sum(1 for r in rows if r.get("imports_ok")), len(rows),
+             sum(1 for r in rows if r.get("exports_ok")), len(rows)))
     unread = sum(1 for r in rows if r["exports"] is None)
     if unread == len(rows):
         print("all %d stop at the same place: the save package's export-entry layout is unread"
@@ -317,11 +324,16 @@ def selftest():
     tmp = tempfile.mkdtemp(prefix="sgs-write-")
     try:
         src = os.path.join(tmp, "Synthetic.sgs")
-        pkg_write.synthesize(src, [63, 10, 200])
+        # one export with no data at all: the save packages' zero-size entry rule has to round-trip too
+        pkg_write.synthesize(src, [63, 0, 200])
         row = roundtrip(src, os.path.join(tmp, "out"))
         chk("synthetic rebuild identical", row["identical"], True)
         chk("synthetic reparses", row["reparsed"], True)
         chk("synthetic export count", row["exports"], 3)
+        chk("all three tables re-encode", (row["names_ok"], row["imports_ok"], row["exports_ok"]),
+            (True, True, True))
+        zero = read_package(src).exports[1]
+        chk("a zero-size export carries size 0 and no offset", (zero["size"], zero["offset"]), (0, 0))
 
         # a model that disagrees with the file must be *located*: flip one export flag and rebuild
         pkg = read_package(src)
