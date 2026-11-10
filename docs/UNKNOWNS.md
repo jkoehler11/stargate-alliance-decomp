@@ -772,15 +772,27 @@ Fullscreen 1` (`0x2b285b`). So the renderer asks for a **fullscreen 640x480 HAL 
 processing, a 32-bit back buffer and a 32-bit depth-stencil buffer**; 30 and 42 are this build's `D3DFORMAT`
 values, not SDK names.
 
-**Not measured, and what would settle it.** The two `D3DFORMAT` enumerants stay unnamed -- naming them needs the
-Xbox D3D8 header, which neither the dump nor this repository carries, so the numbers are the measurement and a
-name would be a guess. What the device *reports* (`GetDeviceCaps`, the caps the code tests afterwards) is a
-second call site nobody has stopped on: stop on its slot with `bp-args.py --break` and read the out-pointer. The
-multisample value `0x11` is a compile-time literal (`mov DWORD PTR [esi+0x4718],0x11`) whose Xbox meaning is not
-in this repository either.
+**Measured 2026-11-10, the reported half -- the entry is closed.** What the device *reports* is not a call to
+stop on but a struct the render device keeps: a **53-dword `D3DCAPS8` at `this+0x419c`**, already populated when
+the post-create capability test at `0x002b3008` (`test BYTE PTR [esi+0x4238],0x2`) reads
+`VertexProcessingCaps` (`0xbb`: TEXGEN, MATERIALSOURCE7, DIRECTIONALLIGHTS, POSITIONALLIGHTS, LOCALVIEWER, one
+unnamed `0x80` bit). Every field boundary lands on the SDK's, and the runtime writes its own driver name
+`"Xbox driver"` at `+0xd4`. The numbers that matter downstream: 4 blend stages and 4 simultaneous textures, 8
+active lights, 4096x4096 textures, `MaxVertexIndex` 0xffff (16-bit indices), and **96** vertex-shader constants
+with `vs`/`ps` version words `0xffff0101`. Because MATERIALSOURCE7 is set, the `hardware` decision and the
+requested `BehaviorFlags` 0x40 agree, and the `D3DVTXPCAPS_MATERIALSOURCE7` fall-through is dead code on this
+hardware. The table is in `docs/systems/RENDERER.md` ("What the device reports"), and `tools/xemu/d3d-caps.py`
+decodes the window out of a `bp-args.py` log (`--check` needs neither dump nor log).
 
-**Status.** Answered for the create request; `tools/xemu/bp-args.py` is the instrument and the three stub
-behaviours it works around are in `docs/XEMU.md`.
+**Still unnamed, and why.** The two `D3DFORMAT` enumerants (30 back buffer, 42 depth) and the `MultiSampleType`
+value `0x11` stay numbers: naming them needs the Xbox D3D8 header, which neither the dump nor this repository
+carries, so a name would be a guess. Which call *fills* the caps struct is also unstopped -- it runs in the
+render device's initialisation before the create path -- and that is the only mechanical question left in this
+entry.
+
+**Status.** Closed for both halves (request and report); `tools/xemu/bp-args.py` and
+`tools/xemu/d3d-caps.py` are the instruments, and the three stub behaviours `bp-args.py` works around are in
+`docs/XEMU.md`.
 
 ## U12. ~~The XBE entry point does not decode from the header~~ — resolved
 

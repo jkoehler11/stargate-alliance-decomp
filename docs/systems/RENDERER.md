@@ -64,6 +64,105 @@ The device itself is reached the way a COM-style API is: through a table on an i
 4.2's signature work (U9): the offsets are recorded here as offsets, not as `IDirect3DDevice8` slots, because
 no signature database in this repository can name them yet.
 
+## What the device reports (measured)
+
+U11's other half is not what the code *asks* for but what the device *reports*: the caps the render device tests
+once `CreateDevice` has returned. That is a struct the render device keeps, so the same instrument can stop on
+the test and dump the window around it:
+
+    python3 tools/xemu/bp-args.py --port 12348 --force --break 0x2b27f0 --break 0x2b3008 \
+        --dump 'esi+0x4000:0x300' --stops 6 --json $WORK/bp1.json > $WORK/bp1.log
+    python3 tools/xemu/d3d-caps.py --log $WORK/bp1.log --base 0x02384000 --caps 0x19c
+
+`0x002b3008` is `test BYTE PTR [esi+0x4238],0x2`. The byte it tests is the first byte of field 39 of a
+**53-dword `D3DCAPS8` that starts at `esi+0x419c`**, and every field boundary falls where the SDK puts it —
+`MaxTextureWidth`/`MaxTextureHeight` at `+0x58`/`+0x5c`, the five guard-band floats at `+0x74..+0x84`,
+`MaxTextureBlendStages`/`MaxSimultaneousTextures` at `+0x94`/`+0x98`, `MaxPointSize` at `+0xb0`,
+`MaxVertexIndex`/`MaxStreams`/`MaxStreamStride` at `+0xb8..+0xc0`, the two shader-version words at
+`+0xc4`/`+0xcc` — with the runtime's own driver name, **`"Xbox driver"`**, written at `+0xd4`. Fifty-three
+positional fields do not line up by accident, so this is the reported caps and not a coincidence in a heap
+window. `tools/xemu/d3d-caps.py` decodes it and refuses a window that is not caps-shaped (`DeviceType` must be a
+`D3DDEVTYPE`, the two texture limits must be powers of two).
+
+| offset | field | value |
+|---|---|---|
+| `+0x000` | `DeviceType` | `0x00000001` (1) |
+| `+0x004` | `AdapterOrdinal` | `0x00000000` (0) |
+| `+0x008` | `Caps` | `0x00020000` (131072) |
+| `+0x00c` | `Caps2` | `0x00000000` (0) |
+| `+0x010` | `Caps3` | `0x00000000` (0) |
+| `+0x014` | `PresentationIntervals` | `0x80000007` (2147483655) |
+| `+0x018` | `CursorCaps` | `0x00000000` (0) |
+| `+0x01c` | `DevCaps` | `0x007bbef0` (8109808) |
+| `+0x020` | `PrimitiveMiscCaps` | `0x00000cf2` (3314) |
+| `+0x024` | `RasterCaps` | `0x00377101` (3633409) |
+| `+0x028` | `ZCmpCaps` | `0x000000ff` (255) |
+| `+0x02c` | `SrcBlendCaps` | `0x00001fff` (8191) |
+| `+0x030` | `DestBlendCaps` | `0x00001fff` (8191) |
+| `+0x034` | `AlphaCmpCaps` | `0x000000ff` (255) |
+| `+0x038` | `ShadeCaps` | `0x00084208` (541192) |
+| `+0x03c` | `TextureCaps` | `0x0007ec87` (519303) |
+| `+0x040` | `TextureFilterCaps` | `0x1f030700` (520292096) |
+| `+0x044` | `CubeTextureFilterCaps` | `0x1f030700` (520292096) |
+| `+0x048` | `VolumeTextureFilterCaps` | `0x03030300` (50529024) |
+| `+0x04c` | `TextureAddressCaps` | `0x00000017` (23) |
+| `+0x050` | `VolumeTextureAddressCaps` | `0x00000017` (23) |
+| `+0x054` | `LineCaps` | `0x0000001f` (31) |
+| `+0x058` | `MaxTextureWidth` | `0x00001000` (4096) |
+| `+0x05c` | `MaxTextureHeight` | `0x00001000` (4096) |
+| `+0x060` | `MaxVolumeExtent` | `0x00000200` (512) |
+| `+0x064` | `MaxTextureRepeat` | `0x00002000` (8192) |
+| `+0x068` | `MaxTextureAspectRatio` | `0x00000000` (0) |
+| `+0x06c` | `MaxAnisotropy` | `0x00000004` (4) |
+| `+0x070` | `MaxVertexW` | `0x501502f9` = 1e+10 |
+| `+0x074` | `GuardBandLeft` | `0xccbebc20` = -1e+08 |
+| `+0x078` | `GuardBandTop` | `0xccbebc20` = -1e+08 |
+| `+0x07c` | `GuardBandRight` | `0x4cbebc20` = 1e+08 |
+| `+0x080` | `GuardBandBottom` | `0x4cbebc20` = 1e+08 |
+| `+0x084` | `ExtentsAdjust` | `0x00000000` = 0 |
+| `+0x088` | `StencilCaps` | `0x000000ff` (255) |
+| `+0x08c` | `FVFCaps` | `0x00080004` (524292) |
+| `+0x090` | `TextureOpCaps` | `0x00ffffff` (16777215) |
+| `+0x094` | `MaxTextureBlendStages` | `0x00000004` (4) |
+| `+0x098` | `MaxSimultaneousTextures` | `0x00000004` (4) |
+| `+0x09c` | `VertexProcessingCaps` | `0x000000bb` = TEXGEN, MATERIALSOURCE7, DIRECTIONALLIGHTS, POSITIONALLIGHTS, LOCALVIEWER, `0x80` unnamed |
+| `+0x0a0` | `MaxActiveLights` | `0x00000008` (8) |
+| `+0x0a4` | `MaxUserClipPlanes` | `0x00000000` (0) |
+| `+0x0a8` | `MaxVertexBlendMatrices` | `0x00000004` (4) |
+| `+0x0ac` | `MaxVertexBlendMatrixIndex` | `0x00000000` (0) |
+| `+0x0b0` | `MaxPointSize` | `0x42800000` = 64 |
+| `+0x0b4` | `MaxPrimitiveCount` | `0x0000ffff` (65535) |
+| `+0x0b8` | `MaxVertexIndex` | `0x0000ffff` (65535) |
+| `+0x0bc` | `MaxStreams` | `0x00000010` (16) |
+| `+0x0c0` | `MaxStreamStride` | `0x000000ff` (255) |
+| `+0x0c4` | `VertexShaderVersion` | `0xffff0101` (4294902017) |
+| `+0x0c8` | `MaxVertexShaderConst` | `0x00000060` (96) |
+| `+0x0cc` | `PixelShaderVersion` | `0xffff0101` (4294902017) |
+| `+0x0d0` | `MaxPixelShaderValue` | `0x3f800000` = 1 |
+
+**What the numbers say.** One HAL adapter, and the PC feature masks are nearly empty — `Caps` names only
+scan-line reads (`0x00020000`) and `Caps2`/`Caps3` are zero, so the renderer is not deciding from a PC feature
+mask at all. The fixed-function budget is the Xbox's: **4** blend stages and **4** simultaneous textures, all 24
+texture ops (`0xffffff`), **8** active lights, 4 vertex-blend matrices and no user clip planes. Textures go to
+4096x4096, volumes to 512, anisotropy 4x, points to 64 px, with guard bands at +/-1e8 and `MaxVertexW` 1e10 —
+i.e. a guard band large enough that the driver never has to clip a triangle against it. `MaxVertexIndex` is
+**65535**, the 16-bit index buffer the Xbox draw path uses, over 16 streams of up to 255-byte stride. The two
+shader words are `0xffff0101` (a 1.1-style version with this build's `0xffff` prefix rather than the PC header's
+`0xfffe`), and the vertex-shader constant file is **96** floats: that is the budget `VS_Lights_MAX` and the
+lighting path (`docs/systems/RENDERER.md`, above) have to fit in.
+
+`VertexProcessingCaps = 0xbb` is the field the create path tests, and MATERIALSOURCE7 (`0x2`) is set — so the
+`test BYTE PTR [esi+0x4238],0x2` at `0x002b3008` **passes** and the fall-through that logs against
+`D3DVTXPCAPS_MATERIALSOURCE7` is never reached in this build's first device creation. The `hardware` decision and
+the `BehaviorFlags = 0x40` request agree because the device really reports the capability; the "mixed"/"software"
+answers that string offers are dead code on this hardware.
+
+**Not measured.** Which call *fills* the struct: it is already populated at the first stop inside `0x002b27f0`,
+so the fill happens in the render device's initialisation before the create path, and neither the call site nor
+the `D3DCAPS8` source (computed by the runtime, or a template in the `D3D` section it copies field by field) was
+stopped on. The `MultiSampleType` value `0x11` in the present-params block stays a named-by-nobody literal for
+the same reason as `D3DFORMAT` 30/42: the header that would name it is not in this repository.
+
 ## What this settles, and what it does not
 
 **Settled.** 4.8's renderer question has a shape: the renderer in this image is the engine's D3D8 render

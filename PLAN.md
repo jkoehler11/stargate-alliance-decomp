@@ -139,6 +139,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `Flags` 0x121, refresh 0, presentation interval 1. The module's own log lines agree
       (`Using back-buffer format 30(32-bit)`, `Using depth-buffer format 42(32-bit)`,
       `Best-match display mode: 640x480x32@60`). U11 answered; the instrument is `tools/xemu/bp-args.py`.
+      **Reported caps measured too**: the render device caches the runtime's 53-dword `D3DCAPS8` at `this+0x419c`
+      and the post-create test at `0x002b3008` reads `VertexProcessingCaps` from it -- `0xbb`, MATERIALSOURCE7 set,
+      so the `hardware` decision is the device's own report and not only the request (4 blend stages, 8 lights,
+      4096x4096 textures, 16-bit indices, 96 VS constants). `tools/xemu/d3d-caps.py` decodes the window;
+      `docs/systems/RENDERER.md` carries the table.
       **Imports done, and the answer is that there are none to enumerate**: the header's import address is
       `0` and the image links statically, recording its **13 libraries** (all 1.0.5849) in one table at
       `0x10738` (`inventory/xbe_libraries.csv`, `tools/xbe-libraries.py`). The libraries' code is visible
