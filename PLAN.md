@@ -1004,6 +1004,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the registration-site census gets its target, and the artifact still reproduces)
+
+- **`inventory/registration_sites.csv` was the last artifact `docs/ARTIFACTS.md` flagged "no target runs it"**, and
+  its own document had the hole in the same place: the sentence introducing the scan read
+  "(`tools/registration-sites.py`, `inventory/registration_sites.csv`, )" -- the target belonged in that empty slot.
+  `make registration-sites` is now that target (dump, no boot, no Ghidra), the help line and `.PHONY` carry it, and
+  the `ARTIFACTS.md` row names it. It is the third census to move off ad-hoc command lines this week, after
+  `class-ctors` and `gnatives-writes`.
+- **The instrument reproduces its committed artifact byte for byte.** Running the new target against
+  `$HOME/nfs/sg1-dump/.../default.xbe` reproduces all 493 rows in the same order with the same literals --
+  `diff -q` clean against `inventory/registration_sites.csv` (44,981 bytes). That is the check the missing target
+  cost: the file was hash-pinned but regenerable only by remembering a command line, so "does the committed census
+  still describe the image" had no answer that did not depend on a session's notes.
+- **The 493rd site is a call from a named function, not an unnamed one.** `0x0010d6a9` sits inside `Engine_UnConn`
+  (`0x0010d630`, 183 bytes) in the committed map; it is the one constructor call whose window holds two identifier
+  literals (`User`, `NetConnection`), so it is still reported unnamed -- but the residue is a boundary in
+  `classes.csv`, not a hole in the function map.
+
 ### Execution notes (2026-11-10, U7's static half: the image writes 233 of the 356 slots, and all of them right)
 
 - **Following the store sites buys two thirds of the table with no boot.** `tools/gnatives-writes.py`

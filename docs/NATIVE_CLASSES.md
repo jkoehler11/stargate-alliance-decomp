@@ -400,7 +400,7 @@ the tree does not match. `--selftest` covers the parser (a wrapped declaration, 
 class, and `inventory/xbe_class_table_names.csv` names **466** of them from a `C7 /0` store inside the
 constructor. This reads the sites themselves: every `E8 rel32` in the executable sections whose target
 is the constructor, then the `68 imm32` pushes in the 96 bytes before it (`tools/registration-sites.py`,
-`inventory/registration_sites.csv`, ).
+`inventory/registration_sites.csv`, `make registration-sites`).
 
 - **493 sites, 466 of them reproduce the class table's name exactly, 0 disagree.** The class table is
   the check on this scan, not its input -- a disagreement would mean either the table's store or the
@@ -411,7 +411,14 @@ is the constructor, then the `68 imm32` pushes in the 96 bytes before it (`tools
   outer package: all 26 push `System`.
 - **1 site carries no class name** (`0x0010d6a9`): its window holds `"new"`, `"User"` and
   `"NetConnection"`, so two identifier literals survive and it is reported unnamed rather than picked. It is
-  the only residue in 493.
+  the only residue in 493, and it is not an unnamed body: it sits inside `Engine_UnConn` (`0x0010d630`, 183
+  bytes), so the constructor is called from a function this map already has.
+- **The artifact reproduces from its own target.** `make registration-sites` writes it and
+  `tools/ci.py`'s `tool-check-contract` drives the scan's `--check` in `make ci`, so the row in
+  `docs/ARTIFACTS.md` names a command again instead of a file nobody regenerates. Re-running the target
+  against the current image reproduces the committed CSV **byte for byte** (field the same 493 rows, same
+  order, 44,981 bytes -- `diff -q` clean, measured 2026-11-10), which is what makes the 493 / 466 / 26 / 1
+  counts above a measurement of the image rather than a snapshot of a session.
 
 The literal window is the same evidence a `ucpp` stub gives -- `"new"`, the outer package and the class
 -- read from the call site instead of from the decompiled body, so the two instruments agree by

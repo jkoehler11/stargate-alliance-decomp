@@ -97,7 +97,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/packages.csv` | 18 | 18 | `make help` |
 | `inventory/property_classes.csv` | 15 | 8 | `make property-types` |
 | `inventory/property_types.csv` | 17 | 4 | `make property-types` |
-| `inventory/registration_sites.csv` | 493 | 6 | **registration-sites.py (no target runs it)** |
+| `inventory/registration_sites.csv` | 493 | 6 | `make registration-sites` |
 | `inventory/savegame_paths.csv` | 16 | 7 | `make savegame-paths` |
 | `inventory/script_calls.csv` | 18931 | 7 | `make script-calls` |
 | `inventory/script_text_natives.csv` | 18 | 4 | `make package-census` |
