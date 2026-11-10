@@ -8,6 +8,7 @@ guaranteed a mismatch.
     python3 tools/package-check.py DUMP/.../System -o inventory
     python3 tools/package-check-pairs.py DUMP/.../Stargate_SG-1_-_The_Alliance-2005-12-15 -o inventory
     python3 tools/package-check-quick.py DUMP/.../Stargate_SG-1_-_The_Alliance-2005-12-15 -o inventory
+    python3 tools/package-check-quick.py BUILD/System --records DUMP/.../System/Packages.md5
 
 ## What the file is
 
@@ -142,14 +143,30 @@ Two consequences are worth stating plainly, because they decide what the check c
   a regenerator has to serve, and it can: the record is a function of the header and the name table
   alone, so a rebuilt package's record is computable from the file rather than from the original.
 
+## The check runs on a build tree
+
+`--records` points the same join at another check-data file, which is what makes the stage usable on
+a build: `tools/build.sh --target hybrid` places the writer's **18 assembled packages** into
+`workdir/System`, copies `Packages.md5` beside them, and then runs
+
+    python3 tools/package-check-quick.py workdir/System --records SRC/System/Packages.md5
+
+against the source's records. The stage passes on the shipped tree — **17 of 17** records whose
+package the build places reproduce — and fails when a placed package no longer matches, which is the
+case a rebuild that moves a name table or an export offset creates. One number is worth keeping:
+`System/` holds 18 `.u` files but only **17** of them have a record; `UPreview.u` (734,635 bytes,
+GUID `0E8020CB4558E0968B4182926B00E849`) is absent from the check data the cook wrote, so a stage that
+counted files instead of records would look one short for no reason.
+
 ## What that leaves for PLAN 6.2
 
 Regeneration needs nothing from outside the dump any more: a package's GUID and its digest both
-come out of the file the writer produced. What is left is plumbing rather than measurement — calling
-`tools/package-check-quick.py` from `build.sh`'s `package-check` stage (still a SKIP, "bypass
-decided, not implemented") and writing the `Packages.md5` package itself through the container writer
-(`docs/PACKAGE_WRITER.md`). Until that stage exists the bypass remains the honest option for a build
-that changes a name table or a layout, since its record no longer matches.
+come out of the file the writer produced, and `build.sh --target hybrid` already runs the stage over
+the tree it places (above). What is left is the writer half — writing a `Packages.md5` package of our
+own through the container writer (`docs/PACKAGE_WRITER.md`) rather than copying the original. Until
+that exists, a build that changes a name table or a layout has to be added to the database with `-c`
+against a patched build, or run with the check bypassed; a build that keeps both header and names
+needs nothing at all.
 
 ## Where the check lives in the image
 

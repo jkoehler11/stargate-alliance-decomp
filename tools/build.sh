@@ -103,8 +103,14 @@ if [ "$target" = hybrid ]; then
     stage place-packages python3 tools/pkg-write.py "$system" --rebuild --write "$out/workdir/System"
     if [ -f "$system/Packages.md5" ]; then
         stage place-check-data sh -c "cp '$system/Packages.md5' '$out/workdir/System/Packages.md5'"
+        # The quick transform is reproduced (docs/PACKAGE_CHECK.md), so the check is verifiable rather than
+        # bypassed: every record whose package is in this tree must still hash to its stored digest, and a
+        # rebuild that moves a name table or an export offset fails here instead of at the title screen.
+        stage package-check python3 tools/package-check-quick.py "$out/workdir/System" \
+            --records "$system/Packages.md5" -o "$out"
     else
         skip place-check-data "no Packages.md5 beside the packages"
+        skip package-check "no Packages.md5 to check the placed packages against"
     fi
     stage manifest python3 tools/build-manifest.py "$out/workdir/System" "$system" -o "$out"
     if [ -d "$out/source-tree" ]; then
@@ -130,9 +136,10 @@ fi
 # 5. Repack and place. The writer can re-lay a package; it cannot invent a payload, so this is blocked on 4.
 skip repack "needs compiled payloads (PLAN 6.1's remaining half; the container itself is proven by writer-relay)"
 
-# 6. The package check. The route is decided (bypass, not regeneration: docs/PACKAGE_CHECK.md) but the bypass is
-#    not implemented, so a repacked package would be rejected.
-skip package-check "bypass decided, not implemented (docs/PACKAGE_CHECK.md)"
+# 6. The package check. The transform is measured (`0x00121cf0`: header dwords + the name table, reproduced
+#    for 168 of 168 shipped packages), so regenerating a record needs no cook inputs. This target has nothing
+#    repacked to check yet; the hybrid target runs the stage on the tree it places.
+skip package-check "needs a repacked tree (stage 5); the quick transform is reproduced -- tools/package-check-quick.py"
 
 # 7. Boot. Needs a repacked HDD image, so it follows 4-6; the boot harness itself exists (tools/xemu/smoke.py).
 skip boot "needs a repacked image (tools/xemu/smoke.py exists and boots the retail image: docs/XEMU.md)"

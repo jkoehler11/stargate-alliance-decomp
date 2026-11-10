@@ -178,8 +178,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
       writes all 2,319 classes to `$WORK/source-tree` (6,113,909 bytes, `inventory/source_tree_summary.csv`,
       `docs/PACKAGE_SCRIPT_TEXT.md`). **The pipeline is scripted** (`tools/build.sh`, `docs/REBUILD.md`, `make rebuild`):
-      eight stages, four proven today (writer relay 18/18, rebuild identity 18/18, source tree, defaults merged into
-      it) and four SKIP with their reason (compile, repack, package check, boot). But **only 15 classes carry
+      eight stages, five of which run today (writer relay 18/18, rebuild identity 18/18, source tree, defaults merged
+      into it, and package check on the hybrid target: 17 of 17 records reproduced) and three SKIP with their reason
+      (compile, repack, boot). But **only 15 classes carry
       `defaultproperties`** — the defaults live in the
       package's default-properties data, not in the text — so the loop needs the text *and* a defaults reader, and
       `ucc` under Wine is still absent. Function counts match `inventory/classes.csv` for 1,789 of 2,319 classes;
@@ -470,9 +471,12 @@ report cites file-level evidence for each claim.
       is a function of the header and the name table alone and a rebuilt package's record is
       computable from its own file. The digest is coarse by design (two characters per name), so a
       match does not mean an intact file; a relayout does change it, because the count/offset pairs
-      are inside the buffer. Still open: which path invokes the check at runtime (probe), and calling
-      the tool from `build.sh`'s `package-check` stage plus writing the `Packages.md5` package through
-      the container writer.
+      are inside the buffer. **The stage is wired**: `tools/build.sh --target hybrid` runs it over the
+      tree it places (`--records` points the join at the source's check data) and passes on the shipped
+      packages — **17 of 17** records whose package the build places reproduce, and `UPreview.u` is the
+      one `System/*.u` package with no record in the file. Still open: which path invokes the check at
+      runtime (probe), and writing the `Packages.md5` package ourselves through the container writer
+      rather than copying the original.
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,

@@ -19,6 +19,8 @@ name table.
     python3 tools/package-check-quick.py DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 -o inventory
     python3 tools/package-check-quick.py --check          # synthetic self-test, no dump
     python3 tools/package-check-quick.py --walk PKG.u     # per-name record bytes
+    python3 tools/package-check-quick.py BUILD/System --records SRC/System/Packages.md5
+                                                          # a build tree against the source's records
 
 Evidence for the layout is in `docs/PACKAGE_CHECK.md`: the reader at `0x00062110` fills the
 entry struct as `flags` at `+0x04` and the wide name at `+0x0C`, and `0x00121cf0` appends
@@ -140,6 +142,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root", nargs="?", help="the dump's game directory (holds System/Packages.md5)")
     ap.add_argument("-o", "--out", help="directory for inventory/package_check_quick.csv")
+    ap.add_argument("--records", metavar="FILE",
+                    help="check-data file to compare against (default: ROOT/System/Packages.md5); "
+                         "point it at the source dump to check a build tree")
     ap.add_argument("--walk", metavar="PKG", help="print the per-name record bytes for one package")
     ap.add_argument("--check", action="store_true", help="synthetic self-test on built bytes, no dump")
     args = ap.parse_args()
@@ -151,7 +156,7 @@ def main():
     if not args.root:
         sys.exit("root is required (the game directory holding System/Packages.md5)")
 
-    md5_path = os.path.join(args.root, "System", "Packages.md5")
+    md5_path = args.records or os.path.join(args.root, "System", "Packages.md5")
     if not os.path.isfile(md5_path):
         print("required: no System/Packages.md5 under %s" % args.root, file=sys.stderr)
         return 2
@@ -199,17 +204,23 @@ def main():
                      "same_guid": len(candidates), "matches": len(matches),
                      "buffer_bytes": buflen})
 
-    print("Packages.md5: %d records, %d package files with a UE2 header" % (len(records), len(files)))
-    print("  records whose GUID a shipped package carries: %d" % paired)
-    print("  records whose quick digest is reproduced:     %d of %d"
-          % (reproduced, len(records)))
+    print("check data: %d records (%s)" % (len(records), md5_path))
+    print("  package files in this tree with a UE2 header: %d" % len(files))
+    print("  records whose GUID a package here carries:     %d" % paired)
+    print("  records whose quick digest is reproduced:      %d of %d present"
+          % (reproduced, paired))
+    if paired < len(records):
+        print("  records with no package in this tree:          %d" % (len(records) - paired))
     if shared:
         print("  records whose GUID several shipped files carry: %d "
               "(every copy reproduces the same digest: %d)" % (shared, shared_all))
     if errors:
         print("  files refused as unreadable name tables: %d" % errors)
-    if reproduced == len(records) == paired:
-        print("  -> the check is header + name table: a rebuilt package reproduces its record")
+    if reproduced == paired:
+        print("  -> every package present reproduces its record: the check covers the header and"
+              " the name table, so a rebuild that keeps both keeps its record")
+    else:
+        print("  -> %d package(s) here no longer match their record" % (paired - reproduced))
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, "package_check_quick.csv")
@@ -220,7 +231,7 @@ def main():
             w.writeheader()
             w.writerows(rows)
         print("wrote %s (%d rows)" % (path, len(rows)))
-    return 0 if reproduced == len(records) else 1
+    return 0 if reproduced == paired else 1
 
 
 def quick_digest(data):
