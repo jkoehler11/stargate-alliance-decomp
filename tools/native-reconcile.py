@@ -107,15 +107,22 @@ def nr_lower(name):
 
 
 def load_binder(path=None):
-    """{(class, function): binder literal} from inventory/native_binder_names.csv (empty when it is absent)."""
+    """{(class, function): binder literal} from inventory/native_binder_names.csv (empty when it is absent).
+
+    A row whose `binder` is empty keeps an **empty** literal. It used to be filled with
+    `"int%s%s" % (prefix_expected, function)` -- a name the image does not carry, because a package the build
+    never compiles has no `int<prefix><Class>exec<Function>` pool entry either -- and the residual table then read
+    its own fabrication as evidence that the image binds the function. That is how `UPreview`'s records came to be
+    `text-missing` instead of `declaration-unbound`; neither `intUSetRenderInfo` nor `intUCreated` occurs in the
+    image. An empty binder is the verdict `declaration-unbound`, not a gap to fill.
+    """
     path = path or os.path.join(ROOT, "inventory", "native_binder_names.csv")
     out = {}
     if not os.path.isfile(path):
         return out
     with open(path, newline="") as fh:
         for r in csv.DictReader(fh):
-            out[(r["class"].lower(), r["function"].lower())] = r.get("binder") or "int%s%s" % (
-                r.get("prefix_expected", ""), r["function"])
+            out[(r["class"].lower(), r["function"].lower())] = (r.get("binder") or "").strip()
     return out
 
 

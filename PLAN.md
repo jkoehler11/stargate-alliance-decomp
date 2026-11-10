@@ -1004,6 +1004,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the 56 without a stub: three channels, and two packages the build never loads)
+
+- **The remainder names itself per declaration, and no declaration is missing.** `tools/native-channels.py` joins
+  the `-1` stub, the `{name, body}` record and the class's store-registered slots for all **523** index-less
+  declarations: **467** stub+record, **41** record-only (all `Object`), **15** with neither. So the count the last
+  run left open was not 56 unexplained registrations but 41 that register by record and 15 whose packages the image
+  does not carry.
+- **`Object` is the store-registered class, and that is the whole answer for the 41.** All **230** of its live slots
+  are filled by `mov [slot], reg` stores, **0** of its 160 indexed natives has an indexed stub, and exactly **one**
+  of its 42 index-less declarations (`GetReferencers`) has a `-1` stub. A class that registers by store shipping no
+  stub for its index-less half is one fact, not two; the record is what binds those 41, through the `int%sexec%s`
+  lookup at `0x0003a030` (U1).
+- **The 15 are editor-side packages the build never loads.** `BrushBuilder` (13), `MaterialFactory` (1) and
+  `UPreviewSkinnedButton` (1) occur **0** times in the image -- class name, function name, binder literal -- and
+  `Editor` (0 of 14) and `UPreview` (0 of 2) are the only two packages with **no** declarations bound by name,
+  against 508 of 508 named rows image-wide. Both sit in `System/Default.ini`'s `EditPackages` and in no runtime
+  package list. Nothing to register, so nothing registers.
+- **A binder column that invented a literal.** `tools/native-reconcile.py`'s `load_binder` filled an empty binder
+  with `"int%s%s" % (prefix_expected, function)`, and the residual table then read its own fabrication as evidence
+  -- which is why `inventory/native_residual.csv` called `UPreview`'s two records `text-missing` (`intUCreated` and
+  `intUSetRenderInfo` occur 0 times in the image). It keeps an empty binder now and both rows read
+  `record-unbound`, which is the rule its own self-test already stated. Two rows change; that target's other two
+  artifacts are unchanged.
+- **Artifact, target, check.** `inventory/native_channels.csv` (523 rows: package, class, function, binder,
+  binder_va, stub, record_va, record_body, channel, class_store_slots, class_stub_slots, in_image), `make
+  native-channels`, and a synthetic `--check` that `make ci` drives through `tool-check-contract` (the four
+  channels, the empty-binder rule, the class slot split, the pool word rule, the join). Image plus five committed
+  CSVs; no boot, no Ghidra.
+
 ### Execution notes (2026-11-10, the other 467 stubs: the name side is code too)
 
 - **The registrar's `-1` branch has 467 callers.** Every one of them pushes `&body` and `-1` instead of an index, and

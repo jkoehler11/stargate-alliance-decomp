@@ -646,6 +646,19 @@ name-resolved natives, and 467 of the 523 index-less declarations have one (`too
 gnatives-name-stubs`, `inventory/gnatives_name_stubs.csv`). The 56 without a stub are Object 41, BrushBuilder 13,
 MaterialFactory 1 and UPreviewSkinnedButton 1.
 
+**The 56 are settled, and none of them is missing from the registration file (2026-11-10).** They use the
+build's other two channels rather than a gap: **41 of them are `Object`** and carry a `{name, body}` record, which
+is what the `int%sexec%s` lookup binds from (U1) -- `Object` is the one class registered through the store table, so
+all 230 of its live slots are store-filled, 0 of its 160 indexed natives has a stub and just one of its 42
+index-less declarations has a `-1` stub; no stub for the rest is the class's normal state. The other **15** are
+`Editor` (13 `BrushBuilder` + 1 `MaterialFactory`) and `UPreview` (1 `UPreviewSkinnedButton`), and the image carries
+**no** occurrence of those class names, their functions, or any `int<prefix><Class>exec<Function>` literal for them
+-- `Editor` and `UPreview` are the only two packages with 0 of their declarations bound by name, and both sit in
+`System/Default.ini`'s `EditPackages` and in no runtime package list, so the shipped build never loads them
+(`tools/native-channels.py`, `make native-channels`, `inventory/native_channels.csv`). All 508 declarations that have
+a binder literal have it in the image. The same run removed a fabrication in `tools/native-reconcile.py` that had
+listed `UPreview`'s two records as `text-missing` against a literal it invented; they read `record-unbound` now.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
