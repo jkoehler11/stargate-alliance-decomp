@@ -293,8 +293,31 @@ The corpus splits the two families sharply: **17 clip records against 2,231 trac
 of the eight files (carter 4, jackson 3, oneill 6, tealc 4) and none in the other four, which is why a
 clip-only path leaves `grey.lad` and `JAnderson.lad` with nothing to evaluate.
 
-What is left of U4 is the same question one level down: a slot's group name is empty in all 58,006 groups,
-so a name-addressed lookup resolves to the empty name only. The `.lad` is not where names could come from --
-but the binary's `.map` writer (`0x000b55f0`) formats a text mapping file, and the dump ships four of them
-(`System/LIPSincData/Mappings/`), which is the next instrument.
+What is left of U4 was the same question one level down: a slot's group name is empty in all 58,006 groups,
+so a name-addressed lookup resolves to the empty name only. That is now answered by the call graph, below.
+
+## The play path selects a track, and no name can resolve (measured 2026-11-09)
+
+* **`LIPSincPlayAnim` (`0x00228730`, 521 bytes) resolves a *track*, not a clip.** All three of its calls to
+  `0x000b2ce0` (`0x002287ab`, `0x002287d3`, `0x00228871`) are the `+0x54`/`+0x58` getter, and it returns
+  immediately when `[track + 0x24] == 0` -- the `u32 1` flag word of the track record. The clip array's
+  *getter* `0x000b2cb0` has exactly one caller in the image, `0x00220ba0` (96 bytes), which walks the array
+  once and calls the bone link `0x000b4930` per clip: that is the pose side, not the play side.
+* **The driver and the blend each have one caller.** `0x000b63f0` is called from the actor update
+  `0x0022e090` (14,676 bytes) at `0x0022fe9b`, after that function has resolved a track and made a virtual
+  call; `0x000b5f10` is called only from the driver (`0x000b64f0`) and takes its key block in `ECX`
+  (`MOV ECX,EDI` at `0x000b64ee`). So the key block is the track the play call selected.
+* **The lookup is name against name, and the names are not there.** The blend hands each clip's `+0x34`
+  string (via `0x000bb2a0`) to `0x000b4710`, which compares it with every group name of the block
+  `0x000b45c0` scans -- `__wcsicmp`, the group's own string read by `0x000bb2f0`. **All 58,006 groups in the
+  corpus are unnamed**, so no clip name can match, every per-clip answer is the `0x4c8848` zero, and pose
+  assembly `0x000b29a0` is never reached from a curve on this path.
+* **The mapping files are not the missing source.** The `.map` names **15 speech targets** -- a near-one-hot
+  viseme matrix, identical weight for weight in all four files (`docs/formats/lipsinc-lad.md`) -- while a
+  track carries 26 groups, and nothing in the `.map` addresses a group by index or by name.
+
+The runtime half of U4 therefore ends on a negative: the loader, the reader, the accessor, the blend and the
+driver are all measured, and the single field the whole chain depends on -- a group's name -- is empty in
+every shipped file, so the shipped data cannot exercise the named-slot path. Which design fills that field
+(the retail build, an export tool, or a runtime naming pass) is not measured.
 
