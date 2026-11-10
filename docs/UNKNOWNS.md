@@ -482,9 +482,14 @@ and slot 59 of the `GameEngine` vtable `0x00509438` is `0x00138680` — agreeing
 holds that address (`0x00509524`). The load commands (`LOADSAVEGAME`, `LOADCHECKPOINT`, `LOADQUICK`, `LOADTRAVEL`) go
 to `0x00136a40`, which composes the name and compares the `SAVEGAME`/`CHECKPOINT`/`QUICKSAVE` literals; the
 `.sgs` strings are name-table strings with no `push` xrefs, which is why neither side was findable that way.
-**Still open:** what the writer does with the name and the four flags (its own name composition and the
-`[VL:SAVEGAME]` sites inside `0x00138680`), and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the
-save/load/check neighbourhood beside the package-check readers of PLAN 6.2).
+**The writer's name, measured 2026-11-09.** `0x00138680` labels the save (`Map Change` / `QUICKSAVE` / `CHECKPOINT` /
+`SAVEGAME`, logged with the loader's own prefix) and then builds the file from one of five formats: `TRAVEL_%s`,
+`Q_A_%s`, `C_%s`, `MATINEE_%s`, all followed by `%s.sgs`, or `%s_%s.sgs` for a manual save. The checkpoint format
+reproduces all nine shipped `System/Profiles/DefaultProfile/*.sgs` names exactly. It then logs
+`[VL:SAVEGAME]: Saving game to file: %s`, sets a saving flag at `+0x708`, and calls the engine serializer.
+**Still open:** the serializer's arguments and the profile's `[Saved Games]` update (what the writer's `Engine` /
+`Saving` literals write), and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the save/load/check
+neighbourhood beside the package-check readers of PLAN 6.2).
 
 ## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 

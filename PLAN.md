@@ -931,8 +931,13 @@ are limited to expected fields (checksum/timestamp) and documented.
   exists because "zero callers" hides two things a dword scan cannot see: a direct call is `E8 rel32` (`0x00136a40`
   has five, `tools/xbe.py xrefs` answers none) and a virtual call stores an *offset*. It prints vcall sites as
   candidates, not answers — every object's slot 59 answers to `+0xec`; the surrounding literal names the object.
-- **Next**: the write side's name composition inside `0x00138680` (it compares the same `SAVEGAME`/`CHECKPOINT`/
-  `QUICKSAVE` literals at `0x001386dc`/`0x001386ec`/`0x001386f3`), and `0x00136a40`'s five flag words.
+- **The writer's name is now measured, and the correction matters**: `0x00138680` does not *compare* the
+  `SAVEGAME`/`CHECKPOINT`/`QUICKSAVE` literals at `0x001386dc`/`0x001386ec`/`0x001386f3` (the previous note said it
+  did) — it selects one as a log label (`Map Change` for the first flag, then `QUICKSAVE`, `CHECKPOINT`, `SAVEGAME`).
+  The file name comes from five formats: `TRAVEL_%s`, `Q_A_%s`, `C_%s`, `MATINEE_%s` then `%s.sgs`, or
+  `%s_%s.sgs` for a manual save; `C_%s`+`%s.sgs` reproduces all nine shipped `C_<desc>.sgs` names exactly.
+- **Next**: the serializer's arguments and the profile's `[Saved Games]` update (the writer's `Engine`/`Saving`
+  literals and the `+0x708` flag's two values), then `0x001226a0`'s `LoadSaveGameInfo` reader.
 
 ### Execution notes (2026-11-09, the binder's map is a table in the image, so a name is an address)
 
