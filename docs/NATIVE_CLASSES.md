@@ -393,3 +393,26 @@ the row's own package and class, and `marker` is the render of its own row — s
 a hand-edited row, or a row regenerated after the marker format changed, fails the gate instead of shipping a table
 the tree does not match. `--selftest` covers the parser (a wrapped declaration, a commented-out one, native *data*
 `var native const int`, an operator) and the pass itself (marker text, offsets, idempotency, a stale marker).
+
+## All 493 registration sites carry their class literal
+
+`docs/FORK.md` counts **493** call sites of the class constructor `FUN_0003af60`, one per registered
+class, and `inventory/xbe_class_table_names.csv` names **466** of them from a `C7 /0` store inside the
+constructor. This reads the sites themselves: every `E8 rel32` in the executable sections whose target
+is the constructor, then the `68 imm32` pushes in the 96 bytes before it (`tools/registration-sites.py`,
+`inventory/registration_sites.csv`, ).
+
+- **493 sites, 466 of them reproduce the class table's name exactly, 0 disagree.** The class table is
+  the check on this scan, not its input -- a disagreement would mean either the table's store or the
+  literal walk is misread, so the tool exits nonzero when one appears.
+- **26 sites are unnamed there and named here**: `Exporter`, `Factory`, `Field`, `Object`, `Subsystem`, `Language`, `Property`, `VoiceSubsystem`, `Viewport`, `CameraEffect`, `Client`, `Channel`, `Download`, `RenderDevice`, `Engine`, `LevelBase`, `Material`, `BitmapMaterial`, `RenderedMaterial`, `NetDriver`, `PendingLevel`, `Player`, `RenderResource`, `Texture`, `FractalTexture`, `FireTexture`. Every one is an engine base class, which is
+  why the class table could not see it -- their registration is not a generated `ucpp` stub but the
+  engine's own constructor, so there is no stub body for a table store to sit in. Confirmed by their
+  outer package: all 26 push `System`.
+- **1 site carries no class name** (`0x0010d6a9`): its window holds `"new"`, `"User"` and
+  `"NetConnection"`, so two identifier literals survive and it is reported unnamed rather than picked. It is
+  the only residue in 493.
+
+The literal window is the same evidence a `ucpp` stub gives -- `"new"`, the outer package and the class
+-- read from the call site instead of from the decompiled body, so the two instruments agree by
+construction where they overlap (466 of 466) and the scan is usable where no body was exported.
