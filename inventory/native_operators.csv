@@ -1,0 +1,98 @@
+package,class,declaration,symbol,composed,native_token,record,record_token,body_va,status
+Core,Object,"native(242) static final operator(24) bool == ( bool A, bool B )",==,EqualEqual_BoolBool,242,EqualEqual_BoolBool,242,0x00041000,bound
+Core,Object,"native(243) static final operator(26) bool != ( bool A, bool B )",!=,NotEqual_BoolBool,243,NotEqual_BoolBool,243,0x00041090,bound
+Core,Object,"native(130) static final operator(30) bool && ( bool A, skip bool B )",&&,AndAnd_BoolBool,130,AndAnd_BoolBool,130,0x00041120,bound
+Core,Object,"native(131) static final operator(30) bool ^^ ( bool A, bool B )",^^,XorXor_BoolBool,131,XorXor_BoolBool,131,0x000411c0,bound
+Core,Object,"native(132) static final operator(32) bool || ( bool A, skip bool B )",||,OrOr_BoolBool,132,OrOr_BoolBool,132,0x00041250,bound
+Core,Object,"native(133) static final operator(34) byte *= ( out byte A, byte B )",*=,MultiplyEqual_ByteByte,133,MultiplyEqual_ByteByte,133,0x000412f0,bound
+Core,Object,"native(134) static final operator(34) byte /= ( out byte A, byte B )",/=,DivideEqual_ByteByte,134,DivideEqual_ByteByte,134,0x000413a0,bound
+Core,Object,"native(135) static final operator(34) byte += ( out byte A, byte B )",+=,AddEqual_ByteByte,135,AddEqual_ByteByte,135,0x00041460,bound
+Core,Object,"native(136) static final operator(34) byte -= ( out byte A, byte B )",-=,SubtractEqual_ByteByte,136,SubtractEqual_ByteByte,136,0x00041510,bound
+Core,Object,"native(144) static final operator(16) int * ( int A, int B )",*,Multiply_IntInt,144,Multiply_IntInt,144,0x00041940,bound
+Core,Object,"native(145) static final operator(16) int / ( int A, int B )",/,Divide_IntInt,145,Divide_IntInt,145,0x000419c0,bound
+Core,Object,"native(146) static final operator(20) int + ( int A, int B )",+,Add_IntInt,146,Add_IntInt,146,0x00041a50,bound
+Core,Object,"native(147) static final operator(20) int - ( int A, int B )",-,Subtract_IntInt,147,Subtract_IntInt,147,0x00041ad0,bound
+Core,Object,"native(148) static final operator(22) int << ( int A, int B )",<<,LessLess_IntInt,148,LessLess_IntInt,148,0x00041b50,bound
+Core,Object,"native(149) static final operator(22) int >> ( int A, int B )",>>,GreaterGreater_IntInt,149,GreaterGreater_IntInt,149,0x00041bd0,bound
+Core,Object,"native(196) static final operator(22) int >>>( int A, int B )",>>>,GreaterGreaterGreater_IntInt,196,GreaterGreaterGreater_IntInt,196,0x00041860,bound
+Core,Object,"native(150) static final operator(24) bool < ( int A, int B )",<,Less_IntInt,150,Less_IntInt,150,0x00041c50,bound
+Core,Object,"native(151) static final operator(24) bool > ( int A, int B )",>,Greater_IntInt,151,Greater_IntInt,151,0x00041ce0,bound
+Core,Object,"native(152) static final operator(24) bool <= ( int A, int B )",<=,LessEqual_IntInt,152,LessEqual_IntInt,152,0x00041d70,bound
+Core,Object,"native(153) static final operator(24) bool >= ( int A, int B )",>=,GreaterEqual_IntInt,153,GreaterEqual_IntInt,153,0x00041e00,bound
+Core,Object,"native(154) static final operator(24) bool == ( int A, int B )",==,EqualEqual_IntInt,154,EqualEqual_IntInt,154,0x00041e90,bound
+Core,Object,"native(155) static final operator(26) bool != ( int A, int B )",!=,NotEqual_IntInt,155,NotEqual_IntInt,155,0x00041f20,bound
+Core,Object,"native(156) static final operator(28) int & ( int A, int B )",&,And_IntInt,156,And_IntInt,156,0x00041fb0,bound
+Core,Object,"native(157) static final operator(28) int ^ ( int A, int B )",^,Xor_IntInt,157,Xor_IntInt,157,0x00042030,bound
+Core,Object,"native(158) static final operator(28) int | ( int A, int B )",|,Or_IntInt,158,Or_IntInt,158,0x000420b0,bound
+Core,Object,"native(159) static final operator(34) int *= ( out int A, float B )",*=,MultiplyEqual_IntFloat,159,MultiplyEqual_IntFloat,159,0x00042130,bound
+Core,Object,"native(160) static final operator(34) int /= ( out int A, float B )",/=,DivideEqual_IntFloat,160,DivideEqual_IntFloat,160,0x000421f0,bound
+Core,Object,"native(161) static final operator(34) int += ( out int A, int B )",+=,AddEqual_IntInt,161,AddEqual_IntInt,161,0x000422c0,bound
+Core,Object,"native(162) static final operator(34) int -= ( out int A, int B )",-=,SubtractEqual_IntInt,162,SubtractEqual_IntInt,162,0x00042370,bound
+Core,Object,"native(170) static final operator(12) float ** ( float A, float B )",**,MultiplyMultiply_FloatFloat,170,MultiplyMultiply_FloatFloat,170,0x00042730,bound
+Core,Object,"native(171) static final operator(16) float * ( float A, float B )",*,Multiply_FloatFloat,171,Multiply_FloatFloat,171,0x000427c0,bound
+Core,Object,"native(172) static final operator(16) float / ( float A, float B )",/,Divide_FloatFloat,172,Divide_FloatFloat,172,0x00042850,bound
+Core,Object,"native(173) static final operator(18) float % ( float A, float B )",%,Percent_FloatFloat,173,Percent_FloatFloat,173,0x000428e0,bound
+Core,Object,"native(174) static final operator(20) float + ( float A, float B )",+,Add_FloatFloat,174,Add_FloatFloat,174,0x00042970,bound
+Core,Object,"native(175) static final operator(20) float - ( float A, float B )",-,Subtract_FloatFloat,175,Subtract_FloatFloat,175,0x00042a00,bound
+Core,Object,"native(176) static final operator(24) bool < ( float A, float B )",<,Less_FloatFloat,176,Less_FloatFloat,176,0x00042a90,bound
+Core,Object,"native(177) static final operator(24) bool > ( float A, float B )",>,Greater_FloatFloat,177,Greater_FloatFloat,177,0x00042b30,bound
+Core,Object,"native(178) static final operator(24) bool <= ( float A, float B )",<=,LessEqual_FloatFloat,178,LessEqual_FloatFloat,178,0x00042bd0,bound
+Core,Object,"native(179) static final operator(24) bool >= ( float A, float B )",>=,GreaterEqual_FloatFloat,179,GreaterEqual_FloatFloat,179,0x00042c70,bound
+Core,Object,"native(180) static final operator(24) bool == ( float A, float B )",==,EqualEqual_FloatFloat,180,EqualEqual_FloatFloat,180,0x00042d10,bound
+Core,Object,"native(210) static final operator(24) bool ~= ( float A, float B )",~=,ComplementEqual_FloatFloat,210,ComplementEqual_FloatFloat,210,0x00048030,bound
+Core,Object,"native(181) static final operator(26) bool != ( float A, float B )",!=,NotEqual_FloatFloat,181,NotEqual_FloatFloat,181,0x00042db0,bound
+Core,Object,"native(182) static final operator(34) float *= ( out float A, float B )",*=,MultiplyEqual_FloatFloat,182,MultiplyEqual_FloatFloat,182,0x00042e50,bound
+Core,Object,"native(183) static final operator(34) float /= ( out float A, float B )",/=,DivideEqual_FloatFloat,183,DivideEqual_FloatFloat,183,0x00042f10,bound
+Core,Object,"native(184) static final operator(34) float += ( out float A, float B )",+=,AddEqual_FloatFloat,184,AddEqual_FloatFloat,184,0x00042fd0,bound
+Core,Object,"native(185) static final operator(34) float -= ( out float A, float B )",-=,SubtractEqual_FloatFloat,185,SubtractEqual_FloatFloat,185,0x00043090,bound
+Core,Object,"native(212) static final operator(16) vector * ( vector A, float B )",*,Multiply_VectorFloat,212,Multiply_VectorFloat,212,0x000439e0,bound
+Core,Object,"native(213) static final operator(16) vector * ( float A, vector B )",*,Multiply_FloatVector,213,Multiply_FloatVector,213,0x00043aa0,bound
+Core,Object,"native(296) static final operator(16) vector * ( vector A, vector B )",*,Multiply_VectorVector,296,Multiply_VectorVector,296,0x00043b60,bound
+Core,Object,"native(214) static final operator(16) vector / ( vector A, float B )",/,Divide_VectorFloat,214,Divide_VectorFloat,214,0x00043c10,bound
+Core,Object,"native(215) static final operator(20) vector + ( vector A, vector B )",+,Add_VectorVector,215,Add_VectorVector,215,0x00043cd0,bound
+Core,Object,"native(216) static final operator(20) vector - ( vector A, vector B )",-,Subtract_VectorVector,216,Subtract_VectorVector,216,0x00043d80,bound
+Core,Object,"native(275) static final operator(22) vector << ( vector A, rotator B )",<<,LessLess_VectorRotator,275,LessLess_VectorRotator,275,0x00043e30,bound
+Core,Object,"native(276) static final operator(22) vector >> ( vector A, rotator B )",>>,GreaterGreater_VectorRotator,276,GreaterGreater_VectorRotator,276,0x00043f00,bound
+Core,Object,"native(217) static final operator(24) bool == ( vector A, vector B )",==,EqualEqual_VectorVector,217,EqualEqual_VectorVector,217,0x00043fd0,bound
+Core,Object,"native(218) static final operator(26) bool != ( vector A, vector B )",!=,NotEqual_VectorVector,218,NotEqual_VectorVector,218,0x00044080,bound
+Core,Object,"native(219) static final operator(16) float Dot ( vector A, vector B )",Dot,Dot_VectorVector,219,Dot_VectorVector,219,0x00044130,bound
+Core,Object,"native(220) static final operator(16) vector Cross ( vector A, vector B )",Cross,Cross_VectorVector,220,Cross_VectorVector,220,0x000441d0,bound
+Core,Object,"native(221) static final operator(34) vector *= ( out vector A, float B )",*=,MultiplyEqual_VectorFloat,221,MultiplyEqual_VectorFloat,221,0x000442b0,bound
+Core,Object,"native(297) static final operator(34) vector *= ( out vector A, vector B )",*=,MultiplyEqual_VectorVector,297,MultiplyEqual_VectorVector,297,0x00044390,bound
+Core,Object,"native(222) static final operator(34) vector /= ( out vector A, float B )",/=,DivideEqual_VectorFloat,222,DivideEqual_VectorFloat,222,0x00044470,bound
+Core,Object,"native(223) static final operator(34) vector += ( out vector A, vector B )",+=,AddEqual_VectorVector,223,AddEqual_VectorVector,223,0x00044560,bound
+Core,Object,"native(224) static final operator(34) vector -= ( out vector A, vector B )",-=,SubtractEqual_VectorVector,224,SubtractEqual_VectorVector,224,0x00044640,bound
+Core,Object,"native(142) static final operator(24) bool == ( rotator A, rotator B )",==,EqualEqual_RotatorRotator,142,EqualEqual_RotatorRotator,142,0x00044cb0,bound
+Core,Object,"native(203) static final operator(26) bool != ( rotator A, rotator B )",!=,NotEqual_RotatorRotator,203,NotEqual_RotatorRotator,203,0x00044d50,bound
+Core,Object,"native(287) static final operator(16) rotator * ( rotator A, float B )",*,Multiply_RotatorFloat,287,Multiply_RotatorFloat,287,0x00044df0,bound
+Core,Object,"native(288) static final operator(16) rotator * ( float A, rotator B )",*,Multiply_FloatRotator,288,Multiply_FloatRotator,288,0x00044ea0,bound
+Core,Object,"native(289) static final operator(16) rotator / ( rotator A, float B )",/,Divide_RotatorFloat,289,Divide_RotatorFloat,289,0x00044f50,bound
+Core,Object,"native(290) static final operator(34) rotator *= ( out rotator A, float B )",*=,MultiplyEqual_RotatorFloat,290,MultiplyEqual_RotatorFloat,290,0x00045000,bound
+Core,Object,"native(291) static final operator(34) rotator /= ( out rotator A, float B )",/=,DivideEqual_RotatorFloat,291,DivideEqual_RotatorFloat,291,0x000450f0,bound
+Core,Object,"native(316) static final operator(20) rotator + ( rotator A, rotator B )",+,Add_RotatorRotator,316,Add_RotatorRotator,316,0x000451e0,bound
+Core,Object,"native(317) static final operator(20) rotator - ( rotator A, rotator B )",-,Subtract_RotatorRotator,317,Subtract_RotatorRotator,317,0x00045270,bound
+Core,Object,"native(318) static final operator(34) rotator += ( out rotator A, rotator B )",+=,AddEqual_RotatorRotator,318,AddEqual_RotatorRotator,318,0x00045300,bound
+Core,Object,"native(319) static final operator(34) rotator -= ( out rotator A, rotator B )",-=,SubtractEqual_RotatorRotator,319,SubtractEqual_RotatorRotator,319,0x000453d0,bound
+Core,Object,"native static final operator(24) bool ClockwiseFrom( int A, int B )",ClockwiseFrom,ClockwiseFrom_IntInt,,ClockwiseFrom_IntInt,0,0x00048520,bound
+Core,Object,"native(112) static final operator(40) string $ ( coerce string A, coerce string B )",$,Concat_StrStr,112,Concat_StringString,,0x00049e10,bound
+Core,Object,"native(168) static final operator(40) string @ ( coerce string A, coerce string B )",@,At_StrStr,168,At_StringString,,0x0004a0a0,bound
+Core,Object,"native(115) static final operator(24) bool < ( string A, string B )",<,Less_StrStr,115,Less_StringString,,0x0004a3b0,bound
+Core,Object,"native(116) static final operator(24) bool > ( string A, string B )",>,Greater_StrStr,116,Greater_StringString,,0x0004a4e0,bound
+Core,Object,"native(120) static final operator(24) bool <= ( string A, string B )",<=,LessEqual_StrStr,120,LessEqual_StringString,,0x0004a610,bound
+Core,Object,"native(121) static final operator(24) bool >= ( string A, string B )",>=,GreaterEqual_StrStr,121,GreaterEqual_StringString,,0x0004a740,bound
+Core,Object,"native(122) static final operator(24) bool == ( string A, string B )",==,EqualEqual_StrStr,122,EqualEqual_StringString,,0x0004a870,bound
+Core,Object,"native(123) static final operator(26) bool != ( string A, string B )",!=,NotEqual_StrStr,123,NotEqual_StringString,,0x0004a9a0,bound
+Core,Object,"native(124) static final operator(24) bool ~= ( string A, string B )",~=,ComplementEqual_StrStr,124,ComplementEqual_StringString,,0x0004aad0,bound
+Core,Object,"native(322) static final operator(44) string $= ( out string A, coerce string B )",$=,ConcatEqual_StrStr,322,ConcatEqual_StringString,,0x00049f50,bound
+Core,Object,"native(323) static final operator(44) string @= ( out string A, coerce string B )",@=,AtEqual_StrStr,323,AtEqual_StringString,,0x0004a220,bound
+Core,Object,"native(324) static final operator(45) string -= ( out string A, coerce string B )",-=,SubtractEqual_StrStr,324,SubtractEqual_StringString,,0x0004cb90,bound
+Core,Object,"native(114) static final operator(24) bool == ( Object A, Object B )",==,EqualEqual_ObjectObject,114,EqualEqual_ObjectObject,114,0x00046330,bound
+Core,Object,"native(119) static final operator(26) bool != ( Object A, Object B )",!=,NotEqual_ObjectObject,119,NotEqual_ObjectObject,119,0x000463f0,bound
+Core,Object,"native(254) static final operator(24) bool == ( name A, name B )",==,EqualEqual_NameName,254,EqualEqual_NameName,254,0x00046210,bound
+Core,Object,"native(255) static final operator(26) bool != ( name A, name B )",!=,NotEqual_NameName,255,NotEqual_NameName,255,0x000462a0,bound
+Engine,Actor,"native(549) static final operator(20) color - ( color A, color B )",-,Subtract_ColorColor,549,Subtract_ColorColor,549,0x00210510,bound
+Engine,Actor,"native(550) static final operator(16) color * ( float A, color B )",*,Multiply_FloatColor,550,Multiply_FloatColor,550,0x002103b0,bound
+Engine,Actor,"native(551) static final operator(20) color + ( color A, color B )",+,Add_ColorColor,551,Add_ColorColor,551,0x00210480,bound
+Engine,Actor,"native(552) static final operator(16) color * ( color A, float B )",*,Multiply_ColorFloat,552,Multiply_ColorFloat,552,0x002102e0,bound
+Engine,StreamBase,"native static final operator(40) string * ( coerce string A, coerce string B )",*,Multiply_StrStr,,Multiply_StrStr,0,0x00292d50,bound
+Engine,StreamBase,"native static final operator(44) string *= ( out string A, coerce string B )",*=,MultiplyEqual_StrStr,,MultiplyEqual_StrStr,0,0x00292e90,bound

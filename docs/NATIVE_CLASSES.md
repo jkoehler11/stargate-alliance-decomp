@@ -291,11 +291,35 @@ and `GUIFont.GetFont`, whose declarer the text does not spell as a binding).
 `GUI.GUIMultiColumnList.SortList`→`Gui`, modulo case). One file per class is also the shape the engine's own source
 uses, so the target of a reconstruction is `src/Native/<Package>/<Class>.cpp` and a function is a symbol in it.
 
-**The 92 `operator` declarations are deliberately not marked.** One `operator` statement expands into typed
-records — `Core.Object`'s 86 `operator` lines become 103 records — so a single marker line would name one of them
-and misrepresent the rest; the expansion is per record in `inventory/native_tokens.csv` under basis
-`operator-expansion`. Marking an operator therefore needs a marker that names a *set*, which is a different
-decision from this one.
+**The 97 `operator` declarations, and what the "92" was.** The marker pass counts operators with
+`native-reconcile`'s `NATIVE_OP`, whose symbol is one or two punctuation characters, so it cannot spell `$`, `$=`,
+`>>>` or a named operator (`ClockwiseFrom`, `Dot`, `Cross`): it reports 86 declarations for `Core.Object`, whose
+text holds 91, and 92 in total where the statements hold 97. `tools/native-operators.py` reads the statements and
+composes each record name by UE2's own rule — stem from the symbol (`==`→`EqualEqual`, `$`→`Concat`,
+`@=`→`AtEqual`, `>>>`→`GreaterGreaterGreater`), then one type suffix per operand in declaration order
+(`vector * ( float A, vector B )`→`Multiply_VectorFloat`), with `out`/`coerce`/`skip` not part of the name — and
+`inventory/native_operators.csv` records the result: **97 of 97 declarations bind to a distinct record of their own
+class**, so a declaration is one-to-one with a record and a marker can name it.
+
+| class | declarations | records composed | operator records no declaration composes |
+|---|---:|---:|---:|
+| `Core.Object` | 91 | 91 | 13 synthesised, 12 of them carrying a token |
+| `Engine.Actor` | 4 | 4 | 0 |
+| `Engine.StreamBase` | 2 | 2 | 0 |
+
+The thirteen are the compiler's: `++`/`--` and unary `-`/`!`/`~` are synthesised from the operators the class does
+declare (`AddAdd_{Int,Byte,PreInt,PreByte}`, `SubtractSubtract_{Int,Byte,PreInt,PreByte}`,
+`Subtract_Pre{Int,Float,Vector}`, `Not_PreBool`, `Complement_PreInt`), which is why `Core.Object` carries 104
+`operator` records for 91 statements and `inventory/native_tokens.csv` counts 107 token-carrying operator records
+across the 97 declarations. Five more names only *begin* with an operator stem and are ordinary natives (`Atan`,
+`Round`, `Divide`, `Nothing`, `OrthoRotation`), so a prefix test is not the classification. The string operators are
+the one place the two spellings differ, and both are measured: the script writes `Str` (`At_StrStr`), the
+registration pool writes `String` (`At_StringString`, 12 records), and the alias is kept in the `composed` column
+rather than silently corrected.
+
+Marking an operator is therefore the same shape as marking a function — one line per declaration naming its record
+and token — and the mapping it needs is now a committed table; wiring it into the tree writer is the remaining
+step.
 
 The marker pass is **idempotent by construction** — every line carrying the prefix is removed before the fresh
 markers are inserted, so it is a pure function of the package text: a second run over the 2,319 files hashes

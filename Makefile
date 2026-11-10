@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
 
 help:
 	@echo "targets:"
@@ -71,6 +71,7 @@ help:
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  native-bodies mark every native body in the extracted tree + the cross-link table (PLAN 3.9, needs the dump)"
 	@echo "  native-census which of the registration table's body addresses are function starts (PLAN 3.9, needs the image)"
+	@echo "  native-operators which record each operator declaration composes (PLAN 3.9, needs the dump)"
 	@echo "  rebuild       run the rebuild pipeline stage by stage (PLAN 6.1; needs the dump)"
 	@echo "  serialize-slots  every class's Serialize override from its class table (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table  the walker's opcode map and per-group operand rules (PLAN 3.7; needs the dump)"
@@ -254,6 +255,9 @@ ci:
 	@$(PYTHON) -m py_compile tools/native-census.py && echo "ok   native-census: tools/native-census.py compiles"
 	@$(PYTHON) tools/native-census.py --selftest
 	@$(PYTHON) tools/native-census.py --check
+	@$(PYTHON) -m py_compile tools/native-operators.py && echo "ok   native-operators: tools/native-operators.py compiles"
+	@$(PYTHON) tools/native-operators.py --selftest
+	@$(PYTHON) tools/native-operators.py --check
 	@$(PYTHON) -m py_compile tools/map-list-order.py && echo "ok   map-list-order: tools/map-list-order.py compiles"
 	@$(PYTHON) tools/map-list-order.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
@@ -459,6 +463,12 @@ native-bodies:
 	@$(PYTHON) tools/native-mark.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory \
 		--tree "$(WORK)/UnrealScript-marked"
 	@echo "wrote inventory/native_bodies.csv and $(WORK)/UnrealScript-marked"
+
+# Which record each `operator` declaration composes, and whether the registration table has it
+# (docs/NATIVE_CLASSES.md, PLAN 3.9). Reads the shipped text, so it needs the dump.
+native-operators:
+	@$(PYTHON) tools/native-operators.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@echo "wrote inventory/native_operators.csv"
 
 # Which of the registration table's body addresses are function starts, and what the call-graph census is
 # short by (docs/NATIVE_CLASSES.md, PLAN 3.9). The image half needs default.xbe; the disassembler verdicts come
