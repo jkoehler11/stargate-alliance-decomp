@@ -889,6 +889,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the play path picks a track and no name can ever match)
+
+- **Callers answer what the bodies could not.** `Callers.java` over the kept import: `0x000b2cb0` (the `+0x48`
+  clip getter) has **one** caller, `0x00220ba0` (96 bytes), which walks the clip array once for the bone link
+  `0x000b4930`; `0x000b2ce0` (the `+0x54` track getter) has five, three of them inside `LIPSincPlayAnim`
+  (`0x00228730`, sites `0x002287ab`/`0x002287d3`/`0x00228871`), which bails on `[track+0x24] == 0` -- the
+  track's `u32 1` flag. So a play call names a **track**, and the clips are the pose side.
+- **The chain has no other entry.** `0x000b5f10` has exactly one caller (`0x000b63f0` at `0x000b64f0`, key
+  block in `ECX`: `MOV ECX,EDI` at `0x000b64ee`) and `0x000b63f0` has exactly one, the actor update
+  `0x0022e090` (14,676 bytes) at `0x0022fe9b`.
+- **The lookup cannot resolve on the shipped data.** The blend passes each clip's `+0x34` name to `0x000b4710`,
+  which `__wcsicmp`s it against every group name of the track's block (`0x000b45c0`); all **58,006** groups
+  are unnamed, so the answer is always `0x4c8848` and pose assembly is never reached from a curve. The `.map`
+  files are not the missing source either: 15 near-one-hot speech targets against 26 groups, no index and no
+  name in common. This **corrects** the previous note's guess that the `.map` was "the next instrument".
+- **Next**: the `+0x24` flag and the rest of the track header's runtime use (which fields the loader's two
+  group arrays at `+0x30`/`+0x3c` feed), or a non-LIPSinc task -- U4's runtime half is closed, so the next
+  pick should come from `docs/UNKNOWNS.md`'s other entries. Instruments: `~/sg1/work/lip11/out4`,
+  `tools/ghidra/ghidra_scripts/Callers.java`, `docs/formats/lipsinc-runtime.md`.
+
 ### Execution notes (2026-11-09, the record is a clip, and its name is read rather than stored)
 
 - **The loader pushes all four destinations before its first call, and each callee pops only its own two.**

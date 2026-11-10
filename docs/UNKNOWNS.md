@@ -386,9 +386,20 @@ in order. The clip reader `0x000bcb60` names each `0x48`-byte element with `0x00
 (`0x000b5f10`, `0x000b63f0`) call it over the `+0x48` array, so **the runtime evaluates clips, not tracks**;
 the track array is `+0x54`, and a track's `+0x34` is its second group array's base (`0x000bc620`), which is
 what separates the two 0x48-byte families. The corpus has **17 clip records against 2,231 track records**,
-clips in four files only. What is still open is not the binding but the *names*: the group names a clip
-name is looked up against are empty in all 58,006 groups, so the next instrument is the text mapping the
-`.map` writer `0x000b55f0` formats, four of which ship in the dump (`System/LIPSincData/Mappings/`).
+clips in four files only. What is still open is not the binding but the *names*, and that is answered by
+the call graph in the paragraph below.
+
+**Answered: the play path resolves a track, and no name in the shipped data can match (2026-11-09).**
+`LIPSincPlayAnim` (`0x00228730`) calls only the track getter `0x000b2ce0` (three sites) and bails when
+`[track + 0x24] == 0`, so a play call selects a **track**; the clip array's getter `0x000b2cb0` has a single
+caller, `0x00220ba0`, which walks the array once for the bone link `0x000b4930`, i.e. the pose side. The fade driver `0x000b63f0` has one
+caller (`0x0022e090` at `0x0022fe9b`) and the blend one (`0x000b63f0` at `0x000b64f0`, key block in `ECX`),
+and the blend compares **each clip's `+0x34` name** against every group name of that track's block
+(`0x000b4710` -> `0x000b45c0`, `__wcsicmp` over `0x000bb2f0`). All 58,006 groups are unnamed, so no clip
+name can match and the per-clip answer is always the `0x4c8848` zero; the `.map` files cannot supply the
+names either -- they name 15 near-one-hot *speech targets*, not 26 groups. The runtime half of U4 is
+therefore closed on a negative: the shipped data cannot exercise the named-slot path, and which design
+fills a group's name is not measured.
 
 What the region does settle is the object model around the records:
 
