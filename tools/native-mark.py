@@ -14,9 +14,9 @@ For every `native function` declaration it writes one line above the declaration
 
     // native - see src/Native/Engine/Pawn.cpp  token 0 binder intUPawexecSetViewPitch body 0x0031e4f0
 
-and one row to `inventory/native_bodies.csv` — `package, class, function, native_token, params, binder,
-binder_va, body_va, module, src_native, marker` — so the tree the marker was written into stays out of git (it is
-game-derived source) while *what was written into it* is a committed, auditable table. The row's key
+and one row to `inventory/native_bodies.csv` — `package, class, kind, function, record, native_token, params,
+binder, binder_va, body_va, module, src_native, marker` — so the tree the marker was written into stays out of git
+(it is game-derived source) while *what was written into it* is a committed, auditable table. The row's key
 `(package, class, function)` is also the key `inventory/natives.csv` uses, so the marker's token, parameter count
 and flags are one join away; `binder`/`binder_va` come from `inventory/native_binder_names.csv` (the image's own
 `int<prefix><Class>exec<Function>` literal) and `body_va` from `inventory/native_targets.csv` (the native
@@ -26,9 +26,12 @@ The marker is **ASCII** (`-` for the dash) and a pure function of the dump text:
 removed and re-inserted on each pass, so a second `--tree` run is byte-identical. That is what makes the tree
 regenerable and the row count checkable.
 
-An `operator` declaration is *not* marked. One operator statement expands into several native records (107 on this
-build), so a single marker line would name one of them and lie about the rest; the expansion is in
-`inventory/native_tokens.csv` under basis `operator-expansion`.
+An `operator` declaration is marked too, and its marker names the record the declaration composes — an operator has
+no function name to join on, and `(package, class, symbol)` is ambiguous because `Core.Object` declares `==` for both
+`bool` and `Object`. `tools/native-operators.py` measured that one statement becomes exactly one record (97 of 97
+bound), so the line gains a `record` field and nothing else changes; the compiler's own extra records (`++`/`--` and
+the unary family) have no declaration to mark and stay in `inventory/native_tokens.csv` under basis
+`operator-expansion`.
 """
 import argparse
 import collections
@@ -47,11 +50,12 @@ from ue2pkg import Package  # noqa: E402
 NATIVES = os.path.join(ROOT, "inventory", "natives.csv")
 BINDERS = os.path.join(ROOT, "inventory", "native_binder_names.csv")
 TARGETS = os.path.join(ROOT, "inventory", "native_targets.csv")
+OPERATORS = os.path.join(ROOT, "inventory", "native_operators.csv")
 MODULES = os.path.join(ROOT, "inventory", "function_modules.csv")
 OUT = os.path.join(ROOT, "inventory", "native_bodies.csv")
 
-COLS = ["package", "class", "function", "native_token", "params", "binder", "binder_va", "body_va",
-        "module", "src_native", "marker"]
+COLS = ["package", "class", "kind", "function", "record", "native_token", "params", "binder", "binder_va",
+        "body_va", "module", "src_native", "marker"]
 
 # The one line the tree carries. `lstrip().startswith(MARK)` is the test for "this line is a marker, not source".
 MARK = "// native - see src/Native/"
@@ -67,6 +71,7 @@ def load_tool(name):
 
 PST = load_tool("pkg-script-text")
 REC = load_tool("native-reconcile")
+OPS = load_tool("native-operators")
 
 
 def blank_comments(text):
@@ -92,25 +97,27 @@ def blank_comments(text):
 def declaration_spans(text):
     """[(offset, name, index, kind)] — one per native declaration, offset = first character of its statement.
 
-    The regexes and the `;`-statement split are `native-reconcile`'s own, applied to a blanked copy so the offset
-    survives. `declarations()` on the original text is the cross-check in `run()`: if the two ever disagree, the
-    tree is not written at all rather than marked in the wrong places.
+    A `function` is `native-reconcile`'s regex; an `operator` is `native-operators`' own `DECL`, because the former's
+    one- or two-character symbol class cannot see `$`, `$=`, `>>>`, `ClockwiseFrom`, `Dot` or `Cross` and counted 92
+    declarations where the text holds 97. Both run on a length-preserving blanked copy, so the offset survives into
+    the original and the marker lands above the declaration's first line. `declarations()` on the original text is
+    the cross-check in `class_rows()`: if the two ever disagree, the tree is not written at all rather than marked
+    in the wrong places.
     """
     blank = blank_comments(text)
     spans = []
     start = 0
     for chunk in blank.split(";"):
         head = re.search(r"\S", chunk)
-        if head and re.search(r"\bnative\b", chunk, re.I) and re.search(r"\b(function|operator)\b", chunk, re.I):
-            off = start + head.start()
-            op = REC.NATIVE_OP.search(chunk)
-            fn = None if op else REC.NATIVE_FN.search(chunk)
-            if op:
-                spans.append((off, op.group(3), op.group(1), "operator"))
-            elif fn:
-                spans.append((off, fn.group(2), fn.group(1), "function"))
-            else:
-                spans.append((off, "", None, "other"))
+        if head and re.search(r"\bnative\b", chunk, re.I):
+            if re.search(r"\boperator\b", chunk, re.I):
+                for m in OPS.DECL.finditer(chunk):
+                    spans.append((start + m.start(), m.group("symbol"),
+                                  (m.group("token") or "").strip() or None, "operator"))
+            elif re.search(r"\bfunction\b", chunk, re.I):
+                fn = REC.NATIVE_FN.search(chunk)
+                off = start + head.start()
+                spans.append((off, fn.group(2), fn.group(1), "function") if fn else (off, "", None, "other"))
         start += len(chunk) + 1
     return spans
 
@@ -135,28 +142,47 @@ def strip_markers(text):
 
 
 def render(row):
-    """The exact line written into the tree, from a row's own fields."""
-    return "%s%s/%s.cpp  token %s binder %s body %s" % (
-        MARK, row["package"], row["class"], row["native_token"] or "-", row["binder"] or "-",
-        row["body_va"] or "-")
+    """The exact line written into the tree, from a row's own fields.
+
+    An operator row adds `record <name>` after the token: the declaration's own name is a symbol (`==`), so without
+    it the line would not say which C++ function the declaration became. Function rows carry no `record`, so their
+    markers are byte-identical to the ones the tree already had.
+    """
+    return "%s%s/%s.cpp  token %s %sbinder %s body %s" % (
+        MARK, row["package"], row["class"], row["native_token"] or "-",
+        ("record %s " % row["record"]) if row.get("record") else "",
+        row["binder"] or "-", row["body_va"] or "-")
 
 
 def src_native(pkg, cls):
     return "src/Native/%s/%s.cpp" % (pkg, cls)
 
 
-def mark_text(text, rows_by_name):
-    """Insert one marker line above each native function declaration; return (text, inserted)."""
+def mark_text(text, rows_by_name, op_rows=()):
+    """Insert one marker line above each native declaration; return (text, inserted).
+
+    `rows_by_name` is keyed by the declaration's function name; `op_rows` is the class's operator rows in
+    declaration order, because the symbol alone cannot separate `Core.Object`'s two `==` declarations.
+    """
     text = strip_markers(text)
     eol = eol_of(text)
     spots = []
+    ops_seen = 0
     for off, name, _idx, kind in declaration_spans(text):
-        if kind != "function":
-            continue
-        row = rows_by_name.get((name or "").lower())
-        if row is None:
+        if kind == "function":
+            row = rows_by_name.get((name or "").lower())
+            if row is None:
+                continue
+        elif kind == "operator":
+            if ops_seen >= len(op_rows):
+                raise SystemExit("native-mark: more operator declarations than rows (%r)" % (name,))
+            row = op_rows[ops_seen]
+            ops_seen += 1
+        else:
             continue
         spots.append((line_start(text, off), render(row)))
+    if ops_seen != len(op_rows):
+        raise SystemExit("native-mark: %d operator rows for %d operator declarations" % (len(op_rows), ops_seen))
     out = []
     last = 0
     for at, line in sorted(spots):
@@ -191,8 +217,55 @@ def load_rows():
     return recs, binder, target, module
 
 
-def class_rows(pkg_name, cls, text, recs, binder, target, module):
-    """Every native function declaration in one class's text, cross-linked, as output rows."""
+def load_ops():
+    """{(package, class): [row]} — `inventory/native_operators.csv`, in the declaration order it was written in."""
+    out = collections.defaultdict(list)
+    if os.path.isfile(OPERATORS):
+        with open(OPERATORS, newline="") as fh:
+            for r in csv.DictReader(fh):
+                out[(r["package"], r["class"])].append(r)
+    return out
+
+
+def op_rows(pkg_name, cls, text, rows, binder, module):
+    """The rows for one class's `operator` declarations, joined to the table by declaration text, in order.
+
+    The declaration text is the join key: `(package, class, symbol)` is ambiguous, because `Core.Object` declares
+    `==` for both `bool` and `Object`. A disagreement between the text and the committed table raises rather than
+    marking the wrong declaration.
+    """
+    decls = OPS.parse(text)
+    if len(decls) != len(rows):
+        raise SystemExit("native-mark: %s.%s: the text holds %d operator declarations, the table %d"
+                         % (pkg_name, cls, len(decls), len(rows)))
+    out = []
+    for (decl, symbol, token, record), r in zip(decls, rows):
+        if re.sub(r"\s+", " ", decl).strip() != r["declaration"] or symbol != r["symbol"]:
+            raise SystemExit("native-mark: %s.%s: the text's declaration %r is not the table's %r"
+                             % (pkg_name, cls, decl, r["declaration"]))
+        operands = re.search(r"\(([^)]*)\)\s*$", r["declaration"])
+        b = binder.get((cls.lower(), (r["record"] or "").lower()), {})
+        row = collections.OrderedDict()
+        row["package"] = pkg_name
+        row["class"] = cls
+        row["kind"] = "operator"
+        row["function"] = symbol
+        row["record"] = (r["record"] or "").strip()
+        row["native_token"] = ((token or "") or (r["record_token"] or "")).strip()
+        row["params"] = str(len(OPS.param_types(operands.group(1)))) if operands else ""
+        row["binder"] = (b.get("binder") or "").strip()
+        row["binder_va"] = (b.get("binder_va") or "").strip()
+        row["body_va"] = (r["body_va"] or "").strip()
+        row["module"] = module.get(row["body_va"].lower(), "not-in-census" if row["body_va"] else "")
+        row["src_native"] = src_native(pkg_name, cls)
+        row["marker"] = ""
+        row["marker"] = render(row)
+        out.append(row)
+    return out
+
+
+def class_rows(pkg_name, cls, text, recs, binder, target, module, ops=None):
+    """Every native declaration in one class's text, cross-linked: (function rows, operator rows)."""
     decls = [d for d in REC.declarations(text) if d[2] == "function"]
     spans = [(n, i, k) for _o, n, i, k in declaration_spans(text) if k == "function"]
     if [(n, i) for n, i, _k in spans] != [(n, i) for n, i, _k in decls]:
@@ -208,7 +281,9 @@ def class_rows(pkg_name, cls, text, recs, binder, target, module):
         row = collections.OrderedDict()
         row["package"] = pkg_name
         row["class"] = cls
+        row["kind"] = "function"
         row["function"] = name or ""
+        row["record"] = ""
         row["native_token"] = (index or (rec.get("native_token") or "")).strip()
         row["params"] = (rec.get("parameter_count") or "").strip()
         row["binder"] = (b.get("binder") or "").strip()
@@ -219,11 +294,12 @@ def class_rows(pkg_name, cls, text, recs, binder, target, module):
         row["marker"] = ""
         row["marker"] = render(row)
         rows.append(row)
-    return rows
+    return rows, op_rows(pkg_name, cls, text, (ops or {}).get((pkg_name, cls), []), binder, module)
 
 
 def run(system_dir, outdir, tree=None, walk=False):
     recs, binder, target, module = load_rows()
+    ops = load_ops()
     all_rows = []
     marked = mismatched = written = 0
     noparent = []
@@ -240,23 +316,24 @@ def run(system_dir, outdir, tree=None, walk=False):
             text = PST.script_text(pkg, exp)
             if not text:
                 continue
-            rows = class_rows(pkg_name, cls, text, recs, binder, target, module)
+            rows, orows = class_rows(pkg_name, cls, text, recs, binder, target, module, ops)
             all_rows.extend(rows)
+            all_rows.extend(orows)
             if tree:
                 # Every class is written, not just the 92 that declare natives: a tree missing the other 2,227
                 # files is an overlay, not the extracted tree, and cannot be diffed against one.
                 body, count = text, 0
-                if rows:
-                    body, count = mark_text(text, {r["function"].lower(): r for r in rows})
+                if rows or orows:
+                    body, count = mark_text(text, {r["function"].lower(): r for r in rows}, orows)
                 path = os.path.join(tree, pkg_name, cls + ".uc")
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "w", newline="", encoding="latin1") as fh:
                     fh.write(body)
                 marked += count
                 written += 1
-                if count != len(rows):
+                if count != len(rows) + len(orows):
                     mismatched += 1
-                    noparent.append("%s.%s (%d of %d)" % (pkg_name, cls, count, len(rows)))
+                    noparent.append("%s.%s (%d of %d)" % (pkg_name, cls, count, len(rows) + len(orows)))
             if walk:
                 for r in rows:
                     print("%-14s %-22s %-26s token=%-5s body=%-10s %s"
@@ -271,8 +348,10 @@ def run(system_dir, outdir, tree=None, walk=False):
             for r in all_rows:
                 w.writerow(r)
         print("wrote %s (%d rows)" % (path, len(all_rows)))
+    fn = [r for r in all_rows if r["kind"] == "function"]
+    op = [r for r in all_rows if r["kind"] == "operator"]
     total = collections.Counter()
-    for r in all_rows:
+    for r in fn:
         total["decl"] += 1
         total["record"] += bool(r["native_token"]) or bool(r["params"])
         total["body"] += bool(r["body_va"])
@@ -280,8 +359,18 @@ def run(system_dir, outdir, tree=None, walk=False):
         total["census"] += bool(r["body_va"]) and r["module"] != "not-in-census"
     print("%d native function declarations in %d classes: %d with a record, %d with the image's binder literal,"
           " %d with a body address (%d of those in the function census)"
-          % (total["decl"], len({(r["package"], r["class"]) for r in all_rows}), total["record"],
+          % (total["decl"], len({(r["package"], r["class"]) for r in fn}), total["record"],
              total["binder"], total["body"], total["census"]))
+    ototal = collections.Counter()
+    for r in op:
+        ototal["decl"] += 1
+        ototal["record"] += bool(r["record"])
+        ototal["binder"] += bool(r["binder"])
+        ototal["body"] += bool(r["body_va"])
+    print("%d operator declarations in %d classes: %d with a composed record, %d with the image's binder literal,"
+          " %d with a body address"
+          % (ototal["decl"], len({(r["package"], r["class"]) for r in op}), ototal["record"], ototal["binder"],
+             ototal["body"]))
     mods = collections.Counter(r["module"] for r in all_rows)
     print("bodies by module attribution: " + ", ".join("%s %d" % (k or "(no body)", v)
                                                        for k, v in mods.most_common()))
@@ -323,19 +412,32 @@ def selftest():
             {"package": "Core", "class": "Object", "function": "Wrapped", "native_token": "",
              "binder": "", "body_va": ""}]
     by = {r["function"].lower(): r for r in rows}
-    marked, count = mark_text(text, by)
-    assert count == 2, "marked %d, expected 2" % count
+    orow = {"package": "Core", "class": "Object", "kind": "operator", "function": "<", "record": "Less_IntInt",
+            "native_token": "150", "binder": "intUObjectexecLess_IntInt", "body_va": "0x00041234"}
+    marked, count = mark_text(text, by, [orow])
+    assert count == 3, "marked %d, expected 3" % count
     assert "// native - see src/Native/Core/Object.cpp  token 113 binder intUObjectexecGotoState " \
            "body 0x0006f4b0\r\nnative(113) final function GotoState" in marked, marked
     assert "// native - see src/Native/Core/Object.cpp  token - binder - body -\r\nnative function bool Wrapped" \
            in marked, "an unmeasured native still gets a marker naming the gap"
     assert "NotReal" not in [l for l in marked.splitlines() if l.lstrip().startswith(MARK)][0]
+    assert "// native - see src/Native/Core/Object.cpp  token 150 record Less_IntInt " \
+           "binder intUObjectexecLess_IntInt body 0x00041234\r\n" \
+           "native(150) static final operator bool < ( int A, int B );" in marked, marked
+    cases += 1
+    # The six declarations the old one- or two-character symbol class could not see must be spans, or 97 becomes 92.
+    tricky = ("native(287) static final operator(20) string $ ( string A, string B );\r\n"
+              "native static final operator(24) bool ClockwiseFrom( int A, int B );\r\n"
+              "native(290) static final operator(22) int >>> ( int A, int B );\r\n")
+    assert [(n, i, k) for _o, n, i, k in declaration_spans(tricky)] == \
+        [("$", "287", "operator"), ("ClockwiseFrom", None, "operator"), (">>>", "290", "operator")], \
+        [(n, i, k) for _o, n, i, k in declaration_spans(tricky)]
     cases += 1
     # Idempotent: the same pass over its own output is byte-identical, and a stale marker is replaced.
-    again, count2 = mark_text(marked, by)
+    again, count2 = mark_text(marked, by, [orow])
     assert again == marked and count2 == count, "the marker pass is not idempotent"
     stale = marked.replace("token 113", "token 999")
-    fixed, _ = mark_text(stale, by)
+    fixed, _ = mark_text(stale, by, [orow])
     assert fixed == marked, "a stale marker was not replaced"
     assert "token 999" not in fixed
     cases += 1
@@ -343,9 +445,11 @@ def selftest():
     assert render(rows[0]) == "// native - see src/Native/Core/Object.cpp  token 113 " \
                               "binder intUObjectexecGotoState body 0x0006f4b0", render(rows[0])
     assert src_native("Engine", "Pawn") == "src/Native/Engine/Pawn.cpp"
+    assert render(orow) == "// native - see src/Native/Core/Object.cpp  token 150 record Less_IntInt " \
+                           "binder intUObjectexecLess_IntInt body 0x00041234", render(orow)
     cases += 1
-    print("ok   native-mark: %d cases (spans with a wrap and a comment, statement offsets, marker text, "
-          "idempotency, a stale marker, the render rule)" % cases)
+    print("ok   native-mark: %d cases (spans with a wrap, a comment and the six hard operator symbols, statement "
+          "offsets, function and operator marker text, idempotency, a stale marker, the render rule)" % cases)
     return 0
 
 
@@ -359,10 +463,16 @@ def check(path=None):
     bad = []
     seen = set()
     for i, r in enumerate(rows, start=2):
-        key = (r["package"], r["class"], r["function"])
+        key = (r["package"], r["class"], r["kind"], r["function"], r["record"])
         if key in seen:
             bad.append("line %d: duplicate key %s" % (i, ".".join(key)))
         seen.add(key)
+        if r["kind"] not in ("function", "operator"):
+            bad.append("line %d: kind %r is neither a function nor an operator" % (i, r["kind"]))
+        if r["kind"] == "operator" and not r["record"]:
+            bad.append("line %d: an operator row names no record" % i)
+        if r["kind"] == "function" and r["record"]:
+            bad.append("line %d: a function row names a record" % i)
         if r["src_native"] != src_native(r["package"], r["class"]):
             bad.append("line %d: src_native %r does not follow the row's package/class" % (i, r["src_native"]))
         if r["marker"] != render(r):
@@ -380,8 +490,10 @@ def check(path=None):
         for line in bad[:8]:
             print("  " + line)
         return 1
-    print("ok   native-mark: %d rows in %s, every marker the render of its own row"
-          % (len(rows), os.path.relpath(path, ROOT)))
+    kinds = collections.Counter(r["kind"] for r in rows)
+    print("ok   native-mark: %d rows in %s (%s), every marker the render of its own row"
+          % (len(rows), os.path.relpath(path, ROOT),
+             ", ".join("%s %d" % kv for kv in sorted(kinds.items()))))
     return 0
 
 
