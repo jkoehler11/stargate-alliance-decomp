@@ -177,6 +177,37 @@ different flag words; it is `FString` concatenation and compares the same `SAVEG
 literals (`0x00509854`, `0x00509868`, `0x00509880`) twice each. Nothing else in the image calls it. What the write
 side does with the name is inside the writer, which is the remaining read.
 
+**What the writer does with the name.** `0x00138680` opens by choosing a *label* from its three stack arguments, in
+the order `[esp+0x678]` → `Map Change`, `[esp+0x674]` → `QUICKSAVE`, `[esp+0x670]` → `CHECKPOINT` (else `SAVEGAME`),
+and logs it as `[VL:LOADGAME]: %s` (`0x00509c0c` — the writer reuses the loader's prefix). The filename comes from a
+second chain over the same arguments, and its whole vocabulary is five format strings:
+
+| branch, in body order | format | then |
+|---|---|---|
+| first flag | `TRAVEL_%s` | `%s.sgs` |
+| quick | `Q_A_%s` | `%s.sgs` |
+| checkpoint | `C_%s` | `%s.sgs` |
+| matinee | `MATINEE_%s` | `%s.sgs` |
+| none of them (manual) | `%s_%s.sgs` | `%s%s` |
+
+Which argument feeds which row is *not* settled by this read — the label chain is ordered by stack offset and the name
+chain by the decompiler's argument order, and they do not have to agree. The checkpoint row is checkable against the
+shipped data anyway: `C_%s` followed by `%s.sgs` gives
+`C_<SaveDescription>.sgs`, and **all nine** `.sgs` files in `System/Profiles/DefaultProfile/` have exactly that shape
+(`C_M02A_Drillsite.sgs`, `C_M04b_Ruins approach.sgs`, `C_M12A_Mission 12 - Checkpoint 1.sgs`). The manual row is the
+only two-part one, which is how a manual save carries its map name in front. The loader composes `TRAVEL_%s.sgs` for
+its travel case too (`0x00136cc7`), so the two sides agree on that name.
+
+**After the name.** It logs `[VL:SAVEGAME]: Saving game to file: %s`, sets a byte at `+0x708` to **2**, calls the
+engine serializer (`Core_UnObjBas` — the body that prints `SaveGame Summary Names=%d Import=%d Export=%d`), walks the
+object at `[engine+0x11c]`, and restores `+0x708` to **0**. So the shipped build's checkpoint write is whole, and the
+only stub on the path is the script-visible `SavePackage` native.
+
+**Correction to the note this one follows.** PR #299 said the writer "compares the same `SAVEGAME` / `CHECKPOINT` /
+`QUICKSAVE` literals" at `0x001386dc`… — measured now, it *selects* one of them for that log line, in the order
+`Map Change`, `QUICKSAVE`, `CHECKPOINT`, `SAVEGAME`; nothing there is compared. Where the letter lands is the second
+chain above, which tests the flags positionally rather than comparing strings.
+
 **The instrument, and the trap it exists for.** `tools/vtable-reach.py --va <addr>` runs the three scans a "zero
 callers" result hides behind: `E8 rel32` call sites (a direct call is relative, so no dword scan can see it —
 `0x00136a40` has five and `tools/xbe.py xrefs` answers none), dword references (what a dispatcher table or a vtable
