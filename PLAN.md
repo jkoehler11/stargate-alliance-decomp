@@ -261,6 +261,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       Microsoft SDK/toolchain output. The part that needs no external data is done — the XBE's own
       library table names the statically linked libraries and versions — and a locally supplied
       database is the unblock, recorded in `tools/versions.lock` rather than committed.
+      **The static half is closed by measurement** (`docs/LIBRARIES.md`, `make library-bodies`,
+      `inventory/library_bodies.csv`): the seven library sections hold 3,109 bodies / 565,157 bytes and
+      **none of them names a source file** -- 169 reference any string at all, the sections' whole
+      vocabulary is 363 strings, and RTTI carries four descriptors (all CRT exception classes). So an
+      engine-module-style naming pass has nothing to read here; U9's signature data is the only route, and
+      the section table is the population a partial database would be scored against.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
@@ -996,6 +1002,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   disagreement in 6,063), so `--check` does not gate on size and the exporter's "0 inside another function" stands.
 - **Next**: the renderer half is small enough to read -- `D3DDrv` is 129 bodies, 22 with a source path, 53 carrying
   prose and 4 a format string -- so 4.8's next measurement is one of those bodies, not another pass over the corpus.
+
+### Execution notes (2026-11-10, the library sections: 0 of 3,109 SDK bodies names itself, so 4.2's static half is closed)
+
+- **The question 4.8 asked next was a naming pass, and this is its bound.** The engine modules name their
+  translation unit in an assert (`1,310` of `6,063` bodies), which is what `tools/body-read.py` turns into
+  file, class and work list. `tools/library-bodies.py` asks the same of the seven sections the XBE's library
+  table puts SDK code in (`XNET`, `XONLINE`, `D3D`, `D3DX`, `XGRPH`, `DSOUND`, `XPP`): **3,109 bodies,
+  565,157 bytes, and not one references a build-tree source path.** 169 reference any string at all (107 of
+  them through a `push imm32`, so 62 of the 169 are a data-table dword landing on a literal rather than an
+  assert), and the whole vocabulary is 363 strings.
+- **What the vocabulary says is function, not name** -- and that is still worth having: `XGRPH` + `D3DX` are
+  the XDK's shader assembler (instruction-combination diagnostics, `ps`/`xvs` version statements, the
+  `PS_COMBINEROUTPUT_*` tables, libpng's messages in D3DX's texture loaders), `XONLINE` is an Xbox Live
+  client (UPnP `WANIPConnection`/`WANPPPConnection` URNs, `/xpnfront/xmessaging.srf`, `contentmeta.xbx`),
+  `D3D` is silent apart from one body carrying the SDK version `1.00.5849.1`, and `DSOUND` carries no
+  string at all.
+- **The two class-level routes are closed too.** RTTI would have named classes from `.?AV<Class>@@`
+  descriptors; the image holds four, all CRT exceptions (`exception`, `std::logic_error`,
+  `std::length_error`, `std::out_of_range`), so the map's single real C++ name in these sections
+  (`?assign@?$basic_string@...`) is that same corner and not a method.
+- **The boundary is two-way.** 9,551 of the sections' 11,479 direct calls resolve to a known body and
+  **1,463 of those leave the section**, i.e. the SDK code calls back into `.text`'s CRT/XAPI half; 4.8
+  measured the engine calling *into* the device through 20 vtable offsets, and this is the other direction,
+  which is why neither module reads independently.
+- **Reconciled, not contradicted:** `docs/IMPORTS.md` says 22 names in these sections; 21 are `thunk_FUN_*`
+  jump stubs and the 22nd is the mangled C++ one, so the semantically named count is **1**. The artifact
+  carries `named` and `thunk` as separate columns rather than one "not FUN_" flag.
+- **Next**: 4.2 has no static route left, so the next measurement on it is a *supplied* database (U9) or a
+  runtime pairing (U11's route); the runtime one has more value now, because `symbols/xbox.map` can name the
+  device's vtable targets once the caps are observed.
 
 ### Execution notes (2026-11-10, the console half: `XboxDrv` is a viewport manager of 22 bodies, and `Default.ini` says so)
 

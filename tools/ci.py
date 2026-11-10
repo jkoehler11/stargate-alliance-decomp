@@ -346,6 +346,18 @@ def check_compile_doc():
         ok(name, out[-1].replace("ok   compile-readiness: ", "") if out else "")
 
 
+def check_library_doc():
+    """docs/LIBRARIES.md's tables are generated; they must match the committed artifact."""
+    name = "library-doc"
+    r = subprocess.run([sys.executable, repo("tools", "library-bodies.py"),
+                        "--check-doc", "docs/LIBRARIES.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("library-bodies: ", "") if out else "")
+
+
 def check_module_split():
     """The per-function module split must reconcile with the committed per-module rollup."""
     name = "module-split"
@@ -465,6 +477,7 @@ def main():
     check_image_strings()
     check_module_split()
     check_compile_doc()
+    check_library_doc()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
