@@ -957,9 +957,11 @@ are limited to expected fields (checksum/timestamp) and documented.
   references in `.rdata`/`.data`/`.data1` (vtable reach), and what its string literals say (`__FILE__` source path,
   asset path, ini/config, printf format, prose, none). One pass over 6,063 files takes **0.7 s**.
 - **All 6,063 are function entries in `.text`** and the attribution now has an independent check: of the 848 bodies
-  whose literals name a `.cpp`, **837 name the module they were attributed to**. The eleven that do not are TU
-  crossings, not errors -- `Engine_UnChan`, `Core_UnClass` and `Engine_UnPlayerStats` assert through a `Core` file in
-  scope -- and each keeps its own name, so nothing has to be re-attributed.
+  whose literals name a `.cpp`, **837 name the module they were attributed to**. The eleven that do not point one
+  way -- each is attributed `Core` and names `Engine` (8), `IpDrv` (2) or `XboxAudio` (1) in its own `.cpp`, because
+  `UnClass.cpp`/`UnTemplate.cpp` compile under `Engine` in this build's tree and the `Core_` name prefix is the
+  weaker label of the two -- so they are 4.5's address-level correction, not a census edit, and the census page
+  lists them from the artifact rather than in prose.
 - **150 of the 6,063 are not analysis targets**: 133 `ret`-only slots (median 5 bytes -- a native registration whose
   C++ side is empty) and 17 jump thunks. The native half's work list is **5,913 bodies**, 1,310 of which can be tied
   to a translation unit today and 4,753 of which cannot; 1,428 are reached through a vtable rather than a call and 519

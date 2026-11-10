@@ -431,8 +431,14 @@ def report(rows):
     top = sorted(pairs.items(), key=lambda kv: -kv[1])[:5]
     if top:
         out.append("")
-        out.append("Disagreements (`attributed` -> `its own path`): " +
+        out.append("Disagreements (`attributed` -> `its own .cpp`): " +
                    ", ".join("%s->%s %d" % (k[0], k[1], v) for k, v in top))
+        out.append("")
+        out.append("| address | name | attributed | its own `.cpp` | size |")
+        out.append("|---|---|---|---|---:|")
+        for r in [r for r in rows if r["src_kind"] == "cpp" and r["src_module"] != r["module"]]:
+            out.append("| `%s` | `%s` | `%s` | `%s` | %d |"
+                       % (r["address"], r["name"], r["module"], r["src_module"], r["size"]))
     kinds = {"FUN_": 0, "thunk_": 0, "Native_": 0, "ucpp_": 0, "module": 0, "other": 0}
     for r in rows:
         nm = r["name"]

@@ -74,7 +74,21 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 | `XboxDrv` | 22 | 5 | 0 | 0 | 17 |
 | **total** | **6063** | **848** | **11** | **451** | **4753** |
 
-Disagreements (`attributed` -> `its own path`): Core->Engine 8, Core->IpDrv 2, Core->XboxAudio 1
+Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2, Core->XboxAudio 1
+
+| address | name | attributed | its own `.cpp` | size |
+|---|---|---|---|---:|
+| `0x0002f820` | `Core_UnTemplate` | `Core` | `XboxAudio` | 518 |
+| `0x000ac170` | `Core_UnClass` | `Core` | `Engine` | 4607 |
+| `0x000f1ec0` | `Core_UnClass` | `Core` | `Engine` | 208 |
+| `0x000f25b0` | `Core_UnClass` | `Core` | `Engine` | 1484 |
+| `0x000f39b0` | `Core_UnClass` | `Core` | `Engine` | 271 |
+| `0x0015e040` | `Core_UnClass` | `Core` | `Engine` | 384 |
+| `0x00166aa0` | `Core_UnClass` | `Core` | `Engine` | 620 |
+| `0x001d0de0` | `Core_UnClass` | `Core` | `Engine` | 4207 |
+| `0x001f6313` | `Core_UnTemplate` | `Core` | `Engine` | 766 |
+| `0x002c1bc0` | `Core_UnTemplate` | `Core` | `IpDrv` | 2674 |
+| `0x002d4950` | `Core_UnClass` | `Core` | `IpDrv` | 300 |
 
 Names: `FUN_*` **4608**, module-prefixed **1298**, `ucpp_*` **39**, `Native_*` **26**, `thunk_*` **17**, other **75** of 6063.
 <!-- /generated:module-census -->
@@ -98,27 +112,17 @@ look like from the outside. Naming them is 4.2's signature work (U9), not a fift
 **6,063 is the right set and the wrong work list.** Every attributed address is a function entry in
 `.text` (0 inside another function, 0 missing — the exporter's own result, re-read here), and the
 attribution survives an independent check: of the 848 bodies whose literals name a `.cpp`, 837 name
-the module they were attributed to. The eleven that do not are the two cases worth not confusing:
+the module they were attributed to. The eleven that do not are in the generated block above, and they
+point one way: every one is a body attributed `Core` whose own `.cpp` is `Engine` (8), `IpDrv` (2) or
+`XboxAudio` (1) — `UnClass.cpp` and `UnTemplate.cpp` compile under `Engine` in this build's tree, so
+the `Core_` prefix on those bodies is the weaker of the two labels.
 
-| address | name | attributed | its own `.cpp` | size |
-|---|---|---|---:|---:|
-| `0x000ba520` | `LIPSincShutdownLevel` | `Engine` | `Core` | 370 |
-| `0x000ba750` | `LIPSincInitLevel` | `Engine` | `Core` | 1,860 |
-| `0x000f25b0` | `Core_UnClass` | `Core` | `Engine` | 1,484 |
-| `0x000f39b0` | `Core_UnClass` | `Core` | `Engine` | 271 |
-| `0x000f9c60` | `Engine_UnCamera` | `Engine` | `Core` | 120 |
-| `0x001098c0` | `Engine_UnChan` | `Engine` | `Core` | 356 |
-| `0x0010b0a0` | `Engine_UnChan` | `Engine` | `Core` | 2,757 |
-| `0x00166aa0` | `Core_UnClass` | `Core` | `Engine` | 620 |
-| `0x001c3dc0` | `Engine_UnPlayerStats` | `Engine` | `Core` | 465 |
-| `0x002d3bc0` | `IpDrv_TcpNetDriverXbox` | `IpDrv` | `Core` | 956 |
-| `0x00326910` | `XboxLive_XboxLiveMatchMaking` | `XboxLive` | `Core` | 726 |
-
-Eleven of 6,063 is 0.18%, and the *name* of each row already says what the body is — `UnChan`,
-`UnClass` and `UnPlayerStats` are `Engine` files in stock UE2 that this build compiles with a `Core`
-assert in scope, so the row is a TU that crosses modules, not a misattribution. The check is worth
-having anyway: it is the first time the locality rule has been scored against evidence inside the
-bodies rather than against held-out asserts (87.9%, `docs/MODULE_ATTRIBUTION.md`).
+Eleven of 6,063 is 0.18%, and the check is worth having anyway: it is the first time the locality rule
+has been scored against evidence inside the bodies rather than against held-out asserts (87.9%,
+`docs/MODULE_ATTRIBUTION.md`). Reconciling the eleven is an address-level correction to
+`function_modules.csv`/`function_module_attribution.csv` (4.5's artifacts, `--check`-gated against
+`xbe_functions_by_module.csv`), not a census edit — they are named here as that work list rather than
+changed here.
 
 **150 of the 6,063 are not analysis targets.** 133 are `ret`-only slots (median 5 bytes — a native
 registration whose C++ side does nothing) and 17 are jump thunks (`thunk_FUN_*`). So the native half's
