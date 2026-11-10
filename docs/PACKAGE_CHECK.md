@@ -147,26 +147,71 @@ Two consequences are worth stating plainly, because they decide what the check c
 
 `--records` points the same join at another check-data file, which is what makes the stage usable on
 a build: `tools/build.sh --target hybrid` places the writer's **18 assembled packages** into
-`workdir/System`, copies `Packages.md5` beside them, and then runs
+`workdir/System`, **writes a database of its own** there (`write-check-data`, below), and then runs
 
     python3 tools/package-check-quick.py workdir/System --records SRC/System/Packages.md5
 
-against the source's records. The stage passes on the shipped tree — **17 of 17** records whose
-package the build places reproduce — and fails when a placed package no longer matches, which is the
-case a rebuild that moves a name table or an export offset creates. One number is worth keeping:
-`System/` holds 18 `.u` files but only **17** of them have a record; `UPreview.u` (734,635 bytes,
-GUID `0E8020CB4558E0968B4182926B00E849`) is absent from the check data the cook wrote, so a stage that
-counted files instead of records would look one short for no reason.
+against the *source's* records — the two halves stay independent, so the stage proves the placed tree
+still matches what the cook recorded rather than agreeing with a file this build just wrote. The stage
+passes on the shipped tree — **17 of 17** records whose package the build places reproduce — and fails
+when a placed package no longer matches, which is the case a rebuild that moves a name table or an
+export offset creates. One number is worth keeping: `System/` holds 18 `.u` files but only **17** of
+them have a record; `UPreview.u` (734,635 bytes, GUID `0E8020CB4558E0968B4182926B00E849`) is absent
+from the check data the cook wrote, so a stage that counted files instead of records would look one
+short for no reason.
 
-## What that leaves for PLAN 6.2
+## Writing the database, not just reading it
 
-Regeneration needs nothing from outside the dump any more: a package's GUID and its digest both
-come out of the file the writer produced, and `build.sh --target hybrid` already runs the stage over
-the tree it places (above). What is left is the writer half — writing a `Packages.md5` package of our
-own through the container writer (`docs/PACKAGE_WRITER.md`) rather than copying the original. Until
-that exists, a build that changes a name table or a layout has to be added to the database with `-c`
-against a patched build, or run with the check bypassed; a build that keeps both header and names
-needs nothing at all.
+`tools/package-check-emit.py` is the writer half, and it goes through the container writer's own
+encoders (`tools/pkg-write.py`) rather than a second implementation of the format:
+
+    python3 tools/package-check-emit.py --dump DUMP          # reproduce the shipped file from its records
+    python3 tools/package-check-emit.py --tree BUILD/System --out BUILD/System/Packages.md5 \
+        --records SRC/System/Packages.md5                    # record a build tree, read it back
+    python3 tools/package-check-emit.py --check              # synthetic self-test, no dump (in `make ci`)
+
+The package is fully parameterised by the records: seven names in front of the record names
+(`None`, `Core`, `Engine`, `Package`, `Class`, `PackageCheckInfo`, `md5` — the last two are the export
+class and the field's own name, both in the shipped table), two imports (`Core.Class`,
+`Engine.PackageCheckInfo`, which is what makes every export's `class = -1` resolve), one
+`PackageCheckInfoN` export per record with flags `0x00070004`, and the same
+`names < payloads < imports < exports` region order `--layout` measures on every shipped package.
+Each payload is the same 78-byte frame, measured from all 168 shipped records rather than derived:
+
+    00 | 21 <32 uppercase hex> 00 | 01 | 21 <32 lowercase hex> 00 | 01 | 00 x7
+
+`21` is the compact `FString` length (32 characters plus the NUL), so the two fields are the package's
+GUID and its quick digest; the single `00`/`01` bytes around them and the trailing `01 00 00 00 00 00
+00` are constant in all 168, and their meaning is **not** measured — which is why the frame is written
+verbatim. (The name table also carries a bytes-vs-text trap worth knowing: the GUID text is four
+`%08X` dwords of the *little-endian* values at `0x24`, so it must be packed back per dword —
+`bytes.fromhex` reverses all four and moves the header GUID with a one-line diff at `+0x24`.)
+
+**The proof is byte identity.** `--dump` records every package the shipped file names, in that file's
+own order, and must emit **20,111 bytes identical to the original** — the same standard `pkg-relay`
+holds the container to. Measured on the dump: 168 of 168 records reproduce, 499 packages carry a UE2
+header, and the emitted file matches to the byte.
+
+**The use is a build tree.** `--tree` records every package in a directory, in name order (a
+deterministic rule, since the cook's order is a GUID order nothing in a build reproduces), derives the
+database's own header GUID from the records unless a source file supplies it, writes the file, then
+**reads its own output back**: record count, order, every payload at its own offset, every export
+resolving to `PackageCheckInfo`, and the imports reading as `PackageCheckInfo`/`Engine`. On the hybrid
+tree that is **18 records for 18 placed packages, of which 17 are records the cook's file already has
+and one is new** — `UPreview.u`, the package the cook never recorded. Pointing the quick checker at
+that file finds 18 of 18, so the database is usable in place of the cook's:
+
+| measurement | value |
+|---|---|
+| records emitted for the shipped dump's database | 168 of 168, 20,111 bytes, byte-identical |
+| records emitted for the hybrid tree | 18 (17 shared with the cook's file, 1 new: `UPreview.u`) |
+| read back through `ue2pkg` + the record reader | 18 of 18, all exports resolving |
+| the quick checker run against our own file | 18 of 18 records reproduce |
+
+So a build no longer has to be added to the database with `-c` against a patched build, or run with the
+check bypassed, whichever way its layout moves: it writes the file it needs. What remains open in 6.2
+is the **runtime** question — which path invokes the check on a load — which needs the xemu probe in
+U5 / 7.3, not another read of the image.
 
 ## Where the check lives in the image
 
@@ -190,6 +235,10 @@ Artifact: `inventory/package_check_code.csv` (`make package-check-code`, `--chec
 
 ## Not measured
 
+* **What the record frame's filler bytes mean** — the `00`, the two `01`s and the seven trailing
+  zeros are identical in all 168 records, so they are reproduced verbatim and not explained. Reading
+  them would mean decompiling the `0x00125a90` record builder for field widths, which buys nothing
+  while no record in the corpus varies.
 * **Which** path invokes the check at runtime: the code is present and reachable from `Engine_UnGame`,
   but whether it runs on every load, on a menu, or only on a console command needs the probe in U5 /
   7.3 territory. The `MD5` console command is the writer, not necessarily the verifier.

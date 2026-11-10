@@ -1,9 +1,10 @@
-# The rebuild pipeline: five stages proven, three missing, and the compiler in between
+# The rebuild pipeline: six stages proven, three missing, and the compiler in between
 
 PLAN 6.1 asks for `tools/build.sh` → compile → repack → place. This is that script, and the interesting
-result is not that it runs: it is *which* stages run. Five of the eight run today — the four container and input
-stages, plus `package-check` on the target that has packages to check — and three are blocked behind a compiler
-this project does not have. The blocked ones fail visibly with a reason instead of being discovered at the end.
+result is not that it runs: it is *which* stages run. Six run today — the four container and input stages, plus
+`write-check-data` and `package-check` on the target that has packages to check — and three are blocked behind a
+compiler this project does not have. The blocked ones fail visibly with a reason instead of being discovered at
+the end.
 
     tools/build.sh --dry-run                                  # every stage that needs no compiler
     SG1_DUMP=~/sg1/dump tools/build.sh                        # + the dump-side stages (target `full`)
@@ -22,7 +23,7 @@ One directory per run under `build/rebuild/<UTC>/`, one log per stage, `summary.
 | 4 | `merge-defaults` | each class's `defaultproperties` block is merged into that tree (1,664 of 2,319 classes) | **proven** |
 | 5 | `compile` | a compiler turns that tree into `.u` payloads | **missing**: no `ucc` matching package version 130 / licensee 4 |
 | 6 | `repack` | generated payloads are placed by the writer | **blocked** on 5 |
-| 7 | `package-check` | a placed package still matches its `Packages.md5` record | **proven on the hybrid target**: **17 of 17** records whose package the build places reproduce (`tools/package-check-quick.py`; the quick transform `0x00121cf0` hashes the header dwords plus 8 bytes per name entry, `docs/PACKAGE_CHECK.md`). `UPreview.u` is the one `System/*.u` package with no record; a target with generated payloads is blocked on 5-6 |
+| 7 | `write-check-data` + `package-check` | the build **writes** its own `Packages.md5` from the packages it places, then checks them against the cook's records | **proven on the hybrid target**: **18 records** written for 18 placed packages (17 of them records the cook's file already has, 1 new: `UPreview.u`), read back 18 of 18 (`tools/package-check-emit.py`, byte-identical reproduction of the shipped 20,111-byte file); **17 of 17** placed records still reproduce against the source (`tools/package-check-quick.py`; the quick transform `0x00121cf0` hashes the header dwords plus 8 bytes per name entry, `docs/PACKAGE_CHECK.md`). `UPreview.u` is the one `System/*.u` package with no record; a target with generated payloads is blocked on 5-6 |
 | 8 | `boot` | the rebuilt image boots | **blocked** on 5-7; the harness exists (`tools/xemu/smoke.py`, `docs/XEMU.md`) |
 
 So 6.1 is *half built*: the container is a non-risk (stages 1-2), the input tree is complete for two thirds of the
@@ -35,7 +36,7 @@ have. That is the same conclusion `docs/PATH.md` reaches from the estimate side.
 
 | target | definition | what it does today |
 |---|---|---|
-| `hybrid` | our scripts + the original assets | places **18 assembled packages** into `workdir/System` (the writer's own output, not a copy — `--rebuild --write`), copies `Packages.md5` beside them, writes `manifest.csv` + `missions.csv`, and checks the merged source tree is 2,319 files. `manifest.csv` must say `identical=1` for all 18 or the stage fails, and runs `package-check` over the placed tree, so a record that no longer matches fails the build |
+| `hybrid` | our scripts + the original assets | places **18 assembled packages** into `workdir/System` (the writer's own output, not a copy — `--rebuild --write`), **writes** `Packages.md5` beside them from those packages (`write-check-data`), writes `manifest.csv` + `missions.csv`, and checks the merged source tree is 2,319 files. `manifest.csv` must say `identical=1` for all 18 or the stage fails, and runs `package-check` over the placed tree, so a record that no longer matches fails the build |
 | `full` | our scripts + re-extracted assets | the same four stages plus `compile`/`repack`/`boot`, which report SKIP with their reason (no `ucc`), and `package-check`, which waits for a tree this target does not produce yet |
 
 Two things this deliberately does **not** claim:

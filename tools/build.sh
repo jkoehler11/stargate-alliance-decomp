@@ -101,15 +101,20 @@ if [ "$target" = hybrid ]; then
     system="${SG1_DUMP:-$HOME/sg1/dump}/Stargate_SG-1_-_The_Alliance-2005-12-15/System"
     mkdir -p "$out/workdir/System"
     stage place-packages python3 tools/pkg-write.py "$system" --rebuild --write "$out/workdir/System"
+    # The database this tree hands the engine is *written*, not copied: the cook's file is a record set about
+    # the whole game and predates UPreview.u, so a copy describes a tree half of which the build does not place.
+    # The records are the same function of header + name table the quick transform reproduces
+    # (docs/PACKAGE_CHECK.md), and the stage reads its own output back before the next stage trusts it.
+    stage write-check-data python3 tools/package-check-emit.py --tree "$out/workdir/System" \
+        --out "$out/workdir/System/Packages.md5" \
+        $([ -f "$system/Packages.md5" ] && printf -- '--records %s' "$system/Packages.md5")
     if [ -f "$system/Packages.md5" ]; then
-        stage place-check-data sh -c "cp '$system/Packages.md5' '$out/workdir/System/Packages.md5'"
-        # The quick transform is reproduced (docs/PACKAGE_CHECK.md), so the check is verifiable rather than
-        # bypassed: every record whose package is in this tree must still hash to its stored digest, and a
-        # rebuild that moves a name table or an export offset fails here instead of at the title screen.
+        # The cook's records are still the independent reference: every record whose package is in this tree
+        # must still hash to its stored digest, so a rebuild that moves a name table or an export offset fails
+        # here instead of at the title screen.
         stage package-check python3 tools/package-check-quick.py "$out/workdir/System" \
             --records "$system/Packages.md5" -o "$out"
     else
-        skip place-check-data "no Packages.md5 beside the packages"
         skip package-check "no Packages.md5 to check the placed packages against"
     fi
     stage manifest python3 tools/build-manifest.py "$out/workdir/System" "$system" -o "$out"
@@ -136,10 +141,11 @@ fi
 # 5. Repack and place. The writer can re-lay a package; it cannot invent a payload, so this is blocked on 4.
 skip repack "needs compiled payloads (PLAN 6.1's remaining half; the container itself is proven by writer-relay)"
 
-# 6. The package check. The transform is measured (`0x00121cf0`: header dwords + the name table, reproduced
-#    for 168 of 168 shipped packages), so regenerating a record needs no cook inputs. This target has nothing
-#    repacked to check yet; the hybrid target runs the stage on the tree it places.
-skip package-check "needs a repacked tree (stage 5); the quick transform is reproduced -- tools/package-check-quick.py"
+# 6. The package check. Both halves are measured: the transform (`0x00121cf0`: header dwords + the name table,
+#    reproduced for 168 of 168 shipped packages) and the writer, which assembles the database itself
+#    (tools/package-check-emit.py). This target has nothing repacked to record yet; the hybrid target runs both
+#    stages on the tree it places.
+skip package-check "needs a repacked tree (stage 5); read and write both exist -- package-check-quick.py, package-check-emit.py"
 
 # 7. Boot. Needs a repacked HDD image, so it follows 4-6; the boot harness itself exists (tools/xemu/smoke.py).
 skip boot "needs a repacked image (tools/xemu/smoke.py exists and boots the retail image: docs/XEMU.md)"
