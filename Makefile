@@ -785,7 +785,7 @@ module-census:
 		-o inventory/module_export_census.csv --write-doc docs/MODULE_CENSUS.md
 
 # PLAN 4.5: which translation unit each unattributed function belongs to. Address locality, measured against
-# held-out asserts at 87.9% (docs/MODULE_ATTRIBUTION.md). Reads the image only; no Ghidra, no boot. A
+# held-out asserts at 89.9% (docs/MODULE_ATTRIBUTION.md). Reads the image only; no Ghidra, no boot. A
 # `--holdout` run scores the rules and writes nothing: the artifact is the full-seed run.
 module-attribution:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }

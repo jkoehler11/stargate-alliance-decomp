@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **15,423 symbols** — 14,957 functions plus 466 class tables — every one
+Status: emitted and checked. **15,439 symbols** — 14,973 functions plus 466 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 ## What is in it
@@ -23,10 +23,11 @@ The names are the build's own, from the same places the native track measured th
 - **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 40
   registrations, plus `appAssertFailed` and `appMallocBeforeInit` named from the strings they log);
 - **`Vtbl_<Class>`** for the 466 class tables named by the class registrations (`docs/NATIVE_CLASSES.md`);
-- **`ctor_<Class>` / `dtor_<Class>`** (450 + 465) for the functions that install one of those tables with a
-  constructor's or a destructor's shape (`tools/class-ctors.py`, `docs/NATIVE_CLASSES.md`); the 31 stores
-  that fall in no mapped function, the overloads of a class with several constructors and the 26 classes no
-  registration literal names keep `FUN_*`;
+- **`ctor_<Class>` / `dtor_<Class>`** (463 + 465) for the functions that install one of those tables with a
+  constructor's or a destructor's shape (`tools/class-ctors.py`, `docs/NATIVE_CLASSES.md`); the 8 stores
+  that fall in no mapped function (listed with the test each failed in
+  `inventory/xbe_store_seed_residual.csv`), the overloads of a class with several constructors and the 26
+  classes no registration literal names keep `FUN_*`;
 - everything else keeps Ghidra's `FUN_000xxxxx`, which is an honest unknown rather than a guess.
 
 ## Loading it against the original XBE

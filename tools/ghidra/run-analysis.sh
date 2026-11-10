@@ -54,6 +54,15 @@ proj="$PWD/build/ghidra"
 mkdir -p "$proj" symbols
 python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
 
+# A class-table store outside every function is evidence of a function the analysis never created,
+# and it names its own class through the immediate it stores. `tools/class-ctors.py` is the tool that
+# measures those stores, so the pipeline asks it for the list instead of carrying a copy of it:
+# SeedStores.java then seeds an entry from each store, XbePost names what it can, and the one CSV
+# it writes is the residual: every store it could not place, with the test that failed.
+python3 tools/class-ctors.py "$game/default.xbe" -o "$proj" --stores-out "$proj/stores.tsv" \
+    > "$proj/store_orphans.log" 2>&1 \
+    || echo "class-ctors orphan pass failed; see $proj/store_orphans.log (no store seeds this run)"
+
 "$headless" "$proj" sg1 \
     -import "$game/default.xbe" \
     -processor "x86:LE:32:default" \
@@ -63,6 +72,7 @@ python3 tools/ghidra/make-spec.py "$game/default.xbe" --out "$proj"
     -preScript XbePre.java "$proj/sections.tsv" "$game/default.xbe" "$ENTRY" \
     -postScript SeedGaps.java "$proj/asserts.tsv" 0x1000 8 "$PWD/inventory/xbe_block_seeds.csv" \
         "$PWD/inventory/xbe_gap_seeds.csv" \
+    -postScript SeedStores.java "$proj/stores.tsv" 0x1000 "$PWD/inventory/xbe_store_seed_residual.csv" \
     -postScript XbePost.java "$proj/asserts.tsv" "$PWD/symbols/xbox_functions.csv" "$ENTRY" \
         "$PWD/symbols/xbe_overrides.csv,$PWD/symbols/xbe_dispatch.csv" \
     -postScript ExportEvidence.java "$proj/evidence" \

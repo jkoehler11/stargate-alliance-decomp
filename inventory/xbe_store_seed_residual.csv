@@ -1,0 +1,25 @@
+function_va,store_va,table_va,class,kept_by,size,reason
+,,0x004d1468,,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d1468,,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d4418,Struct,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d4570,State,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d44c8,Function,rejected,0,the body does not end at a terminator
+,,0x004d4418,Struct,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d4570,State,rejected,0,the body from the nearest boundary ends before the store
+,,0x004d4870,Class,rejected,0,the body from the nearest boundary ends before the store
+,,0x004dd2a8,VertexStreamBase,rejected,0,the body does not end at a terminator
+0x0007d960,0x0007d980,0x004e10c0,ByteProperty,entry after a 0xCC fill run,42,
+0x0007da10,0x0007da30,0x004d1880,IntProperty,entry after a 0xCC fill run,42,
+0x0007da40,0x0007da60,0x004e1198,PointerProperty,entry after a 0xCC fill run,42,
+0x0007daf0,0x0007db10,0x004d1958,BoolProperty,entry after a 0xCC fill run,42,
+0x0007db20,0x0007db40,0x004d1a30,FloatProperty,entry after a 0xCC fill run,42,
+0x0007db50,0x0007db70,0x004e0b40,ObjectProperty,entry after a 0xCC fill run,42,
+0x0007db80,0x0007dba0,0x004e1270,ClassProperty,entry after a 0xCC fill run,42,
+0x0007dcf0,0x0007dd10,0x004e1420,FixedArrayProperty,entry after a 0xCC fill run,42,
+0x0007dda0,0x0007ddc0,0x004d3378,ArrayProperty,entry after a 0xCC fill run,42,
+0x0007ddd0,0x0007ddf0,0x004e14f8,MapProperty,entry after a 0xCC fill run,42,
+0x0007de80,0x0007dea0,0x004e15d0,StructProperty,entry after a 0xCC fill run,42,
+0x0007df30,0x0007df50,0x004e16a8,DelegateProperty,entry after a 0xCC fill run,42,
+0x0024af30,0x0024afc7,0x004d1958,BoolProperty,entry after a 0xCC fill run,809,
+0x00297c70,0x00297c7d,0x00522f90,StreamTag,entry after a 0xCC fill run,624,
+0x002c2675,0x002c2684,0x0052cb00,HTTPDownload,promoted block head (not a function entry),183,

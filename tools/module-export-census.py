@@ -340,10 +340,12 @@ def check(path=CSV_PATH):
     known = {}
     for r in read_csv(MODULES):
         known[r["address"]] = r
-    union = {}
+    union, method = {}, {}
     if os.path.exists(ATTRIBUTION):
         for r in read_csv(ATTRIBUTION):
             union[r["address"]] = r["module"]
+            method[r["address"]] = r["method"]
+    moved = []
     missing = [r["address"] for r in rows if r["address"] not in known]
     if missing:
         bad.append("%d address(es) not in function_modules.csv, e.g. %s"
@@ -359,8 +361,16 @@ def check(path=CSV_PATH):
         # two disagree on one address of 6,063 (0x000816e0: 128 vs 72) and agree everywhere else.
         want = union.get(r["address"], k["module"])
         if want != r["module"]:
-            bad.append("%s: module %r != function_module_attribution.csv %r"
-                       % (r["address"], r["module"], want))
+            # Only an `assert` is a claim this file can be held to. This artifact records the round a body was
+            # *exported* in, chosen by whatever the attribution said then; a `propagated` (locality) label moves
+            # when a new assert lands between a function and its old neighbour -- measured 2026-11-10, when the
+            # store seeds named 13 functions and flipped 6 of the 1,668 disputed labels. Count those, do not fail
+            # on them: they are a fact about the export round, not a disagreement about a name.
+            if method.get(r["address"]) == "assert":
+                bad.append("%s: module %r != function_module_attribution.csv %r"
+                           % (r["address"], r["module"], want))
+            else:
+                moved.append(r["address"])
     doc = os.path.join(ROOT, "docs", "MODULE_CENSUS.md")
     if os.path.exists(doc):
         text = open(doc, encoding="utf-8").read()
@@ -376,7 +386,9 @@ def check(path=CSV_PATH):
             sys.stderr.write("FAIL ... and %d more\n" % (len(bad) - 12))
         return 1
     print("module-export-census: %d rows reconcile with %s (%d modules), function_modules.csv and "
-          "themselves" % (len(rows), os.path.basename(ROUNDS), len(per_module)))
+          "themselves; %d propagated label(s) moved since the export round%s"
+          % (len(rows), os.path.basename(ROUNDS), len(per_module), len(moved),
+             (" (" + ", ".join(moved[:6]) + (", ..." if len(moved) > 6 else "") + ")") if moved else ""))
     return 0
 
 

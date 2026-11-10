@@ -417,6 +417,36 @@ The literal window is the same evidence a `ucpp` stub gives -- `"new"`, the oute
 -- read from the call site instead of from the decompiled body, so the two instruments agree by
 construction where they overlap (466 of 466) and the scan is usable where no body was exported.
 
+## The stores that sat in no function, placed by their own evidence
+
+A `C7 /0` store whose immediate is a class table is evidence of two things at once: which class is being
+built, and that a function exists where the analyser found none. `tools/ghidra/ghidra_scripts/SeedStores.java`
+turns the second into an entry, using the pass `SeedGaps.java` already has for assert sites: a candidate is the
+byte after a `0xCC` fill run before the store, nearest first, and it is kept only when three things are
+measured — the body it produces contains the store, the instruction at the store is a `MOV` whose scalar
+operand is the table the row names, and the body ends at a terminator. The list it reads is the whole
+**1,036**-store census (`tools/class-ctors.py --stores-out`), not today's orphan list, so a re-import from
+scratch reproduces the same seeds.
+
+**Measured.** **15 entries seeded, and 23 of the 31 orphan stores now sit inside a function** (two bodies
+cover two stores each). `functions` **14,957 → 14,973**; the twelve property-class constructors at
+`0x7d960`–`0x7df30` are 42-byte bodies each, `StreamTag`'s is 624 bytes, and `HTTPDownload`'s is a promoted
+block head at `0x2c2675` rather than an entry. **13 of the new entries are named** by the shapes above, which
+is what takes the registration chain from 451 to 464.
+
+**The 8 that remain are a measurement, not a silence.** `inventory/xbe_store_seed_residual.csv` carries one
+row per store the seeder could not place, with the test it failed: seven "the body from the nearest boundary
+ends before the store" and two "the body does not end at a terminator" (one store is covered twice by the
+two `State` rows). All eight have a `0xCC` boundary within 101 bytes, so the boundary is not the obstacle —
+either the code before the store is not part of the same body, or the body runs on past its terminator.
+`HTTPDownload` shows the shape of the second case: its registration names `0x2c2650` as the constructor and
+the promoted block starts at `0x2c2675`, i.e. 37 bytes inside the function the registration already knows
+about, which is a boundary question no store seed can answer.
+
+**Rejected on purpose, not averaged.** The seeder writes no name. A store it places is `FUN_*` until
+`tools/class-ctors.py` classifies the shape, so the one thing this pass cannot do is turn "there is code
+here" into a symbol on its own evidence.
+
 ## Every class's constructor and destructor, from the table each installs
 
 `inventory/xbe_class_table_names.csv` names a class by following its registration to the function that
@@ -428,10 +458,10 @@ attributes the store to the function that contains it. A function that installs 
 building an object whose class that table names, so a class's whole C++ construction set comes out at once:
 the default constructor, the constructors that take arguments, and the scalar deleting destructor.
 
-**Measured.** **1,036** `C7 /0` stores of a measured table exist in `.text`; **1,005** fall inside a
-function the map knows — **998** distinct functions, since 7 functions install two tables — and **31** do
-not. Those 1,005 rows cover all **492** tables: **507** constructor-shaped, **493** destructor-shaped, **5**
-unclassified.
+**Measured.** **1,036** `C7 /0` stores of a measured table exist in `.text`; **1,028** fall inside a
+function the map knows — **1,014** distinct functions, since some install two tables — and **8** do not,
+each with the test it failed in `inventory/xbe_store_seed_residual.csv`. Those 1,028 rows cover all **492**
+tables: **522** constructor-shaped, **493** destructor-shaped, **13** unclassified.
 
 Two independent signatures separate a constructor from a destructor, and only agreement is classified:
 
@@ -440,16 +470,19 @@ Two independent signatures separate a constructor from a destructor, and only ag
 | order | calls its base constructor **before** installing the table | installs the table **before** any call, then calls the base destructor |
 | return | returns `this` (`mov eax, esi` in the epilogue) | returns nothing |
 
-**915 names follow from it** — **450** `ctor_<Class>` and **465** `dtor_<Class>` — and `FUN_*` in
-`symbols/xbox_functions.csv` falls **12,935 → 12,020** (`docs/SYMBOLS.md`). Eight of the constructors
+**928 names follow from it** — **463** `ctor_<Class>` and **465** `dtor_<Class>` — and `FUN_*` in
+`symbols/xbox_functions.csv` falls **12,935 → 12,023** (`docs/SYMBOLS.md`). Thirteen of those names are the
+stores that used to sit in no function: the store said where the function starts, `SeedStores.java` created
+the entry (`tools/ghidra/ghidra_scripts/SeedStores.java`), and the shapes below did the naming. Eight of the constructors
 install the table before any call (a trivial base, or an inlined base constructor) and 36 take stack
 arguments, from 4 bytes to the 52 that `Class`'s registration overload takes.
 
-**The two chains check each other.** Of the 466 classes a registration literal names, **451** have the
-function that registration reaches classified as the constructor and **0** disagree. The 15 that do not are
-classes whose constructor's store is one of the 31 in no mapped function, so nothing was named from them;
-9 of those (`ObjectProperty`, `PointerProperty`, `ClassProperty`, `FixedArrayProperty`, `MapProperty`,
-`StructProperty`, `DelegateProperty`, `StreamTag`, `HTTPDownload`) therefore have no `ctor_` name at all.
+**The two chains check each other.** Of the 466 classes a registration literal names, **464** have the
+function that registration reaches classified as the constructor and **0** disagree — 451 before the store
+seeds. The nine classes that had no `ctor_` name at all (`ObjectProperty`, `PointerProperty`,
+`ClassProperty`, `FixedArrayProperty`, `MapProperty`, `StructProperty`, `DelegateProperty`, `StreamTag`,
+`HTTPDownload`) are down to three: `SGScreenDOF`, `TextBuffer` and `HTTPDownload`, and only the last is a
+seeding residual.
 
 **What is deliberately left `FUN_*`, counted rather than glossed:**
 
@@ -459,13 +492,16 @@ classes whose constructor's store is one of the 31 in no mapped function, so not
   `docs/CONVENTIONS.md` forbids numbering a name to break a tie. `FUN_0003af60` is exactly this case: it
   is `Class`'s 52-byte-argument constructor, the one all 493 script registrations call, while `ctor_Class`
   is the 0-argument constructor at `0x0003ad20` that the `Class` registration itself reaches.
-- **5 stores are unclassified** because the signatures disagree: `0x0014e0e0` (three tables —
-  `StrProperty`, `NameProperty`, `StructProperty`) and `0x0006d520` (`Package`).
-- **31 stores sit in no mapped function** (`inventory/class_constructors.csv` excludes them; the census
-  prints the count): the property-class constructor block at `0x7d980`–`0x7ddf0`, the
-  `Struct`/`State`/`Function`/`Class` constructors at `0x3a180`–`0x3c494`, and a `BoolProperty` block near
-  `0x24afc7`. The store is measured; the containing function is a seeding gap (U8), so no name is taken
-  from it.
+- **13 stores are unclassified** because the signatures disagree: `0x0014e0e0` (four tables —
+  `StrProperty`, `NameProperty`, `StructProperty`, `BoolProperty`), `0x0006d520` (`Package`) and the
+  809-byte function at `0x0024af30`, which installs seven property tables in a row after calling
+  `0x00055ed0` and does not return `this`. That last one corrects a reading: the "`BoolProperty` block"
+  near `0x24afc7` is not a set of constructors, it is one function writing several property tables.
+- **8 stores still sit in no mapped function**, listed with the test each failed in
+  `inventory/xbe_store_seed_residual.csv`: six where the body from the nearest `0xCC` boundary ends
+  before the store (`0x38d04`, `0x38d4b` — a table no registration names — plus `0x3a180`, `0x3a5dd`,
+  `0x3a727`, `0x3c41d`, `0x3c494`, `0x6cefe`) and two where the body does not end at a terminator.
+  **Nothing is named from those**, and the reason is in the artifact rather than in a paragraph.
 - **The 26 tables no registration literal names** (`Object`, `Engine`, `Player`, `Texture`, …) appear in the
   artifact with their installers and their row counts, but naming needs a class name and theirs comes from
   the registration, so they stay `FUN_*` too.

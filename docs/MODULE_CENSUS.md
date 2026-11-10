@@ -118,11 +118,21 @@ point one way: every one is a body attributed `Core` whose own `.cpp` is `Engine
 the `Core_` prefix on those bodies is the weaker of the two labels.
 
 Eleven of 6,063 is 0.18%, and the check is worth having anyway: it is the first time the locality rule
-has been scored against evidence inside the bodies rather than against held-out asserts (87.9%,
+has been scored against evidence inside the bodies rather than against held-out asserts (89.9%,
 `docs/MODULE_ATTRIBUTION.md`). Reconciling the eleven is an address-level correction to
 `function_modules.csv`/`function_module_attribution.csv` (4.5's artifacts, `--check`-gated against
 `xbe_functions_by_module.csv`), not a census edit — they are named here as that work list rather than
 changed here.
+
+**What `--check` holds the attribution to, and what it only reports.** The reconciliation against
+`function_module_attribution.csv` is exact for the 1,375 rows whose label is an **assert** -- the module the
+build's own `__FILE__` literal wrote -- and advisory for the 4,688 whose label came from address locality, because
+this artifact is a snapshot of that heuristic as it ran when the export round was paid for. A later name can move a
+locality label without anything about the body changing: the 15 class-table store seeds (2026-11-10) added 13
+names and moved six -- `0x0012ea70`, `0x0012eb30`, `0x001c4e60`, `0x001c4f30` `Core` -> `Engine`,
+`0x002c50b0`, `0x002c5180` `Core` -> `IpDrv`. `--check` prints that count and names the addresses; it fails only
+when an asserted module and the round disagree, or when the generated block, `module_export_rounds.csv` or
+`function_modules.csv` drift.
 
 **150 of the 6,063 are not analysis targets.** 133 are `ret`-only slots (median 5 bytes — a native
 registration whose C++ side does nothing) and 17 are jump thunks (`thunk_FUN_*`). So the native half's
