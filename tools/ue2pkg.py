@@ -4,8 +4,9 @@
 Every content question in this repository that is still open comes back to the same missing piece: a way to
 read a `.u`/`.unr` without UELib. Maps (5.2), the ucpp function records (4.7), the SFX inside `.uax`, and
 the `Packages.md5` digests all need it. This is the first honest slice of one: the two tables that can be
-parsed and *checked* -- the header and the name table -- with the export table attempted and refused rather
-than guessed when it does not line up.
+parsed and *checked* -- the header and the name table -- plus the import and export tables, which now parse
+every shipped package including the `.sgs` checkpoints (whose export entries drop the serial offset when the
+serial size is zero; see `read_exports`).
 
     python3 tools/ue2pkg.py DUMP/System/Core.u
     python3 tools/ue2pkg.py DUMP/System -o inventory     # every .u: inventory/package_names.csv
@@ -104,6 +105,15 @@ class Package:
         That Outer/Flags are not index-encoded is what broke six earlier attempts: every field looked
         compact, so the parse stayed plausible while the values were nonsense. The check that settled it is
         semantic -- the class histogram -- not the byte count.
+
+        **A zero serial size carries no serial offset.** A save package exports actors that hold no
+        serialised data, and the writer ends such an entry after the size with a single `0x00`; assuming an
+        offset anyway loses one byte per zero-size export, which is what made the checkpoint tables look
+        unreadable (they desynced part-way and ran off the end of the file). With the rule, all nine `.sgs`
+        files walk to exactly EOF: 1,776 exports, 316 of them zero-size, every class resolving to a
+        `Class`/`State` import. The dump's other 407 packages are unaffected (`M01A_sounds.uax` is the only
+        one whose entries read as zero-size, and its 20-entry table does not parse under either rule) --
+        see docs/formats/sgs-checkpoint.md.
         """
         out, off = [], self.export_offset
         for i in range(self.export_count):
@@ -115,7 +125,10 @@ class Package:
             flags = struct.unpack_from("<i", self.data, off)[0]
             off += 4
             size, off = self.read_index(off)
-            offset, off = self.read_index(off)
+            if size == 0:
+                offset = 0            # no offset field follows a zero size: see the docstring
+            else:
+                offset, off = self.read_index(off)
             out.append({"index": i, "class": cls, "super": sup, "outer": outer, "name": name,
                         "flags": flags, "size": size, "offset": offset})
         self.exports = out

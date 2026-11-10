@@ -81,6 +81,9 @@ def encode_imports(imports):
 
 
 def encode_exports(exports):
+    """Class, Super, Outer, Name, Flags, SerialSize, SerialOffset -- except that a zero serial size writes no
+    offset at all. That is the save packages' rule (`ue2pkg.Package.read_exports`), and the checkpoints are the
+    only packages in the build that exercise it."""
     out = bytearray()
     for r in exports:
         out += write_index(r["class"])
@@ -89,7 +92,8 @@ def encode_exports(exports):
         out += write_index(r["name"])
         out += struct.pack("<I", r["flags"])
         out += write_index(r["size"])
-        out += write_index(r["offset"])
+        if r["size"]:
+            out += write_index(r["offset"])
     return bytes(out)
 
 
@@ -132,7 +136,7 @@ def region_order(pkg):
     `--layout` found `names < payloads < imports < exports` on all 18 shipped packages, but that is a measurement,
     not a guarantee: the order is derived here so a package that lays its tables out differently still writes.
     """
-    payload_start = min(e["offset"] for e in pkg.exports) if pkg.exports else pkg.import_offset
+    payload_start = min((e["offset"] for e in pkg.exports if e["size"]), default=pkg.import_offset)
     return [name for _off, name in sorted([(pkg.name_offset, "names"), (pkg.import_offset, "imports"),
                                            (pkg.export_offset, "exports"), (payload_start, "payloads")])]
 
@@ -462,7 +466,8 @@ def selftest():
                  ([63, 10, 200], 0, -63, "a shrink back to nothing"),
                  ([100, 5, 7], 1, 3, "a middle payload moving the ones behind it"),
                  ([10, 10, 10], 2, 20000, "offsets crossing 0x3FFF widen every entry behind it"),
-                 ([1, 1, 1], 0, 0, "a no-op still has to reproduce the file")]
+                 ([1, 1, 1], 0, 0, "a no-op still has to reproduce the file"),
+                 ([63, 0, 200], 0, 0, "a zero-size export (which writes no offset) still reproduces the file")]
         for n, (sizes, index, delta, why) in enumerate(cases):
             path = os.path.join(tmpdir, "synthetic%d.u" % n)
             synthesize(path, sizes)

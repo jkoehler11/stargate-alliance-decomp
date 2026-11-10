@@ -25,7 +25,7 @@ checkpoint was taken**, each serialised with the engine's normal tagged-property
 | `C_M04b_Ruins approach` | 30,965 | 877 | 88 | 114 | 98 | 1,238 |
 | `C_M10B_EnteringtheDepot..` | 47,813 | 1,072 | 113 | 213 | 178 | 2,357 |
 | `C_M12A_Mission 12 - Checkpoint 1` | 57,154 | 1,125 | 107 | 245 | 218 | 3,217 |
-| **total** | **391,106** | — | — | 1,756 | 1,460 | **19,080** |
+| **total** | **391,106** | — | — | 1,776 | 1,460 | **19,080** |
 
 Zero objects failed to load, in all nine. `Sg1Tool save --path <file> --out <csv>` reproduces the
 per-object rows; `tools/sgs-schema.py` reduces them to `inventory/sgs_schema.csv` (1,739 distinct
@@ -38,9 +38,41 @@ per-object rows; `tools/sgs-schema.py` reduces them to `inventory/sgs_schema.csv
 0x24  GUID (16 bytes, zero) + generation count (1) + generation record
 0x44  name table   -- n × (u8 length, ASCII bytes, u32 flags)
       import table -- one record per referenced class/package
-      export table -- one record per object: class, outer, name, flags, serial size, serial offset
+      export table -- one record per object: seven fields, measured below
       object data  -- at each export's serial offset: the tagged-property stream
 ```
+
+The two tables sit at the *end* of the file (the object data comes first, then imports, then exports), which
+is the same order the game's `.u`/`.unr` packages use; only the header and the name table are at the front.
+
+### The export entry, measured (all nine)
+
+```
+Class(index)  Super(index)  Outer(int32)  ObjectName(index)  Flags(u32)  SerialSize(index)  [SerialOffset(index)]
+```
+
+`Outer` and `Flags` are plain 32-bit words and everything else is a compact index, exactly as in the game's
+own packages. The one save-specific rule is at the end: **an export whose serial size is 0 writes no serial
+offset at all.** A checkpoint exports actors that hold no serialised data (class defaults, `Squad` markers,
+state objects), so this is not an edge case — 316 of the 1,776 exports across the nine files are zero-size.
+Assuming an offset for each of them loses one byte, which desyncs the walk part-way through the table and runs
+it off the end of the file; that is exactly what made the table look like an unknown 16.2-byte entry for a
+whole session. Entry lengths are 13/14/16/17/18 bytes depending on the compact widths, and with the rule the
+walk ends *exactly* at EOF in 9 of 9 files.
+
+Three checks say the layout is right rather than merely plausible:
+
+- **the walk ends at EOF**, with 210/208/198/198/212/178/114/213/245 entries (1,776 total);
+- **every class resolves**: all 1,776 class indices name an import whose own class is `Class` or `State`
+  (`-38` → `Carter`, `-31` → `Tealc`, `-65` → `LevelInfo`), so the first field is not a coincidence;
+- **the payloads tile their region**: the `SerialSize`s sum to exactly `export_offset - first_payload_offset`
+  in 9 of 9 files, so no export's data overlaps another's or leaves a hole.
+
+Re-encoding the table from the parsed model reproduces the file's own bytes in all nine, and the rule costs
+nothing elsewhere: the dump's other 407 packages (279,280 exports) encode identically with and without it. The
+single file that answers differently, `M01A_sounds.uax`, has a 20-entry table that reads as 20 zero-size
+entries under either rule and resolves 0 of 20 classes, so it is an unread table of its own and neither
+fixed nor broken here.
 
 Property tags are the engine's `FPropertyTag`: property name, type name, serialised size, array index,
 bool value, then the value. The stream ends with the `None` name. That is why the schema can be listed
@@ -368,8 +400,8 @@ for verifying a rebuilt one.
 ## The write side, measured (2026-11-09)
 
 `tools/sgs-write.py` (`make sgs-write`) exercises the two artefacts a resumable checkpoint needs — the package and
-the `[Saved Games]` row — without a boot, and writes only under `$WORK`. One half is done and the other is one
-measurement away, which is the useful split to know before writing a rebuilt checkpoint.
+the `[Saved Games]` row — without a boot, and writes only under `$WORK`. **Both halves work now**, and the second
+one is what the export-entry rule above bought.
 
 **The row half works.** On a *copy* of `DefaultProfile.sgp`, adding one row under `[Saved Games]` takes the section
 from 142 keys to 143, lands the row inside that section, keeps the file's CRLF endings, and changes no other byte;
@@ -377,22 +409,20 @@ adding the same key again is refused, because the index is a map. The copy re-re
 `tools/sgs-profile.py` as `2 sections, 154 rows` / `[Saved Games] 143 keys`, so the writer and the reader agree
 rather than the writer grading its own work.
 
-**The package half stops at the export table, and that is the measurement.** All nine shipped checkpoints parse
-their header (matching the census above) and their name and import tables, and both of those re-encode
-**byte-identically from the model in 9 of 9 files** — so two of the three tables of a rebuild are already exact,
-including every name and every import row. The export table is not:
+**The package half rebuilds every checkpoint byte-identically.** `pkg-write.rebuild` reassembles each file from the
+parsed model — header, name/import/export tables, every export payload at its offset — and compares it with the
+shipped bytes: **9 of 9 identical**, with all three tables re-encoding exactly and no gap left for the original
+bytes to fill. The tool prints a per-table column precisely because that was the route to the answer: names and
+imports came back exact while exports did not, which localised the last unknown to one rule.
 
-- 210 entries occupy 3,401 bytes (16.2 each) in `C_M02A_Drillsite`; `M00.unr` has 5,078 entries in 86,534 bytes
-  (17.0 each), so the *width* is normal for a compact entry and the difference is in what the fields mean.
-- Walking the table with the `.u` layout (compact class/super/name/size/offset, plain `int32` Outer and Flags)
-  desyncs inside it and runs off the end of the file.
-- It is not a field *order* either: 256 uniform encodings (every combination of compact/`u32`/`u16`/`u8` widths
-  with Flags kept 32-bit) and 15,120 ordered layouts (three plausible width profiles × all 5,040 permutations of
-  the seven fields) produce **zero** candidates that yield 210 plausible entries.
-- A `.unr` map parses with the same reader in the same run, so this is a save-package layout, not a reader
-  regression.
+What that rule was, and why the search missed it: the entry *width* was never wrong (210 entries in 3,401 bytes is
+16.2 average, and `M00.unr`'s 5,078 in 86,534 is 17.0), and it was not a field *order* (256 uniform width
+combinations and 15,120 ordered layouts yield no plausible table). What was wrong was **when a field is absent** —
+a zero serial size writes no serial offset, and a search over field widths and orders cannot find a rule about a
+missing field. 316 of the 1,776 exports are zero-size, so the error accumulated a byte at a time until the walk
+left the file.
 
-So a rebuilt checkpoint is blocked on exactly one thing — the save file's export-entry layout — and not on the
-payloads, which the writer already carries through unchanged. Until that lands, `sgs-write.py` reports where it
-stops instead of guessing, and exits 0 for that known state (exit 1 is reserved for a checkpoint that parses and
-then rebuilds *differently*, which would be a real regression).
+So a rebuilt checkpoint is no longer blocked on the container: the container round-trips, and `sgs-write.py` exits
+0 for that state. Exit 1 is reserved for a checkpoint that parses and then rebuilds *differently* — a real
+regression. What remains is content, not container: a rebuilt package's export payloads come from a compiler
+rather than from this tool, and whether the game's package check accepts a rebuilt save is PLAN 6.2.
