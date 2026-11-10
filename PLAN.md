@@ -130,8 +130,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/formats.csv` (12 formats, container-detected) + four docs; `.lad` payload tracked as U4.
 - [x] 2.5 Map config surface: `Default.ini`, `UnrealEngine2.ini`, `DefUser.ini`, `Startup.int`, the 20+ `Setup*.int`
       files (Xbox/PSX2/GCN variants) → note engine options that reveal fork features.
-- [~] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
+- [x] 2.6 Enumerate XBE imports (D3D8, XAPI, XNet, XOnline) and the D3D8 device caps used — informs the
       renderer-side natives we must understand.
+      **Caps measured 2026-11-10 (runtime).** The create call is `0x002b2dcd` into the statically linked D3D8
+      (`0x44f040`), with `BehaviorFlags = 0x40` -- hardware vertex processing, a literal `push 0x40` in the body --
+      and the present-params block at `[esi+0x4708]` read out of a live guest at that call: 640x480, back-buffer
+      format 30 (32-bit), depth format 42 (32-bit), one back buffer, `SwapEffect` 1, auto depth-stencil on,
+      `Flags` 0x121, refresh 0, presentation interval 1. The module's own log lines agree
+      (`Using back-buffer format 30(32-bit)`, `Using depth-buffer format 42(32-bit)`,
+      `Best-match display mode: 640x480x32@60`). U11 answered; the instrument is `tools/xemu/bp-args.py`.
       **Imports done, and the answer is that there are none to enumerate**: the header's import address is
       `0` and the image links statically, recording its **13 libraries** (all 1.0.5849) in one table at
       `0x10738` (`inventory/xbe_libraries.csv`, `tools/xbe-libraries.py`). The libraries' code is visible

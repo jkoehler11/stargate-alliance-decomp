@@ -4165,3 +4165,36 @@ outer are the only handles there are. The two pages and eight requests the colum
 
 **The pawn's `Name` stays `?` and that is not this bug**: `0x089e0000`'s own `UObject::Name` is empty on this build,
 so `Oneill` -- its class -- is the only name it has.
+
+## Breaking on a function in the guest: the arguments, and three stub behaviours (measured 2026-11-10, U11)
+
+`mem.py` answers "what is in memory"; the question U11 had left was "what did this call pass", which is a
+breakpoint. `tools/xemu/bp-args.py` is that: arm `Z0` execution breakpoints on addresses taken from
+`symbols/xbox.map`, let the guest reach them, and record for each stop the register file, the stack words above
+`ESP`, any ASCII that lands at a stack word (usually the format string of the `GLog` call being made), and any
+memory block named on the command line.
+
+    python3 tools/xemu/bp-args.py --port 12346 --force \
+        --break 0x2b2cda --break 0x2b2d48 --break 0x2b2da3 \
+        --dump "esi+0x4704:0x40" --stops 12 --timeout 70 --json $WORK/d3dcap/bp7.json
+
+Three things about this stub, each of which reads as a broken tool or a broken measurement:
+
+* **A `Z0` stop re-reports itself.** Sending `c` from a breakpoint can return the *same* `EIP`, so eight hits in
+  a row are one instruction that never retired and a report that looks like a loop is really a stalled guest. The
+  tool removes the breakpoint, single-steps, re-arms and resumes when the same `EIP` comes back twice -- that is
+  what makes the guest advance.
+* **Arming is not context-sensitive, but reading is.** Breakpoints were armed while the CPU was still in the
+  kernel (`EIP=0x800f4adb`) and hit correctly once the title ran, so `--force` is safe. Memory reads are the
+  opposite: `ESP` is a virtual address, so the stub has to be in virtual mode (`Qqemu.PhyMemMode:0`), never
+  `mem.py`'s physical mode -- a physical read of a stack address answers plausible garbage.
+* **The guest executes game code with `CS=0x8`, i.e. at `CPL=0`.** Every sample taken here had `EIP` inside the
+  image (`.text` `0x0011000..0x004190fc`) with `CS`'s low two bits clear, so `bootcheck.py`'s "executing" verdict
+  -- which requires `CPL=3` -- would call a guest that is running the title "resident but not running". Judge
+  execution by `EIP` inside the image, not by the ring.
+
+Measured with it (the render device's create path, `0x002b27f0`): the arguments and the present-params block are
+in `docs/UNKNOWNS.md` U11. Two practical notes from that run: a `GLog` call is `0x574d0(GLog, message, args...)`
+where the message pointer is a **UTF-16 string**, not an `FString` struct, so read `2n` bytes and decode
+`utf-16-le`; and the create call (`0x2b2dcd`) is reached within seconds of the title starting, so a probe that
+attaches at the menu has already missed it -- arm at launch and let the breakpoint stop the boot.

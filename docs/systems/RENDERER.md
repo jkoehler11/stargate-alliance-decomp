@@ -74,9 +74,9 @@ lighting path all readable in its own strings. The fork's footprint inside the m
 is used — not a set of new classes.
 
 **Not settled.** Which of those decisions *differ* from stock: a diff needs a stock UE2.5 build of the same
-compiler, which this dump does not contain (the same wall 4.8 hit on the script side). And `docs/UNKNOWNS.md`
-U11 (the D3D8 caps the renderer asks for) stays open — the create path's strings name the capability it
-tests, not the cap bits it passes to `CreateDevice`; that still needs the runtime probe.
+compiler, which this dump does not contain (the same wall 4.8 hit on the script side). The D3D8 caps it asks for are no longer open: `docs/UNKNOWNS.md` U11 was measured at the create
+call (`0x002b2dcd`) -- `BehaviorFlags` 0x40 (hardware vertex processing) and a present-params block read
+out of a live guest (640x480, back-buffer format 30, depth format 42, one back buffer, `Flags` 0x121).
 
 ## The measurement
 
