@@ -933,6 +933,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, module attribution: 948 asserted labels, 5,633 after a locality rule measured at 87.9%)
+
+- **The obvious rule is wrong, and now measured.** Voting a module from a function's attributed callers and
+  callees recovers 169 of 313 held-out labels (54.0%) and reproduces `Core` 159/159 while missing 135 of 144
+  `Engine` labels: every file calls Core, so the biggest module wins votes that mean nothing. Weighting a callee
+  by how many functions call it removes the bias by removing the labels (24 of 50, 48.0%). Both rules ship in the
+  tool and both are scored by one command, so the finding is reproducible rather than asserted.
+- **Address locality is the rule that works.** This build orders code per translation unit, so a function takes
+  the module of the nearest asserted function in address order within `--max-gap`. At the default `0x800` it
+  recovers **311 of 354 held-out labels (87.9%)**; the sweep says accuracy barely moves with the bound while
+  coverage halves with it (`0x200` 91.9% on 1,912 labels, unbounded 85.8% on 14,009), which is why the strict
+  subset is one flag away rather than a second tool (`inventory/function_module_attribution.csv`,
+  `docs/MODULE_ATTRIBUTION.md`).
+- **`(unnamed)` falls from 14,009 to 8,832**: 4,639 functions gain a module from the rule, and **5,633 of 14,957
+  (37.66%) carry one against 948 that carry an assert**. The distribution stays plausible against the seeds
+  (`Core` 3,069 vs 574 asserted, `Engine` 1,884 vs 586, `Gui` 143), which is what the call-graph rules do not do.
+- **Attribution, not a name.** No `FUN_*` is promoted: the artifact records the rule, the round, the votes and the
+  address of the assert that produced each label, and `docs/CONVENTIONS.md` still governs what a module means.
+- **Next**: point `make module-split --lists` at this artifact's `module` column. That turns 4.5's per-module
+  exporter pass from the 948 asserted functions into the file, which is what the split exists for.
+
 ### Execution notes (2026-11-10, the event form reaches the counting pass: 683 of 685, residual 22 → 11)
 
 - **One regex was the whole gap.** `native-reconcile`'s statement parser now knows `native event` as a declaration
