@@ -366,7 +366,8 @@ columns are ordinary weights and not a second curve type. `tools/lad-weights.py`
 slots (34.5%) are applied and **22,951 (65.5%)** skipped (median 36.4% per track, p10 9.1, p90 66.7), at a
 track's own end only **26** (0.07%) are non-zero, **24 == 25 at tick 0 in all 2,230** tracks that carry
 them, **19 == -24 by value in 2,137** and **exact key for key in the 1,890** that share a grid. What is
-left of U4 is the binding: which caller fills a record's name at `+0x34`.
+left of U4 is the binding -- which caller fills a record's name at `+0x34` -- and that is answered below
+(the record is a clip and the name is read from the file, not stored).
 
 **The name writer is outside the support region (2026-11-09, one Ghidra import).** All 58 functions of
 the LIPSinc support region (`0x000b1770`..`0x000b6fc0`, `~/sg1/work/lip10`) are exported together, and
@@ -376,9 +377,23 @@ offsets in the whole set are stack locals plus the fade driver's own request fie
 whatever the object factory at `PTR_005bf508` constructs -- so the next instrument is the
 `0x000b9d50`/`0x000bce40` loader, not another pass over these bodies.
 
+**Answered: the record is a clip and its name arrives through the string stage (2026-11-09).** The loader
+`0x000bce40` pushes all four destinations before its first call and each callee pops only its own two, so
+the stages read `+0x18` (channel names), `+0x30` (pose block), `+0x48` (**clips**) and `+0x54` (**tracks**)
+in order. The clip reader `0x000bcb60` names each `0x48`-byte element with `0x00058850(Ar, record + 0x34)`
+-- an inline `FString` read, **not a store**, which is exactly why the support-region export saw no writer.
+`0x000bb2a0` is the getter that copies that `FString` (`+0x34` data, `+0x38` count), and both consumers
+(`0x000b5f10`, `0x000b63f0`) call it over the `+0x48` array, so **the runtime evaluates clips, not tracks**;
+the track array is `+0x54`, and a track's `+0x34` is its second group array's base (`0x000bc620`), which is
+what separates the two 0x48-byte families. The corpus has **17 clip records against 2,231 track records**,
+clips in four files only. What is still open is not the binding but the *names*: the group names a clip
+name is looked up against are empty in all 58,006 groups, so the next instrument is the text mapping the
+`.map` writer `0x000b55f0` formats, four of which ship in the dump (`System/LIPSincData/Mappings/`).
+
 What the region does settle is the object model around the records:
 
-* **the controller holds two of those arrays, not one.** `0x000b2cb0` and `0x000b2ce0` are a matched
+* **the controller holds two of those arrays, not one** -- and they are now named: `+0x48` is the **clip**
+  array and `+0x54` the **track** one. `0x000b2cb0` and `0x000b2ce0` are a matched
   pair of bounds-checked getters -- `if (count < 1 || count <= i || i < 0) return 0; return base + i *
   0x48` -- over `+0x48`/`+0x4c` and `+0x54`/`+0x58`, which is the pose pair `0x000b5f10` copies between:
   the accessor writes one array's `+0x40` and the blend reads the other's `+0x04`/`+0x10`;

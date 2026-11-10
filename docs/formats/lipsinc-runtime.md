@@ -252,6 +252,49 @@ track's own end -- 2,231 tracks, 35,031 populated slots:
   at tick 0 (0..8.378) and 24/25 never a positive one (-8.378..0). Slots 20-23 stay within +-2.87 and are
   zero at tick 0 in most tracks that carry them (580 of 598, 579 of 596, 866 of 883, 866 of 883).
 
-What is left of U4 is the binding rather than the format: which caller fills a record's name at `+0x34`,
-because that is the only thing that would let a slot be named.
+## The record the runtime walks is a clip, and the loader names it (measured 2026-11-09)
+
+The name writer is not a store, which is why an export of the support region alone found none: it is the
+inline **string stage** of the clip reader, and the record it names is a clip and not a track.
+
+`FUN_000bce40` hands each stage a destination that the *compiler pushed before the first call*:
+`0x00035b60(Ar, +0x18)`, `0x000bc470(Ar, +0x30)`, `0x000bcb60(Ar, +0x48)`, `0x000bcd30(Ar, +0x54)`. Every
+callee pops its own two arguments (`ADD ESP,0x8`), so each later stage consumes the argument still sitting
+on the stack -- which is why the decompiler renders that first call with five arguments and the rest with
+one. The decoding checks itself inside `0x000bcb60`, where the same shape appears with `+0x04`, `+0x1c`,
+`+0x34` and each of the three leaves then identifies exactly one field: `0x00035b60` allocates `count * 0xc`
+and reads one `FString` per element (a string array), `0x000bc470` allocates `count * 0x10` and reads a `u32`
+plus a nested array per element (a pose array), and `0x00058850` reads a single `FString`.
+
+So the controller carries four sections, and its **clip array is at `+0x48`; the track array is at `+0x54`**:
+
+| controller | section | element |
+| --- | --- | --- |
+| `+0x18` | channel names | `FString`, `0xc` |
+| `+0x30` | pose block | `{u32, array of 0x10-byte records}` |
+| `+0x48` | clips | `0x48` bytes |
+| `+0x54` | tracks | `0x48` bytes |
+
+The **clip** record is `{u32 +0x00, bone names +0x04 (TArray<FString>), pose array +0x1c, name +0x34
+(FString: data `+0x34`, count `+0x38`), weight `+0x40`}`. `FUN_000bb2a0(record, out)` is the name getter --
+it copies the `FString` at `+0x34`/`+0x38` -- and both runtime consumers call it for every record of the
+`+0x48` array, so **the pose-pair blend and the fade driver walk clips, not tracks**. The double they store
+at `+0x40` fills the eight bytes a clip record leaves after its name.
+
+The **track** record is read by `FUN_000bc620` with the same accounting: `{u32 +0x00, FString +0x04, FString
++0x10, u32 +0x24, f32 +0x28, f32 +0x2c, group array +0x30, group array +0x3c}`. A track's `+0x34` is
+therefore the *second group array's base*, not a name -- the two families are both `0x48` bytes and that
+field is what separates them. `0x000b45c0`'s scan (count `+0x40`, base `+0x3c`, stride `0x1c`) is over that
+second block, and `0x000b4710` does not take the key block from the record at all: it comes in `ECX` from a
+stack argument of the blend (`[ESP + 0x84]` at `0x000b5fe2`), so the *caller* picks the track a clip name is
+looked up in.
+
+The corpus splits the two families sharply: **17 clip records against 2,231 track records**, clips in four
+of the eight files (carter 4, jackson 3, oneill 6, tealc 4) and none in the other four, which is why a
+clip-only path leaves `grey.lad` and `JAnderson.lad` with nothing to evaluate.
+
+What is left of U4 is the same question one level down: a slot's group name is empty in all 58,006 groups,
+so a name-addressed lookup resolves to the empty name only. The `.lad` is not where names could come from --
+but the binary's `.map` writer (`0x000b55f0`) formats a text mapping file, and the dump ships four of them
+(`System/LIPSincData/Mappings/`), which is the next instrument.
 
