@@ -143,6 +143,48 @@ another `.text` address), so those 8-byte pairs are not `{name, body}` records a
 of the ten sit in two neighbourhoods (`0x00104840`-`0x00112980` and `0x0020cb70`-`0x0020cbf0`), which is where a
 second registration shape would live if the build has one.
 
+## The third shape: the stub that pushes its own slot number
+
+The record pass left ten slots unnamed and inferred a mechanism from the `.data` it could see. The mechanism is
+visible in `.text`, and it covers **all 123** storeless slots, not 113 of them (`tools/gnatives-stubs.py`, `make
+gnatives-stubs`, `inventory/gnatives_stubs.csv`, `--check` in `make ci`). Every one of them has its own registration
+stub:
+
+    0x004145a0  68 98 2d 5c 00   push 0x005c2d98     ; &<the dword in .data that carries the body>
+    0x004145a5  68 10 02 00 00   push 0x00000210     ; the slot index, as a literal: 528
+    0x004145aa  e8 b1 26 c3 ff   call 0x00046c60     ; the registrar
+    0x004145af  83 c4 08         add  esp, 8
+    0x004145b2  a2 58 ae 7a 00   mov  [0x007aae58], al
+
+| Measurement | Value |
+|---|---|
+| stubs of that shape in `.text` | **127** candidates, **123** after three semantic rules |
+| candidates rejected | 4, each pushing `0x006c2c50` where a slot number goes (an address, not an index) |
+| slots the 123 name | one each, **none** shared with a store site |
+| stubs that store what the guest holds at that slot | **123 (100%)** |
+| store sites (233) + stubs (123) | **356 of 356** live slots, none left |
+| stubs of the same shape that push `-1` instead | **467**, and none of their 467 bodies is a live slot value |
+
+**The registrar is read too, because that is where the write happens** (`0x0046c60`): it fills all 4,096 slots with
+the startup sentinel `0x000404a0` once (`mov dword [0x635560], 1` guards the `rep stosd`), returns **without
+storing** when the pushed index is `-1`, and otherwise runs `mov edx, [ecx]` / `mov [eax*4+0x6313e8], edx` with
+`ecx` the pushed `&body`. That scaled store is exactly the fill `tools/gnatives-writes.py` cannot see by
+construction -- and the index is not lost at all, it is the stub's second `push` immediate. The 467 `-1` stubs are
+the other half of the same file: the registrar discards them, their bodies (467 distinct `.text` addresses) are in no
+live slot, and those natives arrive through the name path instead (`tools/native-binder.py`).
+
+**The ten are ordinary members of that set.** 302, 333, 384, 385, 501, 503, 509, 511, 528 and 561 are registered by
+the stubs at `0x00417850`, `0x004186b0`, `0x00417810`, `0x00417830`, `0x004145e0`, `0x00414600`, `0x00414620`,
+`0x004145c0`, `0x004145a0` and `0x00414640`, each carrying its index. So the correction to the section above is about
+the **mechanism**, not the count: the 123 are registered one stub per entry, not by a walk over the record block --
+which is why the record pass could only reach the 113 whose bodies a record also carries, and why the ten it could
+not reach were never a different shape in `.data`. Their bodies are pushed as addresses of dwords in a bodies-only
+`.data` array (`0x005c2d98`, `0x005c43ac`, `0x005c5bd0`), and no `{name, body}` record sits near those.
+
+One caveat stays open: an index names the slot, not the function. The ten have no script declarer in any package
+(the 83 engine-internal execs of U7), so their names stay `Native_<index>` until a dump after a mission load
+registers the classes the front end does not touch.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.

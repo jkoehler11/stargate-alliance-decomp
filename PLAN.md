@@ -1004,6 +1004,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, U7 closes: the storeless 123 are 123 stubs, and the ten sit in them)
+
+- **The blind 123 were never blind, and they are not records either.** Each storeless slot has its own registration
+  stub in `.text` -- `push &body; push <index>; call 0x46c60` -- and the **index is the second `push` immediate**.
+  `tools/gnatives-stubs.py` finds **127** candidates, rejects 4 (their second immediate is an address, not a slot
+  number), and the remaining **123** name one live slot each: **123 of 123 store exactly the value the guest holds**,
+  the stub set is **disjoint** from the 233 store sites, and 233 + 123 = **356 of 356** live slots. So the static map
+  is complete up to a name, and the earlier reading ("filled by a walk over the record block") is corrected: the
+  record table carries most of the same bodies for its own purpose.
+- **The registrar is read, so the write is no longer inferred** (`0x0046c60`): one-time `rep stosd` of 4,096 slots
+  with the sentinel `0x000404a0`, a return without storing for a pushed `-1`, and `mov edx,[ecx]; mov
+  [eax*4+0x6313e8], edx` otherwise -- the exact `[reg*4+base]` fill a store-instruction scan cannot see. The image
+  also holds **467** stubs that push `-1`; the registrar discards them and none of their 467 bodies is a live slot
+  value, which is the name-resolved half (`tools/native-binder.py`) visible as code.
+- **The ten are ordinary.** 302, 333, 384, 385, 501, 503, 509, 511, 528, 561 are registered by stubs at `0x417850`,
+  `0x4186b0`, `0x417810`, `0x417830`, `0x4145e0`, `0x414600`, `0x414620`, `0x4145c0`, `0x4145a0`, `0x414640`, each
+  with its index. They were the record pass's residue only because their bodies are pushed as addresses of dwords in
+  a bodies-only `.data` array, with no `{name, body}` pair near them. What they still lack is a declarer, not an
+  address -- U7's "83 slots with no declarer" row, unchanged.
+- **Artifact, target, check.** `inventory/gnatives_stubs.csv` (123 rows: stub, index, body pointer, body, live
+  address, name, agreement, registrar), `make gnatives-stubs`, and a synthetic `--check` that `make ci` drives
+  through `tool-check-contract` (the shape, all three semantic rules, the `-1` variant). Image plus two committed
+  CSVs; no boot, no Ghidra.
+
 ### Execution notes (2026-11-10, U7's blind spots: 113 of the storeless slots are a record's body, 10 are not)
 
 - **The store scan's 123 blind slots are mostly not blind.** `tools/gnatives-records.py` pairs each live `GNatives`

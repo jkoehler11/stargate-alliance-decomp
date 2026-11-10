@@ -629,6 +629,16 @@ gnatives-records`, `inventory/gnatives_records.csv`). Ten are left -- 302, 333, 
 and 561 -- each with its body present in `.data` but not as a `{name, body}` record. The rest of the entry stands:
 83 registered slots have no declarer, and a full map still waits on a dump after a mission load.
 
+**Closed 2026-11-10: the storeless 123 are per-entry stubs, and the ten are in them.** A store scan cannot see
+them because the write is `mov [eax*4+0x6313e8], edx` inside the registrar at `0x46c60`, reached from a stub that
+pushes `&body` and **the slot index as a literal**: 123 stubs, one per storeless slot, and all 123 store the value
+the guest holds there (`tools/gnatives-stubs.py`, `make gnatives-stubs`, `inventory/gnatives_stubs.csv`). 233 + 123 =
+**356 of 356** live slots, so every slot's index is in the image and the static map is complete up to a name. The ten
+the record pass left -- 302, 333, 384, 385, 501, 503, 509, 511, 528, 561 -- are in the same set, with their stub
+named in the artifact; what they lack is a script declarer, not an address. The mechanism above is corrected
+accordingly: the 123 are stub-registered, not filled by a walk over the record block, though the record table does
+carry most of the same bodies for its own purpose.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
