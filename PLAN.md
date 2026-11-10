@@ -337,7 +337,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       — but 230 of them add no functions and no properties (data-only renames such as the 21 `Surface` subclasses), so
       the behavioural surface is 237 classes and only **6** carry ucpp natives (`SGOrder` 4, `Electrocutor` 2,
       `FarClipChange` 2, `SGFontInfo` 1, `ShadowManager` 1, `StargateHUD` 1). Remaining: the native half (renderer,
-      memory, compiler behaviour) — needs the module split (4.5) or targeted export of stock engine functions.
+      memory, compiler behaviour). **The export's population is now classified** (`docs/MODULE_CENSUS.md`,
+      `inventory/module_export_census.csv`, `make module-census`): all 6,063 attributed bodies are function entries in
+      `.text`, 1,428 sit in a vtable or data table, **150 are not analysis targets** (133 `ret`-only slots, 17 thunks),
+      1,310 declare their own source path and **837 of the 848 whose path is a `.cpp` name the module they were
+      attributed to** — so the lists are the right populations and the work list is **5,913 bodies**. `Core` is not
+      mostly library *by evidence*: 564 of its 3,238 declare a source path and 2,110 carry no literal at all, so the
+      library population is located rather than named (4.2's signatures, U9). Renderer half: `D3DDrv` is 129 bodies,
+      22 with a source path.
 - [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
       `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
@@ -941,6 +948,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, the 6,063 bodies are 5,913 analysis targets, and the attribution survives its own literal check)
+
+- **The export's population is classified, not guessed.** `tools/module-export-census.py` (`make module-census`,
+  `--check` in `make ci`) reads the 6,063 bodies `export-module.sh` leaves under `$WORK/module-export` and measures
+  four independent things per body: its XBE section, its direct `E8 rel32` call sites over the whole image, its dword
+  references in `.rdata`/`.data`/`.data1` (vtable reach), and what its string literals say (`__FILE__` source path,
+  asset path, ini/config, printf format, prose, none). One pass over 6,063 files takes **0.7 s**.
+- **All 6,063 are function entries in `.text`** and the attribution now has an independent check: of the 848 bodies
+  whose literals name a `.cpp`, **837 name the module they were attributed to**. The eleven that do not are TU
+  crossings, not errors -- `Engine_UnChan`, `Core_UnClass` and `Engine_UnPlayerStats` assert through a `Core` file in
+  scope -- and each keeps its own name, so nothing has to be re-attributed.
+- **150 of the 6,063 are not analysis targets**: 133 `ret`-only slots (median 5 bytes -- a native registration whose
+  C++ side is empty) and 17 jump thunks. The native half's work list is **5,913 bodies**, 1,310 of which can be tied
+  to a translation unit today and 4,753 of which cannot; 1,428 are reached through a vtable rather than a call and 519
+  by neither. 1,298 bodies carry a module-prefixed name, 39 `ucpp_*`, 26 `Native_*`, and **4,608 are still `FUN_*`**.
+- **`Core` is not mostly library by the evidence it carries, and the census will not call it that.** 564 of 3,238
+  `Core` bodies declare their own source path, 102 are `ret`-only, 2,110 carry no literal at all; across the export
+  3,472 of 6,063 (57.3%) carry no literal. That is where a static link lives -- the libraries assert nothing -- but a
+  UE2 function without an assert has the same signature, so the population is located and not named: the 100
+  most-called bodies are 83 `Core`, 45 of them literal-free, headed by `FUN_00055ed0` (37 bytes, 3,279 call sites) and
+  `appAssertFailed` (2,448), which is 4.2's signature work (U9) rather than a fifth census.
+- **Two things measured about the image.** `Section.executable` cannot separate code from data on this build: `.rdata`,
+  `.data` and `.data1` all carry flags `0x7`, the same `0x4` bit as `.text`, so the first version found **zero** data
+  references by skipping the data as code -- the split by *name* is what holds, and it finds 23,821 dword references
+  into 1,428 bodies. And one body's Ghidra extent runs past its census size (`0x000816e0`: 128 vs 72, the only
+  disagreement in 6,063), so `--check` does not gate on size and the exporter's "0 inside another function" stands.
+- **Next**: the renderer half is small enough to read -- `D3DDrv` is 129 bodies, 22 with a source path, 53 carrying
+  prose and 4 a format string -- so 4.8's next measurement is one of those bodies, not another pass over the corpus.
 
 ### Execution notes (2026-11-10, the exporter pass costs 12 rounds, not 5,826: 6,063 bodies in 268 s)
 
