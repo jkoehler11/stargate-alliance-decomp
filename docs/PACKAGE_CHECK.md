@@ -7,6 +7,7 @@ guaranteed a mismatch.
 
     python3 tools/package-check.py DUMP/.../System -o inventory
     python3 tools/package-check-pairs.py DUMP/.../Stargate_SG-1_-_The_Alliance-2005-12-15 -o inventory
+    python3 tools/package-check-quick.py DUMP/.../Stargate_SG-1_-_The_Alliance-2005-12-15 -o inventory
 
 ## What the file is
 
@@ -113,17 +114,42 @@ So the check is a **header-and-name digest, not a content digest**: a package re
 payloads keeps its header GUID (the writer copies it) and its name table, which is why all 168
 records still pair with the dump's files even though not one digest matches `md5(file)`.
 
-The remaining unknown is narrow: the byte offsets `0x00121cf0` takes out of the name-entry structure
-it builds at `esp+0xc4` (a dword at `+0x0C`, a word at `+0x1C`, a word at `+0x26`) before the
-digest. With those, the transform is a 20-line reimplementation instead of a guess.
+### The buffer, measured
+
+`tools/package-check-quick.py` rebuilds that buffer and reproduces the record's second field for
+**168 of 168** packages (`make package-check-quick`, `inventory/package_check_quick.csv`):
+
+| bytes | content |
+|---|---|
+| 52 | the header dwords at `0x00`-`0x33` as stored: tag, version\|licensee, package flags, name count and offset, export count and offset, import count and offset, and the four GUID dwords |
+| 8 per generation | the generation records at `0x38` (export count, name count); the generation **count** is not hashed |
+| 8 per name entry | the entry's **flags dword**, then the **first two UTF-16 units** of its name |
+
+Read out of the code, not from the bytes: `0x00062110` (the archive's `FNameEntry` reader) puts the
+flags dword at `+0x04` and the wide name at `+0x0C` of its local, and `0x00121cf0` appends
+`[entry+0x04]` through `0x00058e10` (four bytes) and the words at `+0x0C` and `+0x0E` through
+`0x00058e30` (two bytes each), onto the MD5 context `0x000564b0` which `0x00058b40` finalizes.
+`--walk` prints the eight bytes per entry, so the framing is checkable by eye: `Core.u`'s `None`
+entry is `100407044e006f00` — flags `0x04070410`, then `N`, `o`.
+
+Two consequences are worth stating plainly, because they decide what the check can be used for:
+
+* **The digest is deliberately coarse.** Only the first two characters of each name are covered, so
+  `Actor` and `Actress` hash the same. A record that reproduces therefore does not mean the file is
+  intact — that is what the full pass (`-f`, `0x001219d0`) is for.
+* **A relayout still changes it.** The three count/offset pairs are inside the buffer, so a rebuild
+  that moves an export changes the digest even when no payload byte differs. That is exactly the case
+  a regenerator has to serve, and it can: the record is a function of the header and the name table
+  alone, so a rebuilt package's record is computable from the file rather than from the original.
 
 ## What that leaves for PLAN 6.2
 
-The bypass path is still the safe one, but regenerating the check is back within reach and needs no
-data from outside the dump: the record's own GUID comes from the package header, and the digest
-covers only the header and the name table. A rebuilt package that preserves both reproduces the
-check data; a rebuilt package that changes the name set does not, and has to be added with `-a`
-against a patched build, which is why the `Packages.md5` writer stays in the toolchain.
+Regeneration needs nothing from outside the dump any more: a package's GUID and its digest both
+come out of the file the writer produced. What is left is plumbing rather than measurement — calling
+`tools/package-check-quick.py` from `build.sh`'s `package-check` stage (still a SKIP, "bypass
+decided, not implemented") and writing the `Packages.md5` package itself through the container writer
+(`docs/PACKAGE_WRITER.md`). Until that stage exists the bypass remains the honest option for a build
+that changes a name table or a layout, since its record no longer matches.
 
 ## Where the check lives in the image
 
@@ -147,7 +173,6 @@ Artifact: `inventory/package_check_code.csv` (`make package-check-code`, `--chec
 
 ## Not measured
 
-* The name-entry byte layout `0x00121cf0` digests (above) — the last piece of the transform.
 * **Which** path invokes the check at runtime: the code is present and reachable from `Engine_UnGame`,
   but whether it runs on every load, on a menu, or only on a console command needs the probe in U5 /
   7.3 territory. The `MD5` console command is the writer, not necessarily the verifier.
