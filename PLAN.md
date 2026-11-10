@@ -1126,6 +1126,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   also writes the same value 16 KB later at `0x006353e8`. That second array is *not* a mirror of the table (614
   stores over 9 offsets), recorded so a later reader does not conflate them.
 
+### Execution notes (2026-11-10, the store sites spell their slot twice, and the three nothing declares are token bodies)
+
+- **Every setter carries the slot index as an immediate.** The 233 `mov [GNatives+slot*4], reg` sites sit in
+  compiler-generated setters that also write the slot to one dword at `0x006353e8`
+  (`c7 05 e8 53 63 00 <index>`): **231 of 233 carry it** (slots 2-543), and the two that do not are slots 0 and 1,
+  whose setters store through `eax` (`a3 e8 13 63 00`). The literal and the displacement agree **231 of 231**, so no
+  slot had to be inferred from the address it is stored at. `0x006353e8` is not a second table -- the
+  "614 stores over 9 offsets" structure a previous note put there is `0x00635560` -- and `docs/NATIVE_VM.md` is
+  corrected with the number.
+- **Slots 66, 67 and 68 are token bodies, not Object slots.** 356 live slots split 56 below `0x60` / 16 in the
+  `0x60`-`0x6F` trampoline band (`0x000464f0`-`0x000467c0`, 48 bytes each) / 284 at `0x70` and above, where the first
+  declared index is 112 = `execConcat_StrStr`. Three low-band bodies fix the numbering by their own bytes -- slot 11
+  is a bare `ret 8` (`0x00040690`), slot 29 stores a dword read from `FFrame::Code` (`0x00040a60`), slot 30 the same
+  through `movss` (`0x00040a80`) -- i.e. stock `EX_Nothing`/`EX_IntConst`/`EX_FloatConst` at `0x0B`/`0x1D`/`0x1E`, so
+  66-68 are tokens `0x42`-`0x44`.
+- **One is reached by name, two forward a call.** 66 (`0x000404b0`) bails out of an unequal `0x64` guard with no
+  result and otherwise hands three dwords and a byte to the first virtual of the global at `0x005fe148`; two bodies
+  outside the table (`0x0040510`, `0x0040590`) evaluate an expression, and when the next code byte is `0x42` tail-call
+  `GNatives[66]` and take the value from `0x005ff178` -- so `0x42` follows an expression and never answers one. 67
+  (`0x000409a0`) resolves an 8-byte member pair through `Context + [op+0x48]` and re-enters via `[vtable+0x54]`, the
+  `ProcessEvent` slot. 68 (`0x00040a30`) writes the only 8-byte result in the const block, `{(v ? Context : 0), v}`.
+  No package declares any index below 112, so the three stay `Native_66`-`Native_68` with their behaviour measured
+  and named from it.
+
 ### Execution notes (2026-11-10, the 31 class-table stores that sat in no function are seeded by their own evidence)
 
 - **A store names both the class and the entry.** `SeedStores.java` (new, in the Ghidra chain after

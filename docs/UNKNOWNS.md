@@ -659,6 +659,15 @@ index-less declarations has a `-1` stub; no stub for the rest is the class's nor
 a binder literal have it in the image. The same run removed a fabrication in `tools/native-reconcile.py` that had
 listed `UPreview`'s two records as `text-missing` against a literal it invented; they read `record-unbound` now.
 
+**The slots no package declares are token bodies, and their registration was never in doubt (2026-11-10).** Slots 66,
+67 and 68 are the only store-written `GNatives` entries below the native band, and every store site's setter spells its
+index as an immediate (`c7 05 e8 53 63 00 <index>`, 231 of the 233 sites), so the question this entry used to ask
+about them -- how they were registered -- is answered. What is still missing is a *name*: 356 live slots split 56 / 16
+/ 284 at `0x60` and `0x70` (tokens, extended-native trampolines, declared natives from 112 = `execConcat_StrStr`), and
+three low-band bodies whose bytes fix the stock numbering (11 = bare `ret 8`, 29 = int const, 30 = float const) put
+66-68 at tokens `0x42`-`0x44`. Their behaviour is recorded in `docs/NATIVE_VM.md`; a name needs a dump taken while a
+mission's scripts run, because no shipped package references an index below 112.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).

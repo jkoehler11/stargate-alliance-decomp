@@ -114,9 +114,60 @@ Two things the numbers settle. **The static route validates the runtime dump ove
 complete it:** 233 of 356 slots are visible, all 233 right, and the 123 that are missing are registered by a fill
 through `mov [ecx+eax*4], edx`, whose modrm byte encodes no absolute address -- no store-instruction scan can see
 them, whatever it is written to look for. And **the stores live outside the function map**: 2 of 233 sites fall
-inside a symbolised function, because they are compiler-generated accessor pairs in `0x0040cb1e`-`0x00413ab2`, one
-setter per slot, each with a branch that also writes the same value 16 KB later at `0x006353e8`. That second array
-is *not* a mirror of the table (614 stores over 9 offsets), so do not read one as the other.
+inside a symbolised function, because they are compiler-generated setters across `0x0040cb1e`-`0x00413ab2`, one per
+slot. Each setter writes its slot twice -- the value into `GNatives[slot]`, and **the slot index itself** into one
+dword at `0x006353e8` (`c7 05 e8 53 63 00 <index>`). **231 of the 233 carry that literal** (slots 2 through 543 are
+all there); the two that do not are slots 0 and 1, whose setters store through `eax` (`a3 e8 13 63 00`). So the index
+never had to be inferred from the displacement a store targets: the image spells it out, and the two agree in **231 of
+231** cases. `0x006353e8` is not a second table -- the 614-stores-over-9-offsets structure an earlier note conflated
+with it is `0x00635560` -- it is the one dword these setters annotate, and the slot index is what goes in it.
+
+## The slots nobody declares: 66, 67 and 68 are token bodies
+
+`GNatives` is indexed by the front end's one-byte token as well as by `native(index)` number, and the live table shows
+the split: of the 356 registered slots, **56 sit below `0x60`**, **16 fill the `0x60`-`0x6F` band** as 48-byte
+trampolines (`0x000464f0`-`0x000467c0`, one per slot), and **284 are at `0x70` and above**, where the first declared
+index is 112 (`execConcat_StrStr`, `Core:Object`). Three of the low band -- **slots 66, 67 and 68** -- are the only
+store-written entries nothing declares: no package names index 66, 67 or 68, and `inventory/gnatives_records.csv`
+finds no `{name, body}` record for them, so neither the script side nor the record side can name them. Their
+registration is ordinary and not different in any way: setters at `0x0040cd02`, `0x0040d6c2` and `0x0040d722` store
+`0x000404b0`, `0x000409a0` and `0x00040a30` and annotate them with the literals 66, 67 and 68 at `0x0040ccec`,
+`0x0040d6ac` and `0x0040d70c`.
+
+**The numbering is the stock one, fixed by three bodies whose bytes admit no other reading:**
+
+| slot | body | how it reads | stock token at that number |
+|---|---|---|---|
+| 11 | `0x00040690` | `c2 08 00`: `ret 8`, never touching `FFrame::Code` | `EX_Nothing` `0x0B` |
+| 29 | `0x00040a60` | consumes one dword from `FFrame::Code` (+0x0c) into `Result` | `EX_IntConst` `0x1D` |
+| 30 | `0x00040a80` | consumes one dword through `movss` into `Result` | `EX_FloatConst` `0x1E` |
+| 96-111 | `0x000464f0`-`0x000467c0` | 48 bytes each: push a `.data` dword, read a byte, jump through the table | the `EX_ExtendedNative` band |
+
+With the low band in the stock `EExprToken` numbering, **66, 67 and 68 are tokens `0x42`, `0x43` and `0x44`**, and
+each body is read here rather than inferred:
+
+**66 (`0x000404b0`, 92 bytes).** Reads a dword from `FFrame::Code` and compares it with `0x64`. Unequal: it steps
+`Code` **back one byte** and returns *without writing a result*. Equal: it consumes that dword, a second, a third and
+one byte -- 13 bytes -- and hands them to the first virtual of the global object at `0x005fe148`
+(`mov ecx,[0x5fe148] / mov edx,[ecx] / call [edx]`) as `(Context, Stack, Result, x, y)`. That global is empty in the
+file and filled at runtime. Two bodies outside the table (`0x0040510`, `0x0040590`) evaluate one expression and then,
+**if the next byte in the code stream is `0x42`**, consume it and tail-call `GNatives[66]` with a null result, taking
+the expression's value out of one dword at `0x005ff178`. So token `0x42` is emitted *after* an expression, answers
+nothing itself, and is the only token whose handler is also reached by fixed slot from another exec.
+
+**67 (`0x000409a0`, 131 bytes).** Reads two dwords, treats the first as a pointer and reaches `Context + [first+0x48]`
+for an 8-byte pair; when the object in that pair is non-null it calls `[vtable+0x30]` and clears the pair if that
+answers non-zero, otherwise it calls `0x00062ff0` and re-enters through **`[vtable+0x54]`** -- the `ProcessEvent`
+dispatch slot measured in 4.3 -- with `(Stack, Result, ...)`. It resolves a member/interface operand and forwards a
+call.
+
+**68 (`0x00040a30`, 35 bytes).** Reads one dword `v` and writes an **8-byte** result, `{ (v ? Context : NULL), v }` --
+the only 8-byte result in its neighbourhood, where the const bodies that follow (29, 30) write four bytes each.
+
+None of the three is an `Object` slot: the 230 that are were matched to `Object`'s live slots by body, and these have
+no declarer at all. `symbols/xbe_dispatch.csv` therefore keeps them as `Native_66`, `Native_67`, `Native_68` with the
+behaviour above recorded instead of a name guessed from their operands. What is left is a front-end question: nothing
+in a shipped package references indices below 112, so naming them needs a dump taken while a mission's scripts run.
 
 ## The other side of the blind spot: the record that carries the body
 
