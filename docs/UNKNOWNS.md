@@ -784,11 +784,18 @@ requested `BehaviorFlags` 0x40 agree, and the `D3DVTXPCAPS_MATERIALSOURCE7` fall
 hardware. The table is in `docs/systems/RENDERER.md` ("What the device reports"), and `tools/xemu/d3d-caps.py`
 decodes the window out of a `bp-args.py` log (`--check` needs neither dump nor log).
 
+**Measured 2026-11-10, the fill site.** The struct is filled by `GetDeviceCaps(Adapter=0, DeviceType=1 (HAL),
+pCaps=this+0x419c)` at `0x002b1b8a`, into the statically linked D3D8 at `0x004523a0`; the `lea ecx,[ebx+0x419c]`
+at `0x002b1b76` is the only instruction in an executable section naming that offset, and the same body stores
+adapter 0 into `this+0x46d8`, the field the later `CreateDevice` passes as its adapter. The body then logs six of
+the caps by name -- `MaxTextureBlendStages`, `MaxSimultaneousTextures`, `MaxActiveLights`, `MaxPrimitiveCount`,
+`MaxVertexIndex`, `MaxStreams` -- from `this+0x4230/+0x4234/+0x423c/+0x4250/+0x4254/+0x4258`, which are
+`caps+0x94/+0x98/+0xa0/+0xb4/+0xb8/+0xbc`. The field map therefore rests on the game's own names, not only on
+the SDK's order. `tools/xemu/d3d-caps.py --fill-site` re-derives the call from the image.
+
 **Still unnamed, and why.** The two `D3DFORMAT` enumerants (30 back buffer, 42 depth) and the `MultiSampleType`
 value `0x11` stay numbers: naming them needs the Xbox D3D8 header, which neither the dump nor this repository
-carries, so a name would be a guess. Which call *fills* the caps struct is also unstopped -- it runs in the
-render device's initialisation before the create path -- and that is the only mechanical question left in this
-entry.
+carries, so a name would be a guess. That is the only question left in this entry.
 
 **Status.** Closed for both halves (request and report); `tools/xemu/bp-args.py` and
 `tools/xemu/d3d-caps.py` are the instruments, and the three stub behaviours `bp-args.py` works around are in
