@@ -912,6 +912,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   none is a native, so none has a `native_targets.csv` row. They are read as script (`tools/pkg-script-text.py`), and
   the body to decompile is the exec they all funnel into. Measured in the note below.
 
+### Execution notes (2026-11-09, the write is whole and the index row is a second artefact)
+
+- **The writer's literals, read from the image instead of the decompiler's text.** `ExportAt` labels this
+  build's wide literals two bytes late, so `tools/ghidra/ghidra_scripts/ExportLiterals.java` lists a function in
+  full and resolves every operand that lands in memory: on `0x00138680` it reads `Engine` at `0x004c7948`,
+  `Saving` at `0x004df84c`, the log literal at `0x00509b50` and `%s%s` at `0x004d491c`.
+- **`Engine`/`Saving` are a `GetString`, not the profile update the note below left as "next".** They are the
+  arguments of `FUN_000584a0` → `FUN_00058010`, which formats `%s%ssystem%s%s.%s` and calls slot `+0x10` of the
+  config object at `0x005fbed4` with a `0x400`-byte buffer (the `.int` file is the fallback); the writer also
+  calls slot 3 of the object at `0x005fbed0` before the serializer and slot 4 after it — a begin/end pair.
+- **The flag's two values are 2 and 0**, written at `0x00138c96` and `0x00138ebc` on the first element of the
+  level's actor array (`[[[this+0x11c]+0x2c]]+0x708`); the serializer call sits between them and nothing else in
+  the body writes that byte.
+- **The writer takes seven stack arguments** (`RET 0x1c` at `0x00138f63`), so the kind of save arrives in the
+  arguments. The serializer call at `0x00138cf2` pushes seven words with `ECX = [level+0x18]` as `this` and the
+  caller cleans only 16, so the callee returns cleaning the rest — its arity is the one number still open.
+- **The profile index is a separate artefact with its own address.** `[Saved Games]` is a 142-row section of
+  `DefaultProfile.sgp` (key = `.sgs` file name, value = description); none of its rows has a shipped file and
+  none of the nine files is indexed, so index and files come from different builds. The `Saved Games` literal at
+  `0x00515664` has exactly three xrefs, all in `0x001be5xx`–`0x001bfax`; the save routine reaches `FUN_001be520`
+  through `FUN_001be720` (`0x00138d9d`), which writes one row per element of the profile array at `+0xa8`
+  (count `+0x38`, names `+0x28`, descriptions `+0x34`).
+- **Instrument**: `tools/sgs-profile.py` (`make sgs-profile`) counts the index and reconciles it with the `.sgs`
+  files on disc; `--check` is a synthetic self-test, so `make ci` keeps it honest without the dump.
+- **Next**: `0x001226a0`'s `LoadSaveGameInfo` reader (7,486 bytes, exported but unread) — what the script's
+  `GameInfo.LoadSaveGameInfo` / `StoryModeGame` override consume from a checkpoint before `PostLogin` resumes.
+
 ### Execution notes (2026-11-09, the save path's dispatcher is a console command and its writer is vtable slot 59)
 
 - **`SaveGame <letter> <text>` is the whole write interface.** `PlayerController.NewSaveGame`, `QuickSave`,
@@ -936,8 +963,9 @@ are limited to expected fields (checksum/timestamp) and documented.
   did) — it selects one as a log label (`Map Change` for the first flag, then `QUICKSAVE`, `CHECKPOINT`, `SAVEGAME`).
   The file name comes from five formats: `TRAVEL_%s`, `Q_A_%s`, `C_%s`, `MATINEE_%s` then `%s.sgs`, or
   `%s_%s.sgs` for a manual save; `C_%s`+`%s.sgs` reproduces all nine shipped `C_<desc>.sgs` names exactly.
-- **Next**: the serializer's arguments and the profile's `[Saved Games]` update (the writer's `Engine`/`Saving`
-  literals and the `+0x708` flag's two values), then `0x001226a0`'s `LoadSaveGameInfo` reader.
+- **Answered in the note above**: the `Engine`/`Saving` pair is a config read rather than the profile update this
+  bullet assumed, the `+0x708` flag's two values are 2 and 0, and the `[Saved Games]` row is written by
+  `FUN_001be520` two frames below the writer. What is still unread is `0x001226a0`'s `LoadSaveGameInfo` body.
 
 ### Execution notes (2026-11-09, the binder's map is a table in the image, so a name is an address)
 

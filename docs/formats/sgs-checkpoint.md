@@ -216,6 +216,80 @@ looks like), and — for a reference that lands inside a known class table — t
 `+0xec`, which is why the tool prints those sites as *candidates* and the surrounding literal (`SAVEGAME` at
 `0x0013a4f2`) is what fixes the object.
 
+## The write's second half, measured (2026-11-09)
+
+**Every literal here was read at the address the instruction pushes, not from the decompiler's text.**
+`ExportAt.java` labels this build's wide literals two bytes late, so the reading instrument is
+`tools/ghidra/ghidra_scripts/ExportLiterals.java` (new): the full instruction listing of a function with each
+operand that lands in memory resolved to the string at that VA. On `0x00138680` it gives:
+
+| VA | text | site |
+|---|---|---|
+| `0x004d491c` | `%s%s` | `0x00138c5e`, second half of the name |
+| `0x00509b50` | `[VL:SAVEGAME]: Saving game to file: %s` | `0x00138c7a` |
+| `0x004c7948` | `Engine` | `0x00138ca5` |
+| `0x004df84c` | `Saving` | `0x00138caa` |
+
+**`Engine` and `Saving` are a config *read*, not the profile write the earlier note assumed.** They are the
+two arguments of `FUN_000584a0` (31 bytes), which calls `FUN_00058010` with the literal `Progress` in front;
+that body formats `%s%ssystem%s%s.%s`, then calls slot `+0x10` of the config object at `0x005fbed4` with a
+`0x400`-byte output buffer — a `GetString`, with the `.int` file patched in as a fallback. Its result is handed
+to slot 3 of the object at `0x005fbed0`, and the matching slot 4 call (`0x00138ea4`) closes it after the
+serializer: a begin/end pair around the write, not an ini write. The save routine writes **one** artefact, the
+package; the index row is written two frames further down (*The profile index*, below).
+
+**The flag.** `0x00138c96` sets byte `[[[this+0x11c]+0x2c]]+0x708` to **2**, `0x00138ebc` restores it to **0**,
+and the serializer call sits between them. `[this+0x11c]` is the level the writer saves: its `+0x2c`/`+0x30`
+pair is a counted pointer array that the same body then walks actor by actor (`0x00138df0`–`0x00138e96`), and
+the flag sits on the array's **first element**. So 2 is "saving", 0 is "running", and no other value is written
+anywhere in the body.
+
+**The serializer call, `0x00138cf2`.** Seven words are pushed (`0x00138ce0`–`0x00138cf1`) with `ECX =
+[level+0x18]` as `this`; one of them is the composed filename buffer (`LEA EDX,[ESP+0x468]` at `0x00138ce2`),
+i.e. the same string that was just logged. The callee is `0x0006f4b0` (5,552 bytes), the exporter that prints
+`SaveGame Summary Names=%d Import=%d Export=%d` (`0x00070938`). The caller cleans only 16 bytes (`ADD ESP,0x10`
+at `0x00138cfe`) for seven pushes, so the callee returns cleaning the rest — **its exact arity is not settled**
+(its epilogue is not at the address its Ghidra body size implies, and the scan found no `RET` there), which is
+the one number a rebuild would still need from this call.
+
+**The writer's own arity is seven stack arguments** (`RET 0x1c` at `0x00138f63`), and the three the name chain
+reads are `[esp+0x670]`/`0x674`/`0x678` — the kind of save arrives in the arguments, not in a global.
+
+## The profile index, measured (2026-11-09)
+
+`DefaultProfile.sgp` is a **UE2 text INI** (CRLF, `[section]` and `key=value`), two sections, 153 rows:
+`[Engine.PlayerProfile]` (11 settings) and `[Saved Games]` (142). The second one is the checkpoint index —
+key = the `.sgs` file name, value = the description the menu shows (`AutosaveCheckpoint4`, `Mission 7 - Tombs -
+Lower Cavern`) — so a checkpoint is **two artefacts**, and the package alone is not resumable.
+
+Counted by `tools/sgs-profile.py` (`make sgs-profile`, dump-side, `--check` is a synthetic self-test):
+
+| key shape | rows | example |
+|---|---|---|
+| `C_M07b_#_#.sgs` | 111 | `C_M07b_20050413_170733.sgs` |
+| `C_M07b_OLD_#_#.sgs` | 19 | `C_M07b_OLD_20050414_194043.sgs` |
+| `C_M07C_#_#.sgs` | 11 | `C_M07C_20050415_212331.sgs` |
+| `C_M07B_loadtest_#_#.sgs` | 1 | `C_M07B_loadtest_20050417_174330.sgs` |
+
+(`#` is a run of six or more digits.) Values: `autosave` 10, `label` 132. **None of the nine shipped `.sgs`
+files is in the index and none of the 142 rows has a file.** The index is a mission-7 authoring session
+(`20050413`–`20050418`) whose keys carry a `_<YYYYMMDD>_<HHMMSS>` suffix; the nine files are
+`C_<description>.sgs` with no timestamp, which is exactly what the writer's `C_%s` + `%s.sgs` produces. The
+index and the files therefore come from different builds, and the writer's name chain matches the files, not
+the index.
+
+**Which code owns the section, with an address.** The wide literal `Saved Games` at `0x00515664` (its
+neighbours are `Profiles` and `.sgp`) has exactly three xrefs: `0x001be619` and `0x001be67b` inside
+`FUN_001be520`, and `0x001bf9df` inside `FUN_001bf7b0`. `FUN_001be520` is on the save path: the writer calls
+`FUN_001be720` at `0x00138d9d`, and that body calls `FUN_001be520` when `[this+0xa8]` is non-null. `+0xa8` is
+the profile's saved-game array — count at `+0x38`, two parallel string arrays at `+0x28` (names) and `+0x34`
+(descriptions). Inside `FUN_001be520` the section is touched through the config object's slot `+0x20`, then
+each element is written through slot `+0x34` with **five** arguments (section first, then the two array
+strings, then `[profile+0x4c]` plus the `.sgp` literal at `0x0051567c`, then a literal `1`). Four arguments is
+what `SetString(Section, Key, Value, Filename)` takes and the fourth argument is the profile's own file name,
+which fits; the trailing `1` does not, so the callee is *probably* the config setter but is **not confirmed**.
+`FUN_001be520` ends `RET 0x10`.
+
 ## Using this for the rebuild (PLAN 6.4 / 7.2)
 
 A rebuilt build needs checkpoints that the profile lists and `LoadSaveGame` accepts. Since a

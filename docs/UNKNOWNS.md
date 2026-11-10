@@ -487,9 +487,20 @@ to `0x00136a40`, which composes the name and compares the `SAVEGAME`/`CHECKPOINT
 `Q_A_%s`, `C_%s`, `MATINEE_%s`, all followed by `%s.sgs`, or `%s_%s.sgs` for a manual save. The checkpoint format
 reproduces all nine shipped `System/Profiles/DefaultProfile/*.sgs` names exactly. It then logs
 `[VL:SAVEGAME]: Saving game to file: %s`, sets a saving flag at `+0x708`, and calls the engine serializer.
-**Still open:** the serializer's arguments and the profile's `[Saved Games]` update (what the writer's `Engine` /
-`Saving` literals write), and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the save/load/check
-neighbourhood beside the package-check readers of PLAN 6.2).
+**Answered 2026-11-09: the writer's "next" is two artefacts, and the index row has its own address.** The
+`Engine` / `Saving` literals (`0x004c7948`, `0x004df84c`, read from the instruction operands with
+`tools/ghidra/ghidra_scripts/ExportLiterals.java`) are the arguments of a config **read** (`FUN_000584a0` →
+`FUN_00058010`, which formats `%s%ssystem%s%s.%s` and calls slot `+0x10` of `0x005fbed4` with a `0x400` buffer) —
+not a profile write. The `+0x708` flag is set to **2** at `0x00138c96` and back to **0** at `0x00138ebc`, on the
+first element of the level's actor array, spanning the serializer call at `0x00138cf2`. The `[Saved Games]` row is
+written elsewhere: the section name literal at `0x00515664` has three xrefs, all inside `0x001be5xx`–`0x001bfax`,
+and the writer reaches that code through `FUN_001be720` (`0x00138d9d`) → `FUN_001be520`, which walks the profile's
+array at `+0xa8` (count `+0x38`, names `+0x28`, descriptions `+0x34`) and writes one row per element. The shipped
+index has 142 rows in four key shapes and **none of its files is present, while none of the nine shipped `.sgs` is
+indexed** — the index is an April 2005 mission-7 session, the files are the writer's `C_<description>.sgs`.
+**Still open:** the serializer's exact arity (seven words are pushed, the caller cleans 16 — its epilogue is not
+where its Ghidra body size puts it) and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the
+save/load/check neighbourhood beside the package-check readers of PLAN 6.2).
 
 ## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 
