@@ -14,6 +14,10 @@ Three things complicate the comparison, and each is handled explicitly rather th
   preoperator bool ! ( bool A )`), which a function-shaped regex misses entirely;
 * the compiler *synthesises* a function per operator signature (`Add_IntInt`, `AddEqual_VectorVector`,
   `AddAdd_PreInt`, …), so those records have no declaration to match. They are counted apart, not as mismatches.
+* a native can be declared as an **event** (`native event ClientTravel( string URL, … )`), a third form that sits
+  between `native` and the name and that a `native … function` pattern cannot see. Events are counted in their own
+  column and matched like a function, because the declaration names its own record; leaving them out made eleven
+  records the image does bind read as `text-missing`.
 
 The class-by-class counts answer "do the two halves agree"; the second question is per record, and it is the one
 UNKNOWNS U1 and U3 left open: **every record that carries a token has to be explained by a declaration the class
@@ -44,6 +48,13 @@ from ue2pkg import Package  # noqa: E402
 
 NATIVE_FN = re.compile(r"\bnative\b(?:\s*\(\s*(\d+)\s*\))?.*?\bfunction\s+(?:[\w<>\[\]]+\s+)?(\w+)\s*\(",
                        re.I | re.S)
+# `native event ClientTravel( string URL, … )` — the third declaration form. It carries no `function` keyword, so
+# the pattern above misses it and every pass built on it counted the declaration as absent. The return type is
+# optional (`native event int Main( string Parms )`, `native final event Font GetFont( int XRes )`) and the
+# modifiers are not part of the name, so `event\s+(\w+)` alone would capture `int` as the function.
+NATIVE_EVENT = re.compile(
+    r"\bnative\b(?:\s*\(\s*(\d*)\s*\))?(?:\s+(?:static|final|simulated|private|protected|const|latent))*"
+    r"\s+event\s+(?:[\w<>\[\].]+\s+)?(?P<name>\w+)\s*\(", re.I)
 NATIVE_OP = re.compile(r"\bnative\b(?:\s*\(\s*(\d+)\s*\))?.*?\b(?:pre|post)?operator\b\s*"
                        r"(?:\(\s*(\d+)\s*\))?\s*[\w<>\[\]]+\s*([+\-*/%<>=!&|^@~]{1,2})", re.I | re.S)
 CLASS_NATIVE = re.compile(r"^\s*class\s+\w+.*\bnative\s*;", re.I | re.M)
@@ -62,6 +73,10 @@ def is_operator_record(name):
 
 RESIDUAL_COLS = ["package", "class", "function", "direction", "native_token", "binder", "verdict"]
 
+# The declaration kinds that name one record of the same class. `event` is matched like `function`: the residual
+# table stops calling an event-declared record `text-missing` only because the pattern could not see `event`.
+DECL_FORMS = ("function", "event")
+
 
 def residual_rows(pkg_name, cls, decls, records, binder):
     """[(function, direction, token, binder, verdict)] for the rows where the two halves do not meet.
@@ -71,7 +86,7 @@ def residual_rows(pkg_name, cls, decls, records, binder):
     that class and function, when the native binder (`tools/native-binder.py`) found one -- which is what decides
     the verdict, because it is the build's C++ side speaking rather than either of the two package halves.
     """
-    declared = {n.lower(): n for n, _i, k in decls if n and k == "function"}
+    declared = {n.lower(): n for n, _i, k in decls if n and k in DECL_FORMS}
     out = []
     for name in sorted(records):
         if nr_lower(name) in declared or is_operator_record(name):
@@ -196,8 +211,43 @@ def selftest():
     got3 = [(n, v) for n, _d, _t, _b, v in residual_rows("P", "Cls", decls2, recs2, {})]
     assert ("OnlyRecord", "record-unbound") in got3, "a record with no binder must not read as text-missing"
     cases += 1
+    # A `native event` declaration names its own record, so the record is matched and no longer `text-missing`;
+    # before this the eleven event-declared records of this build read as though the class declared nothing.
+    ev_text = (" native event ClientTravel( string URL, ETravelType TravelType, bool bItems );"
+               " native(9) event IndexedEvent( int A );"
+               " native event int Main( string Parms );"
+               " native simulated final event Font GetFont( int XRes );"
+               " native function Other( int A );")
+    ev_decls = declarations(ev_text)
+    assert [k for _n, _i, k in ev_decls].count("event") == 4, "the event form was not parsed: %r" % (ev_decls,)
+    # A return type before the name is not the name, and a modifier is not either.
+    assert [n for n, _i, k in ev_decls if k == "event"] == [
+        "ClientTravel", "IndexedEvent", "Main", "GetFont"], ev_decls
+    assert [i for _n, i, k in ev_decls if k == "event"] == [None, "9", None, None], ev_decls
+    cases += 2
+    recs_ev = {"ClientTravel": {"native_token": "0"}, "IndexedEvent": {"native_token": "9"},
+               "Undeclared": {"native_token": "0"}}
+    got_ev = residual_rows("P", "PC", ev_decls, recs_ev,
+                           {("pc", "undeclared"): "intAPCexecUndeclared",
+                            ("pc", "clienttravel"): "intAPCexecClientTravel"})
+    rows_ev = [(n, d) for n, d, _t, _b, _v in got_ev]
+    assert ("ClientTravel", "record-only") not in rows_ev, got_ev
+    assert ("IndexedEvent", "record-only") not in rows_ev, got_ev
+    assert rows_ev[0] == ("Undeclared", "record-only"), got_ev
+    assert set(rows_ev[1:]) == {("Other", "declaration-only"), ("Main", "declaration-only"),
+                                ("GetFont", "declaration-only")}, got_ev
+    cases += 1
+    # An event that spells an index is a declared index, not an unexplained token.
+    got_basis = {n: b for n, _t, b in token_basis(ev_decls, recs_ev)}
+    assert got_basis["IndexedEvent"] == "text-index", got_basis
+    cases += 1
+    # Native *data* is not a declaration of either form.
+    data_decls = declarations(" var native const int Size; native event Real( int A );")
+    assert [n for n, _i, k in data_decls] == ["Real"], data_decls
+    cases += 1
     print("ok   native-reconcile: %d cases (five bases, spelled operator index, the operator-name rule, "
-          "a record explained by the binder, a declaration the image does not bind)" % cases)
+          "a record explained by the binder, a declaration the image does not bind, the event form parsed "
+          "and matched, native data ignored)" % cases)
     return 0
 
 
@@ -215,18 +265,26 @@ def strip_comments(text):
 
 
 def declarations(text):
-    """[(name, index, kind)] with kind in function / operator / other, one entry per declaration statement."""
+    """[(name, index, kind)] with kind in function / event / operator / other, one per declaration statement.
+
+    `event` is a declaration form of its own: it names one record, like `function` does, so the two are matched
+    alike (DECL_FORMS) but counted apart — 11 events on this build, and no `native function` line among them.
+    """
     body = strip_comments(text).replace("\r", " ").replace("\n", " ")
     out = []
     for statement in body.split(";"):
         if not re.search(r"\bnative\b", statement, re.I):
             continue
-        if not re.search(r"\b(function|operator)\b", statement, re.I):
+        if not re.search(r"\b(function|operator|event)\b", statement, re.I):
             # `var native const int Foo` / `struct native Foo`: native *data*, not a native body.
             continue
         op = NATIVE_OP.search(statement)
         if op:
             out.append((op.group(3), op.group(1), "operator"))
+            continue
+        ev = NATIVE_EVENT.search(statement)
+        if ev:
+            out.append((ev.group("name"), ev.group(1) or None, "event"))
             continue
         fn = NATIVE_FN.search(statement)
         if fn:
@@ -247,7 +305,8 @@ def csv_natives(path=None):
 
 
 COLS = ["package", "class", "class_is_native", "text_functions", "text_indexed", "operators",
-        "operator_records", "csv_records", "matched", "text_only", "csv_only", "token_mismatch"]
+        "operator_records", "csv_records", "matched", "text_only", "csv_only", "token_mismatch",
+        "text_events"]
 
 
 def run(system_dir, outdir, only=None, walk=False):
@@ -273,7 +332,11 @@ def run(system_dir, outdir, only=None, walk=False):
             if not text:
                 continue
             decls = declarations(text)
-            names = collections.Counter(n for n, _i, k in decls if n and k == "function")
+            functions = collections.Counter(n for n, _i, k in decls if n and k == "function")
+            events = collections.Counter(n for n, _i, k in decls if n and k == "event")
+            # Both forms name one record of their own class, so the match is over the two together; they stay
+            # counted apart so the table says which form the declaration took.
+            names = functions + events
             operators = sum(1 for _n, _i, k in decls if k == "operator")
             records_all = known.get((pkg_name, cls), {})
             records = {k: v for k, v in records_all.items() if not is_operator_record(k)}
@@ -305,10 +368,10 @@ def run(system_dir, outdir, only=None, walk=False):
                                  "verdict": verdict})
             rows.append({"package": pkg_name, "class": cls,
                          "class_is_native": int(bool(CLASS_NATIVE.search(text))),
-                         "text_functions": len(names), "text_indexed": len(indexed), "operators": operators,
+                         "text_functions": len(functions), "text_indexed": len(indexed), "operators": operators,
                          "operator_records": operator_records, "csv_records": len(records),
                          "matched": len(matched), "text_only": len(text_only), "csv_only": len(csv_only),
-                         "token_mismatch": len(token_mismatch)})
+                         "token_mismatch": len(token_mismatch), "text_events": len(events)})
             if walk:
                 print("%-12s %-26s text %2d funcs (%d indexed) + %2d ops  csv %2d  matched %2d  "
                       "text-only %2d  csv-only %2d  tokens %d"
@@ -350,9 +413,10 @@ def run(system_dir, outdir, only=None, walk=False):
     for r in rows:
         for k in COLS[3:]:
             total[k] += r[k]
-    print("%d classes: %d native functions in the text (%d indexed) and %d operator declarations expanded into "
-          "%d records; %d function records, matched %d, text-only %d, csv-only %d, token mismatches %d"
-          % (len(rows), total["text_functions"], total["text_indexed"], total["operators"],
+    print("%d classes: %d native functions and %d native events in the text (%d indexed) and %d operator "
+          "declarations expanded into %d records; %d function records, matched %d, text-only %d, csv-only %d, "
+          "token mismatches %d"
+          % (len(rows), total["text_functions"], total["text_events"], total["text_indexed"], total["operators"],
              total["operator_records"], total["csv_records"], total["matched"], total["text_only"],
              total["csv_only"], total["token_mismatch"]))
     basis = collections.Counter(r["basis"] for r in token_rows)

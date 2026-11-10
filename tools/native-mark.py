@@ -34,10 +34,11 @@ the unary family) have no declaration to mark and stay in `inventory/native_toke
 `operator-expansion`.
 
 A `native event` is a third declaration form, and it was invisible to every counting pass: `native-reconcile` (and
-this tool before it) looks for `native … function`, so the eleven `native event` declarations in the shipped text —
-`ClientTravel`, `ClientHearSound`, `UpdateVehicle`, `GetFont`, `LogStatLine` and their kin — read as "record-only,
-text-missing" in `inventory/native_residual.csv` while the text spells them plainly. They are marked like a function
-(no `record` field: the declaration names its own function), and the marker is the only place the tree says so.
+this tool before it) looked only for `native … function`, so the eleven `native event` declarations in the shipped
+text — `ClientTravel`, `ClientHearSound`, `UpdateVehicle`, `GetFont`, `LogStatLine` and their kin — read as
+"record-only, text-missing" in `inventory/native_residual.csv` while the text spells them plainly. They are marked
+like a function (no `record` field: the declaration names its own function), and the marker is the only place the
+tree says so. `native-reconcile` parses the form now and this pass uses its pattern, so the two cannot drift again.
 """
 import argparse
 import collections
@@ -67,9 +68,9 @@ COLS = ["package", "class", "kind", "function", "record", "native_token", "param
 MARK = "// native - see src/Native/"
 
 # A `native event`: `native event int Main( string Parms )`, `native simulated event DemoPlaySound ( … )`,
-# `native final event Font GetFont( int XRes )`. The return type is optional, the modifiers are not part of the name.
-EVENT = re.compile(r"\bnative\b(?:\s*\([^)]*\))?(?:\s+(?:static|final|simulated|private|protected|const|latent))*"
-                   r"\s+event\s+(?:[\w<>\[\].]+\s+)?(?P<name>\w+)\s*\(", re.I)
+# `native final event Font GetFont( int XRes )`. The pattern is `native-reconcile`'s own (`REC.NATIVE_EVENT`),
+# defined below once that module is loaded: two patterns for one form is how the eleven events went unparsed.
+EVENT = None
 
 
 def load_tool(name):
@@ -83,6 +84,10 @@ def load_tool(name):
 PST = load_tool("pkg-script-text")
 REC = load_tool("native-reconcile")
 OPS = load_tool("native-operators")
+
+# One pattern for the event form, shared with `native-reconcile` so the marking pass and the counting pass cannot
+# disagree about which declarations exist.
+EVENT = REC.NATIVE_EVENT
 
 
 def blank_comments(text):

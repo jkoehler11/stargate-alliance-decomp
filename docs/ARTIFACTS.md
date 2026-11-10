@@ -67,8 +67,8 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_names.csv` | 273 | 4 | `make natives` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |
-| `inventory/native_reconcile.csv` | 96 | 12 | `make native-reconcile` |
-| `inventory/native_residual.csv` | 22 | 7 | `make native-reconcile` |
+| `inventory/native_reconcile.csv` | 96 | 13 | `make native-reconcile` |
+| `inventory/native_residual.csv` | 11 | 7 | `make native-reconcile` |
 | `inventory/native_targets.csv` | 1104 | 14 | `make native-table` |
 | `inventory/native_tokens.csv` | 274 | 5 | `make native-reconcile` |
 | `inventory/natives.csv` | 797 | 6 | `make help` |
@@ -116,5 +116,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-109 artifacts, 128202 rows in total. 0 with no generator.
+109 artifacts, 128191 rows in total. 0 with no generator.
 
