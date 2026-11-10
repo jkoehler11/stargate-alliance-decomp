@@ -661,7 +661,7 @@ listed `UPreview`'s two records as `text-missing` against a literal it invented;
 
 **The slots no package declares are token bodies, and their registration was never in doubt (2026-11-10).** Slots 66,
 67 and 68 are the only store-written `GNatives` entries below the native band, and every store site's setter spells its
-index as an immediate (`c7 05 e8 53 63 00 <index>`, 231 of the 233 sites), so the question this entry used to ask
+index at `0x006353e8` (231 of the 233 as an immediate, the other two through a register), so the question this entry used to ask
 about them -- how they were registered -- is answered. What is still missing is a *name*: 356 live slots split 56 / 16
 / 284 at `0x60` and `0x70` (tokens, extended-native trampolines, declared natives from 112 = `execConcat_StrStr`), and
 three low-band bodies whose bytes fix the stock numbering (11 = bare `ret 8`, 29 = int const, 30 = float const) put

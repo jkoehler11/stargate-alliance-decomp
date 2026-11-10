@@ -1132,9 +1132,11 @@ are limited to expected fields (checksum/timestamp) and documented.
   compiler-generated setters that also write the slot to one dword at `0x006353e8`
   (`c7 05 e8 53 63 00 <index>`): **231 of 233 carry it** (slots 2-543), and the two that do not are slots 0 and 1,
   whose setters store through `eax` (`a3 e8 13 63 00`). The literal and the displacement agree **231 of 231**, so no
-  slot had to be inferred from the address it is stored at. `0x006353e8` is not a second table -- the
-  "614 stores over 9 offsets" structure a previous note put there is `0x00635560` -- and `docs/NATIVE_VM.md` is
-  corrected with the number.
+  slot had to be inferred from the address it is stored at. All 233 annotate the slot (the two that carry no
+  immediate, slots 0 and 1, write it through `edx`), so the artifact gains a `slot_literal` column and `--check`
+  refuses a row whose literal disagrees with its slot. The same count corrects the "614 stores over 9 offsets" line
+  `docs/NATIVE_VM.md` had: the region does take 614 stores, but only offset 0 is these annotations and 307 of them at
+  `0x00635560` are another structure.
 - **Slots 66, 67 and 68 are token bodies, not Object slots.** 356 live slots split 56 below `0x60` / 16 in the
   `0x60`-`0x6F` trampoline band (`0x000464f0`-`0x000467c0`, 48 bytes each) / 284 at `0x70` and above, where the first
   declared index is 112 = `execConcat_StrStr`. Three low-band bodies fix the numbering by their own bytes -- slot 11

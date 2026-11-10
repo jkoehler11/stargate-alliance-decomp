@@ -44,7 +44,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/gnatives_slots.csv` | 356 | 5 | `make natives` |
 | `inventory/gnatives_stubs.csv` | 123 | 8 | `make gnatives-name-stubs` |
 | `inventory/gnatives_table.csv` | 1 | 5 | `make natives` |
-| `inventory/gnatives_write_sites.csv` | 233 | 6 | `make gnatives-writes` |
+| `inventory/gnatives_write_sites.csv` | 233 | 7 | `make gnatives-writes` |
 | `inventory/hud_console_font.csv` | 15 | 3 | `make hud-console-font` |
 | `inventory/hud_console_link.csv` | 1 | 10 | `make hud-link` |
 | `inventory/interaction_setup.csv` | 7 | 7 | `make interaction-setup` |

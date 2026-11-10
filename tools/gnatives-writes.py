@@ -33,8 +33,9 @@ from xbe import Xbe  # noqa: E402
 BASE = 0x006313E8
 MIRROR = 0x006353E8          # the second 4,096-entry table the same initialisers fill, 16 KB past `GNatives`
 SLOTS = 4096
-COLUMNS = ["address", "slot", "form", "value", "value_kind", "function"]
+COLUMNS = ["address", "slot", "form", "value", "value_kind", "slot_literal", "function"]
 STORE_MODRM = {0x05: 0, 0x0D: 1, 0x15: 2, 0x1D: 3, 0x25: 4, 0x2D: 5, 0x35: 6, 0x3D: 7}
+LITERAL_PATTERN = b"\xc7\x05\xe8\x53\x63\x00"      # `mov dword [0x006353e8], imm32`: the slot annotation
 
 
 def functions(path):
@@ -82,6 +83,19 @@ def preceding_value(blob, site, reg):
     return None, ""
 
 
+def slot_literal(blob, site, window=0x40):
+    """The slot index the same setter writes to `0x006353E8`, when it is within `window` bytes of the store.
+
+    Every one of these setters annotates its slot: `c7 05 e8 53 63 00 <index>` six bytes of pattern and the index
+    as an immediate. It is the second, independent statement of which slot the store is for -- the store's own
+    displacement is the first -- so the tool reports both instead of deriving one from the other.
+    """
+    at = blob.rfind(LITERAL_PATTERN, max(0, site - window), site)
+    if at < 0 or at + 10 > len(blob):
+        return None
+    return struct.unpack_from("<I", blob, at + 6)[0]
+
+
 def scan_blocks(blocks, spans, read_va=None, base=BASE):
     """[(va, blob)] -> rows. `read_va` resolves a `table` value to the dword it points at, when it is mapped."""
     rows = []
@@ -113,8 +127,10 @@ def scan_blocks(blocks, spans, read_va=None, base=BASE):
             else:
                 continue
             va = sec_va + i
+            literal = slot_literal(blob, i)
             rows.append({"address": "%#010x" % va, "slot": slot, "form": "%#04x" % ((op << 8) | modrm),
                          "value": "" if value is None else "%#010x" % value, "value_kind": kind,
+                         "slot_literal": "" if literal is None else "%d" % literal,
                          "function": owner(spans, va)})
     rows.sort(key=lambda r: (r["slot"], int(r["address"], 16)))
     return rows
@@ -141,6 +157,10 @@ def report(rows, rt):
     out.append("runtime table %d slots: static and runtime %d, static only %d, runtime only %d"
                % (len(rt), len(both), len(set(slots) - set(rt)), len(set(rt) - set(slots))))
     out.append("of the %d shared slots, %d store the runtime address" % (len(both), len(agree)))
+    lit = [r for r in rows if r["slot_literal"]]
+    same = [r for r in lit if int(r["slot_literal"]) == r["slot"]]
+    out.append("%d of the %d sites also carry their slot index as an immediate at %#010x, %d of them agreeing"
+               % (len(lit), len(rows), MIRROR, len(same)))
     return out
 
 
@@ -153,19 +173,33 @@ SYNTHETIC = bytes([
     0x89, 0x15, 0xE8, 0x13, 0x63, 0x00,        # 27: mov [GNatives+0], edx with no preceding write -> no value
 ])
 
+SYNTHETIC_LIT = bytes([
+    0xC7, 0x05, 0xE8, 0x53, 0x63, 0x00,        # 0: mov dword [0x006353e8], 5   (the slot annotation)
+    0x05, 0x00, 0x00, 0x00,
+    0xC7, 0x05, 0xFC, 0x13, 0x63, 0x00,        # 10: mov dword [GNatives+0x14], imm32 -> slot 5
+    0x00, 0x20, 0x40, 0x00,
+    0xCC,                                      # padding: the scanner stops 10 bytes short of the block's end
+])
+
 
 def synthetic():
     problems = []
-    rows = scan_blocks([(0x1000, SYNTHETIC)], [], read_va=lambda va: 0x00401234 if va == 0x005C2404 else None)
+    rows = scan_blocks([(0x1000, SYNTHETIC), (0x2000, SYNTHETIC_LIT)], [],
+                       read_va=lambda va: 0x00401234 if va == 0x005C2404 else None)
     got = {(r["address"], r["slot"]): r for r in rows}
-    if len(rows) != 3:
-        problems.append("synthetic: expected 3 rows, got %d" % len(rows))
+    if len(rows) != 4:
+        problems.append("synthetic: expected 4 rows, got %d" % len(rows))
     a = got.get(("%#010x" % 0x1005, 0))
     if not a or a["value"] != "0x00401234" or a["value_kind"] != "table":
         problems.append("synthetic: the table-form store did not resolve through the pointer")
     b = got.get(("%#010x" % 0x100B, 2))
     if not b or b["value"] != "0x00401000" or b["value_kind"] != "imm":
         problems.append("synthetic: the immediate-form store did not resolve")
+    if rows and any(r["slot_literal"] for r in rows if r["slot"] != 5):
+        problems.append("synthetic: a store with no annotation in its window was given one")
+    c = got.get(("%#010x" % 0x200A, 5))
+    if not c or c["slot_literal"] != "5" or c["value"] != "0x00402000":
+        problems.append("synthetic: the slot annotation was not read from the setter")
     return problems
 
 
@@ -192,10 +226,15 @@ def check(path):
         if bool(r["value"]) != (r["value_kind"] in ("imm", "table")):
             problems.append("%s: value %r disagrees with kind %r" % (r["address"], r["value"], r["value_kind"]))
             break
+        if r.get("slot_literal") and int(r["slot_literal"]) != int(r["slot"]):
+            problems.append("%s: slot literal %s disagrees with slot %s"
+                            % (r["address"], r["slot_literal"], r["slot"]))
+            break
     if problems:
         print("FAIL gnatives-writes: " + "; ".join(problems[:4]))
         return 1
-    print("ok   gnatives-writes: %d store sites over %d slots" % (len(rows), len({r["slot"] for r in rows})))
+    print("ok   gnatives-writes: %d store sites over %d slots (%d carrying their slot literal)"
+          % (len(rows), len({r["slot"] for r in rows}), sum(1 for r in rows if r.get("slot_literal"))))
     return 0
 
 
@@ -225,8 +264,8 @@ def main():
     for line in report(rows, runtime()):
         print(line)
     near = scan_blocks(blocks, spans, read_va=read_va, base=MIRROR)
-    print("the array 16 KB past the table (%#010x) is not its mirror: %d store sites over %d offsets"
-          % (MIRROR, len(near), len({r["slot"] for r in near})))
+    print("%#010x: %d store sites over %d offsets -- offset 0 is the setters' slot annotation, the rest are "
+          "other structures" % (MIRROR, len(near), len({r["slot"] for r in near})))
     os.makedirs(args.out, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNS, lineterminator="\n")

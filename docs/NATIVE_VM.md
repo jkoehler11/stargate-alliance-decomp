@@ -116,11 +116,14 @@ through `mov [ecx+eax*4], edx`, whose modrm byte encodes no absolute address -- 
 them, whatever it is written to look for. And **the stores live outside the function map**: 2 of 233 sites fall
 inside a symbolised function, because they are compiler-generated setters across `0x0040cb1e`-`0x00413ab2`, one per
 slot. Each setter writes its slot twice -- the value into `GNatives[slot]`, and **the slot index itself** into one
-dword at `0x006353e8` (`c7 05 e8 53 63 00 <index>`). **231 of the 233 carry that literal** (slots 2 through 543 are
-all there); the two that do not are slots 0 and 1, whose setters store through `eax` (`a3 e8 13 63 00`). So the index
-never had to be inferred from the displacement a store targets: the image spells it out, and the two agree in **231 of
-231** cases. `0x006353e8` is not a second table -- the 614-stores-over-9-offsets structure an earlier note conflated
-with it is `0x00635560` -- it is the one dword these setters annotate, and the slot index is what goes in it.
+dword at `0x006353e8` (`c7 05 e8 53 63 00 <index>`). **All 233 annotate the slot, 231 of them as an immediate**
+(slots 2 through 543 are all there) and the remaining two -- slots 0 and 1 -- through a register
+(`89 15 e8 53 63 00`), where the setters' other branch writes the *body* instead. So the index never had to be
+inferred from the displacement a store targets: the image spells it out, and the two agree in **231 of 231** cases.
+`0x006353e8` is not a mirror of the table: the region it starts takes **614 stores over 9 offsets**, of which offset 0
+is these 233 annotations and **307 at `0x00635560`** (mostly from functions no symbol names) are some other structure.
+The artifact reports the annotation as a `slot_literal` column and `--check` refuses a row whose literal disagrees
+with its slot.
 
 ## The slots nobody declares: 66, 67 and 68 are token bodies
 
