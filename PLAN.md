@@ -342,8 +342,19 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       4.2/4.9 own the naming that remains.
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
-      All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
-      class literals (`symbols/xbe_overrides.csv`); 4 are real bodies, documented in `docs/NATIVE_NOTES.md`.
+      All 43 functions decompiled and triaged: 40 are ucpp class-registration stubs, named from the build's own
+class literals (`symbols/xbe_overrides.csv`); 3 are real bodies, documented in `docs/NATIVE_NOTES.md`.
+      **The fortieth stub was read, not decompiled (2026-11-10).** `0x003107b0` is
+`ucpp_Register_GoauldDrone`, object size 2,532: the constructor call does carry `L"GoauldDrone"`, at
+`0x53b42a`, but the decompiler printed that argument as `&DAT_0053b42a` and a text reader took the label
+for "no literal". `tools/ucpp-registrations.py --xbe` resolves the class name from the call site's own
+pushed immediates when the decompile renders fewer than two, and the same read gives the three game
+bodies their assert seams (`Mesh` at `StargateCar.cpp:190`, `DOFResourceRefCount > 0` at
+`SGCameraEffects.cpp:140`, `SharedPixelShaderDOFMaterial == NULL && BlurTargets.Num() == 0` at line 119)
+around the DOF counter at `0x007b93f8`. The extractor now accepts both spellings of the assert helper:
+pinned to `FUN_00058a30` it named **0** of the 40 stubs once `0x00058a30` was named `appAssertFailed`,
+and `--merge`, required when the override file already holds rows the run does not produce, keeps its
+other 38 rows.
 - [x] 4.7 Reverse the ucpp-generated class implementations (from 3.9) and verify against the leaked `.ucpp` sources.
       **Closed from the shipped source** (`docs/PACKAGE_SCRIPT_TEXT.md`, `inventory/native_declarations.csv`): every
       class carries its own `ScriptText`, and the `native` declarations name the C++ functions exactly — `SGOrder` 4
@@ -992,6 +1003,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, U6's four bodies: one was a stub the decompiler mislabelled, three are the DOF counter)
+
+- **`0x003107b0` is `ucpp_Register_GoauldDrone`, and the evidence was in the argument list all along.** The
+  decompiled call reads `FUN_0003af60(0,0x9e4,4,…,&DAT_0053b42a,uStack_4,L"System",…)`; `0x53b42a` is the
+  UTF-16 `L"GoauldDrone"`, pushed at `0x00310806`, and the body asserts `ReturnClass` at
+  `...\stargatevehicles\src\GoauldDrone.cpp:5`. Object size 2,532 makes it the fortieth row in
+  `symbols/xbe_overrides.csv`. **`&DAT_` is a decompiler admission of doubt, not a missing string**, and the
+  listing block beside every decompile still holds the `PUSH` that carries the VA.
+- **The other three of the four are game code, and their seams name them without a decompiler.** Each asserts
+  through `appAssertFailed` at its own source line, and both the expression and the
+  `\<Module>\Src\<File>.cpp` path are immediates: `0x00311520` asserts `Mesh` at `StargateCar.cpp:190`
+  (three seams), `0x00316b10` `DOFResourceRefCount > 0` at `SGCameraEffects.cpp:140`, `0x00318060`
+  `SharedPixelShaderDOFMaterial == NULL && BlurTargets.Num() == 0` at line 119. A third `SGCameraEffects`
+  body outside the 43, `0x00318140`, asserts `DOFResourceRefCount == 0` at line 162, and all three read the
+  counter at `0x007b93f8` — so what "not a registration stub" means here is the depth-of-field resource
+  counter and its constructor/destructor pair.
+- **The extractor had been naming nothing for a while, silently.** `appAssertFailed` was named from its own
+  literal on 2026-10-24, the export prints the name, and `tools/ucpp-registrations.py` was still matching
+  `FUN_00058a30` — so it found no assert in any body, reported **0 registration stubs** against 40 that hold
+  one, and said so only inside a long "left unnamed" list. A pinned symbol is a stale symbol: the tool now
+  accepts both spellings and `--check` drives each. Its `--merge` mode exists because 38 of the override
+  file's 78 rows are other tools' work, which a plain write drops.
+- **What is still open in U6 is the constructor's own name** (`FUN_0003af60`, 493 call sites, installs the
+  `Class` table at `0x004d4870`): the callers now carry class names for the 40 game-module stubs, but the
+  name has to fit the engine-side registrations too, and that is the address-level caller pass PLAN 4.7
+  keeps; until then it stays `FUN_*` per `docs/CONVENTIONS.md`.
 
 ### Execution notes (2026-11-10, the 6,063 bodies are 5,913 analysis targets, and the attribution survives its own literal check)
 

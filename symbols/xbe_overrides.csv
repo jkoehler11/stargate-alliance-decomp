@@ -76,3 +76,4 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00329520,SessionQueryTask_Finshed,own method literal SessionQueryTask::Finshed,SessionQueryTask,,,,Core,,257
 0x00329960,XboxLiveManager_StartStatsLadderRead,own method literal XboxLiveManager::StartStatsLadderRead,XboxLiveManager,,,,Core,XboxLive.h,331
 0x0032aa20,XboxLiveManager_UpdateTask,own method literal XboxLiveManager::UpdateTask,XboxLiveManager,,,,Core,,333
+0x003107b0,ucpp_Register_GoauldDrone,ucpp class registration stub: class literal read by VA from the call site (0x0053b42a; the decompiler printed a &DAT_ for it) + System outer + ReturnClass assert,GoauldDrone,System,2532,5,stargatevehicles,GoauldDrone.cpp,180
