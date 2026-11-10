@@ -81,7 +81,7 @@ tests, not the cap bits it passes to `CreateDevice`; that still needs the runtim
 ## The measurement
 
 <!-- generated:renderer-body-read -->
-129 bodies, 37786 bytes, 194 distinct literals (172 of them not a build path).
+`D3DDrv`: 129 bodies, 37786 bytes, 194 distinct literals (172 of them not a build path).
 
 | translation unit | bodies | bytes | slot calls | cross-module callees |
 |---|---:|---:|---:|---:|

@@ -114,7 +114,7 @@ help:
 	@echo "  module-lists     one address list per module for ExportAt.java, under $(WORK)"
 	@echo "  module-attribution  which translation unit an unnamed function belongs to, by address locality"
 	@echo "  module-census    what the exported bodies are: section, fan-in, literals (needs the dump and the export)"
-	@echo "  body-read        one module's exported bodies: translation unit, literals, callee modules, slots (needs the export)"
+	@echo "  body-read        exported bodies of D3DDrv and XboxDrv: translation unit, literals, callee modules, slots (needs the export)"
 	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
@@ -753,6 +753,8 @@ body-read:
 	@test -d "$(WORK)/module-export/D3DDrv" || { echo "no export under $(WORK)/module-export -- run the exporter first"; exit 2; }
 	@$(PYTHON) tools/body-read.py --module D3DDrv --root "$(WORK)/module-export" \
 		-o inventory/d3ddrv_bodies.csv --write-doc docs/systems/RENDERER.md
+	@$(PYTHON) tools/body-read.py --module XboxDrv --root "$(WORK)/module-export" \
+		-o inventory/xboxdrv_bodies.csv --write-doc docs/systems/XBOX_DRIVER.md
 
 module-census:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }

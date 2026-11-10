@@ -354,6 +354,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `D3DVTXPCAPS_MATERIALSOURCE7` test) plus a vertex-shader lighting path (`VS_Lights_MAX`,
       `Engine_UnPixelShaderMaterial`). So the fork's footprint here is **decisions, not classes**; which
       decisions differ from stock still needs a stock image of this compiler.
+      **Console half also read** (`docs/systems/XBOX_DRIVER.md`, `inventory/xboxdrv_bodies.csv`): `XboxDrv` is
+      **22 bodies, 4,349 bytes** -- `XboxClient.cpp` and `XboxViewport.cpp`, the engine's viewport manager and
+      viewport, not a renderer. `System/Default.ini` names the pair (`ViewportManager=XboxDrv.XboxClient`,
+      `RenderDevice=D3DDrv.D3DRenderDevice`), the viewport body at `0x0032d6c0` is what creates the `RenDev`
+      (`Couldn't create render device!`), `0x0032d860` reads the pad (`ButtonIndex < 8`) and `0x0032dff0` is the
+      XDK's `XBUtil_FindMediaFile` -- so the console renderer is `D3DDrv` plus a 22-body platform shim, and the
+      D3D8 functions themselves stay in the unnamed 302-function `D3D` section (U9/U11). 4.8's native half is
+      now read: what remains is naming (4.2) and a stock image to diff against.
 - [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
       `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
@@ -988,6 +996,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   disagreement in 6,063), so `--check` does not gate on size and the exporter's "0 inside another function" stands.
 - **Next**: the renderer half is small enough to read -- `D3DDrv` is 129 bodies, 22 with a source path, 53 carrying
   prose and 4 a format string -- so 4.8's next measurement is one of those bodies, not another pass over the corpus.
+
+### Execution notes (2026-11-10, the console half: `XboxDrv` is a viewport manager of 22 bodies, and `Default.ini` says so)
+
+- **The module named after the console is not the console's renderer.** One more `body-read.py` pass:
+  `XboxDrv` is 22 bodies and 4,349 bytes against `D3DDrv`'s 129 and 37,786 for the same job description, and its
+  five asserting bodies name `XboxClient.cpp` and `XboxViewport.cpp` under `...\GameXBOX\XboxDrv\Src\`.
+- **The config settles the wiring, not an inference.** `System/Default.ini` carries
+  `ViewportManager=XboxDrv.XboxClient` (with `WinDrv.WindowsClient` commented out) and
+  `RenderDevice=D3DDrv.D3DRenderDevice`, and both classes have class tables in the image (`XboxClient`
+  `0x004c9560`, 196 bytes; `XboxViewport` `0x004c9618`, 464 bytes). `0x0032d6c0` is the body that builds the
+  `RenDev` (`Couldn't create render device!`), so the platform layer *creates* the device rather than calling into
+  it -- the two modules sit on opposite sides of that boundary (4 slot offsets <= `0x5c` here, the device's 20
+  offsets <= `0xbc` there).
+- **The pad arrives through the viewport.** `0x0032d860` asserts `ButtonIndex < 8`, so there is no separate input
+  driver module to look for; and `0x0032dff0` is the XDK's `XBUtil_FindMediaFile(): Could not find file [%s]`, i.e.
+  XDK utility code compiled into the platform module.
+- **Next**: with both halves read, 4.8's remaining native question is naming -- the 302 unnamed bodies of the
+  statically linked `D3D` section (U9's signature work) and the 4,608 `FUN_*` bodies of the corpus. A stock UE2.5
+  image of this compiler is the only thing that would turn "decisions not classes" into a line-by-line diff.
 
 ### Execution notes (2026-11-10, 4.8's renderer half is read: five engine translation units, no call into `XboxDrv`)
 
