@@ -90,7 +90,7 @@ Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2, C
 | `0x002c1bc0` | `Core_UnTemplate` | `Core` | `IpDrv` | 2674 |
 | `0x002d4950` | `Core_UnClass` | `Core` | `IpDrv` | 300 |
 
-Names: `FUN_*` **4581**, module-prefixed **1298**, `ucpp_*` **39**, `Native_*` **26**, `thunk_*` **17**, other **102** of 6063.
+Names: `FUN_*` **3970**, module-prefixed **1297**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **713** of 6063.
 <!-- /generated:module-census -->
 
 ## `Core` is not mostly library code by the evidence the bodies carry

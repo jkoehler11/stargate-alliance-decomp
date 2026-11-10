@@ -1,9 +1,9 @@
 module,functions,named_from_asserts,bytes,mean_size
-(unnamed),13010,0,3094686,237.9
+(unnamed),12095,0,3027245,250.3
+(other named),1131,1131,90470,80.0
 Engine,593,593,298722,503.7
 Core,581,581,388433,668.6
 (dispatch: declared),273,273,83301,305.1
-(other named),216,216,23029,106.6
 (dispatch: slot only),83,83,9761,117.6
 Gui,59,59,14549,246.6
 stargategame,32,32,5612,175.4

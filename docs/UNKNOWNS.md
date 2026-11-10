@@ -539,13 +539,20 @@ stack buffer with `vsnprintf` at `0x003e5cc4`, checks the log-suppression global
 `0x006be0dc`, then dispatches through the output device's vtable), and **returns** — there is no `int3`,
 no abort and no debugger break in the body, so `check`/`verify` here logs and continues.
 
-**Still open: `FUN_0003af60`.** Measured, but not named: 273 bytes, **493 direct call sites**, installs
-the **`Class`** class table (`0x004d4870`, object size 1312, `inventory/xbe_class_table_names.csv`),
-`or`s `0x12` into the flags at `+0x498`, clears `+0x49c`…`+0x51c`, stores 13 parameters at `+0x4a0`…,
-returns `this` with `ret 0x34`, and starts by calling `FUN_0003a5f0` (125 bytes). The ucpp registration
-stubs call it with the class literal and the `System` outer package, so it constructs the class object
-for a script class; what it should be *called* needs the caller-side evidence PLAN 4.7 collects, so it
-stays `FUN_*` — `docs/CONVENTIONS.md` says a hypothesis goes in the comment, not in the symbol.
+**`FUN_0003af60` is classified, and its name is a decision the image does not make (2026-11-10).**
+Measured: 273 bytes, **493 direct call sites**, installs the **`Class`** class table (`0x004d4870`, object
+size 1312), `or`s `0x12` into the flags at `+0x498`, clears `+0x49c`…`+0x51c`, stores 13 parameters at
+`+0x4a0`…, returns `this` with `ret 0x34` (52 bytes of stack arguments), and starts by calling
+`FUN_0003a5f0` (125 bytes, itself a `UnClass.cpp` body). `tools/class-ctors.py` puts it in the population it
+belongs to (`inventory/class_constructors.csv`): `Vtbl_Class` is installed by **four** functions —
+`0x0003ad20` (no stack arguments), `0x0003ae30` (a parent class, 4 bytes), `0x0003af60` (the registration
+overload) and the deleting destructor `0x0003dbd0`. `ctor_Class` therefore goes to `0x0003ad20`, the
+constructor the `Class` registration itself reaches, and `0x0003af60` is **a second constructor of the same
+class**: it constructs a script class's `Class` object from the registration's own data, which is why all 493
+registrations call it. An overload has no name in the image, and `docs/CONVENTIONS.md` forbids numbering one
+into the map, so it stays `FUN_0003af60`. That answers U6's question — *what to call it* — as far as the
+build can: the class is settled, the role is settled, the name is not the image's to give. (`docs/NATIVE_CLASSES.md`
+counts the 915 constructors and destructors that do earn names.)
 
 **Closed 2026-11-10: `0x003107b0` is `ucpp_Register_GoauldDrone`.** Its constructor call does carry the
 class name -- the decompiler printed that argument as `&DAT_0053b42a`, and a reader that trusts the text

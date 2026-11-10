@@ -31,6 +31,13 @@ rerun `make inventory`. A hand-edited CSV is a bug report against the tool.
 - Native functions with no script counterpart: `<Module>_sub_<ADDRESS>` (e.g. `Engine_sub_0014A2C0`),
   where address is the Ghidra address without the `0x`. Never invent a semantic name without evidence;
   put the hypothesis in the comment, not the symbol.
+- A function that stores a measured class table into `[this]` constructs an instance of that class: the
+  vtable store is the build's own statement of what the object is. Name it `ctor_<Class>` when the body
+  returns `this`, and `dtor_<Class>` when it installs the table before any call and returns nothing
+  (`tools/class-ctors.py`, `inventory/class_constructors.csv`). Two independent signs must agree -- the
+  shape of the body and, where a class registration exists, the constructor that registration reaches --
+  and a class with more than one constructor keeps only the registration-reached one named: an overload is
+  recorded in the artifact, never numbered into the map.
 - Library/CRT functions keep their canonical names once matched by signature (`memcpy`, `_malloc`).
 
 ## Marking uncertainty
