@@ -889,6 +889,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the record is a clip, and its name is read rather than stored)
+
+- **The loader pushes all four destinations before its first call, and each callee pops only its own two.**
+  `0x000bce40` is `0x00035b60(Ar, +0x18)`, `0x000bc470(Ar, +0x30)`, `0x000bcb60(Ar, +0x48)`,
+  `0x000bcd30(Ar, +0x54)` once the stack is followed (`ADD ESP,0x8` after each call leaves the later
+  arguments in place) -- which is why Ghidra renders the first call with five arguments and the rest with
+  one, and why the previous pass could only call the arrays "two 0x48-byte record arrays".
+- **The record whose `+0x34` is a name is the clip.** `0x000bcb60` names each `0x48`-byte element with
+  `0x00058850(Ar, elem + 0x34)` -- an inline `FString` read, **not a store**, so the 58-function support
+  export saw no writer by construction. `0x000bb2a0(record, out)` copies that `FString` (`+0x34` data,
+  `+0x38` count), and both consumers (`0x000b5f10`, `0x000b63f0`) call it over the `+0x48` array: **the
+  runtime evaluates clips; `+0x54` is the track array.** A track's `+0x34` is its second group array's base
+  (`0x000bc620`, two `0x000bc330` calls at `+0x30` and `+0x3c`), so the two 0x48-byte families are
+  separable by that field alone. `0x000b4710` does not take the key block from the record at all -- it is
+  in `ECX` from the blend's stack argument (`[ESP + 0x84]` at `0x000b5fe2`), so the caller chooses the track.
+- **Corpus:** 17 clip records against 2,231 track records, clips in four of the eight files (carter 4,
+  jackson 3, oneill 6, tealc 4) and none in the other four, so a clip-only path leaves `grey.lad` and
+  `JAnderson.lad` nothing to evaluate. Instruments: `~/sg1/work/lip11/{out,out2,out3}`,
+  `docs/formats/lipsinc-runtime.md`, U4. No boot, no xemu, no artifact change.
+- **Next**: the `.map` files, which the writer `0x000b55f0` formats and the dump actually ships -- four of
+  them under `System/LIPSincData/Mappings/`, 51 lines each, `[PhonemeToSpeechTargetMapping]`,
+  `NumSpeechTargets=15` and 43 `Phoneme=w0..w14` rows. A slot's group name is empty in all 58,006 groups,
+  so these text tables are the only remaining candidate for what a slot is called.
+
 ### Execution notes (2026-11-09, two record arrays and no name writer)
 
 - **One import of the whole support region answers the name question with a negative.**
