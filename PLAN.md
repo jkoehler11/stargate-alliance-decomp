@@ -236,11 +236,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/native_bodies.csv`, `docs/NATIVE_CLASSES.md` *Every body, marked*): 681 of 681 `native function`
       declarations carry a `// native - see src/Native/<Package>/<Class>.cpp` line naming their token, binder and body
       address, and 660 of them resolve to a body in the image (271 of those 660 bodies are absent from the function
-      census, which no caller list could supply). **Every `operator` declaration is marked too** (778 lines in 2,319
-      files — 681 functions + 97 operators, 0 unmarked, byte-identical on a second pass): 97 of 97 compose a record,
-      85 carry the image's binder literal, and all 97 carry a body address, so a declaration is cross-linked to the
-      C++ that implements it exactly as a function is. This closes 3.9: what is left is the C++ at the target path,
-      which is Phase 4's reconstruction and what the marker names.
+      census, which no caller list could supply). **Every `operator` declaration is marked too** (97 of 97 compose a
+      record, 85 carry the image's binder literal, all 97 a body address) **and so is every `native event`** — 11
+      declarations in 7 classes that every counting pass in the repo matched past, because it looks for
+      `native … function`; all 11 carry the binder literal and a body address. The pass now writes **789 marker
+      lines in 2,319 class files** (681 functions + 97 operators + 11 events, 0 unmarked, byte-identical on a second
+      pass), so every declaration the shipped text carries is cross-linked to the C++ that implements it. This closes
+      3.9: what is left is the C++ at the target path, which is Phase 4's reconstruction and what the marker names.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
@@ -928,6 +930,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, the third declaration form: 11 `native event` bodies, marked — 789 lines)
+
+- **Every counting pass in this repo matches `native … function`, and the text has a third form.** A statement-level
+  scan of all 18 packages finds **11 `native event` declarations in 7 classes** — `Commandlet.Main`,
+  `Actor.DemoPlaySound`, `PlayerController`'s `ClientTravel`/`ClientHearSound`/`ClientValidate`/
+  `ServerValidationResponse`, `SVehicle.UpdateVehicle`, `GUIController.GetMenuFont`/`GetStyle`, `GUIFont.GetFont`,
+  `MasterServerUplink.LogStatLine`. They are exactly the eleven `record-only` rows of
+  `inventory/native_residual.csv` whose verdict is `text-missing`: the text is not missing them, the regex cannot see
+  `event` between `native` and the name, so the residual table has been reporting a phantom gap.
+- **They are marked, and they are the best-covered kind.** 11 of 11 carry the image's binder literal and a body
+  address (the function side has 21 with no body and 12 operators without a binder). 789 marker lines in 2,319 class
+  files, 0 unmarked, byte-identical on a second pass (`ff550c3b…`); against the tree the operator pass left behind the
+  diff is 108 added lines (97 + 11) and 0 removed, every one a marker.
+- **The last two `record-only` rows are the editor package's** (`UPreviewMapListClient.Created` declares only
+  `Super.Created();`, `UPreviewSkinnedButton.SetRenderInfo` spells nothing), so `text-missing` is right for them: the
+  editor build's natives have no text in the shipped packages.
+- **Next measurement, named and not done — a counting change belongs in its own PR:** teach `native-reconcile` the
+  event form and re-derive the residual table. Eleven of the thirteen `record-only` rows move to matched, so the
+  reconciliation reads 683 of 685 (99.7%) instead of 672 (98.1%) and `text-missing` shrinks to the two editor rows.
 
 ### Execution notes (2026-11-10, every native declaration is marked — 778 lines, 681 functions and 97 operators)
 

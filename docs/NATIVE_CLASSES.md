@@ -221,7 +221,7 @@ while `PlayerController`'s 245 KB text is balanced and still declares none of it
 
 The declarations are reconciled above; this is the other half — a reader opening `Pawn.uc` should not have to
 guess that a `native function` has no script to compile. `tools/native-mark.py` writes one line above every native
-declaration in the extracted tree — `native function` and `operator` alike — and one row to
+declaration in the extracted tree — `native function`, `operator` and `native event` alike — and one row to
 `inventory/native_bodies.csv`:
 
 ```
@@ -253,7 +253,10 @@ one join away; `binder`/`binder_va` are the image's own `int<prefix><Class>exec<
 | … composing a record of their own class | **97** |
 | … with the image's binder literal | **85** |
 | … with a body address | **97** |
-| marker lines written | **778** (681 functions + 97 operators, 0 unmarked) |
+| `native event` declarations in the shipped text | **11**, in 7 classes |
+| … with the image's binder literal | **11** |
+| … with a body address | **11** |
+| marker lines written | **789** (681 functions + 97 operators + 11 events, 0 unmarked) |
 
 **The 21 without a body are two known sets, not a new mystery.** Fourteen are **editor-only** — `BrushBuilder`'s 13
 and `MaterialFactory.ConsoleCommand`, classes whose natives are compiled into the editor build rather than into the
@@ -340,6 +343,23 @@ registration pool spells `_StringString` where the script writes `_StrStr`. Nine
 function census; the exception is `Object.ClockwiseFrom_IntInt`, the operator-expansion record the census note above
 already singles out. The thirteen records the compiler synthesises have no declaration, so there is nothing to mark
 for them — that is `inventory/native_tokens.csv`'s `operator-expansion` basis, not a gap in the tree.
+
+**A `native event` is a third declaration form, and every counting pass in this repo was blind to it.**
+`native-reconcile` — and this tool before it — matches `native … function`, so the eleven `native event`
+declarations in the shipped text were the `record-only` rows of `inventory/native_residual.csv` whose verdict reads
+`text-missing`, when the text spells them plainly:
+
+```
+native event ClientTravel( string URL, ETravelType TravelType, bool bItems );
+```
+
+They are marked like a function (the declaration names its own function, so there is no `record` field), and **all
+eleven carry the image's binder literal and a body address** — so for `PlayerController.ClientTravel` the marker is
+the first place the tree says the body is C++ at `0x002163c0`. The two remaining `record-only` rows are the editor
+package's (`UPreviewMapListClient.Created`, which declares only `Super.Created();`, and
+`UPreviewSkinnedButton.SetRenderInfo`, which spells no declaration at all): the editor build's natives have no text
+in the shipped packages, so they stay residual. `native-reconcile` still reports `text-missing` for all thirteen —
+its verdict means "no `native function` line", not "no declaration".
 
 The marker pass is **idempotent by construction** — every line carrying the prefix is removed before the fresh
 markers are inserted, so it is a pure function of the package text: a second run over the 2,319 files hashes

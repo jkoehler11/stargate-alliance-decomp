@@ -32,6 +32,12 @@ no function name to join on, and `(package, class, symbol)` is ambiguous because
 bound), so the line gains a `record` field and nothing else changes; the compiler's own extra records (`++`/`--` and
 the unary family) have no declaration to mark and stay in `inventory/native_tokens.csv` under basis
 `operator-expansion`.
+
+A `native event` is a third declaration form, and it was invisible to every counting pass: `native-reconcile` (and
+this tool before it) looks for `native … function`, so the eleven `native event` declarations in the shipped text —
+`ClientTravel`, `ClientHearSound`, `UpdateVehicle`, `GetFont`, `LogStatLine` and their kin — read as "record-only,
+text-missing" in `inventory/native_residual.csv` while the text spells them plainly. They are marked like a function
+(no `record` field: the declaration names its own function), and the marker is the only place the tree says so.
 """
 import argparse
 import collections
@@ -59,6 +65,11 @@ COLS = ["package", "class", "kind", "function", "record", "native_token", "param
 
 # The one line the tree carries. `lstrip().startswith(MARK)` is the test for "this line is a marker, not source".
 MARK = "// native - see src/Native/"
+
+# A `native event`: `native event int Main( string Parms )`, `native simulated event DemoPlaySound ( … )`,
+# `native final event Font GetFont( int XRes )`. The return type is optional, the modifiers are not part of the name.
+EVENT = re.compile(r"\bnative\b(?:\s*\([^)]*\))?(?:\s+(?:static|final|simulated|private|protected|const|latent))*"
+                   r"\s+event\s+(?:[\w<>\[\].]+\s+)?(?P<name>\w+)\s*\(", re.I)
 
 
 def load_tool(name):
@@ -114,6 +125,9 @@ def declaration_spans(text):
                 for m in OPS.DECL.finditer(chunk):
                     spans.append((start + m.start(), m.group("symbol"),
                                   (m.group("token") or "").strip() or None, "operator"))
+            elif re.search(r"\bevent\b", chunk, re.I):
+                for m in EVENT.finditer(chunk):
+                    spans.append((start + m.start(), m.group("name"), None, "event"))
             elif re.search(r"\bfunction\b", chunk, re.I):
                 fn = REC.NATIVE_FN.search(chunk)
                 off = start + head.start()
@@ -173,6 +187,10 @@ def mark_text(text, rows_by_name, op_rows=()):
             row = rows_by_name.get((name or "").lower())
             if row is None:
                 continue
+        elif kind == "event":
+            row = rows_by_name.get((name or "").lower())
+            if row is None:
+                raise SystemExit("native-mark: the event %r has no row" % (name,))
         elif kind == "operator":
             if ops_seen >= len(op_rows):
                 raise SystemExit("native-mark: more operator declarations than rows (%r)" % (name,))
@@ -264,8 +282,36 @@ def op_rows(pkg_name, cls, text, rows, binder, module):
     return out
 
 
+def event_rows(pkg_name, cls, text, recs, binder, target, module):
+    """A row per `native event` declaration — the third form, joined by the function's own name."""
+    rows = []
+    for name in [n for _o, n, _t, k in declaration_spans(text) if k == "event"]:
+        low = (name or "").lower()
+        rec = recs.get((pkg_name, cls), {}).get(low, {})
+        b = binder.get((cls.lower(), low), {})
+        t = target.get((cls.lower(), low), {})
+        body = (t.get("body") or "").strip()
+        row = collections.OrderedDict()
+        row["package"] = pkg_name
+        row["class"] = cls
+        row["kind"] = "event"
+        row["function"] = name or ""
+        row["record"] = ""
+        row["native_token"] = (rec.get("native_token") or "").strip()
+        row["params"] = (rec.get("parameter_count") or "").strip()
+        row["binder"] = (b.get("binder") or "").strip()
+        row["binder_va"] = (b.get("binder_va") or "").strip()
+        row["body_va"] = body
+        row["module"] = module.get(body.lower(), "not-in-census" if body else "")
+        row["src_native"] = src_native(pkg_name, cls)
+        row["marker"] = ""
+        row["marker"] = render(row)
+        rows.append(row)
+    return rows
+
+
 def class_rows(pkg_name, cls, text, recs, binder, target, module, ops=None):
-    """Every native declaration in one class's text, cross-linked: (function rows, operator rows)."""
+    """Every native declaration in one class's text, cross-linked: (function rows, operator rows, event rows)."""
     decls = [d for d in REC.declarations(text) if d[2] == "function"]
     spans = [(n, i, k) for _o, n, i, k in declaration_spans(text) if k == "function"]
     if [(n, i) for n, i, _k in spans] != [(n, i) for n, i, _k in decls]:
@@ -294,7 +340,8 @@ def class_rows(pkg_name, cls, text, recs, binder, target, module, ops=None):
         row["marker"] = ""
         row["marker"] = render(row)
         rows.append(row)
-    return rows, op_rows(pkg_name, cls, text, (ops or {}).get((pkg_name, cls), []), binder, module)
+    return (rows, op_rows(pkg_name, cls, text, (ops or {}).get((pkg_name, cls), []), binder, module),
+            event_rows(pkg_name, cls, text, recs, binder, target, module))
 
 
 def run(system_dir, outdir, tree=None, walk=False):
@@ -316,24 +363,26 @@ def run(system_dir, outdir, tree=None, walk=False):
             text = PST.script_text(pkg, exp)
             if not text:
                 continue
-            rows, orows = class_rows(pkg_name, cls, text, recs, binder, target, module, ops)
+            rows, orows, erows = class_rows(pkg_name, cls, text, recs, binder, target, module, ops)
             all_rows.extend(rows)
             all_rows.extend(orows)
+            all_rows.extend(erows)
             if tree:
                 # Every class is written, not just the 92 that declare natives: a tree missing the other 2,227
                 # files is an overlay, not the extracted tree, and cannot be diffed against one.
                 body, count = text, 0
-                if rows or orows:
-                    body, count = mark_text(text, {r["function"].lower(): r for r in rows}, orows)
+                if rows or orows or erows:
+                    body, count = mark_text(text, {r["function"].lower(): r for r in rows + erows}, orows)
                 path = os.path.join(tree, pkg_name, cls + ".uc")
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "w", newline="", encoding="latin1") as fh:
                     fh.write(body)
                 marked += count
                 written += 1
-                if count != len(rows) + len(orows):
+                if count != len(rows) + len(orows) + len(erows):
                     mismatched += 1
-                    noparent.append("%s.%s (%d of %d)" % (pkg_name, cls, count, len(rows) + len(orows)))
+                    noparent.append("%s.%s (%d of %d)"
+                                    % (pkg_name, cls, count, len(rows) + len(orows) + len(erows)))
             if walk:
                 for r in rows:
                     print("%-14s %-22s %-26s token=%-5s body=%-10s %s"
@@ -350,6 +399,7 @@ def run(system_dir, outdir, tree=None, walk=False):
         print("wrote %s (%d rows)" % (path, len(all_rows)))
     fn = [r for r in all_rows if r["kind"] == "function"]
     op = [r for r in all_rows if r["kind"] == "operator"]
+    ev = [r for r in all_rows if r["kind"] == "event"]
     total = collections.Counter()
     for r in fn:
         total["decl"] += 1
@@ -371,6 +421,13 @@ def run(system_dir, outdir, tree=None, walk=False):
           " %d with a body address"
           % (ototal["decl"], len({(r["package"], r["class"]) for r in op}), ototal["record"], ototal["binder"],
              ototal["body"]))
+    etotal = collections.Counter()
+    for r in ev:
+        etotal["decl"] += 1
+        etotal["binder"] += bool(r["binder"])
+        etotal["body"] += bool(r["body_va"])
+    print("%d native event declarations in %d classes: %d with the image's binder literal, %d with a body address"
+          % (etotal["decl"], len({(r["package"], r["class"]) for r in ev}), etotal["binder"], etotal["body"]))
     mods = collections.Counter(r["module"] for r in all_rows)
     print("bodies by module attribution: " + ", ".join("%s %d" % (k or "(no body)", v)
                                                        for k, v in mods.most_common()))
@@ -445,6 +502,26 @@ def selftest():
     assert render(rows[0]) == "// native - see src/Native/Core/Object.cpp  token 113 " \
                               "binder intUObjectexecGotoState body 0x0006f4b0", render(rows[0])
     assert src_native("Engine", "Pawn") == "src/Native/Engine/Pawn.cpp"
+    # A `native event` is a third form: the modifiers and the return type are not part of the name, and a plain
+    # `event` (no `native`) is script, not a body.
+    evtext = ("native event int Main( string Parms );\r\n"
+              "native simulated event DemoPlaySound ( sound Sound, optional float Volume );\r\n"
+              "native final event Font GetFont( int XRes );\r\n"
+              "event ScriptedOnly( int A ) { }\r\n")
+    assert [(n, k) for _o, n, _i, k in declaration_spans(evtext)] == \
+        [("Main", "event"), ("DemoPlaySound", "event"), ("GetFont", "event")], \
+        [(n, k) for _o, n, _i, k in declaration_spans(evtext)]
+    erow = {"package": "Core", "class": "Commandlet", "kind": "event", "function": "Main", "record": "",
+            "native_token": "0", "binder": "intUCommandletexecMain", "body_va": "0x00066be0"}
+    evrows = {"main": erow}
+    for n in ("DemoPlaySound", "GetFont"):
+        evrows[n.lower()] = dict(erow, function=n, binder="intXexec" + n, body_va="0x00012345")
+    mx, mcount = mark_text(evtext, evrows, ())
+    assert mcount == 3, "marked %d events, expected 3" % mcount
+    assert "// native - see src/Native/Core/Commandlet.cpp  token 0 binder intUCommandletexecMain " \
+           "body 0x00066be0\r\nnative event int Main( string Parms );" in mx, mx
+    assert "ScriptedOnly" not in [l for l in mx.splitlines() if l.lstrip().startswith(MARK)][0]
+    cases += 1
     assert render(orow) == "// native - see src/Native/Core/Object.cpp  token 150 record Less_IntInt " \
                            "binder intUObjectexecLess_IntInt body 0x00041234", render(orow)
     cases += 1
@@ -467,12 +544,12 @@ def check(path=None):
         if key in seen:
             bad.append("line %d: duplicate key %s" % (i, ".".join(key)))
         seen.add(key)
-        if r["kind"] not in ("function", "operator"):
-            bad.append("line %d: kind %r is neither a function nor an operator" % (i, r["kind"]))
+        if r["kind"] not in ("function", "operator", "event"):
+            bad.append("line %d: kind %r is not a function, an operator or an event" % (i, r["kind"]))
         if r["kind"] == "operator" and not r["record"]:
             bad.append("line %d: an operator row names no record" % i)
-        if r["kind"] == "function" and r["record"]:
-            bad.append("line %d: a function row names a record" % i)
+        if r["kind"] in ("function", "event") and r["record"]:
+            bad.append("line %d: a %s row names a record" % (i, r["kind"]))
         if r["src_native"] != src_native(r["package"], r["class"]):
             bad.append("line %d: src_native %r does not follow the row's package/class" % (i, r["src_native"]))
         if r["marker"] != render(r):
