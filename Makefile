@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
 
 help:
 	@echo "targets:"
@@ -69,6 +69,7 @@ help:
 	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
+	@echo "  native-bodies mark every native body in the extracted tree + the cross-link table (PLAN 3.9, needs the dump)"
 	@echo "  rebuild       run the rebuild pipeline stage by stage (PLAN 6.1; needs the dump)"
 	@echo "  serialize-slots  every class's Serialize override from its class table (PLAN 3.7; needs the dump)"
 	@echo "  opcode-table  the walker's opcode map and per-group operand rules (PLAN 3.7; needs the dump)"
@@ -246,6 +247,9 @@ ci:
 	@$(PYTHON) tools/native-table.py --check
 	@$(PYTHON) -m py_compile tools/native-reconcile.py && echo "ok   native-reconcile: tools/native-reconcile.py compiles"
 	@$(PYTHON) tools/native-reconcile.py --selftest
+	@$(PYTHON) -m py_compile tools/native-mark.py && echo "ok   native-mark: tools/native-mark.py compiles"
+	@$(PYTHON) tools/native-mark.py --selftest
+	@$(PYTHON) tools/native-mark.py --check
 	@$(PYTHON) -m py_compile tools/map-list-order.py && echo "ok   map-list-order: tools/map-list-order.py compiles"
 	@$(PYTHON) tools/map-list-order.py --selftest
 	@$(PYTHON) tools/class-reach.py --check
@@ -443,6 +447,14 @@ defaults-per-class:
 native-reconcile:
 	@$(PYTHON) tools/native-reconcile.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@echo "wrote inventory/native_reconcile.csv, inventory/native_tokens.csv and inventory/native_residual.csv"
+
+# Mark every native body in the extracted script tree and write the cross-link table (PLAN 3.9,
+# docs/NATIVE_CLASSES.md). The tree is game-derived and goes to $(WORK); what is committed is the table,
+# whose `marker` column is the exact line written above each declaration.
+native-bodies:
+	@$(PYTHON) tools/native-mark.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory \
+		--tree "$(WORK)/UnrealScript-marked"
+	@echo "wrote inventory/native_bodies.csv and $(WORK)/UnrealScript-marked"
 
 # Which classes override Serialize, and where the code is (docs/NATIVE_VM.md, PLAN 3.7). Needs the image.
 class-overrides:

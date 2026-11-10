@@ -82,6 +82,10 @@ if [ -n "${SG1_DUMP:-}" ]; then
     # Dump-gated for the same reason: the declarations live in the packages.
     stage native-reconcile python3 tools/native-reconcile.py \
         "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o "$out/native"
+    # Dump-gated: the markers go into a tree under $WORK, the cross-link table is what is compared.
+    stage native-bodies sh -c "python3 tools/native-mark.py \
+        '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System' -o '$out/nativebodies' \
+        && cmp '$out/nativebodies/native_bodies.csv' inventory/native_bodies.csv"
     # Dump-gated: the module is in the image. Regenerate and diff.
     stage lipsinc-runtime sh -c "python3 tools/image-strings.py --topic lipsinc \
         --xbe '$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe' -o '$out/lipsinc' \
