@@ -118,6 +118,31 @@ inside a symbolised function, because they are compiler-generated accessor pairs
 setter per slot, each with a branch that also writes the same value 16 KB later at `0x006353e8`. That second array
 is *not* a mirror of the table (614 stores over 9 offsets), so do not read one as the other.
 
+## The other side of the blind spot: the record that carries the body
+
+A slot with no store site is not a slot without evidence. Every native body also sits in a `{pool name, body}`
+record in the initialised part of `.data` -- 1,104 records over 203 per-class blocks, 883 distinct names
+(`tools/native-table.py`, `inventory/native_targets.csv`) -- so pairing the runtime table's values with those
+records changes the question from "which instruction writes this slot" to "which record carries this body"
+(`tools/gnatives-records.py`, `make gnatives-records`, `inventory/gnatives_records.csv`, `--check` in `make ci`):
+
+| Measurement | Value |
+|---|---|
+| storeless slots that are a record's body | **113 of the 123** |
+| slots named by neither a store nor a record | **10** |
+| stored slots that are also recorded | 230 of 233 (the record and the store name the same body) |
+| records whose body more than one slot holds | 0 |
+
+A record is `{name pointer, body}` and the body has to land in `.text`, so a live slot whose value is a record's
+body was filled from that record. Those 113 are written by a walk over the record block, not by a per-slot store,
+which is exactly why a store-instruction scan cannot see them -- the instrument's blind spot, not missing data.
+
+**The 10 that remain** are slots 302, 333, 384, 385, 501, 503, 509, 511, 528 and 561. Each value does appear as a
+dword in `.data`, but the dword beside it is not a binder-pool name (`0x00000000`, the float `0x3f000000`, or
+another `.text` address), so those 8-byte pairs are not `{name, body}` records and this pass cannot name them. Nine
+of the ten sit in two neighbourhoods (`0x00104840`-`0x00112980` and `0x0020cb70`-`0x0020cbf0`), which is where a
+second registration shape would live if the build has one.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.

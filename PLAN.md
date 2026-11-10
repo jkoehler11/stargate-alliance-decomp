@@ -1004,6 +1004,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, U7's blind spots: 113 of the storeless slots are a record's body, 10 are not)
+
+- **The store scan's 123 blind slots are mostly not blind.** `tools/gnatives-records.py` pairs each live `GNatives`
+  slot's value with the `{pool name, body}` records in `.data` (883 distinct bodies over 1,104 records) and **113 of
+  the 123** storeless slots are a record's body -- so the loader walks the record block instead of storing per slot,
+  which is exactly why a store-instruction scan cannot see them. **230 of the 233** stored slots are recorded too,
+  so the two instruments agree wherever they overlap, and no record's body is held by two slots.
+- **Ten slots remain**: 302, 333, 384, 385, 501, 503, 509, 511, 528, 561. Their values do appear as dwords in
+  `.data`, but the dword beside each is a null, the float `0x3f000000` or another `.text` address, so those 8-byte
+  pairs are not `{name, body}` records. Nine of the ten sit in two neighbourhoods
+  (`0x00104840`-`0x00112980`, `0x0020cb70`-`0x0020cbf0`), which is where a second registration shape would live if
+  the build has one -- that is the next read, not this run's.
+- **Artifact, target, check.** `inventory/gnatives_records.csv` (356 rows, one per live slot: the store flag, the
+  record VA and the record's own name), `make gnatives-records`, and a synthetic `--check` that `make ci` drives
+  through `tool-check-contract`. It reads the image and two committed CSVs, so it needs neither the boot nor the
+  symbol map: the record's own name is the pool's spelling of the function.
+
 ### Execution notes (2026-11-10, the registration-site census gets its target, and the artifact still reproduces)
 
 - **`inventory/registration_sites.csv` was the last artifact `docs/ARTIFACTS.md` flagged "no target runs it"**, and
