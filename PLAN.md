@@ -310,7 +310,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       2.5 MB span (11.7% coverage), `Core`'s 574 occupy 570 runs over 3.2 MB (11.9%), and mean functions-per-run is
       1.0–1.1 for every module. There is no module range to split; a module is a set of addresses, so
       `--lists $WORK/export` emits `<module>.txt` for `ExportAt.java @<file>` and per-module work is one exporter pass
-      per list. What remains for 4.5 is the Ghidra-project half, and it now has an input instead of an assumption.
+      per list. **That input is now measured**: the lists are the union of the assert rule and the locality rule
+      (`inventory/function_module_attribution.csv`), 6,063 of 14,957 functions, and `inventory/module_export_plan.csv`
+      (`make module-split`) prices them per module at **5,826 contiguous runs, mean 1.04 functions per run** — 3,125
+      runs for `Core` alone. So the exporter pass is per *address list*, not per project: there is no region to cut,
+      and a per-module Ghidra project would save nothing over one project plus a list (`docs/MODULE_SPLIT.md`).
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
@@ -932,6 +936,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, 4.5's per-module input: 12 lists, 6,063 addresses, and the pass costs 5,826 runs)
+
+- **The lists now carry the file, not the asserts.** `make module-split --lists` reads both attribution artifacts:
+  the name/override rule (1,348) plus `inventory/function_module_attribution.csv`'s propagated labels (4,715), so one
+  list per module holds **6,063 of 14,957 addresses (40.54%)** instead of 1,348. `inventory/function_modules.csv` is
+  unchanged byte for byte and still reconciles with the rollup; `--check` also recomputes the new plan and fails on a
+  stale row.
+- **`inventory/module_export_plan.csv` prices the pass.** Per module: functions, asserted vs propagated, bytes,
+  contiguous runs, first and last address — `Core` 3,238 in 3,125 runs, `Engine` 2,094 in 2,002, then `IpDrv` 157 and
+  nine more; 1.75 MB of code, **5,826 runs at a mean of 1.04 functions per run**.
+- **So the unit is the address list, not the project.** 4.5's wording assumed a module had a region; it has a scatter,
+  and `ExportAt.java` takes one address per invocation (`@<file>` loops it), so a module's pass is 3,125 exporter
+  rounds, and a per-module Ghidra project buys nothing over one kept project plus a list. The doc says this with the
+  numbers rather than leaving the next session to re-derive it (`docs/MODULE_SPLIT.md`).
+- **Not run**: the exporter pass itself. The plan sizes it; no body has been exported from these lists yet, and the
+  doc's `## Not measured` says so.
+- **Next**: either pay one module's pass (`Gameplay` 24 addresses is the cheap sample that proves the loop end to end)
+  or take 4.8's native half from `Core`/`Engine`, which are 88% of the covered functions.
 
 ### Execution notes (2026-11-10, the attribution artifact was a scoring run's output: 6,063 after the fix)
 
