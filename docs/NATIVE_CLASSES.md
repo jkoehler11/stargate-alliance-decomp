@@ -216,3 +216,74 @@ is only partly right: 3 of the 13 owning classes' texts end unbalanced (`Actor`,
 while `PlayerController`'s 245 KB text is balanced and still declares none of its four `Client*`/`Server*` records.
 
 
+
+## Every body, marked (PLAN 3.9)
+
+The declarations are reconciled above; this is the other half — a reader opening `Pawn.uc` should not have to
+guess that a `native function` has no script to compile. `tools/native-mark.py` writes one line above every
+`native function` declaration in the extracted tree and one row to `inventory/native_bodies.csv`:
+
+```
+// native - see src/Native/Engine/Pawn.cpp  token 0 binder intAPawnexecSetViewPitch body 0x00195340
+simulated native function SetViewPitch( int NewPitch );
+```
+
+The tree itself is game-derived source and stays under `$WORK` (`make native-bodies` writes
+`$(WORK)/UnrealScript-marked`, 2,319 class files); what is committed is the table, and its `marker` column holds the
+exact line written above each declaration — so the tree's provenance is auditable from git without the text. The
+row key `(package, class, function)` is the key `inventory/natives.csv` uses, so `token`, `params` and the flags are
+one join away; `binder`/`binder_va` are the image's own `int<prefix><Class>exec<Function>` literal
+(`inventory/native_binder_names.csv`) and `body_va` the body pointer the native registration table gives
+(`inventory/native_targets.csv`).
+
+    python3 tools/native-mark.py DUMP/System -o inventory --tree $WORK/UnrealScript-marked
+    python3 tools/native-mark.py --check        # the committed table, no dump; in `make ci`
+    python3 tools/native-mark.py --selftest     # the parser and the marker pass on fixtures; in `make ci`
+
+| what | declarations |
+|---|---:|
+| `native function` declarations in the shipped text | **681**, in 92 classes |
+| … with a record in `inventory/natives.csv` | **674** |
+| … with the image's binder literal | **660** |
+| … with a body address | **660** |
+| … whose body is a function in `symbols/xbox_functions.csv` | **389** |
+| … with no body anywhere in the image | **21** |
+| marker lines written | **681** (0 unmarked) |
+
+**The 21 without a body are two known sets, not a new mystery.** Fourteen are **editor-only** — `BrushBuilder`'s 13
+and `MaterialFactory.ConsoleCommand`, classes whose natives are compiled into the editor build rather than into the
+shipped XBE — and the other seven are exactly the `declaration-unbound` rows the residual table above already names
+(`Weapon.GetErrorVec`, `Weapon.GetFireStart`, `ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`,
+`StargateWeapon.updateLeadLag`, `HitEffectManager.Update`, `HitEffectManager.SetupFade`). The two tools agreeing on
+the same seven is the useful part: a declaration nothing binds gets no marker target, rather than a guessed address.
+
+**271 of the 660 bodies are not functions in the census at all.** `function_modules.csv` attributes 389 of them
+(217 `(unnamed)`, 166 `(dispatch: declared)`, 1 `(dispatch: slot only)`, 5 named) and has no row for the rest. That
+is not a defect in the join: the function census is call-graph-driven, and a native's only reference *is* the
+registration table — nothing calls it directly. So the native table is an independent source of **274 function
+starts** (of its 883 distinct body addresses) that the analysis never made, which is a correction to the
+14,957-function denominator in `docs/PATH.md` rather than to any one caller list.
+
+**The `src/Native` path segment is the package, and that is safe.** Only 5 of the 660 bodies carry a module name in
+`function_modules.csv`, and every one agrees with its declaring package (`Core.Object.StaticClearConfig`→`Core`,
+`Engine.Actor.KRemoveLifterFromBone`/`KMakeRagdollAvailable`→`Engine`, `Canvas.WrapText`→`Engine`,
+`GUI.GUIMultiColumnList.SortList`→`Gui`, modulo case). One file per class is also the shape the engine's own source
+uses, so the target of a reconstruction is `src/Native/<Package>/<Class>.cpp` and a function is a symbol in it.
+
+**The 92 `operator` declarations are deliberately not marked.** One `operator` statement expands into typed
+records — `Core.Object`'s 86 `operator` lines become 103 records — so a single marker line would name one of them
+and misrepresent the rest; the expansion is per record in `inventory/native_tokens.csv` under basis
+`operator-expansion`. Marking an operator therefore needs a marker that names a *set*, which is a different
+decision from this one.
+
+The marker pass is **idempotent by construction** — every line carrying the prefix is removed before the fresh
+markers are inserted, so it is a pure function of the package text: a second run over the 2,319 files hashes
+identically, and a marker whose module or address changed is replaced rather than duplicated.
+
+## `tools/native-mark.py`'s `--check`
+
+`--check` answers from `inventory/native_bodies.csv` alone (no dump, no write): every `(package, class, function)`
+appears once, `src_native` follows the row's own package and class, and `marker` is the render of its own row — so
+a hand-edited row, or a row regenerated after the marker format changed, fails the gate instead of shipping a table
+the tree does not match. `--selftest` covers the parser (a wrapped declaration, a commented-out one, native *data*
+`var native const int`, an operator) and the pass itself (marker text, offsets, idempotency, a stale marker).

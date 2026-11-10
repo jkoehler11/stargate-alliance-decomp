@@ -232,7 +232,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       record** (`inventory/native_tokens.csv`, `docs/NATIVE_CLASSES.md` *Every token has a basis*): of the 274 records
       that carry a token, 166 spell it in their class's text, 107 are operator signatures the compiler expands, 0 come
       from a declaration that spelled no index (`Core.Object`'s "17" are all operator records) and 1 is an artefact of
-      the editor package `UPreview`. Marking the bodies and the `src/Native` cross-links remain.
+      the editor package `UPreview`. **The bodies are marked and cross-linked** (`tools/native-mark.py`,
+      `inventory/native_bodies.csv`, `docs/NATIVE_CLASSES.md` *Every body, marked*): 681 of 681 `native function`
+      declarations carry a `// native - see src/Native/<Package>/<Class>.cpp` line naming their token, binder and body
+      address, and 660 of them resolve to a body in the image (271 of those 660 bodies are absent from the function
+      census, which no caller list could supply). **Remaining: the 92 `operator` declarations carry no marker** — one
+      statement expands into several records, so a single line would name one and lie about the rest.
 - [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
@@ -920,6 +925,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, every native body is marked — and 271 of the 660 sit outside the function census)
+
+- **One tool, one table, and the tree stays out of git.** `tools/native-mark.py` writes a marker line above every
+  `native function` declaration in the extracted tree and `inventory/native_bodies.csv` (681 rows: `package, class,
+  function, native_token, params, binder, binder_va, body_va, module, src_native, marker`). The `marker` column is
+  the exact line written into the tree, so the game-derived tree is regenerable and auditable without being
+  committed. 681 markers in 92 classes, 0 unmarked, 2,319 class files written, and a second pass hashes identically.
+- **Coverage, measured:** 674 of the 681 have a `natives.csv` record, 660 carry the image's binder literal *and* a
+  body address, and the 21 with neither are the 14 editor-only natives (`BrushBuilder` 13,
+  `MaterialFactory.ConsoleCommand`) plus exactly the 7 `declaration-unbound` rows the residual table names — the two
+  instruments agree on the same seven.
+- **271 of the 660 bodies are not functions in `symbols/xbox_functions.csv`.** A native has no direct caller — its
+  only reference is the registration table — so a call-graph census never makes it a function. 274 of the native
+  table's 883 distinct body addresses are in that position: the native registration table is an independent source
+  of function starts, and the 14,957-function denominator in `docs/PATH.md` is short by them.
+- **`src/Native/<Package>/<Class>.cpp` is a safe target path:** of the 5 bodies whose module attribution is named
+  at all, every one agrees with its declaring package. One file per class is also the engine's own source shape.
+- **Operators stay unmarked on purpose:** 92 `operator` declarations expand into 107 records, so a per-declaration
+  marker would name one record of several. Their per-record mapping is `inventory/native_tokens.csv`.
 
 ### Execution notes (2026-11-09, the save path loads and cannot write)
 
