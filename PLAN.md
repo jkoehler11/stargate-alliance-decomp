@@ -301,7 +301,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       all 883 names an address statically (`tools/native-table.py`, `inventory/native_targets.csv`), 261 of 261
       agreeing with this runtime dump and 769 of 797 declarations covered — and 275 of those bodies are function
       entries the analysis does not have, so the same table seeds `inventory/function_modules.csv`.
-- [~] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
+- [x] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
       **The split is per function, not per range — measured.** `inventory/function_modules.csv`
       (`make module-split`, `tools/module-split.py`, `--check` in `make ci`) attributes all 14,957 functions to a module
@@ -315,6 +315,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       (`make module-split`) prices them per module at **5,826 contiguous runs, mean 1.04 functions per run** — 3,125
       runs for `Core` alone. So the exporter pass is per *address list*, not per project: there is no region to cut,
       and a per-module Ghidra project would save nothing over one project plus a list (`docs/MODULE_SPLIT.md`).
+      **The pass is paid (2026-11-10).** `tools/ghidra/export-module.sh` imports once and runs one round per module
+      list: **12 rounds for all 6,063 bodies in 268 s**, 6,063 exported at their own address (0 inside, 0 missing),
+      4,625 still `FUN_*`, 2 aborted decompiles, 19.5 MB of C under `$WORK` (`inventory/module_export_rounds.csv`).
+      So the split's deliverable is complete as *lists plus a driver* — there is no per-module project to build, and
+      4.2/4.9 own the naming that remains.
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
       value: DeathGlider, AlkeshBomber, GoauldDrone, StargateCopter, Teltak, StargateHover, vehicle physics).
       All 43 functions decompiled and triaged: 39 are ucpp class-registration stubs, named from the build's own
@@ -936,6 +941,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, the exporter pass costs 12 rounds, not 5,826: 6,063 bodies in 268 s)
+
+- **One `@file` is one invocation.** `ExportAt.java` loops the addresses of the file it was handed inside that same
+  invocation, so the pass is one import plus **one `-process` round per module**, not one round per address: the
+  previous note's "3,125 exporter rounds for `Core`" read a per-*address* cost where the cost is per *round*.
+  `tools/ghidra/export-module.sh` drives the real shape, keeps the project at `build/ghidra-module` (the import is the
+  reusable half; `run-analysis.sh` deletes it) and times every round, so the summary is the committable artifact.
+- **All twelve lists, measured.** 6,063 of 6,063 exported at their own address — 0 fell inside another function, 0
+  missing — so the attributed address set is a subset of the function census `XbePost` names from. 268 s of rounds
+  (`Core` 179 s, `Engine` 36 s, the ten small modules 4–6 s each), 19,454,009 bytes of C, **44 ms per body**; Core's
+  bodies cost 55 ms each against Engine's 17 ms, so cost tracks body size and not address count.
+- **Deterministic.** Two full runs minutes apart wrote the same 6,063 files with identical per-module byte counts
+  (266 s and 268 s), so a re-run after a tool change diffs cleanly.
+- **The residue is naming, not decompilation.** 4,625 of the 6,063 bodies are still `FUN_*` and 2 decompiles aborted
+  (both in `Core`). The pass exports code; it cannot name it — that is 4.2/4.9's work, and the unnamed share per
+  module (80% `Core`, 71% `Engine`, 58–86% for the rest) is its to-do list.
+- **Next**: 4.8's native half now has its input — the bodies exist under `$WORK/module-export` — and what is open is
+  classification rather than export: whether `Core`/`Engine` are mostly library code is settled by a classifier over
+  the exported bodies (section, call fan-in, string refs), not by another pass. The 8,894 unreached functions still
+  have no list to run over.
 
 ### Execution notes (2026-11-10, 4.5's per-module input: 12 lists, 6,063 addresses, and the pass costs 5,826 runs)
 
