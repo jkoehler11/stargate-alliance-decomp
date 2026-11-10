@@ -735,6 +735,13 @@ read them from (`docs/IMPORTS.md`): the device is created inside the statically 
 **Why it matters.** The renderer-side natives (PLAN 4.8) behave the way they do because of the caps the
 device was created with; knowing them also says which Xbox features the fork relies on.
 
+**Measured 2026-11-10, static half.** The create path is now located in `D3DDrv`: `0x002b27f0` (2,513 bytes)
+logs the three decisions it takes -- back-buffer format, depth-buffer format, and a vertex-processing mode
+chosen among `hardware`/`software`/`mixed` after a `D3DVTXPCAPS_MATERIALSOURCE7` test -- and its siblings
+enumerate display modes and check depth-stencil compatibility. So *which capability the code tests* is
+readable (`docs/systems/RENDERER.md`); the cap bits it passes to `CreateDevice` are still arguments at run
+time, and this entry stays open.
+
 **What would settle it.** Break on `CreateDevice` in a live run (xemu's GDB stub plus
 `symbols/xbox.sym.o`, `docs/SYMBOLS.md`), read the `D3DPRESENT_PARAMETERS`/cap arguments, and record
 them. Until then nothing is claimed, and the cap bit constants that appear in `.rdata` are not evidence

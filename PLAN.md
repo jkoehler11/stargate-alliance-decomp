@@ -343,8 +343,17 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       1,310 declare their own source path and **837 of the 848 whose path is a `.cpp` name the module they were
       attributed to** — so the lists are the right populations and the work list is **5,913 bodies**. `Core` is not
       mostly library *by evidence*: 564 of its 3,238 declare a source path and 2,110 carry no literal at all, so the
-      library population is located rather than named (4.2's signatures, U9). Renderer half: `D3DDrv` is 129 bodies,
-      22 with a source path.
+      library population is located rather than named (4.2's signatures, U9).
+      **Renderer half now read** (`docs/systems/RENDERER.md`, `inventory/d3ddrv_bodies.csv`, `make body-read`):
+      the 22 bodies that name their own file are **five engine translation units** — `D3DRenderDevice`,
+      `D3DRenderInterface`, `D3DRenderState`, `D3DResource`, `D3DMaterialState` — built from
+      `...\GameXBOX\D3DDrv\Src\`, and no body in the module carries a Stargate-specific name. The module
+      **calls into no body of `XboxDrv`** and names no asset, and it reaches the device through **20 vtable
+      offsets <= `0xbc`** in 11 bodies. Its own strings narrate a stock D3D8 device creation path (back-buffer
+      and depth-buffer format probing, `hardware`/`software`/`mixed` vertex processing, a
+      `D3DVTXPCAPS_MATERIALSOURCE7` test) plus a vertex-shader lighting path (`VS_Lights_MAX`,
+      `Engine_UnPixelShaderMaterial`). So the fork's footprint here is **decisions, not classes**; which
+      decisions differ from stock still needs a stock image of this compiler.
 - [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
       `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
@@ -979,6 +988,34 @@ are limited to expected fields (checksum/timestamp) and documented.
   disagreement in 6,063), so `--check` does not gate on size and the exporter's "0 inside another function" stands.
 - **Next**: the renderer half is small enough to read -- `D3DDrv` is 129 bodies, 22 with a source path, 53 carrying
   prose and 4 a format string -- so 4.8's next measurement is one of those bodies, not another pass over the corpus.
+
+### Execution notes (2026-11-10, 4.8's renderer half is read: five engine translation units, no call into `XboxDrv`)
+
+- **One module, four readings per body, one instrument.** `tools/body-read.py` reads `$WORK/module-export/<module>`
+  and commits one row per body: the translation unit the body's own assert names, its literal counts (paths vs
+  text), its callees by module (address-form names through `function_module_attribution.csv`, module-prefixed
+  names by prefix, runtime names as `runtime`), and the byte offsets of `call [obj + off]` sites. 129 `D3DDrv`
+  bodies, 37,786 bytes, 194 distinct literals of which 172 are not a build path; 22 bodies name their file —
+  21 a `.cpp`, one a `.h`.
+- **The module is the engine's renderer, not a game-specific one.** The five `.cpp` names in those asserts are
+  `D3DRenderDevice`, `D3DRenderInterface`, `D3DRenderState`, `D3DResource`, `D3DMaterialState`, all under
+  `...\GameXBOX\D3DDrv\Src\`, and the class labels the asserts produce are the engine's D3D8 driver
+  vocabulary -- zero bodies carry a Stargate name. The fork compiled the engine's renderer into the game image
+  rather than shipping a console-specific render device of its own.
+- **The negative is the finding.** No body makes a resolved call into `XboxDrv` (cross-module callees are
+  `Core` 29 bodies and `Engine` 18), no body references an asset path (the export-wide count is 9, none here),
+  and the device is reached through a table: 11 bodies, **20** distinct offsets, all `<= 0xbc`. Naming that
+  table is 4.2's signature work, so the offsets are recorded as offsets.
+- **What the strings say the device path does**, in the module's own words: display-mode enumeration and
+  back-/depth-buffer format selection (`Best-match display mode: %ix%ix%i@%i`, `CheckDepthStencilMatch failed`),
+  device creation with a vertex-processing choice among `hardware`/`software`/`mixed` after testing
+  `D3DVTXPCAPS_MATERIALSOURCE7`, resolution changes guarded by a render-device lock, vertex/index buffer
+  creation, and a vertex-shader lighting path (`VS_Lights_MAX` in 4 bodies, `Engine_UnPixelShaderMaterial`
+  called from three 85-byte siblings). `docs/UNKNOWNS.md` U11 stays open: the create path names the capability
+  it tests, not the cap bits it passes.
+- **Next**: `XboxDrv` is the other half -- 4.8's console-specific question is whether the fork's Xbox code (the
+  module with no assert-derived names at all) touches the render device's table or is only the D3D8/push-buffer
+  library, which one `body-read.py --module XboxDrv` pass would size the same way.
 
 ### Execution notes (2026-11-10, the exporter pass costs 12 rounds, not 5,826: 6,063 bodies in 268 s)
 
