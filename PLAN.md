@@ -989,7 +989,29 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x00138680` does (`+0x30`, `+0x11c`), and reads that writer as 7 arguments from `RET 0x1c`. `--check` is a
   synthetic self-test, so `make ci` keeps it honest without the dump.
 - **Next**: the rebuild side — write a checkpoint package and its `[Saved Games]` row from a level, using the
-  writer's seven-argument shape and the index's `SetString(Section, Key, Value, Filename)` row.
+  writer's seven-argument shape and the index's `SetString(Section, Key, Value, Filename)` row. **Measured in the
+  note below**: the row half is done, the package half stops at the save file's export-entry layout.
+
+### Execution notes (2026-11-09, the checkpoint write side: row done, export table unread)
+
+- **The row writer works, and the reader confirms it.** `tools/sgs-write.py` (`make sgs-write`) adds one row under
+  `[Saved Games]` in a *copy* of `DefaultProfile.sgp`: 142 keys → 143, the row lands in that section, CRLF kept,
+  no other byte changed, and a second add of the same key is refused (the index is a map). `tools/sgs-profile.py`
+  re-reads the copy as `2 sections, 154 rows` / `[Saved Games] 143 keys`, so writer and reader agree.
+- **Two of the three package tables already re-encode byte-identically in 9 of 9 checkpoints** (names, imports),
+  which pins those regions of a rebuild. The export table is the blocker: it desyncs under the `.u` layout and
+  runs off the end of the file.
+- **The width is not the difference.** 210 entries in 3,401 bytes is 16.2 each; `M00.unr`'s 5,078 entries in
+  86,534 bytes is 17.0 — so both are compact entries. It is not a field order either: 256 uniform width
+  combinations and 15,120 ordered layouts (three width profiles x every permutation of the seven fields) give zero
+  candidates that produce 210 plausible entries. The next measurement is therefore *which* structural difference a
+  save package has (a table sorted differently, an entry field that is a reference rather than an index, or a
+  table that does not start at `export_offset`), and a `.unr` parses with the same reader in the same run, so this
+  is not a reader regression.
+- **Instrument**: `tools/sgs-write.py` (`make sgs-write`, dump-side) — reports per file which tables re-encode,
+  where a rebuild stops, and the row it inserted; `--check` is a synthetic package plus a synthetic profile, so
+  `make ci` keeps it honest without the dump. It exits 1 only when a checkpoint parses and then rebuilds
+  *differently*, because the unread table is a known state rather than a failure.
 
 ### Execution notes (2026-11-09, the save path's dispatcher is a console command and its writer is vtable slot 59)
 

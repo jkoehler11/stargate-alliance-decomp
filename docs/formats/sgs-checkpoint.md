@@ -364,3 +364,35 @@ A rebuilt build needs checkpoints that the profile lists and `LoadSaveGame` acce
 checkpoint is a package, that work is: write the package, keep its class/property layout identical,
 and add the slot to the profile's `[Saved Games]` section. The nine shipped files are the fixture set
 for verifying a rebuilt one.
+
+## The write side, measured (2026-11-09)
+
+`tools/sgs-write.py` (`make sgs-write`) exercises the two artefacts a resumable checkpoint needs — the package and
+the `[Saved Games]` row — without a boot, and writes only under `$WORK`. One half is done and the other is one
+measurement away, which is the useful split to know before writing a rebuilt checkpoint.
+
+**The row half works.** On a *copy* of `DefaultProfile.sgp`, adding one row under `[Saved Games]` takes the section
+from 142 keys to 143, lands the row inside that section, keeps the file's CRLF endings, and changes no other byte;
+adding the same key again is refused, because the index is a map. The copy re-reads through
+`tools/sgs-profile.py` as `2 sections, 154 rows` / `[Saved Games] 143 keys`, so the writer and the reader agree
+rather than the writer grading its own work.
+
+**The package half stops at the export table, and that is the measurement.** All nine shipped checkpoints parse
+their header (matching the census above) and their name and import tables, and both of those re-encode
+**byte-identically from the model in 9 of 9 files** — so two of the three tables of a rebuild are already exact,
+including every name and every import row. The export table is not:
+
+- 210 entries occupy 3,401 bytes (16.2 each) in `C_M02A_Drillsite`; `M00.unr` has 5,078 entries in 86,534 bytes
+  (17.0 each), so the *width* is normal for a compact entry and the difference is in what the fields mean.
+- Walking the table with the `.u` layout (compact class/super/name/size/offset, plain `int32` Outer and Flags)
+  desyncs inside it and runs off the end of the file.
+- It is not a field *order* either: 256 uniform encodings (every combination of compact/`u32`/`u16`/`u8` widths
+  with Flags kept 32-bit) and 15,120 ordered layouts (three plausible width profiles × all 5,040 permutations of
+  the seven fields) produce **zero** candidates that yield 210 plausible entries.
+- A `.unr` map parses with the same reader in the same run, so this is a save-package layout, not a reader
+  regression.
+
+So a rebuilt checkpoint is blocked on exactly one thing — the save file's export-entry layout — and not on the
+payloads, which the writer already carries through unchanged. Until that lands, `sgs-write.py` reports where it
+stops instead of guessing, and exits 0 for that known state (exit 1 is reserved for a checkpoint that parses and
+then rebuilds *differently*, which would be a real regression).
