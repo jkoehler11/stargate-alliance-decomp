@@ -499,8 +499,18 @@ array at `+0xa8` (count `+0x38`, names `+0x28`, descriptions `+0x34`) and writes
 index has 142 rows in four key shapes and **none of its files is present, while none of the nine shipped `.sgs` is
 indexed** — the index is an April 2005 mission-7 session, the files are the writer's `C_<description>.sgs`.
 **Still open:** the serializer's exact arity (seven words are pushed, the caller cleans 16 — its epilogue is not
-where its Ghidra body size puts it) and `LoadSaveGameInfo`'s single reader at `0x001226a0` (7,486 bytes, the
-save/load/check neighbourhood beside the package-check readers of PLAN 6.2).
+where its Ghidra body size puts it) and whether slot `+0x34` is a `SetString`.
+
+**Corrected 2026-11-09: `0x001226a0` is not a reader, and the native half has no hole.** That 7,486-byte body is the
+engine's **startup name table** — 290 wide literals, one `FName` construction each, each stored into its own global
+across `0x007aae9c`–`0x007b5dbc`, in alphabetical order from `Accept` to `ZoneChange`. `LoadSaveGameInfo` is row 118
+of 290 (`0x00505b14`, site `0x0012318a`), between `LIPSincAnimEnd` and `Login`. After the names the body resolves the
+`Engine` and `Core` packages, walks the global class array running the registration step with flag `0x2002`, and logs
+`Unreal engine initialized`. So the earlier "the save/load/check module begins here" was an artefact of the
+literal-xref route: every engine name appears once in this table, so the body an xref finds is always the one that
+looks like it starts that subsystem. The whole path is the loader `0x00134d40`, the writer `0x00138680` and the
+profile writer `FUN_001be520`; what remains is the writer's serializer arity, not a missing reader. Depth:
+`docs/formats/sgs-checkpoint.md`, *Not a reader*.
 
 ## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
 

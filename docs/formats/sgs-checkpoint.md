@@ -290,6 +290,28 @@ what `SetString(Section, Key, Value, Filename)` takes and the fourth argument is
 which fits; the trailing `1` does not, so the callee is *probably* the config setter but is **not confirmed**.
 `FUN_001be520` ends `RET 0x10`.
 
+## Not a reader: `0x001226a0` is the engine's name table (2026-11-09)
+
+U5 called this 7,486-byte body "where the save/load/check module begins" because it is the one function that
+references the wide literal `LoadSaveGameInfo`. It is the engine's **startup name table**: 290 wide literals, one
+`FName` construction each (`CALL 0x0005bed0` with the find mode `2`), each stored into its own global across
+`0x007aae9c`–`0x007b5dbc` (`0x001226bf`–`0x00124171`, 296 stores). The names are the engine's exec/event
+vocabulary in alphabetical order — `Accept`, `AcceptInventory`, … `ZoneChange` — with four appended in a block of
+their own (`OnQueryCompleted`, `CalculateRating`, `ReceivedPlayerSkill`, `UpdatePlayerSkill`, the XOnline/XNet
+pair behind them). `LoadSaveGameInfo` is **row 118 of 290** (`0x00505b14`, site `0x0012318a`), between
+`LIPSincAnimEnd` and `Login`; `PreSaveGame` is row 189 and `PostLoadSavedGame` row 176 — same list, nothing
+special about the save names.
+
+After the names the body does three things: resolves the packages `Engine` (`0x004c7948`, sites `0x00124273` and
+`0x001242d4`) and `Core` (`0x004c793c`, site `0x00124367`), walks the global class array (`DAT_006c21b0`, count
+`DAT_006c21b4`) running the class registration step with flag `0x2002`, and logs `Unreal engine initialized`
+(`0x0050494c`, site `0x001243b9`).
+
+**Consequence for U5.** The save/load native half has **no missing reader**: the loader `0x00134d40`, the writer
+`0x00138680` and the profile writer `FUN_001be520` are the whole path. The literal-xref route is what made this
+look like a lead — every engine name appears exactly once in a table like this, so the body found by an xref
+search will always look like the module that "starts" that subsystem.
+
 ## Using this for the rebuild (PLAN 6.4 / 7.2)
 
 A rebuilt build needs checkpoints that the profile lists and `LoadSaveGame` accepts. Since a
