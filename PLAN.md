@@ -1004,6 +1004,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the other 467 stubs: the name side is code too)
+
+- **The registrar's `-1` branch has 467 callers.** Every one of them pushes `&body` and `-1` instead of an index, and
+  `tools/gnatives-name-stubs.py` measures what that set is: **467** stubs, 467 distinct bodies, a distinct
+  `{pool name, body}` record for each (no name twice), **0** bodies shared with the 123 indexed stubs and **0** in
+  the live table -- exactly what `cmp eax,-1; jz ret` predicts. So 467 of `native_targets.csv`'s 1,104 records are
+  the name side of these stubs, and the index-less registration path is now visible as code rather than inferred
+  from the binder.
+- **Coverage, and the remainder named.** 467 of the 523 index-less declarations in `inventory/natives.csv` have a
+  `-1` stub; the 56 that do not are 41 `Object`, 13 `BrushBuilder` (editor-only), 1 `MaterialFactory` and 1
+  `UPreviewSkinnedButton` -- printed by the tool, not left as a total.
+- **One encoding, two artifacts.** `gnatives-name-stubs.py` imports `find_auto_stubs` from `tools/gnatives-stubs.py`
+  rather than re-writing the pattern, so the two artifacts cannot drift on what a stub is.
+- **Artifact, target, check.** `inventory/gnatives_name_stubs.csv` (467 rows: stub, block, body pointer, body, name,
+  class, declaration, in-live-table), `make gnatives-name-stubs`, and a synthetic `--check` (the shape, the majority
+  registrar, the block rule, the name join). Image plus three committed CSVs; no boot, no Ghidra.
+
 ### Execution notes (2026-11-10, U7 closes: the storeless 123 are 123 stubs, and the ten sit in them)
 
 - **The blind 123 were never blind, and they are not records either.** Each storeless slot has its own registration

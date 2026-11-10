@@ -639,6 +639,13 @@ named in the artifact; what they lack is a script declarer, not an address. The 
 accordingly: the 123 are stub-registered, not filled by a walk over the record block, though the record table does
 carry most of the same bodies for its own purpose.
 
+**The other half of the registration file is measured too (2026-11-10).** 467 further stubs push `-1` where the
+indexed ones push a slot: 467 distinct bodies, 467 distinct `{name, body}` records (no name twice), **0** bodies
+shared with the indexed set and **0** in the live table -- the registrar returns for `-1`, so these are the
+name-resolved natives, and 467 of the 523 index-less declarations have one (`tools/gnatives-name-stubs.py`, `make
+gnatives-name-stubs`, `inventory/gnatives_name_stubs.csv`). The 56 without a stub are Object 41, BrushBuilder 13,
+MaterialFactory 1 and UPreviewSkinnedButton 1.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).

@@ -185,6 +185,31 @@ One caveat stays open: an index names the slot, not the function. The ten have n
 (the 83 engine-internal execs of U7), so their names stay `Native_<index>` until a dump after a mission load
 registers the classes the front end does not touch.
 
+## The name side: 467 stubs that push `-1`
+
+The registrar's `-1` branch is not dead code. The same stub shape appears **467** more times in `.text` with `6a ff`
+(`push -1`) where the index goes, and all 467 reach the same registrar (`tools/gnatives-name-stubs.py`, `make
+gnatives-name-stubs`, `inventory/gnatives_name_stubs.csv`, `--check` in `make ci`):
+
+| Measurement | Value |
+|---|---|
+| stubs that push `-1` | **467**, each pushing a different `.data` dword |
+| bodies they push | 467 distinct `.text` addresses, **none** of them a live slot value |
+| bodies also registered by an indexed stub | **0** -- the two stub sets are disjoint |
+| bodies that carry a `{pool name, body}` record | **467 of 467**, and the 467 names are distinct |
+| bodies whose record matches an index-less declaration | **467 of the 523** |
+| blocks the stubs were generated in | 34, the largest 56 stubs, 8 of one stub |
+
+So 467 of `native_targets.csv`'s 1,104 records are the **name side** of these stubs -- one record per stub, no name
+twice -- and the registrar discards the call (`cmp eax,-1; jz ret`), which is why none of the 467 bodies is in the
+table at the main menu. Those natives are the ones resolved by name later, the path `tools/native-binder.py` reads
+from the other side. The 123 indexed stubs and these 467 share **no** body: the two halves of the stub file are
+registration by slot and registration by name.
+
+The 56 index-less declarations with no `-1` stub are **41 `Object`**, 13 `BrushBuilder` (the editor-only brush
+class), 1 `MaterialFactory` and 1 `UPreviewSkinnedButton`. The tool prints that composition rather than folding the
+remainder into the total.
+
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 
 An earlier pass reported `GNatives` at `0x00598e00` with 994 entries and named 270 functions from it.
