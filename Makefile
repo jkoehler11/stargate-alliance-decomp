@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
 
 help:
 	@echo "targets:"
@@ -44,6 +44,7 @@ help:
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
 	@echo "  sgs-profile   reconcile the profile's [Saved Games] index with the checkpoints on disc"
 	@echo "  argc-pass     read a native's arity, calling convention and call sites (VA=0x0006f4b0)"
+	@echo "  sgs-write     rebuild a checkpoint package and add its [Saved Games] row (needs the dump)"
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
 	@echo "  ucpp-vtables  resolve the class tables of the six ucpp-native classes (PLAN 4.7)"
 	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
@@ -187,6 +188,14 @@ argc-pass:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
 	$(PYTHON) tools/argc-pass.py --va $(or $(VA),0x0006f4b0) \
 		--dump "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15"
+
+# The write side of a checkpoint is two artefacts, so this target writes both and then reads them back: the
+# package is rebuilt from the parsed model, the `[Saved Games]` row goes into a copy of the profile. It reports
+# where a rebuild stops rather than guessing, and exits 1 only when a file parses and still rebuilds differently.
+sgs-write:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
+	$(PYTHON) tools/sgs-write.py --dump "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" \
+		--out "$(WORK)/sgs-write"
 
 # Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.
 oracle-diff:
