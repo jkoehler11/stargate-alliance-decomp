@@ -474,9 +474,17 @@ report cites file-level evidence for each claim.
       are inside the buffer. **The stage is wired**: `tools/build.sh --target hybrid` runs it over the
       tree it places (`--records` points the join at the source's check data) and passes on the shipped
       packages — **17 of 17** records whose package the build places reproduce, and `UPreview.u` is the
-      one `System/*.u` package with no record in the file. Still open: which path invokes the check at
-      runtime (probe), and writing the `Packages.md5` package ourselves through the container writer
-      rather than copying the original.
+      one `System/*.u` package with no record in the file. The writer half is done too: the database is
+      fully parameterised by the records (seven names, two imports, one `PackageCheckInfoN` export per
+      record, the same `names < payloads < imports < exports` order the container uses), so
+      `tools/package-check-emit.py` (`make package-check-emit`, `--check` in `make ci`) assembles it
+      through the writer's own encoders and **reproduces the shipped 20,111-byte file byte for byte from
+      its 168 records**; the 78-byte record frame (`00`, the GUID string, `01`, the digest string, `01`,
+      seven zeros) is measured from all 168 and reproduced verbatim, because its filler bytes never vary
+      and their meaning is unmeasured. `build.sh --target hybrid` now runs `write-check-data` — **18
+      records for the 18 packages it places**, 17 of them the cook's and one new (`UPreview.u`), read back
+      18 of 18 through `ue2pkg` — and still checks the tree against the *source's* records, so the two
+      halves stay independent. Still open: which path invokes the check at runtime (probe).
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
