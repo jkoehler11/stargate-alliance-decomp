@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read
 
 help:
 	@echo "targets:"
@@ -116,6 +116,7 @@ help:
 	@echo "  module-census    what the exported bodies are: section, fan-in, literals (needs the dump and the export)"
 	@echo "  body-read        exported bodies of D3DDrv and XboxDrv: translation unit, literals, callee modules, slots (needs the export)"
 	@echo "  library-bodies   the library sections' own evidence: strings, source paths, RTTI, direct calls (needs the dump)"
+	@echo "  body-name        which bodies name themselves from their own literals or a byte-identical twin (needs the export)"
 	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
@@ -750,6 +751,11 @@ module-lists:
 # $(WORK) plus the image, so it is not part of `make ci`; its `--check` is, and it needs no dump.
 # PLAN 4.8: read one module's exported bodies -- the translation unit each asserts, its literals, its
 # callee modules and its vtable slots. Needs the export but not the image; its `--check` is in `make ci`.
+body-name:
+	@test -d "$(WORK)/module-export/Engine" || { echo "no export under $(WORK)/module-export -- run the exporter first"; exit 2; }
+	@$(PYTHON) tools/body-name.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
+		-o inventory/body_names.csv --write-doc docs/NAMING.md --write-overrides
+
 library-bodies:
 	@test -f "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" || { \
 		echo "no default.xbe under $(SG1_DUMP) -- export SG1_DUMP to the dump's parent directory"; exit 2; }
