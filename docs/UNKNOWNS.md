@@ -622,6 +622,13 @@ no absolute address -- so a store scan can see two thirds of the table and can n
 (`docs/NATIVE_VM.md`, `inventory/gnatives_write_sites.csv`). A partial static map used to be one of the three ways
 this entry could have been closed; it is now a check on the way it was closed.
 
+**The blind 123 are mostly records, not unknown (2026-11-10).** The store scan's blind spot is answered from
+`.data`: **113 of the 123** storeless slots hold the body of a `{pool name, body}` record, so those slots are filled
+by a walk over the record block rather than by a per-slot store (`tools/gnatives-records.py`, `make
+gnatives-records`, `inventory/gnatives_records.csv`). Ten are left -- 302, 333, 384, 385, 501, 503, 509, 511, 528
+and 561 -- each with its body present in `.data` but not as a `{name, body}` record. The rest of the entry stands:
+83 registered slots have no declarer, and a full map still waits on a dump after a mission load.
+
 **Still open.** 83 registered slots have no declarer (engine-internal execs, named `Native_<index>`),
 and the table is incomplete because natives are registered with the class that declares them: a full
 map needs a dump after a mission loads, which is blocked on input automation (`docs/XEMU.md`).
