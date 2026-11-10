@@ -44,8 +44,8 @@ CENSUS = os.path.join(ROOT, "inventory", "module_export_census.csv")
 ATTRIBUTION = os.path.join(ROOT, "inventory", "function_module_attribution.csv")
 DOC_MARK = ("<!-- generated:renderer-body-read -->", "<!-- /generated:renderer-body-read -->")
 
-COLUMNS = ["address", "name", "class", "size", "tunit", "literals", "text", "calls", "intra", "cross",
-           "unnamed", "runtime", "slots", "slot_max", "slot_offsets", "modules"]
+COLUMNS = ["module", "address", "name", "class", "size", "tunit", "literals", "text", "calls", "intra",
+           "cross", "unnamed", "runtime", "slots", "slot_max", "slot_offsets", "modules"]
 
 MODULE_NAMES = ["Core", "Engine", "Gui", "IpDrv", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
                 "Gameplay", "Fire", "stargategame", "stargatevehicles"]
@@ -147,7 +147,7 @@ def read_module(root, module, attribution, classes):
         text = sorted({s for s in lits if s not in src})
         counts, mods, slots = callees_of(body, name, attribution, module)
         rows.append({
-            "address": "0x%08x" % addr, "_va": addr, "name": name,
+            "module": module, "address": "0x%08x" % addr, "_va": addr, "name": name,
             "class": classes.get("0x%08x" % addr, ""), "size": size,
             "tunit": tunit_of(lits), "literals": len(set(lits)), "text": len(text),
             "calls": sum(counts.values()), **counts,
@@ -205,9 +205,10 @@ def report(rows, module=""):
     out = []
     if not rows:
         return "no bodies"
+    module = module or rows[0].get("module", "")
     total = sum(r["size"] for r in rows)
-    out.append("%d bodies, %d bytes, %d distinct literals (%d of them not a build path)."
-               % (len(rows), total, sum(r["literals"] for r in rows), sum(r["text"] for r in rows)))
+    out.append("`%s`: %d bodies, %d bytes, %d distinct literals (%d of them not a build path)."
+               % (module, len(rows), total, sum(r["literals"] for r in rows), sum(r["text"] for r in rows)))
 
     units = {}
     for r in rows:
