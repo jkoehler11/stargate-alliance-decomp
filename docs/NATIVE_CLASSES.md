@@ -88,7 +88,11 @@ functions unimplemented.
   `0x004c7ac8`, `0x004c7c78`, `0x004c9348`, `0x004c93d0`, `0x004c94b0` and 18 more, listed in the CSV
   with the evidence column saying so. Their constructors exist (the `mov [this], table` store is
   there) but the registration that names them does not push both a literal and a followable thunk,
-  so the link is missing rather than the table.
+  so the link is missing rather than the table. **Measured 2026-11-10**: 24 of those 27 sites push the
+  same pointer (`0x00034650`, a thunk to `0x00062ce0`, which installs table `0x004dd2a8`), so the missing
+  link is one shared base constructor rather than 26 separate ones; the subclass relation names three of
+  the 26 from their children (`Property`, `LevelBase`, `Player`) and none of the rest, which are leaves.
+  `tools/class-tree-edges.py`, `docs/NATIVE_CLASS_TREE.md`.
 - **Arguments 10 and 12.** `0x4084004` and `&DAT_000624d0` are the same in every registration read;
   what they mean is not established, so no column is claimed for them.
 
