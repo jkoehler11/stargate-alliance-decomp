@@ -16,7 +16,7 @@ One directory per run under `build/rebuild/<UTC>/`, one log per stage, `summary.
 | # | stage | what it proves | today |
 |---|---|---|---|
 | 1 | `writer-relay` | every package re-lays through the writer's own placement path and comes back byte-identical (18 of 18) | **proven** |
-| 2 | `rebuild-identity` | each package is assembled from header + tables + payloads and matches the original byte for byte (18 of 18, 100% of bytes accounted for, zero gaps) | **proven** |
+| 2 | `rebuild-identity` | each package is assembled from header + tables + payloads and matches the original byte for byte (**100 of 100** — 18 `.u`, 9 `.sgs` checkpoints, 73 `.unr` maps; 100% of bytes accounted for, zero gaps in every file) | **proven** |
 | 3 | `source-tree` | the 2,319 classes' own source is written out as one `.uc` per class | **proven** |
 | 4 | `merge-defaults` | each class's `defaultproperties` block is merged into that tree (1,664 of 2,319 classes) | **proven** |
 | 5 | `compile` | a compiler turns that tree into `.u` payloads | **missing**: no `ucc` matching package version 130 / licensee 4 |
@@ -62,6 +62,11 @@ test needs generated payloads — the compiler's output, timestamps and name ord
 write path is reproducible; it does not prove a *build* is. 6.3 stays open until stage 5 exists, and this document
 says so rather than banking the pass.
 
+Stage 2 covers every container kind rather than the game packages alone: 18 `.u`, the nine `.sgs` checkpoints and
+the 73 `.unr` maps all reassemble byte for byte through the same writer (`make pkg-rebuild-all`). The checkpoints
+only joined it once the save package's export entry was read — an export whose serial size is 0 writes no serial
+offset, which is 316 of the 1,776 save exports and a byte lost at each of them (`docs/formats/sgs-checkpoint.md`).
+
 ## What the script does not do
 
 * **It never writes into the repository.** Everything lands under `build/` (git-ignored) or `$WORK`.
@@ -74,7 +79,8 @@ says so rather than banking the pass.
 ```
 make rebuild              # == tools/build.sh --dry-run with SG1_DUMP
 make pkg-relay            # stage 1 alone
-make pkg-rebuild          # stage 2 alone
+make pkg-rebuild          # stage 2 alone, on the 18 game packages
+make pkg-rebuild-all      # stage 2 over every container kind: .u, .sgs checkpoints and .unr maps
 make extract-script       # stage 3 alone
 make defaults-tree        # stage 4 alone
 ```

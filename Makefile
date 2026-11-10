@@ -4,6 +4,10 @@
 #   make verify-dump SG1_DUMP=/path/to/dump
 # game-derived output lives here, outside the repo
 SG1_DUMP ?= $(HOME)/sg1/dump
+# the game directory, and the package directory every package-side target reads; both were appended inline in
+# some targets and left undefined in others (`make pkg-rebuild` with no SYSTEM_DIR ran the writer on "")
+GAME_DIR   ?= $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15
+SYSTEM_DIR ?= $(GAME_DIR)/System
 WORK     ?= $(HOME)/sg1/work
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
@@ -14,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write
 
 help:
 	@echo "targets:"
@@ -34,6 +38,7 @@ help:
 	@echo "  squad-rosters  read every SQUAD_* roster class (needs the dump)"
 	@echo "  pkg-verify    re-encode every package's tables and diff against the original"
 	@echo "  pkg-rebuild   rebuild whole packages from header + tables + payloads and diff"
+	@echo "  pkg-rebuild-all  the same over .u, .sgs and .unr — every container kind the build ships"
 	@echo "  pkg-layout    census of where each region sits in a package"
 	@echo "  pkg-resize    re-lay every package with one payload resized and round-trip it"
 	@echo "  compile-readiness  per-class check of what a rebuild would have (3.6 inputs)"
@@ -301,6 +306,14 @@ pkg-verify:
 
 pkg-rebuild:
 	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --rebuild
+
+# The same writer over every package kind the build ships: game packages (.u), checkpoints (.sgs) and maps (.unr).
+# A container claim that only covers one extension is a claim about that extension, not about the writer.
+pkg-rebuild-all:
+	@test -d "$(SYSTEM_DIR)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --rebuild | tail -2
+	@$(PYTHON) tools/pkg-write.py "$(GAME_DIR)/System/Profiles/DefaultProfile" --rebuild --ext .sgs | tail -2
+	@$(PYTHON) tools/pkg-write.py "$(GAME_DIR)/Maps" --rebuild --ext .unr | tail -2
 
 pkg-layout:
 	@$(PYTHON) tools/pkg-write.py "$(SYSTEM_DIR)" --layout --write inventory

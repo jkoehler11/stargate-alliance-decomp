@@ -25,6 +25,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ue2pkg import TAG, Package  # noqa: E402
 
 
+def package_files(directory, exts=(".u",)):
+    """Files in `directory` whose extension is in `exts`, sorted. Every mode used to assume `.u`; a checkpoint
+    is a `.sgs` package and a map is a `.unr`, and the same writer has to place all three."""
+    return sorted(f for f in os.listdir(directory)
+                  if os.path.splitext(f)[1].lower() in tuple(e.lower() for e in exts))
+
+
 def write_index(value):
     """Inverse of `Package.read_index`: sign in bit 7 of the first byte, continuation in bit 6, then bit 7."""
     negative = value < 0
@@ -324,14 +331,14 @@ def compare(label, want, got):
         want[at:at + 8].hex(" ") or "-", got[at:at + 8].hex(" ") or "-")
 
 
-def relay_report(system_dir, out_dir):
+def relay_report(system_dir, out_dir, exts=(".u",)):
     """Re-lay each package through the writer's placement path with nothing resized; the bytes must not change.
 
     This is the same `relayout` that `--resize` uses, called with a zero delta, and keeping it that one function is
     deliberate: a placement rule that drifts between the "prove it" mode and the "move it" mode would make the proof
     describe code that no longer runs.
     """
-    files = sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u"))
+    files = package_files(system_dir, exts)
     ok_all, bad = 0, []
     for fname in files:
         pkg = Package(os.path.join(system_dir, fname))
@@ -361,9 +368,9 @@ def relay_report(system_dir, out_dir):
     return 0 if not bad else 1
 
 
-def resize_report(system_dir, delta, export_index, out_dir):
+def resize_report(system_dir, delta, export_index, out_dir, exts=(".u",)):
     """Resize a payload in every package and require the file to come back through the reader and round-trip."""
-    files = sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u"))
+    files = package_files(system_dir, exts)
     rows, ok_all, tested = [], 0, 0
     tmpdir = tempfile.mkdtemp(prefix="pkg-resize-")
     try:
@@ -511,17 +518,21 @@ def main():
                          "are sampled per package unless --export names one")
     ap.add_argument("--export", metavar="INDEX", type=int,
                     help="0-based export index to resize (default: the sampled set)")
+    ap.add_argument("--ext", default=".u",
+                    help="comma-separated extensions to treat as packages (default .u; a checkpoint is .sgs, a "
+                         "map is .unr, and the same writer places all of them)")
     ap.add_argument("--write", metavar="DIR",
                     help="write the packages this run assembled (--rebuild) or resized (--resize) into DIR, "
                          "plus package_relayout.csv for a resize (use $WORK, never the repository)")
     args = ap.parse_args()
+    exts = tuple((e if e.startswith(".") else "." + e) for e in args.ext.split(",") if e.strip())
     if args.selftest or not args.system_dir:
         return selftest()
 
     if args.layout:
         rows = []
         print("%-20s %-28s %-28s %-28s %s" % ("package", "names", "imports", "exports", "order"))
-        for fname in sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u")):
+        for fname in package_files(args.system_dir, exts):
             pkg = Package(os.path.join(args.system_dir, fname))
             pkg.read_names()
             pkg.read_imports()
@@ -552,11 +563,11 @@ def main():
         return 0
 
     if args.relay:
-        return relay_report(args.system_dir, args.write)
+        return relay_report(args.system_dir, args.write, exts)
     if args.resize is not None:
-        return resize_report(args.system_dir, args.resize, args.export, args.write)
+        return resize_report(args.system_dir, args.resize, args.export, args.write, exts)
 
-    files = sorted(f for f in os.listdir(args.system_dir) if f.lower().endswith(".u"))
+    files = package_files(args.system_dir, exts)
     ok_all, bad = 0, []
     placed = [0]
     for fname in files:
