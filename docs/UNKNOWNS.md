@@ -754,12 +754,33 @@ enumerate display modes and check depth-stencil compatibility. So *which capabil
 readable (`docs/systems/RENDERER.md`); the cap bits it passes to `CreateDevice` are still arguments at run
 time, and this entry stays open.
 
-**What would settle it.** Break on `CreateDevice` in a live run (xemu's GDB stub plus
-`symbols/xbox.sym.o`, `docs/SYMBOLS.md`), read the `D3DPRESENT_PARAMETERS`/cap arguments, and record
-them. Until then nothing is claimed, and the cap bit constants that appear in `.rdata` are not evidence
-of which were requested.
+**Measured 2026-11-10, runtime half -- the entry is answered.** `tools/xemu/bp-args.py` (`Z0` breakpoints
+over the GDB stub) stops at the log sites and at the create call itself. The call is `0x002b2dcd` into the
+statically linked D3D8 at `0x44f040`, six pushes at `0x2b2dc5..0x2b2dcc`: adapter `[esi+0x46d8]`, device type
+**1** (HAL, a literal push), the focus window from the render interface's slot `0xa8`, `BehaviorFlags` **0x40**
+(hardware vertex processing, again a literal push), `pPresentationParameters` = `esi+0x4708` (`lea ebx` then
+`push ebx`), and a sixth argument `[esi+0x4704]` that is zero at the call.
 
-**Status.** Open, needs a runtime probe (7.3 territory), not more static reading.
+The block, read out of the guest at the `Creating device` log (`0x2b2da3`), is thirteen dwords in the SDK's
+`D3DPRESENT_PARAMETERS` order: width **640**, height **480**, back-buffer format **30**, back-buffer count **1**,
+multisample **0x11**, swap effect **1**, device window 0 (the handle is passed separately), windowed **0**,
+auto depth-stencil **1**, depth format **42**, `Flags` **0x121**, refresh **0**, presentation interval **1**.
+Three independent readings agree, because the same function logs each decision and the arguments are on the
+stack at its `GLog` call: `Best-match display mode: 640x480x32@60` (`0x2b2b29`), `Using back-buffer format
+30(32-bit)` (`0x2b2cda`), `Using depth-buffer format 42(32-bit)` (`0x2b2d48`) and `Enter SetRes: 640x480
+Fullscreen 1` (`0x2b285b`). So the renderer asks for a **fullscreen 640x480 HAL device with hardware vertex
+processing, a 32-bit back buffer and a 32-bit depth-stencil buffer**; 30 and 42 are this build's `D3DFORMAT`
+values, not SDK names.
+
+**Not measured, and what would settle it.** The two `D3DFORMAT` enumerants stay unnamed -- naming them needs the
+Xbox D3D8 header, which neither the dump nor this repository carries, so the numbers are the measurement and a
+name would be a guess. What the device *reports* (`GetDeviceCaps`, the caps the code tests afterwards) is a
+second call site nobody has stopped on: stop on its slot with `bp-args.py --break` and read the out-pointer. The
+multisample value `0x11` is a compile-time literal (`mov DWORD PTR [esi+0x4718],0x11`) whose Xbox meaning is not
+in this repository either.
+
+**Status.** Answered for the create request; `tools/xemu/bp-args.py` is the instrument and the three stub
+behaviours it works around are in `docs/XEMU.md`.
 
 ## U12. ~~The XBE entry point does not decode from the header~~ — resolved
 
