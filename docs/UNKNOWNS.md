@@ -514,15 +514,15 @@ looks like it starts that subsystem. The whole path is the loader `0x00134d40`, 
 profile writer `FUN_001be520`; what remains is the writer's serializer arity, not a missing reader. Depth:
 `docs/formats/sgs-checkpoint.md`, *Not a reader*.
 
-## U6. Two shared helpers named from their own strings; the third and four game bodies remain open
+## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is
 called by every one of them as `(expression, file, line)`, and `FUN_000340c0`/`FUN_0003af60` by 40 of
 them, at the site that constructs a class from `(name, outer, object size, flags)` literals. Those three
-unnamed functions were the reason the modules read as `FUN_*` soup. Four of the 43 do not follow the
+unnamed functions were the reason the modules read as `FUN_*` soup. Three of the 43 do not follow the
 registration pattern at all — the `StargateCar` physics body (`0x00311520`), two `SGCameraEffects`
-bodies (`0x00316b10`, `0x00318060`) and a `GoauldDrone` function (`0x003107b0`) whose constructor call
-carries no class-name literal in the decompiled text.
+bodies (`0x00316b10`, `0x00318060`). A fourth, `0x003107b0`, *does* follow it; what it lacks is a
+literal the decompiler would print (below).
 
 **Named 2026-10-24, from the strings each one logs.** Both names are recorded in
 `symbols/xbe_overrides.csv` with their evidence; nothing was inferred from a guess.
@@ -547,8 +547,29 @@ stubs call it with the class literal and the `System` outer package, so it const
 for a script class; what it should be *called* needs the caller-side evidence PLAN 4.7 collects, so it
 stays `FUN_*` — `docs/CONVENTIONS.md` says a hypothesis goes in the comment, not in the symbol.
 
-**Still open: `0x003107b0`.** The `GoauldDrone` function whose constructor call carries no class-name
-literal; nothing above changes that.
+**Closed 2026-11-10: `0x003107b0` is `ucpp_Register_GoauldDrone`.** Its constructor call does carry the
+class name -- the decompiler printed that argument as `&DAT_0053b42a`, and a reader that trusts the text
+took the label for "no literal". One VA read settles it: `0x53b42a` holds the UTF-16 `L"GoauldDrone"`, the
+dword pushed at `0x00310806`, and the body then asserts `ReturnClass` at
+`...\stargatevehicles\src\GoauldDrone.cpp:5` exactly like the other stubs. Object size 2,532, the
+fortieth row in `symbols/xbe_overrides.csv`. `tools/ucpp-registrations.py --xbe` reads the class name from
+the call site's own pushed immediates whenever the decompiled text renders fewer than two literals, so no
+body can be written off for what the decompiler declined to print.
+
+**The three real game bodies are described the same way, by their assert seams.** Each calls the assert
+helper at its own source line, and both the expression and the `\<Module>\Src\<File>.cpp` path are
+immediates the same reader resolves: `0x00311520` asserts `Mesh` at `StargateCar.cpp:190` (three seams in
+the body), `0x00316b10` `DOFResourceRefCount > 0` at `SGCameraEffects.cpp:140`, `0x00318060`
+`SharedPixelShaderDOFMaterial == NULL && BlurTargets.Num() == 0` at line 119. A third `SGCameraEffects`
+body outside the 43, `0x00318140`, asserts `DOFResourceRefCount == 0` at line 162 -- all three read the
+counter at `0x007b93f8` -- so "not a registration stub" here means the depth-of-field resource counter and
+its constructor/destructor, not unclassified code.
+
+**One extractor bug came out of this and matters more than the row.** `appAssertFailed` was named from its
+own literal (above), the export prints the name, and the extractor was still pinned to `FUN_00058a30`: it
+matched no assert at all and reported **0 registration stubs named** against 40 bodies that each hold one,
+silently, because its only other output is a list of "left unnamed" bodies. It now accepts both spellings,
+and `--check` drives them both.
 
 **Call-site census (measured).** `tools/call-census.py` over the Ghidra export: `appAssertFailed` has
 **2,432 call sites** in `build/ghidra/evidence/calls.tsv` (2,245 of them from 1,270 distinct callers

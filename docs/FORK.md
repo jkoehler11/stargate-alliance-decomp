@@ -17,7 +17,7 @@ time as an Xbox executable — the image carries the string `D:\uc.xbe`.
 |---|---|---|
 | classes registered through the generated registration macro | **493** call sites of `FUN_0003af60`, one per class | `docs/NATIVE_CLASSES.md` |
 | per-class C++ vtables | **492** tables in `.rdata`, `ProcessEvent` at slot 21 of every one | `docs/NATIVE_VM.md` |
-| game-module functions that are registration stubs | **39 of 43** in `stargategame`/`stargatevehicles` | `PLAN` 4.6 note |
+| game-module functions that are registration stubs | **40 of 43** in `stargategame`/`stargatevehicles` | `PLAN` 4.6 note |
 | classes with script *and* C++ bodies | `Pawn`, `ShadowProjector`, and the class pairs the oracle holds as `.ucpp` | `docs/ORACLE_DIFF.md` |
 
 The consequence for every later phase: a class can look complete in the script tree while its

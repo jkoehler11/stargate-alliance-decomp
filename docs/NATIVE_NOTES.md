@@ -10,16 +10,23 @@ contain, which is not what the plan expected.
 tools/ghidra/export-c.sh DUMP GHIDRA_HOME stargategame_,stargatevehicles_
   # imports default.xbe, carves sections, applies symbols/xbox_functions.csv (13,737 names),
   # decompiles the selected functions to $(WORK)/native/*.c and writes an index CSV
-tools/ucpp-registrations.py $(WORK)/native -o symbols/xbe_overrides.csv
+tools/ucpp-registrations.py $(WORK)/module-export/stargategame --xbe DUMP/default.xbe \
+    --merge -o symbols/xbe_overrides.csv
+tools/ucpp-registrations.py $(WORK)/module-export/stargatevehicles --xbe DUMP/default.xbe \
+    --merge -o symbols/xbe_overrides.csv
 make ghidra        # applies symbols/xbe_overrides.csv after the assert pass
 ```
+
+`--xbe` reads a class literal from the call site's own pushed immediates when the decompiled text
+renders a `&DAT_` instead of the string, and `--merge` is required because the override file holds rows
+this tool does not produce (38 of 78 today): a plain write would drop them.
 
 The C is game-derived: it stays under the git-ignored `work/` tree. What is committed is the name map
 and the measurements below.
 
 ## Finding 1: most of these functions are generated class registration
 
-39 of the 43 functions have the same shape:
+40 of the 43 functions have the same shape:
 
 ```c
 iVar2 = FUN_0003af60(0, 0xecc, 4, 0, 0, 0, 0, L"AlkeshBomber", ..., L"System", 0x4084004, ...);
@@ -30,8 +37,10 @@ if (iVar2 == 0)
 They are the per-class registration stubs of Perception's `ucpp` script-to-C++ compiler: the class
 name, the outer package (`System`), the object size and the class flags are the build's own literals,
 and `ReturnClass` is the generated assert. That is evidence, not inference, so each one is named
-`ucpp_Register_<Class>` in `symbols/xbe_overrides.csv` (39 rows, with object size, assert line and
-source file).
+`ucpp_Register_<Class>` in `symbols/xbe_overrides.csv` (40 rows, with object size, assert line and
+source file). The fortieth is `0x003107b0` (`GoauldDrone`, object size 2,532): its literal is there --
+`L"GoauldDrone"` at `0x53b42a` -- but the decompiler printed the argument as `&DAT_0053b42a`, so it is
+read from the call site's pushes instead of from the text.
 
 The object sizes are the class's serialised layout size in bytes — 3,788 for `AlkeshBomber`, 4,344 for
 `StargatePlayer`, 3,344 for `StargateVehicle`, 72 for `SGScreenBlur`. That number is a free cross-check
@@ -78,17 +87,18 @@ for the `UObject` layout work (PLAN 4.3) and for the property counts in `invento
 | `StargateHover` | 3,660 | `StargateHover.cpp` | `0x00314eb0` |
 | `Teltak` | 3,664 | `Teltak.cpp` | `0x00315ec0` |
 | `TeltakBot` | 1,812 | `Teltak.cpp` | `0x00315f80` |
+| `GoauldDrone` | 2,532 | `GoauldDrone.cpp` | `0x003107b0` |
 
 ## Finding 2: the module's own logic is small
 
-The other four functions are not registration stubs, and they are the only game code in the module:
+The other three functions are not registration stubs, and they are the only game code in the module
+(a third `SGCameraEffects` body, `0x00318140`, sits outside the 43 and belongs to the same counter):
 
 | address | name | what the decompiled body does |
 |---|---|---|
 | `0x00311520` | `stargatevehicles_StargateCar` | 541 bytes: projects a velocity onto an axis, clamps it, derives a speed, then asserts `Mesh` and `smesh` before reading mesh state. The vehicle-physics body. |
 | `0x00316b10` | `stargategame_SGCameraEffects` | 88 bytes: depth-of-field resource reference counting, asserts `DOFResourceRefCount > 0`. |
 | `0x00318060` | `stargategame_SGCameraEffects` | 217 bytes: camera effect setup; references the `Engine` package by name. |
-| `0x003107b0` | `stargatevehicles_GoauldDrone` | 180 bytes: same constructor call as the stubs but with no class-name literal in the decompiled text; left unnamed (U6). |
 
 So the game modules are generated glue plus a handful of bodies. The gameplay itself is in script
 (Phase 3) and in engine modules — consistent with the earlier finding that Perception moved hot script
@@ -114,8 +124,9 @@ these modules or the engine, bound outside the dispatch table, which is the thre
 
 ## What this means for Phase 4
 
-- The game modules are now 39/43 named from evidence; the rest are four functions with documented
-  bodies. "Zero unnamed functions in the game modules" is close, and honest about the four.
+- The game modules are now 40/43 named from evidence; the rest are three functions with documented
+bodies (plus `0x00318140`, outside the 43). "Zero unnamed functions in the game modules" is close, and
+honest about the three.
 - Two of the three shared helpers are named from their own strings (`appAssertFailed`,
   `appMallocBeforeInit`); `FUN_0003af60` stays `FUN_*` until its callers are named (PLAN 4.7). The
   remaining engine-side naming work is the `ProcessEvent`/property machinery (PLAN 4.3).
