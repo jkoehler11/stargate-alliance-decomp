@@ -926,6 +926,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, an `operator` declaration is one record, not a set: 97 declarations, 97 records)
+
+- **The "92" was the marker's regex, and the text has 97.** `native-reconcile`'s `NATIVE_OP` takes a one- or
+  two-character symbol and no identifier form, so it cannot see `$`, `$=`, `>>>`, `ClockwiseFrom`, `Dot` or `Cross`
+  — six of `Core.Object`'s declarations. `tools/native-operators.py` parses per *statement* (a regex over the whole
+  text lets `native` from one statement and `operator` from the next compose a phantom declaration: 91 against 87)
+  and composes the record name by the rule the records themselves show: symbol stem (`==`→`EqualEqual`,
+  `$`→`Concat`, `@=`→`AtEqual`, `>>>`→`GreaterGreaterGreater`, `**`→`MultiplyMultiply`) plus one type suffix per
+  operand in declaration order, `out`/`coerce`/`skip` dropped.
+- **Every declaration binds exactly one record: 97 of 97**, across `Core.Object` 91, `Engine.Actor` 4 and
+  `Engine.StreamBase` 2 — so the worry that one statement names several records has it backwards. The record count
+  is *higher* than the declaration count because the compiler synthesises records: 13 in `Core.Object` for
+  `++`/`--` and unary `-`/`!`/`~` (104 operator records for 91 statements; 107 token-carrying operator records
+  overall, which is `inventory/native_tokens.csv`'s count).
+- **The two spellings are both measured, not corrected.** Script `string` composes `Str` (`At_StrStr`), the pool
+  registers `String` (`At_StringString`, 12 rows); the composed name is kept in its own column so the alias stays
+  visible. A prefix test is also not the classification: five `Core.Object` names merely begin with an operator stem
+  (`Atan`, `Round`, `Divide`, `Nothing`, `OrthoRotation`).
+- **What this unblocks:** the marker for an operator is one line naming its record and token, the same shape as a
+  function's marker, and `inventory/native_operators.csv` is the table it needs. Wiring that into the tree writer is
+  the next step in 3.9, not a new question.
+
 ### Execution notes (2026-11-10, the 274 native bodies are function starts: the census is 15,231, not 14,957)
 
 - **The verdict is the disassembler's, not a byte pattern's.** `tools/native-census.py` writes
