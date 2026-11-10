@@ -416,6 +416,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are its vector part and the `-1.0f` is its `w` — a pitch of at most 77.0° on a whole-degree grid (506 of the
       522 turning records about `±X`). What remains is which weight slot is which bone, what the 7 signed key
       slots mean, and the clip/track constants (`u32 2`, `160.0`/`220.0`), which their serialisers only carry.
+      **The consumers are read (2026-11-09)**: `0x000b4710` resolves a slot **by name** through `0x000b45c0`
+      (`__wcsicmp` over the key block, `index*0x1c + base`) and evaluates it, answering `0x4c8848` when the
+      name does not resolve; `0x000b5f10` and the fade driver `0x000b63f0` store that answer at record
+      `+0x40` and call pose assembly only when it is **non-zero**, so a value is a blend weight whose zero
+      is a skip and a negative one is applied like a positive one -- the 7 signed slots are ordinary weights.
+      `tools/lad-weights.py` (`make lipsinc-weights`, `inventory/lipsinc_weights.csv`, `--check` in
+      `make ci`) measures the gate: 34.5% of the corpus's 35,031 populated slots are non-zero at tick 0,
+      0.07% at a track's own end, and 19/24/25 are one number and its negation (exact key for key in 1,890
+      tracks). What remains is the binding, not the format: which caller fills a record's `+0x34`.
       **And the slot's own name field is empty everywhere**: `FUN_000bc330` reads a key group as a 28-byte
       record — `u32`, a 12-byte `FString`, a 12-byte `TArray` — so the `u8 0` is the name's count byte, and all
       58,006 groups are unnamed (`named` in `inventory/lipsinc_keys.csv`, `--check` refuses a named row).
@@ -879,6 +888,38 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, a slot is read by name and a zero is a skip)
+
+- **The consumer addresses a slot by name, not by index.** `0x000b4710` (215 bytes) copies its caller's
+  `FString`, resolves it with `0x000b45c0` (329 bytes: a `__wcsicmp` scan of the key block's 28-byte groups,
+  count `+0x40`, base `+0x3c`, returning `index*0x1c + base` or 0) and evaluates the match with
+  `Engine_LIPSincSupport`, answering `0x4c8848` when nothing matches. Since all 58,006 groups are unnamed,
+  the only query this corpus can resolve is the empty name -- a slot number is not an address in the
+  runtime, and the name field is the one that would label it.
+- **A zero is "no contribution".** `0x000b5f10` (1,244 bytes, the pose-pair blend) enters its sampling path
+  only at `alpha == 0` exactly -- the first frame of a fade -- where it copies the destination pose
+  indices, calls `ValuesAtTime` once, resets the pose from `pDefBonePose` (`0x000b2700`), then writes each
+  record's named curve into `+0x40` and calls pose assembly `0x000b29a0` **only when that value is
+  non-zero**; at any other alpha it lerps the three position floats between the pair and writes four
+  orientation dwords filled by `0x000b19b0`, with no curve work. `0x000b63f0` (1,411 bytes) is the fade
+  state machine: state 1 fade in (duration `[request+0x28]`, alpha = elapsed/duration handed to
+  `0x000b5f10`), state 2 play (clock at `+0x20`, `ValuesAtTime` as the bounds check, the same
+  accessor-and-assembly loop), state 3 fade out (duration `[request+0x2c]`, then a `+0xec` vtable call and
+  every record's `+0x40` zeroed), 0 idle. Both paths treat a negative weight like any other, so the signed
+  columns are ordinary weights.
+- **The corpus against the gate.** `tools/lad-weights.py` (`make lipsinc-weights`,
+  `inventory/lipsinc_weights.csv`, `--check` covering the gate arithmetic and the CSV): **12,080 of 35,031**
+  populated slots (34.5%) are non-zero at tick 0 and applied, **22,951 (65.5%)** are exactly zero and
+  skipped (median 36.4% per track, p10 9.1, p90 66.7, 3 tracks contributing nothing, per file 6.7% to
+  36.2%); at a track's own end only **26** (0.07%) are non-zero. The signed columns are one number and its
+  negation: 19, 24 and 25 are populated in 2,230 tracks, **24 == 25 at tick 0 in all 2,230**, **19 == -24
+  by value in 2,137** and **exact key for key in the 1,890** whose grids coincide; 19 spans 0..8.378 and
+  24/25 -8.378..0, while 20-23 stay within +-2.87.
+- **Next**: the binding, which is the last thing between a slot and a name -- the caller that fills a
+  record's `+0x34` (the loader that builds the 0x48-byte records). Instruments:
+  `tools/lad-weights.py --slots`, `inventory/lipsinc_weights.csv`, `docs/formats/lipsinc-runtime.md`, U4.
+  No boot, no xemu.
 
 ### Execution notes (2026-11-09, the evaluator holds both ends and a segment is a smoothstep)
 

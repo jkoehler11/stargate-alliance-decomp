@@ -350,6 +350,24 @@ covering the domain, 0 adjacent key pairs decrease, 2 pairs share a tick (slot 2
 is left of U4 is not the format or the sampler: it is what a slot means, which lives in the two consumers of the
 vector (`0x000b5f10`, `0x000b63f0`) and the accessor `0x000b4710` with its lookup `0x000b45c0`.
 
+**Answered: a slot is read by name, and a zero means "no contribution" (2026-11-09).** The accessor
+`0x000b4710` copies a caller's `FString`, resolves it with `0x000b45c0` (`__wcsicmp` over the key block's
+28-byte groups, count `+0x40`, returning `index*0x1c + base` or 0) and evaluates the group it finds with
+`Engine_LIPSincSupport`, answering `0x4c8848` when nothing matches -- so **a slot's address is the name in
+its own group record**, which the corpus leaves empty in all 58,006 groups. The pose-pair blend
+`0x000b5f10` evaluates a record only on its `alpha == 0` side (the first frame of a fade), stores the
+answer at record `+0x40` and calls pose assembly `0x000b29a0` **only when that answer is non-zero**; the
+fade driver `0x000b63f0` runs state 1 = fade in (duration `[request+0x28]`), state 2 = play (its own clock
+at `+0x20`, `ValuesAtTime` as the bounds check), state 3 = fade out (duration `[request+0x2c]`, then every
+record zeroed), and its play state repeats the same accessor-and-assembly loop. Both paths make the double
+a blend weight whose zero is a skip; a negative value is applied like a positive one, so the 7 signed
+columns are ordinary weights and not a second curve type. `tools/lad-weights.py` (`make lipsinc-weights`,
+`inventory/lipsinc_weights.csv`, `--check` in `make ci`) counts it: at tick 0 **12,080 of 35,031** populated
+slots (34.5%) are applied and **22,951 (65.5%)** skipped (median 36.4% per track, p10 9.1, p90 66.7), at a
+track's own end only **26** (0.07%) are non-zero, **24 == 25 at tick 0 in all 2,230** tracks that carry
+them, **19 == -24 by value in 2,137** and **exact key for key in the 1,890** that share a grid. What is
+left of U4 is the binding: which caller fills a record's name at `+0x34`.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

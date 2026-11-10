@@ -198,8 +198,60 @@ that sampler and counts what the shipped data asks of it, over all **2,231** tra
 * **0** key values are a non-zero magnitude below `2^-51`, so the snap changes nothing here; it exists for the
   runtime's own arithmetic, not for these bytes.
 
-What a slot *means* is still open, but the route is now two addresses rather than a guess: `0x000b5f10` (a
-pose-pair blend that calls `ValuesAtTime` only for its `alpha == 0` side and lerps positions afterwards) and
-`0x000b63f0` (1,411 bytes, the other consumer), with the single-slot accessor `0x000b4710` and its group lookup
-`0x000b45c0` beside them.
+## A slot is read by name, and a zero means "no contribution" (measured 2026-11-09)
+
+The four bodies the sampler section nominated are read, and the half that was left is not another format
+field: it is a naming convention and a sentinel.
+
+`0x000b4710` (215 bytes) is the single-slot accessor, and it answers one curve rather than the vector: it
+copies its caller's `FString`, resolves it with `0x000b45c0` and hands the group it finds to
+`Engine_LIPSincSupport`. `0x000b45c0` (329 bytes) is a linear scan of the key block -- count at `+0x40`,
+base at `+0x3c`, stride `0x1c`, each group's name read through `0x000bb2f0` -- that returns
+`index * 0x1c + base` for the first `__wcsicmp` match and 0 when nothing matches, and the accessor turns
+that 0 into the `0x4c8848` zero. **A slot is addressed by the name in its own 28-byte record**, and that
+field is empty in all 58,006 groups of the corpus (`inventory/lipsinc_keys.csv`): the one field that could
+name a curve is the runtime's own lookup key, so a slot has no identity a file-side reader can read.
+
+`0x000b5f10` (1,244 bytes) is the pose-pair blend, and its `alpha` argument splits it in two:
+
+* with `alpha == 0` exactly -- the first frame of a fade, below -- it copies the destination's pose
+  indices (0x24-byte entries whose `+0x20` is an index into a 12-byte vector table), calls `ValuesAtTime`
+  once, resets the pose out of `pDefBonePose` (`0x000b2700`), then walks the controller's 0x48-byte
+  records (base `+0x48`, count `+0x4c`): each record's own name goes through `0x000b4710` **at the global
+  zero**, the answer is stored at record `+0x40`, and pose assembly `0x000b29a0` is called **only when
+  that answer is not zero**;
+* with `alpha != 0` it does no curve work at all: per pose entry it lerps the three position floats
+  (`(dst - src) * alpha + src`) and writes four orientation dwords that the `0x000b19b0` call beside it
+  fills. The first frame captures the start pose; every later frame interpolates from it.
+
+`0x000b63f0` (1,411 bytes) is the fade state machine that drives it. The state is the int at `+0x4` of
+the request:
+
+| state | meaning | what it does |
+| --- | --- | --- |
+| 1 | fade in | duration is the float at `[request+0x28]`; while `elapsed < duration` it calls `0x000b5f10` with `alpha = elapsed/duration`, otherwise it sets state 2 |
+| 2 | play | its own clock at `+0x20`; `ValuesAtTime` is a bounds check, and a refusal or a time below the `0x4c8848` floor goes to state 3 (or 0); otherwise every record through `0x000b4710` at that clock and `0x000b29a0` |
+| 3 | fade out | duration is the float at `[request+0x2c]`; past it, state 0, a `*(*param_3 + 0xec)` vtable call and every record's `+0x40` zeroed |
+
+Both paths agree on what the double is: **a blend weight whose zero means "no contribution"; a non-zero
+value, negative or positive, is applied by the same call.** That is the answer the signed columns were
+missing -- nothing in the consumer treats them as a different kind of number.
+
+`tools/lad-weights.py` (`make lipsinc-weights`, `inventory/lipsinc_weights.csv`, `--check` in `make ci`)
+counts the corpus against that gate at tick 0, the time the pose-pair path samples at, and at each
+track's own end -- 2,231 tracks, 35,031 populated slots:
+
+* at tick 0 **12,080 slots (34.5%) are non-zero and applied, 22,951 (65.5%) are exactly zero and
+  skipped**; per track the median share is 36.4% (p10 9.1, p90 66.7), only 3 tracks contribute nothing,
+  and the per-file range is 6.7% (`JAnderson.lad`, 3 tracks) to 36.2% (`carter`, 610 tracks);
+* at each track's own end only **26 of 35,031** slots (0.07%) are non-zero, so the corpus is authored to
+  end on a neutral pose and a clip can stop without leaving a weight behind;
+* the signed columns are one number and its negation: slots 19, 24 and 25 are populated in 2,230 tracks,
+  **24 == 25 at tick 0 in all 2,230**, **19 == -24 by value in 2,137**, and in the 1,890 tracks whose slots
+  19 and 24 share a key grid the negation is **exact key for key**. Slot 19 never takes a negative value
+  at tick 0 (0..8.378) and 24/25 never a positive one (-8.378..0). Slots 20-23 stay within +-2.87 and are
+  zero at tick 0 in most tracks that carry them (580 of 598, 579 of 596, 866 of 883, 866 of 883).
+
+What is left of U4 is the binding rather than the format: which caller fills a record's name at `+0x34`,
+because that is the only thing that would let a slot be named.
 
