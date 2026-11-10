@@ -117,12 +117,13 @@ missing a native body or the record is describing something the source no longer
 | classes declaring natives (text) or carrying records | 96 |
 | `native function` declarations in the shipped text | 681 |
 | …of those carrying an explicit index | 256 |
+| `native event` declarations (a third form, counted apart) | 11 |
 | `native … operator` declarations | 92 |
 | operator records the compiler synthesises from them | 112 |
 | native function records (`natives.csv`, operators excluded) | 685 |
-| **records matched to a declaration** | **672 (98.1%)** |
+| **records matched to a declaration** | **683 (99.7%)** |
 | declarations with no record | 9 |
-| records with no declaration | 13 |
+| records with no declaration | 2 |
 | **index disagreements** | **0** |
 
 **The index check is the part that matters.** Every one of the 256 indexed declarations agrees with its record's
@@ -137,13 +138,19 @@ Three wrinkles, each handled explicitly instead of being smoothed over:
   (`native(129) static final preoperator bool ! ( bool A )`), which a function-shaped pattern does not see at all;
 * **the compiler synthesises a record per operator signature** (`Add_IntInt`, `AddEqual_VectorVector`,
   `Concat_StrStr`, `LessLess_VectorRotator`, …), so those 112 records have no declaration to match by design and are
-  counted apart.
+  counted apart;
+* **a native can also be declared as an `event`** (`native event ClientTravel( string URL, … )`,
+  `native final event Font GetFont( int XRes )`), which carries no `function` keyword at all — so a pattern built on
+  `native … function` cannot see it, and before this pass the eleven event-declared records read as `text-missing`
+  when the text declared them plainly. They are matched like a function (the declaration names one record of its own
+  class) and counted in their own `text_events` column, because a return type sits where a function would put the
+  name.
 
-**The residual is 22 records over 14 classes, and the image now decides 15 of them** — see *The 22 residual rows,
-each with a verdict* below: `PlayerController` has 4 records with no declaration (the `Client*`/`Server*` pairs),
-`Core.Object` has 2 declarations with no record, `Weapon`, `GUIController`, `StargateWeapon` and `HitEffectManager`
-two each. The binder pool in the image settles which side is right where one exists and leaves 7 declarations the
-build does not bind at all.
+**The residual is 11 rows over 7 classes, and the image now decides all of them** — see *The 11 residual rows, each
+with a verdict* below. Two records have no declaration and both are `UPreview`'s, the editor package the game never
+loads; nine declarations have no record, and two of those (`Core.Object.Divide` and `.Round`) the image binds, so
+there the **record** table is what is short. The binder pool settles which side is right wherever a name exists and
+leaves 7 declarations the build does not bind at all.
 
 Not measured: whether the 7 unbound declarations were compiled in some other build of the class — nothing in the
 image binds them, so there is no third witness to ask; everything else in the residual is decided.
@@ -171,7 +178,7 @@ no slot") and U3 guessed at ("the compiler assigns an index to a declaration tha
 function without spelling its index, so on this build the compiler never invents an index for an index-less
 `native`; a token-carrying record always has a declaration that spelled it out or an `operator` behind it. The
 practical rule that survives is narrower than the one U3 stated: a rebuild reads indices from the package records
-because the *text* of the runtime packages is incomplete (9 declarations without a record, 13 records without a
+because the *text* of the runtime packages is incomplete (9 declarations without a record, 2 records without a
 declaration), not because the text omits indices.
 
 **`Core.Object`'s "17" is the operator expansion, exactly.** The class carries 160 token-carrying records and its
@@ -194,9 +201,9 @@ The consequence for 3.9/6.1: `inventory/native_tokens.csv` is the per-record for
 needs — an index is trustworthy when its basis is `text-index`, and a record whose basis is not is either a
 synthesised operator body (no script to compile) or a defect worth reading.
 
-## The 22 residual rows, each with a verdict
+## The 11 residual rows, each with a verdict
 
-The table's residual — 13 records with no declaration, 9 declarations with no record — was left as "which side is
+The table's residual — 2 records with no declaration, 9 declarations with no record — was left as "which side is
 right needs the C++ side". The C++ side is already committed: `tools/native-binder.py` extracts the build's own
 `int<prefix><Class>exec<Function>` literals (`inventory/native_binder_names.csv`), which is exactly the name the
 engine's binder looks up for a native. So the same run now writes `inventory/native_residual.csv`
@@ -204,16 +211,27 @@ engine's binder looks up for a native. So the same run now writes `inventory/nat
 
 | verdict | rows | what the image says |
 |---|---:|---|
-| `text-missing` | **13** | the record **is right**: the image carries `int⋯exec<Function>` for that class and name, and the record's token, so only the class's shipped text lacks the declaration |
+| `text-missing` | **2** | the record **is right** and the class's shipped text declares nothing of that name — both are `UPreview`'s, whose text is editor-side and never ships a body |
 | `declaration-unbound` | **7** | no record and no binder name: the `native function` declaration has no counterpart in the build at all |
 | `binder-only` | **2** | `Core.Object.Divide` and `Core.Object.Round` are declared *and* bound in the image, so the **record** table is what is missing |
 
-So the residual is not 22 undecided disagreements: 15 of the 22 are decided by the image (13 text gaps, 2 record
-gaps — both `Core.Object`), and the remaining 7 are declarations (`Weapon.GetErrorVec`, `Weapon.GetFireStart`,
-`ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`, `StargateWeapon.updateLeadLag`,
-`HitEffectManager.Update`, `HitEffectManager.SetupFade`) that nothing in the build binds. The truncation hypothesis
-is only partly right: 3 of the 13 owning classes' texts end unbalanced (`Actor`, `GUIFont`, `UPreviewMapListClient`),
-while `PlayerController`'s 245 KB text is balanced and still declares none of its four `Client*`/`Server*` records.
+**Eleven rows replaced twenty-two when the event form was taught to the same pass (measured 2026-11-10).** Eleven of
+the thirteen `text-missing` rows were `native event` declarations all along — `Commandlet.Main`,
+`Actor.DemoPlaySound`, `PlayerController`'s four `Client*`/`Server*`, `SVehicle.UpdateVehicle`,
+`GUIController.GetMenuFont`, `GUIController.GetStyle`, `GUIFont.GetFont`, `MasterServerUplink.LogStatLine` — so the
+match reads **683 of 685** records (99.7%), not 672. The two that remain are the editor package's
+(`UPreviewMapListClient.Created`, whose text is a script `function` with a body, and
+`UPreviewSkinnedButton.SetRenderInfo`, which spells no declaration). The seven unbound declarations are
+`Weapon.GetErrorVec`, `Weapon.GetFireStart`, `ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`,
+`StargateWeapon.updateLeadLag`, `HitEffectManager.Update` and `HitEffectManager.SetupFade`, and nothing in the build
+binds them. The residual is therefore not "twelve unanswered questions" but four kinds of row, each decided: 2 editor
+text gaps, 2 record gaps, 7 unbound declarations.
+
+**A return type is where the event form hides its name.** `native event int Main( string Parms )` and
+`native final event Font GetFont( int XRes )` put the return type immediately after `event`, so the obvious
+`event\s+(\w+)` reads `int` and `Font` as the function — five of the eleven events have one, and a first attempt at
+this pass matched only the six without. The pattern now takes an optional modifier run and an optional return type,
+and `--selftest` pins `event int Main` and `simulated final event Font GetFont`.
 
 
 
@@ -345,12 +363,13 @@ already singles out. The thirteen records the compiler synthesises have no decla
 for them — that is `inventory/native_tokens.csv`'s `operator-expansion` basis, not a gap in the tree.
 
 **A `native event` is a third declaration form, and every counting pass in this repo was blind to it.**
-`native-reconcile` — and this tool before it — matches `native … function`, so the eleven `native event`
-declarations in the shipped text were the `record-only` rows of `inventory/native_residual.csv` whose verdict reads
+`native-reconcile` — and this tool before it — matched `native … function`, so the eleven `native event`
+declarations in the shipped text were the `record-only` rows of `inventory/native_residual.csv` whose verdict read
 `text-missing`, when the text spells them plainly:
 
 ```
 native event ClientTravel( string URL, ETravelType TravelType, bool bItems );
+native event int Main( string Parms );
 ```
 
 They are marked like a function (the declaration names its own function, so there is no `record` field), and **all
@@ -358,8 +377,9 @@ eleven carry the image's binder literal and a body address** — so for `PlayerC
 the first place the tree says the body is C++ at `0x002163c0`. The two remaining `record-only` rows are the editor
 package's (`UPreviewMapListClient.Created`, which declares only `Super.Created();`, and
 `UPreviewSkinnedButton.SetRenderInfo`, which spells no declaration at all): the editor build's natives have no text
-in the shipped packages, so they stay residual. `native-reconcile` still reports `text-missing` for all thirteen —
-its verdict means "no `native function` line", not "no declaration".
+in the shipped packages, so they stay residual. **`native-reconcile` parses the event form now** (`NATIVE_EVENT`,
+shared with this tool), so it matches all eleven and its residual fell 22 rows to 11 — 683 of 685 records matched,
+`text-missing` down to those two editor rows.
 
 The marker pass is **idempotent by construction** — every line carrying the prefix is removed before the fresh
 markers are inserted, so it is a pure function of the package text: a second run over the 2,319 files hashes

@@ -141,7 +141,7 @@ an index-less `native` on this build.
   Depth: `docs/NATIVE_CLASSES.md`, *Every token has a basis*.
 
 What survives for a rebuild is narrower and still actionable: read indices from the package records, because the
-runtime packages' **text** is incomplete (13 records with no declaration, 9 declarations with no record — the
+runtime packages' **text** is incomplete (2 records with no declaration, 9 declarations with no record — the
 reconciliation table above), not because the text omits indices it should have spelled.
 
 ## U4. The `.lad` payload layout is not established

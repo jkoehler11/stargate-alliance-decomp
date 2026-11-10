@@ -223,10 +223,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
       declarations in the shipped text (256 carrying an explicit index) and 97 operator declarations, against 685
-      function records in `inventory/natives.csv` — **672 matched (98.1%) and 0 index disagreements**, so every
-      `native(N)` agrees with its record. 22 residual rows over 14 classes (`PlayerController` 4, `Core.Object` 4,
-      `Weapon`/`GUIController`/`StargateWeapon`/`HitEffectManager` 2 each) **each carry a verdict from the image's
-      own binder pool now** (`inventory/native_residual.csv`): 13 records the text lacks but the image binds, 2
+      function records in `inventory/natives.csv` — **683 matched (99.7%) and 0 index disagreements**, so every
+      `native(N)` agrees with its record. 11 residual rows over 7 classes (`Core.Object` 2, `Weapon` 2,
+      `StargateWeapon` 2, `HitEffectManager` 2, `ScoreBoard`, `UPreviewMapListClient`, `UPreviewSkinnedButton` 1
+      each) **each carry a verdict from the image's
+      own binder pool now** (`inventory/native_residual.csv`): 2 records the text lacks (both the editor package
+      `UPreview`), 2
       records the image binds that the record table lacks (`Core.Object.Divide`/`Round`), 7 declarations nothing
       binds. **The token side is closed per
       record** (`inventory/native_tokens.csv`, `docs/NATIVE_CLASSES.md` *Every token has a basis*): of the 274 records
@@ -931,6 +933,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the event form reaches the counting pass: 683 of 685, residual 22 → 11)
+
+- **One regex was the whole gap.** `native-reconcile`'s statement parser now knows `native event` as a declaration
+  form (`NATIVE_EVENT`) and matches it like a function — it names one record of its own class — while counting it in
+  a new `text_events` column. `inventory/native_residual.csv` fell from **22 rows to 11** and the match from 672
+  (98.1%) to **683 of 685 (99.7%)**. The eleven rows that left are exactly the phantom `text-missing` set:
+  `Commandlet.Main`, `Actor.DemoPlaySound`, `PlayerController`'s four `Client*`/`Server*`, `SVehicle.UpdateVehicle`,
+  `GUIController.GetMenuFont`/`GetStyle`, `GUIFont.GetFont`, `MasterServerUplink.LogStatLine`. The two `text-missing`
+  rows that remain are `UPreview`'s editor package, where the text really does declare nothing.
+- **The return type is the trap, and it caught the first attempt.** Five of the eleven put a return type between
+  `event` and the name (`native event int Main( string Parms )`, `native final event Font GetFont( int XRes )`), so
+  `event\s+(\w+)` captures `int` or `Font` as the function and the pass matched six of eleven while reporting the
+  other five still missing. The pattern now takes an optional modifier run and an optional return type, and
+  `--selftest` pins both forms plus the `native data` negative (16 cases, up from 11).
+- **The two passes share one pattern now.** `native-mark`'s private copy is gone (`EVENT = REC.NATIVE_EVENT`), and
+  the full marking pass re-run over the 2,319 class files is byte-identical to the shipped tree (`1073aef4…`, 789
+  markers, 0 unmarked) with `inventory/native_bodies.csv` unchanged — so the mark and the count cannot drift apart
+  again. `inventory/native_tokens.csv` is byte-identical too: the event declarations carry token 0, so no basis moved
+  and the single `unresolved` row is still `UPreviewMapListClient.Created`.
+- **What is left in the residual is decided, not open:** 2 editor text gaps, 2 record gaps (`Core.Object.Divide`,
+  `.Round`) and 7 declarations the build binds nowhere. The next task is therefore Phase 4 work — naming bodies —
+  rather than another counting pass.
+
 ### Execution notes (2026-11-10, the third declaration form: 11 `native event` bodies, marked — 789 lines)
 
 - **Every counting pass in this repo matches `native … function`, and the text has a third form.** A statement-level
@@ -950,6 +975,7 @@ are limited to expected fields (checksum/timestamp) and documented.
 - **Next measurement, named and not done — a counting change belongs in its own PR:** teach `native-reconcile` the
   event form and re-derive the residual table. Eleven of the thirteen `record-only` rows move to matched, so the
   reconciliation reads 683 of 685 (99.7%) instead of 672 (98.1%) and `text-missing` shrinks to the two editor rows.
+  *(Done in the note above: 683 of 685, residual 11 rows.)*
 
 ### Execution notes (2026-11-10, every native declaration is marked — 778 lines, 681 functions and 97 operators)
 
