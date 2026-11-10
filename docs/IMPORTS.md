@@ -59,9 +59,13 @@ the work the signature pass in 4.2 would take on — `docs/UNKNOWNS.md` U9):
 | `.rdata` / `.data` (misidentified as code) | 348 | 0 | 7,741 |
 
 The five library sections add up to **3,109 functions and 565 KB** of code outside `.text`, of which
-**22 carry a name**. That is the measurable size of the signature-library gap: naming them needs
+**22 carry a name** (21 `thunk_FUN_*` jump stubs and one mangled C++ name, so one body is *semantically*
+named — `docs/LIBRARIES.md` reconciles the count). That is the measurable size of the signature-library gap: naming them needs
 MSVC/Xbox-SDK signature data this repository may not carry, so they stay `FUN_*` — an honest unknown
 with a body, which is what `docs/NATIVE.md` reports per module.
+
+The sections' own evidence is measured separately (`docs/LIBRARIES.md`): none of the 3,109 bodies names
+a source file, so the engine-module naming method does not transfer and this gap is signature-data shaped.
 
 ## What is deferred, and why
 

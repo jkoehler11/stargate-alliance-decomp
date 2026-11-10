@@ -683,6 +683,15 @@ outside the repository, like the 2006 source), with `tools/versions.lock` record
 used and `docs/NATIVE.md` reporting the measured effect. Until then 4.2 stays open with the reason
 written down rather than a guess at names.
 
+**Measured 2026-11-10, the static half is closed.** `tools/library-bodies.py` reads every body in the
+seven library sections in place (`docs/LIBRARIES.md`, `inventory/library_bodies.csv`): 3,109 bodies /
+565,157 bytes, **0** of which reference a build-tree source path, 169 reference any string at all, and the
+sections' entire vocabulary is 363 strings. RTTI carries four descriptors (all CRT exception classes), so
+the class-level route is closed as well. The engine-module method -- name the translation unit from the
+body's own assert -- has nothing to read here, and the sections' 21 `thunk_` names plus one mangled C++ name
+are the only names in the population. That leaves this entry's unblock as written: a locally supplied
+signature database, scored against the section table in `docs/LIBRARIES.md`.
+
 **Status.** Open, blocked on data the project may not ship.
 
 ## U10. The tagged property record's field order — closed 2026-10-24
