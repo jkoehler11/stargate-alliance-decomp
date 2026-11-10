@@ -958,8 +958,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   (count `+0x38`, names `+0x28`, descriptions `+0x34`).
 - **Instrument**: `tools/sgs-profile.py` (`make sgs-profile`) counts the index and reconciles it with the `.sgs`
   files on disc; `--check` is a synthetic self-test, so `make ci` keeps it honest without the dump.
-- **Next**: answered in the note above — `0x001226a0` is the engine's startup name table, not a save reader, so
-  the native half has no hole; the next measurement is the serializer's arity.
+- **Next**: answered in the notes above — `0x001226a0` is the engine's startup name table, not a save reader, so
+  the native half has no hole, and the serializer's arity is now measured (note below): seven arguments, `cdecl`.
+  What is left is the rebuild side.
+
+### Execution notes (2026-11-09, the serializer takes seven arguments and cleans none)
+
+- **The number a rebuild needed, from the code.** `tools/argc-pass.py --va 0x0006f4b0` (`make argc-pass`) reads
+  the arity three ways: the frame slots the body reads (`+0x08` x10, `+0x0c` x2, `+0x10`, `+0x14`, `+0x18` x3,
+  `+0x1c`, `+0x20` x8 — a contiguous run, so **7 arguments**), its epilogues (**3**, all plain `RET` at
+  `0x00070981`/`0x00070a88`/`0x00070a9b`, so `cdecl`: it pops nothing), and the block at its one call site
+  `0x00138cf2` (7 dwords pushed).
+- **The earlier "arity not settled" was an instrument artifact, not an unknown body.** A `C2 xx xx` scan cannot
+  see a plain `RET`, and the two `C2 28 00` bytes at `0x00070b0f`/`0x00070b26` belong to the next function
+  (`0x00070aa0`). A strict linear sweep is the second trap: it desyncs in this 5,552-byte body (jump tables) and
+  reports only `+0x08`/`+0x18`, so the sweep resyncs on an undecodable byte and stops at the `RET` that
+  `INT3` padding follows.
+- **The parameters are named by the callee's own asserts.** `0x0006f4dd` tests argument 1 against 0 with the
+  literal `InOuter` (`0x004df8dc`, line `0x1346`) and `0x0006f4f9` tests argument 5 with `Filename`
+  (`0x004df8d0`, line `0x1347`), both against `UnObj.cpp` (`0x004dd358`); `Core_UnObjBas` is the module in
+  `symbols/xbox_functions.csv`. So a rebuilt caller can name two of its seven arguments.
+- **The caller's `ADD ESP,0x10` for seven pushes is not a mismatch.** With a `cdecl` callee the caller must pop
+  `0x1c`, and `MOV EDI,ESP` at `0x00138d01` immediately re-bases the 12 bytes left over as a 3-dword `TArray`
+  header (`[EDI]`/`[EDI+4]`/`[EDI+8]`, grown by `0x00055ed0`): the compiler merged the argument pushes with a
+  stack temporary. A rebuilt caller cleans `0x1c` and keeps its temporary elsewhere.
+- **Instrument**: `tools/argc-pass.py` (`make argc-pass VA=0x…`) — a 32-bit instruction-length decoder with a
+  resyncing sweep, frame-slot and epilogue readers, and a call-site pass anchored on the *caller's* own
+  instruction boundaries (a backward "landing" scan invents chains: `01 ff` decodes as `add edi,edi`, which read
+  this call as 13 pushes). It also refuses a frame count for a body that re-bases `EBP`, which is what the writer
+  `0x00138680` does (`+0x30`, `+0x11c`), and reads that writer as 7 arguments from `RET 0x1c`. `--check` is a
+  synthetic self-test, so `make ci` keeps it honest without the dump.
+- **Next**: the rebuild side — write a checkpoint package and its `[Saved Games]` row from a level, using the
+  writer's seven-argument shape and the index's `SetString(Section, Key, Value, Filename)` row.
 
 ### Execution notes (2026-11-09, the save path's dispatcher is a console command and its writer is vtable slot 59)
 

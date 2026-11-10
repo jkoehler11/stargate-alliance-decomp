@@ -244,13 +244,59 @@ pair is a counted pointer array that the same body then walks actor by actor (`0
 the flag sits on the array's **first element**. So 2 is "saving", 0 is "running", and no other value is written
 anywhere in the body.
 
-**The serializer call, `0x00138cf2`.** Seven words are pushed (`0x00138ce0`–`0x00138cf1`) with `ECX =
-[level+0x18]` as `this`; one of them is the composed filename buffer (`LEA EDX,[ESP+0x468]` at `0x00138ce2`),
-i.e. the same string that was just logged. The callee is `0x0006f4b0` (5,552 bytes), the exporter that prints
-`SaveGame Summary Names=%d Import=%d Export=%d` (`0x00070938`). The caller cleans only 16 bytes (`ADD ESP,0x10`
-at `0x00138cfe`) for seven pushes, so the callee returns cleaning the rest — **its exact arity is not settled**
-(its epilogue is not at the address its Ghidra body size implies, and the scan found no `RET` there), which is
-the one number a rebuild would still need from this call.
+**The serializer call, `0x00138cf2`.** The argument block is three loads and seven pushes
+(`0x00138cd1`–`0x00138cf1`): `MOV EDX,[0x005bf500]`, `MOV EAX,[EBP+0x11c]`, `MOV ECX,[EAX+0x18]`, then
+`PUSH EDI`, `PUSH EDX`, `LEA EDX,[ESP+0x468]`/`PUSH EDX` (the composed filename buffer, the same string that was
+just logged), `MOV EDX,[ESP+0x4c]`/`PUSH EDX`, `PUSH EAX`, `PUSH ECX`. The callee is `0x0006f4b0`
+(`Core_UnObjBas`, 5,552 bytes), the exporter that prints `SaveGame Summary Names=%d Import=%d Export=%d`
+(`0x00070938`). **Its arity is seven arguments and it is `cdecl`** — measured below, and it is what a rebuilt
+caller has to match.
+
+**The seven arguments, and the two the callee names.** `cdecl` pushes right to left, so the last push is
+argument 1 and each argument's frame slot is `+0x08 + 4*(n-1)`:
+
+| arg | slot | value at the call site | site |
+|---|---|---|---|
+| 1 | `+0x08` | `[[EBP+0x11c]+0x18]` — asserted non-null as `InOuter` | push at `0x00138cf1` |
+| 2 | `+0x0c` | `[EBP+0x11c]`, the level; null-checked and its address taken | push at `0x00138cf0` |
+| 3 | `+0x10` | a caller local read with `MOV EDX,[ESP+0x4c]` | push at `0x00138cef` |
+| 4 | `+0x14` | `EDI` | push at `0x00138cee` |
+| 5 | `+0x18` | `LEA EDX,[ESP+0x468]`, the filename buffer — asserted non-null as `Filename` | push at `0x00138ce9` |
+| 6 | `+0x1c` | `[0x005bf500]`, a `.data` pointer | push at `0x00138ce1` |
+| 7 | `+0x20` | `EDI` | push at `0x00138ce0` |
+
+The two asserts are what name the parameters: `0x0006f4dd` tests `[EBP+0x08]` against 0 with the literal
+`InOuter` (`0x004df8dc`, line `0x1346`) and `0x0006f4f9` tests `[EBP+0x18]` with `Filename` (`0x004df8d0`, line
+`0x1347`), both against `...GameXBOX\Core\Src\UnObj.cpp` (`0x004dd358`). So `InOuter` is argument 1 and
+`Filename` argument 5, and a rebuild can name them.
+
+### The serializer's arity, measured (2026-11-09)
+
+`tools/argc-pass.py --va 0x0006f4b0` (`make argc-pass`) answers a native's arity from the code three ways and
+prints all three, so a single misreading cannot stand alone:
+
+| reading | result on `0x0006f4b0` |
+|---|---|
+| frame slots read (`[EBP+disp]`, `disp >= 8`) | `+0x08` x10, `+0x0c` x2, `+0x10`, `+0x14`, `+0x18` x3, `+0x1c`, `+0x20` x8 — a contiguous run, **7 arguments** |
+| epilogues | **3**, all plain `RET` (`c3`): `0x00070981`, `0x00070a88`, `0x00070a9b` — nothing popped, so `cdecl` |
+| the call site's block | 7 dwords pushed at `0x00138ce0`–`0x00138cf1`, caller adds 16 → "callee cleans 12" — which is *not* cleanup (below) |
+
+**Why the arity looked unsettled for a session: the instrument looked for the wrong byte.** The earlier scan
+looked for `C2 xx xx` (`RET n`) in the 5,552-byte declared body and found none; this function's epilogues are
+plain `RET`, which that scan cannot see, and the two `C2 28 00` bytes at `0x00070b0f`/`0x00070b26` really do
+belong to the next function (`0x00070aa0`). The frame also has to be read on the right instruction boundaries:
+a strict linear sweep desyncs in this body (jump tables) and reports only `+0x08` and `+0x18`; the tool's sweep
+resyncs on an undecodable byte and stops at the `RET` followed by `INT3` padding, which recovers all seven.
+The same instrument reads the writer `0x00138680` as 7 arguments (`RET 0x1c`), and correctly refuses a frame
+count for it: that body reads `[EBP+0x30]` and `[EBP+0x11c]` because it re-bases `EBP` over a large local frame,
+so those are not argument slots.
+
+**The caller's `ADD ESP,0x10` is a stack temporary, not the argument cleanup.** With a `cdecl` callee the caller
+must remove all 28 bytes, and this one removes 16 at `0x00138cfe` — then immediately re-bases the 12 that are
+left: `MOV EDI,ESP` (`0x00138d01`) and three stores `[EDI]=0`, `[EDI+4]=EAX`, `[EDI+8]=EAX` build a
+stack-resident `TArray` header, which `0x00055ed0` then grows (`PUSH 2`, `ECX=EDI`). So the argument pushes and a
+3-dword stack temporary were merged by the compiler: **the call takes seven arguments, and a rebuilt caller has
+to clean `0x1c` bytes and keep its own temporary elsewhere.**
 
 **The writer's own arity is seven stack arguments** (`RET 0x1c` at `0x00138f63`), and the three the name chain
 reads are `[esp+0x670]`/`0x674`/`0x678` — the kind of save arrives in the arguments, not in a global.
