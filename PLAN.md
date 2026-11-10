@@ -463,7 +463,16 @@ report cites file-level evidence for each claim.
       168. Both live behind the `MD5` console command family at `0x00126860` (`-a -c -s -r -f -q -g -l -j -w`), which
       saves through the engine's own `SavePackage` (`0x0006df00`) — that is why the file is a package. Regenerating the
       check therefore needs no cook inputs: it needs the quick transform, whose only unknown is the name-entry layout
-      it digests. Still open: that layout, and which path invokes the check at runtime (probe).
+      it digests. **The transform is now reproduced**: `tools/package-check-quick.py`
+      (`make package-check-quick`, `inventory/package_check_quick.csv`, `--check` in `make ci`) hashes
+      the 52-byte header slice + the generation records + 8 bytes per name entry (its flags dword,
+      then the first two UTF-16 units of the name) and matches **168 of 168** records, so the record
+      is a function of the header and the name table alone and a rebuilt package's record is
+      computable from its own file. The digest is coarse by design (two characters per name), so a
+      match does not mean an intact file; a relayout does change it, because the count/offset pairs
+      are inside the buffer. Still open: which path invokes the check at runtime (probe), and calling
+      the tool from `build.sh`'s `package-check` stage plus writing the `Packages.md5` package through
+      the container writer.
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
