@@ -204,6 +204,54 @@ script -- `Concat_StrStr`, `AtEqual_StrStr`, ... -- and every one of them has a 
 (`intUObjectexecConcat_StringString`), so those twelve are not missing at all: they dispatch through `GNatives` on their
 own index and the binder never forms a name for them.
 
+#### The registration table: 883 names, 1,104 records, and the body each one binds (measured 2026-11-09)
+
+The binder looks a name up, so something has to hold the map. It is not a code xref to the literals: none of the
+pool's addresses appears in `.text` as an immediate. The reference is a **table in `.data`** — one 8-byte record per
+entry, `{pointer into the pool, pointer into .text}`.
+
+`tools/native-table.py` (`make native-table`, `inventory/native_targets.csv`) finds it: **1,104 records over 203
+contiguous runs** between `0x00599e08` and `0x005c6740` (87 of the runs hold a single record, the largest holds
+306), covering **883 distinct names** — every name the pool carries. 23 names are registered more than once (up to
+12 records, in separate runs 0x100 apart), and the duplicates always name the same body, so a name resolves to
+exactly one address.
+
+| measurement | value |
+|---|---|
+| records / contiguous runs | 1,104 / 203 |
+| distinct names (and names in the pool) | 883 / 883 |
+| declarations with a body address | **769 of 797** (508 of the 523 index-less, 261 of the 274 indexed) |
+| agree with `inventory/gnatives_slots.csv` (runtime dump) | **261 of 261, 0 disagreements** |
+| bodies that are entries in `inventory/function_modules.csv` | 829 (and **none** is an interior address) |
+| bodies the function map has no function at | **275** |
+
+The cross-check is what makes this a measurement rather than a pattern match: the 261 agreements are against the
+table the *running build* installed (dumped over the xemu GDB stub before any of this), so the static records and
+the runtime dispatch table are the same map, entry for entry. An older, independent address corroborates it end to
+end: U16 found `UGUIController::execGetMapList` at `0x002fe5f0` from a log-string xref and a GDB breakpoint on the
+call site, and `intUGUIControllerexecGetMapList`'s record names `0x002fe5f0`.
+
+The 28 declarations without a body are exactly the three groups already accounted for: `Editor`'s 14 and
+`UPreview`'s 2 (their C++ side is not in the Xbox image, U1) and `Core.Object`'s 12 operator declarations spelled
+`_StrStr`, which dispatch on their own index and never form a name.
+
+**The 275 bodies the seeder has no function at are new entry points.** None falls inside a function the map already
+has, so the records name a start address the analysis is missing, with the callee's own name attached. That is the
+cheapest next pass for the function coverage in PLAN 4.1: 275 `{name, address}` pairs that were not guessed from a
+string or a prologue.
+
+The two save-path natives U5 is waiting on are now locatable with no boot: `intAGameInfoexecSavePackage` is
+`0x00298bb0` and `intAGameInfoexecLoadSaveGame` is `0x00149370`.
+
+**A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
+image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one
+character, so every index after the first pair drifts: **all 769** non-empty addresses in
+`inventory/native_binder_names.csv` were wrong — 752 pointed exactly **2,970 bytes (`0xb9a`) short** of their own
+name and 17 landed outside every file-backed section entirely, so **0** of them sat on the string. The fix reads the
+image as one character per 16-bit unit (lone surrogates are legal in a `str` and never match the binder pattern),
+and all 769 now land exactly on their name. That is why no reference to a pool address had ever been found in the
+image: the addresses being searched for were not the ones in the file.
+
 ### `UObject::ProcessInternal` at `0x00048bf0`
 
 The address every script `UFunction::Func` is set to. Its body is the interpreter, and it says so

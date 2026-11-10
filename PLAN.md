@@ -284,6 +284,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `Native_<index>`. Map: `inventory/gnatives_slots.csv` → `symbols/xbe_dispatch.csv` → `XbePost` overrides.
       The table is incomplete until a mission load (U7); the first attempt at this task was withdrawn because it
       had been measured against the CRT initialiser list — see the correction note below and `docs/NATIVE_VM.md`.
+      **The map no longer depends on the boot (2026-11-09):** the `{name, body}` registration records in `.data` give
+      all 883 names an address statically (`tools/native-table.py`, `inventory/native_targets.csv`), 261 of 261
+      agreeing with this runtime dump and 769 of 797 declarations covered — and 275 of those bodies are function
+      entries the analysis does not have, so the same table seeds `inventory/function_modules.csv`.
 - [~] 4.5 Split the XBE into per-module Ghidra projects using the assert-path map from 2.3 (Engine, Core, IpDrv,
       Gui, D3DDrv, XboxDrv, XboxAudio, XboxLive, Gameplay, Fire, stargategame, stargatevehicles).
       **The split is per function, not per range — measured.** `inventory/function_modules.csv`
@@ -888,6 +892,27 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-09, the binder's map is a table in the image, so a name is an address)
+
+- **The names had nowhere to point because the map is data, not code.** The binder's `int%sexec%s` lookup reads a
+  table of 8-byte `{pool pointer, .text pointer}` records in `.data`: **1,104 records in 203 contiguous runs**
+  (`0x00599e08`..`0x005c6740`), **883 distinct names**, 23 of them registered up to 12 times and always with the same
+  body. `tools/native-table.py` (`make native-table`, `inventory/native_targets.csv`) reads it; U1's ledger entry
+  now carries it.
+- **The cross-check is the deliverable.** 261 of the 274 index-carrying declarations have a record and **261 of 261
+  agree with `inventory/gnatives_slots.csv`** (the runtime dump), 0 disagreements; `intUGUIControllerexecGetMapList`
+  is `0x002fe5f0`, the address U16 measured independently from a log-string xref and a breakpoint. 769 of 797
+  declarations get an address, 508 of them the index-less ones `GNatives` can never name.
+- **275 of the bodies are new function entries.** `inventory/function_modules.csv` has no function at 275 of the
+  1,104 addresses (and none of the 1,104 is an interior address), so the records seed the map with `{name, address}`
+  pairs — the next pass for 4.1 is a seeding pass, not another string or prologue search.
+- **U5's two natives are addressable now**: `GameInfo.SavePackage` `0x00298bb0`, `GameInfo.LoadSaveGame`
+  `0x00149370`, so the save-path read starts at the two bodies instead of the `0x0012xxxx` neighbourhood.
+- **A `0xb9a`-byte bug, corrected here.** `native-binder.py`'s `binder_va` came from a whole-file UTF-16 decode, whose
+  surrogate pairs collapse two units into one character and shift every later index: all 769 addresses were wrong
+  (752 exactly 2,970 bytes short of their name, 17 outside every file-backed section). The column is regenerated and
+  every address now lands on its own name — which is what made the table findable at all.
 
 ### Execution notes (2026-11-09, the play path picks a track and no name can ever match)
 

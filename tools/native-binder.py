@@ -23,6 +23,7 @@ reports which declarations have a name to bind to.
 The XBE is the input; the tool prints names and counts, and writes one CSV of the join.
 """
 import argparse
+import array
 import csv
 import os
 import re
@@ -59,6 +60,19 @@ def split_binder(name):
         raise ValueError("not a binder name: %r" % name)
     prefix, func = m.group(1), m.group(2)
     return prefix[0], prefix[1:], func
+
+
+def wide_text(data):
+    """The image as one character per 16-bit unit, so character `i` is the unit at file offset `2*i`.
+
+    Decoding the file as UTF-16LE would be the obvious way and is wrong: a surrogate pair collapses two units into
+    one character, so every later index drifts, and `binder_va` (which is `index * 2` mapped to a VA) came out short
+    by up to 0xb9a -- far enough that no code or table reference to a name could be found. Lone surrogates are legal
+    in a `str` and never match the binder pattern, so no replacement is needed.
+    """
+    units = array.array("H")
+    units.frombytes(data[:len(data) // 2 * 2])
+    return "".join(map(chr, units))
 
 
 def read_csv(path):
@@ -128,7 +142,7 @@ def main():
     data = open(args.xbe, "rb").read()
     # The names are wide literals in one pool: decode the whole image as UTF-16LE, which leaves ASCII code bytes as
     # CJK-looking text between them and keeps the pool intact.
-    text = data.decode("utf-16-le", "replace")
+    text = wide_text(data)
     found = binder_names(text)
     print("image: %d distinct binder names" % len(found))
 
