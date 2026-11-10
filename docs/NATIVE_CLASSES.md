@@ -416,3 +416,63 @@ is the constructor, then the `68 imm32` pushes in the 96 bytes before it (`tools
 The literal window is the same evidence a `ucpp` stub gives -- `"new"`, the outer package and the class
 -- read from the call site instead of from the decompiled body, so the two instruments agree by
 construction where they overlap (466 of 466) and the scan is usable where no body was exported.
+
+## Every class's constructor and destructor, from the table each installs
+
+`inventory/xbe_class_table_names.csv` names a class by following its registration to the function that
+stores the class's table. That chain reaches **one** function per class, and only for the 466 classes a
+registration literal names. `tools/class-ctors.py` (`make class-ctors`,
+`inventory/class_constructors.csv`) inverts the direction: it scans `.text` for every
+`mov dword ptr [reg(+disp)], imm32` whose immediate is one of the **492** measured class tables and
+attributes the store to the function that contains it. A function that installs a table at `[this]` is
+building an object whose class that table names, so a class's whole C++ construction set comes out at once:
+the default constructor, the constructors that take arguments, and the scalar deleting destructor.
+
+**Measured.** **1,036** `C7 /0` stores of a measured table exist in `.text`; **1,005** fall inside a
+function the map knows — **998** distinct functions, since 7 functions install two tables — and **31** do
+not. Those 1,005 rows cover all **492** tables: **507** constructor-shaped, **493** destructor-shaped, **5**
+unclassified.
+
+Two independent signatures separate a constructor from a destructor, and only agreement is classified:
+
+| signature | constructor | destructor |
+|---|---|---|
+| order | calls its base constructor **before** installing the table | installs the table **before** any call, then calls the base destructor |
+| return | returns `this` (`mov eax, esi` in the epilogue) | returns nothing |
+
+**915 names follow from it** — **450** `ctor_<Class>` and **465** `dtor_<Class>` — and `FUN_*` in
+`symbols/xbox_functions.csv` falls **12,935 → 12,020** (`docs/SYMBOLS.md`). Eight of the constructors
+install the table before any call (a trivial base, or an inlined base constructor) and 36 take stack
+arguments, from 4 bytes to the 52 that `Class`'s registration overload takes.
+
+**The two chains check each other.** Of the 466 classes a registration literal names, **451** have the
+function that registration reaches classified as the constructor and **0** disagree. The 15 that do not are
+classes whose constructor's store is one of the 31 in no mapped function, so nothing was named from them;
+9 of those (`ObjectProperty`, `PointerProperty`, `ClassProperty`, `FixedArrayProperty`, `MapProperty`,
+`StructProperty`, `DelegateProperty`, `StreamTag`, `HTTPDownload`) therefore have no `ctor_` name at all.
+
+**What is deliberately left `FUN_*`, counted rather than glossed:**
+
+- **25 classes have more than one constructor installer** — `Class`, `Level`, `Model`, `Struct`, `State`,
+  `Enum`, `Linker`, `LinkerLoad`, `TcpipConnection`, `TerrainSector` and others. The registration-reached
+  one takes the name; the overloads stay `FUN_*` and are listed in the artifact, because
+  `docs/CONVENTIONS.md` forbids numbering a name to break a tie. `FUN_0003af60` is exactly this case: it
+  is `Class`'s 52-byte-argument constructor, the one all 493 script registrations call, while `ctor_Class`
+  is the 0-argument constructor at `0x0003ad20` that the `Class` registration itself reaches.
+- **5 stores are unclassified** because the signatures disagree: `0x0014e0e0` (three tables —
+  `StrProperty`, `NameProperty`, `StructProperty`) and `0x0006d520` (`Package`).
+- **31 stores sit in no mapped function** (`inventory/class_constructors.csv` excludes them; the census
+  prints the count): the property-class constructor block at `0x7d980`–`0x7ddf0`, the
+  `Struct`/`State`/`Function`/`Class` constructors at `0x3a180`–`0x3c494`, and a `BoolProperty` block near
+  `0x24afc7`. The store is measured; the containing function is a seeding gap (U8), so no name is taken
+  from it.
+- **The 26 tables no registration literal names** (`Object`, `Engine`, `Player`, `Texture`, …) appear in the
+  artifact with their installers and their row counts, but naming needs a class name and theirs comes from
+  the registration, so they stay `FUN_*` too.
+
+The census also caught a drift it did not cause: `symbols/xbe_overrides.csv` carried
+`ucpp_Register_GoauldDrone` at `0x003107b0` while `symbols/xbox_functions.csv` still said
+`stargatevehicles_GoauldDrone`, because an override added after the last import never reached the map.
+`tools/class-ctors.py --apply` now applies the committed override file to the map in its own right, which
+closed it; `inventory/module_export_census.csv` and `inventory/function_modules.csv` were regenerated from
+the resulting names.

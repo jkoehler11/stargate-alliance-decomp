@@ -1,0 +1,1006 @@
+function_va,function_name,class,table_va,object_size,form,stack_args,returns_this,call_before_store,store_va,registration_ctor,evidence
+0x00017050,FUN_00017050,,0x004c78c0,,dtor,0,no,,0x0001706d,,class table installed before any call; the body does not return this
+0x00169980,FUN_00169980,,0x004c7958,,ctor,0,yes,0x00062ce0,0x00169988,,class table installed after a call into the base constructor; the body returns this
+0x00017140,FUN_00017140,,0x004c7958,,dtor,0,no,,0x0001715d,,class table installed before any call; the body does not return this
+0x00017220,FUN_00017220,,0x004c7a10,,dtor,0,no,,0x0001723d,,class table installed before any call; the body does not return this
+0x000172a0,FUN_000172a0,,0x004c7ac8,,dtor,0,no,,0x000172bd,,class table installed before any call; the body does not return this
+0x00017400,ctor_Order,Order,0x004c7b88,40,ctor,0,yes,0x00062ce0,0x00017408,0x00017400,class table installed after a call into the base constructor; the body returns this
+0x000173b0,dtor_Order,Order,0x004c7b88,40,dtor,0,no,,0x000173cd,0x00017400,class table installed before any call; the body does not return this
+0x00017e30,ctor_MatObject,MatObject,0x004c7c00,40,ctor,0,yes,0x00062ce0,0x00017e38,0x00017e30,class table installed after a call into the base constructor; the body returns this
+0x00017de0,dtor_MatObject,MatObject,0x004c7c00,40,dtor,0,no,,0x00017dfd,0x00017e30,class table installed before any call; the body does not return this
+0x00017f70,FUN_00017f70,,0x004c7c78,,dtor,0,no,,0x00017f8d,,class table installed before any call; the body does not return this
+0x00018410,ctor_SGScreenSniperOverlay,SGScreenSniperOverlay,0x004c7d98,84,ctor,0,yes,0x00062ce0,0x00018418,0x00018410,class table installed after a call into the base constructor; the body returns this
+0x000183c0,dtor_SGScreenSniperOverlay,SGScreenSniperOverlay,0x004c7d98,84,dtor,0,no,,0x000183dd,0x00018410,class table installed before any call; the body does not return this
+0x000184e0,ctor_SGScreenMenuPause,SGScreenMenuPause,0x004c7e18,84,ctor,0,yes,0x00062ce0,0x000184e8,0x000184e0,class table installed after a call into the base constructor; the body returns this
+0x00018490,dtor_SGScreenMenuPause,SGScreenMenuPause,0x004c7e18,84,dtor,0,no,,0x000184ad,0x000184e0,class table installed before any call; the body does not return this
+0x000185b0,ctor_SGScreenBlur,SGScreenBlur,0x004c7e98,72,ctor,0,yes,0x00062ce0,0x000185b8,0x000185b0,class table installed after a call into the base constructor; the body returns this
+0x00018560,dtor_SGScreenBlur,SGScreenBlur,0x004c7e98,72,dtor,0,no,,0x0001857d,0x000185b0,class table installed before any call; the body does not return this
+0x00318060,stargategame_SGCameraEffects,SGScreenDOF,0x004c7f18,112,ctor,0,yes,0x00062ce0,0x00318084,0x00318060,class table installed after a call into the base constructor; the body returns this
+0x00018630,dtor_SGScreenDOF,SGScreenDOF,0x004c7f18,112,dtor,0,no,,0x0001864d,0x00318060,class table installed before any call; the body does not return this
+0x00316ef0,ctor_SGScreenMotionBlur,SGScreenMotionBlur,0x004c7fa0,72,ctor,0,yes,0x00062ce0,0x00316ef8,0x00316ef0,class table installed after a call into the base constructor; the body returns this
+0x000186f0,dtor_SGScreenMotionBlur,SGScreenMotionBlur,0x004c7fa0,72,dtor,0,no,,0x0001870d,0x00316ef0,class table installed before any call; the body does not return this
+0x003188c0,ctor_SGScreenRadialBlur,SGScreenRadialBlur,0x004c8028,80,ctor,0,yes,0x00062ce0,0x003188e9,0x003188c0,class table installed after a call into the base constructor; the body returns this
+0x000187b0,dtor_SGScreenRadialBlur,SGScreenRadialBlur,0x004c8028,80,dtor,0,no,,0x000187cd,0x003188c0,class table installed before any call; the body does not return this
+0x00317030,ctor_SGScreenEmissiveWithBloom,SGScreenEmissiveWithBloom,0x004c80a8,68,ctor,0,yes,0x00062ce0,0x00317038,0x00317030,class table installed after a call into the base constructor; the body returns this
+0x00018890,dtor_SGScreenEmissiveWithBloom,SGScreenEmissiveWithBloom,0x004c80a8,68,dtor,0,no,,0x000188ad,0x00317030,class table installed before any call; the body does not return this
+0x0001b600,ctor_MatSubAction,MatSubAction,0x004c8f28,80,ctor,0,yes,0x00062ce0,0x0001b608,0x0001b600,class table installed after a call into the base constructor; the body returns this
+0x0001b570,dtor_MatSubAction,MatSubAction,0x004c8f28,80,dtor,0,no,,0x0001b58d,0x0001b600,class table installed before any call; the body does not return this
+0x0001b6a0,ctor_SubActionCameraEffect,SubActionCameraEffect,0x004c8fb0,96,ctor,0,yes,0x00062ce0,0x0001b6a8,0x0001b6a0,class table installed after a call into the base constructor; the body returns this
+0x0001b620,dtor_SubActionCameraEffect,SubActionCameraEffect,0x004c8fb0,96,dtor,0,no,,0x0001b63d,0x0001b6a0,class table installed before any call; the body does not return this
+0x0001b870,ctor_ScriptedAction,ScriptedAction,0x004c9090,56,ctor,0,yes,0x00062ce0,0x0001b878,0x0001b870,class table installed after a call into the base constructor; the body returns this
+0x0001b810,dtor_ScriptedAction,ScriptedAction,0x004c9090,56,dtor,0,no,,0x0001b82d,0x0001b870,class table installed before any call; the body does not return this
+0x0001b940,ctor_ACTION_TriggerEvent,ACTION_TriggerEvent,0x004c9108,60,ctor,0,yes,0x00062ce0,0x0001b948,0x0001b940,class table installed after a call into the base constructor; the body returns this
+0x0001b8f0,dtor_ACTION_TriggerEvent,ACTION_TriggerEvent,0x004c9108,60,dtor,0,no,,0x0001b90d,0x0001b940,class table installed before any call; the body does not return this
+0x0001ba10,ctor_LatentScriptedAction,LatentScriptedAction,0x004c9180,56,ctor,0,yes,0x00062ce0,0x0001ba18,0x0001ba10,class table installed after a call into the base constructor; the body returns this
+0x0001b9c0,dtor_LatentScriptedAction,LatentScriptedAction,0x004c9180,56,dtor,0,no,,0x0001b9dd,0x0001ba10,class table installed before any call; the body does not return this
+0x0001bae0,ctor_ACTION_WaitForEvent,ACTION_WaitForEvent,0x004c91f8,68,ctor,0,yes,0x00062ce0,0x0001bae8,0x0001bae0,class table installed after a call into the base constructor; the body returns this
+0x0001ba90,dtor_ACTION_WaitForEvent,ACTION_WaitForEvent,0x004c91f8,68,dtor,0,no,,0x0001baad,0x0001bae0,class table installed before any call; the body does not return this
+0x0001bbb0,ctor_SubActionDepthOfField,SubActionDepthOfField,0x004c9270,132,ctor,0,yes,0x00062ce0,0x0001bbb8,0x0001bbb0,class table installed after a call into the base constructor; the body returns this
+0x0001bb60,dtor_SubActionDepthOfField,SubActionDepthOfField,0x004c9270,132,dtor,0,no,,0x0001bb7d,0x0001bbb0,class table installed before any call; the body does not return this
+0x001be140,FUN_001be140,,0x004c9348,,ctor,0,yes,0x00062ce0,0x001be164,,class table installed after a call into the base constructor; the body returns this
+0x0001cb70,FUN_0001cb70,,0x004c9348,,dtor,0,no,,0x0001cb8d,,class table installed before any call; the body does not return this
+0x000f9ce0,FUN_000f9ce0,,0x004c93d0,,ctor,0,yes,0x001be140,0x000f9d14,,class table installed after a call into the base constructor; the body returns this
+0x0001cc10,FUN_0001cc10,,0x004c93d0,,dtor,0,no,,0x0001cc2d,,class table installed before any call; the body does not return this
+0x000fd9b0,FUN_000fd9b0,,0x004c94b0,,ctor,0,yes,0x00062ce0,0x000fd9b8,,class table installed after a call into the base constructor; the body returns this
+0x0001cd10,FUN_0001cd10,,0x004c94b0,,dtor,0,no,,0x0001cd2d,,class table installed before any call; the body does not return this
+0x0032c910,ctor_XboxClient,XboxClient,0x004c9560,196,ctor,0,yes,0x000fd9b0,0x0032c918,0x0032c910,class table installed after a call into the base constructor; the body returns this
+0x0001cda0,dtor_XboxClient,XboxClient,0x004c9560,196,dtor,0,no,,0x0001cdbd,0x0032c910,class table installed before any call; the body does not return this
+0x0032d910,ctor_XboxViewport,XboxViewport,0x004c9618,464,ctor,0,yes,0x000f9ce0,0x0032d91a,0x0032d910,class table installed after a call into the base constructor; the body returns this
+0x0001ce50,dtor_XboxViewport,XboxViewport,0x004c9618,464,dtor,0,no,,0x0001ce6d,0x0032d910,class table installed before any call; the body does not return this
+0x00021940,ctor_Actor,Actor,0x004c9c60,908,ctor,0,yes,0x00062ce0,0x00021948,0x00021940,class table installed after a call into the base constructor; the body returns this
+0x000200f0,dtor_Actor,Actor,0x004c9c60,908,dtor,0,no,,0x0002010d,0x00021940,class table installed before any call; the body does not return this
+0x00021a10,ctor_Keypoint,Keypoint,0x004c9e58,908,ctor,0,yes,0x00062ce0,0x00021a18,0x00021a10,class table installed after a call into the base constructor; the body returns this
+0x00021990,dtor_Keypoint,Keypoint,0x004c9e58,908,dtor,0,no,,0x000219ad,0x00021a10,class table installed before any call; the body does not return this
+0x00021ab0,ctor_AIScript,AIScript,0x004ca048,920,ctor,0,yes,0x00062ce0,0x00021ab8,0x00021ab0,class table installed after a call into the base constructor; the body returns this
+0x00021a30,dtor_AIScript,AIScript,0x004ca048,920,dtor,0,no,,0x00021a4d,0x00021ab0,class table installed before any call; the body does not return this
+0x00021b90,ctor_Info,Info,0x004ca238,992,ctor,0,yes,0x00062ce0,0x00021b98,0x00021b90,class table installed after a call into the base constructor; the body returns this
+0x00021ad0,dtor_Info,Info,0x004ca238,992,dtor,0,no,,0x00021aed,0x00021b90,class table installed before any call; the body does not return this
+0x00021c60,ctor_ReplicationInfo,ReplicationInfo,0x004ca428,992,ctor,0,yes,0x00062ce0,0x00021c68,0x00021c60,class table installed after a call into the base constructor; the body returns this
+0x00021be0,dtor_ReplicationInfo,ReplicationInfo,0x004ca428,992,dtor,0,no,,0x00021bfd,0x00021c60,class table installed before any call; the body does not return this
+0x00021d40,ctor_Pawn,Pawn,0x004ca618,2408,ctor,0,yes,0x00062ce0,0x00021d6a,0x00021d40,class table installed after a call into the base constructor; the body returns this
+0x00021c80,dtor_Pawn,Pawn,0x004ca618,2408,dtor,0,no,,0x00021c9d,0x00021d40,class table installed before any call; the body does not return this
+0x00021f10,ctor_Vehicle,Vehicle,0x004ca830,3028,ctor,0,yes,0x00021d40,0x00021f3a,0x00021f10,class table installed after a call into the base constructor; the body returns this
+0x00021de0,dtor_Vehicle,Vehicle,0x004ca830,3028,dtor,0,no,,0x00021dfd,0x00021f10,class table installed before any call; the body does not return this
+0x00022020,ctor_SVehicle,SVehicle,0x004caa50,3120,ctor,0,yes,0x00021f10,0x00022028,0x00022020,class table installed after a call into the base constructor; the body returns this
+0x00021f80,dtor_SVehicle,SVehicle,0x004caa50,3120,dtor,0,no,,0x00021f9d,0x00022020,class table installed before any call; the body does not return this
+0x000220d0,ctor_Emitter,Emitter,0x004cac80,1048,ctor,0,yes,0x00062ce0,0x000220d8,0x000220d0,class table installed after a call into the base constructor; the body returns this
+0x00022040,dtor_Emitter,Emitter,0x004cac80,1048,dtor,0,no,,0x0002205d,0x000220d0,class table installed before any call; the body does not return this
+0x000221a0,ctor_NavigationPoint,NavigationPoint,0x004cae78,1056,ctor,0,yes,0x00062ce0,0x000221a8,0x000221a0,class table installed after a call into the base constructor; the body returns this
+0x000220f0,dtor_NavigationPoint,NavigationPoint,0x004cae78,1056,dtor,0,no,,0x0002210d,0x000221a0,class table installed before any call; the body does not return this
+0x00022240,ctor_Triggers,Triggers,0x004cb0a0,912,ctor,0,yes,0x00062ce0,0x00022248,0x00022240,class table installed after a call into the base constructor; the body returns this
+0x000221c0,dtor_Triggers,Triggers,0x004cb0a0,912,dtor,0,no,,0x000221dd,0x00022240,class table installed before any call; the body does not return this
+0x000222f0,ctor_Controller,Controller,0x004cb290,1368,ctor,0,yes,0x00062ce0,0x000222f8,0x000222f0,class table installed after a call into the base constructor; the body returns this
+0x00022260,dtor_Controller,Controller,0x004cb290,1368,dtor,0,no,,0x0002227d,0x000222f0,class table installed before any call; the body does not return this
+0x00022390,ctor_AIController,AIController,0x004cb4a8,1388,ctor,0,yes,0x00062ce0,0x00022398,0x00022390,class table installed after a call into the base constructor; the body returns this
+0x00022310,dtor_AIController,AIController,0x004cb4a8,1388,dtor,0,no,,0x0002232d,0x00022390,class table installed before any call; the body does not return this
+0x00219440,ctor_HUD,HUD,0x004cb6c0,1632,ctor,0,yes,0x00062ce0,0x0021946b,0x00219440,class table installed after a call into the base constructor; the body returns this
+0x000223b0,dtor_HUD,HUD,0x004cb6c0,1632,dtor,0,no,,0x000223cd,0x00219440,class table installed before any call; the body does not return this
+0x00022760,ctor_ScriptedSequence,ScriptedSequence,0x004cb8b0,940,ctor,0,yes,0x00062ce0,0x00022768,0x00022760,class table installed after a call into the base constructor; the body returns this
+0x00022700,dtor_ScriptedSequence,ScriptedSequence,0x004cb8b0,940,dtor,0,no,,0x0002271d,0x00022760,class table installed before any call; the body does not return this
+0x00022840,ctor_AmbushInfo,AmbushInfo,0x004cbaa0,1004,ctor,0,yes,0x00062ce0,0x00022848,0x00022840,class table installed after a call into the base constructor; the body returns this
+0x000227e0,dtor_AmbushInfo,AmbushInfo,0x004cbaa0,1004,dtor,0,no,,0x000227fd,0x00022840,class table installed before any call; the body does not return this
+0x00022910,ctor_Ambushpoint,Ambushpoint,0x004cbc90,1068,ctor,0,yes,0x00062ce0,0x00022918,0x00022910,class table installed after a call into the base constructor; the body returns this
+0x000228c0,dtor_Ambushpoint,Ambushpoint,0x004cbc90,1068,dtor,0,no,,0x000228dd,0x00022910,class table installed before any call; the body does not return this
+0x000229e0,ctor_TriggeredCondition,TriggeredCondition,0x004cbeb8,916,ctor,0,yes,0x00062ce0,0x000229e8,0x000229e0,class table installed after a call into the base constructor; the body returns this
+0x00022990,dtor_TriggeredCondition,TriggeredCondition,0x004cbeb8,916,dtor,0,no,,0x000229ad,0x000229e0,class table installed before any call; the body does not return this
+0x00022ab0,ctor_ScriptedController,ScriptedController,0x004cc0a8,1492,ctor,0,yes,0x00062ce0,0x00022ab8,0x00022ab0,class table installed after a call into the base constructor; the body returns this
+0x00022a60,dtor_ScriptedController,ScriptedController,0x004cc0a8,1492,dtor,0,no,,0x00022a7d,0x00022ab0,class table installed before any call; the body does not return this
+0x00022bc0,ctor_SGOrder,SGOrder,0x004cc2c0,148,ctor,0,yes,0x00062ce0,0x00022bc8,0x00022bc0,class table installed after a call into the base constructor; the body returns this
+0x00022b30,dtor_SGOrder,SGOrder,0x004cc2c0,148,dtor,0,no,,0x00022b4d,0x00022bc0,class table installed before any call; the body does not return this
+0x00022c90,ctor_UnrealScriptedSequence,UnrealScriptedSequence,0x004cc338,984,ctor,0,yes,0x00062ce0,0x00022c98,0x00022c90,class table installed after a call into the base constructor; the body returns this
+0x00022c40,dtor_UnrealScriptedSequence,UnrealScriptedSequence,0x004cc338,984,dtor,0,no,,0x00022c5d,0x00022c90,class table installed before any call; the body does not return this
+0x00022dc0,ctor_SquadAIBasic,SquadAIBasic,0x004cc528,1440,ctor,0,yes,0x00062ce0,0x00022dc8,0x00022dc0,class table installed after a call into the base constructor; the body returns this
+0x00022d10,dtor_SquadAIBasic,SquadAIBasic,0x004cc528,1440,dtor,0,no,,0x00022d2d,0x00022dc0,class table installed before any call; the body does not return this
+0x00022e90,ctor_CoverInfo,CoverInfo,0x004cc718,1092,ctor,0,yes,0x00062ce0,0x00022e98,0x00022e90,class table installed after a call into the base constructor; the body returns this
+0x00022e40,dtor_CoverInfo,CoverInfo,0x004cc718,1092,dtor,0,no,,0x00022e5d,0x00022e90,class table installed before any call; the body does not return this
+0x00022f60,ctor_SGFontInfo,SGFontInfo,0x004cc908,1064,ctor,0,yes,0x00062ce0,0x00022f68,0x00022f60,class table installed after a call into the base constructor; the body returns this
+0x00022f10,dtor_SGFontInfo,SGFontInfo,0x004cc908,1064,dtor,0,no,,0x00022f2d,0x00022f60,class table installed before any call; the body does not return this
+0x00023080,ctor_StargateVehicle,StargateVehicle,0x004ccaf8,3344,ctor,0,yes,0x00021f10,0x00023088,0x00023080,class table installed after a call into the base constructor; the body returns this
+0x00022fe0,dtor_StargateVehicle,StargateVehicle,0x004ccaf8,3344,dtor,0,no,,0x00022ffd,0x00023080,class table installed before any call; the body does not return this
+0x00023160,ctor_BeamArc,BeamArc,0x004ccd28,1096,ctor,0,yes,0x00062ce0,0x00023168,0x00023160,class table installed after a call into the base constructor; the body returns this
+0x00023100,dtor_BeamArc,BeamArc,0x004ccd28,1096,dtor,0,no,,0x0002311d,0x00023160,class table installed before any call; the body does not return this
+0x00023250,ctor_Electrocutor,Electrocutor,0x004ccf20,1096,ctor,0,yes,0x00062ce0,0x00023258,0x00023250,class table installed after a call into the base constructor; the body returns this
+0x000231e0,dtor_Electrocutor,Electrocutor,0x004ccf20,1096,dtor,0,no,,0x000231fd,0x00023250,class table installed before any call; the body does not return this
+0x00023320,ctor_SGTriggeredCondition,SGTriggeredCondition,0x004cd118,920,ctor,0,yes,0x00062ce0,0x00023328,0x00023320,class table installed after a call into the base constructor; the body returns this
+0x000232d0,dtor_SGTriggeredCondition,SGTriggeredCondition,0x004cd118,920,dtor,0,no,,0x000232ed,0x00023320,class table installed before any call; the body does not return this
+0x00023400,ctor_BotBase,BotBase,0x004cd308,1772,ctor,0,yes,0x00062ce0,0x00023408,0x00023400,class table installed after a call into the base constructor; the body returns this
+0x000233a0,dtor_BotBase,BotBase,0x004cd308,1772,dtor,0,no,,0x000233bd,0x00023400,class table installed before any call; the body does not return this
+0x000234e0,ctor_BotEnemy,BotEnemy,0x004cd520,2252,ctor,0,yes,0x00062ce0,0x000234e8,0x000234e0,class table installed after a call into the base constructor; the body returns this
+0x00023480,dtor_BotEnemy,BotEnemy,0x004cd520,2252,dtor,0,no,,0x0002349d,0x000234e0,class table installed before any call; the body does not return this
+0x00023750,ctor_StargateHUD,StargateHUD,0x004cd738,2252,ctor,0,yes,0x00219440,0x00023758,0x00023750,class table installed after a call into the base constructor; the body returns this
+0x00023560,dtor_StargateHUD,StargateHUD,0x004cd738,2252,dtor,0,no,,0x0002357d,0x00023750,class table installed before any call; the body does not return this
+0x00023840,ctor_ShadowManager,ShadowManager,0x004cd928,952,ctor,0,yes,0x00062ce0,0x00023848,0x00023840,class table installed after a call into the base constructor; the body returns this
+0x000237d0,dtor_ShadowManager,ShadowManager,0x004cd928,952,dtor,0,no,,0x000237ed,0x00023840,class table installed before any call; the body does not return this
+0x00023910,ctor_IntelligentSpawner,IntelligentSpawner,0x004cdb18,996,ctor,0,yes,0x00062ce0,0x00023918,0x00023910,class table installed after a call into the base constructor; the body returns this
+0x000238c0,dtor_IntelligentSpawner,IntelligentSpawner,0x004cdb18,996,dtor,0,no,,0x000238dd,0x00023910,class table installed before any call; the body does not return this
+0x000239e0,ctor_FarClipChange,FarClipChange,0x004cdd08,932,ctor,0,yes,0x00062ce0,0x000239e8,0x000239e0,class table installed after a call into the base constructor; the body returns this
+0x00023990,dtor_FarClipChange,FarClipChange,0x004cdd08,932,dtor,0,no,,0x000239ad,0x000239e0,class table installed before any call; the body does not return this
+0x00023ac0,ctor_SGLevel,SGLevel,0x004cdef8,920,ctor,0,yes,0x00062ce0,0x00023ac8,0x00023ac0,class table installed after a call into the base constructor; the body returns this
+0x00023a60,dtor_SGLevel,SGLevel,0x004cdef8,920,dtor,0,no,,0x00023a7d,0x00023ac0,class table installed before any call; the body does not return this
+0x00023b90,ctor_SGGenericOrderActor,SGGenericOrderActor,0x004ce0e8,908,ctor,0,yes,0x00062ce0,0x00023b98,0x00023b90,class table installed after a call into the base constructor; the body returns this
+0x00023b40,dtor_SGGenericOrderActor,SGGenericOrderActor,0x004ce0e8,908,dtor,0,no,,0x00023b5d,0x00023b90,class table installed before any call; the body does not return this
+0x00319780,ctor_SGScreenEmissive,SGScreenEmissive,0x004ce2d8,104,ctor,0,yes,0x00062ce0,0x00319788,0x00319780,class table installed after a call into the base constructor; the body returns this
+0x00023c10,dtor_SGScreenEmissive,SGScreenEmissive,0x004ce2d8,104,dtor,0,no,,0x00023c2d,0x00319780,class table installed before any call; the body does not return this
+0x003198a0,ctor_SGScreenBloom,SGScreenBloom,0x004ce360,144,ctor,0,yes,0x00062ce0,0x003198ca,0x003198a0,class table installed after a call into the base constructor; the body returns this
+0x00319970,FUN_00319970,SGScreenBloom,0x004ce360,144,ctor,4,yes,0x00062ce0,0x0031999f,0x003198a0,class table installed after a call into the base constructor; the body returns this
+0x00023cd0,dtor_SGScreenBloom,SGScreenBloom,0x004ce360,144,dtor,0,no,,0x00023ced,0x003198a0,class table installed before any call; the body does not return this
+0x00023dd0,ctor_AlkeshLandingZone,AlkeshLandingZone,0x004ce3e8,924,ctor,0,yes,0x00062ce0,0x00023dd8,0x00023dd0,class table installed after a call into the base constructor; the body returns this
+0x00023d80,dtor_AlkeshLandingZone,AlkeshLandingZone,0x004ce3e8,924,dtor,0,no,,0x00023d9d,0x00023dd0,class table installed before any call; the body does not return this
+0x00023ea0,ctor_StargateCopter,StargateCopter,0x004ce5d8,3600,ctor,0,yes,0x00021f10,0x00023ea8,0x00023ea0,class table installed after a call into the base constructor; the body returns this
+0x00023e50,dtor_StargateCopter,StargateCopter,0x004ce5d8,3600,dtor,0,no,,0x00023e6d,0x00023ea0,class table installed before any call; the body does not return this
+0x00023f70,ctor_Teltak,Teltak,0x004ce810,3664,ctor,0,yes,0x00021f10,0x00023f78,0x00023f70,class table installed after a call into the base constructor; the body returns this
+0x00023f20,dtor_Teltak,Teltak,0x004ce810,3664,dtor,0,no,,0x00023f3d,0x00023f70,class table installed before any call; the body does not return this
+0x00024040,ctor_AlkeshBomber,AlkeshBomber,0x004cea48,3788,ctor,0,yes,0x00021f10,0x00024048,0x00024040,class table installed after a call into the base constructor; the body returns this
+0x00023ff0,dtor_AlkeshBomber,AlkeshBomber,0x004cea48,3788,dtor,0,no,,0x0002400d,0x00024040,class table installed before any call; the body does not return this
+0x00024110,ctor_StargateHover,StargateHover,0x004cec80,3660,ctor,0,yes,0x00021f10,0x00024118,0x00024110,class table installed after a call into the base constructor; the body returns this
+0x000240c0,dtor_StargateHover,StargateHover,0x004cec80,3660,dtor,0,no,,0x000240dd,0x00024110,class table installed before any call; the body does not return this
+0x00024210,ctor_StargateCar,StargateCar,0x004ceeb8,3812,ctor,0,yes,0x00021f10,0x00024218,0x00024210,class table installed after a call into the base constructor; the body returns this
+0x00024190,dtor_StargateCar,StargateCar,0x004ceeb8,3812,dtor,0,no,,0x000241ad,0x00024210,class table installed before any call; the body does not return this
+0x000242e0,ctor_DeathGlider,DeathGlider,0x004cf0f8,3660,ctor,0,yes,0x00021f10,0x000242e8,0x000242e0,class table installed after a call into the base constructor; the body returns this
+0x00024290,dtor_DeathGlider,DeathGlider,0x004cf0f8,3660,dtor,0,no,,0x000242ad,0x000242e0,class table installed before any call; the body does not return this
+0x000243c0,ctor_GoauldDrone,GoauldDrone,0x004cf330,2532,ctor,0,yes,0x00021d40,0x000243c8,0x000243c0,class table installed after a call into the base constructor; the body returns this
+0x00024360,dtor_GoauldDrone,GoauldDrone,0x004cf330,2532,dtor,0,no,,0x0002437d,0x000243c0,class table installed before any call; the body does not return this
+0x000244a0,ctor_TeltakBot,TeltakBot,0x004cf548,1812,ctor,0,yes,0x00062ce0,0x000244a8,0x000244a0,class table installed after a call into the base constructor; the body returns this
+0x00024440,dtor_TeltakBot,TeltakBot,0x004cf548,1812,dtor,0,no,,0x0002445d,0x000244a0,class table installed before any call; the body does not return this
+0x00024570,ctor_DeathGliderBot,DeathGliderBot,0x004cf760,1792,ctor,0,yes,0x00062ce0,0x00024578,0x00024570,class table installed after a call into the base constructor; the body returns this
+0x00024520,dtor_DeathGliderBot,DeathGliderBot,0x004cf760,1792,dtor,0,no,,0x0002453d,0x00024570,class table installed before any call; the body does not return this
+0x00024650,ctor_AlkeshBomberBot,AlkeshBomberBot,0x004cf978,1868,ctor,0,yes,0x00062ce0,0x00024658,0x00024650,class table installed after a call into the base constructor; the body returns this
+0x000245f0,dtor_AlkeshBomberBot,AlkeshBomberBot,0x004cf978,1868,dtor,0,no,,0x0002460d,0x00024650,class table installed before any call; the body does not return this
+0x0027e3b0,ctor_WaterTexture,WaterTexture,0x004cfba0,4868,ctor,0,yes,0x00169980,0x0027e3d5,0x0027e3b0,class table installed after a call into the base constructor; the body returns this
+0x00025550,dtor_WaterTexture,WaterTexture,0x004cfba0,4868,dtor,0,no,,0x0002556d,0x0027e3b0,class table installed before any call; the body does not return this
+0x002e81b0,FUN_002e81b0,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e81c1,0x002e8370,class table installed after a call into the base constructor; the body returns this
+0x002e81f0,FUN_002e81f0,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8201,0x002e8370,class table installed after a call into the base constructor; the body returns this
+0x002e8260,FUN_002e8260,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8274,0x002e8370,class table installed after a call into the base constructor; the body returns this
+0x002e8370,ctor_IceTexture,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8381,0x002e8370,class table installed after a call into the base constructor; the body returns this
+0x00025660,dtor_IceTexture,IceTexture,0x004cfc88,296,dtor,0,no,,0x0002567d,0x002e8370,class table installed before any call; the body does not return this
+0x002e81f0,FUN_002e81f0,,0x004cfd78,,ctor,0,yes,0x0027e3b0,0x002e8220,,class table installed after a call into the base constructor; the body returns this
+0x00025710,FUN_00025710,,0x004cfd78,,dtor,0,no,,0x0002572d,,class table installed before any call; the body does not return this
+0x002e8260,FUN_002e8260,,0x004cfe68,,ctor,0,yes,0x0027e3b0,0x002e82a0,,class table installed after a call into the base constructor; the body returns this
+0x000257d0,FUN_000257d0,,0x004cfe68,,dtor,0,no,,0x000257ed,,class table installed before any call; the body does not return this
+0x002e8310,ctor_WaveTexture,WaveTexture,0x004cff58,4872,ctor,0,yes,0x002e8260,0x002e8318,0x002e8310,class table installed after a call into the base constructor; the body returns this
+0x00025880,dtor_WaveTexture,WaveTexture,0x004cff58,4872,dtor,0,no,,0x0002589d,0x002e8310,class table installed before any call; the body does not return this
+0x002e8330,ctor_FluidTexture,FluidTexture,0x004d0048,4868,ctor,0,yes,0x002e8260,0x002e8338,0x002e8330,class table installed after a call into the base constructor; the body returns this
+0x00025930,dtor_FluidTexture,FluidTexture,0x004d0048,4868,dtor,0,no,,0x0002594d,0x002e8330,class table installed before any call; the body does not return this
+0x002e8350,ctor_WetTexture,WetTexture,0x004d0138,4880,ctor,0,yes,0x002e8260,0x002e8366,0x002e8350,class table installed after a call into the base constructor; the body returns this
+0x000259e0,dtor_WetTexture,WetTexture,0x004d0138,4880,dtor,0,no,,0x000259fd,0x002e8350,class table installed before any call; the body does not return this
+0x002e8370,ctor_IceTexture,,0x004d0228,,ctor,0,yes,0x0027e3b0,0x002e83be,,class table installed after a call into the base constructor; the body returns this
+0x00025a90,FUN_00025a90,,0x004d0228,,dtor,0,no,,0x00025aad,,class table installed before any call; the body does not return this
+0x00183730,FUN_00183730,,0x004d0318,,ctor,0,yes,0x00062ce0,0x0018375f,,class table installed after a call into the base constructor; the body returns this
+0x00025f30,FUN_00025f30,,0x004d0318,,dtor,0,no,,0x00025f4d,,class table installed before any call; the body does not return this
+0x0010ffa0,FUN_0010ffa0,,0x004d03c8,,ctor,0,yes,0x001be140,0x0010ffcf,,class table installed after a call into the base constructor; the body returns this
+0x00110120,FUN_00110120,,0x004d03c8,,ctor,,yes,0x001be140,0x0011015b,,class table installed after a call into the base constructor; the body returns this
+0x00025ff0,FUN_00025ff0,,0x004d03c8,,dtor,0,no,,0x00026010,,class table installed before any call; the body does not return this
+0x00026200,ctor_TcpipConnection,TcpipConnection,0x004d0480,20404,ctor,0,yes,0x0010ffa0,0x00026208,0x00026200,class table installed after a call into the base constructor; the body returns this
+0x002d2890,FUN_002d2890,TcpipConnection,0x004d0480,20404,ctor,36,yes,0x00110120,0x002d28f1,0x00026200,class table installed after a call into the base constructor; the body returns this
+0x000261a0,dtor_TcpipConnection,TcpipConnection,0x004d0480,20404,dtor,0,no,,0x000261bd,0x00026200,class table installed before any call; the body does not return this
+0x000262e0,ctor_TcpNetDriver,TcpNetDriver,0x004d0530,4564,ctor,0,yes,0x00183730,0x000262e8,0x000262e0,class table installed after a call into the base constructor; the body returns this
+0x00026280,dtor_TcpNetDriver,TcpNetDriver,0x004d0530,4564,dtor,0,no,,0x0002629d,0x000262e0,class table installed before any call; the body does not return this
+0x000263d0,ctor_TcpipConnectionXbox,TcpipConnectionXbox,0x004d05e0,20424,ctor,0,yes,0x0010ffa0,0x000263da,0x000263d0,class table installed after a call into the base constructor; the body returns this
+0x002d55f0,FUN_002d55f0,TcpipConnectionXbox,0x004d05e0,20424,ctor,40,yes,0x00110120,0x002d564e,0x000263d0,class table installed after a call into the base constructor; the body returns this
+0x00026360,dtor_TcpipConnectionXbox,TcpipConnectionXbox,0x004d05e0,20424,dtor,0,no,,0x0002637d,0x000263d0,class table installed before any call; the body does not return this
+0x000264f0,ctor_TcpNetDriverXbox,TcpNetDriverXbox,0x004d0690,4608,ctor,0,yes,0x00183730,0x00026500,0x000264f0,class table installed after a call into the base constructor; the body returns this
+0x00026470,dtor_TcpNetDriverXbox,TcpNetDriverXbox,0x004d0690,4608,dtor,0,no,,0x0002648d,0x000264f0,class table installed before any call; the body does not return this
+0x00026870,ctor_PlayerController,PlayerController,0x004d0738,3980,ctor,0,yes,0x00062ce0,0x0002689a,0x00026870,class table installed after a call into the base constructor; the body returns this
+0x00026620,dtor_PlayerController,PlayerController,0x004d0738,3980,dtor,0,no,,0x0002663d,0x00026870,class table installed before any call; the body does not return this
+0x00026990,ctor_UnrealPlayer,UnrealPlayer,0x004d0950,4012,ctor,0,yes,0x00026870,0x00026998,0x00026990,class table installed after a call into the base constructor; the body returns this
+0x00026930,dtor_UnrealPlayer,UnrealPlayer,0x004d0950,4012,dtor,0,no,,0x0002694d,0x00026990,class table installed before any call; the body does not return this
+0x00026a70,ctor_StargatePlayer,StargatePlayer,0x004d0b68,4344,ctor,0,yes,0x00026870,0x00026a78,0x00026a70,class table installed after a call into the base constructor; the body returns this
+0x00026a10,dtor_StargatePlayer,StargatePlayer,0x004d0b68,4344,dtor,0,no,,0x00026a2d,0x00026a70,class table installed before any call; the body does not return this
+0x00038d70,FUN_00038d70,,0x004d1468,,ctor,4,yes,0x00062ce0,0x00038d7f,,class table installed after a call into the base constructor; the body returns this
+0x0002c8a0,FUN_0002c8a0,,0x004d1468,,dtor,0,no,,0x0002c8bd,,class table installed before any call; the body does not return this
+0x0007b0c0,FUN_0007b0c0,,0x004d17a8,,ctor,0,yes,0x00038d70,0x0007b0cf,,class table installed after a call into the base constructor; the body returns this
+0x0007b0f0,FUN_0007b0f0,,0x004d17a8,,ctor,16,yes,0x00038d70,0x0007b128,,class table installed after a call into the base constructor; the body returns this
+0x00031830,FUN_00031830,,0x004d17a8,,dtor,0,no,,0x0003184d,,class table installed before any call; the body does not return this
+0x000318c0,FUN_000318c0,IntProperty,0x004d1880,108,ctor,16,yes,0x0007b0f0,0x000318db,0x0007da10,class table installed after a call into the base constructor; the body returns this
+0x00031920,dtor_IntProperty,IntProperty,0x004d1880,108,dtor,0,no,,0x0003193d,0x0007da10,class table installed before any call; the body does not return this
+0x00031970,FUN_00031970,BoolProperty,0x004d1958,112,ctor,16,yes,0x0007b0f0,0x0003198b,0x0007daf0,class table installed after a call into the base constructor; the body returns this
+0x000319d0,dtor_BoolProperty,BoolProperty,0x004d1958,112,dtor,0,no,,0x000319ed,0x0007daf0,class table installed before any call; the body does not return this
+0x00031a20,FUN_00031a20,FloatProperty,0x004d1a30,108,ctor,16,yes,0x0007b0f0,0x00031a3b,0x0007db20,class table installed after a call into the base constructor; the body returns this
+0x00031a80,dtor_FloatProperty,FloatProperty,0x004d1a30,108,dtor,0,no,,0x00031a9d,0x0007db20,class table installed before any call; the body does not return this
+0x00031e90,ctor_AudioSubsystem,AudioSubsystem,0x004d1f88,152,ctor,0,yes,0x00062ce0,0x00031ebb,0x00031e90,class table installed after a call into the base constructor; the body returns this
+0x00031e00,dtor_AudioSubsystem,AudioSubsystem,0x004d1f88,152,dtor,0,no,,0x00031e1d,0x00031e90,class table installed before any call; the body does not return this
+0x0002fc80,ctor_XBoxAudioSubsystem,XBoxAudioSubsystem,0x004d21f8,432,ctor,0,yes,0x00031e90,0x0002fca4,0x0002fc80,class table installed after a call into the base constructor; the body returns this
+0x000320c0,dtor_XBoxAudioSubsystem,XBoxAudioSubsystem,0x004d21f8,432,dtor,0,no,,0x000320dd,0x0002fc80,class table installed before any call; the body does not return this
+0x000321f0,FUN_000321f0,,0x004d2400,,dtor,0,no,,0x0003220d,,class table installed before any call; the body does not return this
+0x00033450,ctor_XHVVoiceSubsystem,XHVVoiceSubsystem,0x004d2ad8,84,ctor,0,yes,0x00062ce0,0x0003345f,0x00033450,class table installed after a call into the base constructor; the body returns this
+0x00033fc0,dtor_XHVVoiceSubsystem,XHVVoiceSubsystem,0x004d2ad8,84,dtor,0,no,,0x00033fdd,0x00033450,class table installed before any call; the body does not return this
+0x00035890,ctor_StrProperty,StrProperty,0x004d32a0,108,ctor,0,yes,0x0007b0c0,0x00035898,0x00035890,class table installed after a call into the base constructor; the body returns this
+0x00036900,FUN_00036900,StrProperty,0x004d32a0,108,ctor,16,yes,0x0007b0f0,0x0003691b,0x00035890,class table installed after a call into the base constructor; the body returns this
+0x000358e0,dtor_StrProperty,StrProperty,0x004d32a0,108,dtor,0,no,,0x000358fd,0x00035890,class table installed before any call; the body does not return this
+0x0014e0e0,Core_UnClass,StrProperty,0x004d32a0,108,unclassified,0,no,0x0014d060,0x0014e210,0x00035890,shape signatures disagree; left unclassified
+0x0014e0e0,Core_UnClass,StrProperty,0x004d32a0,108,unclassified,0,no,0x0014d060,0x0014e3a6,0x00035890,shape signatures disagree; left unclassified
+0x00035930,FUN_00035930,ArrayProperty,0x004d3378,112,ctor,16,yes,0x0007b0f0,0x0003594b,0x0007dda0,class table installed after a call into the base constructor; the body returns this
+0x00035990,dtor_ArrayProperty,ArrayProperty,0x004d3378,112,dtor,0,no,,0x000359ad,0x0007dda0,class table installed before any call; the body does not return this
+0x00034bc0,FUN_00034bc0,,0x004d34d8,,ctor,0,yes,0x00062ce0,0x00034bc8,,class table installed after a call into the base constructor; the body returns this
+0x00035c70,FUN_00035c70,,0x004d34d8,,dtor,0,no,,0x00035c8d,,class table installed before any call; the body does not return this
+0x00035d00,ctor_ObjectExporterT3D,ObjectExporterT3D,0x004d3828,64,ctor,0,yes,0x00062ce0,0x00035d08,0x00035d00,class table installed after a call into the base constructor; the body returns this
+0x00035d50,dtor_ObjectExporterT3D,ObjectExporterT3D,0x004d3828,64,dtor,0,no,,0x00035d6d,0x00035d00,class table installed before any call; the body does not return this
+0x00036710,FUN_00036710,,0x004d3af0,,ctor,0,yes,0x00062ce0,0x0003671a,,class table installed after a call into the base constructor; the body returns this
+0x00036ac0,FUN_00036ac0,,0x004d3af0,,dtor,0,no,,0x00036add,,class table installed before any call; the body does not return this
+0x0003a1b0,FUN_0003a1b0,Struct,0x004d4418,128,ctor,4,yes,0x00062ce0,0x0003a1e2,0x0003d560,class table installed after a call into the base constructor; the body returns this
+0x0003d560,ctor_Struct,Struct,0x004d4418,128,ctor,0,yes,0x00062ce0,0x0003d56a,0x0003d560,class table installed after a call into the base constructor; the body returns this
+0x0003d4c0,dtor_Struct,Struct,0x004d4418,128,dtor,0,no,,0x0003d4dd,0x0003d560,class table installed before any call; the body does not return this
+0x0003d5b0,ctor_Function,Function,0x004d44c8,164,ctor,0,yes,0x00062ce0,0x0003d5c3,0x0003d5b0,class table installed after a call into the base constructor; the body returns this
+0x0003d600,dtor_Function,Function,0x004d44c8,164,dtor,0,no,,0x0003d61d,0x0003d5b0,class table installed before any call; the body does not return this
+0x0003a5f0,FUN_0003a5f0,State,0x004d4570,1176,ctor,20,yes,0x00062470,0x0003a661,0x0003d6a0,class table installed after a call into the base constructor; the body returns this
+0x0003d6a0,ctor_State,State,0x004d4570,1176,ctor,0,yes,0x00062ce0,0x0003d6b3,0x0003d6a0,class table installed after a call into the base constructor; the body returns this
+0x0003d650,dtor_State,State,0x004d4570,1176,dtor,0,no,,0x0003d66d,0x0003d6a0,class table installed before any call; the body does not return this
+0x0003a7a0,FUN_0003a7a0,Const,0x004d4618,64,ctor,8,yes,0x00062ce0,0x0003a7d9,0x0003d6f0,class table installed after a call into the base constructor; the body returns this
+0x0003d6f0,ctor_Const,Const,0x004d4618,64,ctor,0,yes,0x00062ce0,0x0003d6fa,0x0003d6f0,class table installed after a call into the base constructor; the body returns this
+0x0003d740,dtor_Const,Const,0x004d4618,64,dtor,0,no,,0x0003d75d,0x0003d6f0,class table installed before any call; the body does not return this
+0x0003ad20,ctor_Class,Class,0x004d4870,1312,ctor,0,yes,0x00062ce0,0x0003ad4e,0x0003ad20,class table installed after a call into the base constructor; the body returns this
+0x0003ae30,FUN_0003ae30,Class,0x004d4870,1312,ctor,4,yes,0x0003a1b0,0x0003ae5a,0x0003ad20,class table installed after a call into the base constructor; the body returns this
+0x0003af60,FUN_0003af60,Class,0x004d4870,1312,ctor,52,yes,0x0003a5f0,0x0003af90,0x0003ad20,class table installed after a call into the base constructor; the body returns this
+0x0003dbd0,dtor_Class,Class,0x004d4870,1312,dtor,0,no,,0x0003dbed,0x0003ad20,class table installed before any call; the body does not return this
+0x0003f910,ctor_PackageMap,PackageMap,0x004d9238,112,ctor,0,yes,0x00062ce0,0x0003f937,0x0003f910,class table installed after a call into the base constructor; the body returns this
+0x0003f9f0,dtor_PackageMap,PackageMap,0x004d9238,112,dtor,0,no,,0x0003fa0d,0x0003f910,class table installed before any call; the body does not return this
+0x00051990,Core_UnLinker,Linker,0x004da500,184,ctor,8,yes,0x00062ce0,0x000519c0,0x00075fe0,class table installed after a call into the base constructor; the body returns this
+0x00075fe0,ctor_Linker,Linker,0x004da500,184,ctor,0,yes,,0x00076007,0x00075fe0,class table installed after a call into the base constructor; the body returns this
+0x000537c0,dtor_Linker,Linker,0x004da500,184,dtor,0,no,,0x000537dd,0x00075fe0,class table installed before any call; the body does not return this
+0x00052870,FUN_00052870,LinkerLoad,0x004da778,1304,ctor,12,yes,0x00051990,0x0005290f,0x00076070,class table installed after a call into the base constructor; the body returns this
+0x00076070,ctor_LinkerLoad,LinkerLoad,0x004da778,1304,ctor,0,yes,0x00075fe0,0x000760ff,0x00076070,class table installed after a call into the base constructor; the body returns this
+0x00053890,dtor_LinkerLoad,LinkerLoad,0x004da778,1304,dtor,0,no,,0x000538af,0x00076070,class table installed before any call; the body does not return this
+0x00053190,FUN_00053190,LinkerSave,0x004da8a8,284,ctor,8,yes,0x00051990,0x00053252,0x00076130,class table installed after a call into the base constructor; the body returns this
+0x00076130,ctor_LinkerSave,LinkerSave,0x004da8a8,284,ctor,0,yes,0x00075fe0,0x000761bf,0x00076130,class table installed after a call into the base constructor; the body returns this
+0x000539f0,dtor_LinkerSave,LinkerSave,0x004da8a8,284,dtor,0,no,,0x00053a0f,0x00076130,class table installed before any call; the body does not return this
+0x00053370,FUN_00053370,LinkerSaveGame,0x004da9c8,284,ctor,8,yes,0x00053190,0x00053384,0x00076200,class table installed after a call into the base constructor; the body returns this
+0x00076200,ctor_LinkerSaveGame,LinkerSaveGame,0x004da9c8,284,ctor,0,yes,0x00076130,0x00076208,0x00076200,class table installed after a call into the base constructor; the body returns this
+0x00053b70,dtor_LinkerSaveGame,LinkerSaveGame,0x004da9c8,284,dtor,0,no,,0x00053b8d,0x00076200,class table installed before any call; the body does not return this
+0x000533b0,FUN_000533b0,LinkerLoadGame,0x004daaa0,1304,ctor,12,yes,0x00052870,0x000533c9,0x00076220,class table installed after a call into the base constructor; the body returns this
+0x00076220,ctor_LinkerLoadGame,LinkerLoadGame,0x004daaa0,1304,ctor,0,yes,0x00076070,0x00076228,0x00076220,class table installed after a call into the base constructor; the body returns this
+0x00053c10,dtor_LinkerLoadGame,LinkerLoadGame,0x004daaa0,1304,dtor,0,no,,0x00053c2d,0x00076220,class table installed before any call; the body does not return this
+0x00062ce0,ctor_VertexStreamBase,VertexStreamBase,0x004dd2a8,56,ctor,0,yes,,0x00062ce2,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00063a60,Core_UnObj,VertexStreamBase,0x004dd2a8,56,ctor,4,yes,,0x00063a6a,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00073810,Core_UnObj,VertexStreamBase,0x004dd2a8,56,ctor,20,yes,,0x0007382c,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00062470,FUN_00062470,VertexStreamBase,0x004dd2a8,56,dtor,16,no,,0x0006248e,0x00062ce0,class table installed before any call; the body does not return this
+0x00063ee0,Core_UnObj,VertexStreamBase,0x004dd2a8,56,dtor,0,no,,0x00063ee8,0x00062ce0,class table installed before any call; the body does not return this
+0x000669e0,FUN_000669e0,TextBuffer,0x004ddf78,64,ctor,4,yes,,0x00066a14,0x00075820,class table installed after a call into the base constructor; the body returns this
+0x00075870,dtor_TextBuffer,TextBuffer,0x004ddf78,64,dtor,0,no,,0x0007588d,0x00075820,class table installed before any call; the body does not return this
+0x00066b60,ctor_Commandlet,Commandlet,0x004de008,476,ctor,0,yes,,0x00066b85,0x00066b60,class table installed after a call into the base constructor; the body returns this
+0x00075760,dtor_Commandlet,Commandlet,0x004de008,476,dtor,0,no,,0x0007577d,0x00066b60,class table installed before any call; the body does not return this
+0x00066cb0,ctor_Package,Package,0x004de088,56,ctor,0,yes,,0x00066cd6,0x00066cb0,class table installed after a call into the base constructor; the body returns this
+0x000755e0,dtor_Package,Package,0x004de088,56,dtor,0,no,,0x000755fd,0x00066cb0,class table installed before any call; the body does not return this
+0x0006d520,FUN_0006d520,Package,0x004de088,56,unclassified,0,no,0x000572b0,0x0006da4d,0x00066cb0,shape signatures disagree; left unclassified
+0x00067ea0,FUN_00067ea0,Enum,0x004de118,64,ctor,4,yes,0x00038d70,0x00067eaf,0x000758e0,class table installed after a call into the base constructor; the body returns this
+0x000758e0,ctor_Enum,Enum,0x004de118,64,ctor,0,yes,,0x000758e4,0x000758e0,class table installed after a call into the base constructor; the body returns this
+0x00075930,dtor_Enum,Enum,0x004de118,64,dtor,0,no,,0x0007594d,0x000758e0,class table installed before any call; the body does not return this
+0x00069a40,ctor_TextBufferFactory,TextBufferFactory,0x004de7a0,104,ctor,0,yes,0x00036710,0x00069a48,0x00069a40,class table installed after a call into the base constructor; the body returns this
+0x00076e40,dtor_TextBufferFactory,TextBufferFactory,0x004de7a0,104,dtor,0,no,,0x00076e5d,0x00069a40,class table installed before any call; the body does not return this
+0x0007d850,dtor_ObjectProperty,ObjectProperty,0x004e0b40,112,dtor,0,no,,0x0007d86d,0x0007db50,class table installed before any call; the body does not return this
+0x000fde30,FUN_000fde30,ByteProperty,0x004e10c0,112,ctor,20,yes,0x0007b0f0,0x000fde52,0x0007d960,class table installed after a call into the base constructor; the body returns this
+0x0007d9c0,dtor_ByteProperty,ByteProperty,0x004e10c0,112,dtor,0,no,,0x0007d9dd,0x0007d960,class table installed before any call; the body does not return this
+0x0007daa0,dtor_PointerProperty,PointerProperty,0x004e1198,108,dtor,0,no,,0x0007dabd,0x0007da40,class table installed before any call; the body does not return this
+0x0007dbf0,dtor_ClassProperty,ClassProperty,0x004e1270,116,dtor,0,no,,0x0007dc0d,0x0007db80,class table installed before any call; the body does not return this
+0x0007dc40,ctor_NameProperty,NameProperty,0x004e1348,108,ctor,0,yes,0x00038d70,0x0007dc60,0x0007dc40,class table installed after a call into the base constructor; the body returns this
+0x0007dca0,dtor_NameProperty,NameProperty,0x004e1348,108,dtor,0,no,,0x0007dcbd,0x0007dc40,class table installed before any call; the body does not return this
+0x0014e0e0,Core_UnClass,NameProperty,0x004e1348,108,unclassified,0,no,0x0014d060,0x0014e1de,0x0007dc40,shape signatures disagree; left unclassified
+0x0007dd50,dtor_FixedArrayProperty,FixedArrayProperty,0x004e1420,116,dtor,0,no,,0x0007dd6d,0x0007dcf0,class table installed before any call; the body does not return this
+0x0007de30,dtor_MapProperty,MapProperty,0x004e14f8,116,dtor,0,no,,0x0007de4d,0x0007ddd0,class table installed before any call; the body does not return this
+0x0007dee0,dtor_StructProperty,StructProperty,0x004e15d0,112,dtor,0,no,,0x0007defd,0x0007de80,class table installed before any call; the body does not return this
+0x0014e0e0,Core_UnClass,StructProperty,0x004e15d0,112,unclassified,0,no,0x0014d060,0x0014e277,0x0007de80,shape signatures disagree; left unclassified
+0x0007df90,dtor_DelegateProperty,DelegateProperty,0x004e16a8,112,dtor,0,no,,0x0007dfad,0x0007df30,class table installed before any call; the body does not return this
+0x0007eef0,ctor_new,new,0x004e1ce8,148,ctor,0,yes,0x00062ce0,0x0007eeff,0x0007eef0,class table installed after a call into the base constructor; the body returns this
+0x0007ffa0,dtor_new,new,0x004e1ce8,148,dtor,0,no,,0x0007ffbd,0x0007eef0,class table installed before any call; the body does not return this
+0x00080a00,ctor_FileLog,FileLog,0x004e24a8,1020,ctor,0,yes,0x00062ce0,0x00080a08,0x00080a00,class table installed after a call into the base constructor; the body returns this
+0x00080a50,dtor_FileLog,FileLog,0x004e24a8,1020,dtor,0,no,,0x00080a6d,0x00080a00,class table installed before any call; the body does not return this
+0x00080fe0,ctor_GameStats,GameStats,0x004e2720,1032,ctor,0,yes,0x00062ce0,0x00080fe8,0x00080fe0,class table installed after a call into the base constructor; the body returns this
+0x00081030,dtor_GameStats,GameStats,0x004e2720,1032,dtor,0,no,,0x0008104d,0x00080fe0,class table installed before any call; the body does not return this
+0x00081300,ctor_SceneSubtitles,SceneSubtitles,0x004e2978,1008,ctor,0,yes,0x00062ce0,0x00081308,0x00081300,class table installed after a call into the base constructor; the body returns this
+0x00081350,dtor_SceneSubtitles,SceneSubtitles,0x004e2978,1008,dtor,0,no,,0x0008136d,0x00081300,class table installed before any call; the body does not return this
+0x00086490,ctor_xEmitter,xEmitter,0x004e2d28,1404,ctor,0,yes,0x00062ce0,0x00086498,0x00086490,class table installed after a call into the base constructor; the body returns this
+0x000864e0,dtor_xEmitter,xEmitter,0x004e2d28,1404,dtor,0,no,,0x000864fd,0x00086490,class table installed before any call; the body does not return this
+0x00086a90,ctor_xPickUpBase,xPickUpBase,0x004e2fc0,960,ctor,0,yes,0x00062ce0,0x00086a98,0x00086a90,class table installed after a call into the base constructor; the body returns this
+0x00086ae0,dtor_xPickUpBase,xPickUpBase,0x004e2fc0,960,dtor,0,no,,0x00086afd,0x00086a90,class table installed before any call; the body does not return this
+0x0008b160,ctor_xProcMesh,xProcMesh,0x004e3258,1040,ctor,0,yes,0x00062ce0,0x0008b168,0x0008b160,class table installed after a call into the base constructor; the body returns this
+0x0008b1b0,dtor_xProcMesh,xProcMesh,0x004e3258,1040,dtor,0,no,,0x0008b1cd,0x0008b160,class table installed before any call; the body does not return this
+0x0008d7d0,ctor_xWeatherEffect,xWeatherEffect,0x004e3568,1152,ctor,0,yes,0x00062ce0,0x0008d7d8,0x0008d7d0,class table installed after a call into the base constructor; the body returns this
+0x0008d820,dtor_xWeatherEffect,xWeatherEffect,0x004e3568,1152,dtor,0,no,,0x0008d83d,0x0008d7d0,class table installed before any call; the body does not return this
+0x000942b0,ctor_KActor,KActor,0x004e50c8,976,ctor,0,yes,0x00062ce0,0x000942b8,0x000942b0,class table installed after a call into the base constructor; the body returns this
+0x00094220,dtor_KActor,KActor,0x004e50c8,976,dtor,0,no,,0x0009423d,0x000942b0,class table installed before any call; the body does not return this
+0x00094350,ctor_KConstraint,KConstraint,0x004e52b8,1080,ctor,0,yes,0x00062ce0,0x00094358,0x00094350,class table installed after a call into the base constructor; the body returns this
+0x000942d0,dtor_KConstraint,KConstraint,0x004e52b8,1080,dtor,0,no,,0x000942ed,0x00094350,class table installed before any call; the body does not return this
+0x00094370,ctor_KCarWheelJoint,KCarWheelJoint,0x004e54b0,1136,ctor,0,yes,0x00062ce0,0x00094378,0x00094370,class table installed after a call into the base constructor; the body returns this
+0x000943c0,dtor_KCarWheelJoint,KCarWheelJoint,0x004e54b0,1136,dtor,0,no,,0x000943dd,0x00094370,class table installed before any call; the body does not return this
+0x00094410,ctor_KConeLimit,KConeLimit,0x004e56a8,1092,ctor,0,yes,0x00062ce0,0x00094418,0x00094410,class table installed after a call into the base constructor; the body returns this
+0x00094460,dtor_KConeLimit,KConeLimit,0x004e56a8,1092,dtor,0,no,,0x0009447d,0x00094410,class table installed before any call; the body does not return this
+0x000944b0,ctor_KHinge,KHinge,0x004e58a0,1120,ctor,0,yes,0x00062ce0,0x000944b8,0x000944b0,class table installed after a call into the base constructor; the body returns this
+0x00094500,dtor_KHinge,KHinge,0x004e58a0,1120,dtor,0,no,,0x0009451d,0x000944b0,class table installed before any call; the body does not return this
+0x00094550,ctor_KBSJoint,KBSJoint,0x004e5a98,1080,ctor,0,yes,0x00062ce0,0x00094558,0x00094550,class table installed after a call into the base constructor; the body returns this
+0x000945a0,dtor_KBSJoint,KBSJoint,0x004e5a98,1080,dtor,0,no,,0x000945bd,0x00094550,class table installed before any call; the body does not return this
+0x000a3740,ctor_KarmaParamsCollision,KarmaParamsCollision,0x004e77b0,120,ctor,0,yes,0x00062ce0,0x000a3748,0x000a3740,class table installed after a call into the base constructor; the body returns this
+0x000a36c0,dtor_KarmaParamsCollision,KarmaParamsCollision,0x004e77b0,120,dtor,0,no,,0x000a36dd,0x000a3740,class table installed before any call; the body does not return this
+0x000a6ee0,ctor_KVehicle,KVehicle,0x004e7a18,3104,ctor,0,yes,0x00021f10,0x000a6ee8,0x000a6ee0,class table installed after a call into the base constructor; the body returns this
+0x000a6f30,dtor_KVehicle,KVehicle,0x004e7a18,3104,dtor,0,no,,0x000a6f4d,0x000a6ee0,class table installed before any call; the body does not return this
+0x000a6f80,ctor_KRepulsor,KRepulsor,0x004e7c38,944,ctor,0,yes,0x00062ce0,0x000a6f88,0x000a6f80,class table installed after a call into the base constructor; the body returns this
+0x000a6fd0,dtor_KRepulsor,KRepulsor,0x004e7c38,944,dtor,0,no,,0x000a6fed,0x000a6f80,class table installed before any call; the body does not return this
+0x000a7020,ctor_KTire,KTire,0x004e7e28,1104,ctor,0,yes,0x00062ce0,0x000a7028,0x000a7020,class table installed after a call into the base constructor; the body returns this
+0x000a7070,dtor_KTire,KTire,0x004e7e28,1104,dtor,0,no,,0x000a708d,0x000a7020,class table installed before any call; the body does not return this
+0x000a7150,ctor_KarmaParams,KarmaParams,0x004e8018,220,ctor,0,yes,0x00062ce0,0x000a7158,0x000a7150,class table installed after a call into the base constructor; the body returns this
+0x000a70c0,dtor_KarmaParams,KarmaParams,0x004e8018,220,dtor,0,no,,0x000a70dd,0x000a7150,class table installed before any call; the body does not return this
+0x000a7170,ctor_KarmaParamsSkel,KarmaParamsSkel,0x004e8090,276,ctor,0,yes,0x00062ce0,0x000a7178,0x000a7170,class table installed after a call into the base constructor; the body returns this
+0x000a71c0,dtor_KarmaParamsSkel,KarmaParamsSkel,0x004e8090,276,dtor,0,no,,0x000a71dd,0x000a7170,class table installed before any call; the body does not return this
+0x000a7220,ctor_KarmaParamsRBFull,KarmaParamsRBFull,0x004e8108,256,ctor,0,yes,0x00062ce0,0x000a7228,0x000a7220,class table installed after a call into the base constructor; the body returns this
+0x000a7270,dtor_KarmaParamsRBFull,KarmaParamsRBFull,0x004e8108,256,dtor,0,no,,0x000a728d,0x000a7220,class table installed before any call; the body does not return this
+0x000a7380,ctor_KMeshProps,KMeshProps,0x004e8440,124,ctor,0,yes,0x00062ce0,0x000a738b,0x000a7380,class table installed after a call into the base constructor; the body returns this
+0x000a7be0,dtor_KMeshProps,KMeshProps,0x004e8440,124,dtor,0,no,,0x000a7bfd,0x000a7380,class table installed before any call; the body does not return this
+0x000bd030,FUN_000bd030,,0x004eaea8,,dtor,0,no,,0x000bd04d,,class table installed before any call; the body does not return this
+0x000bd3c0,ctor_NullRenderDevice,NullRenderDevice,0x004eb0a8,220,ctor,0,yes,0x00062ce0,0x000bd3cf,0x000bd3c0,class table installed after a call into the base constructor; the body returns this
+0x000bd500,dtor_NullRenderDevice,NullRenderDevice,0x004eb0a8,220,dtor,0,no,,0x000bd51d,0x000bd3c0,class table installed before any call; the body does not return this
+0x000c0390,ctor_TextureEditable,TextureEditable,0x004eb2b0,216,ctor,0,yes,0x0027e3b0,0x000c0398,0x000c0390,class table installed after a call into the base constructor; the body returns this
+0x000c03e0,dtor_TextureEditable,TextureEditable,0x004eb2b0,216,dtor,0,no,,0x000c03fd,0x000c0390,class table installed before any call; the body does not return this
+0x000c1a30,ctor_ExportCacheCommandlet,ExportCacheCommandlet,0x004eb420,476,ctor,0,yes,0x00066b60,0x000c1a38,0x000c1a30,class table installed after a call into the base constructor; the body returns this
+0x000c1a80,dtor_ExportCacheCommandlet,ExportCacheCommandlet,0x004eb420,476,dtor,0,no,,0x000c1a9d,0x000c1a30,class table installed before any call; the body does not return this
+0x000c3d80,ctor_ReachSpec,ReachSpec,0x004ebb38,76,ctor,0,yes,0x00062ce0,0x000c3d88,0x000c3d80,class table installed after a call into the base constructor; the body returns this
+0x000c3dd0,dtor_ReachSpec,ReachSpec,0x004ebb38,76,dtor,0,no,,0x000c3ded,0x000c3d80,class table installed before any call; the body does not return this
+0x000dbb90,ctor_LogEntry,LogEntry,0x004ebdd0,68,ctor,0,yes,0x00062ce0,0x000dbb98,0x000dbb90,class table installed after a call into the base constructor; the body returns this
+0x000dbbe0,dtor_LogEntry,LogEntry,0x004ebdd0,68,dtor,0,no,,0x000dbbfd,0x000dbb90,class table installed before any call; the body does not return this
+0x000dbc50,ctor_LevelSummary,LevelSummary,0x004ebe48,132,ctor,0,yes,0x00062ce0,0x000dbc58,0x000dbc50,class table installed after a call into the base constructor; the body returns this
+0x000dbd50,dtor_LevelSummary,LevelSummary,0x004ebe48,132,dtor,0,no,,0x000dbd6d,0x000dbc50,class table installed before any call; the body does not return this
+0x000dc840,ctor_InterpolationPoint,InterpolationPoint,0x004ebfd8,908,ctor,0,yes,0x00062ce0,0x000dc848,0x000dc840,class table installed after a call into the base constructor; the body returns this
+0x000dc7c0,dtor_InterpolationPoint,InterpolationPoint,0x004ebfd8,908,dtor,0,no,,0x000dc7dd,0x000dc840,class table installed before any call; the body does not return this
+0x000dc860,ctor_MapVolumeViewPoint,MapVolumeViewPoint,0x004ec1c8,912,ctor,0,yes,0x00062ce0,0x000dc868,0x000dc860,class table installed after a call into the base constructor; the body returns this
+0x000dc8b0,dtor_MapVolumeViewPoint,MapVolumeViewPoint,0x004ec1c8,912,dtor,0,no,,0x000dc8cd,0x000dc860,class table installed before any call; the body does not return this
+0x000dc900,ctor_AmbientSound,AmbientSound,0x004ec3b8,940,ctor,0,yes,0x00062ce0,0x000dc908,0x000dc900,class table installed after a call into the base constructor; the body returns this
+0x000dc950,dtor_AmbientSound,AmbientSound,0x004ec3b8,940,dtor,0,no,,0x000dc96d,0x000dc900,class table installed before any call; the body does not return this
+0x000dc9b0,ctor_PolyMarker,PolyMarker,0x004ec5a8,908,ctor,0,yes,0x00062ce0,0x000dc9b8,0x000dc9b0,class table installed after a call into the base constructor; the body returns this
+0x000dca00,dtor_PolyMarker,PolyMarker,0x004ec5a8,908,dtor,0,no,,0x000dca1d,0x000dc9b0,class table installed before any call; the body does not return this
+0x000dca50,ctor_ClipMarker,ClipMarker,0x004ec798,908,ctor,0,yes,0x00062ce0,0x000dca58,0x000dca50,class table installed after a call into the base constructor; the body returns this
+0x000dcaa0,dtor_ClipMarker,ClipMarker,0x004ec798,908,dtor,0,no,,0x000dcabd,0x000dca50,class table installed before any call; the body does not return this
+0x000dcaf0,ctor_TeamInfo,TeamInfo,0x004ec988,1084,ctor,0,yes,0x00062ce0,0x000dcb1a,0x000dcaf0,class table installed after a call into the base constructor; the body returns this
+0x000dcb90,dtor_TeamInfo,TeamInfo,0x004ec988,1084,dtor,0,no,,0x000dcbad,0x000dcaf0,class table installed before any call; the body does not return this
+0x000dcc10,ctor_GameReplicationInfo,GameReplicationInfo,0x004ecb78,1356,ctor,0,yes,0x00062ce0,0x000dcc3a,0x000dcc10,class table installed after a call into the base constructor; the body returns this
+0x000dccc0,dtor_GameReplicationInfo,GameReplicationInfo,0x004ecb78,1356,dtor,0,no,,0x000dccdd,0x000dcc10,class table installed before any call; the body does not return this
+0x000dce10,ctor_SceneReplicationInfo,SceneReplicationInfo,0x004ecd68,1004,ctor,0,yes,0x00062ce0,0x000dce18,0x000dce10,class table installed after a call into the base constructor; the body returns this
+0x000dce60,dtor_SceneReplicationInfo,SceneReplicationInfo,0x004ecd68,1004,dtor,0,no,,0x000dce7d,0x000dce10,class table installed before any call; the body does not return this
+0x000dcec0,ctor_LinkedReplicationInfo,LinkedReplicationInfo,0x004ecf58,996,ctor,0,yes,0x00062ce0,0x000dcec8,0x000dcec0,class table installed after a call into the base constructor; the body returns this
+0x000dcf10,dtor_LinkedReplicationInfo,LinkedReplicationInfo,0x004ecf58,996,dtor,0,no,,0x000dcf2d,0x000dcec0,class table installed before any call; the body does not return this
+0x000dcf60,ctor_PlayerReplicationInfo,PlayerReplicationInfo,0x004ed148,1252,ctor,0,yes,0x00062ce0,0x000dcf68,0x000dcf60,class table installed after a call into the base constructor; the body returns this
+0x000dcfb0,dtor_PlayerReplicationInfo,PlayerReplicationInfo,0x004ed148,1252,dtor,0,no,,0x000dcfcd,0x000dcf60,class table installed before any call; the body does not return this
+0x000dd0f0,ctor_AnnouncerVoice,AnnouncerVoice,0x004ed338,1056,ctor,0,yes,0x00062ce0,0x000dd0f8,0x000dd0f0,class table installed after a call into the base constructor; the body returns this
+0x000dd140,dtor_AnnouncerVoice,AnnouncerVoice,0x004ed338,1056,dtor,0,no,,0x000dd15d,0x000dd0f0,class table installed before any call; the body does not return this
+0x000dd1e0,ctor_Mutator,Mutator,0x004ed528,1076,ctor,0,yes,0x00062ce0,0x000dd1e8,0x000dd1e0,class table installed after a call into the base constructor; the body returns this
+0x000dd230,dtor_Mutator,Mutator,0x004ed528,1076,dtor,0,no,,0x000dd24d,0x000dd1e0,class table installed before any call; the body does not return this
+0x000dd2e0,ctor_PotentialClimbWatcher,PotentialClimbWatcher,0x004ed718,992,ctor,0,yes,0x00062ce0,0x000dd2e8,0x000dd2e0,class table installed after a call into the base constructor; the body returns this
+0x000dd330,dtor_PotentialClimbWatcher,PotentialClimbWatcher,0x004ed718,992,dtor,0,no,,0x000dd34d,0x000dd2e0,class table installed before any call; the body does not return this
+0x000dd380,ctor_InternetInfo,InternetInfo,0x004ed908,992,ctor,0,yes,0x00062ce0,0x000dd388,0x000dd380,class table installed after a call into the base constructor; the body returns this
+0x000dd3d0,dtor_InternetInfo,InternetInfo,0x004ed908,992,dtor,0,no,,0x000dd3ed,0x000dd380,class table installed before any call; the body does not return this
+0x000dd420,ctor_SavedMove,SavedMove,0x004edaf8,1104,ctor,0,yes,0x00062ce0,0x000dd428,0x000dd420,class table installed after a call into the base constructor; the body returns this
+0x000dd470,dtor_SavedMove,SavedMove,0x004edaf8,1104,dtor,0,no,,0x000dd48d,0x000dd420,class table installed before any call; the body does not return this
+0x000dd540,ctor_ZoneInfo,ZoneInfo,0x004edce8,1144,ctor,0,yes,0x00062ce0,0x000dd548,0x000dd540,class table installed after a call into the base constructor; the body returns this
+0x000dd4c0,dtor_ZoneInfo,ZoneInfo,0x004edce8,1144,dtor,0,no,,0x000dd4dd,0x000dd540,class table installed before any call; the body does not return this
+0x000dd590,ctor_WarpZoneInfo,WarpZoneInfo,0x004eded8,1324,ctor,0,yes,0x00062ce0,0x000dd5ba,0x000dd590,class table installed after a call into the base constructor; the body returns this
+0x000dd630,dtor_WarpZoneInfo,WarpZoneInfo,0x004eded8,1324,dtor,0,no,,0x000dd64d,0x000dd590,class table installed before any call; the body does not return this
+0x000dd6b0,ctor_SkyZoneInfo,SkyZoneInfo,0x004ee0c8,1144,ctor,0,yes,0x00062ce0,0x000dd6b8,0x000dd6b0,class table installed after a call into the base constructor; the body returns this
+0x000dd700,dtor_SkyZoneInfo,SkyZoneInfo,0x004ee0c8,1144,dtor,0,no,,0x000dd71d,0x000dd6b0,class table installed before any call; the body does not return this
+0x000dd750,ctor_GameInfo,GameInfo,0x004ee2b8,2172,ctor,0,yes,0x00062ce0,0x000dd77a,0x000dd750,class table installed after a call into the base constructor; the body returns this
+0x000dd860,dtor_GameInfo,GameInfo,0x004ee2b8,2172,dtor,0,no,,0x000dd87d,0x000dd750,class table installed before any call; the body does not return this
+0x000ddb50,ctor_Scout,Scout,0x004ee4a8,2412,ctor,0,yes,0x00021d40,0x000ddb58,0x000ddb50,class table installed after a call into the base constructor; the body returns this
+0x000ddba0,dtor_Scout,Scout,0x004ee4a8,2412,dtor,0,no,,0x000ddbbd,0x000ddb50,class table installed before any call; the body does not return this
+0x000ddf40,ctor_Brush,Brush,0x004ee6c0,1000,ctor,0,yes,0x00062ce0,0x000ddf48,0x000ddf40,class table installed after a call into the base constructor; the body returns this
+0x000ddbf0,dtor_Brush,Brush,0x004ee6c0,1000,dtor,0,no,,0x000ddc0d,0x000ddf40,class table installed before any call; the body does not return this
+0x000de020,ctor_Volume,Volume,0x004ee910,1032,ctor,0,yes,0x00062ce0,0x000de028,0x000de020,class table installed after a call into the base constructor; the body returns this
+0x000ddf90,dtor_Volume,Volume,0x004ee910,1032,dtor,0,no,,0x000ddfad,0x000de020,class table installed before any call; the body does not return this
+0x000de040,ctor_MapVolume,MapVolume,0x004eeb08,1076,ctor,0,yes,0x00062ce0,0x000de048,0x000de040,class table installed after a call into the base constructor; the body returns this
+0x000de090,dtor_MapVolume,MapVolume,0x004eeb08,1076,dtor,0,no,,0x000de0ad,0x000de040,class table installed before any call; the body does not return this
+0x000de0e0,ctor_BlockingVolume,BlockingVolume,0x004eed00,1048,ctor,0,yes,0x00062ce0,0x000de0e8,0x000de0e0,class table installed after a call into the base constructor; the body returns this
+0x000de130,dtor_BlockingVolume,BlockingVolume,0x004eed00,1048,dtor,0,no,,0x000de14d,0x000de0e0,class table installed before any call; the body does not return this
+0x000de210,ctor_PhysicsVolume,PhysicsVolume,0x004eeef8,1180,ctor,0,yes,0x00062ce0,0x000de218,0x000de210,class table installed after a call into the base constructor; the body returns this
+0x000de190,dtor_PhysicsVolume,PhysicsVolume,0x004eeef8,1180,dtor,0,no,,0x000de1ad,0x000de210,class table installed before any call; the body does not return this
+0x000de230,ctor_LadderVolume,LadderVolume,0x004ef0f0,1236,ctor,0,yes,0x00062ce0,0x000de238,0x000de230,class table installed after a call into the base constructor; the body returns this
+0x000de280,dtor_LadderVolume,LadderVolume,0x004ef0f0,1236,dtor,0,no,,0x000de29d,0x000de230,class table installed before any call; the body does not return this
+0x000de2d0,ctor_DefaultPhysicsVolume,DefaultPhysicsVolume,0x004ef2e8,1180,ctor,0,yes,0x00062ce0,0x000de2d8,0x000de2d0,class table installed after a call into the base constructor; the body returns this
+0x000de320,dtor_DefaultPhysicsVolume,DefaultPhysicsVolume,0x004ef2e8,1180,dtor,0,no,,0x000de33d,0x000de2d0,class table installed before any call; the body does not return this
+0x000de3f0,ctor_PathNode,PathNode,0x004ef4e0,1056,ctor,0,yes,0x00062ce0,0x000de3f8,0x000de3f0,class table installed after a call into the base constructor; the body returns this
+0x000de370,dtor_PathNode,PathNode,0x004ef4e0,1056,dtor,0,no,,0x000de38d,0x000de3f0,class table installed before any call; the body does not return this
+0x000de410,ctor_RoadPathNode,RoadPathNode,0x004ef708,1060,ctor,0,yes,0x00062ce0,0x000de418,0x000de410,class table installed after a call into the base constructor; the body returns this
+0x000de460,dtor_RoadPathNode,RoadPathNode,0x004ef708,1060,dtor,0,no,,0x000de47d,0x000de410,class table installed before any call; the body does not return this
+0x000de4b0,ctor_FlyingPathNode,FlyingPathNode,0x004ef930,1056,ctor,0,yes,0x00062ce0,0x000de4b8,0x000de4b0,class table installed after a call into the base constructor; the body returns this
+0x000de500,dtor_FlyingPathNode,FlyingPathNode,0x004ef930,1056,dtor,0,no,,0x000de51d,0x000de4b0,class table installed before any call; the body does not return this
+0x000de550,ctor_ReplicatorPathNode,ReplicatorPathNode,0x004efb58,1068,ctor,0,yes,0x00062ce0,0x000de558,0x000de550,class table installed after a call into the base constructor; the body returns this
+0x000de5a0,dtor_ReplicatorPathNode,ReplicatorPathNode,0x004efb58,1068,dtor,0,no,,0x000de5bd,0x000de550,class table installed before any call; the body does not return this
+0x000de640,ctor_SmallNavigationPoint,SmallNavigationPoint,0x004efd80,1056,ctor,0,yes,0x00062ce0,0x000de648,0x000de640,class table installed after a call into the base constructor; the body returns this
+0x000de5f0,dtor_SmallNavigationPoint,SmallNavigationPoint,0x004efd80,1056,dtor,0,no,,0x000de60d,0x000de640,class table installed before any call; the body does not return this
+0x000de690,ctor_LevelLoadingView,LevelLoadingView,0x004effa8,1056,ctor,0,yes,0x00062ce0,0x000de698,0x000de690,class table installed after a call into the base constructor; the body returns this
+0x000de6e0,dtor_LevelLoadingView,LevelLoadingView,0x004effa8,1056,dtor,0,no,,0x000de6fd,0x000de690,class table installed before any call; the body does not return this
+0x000de7b0,ctor_Ladder,Ladder,0x004f01d0,1064,ctor,0,yes,0x00062ce0,0x000de7b8,0x000de7b0,class table installed after a call into the base constructor; the body returns this
+0x000de730,dtor_Ladder,Ladder,0x004f01d0,1064,dtor,0,no,,0x000de74d,0x000de7b0,class table installed before any call; the body does not return this
+0x000de7d0,ctor_AutoLadder,AutoLadder,0x004f03f8,1064,ctor,0,yes,0x00062ce0,0x000de7d8,0x000de7d0,class table installed after a call into the base constructor; the body returns this
+0x000de820,dtor_AutoLadder,AutoLadder,0x004f03f8,1064,dtor,0,no,,0x000de83d,0x000de7d0,class table installed before any call; the body does not return this
+0x000de870,ctor_WarpZoneMarker,WarpZoneMarker,0x004f0620,1068,ctor,0,yes,0x00062ce0,0x000de878,0x000de870,class table installed after a call into the base constructor; the body returns this
+0x000de8c0,dtor_WarpZoneMarker,WarpZoneMarker,0x004f0620,1068,dtor,0,no,,0x000de8dd,0x000de870,class table installed before any call; the body does not return this
+0x000de910,ctor_AIMarker,AIMarker,0x004f0848,1060,ctor,0,yes,0x00062ce0,0x000de918,0x000de910,class table installed after a call into the base constructor; the body returns this
+0x000de960,dtor_AIMarker,AIMarker,0x004f0848,1060,dtor,0,no,,0x000de97d,0x000de910,class table installed before any call; the body does not return this
+0x000de9b0,ctor_InventorySpot,InventorySpot,0x004f0a70,1068,ctor,0,yes,0x00062ce0,0x000de9b8,0x000de9b0,class table installed after a call into the base constructor; the body returns this
+0x000dea00,dtor_InventorySpot,InventorySpot,0x004f0a70,1068,dtor,0,no,,0x000dea1d,0x000de9b0,class table installed before any call; the body does not return this
+0x000dea50,ctor_PlayerStart,PlayerStart,0x004f0c98,1068,ctor,0,yes,0x00062ce0,0x000dea58,0x000dea50,class table installed after a call into the base constructor; the body returns this
+0x000deaa0,dtor_PlayerStart,PlayerStart,0x004f0c98,1068,dtor,0,no,,0x000deabd,0x000dea50,class table installed before any call; the body does not return this
+0x000deaf0,ctor_Teleporter,Teleporter,0x004f0ec0,1100,ctor,0,yes,0x00062ce0,0x000deaf8,0x000deaf0,class table installed after a call into the base constructor; the body returns this
+0x000deb40,dtor_Teleporter,Teleporter,0x004f0ec0,1100,dtor,0,no,,0x000deb5d,0x000deaf0,class table installed before any call; the body does not return this
+0x000deba0,ctor_JumpDest,JumpDest,0x004f10e8,1224,ctor,0,yes,0x00062ce0,0x000deba8,0x000deba0,class table installed after a call into the base constructor; the body returns this
+0x000debf0,dtor_JumpDest,JumpDest,0x004f10e8,1224,dtor,0,no,,0x000dec0d,0x000deba0,class table installed before any call; the body does not return this
+0x000dec40,ctor_JumpPad,JumpPad,0x004f1310,1092,ctor,0,yes,0x00062ce0,0x000dec48,0x000dec40,class table installed after a call into the base constructor; the body returns this
+0x000dec90,dtor_JumpPad,JumpPad,0x004f1310,1092,dtor,0,no,,0x000decad,0x000dec40,class table installed before any call; the body does not return this
+0x000ded60,ctor_Door,Door,0x004f1538,1080,ctor,0,yes,0x00062ce0,0x000ded68,0x000ded60,class table installed after a call into the base constructor; the body returns this
+0x000dece0,dtor_Door,Door,0x004f1538,1080,dtor,0,no,,0x000decfd,0x000ded60,class table installed before any call; the body does not return this
+0x000ded80,ctor_AutoDoor,AutoDoor,0x004f1760,1080,ctor,0,yes,0x00062ce0,0x000ded88,0x000ded80,class table installed after a call into the base constructor; the body returns this
+0x000dedd0,dtor_AutoDoor,AutoDoor,0x004f1760,1080,dtor,0,no,,0x000deded,0x000ded80,class table installed before any call; the body does not return this
+0x000dee20,ctor_LiftExit,LiftExit,0x004f1988,1072,ctor,0,yes,0x00062ce0,0x000dee28,0x000dee20,class table installed after a call into the base constructor; the body returns this
+0x000dee70,dtor_LiftExit,LiftExit,0x004f1988,1072,dtor,0,no,,0x000dee8d,0x000dee20,class table installed before any call; the body does not return this
+0x000deec0,ctor_LiftCenter,LiftCenter,0x004f1bb0,1088,ctor,0,yes,0x00062ce0,0x000deec8,0x000deec0,class table installed after a call into the base constructor; the body returns this
+0x000def10,dtor_LiftCenter,LiftCenter,0x004f1bb0,1088,dtor,0,no,,0x000def2d,0x000deec0,class table installed before any call; the body does not return this
+0x000def60,ctor_AvoidMarker,AvoidMarker,0x004f1dd8,916,ctor,0,yes,0x00062ce0,0x000def68,0x000def60,class table installed after a call into the base constructor; the body returns this
+0x000defb0,dtor_AvoidMarker,AvoidMarker,0x004f1dd8,916,dtor,0,no,,0x000defcd,0x000def60,class table installed before any call; the body does not return this
+0x000df000,ctor_LineOfSightTrigger,LineOfSightTrigger,0x004f1fc8,940,ctor,0,yes,0x00062ce0,0x000df008,0x000df000,class table installed after a call into the base constructor; the body returns this
+0x000df050,dtor_LineOfSightTrigger,LineOfSightTrigger,0x004f1fc8,940,dtor,0,no,,0x000df06d,0x000df000,class table installed before any call; the body does not return this
+0x000df0a0,ctor_SVehicleTrigger,SVehicleTrigger,0x004f21b8,920,ctor,0,yes,0x00062ce0,0x000df0a8,0x000df0a0,class table installed after a call into the base constructor; the body returns this
+0x000df0f0,dtor_SVehicleTrigger,SVehicleTrigger,0x004f21b8,920,dtor,0,no,,0x000df10d,0x000df0a0,class table installed before any call; the body does not return this
+0x000df140,ctor_Trigger,Trigger,0x004f23a8,964,ctor,0,yes,0x00062ce0,0x000df148,0x000df140,class table installed after a call into the base constructor; the body returns this
+0x000df190,dtor_Trigger,Trigger,0x004f23a8,964,dtor,0,no,,0x000df1ad,0x000df140,class table installed before any call; the body does not return this
+0x000df280,ctor_Pickup,Pickup,0x004f2598,1020,ctor,0,yes,0x00062ce0,0x000df288,0x000df280,class table installed after a call into the base constructor; the body returns this
+0x000df1f0,dtor_Pickup,Pickup,0x004f2598,1020,dtor,0,no,,0x000df20d,0x000df280,class table installed before any call; the body does not return this
+0x000df2d0,ctor_StationaryWeapons,StationaryWeapons,0x004f2788,1040,ctor,0,yes,0x00062ce0,0x000df2d8,0x000df2d0,class table installed after a call into the base constructor; the body returns this
+0x000df320,dtor_StationaryWeapons,StationaryWeapons,0x004f2788,1040,dtor,0,no,,0x000df33d,0x000df2d0,class table installed before any call; the body does not return this
+0x000df370,ctor_Ammo,Ammo,0x004f2978,1028,ctor,0,yes,0x00062ce0,0x000df378,0x000df370,class table installed after a call into the base constructor; the body returns this
+0x000df3c0,dtor_Ammo,Ammo,0x004f2978,1028,dtor,0,no,,0x000df3dd,0x000df370,class table installed before any call; the body does not return this
+0x000df410,ctor_AntiPortalActor,AntiPortalActor,0x004f2b68,908,ctor,0,yes,0x00062ce0,0x000df418,0x000df410,class table installed after a call into the base constructor; the body returns this
+0x000df460,dtor_AntiPortalActor,AntiPortalActor,0x004f2b68,908,dtor,0,no,,0x000df47d,0x000df410,class table installed before any call; the body does not return this
+0x000df530,ctor_InventoryAttachment,InventoryAttachment,0x004f2d58,916,ctor,0,yes,0x00062ce0,0x000df538,0x000df530,class table installed after a call into the base constructor; the body returns this
+0x000df4b0,dtor_InventoryAttachment,InventoryAttachment,0x004f2d58,916,dtor,0,no,,0x000df4cd,0x000df530,class table installed before any call; the body does not return this
+0x000df550,ctor_WeaponAttachment,WeaponAttachment,0x004f2f48,936,ctor,0,yes,0x00062ce0,0x000df558,0x000df550,class table installed after a call into the base constructor; the body returns this
+0x000df5a0,dtor_WeaponAttachment,WeaponAttachment,0x004f2f48,936,dtor,0,no,,0x000df5bd,0x000df550,class table installed before any call; the body does not return this
+0x000df5f0,ctor_DamageType,DamageType,0x004f3138,1108,ctor,0,yes,0x00062ce0,0x000df5f8,0x000df5f0,class table installed after a call into the base constructor; the body returns this
+0x000df640,dtor_DamageType,DamageType,0x004f3138,1108,dtor,0,no,,0x000df65d,0x000df5f0,class table installed before any call; the body does not return this
+0x000df6f0,ctor_SVehicleFactory,SVehicleFactory,0x004f3328,924,ctor,0,yes,0x00062ce0,0x000df6f8,0x000df6f0,class table installed after a call into the base constructor; the body returns this
+0x000df740,dtor_SVehicleFactory,SVehicleFactory,0x004f3328,924,dtor,0,no,,0x000df75d,0x000df6f0,class table installed before any call; the body does not return this
+0x000df790,ctor_VehiclePart,VehiclePart,0x004f3518,912,ctor,0,yes,0x00062ce0,0x000df798,0x000df790,class table installed after a call into the base constructor; the body returns this
+0x000df7e0,dtor_VehiclePart,VehiclePart,0x004f3518,912,dtor,0,no,,0x000df7fd,0x000df790,class table installed before any call; the body does not return this
+0x000df890,ctor_Inventory,Inventory,0x004f3708,996,ctor,0,yes,0x00062ce0,0x000df898,0x000df890,class table installed after a call into the base constructor; the body returns this
+0x000df830,dtor_Inventory,Inventory,0x004f3708,996,dtor,0,no,,0x000df84d,0x000df890,class table installed before any call; the body does not return this
+0x000df8e0,ctor_Ammunition,Ammunition,0x004f38f8,1036,ctor,0,yes,0x00062ce0,0x000df8e8,0x000df8e0,class table installed after a call into the base constructor; the body returns this
+0x000df930,dtor_Ammunition,Ammunition,0x004f38f8,1036,dtor,0,no,,0x000df94d,0x000df8e0,class table installed before any call; the body does not return this
+0x000df980,ctor_Powerups,Powerups,0x004f3ae8,1024,ctor,0,yes,0x00062ce0,0x000df988,0x000df980,class table installed after a call into the base constructor; the body returns this
+0x000df9d0,dtor_Powerups,Powerups,0x004f3ae8,1024,dtor,0,no,,0x000df9ed,0x000df980,class table installed before any call; the body does not return this
+0x000dfa30,ctor_Weapon,Weapon,0x004f3cd8,1428,ctor,0,yes,0x00062ce0,0x000dfa38,0x000dfa30,class table installed after a call into the base constructor; the body returns this
+0x000dfa90,dtor_Weapon,Weapon,0x004f3cd8,1428,dtor,0,no,,0x000dfaad,0x000dfa30,class table installed before any call; the body does not return this
+0x000dfb10,ctor_Projectile,Projectile,0x004f3ec8,1016,ctor,0,yes,0x00062ce0,0x000dfb18,0x000dfb10,class table installed after a call into the base constructor; the body returns this
+0x000dfb60,dtor_Projectile,Projectile,0x004f3ec8,1016,dtor,0,no,,0x000dfb7d,0x000dfb10,class table installed before any call; the body does not return this
+0x000dfbb0,ctor_Decoration,Decoration,0x004f40b8,972,ctor,0,yes,0x00062ce0,0x000dfbb8,0x000dfbb0,class table installed after a call into the base constructor; the body returns this
+0x000dfc00,dtor_Decoration,Decoration,0x004f40b8,972,dtor,0,no,,0x000dfc1d,0x000dfbb0,class table installed before any call; the body does not return this
+0x000dfc50,ctor_AvoidanceWaypoint,AvoidanceWaypoint,0x004f42a8,908,ctor,0,yes,0x00062ce0,0x000dfc58,0x000dfc50,class table installed after a call into the base constructor; the body returns this
+0x000dfca0,dtor_AvoidanceWaypoint,AvoidanceWaypoint,0x004f42a8,908,dtor,0,no,,0x000dfcbd,0x000dfc50,class table installed before any call; the body does not return this
+0x000dfcf0,ctor_Vignette,Vignette,0x004f4498,924,ctor,0,yes,0x00062ce0,0x000dfcf8,0x000dfcf0,class table installed after a call into the base constructor; the body returns this
+0x000dfd40,dtor_Vignette,Vignette,0x004f4498,924,dtor,0,no,,0x000dfd5d,0x000dfcf0,class table installed before any call; the body does not return this
+0x000dfda0,ctor_Note,Note,0x004f4688,920,ctor,0,yes,0x00062ce0,0x000dfda8,0x000dfda0,class table installed after a call into the base constructor; the body returns this
+0x000dfdf0,dtor_Note,Note,0x004f4688,920,dtor,0,no,,0x000dfe0d,0x000dfda0,class table installed before any call; the body does not return this
+0x000dfe50,ctor_Light,Light,0x004f4878,936,ctor,0,yes,0x00062ce0,0x000dfe58,0x000dfe50,class table installed after a call into the base constructor; the body returns this
+0x000dfea0,dtor_Light,Light,0x004f4878,936,dtor,0,no,,0x000dfebd,0x000dfe50,class table installed before any call; the body does not return this
+0x000e0100,ctor_LevelInfo,LevelInfo,0x004f4a68,2068,ctor,0,yes,0x00062ce0,0x000e0108,0x000e0100,class table installed after a call into the base constructor; the body returns this
+0x000e0150,dtor_LevelInfo,LevelInfo,0x004f4a68,2068,dtor,0,no,,0x000e016d,0x000e0100,class table installed before any call; the body does not return this
+0x000e06a0,ctor_GameProfile,GameProfile,0x004f4c58,316,ctor,0,yes,0x00062ce0,0x000e06ca,0x000e06a0,class table installed after a call into the base constructor; the body returns this
+0x000e0730,dtor_GameProfile,GameProfile,0x004f4c58,316,dtor,0,no,,0x000e074d,0x000e06a0,class table installed before any call; the body does not return this
+0x000e0820,ctor_Manifest,Manifest,0x004f4cd0,64,ctor,0,yes,0x00062ce0,0x000e0828,0x000e0820,class table installed after a call into the base constructor; the body returns this
+0x000e0870,dtor_Manifest,Manifest,0x004f4cd0,64,dtor,0,no,,0x000e088d,0x000e0820,class table installed before any call; the body does not return this
+0x000e0b60,ctor_Camera,Camera,0x004f6188,3980,ctor,0,yes,0x00026870,0x000e0b68,0x000e0b60,class table installed after a call into the base constructor; the body returns this
+0x000e0bb0,dtor_Camera,Camera,0x004f6188,3980,dtor,0,no,,0x000e0bcd,0x000e0b60,class table installed before any call; the body does not return this
+0x000e0eb0,ctor_TextToSpeechAlias,TextToSpeechAlias,0x004f6d38,64,ctor,0,yes,0x00062ce0,0x000e0eb8,0x000e0eb0,class table installed after a call into the base constructor; the body returns this
+0x000e0f00,dtor_TextToSpeechAlias,TextToSpeechAlias,0x004f6d38,64,dtor,0,no,,0x000e0f1d,0x000e0eb0,class table installed before any call; the body does not return this
+0x000e1000,ctor_IMusicActor,IMusicActor,0x004f6dd8,992,ctor,0,yes,0x00062ce0,0x000e1008,0x000e1000,class table installed after a call into the base constructor; the body returns this
+0x000e1050,dtor_IMusicActor,IMusicActor,0x004f6dd8,992,dtor,0,no,,0x000e106d,0x000e1000,class table installed before any call; the body does not return this
+0x000e1160,ctor_I3DL2Listener,I3DL2Listener,0x004f6ff8,156,ctor,0,yes,0x00062ce0,0x000e1168,0x000e1160,class table installed after a call into the base constructor; the body returns this
+0x000e11b0,dtor_I3DL2Listener,I3DL2Listener,0x004f6ff8,156,dtor,0,no,,0x000e11cd,0x000e1160,class table installed before any call; the body does not return this
+0x000e3b90,ctor_Sound,Sound,0x004f72a0,144,ctor,0,yes,0x00062ce0,0x000e3bb8,0x000e3b90,class table installed after a call into the base constructor; the body returns this
+0x000e3c30,FUN_000e3c30,Sound,0x004f72a0,144,ctor,4,yes,0x00062ce0,0x000e3c58,0x000e3b90,class table installed after a call into the base constructor; the body returns this
+0x000e3cd0,FUN_000e3cd0,Sound,0x004f72a0,144,ctor,8,yes,0x00062ce0,0x000e3cf8,0x000e3b90,class table installed after a call into the base constructor; the body returns this
+0x000e6250,dtor_Sound,Sound,0x004f72a0,144,dtor,0,no,,0x000e626d,0x000e3b90,class table installed before any call; the body does not return this
+0x000e4e20,ctor_ProceduralSound,ProceduralSound,0x004f7380,172,ctor,0,yes,0x000e3b90,0x000e4e30,0x000e4e20,class table installed after a call into the base constructor; the body returns this
+0x000e6330,dtor_ProceduralSound,ProceduralSound,0x004f7380,172,dtor,0,no,,0x000e634d,0x000e4e20,class table installed before any call; the body does not return this
+0x000e5660,ctor_SoundGroup,SoundGroup,0x004f7468,176,ctor,0,yes,0x000e3b90,0x000e5668,0x000e5660,class table installed after a call into the base constructor; the body returns this
+0x000e6420,dtor_SoundGroup,SoundGroup,0x004f7468,176,dtor,0,no,,0x000e643d,0x000e5660,class table installed before any call; the body does not return this
+0x000ea830,ctor_ParticleEmitter,ParticleEmitter,0x004f76b8,1176,ctor,0,yes,0x00062ce0,0x000ea838,0x000ea830,class table installed after a call into the base constructor; the body returns this
+0x000ea700,dtor_ParticleEmitter,ParticleEmitter,0x004f76b8,1176,dtor,0,no,,0x000ea71d,0x000ea830,class table installed before any call; the body does not return this
+0x000ea850,ctor_BeamEmitter,BeamEmitter,0x004f7758,1444,ctor,0,yes,0x00062ce0,0x000ea858,0x000ea850,class table installed after a call into the base constructor; the body returns this
+0x000ea8a0,dtor_BeamEmitter,BeamEmitter,0x004f7758,1444,dtor,0,no,,0x000ea8bd,0x000ea850,class table installed before any call; the body does not return this
+0x000f9080,ctor_CacheManager,CacheManager,0x004f8960,144,ctor,0,yes,0x00062ce0,0x000f908a,0x000f9080,class table installed after a call into the base constructor; the body returns this
+0x000f9110,dtor_CacheManager,CacheManager,0x004f8960,144,dtor,0,no,,0x000f912d,0x000f9080,class table installed before any call; the body does not return this
+0x000fbb20,ctor_CameraOverlay,CameraOverlay,0x004f9618,68,ctor,0,yes,0x00062ce0,0x000fbb28,0x000fbb20,class table installed after a call into the base constructor; the body returns this
+0x000fbb70,dtor_CameraOverlay,CameraOverlay,0x004f9618,68,dtor,0,no,,0x000fbb8d,0x000fbb20,class table installed before any call; the body does not return this
+0x000fca90,ctor_MotionBlur,MotionBlur,0x004f9728,76,ctor,0,yes,0x00062ce0,0x000fca98,0x000fca90,class table installed after a call into the base constructor; the body returns this
+0x000fcae0,dtor_MotionBlur,MotionBlur,0x004f9728,76,dtor,0,no,,0x000fcafd,0x000fca90,class table installed before any call; the body does not return this
+0x00106e90,ctor_Canvas,Canvas,0x004fa110,3316,ctor,0,yes,0x00062ce0,0x00106e98,0x00106e90,class table installed after a call into the base constructor; the body returns this
+0x00106ee0,dtor_Canvas,Canvas,0x004fa110,3316,dtor,0,no,,0x00106efd,0x00106e90,class table installed before any call; the body does not return this
+0x00108010,FUN_00108010,,0x004fa390,,ctor,0,yes,0x00062ce0,0x00108018,,class table installed after a call into the base constructor; the body returns this
+0x00107d60,FUN_00107d60,,0x004fa390,,dtor,0,no,,0x00107d7d,,class table installed before any call; the body does not return this
+0x00108520,ctor_ControlChannel,ControlChannel,0x004fa5b0,104,ctor,0,yes,0x00062ce0,0x0010852f,0x00108520,class table installed after a call into the base constructor; the body returns this
+0x0010ce80,dtor_ControlChannel,ControlChannel,0x004fa5b0,104,dtor,0,no,,0x0010ce9d,0x00108520,class table installed before any call; the body does not return this
+0x00108600,ctor_FileChannel,FileChannel,0x004fa650,628,ctor,0,yes,0x00062ce0,0x00108608,0x00108600,class table installed after a call into the base constructor; the body returns this
+0x0010cf10,dtor_FileChannel,FileChannel,0x004fa650,628,dtor,0,no,,0x0010cf2d,0x00108600,class table installed before any call; the body does not return this
+0x0010d090,ctor_VoiceChannel,VoiceChannel,0x004fa6f0,104,ctor,0,yes,0x00062ce0,0x0010d098,0x0010d090,class table installed after a call into the base constructor; the body returns this
+0x0010d0e0,dtor_VoiceChannel,VoiceChannel,0x004fa6f0,104,dtor,0,no,,0x0010d0fd,0x0010d090,class table installed before any call; the body does not return this
+0x00109ab0,ctor_ActorChannel,ActorChannel,0x004fa958,200,ctor,0,yes,0x00062ce0,0x00109aba,0x00109ab0,class table installed after a call into the base constructor; the body returns this
+0x0010d400,dtor_ActorChannel,ActorChannel,0x004fa958,200,dtor,0,no,,0x0010d41d,0x00109ab0,class table installed before any call; the body does not return this
+0x00110120,FUN_00110120,PackageMapLevel,0x004fb9b8,116,ctor,,yes,0x001be140,0x00110491,0x001839d0,class table installed after a call into the base constructor; the body returns this
+0x001839d0,ctor_PackageMapLevel,PackageMapLevel,0x004fb9b8,116,ctor,0,yes,0x0003f910,0x001839d8,0x001839d0,class table installed after a call into the base constructor; the body returns this
+0x00110b80,dtor_PackageMapLevel,PackageMapLevel,0x004fb9b8,116,dtor,0,no,,0x00110b9d,0x001839d0,class table installed before any call; the body does not return this
+0x00110f50,ctor_PlayerInput,PlayerInput,0x004fbb30,132,ctor,0,yes,0x00062ce0,0x00110f58,0x00110f50,class table installed after a call into the base constructor; the body returns this
+0x00110fa0,dtor_PlayerInput,PlayerInput,0x004fbb30,132,dtor,0,no,,0x00110fbd,0x00110f50,class table installed before any call; the body does not return this
+0x00110ff0,ctor_CheatManager,CheatManager,0x004fbba8,56,ctor,0,yes,0x00062ce0,0x00110ff8,0x00110ff0,class table installed after a call into the base constructor; the body returns this
+0x00111040,dtor_CheatManager,CheatManager,0x004fbba8,56,dtor,0,no,,0x0011105d,0x00110ff0,class table installed before any call; the body does not return this
+0x00119eb0,ctor_AdminBase,AdminBase,0x004fc060,348,ctor,0,yes,0x00062ce0,0x00119eb8,0x00119eb0,class table installed after a call into the base constructor; the body returns this
+0x00119f00,dtor_AdminBase,AdminBase,0x004fc060,348,dtor,0,no,,0x00119f1d,0x00119eb0,class table installed before any call; the body does not return this
+0x0011a1a0,ctor_AIMsgManager,AIMsgManager,0x004fc0f8,108,ctor,0,yes,0x00062ce0,0x0011a1a8,0x0011a1a0,class table installed after a call into the base constructor; the body returns this
+0x0011a1f0,dtor_AIMsgManager,AIMsgManager,0x004fc0f8,108,dtor,0,no,,0x0011a20d,0x0011a1a0,class table installed before any call; the body does not return this
+0x0011b090,ctor_Primitive,Primitive,0x004fc1b0,84,ctor,0,yes,0x00062ce0,0x0011b0a0,0x0011b090,class table installed after a call into the base constructor; the body returns this
+0x0011a340,dtor_Primitive,Primitive,0x004fc1b0,84,dtor,0,no,,0x0011a35d,0x0011b090,class table installed before any call; the body does not return this
+0x0011ab50,ctor_ConvexVolume,ConvexVolume,0x004fc250,136,ctor,0,yes,0x0011b090,0x0011ab5a,0x0011ab50,class table installed after a call into the base constructor; the body returns this
+0x0011b640,dtor_ConvexVolume,ConvexVolume,0x004fc250,136,dtor,0,no,,0x0011b65d,0x0011ab50,class table installed before any call; the body does not return this
+0x0011bf90,FUN_0011bf90,,0x004fc4f0,,ctor,0,yes,0x00062ce0,0x0011bfbd,,class table installed after a call into the base constructor; the body returns this
+0x001617d0,FUN_001617d0,,0x004fc4f0,,ctor,8,yes,0x00062ce0,0x00161800,,class table installed after a call into the base constructor; the body returns this
+0x0011bf20,FUN_0011bf20,,0x004fc4f0,,dtor,0,no,,0x0011bf3d,,class table installed before any call; the body does not return this
+0x001a57b0,FUN_001a57b0,,0x004fc588,,ctor,8,yes,0x001617d0,0x001a57c6,,class table installed after a call into the base constructor; the body returns this
+0x0011c050,FUN_0011c050,,0x004fc588,,dtor,0,no,,0x0011c06d,,class table installed before any call; the body does not return this
+0x0011bce0,FUN_0011bce0,DemoPlayPendingLevel,0x004fc630,176,ctor,8,yes,0x001a57b0,0x0011bd12,0x0011c0f0,class table installed after a call into the base constructor; the body returns this
+0x0011c0f0,ctor_DemoPlayPendingLevel,DemoPlayPendingLevel,0x004fc630,176,ctor,0,yes,0x0011bf90,0x0011c10c,0x0011c0f0,class table installed after a call into the base constructor; the body returns this
+0x0011c160,dtor_DemoPlayPendingLevel,DemoPlayPendingLevel,0x004fc630,176,dtor,0,no,,0x0011c17d,0x0011c0f0,class table installed before any call; the body does not return this
+0x0011d460,FUN_0011d460,DemoRecConnection,0x004fcc18,20368,ctor,8,yes,0x00110120,0x0011d474,0x0011e510,class table installed after a call into the base constructor; the body returns this
+0x0011e510,ctor_DemoRecConnection,DemoRecConnection,0x004fcc18,20368,ctor,0,yes,0x0010ffa0,0x0011e518,0x0011e510,class table installed after a call into the base constructor; the body returns this
+0x0011e560,dtor_DemoRecConnection,DemoRecConnection,0x004fcc18,20368,dtor,0,no,,0x0011e57d,0x0011e510,class table installed before any call; the body does not return this
+0x0011d4b0,ctor_DemoRecDriver,DemoRecDriver,0x004fccc8,4684,ctor,0,yes,0x00183730,0x0011d4d4,0x0011d4b0,class table installed after a call into the base constructor; the body returns this
+0x0011e5f0,dtor_DemoRecDriver,DemoRecDriver,0x004fccc8,4684,dtor,0,no,,0x0011e60d,0x0011d4b0,class table installed before any call; the body does not return this
+0x0011f6c0,FUN_0011f6c0,,0x004fcfe0,,dtor,0,no,,0x0011f6dd,,class table installed before any call; the body does not return this
+0x0011f750,ctor_ChannelDownload,ChannelDownload,0x004fd070,1116,ctor,0,yes,0x00062ce0,0x0011f763,0x0011f750,class table installed after a call into the base constructor; the body returns this
+0x0011f7a0,dtor_ChannelDownload,ChannelDownload,0x004fd070,1116,dtor,0,no,,0x0011f7bd,0x0011f750,class table installed before any call; the body does not return this
+0x001212e0,FUN_001212e0,,0x005040d0,,ctor,0,yes,0x00062ce0,0x00121300,,class table installed after a call into the base constructor; the body returns this
+0x00127230,FUN_00127230,,0x005040d0,,dtor,0,no,,0x0012724d,,class table installed before any call; the body does not return this
+0x00127ad0,ctor_ServerCommandlet,ServerCommandlet,0x00504560,476,ctor,0,yes,0x00066b60,0x00127ad8,0x00127ad0,class table installed after a call into the base constructor; the body returns this
+0x00127b20,dtor_ServerCommandlet,ServerCommandlet,0x00504560,476,dtor,0,no,,0x00127b3d,0x00127ad0,class table installed before any call; the body does not return this
+0x00127b70,ctor_UModUnpackCommandlet,UModUnpackCommandlet,0x005045e0,476,ctor,0,yes,0x00066b60,0x00127b78,0x00127b70,class table installed after a call into the base constructor; the body returns this
+0x00127bc0,dtor_UModUnpackCommandlet,UModUnpackCommandlet,0x005045e0,476,dtor,0,no,,0x00127bdd,0x00127b70,class table installed before any call; the body does not return this
+0x00127c10,ctor_MasterMD5Commandlet,MasterMD5Commandlet,0x00504660,492,ctor,0,yes,0x00066b60,0x00127c1a,0x00127c10,class table installed after a call into the base constructor; the body returns this
+0x00127c70,dtor_MasterMD5Commandlet,MasterMD5Commandlet,0x00504660,492,dtor,0,no,,0x00127c8d,0x00127c10,class table installed before any call; the body does not return this
+0x00127cd0,ctor_GlobalTempObjects,GlobalTempObjects,0x005046e0,52,ctor,0,yes,0x00062ce0,0x00127cf4,0x00127cd0,class table installed after a call into the base constructor; the body returns this
+0x00127e00,dtor_GlobalTempObjects,GlobalTempObjects,0x005046e0,52,dtor,0,no,,0x00127e1d,0x00127cd0,class table installed before any call; the body does not return this
+0x0012d670,ctor_FluidSurfacePrimitive,FluidSurfacePrimitive,0x00507be0,88,ctor,0,yes,0x0011b090,0x0012d678,0x0012d670,class table installed after a call into the base constructor; the body returns this
+0x0012d6c0,dtor_FluidSurfacePrimitive,FluidSurfacePrimitive,0x00507be0,88,dtor,0,no,,0x0012d6dd,0x0012d670,class table installed before any call; the body does not return this
+0x0012d940,ctor_FluidSurfaceOscillator,FluidSurfaceOscillator,0x00507da0,932,ctor,0,yes,0x00062ce0,0x0012d948,0x0012d940,class table installed after a call into the base constructor; the body returns this
+0x0012d990,dtor_FluidSurfaceOscillator,FluidSurfaceOscillator,0x00507da0,932,dtor,0,no,,0x0012d9ad,0x0012d940,class table installed before any call; the body does not return this
+0x0012d9e0,ctor_FluidSurfaceInfo,FluidSurfaceInfo,0x00507f90,1256,ctor,0,yes,0x00062ce0,0x0012d9ea,0x0012d9e0,class table installed after a call into the base constructor; the body returns this
+0x0012da40,dtor_FluidSurfaceInfo,FluidSurfaceInfo,0x00507f90,1256,dtor,0,no,,0x0012da5d,0x0012d9e0,class table installed before any call; the body does not return this
+0x0012dcd0,ctor_Font,Font,0x005081d8,96,ctor,0,yes,0x00062ce0,0x0012dcf6,0x0012dcd0,class table installed after a call into the base constructor; the body returns this
+0x0012e860,dtor_Font,Font,0x005081d8,96,dtor,0,no,,0x0012e87d,0x0012dcd0,class table installed before any call; the body does not return this
+0x001318a0,ctor_Polys,Polys,0x005085d8,56,ctor,0,yes,0x00062ce0,0x001318c8,0x001318a0,class table installed after a call into the base constructor; the body returns this
+0x00131ae0,dtor_Polys,Polys,0x005085d8,56,dtor,0,no,,0x00131afd,0x001318a0,class table installed before any call; the body does not return this
+0x00148d70,ctor_MaplistManagerBase,MaplistManagerBase,0x00509010,992,ctor,0,yes,0x00062ce0,0x00148d78,0x00148d70,class table installed after a call into the base constructor; the body returns this
+0x00148dc0,dtor_MaplistManagerBase,MaplistManagerBase,0x00509010,992,dtor,0,no,,0x00148ddd,0x00148d70,class table installed before any call; the body does not return this
+0x00148e10,ctor_PrecacheHack,PrecacheHack,0x00509200,920,ctor,0,yes,0x00062ce0,0x00148e18,0x00148e10,class table installed after a call into the base constructor; the body returns this
+0x00148e60,dtor_PrecacheHack,PrecacheHack,0x00509200,920,dtor,0,no,,0x00148e7d,0x00148e10,class table installed before any call; the body does not return this
+0x00136310,ctor_GameEngine,GameEngine,0x00509438,512,ctor,0,yes,0x001212e0,0x00136344,0x00136310,class table installed after a call into the base constructor; the body returns this
+0x00148ff0,dtor_GameEngine,GameEngine,0x00509438,512,dtor,0,no,,0x0014900d,0x00136310,class table installed before any call; the body does not return this
+0x001491c0,ctor_CrosshairPack,CrosshairPack,0x0050a808,52,ctor,0,yes,0x00062ce0,0x001491c8,0x001491c0,class table installed after a call into the base constructor; the body returns this
+0x00149210,dtor_CrosshairPack,CrosshairPack,0x0050a808,52,dtor,0,no,,0x0014922d,0x001491c0,class table installed before any call; the body does not return this
+0x0014c840,ctor_Input,Input,0x0050c318,4024,ctor,0,yes,0x00062ce0,0x0014c884,0x0014c840,class table installed after a call into the base constructor; the body returns this
+0x0014e7f0,dtor_Input,Input,0x0050c318,4024,dtor,0,no,,0x0014e80d,0x0014c840,class table installed before any call; the body does not return this
+0x0014e8d0,ctor_Interactions,Interactions,0x0050c808,40,ctor,0,yes,0x00062ce0,0x0014e8d8,0x0014e8d0,class table installed after a call into the base constructor; the body returns this
+0x0014e880,dtor_Interactions,Interactions,0x0050c808,40,dtor,0,no,,0x0014e89d,0x0014e8d0,class table installed before any call; the body does not return this
+0x0014e9a0,ctor_Interaction,Interaction,0x0050c880,52,ctor,0,yes,0x00062ce0,0x0014e9a8,0x0014e9a0,class table installed after a call into the base constructor; the body returns this
+0x0014e920,dtor_Interaction,Interaction,0x0050c880,52,dtor,0,no,,0x0014e93d,0x0014e9a0,class table installed before any call; the body does not return this
+0x0014e9c0,ctor_AbstractUIXInteraction,AbstractUIXInteraction,0x0050c910,52,ctor,0,yes,0x00062ce0,0x0014e9c8,0x0014e9c0,class table installed after a call into the base constructor; the body returns this
+0x0014ea10,dtor_AbstractUIXInteraction,AbstractUIXInteraction,0x0050c910,52,dtor,0,no,,0x0014ea2d,0x0014e9c0,class table installed before any call; the body does not return this
+0x0014fac0,ctor_BaseGUIController,BaseGUIController,0x0050ca30,100,ctor,0,yes,0x00062ce0,0x0014fac8,0x0014fac0,class table installed after a call into the base constructor; the body returns this
+0x0014fb10,dtor_BaseGUIController,BaseGUIController,0x0050ca30,100,dtor,0,no,,0x0014fb2d,0x0014fac0,class table installed before any call; the body does not return this
+0x0014fb90,ctor_Console,Console,0x0050cb80,1088,ctor,0,yes,0x00062ce0,0x0014fbba,0x0014fb90,class table installed after a call into the base constructor; the body returns this
+0x0014fc40,dtor_Console,Console,0x0050cb80,1088,dtor,0,no,,0x0014fc5d,0x0014fb90,class table installed before any call; the body does not return this
+0x001507a0,ctor_InteractionMaster,InteractionMaster,0x0050cc68,76,ctor,0,yes,0x00062ce0,0x001507a8,0x001507a0,class table installed after a call into the base constructor; the body returns this
+0x00150cf0,dtor_InteractionMaster,InteractionMaster,0x0050cc68,76,dtor,0,no,,0x00150d0d,0x001507a0,class table installed before any call; the body does not return this
+0x00161860,Engine_UnLevel,Level,0x0050e8b0,4560,ctor,8,yes,0x00285ac0,0x001618b2,0x00162f10,class table installed after a call into the base constructor; the body returns this
+0x00162f10,ctor_Level,Level,0x0050e8b0,4560,ctor,0,yes,0x0011bf90,0x00162f3d,0x00162f10,class table installed after a call into the base constructor; the body returns this
+0x00163090,dtor_Level,Level,0x0050e8b0,4560,dtor,0,no,,0x001630ad,0x00162f10,class table installed before any call; the body does not return this
+0x00168820,ctor_Mesh,Mesh,0x0050ec30,88,ctor,0,yes,0x0011b090,0x00168828,0x00168820,class table installed after a call into the base constructor; the body returns this
+0x00167e20,dtor_Mesh,Mesh,0x0050ec30,88,dtor,0,no,,0x00167e3d,0x00168820,class table installed before any call; the body does not return this
+0x00168840,ctor_MeshInstance,MeshInstance,0x0050ecd8,84,ctor,0,yes,0x0011b090,0x00168848,0x00168840,class table installed after a call into the base constructor; the body returns this
+0x00167ea0,dtor_MeshInstance,MeshInstance,0x0050ecd8,84,dtor,0,no,,0x00167ebd,0x00168840,class table installed before any call; the body does not return this
+0x00168860,ctor_LodMeshInstance,LodMeshInstance,0x0050ee48,124,ctor,0,yes,0x0011b090,0x00168868,0x00168860,class table installed after a call into the base constructor; the body returns this
+0x001688f0,dtor_LodMeshInstance,LodMeshInstance,0x0050ee48,124,dtor,0,no,,0x0016890d,0x00168860,class table installed before any call; the body does not return this
+0x00169270,ctor_LodMesh,LodMesh,0x0050f020,308,ctor,0,yes,0x0011b090,0x0016927d,0x00169270,class table installed after a call into the base constructor; the body returns this
+0x00169360,dtor_LodMesh,LodMesh,0x0050f020,308,dtor,0,no,,0x0016937d,0x00169270,class table installed before any call; the body does not return this
+0x0016ff40,ctor_ConstantMaterial,ConstantMaterial,0x0050f178,64,ctor,0,yes,0x00062ce0,0x0016ff48,0x0016ff40,class table installed after a call into the base constructor; the body returns this
+0x00169600,dtor_ConstantMaterial,ConstantMaterial,0x0050f178,64,dtor,0,no,,0x0016961d,0x0016ff40,class table installed before any call; the body does not return this
+0x00170170,ctor_Modifier,Modifier,0x0050f238,64,ctor,0,yes,0x00062ce0,0x00170178,0x00170170,class table installed after a call into the base constructor; the body returns this
+0x001696a0,dtor_Modifier,Modifier,0x0050f238,64,dtor,0,no,,0x001696bd,0x00170170,class table installed before any call; the body does not return this
+0x001702d0,ctor_TexModifier,TexModifier,0x0050f2f0,76,ctor,0,yes,0x00062ce0,0x001702d8,0x001702d0,class table installed after a call into the base constructor; the body returns this
+0x00169800,dtor_TexModifier,TexModifier,0x0050f2f0,76,dtor,0,no,,0x0016981d,0x001702d0,class table installed before any call; the body does not return this
+0x001704e0,ctor_TexOscillator,TexOscillator,0x0050f3b0,192,ctor,0,yes,0x00062ce0,0x001704e8,0x001704e0,class table installed after a call into the base constructor; the body returns this
+0x00169880,dtor_TexOscillator,TexOscillator,0x0050f3b0,192,dtor,0,no,,0x0016989d,0x001704e0,class table installed before any call; the body does not return this
+0x001707b0,ctor_TexPanner,TexPanner,0x0050f470,156,ctor,0,yes,0x00062ce0,0x001707b8,0x001707b0,class table installed after a call into the base constructor; the body returns this
+0x00169900,dtor_TexPanner,TexPanner,0x0050f470,156,dtor,0,no,,0x0016991d,0x001707b0,class table installed before any call; the body does not return this
+0x0016fdc0,ctor_TexCoordMaterial,TexCoordMaterial,0x0050f618,72,ctor,0,yes,0x00062ce0,0x0016fdc8,0x0016fdc0,class table installed after a call into the base constructor; the body returns this
+0x0016fe50,dtor_TexCoordMaterial,TexCoordMaterial,0x0050f618,72,dtor,0,no,,0x0016fe6d,0x0016fdc0,class table installed before any call; the body does not return this
+0x0016fea0,ctor_VertexColor,VertexColor,0x0050f6d0,64,ctor,0,yes,0x00062ce0,0x0016fea8,0x0016fea0,class table installed after a call into the base constructor; the body returns this
+0x0016fef0,dtor_VertexColor,VertexColor,0x0050f6d0,64,dtor,0,no,,0x0016ff0d,0x0016fea0,class table installed before any call; the body does not return this
+0x0016ff60,ctor_FadeColor,FadeColor,0x0050f788,84,ctor,0,yes,0x00062ce0,0x0016ff68,0x0016ff60,class table installed after a call into the base constructor; the body returns this
+0x0016ffb0,dtor_FadeColor,FadeColor,0x0050f788,84,dtor,0,no,,0x0016ffcd,0x0016ff60,class table installed before any call; the body does not return this
+0x00170000,ctor_ConstantColor,ConstantColor,0x0050f848,68,ctor,0,yes,0x00062ce0,0x00170008,0x00170000,class table installed after a call into the base constructor; the body returns this
+0x00170060,dtor_ConstantColor,ConstantColor,0x0050f848,68,dtor,0,no,,0x0017007d,0x00170000,class table installed before any call; the body does not return this
+0x001700b0,ctor_Shader,Shader,0x0050f908,108,ctor,0,yes,0x00062ce0,0x001700b8,0x001700b0,class table installed after a call into the base constructor; the body returns this
+0x00170120,dtor_Shader,Shader,0x0050f908,108,dtor,0,no,,0x0017013d,0x001700b0,class table installed before any call; the body does not return this
+0x00170190,ctor_OpacityModifier,OpacityModifier,0x0050f9c0,72,ctor,0,yes,0x00062ce0,0x00170198,0x00170190,class table installed after a call into the base constructor; the body returns this
+0x001701e0,dtor_OpacityModifier,OpacityModifier,0x0050f9c0,72,dtor,0,no,,0x001701fd,0x00170190,class table installed before any call; the body does not return this
+0x00170230,ctor_FinalBlend,FinalBlend,0x0050fa78,76,ctor,0,yes,0x00062ce0,0x00170238,0x00170230,class table installed after a call into the base constructor; the body returns this
+0x00170280,dtor_FinalBlend,FinalBlend,0x0050fa78,76,dtor,0,no,,0x0017029d,0x00170230,class table installed before any call; the body does not return this
+0x001702f0,ctor_TexCoordSource,TexCoordSource,0x0050fb30,80,ctor,0,yes,0x00062ce0,0x001702f8,0x001702f0,class table installed after a call into the base constructor; the body returns this
+0x00170340,dtor_TexCoordSource,TexCoordSource,0x0050fb30,80,dtor,0,no,,0x0017035d,0x001702f0,class table installed before any call; the body does not return this
+0x00170390,ctor_TexMatrix,TexMatrix,0x0050fbf0,140,ctor,0,yes,0x00062ce0,0x00170398,0x00170390,class table installed after a call into the base constructor; the body returns this
+0x001703f0,dtor_TexMatrix,TexMatrix,0x0050fbf0,140,dtor,0,no,,0x0017040d,0x00170390,class table installed before any call; the body does not return this
+0x00170440,ctor_TexEnvMap,TexEnvMap,0x0050fcb0,144,ctor,0,yes,0x00062ce0,0x00170448,0x00170440,class table installed after a call into the base constructor; the body returns this
+0x00170490,dtor_TexEnvMap,TexEnvMap,0x0050fcb0,144,dtor,0,no,,0x001704ad,0x00170440,class table installed before any call; the body does not return this
+0x00170500,ctor_TexOscillatorTriggered,TexOscillatorTriggered,0x0050fd70,208,ctor,0,yes,0x00062ce0,0x00170508,0x00170500,class table installed after a call into the base constructor; the body returns this
+0x00170550,dtor_TexOscillatorTriggered,TexOscillatorTriggered,0x0050fd70,208,dtor,0,no,,0x0017056d,0x00170500,class table installed before any call; the body does not return this
+0x001705a0,ctor_TexRotator,TexRotator,0x0050fe30,204,ctor,0,yes,0x00062ce0,0x001705a8,0x001705a0,class table installed after a call into the base constructor; the body returns this
+0x00170620,dtor_TexRotator,TexRotator,0x0050fe30,204,dtor,0,no,,0x0017063d,0x001705a0,class table installed before any call; the body does not return this
+0x00170670,ctor_TexScaler,TexScaler,0x0050fef0,156,ctor,0,yes,0x00062ce0,0x00170678,0x00170670,class table installed after a call into the base constructor; the body returns this
+0x001706c0,dtor_TexScaler,TexScaler,0x0050fef0,156,dtor,0,no,,0x001706dd,0x00170670,class table installed before any call; the body does not return this
+0x00170710,ctor_VariableTexPanner,VariableTexPanner,0x0050ffb0,164,ctor,0,yes,0x00062ce0,0x00170718,0x00170710,class table installed after a call into the base constructor; the body returns this
+0x00170760,dtor_VariableTexPanner,VariableTexPanner,0x0050ffb0,164,dtor,0,no,,0x0017077d,0x00170710,class table installed before any call; the body does not return this
+0x001707d0,ctor_TexPannerTriggered,TexPannerTriggered,0x00510070,172,ctor,0,yes,0x00062ce0,0x001707d8,0x001707d0,class table installed after a call into the base constructor; the body returns this
+0x00170820,dtor_TexPannerTriggered,TexPannerTriggered,0x00510070,172,dtor,0,no,,0x0017083d,0x001707d0,class table installed before any call; the body does not return this
+0x00170870,ctor_ColorModifier,ColorModifier,0x00510130,108,ctor,0,yes,0x00062ce0,0x00170878,0x00170870,class table installed after a call into the base constructor; the body returns this
+0x001708c0,dtor_ColorModifier,ColorModifier,0x00510130,108,dtor,0,no,,0x001708dd,0x00170870,class table installed before any call; the body does not return this
+0x00170910,ctor_Combiner,Combiner,0x005101e8,84,ctor,0,yes,0x00062ce0,0x00170918,0x00170910,class table installed after a call into the base constructor; the body returns this
+0x001709f0,dtor_Combiner,Combiner,0x005101e8,84,dtor,0,no,,0x00170a0d,0x00170910,class table installed before any call; the body does not return this
+0x00170de0,ctor_ProxyBitmapMaterial,ProxyBitmapMaterial,0x005104a8,92,ctor,0,yes,0x00062ce0,0x00170de8,0x00170de0,class table installed after a call into the base constructor; the body returns this
+0x00170e50,dtor_ProxyBitmapMaterial,ProxyBitmapMaterial,0x005104a8,92,dtor,0,no,,0x00170e6d,0x00170de0,class table installed before any call; the body does not return this
+0x00170fa0,ctor_MaterialSequence,MaterialSequence,0x00510568,96,ctor,0,yes,0x00062ce0,0x00170fa8,0x00170fa0,class table installed after a call into the base constructor; the body returns this
+0x00170ff0,dtor_MaterialSequence,MaterialSequence,0x00510568,96,dtor,0,no,,0x0017100d,0x00170fa0,class table installed before any call; the body does not return this
+0x00171050,ctor_MaterialSwitch,MaterialSwitch,0x00510620,80,ctor,0,yes,0x00062ce0,0x00171058,0x00171050,class table installed after a call into the base constructor; the body returns this
+0x001710a0,dtor_MaterialSwitch,MaterialSwitch,0x00510620,80,dtor,0,no,,0x001710bd,0x00171050,class table installed before any call; the body does not return this
+0x00171100,ctor_MultiPassMaterial,MultiPassMaterial,0x005106d8,72,ctor,0,yes,0x00062ce0,0x00171108,0x00171100,class table installed after a call into the base constructor; the body returns this
+0x001711d0,dtor_MultiPassMaterial,MultiPassMaterial,0x005106d8,72,dtor,0,no,,0x001711ed,0x00171100,class table installed before any call; the body does not return this
+0x001712c0,ctor_BackBufferTexture,BackBufferTexture,0x005107c0,208,ctor,0,yes,0x0027e3b0,0x001712c8,0x001712c0,class table installed after a call into the base constructor; the body returns this
+0x00171320,dtor_BackBufferTexture,BackBufferTexture,0x005107c0,208,dtor,0,no,,0x0017133d,0x001712c0,class table installed before any call; the body does not return this
+0x00174660,ctor_MeshEmitter,MeshEmitter,0x00510cf0,1196,ctor,0,yes,0x00062ce0,0x00174668,0x00174660,class table installed after a call into the base constructor; the body returns this
+0x001746b0,dtor_MeshEmitter,MeshEmitter,0x00510cf0,1196,dtor,0,no,,0x001746cd,0x00174660,class table installed before any call; the body does not return this
+0x00178620,FUN_00178620,Model,0x00510fc8,1820,ctor,8,yes,0x0011b090,0x0017864a,0x0017b300,class table installed after a call into the base constructor; the body returns this
+0x0017b300,ctor_Model,Model,0x00510fc8,1820,ctor,0,yes,0x0011b090,0x0017b32a,0x0017b300,class table installed after a call into the base constructor; the body returns this
+0x0017b0d0,dtor_Model,Model,0x00510fc8,1820,dtor,0,no,,0x0017b0ed,0x0017b300,class table installed before any call; the body does not return this
+0x0017c0c0,ctor_Mover,Mover,0x005110c8,1896,ctor,0,yes,0x00062ce0,0x0017c0c8,0x0017c0c0,class table installed after a call into the base constructor; the body returns this
+0x0017c2a0,dtor_Mover,Mover,0x005110c8,1896,dtor,0,no,,0x0017c2bd,0x0017c0c0,class table installed before any call; the body does not return this
+0x0017c420,ctor_Movie,Movie,0x00511308,44,ctor,0,yes,0x00062ce0,0x0017c428,0x0017c420,class table installed after a call into the base constructor; the body returns this
+0x0017d560,dtor_Movie,Movie,0x00511308,44,dtor,0,no,,0x0017d57d,0x0017c420,class table installed before any call; the body does not return this
+0x0017d450,ctor_MovieTexture,MovieTexture,0x00511538,224,ctor,0,yes,0x0027e3b0,0x0017d458,0x0017d450,class table installed after a call into the base constructor; the body returns this
+0x0017d740,dtor_MovieTexture,MovieTexture,0x00511538,224,dtor,0,no,,0x0017d75d,0x0017d450,class table installed before any call; the body does not return this
+0x00187400,ctor_PackageCheckInfo,PackageCheckInfo,0x00512798,72,ctor,0,yes,0x00062ce0,0x0018740a,0x00187400,class table installed after a call into the base constructor; the body returns this
+0x00187460,dtor_PackageCheckInfo,PackageCheckInfo,0x00512798,72,dtor,0,no,,0x0018747d,0x00187400,class table installed before any call; the body does not return this
+0x0018ef10,ctor_ParticleMaterial,ParticleMaterial,0x00512938,720,ctor,0,yes,0x00169980,0x0018ef4c,0x0018ef10,class table installed after a call into the base constructor; the body returns this
+0x0018efa0,dtor_ParticleMaterial,ParticleMaterial,0x00512938,720,dtor,0,no,,0x0018efbd,0x0018ef10,class table installed before any call; the body does not return this
+0x001a57f0,FUN_001a57f0,NetPendingLevel,0x00513a18,176,ctor,12,yes,0x001617d0,0x001a583f,0x001a6c40,class table installed after a call into the base constructor; the body returns this
+0x001a6c40,ctor_NetPendingLevel,NetPendingLevel,0x00513a18,176,ctor,0,yes,0x0011bf90,0x001a6c5c,0x001a6c40,class table installed after a call into the base constructor; the body returns this
+0x001a6ca0,dtor_NetPendingLevel,NetPendingLevel,0x00513a18,176,dtor,0,no,,0x001a6cbd,0x001a6c40,class table installed before any call; the body does not return this
+0x001b8d60,ctor_PixelShaderMaterial,PixelShaderMaterial,0x00513fd0,116,ctor,0,yes,0x00169980,0x001b8d68,0x001b8d60,class table installed after a call into the base constructor; the body returns this
+0x001b8ce0,dtor_PixelShaderMaterial,PixelShaderMaterial,0x00513fd0,116,dtor,0,no,,0x001b8cfd,0x001b8d60,class table installed before any call; the body does not return this
+0x001b8d80,ctor_PSShieldMaterial,PSShieldMaterial,0x00514090,128,ctor,0,yes,0x00169980,0x001b8d88,0x001b8d80,class table installed after a call into the base constructor; the body returns this
+0x001b8dd0,dtor_PSShieldMaterial,PSShieldMaterial,0x00514090,128,dtor,0,no,,0x001b8ded,0x001b8d80,class table installed before any call; the body does not return this
+0x001b8e20,ctor_PSReplicatorVision,PSReplicatorVision,0x00514150,116,ctor,0,yes,0x00169980,0x001b8e28,0x001b8e20,class table installed after a call into the base constructor; the body returns this
+0x001b8e70,dtor_PSReplicatorVision,PSReplicatorVision,0x00514150,116,dtor,0,no,,0x001b8e8d,0x001b8e20,class table installed before any call; the body does not return this
+0x001b9e40,ctor_PSBump,PSBump,0x00514210,140,ctor,0,yes,0x00169980,0x001b9e48,0x001b9e40,class table installed after a call into the base constructor; the body returns this
+0x001b8ec0,dtor_PSBump,PSBump,0x00514210,140,dtor,0,no,,0x001b8edd,0x001b9e40,class table installed before any call; the body does not return this
+0x001bd6d0,ctor_PSBumpSpecular,PSBumpSpecular,0x005142d0,144,ctor,0,yes,0x00169980,0x001bd6d8,0x001bd6d0,class table installed after a call into the base constructor; the body returns this
+0x001b8f60,dtor_PSBumpSpecular,PSBumpSpecular,0x005142d0,144,dtor,0,no,,0x001b8f7d,0x001bd6d0,class table installed before any call; the body does not return this
+0x001b90b0,ctor_PSDistortionBaseMaterial,PSDistortionBaseMaterial,0x00514390,136,ctor,0,yes,0x00169980,0x001b90b8,0x001b90b0,class table installed after a call into the base constructor; the body returns this
+0x001b8ff0,dtor_PSDistortionBaseMaterial,PSDistortionBaseMaterial,0x00514390,136,dtor,0,no,,0x001b900d,0x001b90b0,class table installed before any call; the body does not return this
+0x001b9150,ctor_PSBlendedDistortionMaterial,PSBlendedDistortionMaterial,0x00514450,140,ctor,0,yes,0x00169980,0x001b9158,0x001b9150,class table installed after a call into the base constructor; the body returns this
+0x001b90d0,dtor_PSBlendedDistortionMaterial,PSBlendedDistortionMaterial,0x00514450,140,dtor,0,no,,0x001b90ed,0x001b9150,class table installed before any call; the body does not return this
+0x001b9170,ctor_PSSubtractiveDistortion,PSSubtractiveDistortion,0x00514510,140,ctor,0,yes,0x00169980,0x001b9178,0x001b9170,class table installed after a call into the base constructor; the body returns this
+0x001b91c0,dtor_PSSubtractiveDistortion,PSSubtractiveDistortion,0x00514510,140,dtor,0,no,,0x001b91dd,0x001b9170,class table installed before any call; the body does not return this
+0x001b9210,ctor_PSAdditiveDistortion,PSAdditiveDistortion,0x005145d0,140,ctor,0,yes,0x00169980,0x001b9218,0x001b9210,class table installed after a call into the base constructor; the body returns this
+0x001b9260,dtor_PSAdditiveDistortion,PSAdditiveDistortion,0x005145d0,140,dtor,0,no,,0x001b927d,0x001b9210,class table installed before any call; the body does not return this
+0x001b92b0,ctor_PSModulatedDistortionMaterial,PSModulatedDistortionMaterial,0x00514690,140,ctor,0,yes,0x00169980,0x001b92b8,0x001b92b0,class table installed after a call into the base constructor; the body returns this
+0x001b9300,dtor_PSModulatedDistortionMaterial,PSModulatedDistortionMaterial,0x00514690,140,dtor,0,no,,0x001b931d,0x001b92b0,class table installed before any call; the body does not return this
+0x001b9350,ctor_PSDistortionMaterial,PSDistortionMaterial,0x00514750,140,ctor,0,yes,0x00169980,0x001b9358,0x001b9350,class table installed after a call into the base constructor; the body returns this
+0x001b93a0,dtor_PSDistortionMaterial,PSDistortionMaterial,0x00514750,140,dtor,0,no,,0x001b93bd,0x001b9350,class table installed before any call; the body does not return this
+0x001b93f0,ctor_PSSimple,PSSimple,0x00514810,124,ctor,0,yes,0x00169980,0x001b93f8,0x001b93f0,class table installed after a call into the base constructor; the body returns this
+0x001b9440,dtor_PSSimple,PSSimple,0x00514810,124,dtor,0,no,,0x001b945d,0x001b93f0,class table installed before any call; the body does not return this
+0x001b9490,ctor_PSEmissiveShader,PSEmissiveShader,0x005148d0,144,ctor,0,yes,0x00169980,0x001b9498,0x001b9490,class table installed after a call into the base constructor; the body returns this
+0x001b9570,dtor_PSEmissiveShader,PSEmissiveShader,0x005148d0,144,dtor,0,no,,0x001b958d,0x001b9490,class table installed before any call; the body does not return this
+0x001b95c0,ctor_PSEmissiveConstColor,PSEmissiveConstColor,0x00514990,120,ctor,0,yes,0x00169980,0x001b95c8,0x001b95c0,class table installed after a call into the base constructor; the body returns this
+0x001b9610,dtor_PSEmissiveConstColor,PSEmissiveConstColor,0x00514990,120,dtor,0,no,,0x001b962d,0x001b95c0,class table installed before any call; the body does not return this
+0x001b9660,ctor_PSBackBufferEffect,PSBackBufferEffect,0x00514a50,128,ctor,0,yes,0x00169980,0x001b9668,0x001b9660,class table installed after a call into the base constructor; the body returns this
+0x001b96c0,dtor_PSBackBufferEffect,PSBackBufferEffect,0x00514a50,128,dtor,0,no,,0x001b96dd,0x001b9660,class table installed before any call; the body does not return this
+0x001b9710,ctor_PSBlurMaterial,PSBlurMaterial,0x00514b10,224,ctor,0,yes,0x00169980,0x001b9718,0x001b9710,class table installed after a call into the base constructor; the body returns this
+0x001b9760,dtor_PSBlurMaterial,PSBlurMaterial,0x00514b10,224,dtor,0,no,,0x001b977d,0x001b9710,class table installed before any call; the body does not return this
+0x001b97b0,ctor_PSUseTexIndexMaterial,PSUseTexIndexMaterial,0x00514bd0,124,ctor,0,yes,0x00169980,0x001b97b8,0x001b97b0,class table installed after a call into the base constructor; the body returns this
+0x001b9820,dtor_PSUseTexIndexMaterial,PSUseTexIndexMaterial,0x00514bd0,124,dtor,0,no,,0x001b983d,0x001b97b0,class table installed before any call; the body does not return this
+0x001b9870,ctor_PSLuminanceTexIndexMaterial,PSLuminanceTexIndexMaterial,0x00514c90,116,ctor,0,yes,0x00169980,0x001b9878,0x001b9870,class table installed after a call into the base constructor; the body returns this
+0x001b98c0,dtor_PSLuminanceTexIndexMaterial,PSLuminanceTexIndexMaterial,0x00514c90,116,dtor,0,no,,0x001b98dd,0x001b9870,class table installed before any call; the body does not return this
+0x001b9910,ctor_PSBloomSelectMaterial,PSBloomSelectMaterial,0x00514d50,128,ctor,0,yes,0x00169980,0x001b9918,0x001b9910,class table installed after a call into the base constructor; the body returns this
+0x001b9960,dtor_PSBloomSelectMaterial,PSBloomSelectMaterial,0x00514d50,128,dtor,0,no,,0x001b997d,0x001b9910,class table installed before any call; the body does not return this
+0x001b9bf0,ctor_PSWater,PSWater,0x00514e10,168,ctor,0,yes,0x00169980,0x001b9bf8,0x001b9bf0,class table installed after a call into the base constructor; the body returns this
+0x001bd5b0,dtor_PSWater,PSWater,0x00514e10,168,dtor,0,no,,0x001bd5cd,0x001b9bf0,class table installed before any call; the body does not return this
+0x001b9cf0,ctor_PSMotionBlurMaterial,PSMotionBlurMaterial,0x00514ed0,132,ctor,0,yes,0x00169980,0x001b9cf8,0x001b9cf0,class table installed after a call into the base constructor; the body returns this
+0x001bd630,dtor_PSMotionBlurMaterial,PSMotionBlurMaterial,0x00514ed0,132,dtor,0,no,,0x001bd64d,0x001b9cf0,class table installed before any call; the body does not return this
+0x001bd6f0,ctor_PSVDM,PSVDM,0x00514f90,144,ctor,0,yes,0x00169980,0x001bd6f8,0x001bd6f0,class table installed after a call into the base constructor; the body returns this
+0x001bd740,dtor_PSVDM,PSVDM,0x00514f90,144,dtor,0,no,,0x001bd75d,0x001bd6f0,class table installed before any call; the body does not return this
+0x001bd790,ctor_PSBumpSpecularBSP,PSBumpSpecularBSP,0x00515050,144,ctor,0,yes,0x00169980,0x001bd798,0x001bd790,class table installed after a call into the base constructor; the body returns this
+0x001bd7e0,dtor_PSBumpSpecularBSP,PSBumpSpecularBSP,0x00515050,144,dtor,0,no,,0x001bd7fd,0x001bd790,class table installed before any call; the body does not return this
+0x001bd830,ctor_PSBumpBSP,PSBumpBSP,0x00515110,140,ctor,0,yes,0x00169980,0x001bd838,0x001bd830,class table installed after a call into the base constructor; the body returns this
+0x001bd880,dtor_PSBumpBSP,PSBumpBSP,0x00515110,140,dtor,0,no,,0x001bd89d,0x001bd830,class table installed before any call; the body does not return this
+0x001bc330,ctor_PSDepthOfFieldMaterial,PSDepthOfFieldMaterial,0x00515220,168,ctor,0,yes,0x00169980,0x001bc359,0x001bc330,class table installed after a call into the base constructor; the body returns this
+0x001bdb50,dtor_PSDepthOfFieldMaterial,PSDepthOfFieldMaterial,0x00515220,168,dtor,0,no,,0x001bdb6d,0x001bc330,class table installed before any call; the body does not return this
+0x001bc680,ctor_PSRefractionMaterial,PSRefractionMaterial,0x005152e0,188,ctor,0,yes,0x00169980,0x001bc6a4,0x001bc680,class table installed after a call into the base constructor; the body returns this
+0x001bdbd0,dtor_PSRefractionMaterial,PSRefractionMaterial,0x005152e0,188,dtor,0,no,,0x001bdbed,0x001bc680,class table installed before any call; the body does not return this
+0x001bd460,ctor_WaterSceneManager,WaterSceneManager,0x005153a0,992,ctor,0,yes,0x00062ce0,0x001bd468,0x001bd460,class table installed after a call into the base constructor; the body returns this
+0x001bdc70,dtor_WaterSceneManager,WaterSceneManager,0x005153a0,992,dtor,0,no,,0x001bdc8d,0x001bd460,class table installed before any call; the body does not return this
+0x001bfe60,ctor_PlayerProfile,PlayerProfile,0x005155d8,172,ctor,0,yes,0x00062ce0,0x001bfe68,0x001bfe60,class table installed after a call into the base constructor; the body returns this
+0x001bfeb0,dtor_PlayerProfile,PlayerProfile,0x005155d8,172,dtor,0,no,,0x001bfecd,0x001bfe60,class table installed before any call; the body does not return this
+0x001c5fd0,ctor_PlayerStats,PlayerStats,0x00515bd0,116,ctor,0,yes,0x00062ce0,0x001c5fda,0x001c5fd0,class table installed after a call into the base constructor; the body returns this
+0x001c5f10,dtor_PlayerStats,PlayerStats,0x00515bd0,116,dtor,0,no,,0x001c5f2d,0x001c5fd0,class table installed before any call; the body does not return this
+0x001c6000,ctor_StatsQuery,StatsQuery,0x00515c48,76,ctor,0,yes,0x00062ce0,0x001c600a,0x001c6000,class table installed after a call into the base constructor; the body returns this
+0x001c6060,dtor_StatsQuery,StatsQuery,0x00515c48,76,dtor,0,no,,0x001c607d,0x001c6000,class table installed before any call; the body does not return this
+0x001c60d0,ctor_StatsWrite,StatsWrite,0x00515cc0,52,ctor,0,yes,0x00062ce0,0x001c60da,0x001c60d0,class table installed after a call into the base constructor; the body returns this
+0x001c6120,dtor_StatsWrite,StatsWrite,0x00515cc0,52,dtor,0,no,,0x001c613d,0x001c60d0,class table installed before any call; the body does not return this
+0x001c6180,ctor_PlayerStatCache,PlayerStatCache,0x00515d38,128,ctor,0,yes,0x00062ce0,0x001c619c,0x001c6180,class table installed after a call into the base constructor; the body returns this
+0x001c61e0,dtor_PlayerStatCache,PlayerStatCache,0x00515d38,128,dtor,0,no,,0x001c61fd,0x001c6180,class table installed before any call; the body does not return this
+0x001ca480,ctor_PlayInfo,PlayInfo,0x00516808,100,ctor,0,yes,0x00062ce0,0x001ca488,0x001ca480,class table installed after a call into the base constructor; the body returns this
+0x001ca4d0,dtor_PlayInfo,PlayInfo,0x00516808,100,dtor,0,no,,0x001ca4ed,0x001ca480,class table installed before any call; the body does not return this
+0x001cb640,ctor_ProjectorMaterial,ProjectorMaterial,0x005169b0,212,ctor,0,yes,0x00169980,0x001cb648,0x001cb640,class table installed after a call into the base constructor; the body returns this
+0x001cb690,dtor_ProjectorMaterial,ProjectorMaterial,0x005169b0,212,dtor,0,no,,0x001cb6ad,0x001cb640,class table installed before any call; the body does not return this
+0x001cff80,ctor_ProjectorPrimitive,ProjectorPrimitive,0x00516ac8,84,ctor,0,yes,0x0011b090,0x001cff88,0x001cff80,class table installed after a call into the base constructor; the body returns this
+0x001d00b0,dtor_ProjectorPrimitive,ProjectorPrimitive,0x00516ac8,84,dtor,0,no,,0x001d00cd,0x001cff80,class table installed before any call; the body does not return this
+0x001d0c40,ctor_Projector,Projector,0x00516be8,1308,ctor,0,yes,0x00062ce0,0x001d0c48,0x001d0c40,class table installed after a call into the base constructor; the body returns this
+0x001d0d80,dtor_Projector,Projector,0x00516be8,1308,dtor,0,no,,0x001d0d9d,0x001d0c40,class table installed before any call; the body does not return this
+0x001ead60,FUN_001ead60,,0x00517860,,dtor,0,no,,0x001ead7d,,class table installed before any call; the body does not return this
+0x001eade0,FUN_001eade0,,0x005178d8,,dtor,0,no,,0x001eadfd,,class table installed before any call; the body does not return this
+0x001ec2a0,ctor_IndexBuffer,IndexBuffer,0x00517a18,56,ctor,0,yes,0x00062ce0,0x001ec2aa,0x001ec2a0,class table installed after a call into the base constructor; the body returns this
+0x001ec2f0,dtor_IndexBuffer,IndexBuffer,0x00517a18,56,dtor,0,no,,0x001ec30d,0x001ec2a0,class table installed before any call; the body does not return this
+0x001ec7c0,ctor_VertexBuffer,VertexBuffer,0x00517a90,68,ctor,0,yes,0x00062ce0,0x001ec7db,0x001ec7c0,class table installed after a call into the base constructor; the body returns this
+0x001ec9d0,dtor_VertexBuffer,VertexBuffer,0x00517a90,68,dtor,0,no,,0x001ec9ed,0x001ec7c0,class table installed before any call; the body does not return this
+0x001eca30,ctor_VertexStreamVECTOR,VertexStreamVECTOR,0x00517b10,68,ctor,0,yes,0x00062ce0,0x001eca4b,0x001eca30,class table installed after a call into the base constructor; the body returns this
+0x001ecac0,dtor_VertexStreamVECTOR,VertexStreamVECTOR,0x00517b10,68,dtor,0,no,,0x001ecadd,0x001eca30,class table installed before any call; the body does not return this
+0x001ecb20,ctor_VertexStreamCOLOR,VertexStreamCOLOR,0x00517b90,68,ctor,0,yes,0x00062ce0,0x001ecb3b,0x001ecb20,class table installed after a call into the base constructor; the body returns this
+0x001ecc90,dtor_VertexStreamCOLOR,VertexStreamCOLOR,0x00517b90,68,dtor,0,no,,0x001eccad,0x001ecb20,class table installed before any call; the body does not return this
+0x001eccf0,ctor_VertexStreamUV,VertexStreamUV,0x00517c10,68,ctor,0,yes,0x00062ce0,0x001ecd0b,0x001eccf0,class table installed after a call into the base constructor; the body returns this
+0x001ece40,dtor_VertexStreamUV,VertexStreamUV,0x00517c10,68,dtor,0,no,,0x001ece5d,0x001eccf0,class table installed before any call; the body does not return this
+0x001ecea0,ctor_VertexStreamPosNormTex,VertexStreamPosNormTex,0x00517c90,68,ctor,0,yes,0x00062ce0,0x001ecebb,0x001ecea0,class table installed after a call into the base constructor; the body returns this
+0x001ed070,dtor_VertexStreamPosNormTex,VertexStreamPosNormTex,0x00517c90,68,dtor,0,no,,0x001ed08d,0x001ecea0,class table installed before any call; the body does not return this
+0x001ed0d0,ctor_SkinVertexBuffer,SkinVertexBuffer,0x00517d10,56,ctor,0,yes,0x00062ce0,0x001ed0da,0x001ed0d0,class table installed after a call into the base constructor; the body returns this
+0x001ed120,dtor_SkinVertexBuffer,SkinVertexBuffer,0x00517d10,56,dtor,0,no,,0x001ed13d,0x001ed0d0,class table installed before any call; the body does not return this
+0x002037f0,ctor_MeshObject,MeshObject,0x00518468,40,ctor,0,yes,0x00062ce0,0x002037f8,0x002037f0,class table installed after a call into the base constructor; the body returns this
+0x00203840,dtor_MeshObject,MeshObject,0x00518468,40,dtor,0,no,,0x0020385d,0x002037f0,class table installed before any call; the body does not return this
+0x0020b2c0,ctor_SubActionPlayMovie,SubActionPlayMovie,0x00518530,92,ctor,0,yes,0x00062ce0,0x0020b2c8,0x0020b2c0,class table installed after a call into the base constructor; the body returns this
+0x0020b310,dtor_SubActionPlayMovie,SubActionPlayMovie,0x00518530,92,dtor,0,no,,0x0020b32d,0x0020b2c0,class table installed before any call; the body does not return this
+0x0020b370,ctor_SubActionShowText,SubActionShowText,0x005185b8,108,ctor,0,yes,0x00062ce0,0x0020b378,0x0020b370,class table installed after a call into the base constructor; the body returns this
+0x0020b3c0,dtor_SubActionShowText,SubActionShowText,0x005185b8,108,dtor,0,no,,0x0020b3dd,0x0020b370,class table installed before any call; the body does not return this
+0x0020b420,ctor_SubActionSubTitle,SubActionSubTitle,0x00518640,84,ctor,0,yes,0x00062ce0,0x0020b428,0x0020b420,class table installed after a call into the base constructor; the body returns this
+0x0020b470,dtor_SubActionSubTitle,SubActionSubTitle,0x00518640,84,dtor,0,no,,0x0020b48d,0x0020b420,class table installed before any call; the body does not return this
+0x0020b4c0,ctor_SubActionSceneSpeed,SubActionSceneSpeed,0x005186c8,88,ctor,0,yes,0x00062ce0,0x0020b4c8,0x0020b4c0,class table installed after a call into the base constructor; the body returns this
+0x0020b510,dtor_SubActionSceneSpeed,SubActionSceneSpeed,0x005186c8,88,dtor,0,no,,0x0020b52d,0x0020b4c0,class table installed before any call; the body does not return this
+0x0020b560,ctor_SubActionGameSpeed,SubActionGameSpeed,0x00518750,88,ctor,0,yes,0x00062ce0,0x0020b568,0x0020b560,class table installed after a call into the base constructor; the body returns this
+0x0020b5b0,dtor_SubActionGameSpeed,SubActionGameSpeed,0x00518750,88,dtor,0,no,,0x0020b5cd,0x0020b560,class table installed before any call; the body does not return this
+0x0020b600,ctor_SubActionOrientation,SubActionOrientation,0x005187d8,172,ctor,0,yes,0x00062ce0,0x0020b60b,0x0020b600,class table installed after a call into the base constructor; the body returns this
+0x0020b6a0,dtor_SubActionOrientation,SubActionOrientation,0x005187d8,172,dtor,0,no,,0x0020b6bd,0x0020b600,class table installed before any call; the body does not return this
+0x0020b6f0,ctor_SubActionCameraShake,SubActionCameraShake,0x00518860,104,ctor,0,yes,0x00062ce0,0x0020b6f8,0x0020b6f0,class table installed after a call into the base constructor; the body returns this
+0x0020b740,dtor_SubActionCameraShake,SubActionCameraShake,0x00518860,104,dtor,0,no,,0x0020b75d,0x0020b6f0,class table installed before any call; the body does not return this
+0x0020b790,ctor_SubActionFOV,SubActionFOV,0x005188e8,88,ctor,0,yes,0x00062ce0,0x0020b798,0x0020b790,class table installed after a call into the base constructor; the body returns this
+0x0020b7e0,dtor_SubActionFOV,SubActionFOV,0x005188e8,88,dtor,0,no,,0x0020b7fd,0x0020b790,class table installed before any call; the body does not return this
+0x0020b830,ctor_SubActionTrigger,SubActionTrigger,0x00518970,84,ctor,0,yes,0x00062ce0,0x0020b838,0x0020b830,class table installed after a call into the base constructor; the body returns this
+0x0020b880,dtor_SubActionTrigger,SubActionTrigger,0x00518970,84,dtor,0,no,,0x0020b89d,0x0020b830,class table installed before any call; the body does not return this
+0x0020b8d0,ctor_SubActionFade,SubActionFade,0x005189f8,88,ctor,0,yes,0x00062ce0,0x0020b8d8,0x0020b8d0,class table installed after a call into the base constructor; the body returns this
+0x0020b920,dtor_SubActionFade,SubActionFade,0x005189f8,88,dtor,0,no,,0x0020b93d,0x0020b8d0,class table installed before any call; the body does not return this
+0x0020bfd0,ctor_MatAction,MatAction,0x00518c30,136,ctor,0,yes,0x00062ce0,0x0020bfd8,0x0020bfd0,class table installed after a call into the base constructor; the body returns this
+0x0020bb90,dtor_MatAction,MatAction,0x00518c30,136,dtor,0,no,,0x0020bbad,0x0020bfd0,class table installed before any call; the body does not return this
+0x0020bff0,ctor_ActionPause,ActionPause,0x00518ca8,140,ctor,0,yes,0x00062ce0,0x0020bff8,0x0020bff0,class table installed after a call into the base constructor; the body returns this
+0x0020bc40,dtor_ActionPause,ActionPause,0x00518ca8,140,dtor,0,no,,0x0020bc5d,0x0020bff0,class table installed before any call; the body does not return this
+0x0020bcc0,ctor_LookTarget,LookTarget,0x00518ef8,908,ctor,0,yes,0x00062ce0,0x0020bcc8,0x0020bcc0,class table installed after a call into the base constructor; the body returns this
+0x0020bd10,dtor_LookTarget,LookTarget,0x00518ef8,908,dtor,0,no,,0x0020bd2d,0x0020bcc0,class table installed before any call; the body does not return this
+0x0020bd60,ctor_SceneManager,SceneManager,0x005190e8,1328,ctor,0,yes,0x00062ce0,0x0020bd6b,0x0020bd60,class table installed after a call into the base constructor; the body returns this
+0x0020beb0,dtor_SceneManager,SceneManager,0x005190e8,1328,dtor,0,no,,0x0020becd,0x0020bd60,class table installed before any call; the body does not return this
+0x0020bf30,ctor_MatDemoActor,MatDemoActor,0x005192d8,908,ctor,0,yes,0x00062ce0,0x0020bf38,0x0020bf30,class table installed after a call into the base constructor; the body returns this
+0x0020bf80,dtor_MatDemoActor,MatDemoActor,0x005192d8,908,dtor,0,no,,0x0020bf9d,0x0020bf30,class table installed before any call; the body does not return this
+0x0020c010,ctor_MatActionWaitForEvent,MatActionWaitForEvent,0x005194c8,152,ctor,0,yes,0x00062ce0,0x0020c018,0x0020c010,class table installed after a call into the base constructor; the body returns this
+0x0020c060,dtor_MatActionWaitForEvent,MatActionWaitForEvent,0x005194c8,152,dtor,0,no,,0x0020c07d,0x0020c010,class table installed before any call; the body does not return this
+0x0020c0b0,ctor_ActionMoveCamera,ActionMoveCamera,0x00519548,180,ctor,0,yes,0x00062ce0,0x0020c0b8,0x0020c0b0,class table installed after a call into the base constructor; the body returns this
+0x0020c100,dtor_ActionMoveCamera,ActionMoveCamera,0x00519548,180,dtor,0,no,,0x0020c11d,0x0020c0b0,class table installed before any call; the body does not return this
+0x0021aae0,ctor_ScriptedTexture,ScriptedTexture,0x0051a2b8,112,ctor,0,yes,0x00169980,0x0021aae8,0x0021aae0,class table installed after a call into the base constructor; the body returns this
+0x0021ab30,dtor_ScriptedTexture,ScriptedTexture,0x0051a2b8,112,dtor,0,no,,0x0021ab4d,0x0021aae0,class table installed before any call; the body does not return this
+0x0021c740,ctor_Security,Security,0x0051a5b0,1020,ctor,0,yes,0x00062ce0,0x0021c77f,0x0021c740,class table installed after a call into the base constructor; the body returns this
+0x0021c7d0,dtor_Security,Security,0x0051a5b0,1020,dtor,0,no,,0x0021c7ed,0x0021c740,class table installed before any call; the body does not return this
+0x0021ece0,ctor_ShadowBitmapMaterial,ShadowBitmapMaterial,0x0051a908,136,ctor,0,yes,0x00169980,0x0021ece8,0x0021ece0,class table installed after a call into the base constructor; the body returns this
+0x0021ed30,dtor_ShadowBitmapMaterial,ShadowBitmapMaterial,0x0051a908,136,dtor,0,no,,0x0021ed4d,0x0021ece0,class table installed before any call; the body does not return this
+0x0021f000,ctor_ShadowProjector,ShadowProjector,0x0051ab38,1376,ctor,0,yes,0x00062ce0,0x0021f008,0x0021f000,class table installed after a call into the base constructor; the body returns this
+0x0021f050,dtor_ShadowProjector,ShadowProjector,0x0051ab38,1376,dtor,0,no,,0x0021f06d,0x0021f000,class table installed before any call; the body does not return this
+0x0021f690,ctor_AnimNotify,AnimNotify,0x0051ad50,44,ctor,0,yes,0x00062ce0,0x0021f698,0x0021f690,class table installed after a call into the base constructor; the body returns this
+0x0021f610,dtor_AnimNotify,AnimNotify,0x0051ad50,44,dtor,0,no,,0x0021f62d,0x0021f690,class table installed before any call; the body does not return this
+0x0021f6b0,ctor_AnimNotify_MatSubAction,AnimNotify_MatSubAction,0x0051add0,48,ctor,0,yes,0x00062ce0,0x0021f6b8,0x0021f6b0,class table installed after a call into the base constructor; the body returns this
+0x0021f700,dtor_AnimNotify_MatSubAction,AnimNotify_MatSubAction,0x0051add0,48,dtor,0,no,,0x0021f71d,0x0021f6b0,class table installed before any call; the body does not return this
+0x0021f750,ctor_AnimNotify_Scripted,AnimNotify_Scripted,0x0051ae50,44,ctor,0,yes,0x00062ce0,0x0021f758,0x0021f750,class table installed after a call into the base constructor; the body returns this
+0x0021f7a0,dtor_AnimNotify_Scripted,AnimNotify_Scripted,0x0051ae50,44,dtor,0,no,,0x0021f7bd,0x0021f750,class table installed before any call; the body does not return this
+0x0021f7f0,ctor_AnimNotify_Script,AnimNotify_Script,0x0051aed0,48,ctor,0,yes,0x00062ce0,0x0021f7f8,0x0021f7f0,class table installed after a call into the base constructor; the body returns this
+0x0021f840,dtor_AnimNotify_Script,AnimNotify_Script,0x0051aed0,48,dtor,0,no,,0x0021f85d,0x0021f7f0,class table installed before any call; the body does not return this
+0x0021f890,ctor_AnimNotify_LIPSinc,AnimNotify_LIPSinc,0x0051af50,60,ctor,0,yes,0x00062ce0,0x0021f898,0x0021f890,class table installed after a call into the base constructor; the body returns this
+0x0021f8e0,dtor_AnimNotify_LIPSinc,AnimNotify_LIPSinc,0x0051af50,60,dtor,0,no,,0x0021f8fd,0x0021f890,class table installed before any call; the body does not return this
+0x0021f930,ctor_AnimNotify_DestroyEffect,AnimNotify_DestroyEffect,0x0051afd0,52,ctor,0,yes,0x00062ce0,0x0021f938,0x0021f930,class table installed after a call into the base constructor; the body returns this
+0x0021f980,dtor_AnimNotify_DestroyEffect,AnimNotify_DestroyEffect,0x0051afd0,52,dtor,0,no,,0x0021f99d,0x0021f930,class table installed before any call; the body does not return this
+0x0021f9d0,ctor_AnimNotify_Effect,AnimNotify_Effect,0x0051b050,104,ctor,0,yes,0x00062ce0,0x0021f9d8,0x0021f9d0,class table installed after a call into the base constructor; the body returns this
+0x0021fa20,dtor_AnimNotify_Effect,AnimNotify_Effect,0x0051b050,104,dtor,0,no,,0x0021fa3d,0x0021f9d0,class table installed before any call; the body does not return this
+0x002205e0,ctor_Animation,Animation,0x0051b100,40,ctor,0,yes,0x00062ce0,0x002205e8,0x002205e0,class table installed after a call into the base constructor; the body returns this
+0x00220630,dtor_Animation,Animation,0x0051b100,40,dtor,0,no,,0x0022064d,0x002205e0,class table installed before any call; the body does not return this
+0x0023bb30,ctor_AnimNotify_Sound,AnimNotify_Sound,0x0051bf30,76,ctor,0,yes,0x00062ce0,0x0023bb38,0x0023bb30,class table installed after a call into the base constructor; the body returns this
+0x0023bb80,dtor_AnimNotify_Sound,AnimNotify_Sound,0x0051bf30,76,dtor,0,no,,0x0023bb9d,0x0023bb30,class table installed before any call; the body does not return this
+0x0022ca70,ctor_MeshAnimation,MeshAnimation,0x0051c040,104,ctor,0,yes,0x00062ce0,0x0022ca7a,0x0022ca70,class table installed after a call into the base constructor; the body returns this
+0x0023cf70,dtor_MeshAnimation,MeshAnimation,0x0051c040,104,dtor,0,no,,0x0023cf8d,0x0022ca70,class table installed before any call; the body does not return this
+0x0023d170,ctor_SkeletalMeshInstance,SkeletalMeshInstance,0x0051c188,1104,ctor,0,yes,0x0011b090,0x0023d19e,0x0023d170,class table installed after a call into the base constructor; the body returns this
+0x0023d4a0,dtor_SkeletalMeshInstance,SkeletalMeshInstance,0x0051c188,1104,dtor,0,no,,0x0023d4bd,0x0023d170,class table installed before any call; the body does not return this
+0x0023d650,ctor_SkeletalMesh,SkeletalMesh,0x0051c310,836,ctor,0,yes,0x00169270,0x0023d67b,0x0023d650,class table installed after a call into the base constructor; the body returns this
+0x0023d930,dtor_SkeletalMesh,SkeletalMesh,0x0051c310,836,dtor,0,no,,0x0023d94d,0x0023d650,class table installed before any call; the body does not return this
+0x00245520,ctor_SparkEmitter,SparkEmitter,0x0051d260,1236,ctor,0,yes,0x00062ce0,0x00245528,0x00245520,class table installed after a call into the base constructor; the body returns this
+0x00245570,dtor_SparkEmitter,SparkEmitter,0x0051d260,1236,dtor,0,no,,0x0024558d,0x00245520,class table installed before any call; the body does not return this
+0x00247eb0,ctor_SpriteEmitter,SpriteEmitter,0x0051d3a0,1204,ctor,0,yes,0x00062ce0,0x00247eb8,0x00247eb0,class table installed after a call into the base constructor; the body returns this
+0x00247f00,dtor_SpriteEmitter,SpriteEmitter,0x0051d3a0,1204,dtor,0,no,,0x00247f1d,0x00247eb0,class table installed before any call; the body does not return this
+0x0024e910,ctor_DecoCollideActor,DecoCollideActor,0x0051d860,908,ctor,0,yes,0x00062ce0,0x0024e918,0x0024e910,class table installed after a call into the base constructor; the body returns this
+0x0024e960,dtor_DecoCollideActor,DecoCollideActor,0x0051d860,908,dtor,0,no,,0x0024e97d,0x0024e910,class table installed before any call; the body does not return this
+0x0024e9b0,ctor_StaticMeshActor,StaticMeshActor,0x0051da50,916,ctor,0,yes,0x00062ce0,0x0024e9b8,0x0024e9b0,class table installed after a call into the base constructor; the body returns this
+0x0024ea00,dtor_StaticMeshActor,StaticMeshActor,0x0051da50,916,dtor,0,no,,0x0024ea1d,0x0024e9b0,class table installed before any call; the body does not return this
+0x0024ee40,ctor_StaticMeshInstance,StaticMeshInstance,0x0051dc40,80,ctor,0,yes,0x00062ce0,0x0024ee64,0x0024ee40,class table installed after a call into the base constructor; the body returns this
+0x0024eed0,dtor_StaticMeshInstance,StaticMeshInstance,0x0051dc40,80,dtor,0,no,,0x0024eeed,0x0024ee40,class table installed before any call; the body does not return this
+0x0024b490,ctor_StaticMesh,StaticMesh,0x0051dd28,416,ctor,0,yes,0x0011b090,0x0024b4b6,0x0024b490,class table installed after a call into the base constructor; the body returns this
+0x0024f4c0,dtor_StaticMesh,StaticMesh,0x0051dd28,416,dtor,0,no,,0x0024f4e0,0x0024b490,class table installed before any call; the body does not return this
+0x00263a90,ctor_SVehicleWheel,SVehicleWheel,0x0051f650,256,ctor,0,yes,0x00062ce0,0x00263a98,0x00263a90,class table installed after a call into the base constructor; the body returns this
+0x00263ae0,dtor_SVehicleWheel,SVehicleWheel,0x0051f650,256,dtor,0,no,,0x00263afd,0x00263a90,class table installed before any call; the body does not return this
+0x00275f50,ctor_TerrainPrimitive,TerrainPrimitive,0x0051f720,88,ctor,0,yes,0x0011b090,0x00275f58,0x00275f50,class table installed after a call into the base constructor; the body returns this
+0x00279730,FUN_00279730,TerrainPrimitive,0x0051f720,88,ctor,4,yes,0x0011b090,0x0027973f,0x00275f50,class table installed after a call into the base constructor; the body returns this
+0x00275fa0,dtor_TerrainPrimitive,TerrainPrimitive,0x0051f720,88,dtor,0,no,,0x00275fbd,0x00275f50,class table installed before any call; the body does not return this
+0x00279210,ctor_TerrainMaterial,TerrainMaterial,0x0051fc18,84,ctor,0,yes,0x00169980,0x00279218,0x00279210,class table installed after a call into the base constructor; the body returns this
+0x00279260,dtor_TerrainMaterial,TerrainMaterial,0x0051fc18,84,dtor,0,no,,0x0027927d,0x00279210,class table installed before any call; the body does not return this
+0x002710e0,FUN_002710e0,TerrainSector,0x0051fcd0,196,ctor,20,yes,0x00062ce0,0x00271104,0x002792c0,class table installed after a call into the base constructor; the body returns this
+0x002792c0,ctor_TerrainSector,TerrainSector,0x0051fcd0,196,ctor,0,yes,0x00062ce0,0x002792e4,0x002792c0,class table installed after a call into the base constructor; the body returns this
+0x00279370,dtor_TerrainSector,TerrainSector,0x0051fcd0,196,dtor,0,no,,0x0027938d,0x002792c0,class table installed before any call; the body does not return this
+0x00273930,ctor_TerrainInfo,TerrainInfo,0x0051fda8,5172,ctor,0,yes,0x00062ce0,0x0027396e,0x00273930,class table installed after a call into the base constructor; the body returns this
+0x00279780,dtor_TerrainInfo,TerrainInfo,0x0051fda8,5172,dtor,0,no,,0x0027979d,0x00273930,class table installed before any call; the body does not return this
+0x0027bf60,ctor_Palette,Palette,0x00520288,52,ctor,0,yes,0x00062ce0,0x0027bf6a,0x0027bf60,class table installed after a call into the base constructor; the body returns this
+0x0027eed0,dtor_Palette,Palette,0x00520288,52,dtor,0,no,,0x0027eeed,0x0027bf60,class table installed before any call; the body does not return this
+0x0027e7a0,ctor_Cubemap,Cubemap,0x005205c8,232,ctor,0,yes,0x0027e3b0,0x0027e7c2,0x0027e7a0,class table installed after a call into the base constructor; the body returns this
+0x0027efc0,dtor_Cubemap,Cubemap,0x005205c8,232,dtor,0,no,,0x0027efdd,0x0027e7a0,class table installed before any call; the body does not return this
+0x00284080,ctor_TrailEmitter,TrailEmitter,0x005207c8,1252,ctor,0,yes,0x00062ce0,0x00284088,0x00284080,class table installed after a call into the base constructor; the body returns this
+0x002841b0,dtor_TrailEmitter,TrailEmitter,0x005207c8,1252,dtor,0,no,,0x002841cd,0x00284080,class table installed before any call; the body does not return this
+0x0028f0f0,ctor_VertMeshInstance,VertMeshInstance,0x00520ca0,332,ctor,0,yes,0x0011b090,0x0028f0fa,0x0028f0f0,class table installed after a call into the base constructor; the body returns this
+0x0028f160,dtor_VertMeshInstance,VertMeshInstance,0x00520ca0,332,dtor,0,no,,0x0028f17d,0x0028f0f0,class table installed before any call; the body does not return this
+0x0028f1e0,ctor_VertMesh,VertMesh,0x00520fd8,608,ctor,0,yes,0x00169270,0x0028f204,0x0028f1e0,class table installed after a call into the base constructor; the body returns this
+0x0028f320,dtor_VertMesh,VertMesh,0x00520fd8,608,dtor,0,no,,0x0028f33d,0x0028f1e0,class table installed before any call; the body does not return this
+0x0028faa0,ctor_PlayerChatManager,PlayerChatManager,0x005210a8,996,ctor,0,yes,0x00062ce0,0x0028faa8,0x0028faa0,class table installed after a call into the base constructor; the body returns this
+0x0028faf0,dtor_PlayerChatManager,PlayerChatManager,0x005210a8,996,dtor,0,no,,0x0028fb0d,0x0028faa0,class table installed before any call; the body does not return this
+0x0028fb40,ctor_VoiceChatRoom,VoiceChatRoom,0x00521298,1040,ctor,0,yes,0x00062ce0,0x0028fb48,0x0028fb40,class table installed after a call into the base constructor; the body returns this
+0x0028fb90,dtor_VoiceChatRoom,VoiceChatRoom,0x00521298,1040,dtor,0,no,,0x0028fbad,0x0028fb40,class table installed before any call; the body does not return this
+0x0028fd40,ctor_VoiceChatReplicationInfo,VoiceChatReplicationInfo,0x005214d0,1240,ctor,0,yes,0x00062ce0,0x0028fd6a,0x0028fd40,class table installed after a call into the base constructor; the body returns this
+0x0028fdf0,dtor_VoiceChatReplicationInfo,VoiceChatReplicationInfo,0x005214d0,1240,dtor,0,no,,0x0028fe0d,0x0028fd40,class table installed before any call; the body does not return this
+0x00290a70,ctor_DecoVolumeObject,DecoVolumeObject,0x005216c0,908,ctor,0,yes,0x00062ce0,0x00290a78,0x00290a70,class table installed after a call into the base constructor; the body returns this
+0x00290ac0,dtor_DecoVolumeObject,DecoVolumeObject,0x005216c0,908,dtor,0,no,,0x00290add,0x00290a70,class table installed before any call; the body does not return this
+0x00290b10,ctor_DecorationList,DecorationList,0x005218b0,920,ctor,0,yes,0x00062ce0,0x00290b18,0x00290b10,class table installed after a call into the base constructor; the body returns this
+0x00290b60,dtor_DecorationList,DecorationList,0x005218b0,920,dtor,0,no,,0x00290b7d,0x00290b10,class table installed before any call; the body does not return this
+0x00290db0,ctor_Spline,Spline,0x00521b30,188,ctor,0,yes,0x00062ce0,0x00290db8,0x00290db0,class table installed after a call into the base constructor; the body returns this
+0x00290e00,dtor_Spline,Spline,0x00521b30,188,dtor,0,no,,0x00290e1d,0x00290db0,class table installed before any call; the body does not return this
+0x00292340,ctor_StreamBase,StreamBase,0x00521f80,40,ctor,0,yes,0x00062ce0,0x00292348,0x00292340,class table installed after a call into the base constructor; the body returns this
+0x002922f0,dtor_StreamBase,StreamBase,0x00521f80,40,dtor,0,no,,0x0029230d,0x00292340,class table installed before any call; the body does not return this
+0x00295e80,ctor_StreamInterface,StreamInterface,0x00522110,52,ctor,0,yes,0x00062ce0,0x00295e88,0x00295e80,class table installed after a call into the base constructor; the body returns this
+0x00295ed0,dtor_StreamInterface,StreamInterface,0x00522110,52,dtor,0,no,,0x00295eed,0x00295e80,class table installed before any call; the body does not return this
+0x00295f30,ctor_StreamInteraction,StreamInteraction,0x00522190,140,ctor,0,yes,0x00062ce0,0x00295f38,0x00295f30,class table installed after a call into the base constructor; the body returns this
+0x00295f80,dtor_StreamInteraction,StreamInteraction,0x00522190,140,dtor,0,no,,0x00295f9d,0x00295f30,class table installed before any call; the body does not return this
+0x00297930,ctor_Stream,Stream,0x00522e88,128,ctor,0,yes,0x00062ce0,0x0029793a,0x00297930,class table installed after a call into the base constructor; the body returns this
+0x002979b0,dtor_Stream,Stream,0x00522e88,128,dtor,0,no,,0x002979cd,0x00297930,class table installed before any call; the body does not return this
+0x00297f10,dtor_StreamTag,StreamTag,0x00522f90,356,dtor,0,no,,0x00297f2d,0x00297c70,class table installed before any call; the body does not return this
+0x002b3b30,ctor_D3DRenderDevice,D3DRenderDevice,0x0052b460,348696,ctor,0,yes,0x00062ce0,0x002b3b69,0x002b3b30,class table installed after a call into the base constructor; the body returns this
+0x002b4ee0,dtor_D3DRenderDevice,D3DRenderDevice,0x0052b460,348696,dtor,0,no,,0x002b4efd,0x002b3b30,class table installed before any call; the body does not return this
+0x002c3c60,dtor_HTTPDownload,HTTPDownload,0x0052cb00,1280,dtor,0,no,,0x002c3c7d,0x002c2650,class table installed before any call; the body does not return this
+0x002c6880,ctor_InternetLink,InternetLink,0x0052d5c8,1056,ctor,0,yes,0x00062ce0,0x002c68ab,0x002c6880,class table installed after a call into the base constructor; the body returns this
+0x002c73f0,dtor_InternetLink,InternetLink,0x0052d5c8,1056,dtor,0,no,,0x002c740d,0x002c6880,class table installed before any call; the body does not return this
+0x002c9420,ctor_MasterServerLink,MasterServerLink,0x0052e298,1016,ctor,0,yes,0x00062ce0,0x002c9428,0x002c9420,class table installed after a call into the base constructor; the body returns this
+0x002c9390,dtor_MasterServerLink,MasterServerLink,0x0052e298,1016,dtor,0,no,,0x002c93ad,0x002c9420,class table installed before any call; the body does not return this
+0x002c94c0,ctor_ServerQueryClient,ServerQueryClient,0x0052e488,1036,ctor,0,yes,0x00062ce0,0x002c94c8,0x002c94c0,class table installed after a call into the base constructor; the body returns this
+0x002c9440,dtor_ServerQueryClient,ServerQueryClient,0x0052e488,1036,dtor,0,no,,0x002c945d,0x002c94c0,class table installed before any call; the body does not return this
+0x002c94e0,ctor_MasterServerClient,MasterServerClient,0x0052e678,1116,ctor,0,yes,0x00062ce0,0x002c94e8,0x002c94e0,class table installed after a call into the base constructor; the body returns this
+0x002c9530,dtor_MasterServerClient,MasterServerClient,0x0052e678,1116,dtor,0,no,,0x002c954d,0x002c94e0,class table installed before any call; the body does not return this
+0x002cdd20,ctor_MasterServerGameStats,MasterServerGameStats,0x0052ef78,1036,ctor,0,yes,0x00062ce0,0x002cdd28,0x002cdd20,class table installed after a call into the base constructor; the body returns this
+0x002cdd70,dtor_MasterServerGameStats,MasterServerGameStats,0x0052ef78,1036,dtor,0,no,,0x002cdd8d,0x002cdd20,class table installed before any call; the body does not return this
+0x002ce2f0,ctor_MasterServerUplink,MasterServerUplink,0x0052f4a0,1552,ctor,0,yes,0x00062ce0,0x002ce320,0x002ce2f0,class table installed after a call into the base constructor; the body returns this
+0x002ce3d0,dtor_MasterServerUplink,MasterServerUplink,0x0052f4a0,1552,dtor,0,no,,0x002ce3ed,0x002ce2f0,class table installed before any call; the body does not return this
+0x002d1480,ctor_TcpLink,TcpLink,0x00530000,1096,ctor,0,yes,0x002c6880,0x002d1488,0x002d1480,class table installed after a call into the base constructor; the body returns this
+0x002d1bf0,dtor_TcpLink,TcpLink,0x00530000,1096,dtor,0,no,,0x002d1c0d,0x002d1480,class table installed before any call; the body does not return this
+0x002d6ce0,ctor_CompressCommandlet,CompressCommandlet,0x00531710,476,ctor,0,yes,0x00066b60,0x002d6ce8,0x002d6ce0,class table installed after a call into the base constructor; the body returns this
+0x002d6d30,dtor_CompressCommandlet,CompressCommandlet,0x00531710,476,dtor,0,no,,0x002d6d4d,0x002d6ce0,class table installed before any call; the body does not return this
+0x002d6d80,ctor_DecompressCommandlet,DecompressCommandlet,0x00531790,476,ctor,0,yes,0x00066b60,0x002d6d88,0x002d6d80,class table installed after a call into the base constructor; the body returns this
+0x002d6dd0,dtor_DecompressCommandlet,DecompressCommandlet,0x00531790,476,dtor,0,no,,0x002d6ded,0x002d6d80,class table installed before any call; the body does not return this
+0x002d7c60,ctor_UdpLink,UdpLink,0x00531c40,1072,ctor,0,yes,0x002c6880,0x002d7c68,0x002d7c60,class table installed after a call into the base constructor; the body returns this
+0x002d7f70,dtor_UdpLink,UdpLink,0x00531c40,1072,dtor,0,no,,0x002d7f8d,0x002d7c60,class table installed before any call; the body does not return this
+0x002ea990,ctor_GUI,GUI,0x00536370,44,ctor,0,yes,0x00062ce0,0x002ea998,0x002ea990,class table installed after a call into the base constructor; the body returns this
+0x002ea940,dtor_GUI,GUI,0x00536370,44,dtor,0,no,,0x002ea95d,0x002ea990,class table installed before any call; the body does not return this
+0x002eabc0,ctor_StatsManager,StatsManager,0x005363e8,40,ctor,0,yes,0x00062ce0,0x002eabc8,0x002eabc0,class table installed after a call into the base constructor; the body returns this
+0x002eac10,dtor_StatsManager,StatsManager,0x005363e8,40,dtor,0,no,,0x002eac2d,0x002eabc0,class table installed before any call; the body does not return this
+0x002eac60,ctor_PropertyManagerBase,PropertyManagerBase,0x00536460,44,ctor,0,yes,0x00062ce0,0x002eac68,0x002eac60,class table installed after a call into the base constructor; the body returns this
+0x002eacb0,dtor_PropertyManagerBase,PropertyManagerBase,0x00536460,44,dtor,0,no,,0x002eaccd,0x002eac60,class table installed before any call; the body does not return this
+0x002f3760,ctor_GUIStyles,GUIStyles,0x00536590,476,ctor,0,yes,0x00062ce0,0x002f378a,0x002f3760,class table installed after a call into the base constructor; the body returns this
+0x002f3800,dtor_GUIStyles,GUIStyles,0x00536590,476,dtor,0,no,,0x002f381d,0x002f3760,class table installed before any call; the body does not return this
+0x002f3df0,ctor_GUIComponent,GUIComponent,0x00536648,584,ctor,0,yes,0x00062ce0,0x002f3df8,0x002f3df0,class table installed after a call into the base constructor; the body returns this
+0x002f3ca0,dtor_GUIComponent,GUIComponent,0x00536648,584,dtor,0,no,,0x002f3cbd,0x002f3df0,class table installed before any call; the body does not return this
+0x002f3eb0,ctor_GUIMultiComponent,GUIMultiComponent,0x00536730,628,ctor,0,yes,0x00062ce0,0x002f3eb8,0x002f3eb0,class table installed after a call into the base constructor; the body returns this
+0x002f3e10,dtor_GUIMultiComponent,GUIMultiComponent,0x00536730,628,dtor,0,no,,0x002f3e2d,0x002f3eb0,class table installed before any call; the body does not return this
+0x002f3f50,ctor_GUIPanel,GUIPanel,0x00536830,644,ctor,0,yes,0x00062ce0,0x002f3f58,0x002f3f50,class table installed after a call into the base constructor; the body returns this
+0x002f3ed0,dtor_GUIPanel,GUIPanel,0x00536830,644,dtor,0,no,,0x002f3eed,0x002f3f50,class table installed before any call; the body does not return this
+0x002f3f70,ctor_GUIScrollingPanel,GUIScrollingPanel,0x00536930,664,ctor,0,yes,0x00062ce0,0x002f3f78,0x002f3f70,class table installed after a call into the base constructor; the body returns this
+0x002f3fc0,dtor_GUIScrollingPanel,GUIScrollingPanel,0x00536930,664,dtor,0,no,,0x002f3fdd,0x002f3f70,class table installed before any call; the body does not return this
+0x002f4020,ctor_GUITabPanel,GUITabPanel,0x00536a30,652,ctor,0,yes,0x00062ce0,0x002f4028,0x002f4020,class table installed after a call into the base constructor; the body returns this
+0x002f4070,dtor_GUITabPanel,GUITabPanel,0x00536a30,652,dtor,0,no,,0x002f408d,0x002f4020,class table installed before any call; the body does not return this
+0x002f40c0,ctor_GUIPage,GUIPage,0x00536b30,768,ctor,0,yes,0x00062ce0,0x002f40c8,0x002f40c0,class table installed after a call into the base constructor; the body returns this
+0x002f4110,dtor_GUIPage,GUIPage,0x00536b30,768,dtor,0,no,,0x002f412d,0x002f40c0,class table installed before any call; the body does not return this
+0x002f4170,ctor_GUIMenuOption,GUIMenuOption,0x00536c30,704,ctor,0,yes,0x00062ce0,0x002f4178,0x002f4170,class table installed after a call into the base constructor; the body returns this
+0x002f41c0,dtor_GUIMenuOption,GUIMenuOption,0x00536c30,704,dtor,0,no,,0x002f41dd,0x002f4170,class table installed before any call; the body does not return this
+0x002f4250,ctor_GUIComboBox,GUIComboBox,0x00536d30,668,ctor,0,yes,0x00062ce0,0x002f4258,0x002f4250,class table installed after a call into the base constructor; the body returns this
+0x002f42a0,dtor_GUIComboBox,GUIComboBox,0x00536d30,668,dtor,0,no,,0x002f42bd,0x002f4250,class table installed before any call; the body does not return this
+0x002f4300,ctor_GUITabControl,GUITabControl,0x00536e30,676,ctor,0,yes,0x00062ce0,0x002f4308,0x002f4300,class table installed after a call into the base constructor; the body returns this
+0x002f4350,dtor_GUITabControl,GUITabControl,0x00536e30,676,dtor,0,no,,0x002f436d,0x002f4300,class table installed before any call; the body does not return this
+0x002f4410,ctor_GUIScrollBarBase,GUIScrollBarBase,0x00536f30,632,ctor,0,yes,0x00062ce0,0x002f4418,0x002f4410,class table installed after a call into the base constructor; the body returns this
+0x002f43c0,dtor_GUIScrollBarBase,GUIScrollBarBase,0x00536f30,632,dtor,0,no,,0x002f43dd,0x002f4410,class table installed before any call; the body does not return this
+0x002f4460,ctor_GUIHorzScrollBar,GUIHorzScrollBar,0x00537030,656,ctor,0,yes,0x00062ce0,0x002f4468,0x002f4460,class table installed after a call into the base constructor; the body returns this
+0x002f44b0,dtor_GUIHorzScrollBar,GUIHorzScrollBar,0x00537030,656,dtor,0,no,,0x002f44cd,0x002f4460,class table installed before any call; the body does not return this
+0x002f4500,ctor_GUIVertScrollBar,GUIVertScrollBar,0x00537130,660,ctor,0,yes,0x00062ce0,0x002f4508,0x002f4500,class table installed after a call into the base constructor; the body returns this
+0x002f4550,dtor_GUIVertScrollBar,GUIVertScrollBar,0x00537130,660,dtor,0,no,,0x002f456d,0x002f4500,class table installed before any call; the body does not return this
+0x002f45a0,ctor_GUINumericEdit,GUINumericEdit,0x00537230,668,ctor,0,yes,0x00062ce0,0x002f45a8,0x002f45a0,class table installed after a call into the base constructor; the body returns this
+0x002f45f0,dtor_GUINumericEdit,GUINumericEdit,0x00537230,668,dtor,0,no,,0x002f460d,0x002f45a0,class table installed before any call; the body does not return this
+0x002f4650,ctor_GUIProgressBar,GUIProgressBar,0x00537330,668,ctor,0,yes,0x00062ce0,0x002f4658,0x002f4650,class table installed after a call into the base constructor; the body returns this
+0x002f46a0,dtor_GUIProgressBar,GUIProgressBar,0x00537330,668,dtor,0,no,,0x002f46bd,0x002f4650,class table installed before any call; the body does not return this
+0x002f4720,ctor_GUITitleBar,GUITitleBar,0x00537418,612,ctor,0,yes,0x00062ce0,0x002f4728,0x002f4720,class table installed after a call into the base constructor; the body returns this
+0x002f4770,dtor_GUITitleBar,GUITitleBar,0x00537418,612,dtor,0,no,,0x002f478d,0x002f4720,class table installed before any call; the body does not return this
+0x002f4860,ctor_GUIButton,GUIButton,0x00537500,612,ctor,0,yes,0x00062ce0,0x002f4868,0x002f4860,class table installed after a call into the base constructor; the body returns this
+0x002f47d0,dtor_GUIButton,GUIButton,0x00537500,612,dtor,0,no,,0x002f47ed,0x002f4860,class table installed before any call; the body does not return this
+0x002f4880,ctor_GUITabButton,GUITabButton,0x005375e8,620,ctor,0,yes,0x00062ce0,0x002f4888,0x002f4880,class table installed after a call into the base constructor; the body returns this
+0x002f48d0,dtor_GUITabButton,GUITabButton,0x005375e8,620,dtor,0,no,,0x002f48ed,0x002f4880,class table installed before any call; the body does not return this
+0x002f4920,ctor_GUIHorzGripButton,GUIHorzGripButton,0x005376d0,612,ctor,0,yes,0x00062ce0,0x002f4928,0x002f4920,class table installed after a call into the base constructor; the body returns this
+0x002f4970,dtor_GUIHorzGripButton,GUIHorzGripButton,0x005376d0,612,dtor,0,no,,0x002f498d,0x002f4920,class table installed before any call; the body does not return this
+0x002f49c0,ctor_GUIHorzScrollButton,GUIHorzScrollButton,0x005377b8,624,ctor,0,yes,0x00062ce0,0x002f49c8,0x002f49c0,class table installed after a call into the base constructor; the body returns this
+0x002f4a10,dtor_GUIHorzScrollButton,GUIHorzScrollButton,0x005377b8,624,dtor,0,no,,0x002f4a2d,0x002f49c0,class table installed before any call; the body does not return this
+0x002f4a60,ctor_GUIVertGripButton,GUIVertGripButton,0x005378a0,612,ctor,0,yes,0x00062ce0,0x002f4a68,0x002f4a60,class table installed after a call into the base constructor; the body returns this
+0x002f4ab0,dtor_GUIVertGripButton,GUIVertGripButton,0x005378a0,612,dtor,0,no,,0x002f4acd,0x002f4a60,class table installed before any call; the body does not return this
+0x002f4b50,ctor_GUIVertScrollButton,GUIVertScrollButton,0x00537988,624,ctor,0,yes,0x00062ce0,0x002f4b58,0x002f4b50,class table installed after a call into the base constructor; the body returns this
+0x002f4b00,dtor_GUIVertScrollButton,GUIVertScrollButton,0x00537988,624,dtor,0,no,,0x002f4b1d,0x002f4b50,class table installed before any call; the body does not return this
+0x002f4ba0,ctor_GUIComboButton,GUIComboButton,0x00537a70,624,ctor,0,yes,0x00062ce0,0x002f4ba8,0x002f4ba0,class table installed after a call into the base constructor; the body returns this
+0x002f4bf0,dtor_GUIComboButton,GUIComboButton,0x00537a70,624,dtor,0,no,,0x002f4c0d,0x002f4ba0,class table installed before any call; the body does not return this
+0x002f4c40,ctor_GUIEditBox,GUIEditBox,0x00537b58,708,ctor,0,yes,0x00062ce0,0x002f4c48,0x002f4c40,class table installed after a call into the base constructor; the body returns this
+0x002f4c90,dtor_GUIEditBox,GUIEditBox,0x00537b58,708,dtor,0,no,,0x002f4cad,0x002f4c40,class table installed before any call; the body does not return this
+0x002f4d00,ctor_GUICheckBoxButton,GUICheckBoxButton,0x00537c40,616,ctor,0,yes,0x00062ce0,0x002f4d08,0x002f4d00,class table installed after a call into the base constructor; the body returns this
+0x002f4d50,dtor_GUICheckBoxButton,GUICheckBoxButton,0x00537c40,616,dtor,0,no,,0x002f4d6d,0x002f4d00,class table installed before any call; the body does not return this
+0x002f4da0,ctor_GUISpinnerButton,GUISpinnerButton,0x00537d28,616,ctor,0,yes,0x00062ce0,0x002f4da8,0x002f4da0,class table installed after a call into the base constructor; the body returns this
+0x002f4df0,dtor_GUISpinnerButton,GUISpinnerButton,0x00537d28,616,dtor,0,no,,0x002f4e0d,0x002f4da0,class table installed before any call; the body does not return this
+0x002f4e40,ctor_GUIHorzScrollZone,GUIHorzScrollZone,0x00537e10,592,ctor,0,yes,0x00062ce0,0x002f4e48,0x002f4e40,class table installed after a call into the base constructor; the body returns this
+0x002f4e90,dtor_GUIHorzScrollZone,GUIHorzScrollZone,0x00537e10,592,dtor,0,no,,0x002f4ead,0x002f4e40,class table installed before any call; the body does not return this
+0x002f4ee0,ctor_GUIVertScrollZone,GUIVertScrollZone,0x00537ef8,592,ctor,0,yes,0x00062ce0,0x002f4ee8,0x002f4ee0,class table installed after a call into the base constructor; the body returns this
+0x002f4f30,dtor_GUIVertScrollZone,GUIVertScrollZone,0x00537ef8,592,dtor,0,no,,0x002f4f4d,0x002f4ee0,class table installed before any call; the body does not return this
+0x002f4f80,ctor_GUILabel,GUILabel,0x00537fe0,668,ctor,0,yes,0x00062ce0,0x002f4f88,0x002f4f80,class table installed after a call into the base constructor; the body returns this
+0x002f4fd0,dtor_GUILabel,GUILabel,0x00537fe0,668,dtor,0,no,,0x002f4fed,0x002f4f80,class table installed before any call; the body does not return this
+0x002f5040,ctor_GUIImage,GUIImage,0x005380c8,608,ctor,0,yes,0x00062ce0,0x002f5048,0x002f5040,class table installed after a call into the base constructor; the body returns this
+0x002f5090,dtor_GUIImage,GUIImage,0x005380c8,608,dtor,0,no,,0x002f50ad,0x002f5040,class table installed before any call; the body does not return this
+0x002f5330,ctor_GUIFont,GUIFont,0x005381b0,84,ctor,0,yes,0x00062ce0,0x002f5338,0x002f5330,class table installed after a call into the base constructor; the body returns this
+0x002f5380,dtor_GUIFont,GUIFont,0x005381b0,84,dtor,0,no,,0x002f539d,0x002f5330,class table installed before any call; the body does not return this
+0x002f5490,ctor_GameStartInfo,GameStartInfo,0x005385a8,100,ctor,0,yes,0x00062ce0,0x002f5498,0x002f5490,class table installed after a call into the base constructor; the body returns this
+0x002f54e0,dtor_GameStartInfo,GameStartInfo,0x005385a8,100,dtor,0,no,,0x002f54fd,0x002f5490,class table installed before any call; the body does not return this
+0x00300ba0,ctor_GUIController,GUIController,0x00538d50,1180,ctor,0,yes,0x00062ce0,0x00300bca,0x00300ba0,class table installed after a call into the base constructor; the body returns this
+0x00300c50,dtor_GUIController,GUIController,0x00538d50,1180,dtor,0,no,,0x00300c6d,0x00300ba0,class table installed before any call; the body does not return this
+0x00305980,ctor_GUIMultiColumnListHeader,GUIMultiColumnListHeader,0x00538e28,596,ctor,0,yes,0x00062ce0,0x00305988,0x00305980,class table installed after a call into the base constructor; the body returns this
+0x003059d0,dtor_GUIMultiColumnListHeader,GUIMultiColumnListHeader,0x00538e28,596,dtor,0,no,,0x003059ed,0x00305980,class table installed before any call; the body does not return this
+0x00305ab0,ctor_GUIListBoxBase,GUIListBoxBase,0x00538f10,660,ctor,0,yes,0x00062ce0,0x00305ab8,0x00305ab0,class table installed after a call into the base constructor; the body returns this
+0x00305a20,dtor_GUIListBoxBase,GUIListBoxBase,0x00538f10,660,dtor,0,no,,0x00305a3d,0x00305ab0,class table installed before any call; the body does not return this
+0x00305ad0,ctor_GUIScrollTextBox,GUIScrollTextBox,0x00539010,688,ctor,0,yes,0x00062ce0,0x00305ad8,0x00305ad0,class table installed after a call into the base constructor; the body returns this
+0x00305b20,dtor_GUIScrollTextBox,GUIScrollTextBox,0x00539010,688,dtor,0,no,,0x00305b3d,0x00305ad0,class table installed before any call; the body does not return this
+0x00305b70,ctor_GUIListBox,GUIListBox,0x00539110,664,ctor,0,yes,0x00062ce0,0x00305b78,0x00305b70,class table installed after a call into the base constructor; the body returns this
+0x00305bc0,dtor_GUIListBox,GUIListBox,0x00539110,664,dtor,0,no,,0x00305bdd,0x00305b70,class table installed before any call; the body does not return this
+0x003063e0,ctor_GUIListBase,GUIListBase,0x005392e8,676,ctor,0,yes,0x00062ce0,0x003063e8,0x003063e0,class table installed after a call into the base constructor; the body returns this
+0x00306340,dtor_GUIListBase,GUIListBase,0x005392e8,676,dtor,0,no,,0x0030635d,0x003063e0,class table installed before any call; the body does not return this
+0x00306480,ctor_GUIVertList,GUIVertList,0x005393d8,680,ctor,0,yes,0x00062ce0,0x00306488,0x00306480,class table installed after a call into the base constructor; the body returns this
+0x00306400,dtor_GUIVertList,GUIVertList,0x005393d8,680,dtor,0,no,,0x0030641d,0x00306480,class table installed before any call; the body does not return this
+0x003064a0,ctor_GUIScrollText,GUIScrollText,0x005394c8,780,ctor,0,yes,0x00062ce0,0x003064a8,0x003064a0,class table installed after a call into the base constructor; the body returns this
+0x003064f0,dtor_GUIScrollText,GUIScrollText,0x005394c8,780,dtor,0,no,,0x0030650d,0x003064a0,class table installed before any call; the body does not return this
+0x003065a0,ctor_GUIHorzList,GUIHorzList,0x005395b8,680,ctor,0,yes,0x00062ce0,0x003065a8,0x003065a0,class table installed after a call into the base constructor; the body returns this
+0x003065f0,dtor_GUIHorzList,GUIHorzList,0x005395b8,680,dtor,0,no,,0x0030660d,0x003065a0,class table installed before any call; the body does not return this
+0x00306670,ctor_GUIMultiColumnList,GUIMultiColumnList,0x005396c8,756,ctor,0,yes,0x00062ce0,0x00306678,0x00306670,class table installed after a call into the base constructor; the body returns this
+0x003066c0,dtor_GUIMultiColumnList,GUIMultiColumnList,0x005396c8,756,dtor,0,no,,0x003066dd,0x00306670,class table installed before any call; the body does not return this
+0x00306760,ctor_GUIMultiColumnListBox,GUIMultiColumnListBox,0x005397b8,704,ctor,0,yes,0x00062ce0,0x00306768,0x00306760,class table installed after a call into the base constructor; the body returns this
+0x003067b0,dtor_GUIMultiColumnListBox,GUIMultiColumnListBox,0x005397b8,704,dtor,0,no,,0x003067cd,0x00306760,class table installed before any call; the body does not return this
+0x00306960,ctor_UIXInteraction,UIXInteraction,0x00539988,128,ctor,0,yes,0x00062ce0,0x00306968,0x00306960,class table installed after a call into the base constructor; the body returns this
+0x003069b0,dtor_UIXInteraction,UIXInteraction,0x00539988,128,dtor,0,no,,0x003069cd,0x00306960,class table installed before any call; the body does not return this
+0x0030bb80,ctor_XboxLiveInterface,XboxLiveInterface,0x0053b168,96,ctor,0,yes,0x00062ce0,0x0030bb88,0x0030bb80,class table installed after a call into the base constructor; the body returns this
+0x0030bbd0,dtor_XboxLiveInterface,XboxLiveInterface,0x0053b168,96,dtor,0,no,,0x0030bbed,0x0030bb80,class table installed before any call; the body does not return this

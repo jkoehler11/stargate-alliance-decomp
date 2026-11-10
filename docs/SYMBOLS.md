@@ -23,6 +23,10 @@ The names are the build's own, from the same places the native track measured th
 - **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 40
   registrations, plus `appAssertFailed` and `appMallocBeforeInit` named from the strings they log);
 - **`Vtbl_<Class>`** for the 466 class tables named by the class registrations (`docs/NATIVE_CLASSES.md`);
+- **`ctor_<Class>` / `dtor_<Class>`** (450 + 465) for the functions that install one of those tables with a
+  constructor's or a destructor's shape (`tools/class-ctors.py`, `docs/NATIVE_CLASSES.md`); the 31 stores
+  that fall in no mapped function, the overloads of a class with several constructors and the 26 classes no
+  registration literal names keep `FUN_*`;
 - everything else keeps Ghidra's `FUN_000xxxxx`, which is an honest unknown rather than a guess.
 
 ## Loading it against the original XBE
@@ -60,11 +64,12 @@ resolves, not a live attach.
 - **Names are file-level, not unique.** 128 names are used by more than one function — the assert
   attribution names a function by its source file, so `Core_UnTemplate` covers 310 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
-  gives every duplicate an `_<address>` suffix (1,168 symbols affected) so a debugger can address
+  gives every duplicate an `_<address>` suffix (1,167 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **12,971 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+- **12,020 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and naming them is 4.2's blocked signature work (`docs/UNKNOWNS.md` U9), not a gap
-  in this file.
+  in this file. The class-construction pass took this from 12,935: 915 functions now carry the class whose
+  object they build.
 - **No types, no variables, no source lines.** The map carries code addresses and class-table
   addresses only; there is no debug information in this build (`RSDS` absent, PLAN §0).
 

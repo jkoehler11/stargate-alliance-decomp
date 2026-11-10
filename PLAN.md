@@ -1004,6 +1004,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, every class's constructor and destructor is named by the table it installs)
+
+- **A vtable store is a constructor's signature.** `tools/class-ctors.py` (`make class-ctors`,
+  `inventory/class_constructors.csv`) scans `.text` for every `C7 /0` store whose immediate is one of the
+  492 measured class tables: **1,036** stores, **1,005** inside a mapped function, **998** distinct
+  functions (7 install two tables), **31** in no function. Two independent signatures — the store comes
+  *after* a call into the base constructor and the body returns `this` — classify **507** constructors and
+  **493** destructors, and leave **5** unclassified rather than averaging a disagreement.
+- **915 names, and `FUN_*` 12,935 → 12,020** (450 `ctor_<Class>`, 465 `dtor_<Class>`). The independent
+  check is the registration chain: of the 466 classes a registration literal names, **451** reach exactly
+  the function classified as the constructor and **0** disagree. The 15 that do not are classes whose
+  constructor's store is one of the 31 in no mapped function — a seeding gap, not a naming one.
+- **What stays `FUN_*` is counted, not glossed.** 25 classes have more than one constructor installer and
+  keep only the registration-reached name (so `FUN_0003af60` is `Class`'s 52-byte-argument overload, and
+  U6's last open item closes as *classified, unnameable as an overload*); 5 stores are unclassified; the 31
+  orphans are listed by address; the 26 tables with no registration literal stay unnamed because a name
+  needs a class name.
+- **The override file and the function map had drifted and the census caught it.** `#331`'s
+  `ucpp_Register_GoauldDrone` sat in `symbols/xbe_overrides.csv` but not in `symbols/xbox_functions.csv`,
+  because no import had run since it was added. `--apply` now applies the committed overrides to the map as
+  well as adding its own rows; `docs/NATIVE.md`, `inventory/function_modules.csv`,
+  `inventory/xbe_functions_by_module.csv`, `inventory/module_export_census.csv`, `docs/MODULE_CENSUS.md`,
+  `docs/STATUS.md` and the README badges were regenerated from the resulting names.
+
 ### Execution notes (2026-11-10, all 493 class registrations are read from the call sites, and the 26 the table missed are engine base classes)
 
 - **The count in `docs/FORK.md` is now an artifact, not a citation.** `tools/registration-sites.py`
