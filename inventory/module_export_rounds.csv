@@ -1,0 +1,13 @@
+module,addresses,seconds,exported,inside,missing,unnamed,decompile_failed,c_bytes
+Core,3238,179,3238,0,0,2593,2,9314551
+Engine,2094,36,2094,0,0,1493,0,7681115
+IpDrv,157,6,157,0,0,135,0,455126
+Gui,145,6,145,0,0,86,0,555576
+D3DDrv,129,6,129,0,0,107,0,409026
+stargategame,88,5,88,0,0,56,0,275155
+stargatevehicles,52,5,52,0,0,40,0,172420
+XboxAudio,42,6,42,0,0,33,0,164468
+Fire,41,5,41,0,0,32,0,130088
+XboxLive,31,5,31,0,0,18,0,153145
+Gameplay,24,5,24,0,0,15,0,82422
+XboxDrv,22,4,22,0,0,17,0,60917
