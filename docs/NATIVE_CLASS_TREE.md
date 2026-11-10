@@ -37,9 +37,9 @@ inventories; the tool recomputes all of them):
 | … whose class has no subclass in the image (a leaf) | 76 |
 
 375 of 391 is the claim this instrument is worth: the constructor call edges reproduce the script
-class tree for 96% of the classes that have subclasses at all. The 15 disagreements are listed by the
-same run against the CSVs, and they are the population a later pass should read — not this page's
-subject.
+class tree for 96% of the classes that have subclasses at all. The 15 disagreements are listed by the same run against the CSVs and decomposed in the next
+section (`--conflicts`): most of them are tables whose class has no script row at all, and one
+contradicts a name.
 
 ## What it names among the 26, and why it is not all of them
 
@@ -88,6 +88,62 @@ is one shared function.
 exactly the reading `registration-sites.py` warns about when it reports the class of such a site as
 "the site's only identifier literal". Only `FireTexture` (`0x002e8468`) pushes a pointer that lands on
 its own installer: `0x00018120` → `0x002e81f0`, which stores table `0x004cfd78`.
+
+## The 15 conflicts, decomposed
+
+`--conflicts` names the 15 tables whose measured child set is not the script's direct subclass set
+and says which way each one differs. The 15 are four groups, and only the third is evidence against
+a name:
+
+| cause | tables | what it is |
+|---|---|---|
+| `no-script-row` | 11 | the table's own class has no row in `inventory/classes.csv` — a native C++ class (`AudioSubsystem`, `Struct`, `State`, `PackageMap`, `PackageMapLevel`, `Linker`, `LinkerLoad`, `LinkerSave`, `Primitive`, `LodMesh`, `VertexStreamBase`), so there is no script super to compare against and its child set is measured-only. 95 of the 466 names are in this group; 84 of those have no measured child, so they land in the 76 blanks. |
+| `descendant-edge` | 2 | every extra child is a descendant: `Vehicle` (7) and `PlayerController` (1). |
+| `foreign-child` | 1 | an extra child is in the script tree and is *not* a descendant: `WaterTexture` (5). |
+| `native-child` | 1 | every extra child is a native class with no script row: `Commandlet` (6). |
+
+### The descendant edge is a skipped level, not an inlined parent
+
+`call_before_store` is the **first** `E8` before the table store (`class-ctors.py` stops at the
+first), so the edge names the constructor the body actually calls — and in these two families the
+body calls an ancestor, not the parent. Measured in the image (`SG1_DUMP=$HOME/nfs/sg1-dump/...`,
+bytes from the ctor to the store + 0x40):
+
+* `StargateVehicle` (`super SVehicle`) ctor `0x00023080` calls `Vehicle`'s ctor `0x00021f10` at
+  `+0x003` and nothing else, while `SVehicle`'s ctor `0x00022020` **exists out of line** (it calls
+  `0x00021f10` at `+0x003` too). So the level is skipped by the generated stub, not inlined away:
+  `Teltak` and `AlkeshBomber` (`super StargateCopter`) likewise call `0x00021f10`.
+* `StargatePlayer` (`super UnrealPlayer`) ctor `0x00026a70` calls `PlayerController`'s ctor
+  `0x00026870`, and `UnrealPlayer`'s own ctor `0x00026990` is out of line and calls the same.
+  `Camera` (`super PlayerController`) calls `0x00026870` as it should.
+
+The instrument loses a level on those classes and nothing else: the extra child is a descendant, so
+the parent is still pinned to a unique table. That is why the verdict names the class and not the
+parent, and why 375 of 391 still hold.
+
+### `WaterTexture` is the one conflict that contradicts a name
+
+`0x004cfba0` carries the name `WaterTexture`, and the tree says that cannot be right:
+
+* its five callers are `TextureEditable`, `Cubemap`, `MovieTexture`, `BackBufferTexture` (each
+  `super Texture`) and `IceTexture` (`super FractalTexture`) — none of them descends from
+  `WaterTexture`;
+* `WaterTexture`'s own three script subclasses (`FluidTexture`, `WaveTexture`, `WetTexture`) call
+  `0x002e8260` instead, which stores the **unnamed** table `0x004cfe68`, and whose child set is
+  exactly those three;
+* `0x002e8260` calls `0x0027e3b0` at `+0x006` before its store — the constructor that installs
+  `0x004cfba0` — so `0x004cfe68` is a child of `0x004cfba0`, and `0x004cfba0`'s ctor calls
+  `0x00169980` (table `0x004c7958`), the material-side base.
+
+Consistent reading: **`0x004cfba0` is `Texture` and `0x004cfe68` is `WaterTexture`**, with
+`FractalTexture` having no out-of-line constructor at all (which is why both `IceTexture` and
+`WaterTexture` chain past it to `Texture`). That is also the neighbourhood the registration-site
+join already flags: `Texture`'s site `0x0027e889` and `FractalTexture`'s `0x002e1489` push the same
+thunk `0x0027f070`, and `WaterTexture`'s site `0x0027e8e0` sits 0x57 bytes after `Texture`'s, so
+the literal window can attach the neighbour's name to the table the thunk installs. Which side is
+wrong is not settled from the file: it needs one object read (`UClass` name vs `+0x00` table,
+`docs/UNKNOWNS.md` U8), and until then this page reports the contradiction rather than renaming an
+artifact entry the other tools read.
 
 ## Status
 

@@ -1022,6 +1022,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the 15 class-tree conflicts are four causes, and one of them is a name)
+
+- **The tool now says why, and the answer is mostly "no script row".** `tools/class-tree-edges.py
+  --conflicts` decomposes the 15 conflicts that the 375/391 agreement leaves: **11 `no-script-row`**
+  (the table's class is absent from `inventory/classes.csv` — 95 of the 466 names are such native
+  classes, 84 of them without a measured child), **2 `descendant-edge`** (`Vehicle` 7 extras,
+  `PlayerController` 1), **1 `foreign-child`** (`WaterTexture` 5), **1 `native-child`**
+  (`Commandlet` 6). `--check` carries all three of the new causes as a synthetic world.
+- **The descendant edge is a skipped level, not an inlined parent.** `call_before_store` is the
+  first `E8` before the store, and the bodies show it: `StargateVehicle`'s ctor `0x00023080` calls
+  `Vehicle`'s `0x00021f10` at `+0x003` with `SVehicle`'s ctor `0x00022020` out of line and calling
+  the same, and `StargatePlayer`'s `0x00026a70` calls `PlayerController`'s `0x00026870` with
+  `UnrealPlayer`'s `0x00026990` out of line and doing the same. The generated stub skips its own
+  parent; the instrument loses exactly one level and still pins a unique table.
+- **`WaterTexture` is the one contradiction.** `0x004cfba0`'s five callers all `extend Texture` (or
+  `FractalTexture`), while `WaterTexture`'s three script subclasses call `0x002e8260`, which stores
+  the unnamed `0x004cfe68` and calls `0x0027e3b0` (the ctor that installs `0x004cfba0`) before its
+  store. Read as `0x004cfba0 = Texture` and `0x004cfe68 = WaterTexture`, with `FractalTexture` having
+  no out-of-line ctor. The registration literal path puts `WaterTexture` on `0x004cfba0` from a site
+  0x57 bytes from `Texture`'s, so the mixed-window caveat reaches this row; what would settle it is
+  one `UClass` name/table read at runtime (U8). `docs/NATIVE_CLASS_TREE.md`,
+  `docs/UNKNOWNS.md` U8.
+
 ### Execution notes (2026-11-10, U7's second dump: a mission load registers nothing, and 356 is the whole table)
 
 - **The table after a level loads is the table before it.** `tools/xemu/gnatives-mission.sh 10` boots to the title,

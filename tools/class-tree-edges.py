@@ -193,6 +193,101 @@ def site_thunks(xbe_path, root):
     return found
 
 
+def ancestors(classes):
+    """class -> the classes above it in the script tree, when each step resolves to one super."""
+    supers = collections.defaultdict(set)
+    for (_pkg, cls), sup in classes.items():
+        if sup:
+            supers[cls].add(sup)
+    out = {}
+    for cls in supers:
+        chain, seen, cur = [], {cls}, cls
+        while True:
+            nxt = supers.get(cur, ())
+            if len(nxt) != 1:
+                break
+            cur = next(iter(nxt))
+            if cur in seen:
+                break
+            seen.add(cur)
+            chain.append(cur)
+        out[cls] = chain
+    return out
+
+
+def decompose(tables, names, classes, ctors):
+    """Why a named table's measured child set disagrees with the script tree, in measured terms.
+
+    `call_before_store` is the *first* call before the table store (`class-ctors.py` stops at the
+    first `E8`), so inverting it yields the nearest ancestor whose constructor has an out-of-line
+    body, not always the direct parent. Four causes come out, and only `foreign-child` is evidence
+    against a name:
+
+    * `no-script-row` -- the named class is absent from `inventory/classes.csv` (a native C++
+      class), so there is no script super to compare and its child set is measured-only;
+    * `descendant-edge` -- every extra child is a descendant of the class, so the edge sits one or
+      more levels up: the body calls an ancestor's constructor and the intermediate level never
+      appears as a call;
+    * `foreign-child` -- an extra child is in `classes.csv` but *not* a descendant: its constructor
+      calls this table's constructor and the script tree puts it somewhere else, so one of the two
+      is wrong;
+    * `native-child` -- every extra child is absent from `classes.csv` (a native C++ class), so the
+      measured child set is all there is;
+    * `missing-only` -- nothing extra, something missing; report where the missing child's first
+      call lands instead.
+    """
+    children, _rows = edges(ctors)
+    subs = collections.defaultdict(set)
+    known = set()
+    for (_pkg, cls), sup in classes.items():
+        known.add(cls)
+        if sup:
+            subs[sup].add(cls)
+    up = ancestors(classes)
+    named_tables = {n: t for t, n in names.items() if n}
+    fn2table = {}
+    for t, rows in _rows.items():
+        for row in rows:
+            fn2table[int(row["function_va"], 16)] = t
+    first_call = collections.defaultdict(set)
+    for row in ctors:
+        if row.get("class") and row.get("call_before_store"):
+            first_call[row["class"]].add(int(row["call_before_store"], 16))
+
+    out = []
+    for t in sorted(tables):
+        cls = names.get(t) or ""
+        if not cls:
+            continue
+        kids = sorted(names.get(c) or ("?" + hex(c)) for c in children[t])
+        named_kids = [k for k in kids if not k.startswith("?")]
+        script = sorted(s for s in subs.get(cls, ()) if s in named_tables)
+        if not named_kids or named_kids == script:
+            continue
+        extra = [k for k in named_kids if k not in script]
+        missing = [s for s in script if s not in named_kids]
+        if cls not in known:
+            cause = "no-script-row"
+        elif any(k in known and cls not in up.get(k, ()) for k in extra):
+            cause = "foreign-child"
+        elif any(cls in up.get(k, ()) for k in extra):
+            cause = "descendant-edge"
+        elif extra:
+            cause = "native-child"
+        else:
+            cause = "missing-only"
+        def where(va):
+            t2 = fn2table.get(va)
+            return (names.get(t2) or "?" + hex(t2)) if t2 is not None else "?fn:" + hex(va)
+        lands = []
+        for s in missing:
+            targets = sorted(first_call.get(s, ()))
+            lands.append("%s->%s" % (s, ",".join(where(x) for x in targets) or "no-call"))
+        out.append({"table_va": hex(t), "class": cls, "cause": cause,
+                    "extra": extra, "missing": lands})
+    return out
+
+
 def check():
     """Synthetic: three tables, three classes, one shared base -- asserts the direction."""
     ctors = [
@@ -209,7 +304,23 @@ def check():
     assert by["0x2000"]["verdict"] == "candidate:Mid", by["0x2000"]
     assert by["0x1000"]["child_count"] == 0, by["0x1000"]
     assert by["0x1000"]["verdict"] == "agrees", by["0x1000"]  # a leaf: nothing calls it, no script sub
-    print("class-tree-edges: check ok (3 tables, direction and candidate match)")
+    # A second world: one table that wins an extra descendant, one that wins a stranger, and one
+    # whose class the script tree does not have at all.
+    ctors2 = [
+        {"table_va": "0x1000", "function_va": "0x10", "call_before_store": "", "form": "ctor"},
+        {"table_va": "0x2000", "function_va": "0x20", "call_before_store": "0x10", "form": "ctor"},
+        {"table_va": "0x3000", "function_va": "0x30", "call_before_store": "0x10", "form": "ctor"},
+        {"table_va": "0x4000", "function_va": "0x40", "call_before_store": "0x30", "form": "ctor"},
+        {"table_va": "0x4100", "function_va": "0x50", "call_before_store": "0x40", "form": "ctor"},
+    ]
+    tables2 = {0x1000: 4, 0x2000: 4, 0x3000: 4, 0x4000: 4, 0x4100: 4}
+    names2 = {0x1000: "Base", 0x2000: "Mid", 0x3000: "Leaf", 0x4000: "Odd", 0x4100: "Sub"}
+    classes2 = {("P", "Base"): "", ("P", "Mid"): "Base", ("P", "Leaf"): "Mid",
+                ("P", "Odd"): "Base"}
+    causes = {r["class"]: r["cause"] for r in decompose(tables2, names2, classes2, ctors2)}
+    assert causes == {"Base": "descendant-edge", "Leaf": "foreign-child",
+                      "Odd": "native-child"}, causes
+    print("class-tree-edges: check ok (direction, candidate, and three conflict causes)")
     return 0
 
 
@@ -219,6 +330,8 @@ def main():
     ap.add_argument("--csv", help="write one row per table here")
     ap.add_argument("--unnamed-only", action="store_true")
     ap.add_argument("--check", action="store_true", help="synthetic self-test, writes nothing")
+    ap.add_argument("--conflicts", action="store_true",
+                    help="with the summary, say why each conflicting table's child set disagrees")
     ap.add_argument("--xbe", help="also link the unnamed registration sites through their pushed thunk")
     args = ap.parse_args()
     if args.check:
@@ -229,6 +342,19 @@ def main():
     print("tables %d, named %d, unnamed %d" % (len(out), len(out) - len(unnamed), len(unnamed)))
     print("named over a measured child set: %d agree, %d conflict, %d no subclass in the image"
           % (agree, conflict, blank))
+    if args.conflicts:
+        rows = decompose(tables, names, classes, ctors)
+        counts = collections.Counter(r["cause"] for r in rows)
+        print("conflicts by cause: " + ", ".join(
+            "%s %d" % (c, counts[c]) for c in
+            ("no-script-row", "descendant-edge", "foreign-child", "native-child",
+             "missing-only") if counts[c]))
+        for r in rows:
+            print("  %s %-22s %-15s extra=%d %s" % (
+                r["table_va"], r["class"], r["cause"], len(r["extra"]),
+                "|".join(r["extra"])[:90] if r["extra"] else "-"))
+            if r["missing"]:
+                print("       missing: %s" % " ".join(r["missing"]))
     cands = [r for r in unnamed if r["verdict"].startswith("candidate:")]
     amb = [r for r in unnamed if r["verdict"].startswith("ambiguous:")]
     free = [r for r in unnamed if r["verdict"] == "unconstrained"]
