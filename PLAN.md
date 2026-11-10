@@ -1004,6 +1004,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, all 493 class registrations are read from the call sites, and the 26 the table missed are engine base classes)
+
+- **The count in `docs/FORK.md` is now an artifact, not a citation.** `tools/registration-sites.py`
+  (`inventory/registration_sites.csv`) scans the executable sections for every
+  `E8 rel32` into the class constructor `0x0003af60`: **493** sites, matching the number the class-table
+  pass cited. For each it reads the `68 imm32` pushes in the 96 bytes before the call and resolves them
+  as wide or ASCII literals; a normal site carries three -- `"new"`, the outer package `"System"` and the
+  class -- so the class is the literal `inventory/classes.csv` knows, the outer is a package name, and a
+  site with more than one unknown identifier is reported unnamed rather than picked.
+- **466 of 493 reproduce `inventory/xbe_class_table_names.csv` exactly, 0 disagree**, and the tool exits
+  nonzero on a disagreement: the table's `C7 /0` store and this literal walk are independent, so 466/466
+  is the accuracy measure rather than a restatement.
+- **The 26 residue sites are all engine base classes** -- `Object`, `Engine`, `Player`, `Texture`,
+  `RenderDevice`, `Viewport`, `Material`, `Subsystem`, `Channel`, `NetDriver`, `LevelBase` and the like --
+  which is exactly why a class-table pass misses them: their registration is the engine's own constructor,
+  not a generated `ucpp` stub, so there is no stub body for a table store to sit in. All 26 push `System`
+  as the outer package. One site (0x0010d6a9) carries no class literal in its window and stays unnamed.
+- **What is still not claimed.** A literal names the class being registered; it does not prove the class
+  object was created by that site at runtime, and this is a static scan of `.text`, so a site inside
+  unreachable code would count too. What it does establish is the population: every registration site is
+  found, and 492 of 493 name their class from the image's own bytes.
+
 ### Execution notes (2026-11-10, U6's four bodies: one was a stub the decompiler mislabelled, three are the DOF counter)
 
 - **`0x003107b0` is `ucpp_Register_GoauldDrone`, and the evidence was in the argument list all along.** The
