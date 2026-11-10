@@ -39,14 +39,19 @@ class Package:
         self.name_error = None
 
     def read_names(self):
-        """Length-prefixed strings with four flag bytes each. Refuses rather than inventing names."""
+        """Length-prefixed strings with four flag bytes each. Refuses rather than inventing names.
+
+        The length is an **index**, not a single byte: below 0x40 the two readings agree, which is why a
+        byte rule parsed every name in all 18 `System/*.u` packages (no name there is 63 characters long)
+        and refused two of the 73 maps, whose tables hold a 63-character name whose length `0x40` is the
+        index codec's "another byte follows" flag (`0x40 0x01` = 64) -- `docs/PACKAGE_READER.md`.
+        """
         d, off, out = self.data, self.name_offset, []
         try:
             for _ in range(self.name_count):
-                n = d[off]
-                if n == 0 or n > 0x7F:
-                    raise ValueError("length %d at 0x%x is not a compact name length" % (n, off))
-                off += 1
+                n, off = self.read_index(off)
+                if n <= 0 or n > 0x7F:
+                    raise ValueError("length %d at 0x%x is not a name length" % (n, off))
                 raw = d[off:off + n]
                 # the stored length counts the terminating NUL
                 if raw.endswith(b"\0"):

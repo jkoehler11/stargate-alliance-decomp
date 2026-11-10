@@ -350,8 +350,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       parse as packages, and level actors are exports, so the actor-class census is a histogram — 6,478 (map, class,
       count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
       256 of 389 totals exact, this reader consistently slightly low). **Remaining**: actor *properties* and the level
-      script, i.e. the property-stream reader, plus the T3D text itself. `M21A` has 1,540 exports whose class index does
-      not resolve — recorded, not explained. **Actor properties now parse too** (`docs/ACTOR_PROPERTIES.md`):
+      script, i.e. the property-stream reader, plus the T3D text itself. `M21A`'s 1,540 exports whose class index did
+      not resolve are **explained** (next note): the name length is an index, not a byte, and the two maps holding a
+      63-character name lost their tables after 146 and 395 entries — with the rule fixed, `M17D`'s 988 and `M21A`'s
+      1,540 unnamed actors resolve, `map_export_classes.csv` goes 6,478 → 6,658 rows with no `?` rows left and the
+      actor total unchanged at 194,190 (`docs/PACKAGE_READER.md`). **Actor properties now parse too** (`docs/ACTOR_PROPERTIES.md`):
       121,225 of 194,190 exports across the 73 maps carry a readable property block — `StaticMeshActor` 32,191 of
       32,193, `ReachSpec` and `PathNode` at 100% — and the properties are the same `Tag`/`PhysicsVolume`/`Region`/
       `Level`/`Location`/`Rotation` baseline the checkpoint analysis found, arrived at independently. The block is

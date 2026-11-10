@@ -56,7 +56,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/lipsinc_tracks.csv` | 8 | 22 | `make lipsinc-tracks` |
 | `inventory/lipsinc_weights.csv` | 2231 | 11 | `make lipsinc-weights` |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
-| `inventory/map_export_classes.csv` | 6478 | 3 | `make map-actors` |
+| `inventory/map_export_classes.csv` | 6658 | 3 | `make map-actors` |
 | `inventory/map_parse.csv` | 0 | 3 | `make maps-parse` |
 | `inventory/map_property_coverage.csv` | 73 | 3 | `make map-census` |
 | `inventory/maps.csv` | 73 | 6 | `make help` |
@@ -113,5 +113,5 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `symbols/xbe_overrides.csv` | 50 | 10 | `make ci` |
 | `symbols/xbox_functions.csv` | 14957 | 4 | `make assert-residual` |
 
-106 artifacts, 126250 rows in total. 0 with no generator.
+106 artifacts, 126430 rows in total. 0 with no generator.
 
