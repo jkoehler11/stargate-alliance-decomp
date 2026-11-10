@@ -49,3 +49,30 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x000b7260,LIPSincReadControllerFile,logs [LIPSinc]: Parsed %s and [LIPSinc]: Attempt to import an obsolete .LBP file!,,,,,Engine,,4290
 0x00225cd0,LIPSincLinkBones,its own log line [LIPSinc]: Linking Bones for %s,,,,,Engine,,164
 0x00228730,LIPSincPlayAnim,its own log line [LIPSinc]: PlayLIPSincAnim for %s,,,,,Engine,,521
+0x000341a0,FFileManagerError_CreateFileReader,own method literal FFileManagerError::CreateFileReader,FFileManagerError,,,,Core,,24
+0x000341c0,FFileManagerError_CreateFileWriter,own method literal FFileManagerError::CreateFileWriter,FFileManagerError,,,,Core,,24
+0x00063410,UObject_StaticShutdownAfterError,own method literal UObject::StaticShutdownAfterError,UObject,,,,Core,,142
+0x000e5a70,USoundGroup_RefreshGroup,own method literal USoundGroup::RefreshGroup,USoundGroup,,,,Engine,,559
+0x0012ed30,FPoly_Fix,own method literal FPoly::Fix,FPoly,,,,Engine,,269
+0x001c4bc0,UPlayerStats_Initialize,own method literal UPlayerStats::Initialize,UPlayerStats,,,,Engine,,118
+0x00261310,ASVehicle_physKarma,own method literal ASVehicle::physKarma,ASVehicle,,,,Engine,,1112
+0x00290ef0,USpline_execInitSplinePath,own method literal USpline::execInitSplinePath,USpline,,,,Engine,,905
+0x00291280,USpline_execInitSplineRot,own method literal USpline::execInitSplineRot,USpline,,,,Engine,,885
+0x00291c50,USpline_execNextSplineRot,own method literal USpline::execNextSplineRot,USpline,,,,Engine,,1473
+0x002c4f10,FUdpLink_BindPort,own method literal FUdpLink::BindPort,FUdpLink,,,,IpDrv,,12
+0x002c4f1c,FUdpLink_BindPort,own method literal FUdpLink::BindPort,FUdpLink,,,,IpDrv,,401
+0x00307150,UUIXInteraction_InitUIXVoiceSupport,own method literal UUIXInteraction::InitUIXVoiceSupport,UUIXInteraction,,,,Gui,,129
+0x003072e0,UUIXInteraction_VoiceCommunicatorUpdate,own method literal UUIXInteraction::VoiceCommunicatorUpdate,UUIXInteraction,,,,Gui,,46
+0x00307cd0,UUIXInteraction_InitUIX,own method literal UUIXInteraction::InitUIX,UUIXInteraction,,,,Gui,,652
+0x00308a60,UIXInteraction_StartSignIn,own method literal UIXInteraction::StartSignIn,UIXInteraction,,,,Core,,601
+0x003090a0,UUIXInteraction_RegisterPlayer,own method literal UUIXInteraction::RegisterPlayer,UUIXInteraction,,,,Gui,,414
+0x00325da0,StatsReadTask_Finished,own method literal StatsReadTask::Finished,StatsReadTask,,,,XboxLive,,420
+0x00327600,XboxLiveManager_StartStatsWrite,own method literal XboxLiveManager::StartStatsWrite,XboxLiveManager,,,,XboxLive,XboxLive.h,222
+0x003276e0,XboxLiveManager_StartStatsRead,own method literal XboxLiveManager::StartStatsRead,XboxLiveManager,,,,XboxLive,XboxLive.h,211
+0x003277c0,XboxLiveManager_StartStatsEnumerate,own method literal XboxLiveManager::StartStatsEnumerate,XboxLiveManager,,,,XboxLive,XboxLive.h,226
+0x003278b0,XboxLiveManager_StartStatsReset,own method literal XboxLiveManager::StartStatsReset,XboxLiveManager,,,,XboxLive,XboxLive.h,232
+0x003279a0,XboxLiveManager_StartStatsLadderWrite,own method literal XboxLiveManager::StartStatsLadderWrite,XboxLiveManager,,,,XboxLive,XboxLive.h,284
+0x00328af0,StatsEnumerateTask_Finished,own method literal StatsEnumerateTask::Finished,StatsEnumerateTask,,,,XboxLive,,754
+0x00329520,SessionQueryTask_Finshed,own method literal SessionQueryTask::Finshed,SessionQueryTask,,,,Core,,257
+0x00329960,XboxLiveManager_StartStatsLadderRead,own method literal XboxLiveManager::StartStatsLadderRead,XboxLiveManager,,,,Core,XboxLive.h,331
+0x0032aa20,XboxLiveManager_UpdateTask,own method literal XboxLiveManager::UpdateTask,XboxLiveManager,,,,Core,,333

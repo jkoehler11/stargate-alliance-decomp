@@ -368,6 +368,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       XDK's `XBUtil_FindMediaFile` -- so the console renderer is `D3DDrv` plus a 22-body platform shim, and the
       D3D8 functions themselves stay in the unnamed 302-function `D3D` section (U9/U11). 4.8's native half is
       now read: what remains is naming (4.2) and a stock image to diff against.
+      **Naming is now measured and bounded** (`docs/NAMING.md`, `make body-name`,
+      `inventory/body_names.csv`): of the corpus's unnamed bodies **27** name themselves from a
+      `Class::Method` literal in their own log text (and are now in `symbols/xbe_overrides.csv` and the
+      symbol map), 23 name only a source file, and 4,575 carry no naming evidence at all; the linker's
+      19 byte-identical groups hold 330 unnamed bodies and none of them has a named member, so twin
+      propagation adds nothing yet. The name source the image offers is therefore exhausted: the rest is
+      U9's supplied database, not another pass.
 - [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
       `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
@@ -1002,6 +1009,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   disagreement in 6,063), so `--check` does not gate on size and the exporter's "0 inside another function" stands.
 - **Next**: the renderer half is small enough to read -- `D3DDrv` is 129 bodies, 22 with a source path, 53 carrying
   prose and 4 a format string -- so 4.8's next measurement is one of those bodies, not another pass over the corpus.
+
+### Execution notes (2026-11-10, naming: 27 bodies name themselves, the linker's twins name none, and the names are in the map)
+
+- **The pass the last two notes asked for, with its ceiling.** `tools/body-name.py` reads every exported
+  body and classifies it: `already named`, `own method literal`, `ambiguous method literals`,
+  `byte-identical twin of a named body`, `source file only`, `none`. **27** unnamed bodies carry exactly one
+  distinct `Class::Method` token in their own log text, so the image names them outright -- Core's file
+  manager and shutdown paths, the Xbox Live task methods (`XboxLiveManager_StartStats*`,
+  `StatsReadTask::Finished`), `USpline`'s three script-visible `exec` natives and `ASVehicle::physKarma`.
+  One keeps the game's own misspelling (`SessionQueryTask::Finshed`) because the literal is the evidence,
+  and `FUdpLink::BindPort` names two bodies, which is an overload pair reported rather than deduplicated.
+- **Two refusals are part of the design.** A body naming two methods is `ambiguous method literals` and is
+  not named at all (a body that logs about another object is common here), and a byte-identical twin under
+  32 bytes is refused -- two different getters compile to the same six instructions. The refusal counts are
+  in the artifact, so the next session can see what was skipped instead of trusting a total.
+- **The twin route is a measured zero.** The linker did fold code: **19** groups hold **330** unnamed
+  bodies -- but not one group has a named member, because what is folded here is the 33-byte stub shape,
+  not a function anyone has named. The instrument stays in `make body-name`, so the first named member of a
+  group names the rest for free; today it names none.
+- **Applied, not proposed.** `--write-overrides` appends the candidates to `symbols/xbe_overrides.csv`
+  (append-only, ten fields, CRLF, idempotent: a second run adds no row), and the names were carried into
+  `symbols/xbox_functions.csv` **names-only** -- 27 renamed, 0 added, 0 removed, 0 size or module changes --
+  so `symbols/xbox.map`, `docs/NATIVE.md` and `inventory/xbe_functions_by_module.csv` all carry them. That
+  CSV is otherwise the Ghidra product (`run-analysis.sh` applies the same override file on a full import);
+  this pass made the same edit and proved it moved no address, size or module.
+- **The ceiling is the finding**: 27 of 4,625 unnamed corpus bodies (0.6%) name themselves, and the library
+  sections name none (`docs/LIBRARIES.md`). Together they close the "read the strings for names" idea for
+  good -- 4.2 is signature-data shaped (U9), and the next thing worth doing with names is a runtime pairing,
+  not another static pass.
 
 ### Execution notes (2026-11-10, the library sections: 0 of 3,109 SDK bodies names itself, so 4.2's static half is closed)
 

@@ -81,6 +81,14 @@ CONFIG = re.compile(r"^\s*\[[A-Za-z][A-Za-z0-9 _]*\]|\.ini\b|\?\w+=", re.IGNOREC
 FORMAT = re.compile(r"%[-+ #0-9.]*(?:[diouxXeEfgGcspr]|l[dsux])")
 
 
+def read_overrides(path=os.path.join(ROOT, "symbols", "xbe_overrides.csv")):
+    """address -> name: the evidence names applied to a body the export snapshot predates."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        return {r["address"].lower(): r["name"] for r in csv.DictReader(fh) if r["name"]}
+
+
 def die(msg):
     sys.stderr.write(msg.rstrip() + "\n")
     sys.exit(1)
@@ -233,8 +241,12 @@ def census(root, xbe_path):
     if not files:
         die("no .c files under %s" % root)
     parsed = []
+    overrides = read_overrides()
     for module, path in files:
         name, addr, size, state, body = parse_body(path)
+        # A body renamed after this export was taken keeps the header's address and size; its name is
+        # whatever the override file says, which is also what `function_modules.csv` carries.
+        name = overrides.get("0x%08x" % addr, name)
         lits = literals_of(body) if state == "ok" else []
         cls, counts = classify(state, size, body, lits)
         sec = xbe.section_for(addr)

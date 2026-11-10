@@ -689,8 +689,11 @@ seven library sections in place (`docs/LIBRARIES.md`, `inventory/library_bodies.
 sections' entire vocabulary is 363 strings. RTTI carries four descriptors (all CRT exception classes), so
 the class-level route is closed as well. The engine-module method -- name the translation unit from the
 body's own assert -- has nothing to read here, and the sections' 21 `thunk_` names plus one mangled C++ name
-are the only names in the population. That leaves this entry's unblock as written: a locally supplied
-signature database, scored against the section table in `docs/LIBRARIES.md`.
+are the only names in the population. The engine corpus does no better from its own text:
+`tools/body-name.py` (`docs/NAMING.md`) names **27** of its 4,625 unnamed bodies from a `Class::Method`
+literal and 0 from a byte-identical twin, so the string-based route is exhausted on both sides of the
+image. That leaves this entry's unblock as written: a locally supplied signature database, scored against
+the section table in `docs/LIBRARIES.md`.
 
 **Status.** Open, blocked on data the project may not ship.
 

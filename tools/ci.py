@@ -346,6 +346,18 @@ def check_compile_doc():
         ok(name, out[-1].replace("ok   compile-readiness: ", "") if out else "")
 
 
+def check_body_name_doc():
+    """docs/NAMING.md's tables are generated from inventory/body_names.csv."""
+    name = "body-name-doc"
+    r = subprocess.run([sys.executable, repo("tools", "body-name.py"),
+                        "--check-doc", "docs/NAMING.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("body-name: ", "") if out else "")
+
+
 def check_library_doc():
     """docs/LIBRARIES.md's tables are generated; they must match the committed artifact."""
     name = "library-doc"
@@ -478,6 +490,7 @@ def main():
     check_module_split()
     check_compile_doc()
     check_library_doc()
+    check_body_name_doc()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
