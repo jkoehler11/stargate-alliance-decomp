@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile
 
 help:
 	@echo "targets:"
@@ -42,6 +42,7 @@ help:
 	@echo "  inventory-index  index every committed artifact and what regenerates it"
 	@echo "  status        regenerate the progress table in README.md and docs/STATUS.md"
 	@echo "  checkpoints   roll the .sgs schema up per class (PLAN 8.3, checkpoint system)"
+	@echo "  sgs-profile   reconcile the profile's [Saved Games] index with the checkpoints on disc"
 	@echo "  fork-surface  list every class the fork inserts onto a stock UE2.5 base (PLAN 4.8)"
 	@echo "  ucpp-vtables  resolve the class tables of the six ucpp-native classes (PLAN 4.7)"
 	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
@@ -170,6 +171,13 @@ formats:
 	@$(PYTHON) tools/formats.py --manifest inventory/manifest.sha256 --samples "$(SG1_DUMP)" -o inventory
 	@sh tools/sgs-dump.sh "$(SG1_DUMP)" "$(WORK)/sgs"
 	@$(PYTHON) tools/sgs-schema.py "$(WORK)/sgs" -o inventory/sgs_schema.csv
+
+# The checkpoint index lives in the profile, not in the package: `[Saved Games]` maps a file name to the
+# description the menu shows, so a rebuilt checkpoint needs a row here as well as a file on disc.
+sgs-profile:
+	@prof="$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/Profiles/DefaultProfile/DefaultProfile.sgp"; \
+	test -f "$$prof" || { echo "no profile at $$prof (SG1_DUMP=$(SG1_DUMP))"; exit 2; }; \
+	$(PYTHON) tools/sgs-profile.py "$$prof"
 
 # Needs the privately held 2006 Classes tree; deliberately not part of `make inventory`.
 oracle-diff:
