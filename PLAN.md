@@ -142,8 +142,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **Reported caps measured too**: the render device caches the runtime's 53-dword `D3DCAPS8` at `this+0x419c`
       and the post-create test at `0x002b3008` reads `VertexProcessingCaps` from it -- `0xbb`, MATERIALSOURCE7 set,
       so the `hardware` decision is the device's own report and not only the request (4 blend stages, 8 lights,
-      4096x4096 textures, 16-bit indices, 96 VS constants). `tools/xemu/d3d-caps.py` decodes the window;
-      `docs/systems/RENDERER.md` carries the table.
+      4096x4096 textures, 16-bit indices, 96 VS constants). The fill site is `GetDeviceCaps(0, HAL,
+      this+0x419c)` at `0x002b1b8a` into `0x004523a0`, the only immediate `0x419c` in `.text`, and six caps are
+      logged by name straight after it. `tools/xemu/d3d-caps.py` decodes the window and re-finds the call
+      (`--fill-site`); `docs/systems/RENDERER.md` carries the table.
       **Imports done, and the answer is that there are none to enumerate**: the header's import address is
       `0` and the image links statically, recording its **13 libraries** (all 1.0.5849) in one table at
       `0x10738` (`inventory/xbe_libraries.csv`, `tools/xbe-libraries.py`). The libraries' code is visible

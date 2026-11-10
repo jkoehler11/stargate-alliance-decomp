@@ -157,11 +157,25 @@ lighting path (`docs/systems/RENDERER.md`, above) have to fit in.
 the `BehaviorFlags = 0x40` request agree because the device really reports the capability; the "mixed"/"software"
 answers that string offers are dead code on this hardware.
 
-**Not measured.** Which call *fills* the struct: it is already populated at the first stop inside `0x002b27f0`,
-so the fill happens in the render device's initialisation before the create path, and neither the call site nor
-the `D3DCAPS8` source (computed by the runtime, or a template in the `D3D` section it copies field by field) was
-stopped on. The `MultiSampleType` value `0x11` in the present-params block stays a named-by-nobody literal for
-the same reason as `D3DFORMAT` 30/42: the header that would name it is not in this repository.
+**Where the struct comes from.** It is filled by a caps query, not by a copy from a table:
+`GetDeviceCaps(Adapter=0, DeviceType=1 (HAL), pCaps=this+0x419c)` at **`0x002b1b8a`**, into the statically linked
+D3D8 at `0x004523a0` in the `D3D` section. The `lea ecx,[ebx+0x419c]` at `0x002b1b76` is the **only** place in
+an executable section that names that offset, and the third (last-pushed) argument of a three-argument call is
+exactly the `pCaps` slot — `tools/xemu/d3d-caps.py --fill-site` walks the image and prints the three pushes, so
+the claim is checkable rather than asserted. The same body stores adapter `0` into `this+0x46d8` two instructions
+before the call, and `[esi+0x46d8]` is the adapter the later `CreateDevice` passes — one adapter field, queried
+and then used.
+
+The module then **logs six of the caps by name** at file:`0x2fa`, reading `this+0x4230`, `+0x4234`, `+0x423c`,
+`+0x4250`, `+0x4254` and `+0x4258`: `D3D Driver: MaxTextureBlendStages=%i`, `D3D Driver:
+MaxSimultaneousTextures=%i`, `D3D Driver: MaxActiveLights=%u`, `D3D Driver: MaxPrimitiveCount=%u`, `D3D Driver:
+MaxVertexIndex=%u`, `D3D Driver: MaxStreams=%u`. Mapped through the struct base those are `caps+0x94`, `+0x98`,
+`+0xa0`, `+0xb4`, `+0xb8` and `+0xbc` — the SDK's own slots — so the field map in the table rests on the game's
+names as well as on the SDK's order. Six queries about the fixed-function budget and the index limit, and not one
+about a shader: the module checks the caps it is going to *depend* on and nothing else.
+
+**Still unnamed.** The `MultiSampleType` value `0x11` in the present-params block stays a literal for the same
+reason as `D3DFORMAT` 30/42: the header that would name it is not in this repository.
 
 ## What this settles, and what it does not
 

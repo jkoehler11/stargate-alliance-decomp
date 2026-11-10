@@ -9,6 +9,7 @@ they are.
 
     python3 tools/xemu/d3d-caps.py --log $WORK/bp1.log --base 0x02384000 --caps 0x19c
     python3 tools/xemu/d3d-caps.py --log $WORK/bp1.log --base 0x02384000 --caps 0x19c --markdown
+    python3 tools/xemu/d3d-caps.py --fill-site $SG1_DUMP/default.xbe --caps-offset 0x419c
 
 `--caps` is the offset of the struct **inside** the dumped window (the window above is `esi+0x4000`, and the
 struct sits at `esi+0x419c`), so the two numbers together name the same bytes from both sides: `--base` is the
@@ -152,6 +153,68 @@ def markdown(fields, caps_addr):
     return "\n".join(out)
 
 
+def fill_site(xbe_path, caps_off):
+    """The call that fills the struct: one immediate `this+caps_off` in `.text`, the pushes before it, the target.
+
+    A struct member is only "the caps" if something fills it, and the offset alone proves nothing — the useful
+    check is that the *only* instruction in the image naming `caps_off` is a `lea reg,[reg+caps_off]` handed to a
+    three-argument call as its third (last-pushed) argument, with `1` and a cleared register pushed before it.
+    That is `GetDeviceCaps(Adapter, DeviceType, pCaps)`, and the target it lands in says which section owns it.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from xbe import Xbe                                          # noqa: E402
+    x = Xbe(xbe_path)
+    pat = struct.pack("<I", caps_off)
+    hits = []
+    for s in x.sections:
+        if not s.executable:
+            continue
+        blob = x.data[s.foff:s.foff + s.fsize]
+        i = blob.find(pat)
+        while i >= 0:
+            hits.append((s.name, s.va + i))
+            i = blob.find(pat, i + 1)
+    if len(hits) != 1:
+        sys.exit("%d instruction(s) in executable sections name 0x%x; expected exactly one"
+                 % (len(hits), caps_off))
+    sec, imm_va = hits[0]
+    pre = x.read_va(imm_va - 2, 6)                     # `8d 8b <imm32>` = lea reg,[ebx+imm32]
+    if pre[0] != 0x8D or pre[1] != 0x8B or struct.unpack_from("<I", pre, 2)[0] != caps_off:
+        sys.exit("the only 0x%x immediate at 0x%08x is not a `lea reg,[ebx+0x%x]` (%s)"
+                 % (caps_off, imm_va, caps_off, pre.hex()))
+    post = x.read_va(imm_va + 4, 32)
+    lines = ["fill site: one immediate 0x%x in %s" % (caps_off, sec),
+             "  0x%08x  lea %s,[%s+0x%x]   (the struct is this+0x%x)"
+             % (imm_va - 2, "ecx", "ebx", caps_off, caps_off)]
+    if post[:1] != b"\x51":
+        sys.exit("expected `push ecx` right after the lea at 0x%08x, found %s" % (imm_va + 4, post[:1].hex()))
+    lines.append("  0x%08x  push ecx                     -> pCaps" % (imm_va + 4))
+    dev = None
+    for k in range(1, 20):
+        if post[k] == 0xBD and struct.unpack_from("<I", post, k + 1)[0] in (1, 2, 3):
+            dev = struct.unpack_from("<I", post, k + 1)[0]
+            lines.append("  0x%08x  mov ebp,%d%s" % (imm_va + 4 + k, dev,
+                                                     {1: "  (D3DDEVTYPE_HAL)", 2: "  (D3DDEVTYPE_REF)",
+                                                      3: "  (D3DDEVTYPE_SW)"}[dev]))
+            break
+    if dev is None:
+        sys.exit("no `mov reg,<D3DDEVTYPE>` push found within 20 bytes of the lea")
+    call = None
+    for k in range(1, len(post) - 4):
+        if post[k] == 0xE8:
+            call = imm_va + 4 + k, imm_va + 4 + k + 5 + struct.unpack_from("<i", post, k + 1)[0]
+            break
+    if call is None:
+        sys.exit("no relative call within 32 bytes of the lea")
+    site, target = call
+    owner = next((s.name for s in x.sections if s.contains(target)), "?")
+    lines.append("  0x%08x  call 0x%08x%s" % (site, target,
+                                              "  -> section %s (the statically linked D3D8)" % owner
+                                              if owner != sec else ""))
+    lines.append("read as GetDeviceCaps(Adapter=0, DeviceType=%d, pCaps=this+0x%x)" % (dev, caps_off))
+    return "\n".join(lines)
+
+
 def selfchk():
     """A synthetic window that is a D3DCAPS8 by construction: no dump, no log, writes nothing."""
     words = [0] * (0x120 // 4)
@@ -189,9 +252,15 @@ def main():
     ap.add_argument("--markdown", action="store_true", help="emit a markdown table instead of the listing")
     ap.add_argument("--json", metavar="PATH", help="also write the decoded fields as JSON")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no dump and writes nothing")
+    ap.add_argument("--fill-site", metavar="XBE", help="verify the call that fills the struct, from the image")
+    ap.add_argument("--caps-offset", type=lambda v: int(v, 0), default=0x419c,
+                    help="offset of the caps inside the render device (default 0x419c)")
     args = ap.parse_args()
     if args.check:
         selfchk()
+        return
+    if args.fill_site:
+        print(fill_site(args.fill_site, args.caps_offset))
         return
     if args.words:
         words = [int(w, 16) for w in re.split(r"[,\s]+", args.words.strip()) if w]
