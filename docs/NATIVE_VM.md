@@ -76,11 +76,45 @@ The map is `inventory/gnatives_slots.csv` (index, address, name, evidence) and
 overrides, which is how the dispatch targets get names in Ghidra. The raw 16 KB dump is guest memory:
 it lives under `$WORK/gnatives/runtime.bin` and is never committed; only the derived address map is.
 
-**Why the registration stops at 356.** Natives are registered with the class that declares them, and
-at the main menu only the classes the front end has loaded exist. A complete table therefore needs a
-dump taken after a mission loads — which is blocked on the input automation problem in
-`docs/XEMU.md`, not on the table. The 273 declared indices are all covered because the engine's own
-native classes are loaded before the menu.
+**Why the registration stops at 356 — and why 356 is the whole table.** Natives are registered with the class
+that declares them, and the front end has loaded every native class before its own menu: a second dump taken with
+`M00` loaded holds the **same 356 slots with the same bodies, 0 gained** (next section). Registration therefore
+finishes at startup, a mission adds nothing, and the 83 slots no package declares are engine-internal execs, not
+natives waiting for a map. The 273 declared indices are covered for the same reason.
+
+### A second dump, after a mission loads (U7 closed)
+
+`tools/xemu/gnatives-mission.sh 10` is the whole recipe: boot to the title, hold the guest, `Continue`, ten d-pad
+presses and `A` (index 10 is `M00`, `tools/xemu/map-index.py`), gate on `tools/xemu/frame-diff.py` proving the
+frame left the menu, then read the 16 KB array over the stub. `make gnatives-mission` joins that read with this
+page's menu-time map (`tools/gnatives-mission.py`, artifact `inventory/gnatives_mission.csv`, one row per live
+slot with a `change` column).
+
+| Measurement | At the main menu | After `M00` loads |
+|---|---|---|
+| live slots (not the startup stub) | 356 | **356** |
+| distinct bodies among them | 356 | 356 |
+| body in the same slot as the menu dump | — | **356 of 356** |
+| slots gained / lost / replaced | — | **0 / 0 / 0** |
+
+Every slot holds the same pointer, so the table is complete before the front end's menu and a mission load
+registers nothing. That is U7's last open question answered, and it also settles how to read the 83 slots with no
+declarer: they are registered at startup by the engine, not deferred to a map.
+
+Two ways a second read lies, both measured on 2026-11-10:
+
+- **The table is a `.data` address, and a physical read of that number is a different page.** A `mem.py --dump`
+  in the stub's default *physical* mode put the array at physical `0x7dd3e8`: 353 of the 356 menu bodies matched,
+  and from slot 3,846 on — `0x635000`, the array's last page — the window held **zeros**, which reads exactly like
+  "the load zeroed the tail of the table". The linear space is the space the address belongs to:
+  `tools/xemu/mem.py --virtual` returns 356 of 356. (`gdb`'s own `dump binary memory` reads linearly by default,
+  which is why the first dump never met this.)
+- **A boot that never left the menu still hands out its stub.** One attempt's presses were swallowed at a 135 s
+  boot window (the highlight frame moved 331 px against a 710 threshold, then 0 px on the mission shot); its stub
+  would have served the menu's table again. The script gates on `frame-diff.py` before it reads, and its boot
+  window is `SG1_BOOT` (default 150).
+
+The dump stays under `$WORK/mission-gnatives/index-NN/` — guest memory, never committed; only the derived map is.
 
 **Validation.** The three operator natives behave like operator bodies: at `execNotEqual_ObjectObject`
 (`0x000463f0`), `execAdd_IntInt` (`0x00041a50`) and `execAndAnd_BoolBool` (`0x00041120`) the code takes

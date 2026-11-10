@@ -309,6 +309,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       There is **no `GPropPointers`** in the image — the roster is the constructors, not a global array —
       and the property classes have no package exports (`Core.u`: 7 class exports, 643 property exports).
       Still open here: the tagged tag record's own field order (U10).
+      **The dispatch table is closed as complete (2026-11-10)**: a second dump taken with `M00` loaded holds the
+      same 356 slots with the same bodies as the menu dump — 0 gained, 0 lost, 0 replaced — so registration
+      finishes at startup and a mission adds nothing (`tools/xemu/gnatives-mission.sh`, `make gnatives-mission`,
+      `inventory/gnatives_mission.csv`).
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
@@ -1003,6 +1007,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, U7's second dump: a mission load registers nothing, and 356 is the whole table)
+
+- **The table after a level loads is the table before it.** `tools/xemu/gnatives-mission.sh 10` boots to the title,
+  presses `Continue`, ten d-pad presses and `A` (index 10 = `M00`), proves with `frame-diff.py` that the frame left
+  the menu (92,571 px, 7.53%), then reads the 16 KB array over the stub. `tools/gnatives-mission.py` joins that read
+  with the menu-time map: **356 live slots in both, 356 of 356 bodies in the same slot, 0 gained, 0 lost, 0
+  replaced** — `inventory/gnatives_mission.csv`, 356 rows, every one `same`. So natives are all registered before
+  the front end's menu, a mission adds nothing, and the line that stood in U7 and in `docs/NATIVE_VM.md` ("a full
+  map needs a dump after a mission loads") was wrong for this build rather than blocked.
+- **A `.data` address is not a physical address, and here the difference was one page.** The first read used
+  `mem.py --dump 0x6313e8:0x6353e8`, which in the stub's default *physical* mode dumped 6.5 MB (the flag takes
+  `ADDR:SIZE`) with the array at physical `0x7dd3e8`: 353 of the menu's 356 bodies matched and the last 250 slots
+  read **zeros**, because `0x635000` is a page boundary 3,846 slots into the array and that page's frame is
+  elsewhere. Those zeros read exactly like "the load zeroed the tail". `tools/xemu/mem.py --virtual` reads the
+  context's linear space — the space the address belongs to — and returns 356 of 356.
+- **The gate threw away one boot, which is why the number is worth trusting.** A first attempt's presses were
+  swallowed (highlight frame 331 px against a 710 threshold, then 0 px on the mission shot) and the frame gate
+  stopped the read before the stub could serve the menu's table again; the retry at a 170 s boot window
+  (`SG1_BOOT`) loaded `M00` first time. Two boots, one read, one committed row set.
 
 ### Execution notes (2026-11-10, the 56 without a stub: three channels, and two packages the build never loads)
 
