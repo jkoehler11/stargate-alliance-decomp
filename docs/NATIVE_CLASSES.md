@@ -260,9 +260,30 @@ the same seven is the useful part: a declaration nothing binds gets no marker ta
 **271 of the 660 bodies are not functions in the census at all.** `function_modules.csv` attributes 389 of them
 (217 `(unnamed)`, 166 `(dispatch: declared)`, 1 `(dispatch: slot only)`, 5 named) and has no row for the rest. That
 is not a defect in the join: the function census is call-graph-driven, and a native's only reference *is* the
-registration table — nothing calls it directly. So the native table is an independent source of **274 function
-starts** (of its 883 distinct body addresses) that the analysis never made, which is a correction to the
-14,957-function denominator in `docs/PATH.md` rather than to any one caller list.
+registration table — nothing calls it directly. **Measured 2026-11-10: all 274 are function starts, so the census denominator is 15,231, not 14,957.** A byte
+pattern is not a verdict — this project's own `SeedGaps` opening-byte list once hid 47 real entries — so
+`tools/native-census.py` writes `inventory/native_census.csv`, one row per distinct body address, carrying three
+kinds of evidence: the address's relation to `symbols/xbox_functions.csv` (an entry point, inside a function's
+`[address, address+size)` range, or outside every range), the image's byte before it and its first bytes, and the
+answer the disassembler gives when `tools/ghidra/ghidra_scripts/NativeCensus.java` *creates* a function there.
+
+| evidence | result |
+|---|---:|
+| of the 883 distinct body addresses, function entry points in the census | 609 |
+| … inside a census function's range (`symbols/xbox_functions.csv` having folded a native into a neighbour) | **0** |
+| … outside every function's range | 274 |
+| … preceded by a function boundary (`0xCC` padding 251, `0x00` padding 15, a `ret` 8) | 274 |
+| … opening on an MSVC prologue shape (`arg-load` 117, `push-reg` 115, `seh` 21, `alloc` 15, `empty-return` 4, `push-imm` 2) | 274, 0 unclassified |
+| … **accepted by the disassembler as a function start** | **274**, 0 rejected, 0 inside another body |
+
+These are bodies, not pointers into data: median 106 bytes / 39 instructions, the smallest 3 bytes (four `UObject`
+log-filter natives whose whole body is `ret 8`: `ListLogFilters`, `SetLogFilter`, `ClearLogFilter`,
+`EmptyLogFilters`), the largest 2,016 bytes / 571 instructions (`Actor.GetClosestBone`), and all 274 end on a flow
+terminator. The script creates functions in address order, so a false start would be reported as `inside` the body
+created just before it; none was. `docs/PATH.md` therefore states **15,231** functions (14,957 + 274) and a named
+share of 1,988/15,231 = **13.05%**. Of the 274, 271 are the body of a `native function` declaration and 3 carry no
+declaration at all (`Object.ClockwiseFrom_IntInt`, one of the operator-expansion records; `SVehicle.UpdateVehicle`
+and `GUIFont.GetFont`, whose declarer the text does not spell as a binding).
 
 **The `src/Native` path segment is the package, and that is safe.** Only 5 of the 660 bodies carry a module name in
 `function_modules.csv`, and every one agrees with its declaring package (`Core.Object.StaticClearConfig`→`Core`,

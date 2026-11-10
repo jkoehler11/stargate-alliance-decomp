@@ -37,15 +37,15 @@ the numbers are least encouraging:
 
 | what it needs | measured state |
 |---|---|
-| functions to reconstruct | **14,957** |
-| functions carrying any name at all | **1,988 (13.29%)** (`symbols/xbox_functions.csv`) |
+| functions to reconstruct | **15,231** — 14,957 in the call-graph census, plus the 274 native bodies the registration table names and no call site reaches (`inventory/native_census.csv`, `docs/NATIVE_CLASSES.md`) |
+| functions carrying any name at all | **1,988 of 15,231 (13.05%)** (`symbols/xbox_functions.csv`) |
 | functions with reconstructed C | **0** — `src/Native/` is empty |
 | class tables identified | 466 of 492 named (`inventory/xbe_class_tables.csv`) |
 | classes agreeing with the 2006 source | 204 of 291 (`inventory/oracle_diff.csv`) |
 | assets indexed | 73 maps, 1,923 music cues, 55 `.uax` packages / 3,047 sounds |
 
 At this project's rate — a handful of measured chunks per session, ~19 new native names per session across the last
-stretch — naming all 14,957 functions is on the order of **600+ sessions**, before a single line of reconstructed C.
+stretch — naming all 15,231 functions is on the order of **600+ sessions**, before a single line of reconstructed C.
 Reconstruction is slower than naming. A realistic statement is **years, not months**, and the honest framing is
 that Goal B does not get there by continuing this pace function by function.
 
