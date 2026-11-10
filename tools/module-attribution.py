@@ -12,7 +12,7 @@ many come back). Two of them are the obvious ones and both fail: voting a module
 calls and is called by hands the image to `Core`, because every file calls Core and Core has the most labels, and
 weighting a callee by how many callers it has does not rescue it (a *fewer* labels, still under half right). The
 rule that ships is **address locality**: a function belongs to the file of the nearest attributed function, which
-is what "the TU's code is contiguous" means measured rather than assumed. The numbers in
+is what "the TU's code is contiguous" means measured rather than assumed, and its labels are scored two ways: **95.7%** where the two neighbours name the same module and **68.8%** where they contradict each other (a contradicted label moves when a new assert lands beside it, and `--holdout` prints the split). The numbers in
 `docs/MODULE_ATTRIBUTION.md` are what that run printed.
 
 **A module label is not a name** (`docs/CONVENTIONS.md`): it says which translation unit's code this is, and
@@ -194,6 +194,20 @@ def run(rows, edges=None, holdout=0, rules=RULES, gap=DEFAULT_GAP):
     return seeds, hidden, results
 
 
+def score_by_share(hidden, got):
+    """Recovery split by the rule's own confidence: `agree` is both neighbours voting one module, `disputed` is
+    one neighbour outvoting the other. A disputed label is what a new assert can flip (see docs/MODULE_ATTRIBUTION.md)."""
+    out = {}
+    for va, want in hidden.items():
+        rec = got.get(va)
+        if not rec:
+            continue
+        key = "agree" if rec[3] >= 1.0 else "disputed"
+        hit, n = out.get(key, (0, 0))
+        out[key] = (hit + (rec[0] == want), n + 1)
+    return out
+
+
 def score(hidden, got):
     """Recovery of the held-out labels: exact matches, and how many were labelled at all."""
     by_module = {}
@@ -352,6 +366,10 @@ def main():
                   % (rule, labelled_here, hit, 100.0 * hit / max(1, total)))
             for mod, (h, n) in sorted(by_module.items(), key=lambda kv: -kv[1][1])[:6]:
                 print("      %-22s %4d/%4d" % (mod, h, n))
+        print("locality scored by its own confidence (share 1.000 = both neighbours agree):")
+        for key in ("agree", "disputed"):
+            hit, n = score_by_share(hidden, results["locality"]).get(key, (0, 0))
+            print("  %-9s %4d of %4d exact (%.1f%%)" % (key, hit, n, 100.0 * hit / max(1, n)))
         print("locality gap sweep (gap, functions labelled out of %d, held-out exact):" % len(rows))
         for g in GAPS:
             loc = propagate_locality(rows, seeds, g)

@@ -2,7 +2,7 @@
 
 Status: **measured end to end** — the import plus twelve exporter rounds decompile all 6,063 attributed functions
 in 268 s of rounds (2026-11-10, twice: 266 s and 268 s, byte-identical output).
-Artifacts: `inventory/function_modules.csv` (14,957 rows), `inventory/module_export_plan.csv` (12 rows),
+Artifacts: `inventory/function_modules.csv` (14,973 rows), `inventory/module_export_plan.csv` (12 rows),
 `inventory/module_export_rounds.csv` (12 rounds, one per module).
 Tools: `tools/module-split.py` (`make module-split`, `make module-lists`; `--check` in `make ci`),
 `tools/ghidra/export-module.sh` (the pass driver).
@@ -12,11 +12,11 @@ Tools: `tools/module-split.py` (`make module-split`, `make module-lists`; `--che
 PLAN 4.5 asks for the XBE split into per-module Ghidra projects "using the assert-path map from 2.3". The map is
 per *function*: `inventory/function_modules.csv` attributes each function by the `__FILE__` assert its own body
 carries (plus the evidence overrides), and `inventory/function_module_attribution.csv` adds the functions whose
-module came from address locality (87.9% on held-out asserts, `docs/MODULE_ATTRIBUTION.md`). The union is
-**6,063 of 14,957 functions (40.54%) in 12 modules**.
+module came from address locality (89.9% on held-out asserts; 95.7% where both neighbours agree, `docs/MODULE_ATTRIBUTION.md`). The union is
+**6,092 of 14,973 functions (40.69%) in 12 modules**.
 
-Their addresses are nowhere near contiguous: the 12 modules' 6,063 functions occupy **5,826 contiguous runs**, a
-mean of **1.04 functions per run**, and `Core` is 3,238 functions in 3,125 runs across a 3.2 MB span. That is the
+Their addresses are nowhere near contiguous: the 12 modules' 6,092 functions occupy **5,854 contiguous runs**, a
+mean of **1.04 functions per run**, and `Core` is 3,244 functions in 3,131 runs across a 3.2 MB span. That is the
 same property the `run` column has measured since `function_modules.csv` landed — this build orders code per
 translation unit, and the compiler emits each function of a TU together, so a module is a *scatter of individual
 bodies*, not a region. There is no range to cut, and therefore no project boundary to draw.
@@ -29,26 +29,26 @@ if a row differs):
 
 | module | functions | asserted | propagated | runs | bytes | first | last |
 |---|---:|---:|---:|---:|---:|---|---|
-| `Core` | 3,238 | 574 | 2,664 | 3,125 | 842,694 | `0x00012110` | `0x0032ae50` |
-| `Engine` | 2,094 | 586 | 1,508 | 2,002 | 707,214 | `0x00033060` | `0x00298890` |
-| `IpDrv` | 157 | 22 | 135 | 151 | 35,110 | `0x002c3b70` | `0x002d8cc0` |
-| `Gui` | 145 | 55 | 90 | 141 | 44,170 | `0x002ec180` | `0x0030b750` |
+| `Core` | 3,244 | 581 | 2,663 | 3,131 | 843,158 | `0x00012110` | `0x0032b210` |
+| `Engine` | 2,104 | 593 | 1,511 | 2,011 | 711,533 | `0x00033060` | `0x00298890` |
+| `IpDrv` | 159 | 24 | 135 | 153 | 35,469 | `0x002c3b70` | `0x002d8cc0` |
+| `Gui` | 155 | 59 | 96 | 151 | 46,411 | `0x002ec180` | `0x0030b750` |
 | `D3DDrv` | 129 | 22 | 107 | 127 | 37,786 | `0x002aa300` | `0x002c0c50` |
 | `stargategame` | 88 | 32 | 56 | 82 | 20,271 | `0x003165b0` | `0x003237a0` |
 | `stargatevehicles` | 52 | 12 | 40 | 48 | 13,318 | `0x0030c2e0` | `0x003164a0` |
 | `XboxAudio` | 42 | 9 | 33 | 40 | 14,938 | `0x0002dee0` | `0x00033d20` |
 | `Fire` | 41 | 9 | 32 | 39 | 10,188 | `0x002e1130` | `0x002e91f0` |
-| `XboxLive` | 31 | 13 | 18 | 30 | 12,163 | `0x00325b24` | `0x00328af0` |
+| `XboxLive` | 32 | 20 | 12 | 31 | 13,027 | `0x00325b24` | `0x00328e00` |
 | `Gameplay` | 24 | 9 | 15 | 20 | 7,300 | `0x003238b0` | `0x00324d60` |
 | `XboxDrv` | 22 | 5 | 17 | 21 | 4,349 | `0x0032c010` | `0x0032dff0` |
 
-`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 8,894 functions no
+`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 8,881 functions no
 rule reaches are CRT start-up, the statically linked libraries (whose sections carry almost no asserts) and bodies
 whose translation unit has no assert within 2 KB.
 
 ## The lists
 
-`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 6,063 addresses, ascending,
+`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 6,092 addresses (6,063 of them in the round measured below), ascending,
 which is what `ExportAt.java @<file>` takes (address lists are derived work, so they stay out of git; `--lists`
 refuses to be pointed at `inventory/`, by convention rather than by code, because an address list of game code is
 not something to commit).
@@ -56,7 +56,7 @@ not something to commit).
 ## The pass, measured
 
 `ExportAt.java` takes the whole list as one `@file` argument and loops its addresses **inside one invocation**, so
-the pass costs **one import plus one round per module** — 12 rounds, not 5,826 invocations. The earlier reading of
+the pass costs **one import plus one round per module** — 12 rounds, not 5,854 invocations. The earlier reading of
 this page had it the other way round; the per-address cost it assumed is a per-*round* cost. `tools/ghidra/export-module.sh`
 drives the real shape: it imports `default.xbe` with the same recipe as `tools/ghidra/run-analysis.sh` (minus
 `-deleteProject` — the project is the reusable half), keeps it at `build/ghidra-module`, and runs one
@@ -95,7 +95,7 @@ Four things the table settles.
   `Engine` 1,493 of 2,094 (71%), `IpDrv` 135 of 157 (86%), `Gui` 86 of 145 (59%), and the game-specific/Xbox
   modules 58-79% (lowest `XboxLive` 18 of 31, highest `XboxAudio` 33 of 42).
 
-Re-priced: 5,826 contiguous runs remains the right shape for *reading* work — a run is what a human takes on at a
+Re-priced: 5,854 contiguous runs remains the right shape for *reading* work — a run is what a human takes on at a
 time — but it is not the cost of the pass. The pass is 12 rounds and under five minutes of them, on one kept
 project. A per-module Ghidra project still buys nothing.
 
@@ -105,7 +105,7 @@ project. A per-module Ghidra project still buys nothing.
   unnamed; it does not answer what they are. `Core` and `Engine` are 88% of the covered functions and may be mostly
   library code — that needs a classifier over the exported bodies (section, call fan-in, string refs), not another
   pass.
-- **The 8,894 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
+- **The 8,881 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
   (the library sections are the obvious place to start). The pass is cheap enough to run speculatively now that it
   is priced at 44 ms a body, but there is still no list to run it over.
 

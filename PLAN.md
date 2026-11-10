@@ -1030,6 +1030,15 @@ are limited to expected fields (checksum/timestamp) and documented.
   artifact — seven where the body from the nearest boundary ends before the store
   (`0x38d04`, `0x38d4b`, `0x3a180`, `0x3a5dd`, `0x3a727`, `0x3c41d`, `0x3c494`, `0x6cefe`) and two where the
   body does not end at a terminator. Nothing is named from them.
+- **The artifacts it moved are regenerated, and six locality labels moved with them.** The 13 new names gave six
+  functions a nearer assert on the other side of their boundary, so `inventory/function_module_attribution.csv`
+  now says `Engine` where it said `Core` for `0x0012ea70`, `0x0012eb30`, `0x001c4e60`, `0x001c4f30`, and `IpDrv`
+  for `0x002c50b0`, `0x002c5180`; the totals move to **6,092 of 14,973 (40.69%), 4,717 propagated against 1,375
+  asserted, 5,854 runs** (the older notes' 6,063 / 40.54% / 5,826 runs are the pre-seeding values). That is the
+  disputed half of the rule behaving as documented: `--holdout 400` scores **95.7% (266/278) where both
+  neighbours agree and 68.8% (53/77) where they disagree**, so `module-export-census --check` now holds the
+  attribution to its **`assert`** rows only and reports the propagated rows that moved since the export round
+  (`6 propagated label(s) moved`, naming them) instead of failing on a snapshot of an older run of a heuristic.
 
 ### Execution notes (2026-11-10, every class's constructor and destructor is named by the table it installs)
 

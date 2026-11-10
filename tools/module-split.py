@@ -2,7 +2,7 @@
 """Which functions belong to which module, per function -- the prerequisite for per-module work (PLAN 4.5).
 
 `inventory/xbe_functions_by_module.csv` gives counts; PLAN 4.5 needs addresses, because the point of splitting the image
-into per-module projects is to hand a module's functions to an exporter instead of re-analysing all 14,957.
+into per-module projects is to hand a module's functions to an exporter instead of re-analysing all 14,973.
 
     python3 tools/module-split.py                      # writes inventory/function_modules.csv
     python3 tools/module-split.py --plan inventory/module_export_plan.csv   # + the per-module export plan
@@ -14,8 +14,8 @@ modules that assert in this binary, else the module an evidence override declare
 `--check` recomputes the per-module counts and fails if they disagree with `inventory/xbe_functions_by_module.csv`.
 
 **The lists are the union of the two attribution artifacts, and that is the point of the plan.** The name/override rule
-reaches 1,348 functions; `inventory/function_module_attribution.csv` (tools/module-attribution.py) adds 4,715 whose
-module came from address locality, measured at 87.9% on held-out asserts. A list built from the assert rule alone is a
+reaches 1,375 functions; `inventory/function_module_attribution.csv` (tools/module-attribution.py) adds 4,717 whose
+module came from address locality, measured at 89.9% on held-out asserts (95.7% where both neighbours agree). A list built from the assert rule alone is a
 sample of a module; built from the union it is the file. `inventory/module_export_plan.csv` is what that union amounts
 to per module -- functions, asserted vs propagated, bytes, contiguous runs, first and last address -- so a per-module
 `ExportAt.java` pass can be sized before it is paid for.
