@@ -737,7 +737,8 @@ module-split:
 	@echo "wrote inventory/function_modules.csv"
 
 # PLAN 4.5: which translation unit each unattributed function belongs to. Address locality, measured against
-# held-out asserts at 87.9% (docs/MODULE_ATTRIBUTION.md). Reads the image only; no Ghidra, no boot.
+# held-out asserts at 87.9% (docs/MODULE_ATTRIBUTION.md). Reads the image only; no Ghidra, no boot. A
+# `--holdout` run scores the rules and writes nothing: the artifact is the full-seed run.
 module-attribution:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/module-attribution.py \

@@ -933,7 +933,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
-### Execution notes (2026-11-10, module attribution: 948 asserted labels, 5,633 after a locality rule measured at 87.9%)
+### Execution notes (2026-11-10, the attribution artifact was a scoring run's output: 6,063 after the fix)
+
+- **The tool wrote its artifact from a `--holdout` run, and #318 shipped that file.** `main()` wrote whatever rule
+  result the run produced, so the committed `inventory/function_module_attribution.csv` came from `--holdout 400`:
+  **354 rows were labelled `propagated` from a neighbour while their own assert names a module** (43 of them a
+  *different* module — `Engine_AxPickupBase` and `XboxAudio_XboxAudioSubsystem` both written `Core`), and **430
+  rows the full-seed run attributes were left unlabelled**, because their nearest label had been hidden. Every
+  seed-dependent total in the note below and in `docs/MODULE_ATTRIBUTION.md` was therefore 400 low.
+- **The score was never wrong, the artifact was.** The same `--holdout 400` run still recovers 311 of 354 (87.9%),
+  so the rule's accuracy claim stands; what was wrong is the file and the counts read off it. Corrected: **6,063 of
+  14,957 carry a module (40.54%), 4,715 of them propagated, `(unnamed)` 8,412** — 632 module labels move (430 rows
+  gain one, 202 change) and 784 methods (`propagated` -> `assert` 354, `none` -> `propagated` 430).
+- **Two guards, both in `make ci` from now on.** A `--holdout` run writes nothing (the artifact's md5 is unchanged
+  across a scoring run), and `--check` now fails on any row that carries a real `asserted_module` but is not an
+  `assert` row — the invariant the shipped file breaks on its first row, `0x0001afc0 carries the asserted module
+  Core but is labelled propagated`. The old check validated shape and one direction of the label relationship, which
+  is why a 40%-poisoned artifact passed it.
+- **`tools/status.py`'s "functions attributed to a module" now reads this artifact** rather than the rollup, and
+  counts only the twelve real modules (the three name-only buckets are not modules): 12.84% -> **40.54%**.
+- **Next is unchanged**: point `make module-split --lists` at this artifact's `module` column, which turns 4.5's
+  per-module exporter pass from the 1,348 asserted functions into the file.
+
+### Execution notes (2026-11-10, module attribution: locality at 87.9%, 1,348 asserted labels, 6,063 labelled)
+
+*Corrected above: this note and its artifact were written by a `--holdout 400` run, so the seed counts below are
+400 low and the artifact was replaced; the rule's 87.9% is unaffected.*
 
 - **The obvious rule is wrong, and now measured.** Voting a module from a function's attributed callers and
   callees recovers 169 of 313 held-out labels (54.0%) and reproduces `Core` 159/159 while missing 135 of 144
@@ -943,16 +968,16 @@ are limited to expected fields (checksum/timestamp) and documented.
 - **Address locality is the rule that works.** This build orders code per translation unit, so a function takes
   the module of the nearest asserted function in address order within `--max-gap`. At the default `0x800` it
   recovers **311 of 354 held-out labels (87.9%)**; the sweep says accuracy barely moves with the bound while
-  coverage halves with it (`0x200` 91.9% on 1,912 labels, unbounded 85.8% on 14,009), which is why the strict
-  subset is one flag away rather than a second tool (`inventory/function_module_attribution.csv`,
-  `docs/MODULE_ATTRIBUTION.md`).
-- **`(unnamed)` falls from 14,009 to 8,832**: 4,639 functions gain a module from the rule, and **5,633 of 14,957
-  (37.66%) carry one against 948 that carry an assert**. The distribution stays plausible against the seeds
-  (`Core` 3,069 vs 574 asserted, `Engine` 1,884 vs 586, `Gui` 143), which is what the call-graph rules do not do.
+  coverage halves with it (`0x200` 91.9% on 1,912 labels, unbounded 85.8% on 14,009 — the labelled column is the
+  scoring run's, so it undercounts), which is why the strict subset is one flag away rather than a second tool
+  (`inventory/function_module_attribution.csv`, `docs/MODULE_ATTRIBUTION.md`).
+- **`(unnamed)` falls from 13,609 to 8,412**: 4,715 functions gain a module from the rule, and **6,063 of 14,957
+  (40.54%) carry one against 1,348 that carry an assert**. The distribution stays plausible against the seeds
+  (`Core` 3,238 vs 574 asserted, `Engine` 2,094 vs 586, `Gui` 145), which is what the call-graph rules do not do.
 - **Attribution, not a name.** No `FUN_*` is promoted: the artifact records the rule, the round, the votes and the
   address of the assert that produced each label, and `docs/CONVENTIONS.md` still governs what a module means.
 - **Next**: point `make module-split --lists` at this artifact's `module` column. That turns 4.5's per-module
-  exporter pass from the 948 asserted functions into the file, which is what the split exists for.
+  exporter pass from the 1,348 asserted functions into the file, which is what the split exists for.
 
 ### Execution notes (2026-11-10, the event form reaches the counting pass: 683 of 685, residual 22 → 11)
 
