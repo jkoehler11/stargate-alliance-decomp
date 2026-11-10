@@ -2,10 +2,10 @@
 """Which translation unit an unattributed function belongs to (PLAN 4.5).
 
 `inventory/function_modules.csv` (tools/module-split.py) attributes a function to a module only when the build
-already named it that way -- 948 of 14,957 -- because the module comes from the `__FILE__` assert the function
-carries. The other 14,009 are `(unnamed)`, even though the code around them is attributed: Perception compiled
-this build per translation unit, so a file's functions sit together in address order (that is the same property
-`inventory/function_modules.csv`'s `run` column measures from the other side).
+already named it that way -- 1,348 of 14,957 -- because the module comes from the `__FILE__` assert the function
+carries. The other 13,609 are `(unnamed)` or one of the three name-only buckets, even though the code around them is
+attributed: Perception compiled this build per translation unit, so a file's functions sit together in address order
+(that is the same property `inventory/function_modules.csv`'s `run` column measures from the other side).
 
 Three rules were scored against held-out labels (`--holdout N` hides N asserted labels, re-runs, and counts how
 many come back). Two of them are the obvious ones and both fail: voting a module from the functions a function
@@ -20,8 +20,13 @@ nothing about what the function does. A function no assertion sits near -- a CRT
 between two TUs -- keeps `(unnamed)`.
 
     python3 tools/module-attribution.py --xbe DUMP/default.xbe -o inventory       # the artifact (locality)
-    python3 tools/module-attribution.py --xbe DUMP/default.xbe --holdout 400      # every rule, scored
+    python3 tools/module-attribution.py --xbe DUMP/default.xbe --holdout 400      # every rule, scored; writes nothing
     python3 tools/module-attribution.py --check                                   # dump-free, in `make ci`
+
+**A scoring run writes no artifact.** `--holdout` hides asserted labels, so the rows that carry one come back
+labelled `propagated` from a neighbour -- and a run that wrote the file shipped exactly that: 354 rows citing a
+neighbour instead of their own assert, 43 of them a different module. The artifact is the full-seed run; the holdout
+is a score.
 """
 import argparse
 import bisect
@@ -292,6 +297,12 @@ def check(path, symbols):
         if r["method"] == "assert" and r["module"] != r["asserted_module"]:
             problems.append("%s overwrote its asserted module" % r["address"])
             break
+        # The invariant the shipped artifact broke: a row whose own assert names a module is an `assert` row. A
+        # `propagated` label on one means the file was written by a run that had hidden that label.
+        if is_module(r["asserted_module"]) and r["method"] != "assert":
+            problems.append("%s carries the asserted module %s but is labelled %s"
+                            % (r["address"], r["asserted_module"], r["method"]))
+            break
         if r["method"] == "propagated" and (r["rule"] not in RULES or not is_module(r["module"])
                                             or not r["evidence"]):
             problems.append("%s carries a label with no evidence" % r["address"])
@@ -313,7 +324,8 @@ def main():
     ap.add_argument("--modules", default=os.path.join(ROOT, "inventory", "function_modules.csv"))
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
     ap.add_argument("--rule", default=DEFAULT_RULE, choices=RULES)
-    ap.add_argument("--holdout", type=int, default=0, help="hide this many asserted labels; score every rule")
+    ap.add_argument("--holdout", type=int, default=0,
+                    help="hide this many asserted labels and score every rule (a scoring run: writes no artifact)")
     ap.add_argument("--max-gap", type=lambda v: int(v, 0), default=DEFAULT_GAP,
                     help="how far a locality label may reach, in bytes (0 = unbounded)")
     ap.add_argument("--check", action="store_true")
@@ -329,18 +341,11 @@ def main():
     gap = args.max_gap or None
     seeds, hidden, results = run(rows, edges, args.holdout, gap=gap)
     got = results[args.rule]
-    os.makedirs(args.out, exist_ok=True)
-    write(rows, got, args.rule, path)
     print("%d functions, %d call edges, %d asserted seeds"
           % (len(rows), sum(len(v) for v in edges.values()), len(seeds)))
-    counts = totals(rows, got)
-    labelled = sum(n for m, n in counts.items() if is_module(m))
-    print("rule %s: %d of %d carry a module (%.2f%%), %d of them propagated"
-          % (args.rule, labelled, len(rows), 100.0 * labelled / len(rows), len(got)))
-    for mod, n in sorted(counts.items(), key=lambda kv: -kv[1])[:12]:
-        print("  %-24s %5d" % (mod, n))
     if hidden:
-        print("holdout: %d asserted labels hidden, every rule scored on that sample" % len(hidden))
+        print("scoring run: %d asserted labels hidden, every rule scored on that sample; artifact NOT written"
+              % len(hidden))
         for rule in RULES:
             by_module, hit, total, labelled_here = score(hidden, results[rule])
             print("  %-11s %4d labelled, %4d exact (%.1f%%)"
@@ -354,6 +359,15 @@ def main():
             print("  %-9s %6d labelled  %4d exact of %4d (%.1f%%)"
                   % ("unbounded" if g is None else "%#x" % g, len(loc), h, t,
                      100.0 * h / max(1, t)))
+        return 0
+    os.makedirs(args.out, exist_ok=True)
+    write(rows, got, args.rule, path)
+    counts = totals(rows, got)
+    labelled = sum(n for m, n in counts.items() if is_module(m))
+    print("rule %s: %d of %d carry a module (%.2f%%), %d of them propagated"
+          % (args.rule, labelled, len(rows), 100.0 * labelled / len(rows), len(got)))
+    for mod, n in sorted(counts.items(), key=lambda kv: -kv[1])[:12]:
+        print("  %-24s %5d" % (mod, n))
     print("%d rows -> %s" % (len(rows), path))
     return 0
 

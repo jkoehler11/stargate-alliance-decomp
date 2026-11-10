@@ -111,10 +111,10 @@ def collect():
     named = [r for r in funcs if not r["name"].startswith("FUN_")]
     out.append(("Native", "functions carrying a name", len(named), len(funcs),
                 "symbols/xbox_functions.csv (name not FUN_*)"))
-    by_module = rows_of("inventory/xbe_functions_by_module.csv")
-    attributed = sum(int(r["functions"]) for r in by_module if r["module"] != "(unnamed)")
+    attribution = rows_of("inventory/function_module_attribution.csv")
+    attributed = sum(1 for r in attribution if r["module"] and not r["module"].startswith("("))
     out.append(("Native", "functions attributed to a module", attributed, len(funcs),
-                "inventory/xbe_functions_by_module.csv (all rows except '(unnamed)')"))
+                "inventory/function_module_attribution.csv (the twelve real modules, not the name-only buckets)"))
     tables = rows_of("inventory/xbe_class_table_names.csv")
     named_tables = [r for r in tables if r["class"]]
     out.append(("Native", "class tables named", len(named_tables), len(tables),
