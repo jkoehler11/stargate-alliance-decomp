@@ -764,6 +764,20 @@ settle the rest is a decode that does not assume the body starts at the nearest 
 `Struct`/`State`/`Function`/`Class` block at `0x3a180`–`0x3c494` is where the seven are, and the
 registration calls one of them without the table store belonging to the same body.
 
+**The tree half of U8 is measured and stops (2026-11-10).** The class constructors encode the subclass
+relation: each installs its own table and calls its parent's before the store, and
+`inventory/class_constructors.csv` records that call. Inverted, the edge reproduces the script tree for
+**375 of 391** named tables that have a child (15 disagree, 76 leaves), so it is evidence -- and it names
+`Property` (`0x004d1468`), `LevelBase` (`0x004fc4f0`) and `Player` (`0x004c9348`) among the 26 from their
+partly-unnamed child sets. It cannot name the other 23: they have no callers. The site join is now
+measured too -- **24 of the 27 unnamed sites push one shared pointer** (`0x00034650` -> thunk `0x00062ce0`,
+which installs table `0x004dd2a8`), one of the other two resolves to `FireTexture`'s own installer, and
+the last two (`Texture`, `FractalTexture`) push a thunk into the *neighbouring* `WaterTexture`
+registration, which is the mixed-window caveat `registration-sites.py` already carries. **What would
+settle the 26 is now specific**: a boot that walks the object array and reads each `UClass`'s `+0x00`
+table and its name (`tools/xemu/mem.py`, `names.py`), or a decompile of `0x00062ce0` to see what the
+shared argument is. `tools/class-tree-edges.py`, `docs/NATIVE_CLASS_TREE.md`.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature

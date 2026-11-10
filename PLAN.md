@@ -313,6 +313,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       same 356 slots with the same bodies as the menu dump — 0 gained, 0 lost, 0 replaced — so registration
       finishes at startup and a mission adds nothing (`tools/xemu/gnatives-mission.sh`, `make gnatives-mission`,
       `inventory/gnatives_mission.csv`).
+      **The class tree is now a second instrument, and it does not name the 26 (2026-11-10)**: inverting
+      the `call_before_store` column of `inventory/class_constructors.csv` gives every table the set of
+      classes whose constructor calls it, and that set equals the class's direct subclasses in
+      `inventory/classes.csv` for **375 of the 391** named tables that have a child at all (15 disagree,
+      76 are leaves with no subclass in the image) — `tools/class-tree-edges.py`,
+      `docs/NATIVE_CLASS_TREE.md`. Of U8's 26 unnamed tables it names **3** by the tree
+      (`0x004d1468` `Property`, `0x004fc4f0` `LevelBase`, `0x004c9348` `Player`, each read off a
+      partly-unnamed child set) and 23 stay invisible because nothing calls them. The registration-site
+      join fails for a measured reason rather than a missing link: **24 of the 27 sites the class map
+      leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`, which installs
+      table `0x004dd2a8`), so the site cannot identify a per-class table; the other three resolve to a
+      neighbouring `WaterTexture` registration (`Texture`, `FractalTexture`) or to `FireTexture`'s own
+      installer (`0x004cfd78`). U8's 26 need a runtime read of the class objects or a decompile of the
+      shared constructor, and that is now the written next step rather than a guess.
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
