@@ -889,6 +889,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, two record arrays and no name writer)
+
+- **One import of the whole support region answers the name question with a negative.**
+  `~/sg1/work/lip10` exports all **58** functions of `0x000b1770`..`0x000b6fc0`, and **no body stores to a
+  0x48-byte record's `+0x34`/`+0x38`** -- the only stores to those offsets in the set are stack locals and
+  the fade driver's own request field. The records are built outside the region, so the next instrument is
+  the loader the factory at `PTR_005bf508` runs (`0x000b9d50`/`0x000bce40`), not another read of these
+  bodies.
+- **The controller holds two record arrays.** `0x000b2cb0` and `0x000b2ce0` are matched
+  bounds-checked getters (`count < 1 || count <= i || i < 0 -> 0`, else `base + i * 0x48`) over
+  `+0x48`/`+0x4c` and `+0x54`/`+0x58`: the pose pair `0x000b5f10` blends between, one written by the
+  accessor at `+0x40` and one read at `+0x04`/`+0x10`.
+- **The key block's write side is in the region too.** `0x000b4200`/`0x000b43e0` are 466-byte twins that
+  size a group array for writing, `keys * 0x10 + (namelen - 1) * 2` per 28-byte group -- the 16-byte key
+  and the wide name of the same record `0x000bc330` reads -- and `0x000b55f0` writes the `.map` phoneme
+  text (`; %s.map`, `LIPSinc Phoneme Mapping File for %s`), a file outside this container. In the exported
+  set `0x000b4710` has exactly two callers (`0x000b5f10`, `0x000b63f0`).
+- **Next**: the record builder, from the loader side. Instruments: `~/sg1/work/lip10/out`,
+  `symbols/xbox_functions.csv`, `docs/formats/lipsinc-runtime.md`, U4. No boot, no xemu, no artifact change.
+
 ### Execution notes (2026-11-09, a slot is read by name and a zero is a skip)
 
 - **The consumer addresses a slot by name, not by index.** `0x000b4710` (215 bytes) copies its caller's

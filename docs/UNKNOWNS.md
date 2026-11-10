@@ -368,6 +368,29 @@ track's own end only **26** (0.07%) are non-zero, **24 == 25 at tick 0 in all 2,
 them, **19 == -24 by value in 2,137** and **exact key for key in the 1,890** that share a grid. What is
 left of U4 is the binding: which caller fills a record's name at `+0x34`.
 
+**The name writer is outside the support region (2026-11-09, one Ghidra import).** All 58 functions of
+the LIPSinc support region (`0x000b1770`..`0x000b6fc0`, `~/sg1/work/lip10`) are exported together, and
+**no body in that range stores to a 0x48-byte record's `+0x34`/`+0x38`**: the only stores to those two
+offsets in the whole set are stack locals plus the fade driver's own request field (`0x000b63f0` writes
+`+0x38` of the request, not of a record). The arrays are therefore built outside the region -- by
+whatever the object factory at `PTR_005bf508` constructs -- so the next instrument is the
+`0x000b9d50`/`0x000bce40` loader, not another pass over these bodies.
+
+What the region does settle is the object model around the records:
+
+* **the controller holds two of those arrays, not one.** `0x000b2cb0` and `0x000b2ce0` are a matched
+  pair of bounds-checked getters -- `if (count < 1 || count <= i || i < 0) return 0; return base + i *
+  0x48` -- over `+0x48`/`+0x4c` and `+0x54`/`+0x58`, which is the pose pair `0x000b5f10` copies between:
+  the accessor writes one array's `+0x40` and the blend reads the other's `+0x04`/`+0x10`;
+* **the key block has a write-side size function**: `0x000b4200` and `0x000b43e0` are 466-byte twins
+  that walk a group array (`+0x30`/`+0x34`) and sum `keys * 0x10 + (namelen - 1) * 2` per 28-byte group,
+  i.e. the 16-byte key record and the wide name -- the save path for exactly the record `0x000bc330`
+  reads, and the counterpart the earlier notes were missing;
+* `0x000b55f0` is the `.map` writer (`; %s.map`, `LIPSinc Phoneme Mapping File for %s`), a text file
+  outside this container and not a second home for the track data;
+* in the exported set `0x000b4710` has exactly two callers, `0x000b5f10` and `0x000b63f0`; there is no
+  third consumer of a single slot.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
