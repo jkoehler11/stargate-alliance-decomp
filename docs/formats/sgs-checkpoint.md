@@ -85,6 +85,46 @@ From the shipped classes and native declarations (not from guessing):
 Which of those calls `SavePackage` in which order is script behaviour to be read from the
 reconstructed sources (PLAN 3.10); the format itself is settled. See U5 in `docs/UNKNOWNS.md`.
 
+## The two natives, measured (2026-11-09)
+
+Both addresses come from the registration table (`inventory/native_targets.csv`, `docs/NATIVE_VM.md` *The
+registration table*), so none of this needed a boot.
+
+**The load half is whole.** `GameInfo.LoadSaveGame` is `0x00149370` (237 bytes). It decodes its one `string`
+argument through the VM's step (`Stack.Code` at `+0xc`, `GNatives[b]`), then calls `0x00134d40` (2,472 bytes) — the
+loader, which logs through one prefix of its own:
+
+    [VL:LOADGAME]: Loading save game: %s            literal 0x00508f10, xref site 0x00134eb2
+    [VL:LOADGAME]: Loading save game: FAILED because no viewports!
+    [VL:LOADGAME]: LevelName: %s %d
+    [VL:LOADGAME]: LoadGame [%s] Summary Names=%d Import=%d Export=%d
+
+It answers 1 when the loader returns non-zero and 0 otherwise, and the `no viewports` branch calls `Disconnect` —
+the shape of a load that is refused, not of one that is missing.
+
+**The write half is a stub.** `GameInfo.SavePackage` is `0x00298bb0` (145 bytes) and its whole body is the same
+argument decode: it builds the `FString` local, steps the parameter, and stores **0** into the result pointer. There
+is no call, no log and no package writer in it, so `bool SavePackage(string)` answers *false* on every call. Its two
+script callers are `GameProfile.StartNewMatch` and `GameProfile.ContinueSinglePlayerGame`
+(`inventory/savegame_paths.csv`), and neither reads the return value, so that path fails silently.
+
+**A writer exists, but not there.** The `[VL:SAVEGAME]` family is in the image:
+
+    [VL:SAVEGAME]: Saving game to file: %s          literal 0x00509b50, xref site 0x00138c7b, in FUN_00138680
+    [VL:SAVEGAME]: SaveGame Summary Names=%d Import=%d Export=%d   literal 0x004df8e8, site 0x00070938
+
+`FUN_00138680` (2,278 bytes) is the save routine — the 2,278-byte counterpart of the loader's 2,472 — and it has no
+direct call site in the image, so it is dispatched rather than called (both execs above are reached the same way,
+through the registration table). The `SaveGame Summary` literal lives at `0x00070938`, inside `Core_UnObjBas`
+(5,552 bytes), i.e. the exporter that prints those counts is the engine's own package serializer, which is what U5
+asked.
+
+**Consequence for the rebuild.** A checkpoint can be read — `LoadSaveGame` is complete and is what
+`PlayerController.RestartCheckpoint` reaches through `ConsoleCommand("LoadSaveGame …")` — but the shipped build's
+script path cannot write one, so the nine `.sgs` files on the disc are authoring output rather than something the
+build regenerates. A rebuild that wants to save writes the package itself (PLAN 6.4) instead of restoring this
+native.
+
 ## Using this for the rebuild (PLAN 6.4 / 7.2)
 
 A rebuilt build needs checkpoints that the profile lists and `LoadSaveGame` accepts. Since a

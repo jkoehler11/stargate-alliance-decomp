@@ -893,6 +893,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-09, the save path loads and cannot write)
+
+- **The two natives, from the table the previous PR landed.** `GameInfo.LoadSaveGame` is `0x00149370` and calls the
+  loader `0x00134d40` (2,472 bytes, `[VL:LOADGAME]` trail, `FAILED because no viewports!` → `Disconnect`);
+  `GameInfo.SavePackage` is `0x00298bb0`, 145 bytes, and decodes its string argument and stores 0 — no call, no log,
+  no writer.
+- **So `bool SavePackage(string)` is false at every call site.** Both script callers
+  (`GameProfile.StartNewMatch`, `GameProfile.ContinueSinglePlayerGame`) ignore the result, so the profile save fails
+  silently in the shipped build and the nine `.sgs` files on the disc are authoring output rather than something the
+  build writes.
+- **The writer is elsewhere, and dispatched rather than called.** `FUN_00138680` (2,278 bytes) carries
+  `[VL:SAVEGAME]: Saving game to file: %s` (`0x00509b50`, site `0x00138c7b`) and has zero direct call sites — the
+  same shape as the two execs, which are reached through the registration table. The exporter's own summary literal
+  (`SaveGame Summary Names=%d Import=%d Export=%d`, site `0x00070938`) is inside `Core_UnObjBas`, so the serializer
+  behind a checkpoint is the engine's, as U5 suspected.
+- **Next**: `CheckpointSave`, `QuickSave` and `NewSaveGame` are the three `PlayerController` console commands that
+  could dispatch it; each is one `native_targets.csv` lookup and one decompile away.
+
 ### Execution notes (2026-11-09, the binder's map is a table in the image, so a name is an address)
 
 - **The names had nowhere to point because the map is data, not code.** The binder's `int%sexec%s` lookup reads a

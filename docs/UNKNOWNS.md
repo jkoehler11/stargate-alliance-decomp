@@ -460,8 +460,23 @@ Eligibility is opt-in and per-class: `MarkForSaveGame` is called from six places
 and `0x001226a0` (the one body that references the wide string `LoadSaveGameInfo`) is where the save/load/check
 module begins.
 
-**Still open.** The native bodies behind `SavePackage`/`LoadSaveGame` — whether the writer is the engine's generic
-package serializer and what the console path's handler does with the name. The `.sgs` literals in the image are
+**Measured 2026-11-09, no boot: the load half is complete and the write half is a stub.** The registration table
+(`inventory/native_targets.csv`) puts `GameInfo.LoadSaveGame` at `0x00149370`, a 237-byte exec that decodes its string
+argument and calls the loader `0x00134d40` (2,472 bytes, the `[VL:LOADGAME]` log trail, returns 1 or 0).
+`GameInfo.SavePackage` is `0x00298bb0`, 145 bytes: it decodes the same argument and stores **0** into the result
+pointer — no call, no log, no writer — so `bool SavePackage(string)` answers false for both of its script callers
+(`GameProfile.StartNewMatch`, `ContinueSinglePlayerGame`) and neither reads the result.
+
+**A writer does exist, one address family over:** `FUN_00138680` (2,278 bytes) is the routine behind
+`[VL:SAVEGAME]: Saving game to file: %s` (literal `0x00509b50`, site `0x00138c7b`) — the counterpart of the loader —
+and it has no direct call site, so it is dispatched rather than called. The `SaveGame Summary Names=%d Import=%d
+Export=%d` literal (`0x004df8e8`, site `0x00070938`) is inside `Core_UnObjBas`'s 5,552-byte body, i.e. the exporter
+is the engine's own package serializer. What remains open is *who dispatches* `FUN_00138680`: the console commands
+`CheckpointSave`, `QuickSave` and `NewSaveGame` are the candidates, and each is settled by reading its own exec body
+with the same table. Depth: `docs/formats/sgs-checkpoint.md`, *The two natives, measured*.
+
+**Still open.** The console side of the write path (the three `PlayerController` commands above), and what the console
+path's handler does with the name. The `.sgs` literals in the image are
 **name-table strings, not log strings**: they have no `push` xrefs, so the code has to be found another way. One
 measured lead: the wide string `LoadSaveGameInfo` is referenced by a single function at `0x001226a0` (7,486 bytes),
 inside the same `0x0012xxxx` region that holds the package-check readers (PLAN 6.2) — the save/load/check neighbourhood
