@@ -67,8 +67,10 @@ image. **And the map those names are looked up in is in the image too (2026-11-0
 registration — 1,104 records in 203 contiguous runs of `.data`, 883 distinct names — gives every declaration an
 address with no boot, and the 261 records whose declaration also carries an index agree with the runtime
 `GNatives` dump 261 of 261. `tools/native-table.py`, `inventory/native_targets.csv`, `docs/NATIVE_VM.md`
-*The registration table*. 275 of the named bodies are addresses `inventory/function_modules.csv` has no function at,
-so the records also seed the function map. **And the records that *do* carry a token are now explained one by one**
+*The registration table*. 274 of the table's 883 distinct body addresses are outside every function in the call-graph census (275
+records: one address carries two registrations) and all 274 are verified function starts — one Ghidra import
+accepted 274, rejected 0, `inventory/native_census.csv` — so the records also seed the function map and correct its
+denominator to 15,231 (`docs/PATH.md`). **And the records that *do* carry a token are now explained one by one**
 (`inventory/native_tokens.csv`, *Every token has a basis* in `docs/NATIVE_CLASSES.md`): 166 spell their index in the
 class's own text, 107 are operator signatures the compiler expands, 0 come from a declaration that spelled no index,
 1 is an artefact of the editor package `UPreview` — so a token never means "the compiler filled this in".

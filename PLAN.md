@@ -926,6 +926,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the 274 native bodies are function starts: the census is 15,231, not 14,957)
+
+- **The verdict is the disassembler's, not a byte pattern's.** `tools/native-census.py` writes
+  `inventory/native_census.csv` (883 rows, one per distinct body address) with three kinds of evidence: the address's
+  relation to `symbols/xbox_functions.csv`, the image's byte before it plus its first 8 bytes, and the answer
+  `tools/ghidra/ghidra_scripts/NativeCensus.java` gets by *creating* a function at the address. The pattern columns
+  only corroborate — `SeedGaps`' opening-byte list once hid 47 real entries — but they corroborate completely: 274
+  of 274 follow a function boundary (`0xCC` 251, `0x00` 15, `ret` 8) and 274 of 274 open on an MSVC prologue shape
+  (`arg-load` 117, `push-reg` 115, `seh` 21, `alloc` 15, `empty-return` 4, `push-imm` 2), 0 unclassified.
+- **All 274 are accepted function starts.** One Ghidra import over the 883 addresses: 609 already functions,
+  **0 inside another function's body**, 274 accepted, **0 rejected**. Bodies: median 106 bytes / 39 instructions;
+  smallest 3 bytes (four `UObject` log-filter natives whose body is `ret 8`); largest 2,016 bytes / 571 instructions
+  (`Actor.GetClosestBone`); all 274 end on a flow terminator. Because the script creates them in address order, a
+  false start would be reported as `inside` the body created immediately before it — none was, so no native body is
+  a tail shared with its neighbour.
+- **The denominator moves 1.8%: 14,957 → 15,231**, and the named share 1,988/15,231 = 13.05% (`docs/PATH.md`). The
+  call-graph census is not wrong, it is short: nothing in it was displaced, the 274 are outside every range.
+- **275 records, 274 addresses, 271 declarations.** 275 registration records name one of the 274 addresses
+  (`Object.ClockwiseFrom_IntInt` carries two), 271 are the body of a `native function` declaration, and 3 are not
+  (`Object.ClockwiseFrom_IntInt` — an operator-expansion record — plus `SVehicle.UpdateVehicle` and
+  `GUIFont.GetFont`, whose declaring text spells no binding; why those two bind a body is unmeasured).
+- **Repeating it is two commands, and the image half is separate on purpose:** `make native-census` recomputes the
+  static and image columns and carries the disassembler verdicts over from the committed table; a fresh verdict set
+  is one `~/sg1/work/native-census/run.sh` (import ~3.5 min). `--check` re-derives the census column from the two
+  committed tables and needs no dump, which is what `make ci` runs.
+
 ### Execution notes (2026-11-10, every native body is marked — and 271 of the 660 sit outside the function census)
 
 - **One tool, one table, and the tree stays out of git.** `tools/native-mark.py` writes a marker line above every
