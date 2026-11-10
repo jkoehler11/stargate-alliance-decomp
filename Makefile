@@ -14,7 +14,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe
 
 help:
 	@echo "targets:"
@@ -80,6 +80,7 @@ help:
 	@echo "  lipsinc-groups the 26 groups as a slot table: weights vs signed values, redundant pairs (needs the dump)"
 	@echo "  opcode-refusals the 85 scripts the bytecode walker still refuses, one row each (needs the packages)"
 	@echo "  lipsinc-sampler  what the runtime answers where a curve has no keys: hold, not extrapolation (needs the dump)"
+	@echo "  lipsinc-weights  which slots the consumer applies: a non-zero value, and 65.5% of them are zero (needs the dump)"
 	@echo "  lipsinc-bones  the channel table as an ordered bone list, and the pose record's angle (needs the dump)"
 	@echo "  lipsinc-bone-owners  which packages declare each .lad channel name as a bone (needs the dump)"
 	@echo "  lipsinc-runtime  the LIPSinc support functions, from their own log strings (needs the dump)"
@@ -467,6 +468,12 @@ lipsinc-groups:
 lipsinc-sampler:
 	@$(PYTHON) tools/lad-sampler.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
 	@echo "wrote inventory/lipsinc_sampler.csv"
+
+# Which slots the consumer applies: a record is sampled at tick 0 and the pose builder runs only on a
+# non-zero value, so the count is the corpus's gate (docs/formats/lipsinc-runtime.md, U4).
+lipsinc-weights:
+	@$(PYTHON) tools/lad-weights.py --dir "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System/LIPSincData" -o inventory
+	@echo "wrote inventory/lipsinc_weights.csv"
 
 # The channel table as an ordered bone list, and the pose record's eighth word as an angle
 # (docs/formats/lipsinc-lad.md, U4).
