@@ -1004,6 +1004,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the 31 class-table stores that sat in no function are seeded by their own evidence)
+
+- **A store names both the class and the entry.** `SeedStores.java` (new, in the Ghidra chain after
+  `SeedGaps`) takes `tools/class-ctors.py --stores-out` — the whole 1,036-store census, not today's orphan
+  list, so a re-import reproduces the same seeds — and for every store outside a function tries the byte
+  after the nearest `0xCC` fill run, keeping a candidate only when three things are measured: the body
+  contains the store, the instruction at the store is a `MOV` whose scalar operand is the table the row
+  names, and the body ends at a terminator. Measured: **15 entries seeded, 23 of the 31 stores now inside a
+  function, functions 14,957 → 14,973**, and `inventory/xbe_store_seed_residual.csv` lists the rest.
+- **The registration chain closes 13 of its 15 gaps.** `tools/class-ctors.py` then classifies the shapes:
+  **1,028 stores in 1,014 functions, 522 constructor-shaped / 493 destructor-shaped / 13 unclassified**,
+  **928 names (463 `ctor_` + 465 `dtor_`)**, `FUN_*` **12,020 → 12,023** (16 new functions, 13 named), and
+  the independent check — of the 466 classes a registration literal names, does the registration reach the
+  function classified as the constructor — goes **451 → 464 with 0 disagreements**. The nine classes with no
+  constructor name at all are down to three (`SGScreenDOF`, `TextBuffer`, `HTTPDownload`).
+- **Two things the pass corrected rather than assumed.** The "`BoolProperty` block" near `0x24afc7` is not a
+  set of constructors: all seven stores there belong to the 809-byte function at `0x0024af30`, which calls
+  `0x00055ed0` first and does not return `this`, so it is one function writing several property tables (the
+  unclassified count 5 → 13 is that finding, not a regression). And `HTTPDownload`'s registration names
+  `0x2c2650` while the seeder's promoted block head is `0x2c2675` — 37 bytes inside the function the
+  registration already knows, which is a boundary question a store seed cannot answer; it is the one
+  residual where a name is still missing for that reason.
+- **What is left is counted.** 8 stores sit in no mapped function, each with the test it failed in the
+  artifact — seven where the body from the nearest boundary ends before the store
+  (`0x38d04`, `0x38d4b`, `0x3a180`, `0x3a5dd`, `0x3a727`, `0x3c41d`, `0x3c494`, `0x6cefe`) and two where the
+  body does not end at a terminator. Nothing is named from them.
+
 ### Execution notes (2026-11-10, every class's constructor and destructor is named by the table it installs)
 
 - **A vtable store is a constructor's signature.** `tools/class-ctors.py` (`make class-ctors`,

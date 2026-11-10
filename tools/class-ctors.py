@@ -316,6 +316,8 @@ def main():
     ap.add_argument("--tables", default=os.path.join(ROOT, "inventory/xbe_class_table_names.csv"))
     ap.add_argument("--symbols", default=os.path.join(ROOT, "symbols/xbox_functions.csv"))
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
+    ap.add_argument("--stores-out", default=None,
+                    help="write every measured store as TSV, mapped or not (for SeedStores.java)")
     ap.add_argument("--apply", action="store_true",
                     help="fold the names into symbols/xbe_overrides.csv and symbols/xbox_functions.csv")
     args = ap.parse_args()
@@ -347,7 +349,8 @@ def main():
         return None
 
     rows, orphans = [], []
-    for store_va, table_va, kind in stores_to_tables(tb, text.va, tables):
+    hits = stores_to_tables(tb, text.va, tables)
+    for store_va, table_va, kind in hits:
         fn = containing(store_va)
         if fn is None or kind == "frame":
             orphans.append((store_va, table_va, kind))
@@ -371,6 +374,15 @@ def main():
             "evidence": {"ctor": CTOR_EVIDENCE, "dtor": DTOR_EVIDENCE,
                          "unclassified": "shape signatures disagree; left unclassified"}[s["form"]],
         })
+
+    if args.stores_out:
+        with open(args.stores_out, "w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["store_va", "table_va", "class", "kind"])
+            for store_va, table_va, kind in hits:
+                w.writerow(["0x%08x" % store_va, "0x%08x" % table_va, tables[table_va]["class"], kind])
+        print("%s: %d measured stores, %d of them in no mapped function"
+              % (args.stores_out, len(hits), len(orphans)))
 
     kept, skipped, unplaced = naming_plan(rows, functions)
     path = write_census(rows, args.out)

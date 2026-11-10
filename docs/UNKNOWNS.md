@@ -693,6 +693,16 @@ for byte and another produced the smaller body. Until that body is explained the
 byte-for-byte reproducible, and the next run that moves it is not a regression. The slot-index question (which virtuals 19/20 are, the 26 unnamed tables) is
 unchanged and is not a coverage problem. 
 
+
+**Store evidence, the fourth seed source (2026-11-10).** U8's thread was assert sites; the class-table store
+is an independent one, because its immediate names the class. `SeedStores.java` seeded **15 entries from the
+31 stores that sat in no function**, taking that count to **8** and functions 14,957 → 14,973, and
+`inventory/xbe_store_seed_residual.csv` records each of the 8 with the test it failed (seven: the body from
+the nearest `0xCC` boundary ends before the store; two: the body does not end at a terminator). What would
+settle the rest is a decode that does not assume the body starts at the nearest fill byte: the
+`Struct`/`State`/`Function`/`Class` block at `0x3a180`–`0x3c494` is where the seven are, and the
+registration calls one of them without the table store belonging to the same body.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
