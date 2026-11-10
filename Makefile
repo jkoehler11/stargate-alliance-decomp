@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists
+.PHONY:defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census
 
 help:
 	@echo "targets:"
@@ -113,6 +113,7 @@ help:
 	@echo "  module-split     per-function module attribution, the per-module export plan (dump-free)"
 	@echo "  module-lists     one address list per module for ExportAt.java, under $(WORK)"
 	@echo "  module-attribution  which translation unit an unnamed function belongs to, by address locality"
+	@echo "  module-census    what the exported bodies are: section, fan-in, literals (needs the dump and the export)"
 	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
@@ -741,6 +742,15 @@ module-split:
 # the plan artifact prices the pass (an address list is a run of 1.04 functions, not a region).
 module-lists:
 	@$(PYTHON) tools/module-split.py --lists "$(WORK)/module-lists"
+
+# PLAN 4.8: what the 6,063 exported bodies are -- their section, their direct call fan-in, whether a
+# vtable holds them, and what their literals say. Reads the export `export-module.sh` leaves under
+# $(WORK) plus the image, so it is not part of `make ci`; its `--check` is, and it needs no dump.
+module-census:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@test -d "$(WORK)/module-export" || { echo "no export under $(WORK)/module-export -- run the exporter first (docs/MODULE_SPLIT.md)"; exit 2; }
+	@$(PYTHON) tools/module-export-census.py --root "$(WORK)/module-export" --xbe "$(GAME_DIR)/default.xbe" \
+		-o inventory/module_export_census.csv --write-doc docs/MODULE_CENSUS.md
 
 # PLAN 4.5: which translation unit each unattributed function belongs to. Address locality, measured against
 # held-out asserts at 87.9% (docs/MODULE_ATTRIBUTION.md). Reads the image only; no Ghidra, no boot. A
