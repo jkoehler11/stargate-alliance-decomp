@@ -79,11 +79,74 @@ schema is dominated by weapon-sized object counts (`docs/systems/CHECKPOINTS.md`
 weapon state wrong will fail the checkpoint comparison immediately, which makes this system a good early
 verification target.
 
+## What a weapon names
+
+`tools/weapon-links.py` reads every class reference a class in the four trees sets in its default properties
+and classifies the target by **its own super chain**, never by the property's name:
+
+    python3 tools/weapon-links.py --system DUMP/System -o inventory/weapon_links.csv
+    python3 tools/weapon-links.py --tree $WORK/defwep --write-doc docs/systems/WEAPONS.md
+
+Output: `inventory/weapon_links.csv`, one row per reference. The population is **231 classes including the four
+roots themselves** -- the table above counts the 227 descendants, which is why its rows are one short of each
+root's count here. Class names are vocabulary this repository already publishes; the numbers a weapon sets are
+still game data and stay in `$WORK`, so the artifact is the reference graph only.
+
+<!-- generated:weapon-links -->
+**315 class references over 176 of the 231 classes in the four trees** (ammo 69, damage 74, emitter 47, other 85, projectile 40). Every one names a class this dump carries.
+
+| property | declared | edges | targets |
+|---|---|---:|---|
+| `MyDamageType` | `Class<DamageType>` | 78 | damage 74, other 4 |
+| `AmmoName` | `Class<Ammunition>` | 53 | ammo 53 |
+| `ProjectileClass` | `Class<Projectile>` | 36 | projectile 36 |
+| `LowDetailEffect` | `Class<Effects>` | 30 | other 30 |
+| `AttachmentClass` | `Class<InventoryAttachment>` | 28 | other 28 |
+| `PickupClass` | `Class<Pickup>` | 19 | other 19 |
+| `MeleeClipType` | `Class<StargateAmmo>` | 16 | ammo 16 |
+| `MuzzleEmitter` | `Class<Emitter>` | 16 | emitter 16 |
+| `ImpactClass` | `Class<Emitter>` | 15 | emitter 15 |
+| `EmitterClass` | `Class<Emitter>` | 5 | emitter 5 |
+| `ProjectileEmitterClass` | `Class<Emitter>` | 3 | emitter 3 |
+| `ChargingEmitterClass` | `Class<Emitter>` | 2 | emitter 2 |
+| `FullyChargedEmitterClass` | `Class<Emitter>` | 2 | emitter 2 |
+| `FullyChargedProjectileClass` | `Class<Projectile>` | 2 | projectile 2 |
+| `UnchargedProjectileClass` | `Class<Projectile>` | 2 | projectile 2 |
+| `ChargedDecal` | `Class<Projector>` | 1 | other 1 |
+| `ChargingEmitterType` | `Class<Emitter>` | 1 | emitter 1 |
+| `ControllerClass` | `Class<Controller>` | 1 | other 1 |
+| `ExplosionEmitterClass` | `Class<Emitter>` | 1 | emitter 1 |
+| `MeleeChargingEmitterClass` | `Class<Emitter>` | 1 | emitter 1 |
+| `MeleeFullyChargedEmitterClass` | `Class<Emitter>` | 1 | emitter 1 |
+| `ReetouClass` | `Class<Reetou>` | 1 | other 1 |
+| `UnChargedDecal` | `Class<Projector>` | 1 | other 1 |
+
+The firing chain is two hops of the same kind of value: **53 weapons name an ammo class, 35 of those ammo classes name a projectile class, and 27 of those projectiles name a damage type.** A weapon that names no ammo class spawns its shot in script -- `ProjectileClass` is not a `Weapon` property on this build at all.
+
+**Effects wiring, the item this page listed as not measured:** 35 distinct emitter classes are named, 16 weapons name a muzzle emitter and 15 a projectile impact emitter; the damage side's `LowDetailEffect` names one class (`BloodHit`), from 30 row(s).
+<!-- /generated:weapon-links -->
+
+Three things the table says that a property name cannot:
+
+* **The chain is joined at the ammunition, not at the weapon.** `AmmoName` is declared on `Engine.Weapon`, but
+  `ProjectileClass` and `MyDamageType` are declared on `Engine.Ammunition` -- a weapon names a bullet and the
+  bullet names the shot. That is why this graph and the `X`/`XAmmo`/`XDamage` naming test disagree: a weapon
+  that shares an ammo class inherits whichever projectile that class names.
+* **`MeleeClipType` is an ammo class and `ChargingEmitterType` is an emitter class**, while `ImpactClass` is
+  declared on the projectile rather than the weapon. Two properties whose names say "type" carry a class
+  reference, and the one whose name says "class" is not on the weapon at all.
+* **The damage vocabulary is not pure data after all.** The 37 `StargateDamageType` classes carry zero
+  functions, but 30 of them set `Engine.DamageType`'s `LowDetailEffect`, and all 30 name the *same* class -- an
+  `Effects` sprite (`Blood < UT_SpriteSmokePuff < AnimSpriteEffect < Effects`), not an emitter. So the damage
+  tree reaches into `Stargateeffects` through one shared class, while the emitter references are per weapon
+  (35 distinct classes over the 47 emitter references).
+
 ## Not measured
 
-* Ballistics and damage numbers. Those are class defaults inside the script bodies
-  (`$WORK/UnrealScript`), which this repository does not carry; the class graph gives structure, not values.
+* **Damage numbers.** `Damage`, `DamageRadius`, `MomentumTransfer` and `MaxSpeed` on `Engine.Projectile` are
+  the values a shot uses, and they are game data: `weapon_links.csv` says which property carries one and which
+  class declares it, and the numbers stay in `$WORK`.
 * Which state of `GRENADE`'s 8 handles throwing versus detonation.
-* Effects wiring. `Sharpeffects` holds muzzle/impact emitters named after weapons (`SE_3rd_P90MuzzleEmitter`,
-  `SE_CaptainStaffWeaponImpactEmitter`), but which emitter a weapon selects is a default property, not a
-  class relationship, so the graph cannot link them.
+* **Arrays of class references.** `tools/defaults-emit.py` leaves arrays unrendered unless they tile, so an
+  array-typed class property is absent from `weapon_links.csv` -- unmeasured here, not unset. Every property in
+  the table above is a scalar, and a class-reference array would need the element tiling 5.2/4.7 is blocked on.
