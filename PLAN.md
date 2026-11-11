@@ -267,7 +267,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       Interactions done — `docs/systems/interactions.md`: `SGInteraction` as an inline value object on
       `Actor.InteractionData` (621 of them across 61 maps), the prompt/use path through `StargatePlayer`
       and `CommandInterface`, and the separate Epic `Interaction`/`InteractionMaster` client framework.
-      The other three systems (AI scripts, vehicle weapon structs, checkpoint saves) are open.
+      Vehicles done — `docs/systems/VEHICLES.md`: the seat/turret wiring is a default property value rather than
+      behaviour, so `tools/vehicle-seats.py` reads `DriverWeapons`/`PassengerWeapons` out of the emitted defaults
+      tree into `inventory/vehicle_seats.csv` (25 slots over 11 classes, and the page's table is generated from it).
+      The other two systems (AI scripts, checkpoint saves) are open.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
@@ -1027,6 +1030,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-11, the vehicle seat wiring is a default property, and the seats are shared)
+
+- **The page's negative was the wrong question.** `docs/systems/VEHICLES.md` closed with "which seat index maps
+  to which turret is configuration, not visible in the class graph". The configuration is a **default property
+  block**: `StargateVehicle` declares `DriverWeapons` (`array<DriverWeaponStruct>`) and `PassengerWeapons`
+  (`array<PassengerWeaponStruct>`), and `tools/defaults-emit.py`'s array path already tiles one tagged struct per
+  element, so the wiring is a read. `tools/vehicle-seats.py` turns the emitted blocks into
+  `inventory/vehicle_seats.csv` -- **25 slot rows over 11 classes**: turret 5, seat 10, weapon 6, empty 4 -- and
+  the page's table is generated from it (`--check-doc` in `make ci`).
+- **The field name differs between the two structs.** A `DriverWeaponStruct` element carries `WeaponClass` and a
+  `PassengerWeaponStruct` element carries `WeaponPawnClass`; a reader that matches either one name alone returns
+  half the table, which is the failure mode the synthetic `--check` drives on purpose.
+- **A seat pawn does not name its vehicle, and a turret pawn need not have a slot.** `Semektet`'s two rear slots
+  hold `HummveeInteriorSeat`, and five distinct seat pawns fill the ten seats, so `role` is taken from the super
+  chain (`VehicleTurret` -> turret, `StargateVehicleSeat` -> seat) rather than from the name. The slots name
+  5 of the 11 turret pawn classes; the six left over -- `HummveeTurretRear`/`…Left`/`…Right` and
+  `SemektetStaffTurret`/`…Left`/`…Right` -- are declared in the tree and never wired here, so a turret can exist
+  without a slot and nothing in this read says how it is attached. The bone a slot names is a property value and
+  stays out of the artifact; the column records only `named` (18) or `none` (7).
+- **Unset is empty, not unknown.** `AlkeshBomber`, `DeathGlider`, `Jeep` and `Teltak` emit no slot row; the
+  property is declared once on the base, so a class that sets no value inherits no seats. Two of those four are
+  the flyers that *are* placed in maps (`DeathGlider` 12, `AlkeshBomber` 6), so their gunnery is not in this
+  configuration -- unmeasured, and named on the page.
+- **A per-root artifact cannot supply a fixed list.** The first version derived the "no slots" list from
+  `inventory/class_graph.csv`, which `tools/class-graph.py` regenerates per root and which now holds the
+  objectives graph: it answered 32 `ACTION_*`/objective classes as vehicles. The list comes from
+  `inventory/classes.csv`'s own super chains, which is what `role` already used, and `--check` asserts the
+  fork-base and seat exclusions against a synthetic tree.
 
 ### Execution notes (2026-11-11, the last 21 maps load, and all 61 campaign entries have a row)
 
