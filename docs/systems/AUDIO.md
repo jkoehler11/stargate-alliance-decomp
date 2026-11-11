@@ -112,10 +112,13 @@ reference is a **negative** compact index: the sets live in `StargateContent.u` 
 character's own package, so `VSounds` points into the import table, and counting only positive references is
 what made a correctly parsed array read as zero sounds.
 
-The 20 `*VoicePack` rows in `inventory/class_defaults_misses.csv` are this same one-property block seen from
-the other side: the emitter's locator (`tools/class-defaults.py`) requires at least two properties in a
-candidate block, so a pack's `defaultproperties` can never be a candidate and is reported `incomplete`. The
-values are read here instead; the emitter's floor is its own fix.
+The `*VoicePack` rows in `inventory/class_defaults_misses.csv` are this same one-property block seen from the
+other side: the emitter's locator (`tools/class-defaults.py`) requires at least two properties in a candidate
+block — a floor that is *measured*, not cautious, because a floor of one promotes 320 classes on a tag that 1,477
+already-located payloads also carry (`docs/CLASS_DEFAULTS.md`) — and 10 of the 20 pack rows are now labelled
+`single-declared`: nine name `VoiceSets` (the array read here) and `VoicePack` itself names `LifeSpan`, which is the
+coincidence the reason exists to expose rather than a block. The values are read here instead; the emitter's floor
+is its own fix.
 
 <!-- generated:voice-descs -->
 ### What a per-sound `VoiceDesc` carries
@@ -173,9 +176,10 @@ matching set that sets `bForbidGeneric` clears the generic buckets for the rest 
 
 Two things this page cannot yet say, both artifact gaps rather than open questions on the code side: **how many
 voices a pack holds** — no emitted `defaultproperties` block carries a `VoiceSets` value, and
-`inventory/class_defaults_misses.csv` lists 20 `*VoicePack` rows the locator cannot complete (19 `incomplete`,
-1 `empty-block`; 2–3 properties found of 299–308 declared), so the per-sound `VoiceDesc` the selector matches
-against stays unread — and **which pack a given mission uses**, because the placement route is empty (see the
+`inventory/class_defaults_misses.csv` lists all 20 `*VoicePack` rows the locator cannot complete (10
+`single-declared` — nine on `VoiceSets`, one on `LifeSpan`; 9 `incomplete` and 1 `empty-block`, every one of the ten
+a 108-byte payload that sets no array; 2–3 properties found of 299–308 declared), so the per-sound `VoiceDesc` the
+selector matches against stays unread — and **which pack a given mission uses**, because the placement route is empty (see the
 generated block: the mission's pawns come from 814 spawner instances whose squad is per-instance map data).
 
 ## Music

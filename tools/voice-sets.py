@@ -9,7 +9,7 @@ the selector matches on"*. `#356` measured which pack a pawn speaks with; this r
 tagged block holding that single tag. `tools/class-defaults.py` rejects it because its `candidates()` floor is
 `len(props) < 2` -- a one-property block never becomes a candidate -- so the emitter's locator fell back to a
 mis-parse and the class was reported `incomplete` with 2-3 unaccounted names
-(`inventory/class_defaults_misses.csv`, 20 `*VoicePack` rows).
+(`inventory/class_defaults_misses.csv`, 20 `*VoicePack` rows, nine of them `single-declared` on `VoiceSets`).
 
 **The block is read with `tools/prop-stream.py`, not with a scanner.** Two mistakes came from hand-rolling
 the tag walk here: a struct's *name index* precedes its size class, so `VDesc` looked 19 bytes long instead of
