@@ -1031,6 +1031,43 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the voice pack is a per-pawn default and the selector is a lottery)
+
+- **`AUDIO.md`'s open question was two questions, and only one of them had a mission in it.** "Which voice pack a
+  given mission uses" presumes a mission chooses a pack; nothing does. `StargatePawn` declares
+  `SGVoicePackClass` (`class<StargateVoicePack>`) and spawns that class on itself at begin-play, so the pack is a
+  **default property value**, inherited down the class tree — `tools/voice-packs.py` reads it out of the emitted
+  defaults into `inventory/voice_packs.csv` (`make voice-packs`), the same reader `#355` used for seats.
+- **61 classes under `StargatePawn`; the pack is `own` in 17, `inherited` in 5, `unread` in 1 and `none` in 38,
+  over 13 packs.** The Jaffa tiering is the inheritance case: `JaffaHorusM`, `JaffaJackalM` and
+  `JaffaSerpentM` take `JaffaMVoicePack` from `JaffaBase`, which is why three heights share three packs rather
+  than nine. `unread` is a class whose `defaultproperties` the emitter cannot locate (`Tokra_Armed`); it is
+  reported as unread, not as silent.
+- **Most characters do not speak.** 38 classes set no pack and inherit none, so no pack is spawned and every
+  `Say` is a no-op: the SGC rank and file, `GeneralHammond`, the single-pool Goa'uld and Replicator families,
+  `JaffaGrunt`, `SuperSoldier`, `Ptero`, `Jonas`, `Jacob_Selmak`. The voiced population is the SG-1 four, the
+  Jaffa officer tier, the Haaken trio, the Tok'ra and the Reetou.
+- **The placement route is empty, measured rather than assumed.** Zero pawns are placed across the 73 maps
+  (`inventory/map_actors.csv`, 6,658 rows over 389 actor classes); 814 spawner instances
+  (`IntelligentSpawner` 808, `ScriptedSpawner` 4, `FishSpawner` 2) fill a mission, and each spawner's squad is a
+  per-instance property of the map — so a mission's pack set is not readable from its actor table, and that is
+  now what the page says instead of the old "not measured".
+- **Which selection code runs depends on the pack's ancestry, not on the caller.** `StargateVoicePack.SelectVoice`
+  is an id-only fast search (first `VoiceSet` whose `VDesc.ID` matches, then `Rand` inside it);
+  `SGVoicePackExtended` replaces it with `VoiceSelector`'s six-bucket lottery. `SG1VoicePack` is the only subclass
+  of the extended pack and the SG-1 four are its only subclasses, so Carter, Jackson, O'Neill and Teal'c get
+  tone/recipient matching while the nine enemy and NPC packs do not.
+- **The lottery's tail is unreachable while anything better matches.** `VoiceSelector`'s defaults are
+  `FullMatchProba=1.0`, `ToneMatchProba=FullGenericProba=ToneGenericProba=0.5`, and `DefaultMatchProba` /
+  `DefaultGenericProba` are unset — 0.0. The pool takes a bucket's voice unconditionally when the pool is empty
+  and with probability `p` otherwise, so a default-parameter voice can only be heard when no full match, tone
+  match or generic match exists. `MaxRecentlyUsedVoices=3` is the repetition guard, and it stands down while only
+  one suitable voice remains.
+- **One limit, and it is the reader's not the code's.** No emitted block carries a `VoiceSets` value and
+  `inventory/class_defaults_misses.csv` lists 20 `*VoicePack` rows the locator cannot complete (19 `incomplete`,
+  1 `empty-block`, 2–3 properties of 299–308 declared), so voices-per-pack and the per-sound `VoiceDesc` stay
+  unread; the page's *Not measured* list now says that instead of naming the selection logic.
+
 ### Execution notes (2026-11-11, the vehicle seat wiring is a default property, and the seats are shared)
 
 - **The page's negative was the wrong question.** `docs/systems/VEHICLES.md` closed with "which seat index maps
@@ -5515,7 +5552,12 @@ and a deliberate one-line script break is caught by the boot test.
       U4); music is the only audio with natives (`IMusicActor` 3) and 1,923 WAVs / 348 MiB in 16 groups with two
       scoring shapes (mission cue sets vs `M07A`'s 28 numbered cues); speech is 1,364 lines / 150.8 MiB over 207 scenes
       and 30 speakers, 545 of them untagged. **SFX remain unindexed** — 55 per-character/per-vehicle `.uax` packages,
-      blocked on the same package reader as 5.2/4.7. 8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI, network,
+      blocked on the same package reader as 5.2/4.7. **Voice selection is a per-pawn default** (`docs/systems/AUDIO.md`, `tools/voice-packs.py`,
+      `inventory/voice_packs.csv`, `make voice-packs`): of 61 classes under `StargatePawn` 17 carry a
+      `SGVoicePackClass` value and 5 inherit one — 13 packs — 38 inherit none and never speak, and the
+      six-bucket `VoiceSelector` lottery runs only for the SG-1 four, because `SG1VoicePack` is the only
+      subclass of the extended pack.
+      8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI, network,
       audio.
       Note: `FORK_SURFACE.md` should gain the GUI example when next touched.
 - [~] 8.4 Milestone releases: (a) inventory+tooling, (b) scripts decompiled, (c) scripts compile, (d) bytecode match,

@@ -25,6 +25,88 @@ Lip-sync is a third-party layer: `System/LIPSincData/` holds **18 files, 6.5 MiB
 4 `.map`. The `.lad` payload layout is still **UNKNOWNS U4**; nothing here changes that, but this is where
 the data lives.
 
+## Which pack a pawn speaks with
+
+`StargatePawn` declares `SGVoicePackClass` (`class<StargateVoicePack>`) and a spawned `SGVoicePack`, and spawns
+that class on itself when it begins play; every bark afterwards is a call on the object —
+`SGVoicePack.Say('MSGID_Dead',, TONE_Combat, MSGP_Critical)` among them — so **the pack is a per-pawn default
+property**, inherited down the class tree, and no mission, roster or ini file chooses it.
+`tools/voice-packs.py` reads the values out of the emitted defaults tree into `inventory/voice_packs.csv`, and
+the table below is generated from that artifact (`--check-doc` in `make ci`).
+
+<!-- generated:voice-packs -->
+**61 classes under `StargatePawn` — the pack is `own` in 17, `inherited` in 5, `unread` in 1 and `none` in 38, over 13 distinct packs.**
+
+| pack | pawns | how |
+|---|---:|---|
+| `JaffaMVoicePack` | 4 | `JaffaBase`, `JaffaHorusM` (inherited), `JaffaJackalM` (inherited), `JaffaSerpentM` (inherited) |
+| `JaffaHVoicePack` | 3 | `JaffaHorusH`, `JaffaJackalH`, `JaffaSerpentH` |
+| `JaffaLVoicePack` | 3 | `JaffaHorusL`, `JaffaJackalL`, `JaffaSerpentL` |
+| `JaffaCaptainVoicePack` | 2 | `GoauldFirstPrime` (inherited), `JaffaCaptain` |
+| `ReetouVoicePack` | 2 | `Reetou`, `ReetouProtector` (inherited) |
+| `TokraVoicePack` | 2 | `Tokra`, `Tokra_Armed` (inherited) |
+| `CarterVoicePack` | 1 | `Carter` |
+| `HaakenLeaderVoicePack` | 1 | `HaakenLeader` |
+| `HaakenVoicePack` | 1 | `HaakenGrunt` |
+| `HaakenWarriorVoicePack` | 1 | `HaakenWarrior` |
+| `JacksonVoicePack` | 1 | `Jackson` |
+| `ONeillVoicePack` | 1 | `Oneill` |
+| `TealcVoicePack` | 1 | `Tealc` |
+
+The **38** classes that set no pack and inherit none are silent by construction — the base class sets no `SGVoicePackClass`, so nothing is spawned: `Anubis`, `BigReplicator`, `BloodyGrahamCoulder`, `Extrenite`, `ExtreniteChild`, `ExtreniteSG`, `FemaleDoctor`, `GeneralHammond`, `Goauld`, `GrahamCoulder`, `Jacob_Selmak`, `JaffaGrunt`, `Jonas`, `Langaran`, `Langaran_Minister`, `MediumGreenReplicator`, `MediumPurpleReplicator`, `NPC`, `ONeill_Lite`, `Oma`, `Ptero`, `PteroBoss`, `Replicator`, `ReplicatorPossess`, `ReplicatorQueen`, `SG1Pawn`, `SGCEngineer`, `SGCGrunt`, `SGCMedic`, `SGCOfficer`, `SGCWalter`, `Scarab`, `Shifu_Harsisis`, `StargatePawn`, `SuperSoldier`, `Thor`, `Tokra_Councillor`, `Tokra_CouncillorFemale`.
+
+**Placement answers nothing.** 0 pawns are placed across the 73 maps in `inventory/map_actors.csv`; the 814 spawner placements (FishSpawner 2, IntelligentSpawner 808, ScriptedSpawner 4) are what fills a mission, and each spawner's squad is a per-instance property of the map, so a mission's pack set is not readable from its actor table.
+<!-- /generated:voice-packs -->
+
+The four `source` values are the point of the artifact. `own` is a class whose own block names its pack;
+`inherited` is one that sets none and takes a super's — the Jaffa tiering is exactly this, `JaffaHorusM`,
+`JaffaJackalM` and `JaffaSerpentM` each inheriting `JaffaMVoicePack` from `JaffaBase`; `none` is a class that
+sets no pack and inherits none, so no pack is spawned and the pawn is silent; and `unread` is a class whose
+`defaultproperties` block the emitter could not locate (`Tokra_Armed`), where the inherited value is a lower
+bound rather than an answer.
+
+Most characters in this build therefore do not speak: the silent set is the SGC rank and file (`SGCGrunt`,
+`SGCMedic`, `SGCOfficer`, `SGCWalter`, `GeneralHammond`), the single-pool Goa'uld and Replicator families,
+`JaffaGrunt`, `SuperSoldier`, `Ptero`, `Jonas` and `Jacob_Selmak`. The voiced population is the SG-1 four, the
+Jaffa officer tier, the Haaken trio, the Tok'ra and the Reetou.
+
+## How one line becomes a sound
+
+Three layers, and only the last chooses:
+
+1. **A caller names a message.** `StargatePawn` and `BotEnemy` say `MSGID_Dead`, `MSGID_Wounded`, `MSGID_Gasp`,
+   `MSGID_Breath`, `MSGID_Alert`, `MSGID_Suspicious`, `MSGID_StandingDown`, `MSGID_SpotEnemy` and
+   `MSGID_IncomingGrenade`; squad talk goes through `SayAIMsg` with the three `AIMSG_*` messages
+   `docs/systems/AI.md` counts. Twelve call sites, nine distinct ids — the barks are a fixed vocabulary,
+   not a script surface.
+2. **The pack filters and queues.** `Speak` → `FilterSpeech` (mute, priority, and `MaxSpeechesPerSquad` /
+   `bRandomMaxSpeechesPerSquad`, set to 2 on `SG1VoicePack`) → `BuildSpeech`, which owns a four-slot rotation
+   (`Speeches[4]`: current, previous, next, buffer) and plays through `Speech`, the `Engine` class.
+3. **The pack picks a voice, and which code runs depends on the pack's own ancestry.** `StargateVoicePack`'s
+   `SelectVoice` is a fast search: the *first* `VoiceSet` whose own `VDesc.ID` matches the requested id, then
+   `Rand(VSounds.Length)` inside it — no tone, recipient or subject matching. `SGVoicePackExtended` replaces it
+   with `VoiceSelector`, which scores every voice under every set into six buckets and draws from a
+   probability-weighted pool. **`SG1VoicePack` is the only subclass of the extended pack, and the SG-1 four are
+   its only subclasses**, so Carter, Jackson, O'Neill and Teal'c get tone/recipient matching while the nine
+   enemy and NPC packs take the id-only path — a real asymmetry between the player's team and everyone else.
+
+`VoiceSelector`'s own defaults are the weights, and they are lopsided: `FullMatchProba=1.0`, `ToneMatchProba=0.5`,
+`FullGenericProba=0.5`, `ToneGenericProba=0.5` and **`DefaultMatchProba` / `DefaultGenericProba` unset, i.e.
+0.0**. The pool logic is "if the pool is empty, take one from this bucket; otherwise take one with probability
+p", so the last two buckets can only be heard when no better bucket matched at all: a line whose recipient,
+subject and tone all differ falls back to a default-parameter voice only when there is nothing else.
+`MaxRecentlyUsedVoices=3` with `bDiscardRecentlyUsedVoices=True` drops the last three picks from the pool, but
+only while more than one suitable voice remains, so a single-voice set repeats; the tone ladder is
+one-directional per pair (`TONE_Critical` accepts `Combat`, `Combat` accepts `Critical` and `Normal`); and a
+matching set that sets `bForbidGeneric` clears the generic buckets for the rest of that search.
+
+Two things this page cannot yet say, both artifact gaps rather than open questions on the code side: **how many
+voices a pack holds** — no emitted `defaultproperties` block carries a `VoiceSets` value, and
+`inventory/class_defaults_misses.csv` lists 20 `*VoicePack` rows the locator cannot complete (19 `incomplete`,
+1 `empty-block`; 2–3 properties found of 299–308 declared), so the per-sound `VoiceDesc` the selector matches
+against stays unread — and **which pack a given mission uses**, because the placement route is empty (see the
+generated block: the mission's pawns come from 814 spawner instances whose squad is per-instance map data).
+
 ## Music
 
 `IMusicActor` (20 functions, 11 properties, **3 natives**) and `IMusicController` (11/6) are an interface pair
@@ -116,7 +198,7 @@ indexing: the effects live inside packages and pulling them out as WAVs is the e
 
 ## Not measured
 
-* Which voice pack a given mission uses, and how `VoiceSelector` picks between them (script bodies, `$WORK`).
+* How many voices a pack holds, and the per-sound `VoiceDesc` the selector matches on: the `VoiceSets` arrays are not decoded (see *Which pack a pawn speaks with*).
 * The `.lad` layout (UNKNOWNS U4).
 * What each effect sounds like, and which weapon or surface uses it — that is a property value on the sound
   object, i.e. the property-stream reader, not the export table.
