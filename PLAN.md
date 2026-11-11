@@ -1028,6 +1028,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the class object's constructor field is not carried)
+
+- **The route U8 ended on is measured, and it is a negative.** Every registered class owns a `UClass`
+  object, so the class object's constructor field looked like the literal-free way to name the seventeen
+  tables the installer's-callers edge could only constrain. `tools/xemu/class-ctor-field.py` walks the
+  object array in a booted **M00** (`drive.py --gdb=12441 --linger=1800`, 48,646 objects / 1,059 objects
+  carrying the `Class` table `0x004d4870`), reads each class object's own `FName` at `+0x20`, and scans
+  its whole body for any of the **1,011** constructor and destructor VAs in
+  `inventory/class_constructors.csv`. **0 hits**: the read reproduces **0 of the 466** names it already has,
+  so it is a statement about the field, not about the nineteen -- this build keeps a class's constructor in
+  the registration code and does not store it in the `UClass` instance.
+- **What that changes.** The seventeen stay constrained and `docs/NATIVE_CLASS_TREE.md` keeps its status
+  quo; U8 now records the closure and names the two routes left (an engine-side `classes.csv` for
+  `Core`/`IpDrv`/`Engine` natives, or a breakpoint on a registration call reading the `UClass` as it is
+  filled). The tool stays as the instrument, with `--check` (synthetic, no boot) so it cannot rot silently.
+
 ### Execution notes (2026-11-10, the installer's callers name five of the 26 and constrain seventeen)
 
 - **The third edge is the installer's callers, and it reproduces the whole map.** A table is installed
