@@ -1335,6 +1335,16 @@ untyped expressions (473 an import no package declares, 81 a local its source do
 30 not a variable), 10 typed-and-unplaceable, and 469 a completed value in front. `inventory/script_calls.csv` moved
 **400 rows**, 327 of them in `resolved_in`.
 
+**2026-11-11, same day: the import branch was dead code, and the reason was a `U`.** The 473 "a property no package
+declares" were not absent from the packages: the tagged property stream names the property class `UObjectProperty`
+and an import names it `ObjectProperty`, so `c[1] == kind` never matched, and the branch below it (`_class_of_type(c[3])`
+on a three-field tuple) could never have run either. Comparing the names without the prefix types **233 more imported
+receivers** -- the receiver's chain 1,757 -> **1,954**, the untyped-object residue 654 -> **421** -- and takes by-name
+placement to **12,571 of 13,507 (93.1%)**. The 240 imports left in the residue name a property that two or more
+packages declare with *different* types (`UIWidget` 61, `HaakenMK2Weapon` 50, `Controller` 48), and the import's outer
+already names the owning class (`Pawn` 33, `GUI` 30, `GUIListBox` 16), so the next instrument is to prefer the owner's
+declaration instead of requiring the corpus to agree.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all

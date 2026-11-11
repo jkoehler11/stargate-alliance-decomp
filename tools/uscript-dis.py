@@ -1316,6 +1316,15 @@ def source_declarations(text):
             for fn, decls in out.items()}
 
 
+def _kind_key(kind):
+    """A property class's name without the C++ `U` prefix.
+
+    The tagged property stream names the class `UObjectProperty` (its C++ name) and an import names the same class
+    `ObjectProperty`, so comparing the two as strings rejects every property import in the corpus.
+    """
+    return kind[1:] if kind.startswith("U") and kind.endswith("Property") else kind
+
+
 def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
     """The class the receiver expression's declared type names, or "" when its token cannot say."""
     return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types)[0]
@@ -1364,10 +1373,14 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         return (cls, "") if cls else ("", "property: declared, but not as a class")
     if value < 0 and -value in import_at:
         name, kind = import_at[-value]
-        decl = [c for c in prop_type_by_name.get(name, ()) if c[1] == kind]
+        # An import's class names the *kind* of object it is, so only a property kind can carry a variable's type:
+        # `Class`, `Function`, `Struct` and `Sound` imports sit in the same table and are not variables at all.
+        if not kind.endswith("Property"):
+            return "", "import: names a %s, not a property" % (kind or "object")
+        decl = [c for c in prop_type_by_name.get(name, ()) if c[1] == _kind_key(kind)]
         if not decl:
             return "", "import: no package declares that property"
-        types = {_class_of_type(c[3]) for c in decl}
+        types = {_class_of_type(c[2]) for c in decl}
         if len(types) > 1:
             return "", "import: the packages that declare it disagree"
         cls = types.pop()
@@ -1422,7 +1435,7 @@ def calls_report(path, table, out=None):
     prop_type_by_name = collections.defaultdict(set)
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "class_properties.csv"))):
         prop_type[(r["class"], r["property"])] = (r["kind"], r["friendly_type"])
-        prop_type_by_name[r["property"]].add((r["class"], r["kind"], r["friendly_type"]))
+        prop_type_by_name[r["property"]].add((r["class"], _kind_key(r["kind"]), r["friendly_type"]))
     # Every package's Function exports, by declaring class -- read from the export tables alone, no payload walk.
     funcs = collections.defaultdict(set)
     # name -> the classes that declare a function of that name, anywhere in the corpus. A virtual call dispatches
@@ -1543,6 +1556,8 @@ def calls_report(path, table, out=None):
     below_multi = collections.Counter()
     below_outside = collections.Counter()
     below_none = collections.Counter()
+    gap_class = []
+    import_owners = collections.Counter()
     walked = seen = 0
     for one in files:
         pkg = Package(one)
@@ -1555,6 +1570,15 @@ def calls_report(path, table, out=None):
             outer_of = pkg.name(pkg.exports[x["outer"] - 1]["name"]) if x.get("outer") else ""
             export_at[i] = (pkg.name(x["name"]), pkg.class_name_of(x), outer_of)
         import_at = {i: (pkg.name(x["name"]), pkg.name(x["class"])) for i, x in enumerate(pkg.imports, 1)}
+        # The import's `package` field is its OuterIndex: a u32 that is a negative import index for a nested object,
+        # so -outer names the class (or package) the property belongs to -- which the packages never spell for a
+        # property they do not declare.
+        import_owner = {}
+        for i, x in enumerate(pkg.imports, 1):
+            o = x.get("package") or 0
+            k = -((1 << 32) - o) if o >= (1 << 31) else 0
+            if k < 0 and -k <= len(pkg.imports):
+                import_owner[i] = pkg.name(pkg.imports[-k - 1]["name"])
         # A local's declared type is not in the package's records, so it comes from the class's own ScriptText;
         # parse each class once per package and answer per function from that.
         class_export = {}
@@ -1645,8 +1669,15 @@ def calls_report(path, table, out=None):
                                 below_none[name] += 1
                     if not where and name and rtoken in OBJECT_TOKENS and not rtype:
                         receiver_gap[why or rtoken] += 1
-                        if why.startswith("import: no package"):
+                        if why.startswith("import:"):
                             gap_names[_operand_name(prev, export_at, import_at)] += 1
+                            iv, _ie = read_index(prev["operands"], 0)
+                            if iv < 0 and -iv in import_owner:
+                                import_owners[import_owner[-iv] or "?"] += 1
+                        if why.startswith("import: names a") and len(gap_class) < 8:
+                            gap_class.append("%s.%s -> %s on %s"
+                                             % (pkg_name, pkg.name(e["name"]), name,
+                                                _operand_name(prev, export_at, import_at)))
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
                                  "Function" if where else "name", where, nowners, uniq, rtoken, rtype))
                     continue
@@ -1726,8 +1757,14 @@ def calls_report(path, table, out=None):
           % (len(open_) - len(untyped) - len(typed_gap)))
     print("      why an expression in front names no class: %s"
           % ", ".join("%s %d" % kv for kv in receiver_gap.most_common(7)))
-    print("      properties no package declares, by name: %s"
-          % ", ".join("%s %d" % kv for kv in gap_names.most_common(6)))
+    if gap_names:
+        print("      the imported properties, by name: %s"
+              % ", ".join("%s %d" % kv for kv in gap_names.most_common(8)))
+    if import_owners:
+        print("      the class those imports belong to: %s"
+              % ", ".join("%s %d" % kv for kv in import_owners.most_common(8)))
+    if gap_class:
+        print("      a receiver import that names a class rather than a variable: %s" % "; ".join(gap_class[:6]))
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]
                                   + [r[5] for r in by_name if r[5] and r[7]])
     print("  most-called resolved targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
