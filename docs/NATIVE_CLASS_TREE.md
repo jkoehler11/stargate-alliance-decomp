@@ -203,6 +203,48 @@ every one of class `Texture`** (up from 454 at the title).
   `InventorySpot`, `MaterialSwitch`, `SubActionCameraEffect`, `SubActionTrigger`, `SubActionFade`) and every one of
   them agrees with the literal artifact, so a loaded level adds coverage without moving a verdict.
 
+## The installer's callers: five more names, two clashes, and the reason the rest stay open
+
+A class table is installed by a function -- `inventory/class_constructors.csv` records it as
+`function_va`/`store_va` -- and MSVC makes every subclass's constructor and destructor *call* its
+parent's before installing its own. So the direct callers of an installer are the classes one level
+below it, and an unnamed installer's table is the deepest class that is a proper ancestor of every
+named caller. `tools/class-table-parents.py` (`make class-table-parents`,
+`inventory/class_table_parents.csv`, 492 rows) reads that edge: one `E8 rel32` pass over the code
+section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.csv` for the supers,
+1,978 caller sites in all.
+
+* **The installer-name edge reproduces the whole map: 466 of 466 named tables `agrees`, 0 adjacent,
+  0 differs.** Every named table's installer is itself a `ctor_X`/`dtor_X` symbol, so the same edge
+  that `class-tree-edges.py` inverts is what the registration artifact encodes -- and a rule that
+  cannot reproduce a name it already knows is not evidence for one it does not.
+* **Five unnamed tables the callers name** (`unnamed->proposed`): `0x004c7958` `Material`
+  (35 of 37 callers), `0x004c7a10` `RenderedMaterial` (7/10), `0x004c7ac8` `BitmapMaterial` (3/5),
+  `0x004c7c78` `CameraEffect` (10/11), `0x005040d0` `Engine` (1/3, from `ctor_GameEngine`). The
+  three material tables form the exact chain `classes.csv` gives -- `BitmapMaterial :
+  RenderedMaterial : Material` -- which the registration never said, and each of the five names has
+  a registration site whose literal is that class (`Engine` at `0x00121989`, `Material`, ...) whose
+  constructor pointer is the shared default and so installs no table of its own.
+* **Two proposals clash with a name the registration already gives another table, and that is the
+  finding**: `0x004cfe68` -> `WaterTexture` where `0x004cfba0` is committed `WaterTexture`, and
+  `0x004d0228` -> `IceTexture` where `0x004cfc88` is committed `IceTexture`. The live read already
+  says `0x004cfba0` carries **613 objects, every one of class `Texture`**, so the clash corroborates
+  the inversion this page recorded above rather than contradicting it. Both rows keep the verdict
+  `name-clash:<other table>`: the artifact reports, it does not re-name.
+* **Seventeen tables are constrained, not named.** Their installers are called by named classes whose
+  own rows are absent from `inventory/classes.csv` -- `Struct`/`Const`/`Enum` (16 callers,
+  `0x004d1468`), the fifteen property classes (13, `0x004d17a8`), `TcpNetDriver`/`TcpNetDriverXbox`/
+  `DemoRecDriver` (`0x004d0318`), `ActorChannel`/`ControlChannel`/`FileChannel`/`VoiceChannel`
+  (`0x004fa390`), `Level`/`NetPendingLevel`/`DemoPlayPendingLevel` (`0x004fc4f0`),
+  `D3DRenderDevice`/`NullRenderDevice` (`0x004eaea8`), `IndexBuffer`/`SkinVertexBuffer`
+  (`0x00517860`), `VertexBuffer`/`VertexStream*` (`0x005178d8`), ... These are the engine's own base
+  classes: `classes.csv` is built from the 18 packages and `Core.u` holds 7 class exports, so
+  `Field`, `Property`, `NetDriver`, `Channel`, `VertexBuffer` have **no row to read a super from**.
+  The artifact keeps the caller set in `named_callers`, which is the constraint: the table is a
+  common base class of exactly those names.
+* **Two have no named caller at all** (`0x004c9348`, `0x004cfd78`): the class objects behind them are
+  constructed from unnamed code, so this edge is silent rather than negative.
+
 ## Status
 
 The constructor tree is a real second instrument (375/391 agreement) and it confirms three of the 26
@@ -220,3 +262,7 @@ settle the rest is an argument the registration passes that is not the construct
 
 Neither is a base-class-table problem any more: the tables are located, sized and slotted
 (`docs/NATIVE_VM.md`); this page adds only which of them the tree can name.
+
+The installer's-callers edge above is the third instrument on these 26 tables and the strongest one
+for the engine base classes: it reproduces all 466 names it can check, names five more, and records
+the seventeen it cannot name as a constraint instead of a guess.

@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors registration-sites gnatives-records gnatives-mission
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission
 
 help:
 	@echo "targets:"
@@ -120,6 +120,7 @@ help:
 	@echo "  module-lists     one address list per module for ExportAt.java, under $(WORK)"
 	@echo "  module-attribution  which translation unit an unnamed function belongs to, by address locality"
 	@echo "  class-ctors     every class constructor and destructor, from the class table each installs"
+	@echo "  class-table-parents  name a class table from the callers of the function that installs it"
 	@echo "  registration-sites  every class-constructor call site and the class literal it pushes (needs the dump)"
 	@echo "  module-census    what the exported bodies are: section, fan-in, literals (needs the dump and the export)"
 	@echo "  body-read        exported bodies of D3DDrv and XboxDrv: translation unit, literals, callee modules, slots (needs the export)"
@@ -845,6 +846,11 @@ class-ctors:
 	@$(PYTHON) tools/native-summary.py --symbols symbols/xbox_functions.csv --overrides symbols/xbe_overrides.csv -o inventory/
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/class_constructors.csv and the names it earned"
+
+class-table-parents:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/class-table-parents.py "$(GAME_DIR)/default.xbe" --csv inventory/class_table_parents.csv
+	@echo "wrote inventory/class_table_parents.csv"
 
 module-census:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }

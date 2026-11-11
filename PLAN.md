@@ -1028,6 +1028,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the installer's callers name five of the 26 and constrain seventeen)
+
+- **The third edge is the installer's callers, and it reproduces the whole map.** A table is installed
+  by a function (`inventory/class_constructors.csv`) and every subclass's ctor and dtor calls its
+  parent's first, so an installer's direct callers are the classes one level below it.
+  `tools/class-table-parents.py` reads that with one `E8` pass plus `symbols/xbox_functions.csv`:
+  **466 of 466** committed names `agrees`, 0 adjacent, 0 differs, over **1,978** caller sites
+  (`inventory/class_table_parents.csv`, 492 rows).
+- **It names five of U8's 26**: `0x004c7958` `Material` (35/37 callers), `0x004c7a10`
+  `RenderedMaterial` (7/10), `0x004c7ac8` `BitmapMaterial` (3/5), `0x004c7c78` `CameraEffect` (10/11),
+  `0x005040d0` `Engine` (1/3, from `ctor_GameEngine`). The three material tables come out as the exact
+  chain `classes.csv` gives, and each name has a registration site whose literal is that class.
+- **Two clash, and the clash is evidence**: `0x004cfe68` -> `WaterTexture` (committed `0x004cfba0`)
+  and `0x004d0228` -> `IceTexture` (committed `0x004cfc88`); the live read already says `0x004cfba0`
+  carries 613 objects of class `Texture`, so the tool corroborates that inversion instead of
+  re-naming. Both rows keep `name-clash:<table>`.
+- **Seventeen stay constrained and two silent.** Their callers are native classes with no
+  `inventory/classes.csv` row (`Struct`, `IntProperty`, `TcpNetDriver`, `ActorChannel`,
+  `VertexBuffer`, ...), so the ancestor vote has no super to read; the caller set is kept as the
+  constraint. `0x004c9348` and `0x004cfd78` have no named caller at all.
+- **Correction: U8's "fourth and fifth pushes, unread" was wrong.** `0x004d0e90` is `L"System"`
+  (argument 9 of the same 13-argument call) and the per-site string VA is argument 7, the class
+  literal -- `tools/registration-sites.py` already decodes both, which is where 466 names came from.
+  A site has no unread literal; its per-site arguments are the name, the size and the constructor.
+  The remaining route is the class object's `ClassConstructor` read at runtime, or an engine-side
+  class roster. `docs/UNKNOWNS.md` U8, `docs/NATIVE_CLASS_TREE.md`.
+
 ### Execution notes (2026-11-10, the shared constructor argument: a nine-byte default ctor, and none of the 27 names a class)
 
 - **The argument is a default constructor, and the decompile says so in nine bytes.** `0x00062ce0` is
