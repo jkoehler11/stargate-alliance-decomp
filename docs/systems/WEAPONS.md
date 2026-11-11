@@ -121,7 +121,7 @@ still game data and stay in `$WORK`, so the artifact is the reference graph only
 | `ReetouClass` | `Class<Reetou>` | 1 | other 1 |
 | `UnChargedDecal` | `Class<Projector>` | 1 | other 1 |
 
-The firing chain is two hops of the same kind of value: **53 weapons name an ammo class, 35 of those ammo classes name a projectile class, and 27 of those projectiles name a damage type.** A weapon that names no ammo class spawns its shot in script -- `ProjectileClass` is not a `Weapon` property on this build at all.
+A reference here is a **setting, not the value a class carries**: 53 weapons set an ammo class in their own block, but **62 of the 69 weapons in the tree end up with one** (9 inherit theirs) and 7 carry none (`Binoculars`, `EmptyHands`, `GRENADE`, `InteractionHands`, `ScopedWeapon`, `StargateRechargeWeapons`, `StargateWeapon`). `ProjectileClass` is not a `Weapon` property on this build at all -- a weapon names a bullet and the bullet names the shot -- so the resolved chain is the next block's measurement, and this table is the settings it starts from.
 
 **Effects wiring, the item this page listed as not measured:** 35 distinct emitter classes are named, 16 weapons name a muzzle emitter and 15 a projectile impact emitter; the damage side's `LowDetailEffect` names one class (`BloodHit`), from 30 row(s).
 <!-- /generated:weapon-links -->
@@ -140,6 +140,61 @@ Three things the table says that a property name cannot:
   `Effects` sprite (`Blood < UT_SpriteSmokePuff < AnimSpriteEffect < Effects`), not an emitter. So the damage
   tree reaches into `Stargateeffects` through one shared class, while the emitter references are per weapon
   (35 distinct classes over the 47 emitter references).
+
+## What a weapon fires
+
+The table above is *settings*; this is the value. Each hop is resolved through the class chain -- a weapon's
+`AmmoName` is the nearest one it or an ancestor sets, the ammo's `ProjectileClass` likewise, and the damage type
+falls back from the projectile to the ammo, because `Engine.Ammunition.MyDamageType` is what the engine stamps on
+the projectile that ammo spawns:
+
+    python3 tools/weapon-links.py --system DUMP/System \
+        --effective-out inventory/weapon_effective.csv --write-doc docs/systems/WEAPONS.md
+
+Output: `inventory/weapon_effective.csv`, one row for every weapon in the tree
+(`package,class,ammo,ammo_set_by,projectile,projectile_set_by,damage,damage_via,damage_set_by`). The `*_set_by`
+column names the class whose **own** block sets the value, so "this class sets it" and "it inherited it" are two
+different rows; `damage_via` says whether the damage type came from the projectile or from the ammo. Class names
+only -- no range, speed or damage number is read, and the values stay in `$WORK`.
+
+<!-- generated:weapon-effective -->
+**69 weapons, resolved through their class chains** (`inventory/weapon_effective.csv`, one row per weapon, names only): **62 carry an ammo class** -- 53 set it in their own block and 9 inherit it -- and **7 carry none** (`Binoculars`, `EmptyHands`, `GRENADE`, `InteractionHands`, `ScopedWeapon`, `StargateRechargeWeapons`, `StargateWeapon`). 42 of the 69 reach a projectile class and 60 reach a damage type.
+
+| hop | weapons |
+|---|---:|
+| sets an ammo class in its own block | 53 |
+| carries an ammo class (set or inherited) | 62 |
+| carries a projectile class | 42 |
+| damage type from the projectile's `MyDamageType` | 39 |
+| damage type from the ammo's `MyDamageType` | 21 |
+| resolves a damage type | 60 |
+
+The 62 weapons that carry a bullet share **52 ammo classes** (the most shared, `APCM60GunAmmo`, is named by 4 weapons) and reach **29 damage classes**.
+
+9 weapon(s) reach no damage type at all: `Binoculars`, `EmptyHands`, `GRENADE`, `GoauldKillerDroidWeapon`, `InteractionHands`, `ReetouDevice`, `ScopedWeapon`, `StargateRechargeWeapons`, `StargateWeapon`.
+<!-- /generated:weapon-effective -->
+
+Four things the resolved chain says that the settings table cannot:
+
+* **The nine weapons that never set a bullet are variants, and the inheritance is the pattern.** `_Bot`,
+  `_Enemy` and `_Weak`/`_JaffaCaptain` subclasses, plus `P90Torch` (inheriting `P90Prototype`'s `P90Ammo`),
+  `GatlingGun` and `HummveeM60Gun` (inheriting the APC gun's `APCM60GunAmmo`). A rebuild that writes `AmmoName` into
+  all 62 of these classes would add nine settings the original does not have -- the same trap as generating
+  classes from the `X`/`XAmmo`/`XDamage` naming.
+* **The projectile's `MyDamageType` is not always where the damage is.** Three weapons name a projectile that
+  carries no damage type -- `FragGrenade`, `ShockGrenade` and `SemektetMortarGun`, the hand-grenade and mortar
+  ammo -- and resolve `Exploded` from the **ammo** instead, so the fallback hop is load-bearing, not defensive.
+* **Nine weapons reach no damage type, and only seven of those are ammo-less.** `GoauldKillerDroidWeapon` and
+  `ReetouDevice` carry a melee ammo class and resolve nothing from it, so a damage number has to be in the
+  weapon's script; the seven with no ammo class at all (`Binoculars`, `EmptyHands`, `GRENADE`,
+  `InteractionHands`, `ScopedWeapon`, `StargateRechargeWeapons`, `StargateWeapon`) spawn their shot in script for
+  the same reason. `GRENADE` -- 22 functions, 8 states -- is the clearest case: a weapon class whose whole
+  firing path is code.
+* **The armoury is a small vocabulary reused heavily, which the naming hides.** 52 ammo classes over 62 weapons
+  and 29 damage classes over 60 weapons; one ammo class (`APCM60GunAmmo`) serves four weapons (the APC gun, the
+  gatling gun, the Hummvee's M60 and the M60 turret), and 12 damage classes are reached by more than one weapon
+  (`SGDamageMelee` alone by 7). Read as the one-to-one triple the naming implies, the 68 weapon classes would
+  invent 16 ammo classes and 39 damage classes that do not exist.
 
 ## Not measured
 

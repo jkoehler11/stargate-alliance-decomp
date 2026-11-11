@@ -1031,6 +1031,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a weapon's bullet is the one it inherits, and nine of the sixty-two never set one)
+
+- **A reference is a setting; the resolved chain is the number a rebuild needs.** `tools/weapon-links.py
+  --effective-out` resolves every hop through the super chain (`resolve()`: the nearest ancestor whose *own*
+  block sets the tag) and writes one row per weapon: **69 weapons, 62 carry an ammo class -- 53 set it in their
+  own block and 9 inherit it -- and 7 carry none.** That corrects the merged block's reading: the script-spawn
+  sentence belongs to those 7 classes, not to everything that does not set an `AmmoName`.
+- **The nine inherited bullets are the variant pattern, not a chain quirk.** `_Bot`/`_Enemy`/`_Weak`/
+  `_JaffaCaptain` subclasses, `P90Torch` <- `P90Prototype`, `GatlingGun`/`HummveeM60Gun` <- `APCM60Gun`. A
+  rebuild that writes `AmmoName` into all 62 adds nine settings the build does not have.
+- **Every hop moves, and the fallback hop is load-bearing.** 42 weapons reach a projectile class (41 set on the
+  ammo, **1 inherited**: `JaffaKreeStaffWeaponAmmo` <- `StaffWeaponAmmo`) and 60 reach a damage type: **39 from
+  the projectile's `MyDamageType`, 21 from the ammo's** -- because three grenade and mortar projectiles
+  (`FragGrenade`, `ShockGrenade`, `SemektetMortarGun`) name no damage type and their ammo's `Exploded` is the
+  value. Without the fallback those three read as damage-less.
+- **9 weapons reach no damage type and only 7 of them are ammo-less.** `GoauldKillerDroidWeapon` and
+  `ReetouDevice` carry a melee ammo class that names none, so the damage is in the weapon's script -- the same
+  conclusion `GRENADE` (22 functions, 8 states, no ammo class) forces for its shot.
+- **The vocabulary is smaller than the naming implies.** 52 ammo classes over 62 weapons, 29 damage classes
+  over 60, `APCM60GunAmmo` on 4 weapons and 12 damage classes shared; read as the one-to-one triple the naming
+  implies, 68 weapon names would invent 16 ammo and 39 damage classes that do not exist.
+- Tool + `inventory/weapon_effective.csv` (69 rows: `package,class,ammo,ammo_set_by,projectile,
+  projectile_set_by,damage,damage_via,damage_set_by`) + `docs/systems/WEAPONS.md` section "What a weapon fires"
+  (generated block; `--check-doc` in `make ci` also fails when the committed CSV disagrees with the graph) +
+  `make weapon-effective` (`--from-csv`, so it needs no dump). The `--check` covers inheritance at each hop,
+  the ammo fallback and the per-hop counts.
+
 ### Execution notes (2026-11-11, a weapon names a bullet, the bullet names the shot, and a class reference had been naming its metaclass)
 
 - **The effects-wiring item is a read, and the graph is 315 class references over 176 of the 231 classes.**
@@ -5747,6 +5774,11 @@ and a deliberate one-line script break is caught by the boot test.
       **The reference graph is measured** (`tools/weapon-links.py`, `inventory/weapon_links.csv`): 315 class
       references over 176 of the 231 classes, the firing chain joined at the ammo class, and the effects
       wiring read rather than left open.
+      **The effective chain is measured** (`inventory/weapon_effective.csv`): a reference is a setting,
+      not a value -- 62 of the 69 weapons carry an ammo class (53 set it, 9 inherit it) and 7 carry none,
+      42 reach a projectile (41 set on the ammo, 1 inherited) and 60 reach a damage type (39 from the
+      projectile, 21 from the ammo's fallback). The "a weapon that names no ammo class spawns its shot in
+      script" reading therefore applies to those 7, not to every weapon that does not set one.
       **Mission objectives done** (`docs/systems/OBJECTIVES.md`): two families that do not touch, and the campaign
       ships the engine's — `Engine.MissionObjective` has no subclasses but is placed **261 times**, while the fork's
       `GameObjective` family (10 classes, 22 functions, 4 empty stubs) is placed **zero** times in all 73 maps. Mission
