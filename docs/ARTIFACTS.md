@@ -15,7 +15,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_constructors.csv` | 1028 | 12 | `make class-ctors` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make defaults-coverage` |
 | `inventory/class_defaults_emit.csv` | 18 | 25 | `make defaults-emit` |
-| `inventory/class_defaults_misses.csv` | 655 | 7 | `make defaults-misses` |
+| `inventory/class_defaults_misses.csv` | 655 | 8 | `make defaults-misses` |
 | `inventory/class_defaults_per_class.csv` | 2319 | 6 | `make defaults-per-class` |
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |

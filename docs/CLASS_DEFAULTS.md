@@ -72,16 +72,27 @@ Where it still fails:
   harshly.
 * **110 classes have no usable block, and the trailer bound is not why.** `make defaults-misses`
   (`tools/class-defaults.py --misses`, `inventory/class_defaults_misses.csv`, `--check-misses` in `make ci`) classifies
-  every one of the 653 classes that are not fully declared, against the committed per-class artifact:
+  every one of the 655 classes that are not fully declared, against the committed per-class artifact:
 
   | reason | classes | what it means |
   |---|---:|---|
-  | `incomplete` | 515 | a block was chosen, but it holds names the class does not declare — the tie below |
+  | `single-declared` | 263 | the payload's tail is a one-property block whose name the class declares, and no parse holds two declared names — the floor-of-one measurement below |
+  | `incomplete` | 252 | a block was chosen, but it holds names the class does not declare — the tie below |
   | `type-contradiction` | 30 | a block was chosen whose names are declared, but at least one tag's type the declared kind cannot carry (below) |
   | `empty-block` | 109 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding even two of the class's properties |
   | `single-property` | 1 | only one-property blocks parse |
   | `trailer-over-64` | **0** | no class is rejected by the 64-byte bound |
   | `no-block-parses` | **0** | every class parses *something* |
+
+  `single-declared` is new and it is a *reason*, not a located block: the `property` column names the tag a
+  floor of one would have promoted the class on, and the tag is usually the payload's own tail rather than its
+  block. Nine of the 263 name `VoiceSets` — the nine packs that set the `array<VoiceSet>` — and
+  `tools/voice-sets.py` reads that same array independently, so *those* rows are a real one-property block. `ActionString` is the tag for **53** of them, which
+  is a menu-table tail shared across classes, and `VoicePack` itself would be "fully declared" on `LifeSpan` out of
+  a 108-byte payload that holds no `defaultproperties` at all. The 24 `empty-block` and 24 `type-contradiction`
+  rows that also end in a declared one-tag parse keep their reasons: an empty block parses at offset 0, so those
+  payloads do hold a block-shaped structure the single tag does not explain, and a contradicting block is a
+  different finding.
 
   This corrects an earlier reading of the same data. The first pass labelled 48 of these `trailer-over-64`, because it
   asked only "what was the best parse and how far did it end from EOF" — and a 1–2 property parse 90 bytes from the end
@@ -95,9 +106,18 @@ Where it still fails:
   `defaultproperties` and loses nothing), or their block has a shape `read_block` does not parse and the remainder is
   where it lives. Settling it needs that remainder decoded, or a stock `ucc` build of one of these classes to compare
   against — neither of which this project has.
-* Relaxing the one-property filter was tried and rejected: it would "recover" 19 of the single-property group, but the
-  matches are spurious (`Modifier` matching its own class name, `TexPanner` matching on `ObjectFlags`). A false block is
-  worse than a miss: it would emit wrong defaults where the compiler would otherwise leave the class alone.
+* **Dropping the two-property floor was measured, and it is why the guard is two.** A floor of one promotes **320**
+  classes to "fully declared" (1,664 → **1,984** of 2,319), and every one of those verdicts rests on a single tag.
+  That tag is not evidence that a block was found: **1,477 of the 1,664** classes whose block is *already* located
+  carry the same shape — a one-tag parse of a declared property ending exactly on the payload's last byte
+  (**1,778 of 2,319** payloads do), because the last tag of any real block, read from its own start, is that. The
+  promotions are also wrong where the payload is known: `ActionString` is the single tag for **53** of the 320,
+  `VoicePack` would be "fully declared" on `LifeSpan` out of a 108-byte payload, and for **19** classes the promoted
+  tag *replaces* a two-property candidate that names **two** declared names, because the score's declared fraction
+  (1/1 against 2/3) outranks the count. A false block is worse than a miss — it would emit wrong defaults where the
+  compiler would otherwise leave the class alone — so the floor stays at two and `single-declared` names the residue.
+  Reproduce with `python3 tools/class-defaults.py --packages DUMP/System --floor 1 -o $WORK/floor1`, which
+  reports 1,984 fully declared against the committed 1,664.
 * 430 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 

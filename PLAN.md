@@ -1031,6 +1031,31 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the defaults floor of two is measured, and a one-tag payload gets a reason)
+
+- **A floor of one is not a recovery, and the number that settles it is 1,477.** `tools/class-defaults.py` keeps
+  blocks of at least two properties; dropping that to one promotes **320** classes to "fully declared" (1,664 →
+  **1,984** of 2,319), and every one of those verdicts rests on a single tag. But **1,477 of the 1,664** classes whose
+  block is *already* located carry the same shape — a one-tag parse of a declared property that ends on the payload's
+  last byte — and **1,778 of 2,319** payloads do, because the last tag of a real block, read from its own start, is
+  exactly that. The promotions are also wrong where the payload is known: `ActionString` is the tag for **53** of the
+  320, `VoicePack` would be "fully declared" on `LifeSpan` out of a 108-byte payload, and for **19** classes the
+  promoted tag *replaces* a candidate that names two declared names of three (the score's declared fraction, 1/1
+  against 2/3, outranks the count). The floor therefore stays at two; `--floor 1` was added so the measurement
+  reproduces (`--packages DUMP/System --floor 1 -o $WORK/floor1` prints 1,984).
+- **The `*VoicePack` rows split 10 `single-declared` / 9 `incomplete` / 1 `empty-block`, and `--misses` now says
+  which is which.** Before calling a class `incomplete`, the tool asks whether the payload ends in a one-tag parse
+  naming a declared property with no parse holding two declared names; if so the reason is `single-declared` and a new
+  `property` column names the tag (263 rows: **nine name `VoiceSets`**, the array `tools/voice-sets.py` reads
+  independently, and `ActionString` alone accounts for 53, which is a menu-table tail shared across classes). The ten
+  other pack rows keep their reasons correctly — nine are 108-byte payloads that set no array, and
+  `JaffaCaptainVoicePack` parses an empty block. The 24 `empty-block` and 24 `type-contradiction` rows that also end
+  in a declared one-tag parse are deliberately **not** relabelled: an empty block at offset 0 is a block-shaped
+  structure the single tag does not explain, and a contradicting block is a different finding.
+- Tool + `inventory/class_defaults_misses.csv` (655 rows, new `property` column) + `docs/CLASS_DEFAULTS.md` +
+  `docs/systems/AUDIO.md`; `--check-misses` now verifies that every `single-declared` row names a property its class
+  declares and holds exactly one, so the reason cannot drift into a claim nothing checks.
+
 ### Execution notes (2026-11-11, a per-sound `VoiceDesc` is match keys, and the array exists for the takes)
 
 - **A `VoiceSet` block begins at byte 0; only a *class* payload hides its block.** A `*VoicePack` export is a

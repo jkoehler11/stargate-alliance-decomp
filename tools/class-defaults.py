@@ -58,6 +58,16 @@ def declared_properties(path=os.path.join(ROOT, "inventory", "class_properties.c
     return by_class
 
 
+# The locator keeps blocks of at least two properties, and that floor is measured rather than cautious. A floor of
+# one promotes **320** of the 2,319 classes to "fully declared", every one of them on a single tag -- and 1,477 of
+# the 1,664 blocks that are already located carry the same shape (a declared one-tag parse that ends on the
+# payload's last byte), so the test passes on nine payloads in ten no matter what the class contains. It is also
+# satisfied by a table tail rather than a block (`ActionString` is the tag for 53 of the 320, and `VoicePack`
+# would be "fully declared" on `LifeSpan` out of a 108-byte payload), and it discards better evidence for 21
+# classes whose two-property candidate names two declared names where the single tag names one. `single-declared`
+# below names the residue instead of promoting it.
+MIN_PROPERTIES = 2
+
 # Which tag types each declared property *kind* can legitimately carry. A block whose tag type contradicts the
 # class's own property record is reading something other than a tag stream -- the one test the name score cannot
 # make, because a start inside a preceding native blob still lands on names the class declares.
@@ -124,7 +134,7 @@ def contradictions(props, kinds):
     return bad
 
 
-def candidates(pkg, mod, exp, limit=None, kinds=None):
+def candidates(pkg, mod, exp, limit=None, kinds=None, floor=MIN_PROPERTIES):
     """Every offset where a property block parses, bounded by the export's own size.
 
     The bound used to be a fixed 512 bytes, and that is what made the classes with the most defaults look
@@ -142,7 +152,7 @@ def candidates(pkg, mod, exp, limit=None, kinds=None):
             props, end, reason = mod.read_block(data[start:], pkg, False)
         except Exception:
             continue
-        if reason != "None" or len(props) < 2:
+        if reason != "None" or len(props) < floor:
             continue
         if any(p["name"] == "?" for p in props):
             continue
@@ -215,6 +225,32 @@ def diagnose(pkg, mod, exp, declared=frozenset()):
     return "no-block-parses", 0, 0, -1
 
 
+def single_declared_block(pkg, mod, exp, declared, kinds=None):
+    """The one-property block that ends on the payload's last byte, when the class declares its name.
+
+    This is the shape a two-property floor withholds, and the one `--misses` used to call `incomplete`: a payload
+    whose whole defaults block is a single tag -- a `*VoicePack` class's `VoiceSets` array, for eight of them. The
+    tag has to tile the payload's tail exactly and its type must not contradict the declared kind, so "a parse that
+    happens to end near the end" is not enough; what the check cannot decide is whether the tag is a block or a
+    table tail, which is why the caller reports it as a reason rather than as a located block.
+    """
+    data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+    for start in range(len(data)):
+        try:
+            props, end, reason = mod.read_block(data[start:], pkg, False)
+        except Exception:
+            continue
+        if reason != "None" or len(props) != 1:
+            continue
+        prop = props[0]
+        if prop["name"] not in declared or start + end != len(data):
+            continue
+        if contradictions(props, kinds):
+            continue
+        return start, prop["name"], prop["type"]
+    return None
+
+
 def check_misses(outdir):
     """The two artifacts must agree: every not-fully-declared class explained once, no invented class."""
     per_class = os.path.join(outdir, "class_defaults_per_class.csv")
@@ -231,6 +267,30 @@ def check_misses(outdir):
     blockless = sum(v for k, v in reasons.items()
                     if k in ("single-property", "trailer-over-64", "no-declared-property", "empty-block"))
     problems = []
+    # A `single-declared` row claims two things, and both are checkable from the inventory: the block it names
+    # holds exactly one property, and that property is one the class (or an ancestor) declares.
+    supers, declared_all = super_map(), declared_properties()
+    for r in rows:
+        prop = r.get("property") or ""
+        if r["reason"] != "single-declared":
+            if prop:
+                problems.append("%s.%s carries a property on a %s row"
+                                % (r["package"], r["class"], r["reason"]))
+            continue
+        closure, cur, seen = set(), r["class"], set()
+        while cur and cur not in seen:
+            seen.add(cur)
+            closure |= declared_all.get(cur, set())
+            cur = supers.get(cur)
+        if not prop:
+            problems.append("%s.%s is single-declared without naming its property"
+                            % (r["package"], r["class"]))
+        elif prop not in closure:
+            problems.append("%s.%s is single-declared on `%s`, which the class does not declare"
+                            % (r["package"], r["class"], prop))
+        elif r["best_properties"] != "1":
+            problems.append("%s.%s is single-declared but holds %s properties"
+                            % (r["package"], r["class"], r["best_properties"]))
     if got != wanted:
         problems.append("%d classes explained but %d not fully declared (%d missing, %d invented)"
                         % (len(got), len(wanted), len(wanted - got), len(got - wanted)))
@@ -241,9 +301,10 @@ def check_misses(outdir):
         print("FAIL class-defaults: " + "; ".join(problems))
         return 1
     print("ok   class-defaults: %d classes without a fully declared block (%d with no usable block: "
-          "%d empty-block, %d single-property, %d past the trailer bound)"
+          "%d empty-block, %d single-property, %d past the trailer bound; %d single-declared)"
           % (len(rows), blockless, reasons.get("empty-block", 0),
-             reasons.get("single-property", 0), reasons.get("trailer-over-64", 0)))
+             reasons.get("single-property", 0), reasons.get("trailer-over-64", 0),
+             reasons.get("single-declared", 0)))
     return 0
 
 
@@ -281,20 +342,31 @@ def misses(system_dir, outdir):
                 seen.add(cur)
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
+            kinds = kinds_for_class(cls)
             if defaults:
-                cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
-                bad = choose(cands, decl)[4] if cands else 0
-                rows.append([pkg_name, cls, len(decl), "type-contradiction" if bad else "incomplete",
-                             len(cands), defaults, fully])
+                cands, _data = candidates(pkg, mod, exp, kinds=kinds)
+                best = choose(cands, decl)
+                bad = best[4] if best else 0
+                reason, props, trailer, prop = "type-contradiction" if bad else "incomplete", \
+                    defaults, fully, ""
+                if reason == "incomplete":
+                    # No parse holds two declared names: whatever block this payload has, the only block-shaped
+                    # evidence is one tag. Name it instead of calling the class incomplete (a floor of one would
+                    # promote the class here on that tag alone -- the measurement in MIN_PROPERTIES).
+                    known = max([sum(1 for n in c[2] if n in decl) for c in cands], default=0)
+                    found = single_declared_block(pkg, mod, exp, decl, kinds) if known < 2 else None
+                    if found:
+                        reason, props, trailer, prop = "single-declared", 1, 0, found[1]
+                rows.append([pkg_name, cls, len(decl), reason, len(cands), props, trailer, prop])
                 continue
             reason, parsed, props, trailer = diagnose(pkg, mod, exp, decl)
-            rows.append([pkg_name, cls, len(decl), reason, parsed, props, trailer])
+            rows.append([pkg_name, cls, len(decl), reason, parsed, props, trailer, ""])
     path = os.path.join(outdir, "class_defaults_misses.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["package", "class", "declared_properties", "reason", "candidates", "best_properties",
-                    "detail"])
+                    "detail", "property"])
         w.writerows(rows)
     counts = collections.Counter(r[3] for r in rows)
     print("%d classes explained against class_defaults_per_class.csv: %s"
@@ -322,7 +394,7 @@ def choose(cands, declared):
     return best
 
 
-def all_packages(system_dir, outdir):
+def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
     """Sweep every package into one CSV: package, class, defaults, declared fraction, block start.
 
     Written as its own mode because `--sweep -o` writes `class_defaults.csv` per invocation and a loop over
@@ -345,7 +417,7 @@ def all_packages(system_dir, outdir):
                 seen.add(cur)
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
-            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
+            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
             best = choose(cands, decl)
             if best is None:
                 rows.append([pkg_name, cls, 0, 0.0, "", 0])
@@ -368,7 +440,7 @@ def all_packages(system_dir, outdir):
     return 0
 
 
-def coverage(system_dir, outdir):
+def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
     """Per-package rollup of the locator: classes, blocks found, fully declared, ambiguous, no block.
 
     This is the artifact `inventory/class_defaults_coverage.csv`, which until now had no generator: it was
@@ -396,7 +468,7 @@ def coverage(system_dir, outdir):
         for exp in [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]:
             classes += 1
             cls = pkg.name(exp["name"])
-            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
+            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
             if not cands:
                 none_found += 1
                 continue
@@ -436,17 +508,20 @@ def main():
                     help="print the raw byte walk of the chosen block (type byte, size, consumed bytes)")
     ap.add_argument("--check-misses", action="store_true",
                     help="verify class_defaults_misses.csv reconciles with class_defaults_per_class.csv")
+    ap.add_argument("--floor", type=int, default=MIN_PROPERTIES,
+                    help="minimum properties in a candidate block (default %d; a floor of one is measured and "
+                         "rejected, see docs/CLASS_DEFAULTS.md)" % MIN_PROPERTIES)
     ap.add_argument("-o", "--out")
     args = ap.parse_args()
 
     if args.packages:
-        return all_packages(args.packages, args.out or "inventory")
+        return all_packages(args.packages, args.out or "inventory", args.floor)
     if args.check_misses:
         return check_misses(args.out or os.path.join(ROOT, "inventory"))
     if args.misses:
         return misses(args.misses, args.out or "inventory")
     if args.coverage:
-        return coverage(args.coverage, args.out or "inventory")
+        return coverage(args.coverage, args.out or "inventory", args.floor)
 
     mod = load_prop_stream()
     declared = declared_properties()
@@ -474,7 +549,7 @@ def main():
     for exp in targets:
         cls = pkg.name(exp["name"])
         known = known_for(cls)
-        cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls))
+        cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=args.floor)
         if not cands:
             none_found += 1
             continue
