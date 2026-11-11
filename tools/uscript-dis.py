@@ -1387,8 +1387,11 @@ def calls_report(path, table, out=None):
     What is left is a real dispatch question, and the site *does* carry the receiver, just not as an operand: the
     emitter evaluates the object before the call token, so the expression in front of the call is it. When that
     expression is a variable, a cast, a `Context` or an object literal, its declared type names a class, and the
-    call is placed on *that* class's chain. Locals are the exception -- their type is not a class property, so it is
-    not in `inventory/class_properties.csv` -- which is why they are counted separately below.
+    and the call is placed on *that* class's chain. A base-typed receiver can hold any subclass, so a name the
+    chain does not declare is looked for *below* it as the last step: one declaring descendant places the site
+    (`descendant:Pkg.Class`), several are a dispatch the static type cannot decide. Locals are the exception --
+    their type is not a class property, so it is not in `inventory/class_properties.csv` -- which is why they are
+    counted separately below.
 
     A function declared inside a `State` is a function of the class that owns the state (the state compiles into
     that class), so a site inside one is attributed to the class, not to the state.
@@ -1405,6 +1408,15 @@ def calls_report(path, table, out=None):
     pkg_of_class = collections.defaultdict(list)
     for (p, c) in supers:
         pkg_of_class[c].append(p)
+    # UnrealScript matches a class name case-insensitively while the source spells one `pawn` and the export table
+    # `Pawn`, so every class lookup folds the case and keeps the canonical (package, class) pair.
+    canon = collections.defaultdict(list)
+    for (p, c) in supers:
+        canon[c.lower()].append((p, c))
+
+    def class_pairs(one):
+        """The canonical (package, class) pairs a type name can mean, exact case first."""
+        return [(p, one) for p in pkg_of_class.get(one, ())] or canon.get(one.lower(), [])
     # (class, property) -> (kind, declared type): what a variable receiver's type names.
     prop_type = {}
     prop_type_by_name = collections.defaultdict(set)
@@ -1418,6 +1430,9 @@ def calls_report(path, table, out=None):
     # whatever the receiver is, and a name several classes declare is where the receiver would have decided. A
     # declaration inside a State is owned by the class that owns the state: the state is compiled into that class.
     decls = collections.defaultdict(set)
+    # The same declarations keyed by the *class* that owns them (a state's functions count for its class), which is
+    # the index a subtree lookup needs: an ancestor's state function is reachable from the subclass that compiles it.
+    cfuncs = collections.defaultdict(set)
     for one in files:
         pkg_name = os.path.basename(one).rsplit(".", 1)[0]
         pre = Package(one)
@@ -1435,16 +1450,26 @@ def calls_report(path, table, out=None):
             if pre.class_name_of(oe) == "State" and oe.get("outer"):
                 owner = (pkg_name, pre.name(pre.exports[oe["outer"] - 1]["name"]))
             decls[fn].add(owner)
+            cfuncs[owner].add(fn)
 
-    def on_chain(pkg_name, owner, name):
-        """The caller's own class, then its ancestors in the package that declares each: what a self-call needs."""
-        if name in funcs.get((pkg_name, owner), ()):
+    def on_chain(pkg_name, owner, name, state_hits=None):
+        """The caller's own class, then its ancestors in the package that declares each: what a self-call needs.
+
+        The index is keyed by the *class*, so a function a state declares is reachable from the class that owns the
+        state and from its subclasses -- `funcs` alone keys it under the state's own name, which is not a class any
+        chain walks. `state_hits` counts the placements that only that folding makes.
+        """
+        if name in cfuncs.get((pkg_name, owner), ()):
+            if state_hits is not None and name not in funcs.get((pkg_name, owner), ()):
+                state_hits[name] += 1
             return "package", ""
         here, seen = (pkg_name, owner), set()
         while here in supers and here not in seen:
             seen.add(here)
             here = supers[here]
-            if name in funcs.get(here, ()):
+            if name in cfuncs.get(here, ()):
+                if state_hits is not None and name not in funcs.get(here, ()):
+                    state_hits[name] += 1
                 return "ancestor", "%s.%s" % here
         return "", ""
 
@@ -1454,7 +1479,7 @@ def calls_report(path, table, out=None):
         Returns (where, how_many_classes_declare_the_name, the_only_class). The corpus step is the last one that
         needs no receiver; `place_on_receiver` runs before it when the site's expression in front names a class.
         """
-        where, decl = on_chain(pkg_name, owner, name)
+        where, decl = on_chain(pkg_name, owner, name, chain_state)
         if where:
             return (decl or where), len(decls.get(name, ())), ""
         owners = decls.get(name, set())
@@ -1463,18 +1488,61 @@ def calls_report(path, table, out=None):
             return "corpus:%s.%s" % (op, oc), 1, "%s.%s" % (op, oc)
         return "", len(owners), ""
 
-    def place_on_receiver(rtype, name):
+    def place_on_receiver(rtype, name, state_hits=None):
         """Where a call on an object of class `rtype` is declared: the *receiver's* chain, not the caller's."""
-        for p in pkg_of_class.get(rtype, ()):
-            where, decl = on_chain(p, rtype, name)
+        for p, cname in class_pairs(rtype):
+            where, decl = on_chain(p, cname, name, state_hits)
             if where:
-                return decl or "%s.%s" % (p, rtype)
+                if cname != rtype:
+                    case_fixed[rtype] += 1
+                return decl or "%s.%s" % (p, cname)
         return ""
+
+    subs = collections.defaultdict(set)
+    for (p, c), (pp, sup) in supers.items():
+        if sup:
+            subs[(pp, sup)].add((p, c))
+    subtrees = {}
+
+    def subtree(rtype):
+        """Every (package, class) *below* `rtype` in the corpus, walked once per receiver class."""
+        if rtype not in subtrees:
+            seen, todo, out = set(), list(class_pairs(rtype)), []
+            while todo:
+                node = todo.pop()
+                if node in seen:
+                    continue
+                seen.add(node)
+                for kid in subs.get(node, ()):
+                    if kid not in seen:
+                        todo.append(kid)
+                        out.append(kid)
+            subtrees[rtype] = out
+        return subtrees[rtype]
+
+    def place_below(rtype, name):
+        """The classes below `rtype` that declare `name`.
+
+        A virtual call dispatches on the receiver's class, and a receiver whose static type is the base can hold any
+        descendant, so a name that no class on the base's chain declares may still be declared by one below it. One
+        answer can be reported as where the call lands; several are an ambiguity that the static type cannot decide,
+        and they are named rather than guessed.
+        """
+        return {k for k in subtree(rtype) if name in cfuncs.get(k, ())}
     epilogue = bytes([0x04, 0x0B, 0x47])
     rows = []
     # Why a by-name site that stays unplaced still has an object expression in front of it.
     receiver_gap = collections.Counter()
     gap_names = collections.Counter()
+    # The receiver typed to a class whose chain declares nothing of that name: what the corpus knows *below* it.
+    gap_classes = collections.Counter()
+    chain_state = collections.Counter()
+    recv_state = collections.Counter()
+    case_fixed = collections.Counter()
+    below_uniq = collections.defaultdict(set)
+    below_multi = collections.Counter()
+    below_outside = collections.Counter()
+    below_none = collections.Counter()
     walked = seen = 0
     for one in files:
         pkg = Package(one)
@@ -1559,9 +1627,22 @@ def calls_report(path, table, out=None):
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
                     if not where and rtype and name:
-                        placed = place_on_receiver(rtype, name)
+                        placed = place_on_receiver(rtype, name, recv_state)
                         if placed:
                             where = "receiver:%s" % placed
+                        else:
+                            gap_classes[rtype] += 1
+                            hits = place_below(rtype, name)
+                            if len(hits) == 1:
+                                (hp, hc), = hits
+                                where = "descendant:%s.%s" % (hp, hc)
+                                below_uniq[name].add("%s.%s" % (hp, hc))
+                            elif hits:
+                                below_multi[name] += 1
+                            elif name in decls:
+                                below_outside[name] += 1
+                            else:
+                                below_none[name] += 1
                     if not where and name and rtoken in OBJECT_TOKENS and not rtype:
                         receiver_gap[why or rtoken] += 1
                         if why.startswith("import: no package"):
@@ -1585,9 +1666,11 @@ def calls_report(path, table, out=None):
     print("  static (FinalFunction): %d, of which the target is a Function: %d"
           % (len(static), sum(1 for r in static if r[6] == "Function")))
     here = [r for r in by_name if r[7] == "package"]
-    above = [r for r in by_name if r[7] and r[7] != "package" and not r[7].startswith(("corpus:", "receiver:"))]
+    above = [r for r in by_name
+             if r[7] and r[7] != "package" and not r[7].startswith(("corpus:", "receiver:", "descendant:"))]
     corpus = [r for r in by_name if r[7].startswith("corpus:")]
     recv = [r for r in by_name if r[7].startswith("receiver:")]
+    below_rows = [r for r in by_name if r[7].startswith("descendant:")]
     wide = [r for r in by_name if not r[7] and r[5]]
     only = {r[5]: r[9] for r in corpus}
     wide_n = {r[5]: r[8] for r in wide}
@@ -1595,6 +1678,8 @@ def calls_report(path, table, out=None):
     print("    on the caller's chain: %d -- %d in its own class, %d on an ancestor (top: %s)"
           % (len(here) + len(above), len(here), len(above),
              ", ".join("%s %d" % kv for kv in collections.Counter(r[7] for r in above).most_common(5))))
+    print("      of those, %d name a function only a *state* of that class declares (the class owns the state)"
+          % sum(chain_state.values()))
     print("    by the corpus alone: %d site(s) reach the one class that declares the name (%d names), top: %s"
           % (len(corpus), len(only),
              ", ".join("%s -> %s %d" % (n, only[n], c)
@@ -1604,6 +1689,10 @@ def calls_report(path, table, out=None):
           % (len(recv), len({r[5] for r in recv}),
              len({r[11] for r in recv}),
              ", ".join("%s %d" % kv for kv in collections.Counter(r[11] for r in recv).most_common(5))))
+    print("      of those, %d place because the receiver's type names a class in another case, top: %s"
+          % (sum(case_fixed.values()), ", ".join("%s %d" % kv for kv in case_fixed.most_common(6))))
+    print("      and %d name a function only a *state* of the receiver's chain declares"
+          % sum(recv_state.values()))
     open_ = [r for r in wide if not r[7]]
     untyped = [r for r in open_ if r[10] in OBJECT_TOKENS and not r[11]]
     typed_gap = [r for r in open_ if r[10] in OBJECT_TOKENS and r[11]]
@@ -1616,7 +1705,23 @@ def calls_report(path, table, out=None):
           % (len(untyped), len(locals_), len(untyped) - len(locals_)))
     print("      of the receiver-typed sites, %d had a local in front (typed from the class's own ScriptText)"
           % len([r for r in recv if r[10] == "LocalVariable"]))
-    print("      an expression that typed to a class whose chain declares no such name: %d" % len(typed_gap))
+    print("      an expression that typed to a class whose chain declares no such name: %d, of which %d reach "
+          "exactly one descendant that declares it (descendant:Pkg.Class, %d names), top: %s"
+          % (len(typed_gap) + len(below_rows), len(below_rows), len({r[5] for r in below_rows}),
+             ", ".join("%s -> %s %d" % (n, "/".join(sorted(below_uniq[n])), c)
+                       for n, c in collections.Counter(r[5] for r in below_rows).most_common(5))))
+    print("        the rest stay a dispatch: %d over several descendants (%d names, top: %s), %d a name only classes "
+          "outside the subtree declare, %d a name no class in the corpus declares"
+          % (sum(below_multi.values()), len(below_multi),
+             ", ".join("%s %d" % kv for kv in below_multi.most_common(4)),
+             sum(below_outside.values()), sum(below_none.values())))
+    print("        those %d receivers by class: %s"
+          % (len(typed_gap) + len(below_rows),
+             ", ".join("%s %d" % kv for kv in gap_classes.most_common(6))))
+    print("        names only outside the subtree declare: %s"
+          % ", ".join("%s %d" % kv for kv in below_outside.most_common(6)))
+    print("        names no class declares: %s"
+          % ", ".join("%s %d" % kv for kv in below_none.most_common(6)))
     print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
           % (len(open_) - len(untyped) - len(typed_gap)))
     print("      why an expression in front names no class: %s"

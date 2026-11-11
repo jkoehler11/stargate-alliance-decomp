@@ -1314,6 +1314,27 @@ outside `System` or declared natively, and the only reading that would type them
 `Class<>`/`array<>` and not the lowercase `class<>` the scripts themselves write, which cost 14 sites; with
 both spellings accepted the receiver group is 1,732 sites over 546 names and the local share 504.
 
+**2026-11-11, the last of the call residue: the index was keyed on the state, the class was matched on its case.**
+The residue above was announced as "a dispatch question", and two thirds of it was not: it was the same class of bug as
+`class<LocalMessage>` -- a lookup keyed on a spelling nothing else uses. **(a)** A function declared inside a `State` is
+owned by the class that compiles the state, but the by-name index was keyed on the function's *outer* export, which is
+the `State`: `IsUnconscious` (declared in `state BotUnconscious`) sat under a name no chain walks. Keying it by the
+owning class places **223** chain sites (own class +197, ancestor -127 -- the nearer declarer is the state the caller's
+class owns) and 8 receiver sites, and the corpus-alone group falls 2,332 -> 2,290, for **8,321 on the chain**.
+**(b)** UnrealScript matches a class name case-insensitively while the source spells `pawn`, `inventory`, `GameHUD`:
+folding the case places **26** more receiver sites (`pawn` 14, `GameHUD` 4, `inventory` 2, `pickup` 2, `controller`,
+`vehicle`) and types 25 more locals (**1,757** on the receiver's chain, 529 with a local in front). **(c)** The typed
+residue -- 47 sites whose expression names a class whose chain lacks the call name -- is then **16**: a base-typed
+receiver can hold any subclass, so `--calls` looks *below* the receiver as its last step and **6** place on the one
+descendant that declares the name (`IsUnconscious`, `GetAggroLevel` -> `StargateGame.BotEnemy`, 3 each; the first is a
+state function, which is why (a) and (c) meet on the same name). The other **10** are the dispatch the entry predicted:
+`CallToArms` 3, `UnPossess`, `Possess` over several descendants, `GetMoveTarget` 2, `GetMyPlayer`, `TakeOver`,
+`SetPawnClass` only outside the subtree -- and **0 names absent from the corpus**, so what remains is which object, not
+which build. Total: **12,374 of 13,507 by-name sites (91.6%)** name a declaring class; the 1,133 that do not are 654
+untyped expressions (473 an import no package declares, 81 a local its source does not declare, 70 a literal or cast,
+30 not a variable), 10 typed-and-unplaceable, and 469 a completed value in front. `inventory/script_calls.csv` moved
+**400 rows**, 327 of them in `resolved_in`.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all

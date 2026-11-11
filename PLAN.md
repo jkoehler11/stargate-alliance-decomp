@@ -1031,6 +1031,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the call residue halves — the index was keyed on the state and the class on its case)
+
+- **Two keyings, not a measurement, closed 24 of the 47.** The by-name index was built from a function's *outer*
+  export, so a function declared inside a `State` was indexed under the state's name -- a name no super chain walks --
+  and 223 sites that call one resolved nowhere; keyed by the owning class it places them (own class +197, ancestor
+  -127, because the nearer declarer is the state the caller's class owns), for **8,321 on the caller's chain**. And
+  the class lookup was case-sensitive while the shipped source spells `pawn`/`inventory`/`GameHUD`: folding the case
+  places **26** more receiver sites and types 25 more locals, for **1,757 on the receiver's chain**.
+- **The residue the last note named is then 16, and only 10 of those are a dispatch.** A base-typed receiver can hold
+  any subclass, so the tool now looks *below* the receiver's chain as its last step: **6** place on the one descendant
+  that declares the name (`IsUnconscious`, `GetAggroLevel` -> `StargateGame.BotEnemy`, the first declared inside
+  `state BotUnconscious`); the rest are `CallToArms` 3, `UnPossess`, `Possess` among several descendants and
+  `GetMoveTarget` 2, `GetMyPlayer`, `TakeOver`, `SetPawnClass` outside the subtree. **No name in it is absent from the
+  corpus** -- the gap is which object, not which build, so do not look for a name table fix here.
+- **By-name placement is 12,374 of 13,507 (91.6%)**, and the 1,133 unplaced are 654 expressions that type to nothing,
+  10 typed-and-unplaceable, and 469 a completed value in front. The next instrument on this table is the 473 imports
+  no package declares, which needs the native property table (`docs/NATIVE_PROPERTIES.md`), not a better walk.
+- Tool (`--calls`: the class-keyed index, `class_pairs`' case folding, `place_below` and the `descendant:` column) +
+  `inventory/script_calls.csv` regenerated (18,931 rows, 400 of them moved) + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`.
+
 ### Execution notes (2026-11-11, the residue has names — 474 cite a property no package declares, and the type syntax has two spellings)
 
 - **A residue site is now counted by the reason its expression typed to nothing**, and the tool's counts add up:
