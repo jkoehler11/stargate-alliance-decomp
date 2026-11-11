@@ -195,12 +195,15 @@ def doc_block(rows, campaign=CAMPAIGN):
     passed = sum(1 for row in rows if row[2] == "PASS")
     boots = sum(row[3] for row in rows)
     missing = [i for i in range(lo, hi + 1) if i not in measured]
-    lines = ["",
-             "**%d rows, %d PASS / %d FAIL, %d boots:** %d of the %d campaign entries (%d-%d) have been loaded, "
-             "and %d do not yet."
-             % (len(rows), passed, len(rows) - passed, boots, hi - lo + 1 - len(missing), hi - lo + 1, lo, hi,
-                len(missing)),
-             ""]
+    if missing:
+        summary = ("**%d rows, %d PASS / %d FAIL, %d boots:** %d of the %d campaign entries (%d-%d) have been "
+                   "loaded; %d still unmeasured."
+                   % (len(rows), passed, len(rows) - passed, boots, hi - lo + 1 - len(missing), hi - lo + 1,
+                      lo, hi, len(missing)))
+    else:
+        summary = ("**%d rows, %d PASS / %d FAIL, %d boots:** all %d campaign entries (%d-%d) have been loaded."
+                   % (len(rows), passed, len(rows) - passed, boots, hi - lo + 1, lo, hi))
+    lines = ["", summary, ""]
     if missing:
         lines += ["Not measured: `%s`." % ranges(missing), ""]
     lines += ["| index | map | result | attempts | runs | detail |",
@@ -234,10 +237,11 @@ def check():
             fh.write("2\tPASS\t/b/02-mission.png\t1 attempts\n")   # the same index, retried later
             fh.write("4\tFAIL\t/b/halt.log\t1 attempts\tBIOS screen\n")
             fh.write("4\tFAIL\t/b/run.log\t2 attempts\n")          # last failure's reason is kept
+        want_rows = [(2, "M00", "PASS", 3, 2, ""),
+                     (3, "M01A", "PASS", 1, 1, ""),
+                     (4, "M15C", "FAIL", 3, 2, "BIOS screen")]
         got = render(merge([first, second], names))
-        want = render([(2, "M00", "PASS", 3, 2, ""),
-                       (3, "M01A", "PASS", 1, 1, ""),
-                       (4, "M15C", "FAIL", 3, 2, "BIOS screen")])
+        want = render(want_rows)
         if got != want:
             print("FAIL merge: got\n%s\nwant\n%s" % (got, want))
             return 1
@@ -261,8 +265,16 @@ def check():
         else:
             print("FAIL an unknown status was accepted")
             return 1
-        print("ok   map-loads: a PASS from a later run wins, attempts add up, and an unknown index or "
-              "status is refused")
+        complete = "".join(doc_block(want_rows, campaign=(2, 4)))
+        if "all 3 campaign entries (2-4) have been loaded" not in complete or "unmeasured" in complete:
+            print("FAIL doc_block does not say the range is complete when it is:\n%s" % complete)
+            return 1
+        gapped = "".join(doc_block(want_rows[1:], campaign=(2, 4)))
+        if "2 of the 3 campaign entries (2-4) have been loaded; 1 still unmeasured" not in gapped:
+            print("FAIL doc_block does not name the unmeasured index:\n%s" % gapped)
+            return 1
+        print("ok   map-loads: a PASS from a later run wins, attempts add up, an unknown index or "
+              "status is refused, and the summary line knows a complete range from a gapped one")
         return 0
     finally:
         shutil.rmtree(root, ignore_errors=True)

@@ -45,11 +45,18 @@ own reason (`BIOS screen`, `main menu`, `frame gate`) for the rows that never pa
 | run directory | range | note |
 |---|---|---|
 | `$WORK/xemu/missions-run` | 10-15 | first six, before the boot window was 135 s |
+| `$WORK/xemu/missions-retry` | 12, 14 | the two boots `missions-run` lost |
 | `$WORK/xemu/missions-retry2` | 12 | the retry that answered the index `missions-run` lost |
 | `$WORK/xemu/missions-sweep` | 16-33 | the 18-index sweep |
 | `$WORK/xemu/missions-tail` | 21, 34-40 | the tail of the first half plus the two failures re-run |
 | `$WORK/xemu/missions-38` | 38 | the second failure re-run alone |
-| `$WORK/mapback` | 41-70 (stride) | this page's back-half sweep |
+| `$WORK/mapback` | 41-45 | the back-half sweep, stopped at a run's budget |
+| `$WORK/mapback2` | 44, 46-49 | the resume at 44 |
+| `$WORK/mapback3` | 50-70 | the last 21, one boot each |
+
+Nine directories, and the set is its own evidence: the first eight regenerate the committed 40 rows **byte for
+byte**, and adding `mapback3` is then the only diff. A directory listing cannot confirm that -- `$WORK` also
+holds `missions/`, `gtime`-era retries and the manufactured-failure directories below.
 
 Three other directories in `$WORK/xemu` carry a `missions.tsv` and are **not** merged, on purpose:
 `missions-neg` (index 10 with `--boot=25`, a manufactured failure that proves the loop retries),
@@ -60,9 +67,7 @@ merging them would put `BIOS screen` on a row whose map loads.
 ## The table
 
 <!-- generated:map-loads -->
-**40 rows, 40 PASS / 0 FAIL, 53 boots:** 40 of the 61 campaign entries (10-70) have been loaded, and 21 do not yet.
-
-Not measured: `50-70`.
+**61 rows, 61 PASS / 0 FAIL, 74 boots:** all 61 campaign entries (10-70) have been loaded.
 
 | index | map | result | attempts | runs | detail |
 |---:|---|---|---:|---:|---|
@@ -106,19 +111,46 @@ Not measured: `50-70`.
 | 47 | `M16C` | PASS | 1 | 1 |  |
 | 48 | `M16D` | PASS | 1 | 1 |  |
 | 49 | `M16E` | PASS | 1 | 1 |  |
+| 50 | `M16F` | PASS | 1 | 1 |  |
+| 51 | `M16G` | PASS | 1 | 1 |  |
+| 52 | `M17A` | PASS | 1 | 1 |  |
+| 53 | `M17B` | PASS | 1 | 1 |  |
+| 54 | `M17D` | PASS | 1 | 1 |  |
+| 55 | `M18A` | PASS | 1 | 1 |  |
+| 56 | `M18B` | PASS | 1 | 1 |  |
+| 57 | `M18D` | PASS | 1 | 1 |  |
+| 58 | `M19A` | PASS | 1 | 1 |  |
+| 59 | `M19B` | PASS | 1 | 1 |  |
+| 60 | `M19C` | PASS | 1 | 1 |  |
+| 61 | `M19D` | PASS | 1 | 1 |  |
+| 62 | `M19E` | PASS | 1 | 1 |  |
+| 63 | `M20A` | PASS | 1 | 1 |  |
+| 64 | `M20B` | PASS | 1 | 1 |  |
+| 65 | `M20C` | PASS | 1 | 1 |  |
+| 66 | `M20D` | PASS | 1 | 1 |  |
+| 67 | `M21A` | PASS | 1 | 1 |  |
+| 68 | `M21B` | PASS | 1 | 1 |  |
+| 69 | `M21C` | PASS | 1 | 1 |  |
+| 70 | `M21D` | PASS | 1 | 1 |  |
 <!-- /generated:map-loads -->
 
 ## What is left
 
 The campaign range is 10-70 (61 entries; 0-9 are the multiplayer maps and `Entry`, 71-72 are `MainMenu` and
-`SGCTF-AbydosVsSGC`). The unmeasured indices are named by the tool's own summary line, and
-`tools/xemu/map-index.py --rotate N` prints N indices a night for a nightly that walks the range without
+`SGCTF-AbydosVsSGC`), and **every one of the 61 has a row** (2026-11-11). The tool's summary line no longer
+names an unmeasured index, so the sweep is finished rather than paused, and `map-index.py --rotate N` -- which
+printed N indices a night for a nightly that walks the range without repeating (2 a night covers 61 entries in
+31 nights, and because 2 is coprime with 61 the wrap skips nothing) -- has no work left to hand out.
 
-**Measured pace (2026-11-11):** five indices -- 44, 46, 47, 48, 49 -- took 23 minutes of wall clock, 4.6
-minutes per boot with no retry (135 s to the title, one `A`, N d-pad presses, a 60 s settle), so the 21
-that remain are about 100 minutes of harness time. The pause at 50 is where a run's budget ended, not a
-place the harness failed.
-repeating: 2 a night covers 61 entries in 31 nights, and because 2 is coprime with 61 the wrap skips nothing.
+What that does **not** mean is that the list is readable from the names: the indices are dense (10-70) and the
+names are not. 15 is `M04B` and 16 is lowercase `M04a`; 52-54 are `M17A`, `M17B`, `M17D` and 55-57 `M18A`,
+`M18B`, `M18D`, so `M17C` and `M18C` are on no entry of the list and a name does not predict an index. This
+table, generated from `map-index.py`'s own ASCII order, is the only index-to-name record there is.
+
+**Measured pace:** five indices -- 44, 46, 47, 48, 49 -- took 23 minutes of wall clock, 4.6 minutes per boot
+with no retry (135 s to the title, one `A`, N d-pad presses, a 60 s settle), and the remaining 21 took 97
+minutes, 4.6 apiece: the prediction was the measurement's own rate, and a sweep of this range is an afternoon
+of boots rather than a risk. The pause at 50 was where a run's budget ended, not a place the harness failed.
 
 Two things this table still cannot say, and what would settle each:
 
@@ -132,7 +164,11 @@ Two things this table still cannot say, and what would settle each:
 
 ## Status
 
-PLAN 7.2 stays `[~]` until every entry in the range has a row; the artifact makes that a matter of harness
-time rather than of bookkeeping. `make ci` runs the tool's synthetic `--check` (a merge that must prefer
-the later PASS, add up attempts, keep a reason, and refuse an unknown index or status), so the instrument
-cannot rot while the rows accumulate.
+The artifact is complete: **61 rows over 74 boots, 61 PASS and 0 FAIL** -- no campaign map on this disc fails
+to load. "Complete" here means coverage, not playability: a `PASS` row is a load, and the two questions above
+are what a row still cannot answer.
+
+`make ci` gates both halves. `--check-doc` re-renders this page from the committed rows, so the table cannot
+drift from the CSV without a disc, and the tool's synthetic `--check` exercises the merge rules themselves (a
+later PASS wins, attempts add up, a reason is kept, an unknown index or status is refused), so the instrument
+cannot rot behind a table that looks right.
