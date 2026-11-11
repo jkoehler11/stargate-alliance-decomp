@@ -419,6 +419,20 @@ are the authority for a rebuild**, and the shipped text cannot validate this ren
 therefore structural — every value comes from the same tag/decoder the map T3D pass uses, which is checked against
 73 maps — plus the property-name agreement the coverage table already measures.
 
+## A class reference names the package it lives in, not its metaclass
+
+The emitter used to write a foreign class reference as `class'Core.<Name>'`, and `Core` is exactly what an
+import's `class_package` field holds for a **class**: it is the package of the *metaclass* (`Class` lives in
+`Core`), not of the class. The class's own package is the import's Outer, a signed index this reader already
+had. Measured 2026-11-11 over the whole dump: of **885 emitted class references, 183 named a package the class
+is not in** before the fix and **2** after -- both the same case difference (`Gameplay` in the name table,
+`GamePlay` in `inventory/classes.csv`).
+
+`render_ref` now takes the package from `outer_package()`, which resolves the signed Outer and accepts a name
+only when that object really is a `Package`; a nested object falls back to the old field, which is right for
+it. `tools/weapon-links.py` is the consumer that scores it: all 219 distinct class references the weapon tree
+names resolve in `inventory/classes.csv`, and the emitted text now agrees with that table on all 315 edges.
+
 ## Wiring defaults into the source tree
 
 `make extract-script` writes 2,319 classes as `$WORK/source-tree/<Package>/<Class>.uc`, and only 15 of them carry a

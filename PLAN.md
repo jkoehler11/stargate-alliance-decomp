@@ -1031,6 +1031,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a weapon names a bullet, the bullet names the shot, and a class reference had been naming its metaclass)
+
+- **The effects-wiring item is a read, and the graph is 315 class references over 176 of the 231 classes.**
+  `tools/weapon-links.py` reads every `class'...'` value in the four trees' default property blocks
+  (`tools/defaults-emit.py --emit`) and classifies the **target by its own super chain**, never by the property's
+  name: `ammo` 69, `damage` 74, `emitter` 47, `projectile` 40, `other` 85. All **219 distinct** references
+  resolve in `inventory/classes.csv`, so none of this is a name the dump does not carry. The 231 counts the four
+  roots themselves; the page's 227 counts their descendants.
+- **The chain is joined at the ammunition, and that is the structural finding.** `AmmoName` is declared on
+  `Engine.Weapon`, but `ProjectileClass` and `MyDamageType` are declared on `Engine.Ammunition`: **53 weapons
+  name an ammo class, 35 of those ammo classes name a projectile, 27 of those projectiles name a damage type.**
+  A weapon that names no ammo class spawns its shot in script -- `ProjectileClass` is not a `Weapon` property on
+  this build at all, which is why the page's naming test and this graph disagree in places.
+- **`StargateDamageType` is not pure data.** 30 of the 37 set `LowDetailEffect`, and all 30 name one class, an
+  `Effects` sprite (`Blood < UT_SpriteSmokePuff < AnimSpriteEffect < Effects`) -- one shared reference into
+  `Stargateeffects`, against 35 distinct emitter classes over the 47 emitter edges.
+- **The emitter had been naming the metaclass's package, and this measurement caught it.** A foreign class
+  reference rendered as `class'Core.SE_...'` because `render_ref` used the import's `class_package`, which for a
+  **class** holds the package of its *metaclass* (`Class` lives in `Core`); the class's own package is the
+  import's Outer. Over the whole dump **183 of 885** class references named a package the class is not in, and
+  **2** do after the fix -- both the same case difference (`Gameplay` in the name table, `GamePlay` in
+  `inventory/classes.csv`). `outer_package()` takes the Outer only when that object really is a `Package`, and
+  falls back to the old field for a nested one, which is right for it.
+- Tool + `inventory/weapon_links.csv` (315 rows: `package,class,property,declared,declared_type,target,ref,
+  ref_package`) + `docs/systems/WEAPONS.md` §"What a weapon names" (generated block, `--check-doc` in `make ci`)
+  + `docs/CLASS_DEFAULTS.md` §"A class reference names the package it lives in" + `make weapon-links`. The
+  `--check` covers the super-chain classification, the declaring-class walk, an unresolvable name and the
+  per-hop chain count.
+
 ### Execution notes (2026-11-11, 522 located starts are not property tags, and they are the whole single-declared and incomplete residue)
 
 - **The locator's own start, read as a tag.** The declared-name table that the anchor rule needs also says what the
@@ -5715,6 +5744,9 @@ and a deliberate one-line script break is caught by the boot test.
       fully-scripted system, hence the best rebuild target; 29 of 68 weapons are two-function-or-less variants, and the
       `X`/`XAmmo`/`XDamage` naming holds for only 17 of 68, so a rebuild must not generate classes from the pattern.
       No weapon is placed in any map; they persist through checkpoints (`FragGrenade` 447, `P90Prototype` 432).
+      **The reference graph is measured** (`tools/weapon-links.py`, `inventory/weapon_links.csv`): 315 class
+      references over 176 of the 231 classes, the firing chain joined at the ammo class, and the effects
+      wiring read rather than left open.
       **Mission objectives done** (`docs/systems/OBJECTIVES.md`): two families that do not touch, and the campaign
       ships the engine's — `Engine.MissionObjective` has no subclasses but is placed **261 times**, while the fork's
       `GameObjective` family (10 classes, 22 functions, 4 empty stubs) is placed **zero** times in all 73 maps. Mission

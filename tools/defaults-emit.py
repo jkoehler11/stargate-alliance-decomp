@@ -17,7 +17,9 @@ Rendering rules, all of them learned from bytes rather than assumed:
   first character is what made `Description` print as "\\x0cEmpty Order".
 * an object reference renders as `Class'Name'` inside the package and `Class'Package.Name'` across one, which
   is the form the game's own T3D writer uses (`Squad=SQUAD_x'SQUAD_x2'` in `docs/T3D.md`) and the form the
-  shipped source shows (`ProjectorMaterial=Texture'SG1_wep_tex.wep_p90_torchlens'`).
+  shipped source shows (`ProjectorMaterial=Texture'SG1_wep_tex.wep_p90_torchlens'`). The package of a **class**
+  reference is the import's Outer: `class_package` holds the metaclass's package (`Core`) and named a package
+  the class is not in, which is what `outer_package` corrects.
 * a `Byte` property is an enum: `inventory/class_properties.csv` carries the enum's *type* name, and the
   element list is read out of the class's own shipped script (`enum EPhysics { PHYS_None, ... }`). Without
   both halves the value is written as a number, which is why the CSV counts the two cases apart.
@@ -197,6 +199,39 @@ def inner_type(meta):
     return INLINE_FLAGS.sub("", m.group(1).strip())
 
 
+def outer_package(pkg, ref):
+    """The package an imported object lives in: the import's own Outer, not `class_package`.
+
+    `class_package` names the package of the object's **class**, and a class reference's object is a `Class`,
+    which lives in `Core`. So every cross-package class reference rendered as `class'Core.SE_...'` -- a package
+    the class is not in, and a path a compiler would reject. The import's Outer is the package; a name is taken
+    only when that outer object really is one (`Package`), so a nested object answers None. Measured
+    2026-11-11: this corrects 83 of the 315 class references the weapon tree sets, and `tools/weapon-links.py`
+    is the tool that scores it.
+    """
+    if ref >= 0:
+        return None
+    try:
+        imp = pkg.imports[-ref - 1]
+    except IndexError:
+        return None
+    outer = struct.unpack("<i", struct.pack("<I", imp["package"]))[0]
+    if outer == 0:
+        return None
+    if outer < 0:
+        i, table = -outer - 1, pkg.imports
+    else:
+        i, table = outer - 1, pkg.exports
+    if not 0 <= i < len(table):
+        return None
+    if outer < 0:
+        if pkg.name(table[i]["class"]) != "Package":
+            return None
+    elif pkg.class_name_of(table[i]) != "Package":
+        return None
+    return pkg.name(table[i]["name"])
+
+
 def render_ref(pkg, ref, meta):
     got = ref_name(pkg, ref)
     if got is None:
@@ -206,6 +241,8 @@ def render_ref(pkg, ref, meta):
         return None
     object_name = "%s.%s" % (package, name) if package else name
     if meta and meta[0] == "UClassProperty":
+        owner = outer_package(pkg, ref) or package
+        object_name = "%s.%s" % (owner, name) if owner else name
         return "class'%s'" % object_name
     return "%s'%s'" % (cls, object_name)
 
