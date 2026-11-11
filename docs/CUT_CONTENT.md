@@ -132,9 +132,11 @@ Likewise the 63 drifted + 11 divergent `Engine` classes are engine plumbing stil
 ## How much of the script tree the content reaches (`inventory/class_reach.csv`)
 
 The findings above are about missions and audio. This is the same question asked from the other end — for
-each of the 2,319 classes, is anything in the dump built out of it? Four independent signals, all committed:
+each of the 2,319 classes, is anything in the dump built out of it? Six independent signals, all committed:
 placed in a `.unr` (`map_actors.csv`), present in a `.sgs` snapshot (`checkpoint_summary.csv`), a base class
-of something reached (`classes.csv` supers), and named by a map's spawner (`squad_scripts.csv`).
+of something reached (`classes.csv` supers), named by a map's spawner (`squad_scripts.csv`), and — from the
+script side — named in bytecode as a class literal or cast target (`script_class_refs.csv`) or used as a
+declared property type (`class_properties.csv`).
 
 | reach | classes | share |
 |---|---:|---:|
@@ -142,7 +144,9 @@ of something reached (`classes.csv` supers), and named by a map's spawner (`squa
 | reached only through checkpoint state | 79 | 3.4% |
 | a base class of something reached | 93 | 4.0% |
 | **reached by content (any of the above)** | **553** | **23.8%** |
-| referenced by nothing these artifacts can see | 1,766 | 76.2% |
+| named in code, placed by nothing (`DynamicCast`/`ObjectConst`) | 490 | 21.1% |
+| only a declared type somewhere in the script | 102 | 4.4% |
+| referenced by nothing these seven artifacts can see | 1,174 | 50.6% |
 
 Of the 381 placed classes, **359 appear only in mission maps and 22 only in multiplayer maps** (the DM/CTF
 pickups and `LinkedGate` of finding 4), across **141,796 actor instances**. Three independent checks land on
@@ -157,13 +161,24 @@ numbers the system write-ups already published, which is what makes the artifact
 The 79 checkpoint-only classes are the runtime spawns the checkpoint analysis predicted: `SVehicleTrigger`
 1,115 instances, `InventoryAttachment` 288, `AttachmentP90Weap` 266, `Binoculars` 218.
 
-**What "referenced by nothing" does not mean.** It is 76.2% of the tree, and calling that cut content would be
+**The script side halves the residue and does not close it.** `python3 tools/uscript-dis.py --class-refs` walks
+the same 11,602 scripts the call census walks and records every `ObjectConst`/`DynamicCast`/`MetaClassCast`
+operand that resolves to a `Class`: **5,587 references over 675 distinct classes** (`DynamicCast` 4,153,
+`ObjectConst` 1,305, `MetaClassCast` 129; `Pawn` 591, `StargatePawn` 433, `PlayerController` 388). Of the 1,766
+classes no content artifact could see, **490 are named that way**; another **102** are only a declared variable,
+parameter or return type (`class_properties.csv`'s `friendly_type`: 429 classes, 1,908 declarations). That leaves
+**1,174 classes (50.6%) invisible to all seven artifacts** — but naming is not instantiation: a `DynamicCast`
+target is a test, and an unplaced class named only that way still has no evidence anything builds it, which is
+why the two script labels never count as "reached by content".
+
+**What "referenced by nothing" does not mean.** It is 50.6% of the tree, and calling that cut content would be
 the same mistake finding 7 warns about. A class is invisible to these artifacts when it is reached only
 through a *default property* — a pawn's `InventoryClasses`, a squad roster's members, an `AIScript` — and
 defaults values are game data this repository does not publish (`docs/CLASS_DEFAULTS.md` reads them, but the
 values stay in `$WORK`). Abstract bases, native shells and classes the engine names in C++ are the rest. What
-the artifact does support is the opposite direction: **553 classes are provably reachable**, and any future
-claim that a system is unused has to explain why its classes are not among them.
+the artifact does support is the opposite direction: **553 classes are provably reachable by the content and
+592 more are named by the script**, and any future claim that a system is unused has to explain why its classes
+are not among them.
 
 One negative worth recording: `squad_scripts.csv`'s 601 names match **no** class in the tree. They name
 `.uc` AI scripts, not classes, so the spawner→roster link stays a defaults-level reference and cannot be

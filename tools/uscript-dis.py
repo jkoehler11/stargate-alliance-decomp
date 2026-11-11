@@ -941,6 +941,100 @@ def resolve_report(path, table):
 
 
 
+CLASS_REF_TOKENS = ("ObjectConst", "DynamicCast", "MetaClassCast")
+
+
+def class_refs_report(path, table, out=None):
+    """Which classes the scripts name in code -- a class literal or a cast target -- resolved per package.
+
+    A `ObjectConst`, `DynamicCast` or `MetaClassCast` operand is an object reference, so the value indexes the
+    export table or (negated) the import table; when the object it names is itself a `Class`, the operand names
+    that class. This is the code side of the question `tools/class-reach.py` asks from the content side: a class a
+    script names is one a rebuild has to carry, whether or not a map places an instance of it. Naming is not
+    instantiation -- `class'Foo'` passed to `Spawn` is, a `DynamicCast` target is only a test -- which is why the
+    row records the token that named it.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    rows = []
+    seen = walked = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        pkg_name = os.path.basename(one).rsplit(".", 1)[0]
+        exports = [(pkg.name(e["name"]), pkg.class_name_of(e)) for e in pkg.exports]
+        imports = [(pkg.name(i["name"]), pkg.name(i["class"])) for i in pkg.imports]
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, ok = 0, None, True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    ok = False
+                    break
+            if not ok or last != e["name"]:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            seen += 1
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = parse(pay[start:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+                continue
+            walked += 1
+            owner = pkg.name(pkg.exports[e["outer"] - 1]["name"]) if e["outer"] > 0 else "?"
+            stack = list(nodes)
+            while stack:
+                node = stack.pop()
+                stack.extend(node["children"])
+                token = table.rows[node["opcode"]]["name"]
+                if token not in CLASS_REF_TOKENS or not node["operands"]:
+                    continue
+                value, _e = read_index(node["operands"], 0)
+                if 0 < value <= len(exports):
+                    target = exports[value - 1]
+                elif value < 0 and -value <= len(imports):
+                    target = imports[-value - 1]
+                else:
+                    continue
+                rows.append((pkg_name, owner, pkg.name(e["name"]), token, target[0], target[1]))
+    named = [r for r in rows if r[5] == "Class"]
+    print("%d scripts walked; %d class-reference operands, %d of them name a Class (%d distinct)"
+          % (walked, len(rows), len(named), len({r[4] for r in named})))
+    print("  by token: %s"
+          % ", ".join("%s %d" % kv for kv in collections.Counter(r[3] for r in named).most_common()))
+    print("  top classes named: %s"
+          % ", ".join("%s %d" % kv for kv in collections.Counter(r[4] for r in named).most_common(8)))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "script_class_refs.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["package", "class", "function", "token", "target", "target_class"])
+            for row in rows:
+                w.writerow(list(row))
+        print("wrote %s/script_class_refs.csv (%d rows)" % (out, len(rows)))
+    return 0
+
+
 CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalFunction": "by name"}
 
 
@@ -1549,6 +1643,8 @@ def main():
                     help="what the opcodes above 0x5f call: each index read against the caller's native chain")
     ap.add_argument("--calls", metavar="PATH",
                     help="every script-level call site, static or by name, for a package or a System directory")
+    ap.add_argument("--class-refs", metavar="PATH",
+                    help="which classes the scripts name in code: class literals and cast targets")
     ap.add_argument("--resolve", metavar="PATH",
                     help="for each index operand, what the value points at (a check on the operand rules)")
     ap.add_argument("--switches", metavar="PATH",
@@ -1577,6 +1673,8 @@ def main():
         return native_calls_report(args.native_calls, Table(), args.out)
     if args.calls:
         return calls_report(args.calls, Table(), args.out)
+    if args.class_refs:
+        return class_refs_report(args.class_refs, Table(), args.out)
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.selftest:

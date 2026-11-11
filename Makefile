@@ -604,6 +604,9 @@ decompiler-gaps:
 script-calls:
 	@$(PYTHON) tools/uscript-dis.py --calls "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 
+class-refs:
+	@$(PYTHON) tools/uscript-dis.py --class-refs "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+
 opcode-usage:
 	@$(PYTHON) tools/uscript-dis.py --usage "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 
