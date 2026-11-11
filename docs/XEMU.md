@@ -1008,6 +1008,15 @@ first-person HUD scene with `CARTER`'s portrait and a shotgun, the other a cutsc
 set is 32 boots (about two hours at the measured cost), so 7.2's full sweep is now a matter of harness time, not of
 access.
 
+**The verdicts are an artifact now (2026-11-10).** `inventory/map_loads.csv` carries one row per index --
+`index,name,result,attempts,runs,detail` -- merged by `tools/xemu/map-loads.py` from the `missions.sh` run
+directories that produced the table above (`make map-loads`), and `docs/MAP_LOADS.md` renders it between its own
+markers, so the page cannot drift from the rows. The merge is cumulative because `missions.tsv` is truncated per
+invocation, which is what makes a sweep resumable: `PASS` wins over `FAIL` when a later run contradicts an earlier
+one, `attempts` adds the boots up, and a row that never passed keeps the failure's own reason. The second half is
+being swept from index 41 upward with the same harness; that page's table says which indices have a row, so "how
+much of the campaign loads" is a number rather than a paragraph.
+
 ## `QUICK SELECT MAP` lists every map on the disc; the 41-entry table was a paging artefact (measured 2026-11-04,
 corrected 2026-11-05)
 
