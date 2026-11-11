@@ -541,7 +541,8 @@ defaults-per-class:
 
 # Where a class export stops being a record, and what the payload after it is (docs/CLASS_DEFAULTS.md). Two anchors
 # from the export table place the record's prefix on all 2,319 classes; the block the locator found is the record's
-# end, so the 109 "no block" rows split into 50 records with no stream and 59 payloads still unexplained.
+# end, so the 109 "no block" rows split into 50 records with no stream and 59 payloads still unexplained. The two
+# trailing-byte columns are a control, not an instrument: every class payload ends in 00, so a tail byte locates no end.
 class-records:
 	@$(PYTHON) tools/class-record.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
 	@$(PYTHON) tools/class-record.py --report -o inventory

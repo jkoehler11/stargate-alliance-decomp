@@ -1031,6 +1031,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the trailing byte of a class payload cannot locate its end)
+
+- **The one-byte terminator for the 109 `empty-block` records is measured and rejected, and the control is what rejects
+  it.** The obvious close — read the payload's last byte as the terminator of a zero-tag stream, so the record is
+  `payload-1` bytes on all 109 (80–1,395, median 102; the 50 `record-only` 80–99, the 59 `long-no-block` 100–1,395)
+  — holds for every payload in the population and so locates nothing: **2,319 of 2,319** class payloads end in `00`,
+  and a one-byte empty tag stream (a name index of 0) parses at `payload-1` on **2,319 of 2,319**, including the
+  **2,209** whose record end a located block already fixes at a much earlier byte. So the 109 record lengths stay
+  bounded by `RECORD_WINDOW` and the length distribution, and the residue is unchanged — which is worth more than the
+  number it refuses, because the number was about to be written down as measured.
+- **#360's "the class's function table sits inside the record" is a correlation and not a layout claim.** r **0.80**
+  with `Function` exports and **0.67** with `Property` exports over 2,189 measured blocks say the record grows with
+  the class; nothing decodes its body, and the `empty-block` rows cannot serve as counterexamples because their length
+  is exactly what is missing.
+- `inventory/class_records.csv` gains `last_byte` and `empty_at_end` (2,319 rows, beside `block_start`/`shape`, so the
+  saturation is auditable on the rows whose true end is known), `--report` prints both counts plus the located
+  denominator, and `docs/CLASS_DEFAULTS.md` §"Where a class payload stops being a record" carries the negative next to
+  the residue. A local `--empties` mode writing a 109-row `class_record_empties.csv` was trialled and not committed:
+  per class it recorded the same saturated predicate, which the two columns already show against a control.
+
 ### Execution notes (2026-11-11, a class record is anchored on two indices, and the 109 no-block rows split 50/59)
 
 - **The `empty-block` reason is now a measurement for 50 of its 109 rows, and the other 59 are a named residue.**
