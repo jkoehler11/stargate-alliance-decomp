@@ -16,10 +16,12 @@ guessed field order:
 
 The record's end is then measured, not derived: for a class whose defaults block the locator did find, the block's
 start **is** the record's length, and the distribution of that length is the window a payload has to fall in before
-"there is no stream here" becomes an honest reading rather than a parse failure. That length is not a header's: it
-tracks the number of `Function` exports the class owns (Pearson r **0.80** over 2,189 located blocks, and a class with
-none has a 92-byte record while one with more than sixty has a 3,410-byte median), so the record carries the class's
-function table.
+"there is no stream here" becomes an honest reading rather than a parse failure. The one obvious way to finish the
+109 -- read their trailing byte as a terminator and call the record `payload-1` -- is measured here and **rejected**:
+every one of the 2,319 class payloads ends in `00`, and a one-byte empty tag stream (a name index of 0) parses at
+`payload-1` on 2,319 of 2,319, including the 2,209 whose record end a located block already fixes. The pair is
+saturated, so it locates no end and those payloads stay bounded by the window. Every row carries both, so the next
+session can see the control instead of re-deriving the guess.
 
     python3 tools/class-record.py DUMP/System --class Engine.Sound
     python3 tools/class-record.py DUMP/System --sweep -o inventory
@@ -30,6 +32,7 @@ payload's own four-byte tail, which is structure, not content.
 import argparse
 import collections
 import csv
+import importlib.util
 import os
 import struct
 import sys
@@ -38,6 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ue2pkg import Package  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_prop_stream = None
 
 # The record length is not one number: 2,189 located blocks start anywhere from 8 to 13,665 bytes after the prefix,
 # with a median of 96 and a p90 of 401 (a class record carries the class's function table, so a function-rich class
@@ -117,6 +121,15 @@ def measure(pkg, exp, class_index, buffers, block_start=None, functions=0):
         row["record_bytes"] = block_start
     row["functions"] = functions
     row["tail"] = data[-4:].hex() if len(data) >= 4 else data.hex()
+    row["last_byte"] = data[-1:].hex()
+    # Does one byte at the payload's end parse as a complete, empty tag stream? A single zero index byte does, so the
+    # answer is 1 wherever the payload ends in 00 -- which is every class payload, so the column is a control and not
+    # an instrument: keep it beside `block_start`, where the true end is known, to show that.
+    try:
+        props, _end, reason = load_prop_stream().read_block(data[-1:], pkg, False)
+        row["empty_at_end"] = 1 if (reason == "None" and not props) else 0
+    except Exception:
+        row["empty_at_end"] = 0
     row["payload"] = len(data)
     return row
 
@@ -151,6 +164,7 @@ def walk(system_dir):
 
 
 def sweep(system_dir, outdir):
+    load_prop_stream()
     base = base_rows(outdir)
     rows, reasons = [], collections.Counter()
     for pkg_name, pkg in walk(system_dir):
@@ -167,13 +181,14 @@ def sweep(system_dir, outdir):
             reasons[shape] += 1
             rows.append([pkg_name, cls, m["payload"], m["super_index"], m["super_matches"],
                          m["scripttext_index"], m["scripttext_at"], m["record_bytes"], shape, start, m["tail"],
-                         m["functions"]])
+                         m["functions"], m["last_byte"], m["empty_at_end"]])
     path = os.path.join(outdir, "class_records.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["package", "class", "payload", "super_index", "super_matches", "scripttext_index",
-                    "scripttext_at", "record_bytes", "shape", "block_start", "tail", "functions"])
+                    "scripttext_at", "record_bytes", "shape", "block_start", "tail", "functions",
+                    "last_byte", "empty_at_end"])
         w.writerows(rows)
     print("%d class exports: %s" % (len(rows), ", ".join("%s %d" % (k, v) for k, v in reasons.most_common())))
     print("wrote %s" % path)
@@ -195,6 +210,18 @@ def read_reasons(outdir):
 def at_share(values, share):
     """Nearest-rank value of a sorted list at `share`; 0 for an empty list."""
     return values[min(len(values) - 1, int(round(share * (len(values) - 1))))] if values else 0
+
+
+def load_prop_stream():
+    """`tools/prop-stream.py` is hyphenated, so it is imported by path; loaded once per process."""
+    global _prop_stream
+    if _prop_stream is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prop-stream.py")
+        spec = importlib.util.spec_from_file_location("prop_stream", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _prop_stream = mod
+    return _prop_stream
 
 
 def report(rows, outdir):
@@ -257,6 +284,13 @@ def report(rows, outdir):
                 split[(reason, r[8])] += 1
         print("misses by shape         %s"
               % ", ".join("%s/%s %d" % (a, b, v) for (a, b), v in sorted(split.items())))
+    if len(rows[0]) > 13:
+        zero = [r for r in rows if r[12] == "00"]
+        at_end = [r for r in rows if r[13] == "1"]
+        located = [r for r in rows if r[13] == "1" and r[8] == "located"]
+        print("trailing byte           %d of %d payloads end in 00" % (len(zero), len(rows)))
+        print("empty parse at end      %d of %d, of which %d have their record end fixed by a located block -- "
+              "saturated, so it is not a record-end locator" % (len(at_end), len(rows), len(located)))
 
 
 def selftest():

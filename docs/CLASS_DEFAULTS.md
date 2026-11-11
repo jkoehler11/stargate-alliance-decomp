@@ -277,10 +277,12 @@ tag format), or a class whose defaults are known from the shipped text. The ship
 
 ## Where a class payload stops being a record
 
-`--misses` reports a class with no locatable block as `empty-block`, which is a reason and not a measurement: the
-payload either holds a record and nothing else, or a record followed by bytes the locator failed to parse.
-`tools/class-record.py` splits the two with two indices that come out of the package's own export table, so neither
-rests on a guessed field order:
+`--misses` calls a class `empty-block` when the payload parses a valid *empty* block somewhere and no offset anywhere
+carries two of the class's declared properties — a reason and not a measurement: the payload may be a record and
+nothing else, or a record followed by a stream the locator failed to read. The first clause holds for *every* class
+payload (each ends in `00`, so an empty parse at the last byte is free — see below), which leaves the second as the
+real content of the reason. `tools/class-record.py` splits the two with two indices that come out of the package's own
+export table, so neither rests on a guessed field order:
 
 * **`Super` is the record's first field, as a compact index.** Each export row carries its own `super`, and the value
   the payload opens with must be that number (`-n` = import `n`, positive = export). It agrees on **2,319 of 2,319**
@@ -291,10 +293,11 @@ rests on a guessed field order:
   byte — for **2,319 of 2,319**.
 
 The record's *end* is measured, not derived. Where the locator found a block, that block's start **is** the record's
-length, and the length is not a header's: it tracks the number of `Function` exports the class owns (Pearson
-**r 0.80** over 2,189 blocks). A class that owns no `Function` export has a **92-byte** median record, 1–5 functions
-**123**, 6–20 **288**, 21–60 **670**, more than sixty **3,410** — the class's function table sits inside the record,
-which is why `PlayerController`'s is 13,665 bytes.
+length. The length tracks the class's size — the correlation with the number of `Function` exports the class owns is
+**0.80** over 2,189 blocks (none: **92-byte** median; 1–5: **123**; 6–20: **288**; 21–60: **670**; more than sixty:
+**3,410**), and with its `Property` exports **0.67** over the same blocks. That is a correlation and not an identity:
+nothing here decodes the record's body, so it says the record grows with the class and not that a field per function
+sits in it.
 
 | measure | value |
 |---|---|
@@ -330,6 +333,16 @@ tails are the record's own and dominated by `83 03 00 00` (28 of 50), `89 06 00 
 **The 59 `long-no-block` payloads are 101–1,396 bytes (median 125)**: a record accounts for the front of each and the
 remainder is still a locator miss. That is the residue, and it is 59 of the 109 `empty-block` rows rather than all of
 them.
+
+The shortest way to close it would be to read each payload's last byte as the terminator of a zero-tag stream, which
+would put the record at `payload-1` bytes on all 109 (80–1,395, median 102; the 50 `record-only` 80–99, median 94,
+the 59 `long-no-block` 100–1,395, median 121). **Measured over the whole corpus, that is not available.** Every one
+of the 2,319 class payloads ends in `00`, and a one-byte empty tag stream — a name index of 0 — parses at `payload-1`
+on 2,319 of 2,319, *including the 2,209 whose record end a located block already fixes at a much earlier byte*. A
+predicate that holds on every payload in the population cannot locate an end: it is the trailing zero, not a record
+boundary. `inventory/class_records.csv`
+therefore carries `last_byte` and `empty_at_end` beside `block_start` and `shape`, so the control sits on every row
+where the true end is known, and a later session can read the saturation instead of re-deriving the guess.
 
 What would settle the 59: a start rule that does not require the tags to reach the payload's last byte, or the runtime
 reader of the trailing table (`docs/NATIVE_PROPERTIES.md`'s route for the tag format). What would falsify the 50: a
