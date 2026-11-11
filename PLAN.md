@@ -1031,6 +1031,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the native-call opcode is the `GNatives` slot itself, and 0xe7 is `Object.Log`)
+
+- **The previous note's open question is settled, and its reading was off by `0x70`.** `tools/uscript-dis.py
+  --native-calls` now scores three index rules side by side: the token itself, `op - 0x70` (what the first census
+  used) and `op - 0x60`. Against the caller's own super chain, **42,056 of the 48,422 sites name a `native()`
+  declaration under the token-as-index rule against 5,864 under `op - 0x70`** -- and the image's own `.data` record,
+  the binder strings `intUObjectexec<Function>` that U7 already measured, spells the body at each token's slot:
+  **111 of the 120 direct opcodes, 38,950 sites, name the declaration's function exactly**, the other nine only
+  differing in spelling (`execConcat_StringString` for `Concat_StrStr`). Under `op - 0x70`, **0 of 120** match.
+- **So there is no operator band and no second numbering.** The "38,143 sites on slots 0..95 that name nothing" are
+  slots `112..207` and all declared; the one-byte form spans `112..255`, the declared band, and the two-byte form
+  exists only beyond 255, which is exactly where every extended site sits.
+- **`0xe7` is `Object.Log`, not `NotEqual_ObjectObject`.** Slot 231 takes one string and 1,072 of its 1,186 sites pass
+  one argument; slot 119 (`0x77`) is `NotEqual_ObjectObject` with 5,368 sites of exactly two. The earlier row had the
+  two swapped by the offset, which is why its arity never fitted. `0xfe` likewise reads as slot 254
+  `Object.EqualEqual_NameName` (414/414 two arguments, `Tag == 'Foo'`), not `EqualEqual_RotatorRotator`.
+- **What stays unresolved is the class half, not the index.** 6,366 sites (13%) name no declaration on the caller's
+  chain: 1,480 are extended calls into engine classes the script never declares (`intUCanvasexecDrawText` 352,
+  `execStrLen` 120, `execDrawActor` 8), and the rest are callers whose class the inventory's super map does not carry.
+- Tool (`--native-calls`, three scored rules, `inventory/native_opcodes.csv` gains `body_name` and `body_match`) +
+  `docs/BYTECODE.md` section "The opcodes above `0x5f` carry the native index itself" (its "Not measured" bullet
+  corrected to the residue) + `docs/UNKNOWNS.md` U7's closure paragraph + `make native-opcodes`.
+
 ### Execution notes (2026-11-11, the opcodes above 0x5f are native calls and their arity is constant)
 
 - **The page's last open opcode item is measured, not reserved.** `tools/uscript-dis.py --native-calls` reads every
