@@ -1031,6 +1031,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a switch's operand byte is the width of the value it compares, and zero is a wide string)
+
+`0x05`'s operand was the last unnamed byte on the bytecode page and the table's note called it a case count, which
+the corpus contradicts: four cases and a `1`, sixteen cases and a `0`. The image's interpreter settles it.
+**`execSwitch` is `GNatives` slot 5** (`0x0004ca20`, 348 bytes, `Native_5`), it reads the byte itself, evaluates the
+expression into a 12-byte result buffer, and then per case reads a 16-bit offset and a value expression into a
+second buffer and compares the two with **`FUN_00036bd0` -- `repz cmpsb` over its third argument** (no locals, a bare
+`ret`). At byte `0` it calls **`__wcsicmp`** (`0x00036d00`) on the same two buffers instead, and destroys them as
+`FString`s afterwards -- the teardown runs only in that arm, so the buffers are strings exactly when the width is
+zero. So the byte is **the width, in bytes, of the value being switched on**, and zero is "a wide string".
+
+**The corpus agrees three ways** (`make switch-operands`, `tools/uscript-dis.py --switches`,
+`inventory/switch_operands.csv`, 105 switch sites in 11,602 clean-walking scripts): width 1 on 78 sites whose 273
+case values are **all `ByteConst`** (`ByteConst` appears under no other width), width 4 on 20 sites whose cases are
+the compact int tokens (`IntConstByte` 40, plus `NameConst` 8 and `InstanceVariable` 8), and width 0 on 7 sites, of
+which `UWindowHTMLTextArea.GetHexDigit` carries the 16 `StringConst` cases and is the string switch.
+
+**Residue, recorded not explained**: six zero-width sites (`UDebugMenu`/`UWindow` `Combo_SetupSizes`,
+`Checkbox_SetupSizes`, `Editbox_SetupSizes`) and one four-width site (`StargateMenus.ButtonClick`) have no case list
+at all -- no `0xffff` terminator -- which a switch cannot be; they are artifact rows with `ended=end`. The table's
+`0x05` note is corrected in `tools/opcode-table.py` and `inventory/opcode_table.csv` in the same commit. The mode is
+dump-side and therefore not in `make ci`; `--selftest` still covers the tool's wiring. This closes the `0x05` half of
+3.7's operand-semantics residue; the other half (22% of virtual-call names) stands.
+
 ### Execution notes (2026-11-11, a quarter of the by-name calls are declared on an ancestor, and the rest need a receiver)
 
 - **The call graph's dynamic half was asking one package the wrong question.** `--calls` resolved a by-name target

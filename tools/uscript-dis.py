@@ -1256,6 +1256,139 @@ def calls_report(path, table, out=None):
 
 
 
+def switches_report(path, table, out=None):
+    """What a `0x05` switch's operand byte is: the width, in bytes, of the value it compares.
+
+    `execSwitch` is the body `GNatives` slot 5 holds (`0x0004ca20`, 348 bytes) and it reads the operand itself:
+    one byte, then the switch expression evaluated into a 12-byte result buffer, then per case a 16-bit offset, a
+    case value expression into a second buffer, and a comparison. `FUN_00036bd0` is that comparison -- `repz cmpsb`
+    over the count in its third argument, no locals, `ret` -- and when the byte is zero the body calls `__wcsicmp`
+    (`0x00036d00`) on the two buffers instead. So the byte is the number of bytes compared, i.e. the width of the
+    value the switch compares, and zero says the value is a wide string.
+
+    This mode is the corpus side of that reading: the byte each switch carries, the opcodes the expression and the
+    case values are built from, and how many cases follow. The width reading has to survive three pairs -- 1 with
+    one-byte constants, 4 with `IntConst`, 0 with `StringConst` -- and any other byte is a finding.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    def nm(op):
+        return (table.rows[op]["name"] or "op%02x" % op) if op in table.rows else "?"
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    rows = []
+    sites = collections.Counter()          # (byte, expression opcode) -> sites
+    values = collections.Counter()         # (byte, case-value opcode) -> case values
+    span = {}                              # byte -> [min cases, max cases]
+    ended = collections.Counter()          # (byte, how the case list ended) -> sites
+    walked = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        name = os.path.basename(one).rsplit(".", 1)[0]
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            found = top_level(pkg, e, table)
+            if found is None:
+                continue
+            nodes, data = found
+            walked += 1
+            cls = pkg.name(pkg.exports[e["outer"] - 1]["name"]) if e.get("outer") else "-"
+            func = pkg.name(e["name"])
+            for i, node in enumerate(nodes):
+                if node["opcode"] != 0x05:
+                    continue
+                byte = node["operands"][0] if node["operands"] else -1
+                expr = node["children"][0]["opcode"] if node["children"] else -1
+                sites[(byte, expr)] += 1
+                seen, vals, why = 0, [], "end"
+                for nxt in nodes[i + 1:]:
+                    if nxt["opcode"] == 0x05:
+                        why = "nested-switch"
+                        break
+                    if nxt["opcode"] != 0x0A:
+                        continue
+                    if nxt["operands"][:2] == b"\xff\xff":
+                        why = "terminator"
+                        break
+                    seen += 1
+                    # The case is `<2-byte offset><value expression>`; the byte after the offset names the
+                    # token the value is built from, which is the check this census exists for.
+                    pos = nxt["offset"] + 3
+                    if pos < len(data):
+                        vals.append(data[pos])
+                        values[(byte, data[pos])] += 1
+                ended[(byte, why)] += 1
+                lo, hi = span.get(byte, (None, None))
+                span[byte] = (seen if lo is None else min(lo, seen), seen if hi is None else max(hi, seen))
+                rows.append([name, cls, func, "0x%04x" % node["offset"], byte, nm(expr), seen,
+                             ";".join(nm(v) for v in sorted(set(vals))) or "-", why])
+    total = sum(sites.values())
+
+    print("%d scripts walk clean; %d switch sites" % (walked, total))
+    print("%-4s %6s %-30s %-30s %s" % ("byte", "sites", "expression built from", "case values built from", "cases"))
+    for byte in sorted(span):
+        exprs = [(nm(op), n) for (b, op), n in sites.items() if b == byte]
+        vals = [(nm(op), n) for (b, op), n in values.items() if b == byte]
+        print("%-4d %6d %-30s %-30s %d..%d" % (
+            byte, sum(n for _t, n in exprs),
+            ", ".join("%s %d" % kv for kv in sorted(exprs, key=lambda kv: -kv[1])[:3]),
+            ", ".join("%s %d" % kv for kv in sorted(vals, key=lambda kv: -kv[1])[:3]),
+            span[byte][0], span[byte][1]))
+    print("how each case list ended: %s" % ", ".join(
+        "byte %d %s %d" % (b, why, n) for (b, why), n in sorted(ended.items(), key=lambda kv: -kv[1])))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        path_out = os.path.join(out, "switch_operands.csv")
+        with open(path_out, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["package", "class", "function", "offset", "width", "expression", "cases",
+                        "case_values", "ended"])
+            for row in sorted(rows):
+                w.writerow(row)
+        print("wrote %s (%d switch sites, widths %s)"
+              % (path_out, total, ", ".join(str(b) for b in sorted(span))))
+    return 0
+
+
+def top_level(pkg, export, table):
+    """A function's top-level token list and the bytes it was parsed from, or None when it does not disassemble."""
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    pay = pkg.data[export["offset"]:export["offset"] + export["size"]]
+    n = len(pay)
+    off, last, ok = 0, None, True
+    for _ in range(6):
+        try:
+            last, off = read_index(pay, off)
+        except IndexError:
+            ok = False
+            break
+    if not ok or last != export["name"]:
+        return None
+    if n >= 10 and pay[n - 10:n - 7] == epilogue:
+        end = n - 7
+    elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+        end = n - 9
+    else:
+        return None
+    start = off + 16
+    if start >= end:
+        return None
+    data = pay[start:end]
+    try:
+        nodes = parse(data, table)
+    except Refused:
+        return None
+    if sum(x["end"] - x["offset"] for x in nodes) != len(data):
+        return None
+    return nodes, data
+
+
 def flatten(nodes):
     """Tokens in stream order, as (opcode, operands) -- the unit a match percentage is computed over."""
     out = []
@@ -1391,6 +1524,8 @@ def main():
                     help="every script-level call site, static or by name, for a package or a System directory")
     ap.add_argument("--resolve", metavar="PATH",
                     help="for each index operand, what the value points at (a check on the operand rules)")
+    ap.add_argument("--switches", metavar="PATH",
+                    help="what a 0x05 switch's operand byte is: the width of the value it compares")
     ap.add_argument("--usage", metavar="PATH",
                     help="which opcodes the shipped scripts that walk clean actually use")
     ap.add_argument("-o", "--out", help="write inventory/opcode_usage.csv into this directory (with --usage)")
@@ -1405,6 +1540,8 @@ def main():
         return start_report(args.start)
     if args.script:
         return function_script(args.script[0], args.script[1], args.script[2], Table(), hex_bytes=args.hex_bytes)
+    if args.switches:
+        return switches_report(args.switches, Table(), args.out)
     if args.usage:
         return usage_report(args.usage, Table(), args.out)
     if args.resolve:

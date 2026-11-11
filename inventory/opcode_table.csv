@@ -4,7 +4,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x02,0,0x00039c0e,DefaultVariable,index,0,map,object/name reference as a compact index
 0x03,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; this build rejects it too
 0x04,1,0x00039dec,Return,expr,0,map,one nested token
-0x05,2,0x00039d12,Switch,"bytes:1,expr",1,map,case-count byte then the expression
+0x05,2,0x00039d12,Switch,"bytes:1,expr",1,map,"value width in bytes, 0 = wide string (execSwitch)"
 0x06,3,0x00039a14,Jump,bytes:2,2,map,code offset
 0x07,4,0x00039cce,JumpIfNot,"bytes:2,expr",2,map,code offset then the condition
 0x08,5,0x00039e38,Stop,,0,map,"no operand bytes, no children: the handler returns the opcode"

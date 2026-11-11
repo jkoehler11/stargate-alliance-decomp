@@ -335,6 +335,42 @@ matches while the bytes do not, which is exactly the distinction the three tiers
 **What this leaves of 3.8** is the oracle side: to score a rebuild, something has to produce one, and that is `ucc`.
 The comparator is now the part that does not wait.
 
+## The switch operand is a width, and zero is a wide string
+
+The `0x05` byte was the last unnamed operand on this page, and it is not a case count: it is **the number of bytes
+the case comparison reads**, with **zero meaning the value is a wide string**. Two independent readings agree.
+
+**The image's interpreter.** `GNatives` slot 5 holds the switch's own body (`0x0004ca20`, 348 bytes, `Native_5` in
+the symbol map) and it reads the operand itself instead of letting the walker hide it: one byte, then the switch
+expression evaluated into a 12-byte result buffer, then per case a 16-bit offset, a case value expression into a
+second buffer, and a comparison. That comparison is `FUN_00036bd0` -- `repz cmpsb` over its third argument, no
+locals, a bare `ret` -- so the byte's value is a byte count. At zero the body takes the other arm, calls `__wcsicmp`
+(`0x00036d00`) on the same two buffers, and only then destroys them (the two teardown calls before `ret` run **only**
+when the byte is zero, which says the same thing a second way: the buffers are `FString`s exactly when the width is
+zero).
+
+**The corpus.** `make switch-operands` (`tools/uscript-dis.py --switches`; rows in `inventory/switch_operands.csv`)
+walks every script that disassembles -- 11,602 of them -- and finds **105 switch sites carrying three widths**:
+
+| width | sites | case values are built from | cases per switch |
+|---|---:|---|---|
+| 0 | 7 | `StringConst` 16 (one site, `UWindowHTMLTextArea.GetHexDigit`) | 0..16 |
+| 1 | 78 | `ByteConst` 273 | 1..14 |
+| 4 | 20 | `IntConstByte` 40, `NameConst` 8, `InstanceVariable` 8 | 0..17 |
+
+The split is the check. A one-byte value's cases are **all** `ByteConst` (273 of 273) and `ByteConst` appears under
+no other width, while an int's cases are the compact int tokens (`IntConstByte`, `IntZero`, `IntOne`). The width is
+therefore a property of the value's type as the compiler saw it, not of the case list -- which is why the
+"case-count byte" reading the opcode table carried until now could not be right: `Engine.IMusicActor.
+ConvertStateToTransitionType` switches on a byte with four cases and its operand is `1`, and
+`UWindowHTMLTextArea.GetHexDigit` switches on a string with sixteen `StringConst` cases and its operand is `0`.
+
+**Residue, named rather than explained.** Six of the seven zero-width sites (`UDebugMenu` and `UWindow`
+`Combo_SetupSizes`, `Checkbox_SetupSizes`, `Editbox_SetupSizes`) are followed by **no case list at all** -- no
+`0xffff` terminator, no case, which a switch cannot be -- and `StargateMenus.ButtonClick`'s four-width site ends the
+same way. They are rows in the artifact with `ended=end`: the token the table calls `0x05` is doing something this
+page does not yet describe, and the census records that instead of guessing at it.
+
 ## Not measured
 
 * **Where a script starts inside a `Function` payload (U13).** The tail is solved (above), the header's encoded part
@@ -359,10 +395,11 @@ The comparator is now the part that does not wait.
   (`--header` reports the per-position classification), which is why the per-child `Children`-chain model this
   document used to propose is dead — and its +1/+2/+3 residuals were the compact encoding's widths.
 * **Operand semantics.** What the reference operands *name* is now measured per opcode (`--resolve`, above): objects
-  for the variable, cast and final-call tokens, the name table for the virtual and global calls and `NameConst`. What
-  is left of this item is the residue: what a `0x05` switch's byte means, and the 22% of virtual-call operands whose
-  name is not a function the package declares (a native parent's function, most likely, which the name table alone
-  cannot confirm).
+  for the variable, cast and final-call tokens, the name table for the virtual and global calls and `NameConst`. The
+  `0x05` switch's byte is measured too (`## The switch operand is a width`): it is the number of bytes the case
+  comparison reads, and zero means the value is a wide string. What is left of this item is the 22% of virtual-call
+  operands whose name is not a function the package declares (a native parent's function, most likely, which the name
+  table alone cannot confirm).
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
   declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by
