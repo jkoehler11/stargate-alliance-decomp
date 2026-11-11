@@ -1031,6 +1031,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a pack holds one `VoiceSets` array and its sounds are imports)
+
+- **The pack's whole content is one default property, and the emitter's locator cannot see it.** A `*VoicePack`
+  class payload is a class record plus a single tagged `VoiceSets` array; `tools/class-defaults.py` requires two
+  properties in a candidate block, so the 20 `*VoicePack` rows in `inventory/class_defaults_misses.csv` are
+  exactly this shape and stay `incomplete` there. `tools/voice-sets.py` (`make voice-sets`) reads the array
+  straight from the package into `inventory/voice_sets.csv`: **9 of the 25 pack classes carry a `VoiceSets`
+  array — 337 slots, 336 of them resolving to a `VoiceSet`, 1227 `Sound` references** — and the other 16 set no
+  array at all (10 of those payloads are exactly 108 bytes, the class record alone), so they are silent packs.
+- **A sound reference is negative, i.e. an import.** The sets live in `StargateContent.u`, but every one of the
+  1227 sound references resolves to a `Sound` import from the character's own package; counting only positive
+  references made a correctly parsed array read as zero sounds, which is the failure mode to remember here.
+- **A `VoiceSet` block is `VDesc` (struct) + `VSounds` + `VSoundsDesc`, and reading it by scanning for tag names
+  is wrong twice over.** A struct's name index precedes its size class (so `VDesc` is 66 bytes, not the 19 a
+  first walk measured), and `VDesc`'s bytes can spell a `VSounds` + Array coincidence. `tools/prop-stream.py`
+  already reads this layout — it is the reader the save/`defaults` work derived from the game's own code — so
+  the tool locates the block that terminates at the payload's last byte and takes its properties from there; a
+  hand-rolled `parse_tag`/`scan` pair was deleted rather than repaired.
+- **Not every set carries sounds, and the three shapes are counted.** Of the 336 sets, 274 carry the full triple
+  and in 274 the descriptor count equals the sound count, 25 carry `VSounds` plus load-priority flags
+  (`VLoadPriorityLow`, `VOnlyPlayIfLoaded`, `VPreCaching`) and no descriptor array, and 37 are `VDesc`-only
+  templates. The per-sound `VoiceDesc`'s *fields* remain unread; that is the page's remaining open question.
+- **The numbers are one lower than the probe that opened the task** (Carter 352 not 353, Jackson 241, ONeill 279,
+  Tealc 252): the earlier probe counted an empty `0` element as a sound, and the artifact counts references that
+  resolve. Six empty elements exist across the nine packs (one each in the SG-1 four, four each in `JaffaL`/`JaffaM`).
+
 ### Execution notes (2026-11-11, the voice pack is a per-pawn default and the selector is a lottery)
 
 - **`AUDIO.md`'s open question was two questions, and only one of them had a mission in it.** "Which voice pack a
