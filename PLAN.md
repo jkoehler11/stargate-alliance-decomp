@@ -1031,6 +1031,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a local is a record the function owns and its type is in the shipped source — 490 more sites, 91% placed)
+
+- **A local's operand is an export, not a table index.** Every one of the 540 local receiver sites in `Engine.u`
+  resolves to a property export whose **outer is the calling function** (389 `ObjectProperty`, 62 `IntProperty`,
+  37 `StrProperty`, 23 `ClassProperty`, 9 `StructProperty`, 7 `ArrayProperty`, 6 `BoolProperty`, 4
+  `FloatProperty`, 3 `ByteProperty`), so the function's own children are its parameters and locals and the
+  record's name is table fact.
+- **The record's payload does not name the type in a field this build writes readably.** Of the 281
+  `ObjectProperty` locals whose source type is known, no payload offset names that class for more than 30 of them
+  (offset 4: 30, offset 5: 16, offset 3: 8), so a guessed `[ArrayDim][class reference]` layout would be wrong two
+  times in three -- measured and rejected rather than assumed.
+- **The class carries the source it was compiled from, and that binds the name.** `--calls` now parses each
+  class's `ScriptText` once per package (`local <Type> <Name>;` and the parameter list, `event` as well as
+  `function`, bodyless `native` declarations contributing only their parameters) and answers a local's type from
+  it. **490 of the 628 local sites are placed on the receiver's chain**, untyped locals fall **628 -> 138**, and
+  by-name sites naming a declaring class go **11,811 -> 12,301 of 13,507 (91%)**; the receiver group grows
+  **1,228 -> 1,718 sites over 540 names**, 237 distinct classes. The residue is **1,206**: 717 with an untyped
+  object expression (138 locals, 579 properties) and 489 with a completed value in front.
+- **The control is a shuffle, and it is the reason to believe the placements.** Permuting the declared types
+  inside each class and re-running the same walk collapses `Engine.u`'s local placements **82 -> 13** (its whole
+  receiver group 313 -> 244), so a placement is the declaration doing work, not a name that would land on any
+  chain.
+- Tool (`--calls`, `source_declarations` and the per-function local lookup) + `inventory/script_calls.csv`
+  regenerated (18,931 rows, 12 columns) + `docs/BYTECODE.md` "The calls the scripts make" + `docs/UNKNOWNS.md`'s
+  call-site entry. The next instrument is the 579 untyped properties, whose declarations are in the tagged
+  property stream `class_properties.csv` is read from.
+
 ### Execution notes (2026-11-11, the receiver is the expression in front of the call — 1,228 more sites, and a state's function belongs to its class)
 
 - **The site carries its receiver, and it is not an operand.** A by-name call names its target and nothing else,

@@ -1236,17 +1236,85 @@ def _class_of_type(friendly):
     return friendly
 
 
-def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name):
+_SCRIPT_TEXT = None
+
+
+def _script_text(pkg, export, index):
+    """The class's own `ScriptText` (the source it ships), or None. `pkg-script-text` is loaded lazily once."""
+    global _SCRIPT_TEXT
+    if _SCRIPT_TEXT is None:
+        import importlib.util                                 # noqa: PLC0415 - a hyphenated sibling module
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pkg-script-text.py")
+        spec = importlib.util.spec_from_file_location("pkg_script_text", path)
+        _SCRIPT_TEXT = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_SCRIPT_TEXT)
+    return _SCRIPT_TEXT.script_text(pkg, dict(export, index=index))
+
+
+_SRC_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+_SRC_FUNC = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|iterator|native)\s+)*"
+                       r"(?:function|event)\s+(?:([\w<>\[\].]+)\s+)?(\w+)\s*\(([^)]*)\)", re.I | re.M)
+_SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+)\s+(.+?);", re.I)
+_SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+)\s+(\w+)\s*(?:=.*)?$",
+                        re.I)
+
+
+def source_declarations(text):
+    """{function: {variable: declared type}} from a class's ScriptText, or {} when it ships none.
+
+    A local *is* an export: the bytecode's `LocalVariable` operand points at a property record whose outer is the
+    function that declares it, so the record's name is a fact of the export table. Its *type* is not a field the
+    corpus can read -- no payload offset of the ObjectProperty records names the declared class for more than 30
+    of 281 (measured), so the record is a handle and not a declaration. The class ships the source it was compiled
+    from, and `local <Type> <Name>;` plus the parameter list bind exactly that name. A name the class declares
+    with two different types is dropped rather than guessed; a bodyless (`native`) declaration contributes its
+    parameters and no locals.
+    """
+    if not text:
+        return {}
+    text = _SRC_COMMENT.sub("", text)
+    out = collections.defaultdict(lambda: collections.defaultdict(set))
+    for m in _SRC_FUNC.finditer(text):
+        fn, params = m.group(2), m.group(3)
+        for p in params.split(","):
+            pm = _SRC_PARAM.match(p.strip())
+            if pm:
+                out[fn][pm.group(2)].add(pm.group(1))
+        j = m.end()
+        while j < len(text) and text[j] in " \t\r\n":
+            j += 1
+        if j >= len(text) or text[j] != "{":
+            continue
+        depth, k = 0, j
+        while k < len(text):
+            if text[k] == "{":
+                depth += 1
+            elif text[k] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            k += 1
+        for line in text[j:k].splitlines():
+            lm = _SRC_LOCAL.match(line)
+            if lm:
+                for nm in lm.group(2).split(","):
+                    out[fn][nm.strip()].add(lm.group(1))
+    return {fn: {n: (next(iter(t)) if len(t) == 1 else "") for n, t in decls.items()}
+            for fn, decls in out.items()}
+
+
+def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
     """The class the receiver expression's declared type names, or "" when its token cannot say.
 
-    A variable's own type is not in its export record, so it comes from `inventory/class_properties.csv` -- the
-    script's declarations. A *local* is not a class property and is not in that table, which is the largest single
-    reason a receiver stays untyped; an imported property is looked up by name and accepted only when every class
+    A property's type comes from its declaration in `inventory/class_properties.csv`; a *local* is a property
+    record the function owns, so the export table gives its name and the class's own ScriptText the type
+    (`source_declarations`); an imported property is looked up by name and accepted only when every class
     declaring that name agrees on the type.
     """
     nm = expr["name"]
     if nm in ("Context", "ClassContext") and expr["children"]:
-        return _receiver_type(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name)
+        return _receiver_type(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
+                              local_types)
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
         value, _e = read_index(expr["operands"], 0)
         target = export_at.get(value)
@@ -1254,7 +1322,11 @@ def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name):
     if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
         return ""
     value, _e = read_index(expr["operands"], 0)
-    if nm != "LocalVariable" and value in export_at:
+    if nm == "LocalVariable":
+        if value > 0 and value in export_at:
+            return _class_of_type((local_types or {}).get(export_at[value][0], ""))
+        return ""
+    if value in export_at:
         name, _kind, owner = export_at[value]
         hit = prop_type.get((owner, name))
         return _class_of_type(hit[1]) if hit else ""
@@ -1375,6 +1447,22 @@ def calls_report(path, table, out=None):
             outer_of = pkg.name(pkg.exports[x["outer"] - 1]["name"]) if x.get("outer") else ""
             export_at[i] = (pkg.name(x["name"]), pkg.class_name_of(x), outer_of)
         import_at = {i: (pkg.name(x["name"]), pkg.name(x["class"])) for i, x in enumerate(pkg.imports, 1)}
+        # A local's declared type is not in the package's records, so it comes from the class's own ScriptText;
+        # parse each class once per package and answer per function from that.
+        class_export = {}
+        for k, x in enumerate(pkg.exports, 1):
+            if pkg.class_name_of(x) == "Class":
+                class_export.setdefault(pkg.name(x["name"]), (k, x))
+        decls_by_class = {}
+
+        def local_decls(cls_name, fn_name):
+            """{local name: declared type} for one function of `cls_name`, from its ScriptText."""
+            if cls_name not in decls_by_class:
+                hit = class_export.get(cls_name)
+                text = _script_text(pkg, hit[1], hit[0] - 1) if hit else None
+                decls_by_class[cls_name] = source_declarations(text)
+            return decls_by_class[cls_name].get(fn_name, {})
+
         # A by-name call carries a name-table index; whether it names a function is a question for the chain above.
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function":
@@ -1411,6 +1499,7 @@ def calls_report(path, table, out=None):
             owner = pkg.name(oe["name"]) if oe is not None else "?"
             if oe is not None and oe.get("outer") and pkg.class_name_of(oe) == "State":
                 owner = pkg.name(pkg.exports[oe["outer"] - 1]["name"])
+            here_locals = local_decls(owner, pkg.name(e["name"]))
             for node, i, sibs, parent in _tree(nodes):
                 kind = CALL_TOKENS.get(table.rows[node["opcode"]]["name"])
                 if kind is None or not node["operands"]:
@@ -1424,7 +1513,8 @@ def calls_report(path, table, out=None):
                     rtype = ""
                     if prev is not None:
                         if rtoken in OBJECT_TOKENS:
-                            rtype = _receiver_type(prev, export_at, import_at, prop_type, prop_type_by_name)
+                            rtype = _receiver_type(prev, export_at, import_at, prop_type, prop_type_by_name,
+                                                   here_locals)
                         else:
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
@@ -1479,6 +1569,8 @@ def calls_report(path, table, out=None):
                        for n, c in collections.Counter(r[5] for r in wide).most_common(5))))
     print("      an object expression with no recorded type: %d -- %d of them a local, %d a property whose "
           "declaration the script does not type" % (len(untyped), len(locals_), len(untyped) - len(locals_)))
+    print("      of the receiver-typed sites, %d had a local in front (typed from the class's own ScriptText)"
+          % len([r for r in recv if r[10] == "LocalVariable"]))
     print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
           % (len(open_) - len(untyped)))
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]

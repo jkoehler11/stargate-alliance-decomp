@@ -1280,6 +1280,25 @@ reach). So **11,811 of the 13,507 (87%)** by-name sites name a declaring class. 
 one beside the next call), so the pass prefers the chain reading and writes the receiver class into every row it does
 place. The obvious next instrument is the local-variable declarations, and it is worth 628 sites.
 
+**2026-11-11, the local-variable declarations: the operand is a record the function owns, the type is in the
+source the class ships.** A `LocalVariable` operand is not an index into a locals array -- it resolves to a
+property export whose **outer is the calling function** in 540 of 540 local receiver sites in `Engine.u` (389
+`ObjectProperty`, 62 `IntProperty`, 37 `StrProperty`, 23 `ClassProperty`, 9 `StructProperty`, 7
+`ArrayProperty`), so the record names the variable and nothing else. Its payload does **not** carry the type
+where a reader can reach it: of the 281 `ObjectProperty` locals whose source type is known, no payload offset
+names that class for more than 30 (offset 4: 30, offset 5: 16, offset 3: 8), so `[ArrayDim][class reference]`
+is not what this cook writes. The class ships its own `ScriptText`, and `local <Type> <Name>;` plus the
+parameter list bind exactly the name the export table gives, so `--calls` parses each class's source once per
+package and reads the type from there. **490 of the 628 local sites are placed that way**, which takes the
+untyped locals to **138** and the by-name sites that name a declaring class from 11,811 to **12,301 of 13,507
+(91%)**; the residue is **1,206 sites**, 717 with an untyped object expression (138 locals, 579 properties the
+script does not type) and 489 with a completed value in front. The control is a shuffle: permuting the declared
+types inside each class collapses `Engine.u`'s local placements from **82 to 13**. What is left of this route
+is a local whose source binds no class -- no `ScriptText` for the class, no declaration for the name, two
+different declarations of it, or a declared type that is not a class. The 579 untyped properties are the next
+instrument, and their declarations come from the tagged property stream that `class_properties.csv` is read
+from.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
