@@ -1028,6 +1028,36 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the last 21 maps load, and all 61 campaign entries have a row)
+
+- **The sweep finished the range.** `tools/xemu/missions.sh` ran indices 50-70 into `$WORK/mapback3`, one boot
+  each, and **all 21 passed on their first attempt**: `M16F`, `M16G`, `M17A`, `M17B`, `M17D`, `M18A`, `M18B`,
+  `M18D`, `M19A`-`M19E`, `M20A`-`M20D`, `M21A`-`M21D`. Merged with the eight run directories the two earlier
+  sessions left, `inventory/map_loads.csv` now holds **61 of the 61 campaign entries over 74 boots, 61 PASS
+  and 0 FAIL** -- every campaign map on this disc loads, and the campaign load table has no gap left.
+- **The pace prediction held to the minute.** The first five of the back half took 23 minutes (4.6 per boot);
+  these 21 took 97 minutes for the same 4.6, so a sweep of the whole range is one afternoon of boots and the
+  earlier estimate was the measurement's own rate rather than an extrapolation.
+- **The merge set is nine directories, and the reproduction is the check.** The base eight reproduce the
+  committed 40 rows byte for byte, and adding `mapback3` is then the only diff -- which is how the set was
+  confirmed, because a directory listing does not name it. Two of the nine were missing from this page's own
+  run table: `$WORK/xemu/missions-retry` (the boots behind index 12's 3 attempts and index 14's late PASS) and
+  `$WORK/mapback2`. Both are listed now. `map-loads.py` truncates nothing, but it does decide the merge from
+  the directories it is handed, so the table of them is part of the artifact.
+- **A `PASS` is a load, not a mission, and this table is still not a playability claim.** 61 of 61 loading is
+  the opposite of the thing the page warns about in prose: several entries are cutscenes (70) and 41 is a
+  first-person scene, so a HUD criterion would fail on the disc's own content. What a row cannot say -- whether
+  the map plays, and which of them a player can reach without the list -- is unchanged and still named on the
+  page.
+- **The names do not predict the index.** The range is dense (10-70) and the names are not: 15 is `M04B` while
+  16 is lowercase `M04a`, and 52-54 are `M17A`, `M17B`, `M17D` while 55-57 are `M18A`, `M18B`, `M18D` -- so
+  `M17C` and `M18C` sit on no entry. `map-loads.py` names each row from `map-index.py`'s ASCII order for that
+  reason; a name read off a highlight frame is the error `docs/XEMU.md` records twice.
+- **Two defects this run fixed rather than reproduced.** The page's "What is left" paragraph had been spliced
+  mid-sentence by the previous run's edit -- the pace paragraph landed between "walks the range without" and
+  "repeating:" -- and the generator's summary line read "61 of the 61 campaign entries ... and 0 do not yet"
+  once the range closed. The line now says all 61 have been loaded, and `--check` exercises that branch.
+
 ### Execution notes (2026-11-11, the load sweep resumes at index 44 and 40 of 61 entries have a row)
 
 - **Five more rows, and every one loaded on its first attempt.** `tools/xemu/missions.sh` ran indices
