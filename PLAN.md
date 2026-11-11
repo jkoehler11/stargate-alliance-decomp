@@ -1031,6 +1031,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a class record is anchored on two indices, and the 109 no-block rows split 50/59)
+
+- **The `empty-block` reason is now a measurement for 50 of its 109 rows, and the other 59 are a named residue.**
+  `tools/class-record.py` measures where a class payload stops being a record using two indices from the package's
+  own export table, neither guessed: the payload's first compact index must equal the export row's `super` (**2,319 of
+  2,319** agree), and the `TextBuffer` export outered to the class must be referenced right after it (**2,319 of
+  2,319** — at `+2` for 1,451, `+3` for 868, i.e. past `Super` and the zero `Children` byte). The record's end is the
+  block start the defaults locator already found, so the block is the measurement.
+- **The record is not a header: its length tracks the class's own function table.** Over 2,189 located blocks the
+  length runs 8 .. 13,665 bytes (median 96, p90 401, mode 92 with 357 blocks, 431 distinct lengths), and the Pearson
+  correlation with the number of `Function` exports the class owns is **0.80**: classes that own none have a 92-byte
+  median record, 1–5 functions 123, 6–20 288, 21–60 670, more than sixty 3,410. Twenty located candidates start at
+  byte 0 or 1 — inside `Super`/`Children` — and are counted apart, because their "length" is not one.
+- **Joining the shapes against `class_defaults_misses.csv` splits the 109 `empty-block` rows 50 / 59 and moves
+  nothing else** (252 `incomplete`, 263 `single-declared`, 30 `type-contradiction` and 1 `single-property` keep their
+  reasons). The **50 `record-only`** payloads are 81–100 bytes — inside the record-length distribution and inside the
+  range where 1,254 located classes *do* carry a block after their record — so "this class sets no defaults" is a
+  reading of the bytes, not a parse failure. The **59 `long-no-block`** payloads are 101–1,396 bytes (median 125): a
+  record accounts for the front and the rest is still a locator miss, which is the residual this note opens.
+- Tool + `inventory/class_records.csv` (2,319 rows, new `functions` column) + `docs/CLASS_DEFAULTS.md` §"Where a class
+  payload stops being a record" + `make class-records`. `--report` now counts *blocks* rather than distinct lengths
+  (its first version answered 72 where the artifact holds 1,549, caught by reading the number against the rows) and
+  joins the misses artifact itself, so every figure the page quotes comes out of the two files.
+
 ### Execution notes (2026-11-11, the defaults floor of two is measured, and a one-tag payload gets a reason)
 
 - **A floor of one is not a recovery, and the number that settles it is 1,477.** `tools/class-defaults.py` keeps
