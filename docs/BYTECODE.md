@@ -300,26 +300,48 @@ only because one byte cannot spell 256.
     11687 scripts with an epilogue, 11602 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
-        on the caller's chain: 8251 -- 5581 in its own class, 2670 on an ancestor (top: Engine.Actor 373, ...)
-        by the corpus alone: 2332 site(s) reach the one class that declares the name (945 names), top:
+        on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, ...)
+          of those, 223 name a function only a *state* of that class declares (the class owns the state)
+        by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top:
           ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        on the receiver's chain: 1732 (546 names) -- the expression in front of the call types to a class
-          (239 distinct; 504 of the 1,732 had a local in front, typed from the class's own ScriptText)
-        decided by the receiver: 1192 site(s) across 295 names, top: SetText 107 over 5 classes, ...
-          an object expression with no recorded type: 656 -- 81 of them a local, 575 not
-          an expression that typed to a class whose chain declares no such name: 47
-          a completed value in front (a self-call, or a receiver the walk did not reach): 489
-          why an expression in front names no class: import: no package declares that property 474, ...
+        on the receiver's chain: 1757 (547 names) -- the expression in front of the call types to a class
+          (247 distinct; 529 of the 1,757 had a local in front, typed from the class's own ScriptText)
+          of those, 26 place because the receiver's type names a class in another case (pawn 14, GameHUD 4, ...)
+        below the receiver's chain: 6 reach exactly one descendant that declares the name, top:
+          IsUnconscious -> StargateGame.BotEnemy 3, GetAggroLevel -> StargateGame.BotEnemy 3
+        decided by the receiver: 1133 site(s) across 277 names, top: SetText 107 over 5 classes, ...
+          an object expression with no recorded type: 654 -- 81 of them a local, 573 not
+          an expression that typed to a class whose chain declares no such name: 16, of which 6 reach exactly
+            one descendant that declares it; the other 10 are a dispatch the static type cannot decide
+          a completed value in front (a self-call, or a receiver the walk did not reach): 469
+          why an expression in front names no class: import: no package declares that property 473, ...
           properties no package declares, by name: UIWidget 80, HaakenMK2Weapon 59, Instigator 56, ...
-          a completed value in front (a self-call, or a receiver the walk did not reach): 489
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in
 the package that declares each ancestor** -- the earlier census only asked its own package, which is why a parent's
-function looked unresolved. **8,251 of the 13,507 (61%) name a function declared on the chain: 5,581 on the caller's
-own class and 2,670 on an ancestor, 373 of those `Engine.Actor`, 252 `Engine.Pawn`, 218 `StargateGame.BotBase`, 187
-`Editor.BrushBuilder`** -- so a by-name call is not necessarily to a script function of this build at all, and a
-rebuild has to carry the ancestor's declaration too.
+function looked unresolved. **8,321 of the 13,507 (62%) name a function declared on the chain: 5,778 on the caller's
+own class and 2,543 on an ancestor, 337 of those `Engine.Actor`, 246 `Engine.Pawn`, 191 `StargateGame.BotBase`, 187
+`Editor.BrushBuilder`, 187 `StargateGame.BotEnemy`** -- so a by-name call is not necessarily to a script function of
+this build at all, and a rebuild has to carry the ancestor's declaration too.
+
+**The chain index was keyed on the wrong name: a state's function is the class's.** The index a chain walks was built
+by a function's *outer* export, which is the `State` for anything declared inside one -- so `IsUnconscious`, declared in
+`state BotUnconscious` of `StargateGame.BotEnemy`, was indexed under `BotUnconscious`, a name no super chain holds, and
+the sites that call it resolved nowhere. Keying the same index by the class that owns the state (the rule this page
+already states for attribution) places **223** of the chain group's sites: the own-class share rises by 197 and the
+ancestor share falls by 127 -- 127 sites that named an ancestor now name the caller's own class, because the nearer
+declarer is the state the caller's class owns -- for a net **+70**, and it places 8 more on the receiver's chain. The
+corpus-alone group shrinks 2,332 -> **2,290** for the same reason seen from the other side (a name that could only be
+placed "somewhere in the corpus" now names a class on the caller's chain). Examples: `ChooseAttackMode` and
+`WhatToDoNext`, both declared in that state, resolve 6 and 11 sites to `StargateGame.BotEnemy`.
+
+**And a class name is matched without regard to case, which the source does not respect.** UnrealScript is
+case-insensitive; the `ScriptText` writes `local pawn P;` and `Cast<inventory>(...)` while `classes.csv` says `Pawn`
+and `Inventory`, so the receiver's type reached the class index as a name no key held and placed nothing -- the same
+shape of bug as `class<LocalMessage>` was for the type syntax. Folding the case **places 26 more sites on the receiver's
+chain** (`pawn` 14, `GameHUD` 4, `inventory` 2, `pickup` 2, `controller` 1, `vehicle` 1) and types 25 more local
+receivers, so the local share of that group is 529 of 1,757.
 
 **The caller of a site inside a `State` is the class that owns the state, and saying so moved 869 sites onto the
 chain.** A state compiles into its class, so a function declared in `state Active` is `Pawn`'s function and its
@@ -331,7 +353,7 @@ collapse is the check that the attribution is the right one rather than a lucky 
 **The chain is only the first of two lookups, and the second one does not need the receiver.** A by-name operand is an
 `FName` and `ProcessEvent` finds the function by walking the *receiver's* class, so a site inside a class that does
 not declare the name is not a broken site -- it is a call on another object. The corpus answers most of the rest
-without knowing which object: of the **5,256** sites the chain cannot place, **2,332 (44%) across 945 names reach a
+without knowing which object: of the **5,186** sites the chain cannot place, **2,290 (44%) across 914 names reach a
 function exactly one class in the corpus declares** -- `ShouldCrouch` -> only `Engine.Pawn` 63, `AddMenuItem` ->
 only `UWindow.UWindowPulldownMenu` 58, `SetPosImmediate` -> only `StargateGame.UIWidget` 51,
 `GetLocalPlayerController` -> only `Engine.LevelInfo` 40, `PostAIMsg` -> only `Engine.Controller` 40 -- so whatever
@@ -342,8 +364,8 @@ because the compiler has already emitted the object expression and the VM dispat
 **expression in front of the call token** is the receiver, and in the token tree that is the previous sibling. When
 that expression is a variable, a cast, a `Context` or an object literal, its **declared type** names a class -- a
 class property's from `inventory/class_properties.csv`, a cast's from its target -- and the call is placed on *that*
-class's chain: **1,718 sites (13%) over 540 names**, 237 distinct receiver classes, `Pawn` 138 sites,
-`Controller` 102, `SquadAIBasic` 82, `UIWidget` 78, `BotBase` 63. Examples: `Engine.Touch ClientMessage()` has a
+class's chain: **1,757 sites (13%) over 547 names**, 247 distinct receiver classes, `Pawn` 138 sites,
+`Controller` 101, `SquadAIBasic` 82, `UIWidget` 78, `BotBase` 64. Examples: `Engine.Touch ClientMessage()` has a
 `Pawn` in front, so it lands on `Engine.Pawn`; `Engine.PlayerTick PlayerInput()` has a `PlayerInput` and lands
 on `Engine.PlayerInput`; `UWindow.AddText AppendItem()` has a `UWindowDynamicTextRow`.
 
@@ -366,18 +388,28 @@ untyped by construction when its class ships no `ScriptText`, when the source ha
 name in that function, when the class declares the name with two different types, or when the declared type
 is not a class at all.
 
-**So 12,315 of the 13,507 (91%) by-name sites now name a declaring class, and the 1,192 that do not are a
+**So 12,374 of the 13,507 (91.6%) by-name sites now name a declaring class, and the 1,133 that do not are a
 typing gap, not a dispatch gap.** `SetText` 107 sites over 5 classes, `SetFont` 105 over 4, `GetValue` 42 over 10,
-`ClientMessage` 40 over 3, `GetViewRotation` 38 over 9. Of the 1,192: **656 have an object expression in front of them that names no class at all** (81 a local, 575
-not), **47 name a class whose chain declares no function of that name** (`Pawn` 14, `BotBase` 14, `GameHUD` 4
-and 15 more over other classes), and **489 have a completed value in front**, which is a self-call whose name
-no class on the chain declares, or a receiver the walk did not reach.
+`ClientMessage` 37 over 3, `GetViewRotation` 35 over 9. Of the 1,133: **654 have an object expression in front of them that names no class at all** (81 a local, 573
+not), **10 name a class whose chain and subtree both declare nothing of that name** (was 47 before the two keyings
+above), and **469 have a completed value in front**, which is a self-call whose name no class on the chain
+declares, or a receiver the walk did not reach.
 
-**The 656 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
-its expression typed to nothing: **474 of the 656 reference a property no package in the corpus declares**
+**The last of the typed residue is a dispatch, and looking below the receiver settles most of it.** A receiver whose
+static type is a base can hold any subclass, so after the chain the tool looks *below* it: of the **16** sites whose
+expression typed to a class whose chain declares no such name (`BotBase` 12, `UnrealScriptedSequence` 3, `Pawn` 1),
+**6 name a function exactly one descendant declares** and place as `descendant:Pkg.Class` -- `IsUnconscious` and
+`GetAggroLevel`, each 3 sites, both to `StargateGame.BotEnemy`, where the first is declared inside `state
+BotUnconscious`. The other **10 stay a dispatch**: `CallToArms` 3, `UnPossess` 1 and `Possess` 1 name a function
+several descendants of `BotBase` declare, and `GetMoveTarget` 2, `GetMyPlayer`, `TakeOver` and `SetPawnClass` name one
+only classes *outside* the receiver's subtree declare. **No name in that residue is missing from the corpus (0)**, which
+is the useful negative: the gap is which object, not which build.
+
+**The 654 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
+its expression typed to nothing: **473 of the 654 reference a property no package in the corpus declares**
 (`UIWidget` 80, `HaakenMK2Weapon` 59, `Instigator` 56, `Controller` 48, `Pawn` 41, `Outer` 36 -- several of
 them the `Actor`/`Pawn` properties a rebuild inherits from C++), **81 a local whose class's own source has no
-declaration for the name**, **71 a literal or cast that names no class**, and **30 a token that is not a
+declaration for the name**, **70 a literal or cast that names no class**, and **30 a token that is not a
 variable at all**. An import names an object in *another* package by definition, so the largest bucket is a
 property declared outside the eighteen packages in `System` or declared natively: no reading of these
 packages can type it, and the answer would have to come from the native property table, not from a better
@@ -386,19 +418,20 @@ walk.
 **The split paid for itself by finding a spelling bug.** `_class_of_type` knew only `Class<>` and `array<>`;
 UnrealScript's own source spells them lowercase (`local class<LocalMessage> M;`), so a class-typed local came
 back as a class literally named `class<LocalMessage>` and placed nothing. Accepting both spellings places
-**14 more sites** (the receiver group 1,718 -> 1,732, the local share 490 -> 504) and is why the earlier
-round's `typed class<LocalMessage> ...` line is gone.
+**14 more sites** (the receiver group 1,718 -> 1,732, the local share 490 -> 504; the group is **1,757** after the
+class-keying round above) and is why the earlier round's `typed class<LocalMessage> ...` line is gone.
 
 **One caveat, measured: an object expression in front is evidence, not proof.** 820 of the 8,251 chain-resolved
-sites (10%) would *also* be placed by the expression in front of them, because a statement that ends in an object
+sites (10%, measured against that group; the group is 8,321 now) would *also* be placed by the expression in front of them, because a statement that ends in an object
 (`A = SomePawn; Foo();`) leaves an object-valued token next to the next call. The tool prefers the chain reading --
 the conservative one for a rebuild, because it never invents a target class the caller cannot reach -- and the
 ambiguity is why a `receiver:` placement is written with its receiver class in the same row: a reader can re-judge
 any row individually.
 
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
-`resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup, or
-`receiver:Pkg.Class` for the receiver's chain), `declaring_classes` (how many classes in the corpus declare that
+`resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
+`receiver:Pkg.Class` for the receiver's chain, or `descendant:Pkg.Class` for the one class below it that declares the
+name), `declaring_classes` (how many classes in the corpus declare that
 name), `only_class` (that class when there is exactly one), `receiver` (`self`, `value`, or the token in front when it
 can leave an object on the stack) and `receiver_type` (the class that token's declared type names) -- regenerated by
 `make script-calls`. The static column is the part a reader can rely on; the dynamic column says where to look, not
