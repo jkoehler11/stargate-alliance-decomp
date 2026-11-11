@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records
 
 help:
 	@echo "targets:"
@@ -67,6 +67,7 @@ help:
 	@echo "  defaults-emit  render every class's defaultproperties block (PLAN 3.5, needs the dump)"
 	@echo "  defaults-coverage  roll the defaults locator up per package (needs the dump)"
 	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
+	@echo "  class-records where a class payload stops being a record (needs the dump)"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  native-bodies mark every native body in the extracted tree + the cross-link table (PLAN 3.9, needs the dump)"
@@ -537,6 +538,14 @@ defaults-coverage:
 defaults-per-class:
 	@$(PYTHON) tools/class-defaults.py --packages "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@echo "wrote inventory/class_defaults_per_class.csv"
+
+# Where a class export stops being a record, and what the payload after it is (docs/CLASS_DEFAULTS.md). Two anchors
+# from the export table place the record's prefix on all 2,319 classes; the block the locator found is the record's
+# end, so the 109 "no block" rows split into 50 records with no stream and 59 payloads still unexplained.
+class-records:
+	@$(PYTHON) tools/class-record.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
+	@$(PYTHON) tools/class-record.py --report -o inventory
+	@echo "wrote inventory/class_records.csv"
 
 # Native declarations in the shipped script against inventory/natives.csv (docs/NATIVE_CLASSES.md, PLAN 3.9).
 # Writes three artifacts: the class-by-class reconciliation, the per-record token basis and the residual verdicts.

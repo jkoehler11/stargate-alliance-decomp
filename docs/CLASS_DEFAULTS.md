@@ -275,6 +275,67 @@ What would settle it: the reader of that table in the XBE (the same route `docs/
 tag format), or a class whose defaults are known from the shipped text. The shipped text cannot help — it retains a
 `defaultproperties` block for only two classes, and neither agrees with its package (below).
 
+## Where a class payload stops being a record
+
+`--misses` reports a class with no locatable block as `empty-block`, which is a reason and not a measurement: the
+payload either holds a record and nothing else, or a record followed by bytes the locator failed to parse.
+`tools/class-record.py` splits the two with two indices that come out of the package's own export table, so neither
+rests on a guessed field order:
+
+* **`Super` is the record's first field, as a compact index.** Each export row carries its own `super`, and the value
+  the payload opens with must be that number (`-n` = import `n`, positive = export). It agrees on **2,319 of 2,319**
+  class exports — one counterexample would sink the claim, and there is none.
+* **`ScriptText` follows it**, as one compact index pointing at the `TextBuffer` export outered to that class. The cook
+  strips the field chain (`Children` is 0) but keeps the script text, so the buffer is exactly one export away: found
+  at **+2 for 1,451** classes and **+3 for 868** — immediately after `Super` (one or two bytes) and the zero `Children`
+  byte — for **2,319 of 2,319**.
+
+The record's *end* is measured, not derived. Where the locator found a block, that block's start **is** the record's
+length, and the length is not a header's: it tracks the number of `Function` exports the class owns (Pearson
+**r 0.80** over 2,189 blocks). A class that owns no `Function` export has a **92-byte** median record, 1–5 functions
+**123**, 6–20 **288**, 21–60 **670**, more than sixty **3,410** — the class's function table sits inside the record,
+which is why `PlayerController`'s is 13,665 bytes.
+
+| measure | value |
+|---|---|
+| class exports | 2,319 |
+| a block located (`located`) | 2,209 |
+| record lengths (blocks starting at byte ≥ 4) | 2,189: 8 .. 13,665 bytes, median 96, p90 401 |
+| modal record | 92 bytes, 357 blocks (431 distinct lengths) |
+| records at or below 100 bytes | 1,254 of 2,189 (57%) |
+| candidates starting inside the prefix | 20 (5 at byte 0, 15 at byte 1) |
+
+Those 20 are not record lengths — a candidate that starts at byte 0 or 1 begins inside `Super`/`Children`, so it is
+reading the record's own prefix as a tag stream, which is the `empty-block`-at-offset-0 shape the section above names.
+Keeping them apart is what makes the rest of the distribution a record length.
+
+The payload's shape then follows from its length: `located` (a block was found), `record-only` (no block, and the
+payload is short enough that a record alone accounts for every byte) and `long-no-block` (no block, and bytes after
+the record are unexplained). Joining the shapes against `inventory/class_defaults_misses.csv`'s reasons moves nothing
+but the bucket it explains:
+
+| reason | shape | classes |
+|---|---|---:|
+| `empty-block` | `record-only` | **50** |
+| `empty-block` | `long-no-block` | **59** |
+| `single-property` | `long-no-block` | 1 |
+| `incomplete` | `located` | 252 |
+| `single-declared` | `located` | 263 |
+| `type-contradiction` | `located` | 30 |
+
+**The 50 `record-only` payloads are 81–100 bytes** — inside the record-length distribution, and inside the range where
+1,254 located classes *do* have a block after their record. For these fifty no candidate accounts for the bytes after
+the record, so "this class sets no defaults" is a reading of the payload rather than a parse failure. Their four-byte
+tails are the record's own and dominated by `83 03 00 00` (28 of 50), `89 06 00 00` (4) and `03 03 00 00` (3).
+**The 59 `long-no-block` payloads are 101–1,396 bytes (median 125)**: a record accounts for the front of each and the
+remainder is still a locator miss. That is the residue, and it is 59 of the 109 `empty-block` rows rather than all of
+them.
+
+What would settle the 59: a start rule that does not require the tags to reach the payload's last byte, or the runtime
+reader of the trailing table (`docs/NATIVE_PROPERTIES.md`'s route for the tag format). What would falsify the 50: a
+class among them whose payload decodes as a record shorter than its length, which would put unexplained bytes behind a
+short record — nothing here decodes the record's body, so that check is open.
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds
