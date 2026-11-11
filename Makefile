@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads
 
 help:
 	@echo "targets:"
@@ -134,6 +134,7 @@ help:
 	@echo "  hud-console-font  which font the console's input line is drawn in (needs the dump; no boot)"
 	@echo "  hud-messages     which HUD class draws which message, from the scripts (needs the dump; no boot)"
 	@echo "  hud-text         read the HUD's three text boxes over a live stub (needs a boot: tools/xemu/hud-text.py)"
+	@echo "  map-loads        merge missions.sh run directories into inventory/map_loads.csv (needs the disc; no boot)"
 	@echo "  native-binder    the names the binder resolves index-less natives from (needs the dump; no boot)"
 	@echo "  native-table     each of those names' body address, from the image's own registration table (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
@@ -294,14 +295,17 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@$(PYTHON) tools/xemu/map-loads.py --check-doc docs/MAP_LOADS.md
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
 		tools/xemu/objects.py tools/xemu/ramscan.py tools/xemu/vamap.py tools/xemu/console-state.py \
 		tools/xemu/owner.py tools/xemu/names.py tools/xemu/fields.py tools/xemu/hud-link.py \
-		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py, names.py, fields.py and hud-link.py compile"
+		tools/xemu/map-loads.py \
+		&& echo "ok   xemu-tools: mem.py, bootcheck.py, drive.py, console-line.py, map-index.py, frame-diff.py, objects.py ramscan.py, vamap.py, console-state.py, owner.py, names.py, fields.py, hud-link.py and map-loads.py compile"
 	@$(PYTHON) tools/xemu/ramscan.py --selftest
 	@$(PYTHON) tools/xemu/hud-link.py --selftest
+	@$(PYTHON) tools/xemu/map-loads.py --check
 	@$(PYTHON) tools/xemu/mem.py --selftest
 	@$(PYTHON) tools/xemu/console-state.py --selftest
 	@$(PYTHON) tools/xemu/owner.py --selftest
@@ -794,6 +798,12 @@ hud-link:
 hud-text:
 	@echo "hud-text: needs a boot with a GDB stub -- tools/xemu/hud-text.py --port <stub> (see docs/HUD_TEXT.md)"
 	@echo "          and tools/xemu/hud-say.sh runs one: it boots M00, submits a marker and watches the boxes"
+
+# PLAN 7.2: merge `missions.sh` run directories into one committed load table, named from the disc.
+# `missions.sh` truncates its missions.tsv on every invocation, so this is what makes a sweep cumulative.
+map-loads:
+	@test -n "$(ISO)" || { echo "map-loads: pass ISO=<disc image> RUNS='<missions.sh outdir> ...'" >&2; exit 2; }
+	@$(PYTHON) tools/xemu/map-loads.py --iso "$(ISO)" $(RUNS) -o inventory/map_loads.csv
 
 hud-messages:
 	@test -d "$(WORK)/UnrealScript" || { echo "hud-messages: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }

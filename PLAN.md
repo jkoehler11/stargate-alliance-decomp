@@ -1028,6 +1028,31 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the campaign load table is an artifact, and 35 of 61 campaign maps have a row)
+
+- **The verdicts are cumulative now.** `tools/xemu/map-loads.py` merges `missions.sh` run directories into
+  `inventory/map_loads.csv` (`index,name,result,attempts,runs,detail`) and renders `docs/MAP_LOADS.md`
+  between its own markers (`--write-doc`; `--check-doc` in `make ci`, reading the committed rows so it
+  needs no disc). `missions.tsv` is truncated per invocation, so before this a sweep could not be extended
+  and the campaign table lived in prose assembled by hand from several runs.
+- **The merge rules are the measurement.** `PASS` wins over `FAIL` because a recorded failure is input and
+  measured non-deterministic (4 of 31 indices in the 2026-11-04 sweep hit one; 21 and 38 failed both
+  attempts there and passed first time when re-run alone); `attempts` sums the boots and `runs` counts the
+  invocations; a row that never passed keeps the failure's own reason; and an index outside the disc's
+  table or a status other than PASS/FAIL is refused rather than recorded.
+- **Three run directories are deliberately not merged**, and the page names them: `missions-neg`
+  (`--boot=25`), `halt-test` and `halt-test2` (an ISO whose `M00.unr` was truncated to 1,000 bytes) are
+  failures by construction -- they exist to prove the retry loop and `guest-halt.py`, so merging them would
+  put `BIOS screen` on a row whose map loads.
+- **Measured: 35 rows, 35 PASS, 46 boots -- 35 of the 61 campaign entries (10-70).** The 31 first-half rows
+  come from the five sweep directories the 2026-11-04/05 sessions left behind; the second half was swept
+  from 41 upward here (`M15C`, `M15D`, `M15E`, `M16A` -- indices 41, 42, 43, 45), one boot each, every one
+  on its first attempt, which extends the two second-half entries (41, 70) that `docs/XEMU.md` had measured
+  by hand. 26 entries still have no row and the page's generated line names them (`44, 46-70`).
+- **What this does not say**: a `PASS` is a load (repaint + not the BIOS screen + not the boot frame), not a
+  playable mission; several campaign entries are cutscenes, so a HUD criterion would fail on the disc's own
+  content. `docs/MAP_LOADS.md` states that and the two questions it cannot answer.
+
 ### Execution notes (2026-11-10, the class object's constructor field is not carried)
 
 - **The route U8 ended on is measured, and it is a negative.** Every registered class owns a `UClass`
