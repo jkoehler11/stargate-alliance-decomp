@@ -20,7 +20,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 13 | `make class-reach` |
-| `inventory/class_records.csv` | 2319 | 14 | `make class-records` |
+| `inventory/class_records.csv` | 2319 | 18 | `make class-records` |
 | `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
 | `inventory/class_table_parents.csv` | 492 | 8 | `make class-table-parents` |
 | `inventory/class_virtual_overrides.csv` | 1145 | 14 | `make class-overrides` |
