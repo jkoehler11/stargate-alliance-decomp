@@ -1031,6 +1031,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the property import branch was dead code — the tagged stream writes the C++ `U`)
+
+- **The 473 "property no package declares" were a suffix mismatch, not a missing declaration.** The tagged property
+  stream writes the property class as `UObjectProperty`; an import writes `ObjectProperty`. An equality test between
+  the two rejected every property import in the corpus, and the branch it guarded indexed a fourth field of a
+  three-field tuple, so it could never have run. Strip the prefix and **233 more receivers type**: receiver chain
+  1,757 -> **1,954** (569 names, 249 distinct, `Pawn` 260), untyped-object residue 654 -> **421**, by-name placement
+  **12,374 -> 12,571 of 13,507 (93.1%)**.
+- **What is left of the imports is a vote, and the vote is the wrong rule.** 240 sites name a property two or more
+  packages declare with *different* types (`UIWidget` 61, `HaakenMK2Weapon` 50, `Controller` 48, `InitComponent` 20);
+  the import's own outer names the owning class (`Pawn` 33, `GUI` 30, `GUIListBox` 16, `ScriptedController` 9), so the
+  next instrument is to prefer the owner's declaration over requiring the whole corpus to agree.
+- The typed-unplaceable residue is 52 before the subtree step and 46 after (6 place on `StargateGame.BotEnemy`),
+  receivers `Object` 36, `BotBase` 6, `UnrealScriptedSequence` 3, `Pawn` 1 -- `Object`-typed receivers are a dispatch
+  over every class in the build, not a lookup.
+- Tool (`_kind_key`, the import-owner index and the conditional report lines) + `inventory/script_calls.csv`
+  regenerated + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`.
+
 ### Execution notes (2026-11-11, the call residue halves — the index was keyed on the state and the class on its case)
 
 - **Two keyings, not a measurement, closed 24 of the 47.** The by-name index was built from a function's *outer*

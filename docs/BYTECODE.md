@@ -336,6 +336,17 @@ corpus-alone group shrinks 2,332 -> **2,290** for the same reason seen from the 
 placed "somewhere in the corpus" now names a class on the caller's chain). Examples: `ChooseAttackMode` and
 `WhatToDoNext`, both declared in that state, resolve 6 and 11 sites to `StargateGame.BotEnemy`.
 
+**The property imports were invisible: the tagged stream names the property class with its C++ `U`.** An import that
+names a variable records the property's class as `ObjectProperty`, while `inventory/class_properties.csv` writes the
+same class `UObjectProperty` (its C++ name), so an equality test between the two rejected **every** property import in
+the corpus -- and inside that dead branch a `c[3]` indexed a three-field tuple, which nothing noticed because the
+branch never ran. Comparing the names with the prefix stripped types **233 more receivers**, all of them imported
+variables: the receiver's chain goes 1,757 -> **1,954** (569 names, 249 distinct receiver types, `Pawn` 260) and the
+untyped-object-expression residue 654 -> **421** (340 not a local). What is left of the imports is a different
+question: **240 name a property several packages declare with different types** (`UIWidget` 61, `HaakenMK2Weapon` 50,
+`Controller` 48, `InitComponent` 20), owned by `Pawn` 33, `GUI` 30, `GUIListBox` 16, `ScriptedController` 9 -- the
+import's own outer names the owner, so the next step is to prefer the owner's declaration over a corpus-wide vote.
+
 **And a class name is matched without regard to case, which the source does not respect.** UnrealScript is
 case-insensitive; the `ScriptText` writes `local pawn P;` and `Cast<inventory>(...)` while `classes.csv` says `Pawn`
 and `Inventory`, so the receiver's type reached the class index as a name no key held and placed nothing -- the same
@@ -388,11 +399,11 @@ untyped by construction when its class ships no `ScriptText`, when the source ha
 name in that function, when the class declares the name with two different types, or when the declared type
 is not a class at all.
 
-**So 12,374 of the 13,507 (91.6%) by-name sites now name a declaring class, and the 1,133 that do not are a
+**So 12,571 of the 13,507 (93.1%) by-name sites now name a declaring class, and the 936 that do not are a
 typing gap, not a dispatch gap.** `SetText` 107 sites over 5 classes, `SetFont` 105 over 4, `GetValue` 42 over 10,
-`ClientMessage` 37 over 3, `GetViewRotation` 35 over 9. Of the 1,133: **654 have an object expression in front of them that names no class at all** (81 a local, 573
-not), **10 name a class whose chain and subtree both declare nothing of that name** (was 47 before the two keyings
-above), and **469 have a completed value in front**, which is a self-call whose name no class on the chain
+`ClientMessage` 27 over 3, `GetViewRotation` 35 over 9. Of the 936: **421 have an object expression in front of them that names no class at all** (81 a local, 340
+not; 240 of them a property several packages declare with different types), **46 name a class whose chain and subtree
+both declare nothing of that name** (was 47 before the three keyings above), and **469 have a completed value in front**, which is a self-call whose name no class on the chain
 declares, or a receiver the walk did not reach.
 
 **The last of the typed residue is a dispatch, and looking below the receiver settles most of it.** A receiver whose
@@ -406,7 +417,7 @@ only classes *outside* the receiver's subtree declare. **No name in that residue
 is the useful negative: the gap is which object, not which build.
 
 **The 654 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
-its expression typed to nothing: **473 of the 654 reference a property no package in the corpus declares**
+its expression typed to nothing: **473 of the 654 (before the kind fix below, which places 233 of them) reference a property no package in the corpus declares**
 (`UIWidget` 80, `HaakenMK2Weapon` 59, `Instigator` 56, `Controller` 48, `Pawn` 41, `Outer` 36 -- several of
 them the `Actor`/`Pawn` properties a rebuild inherits from C++), **81 a local whose class's own source has no
 declaration for the name**, **70 a literal or cast that names no class**, and **30 a token that is not a
