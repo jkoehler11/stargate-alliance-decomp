@@ -1031,6 +1031,45 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a per-sound `VoiceDesc` is match keys, and the array exists for the takes)
+
+- **A `VoiceSet` block begins at byte 0; only a *class* payload hides its block.** A `*VoicePack` export is a
+  class record followed by its one tagged array, so `tools/voice-sets.py` has to hunt for the start. A
+  `VoiceSet` is an ordinary object: `VDesc` (Struct `VoiceDesc`, 66 bytes), `VSounds`, `VSoundsDesc`, and the
+  block ends exactly on the payload's last byte. Reading it from 0 is not tidiness -- `voice-sets.py`'s
+  `block_of` prefers the candidate with the *most* properties, and on these payloads a start a few bytes late
+  re-reads `VDesc`'s own tagged fields as seven top-level properties (`Type`, `Type`, `Subject`, `Subject`, ...)
+  instead of three. Its totals were right because the tag it wanted survived the mis-parse; a column taken from
+  that parse would not have been.
+- **An array of structs is `count` + one tagged, `None`-terminated block per element.** `VSounds`' elements are
+  bare compact references, `VSoundsDesc`' are not, so the only honest check is that the last element lands
+  exactly on the property's size; an element type that happens to stop *inside* it is what a guess looks like,
+  and the tool refuses the whole set rather than reporting one element short.
+- **1125 descriptors over 273 sets, and every one of them is the same 11 fields.** The array is carried only by
+  the SG-1 four -- the extended pack's subclass -- while the Jaffa, Haaken and Reetou sets are `VDesc` +
+  `VSounds` + load-priority flags and hold no per-sound descriptor at all. The per-sound match is an SG-1-only
+  feature twice over: only `SG1VoicePack` runs the lottery, and only its sets carry the data to run it on.
+- **Tone is what the per-sound array exists for.** 189 of the 273 sets name more than one tone among their
+  descriptors, and the histogram over all descriptors is `TONE_None` 4, `Normal` 341, `Combat` 553,
+  `Stealth` 227 -- `TONE_Critical` and `TONE_Other` are declared and never used. A set is one line of dialogue
+  and its `VSounds` are the alternate takes, so `VSoundsDesc[i].Tone` is what puts take *i* in the tone-match or
+  tone-generic bucket; `(normal, combat, stealth)` is the common shape (90 sets), with 8 sets holding two takes
+  per tone and 7 holding three.
+- **A descriptor names its type by string and carries no probability.** `Type` and `GenericType` are 0 in all
+  1125 descriptors and `SGenericType` is set in 195: `VoiceSet.Build` runs `GetMsgTypeFromString` when the pack
+  builds, and *that* is when the ints `IsSubTypeOf` compares appear -- the file holds the name, not the value.
+  The rest of the match keys: `Recipient` 236, `Subject` 153, `bForbidGeneric` 101, `eCustomize` 140 (every one
+  of them the recipient-name *prefix* mode, never postfix), `Text` 1121. Every probability lives on
+  `VoiceSelector`'s own defaults, so "which probability a descriptor carries" has the answer *none*.
+- **96 of the 273 sets have no `VDesc.Id` of their own**, and 379 descriptors name an Id different from their
+  set's. The fall-through chain (`GetVoiceID`/`GetVoiceTone`/`GetVoiceRecipient`/... each fall back to the set's
+  `VDesc`) is what makes that harmless for everything but `Id`: `SearchVoices` compares the set-level `VDesc.Id`
+  when the descriptor does not match, so a mixed-Id set matches on its own Id and its other takes fall through to
+  the generic bucket -- which is empty here, because `GenericType` is only ever a string in the file.
+- Tool + artifact: `tools/voice-descs.py` (`make voice-descs`), `inventory/voice_descs.csv`, and the
+  `AUDIO.md` block it generates (`--check-doc` in `make ci`). `AUDIO.md`'s "not measured" list no longer names
+  the descriptor; what remains open is which take the game picks at runtime, which needs a mission.
+
 ### Execution notes (2026-11-11, a pack holds one `VoiceSets` array and its sounds are imports)
 
 - **The pack's whole content is one default property, and the emitter's locator cannot see it.** A `*VoicePack`
@@ -5583,6 +5622,10 @@ and a deliberate one-line script break is caught by the boot test.
       `SGVoicePackClass` value and 5 inherit one — 13 packs — 38 inherit none and never speak, and the
       six-bucket `VoiceSelector` lottery runs only for the SG-1 four, because `SG1VoicePack` is the only
       subclass of the extended pack.
+      **What a per-sound `VoiceDesc` holds is measured** (`tools/voice-descs.py`,
+      `inventory/voice_descs.csv`): 1125 descriptors over 273 sets, all 11 fields -- `Tone` in 189 multi-tone
+      sets (the alternate takes), a message-type *string* rather than the int, and no probability anywhere;
+      only the SG-1 four carry the array at all.
       8.3 is complete: checkpoints, AI, vehicles, weapons, objectives, UI, network,
       audio.
       Note: `FORK_SURFACE.md` should gain the GUI example when next touched.
