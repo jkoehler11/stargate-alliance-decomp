@@ -300,41 +300,71 @@ only because one byte cannot spell 256.
     11687 scripts with an epilogue, 11602 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
-        on the caller's chain: 7382 -- 5136 in its own class, 2246 on an ancestor (top: Engine.Actor 305, ...)
-        by the corpus alone: 2712 site(s) reach the one class that declares the name (1080 names), top:
+        on the caller's chain: 8251 -- 5581 in its own class, 2670 on an ancestor (top: Engine.Actor 373, ...)
+        by the corpus alone: 2332 site(s) reach the one class that declares the name (945 names), top:
           ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        decided by the receiver: 3413 site(s) across 736 names, top: SetText 156 over 5 classes, ...
+        on the receiver's chain: 1228 (419 names) -- the expression in front of the call types to a class
+        decided by the receiver: 1696 site(s) across 412 names, top: SetText 107 over 5 classes, ...
+          an object expression with no recorded type: 1207 -- 628 of them a local, 579 a property ...
+          a completed value in front (a self-call, or a receiver the walk did not reach): 489
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in
 the package that declares each ancestor** -- the earlier census only asked its own package, which is why a parent's
-function looked unresolved. **7,382 of the 13,507 (55%) name a function declared on the chain: 5,136 on the caller's
-own class and 2,246 on an ancestor, 305 of those `Engine.Actor`, 244 `Engine.Pawn`, 187 `Editor.BrushBuilder`** --
-so a by-name call is not necessarily to a script function of this build at all, and a rebuild has to carry the
-ancestor's declaration too. (This page wrote **9,628** for that group until the corpus-wide pass below; its own two
-numbers, 5,136 + 2,246, are 7,382, and 13,507 - 6,125 is the same 7,382.)
+function looked unresolved. **8,251 of the 13,507 (61%) name a function declared on the chain: 5,581 on the caller's
+own class and 2,670 on an ancestor, 373 of those `Engine.Actor`, 252 `Engine.Pawn`, 218 `StargateGame.BotBase`, 187
+`Editor.BrushBuilder`** -- so a by-name call is not necessarily to a script function of this build at all, and a
+rebuild has to carry the ancestor's declaration too.
+
+**The caller of a site inside a `State` is the class that owns the state, and saying so moved 869 sites onto the
+chain.** A state compiles into its class, so a function declared in `state Active` is `Pawn`'s function and its
+self-calls resolve there; the census attributed those functions to the state's own name, where nothing declares
+anything. With the class as the owner the chain group went from 7,382 to 8,251, and the number of sites with **no
+expression in front of them** fell from 145 to **17** -- a self-call always has a declarer on the chain, so that
+collapse is the check that the attribution is the right one rather than a lucky one.
 
 **The chain is only the first of two lookups, and the second one does not need the receiver.** A by-name operand is an
 `FName` and `ProcessEvent` finds the function by walking the *receiver's* class, so a site inside a class that does
 not declare the name is not a broken site -- it is a call on another object. The corpus answers most of the rest
-without knowing which object: of the **6,125** sites the chain cannot place, **2,712 (44%) across 1,080 names reach a
+without knowing which object: of the **5,256** sites the chain cannot place, **2,332 (44%) across 945 names reach a
 function exactly one class in the corpus declares** -- `ShouldCrouch` -> only `Engine.Pawn` 63, `AddMenuItem` ->
 only `UWindow.UWindowPulldownMenu` 58, `SetPosImmediate` -> only `StargateGame.UIWidget` 51,
 `GetLocalPlayerController` -> only `Engine.LevelInfo` 40, `PostAIMsg` -> only `Engine.Controller` 40 -- so whatever
-the receiver is, the call can reach exactly one implementation. A declaration inside a `State` counts against the
-class that owns the state, because the state compiles into that class's chain (6 of the 2,712 resolve that way).
+the receiver is, the call can reach exactly one implementation.
 
-**The other 3,413 sites over 736 names are declared by more than one class, and only the receiver decides.** `SetText`
-156 sites over 5 classes (GUI's, UWindow's, StargateGame's), `SetFont` 139 over 4, `GetValue` 56 over 10 (sliders,
-edit boxes, a playlist parser), `WhatToDoNext` 52 over 16, `ClientMessage` 48 over 3 (Pawn, PlayerController,
-Security). That residue is not a naming gap: every one of the 1,816 distinct names is declared somewhere in the
-corpus, and a rebuild has to keep every declaration a name has, because the call site cannot say which one runs.
+**The site does carry its receiver; it is just not an operand.** `VirtualFunction` names its target and nothing else,
+because the compiler has already emitted the object expression and the VM dispatches on what is on the stack: the
+**expression in front of the call token** is the receiver, and in the token tree that is the previous sibling. When
+that expression is a variable, a cast, a `Context` or an object literal, its **declared type** names a class -- a
+class property's from `inventory/class_properties.csv`, a cast's from its target -- and the call is placed on *that*
+class's chain: **1,228 sites (9%) over 419 names**, 198 distinct receiver classes, `Pawn` 80 sites, `UIWidget` 76,
+`SquadAIBasic` 65, `Controller` 51, `UWindowComboControl` 50. Examples: `Engine.Touch ClientMessage()` has a `Pawn`
+in front, so it lands on `Engine.Pawn`; `Engine.PlayerTick PlayerInput()` has a `PlayerInput` and lands on
+`Engine.PlayerInput`; `UWindow.AddText AppendItem()` has a `UWindowDynamicTextRow`.
+
+**So 11,811 of the 13,507 (87%) by-name sites now name a declaring class, and the 1,696 that do not are a typing
+gap, not a dispatch gap.** `SetText` 107 sites over 5 classes, `SetFont` 105 over 4, `GetValue` 42 over 10,
+`ClientMessage` 40 over 3, `GetViewRotation` 38 over 9. Of the 1,696: **1,207 have an object expression in front of
+them whose type the corpus does not record -- 628 a local variable, whose type is not a class property and so is not
+in `class_properties.csv`, and 579 a property whose declaration the script does not type (arrays, delegates,
+pointer-sized natives)**; the other **489 have a completed value in front**, which is a self-call whose name no
+class on the chain declares, or a receiver the walk did not reach. The next instrument is the local-variable
+declarations, and it is worth 628 sites.
+
+**One caveat, measured: an object expression in front is evidence, not proof.** 820 of the 8,251 chain-resolved
+sites (10%) would *also* be placed by the expression in front of them, because a statement that ends in an object
+(`A = SomePawn; Foo();`) leaves an object-valued token next to the next call. The tool prefers the chain reading --
+the conservative one for a rebuild, because it never invents a target class the caller cannot reach -- and the
+ambiguity is why a `receiver:` placement is written with its receiver class in the same row: a reader can re-judge
+any row individually.
 
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
-`resolved_in` (`package`, an ancestor's `Pkg.Class`, or `corpus:Pkg.Class` for the one-class lookup),
-`declaring_classes` (how many classes in the corpus declare that name) and `only_class` (that class when there is
-exactly one) -- regenerated by `make script-calls`. The static column is the part a reader can rely on; the dynamic
-column says where to look, not what runs.
+`resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup, or
+`receiver:Pkg.Class` for the receiver's chain), `declaring_classes` (how many classes in the corpus declare that
+name), `only_class` (that class when there is exactly one), `receiver` (`self`, `value`, or the token in front when it
+can leave an object on the stack) and `receiver_type` (the class that token's declared type names) -- regenerated by
+`make script-calls`. The static column is the part a reader can rely on; the dynamic column says where to look, not
+what runs.
 
 ## Comparing two packages: the L2/L3 comparator
 
@@ -413,13 +443,15 @@ page does not yet describe, and the census records that instead of guessing at i
   header's encoded part is a fixed four values for a `Class` and five for a `Function` whatever their child count
   (`--header` reports the per-position classification), which is why the per-child `Children`-chain model this
   document used to propose is dead — and its +1/+2/+3 residuals were the compact encoding's widths.
-* **Operand semantics -- measured, except where the receiver decides.** What the reference operands *name* is
-  measured per opcode (`--resolve`, above): objects for the variable, cast and final-call tokens, the name table for
-  the virtual and global calls and `NameConst`. The `0x05` switch's byte is settled above (the compared value's
-  width), and the by-name operands are now placed twice over: 7,382 on the caller's chain and 2,712 by the one class
-  in the corpus that declares the name. What is left is **3,413 sites over 736 names that more than one class
-  declares** -- placing one of those needs the *static type* of the receiver, which the operand stream does not carry
-  (a variable token carries its declared class, but the receiving expression is not recorded beside the call).
+* **Operand semantics -- measured, and the receiver is read from the expression in front of the call.** What the
+  reference operands *name* is measured per opcode (`--resolve`, above): objects for the variable, cast and
+  final-call tokens, the name table for the virtual and global calls and `NameConst`. The `0x05` switch's byte is
+  settled above (the compared value's width). By-name sites are now placed four ways: 8,251 on the caller's chain,
+  2,332 by the one class in the corpus that declares the name, and 1,228 on the **receiver's** chain -- the receiver
+  is the expression the emitter evaluated in front of the call, and its declared type names a class. What is left is
+  **1,696 sites over 412 names**, 1,207 of them with an object expression whose type the corpus does not record (628
+  are locals) and 489 with a completed value in front; see "The calls the scripts make" for the counts and the
+  10% reading ambiguity.
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
   declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by

@@ -1259,6 +1259,27 @@ receiver is. The remaining **3,413 sites over 736 names** are declared by two or
 its dynamic sites (7,382 + 2,712 of 13,507) rather than 55%, and the last quarter is a receiver-typing problem, not
 a name-table one.
 
+**2026-11-11, the receiver measurement: the site does carry its receiver, and it is the expression in front of the
+call.** The counts in the three paragraphs above are superseded -- a site inside a `State` was attributed to the
+state rather than to the class that owns it, which alone placed **869 more sites on the chain** (7,382 -> **8,251**)
+and cut the sites with nothing at all in front of them from 145 to **17**; a self-call always has a declarer on its
+chain, so that collapse is the check on the attribution. A by-name call carries no receiver operand because the
+compiler has already emitted the object: the **expression immediately in front of the call token** is what the VM
+dispatches on. `--calls` now reads it, types it where its token can name a class (a property's declared type from
+`inventory/class_properties.csv`, a cast's target, a `Context`'s inner expression) and places the call on the
+**receiver's** chain, `receiver:Pkg.Class` in `resolved_in`, with the token and the type in two new columns. **1,228
+sites (9%) over 419 names** are placed that way, 198 distinct receiver classes (`Pawn` 80, `UIWidget` 76,
+`SquadAIBasic` 65, `Controller` 51, `UWindowComboControl` 50): `Engine.Touch ClientMessage()` has a `Pawn` in front
+and lands on `Engine.Pawn`. The corpus-only lookup consequently shrinks to **2,332 (945 names)** and the residue to
+**1,696 sites over 412 names**, which is now a *typing* gap: **1,207** have an object expression whose type the corpus
+does not record (**628 a local variable** -- a local's type is not a class property, so it is not in
+`class_properties.csv` -- and 579 a property the script does not type, arrays/delegates/pointer natives), and **489**
+have a completed value in front (a self-call whose declarer the corpus does not carry, or a receiver the walk did not
+reach). So **11,811 of the 13,507 (87%)** by-name sites name a declaring class. One caveat, measured: **820** of the
+8,251 chain-resolved sites would *also* be placed by the expression in front (a statement ending in an object leaves
+one beside the next call), so the pass prefers the chain reading and writes the receiver class into every row it does
+place. The obvious next instrument is the local-variable declarations, and it is worth 628 sites.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
