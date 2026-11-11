@@ -1022,6 +1022,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the same read in a loaded level: 48,631 objects, and the 26 stay nameless)
+
+- **The read the last note asked for ran: M00, 48,646 objects in the array, 48,631 headers read (15 unreadable), 346
+  pages, 189 class tables / 376 rows** (`~/sg1/work/m00live/read.log`, `inventory/live_class_tables_m00.csv`).
+  `tools/class-table-reconcile.py --live` scores it: **agree 142, installer 13, shared 32, inverted 1,
+  unknown-class 1** -- one more agreement and one more installer than the title's 139/12, no unrelated pair.
+- **None of the 26 unnamed tables carries an object at M00 either**, so the level's 6,494 extra objects do not name a
+  single one of them: absence is a property of **which packages the disc loads**, not of the walk. The read covers
+  **189 of 492** static tables, and **277 of the 466 named** ones are absent too, so the 26 behave exactly like the
+  named majority they sit in. The runtime route to U8's 26 is therefore exhausted at two points of the game; the
+  remaining instrument is the decompile of `0x00062ce0` (the shared argument 24 of the 27 sites push).
+- **`0x004cfba0` is `Texture` again, on 613 objects** (title: 454), so the inverted row survives a second and much
+  larger world; `0x004cfe68` (the pair's other half) still carries nothing, as does `IceTexture`'s own table.
+- **Ten tables appear only at M00**, every one of them named by the literal artifact and consistent with it: nine
+  agree or are shared (`SubActionCameraEffect`, `InventorySpot`, `MaterialSwitch`, `SubActionTrigger`, `SubActionFade`,
+  `Pickup` carried by four pickup classes, ...), three are `installer` (`Pawn`/`GoaAutoTurretMK3Pawn`,
+  `AIController`/`GoaAutoTurretMK2Controller`, `Projector`/`DynamicProjector`, `GUIScrollTextBox`/`SGScrollTextBox`).
+  No table seen at the title disappears at M00.
+
 ### Execution notes (2026-11-10, the table->class read taken: `0x004cfba0` is `Texture`, and the 26 stay nameless)
 
 - **The command the last run left one call from an answer returned one.** `tools/xemu/class-tables-live.py`

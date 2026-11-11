@@ -180,6 +180,24 @@ them with **179 class tables / 312 rows**, now `inventory/live_class_tables.csv`
         --csv inventory/live_class_tables.csv --table 0x004cfba0 --table 0x004cfe68
     python3 tools/class-table-reconcile.py
 
+### The read at a loaded level: the same verdict on 613 objects, and the pair's half stays empty
+
+A second boot, this time **in M00** (`Continue` -> `QUICK SELECT MAP` -> ten `down` -> `A`, `--gdb=12391 --linger=1800`),
+reads **48,646 objects / 48,631 headers (15 unreadable) / 346 pages** and pairs them with **189 tables / 376 rows**
+(`inventory/live_class_tables_m00.csv`). `class-table-reconcile.py --live` scores that read **agree 142, installer 13,
+shared 32, inverted 1, unknown-class 1**, and the one inverted row is this one again: **`0x004cfba0` carries 613 objects,
+every one of class `Texture`** (up from 454 at the title).
+
+* `0x004cfe68` **still carries no object** at a loaded level, and neither does `IceTexture`'s `0x004cfc88`, so the
+  texture family's second half is named by the constructor tree alone and this read can never confirm it: the classes
+  that install those tables have no instance in the packages the game loads at the title or in M00.
+* **None of the 26 unnamed tables is carried either**, and **277 of the 466 named ones are absent too** -- 189 of 492
+  tables get a row. The read's silence is a statement about which packages are loaded, not about a table's name.
+* **Ten tables appear only at M00** (`Pickup` with four pickup classes, `Pawn`/`GoaAutoTurretMK3Pawn`,
+  `AIController`/`GoaAutoTurretMK2Controller`, `Projector`/`DynamicProjector`, `GUIScrollTextBox`/`SGScrollTextBox`,
+  `InventorySpot`, `MaterialSwitch`, `SubActionCameraEffect`, `SubActionTrigger`, `SubActionFade`) and every one of
+  them agrees with the literal artifact, so a loaded level adds coverage without moving a verdict.
+
 ## Status
 
 The constructor tree is a real second instrument (375/391 agreement) and it confirms three of the 26

@@ -791,6 +791,18 @@ and 287 of the 466 named ones do not either, so absence there measures which pac
 walk. What would settle the 26 is the same read in a guest **with a level loaded** (M00 holds ~6,500 more
 objects), or a package load that instantiates their classes.
 
+**The loaded-level read is taken (2026-11-10) and the 26 are still not carried.** The same walk in a booted **M00** --
+`drive.py --gdb=12391 --linger=1800`, `Continue` -> `QUICK SELECT MAP` -> ten `down` -> `A`, the tutorial modal up, so
+the level's actors exist -- reads **48,646 objects / 48,631 headers (15 unreadable) / 346 pages** and pairs them with
+**189 class tables / 376 rows** (`~/sg1/work/m00live/read.log`,
+`inventory/live_class_tables_m00.csv`; 6,494 more objects than the title's 42,152). `class-table-reconcile.py --live`
+scores it **agree 142, installer 13, shared 32, inverted 1, unknown-class 1**, i.e. the title's verdicts hold and one
+more table agrees. **Not one of the 26 unnamed tables carries an object here either**, and **277 of the 466 named
+tables are just as absent**, so the read names 189 of 492: what it witnesses is the package set a given point in the
+game loads, and the 26 sit inside the 303 tables no loaded class instantiates. So the runtime route this section asked
+for is measured and cannot settle them; what is left is the other route it already named -- a decompile of
+`0x00062ce0` to see what the shared argument at `0x00034650` is.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
