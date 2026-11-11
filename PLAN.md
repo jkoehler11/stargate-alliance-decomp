@@ -1031,6 +1031,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a tags-only start rule anchors 1,628 of 2,209 blocks and finds no two-tag block in the residue)
+
+- **The start rule the residue asked for is measured, and it is a bounded rule.** `tools/class-record.py` now anchors a
+  defaults block on its **tags alone**: a start is an offset past the record prefix where a tag's name index resolves to
+  a property the class or an ancestor declares, and a clean parse runs from there with no invented name. No test reads
+  the payload's last byte, which is what the 59 asked for. Every suffix of a real block parses too, so the candidate
+  with the most properties is its front. Scored against the population that has an answer: **1,963 of 2,319** payloads
+  anchor at all and **1,628 of the 2,209** located starts are reproduced (73.7%).
+- **The 73.7% is agreement, not correctness, and the miss has a direction.** The four sampled unanchored located
+  starts (`Core.Time` 72, `Engine.Material` 109, `Engine.SavedMove` 349, `AmbientCreatures.AmbientCreature` 83) decode
+  their first two tags to `Core`, `System`, `<` and `Lighting` — package and operator names, not properties — so the
+  locator's "located" is a shape there and the tag rule refuses it. Read as a bound on the locator's semantic claim,
+  not as a failed parse.
+- **The residue holds no block of two or more tags, and that is the close the doc's question deserved.** `long-no-block`
+  (60 rows, 59 of them `empty-block`): **27 name no declared property anywhere in the payload**, **33 hold exactly one
+  tagged property** (14 of them end on the payload's last byte, 19 are followed by a 66–478-byte trailer), **0 hold
+  two or more**. `record-only` (50): 45 / 5 / 0, the five single tags at trailer 13–70. So a rule that ignores the
+  payload end finds nothing the locator missed: the tail is a single tag or no tag, and the 14 that end on the last
+  byte are the shape the `single-declared` reason already carries (one tag cannot be told from a table tail).
+- **What is left is the payload's shape, not its tags.** The 27 + 45 payloads whose tail names no property of their
+  class are record body by elimination — a payload-length question the length window already bounds — and the 19 with
+  a 66–478-byte trailer are a tag followed by bytes no tag stream explains. Neither is a start-recovery problem any
+  more, which is a stronger statement than the residue had.
+- Tool + `inventory/class_records.csv` (`anchor_starts`/`anchor_start`/`anchor_props`/`anchor_trailer` on all 2,319
+  rows) + `docs/CLASS_DEFAULTS.md` §"The start rule is measured" + `--report` printing the four counts + `--check`
+  covering the rule on a hand-built two-tag payload and a class that declares nothing.
+
 ### Execution notes (2026-11-11, the trailing byte of a class payload cannot locate its end)
 
 - **The one-byte terminator for the 109 `empty-block` records is measured and rejected, and the control is what rejects

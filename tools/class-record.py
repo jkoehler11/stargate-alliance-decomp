@@ -23,6 +23,13 @@ every one of the 2,319 class payloads ends in `00`, and a one-byte empty tag str
 saturated, so it locates no end and those payloads stay bounded by the window. Every row carries both, so the next
 session can see the control instead of re-deriving the guess.
 
+The third measurement is the **start rule the doc asks for**, one that never looks at the payload's last byte: a
+block starts where a tag names a property the class (or an ancestor) declares and a clean parse runs from there with
+no invented name. Every suffix of a real block also parses, so the candidate with the most properties is the block's
+front; a parse beginning inside the record can only win by decoding record bytes as declared names, which is why the
+rule is scored against the 2,209 located block starts rather than trusted. It recovers 1,554 of them, which bounds it
+as a locator, and it is reported per payload so the residue's own number is a reading (`anchor_starts` = 0).
+
     python3 tools/class-record.py DUMP/System --class Engine.Sound
     python3 tools/class-record.py DUMP/System --sweep -o inventory
 
@@ -100,11 +107,94 @@ def function_counts(pkg):
     return out
 
 
-def measure(pkg, exp, class_index, buffers, block_start=None, functions=0):
+def declared_tables(outdir=None):
+    """(declared properties, super name, super's package) from the committed class artifacts.
+
+    `class_properties.csv` is the class's own serialised property exports and `classes.csv` carries the super name
+    and the package it was declared in, which is what makes an inherited name resolvable without a second walk.
+    """
+    base = outdir or os.path.join(ROOT, "inventory")
+    props, supers, super_pkg = collections.defaultdict(set), {}, {}
+    path = os.path.join(base, "class_properties.csv")
+    if os.path.isfile(path):
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                props[(r["package"], r["class"])].add(r["property"])
+    path = os.path.join(base, "classes.csv")
+    if os.path.isfile(path):
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                key = (r["package"], r["class"])
+                supers[key] = r.get("super") or ""
+                super_pkg[key] = r.get("package_of_super") or r["package"]
+    return props, supers, super_pkg
+
+
+def declared_names(props, supers, super_pkg, key):
+    """Every property name the class or one of its ancestors declares."""
+    out, seen = set(), set()
+    while key and key not in seen:
+        seen.add(key)
+        out |= props.get(key, set())
+        sup = supers.get(key)
+        if not sup or sup in ("None", ""):
+            break
+        key = (super_pkg.get(key) or key[0], sup)
+    return out
+
+
+def name_indices(pkg):
+    """resolvable name index -> name, for a package's own name table."""
+    out = {}
+    for i, entry in enumerate(pkg.names):
+        name = entry[0] if isinstance(entry, tuple) else entry
+        out.setdefault(i, name)
+    return out
+
+
+def anchor(data, pkg, declared, index_of):
+    """The block's start from tags alone: (candidate count, start, properties, trailer after the parse).
+
+    A start is a byte offset at or after the record prefix where a tag's name index resolves to a property the class
+    declares, and the block read from there ends cleanly with only declared names. No condition touches the payload's
+    last byte -- that is the point. The suffix property of a real block means the longest parse is its front, so ties
+    go to the earlier start.
+    """
+    if not declared or not index_of:
+        return 0, "", "", ""
+    wanted = {i for i, n in index_of.items() if n in declared}
+    stream = load_prop_stream()
+    found = []
+    for off in range(3, len(data) - 1):
+        try:
+            value, _end = read_index(data, off)
+        except (IndexError, ValueError):
+            break
+        if value <= 0 or value not in wanted:
+            continue
+        try:
+            props, end, reason = stream.read_block(data[off:], pkg, False)
+        except Exception:
+            continue
+        if reason != "None" or not props:
+            continue
+        names = [p["name"] for p in props]
+        if any(n == "?" or n not in declared for n in names):
+            continue
+        found.append((len(props), off, off + end))
+    if not found:
+        return 0, "", "", ""
+    props_n, start, end = max(found, key=lambda t: (t[0], -t[1]))
+    return len(found), start, props_n, len(data) - end
+
+
+
+def measure(pkg, exp, class_index, buffers, block_start=None, functions=0, declared=frozenset(), index_of=None):
     """One class export -> the record's measured prefix plus the payload's tail."""
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     row = {"super_index": "", "super_matches": "", "scripttext_index": "", "scripttext_at": "",
-           "record_bytes": "", "tail": ""}
+           "record_bytes": "", "tail": "", "anchor_starts": "", "anchor_start": "", "anchor_props": "",
+           "anchor_trailer": ""}
     if not data:
         return row
     row["super_index"], end = read_index(data, 0)
@@ -130,6 +220,8 @@ def measure(pkg, exp, class_index, buffers, block_start=None, functions=0):
         row["empty_at_end"] = 1 if (reason == "None" and not props) else 0
     except Exception:
         row["empty_at_end"] = 0
+    row["anchor_starts"], row["anchor_start"], row["anchor_props"], row["anchor_trailer"] = anchor(
+        data, pkg, declared, index_of)
     row["payload"] = len(data)
     return row
 
@@ -166,29 +258,35 @@ def walk(system_dir):
 def sweep(system_dir, outdir):
     load_prop_stream()
     base = base_rows(outdir)
+    props, supers, super_pkg = declared_tables()
     rows, reasons = [], collections.Counter()
     for pkg_name, pkg in walk(system_dir):
         buffers = textbuffer_of(pkg)
         functions = function_counts(pkg)
+        index_of = name_indices(pkg)
         for k, exp in enumerate(pkg.exports, start=1):
             if pkg.class_name_of(exp) != "Class":
                 continue
             cls = pkg.name(exp["name"])
             start, defaults = base.get((pkg_name, cls), ("", ""))
-            m = measure(pkg, exp, k, buffers, int(start) if start else None, functions.get(k, 0))
+            declared = declared_names(props, supers, super_pkg, (pkg_name, cls))
+            m = measure(pkg, exp, k, buffers, int(start) if start else None, functions.get(k, 0),
+                        declared, index_of)
             has_block = bool(start) and defaults not in ("", "0")
             shape = tail_class(m["payload"], has_block)
             reasons[shape] += 1
             rows.append([pkg_name, cls, m["payload"], m["super_index"], m["super_matches"],
                          m["scripttext_index"], m["scripttext_at"], m["record_bytes"], shape, start, m["tail"],
-                         m["functions"], m["last_byte"], m["empty_at_end"]])
+                         m["functions"], m["last_byte"], m["empty_at_end"],
+                         m["anchor_starts"], m["anchor_start"], m["anchor_props"], m["anchor_trailer"]])
     path = os.path.join(outdir, "class_records.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["package", "class", "payload", "super_index", "super_matches", "scripttext_index",
                     "scripttext_at", "record_bytes", "shape", "block_start", "tail", "functions",
-                    "last_byte", "empty_at_end"])
+                    "last_byte", "empty_at_end", "anchor_starts", "anchor_start", "anchor_props",
+                    "anchor_trailer"])
         w.writerows(rows)
     print("%d class exports: %s" % (len(rows), ", ".join("%s %d" % (k, v) for k, v in reasons.most_common())))
     print("wrote %s" % path)
@@ -291,6 +389,23 @@ def report(rows, outdir):
         print("trailing byte           %d of %d payloads end in 00" % (len(zero), len(rows)))
         print("empty parse at end      %d of %d, of which %d have their record end fixed by a located block -- "
               "saturated, so it is not a record-end locator" % (len(at_end), len(rows), len(located)))
+    if len(rows[0]) > 17:
+        anchored = [r for r in rows if r[14] != "" and int(r[14])]
+        hits = [r for r in rows if r[15] != ""]
+        agree = [r for r in hits if r[8] == "located" and r[9] and int(r[15]) == int(r[9])]
+        loc = [r for r in rows if r[8] == "located"]
+        print("anchor rule             %d of %d payloads carry a tag naming one of the class's declared properties"
+              % (len(anchored), len(rows)))
+        print("anchor vs locator       %d of %d located block starts reproduced, from tags alone (no payload-end "
+              "test)" % (len(agree), len(loc)))
+        for shape in ("long-no-block", "record-only"):
+            sub = [r for r in rows if r[8] == shape]
+            got = [r for r in sub if r[15] != ""]
+            trailers = sorted(int(r[17]) for r in got)
+            print("anchor on %-14s %d of %d anchored%s"
+                  % (shape, len(got), len(sub),
+                     "" if not got else ", trailer after the parse %d..%d bytes, median %d"
+                     % (trailers[0], trailers[-1], at_share(trailers, 0.5))))
 
 
 def selftest():
@@ -313,6 +428,24 @@ def selftest():
     # `--report` quotes `at_share`, and its first version counted distinct block starts instead of blocks.
     if at_share([8, 92, 92, 200], 0.5) != 92 or at_share([], 0.5) != 0 or at_share([7], 0.9) != 7:
         problems.append("at_share misranks a synthetic list")
+
+    # The anchor rule on a hand-built payload: a record prefix, then two tags whose names the class declares. Both
+    # tags are valid starts (a block's suffix parses too), so the count is 2 and the front is the first one, whose
+    # parse ends on the payload's last byte.
+    class Stub:
+        names = [("None", 0), ("Foo", 0), ("Bar", 0)]
+
+        def name(self, i):
+            return self.names[i][0] if 0 <= i < len(self.names) else "?"
+
+    body = bytes.fromhex("030000" "012200000000" "022200000000" "00")
+    starts, start, props_n, trailer = anchor(body, Stub(), {"Foo", "Bar"}, {1: "Foo", 2: "Bar"})
+    if (starts, start, props_n, trailer) != (2, 3, 2, 0):
+        problems.append("anchor answered %s on a synthetic two-tag payload" % ((starts, start, props_n, trailer),))
+    if anchor(body, Stub(), set(), {1: "Foo"})[0] != 0:
+        problems.append("anchor claimed a start for a class that declares nothing")
+    if declared_names({("A", "X"): {"P"}}, {("A", "X"): "Y"}, {("A", "X"): "B"}, ("A", "X")) != {"P"}:
+        problems.append("declared_names invented a name across a package boundary")
     if problems:
         print("FAIL class-record: " + "; ".join(problems))
         return 1
@@ -344,15 +477,18 @@ def main():
     if not args.klass:
         ap.error("--class Package.Class, --sweep, --report or --check")
     want_pkg, _, want_cls = args.klass.partition(".")
+    props, supers, super_pkg = declared_tables()
     for pkg_name, pkg in walk(args.system):
         if pkg_name != want_pkg:
             continue
         buffers = textbuffer_of(pkg)
         functions = function_counts(pkg)
+        index_of = name_indices(pkg)
         for k, exp in enumerate(pkg.exports, start=1):
             if pkg.class_name_of(exp) != "Class" or pkg.name(exp["name"]) != want_cls:
                 continue
-            m = measure(pkg, exp, k, buffers, None, functions.get(k, 0))
+            declared = declared_names(props, supers, super_pkg, (pkg_name, want_cls))
+            m = measure(pkg, exp, k, buffers, None, functions.get(k, 0), declared, index_of)
             print("%s.%s payload %d" % (pkg_name, want_cls, m["payload"]))
             print("  super            %s (export table %s) %s"
                   % (m["super_index"], exp["super"], "agrees" if m["super_matches"] else "DISAGREES"))
@@ -360,6 +496,9 @@ def main():
                   % (m["scripttext_index"] or "-", m["scripttext_at"] if m["scripttext_at"] != "" else "-"))
             print("  functions owned  %s" % m["functions"])
             print("  tail             %s" % m["tail"])
+            print("  anchor           %s starts; first block at %s with %s properties, trailer %s"
+                  % (m["anchor_starts"] or "-", m["anchor_start"] if m["anchor_start"] != "" else "-",
+                     m["anchor_props"] or "-", m["anchor_trailer"] if m["anchor_trailer"] != "" else "-"))
             print("  shape            %s" % tail_class(m["payload"], False))
             return 0
     print("FAIL class-record: %s not found" % args.klass)

@@ -349,6 +349,38 @@ reader of the trailing table (`docs/NATIVE_PROPERTIES.md`'s route for the tag fo
 class among them whose payload decodes as a record shorter than its length, which would put unexplained bytes behind a
 short record — nothing here decodes the record's body, so that check is open.
 
+### The start rule is measured, and it says the residue holds no multi-tag block
+
+`tools/class-record.py` now also anchors a block **on its tags alone**: a start is an offset past the record prefix
+where a tag's name index resolves to a property the class or an ancestor declares, and a clean parse runs from there
+with no invented name. Nothing in the test reads the payload's last byte, which is what the residue asked for. A real
+block's every suffix parses too, so the candidate with the most properties is its front.
+
+The rule is scored against the 2,209 located block starts rather than trusted: it anchors **1,963 of the 2,319**
+payloads and reproduces **1,628 of the 2,209** located starts (73.7%). The miss is not a parse failure: the four
+sampled (`Core.Time`, `Engine.Material`, `Engine.SavedMove`, `AmbientCreatures.AmbientCreature`) have a located start
+whose tags decode to `Core`, `System`, `<` and `Lighting` — package and operator names, not properties — so those
+starts are a shape the tag rule does not confirm, and the 73.7% is agreement with the locator and not a correctness
+bound. Either way the rule cannot replace the end boundary, and the doc keeps the locator.
+
+Applied to the residue it is decisive in the other direction:
+
+| shape | no anchor | one tagged property | two or more tags |
+|---|---:|---:|---:|
+| `long-no-block` (60; 59 of them `empty-block`) | **27** | **33** (14 end on the payload's last byte, 19 with a 66–478-byte trailer) | **0** |
+| `record-only` (50) | **45** | **5** (3 trailer ≤64) | **0** |
+
+**Not one of the 60 `long-no-block` payloads holds a block of two or more tags.** A rule that ignores the payload's
+end therefore finds nothing the locator could have missed there: the payload's tail is either a single named tag or
+no tag of the class at all. The 14 whose single tag ends exactly on the last byte are the same shape the
+`single-declared` reason already carries (263 classes), where one tag cannot be told from a table tail; the 19 with a
+trailer hold a tag followed by 66–478 bytes that no tag stream explains; the 27 name no declared property anywhere in
+the payload, so their tail is record body by elimination — the payload shape, not the locator, is what is left.
+
+`inventory/class_records.csv` gains `anchor_starts`, `anchor_start`, `anchor_props` and `anchor_trailer` on all 2,319
+rows, `--report` prints the four counts above, and `--check` covers the rule on a hand-built two-tag payload (a class
+that declares nothing claims no start).
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds
