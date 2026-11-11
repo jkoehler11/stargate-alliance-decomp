@@ -107,6 +107,18 @@ def function_counts(pkg):
     return out
 
 
+def first_tag(data, off, pkg, declared):
+    """The name the tag at `off` carries, and whether the class declares it: (name, 1/0), ("", "") off the payload."""
+    if not (0 <= off < len(data)):
+        return "", ""
+    try:
+        value, _end = read_index(data, off)
+    except (IndexError, ValueError):
+        return "", ""
+    name = pkg.name(value) if 0 <= value < len(pkg.names) else "?"
+    return name, 1 if name in declared else 0
+
+
 def declared_tables(outdir=None):
     """(declared properties, super name, super's package) from the committed class artifacts.
 
@@ -194,7 +206,7 @@ def measure(pkg, exp, class_index, buffers, block_start=None, functions=0, decla
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     row = {"super_index": "", "super_matches": "", "scripttext_index": "", "scripttext_at": "",
            "record_bytes": "", "tail": "", "anchor_starts": "", "anchor_start": "", "anchor_props": "",
-           "anchor_trailer": ""}
+           "anchor_trailer": "", "block_first_name": "", "block_first_declared": ""}
     if not data:
         return row
     row["super_index"], end = read_index(data, 0)
@@ -222,6 +234,11 @@ def measure(pkg, exp, class_index, buffers, block_start=None, functions=0, decla
         row["empty_at_end"] = 0
     row["anchor_starts"], row["anchor_start"], row["anchor_props"], row["anchor_trailer"] = anchor(
         data, pkg, declared, index_of)
+    # The locator's own start, read as a tag: every located count in the docs rests on it, so the row says whether
+    # that start opens with a property the class declares or with a name that is not a property at all (a package, a
+    # struct, a state, a function). The suffix property means a block's *front* is what this sees.
+    if block_start is not None:
+        row["block_first_name"], row["block_first_declared"] = first_tag(data, block_start, pkg, declared)
     row["payload"] = len(data)
     return row
 
@@ -278,7 +295,8 @@ def sweep(system_dir, outdir):
             rows.append([pkg_name, cls, m["payload"], m["super_index"], m["super_matches"],
                          m["scripttext_index"], m["scripttext_at"], m["record_bytes"], shape, start, m["tail"],
                          m["functions"], m["last_byte"], m["empty_at_end"],
-                         m["anchor_starts"], m["anchor_start"], m["anchor_props"], m["anchor_trailer"]])
+                         m["anchor_starts"], m["anchor_start"], m["anchor_props"], m["anchor_trailer"],
+                         m["block_first_name"], m["block_first_declared"]])
     path = os.path.join(outdir, "class_records.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
@@ -286,7 +304,7 @@ def sweep(system_dir, outdir):
         w.writerow(["package", "class", "payload", "super_index", "super_matches", "scripttext_index",
                     "scripttext_at", "record_bytes", "shape", "block_start", "tail", "functions",
                     "last_byte", "empty_at_end", "anchor_starts", "anchor_start", "anchor_props",
-                    "anchor_trailer"])
+                    "anchor_trailer", "block_first_name", "block_first_declared"])
         w.writerows(rows)
     print("%d class exports: %s" % (len(rows), ", ".join("%s %d" % (k, v) for k, v in reasons.most_common())))
     print("wrote %s" % path)
@@ -389,6 +407,19 @@ def report(rows, outdir):
         print("trailing byte           %d of %d payloads end in 00" % (len(zero), len(rows)))
         print("empty parse at end      %d of %d, of which %d have their record end fixed by a located block -- "
               "saturated, so it is not a record-end locator" % (len(at_end), len(rows), len(located)))
+    if len(rows[0]) > 19:
+        named = [r for r in rows if r[19] != ""]
+        declared_first = [r for r in named if r[19] == "1"]
+        odd = [r for r in named if r[19] == "0"]
+        top = collections.Counter(r[18] for r in odd).most_common(6)
+        print("block first tag         %d of %d located starts open with a property the class declares; %d open with "
+              "something else" % (len(declared_first), len(named), len(odd)))
+        if top:
+            print("block first not a prop  %s" % ", ".join("%s %d" % (k, v) for k, v in top))
+        reasons = read_reasons(outdir)
+        if reasons and odd:
+            bad = collections.Counter(reasons.get((r[0], r[1]), "(no reason)") for r in odd)
+            print("not-a-property by reason %s" % ", ".join("%s %d" % (k, v) for k, v in bad.most_common()))
     if len(rows[0]) > 17:
         anchored = [r for r in rows if r[14] != "" and int(r[14])]
         hits = [r for r in rows if r[15] != ""]
@@ -444,6 +475,11 @@ def selftest():
         problems.append("anchor answered %s on a synthetic two-tag payload" % ((starts, start, props_n, trailer),))
     if anchor(body, Stub(), set(), {1: "Foo"})[0] != 0:
         problems.append("anchor claimed a start for a class that declares nothing")
+    # The locator's own start read as a tag: declared, not declared, and off the payload.
+    if first_tag(body, 3, Stub(), {"Foo"}) != ("Foo", 1) or first_tag(body, 3, Stub(), {"Bar"}) != ("Foo", 0):
+        problems.append("first_tag did not separate a declared property from another name")
+    if first_tag(body, 99, Stub(), {"Foo"}) != ("", ""):
+        problems.append("first_tag read past the payload")
     if declared_names({("A", "X"): {"P"}}, {("A", "X"): "Y"}, {("A", "X"): "B"}, ("A", "X")) != {"P"}:
         problems.append("declared_names invented a name across a package boundary")
     if problems:
