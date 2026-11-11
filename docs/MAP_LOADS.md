@@ -60,9 +60,9 @@ merging them would put `BIOS screen` on a row whose map loads.
 ## The table
 
 <!-- generated:map-loads -->
-**35 rows, 35 PASS / 0 FAIL, 48 boots:** 35 of the 61 campaign entries (10-70) have been loaded, and 26 do not yet.
+**40 rows, 40 PASS / 0 FAIL, 53 boots:** 40 of the 61 campaign entries (10-70) have been loaded, and 21 do not yet.
 
-Not measured: `44, 46-70`.
+Not measured: `50-70`.
 
 | index | map | result | attempts | runs | detail |
 |---:|---|---|---:|---:|---|
@@ -100,7 +100,12 @@ Not measured: `44, 46-70`.
 | 41 | `M15C` | PASS | 1 | 1 |  |
 | 42 | `M15D` | PASS | 1 | 1 |  |
 | 43 | `M15E` | PASS | 1 | 1 |  |
+| 44 | `M15F` | PASS | 1 | 1 |  |
 | 45 | `M16A` | PASS | 1 | 1 |  |
+| 46 | `M16B` | PASS | 1 | 1 |  |
+| 47 | `M16C` | PASS | 1 | 1 |  |
+| 48 | `M16D` | PASS | 1 | 1 |  |
+| 49 | `M16E` | PASS | 1 | 1 |  |
 <!-- /generated:map-loads -->
 
 ## What is left
@@ -108,6 +113,11 @@ Not measured: `44, 46-70`.
 The campaign range is 10-70 (61 entries; 0-9 are the multiplayer maps and `Entry`, 71-72 are `MainMenu` and
 `SGCTF-AbydosVsSGC`). The unmeasured indices are named by the tool's own summary line, and
 `tools/xemu/map-index.py --rotate N` prints N indices a night for a nightly that walks the range without
+
+**Measured pace (2026-11-11):** five indices -- 44, 46, 47, 48, 49 -- took 23 minutes of wall clock, 4.6
+minutes per boot with no retry (135 s to the title, one `A`, N d-pad presses, a 60 s settle), so the 21
+that remain are about 100 minutes of harness time. The pause at 50 is where a run's budget ended, not a
+place the harness failed.
 repeating: 2 a night covers 61 entries in 31 nights, and because 2 is coprime with 61 the wrap skips nothing.
 
 Two things this table still cannot say, and what would settle each:

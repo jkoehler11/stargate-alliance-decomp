@@ -1028,6 +1028,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the load sweep resumes at index 44 and 40 of 61 entries have a row)
+
+- **Five more rows, and every one loaded on its first attempt.** `tools/xemu/missions.sh` ran indices
+  44, 46, 47, 48, 49 into `$WORK/mapback2` and all five passed: `44 M15F`, `46 M16B`, `47 M16C`,
+  `48 M16D`, `49 M16E`. Merged with the seven run directories #352 used, `inventory/map_loads.csv` now
+  holds **40 of the 61 campaign entries over 53 boots, 40 PASS and 0 FAIL**.
+- **The merge set is part of the measurement.** Re-running `map-loads.py` over *every* `missions.tsv`
+  under `$WORK` does not reproduce the committed table: `missions/` and `missions-second-half/` re-report
+  indices a later run already measured (10, 11 and 41 came back `2 attempts / 2 runs` against the
+  committed `1/1`), and `missions-neg/`, `halt-test*/` and `sink*/` exist to prove the retry loop, the
+  halt check and the sink read rather than to measure a map. Reproduce the committed rows byte for byte
+  first, then add the new directory -- that diff is the check that the set is right.
+- **The pace is measured, so what is left is bookkeeping rather than risk**: five boots took 23 minutes
+  of wall clock (4.6 minutes each -- 135 s to the title, one `A`, N d-pad presses, a 60 s settle, one
+  attempt), which puts the 21 unmeasured indices at about 100 minutes of harness time.
+- **The sweep was stopped at index 50 instead of ending the run without a PR.** These five rows are the
+  measurement the boot budget bought; `missions.sh` truncates its TSV per invocation, so
+  `$WORK/mapback2` is left in place and the next sweep adds its own directory to the merge.
+
 ### Execution notes (2026-11-10, the campaign load table is an artifact, and 35 of 61 campaign maps have a row)
 
 - **The verdicts are cumulative now.** `tools/xemu/map-loads.py` merges `missions.sh` run directories into
