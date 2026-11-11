@@ -1236,6 +1236,16 @@ declares. `inventory/script_calls.csv` carries package, class, function, token, 
 per package, so a call into a native parent's function is indistinguishable from a call into a sibling package's until
 the hierarchy is consulted.
 
+**2026-11-11: the hierarchy is consulted, and a quarter of the dynamic calls land above the caller.**
+`--calls` now resolves a by-name target along the caller's super chain, in the package that declares each ancestor
+(`inventory/classes.csv`'s `package_of_super`), and writes the declaring class to a `resolved_in` column: of the
+13,507 dynamic sites, **9,628 (71%) name a function declared on the chain -- 5,136 on the caller's own class and
+2,246 on an ancestor**, 305 `Engine.Actor`, 244 `Engine.Pawn`, 187 `Editor.BrushBuilder`, 135 `Engine.Interaction`.
+So the "2,993 not declared locally" are two different things: 2,246 are a parent's function, which the hierarchy
+does place, and **6,125 remain unresolvable from the site by construction** -- a virtual call resolves on the
+receiver's class and the site names no receiver (`SetText` 156, `SetFont` 139, `ShouldCrouch` 63). A rebuild has to
+carry the ancestor's declaration for the first group; the second needs a receiver, not a better name table.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all

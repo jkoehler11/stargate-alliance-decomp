@@ -111,7 +111,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/registration_ctor_arguments.csv` | 493 | 17 | **ctor-argument.py (no target runs it)** |
 | `inventory/registration_sites.csv` | 493 | 6 | `make registration-sites` |
 | `inventory/savegame_paths.csv` | 16 | 7 | `make savegame-paths` |
-| `inventory/script_calls.csv` | 18931 | 7 | `make script-calls` |
+| `inventory/script_calls.csv` | 18931 | 8 | `make script-calls` |
 | `inventory/script_text_natives.csv` | 18 | 4 | `make package-census` |
 | `inventory/sfx_index.csv` | 55 | 4 | `make lipsinc-index` |
 | `inventory/sgs_schema.csv` | 1739 | 7 | `make formats` |
