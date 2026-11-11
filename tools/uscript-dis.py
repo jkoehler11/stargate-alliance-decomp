@@ -1130,6 +1130,11 @@ def calls_report(path, table, out=None):
         supers[(r["package"], r["class"])] = (r["package_of_super"] or r["package"], r["super"])
     # Every package's Function exports, by declaring class -- read from the export tables alone, no payload walk.
     funcs = collections.defaultdict(set)
+    # name -> the classes that declare a function of that name, anywhere in the corpus. A virtual call dispatches
+    # by name on the *receiver's* class, so a name only one class declares can reach exactly one implementation
+    # whatever the receiver is, and a name several classes declare is where the receiver would have decided. A
+    # declaration inside a State is owned by the class that owns the state: the state is compiled into that class.
+    decls = collections.defaultdict(set)
     for one in files:
         pkg_name = os.path.basename(one).rsplit(".", 1)[0]
         pre = Package(one)
@@ -1138,20 +1143,38 @@ def calls_report(path, table, out=None):
         pre.read_exports()
         for e in pre.exports:
             outer = e.get("outer") or 0
-            if pre.class_name_of(e) == "Function" and outer:
-                funcs[(pkg_name, pre.name(pre.exports[outer - 1]["name"]))].add(pre.name(e["name"]))
+            if pre.class_name_of(e) != "Function" or not outer:
+                continue
+            fn = pre.name(e["name"])
+            oe = pre.exports[outer - 1]
+            funcs[(pkg_name, pre.name(oe["name"]))].add(fn)
+            owner = (pkg_name, pre.name(oe["name"]))
+            if pre.class_name_of(oe) == "State" and oe.get("outer"):
+                owner = (pkg_name, pre.name(pre.exports[oe["outer"] - 1]["name"]))
+            decls[fn].add(owner)
 
     def resolve_name(pkg_name, owner, name):
-        """Where a by-name call's target is declared: this package, an ancestor's, or nowhere in the corpus."""
+        """Where a by-name call's target is declared.
+
+        First the caller's own class, then its super chain in the package that declares each ancestor. Those two
+        answer for a call to `this`; a call to another object's virtual resolves on that object's class, which the
+        site does not name. So the last step is the corpus: the set of classes that declare a function of that name.
+        One means the call can only reach that one implementation; several means the receiver picks, and the count
+        records how wide the choice is. Returns (where, how_many_classes_declare_the_name, the_only_class).
+        """
         if name in funcs.get((pkg_name, owner), ()):
-            return "package"
+            return "package", len(decls.get(name, ())), ""
         here, seen = (pkg_name, owner), set()
         while here in supers and here not in seen:
             seen.add(here)
             here = supers[here]
             if name in funcs.get(here, ()):
-                return "%s.%s" % here
-        return ""
+                return "%s.%s" % here, len(decls.get(name, ())), ""
+        owners = decls.get(name, set())
+        if len(owners) == 1:
+            (op, oc), = owners
+            return "corpus:%s.%s" % (op, oc), 1, "%s.%s" % (op, oc)
+        return "", len(owners), ""
     epilogue = bytes([0x04, 0x0B, 0x47])
     rows = []
     walked = seen = 0
@@ -1207,9 +1230,9 @@ def calls_report(path, table, out=None):
                 token = table.rows[node["opcode"]]["name"]
                 if kind == "by name":
                     name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
-                    where = resolve_name(pkg_name, owner, name) if name else ""
+                    where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
-                                 "Function" if where else "name", where))
+                                 "Function" if where else "name", where, nowners, uniq))
                     continue
                 if value == 0:
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", ""))
@@ -1223,34 +1246,38 @@ def calls_report(path, table, out=None):
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", "out of range"))
     static = [r for r in rows if r[4] == "static"]
     by_name = [r for r in rows if r[4] == "by name"]
-    named_fn = [r for r in by_name if r[6] == "Function"]
     print("%d scripts with an epilogue, %d walked; %d call sites" % (seen, walked, len(rows)))
     print("  static (FinalFunction): %d, of which the target is a Function: %d"
           % (len(static), sum(1 for r in static if r[6] == "Function")))
-    print("  by name (VirtualFunction, GlobalFunction): %d, of which the name is a function in the package: %d"
-          % (len(by_name), len(named_fn)))
-    callees = collections.Counter(r[5] for r in static + named_fn if r[5])
-    print("  most-called function targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
-    others = collections.Counter(r[5] for r in by_name if r[6] != "Function" and r[5])
-    print("  by-name operands that name something other than a function: %s"
-          % ", ".join("%s %d" % kv for kv in others.most_common(5)))
-    here = [r for r in named_fn if r[7] == "package"]
-    above = [r for r in named_fn if r[7] != "package"]
-    print("  of the by-name targets that are a function: %d declared in the caller's own package, %d on an "
-          "ancestor (top: %s)" % (len(here), len(above),
-                                  ", ".join("%s %d" % kv for kv in
-                                            collections.Counter(r[7] for r in above).most_common(5))))
-    miss = collections.Counter(r[5] for r in by_name if not r[7] and r[5])
-    print("  by-name without a declaration anywhere in the corpus: %d site(s), top names: %s"
-          % (sum(miss.values()), ", ".join("%s %d" % kv for kv in miss.most_common(6))))
+    here = [r for r in by_name if r[7] == "package"]
+    above = [r for r in by_name if r[7] and r[7] != "package" and not r[7].startswith("corpus:")]
+    corpus = [r for r in by_name if r[7].startswith("corpus:")]
+    wide = [r for r in by_name if not r[7] and r[5]]
+    only = {r[5]: r[9] for r in corpus}
+    wide_n = {r[5]: r[8] for r in wide}
+    print("  by name (VirtualFunction, GlobalFunction): %d" % len(by_name))
+    print("    on the caller's chain: %d -- %d in its own class, %d on an ancestor (top: %s)"
+          % (len(here) + len(above), len(here), len(above),
+             ", ".join("%s %d" % kv for kv in collections.Counter(r[7] for r in above).most_common(5))))
+    print("    by the corpus alone: %d site(s) reach the one class that declares the name (%d names), top: %s"
+          % (len(corpus), len(only),
+             ", ".join("%s -> %s %d" % (n, only[n], c)
+                       for n, c in collections.Counter(r[5] for r in corpus).most_common(5))))
+    print("    decided by the receiver: %d site(s) across %d names, top: %s"
+          % (len(wide), len(wide_n),
+             ", ".join("%s %d over %d classes" % (n, c, wide_n[n])
+                       for n, c in collections.Counter(r[5] for r in wide).most_common(5))))
+    callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]
+                                  + [r[5] for r in by_name if r[5] and r[7]])
+    print("  most-called resolved targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
     if out:
         os.makedirs(out, exist_ok=True)
         with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class",
-                        "resolved_in"])
+                        "resolved_in", "declaring_classes", "only_class"])
             for row in rows:
-                w.writerow(list(row) + [""] * (8 - len(row)))
+                w.writerow(list(row) + [""] * (10 - len(row)))
         print("wrote %s/script_calls.csv (%d rows)" % (out, len(rows)))
     return 0
 

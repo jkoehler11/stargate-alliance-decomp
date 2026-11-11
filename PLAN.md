@@ -1031,6 +1031,24 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the by-name residue is a receiver question, and 44% of it needs no receiver)
+
+- **The 6,125 "unresolvable" sites are not names the build lacks.** `--calls` now indexes every `Function` export of
+  the 18 packages by name -- a function declared inside a `State` counted against the class that owns the state -- and
+  resolves a site the caller's chain cannot place against that index: **2,712 of the 6,125 (44%), across 1,080
+  names, reach a function exactly one class in the corpus declares** (`ShouldCrouch` -> only `Engine.Pawn` 63,
+  `AddMenuItem` -> only `UWindow.UWindowPulldownMenu` 58, `SetPosImmediate` -> only `StargateGame.UIWidget` 51,
+  `GetLocalPlayerController` -> only `Engine.LevelInfo` 40, `PostAIMsg` -> only `Engine.Controller` 40), so whatever
+  the receiver is, the call reaches one implementation. The last **3,413 sites over 736 names** are declared by two
+  or more classes (`SetText` 156 over 5, `SetFont` 139 over 4, `GetValue` 56 over 10, `WhatToDoNext` 52 over 16) and
+  can only be placed by the receiver's static type, which the operand stream does not carry.
+- **The previous note's 9,628 was an arithmetic error.** 5,136 + 2,246 = 7,382, and 13,507 - 6,125 = 7,382, so the
+  chain places **7,382 (55%)** of the dynamic sites; `docs/BYTECODE.md` and `docs/UNKNOWNS.md` are corrected.
+  `inventory/script_calls.csv` gains `declaring_classes` and `only_class`, and `resolved_in` grows a `corpus:Pkg.Class`
+  value for the one-class lookup.
+- Tool (`--calls`, the corpus-wide index and the three-way summary) + `inventory/script_calls.csv` regenerated
+  (18,931 rows, 10 columns) + `docs/BYTECODE.md` "The calls the scripts make" (rewritten, with the correction) +
+  `docs/UNKNOWNS.md`'s call-site entry.
 ### Execution notes (2026-11-11, a switch's operand byte is the width of the value it compares, and zero is a wide string)
 
 `0x05`'s operand was the last unnamed byte on the bytecode page and the table's note called it a case count, which

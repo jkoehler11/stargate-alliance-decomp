@@ -1246,6 +1246,19 @@ does place, and **6,125 remain unresolvable from the site by construction** -- a
 receiver's class and the site names no receiver (`SetText` 156, `SetFont` 139, `ShouldCrouch` 63). A rebuild has to
 carry the ancestor's declaration for the first group; the second needs a receiver, not a better name table.
 
+**Later the same day: the second group splits, and the first group's number was wrong.** Counting that 9,628 against
+its own components gives 5,136 + 2,246 = 7,382, and 13,507 - 6,125 is 7,382 as well, so the chain places **7,382
+(55%)**, not 9,628 -- a correction to the entry above. The 6,125 the chain cannot place are not names the build does
+not have: `--calls` now also indexes every `Function` export of the 18 packages by name (a state's functions counted
+against the class that owns the state), and **2,712 site(s) across 1,080 names reach a class that is the only one in
+the corpus declaring that name** (`ShouldCrouch` -> `Engine.Pawn` 63, `AddMenuItem` -> `UWindow.UWindowPulldownMenu`
+58, `SetPosImmediate` -> `StargateGame.UIWidget` 51), so the call can reach exactly one implementation whatever the
+receiver is. The remaining **3,413 sites over 736 names** are declared by two or more classes -- `SetText` 156 over
+5, `SetFont` 139 over 4, `GetValue` 56 over 10, `WhatToDoNext` 52 over 16 -- and placing those needs the receiver's
+**static type**, which the bytecode does not carry beside the call. So U13's call table is now resolved to 74% of
+its dynamic sites (7,382 + 2,712 of 13,507) rather than 55%, and the last quarter is a receiver-typing problem, not
+a name-table one.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
