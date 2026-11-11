@@ -1031,6 +1031,32 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the receiver is the expression in front of the call — 1,228 more sites, and a state's function belongs to its class)
+
+- **The site carries its receiver, and it is not an operand.** A by-name call names its target and nothing else,
+  because the compiler has already emitted the object expression the VM dispatches on, so the **expression
+  immediately in front of the call token** is the receiver (the previous sibling in the token tree). `--calls` now
+  reads it and, when the token can name a class (a property's declared type from `class_properties.csv`, a cast's
+  target, a `Context`'s inner expression), places the call on the **receiver's** chain: **1,228 of 13,507 sites (9%)
+  over 419 names**, 198 receiver classes (`Pawn` 80, `UIWidget` 76, `SquadAIBasic` 65, `Controller` 51,
+  `UWindowComboControl` 50) — `Engine.Touch ClientMessage()` has a `Pawn` in front and lands on `Engine.Pawn`;
+  `Engine.PlayerTick PlayerInput()` lands on `Engine.PlayerInput`.
+- **A function inside a `State` belongs to the class that owns the state, and that correction came first.** The
+  census attributed such functions to the state's name, where nothing declares anything; with the class as the owner
+  **869 sites moved onto the chain (7,382 -> 8,251)** and the sites with *nothing* in front of them fell from 145 to
+  **17** — a self-call always has a declarer on its chain, so the collapse is the check that the attribution is
+  right. The corpus-only lookup shrinks to **2,332 (945 names)**.
+- **What is left is a typing gap, not a dispatch gap.** 1,696 sites over 412 names: **1,207** have an object
+  expression whose type the corpus does not record — **628 a local variable** (a local's type is not a class
+  property, so not in `class_properties.csv`) and 579 a property the script does not type — and **489** have a
+  completed value in front (a self-call the corpus cannot complete, or a receiver the walk did not reach). By-name
+  sites naming a declaring class: **11,811 of 13,507 (87%)**. Ambiguity measured: **820** chain-resolved sites (10%)
+  would also be placed by the expression in front, so the pass prefers the chain reading and records the receiver
+  class in every row it does place. The next instrument is the local-variable declarations: 628 sites.
+- Tool (`--calls`, the receiver pass and the state-owner attribution) + `inventory/script_calls.csv` regenerated
+  (18,931 rows, 12 columns: `receiver`, `receiver_type`) + `docs/BYTECODE.md` "The calls the scripts make" +
+  `docs/UNKNOWNS.md`'s call-site entry.
+
 ### Execution notes (2026-11-11, the script side halves the cut-content residue, and 592 classes nothing places are named by code)
 
 - **The reach census only asked the content, so a class no map builds looked invisible.** `tools/class-reach.py`

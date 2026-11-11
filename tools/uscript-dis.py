@@ -1036,6 +1036,11 @@ def class_refs_report(path, table, out=None):
 
 
 CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalFunction": "by name"}
+# The tokens that leave an object on the evaluation stack, so one of them can be the expression a
+# by-name call dispatches on. The receiver is not an operand: the emitter evaluates the object before
+# the call token, so the site carries it as the expression in front (docs/BYTECODE.md).
+OBJECT_TOKENS = {"InstanceVariable", "LocalVariable", "DefaultVariable", "ObjectConst", "Context",
+                 "ClassContext", "DynamicCast", "MetaCast", "StructMember", "NativeParm", "NoObject"}
 
 
 def native_calls_report(path, table, out=None):
@@ -1203,15 +1208,81 @@ def native_calls_report(path, table, out=None):
     return 0
 
 
+def _tree(nodes, parent=None, idx=None):
+    """Every node, with its index in its own sibling list.
+
+    A by-name call carries no receiver operand: the emitter evaluates the object *before* the call token, so the
+    expression the VM would have on its stack at the call is the one in front of it in the same list. Keeping the
+    sibling order is what makes that expression findable.
+    """
+    for i, n in enumerate(nodes):
+        yield n, i, nodes, parent
+        for sub in _tree(n["children"], n, i):
+            yield sub
+
+
+def _class_of_type(friendly):
+    """The class a property's declared type names, or "" when the type is not one."""
+    if not friendly:
+        return ""
+    if friendly.startswith("Class<") and friendly.endswith(">"):
+        return _class_of_type(friendly[6:-1])
+    if friendly.startswith("array<") and friendly.endswith(">"):
+        return _class_of_type(friendly[6:-1])
+    if "." in friendly:
+        return _class_of_type(friendly.rsplit(".", 1)[-1])
+    if friendly in ("int", "float", "bool", "byte", "string", "name", "object", "pointer"):
+        return ""
+    return friendly
+
+
+def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name):
+    """The class the receiver expression's declared type names, or "" when its token cannot say.
+
+    A variable's own type is not in its export record, so it comes from `inventory/class_properties.csv` -- the
+    script's declarations. A *local* is not a class property and is not in that table, which is the largest single
+    reason a receiver stays untyped; an imported property is looked up by name and accepted only when every class
+    declaring that name agrees on the type.
+    """
+    nm = expr["name"]
+    if nm in ("Context", "ClassContext") and expr["children"]:
+        return _receiver_type(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name)
+    if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
+        value, _e = read_index(expr["operands"], 0)
+        target = export_at.get(value)
+        return target[0] if target and target[1] == "Class" else ""
+    if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
+        return ""
+    value, _e = read_index(expr["operands"], 0)
+    if nm != "LocalVariable" and value in export_at:
+        name, _kind, owner = export_at[value]
+        hit = prop_type.get((owner, name))
+        return _class_of_type(hit[1]) if hit else ""
+    if value < 0 and -value in import_at:
+        name, kind = import_at[-value]
+        types = {_class_of_type(c[3]) for c in prop_type_by_name.get(name, ()) if c[1] == kind}
+        if len(types) == 1:
+            return types.pop()
+    return ""
+
+
 def calls_report(path, table, out=None):
-    """Every script-level call the corpus makes, resolved as far as the operand rules allow.
+    """Every script-level call the corpus makes, and what each one's receiver can be read to be.
 
     A `FinalFunction` operand is an object reference, so the call is static and the target is known; a
     `VirtualFunction` or `GlobalFunction` operand is a name, so the target is a name the runtime resolves against the
-    receiver -- which is recorded as such rather than guessed. A name that is not a function of the caller's own
-    package is looked up on the caller's super chain in the package that declares each ancestor, because a native
-    parent's function is not in the child's name table and "not here" is not "nowhere". This is the script half of a
-    call graph, and the static edges are the ones a reader can rely on.
+    receiver. Three lookups place a by-name call: the caller's own class, its super chain in the package that
+    declares each ancestor, and -- when the name is declared by exactly one class in the corpus -- that class
+    whatever the receiver is.
+
+    What is left is a real dispatch question, and the site *does* carry the receiver, just not as an operand: the
+    emitter evaluates the object before the call token, so the expression in front of the call is it. When that
+    expression is a variable, a cast, a `Context` or an object literal, its declared type names a class, and the
+    call is placed on *that* class's chain. Locals are the exception -- their type is not a class property, so it is
+    not in `inventory/class_properties.csv` -- which is why they are counted separately below.
+
+    A function declared inside a `State` is a function of the class that owns the state (the state compiles into
+    that class), so a site inside one is attributed to the class, not to the state.
     """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
@@ -1222,6 +1293,15 @@ def calls_report(path, table, out=None):
     supers = {}
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
         supers[(r["package"], r["class"])] = (r["package_of_super"] or r["package"], r["super"])
+    pkg_of_class = collections.defaultdict(list)
+    for (p, c) in supers:
+        pkg_of_class[c].append(p)
+    # (class, property) -> (kind, declared type): what a variable receiver's type names.
+    prop_type = {}
+    prop_type_by_name = collections.defaultdict(set)
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "class_properties.csv"))):
+        prop_type[(r["class"], r["property"])] = (r["kind"], r["friendly_type"])
+        prop_type_by_name[r["property"]].add((r["class"], r["kind"], r["friendly_type"]))
     # Every package's Function exports, by declaring class -- read from the export tables alone, no payload walk.
     funcs = collections.defaultdict(set)
     # name -> the classes that declare a function of that name, anywhere in the corpus. A virtual call dispatches
@@ -1247,28 +1327,40 @@ def calls_report(path, table, out=None):
                 owner = (pkg_name, pre.name(pre.exports[oe["outer"] - 1]["name"]))
             decls[fn].add(owner)
 
-    def resolve_name(pkg_name, owner, name):
-        """Where a by-name call's target is declared.
-
-        First the caller's own class, then its super chain in the package that declares each ancestor. Those two
-        answer for a call to `this`; a call to another object's virtual resolves on that object's class, which the
-        site does not name. So the last step is the corpus: the set of classes that declare a function of that name.
-        One means the call can only reach that one implementation; several means the receiver picks, and the count
-        records how wide the choice is. Returns (where, how_many_classes_declare_the_name, the_only_class).
-        """
+    def on_chain(pkg_name, owner, name):
+        """The caller's own class, then its ancestors in the package that declares each: what a self-call needs."""
         if name in funcs.get((pkg_name, owner), ()):
-            return "package", len(decls.get(name, ())), ""
+            return "package", ""
         here, seen = (pkg_name, owner), set()
         while here in supers and here not in seen:
             seen.add(here)
             here = supers[here]
             if name in funcs.get(here, ()):
-                return "%s.%s" % here, len(decls.get(name, ())), ""
+                return "ancestor", "%s.%s" % here
+        return "", ""
+
+    def resolve_name(pkg_name, owner, name):
+        """Where a by-name call's target is declared: the caller's chain, then the corpus.
+
+        Returns (where, how_many_classes_declare_the_name, the_only_class). The corpus step is the last one that
+        needs no receiver; `place_on_receiver` runs before it when the site's expression in front names a class.
+        """
+        where, decl = on_chain(pkg_name, owner, name)
+        if where:
+            return (decl or where), len(decls.get(name, ())), ""
         owners = decls.get(name, set())
         if len(owners) == 1:
             (op, oc), = owners
             return "corpus:%s.%s" % (op, oc), 1, "%s.%s" % (op, oc)
         return "", len(owners), ""
+
+    def place_on_receiver(rtype, name):
+        """Where a call on an object of class `rtype` is declared: the *receiver's* chain, not the caller's."""
+        for p in pkg_of_class.get(rtype, ()):
+            where, decl = on_chain(p, rtype, name)
+            if where:
+                return decl or "%s.%s" % (p, rtype)
+        return ""
     epilogue = bytes([0x04, 0x0B, 0x47])
     rows = []
     walked = seen = 0
@@ -1278,8 +1370,11 @@ def calls_report(path, table, out=None):
         pkg.read_imports()
         pkg.read_exports()
         pkg_name = os.path.basename(one).rsplit(".", 1)[0]
-        exports = [(pkg.name(e["name"]), pkg.class_name_of(e)) for e in pkg.exports]
-        imports = [(pkg.name(i["name"]), pkg.name(i["class"])) for i in pkg.imports]
+        export_at = {}
+        for i, x in enumerate(pkg.exports, 1):
+            outer_of = pkg.name(pkg.exports[x["outer"] - 1]["name"]) if x.get("outer") else ""
+            export_at[i] = (pkg.name(x["name"]), pkg.class_name_of(x), outer_of)
+        import_at = {i: (pkg.name(x["name"]), pkg.name(x["class"])) for i, x in enumerate(pkg.imports, 1)}
         # A by-name call carries a name-table index; whether it names a function is a question for the chain above.
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function":
@@ -1312,11 +1407,11 @@ def calls_report(path, table, out=None):
             if sum(x["end"] - x["offset"] for x in nodes) != end - start:
                 continue
             walked += 1
-            owner = pkg.name(pkg.exports[e["outer"] - 1]["name"]) if e["outer"] > 0 else "?"
-            stack = list(nodes)
-            while stack:
-                node = stack.pop()
-                stack.extend(node["children"])
+            oe = pkg.exports[e["outer"] - 1] if e["outer"] > 0 else None
+            owner = pkg.name(oe["name"]) if oe is not None else "?"
+            if oe is not None and oe.get("outer") and pkg.class_name_of(oe) == "State":
+                owner = pkg.name(pkg.exports[oe["outer"] - 1]["name"])
+            for node, i, sibs, parent in _tree(nodes):
                 kind = CALL_TOKENS.get(table.rows[node["opcode"]]["name"])
                 if kind is None or not node["operands"]:
                     continue
@@ -1324,18 +1419,30 @@ def calls_report(path, table, out=None):
                 token = table.rows[node["opcode"]]["name"]
                 if kind == "by name":
                     name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
+                    prev = sibs[i - 1] if i > 0 else None
+                    rtoken = "self" if prev is None else (prev["name"] or "op%02x" % prev["opcode"])
+                    rtype = ""
+                    if prev is not None:
+                        if rtoken in OBJECT_TOKENS:
+                            rtype = _receiver_type(prev, export_at, import_at, prop_type, prop_type_by_name)
+                        else:
+                            rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
+                    if not where and rtype and name:
+                        placed = place_on_receiver(rtype, name)
+                        if placed:
+                            where = "receiver:%s" % placed
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
-                                 "Function" if where else "name", where, nowners, uniq))
+                                 "Function" if where else "name", where, nowners, uniq, rtoken, rtype))
                     continue
                 if value == 0:
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", ""))
-                elif 0 < value <= len(exports):
-                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, exports[value - 1][0],
-                                 exports[value - 1][1]))
-                elif -value <= len(imports):
-                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, imports[-value - 1][0],
-                                 imports[-value - 1][1]))
+                elif value > 0 and value in export_at:
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, export_at[value][0],
+                                 export_at[value][1]))
+                elif value < 0 and -value in import_at:
+                    rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, import_at[-value][0],
+                                 import_at[-value][1]))
                 else:
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", "out of range"))
     static = [r for r in rows if r[4] == "static"]
@@ -1344,8 +1451,9 @@ def calls_report(path, table, out=None):
     print("  static (FinalFunction): %d, of which the target is a Function: %d"
           % (len(static), sum(1 for r in static if r[6] == "Function")))
     here = [r for r in by_name if r[7] == "package"]
-    above = [r for r in by_name if r[7] and r[7] != "package" and not r[7].startswith("corpus:")]
+    above = [r for r in by_name if r[7] and r[7] != "package" and not r[7].startswith(("corpus:", "receiver:"))]
     corpus = [r for r in by_name if r[7].startswith("corpus:")]
+    recv = [r for r in by_name if r[7].startswith("receiver:")]
     wide = [r for r in by_name if not r[7] and r[5]]
     only = {r[5]: r[9] for r in corpus}
     wide_n = {r[5]: r[8] for r in wide}
@@ -1357,10 +1465,22 @@ def calls_report(path, table, out=None):
           % (len(corpus), len(only),
              ", ".join("%s -> %s %d" % (n, only[n], c)
                        for n, c in collections.Counter(r[5] for r in corpus).most_common(5))))
+    print("    on the receiver's chain: %d (%d names) -- the expression in front of the call types to a class "
+          "(%d distinct, top: %s)"
+          % (len(recv), len({r[5] for r in recv}),
+             len({r[11] for r in recv}),
+             ", ".join("%s %d" % kv for kv in collections.Counter(r[11] for r in recv).most_common(5))))
+    open_ = [r for r in wide if not r[7]]
+    untyped = [r for r in open_ if r[10] in OBJECT_TOKENS]
+    locals_ = [r for r in untyped if r[10] == "LocalVariable"]
     print("    decided by the receiver: %d site(s) across %d names, top: %s"
           % (len(wide), len(wide_n),
              ", ".join("%s %d over %d classes" % (n, c, wide_n[n])
                        for n, c in collections.Counter(r[5] for r in wide).most_common(5))))
+    print("      an object expression with no recorded type: %d -- %d of them a local, %d a property whose "
+          "declaration the script does not type" % (len(untyped), len(locals_), len(untyped) - len(locals_)))
+    print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
+          % (len(open_) - len(untyped)))
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]
                                   + [r[5] for r in by_name if r[5] and r[7]])
     print("  most-called resolved targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
@@ -1369,12 +1489,11 @@ def calls_report(path, table, out=None):
         with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class",
-                        "resolved_in", "declaring_classes", "only_class"])
+                        "resolved_in", "declaring_classes", "only_class", "receiver", "receiver_type"])
             for row in rows:
-                w.writerow(list(row) + [""] * (10 - len(row)))
+                w.writerow(list(row) + [""] * (12 - len(row)))
         print("wrote %s/script_calls.csv (%d rows)" % (out, len(rows)))
     return 0
-
 
 
 def switches_report(path, table, out=None):
