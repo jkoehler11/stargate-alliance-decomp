@@ -249,42 +249,48 @@ index** — 10,405 of the 13,398 virtual-call operands name a function the packa
 A byte stream cannot make that distinction by width, which is why "which object a `0x13` cast names" sat unmeasured:
 it is a different question per opcode, and the answer is a table.
 
-## The opcodes above `0x5f` are native calls, and each one has a fixed arity
+## The opcodes above `0x5f` carry the native index itself
 
 The table names nothing above `0x5f` (UELib stops there), so the walker only had a shape for them: `0x60..0x6f` take
 one byte and then a parameter list, everything above `0x6f` a parameter list alone. That shape is a native call, and
-the token does carry the slot:
+the token *is* the native's index -- the number `GNatives` is indexed by, with no arithmetic on it:
 
     python3 tools/uscript-dis.py --native-calls DUMP/System -o inventory
 
 over the same 11,602 scripts that walk clean writes `inventory/native_opcodes.csv` (206 rows:
-`opcode,operand,index,sites,resolved,param_fit,native,declared_in,declared_params,args`), where the slot is the
-opcode itself below `0x100` (`0x70 + n`) and two bytes at or above it (`0x60 + (n >> 8)`, then the low byte).
+`opcode,operand,index,sites,resolved,param_fit,body_name,body_match,native,declared_in,declared_params,args`), where
+the index is the opcode itself below `0x100` and two bytes at or above it (`0x60 + (n >> 8)`, then the low byte), and
+`body_name` is what the image's own `GNatives` record spells for the slot's body.
 
-* **48,422 native-call tokens**, 44,174 in the direct form and **4,248 in the extended form -- and every extended
-  site names a slot of 256 or more**, which is exactly where the one-byte form cannot reach.
-* **The extended form resolves to its declaration**: `0x61 0x16` is slot 278 = `Actor.Spawn` (465 sites), `0x61 0x17`
-  279 = `Actor.Destroy` (350), `0x61 0x18` 280 = `Actor.SetTimer` (262), `0x61 0x2f` 303 = `Object.IsA` (217).
-  **5,864 sites in all name a `native()` declaration on the caller's own super chain.**
-* **The argument count is constant per opcode, and that is the proof that one opcode is one native.** `0x77`:
-  5,368 sites, **every one with exactly two arguments**; `0xaf` 1,598/1,598, `0x9a` 1,538/1,538, `0x96`
-  1,433/1,433, `0xb0` 805/805, `0x97` 523/523, `0x93` 479/479 -- all two. A per-class ordinal, or a slot the
-  caller's chain decided, would spread over several counts.
-* **The traffic sits on slots the script never declares.** **38,143 of the 48,422 sites are slots 0..95**
-  (`0x70..0xcf`), and no declaration exists at those slots in any caller's chain: they are engine-side natives the
-  compiler emits for its own operators. The remaining **10,279 sites are slots 96..143** (`0xd0..0xff`), where
-  **5,862 do name a declaration** -- `0xfe` slot 142 = `Object.EqualEqual_RotatorRotator`, `0xff` 143 =
-  `Object.Subtract_PreInt` (312 of its 331 sites with the two arguments its declaration takes).
-* **The arity is where the two numberings show.** Only 1,174 of the 5,864 resolved sites match their declaration's
-  `parameter_count`, and the clearest case is `0xe7`: 1,072 of its 1,186 sites pass **one** argument while the slot's
-  declaration (`Object.NotEqual_ObjectObject`) takes two. So either an operator token's operand stream is not a
-  parameter list, or the low slots and the declared slots are two numbering schemes that meet at 96. The arity
-  constancy settles *one opcode, one native*; it does not yet settle that the two numbers are the same number.
+* **48,422 native-call tokens**: 44,174 in the direct form over **120 opcodes**, and **4,248 in the extended form**,
+  every extended site naming an index of 256 or more -- exactly where the one-byte form cannot reach (it spans
+  `112..255`, which is where the declared band sits).
+* **The token is the index, and the image says so twice.** For the body at the token's own `GNatives` slot, the
+  image's `.data` record (`{slot, intUObjectexec<Function>}`) already carries the name: **111 of the 120 direct opcodes
+  spell `exec<Function>` for the declaration at that exact index, 38,950 sites**, and the other nine differ only in
+  spelling (`execConcat_StringString` where the script declares `Concat_StrStr`). Under this rule **42,056 of the
+  48,422 sites name a `native()` declaration on the caller's own super chain**, against **5,864** under the
+  `op - 0x70` reading this tool shipped with first.
+* **Arity agrees once the index is the token.** `0xe7` is slot 231 = `Object.Log` and 1,072 of its 1,186 sites pass
+  **one** argument; `0x77` is slot 119 = `Object.NotEqual_ObjectObject`, 5,368 sites, every one with two; `0xe1` slot
+  225 `Object.VSize` 372/372 with one; `0xc3` slot 195 `Object.FRand` 324/324 with none. The earlier reading had the
+  one-argument `Log` and the two-object `NotEqual` swapped, which is why its arity never fitted.
+* **There is no operator band below 96.** The first census read these tokens as slots `0..95` and reported 38,143
+  sites that "name nothing": as slots `112..207` they are all declared. `op - 0x70` subtracts the same constant the
+  two-byte form adds, and nothing in the build numbers natives from 0.
+* **`0xfe` is `Name` equality, not rotator.** Slot 254 = `Object.EqualEqual_NameName`, 414/414 with two arguments --
+  the construct is `Tag == 'Foo'`, which is why it outnumbers every other comparison in the shipped script (the
+  earlier reading called it `EqualEqual_RotatorRotator`, slot 142, by the same offset).
+* **What does not resolve is the classes, not the numbering.** 6,366 sites (13%) name no declaration on the caller's
+  chain: 1,480 are extended calls into engine classes the script half never declares (`intUCanvasexecDrawText` 352,
+  `execStrLen` 120, `execDrawActor` 8 -- Canvas draws through its own natives), and the rest are callers whose class
+  the super map does not carry. The body is still named by the image's record, so the index holds; the declaration is
+  what is missing.
 
-**What it rules out.** The three readings the page carried -- extended natives, engine-private tokens, or reserved --
-collapse to one: they are all native calls. What is open is narrower: which table numbers slots 0..95, and why the
-declared-operator rows' arity disagrees. Both need `GNatives` (U7) or the operator table's own declarations, not
-another walk.
+**What it rules out.** Both readings this page carried -- an operator token whose operand stream is not a parameter
+list, and two numbering schemes meeting at 96 -- are wrong. The stream is a parameter list, and the build has one
+numbering: the token is `GNatives`' own index from 112 (`Object.Concat_StrStr`) upward, and the two-byte form exists
+only because one byte cannot spell 256.
 
 ## The calls the scripts make
 
@@ -349,10 +355,12 @@ The comparator is now the part that does not wait.
   is left of this item is the residue: what a `0x05` switch's byte means, and the 22% of virtual-call operands whose
   name is not a function the package declares (a native parent's function, most likely, which the name table alone
   cannot confirm).
-* **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls, and the token
-  carries the slot (`0x70 + n`, or two bytes from `0x100`): 48,422 sites, an arity that is constant per opcode, and
-  5,864 of them naming a `native()` declaration. What is still open is *which* table numbers slots 0..95 -- no
-  declaration in the script does -- and why the declared operator rows' arity disagrees. `--native-calls`, above.
+* **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
+  slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
+  declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by
+  the image's own record for 111 of the 120 opcodes. The residue is 6,366 sites whose caller's chain or class the
+  inventory does not carry, and the extended calls into classes the script half never declares (Canvas). Arity is
+  constant per opcode and agrees with the declaration. `--native-calls`, above.
 * **Compressed scripts — measured negative.** `UStruct::Serialize` appends a `'G'` marker when a script is stored
   compressed. Every one of the **2,319 `Class` payloads** was tried at five offsets after `FriendlyName`, with four
   leading-byte skips and both zlib framings, looking for an inflate that starts with a `Return` opcode or ends on the

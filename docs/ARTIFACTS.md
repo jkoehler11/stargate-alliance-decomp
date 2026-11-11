@@ -85,7 +85,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_channels.csv` | 523 | 12 | `make native-channels` |
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_names.csv` | 273 | 4 | `make gnatives-mission` |
-| `inventory/native_opcodes.csv` | 206 | 10 | `make help` |
+| `inventory/native_opcodes.csv` | 206 | 12 | `make help` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |
 | `inventory/native_reconcile.csv` | 96 | 13 | `make native-reconcile` |
 | `inventory/native_residual.csv` | 11 | 7 | `make native-reconcile` |

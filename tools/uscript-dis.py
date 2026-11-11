@@ -945,16 +945,16 @@ CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalF
 
 
 def native_calls_report(path, table, out=None):
-    """What the opcodes above 0x5f call: a native index, read against the calling class's own chain.
+    """What the opcodes above 0x5f call: the token is the native index, read against the caller's chain.
 
     The opcode table stops naming at `0x5f` and carries `0x60..0x6f` as "one byte then parms" and everything above
-    it as "parms" -- the operand shape of a native call without saying which native. A call is only read correctly if
-    its index names a `native()` declaration on the calling class or an ancestor *and* the declared parameter count
-    matches the argument list the token carries, which is a check on content rather than on tiling. Two candidate
-    index rules are scored side by side so the answer is the one the declarations support.
+    it as "parms" -- the operand shape of a native call without saying which native. `GNatives` holds the bodies:
+    slot `n` is native `n` for the declared band, and the image's own `.data` record for that slot spells the body's
+    name (`{slot, intUObjectexec<Function>}`). Three candidate index rules are scored side by side -- `op`, `op-0x70`
+    (this tool's first reading) and `op-0x60` -- because arithmetic on the token is what the earlier census guessed
+    and the token needs no arithmetic at all.
     """
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
-
     supers = {r["class"]: r["super"]
               for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv")))}
     declared = collections.defaultdict(dict)
@@ -962,6 +962,13 @@ def native_calls_report(path, table, out=None):
         token = int(r["native_token"] or 0)
         if token:
             declared[r["class"]][token] = (r["class"], r["function"], int(r["parameter_count"] or 0))
+    # The body each GNatives slot holds, named by the image's own record rather than by a script declaration --
+    # this is the half of the question the declarations cannot answer on their own.
+    bodies = {}
+    records = os.path.join(ROOT, "inventory", "gnatives_records.csv")
+    if os.path.exists(records):
+        for r in csv.DictReader(open(records)):
+            bodies[int(r["slot"])] = r["record_name"] or ""
 
     def chain_of(cls):
         names, seen = [], set()
@@ -978,6 +985,13 @@ def native_calls_report(path, table, out=None):
                 return got
         return None
 
+    def body_names(index, hit=None):
+        """The body at `index` is `exec<Function>` for the declaration the same index resolves to."""
+        record = bodies.get(index, "")
+        if not record or not hit:
+            return False
+        return record.endswith("exec" + hit[1])
+
     def arg_hist(hist):
         """`2:4100/5368` -- one native means one argument count; a per-class ordinal does not."""
         total = sum(hist.values()) or 1
@@ -988,7 +1002,7 @@ def native_calls_report(path, table, out=None):
     epilogue = bytes([0x04, 0x0B, 0x47])
     # sites, resolved, param-fit, (class, fn, params), argument-count histogram
     rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter()])
-    scores = {"A": [0, 0, 0], "B": [0, 0, 0]}                 # sites, resolved, param-fit
+    scores = {"A": [0, 0, 0, 0], "B": [0, 0, 0, 0], "C": [0, 0, 0, 0]}   # sites, resolved, fit, body
     walked = seen_payloads = 0
     for one in files:
         pkg = Package(one)
@@ -1039,9 +1053,10 @@ def native_calls_report(path, table, out=None):
                 operand = node["operands"][0] if (0x60 <= op <= 0x6f and node["operands"]) else None
                 args = len([c for c in node["children"]]) - 1       # the terminating 0x16 is a child too
                 if op > 0x6f:
-                    candidates = {"A": op - 0x70, "B": op - 0x60}
+                    candidates = {"A": op - 0x70, "B": op - 0x60, "C": op}
                 else:
-                    candidates = {"A": ((op - 0x60) << 8) | (operand or 0), "B": operand or 0}
+                    candidates = {"A": ((op - 0x60) << 8) | (operand or 0), "B": operand or 0,
+                                  "C": ((op - 0x60) << 8) | (operand or 0)}
                 for rule, index in candidates.items():
                     scores[rule][0] += 1
                     hit = lookup(cls, index)
@@ -1049,7 +1064,9 @@ def native_calls_report(path, table, out=None):
                         scores[rule][1] += 1
                         if hit[2] == args:
                             scores[rule][2] += 1
-                index = candidates["A"]
+                        if body_names(index, hit):
+                            scores[rule][3] += 1
+                index = candidates["C"]
                 hit = lookup(cls, index)
                 key = (op, operand, index)
                 cell = rows[key]
@@ -1061,27 +1078,32 @@ def native_calls_report(path, table, out=None):
                         cell[2] += 1
                     cell[3] = hit
     print("%d payload(s) with an epilogue, %d walk clean" % (seen_payloads, walked))
-    for rule in ("A", "B"):
-        sites, resolved, fit = scores[rule]
-        print("rule %s: %d native-call token(s), %d name a declaration on the caller's chain, %d also match its "
-              "declared parameter count" % (rule, sites, resolved, fit))
-    print("%-6s %-7s %6s %7s %8s %8s  %-34s %s"
-          % ("op", "operand", "index", "sites", "resolved", "params", "native", "args (top 3)"))
+    for rule, label in (("A", "op-0x70"), ("B", "op-0x60"), ("C", "the token itself")):
+        sites, resolved, fit, named = scores[rule]
+        print("rule %s (%s): %d native-call token(s), %d name a declaration on the caller's chain, %d also match "
+              "its declared parameter count, %d name a body the image's own GNatives record spells"
+              % (rule, label, sites, resolved, fit, named))
+    print("%-6s %-7s %6s %7s %8s %8s  %-22s %-22s %s"
+          % ("op", "operand", "index", "sites", "resolved", "params", "body (GNatives record)", "native",
+             "args (top 3)"))
     for (op, operand, index), (sites, resolved, fit, hit, hist) in \
             sorted(rows.items(), key=lambda kv: -kv[1][0])[:40]:
-        print("0x%02x   %-7s %6d %7d %8d %8d  %-34s %s"
+        record = bodies.get(index, "")
+        print("0x%02x   %-7s %6d %7d %8d %8d  %-22s %-22s %s"
               % (op, "-" if operand is None else "0x%02x" % operand, index, sites, resolved, fit,
+                 (record + (" *" if body_names(index, hit) else "")) if record else "-",
                  ("%s.%s" % (hit[0], hit[1])) if hit else "-", arg_hist(hist)))
     if out:
         os.makedirs(out, exist_ok=True)
         name = os.path.join(out, "native_opcodes.csv")
         with open(name, "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "native", "declared_in",
-                        "declared_params", "args"])
+            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "body_name", "body_match",
+                        "native", "declared_in", "declared_params", "args"])
             for (op, operand, index), (sites, resolved, fit, hit, hist) in sorted(rows.items()):
                 w.writerow(["0x%02x" % op, "" if operand is None else "0x%02x" % operand, index, sites, resolved,
-                            fit, hit[1] if hit else "", hit[0] if hit else "", hit[2] if hit else "",
+                            fit, bodies.get(index, ""), int(body_names(index, hit)),
+                            hit[1] if hit else "", hit[0] if hit else "", hit[2] if hit else "",
                             arg_hist(hist)])
         print("wrote %s (%d row(s), %d sites)" % (name, len(rows), sum(v[0] for v in rows.values())))
     return 0

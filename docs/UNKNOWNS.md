@@ -678,6 +678,21 @@ space (`tools/xemu/mem.py --virtual`; a physical read of `0x6313e8` lands on ano
 zeros, which looks like a zeroed array), and a boot that never left the menu still serves its stub — the read is
 gated on `tools/xemu/frame-diff.py`, because a failed boot would otherwise "confirm" the menu table.
 
+**Closed 2026-11-11: the token is the slot, and the low band was arithmetic, not a table.** The bytecode census
+read the opcodes above `0x5f` as `op - 0x70` and so reported 38,143 sites on "slots 0..95 that name nothing" -- an
+operator band with no declarer, and a `0xe7` arity that disagreed with the declaration it resolved to. `GNatives`
+settles it from both sides. First, the image's own `.data` record for each slot (`{slot, intUObjectexec<Function>}`,
+the binder strings this entry already measured) spells the body's name: read by the **token as the index**, **111 of
+the 120 direct opcodes' bodies are `exec<Function>` for the declaration at that exact index (38,950 sites)**, the
+other nine differing only in spelling (`execConcat_StringString` against the declared `Concat_StrStr`); read by
+`op - 0x70`, none of the 120 match. Second, the arity: `0xe7` is slot 231 = `Object.Log`, and 1,072 of its 1,186
+sites pass one argument, while `0x77` is slot 119 = `Object.NotEqual_ObjectObject` with 5,368 sites of exactly two.
+The one-byte form spans `112..255` -- the declared band -- and the two-byte form exists only beyond it, so nothing is
+numbered from 0 and there is no second table. `tools/uscript-dis.py --native-calls` now scores `op`, `op - 0x70` and
+`op - 0x60` side by side (42,056 / 5,864 / 5,213 sites resolving) and writes `inventory/native_opcodes.csv` with the
+slot's record name and whether it matches; `docs/BYTECODE.md` carries the corrected numbers. What remains open in
+this entry is unchanged and unrelated: a name for the 83 registered slots that no package declares.
+
 ## U8. Which slot dispatches `ProcessEvent`, and the assert sites with no function
 
 **`ProcessEvent` found 2026-10-24, at `0x0004bf20`.** It was located by scanning the executable for
