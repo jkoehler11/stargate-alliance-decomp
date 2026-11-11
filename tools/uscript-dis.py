@@ -1114,14 +1114,44 @@ def calls_report(path, table, out=None):
 
     A `FinalFunction` operand is an object reference, so the call is static and the target is known; a
     `VirtualFunction` or `GlobalFunction` operand is a name, so the target is a name the runtime resolves against the
-    receiver -- which is recorded as such rather than guessed. This is the script half of a call graph, and the
-    static edges are the ones a reader can rely on.
+    receiver -- which is recorded as such rather than guessed. A name that is not a function of the caller's own
+    package is looked up on the caller's super chain in the package that declares each ancestor, because a native
+    parent's function is not in the child's name table and "not here" is not "nowhere". This is the script half of a
+    call graph, and the static edges are the ones a reader can rely on.
     """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
 
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
+    # (package, class) -> (package the super is declared in, super): the chain a by-name call is resolved along.
+    supers = {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
+        supers[(r["package"], r["class"])] = (r["package_of_super"] or r["package"], r["super"])
+    # Every package's Function exports, by declaring class -- read from the export tables alone, no payload walk.
+    funcs = collections.defaultdict(set)
+    for one in files:
+        pkg_name = os.path.basename(one).rsplit(".", 1)[0]
+        pre = Package(one)
+        pre.read_names()
+        pre.read_imports()
+        pre.read_exports()
+        for e in pre.exports:
+            outer = e.get("outer") or 0
+            if pre.class_name_of(e) == "Function" and outer:
+                funcs[(pkg_name, pre.name(pre.exports[outer - 1]["name"]))].add(pre.name(e["name"]))
+
+    def resolve_name(pkg_name, owner, name):
+        """Where a by-name call's target is declared: this package, an ancestor's, or nowhere in the corpus."""
+        if name in funcs.get((pkg_name, owner), ()):
+            return "package"
+        here, seen = (pkg_name, owner), set()
+        while here in supers and here not in seen:
+            seen.add(here)
+            here = supers[here]
+            if name in funcs.get(here, ()):
+                return "%s.%s" % here
+        return ""
     epilogue = bytes([0x04, 0x0B, 0x47])
     rows = []
     walked = seen = 0
@@ -1133,9 +1163,7 @@ def calls_report(path, table, out=None):
         pkg_name = os.path.basename(one).rsplit(".", 1)[0]
         exports = [(pkg.name(e["name"]), pkg.class_name_of(e)) for e in pkg.exports]
         imports = [(pkg.name(i["name"]), pkg.name(i["class"])) for i in pkg.imports]
-        # A by-name call carries a name-table index, so it is resolved against the names this package declares --
-        # "is it a function here" is the question a call graph asks of it.
-        function_names = {pkg.name(e["name"]) for e in pkg.exports if pkg.class_name_of(e) == "Function"}
+        # A by-name call carries a name-table index; whether it names a function is a question for the chain above.
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function":
                 continue
@@ -1179,8 +1207,9 @@ def calls_report(path, table, out=None):
                 token = table.rows[node["opcode"]]["name"]
                 if kind == "by name":
                     name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
+                    where = resolve_name(pkg_name, owner, name) if name else ""
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
-                                 "Function" if name in function_names else "name"))
+                                 "Function" if where else "name", where))
                     continue
                 if value == 0:
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, "", ""))
@@ -1205,13 +1234,23 @@ def calls_report(path, table, out=None):
     others = collections.Counter(r[5] for r in by_name if r[6] != "Function" and r[5])
     print("  by-name operands that name something other than a function: %s"
           % ", ".join("%s %d" % kv for kv in others.most_common(5)))
+    here = [r for r in named_fn if r[7] == "package"]
+    above = [r for r in named_fn if r[7] != "package"]
+    print("  of the by-name targets that are a function: %d declared in the caller's own package, %d on an "
+          "ancestor (top: %s)" % (len(here), len(above),
+                                  ", ".join("%s %d" % kv for kv in
+                                            collections.Counter(r[7] for r in above).most_common(5))))
+    miss = collections.Counter(r[5] for r in by_name if not r[7] and r[5])
+    print("  by-name without a declaration anywhere in the corpus: %d site(s), top names: %s"
+          % (sum(miss.values()), ", ".join("%s %d" % kv for kv in miss.most_common(6))))
     if out:
         os.makedirs(out, exist_ok=True)
         with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class"])
+            w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class",
+                        "resolved_in"])
             for row in rows:
-                w.writerow(row)
+                w.writerow(list(row) + [""] * (8 - len(row)))
         print("wrote %s/script_calls.csv (%d rows)" % (out, len(rows)))
     return 0
 

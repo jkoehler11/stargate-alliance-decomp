@@ -1031,6 +1031,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, a quarter of the by-name calls are declared on an ancestor, and the rest need a receiver)
+
+- **The call graph's dynamic half was asking one package the wrong question.** `--calls` resolved a by-name target
+  against its own package's function list; it now walks the **caller's super chain in the package that declares each
+  ancestor** (`inventory/classes.csv`'s `package_of_super`) and records the declaring class in a new `resolved_in`
+  column of `inventory/script_calls.csv`. Of **13,507 dynamic sites, 9,628 (71%) name a function on the chain** --
+  5,136 on the caller's own class, **2,246 on an ancestor** (305 `Engine.Actor`, 244 `Engine.Pawn`, 187
+  `Editor.BrushBuilder`, 135 `Engine.Interaction`), which the old census had counted as "not declared locally".
+- **What is left of the 2,993 is not a name-table problem.** Those were described as "a native parent's function is
+  indistinguishable from a sibling package's until the hierarchy is consulted" -- the hierarchy places 2,246 of them;
+  the other **6,125 cannot be placed from the site at all**, because a virtual call resolves on the *receiver's* class
+  and no site names its receiver. The top of that residue is UWindow and PlayerController: `SetText` 156, `SetFont`
+  139, `ShouldCrouch` 63, `AddMenuItem` 58, `GetValue` 56.
+- **The consequence for a rebuild**: a by-name call does not necessarily target a function this build's own package
+  declares -- 2,246 of them target a parent's -- so a recompiled package has to carry the ancestor declaration, not
+  an invented local one.
+- Tool (`--calls`, chain resolution + `resolved_in`, the summary broken down by declaring class) +
+  `inventory/script_calls.csv` regenerated (18,931 rows, 8 columns) + `docs/BYTECODE.md` section "The calls the
+  scripts make" + `docs/UNKNOWNS.md`'s call-site entry.
+
 ### Execution notes (2026-11-11, the native-call opcode is the `GNatives` slot itself, and 0xe7 is `Object.Log`)
 
 - **The previous note's open question is settled, and its reading was off by `0x70`.** `tools/uscript-dis.py
