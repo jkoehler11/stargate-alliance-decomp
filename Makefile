@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs
 
 help:
 	@echo "targets:"
@@ -138,6 +138,7 @@ help:
 	@echo "  vehicle-seats    read the seat/turret wiring out of the default properties into inventory/vehicle_seats.csv"
 	@echo "  voice-packs      which pack each class under StargatePawn speaks with, into inventory/voice_packs.csv"
 	@echo "  voice-sets       how many voices each pack holds, into inventory/voice_sets.csv"
+	@echo "  voice-descs     what a per-sound VoiceDesc holds, into inventory/voice_descs.csv"
 	@echo "  native-binder    the names the binder resolves index-less natives from (needs the dump; no boot)"
 	@echo "  native-table     each of those names' body address, from the image's own registration table (needs the dump; no boot)"
 	@echo "  ci            the checks that need no game data (committed CSVs, symbol map, generated docs)"
@@ -302,6 +303,7 @@ ci:
 	@$(PYTHON) tools/vehicle-seats.py --check-doc docs/systems/VEHICLES.md
 	@$(PYTHON) tools/voice-packs.py --check-doc docs/systems/AUDIO.md
 	@$(PYTHON) tools/voice-sets.py --check-doc docs/systems/AUDIO.md
+	@$(PYTHON) tools/voice-descs.py --check-doc docs/systems/AUDIO.md
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
@@ -910,3 +912,11 @@ voice-sets:
 	$(PYTHON) tools/voice-sets.py \
 		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
 		-o inventory/voice_sets.csv --write-doc docs/systems/AUDIO.md
+
+# A `VoiceSet` is an ordinary object, so its block starts at byte 0: `VDesc`, `VSounds`, `VSoundsDesc`. This
+# reads the per-sound `VoiceDesc` elements (the question `AUDIO.md` still had open after `voice-sets`).
+voice-descs:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
+	$(PYTHON) tools/voice-descs.py \
+		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
+		-o inventory/voice_descs.csv --write-doc docs/systems/AUDIO.md
