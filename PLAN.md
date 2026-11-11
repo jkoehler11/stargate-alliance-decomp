@@ -1031,6 +1031,33 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the opcodes above 0x5f are native calls and their arity is constant)
+
+- **The page's last open opcode item is measured, not reserved.** `tools/uscript-dis.py --native-calls` reads every
+  token at `0x60` or above as a native call whose slot is the token itself (`0x70 + n`, or `0x60 + (n >> 8)` then
+  the low byte from `0x100`): **48,422 sites over the 11,602 scripts that walk clean**, 44,174 direct and **4,248
+  extended, every extended one naming a slot of 256 or more** -- the two-byte form is used exactly where the
+  one-byte form cannot reach.
+- **The extended form resolves to its declaration**: `0x61 0x16` = 278 `Actor.Spawn` (465 sites), `0x61 0x17` 279
+  `Actor.Destroy`, `0x61 0x18` 280 `Actor.SetTimer`, `0x61 0x2f` 303 `Object.IsA`; **5,864 sites name a `native()`
+  declaration on the caller's own chain.**
+- **Arity is constant per opcode, and that is the proof that one opcode is one native.** `0x77` 5,368/5,368 with
+  exactly two arguments, `0xaf` 1,598/1,598, `0x9a` 1,538/1,538, `0x96` 1,433/1,433, `0xb0` 805/805 -- a per-class
+  ordinal or a chain-decided slot would spread.
+- **38,143 of the 48,422 sites are slots 0..95 and name nothing.** No declaration exists at those slots in any
+  caller's chain, so they are engine-side natives emitted for the compiler's own operators; the 10,279 at slots
+  96..143 are the declared half (`0xfe` 142 `Object.EqualEqual_RotatorRotator`, `0xff` 143 `Object.Subtract_PreInt`,
+  312 of 331 sites with the two arguments it declares).
+- **The arity is where the two numberings show, and it is the next question**: 1,174 of 5,864 resolved sites match
+  their declaration's `parameter_count`, and `0xe7` passes one argument in 1,072 of 1,186 sites while its slot's
+  declaration (`Object.NotEqual_ObjectObject`) takes two. Either an operator token's operands are not a parameter
+  list, or slots 0..95 and the declared slots are two tables that meet at 96 -- settled by `GNatives` (U7), not by
+  another walk.
+- Tool (`--native-calls`, `-o` writes `inventory/native_opcodes.csv`, 206 rows with `args` as the arity histogram) +
+  `docs/BYTECODE.md` section "The opcodes above `0x5f` are native calls, and each one has a fixed arity" (the
+  "Not measured" bullet now states what is left) + `make native-opcodes`. Two slot rules are scored side by side
+  (`0x70+n` against `op-0x60`), so the census reports the rule the declarations support rather than a guess.
+
 ### Execution notes (2026-11-11, a weapon's bullet is the one it inherits, and nine of the sixty-two never set one)
 
 - **A reference is a setting; the resolved chain is the number a rebuild needs.** `tools/weapon-links.py
