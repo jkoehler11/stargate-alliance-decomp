@@ -778,6 +778,19 @@ settle the 26 is now specific**: a boot that walks the object array and reads ea
 table and its name (`tools/xemu/mem.py`, `names.py`), or a decompile of `0x00062ce0` to see what the
 shared argument is. `tools/class-tree-edges.py`, `docs/NATIVE_CLASS_TREE.md`.
 
+**The runtime read is taken (2026-11-10), and it names one row and none of the 26.** A booted guest at the title
+(`drive.py --gdb=12641 --linger=1800`, 42,152 objects) walked **42,135 of 42,152** object headers over 255 pages
+and paired them with **179 class tables / 312 rows** (`inventory/live_class_tables.csv`,
+`tools/xemu/class-tables-live.py`). `tools/class-table-reconcile.py` scores that against the literal artifact:
+**139 agree**, **12 name an ancestor of the object's class** (both readings true -- the literal names the
+constructor that installs the table, the read names the class of the instance, `Triggers`/`SGC_SecurityReader`),
+**26 tables are carried by more than one class**, **one is inverted** (`0x004cfba0`: the literal says
+`WaterTexture`, 454 objects of class `Texture` carry it) and **one is not a class at all** (`0x004e1ce8`: the
+literal read `new`, the objects say `System`). **None of the 26 unnamed tables carries an object at the title**,
+and 287 of the 466 named ones do not either, so absence there measures which packages the title loads, not the
+walk. What would settle the 26 is the same read in a guest **with a level loaded** (M00 holds ~6,500 more
+objects), or a package load that instantiates their classes.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
