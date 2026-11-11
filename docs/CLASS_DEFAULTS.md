@@ -381,6 +381,25 @@ the payload, so their tail is record body by elimination — the payload shape, 
 rows, `--report` prints the four counts above, and `--check` covers the rule on a hand-built two-tag payload (a class
 that declares nothing claims no start).
 
+### The located start opens with a property tag on 1,687 of the 2,209 payloads
+
+The same declared-name table reads the locator's own `block_start` as a tag, which every "located" count in this page
+rests on: **1,687 of the 2,209 located starts carry the name of a property the class declares, and 522 carry something
+else** — a package (`System` 121, `Core` 89, `Engine` 41), a state (`Lighting` 38), a struct (`Range` 29), a class
+(`Gameplay` 15) or a function (`GetMeshName` 5). A tagged property's name is a property, so those 522 starts are not
+property blocks; they are the payload's own footer read as one. `Engine.Material` is the sample: its 118-byte payload's
+"block" is the last nine bytes, parsing as `System` + `DefaultMaterial`, and the four neighbouring offsets parse to the
+same end with `Core`, `Engine`, `Object` and `?` instead — a block whose every byte is in question.
+
+The split against the reasons is exact and is the finding: **all 263 `single-declared` rows and all 252 `incomplete`
+rows are among the 522** (the rest: 4 of the 30 `type-contradiction`, and 3 classes this page calls fully declared). So
+those two reasons do not mean "a block the renderer could not match" — their input is a parse of record bytes, and the
+`--verify` gaps this page records for them are the renderer being right about a block that is not there.
+
+`inventory/class_records.csv` gains `block_first_name` and `block_first_declared` beside `anchor_*`, `--report` prints
+the 1,687 / 522 split, the six names behind it and the per-reason breakdown, and `--check` covers the read with a
+declared name, a non-property name and an offset past the payload.
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds

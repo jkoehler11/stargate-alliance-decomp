@@ -1031,6 +1031,25 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, 522 located starts are not property tags, and they are the whole single-declared and incomplete residue)
+
+- **The locator's own start, read as a tag.** The declared-name table that the anchor rule needs also says what the
+  `block_start` of the 2,209 located payloads opens with: **1,687 carry a property the class declares, 522 carry
+  something else** -- a package (`System` 121, `Core` 89, `Engine` 41), a state (`Lighting` 38), a struct (`Range` 29),
+  a class (`Gameplay` 15), a function (`GetMeshName` 5). A tagged property's name is a property, so those starts are
+  the payload's own footer read as a block, not a block.
+- **The sample is a block whose every byte is in question.** `Engine.Material`'s 118-byte payload "locates" a block in
+  its **last nine bytes** (`System` + `DefaultMaterial`), and offsets 107, 108, 110 and 111 parse to the same end with
+  `Core`, `Engine`, `Object` and `?` instead. Four adjacent starts, four different stories, one payload end.
+- **The split against the reasons is exact, and it is the finding.** All **263** `single-declared` rows and all **252**
+  `incomplete` rows are among the 522 (the remainder: 4 of the 30 `type-contradiction` and 3 fully-declared classes). So
+  those two reasons are not "a block the renderer could not match": their input is record bytes, and the `--verify` gaps
+  the page records for them are the renderer being right about a block that is not there. That is the strongest reading
+  of the 545 withheld classes so far, and it does not need a new parse to check -- the column says it per row.
+- Tool + `inventory/class_records.csv` (`block_first_name`, `block_first_declared`) + `docs/CLASS_DEFAULTS.md` S"The
+  located start opens with a property tag" + `--report` printing the split, the six names and the per-reason breakdown +
+  `--check` covering a declared name, a non-property name and an offset past the payload.
+
 ### Execution notes (2026-11-11, a tags-only start rule anchors 1,628 of 2,209 blocks and finds no two-tag block in the residue)
 
 - **The start rule the residue asked for is measured, and it is a bounded rule.** `tools/class-record.py` now anchors a
