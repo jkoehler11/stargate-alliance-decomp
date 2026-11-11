@@ -807,6 +807,33 @@ game loads, and the 26 sit inside the 303 tables no loaded class instantiates. S
 for is measured and cannot settle them; what is left is the other route it already named -- a decompile of
 `0x00062ce0` to see what the shared argument at `0x00034650` is.
 
+**The installer's callers are the third edge, and they name five (2026-11-10).** A class table is
+installed by a function (`inventory/class_constructors.csv` `function_va`), and every subclass's
+constructor and destructor calls its parent's first, so the *callers* of an installer are the classes
+one level below it. `tools/class-table-parents.py` (`inventory/class_table_parents.csv`, 492 rows,
+1,978 caller sites) reads that edge from one `E8` pass plus `symbols/xbox_functions.csv`: it
+reproduces **466 of 466** committed names (`agrees`, 0 adjacent, 0 differs), names **five** unnamed
+tables -- `0x004c7958` `Material`, `0x004c7a10` `RenderedMaterial`, `0x004c7ac8` `BitmapMaterial`,
+`0x004c7c78` `CameraEffect`, `0x005040d0` `Engine` -- and **clashes on two** (`0x004cfe68` ->
+`WaterTexture`, `0x004d0228` -> `IceTexture`, each a name the registration gives another table; both
+are the texture-family inversion the live read already settled in `0x004cfba0`'s favour). The other
+**seventeen are constrained and not named**, for a measured reason: their installers' callers are
+native engine classes (`Struct`, `IntProperty`, `TcpNetDriver`, `ActorChannel`, `VertexBuffer`, ...)
+with no row in `inventory/classes.csv`, so there is no super to read; the caller set is kept in the
+artifact as the constraint. Two (`0x004c9348`, `0x004cfd78`) have no named caller at all. What would
+settle the seventeen is not another literal: it is the class objects' own **`ClassConstructor`**
+field read at runtime (the registration builds one `UClass` per class even when no instance exists),
+or an engine-side `Classes.csv` for `Core`/`IpDrv`/`Engine` natives.
+
+**The site's "fourth and fifth pushes" were already read, and the docs were wrong to call them
+unread.** `0x004d0e90` is `L"System"` -- argument 9 in `docs/NATIVE_CLASSES.md`'s own table -- and the
+per-site string VA is argument 7, the class literal; `tools/registration-sites.py` decodes both, which
+is how 466 names came out. Reading the 13 pushes of a site in call order (the window is
+`sub esp,0x10` for args 3-6, then `push` of arg 7 name, arg 8 the outer object, arg 9 `L"System"`,
+arg 10 `0x4084004`, arg 11 the constructor, arg 12 `&DAT_000624d0`) leaves no unread literal: the
+arguments that differ per site are the name (read), the size (read) and the constructor (measured as
+one shared default). That is why this section's remaining route is an edge, not an argument.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
