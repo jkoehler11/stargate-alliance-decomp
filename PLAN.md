@@ -1031,6 +1031,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the script side halves the cut-content residue, and 592 classes nothing places are named by code)
+
+- **The reach census only asked the content, so a class no map builds looked invisible.** `tools/class-reach.py`
+  now counts two script-side signals as well: a class named in bytecode -- `tools/uscript-dis.py --class-refs`
+  (`make class-refs`) resolves every `ObjectConst`/`DynamicCast`/`MetaClassCast` operand against the export and
+  import tables and writes `inventory/script_class_refs.csv`, **5,587 class references over 675 distinct classes**
+  (`DynamicCast` 4,153, `ObjectConst` 1,305, `MetaClassCast` 129; `Pawn` 591, `StargatePawn` 433,
+  `PlayerController` 388) -- and a class used as a declared property type (`class_properties.csv`'s
+  `friendly_type`: 429 classes, 1,908 declarations).
+- **Of the 1,766 classes the four content artifacts could not see, 592 are named by the script:** 490 in code and
+  102 only as a declared type, which leaves **1,174 (50.6%)** invisible to all seven. The content side is
+  unchanged at 553 reached (23.8%), and the two script labels deliberately do not count as reached, because a
+  `DynamicCast` target is a test rather than a use.
+- **`class_reach.csv` gains `code_refs` and `type_refs` and two `reach` values** (`code-referenced`,
+  `type-referenced`, ordered after `base-of-content` and before `unreferenced`), so a query for the strongest cut
+  candidates is `reach=unreferenced` and nothing weaker.
+- Tool (`--class-refs`) + `inventory/script_class_refs.csv` (5,731 rows) + `inventory/class_reach.csv`
+  regenerated (15 columns) + `docs/CUT_CONTENT.md`'s reach section (the table and the residue paragraph) +
+  `make class-refs`. `make ci` covers `class-reach --check` against the committed CSVs.
+
 ### Execution notes (2026-11-11, the by-name residue is a receiver question, and 44% of it needs no receiver)
 
 - **The 6,125 "unresolvable" sites are not names the build lacks.** `--calls` now indexes every `Function` export of

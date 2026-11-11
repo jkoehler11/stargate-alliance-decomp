@@ -9,6 +9,13 @@ all committed:
   * `inventory/squad_scripts.csv`   — a map names it as a squad/encounter script (spawner convention)
   * `inventory/checkpoint_summary.csv` — the class appears in a `.sgs` snapshot, so a running game held one
   * `inventory/classes.csv`         — the class has a subclass that is reached by one of the above
+  * `inventory/script_class_refs.csv` — a script names the class in code (a `class'X'` literal or a cast target)
+  * `inventory/class_properties.csv` — a script declares a variable, parameter or return of the class's type
+
+The last two are the script's side of the same question: the content can never place a class that no script names,
+and a class some script names is one a rebuild has to carry even when nothing instantiates it. They are weaker
+evidence than placement -- a `DynamicCast` target is a test, not a use -- so they are their own two labels and
+never upgrade a class past `code-referenced`.
 
 A class reached by nothing is *not* automatically cut content: it can be an abstract base the content never
 instantiates, a native shell, or a class only reachable through a default property this repository does not
@@ -65,6 +72,17 @@ def build():
     for r in rows("checkpoint_summary.csv"):
         checkpoints[r["class"]] += int(r.get("instances") or 0)
 
+    # The script side: a class literal or cast target in bytecode, and a declared type in a property table.
+    code_refs = collections.Counter()
+    for r in rows("script_class_refs.csv"):
+        if r["target_class"] == "Class" and r["target"]:
+            code_refs[r["target"]] += 1
+    known = {r["class"] for r in classes}
+    type_refs = collections.Counter()
+    for r in rows("class_properties.csv"):
+        if r["friendly_type"] in known:
+            type_refs[r["friendly_type"]] += 1
+
     out = []
     for r in classes:
         cls = r["class"]
@@ -85,18 +103,27 @@ def build():
                         base = True
                         break
                     stack.append(kid)
-            reach = "base-of-content" if base else "unreferenced"
+            if base:
+                reach = "base-of-content"
+            elif code_refs[cls]:
+                reach = "code-referenced"
+            elif type_refs[cls]:
+                reach = "type-referenced"
+            else:
+                reach = "unreferenced"
         kind = "mp" if placed[cls] and not mission[cls] else ("mission" if mission[cls] else "")
         out.append({"package": r["package"], "class": cls, "super": r["super"],
                     "native_only": r["native_only"], "subclasses": len(children.get(cls, ())),
                     "placed_actors": placed[cls], "mission_actors": mission[cls], "mp_actors": mp[cls],
                     "maps": len(maps_by_class.get(cls, ())), "squad_refs": squads[cls],
-                    "checkpoint_instances": checkpoints[cls], "placed_kind": kind, "reach": reach})
+                    "checkpoint_instances": checkpoints[cls], "code_refs": code_refs[cls],
+                    "type_refs": type_refs[cls], "placed_kind": kind, "reach": reach})
     return out
 
 
 COLUMNS = ["package", "class", "super", "native_only", "subclasses", "placed_actors", "mission_actors",
-           "mp_actors", "maps", "squad_refs", "checkpoint_instances", "placed_kind", "reach"]
+           "mp_actors", "maps", "squad_refs", "checkpoint_instances", "code_refs", "type_refs", "placed_kind",
+           "reach"]
 
 
 def write(rows_out, outdir):
@@ -114,10 +141,16 @@ def write(rows_out, outdir):
 def summarise(rows_out):
     tally = collections.Counter(r["reach"] for r in rows_out)
     total = len(rows_out)
-    for key in ("placed", "squad-script", "checkpoint", "base-of-content", "unreferenced"):
+    for key in ("placed", "squad-script", "checkpoint", "base-of-content", "code-referenced", "type-referenced",
+                "unreferenced"):
         print("%-16s %5d  %5.1f%%" % (key, tally[key], 100.0 * tally[key] / total if total else 0.0))
-    reached = total - tally["unreferenced"]
+    reached = sum(1 for r in rows_out
+                  if r["reach"] in ("placed", "squad-script", "checkpoint", "base-of-content"))
     print("reached by content: %d of %d (%.1f%%)" % (reached, total, 100.0 * reached / total if total else 0))
+    script_only = [r for r in rows_out if r["reach"] in ("code-referenced", "type-referenced")]
+    print("named by a script but placed by nothing: %d (%d in code, %d as a declared type)"
+          % (len(script_only), sum(1 for r in script_only if r["reach"] == "code-referenced"),
+             sum(1 for r in script_only if r["reach"] == "type-referenced")))
     unref = [r for r in rows_out if r["reach"] == "unreferenced"]
     by_pkg = collections.Counter(r["package"] for r in unref)
     print("unreferenced by package: %s" % by_pkg.most_common(8))
