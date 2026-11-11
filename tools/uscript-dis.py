@@ -1225,10 +1225,11 @@ def _class_of_type(friendly):
     """The class a property's declared type names, or "" when the type is not one."""
     if not friendly:
         return ""
-    if friendly.startswith("Class<") and friendly.endswith(">"):
-        return _class_of_type(friendly[6:-1])
-    if friendly.startswith("array<") and friendly.endswith(">"):
-        return _class_of_type(friendly[6:-1])
+    # UnrealScript spells these lowercase in its own source (`local class<LocalMessage> M;`) and the tagged
+    # property stream capitalises `Class<>`; a reader that knew only one spelling read the other as a class name.
+    for prefix in ("class<", "array<"):
+        if friendly.lower().startswith(prefix) and friendly.endswith(">"):
+            return _class_of_type(friendly[6:-1])
     if "." in friendly:
         return _class_of_type(friendly.rsplit(".", 1)[-1])
     if friendly in ("int", "float", "bool", "byte", "string", "name", "object", "pointer"):
@@ -1257,6 +1258,18 @@ _SRC_FUNC = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|iterator|nat
 _SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+)\s+(.+?);", re.I)
 _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+)\s+(\w+)\s*(?:=.*)?$",
                         re.I)
+
+
+def _operand_name(expr, export_at, import_at):
+    """The export's or import's own name for a variable token's operand, or "" -- never the call's target."""
+    if not expr or not expr.get("operands"):
+        return ""
+    value, _e = read_index(expr["operands"], 0)
+    if value in export_at:
+        return export_at[value][0]
+    if value < 0 and -value in import_at:
+        return import_at[-value][0]
+    return ""
 
 
 def source_declarations(text):
@@ -1299,43 +1312,67 @@ def source_declarations(text):
             if lm:
                 for nm in lm.group(2).split(","):
                     out[fn][nm.strip()].add(lm.group(1))
-    return {fn: {n: (next(iter(t)) if len(t) == 1 else "") for n, t in decls.items()}
+    return {fn: {n: (next(iter(t)) if len(t) == 1 else None) for n, t in decls.items()}
             for fn, decls in out.items()}
 
 
 def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
-    """The class the receiver expression's declared type names, or "" when its token cannot say.
+    """The class the receiver expression's declared type names, or "" when its token cannot say."""
+    return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types)[0]
+
+
+def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
+    """(the class the expression's declared type names, why it names none).
 
     A property's type comes from its declaration in `inventory/class_properties.csv`; a *local* is a property
     record the function owns, so the export table gives its name and the class's own ScriptText the type
     (`source_declarations`); an imported property is looked up by name and accepted only when every class
-    declaring that name agrees on the type.
+    declaring that name agrees on the type. The second half of the pair is what a residue site is counted by, so
+    the split says whether the gap is a missing declaration, a disagreement between packages, or a type that is
+    not a class at all.
     """
     nm = expr["name"]
     if nm in ("Context", "ClassContext") and expr["children"]:
-        return _receiver_type(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
-                              local_types)
+        return _receiver_reading(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
+                                 local_types)
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
         value, _e = read_index(expr["operands"], 0)
         target = export_at.get(value)
-        return target[0] if target and target[1] == "Class" else ""
+        if target and target[1] == "Class":
+            return target[0], ""
+        return "", "a literal or cast that names no class"
     if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
-        return ""
+        return "", "not an object expression"
     value, _e = read_index(expr["operands"], 0)
     if nm == "LocalVariable":
-        if value > 0 and value in export_at:
-            return _class_of_type((local_types or {}).get(export_at[value][0], ""))
-        return ""
+        if not (value > 0 and value in export_at):
+            return "", "local: the operand names no record"
+        name = export_at[value][0]
+        if name not in (local_types or {}):
+            return "", "local: the class source does not declare it"
+        hit = local_types[name]
+        if hit is None:
+            return "", "local: the class declares it with two types"
+        cls = _class_of_type(hit)
+        return (cls, "") if cls else ("", "local: declared, but not as a class")
     if value in export_at:
         name, _kind, owner = export_at[value]
         hit = prop_type.get((owner, name))
-        return _class_of_type(hit[1]) if hit else ""
+        if not hit:
+            return "", "property: not in the script's declarations"
+        cls = _class_of_type(hit[1])
+        return (cls, "") if cls else ("", "property: declared, but not as a class")
     if value < 0 and -value in import_at:
         name, kind = import_at[-value]
-        types = {_class_of_type(c[3]) for c in prop_type_by_name.get(name, ()) if c[1] == kind}
-        if len(types) == 1:
-            return types.pop()
-    return ""
+        decl = [c for c in prop_type_by_name.get(name, ()) if c[1] == kind]
+        if not decl:
+            return "", "import: no package declares that property"
+        types = {_class_of_type(c[3]) for c in decl}
+        if len(types) > 1:
+            return "", "import: the packages that declare it disagree"
+        cls = types.pop()
+        return (cls, "") if cls else ("", "import: declared, but not as a class")
+    return "", "no record for the operand"
 
 
 def calls_report(path, table, out=None):
@@ -1435,6 +1472,9 @@ def calls_report(path, table, out=None):
         return ""
     epilogue = bytes([0x04, 0x0B, 0x47])
     rows = []
+    # Why a by-name site that stays unplaced still has an object expression in front of it.
+    receiver_gap = collections.Counter()
+    gap_names = collections.Counter()
     walked = seen = 0
     for one in files:
         pkg = Package(one)
@@ -1510,11 +1550,11 @@ def calls_report(path, table, out=None):
                     name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
                     prev = sibs[i - 1] if i > 0 else None
                     rtoken = "self" if prev is None else (prev["name"] or "op%02x" % prev["opcode"])
-                    rtype = ""
+                    rtype, why = "", ""
                     if prev is not None:
                         if rtoken in OBJECT_TOKENS:
-                            rtype = _receiver_type(prev, export_at, import_at, prop_type, prop_type_by_name,
-                                                   here_locals)
+                            rtype, why = _receiver_reading(prev, export_at, import_at, prop_type,
+                                                           prop_type_by_name, here_locals)
                         else:
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
@@ -1522,6 +1562,10 @@ def calls_report(path, table, out=None):
                         placed = place_on_receiver(rtype, name)
                         if placed:
                             where = "receiver:%s" % placed
+                    if not where and name and rtoken in OBJECT_TOKENS and not rtype:
+                        receiver_gap[why or rtoken] += 1
+                        if why.startswith("import: no package"):
+                            gap_names[_operand_name(prev, export_at, import_at)] += 1
                     rows.append((pkg_name, owner, pkg.name(e["name"]), token, kind, name,
                                  "Function" if where else "name", where, nowners, uniq, rtoken, rtype))
                     continue
@@ -1561,18 +1605,24 @@ def calls_report(path, table, out=None):
              len({r[11] for r in recv}),
              ", ".join("%s %d" % kv for kv in collections.Counter(r[11] for r in recv).most_common(5))))
     open_ = [r for r in wide if not r[7]]
-    untyped = [r for r in open_ if r[10] in OBJECT_TOKENS]
+    untyped = [r for r in open_ if r[10] in OBJECT_TOKENS and not r[11]]
+    typed_gap = [r for r in open_ if r[10] in OBJECT_TOKENS and r[11]]
     locals_ = [r for r in untyped if r[10] == "LocalVariable"]
     print("    decided by the receiver: %d site(s) across %d names, top: %s"
           % (len(wide), len(wide_n),
              ", ".join("%s %d over %d classes" % (n, c, wide_n[n])
                        for n, c in collections.Counter(r[5] for r in wide).most_common(5))))
-    print("      an object expression with no recorded type: %d -- %d of them a local, %d a property whose "
-          "declaration the script does not type" % (len(untyped), len(locals_), len(untyped) - len(locals_)))
+    print("      an object expression with no recorded type: %d -- %d of them a local, %d not"
+          % (len(untyped), len(locals_), len(untyped) - len(locals_)))
     print("      of the receiver-typed sites, %d had a local in front (typed from the class's own ScriptText)"
           % len([r for r in recv if r[10] == "LocalVariable"]))
+    print("      an expression that typed to a class whose chain declares no such name: %d" % len(typed_gap))
     print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
-          % (len(open_) - len(untyped)))
+          % (len(open_) - len(untyped) - len(typed_gap)))
+    print("      why an expression in front names no class: %s"
+          % ", ".join("%s %d" % kv for kv in receiver_gap.most_common(7)))
+    print("      properties no package declares, by name: %s"
+          % ", ".join("%s %d" % kv for kv in gap_names.most_common(6)))
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]
                                   + [r[5] for r in by_name if r[5] and r[7]])
     print("  most-called resolved targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))

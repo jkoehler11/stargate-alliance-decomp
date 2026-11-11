@@ -1090,7 +1090,7 @@ Engine,TriggeredProjector,DetachAllActors,VirtualFunction,by name,DetachActor,Fu
 Engine,GameReplicationInfo,TeamSymbolNotify,VirtualFunction,by name,SetGRI,Function,Engine.Actor,3,,LocalVariable,Actor
 Engine,TriggeredProjector,ReattachAllActors,VirtualFunction,by name,AttachActor,Function,Engine.Projector,1,,value,
 Engine,GameReplicationInfo,PostNetBeginPlay,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,GameReplicationInfo,PostNetBeginPlay,VirtualFunction,by name,SetupHUDFor,name,,2,,LocalVariable,class<GameInfo>
+Engine,GameReplicationInfo,PostNetBeginPlay,VirtualFunction,by name,SetupHUDFor,Function,receiver:Engine.GameInfo,2,,LocalVariable,GameInfo
 Engine,GameReplicationInfo,PostNetBeginPlay,VirtualFunction,by name,AddPRI,Function,package,1,,value,
 Engine,GameReplicationInfo,PostNetBeginPlay,VirtualFunction,by name,TeamSymbolNotify,Function,package,1,,value,
 Engine,TriggeredProjector,Touch,VirtualFunction,by name,AttachActor,Function,Engine.Projector,1,,InstanceVariable,
@@ -1823,10 +1823,10 @@ Engine,PlayerController,ViewFlash,FinalFunction,static,UpdateFlashComponent,Func
 Engine,PlayerController,ViewFlash,FinalFunction,static,UpdateFlashComponent,Function,,,,,
 Engine,PlayerController,ViewFlash,FinalFunction,static,UpdateFlashComponent,Function,,,,,
 Engine,PlayerController,ViewFlash,FinalFunction,static,UpdateFlashComponent,Function,,,,,
-Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,ClientReceive,name,,5,,LocalVariable,class<LocalMessage>
-Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,IsConsoleMessage,name,,2,,LocalVariable,class<LocalMessage>
+Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,ClientReceive,Function,receiver:Engine.LocalMessage,5,,LocalVariable,LocalMessage
+Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,IsConsoleMessage,Function,receiver:Engine.LocalMessage,2,,LocalVariable,LocalMessage
 Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,Message,Function,receiver:Engine.Console,10,,Context,Console
-Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,GetString,name,,15,,LocalVariable,class<LocalMessage>
+Engine,PlayerController,ReceiveLocalizedMessage,VirtualFunction,by name,GetString,Function,receiver:Engine.LocalMessage,15,,LocalVariable,LocalMessage
 Engine,PlayerController,ChatRoomMessage,VirtualFunction,by name,GetChannelAt,Function,corpus:Engine.VoiceChatReplicationInfo,1,Engine.VoiceChatReplicationInfo,InstanceVariable,VoiceChatReplicationInfo
 Engine,PlayerController,ChatRoomMessage,VirtualFunction,by name,GetTitle,Function,receiver:Engine.VoiceChatRoom,4,,LocalVariable,VoiceChatRoom
 Engine,PlayerController,ChatRoomMessage,VirtualFunction,by name,ClientMessage,Function,package,3,,value,
@@ -2048,7 +2048,7 @@ Engine,PlayerController,ServerToggleBehindView,VirtualFunction,by name,ClientSet
 Engine,PlayerController,SetPawnClass,FinalFunction,static,SetPawnClass,Function,,,,,
 Engine,PlayerController,SetPawnClass,FinalFunction,static,SetFloatStatByCharacter,Function,,,,,
 Engine,PlayerController,ClientPostLogin,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,PlayerController,ClientPostLogin,VirtualFunction,by name,InitialiseSurfacesFor,name,,2,,LocalVariable,class<GameInfo>
+Engine,PlayerController,ClientPostLogin,VirtualFunction,by name,InitialiseSurfacesFor,Function,receiver:Engine.GameInfo,2,,LocalVariable,GameInfo
 Engine,PlayerController,ChangedWeapon,VirtualFunction,by name,SetHand,Function,package,2,,Context,Weapon
 Engine,PlayerController,AdjustAim,VirtualFunction,by name,InstantWarnTarget,Function,Engine.Controller,1,,StructMember,
 Engine,PlayerController,AdjustAim,VirtualFunction,by name,WarnTarget,Function,Engine.Controller,1,,value,
@@ -2230,7 +2230,7 @@ Engine,TestInfo,Tick,FinalFunction,static,GetPropertyText,Function,,,,,
 Engine,TestInfo,Tick,FinalFunction,static,GetPropertyText,Function,,,,,
 Engine,TestInfo,Tick,FinalFunction,static,SetPropertyText,Function,,,,,
 Engine,TestInfo,Tick,VirtualFunction,by name,TestStatic,Function,package,1,,value,
-Engine,TestInfo,Tick,VirtualFunction,by name,TestStatic,Function,package,1,,LocalVariable,class<testinfo>
+Engine,TestInfo,Tick,VirtualFunction,by name,TestStatic,Function,package,1,,LocalVariable,testinfo
 Engine,TestInfo,Tick,VirtualFunction,by name,TestStatic,Function,package,1,,value,
 Engine,TestInfo,Tick,VirtualFunction,by name,RecurseTest,Function,package,1,,value,
 Engine,TestInfo,Tick,VirtualFunction,by name,TestStructBools,Function,package,1,,value,
@@ -3040,7 +3040,7 @@ Engine,AccessControl,KickPlayer,VirtualFunction,by name,IsAdmin,Function,package
 Engine,AccessControl,KickPlayer,VirtualFunction,by name,ClientNetworkMessage,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 Engine,GameInfo,KickIdler,VirtualFunction,by name,KickPlayer,Function,corpus:Engine.AccessControl,1,Engine.AccessControl,InstanceVariable,AccessControl
 Engine,HUD,AddTextMessage,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,PlayerController
-Engine,HUD,AddTextMessage,VirtualFunction,by name,GetConsoleColor,name,,2,,LocalVariable,class<LocalMessage>
+Engine,HUD,AddTextMessage,VirtualFunction,by name,GetConsoleColor,Function,receiver:Engine.LocalMessage,2,,LocalVariable,LocalMessage
 Engine,AccessControl,KickBan,VirtualFunction,by name,BanPlayer,Function,package,1,,value,
 Engine,StreamInteraction,Tick,VirtualFunction,by name,NextSong,Function,package,3,,InstanceVariable,
 Engine,StreamInteraction,Tick,VirtualFunction,by name,PlayStream,Function,package,2,,value,
@@ -3644,11 +3644,11 @@ Engine,StreamPlaylist,InitializePlaylist,VirtualFunction,by name,LoadPlaylist,Fu
 Engine,LevelInfo,FillPrecacheStaticMeshesArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,LevelInfo,FillPrecacheStaticMeshesArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,LevelInfo,FillPrecacheStaticMeshesArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,LevelInfo,FillPrecacheStaticMeshesArray,VirtualFunction,by name,PrecacheGameStaticMeshes,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,class<GameInfo>
+Engine,LevelInfo,FillPrecacheStaticMeshesArray,VirtualFunction,by name,PrecacheGameStaticMeshes,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,GameInfo
 Engine,LevelInfo,FillPrecacheStaticMeshesArray,VirtualFunction,by name,UpdatePrecacheStaticMeshes,Function,Engine.Actor,3,,LocalVariable,Actor
 Engine,GameInfo,RestartPlayer,VirtualFunction,by name,FindPlayerStart,Function,package,3,,LocalVariable,
 Engine,GameInfo,RestartPlayer,VirtualFunction,by name,PlayerChangedClass,Function,receiver:Engine.Mutator,2,,InstanceVariable,Mutator
-Engine,GameInfo,RestartPlayer,VirtualFunction,by name,GetDefaultPlayerClass,Function,package,3,,LocalVariable,class<Pawn>
+Engine,GameInfo,RestartPlayer,VirtualFunction,by name,GetDefaultPlayerClass,Function,package,3,,LocalVariable,Pawn
 Engine,GameInfo,RestartPlayer,VirtualFunction,by name,ClientGotoState,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 Engine,GameInfo,RestartPlayer,VirtualFunction,by name,Possess,Function,receiver:Engine.Controller,15,,LocalVariable,Controller
 Engine,GameInfo,RestartPlayer,VirtualFunction,by name,PlayTeleportEffect,Function,Engine.Actor,4,,Context,Pawn
@@ -3664,10 +3664,10 @@ Engine,M3UParser,MatchPath,VirtualFunction,by name,CompareNames,Function,Engine.
 Engine,M3UParser,MatchPath,FinalFunction,static,GetPathSeparator,Function,,,,,
 Engine,M3UParser,MatchPath,FinalFunction,static,GetPathSeparator,Function,,,,,
 Engine,LevelInfo,FillPrecacheMaterialsArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,LevelInfo,FillPrecacheMaterialsArray,VirtualFunction,by name,PrecacheGameTextures,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,class<GameInfo>
+Engine,LevelInfo,FillPrecacheMaterialsArray,VirtualFunction,by name,PrecacheGameTextures,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,GameInfo
 Engine,LevelInfo,FillPrecacheMaterialsArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,LevelInfo,FillPrecacheMaterialsArray,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,LevelInfo,FillPrecacheMaterialsArray,VirtualFunction,by name,PrecacheGameTextures,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,class<GameInfo>
+Engine,LevelInfo,FillPrecacheMaterialsArray,VirtualFunction,by name,PrecacheGameTextures,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,GameInfo
 Engine,LevelInfo,FillPrecacheMaterialsArray,VirtualFunction,by name,UpdatePrecacheMaterials,Function,Engine.Actor,6,,LocalVariable,Actor
 Engine,M3UParser,ParseLines,FinalFunction,static,ParseLines,Function,,,,,
 Engine,M3UParser,ParseLines,FinalFunction,static,GetPathSeparator,Function,,,,,
@@ -3726,7 +3726,7 @@ Engine,GameInfo,PostLogin,VirtualFunction,by name,ClientSetHUD,Function,corpus:E
 Engine,GameInfo,PostLogin,VirtualFunction,by name,SetWeaponViewShake,Function,package,1,,Context,
 Engine,GameInfo,PostLogin,FinalFunction,static,RegisterOnline,Function,,,,,
 Engine,GameInfo,PostLogin,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,GameInfo,PostLogin,VirtualFunction,by name,GetUIXInteraction,name,,2,,LocalVariable,class<AbstractUIXInteraction>
+Engine,GameInfo,PostLogin,VirtualFunction,by name,GetUIXInteraction,Function,receiver:Engine.AbstractUIXInteraction,2,,LocalVariable,AbstractUIXInteraction
 Engine,GameInfo,PostLogin,VirtualFunction,by name,UpdateOnlineState,Function,receiver:Engine.AbstractUIXInteraction,2,,LocalVariable,AbstractUIXInteraction
 Engine,GameInfo,PostLogin,VirtualFunction,by name,ClientSetRotation,Function,receiver:Engine.Pawn,2,,Context,Pawn
 Engine,GameInfo,PostLogin,VirtualFunction,by name,PlayerJoin,Function,corpus:Engine.VotingHandler,1,Engine.VotingHandler,InstanceVariable,VotingHandler
@@ -3910,7 +3910,7 @@ Engine,AIMsgManager,CheckPostedMsg,VirtualFunction,by name,GetString,name,,15,,L
 Engine,AIMsgManager,CheckPostedMsg,VirtualFunction,by name,GetOwner,Function,package,2,,self,
 Engine,GameInfo,BroadcastLocalized,VirtualFunction,by name,AllowBroadcastLocalized,Function,corpus:Engine.BroadcastHandler,1,Engine.BroadcastHandler,InstanceVariable,BroadcastHandler
 Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,GetGameClass,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,PrecacheGameAnnouncements,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,class<GameInfo>
+Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,PrecacheGameAnnouncements,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,LocalVariable,GameInfo
 Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,PrecacheAnnouncer,Function,Engine.Actor,1,,LocalVariable,Actor
 Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,PrecacheSound,Function,package,1,,LocalVariable,
 Engine,AnnouncerVoice,PrecacheAnnouncements,VirtualFunction,by name,PrecacheSound,Function,package,1,,value,
@@ -4305,7 +4305,7 @@ Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,SetActiveList,Functio
 Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,SaveGame,Function,package,2,,value,
 Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,GetCacheGameIndex,Function,package,1,,LocalVariable,
 Engine,MaplistManager,ApplyMapList,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,SetMaplist,name,,2,,LocalVariable,class<MapList>
+Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,SetMaplist,Function,receiver:Engine.MapList,2,,LocalVariable,MapList
 Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,GetActiveMap,Function,package,2,,self,
 Engine,MaplistManager,ApplyMapList,VirtualFunction,by name,GetMapList,Function,package,5,,value,
 Engine,MaplistManager,ResetGame,VirtualFunction,by name,ValidGameIndex,Function,package,2,,self,
@@ -4447,7 +4447,7 @@ Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,ValidGame
 Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,
 Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,AddMaplistRecord,Function,package,1,,value,
 Engine,MaplistManager,GetDefaultMaps,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,MaplistManager,GetDefaultMaps,VirtualFunction,by name,StaticGetMaps,Function,corpus:Engine.MapList,1,Engine.MapList,LocalVariable,class<Maplist>
+Engine,MaplistManager,GetDefaultMaps,VirtualFunction,by name,StaticGetMaps,Function,corpus:Engine.MapList,1,Engine.MapList,LocalVariable,Maplist
 Engine,AIMessage,GetString,VirtualFunction,by name,GetMsgTypeString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,Actor
 Engine,AIMessage,GetString,FinalFunction,static,GetEnum,Function,,,,,
 Engine,AIMessage,GetString,VirtualFunction,by name,GetMsgTypeString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,Actor
@@ -12573,7 +12573,7 @@ StargateGame,StargateHUD,drawHudMap,VirtualFunction,by name,paintTransparentBlob
 StargateGame,StargateHUD,drawHudMap,VirtualFunction,by name,paintTransparentBlob,Function,package,1,,value,
 StargateGame,StargateHUD,drawHudMap,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargatePawn,AnimateFleeing,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateFleeing,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateFleeing,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargateHUD,DrawOrderTarget,VirtualFunction,by name,SetTargetStatus,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,InstanceVariable,TacticalTarget
 StargateGame,StargateHUD,DrawOrderTarget,VirtualFunction,by name,SetTargetStatus,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,InstanceVariable,TacticalTarget
 StargateGame,StargateHUD,DrawOrderTarget,VirtualFunction,by name,GetSmallFont,Function,receiver:StargateGame.SGFontInfo,2,,InstanceVariable,SGFontInfo
@@ -12591,7 +12591,7 @@ StargateGame,SelectionMenu,ChangeFocusDown,VirtualFunction,by name,AllOptionsOut
 StargateGame,SelectionMenu,ChangeFocusDown,VirtualFunction,by name,ItemHighlightDown,Function,package,1,,value,
 StargateGame,SelectionMenu,ChangeFocusDown,VirtualFunction,by name,PlayMenuSound,Function,package,3,,value,
 StargateGame,StargatePawn,AnimateSprinting,VirtualFunction,by name,SetupMovementAnimsWithBackStrafes,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateSprinting,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateSprinting,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateBurningWalking,VirtualFunction,by name,AnimateAggroWalking,Function,package,1,,value,
 StargateGame,SelectionMenu,ChangeFocusUp,VirtualFunction,by name,AllOptionsOut,Function,package,1,,self,
 StargateGame,SelectionMenu,ChangeFocusUp,VirtualFunction,by name,ItemHighlightUp,Function,package,1,,value,
@@ -12621,12 +12621,12 @@ StargateGame,StargateHUD,PostNetHUDSetup,VirtualFunction,by name,getPlayerSquad,
 StargateGame,StargateHUD,PostNetHUDSetup,VirtualFunction,by name,getCurrentLevel,Function,package,1,,value,
 StargateGame,StargateHUD,PostNetHUDSetup,VirtualFunction,by name,Initialise,Function,receiver:StargateGame.SGInsetCamera,7,,InstanceVariable,SGInsetCamera
 StargateGame,StargateHUD,PostNetHUDSetup,FinalFunction,static,DynamicLoadObject,Function,,,,,
-StargateGame,StargateHUD,PostNetHUDSetup,VirtualFunction,by name,SetupHUDFor,name,,2,,LocalVariable,class<GameInfo>
+StargateGame,StargateHUD,PostNetHUDSetup,VirtualFunction,by name,SetupHUDFor,Function,receiver:Engine.GameInfo,2,,LocalVariable,GameInfo
 StargateGame,StargatePawn,AnimateRunning,VirtualFunction,by name,SetupMovementAnimsWithBackStrafes,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateRunning,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateRunning,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargateHUD,Timer,VirtualFunction,by name,PostNetHUDSetup,Function,package,1,,value,
 StargateGame,StargateHUD,Timer,VirtualFunction,by name,PawnDied,Function,receiver:Engine.PlayerController,8,,LocalVariable,PlayerController
-StargateGame,StargatePawn,AnimateSniping,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateSniping,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargateHUD,TellTime,VirtualFunction,by name,ReceiveLocalizedMessage,name,,2,,InstanceVariable,
 StargateGame,StargateHUD,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateGame,SelectionMenu,ItemHighlightDown,VirtualFunction,by name,OptionHighlightDown,Function,corpus:StargateGame.GameMenu,1,StargateGame.GameMenu,value,
@@ -12636,30 +12636,30 @@ StargateGame,SelectionMenu,ItemHighlightDown,VirtualFunction,by name,SetHighligh
 StargateGame,SelectionMenu,_ItemHighlightUp,VirtualFunction,by name,FindHighlightableOptionBottom,Function,corpus:StargateGame.GameMenu,1,StargateGame.GameMenu,value,
 StargateGame,SelectionMenu,_ItemHighlightUp,VirtualFunction,by name,_ItemHighlightUp,Function,package,1,,self,
 StargateGame,StargatePawn,AnimateWalking,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateWalking,VirtualFunction,by name,AnimateSniping,Function,package,1,,InstanceVariable,
 StargateGame,StargatePawn,AnimateAggroRunning,VirtualFunction,by name,SetupMovementAnimsWithBackStrafes,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateAggroRunning,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateAggroRunning,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateAggroWalking,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateAggroWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateAggroWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateAggroWalking,VirtualFunction,by name,AnimateSniping,Function,package,1,,InstanceVariable,
 StargateGame,StargatePawn,AnimateCrouchWalking,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateCrouchWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateCrouchWalking,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateCrouchWalking,VirtualFunction,by name,AnimateSniping,Function,package,1,,InstanceVariable,
 StargateGame,StargateHUD,DrawTwoColorID,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargateHUD,DrawTwoColorID,VirtualFunction,by name,SetIDColor,Function,package,4,,Context,
 StargateGame,StargateHUD,DrawTwoColorID,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargateHUD,DrawTwoColorID,VirtualFunction,by name,SetIDColor,Function,package,4,,Context,
 StargateGame,StargatePawn,AnimateTreading,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateTreading,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateTreading,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,AnimateSwimming,VirtualFunction,by name,SetupMovementAnims,Function,package,1,,self,
-StargateGame,StargatePawn,AnimateSwimming,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,AnimateSwimming,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,SelectionMenu,ItemHighlightUp,VirtualFunction,by name,OptionHighlightUp,Function,corpus:StargateGame.GameMenu,1,StargateGame.GameMenu,value,
 StargateGame,SelectionMenu,ItemHighlightUp,VirtualFunction,by name,SetHighlightColumn,Function,package,1,,value,
 StargateGame,SelectionMenu,ItemHighlightUp,VirtualFunction,by name,_ItemHighlightUp,Function,package,1,,LocalVariable,
 StargateGame,SelectionMenu,ItemHighlightUp,VirtualFunction,by name,SetHighlightColumn,Function,package,1,,value,
 StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,
-StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,GetString,name,,15,,LocalVariable,class<LocalMessage>
+StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,GetString,Function,receiver:Engine.LocalMessage,15,,LocalVariable,LocalMessage
 StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,AddNotification,Function,package,3,,value,
 StargateGame,StargatePawn,IsPlayingSwimming,FinalFunction,static,AnimIsInGroup,Function,,,,,
 StargateGame,StargateDeathMatch,HandleGameEndedFor,VirtualFunction,by name,ServerReStartPlayer,Function,receiver:Engine.Controller,2,,LocalVariable,PlayerController
@@ -12781,7 +12781,7 @@ StargateGame,SelectionMenu,AddSelectionEntry,VirtualFunction,by name,setTextOffs
 StargateGame,SelectionMenu,AddSelectionEntry,VirtualFunction,by name,SetPosImmediate,Function,corpus:StargateGame.UIWidget,1,StargateGame.UIWidget,LocalVariable,UIWidget
 StargateGame,SelectionMenu,AddSelectionEntry,VirtualFunction,by name,GetWidgetOffset,Function,package,1,,self,
 StargateGame,StargatePawn,PlayFiring,FinalFunction,static,AnimBlendParams,Function,,,,,
-StargateGame,StargatePawn,PlayFiring,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,class<StargateWeapon>
+StargateGame,StargatePawn,PlayFiring,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargatePawn,StopPlayFiring,FinalFunction,static,AnimBlendToAlpha,Function,,,,,
 StargateGame,StargatePawn,StopPlayFiring,VirtualFunction,by name,PlayWaiting,Function,package,3,,value,
 StargateGame,StargatePawn,PlayFiringChannelAnim,FinalFunction,static,AnimBlendParams,Function,,,,,
@@ -13017,19 +13017,19 @@ StargateGame,GameHud,SetCrosshairColour,VirtualFunction,by name,ChangeColour,Fun
 StargateGame,GameHud,SetCrosshairColour,VirtualFunction,by name,ChangeColour,Function,receiver:StargateGame.UIWidget,2,,InstanceVariable,UIWidget
 StargateGame,GameHud,SetCrosshairColour,VirtualFunction,by name,ChangeColour,Function,receiver:StargateGame.UIWidget,2,,InstanceVariable,UIWidget
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,
-StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetString,name,,15,,LocalVariable,class<LocalMessage>
+StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetString,Function,receiver:Engine.LocalMessage,15,,LocalVariable,LocalMessage
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetOffset,name,,4,,StructMember,
-StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetOffset,name,,4,,LocalVariable,class<LocalMessage>
-StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetOffset,Function,receiver:Engine.LocalMessage,4,,LocalVariable,LocalMessage
+StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
-StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,CopyMessage,Function,Engine.HUD,1,,value,
-StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,GoauldConsoleHud,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
@@ -13228,19 +13228,19 @@ StargateGame,StargatePawn,SetupSkin,FinalFunction,static,ResetSkins,Function,,,,
 StargateGame,LastManTeamGame,InitGame,FinalFunction,static,InitGame,Function,,,,,
 StargateGame,LastManTeamGame,InitGame,VirtualFunction,by name,AddGameRules,Function,corpus:Engine.GameRules,1,Engine.GameRules,InstanceVariable,
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,
-StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetString,name,,15,,LocalVariable,class<LocalMessage>
+StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetString,Function,receiver:Engine.LocalMessage,15,,LocalVariable,LocalMessage
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetOffset,name,,4,,StructMember,
-StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetOffset,name,,4,,LocalVariable,class<LocalMessage>
-StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetOffset,Function,receiver:Engine.LocalMessage,4,,LocalVariable,LocalMessage
+StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
-StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,CopyMessage,Function,Engine.HUD,1,,value,
-StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,class<LocalMessage>
+StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetColor,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,LocalVariable,LocalMessage
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetFontSize,Function,corpus:Engine.LocalMessage,1,Engine.LocalMessage,StructMember,
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetBigFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo
 StargateGame,ReplicatorHUD,LocalizedMessage,VirtualFunction,by name,GetHugeFont,Function,receiver:StargateGame.FontInfo,2,,InstanceVariable,FontInfo

@@ -1299,6 +1299,21 @@ different declarations of it, or a declared type that is not a class. The 579 un
 instrument, and their declarations come from the tagged property stream that `class_properties.csv` is read
 from.
 
+**2026-11-11, later the same day: the numbers above are superseded, and the residue has names.** `--calls` now
+counts every site that stays unplaced by *why* its expression typed to nothing, and two labels that used to
+overlap are separate: **656** unplaced sites with an object expression that names no class at all, **47** that
+typed to a class whose chain declares no function of that name (`Pawn` 14, `BotBase` 14, `GameHUD` 4, fifteen
+more over other classes), and **489** with a completed value in front -- **1,192**, so by-name sites naming a
+declaring class are **12,315 of 13,507 (91%)**. Of the 656: **474 reference a property no package in the corpus
+declares** (`UIWidget` 80, `HaakenMK2Weapon` 59, `Instigator` 56, `Controller` 48, `Pawn` 41, `Outer` 36),
+**81 a local whose class's source has no declaration for the name**, **71 a literal or cast that names no
+class**, **30 a token that is not a variable**. The largest bucket is therefore **not a script-typing gap a
+better walk could close**: an import names an object in another package, so these are properties declared
+outside `System` or declared natively, and the only reading that would type them is the native property table
+(`docs/NATIVE_PROPERTIES.md`), not the packages. The split also found a real bug: the type-syntax reader knew
+`Class<>`/`array<>` and not the lowercase `class<>` the scripts themselves write, which cost 14 sites; with
+both spellings accepted the receiver group is 1,732 sites over 546 names and the local share 504.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
