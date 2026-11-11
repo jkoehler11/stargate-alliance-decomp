@@ -303,10 +303,14 @@ only because one byte cannot spell 256.
         on the caller's chain: 8251 -- 5581 in its own class, 2670 on an ancestor (top: Engine.Actor 373, ...)
         by the corpus alone: 2332 site(s) reach the one class that declares the name (945 names), top:
           ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        on the receiver's chain: 1718 (540 names) -- the expression in front of the call types to a class
-          (237 distinct; 490 of the 1,718 had a local in front, typed from the class's own ScriptText)
-        decided by the receiver: 1206 site(s) across 301 names, top: SetText 107 over 5 classes, ...
-          an object expression with no recorded type: 717 -- 138 of them a local, 579 a property ...
+        on the receiver's chain: 1732 (546 names) -- the expression in front of the call types to a class
+          (239 distinct; 504 of the 1,732 had a local in front, typed from the class's own ScriptText)
+        decided by the receiver: 1192 site(s) across 295 names, top: SetText 107 over 5 classes, ...
+          an object expression with no recorded type: 656 -- 81 of them a local, 575 not
+          an expression that typed to a class whose chain declares no such name: 47
+          a completed value in front (a self-call, or a receiver the walk did not reach): 489
+          why an expression in front names no class: import: no package declares that property 474, ...
+          properties no package declares, by name: UIWidget 80, HaakenMK2Weapon 59, Instigator 56, ...
           a completed value in front (a self-call, or a receiver the walk did not reach): 489
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
@@ -353,7 +357,7 @@ more than 30 of them (offset 4 hits 30, offset 5 hits 16, offset 3 hits 8), so t
 `[ArrayDim][class reference]` in this cook. What does bind the name is the `ScriptText` the class carries:
 `local <Type> <Name>;` and the parameter list name the same variable, so `--calls` parses each class's source
 once per package (`source_declarations`) and answers a local's type from it. That takes the untyped locals
-from **628 to 138** and places **490 more sites**, 78% of them.
+from **628 to 81** and places **504 of the 628**, 80% of them.
 
 **The check is a shuffle.** Permuting the declared types inside each class and re-running the same walk
 collapses `Engine.u`'s local placements from **82 to 13** (and its whole receiver group from 313 to 244), so
@@ -362,14 +366,28 @@ untyped by construction when its class ships no `ScriptText`, when the source ha
 name in that function, when the class declares the name with two different types, or when the declared type
 is not a class at all.
 
-**So 12,301 of the 13,507 (91%) by-name sites now name a declaring class, and the 1,206 that do not are a
+**So 12,315 of the 13,507 (91%) by-name sites now name a declaring class, and the 1,192 that do not are a
 typing gap, not a dispatch gap.** `SetText` 107 sites over 5 classes, `SetFont` 105 over 4, `GetValue` 42 over 10,
-`ClientMessage` 40 over 3, `GetViewRotation` 38 over 9. Of the 1,206: **717 have an object expression in front of
-them whose type the corpus does not record -- 138 a local variable, down from 628, and 579 a property whose
-declaration the script does not type (arrays, delegates, pointer-sized natives)**; the other **489 have a
-completed value in front**, which is a self-call whose name no class on the chain declares, or a receiver the
-walk did not reach. The next instrument is the 579 untyped properties: their declarations are the tagged
-property stream's, the same one `class_properties.csv` is read from.
+`ClientMessage` 40 over 3, `GetViewRotation` 38 over 9. Of the 1,192: **656 have an object expression in front of them that names no class at all** (81 a local, 575
+not), **47 name a class whose chain declares no function of that name** (`Pawn` 14, `BotBase` 14, `GameHUD` 4
+and 15 more over other classes), and **489 have a completed value in front**, which is a self-call whose name
+no class on the chain declares, or a receiver the walk did not reach.
+
+**The 656 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
+its expression typed to nothing: **474 of the 656 reference a property no package in the corpus declares**
+(`UIWidget` 80, `HaakenMK2Weapon` 59, `Instigator` 56, `Controller` 48, `Pawn` 41, `Outer` 36 -- several of
+them the `Actor`/`Pawn` properties a rebuild inherits from C++), **81 a local whose class's own source has no
+declaration for the name**, **71 a literal or cast that names no class**, and **30 a token that is not a
+variable at all**. An import names an object in *another* package by definition, so the largest bucket is a
+property declared outside the eighteen packages in `System` or declared natively: no reading of these
+packages can type it, and the answer would have to come from the native property table, not from a better
+walk.
+
+**The split paid for itself by finding a spelling bug.** `_class_of_type` knew only `Class<>` and `array<>`;
+UnrealScript's own source spells them lowercase (`local class<LocalMessage> M;`), so a class-typed local came
+back as a class literally named `class<LocalMessage>` and placed nothing. Accepting both spellings places
+**14 more sites** (the receiver group 1,718 -> 1,732, the local share 490 -> 504) and is why the earlier
+round's `typed class<LocalMessage> ...` line is gone.
 
 **One caveat, measured: an object expression in front is evidence, not proof.** 820 of the 8,251 chain-resolved
 sites (10%) would *also* be placed by the expression in front of them, because a statement that ends in an object
@@ -467,12 +485,12 @@ page does not yet describe, and the census records that instead of guessing at i
   reference operands *name* is measured per opcode (`--resolve`, above): objects for the variable, cast and
   final-call tokens, the name table for the virtual and global calls and `NameConst`. The `0x05` switch's byte is
   settled above (the compared value's width). By-name sites are now placed three ways: 8,251 on the caller's chain,
-  2,332 by the one class in the corpus that declares the name, and 1,718 on the **receiver's** chain -- the receiver
+  2,332 by the one class in the corpus that declares the name, and 1,732 on the **receiver's** chain -- the receiver
   is the expression the emitter evaluated in front of the call, and its declared type names a class (a property's
-  from `class_properties.csv`, a local's from the class's own `ScriptText`). What is left is **1,206 sites over 301
-  names**, 717 of them with an object expression whose type the corpus does not record (138 are locals, 579 untyped
-  properties) and 489 with a completed value in front; see "The calls the scripts make" for the counts, the shuffle
-  control and the 10% reading ambiguity.
+  from `class_properties.csv`, a local's from the class's own `ScriptText`). What is left is **1,192 sites over 295
+  names**: 656 with an expression that names no class (474 of them a property no package declares), 47 typed to a
+  class whose chain lacks the name, and 489 with a completed value in front; see "The calls the scripts make" for
+  the counts, the reason split, the shuffle control and the 10% reading ambiguity.
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
   declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by

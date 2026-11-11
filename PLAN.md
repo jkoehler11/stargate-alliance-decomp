@@ -1031,6 +1031,30 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the residue has names — 474 cite a property no package declares, and the type syntax has two spellings)
+
+- **A residue site is now counted by the reason its expression typed to nothing**, and the tool's counts add up:
+  **656** unplaced sites with an object expression that names no class, **47** that typed to a class whose chain
+  declares no such name (`Pawn` 14, `BotBase` 14, `GameHUD` 4, fifteen more elsewhere) and **489** with a
+  completed value in front -- 1,192 in all, so **12,315 of 13,507 (91%)** by-name sites name a declaring class.
+  The two labels used to overlap (a receiver that typed and still did not place was counted as "no recorded
+  type"), which is why the untyped line reads 656 and not the 717 of the previous note.
+- **The largest bucket is not a script gap.** Of the 656, **474 reference a property no package in the corpus
+  declares** (`UIWidget` 80, `HaakenMK2Weapon` 59, `Instigator` 56, `Controller` 48, `Pawn` 41, `Outer` 36 --
+  several are the `Actor`/`Pawn` properties a rebuild inherits from C++), **81 a local whose class's own source
+  has no declaration for the name**, **71 a literal or cast that names no class** and **30 a token that is not a
+  variable**. An import names an object in another package, so the 474 are declared outside `System` or
+  natively: the reading that would type them is the native property table, not a better walk -- a negative
+  worth carrying rather than re-measuring.
+- **The split found a spelling bug, which is what it was for.** `_class_of_type` accepted `Class<>` and
+  `array<>` but the scripts spell `class<LocalMessage>` lowercase, so a class-typed local came back as a class
+  named `class<LocalMessage>` and placed nothing; accepting both spellings places **14 more sites** (receiver
+  group 1,718 -> 1,732, local share 490 -> 504).
+- Tool (`_receiver_reading`'s reason, the two histograms and the split labels) + `inventory/script_calls.csv`
+  regenerated (18,931 rows) + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`. The next instrument on the call table is
+  the 47 sites that typed to a class whose chain lacks the call name: that is a dispatch question, not a typing
+  one, and the receivers are `Pawn`, `BotBase` and `GameHUD` objects.
+
 ### Execution notes (2026-11-11, a local is a record the function owns and its type is in the shipped source — 490 more sites, 91% placed)
 
 - **A local's operand is an export, not a table index.** Every one of the 540 local receiver sites in `Engine.u`
