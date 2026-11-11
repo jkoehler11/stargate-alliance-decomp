@@ -52,7 +52,7 @@ GROUPS = {
     0:  ("index",            "LocalVariable,InstanceVariable,DefaultVariable,ObjectConst,NativeParm",
          "object/name reference as a compact index"),
     1:  ("expr",             "Return", "one nested token"),
-    2:  ("bytes:1,expr",     "Switch", "case-count byte then the expression"),
+    2:  ("bytes:1,expr",     "Switch", "value width in bytes, 0 = wide string (execSwitch)"),
     3:  ("bytes:2",          "Jump", "code offset"),
     4:  ("bytes:2,expr",     "JumpIfNot", "code offset then the condition"),
     5:  ("",                 "Stop,Nothing,EndFunctionParms,Self,IntZero,IntOne,True,False,NoObject,"
