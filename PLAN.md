@@ -322,10 +322,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       (`0x004d1468` `Property`, `0x004fc4f0` `LevelBase`, `0x004c9348` `Player`, each read off a
       partly-unnamed child set) and 23 stay invisible because nothing calls them. The registration-site
       join fails for a measured reason rather than a missing link: **24 of the 27 sites the class map
-      leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`, which installs
-      table `0x004dd2a8`), so the site cannot identify a per-class table; the other three resolve to a
-      neighbouring `WaterTexture` registration (`Texture`, `FractalTexture`) or to `FireTexture`'s own
-      installer (`0x004cfd78`). U8's 26 need a runtime read of the class objects or a decompile of the
+leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`), and that body is a
+      nine-byte **default constructor** (`MOV EAX,ECX; MOV [EAX],0x004dd2a8; RET`) which stores one fixed
+      dword and names no class, so the site cannot identify a per-class table; one more site pushes it
+      behind a tying candidate, two resolve to a neighbouring `WaterTexture` registration (`Texture`,
+      `FractalTexture`) and `FireTexture`'s resolves to a constructor that installs `IceTexture`'s table
+      -- **not one of the 27 lands on its own class's table**. The same test validates the rest (459 of
+      493 sites: the pushed constructor installs the site's own class table) -- `tools/ctor-argument.py`,
+      `inventory/registration_ctor_arguments.csv`. U8's 26 need an argument that is not the constructor
+      (the site's fourth/fifth pushes, unread) or a registration-time breakpoint, and that is now the
+      written next step rather than a guess.
       shared constructor, and that is now the written next step rather than a guess.
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
@@ -1021,6 +1027,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-10, the shared constructor argument: a nine-byte default ctor, and none of the 27 names a class)
+
+- **The argument is a default constructor, and the decompile says so in nine bytes.** `0x00062ce0` is
+  `MOV EAX,ECX; MOV [EAX],0x004dd2a8; RET`; `0x00034650` is a 13-byte null-check forwarder into it
+  (`MOV ECX,[ESP+4]; TEST ECX,ECX; JZ +5; JMP rel32`). It takes no class argument and stores one fixed
+  dword, so 25 of the 27 unnamed registration sites are described identically by it.
+- **`tools/ctor-argument.py` scores every site, and its own gate is the class-table map.**
+  `inventory/registration_ctor_arguments.csv` (493 rows) gives each site the constructor it pushes, the
+  table that body stores, how many sites share it, and how many classes object memory pairs that table
+  with. **459 of 493 sites** have the pushed constructor install the site's own class table -- that is
+  what makes the selection rule trustworthy -- and the 26 that do not are exactly the shared/neighbour
+  sites. The 27 unnamed ones: 25 -> `0x004dd2a8` (51 classes / 550 objects at M00), 2 -> `WaterTexture`'s
+  ctor, 1 -> a ctor that installs `IceTexture`'s table. **No unnamed site pushes a per-class constructor.**
+- **Two selection bugs worth remembering in this build.** Every XBE section carries an executable flag
+  (`.rdata` reads `0x6`), so `section_for(va, executable=True)` admits the `.rdata` literal `0x004c7008`
+  that every site pushes and resolves all 493 sites to it; a push is code evidence only when the body it
+  reaches is a **known function start** (`symbols/xbox_functions.csv`). And `C7 /0` at mod=00 masks as
+  `modrm & 0xF8 == 0` -- `& 0xC7` rejects `C7 06` (`mov [esi],imm32`), which is how most of these
+  constructors install their table, and read 462 of 493 as "no store".
 
 ### Execution notes (2026-11-10, the same read in a loaded level: 48,631 objects, and the 26 stay nameless)
 

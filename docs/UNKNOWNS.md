@@ -770,13 +770,17 @@ relation: each installs its own table and calls its parent's before the store, a
 **375 of 391** named tables that have a child (15 disagree, 76 leaves), so it is evidence -- and it names
 `Property` (`0x004d1468`), `LevelBase` (`0x004fc4f0`) and `Player` (`0x004c9348`) among the 26 from their
 partly-unnamed child sets. It cannot name the other 23: they have no callers. The site join is now
-measured too -- **24 of the 27 unnamed sites push one shared pointer** (`0x00034650` -> thunk `0x00062ce0`,
-which installs table `0x004dd2a8`), one of the other two resolves to `FireTexture`'s own installer, and
-the last two (`Texture`, `FractalTexture`) push a thunk into the *neighbouring* `WaterTexture`
-registration, which is the mixed-window caveat `registration-sites.py` already carries. **What would
-settle the 26 is now specific**: a boot that walks the object array and reads each `UClass`'s `+0x00`
-table and its name (`tools/xemu/mem.py`, `names.py`), or a decompile of `0x00062ce0` to see what the
-shared argument is. `tools/class-tree-edges.py`, `docs/NATIVE_CLASS_TREE.md`.
+measured too, and it answers the question this section was waiting for: **25 of the 27 unnamed sites
+push one shared pointer** (`0x00034650` -> thunk `0x00062ce0`), and the decompile of that body shows why --
+`MOV EAX,ECX; MOV [EAX],0x004dd2a8; RET`, a nine-byte **default constructor** that stores one fixed dword
+and names no class. That dword is the table the map calls `VertexStreamBase` (`0x004dd2a8`), and the
+loaded level carries it on **51 classes / 550 objects**, so it is not an identity either. The other two
+sites push the *neighbouring* `WaterTexture` constructor (`Texture`, `FractalTexture`) and the last
+(`FireTexture`) one that installs `IceTexture`'s table, so **no one of the 27 pushes a constructor that
+installs its own class's table**: the literal path cannot name any of the 26, measured rather than
+assumed. What is left is an argument that is not the constructor -- the site's fourth and fifth pushes,
+or the registration call read at runtime with a breakpoint. `tools/ctor-argument.py`,
+`inventory/registration_ctor_arguments.csv`, `tools/class-tree-edges.py`, `docs/NATIVE_CLASS_TREE.md`.
 
 **The runtime read is taken (2026-11-10), and it names one row and none of the 26.** A booted guest at the title
 (`drive.py --gdb=12641 --linger=1800`, 42,152 objects) walked **42,135 of 42,152** object headers over 255 pages

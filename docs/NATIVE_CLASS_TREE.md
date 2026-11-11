@@ -74,20 +74,25 @@ the 26 plus the `NetConnection` site whose window holds two literals), follow th
 in the 96 bytes before the call and see whether one resolves to a table-installing constructor, directly
 or through a `jmp` thunk.
 
-**24 of the 27 push the same pointer: `0x00034650`, a thunk to `0x00062ce0`, which installs table
-`0x004dd2a8`.** One pointer for `Object`, `Engine`, `Property`, `Player`, `Texture`, `NetDriver`,
-`LevelBase`, `RenderDevice` and sixteen more is not a per-class constructor; it is the shared base
-constructor these registrations pass. That is the mechanism behind U8's residual, measured rather than
-assumed: the literal path has no per-class table to link to because the argument it would link through
-is one shared function.
+**25 of the 27 push the same pointer: `0x00034650`, a thunk to `0x00062ce0`.** `tools/ctor-argument.py`
+reads what that body is: `MOV EAX,ECX; MOV [EAX],0x004dd2a8; RET` -- nine bytes, no class argument, one
+fixed dword. It is a **default constructor**, not a class constructor, so the argument the literal path
+was going to link through names no class at all. 24 sites reach it as a shared default and `Download`'s
+site pushes it behind a second candidate that ties; `Object`, `Engine`, `Player`, `NetDriver`, `LevelBase`,
+`RenderDevice` and nineteen more are described identically by it. And the dword it stores is not an
+identity either: table `0x004dd2a8` (named `VertexStreamBase`) is carried by **51 classes / 550 objects**
+in the loaded level, so object memory pairs it with classes that are not its name.
 
-**Three of the 27 do resolve, and they show why the window has to be read with care.** `Texture`
-(`0x0027e889`) and `FractalTexture` (`0x002e1489`) both push `0x0027f070`, a thunk into `0x0027e3b0`
-— the constructor of **`WaterTexture`**, whose own registration site is `0x0027e8e0`, 0x57 bytes after
-`Texture`'s. The 96-byte literal window therefore holds a *neighbouring* registration's push, which is
-exactly the reading `registration-sites.py` warns about when it reports the class of such a site as
-"the site's only identifier literal". Only `FireTexture` (`0x002e8468`) pushes a pointer that lands on
-its own installer: `0x00018120` → `0x002e81f0`, which stores table `0x004cfd78`.
+**The other two resolve to the registration site that follows them, and one earlier sentence here was
+wrong.** `Texture` (`0x0027e889`) and `FractalTexture` (`0x002e1489`) push `0x0027f070` -> `0x0027e3b0`,
+`WaterTexture`'s constructor, 0x57 bytes from `Texture`'s own site: the mixed-window caveat.
+`FireTexture` (`0x002e8468`) pushes `0x00018120` -> `0x002e81f0`, and that body stores `0x004cfc88` =
+**`IceTexture`**, not `FireTexture`; the `0x004cfd78` this page quoted before is the row the class map
+records as *"no registration names this table"*. So **not one of the 27 sites pushes a constructor that
+installs its own class's table** -- the literal path cannot name any of the 26. That same test is what
+validates the rows that do resolve: of all 493 sites the pushed constructor installs the site's own class
+table in **459**, and disagrees in 26, every one of them a shared or neighbouring site, so the 466 names
+the class map does carry do not rest on a coincidence of windows.
 
 ## The 15 conflicts, decomposed
 
@@ -202,14 +207,16 @@ every one of class `Texture`** (up from 454 at the title).
 
 The constructor tree is a real second instrument (375/391 agreement) and it confirms three of the 26
 names independently of the registration literal. **It does not close U8's 26**: 23 are leaves with no
-callers, and the site join runs into one shared base constructor for 24 of 27. What would settle the
-rest is one of:
-
-* a **runtime read** — the object array holds each `UClass`, whose `+0x00` is the table, so a boot that
-  walks the array and reads each class object's name pairs every table with a name from the build
-  itself (`tools/xemu/mem.py`, `tools/xemu/names.py`);
-* a **decompile of `0x00062ce0`**, to see what the shared argument at `0x00034650` is and whether the
-  engine's base registrations pass their own constructor somewhere else in the same function.
+callers, and the site join is closed the other way -- 25 of 27 push a nine-byte default constructor that
+stores one dword shared by 51 classes, and the other two push their neighbour's constructor. What would
+settle the rest is an argument the registration passes that is not the constructor:
+* the **fourth and fifth pushes** of a site (`0x004d0e90`, a `.rdata` pointer, and a string VA) are the
+  same in kind at every site and unread; `docs/NATIVE_CLASSES.md` records them as arguments 10 and 12
+  whose meaning is not established;
+* a **breakpoint on the registration call** each row of `inventory/registration_sites.csv` names, reading
+  the constructed `UClass`'s `+0x00` table field as it is filled -- the read of the *object array* is
+  exhausted (no object carries any of the 26 tables at the title or in `M00`), but a class object is
+  built at registration even when no instance is ever spawned.
 
 Neither is a base-class-table problem any more: the tables are located, sized and slotted
 (`docs/NATIVE_VM.md`); this page adds only which of them the tree can name.
