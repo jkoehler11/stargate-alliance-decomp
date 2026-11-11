@@ -944,6 +944,149 @@ def resolve_report(path, table):
 CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalFunction": "by name"}
 
 
+def native_calls_report(path, table, out=None):
+    """What the opcodes above 0x5f call: a native index, read against the calling class's own chain.
+
+    The opcode table stops naming at `0x5f` and carries `0x60..0x6f` as "one byte then parms" and everything above
+    it as "parms" -- the operand shape of a native call without saying which native. A call is only read correctly if
+    its index names a `native()` declaration on the calling class or an ancestor *and* the declared parameter count
+    matches the argument list the token carries, which is a check on content rather than on tiling. Two candidate
+    index rules are scored side by side so the answer is the one the declarations support.
+    """
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    supers = {r["class"]: r["super"]
+              for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv")))}
+    declared = collections.defaultdict(dict)
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "natives.csv"))):
+        token = int(r["native_token"] or 0)
+        if token:
+            declared[r["class"]][token] = (r["class"], r["function"], int(r["parameter_count"] or 0))
+
+    def chain_of(cls):
+        names, seen = [], set()
+        while cls and cls not in seen:
+            seen.add(cls)
+            names.append(cls)
+            cls = supers.get(cls, "")
+        return names
+
+    def lookup(cls, index):
+        for name in chain_of(cls):
+            got = declared.get(name, {}).get(index)
+            if got:
+                return got
+        return None
+
+    def arg_hist(hist):
+        """`2:4100/5368` -- one native means one argument count; a per-class ordinal does not."""
+        total = sum(hist.values()) or 1
+        return ";".join("%d:%d/%d" % (n, c, total) for n, c in hist.most_common(3))
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    # sites, resolved, param-fit, (class, fn, params), argument-count histogram
+    rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter()])
+    scores = {"A": [0, 0, 0], "B": [0, 0, 0]}                 # sites, resolved, param-fit
+    walked = seen_payloads = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            # A Function export's class is its Outer export, named through that object's own Name.
+            outer_ix = e.get("outer")
+            cls = pkg.name(pkg.exports[outer_ix - 1]["name"]) if outer_ix else ""
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, ok = 0, None, True
+            for _ in range(6):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    ok = False
+                    break
+            if not ok or last != e["name"]:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            seen_payloads += 1
+            start = off + 16
+            if start >= end:
+                continue
+            try:
+                nodes = parse(pay[start:end], table)
+            except Refused:
+                continue
+            if sum(x["end"] - x["offset"] for x in nodes) != end - start:
+                continue
+            walked += 1
+            stack = list(nodes)
+            while stack:
+                node = stack.pop()
+                stack.extend(node["children"])
+                op = node["opcode"]
+                if op < 0x60:
+                    continue
+                operand = node["operands"][0] if (0x60 <= op <= 0x6f and node["operands"]) else None
+                args = len([c for c in node["children"]]) - 1       # the terminating 0x16 is a child too
+                if op > 0x6f:
+                    candidates = {"A": op - 0x70, "B": op - 0x60}
+                else:
+                    candidates = {"A": ((op - 0x60) << 8) | (operand or 0), "B": operand or 0}
+                for rule, index in candidates.items():
+                    scores[rule][0] += 1
+                    hit = lookup(cls, index)
+                    if hit:
+                        scores[rule][1] += 1
+                        if hit[2] == args:
+                            scores[rule][2] += 1
+                index = candidates["A"]
+                hit = lookup(cls, index)
+                key = (op, operand, index)
+                cell = rows[key]
+                cell[0] += 1
+                cell[4][args] += 1
+                if hit:
+                    cell[1] += 1
+                    if hit[2] == args:
+                        cell[2] += 1
+                    cell[3] = hit
+    print("%d payload(s) with an epilogue, %d walk clean" % (seen_payloads, walked))
+    for rule in ("A", "B"):
+        sites, resolved, fit = scores[rule]
+        print("rule %s: %d native-call token(s), %d name a declaration on the caller's chain, %d also match its "
+              "declared parameter count" % (rule, sites, resolved, fit))
+    print("%-6s %-7s %6s %7s %8s %8s  %-34s %s"
+          % ("op", "operand", "index", "sites", "resolved", "params", "native", "args (top 3)"))
+    for (op, operand, index), (sites, resolved, fit, hit, hist) in \
+            sorted(rows.items(), key=lambda kv: -kv[1][0])[:40]:
+        print("0x%02x   %-7s %6d %7d %8d %8d  %-34s %s"
+              % (op, "-" if operand is None else "0x%02x" % operand, index, sites, resolved, fit,
+                 ("%s.%s" % (hit[0], hit[1])) if hit else "-", arg_hist(hist)))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        name = os.path.join(out, "native_opcodes.csv")
+        with open(name, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "native", "declared_in",
+                        "declared_params", "args"])
+            for (op, operand, index), (sites, resolved, fit, hit, hist) in sorted(rows.items()):
+                w.writerow(["0x%02x" % op, "" if operand is None else "0x%02x" % operand, index, sites, resolved,
+                            fit, hit[1] if hit else "", hit[0] if hit else "", hit[2] if hit else "",
+                            arg_hist(hist)])
+        print("wrote %s (%d row(s), %d sites)" % (name, len(rows), sum(v[0] for v in rows.values())))
+    return 0
+
+
 def calls_report(path, table, out=None):
     """Every script-level call the corpus makes, resolved as far as the operand rules allow.
 
@@ -1181,6 +1324,8 @@ def main():
                          "`drive.py --step=brk=` searches a RAM dump for (docs/XEMU.md)")
     ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
                     help="compare two packages function by function: bytes, opcode sequence, or neither")
+    ap.add_argument("--native-calls", metavar="PATH",
+                    help="what the opcodes above 0x5f call: each index read against the caller's native chain")
     ap.add_argument("--calls", metavar="PATH",
                     help="every script-level call site, static or by name, for a package or a System directory")
     ap.add_argument("--resolve", metavar="PATH",
@@ -1203,6 +1348,8 @@ def main():
         return usage_report(args.usage, Table(), args.out)
     if args.resolve:
         return resolve_report(args.resolve, Table())
+    if args.native_calls:
+        return native_calls_report(args.native_calls, Table(), args.out)
     if args.calls:
         return calls_report(args.calls, Table(), args.out)
     if args.compare:
