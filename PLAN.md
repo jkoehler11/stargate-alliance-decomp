@@ -1022,6 +1022,23 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-10, the table->class read taken: `0x004cfba0` is `Texture`, and the 26 stay nameless)
+
+- **The command the last run left one call from an answer returned one.** `tools/xemu/class-tables-live.py`
+  against a booted guest at the title (`drive.py --gdb=12641 --linger=1800`, 42,152 objects) walked **42,135 of
+  42,152** object headers over 255 pages, paired them with **179 class tables / 312 rows**, and wrote
+  `inventory/live_class_tables.csv`: **`0x004cfba0` is `Texture`** (454 objects, every one of class `Texture`),
+  and `0x004cfe68` carries no object -- as does `IceTexture`'s own table, so that is the title's package set, not
+  a hole in the walk. The `WaterTexture` row in `inventory/xbe_class_table_names.csv` is the neighbour's literal,
+  as `docs/NATIVE_CLASS_TREE.md` predicted; the artifact keeps the row (it is that pass's output) and the live
+  file is the tiebreaker.
+- **`tools/class-table-reconcile.py` is what makes the read scorable** (`--check` is a synthetic world of six
+  verdicts and needs no dump): 139 agree, 12 name an ancestor of the object's class, 26 tables are shared by more
+  than one class, 1 inverted, 1 non-class (`new`/`System`).
+- **The 26 unnamed tables are not settled by it**: none carries an object at the title, and 287 of the 466 named
+  ones do not either. The next measurement is the same read in a loaded level (M00, which holds ~6,500 more
+  objects), so this run stopped at the title.
+
 ### Execution notes (2026-11-10, the table->class read: instrument shipped, no guest)
 
 - **The instrument exists now.** `tools/xemu/class-tables-live.py` answers U8's "one object read" without a

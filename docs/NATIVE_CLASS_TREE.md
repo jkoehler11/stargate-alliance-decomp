@@ -156,16 +156,29 @@ a hierarchy the static name disagrees with, which is exactly this `WaterTexture`
 pair (`0x004cfba0`, `0x004cfe68`), and `--selftest` runs the same walk over a synthetic world, so the instrument is
 checkable without a boot.
 
-**It read nothing this run, and the reason is the emulator, not the address.** Two launches of the prepared image
-(`~/tools/xemu.AppImage -config_path <toml> -qmp unix:<out>/qmp.sock,server,nowait -gdb tcp::12383`, the TOML
-`drive.py` writes) each left an `AppRun` process with **no QMP socket, no `serial.log` and no `-gdb` listener**,
-while `xemu.log`/`xemu.out` stop after `xemu_settings_set_path` -- xemu never started QEMU -- and `xdpyinfo` still
-answers on `:0` with an `xemu | v0.8.139 Debug` window findable by name. That signature is written down here so the
-next run recognises it instead of re-deriving it. Until a guest gives a read, this page keeps reporting the
-contradiction rather than renaming a row the other tools read.
+**The read landed on 2026-11-10, and it names `0x004cfba0` `Texture`.** A boot through `drive.py --gdb=12641
+--linger=1800` (title screen, 42,152 objects) walked **42,135 of 42,152** object headers over 255 pages and paired
+them with **179 class tables / 312 rows**, now `inventory/live_class_tables.csv`:
 
-    python3 tools/xemu/class-tables-live.py --port 12383 --xbe $SG1_DUMP/default.xbe \
-        --csv $WORK/ct.live.csv --table 0x004cfba0 --table 0x004cfe68
+* **`0x004cfba0`: 454 objects, every one of class `Texture`, nothing else.** An object's `+0x00` is its own
+  class's table or an ancestor's, so a `Texture` instance cannot carry a table only its descendant
+  `WaterTexture` installs. The literal row `0x004cfba0,WaterTexture` is the neighbour's push, exactly where this
+  page predicted it -- `WaterTexture`'s own registration site sits 0x57 bytes after `Texture`'s.
+* **`0x004cfe68` carries no object at the title**, and neither does `IceTexture`'s `0x004cfc88`: absence there is a
+  property of texture classes with no instance in the packages the title loads, not a hole in the walk. So the
+  pair's second half is *not* named by this read, and the reading that makes both instruments agree is still the
+  tree's: `0x004cfba0` = `Texture`, `0x004cfe68` = `WaterTexture`.
+* `tools/class-table-reconcile.py` scores the whole read against the literal artifact: **139 agree**, **12 name an
+  ancestor of the object's class** (the literal names the installer, the read names the instance --
+  `Triggers`/`SGC_SecurityReader`), **26 tables are carried by more than one class**, **one is inverted** (this
+  row) and **one is not a class at all** (`0x004e1ce8`: the literal read `new`, the objects say `System`).
+* The artifact keeps its row: it is `registration-sites.py`'s output and its `--check` reproduces it. This page and
+  `inventory/live_class_tables.csv` are the tiebreaker, and `foreign-child: WaterTexture (5)` in the table above is
+  an artifact error rather than a tree disagreement.
+
+    python3 tools/xemu/class-tables-live.py --port 12641 --xbe $SG1_DUMP/default.xbe \
+        --csv inventory/live_class_tables.csv --table 0x004cfba0 --table 0x004cfe68
+    python3 tools/class-table-reconcile.py
 
 ## Status
 
