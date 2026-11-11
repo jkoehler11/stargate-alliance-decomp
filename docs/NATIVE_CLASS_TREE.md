@@ -266,3 +266,16 @@ Neither is a base-class-table problem any more: the tables are located, sized an
 The installer's-callers edge above is the third instrument on these 26 tables and the strongest one
 for the engine base classes: it reproduces all 466 names it can check, names five more, and records
 the seventeen it cannot name as a constraint instead of a guess.
+
+## The class object's constructor field is not carried (2026-11-10)
+
+`tools/xemu/class-ctor-field.py` was written for the route this page ended on: a `UClass` object exists per
+registered class even when nothing instantiates it, so its constructor field should name the table the class
+installs. In a booted **M00** the object array holds **1,059** objects carrying the `Class` table
+`0x004d4870`; none of their bodies holds any of the **1,011** constructors/destructors in
+`inventory/class_constructors.csv`, so the read reproduces **0 of the 466** names the literal already has and
+cannot name the nineteen. The negative is about the field: the build keeps the constructor in the
+registration code, not in the `UClass` instance. So this page's status stands as written -- the constructor
+tree (375/391) and the installer's callers (466/466, five named, nineteen constrained) are the two edges that
+work, and the engine's own base classes need an engine-side `classes.csv` or a registration breakpoint.
+`docs/UNKNOWNS.md` U8.

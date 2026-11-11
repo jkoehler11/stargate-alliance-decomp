@@ -825,6 +825,20 @@ settle the seventeen is not another literal: it is the class objects' own **`Cla
 field read at runtime (the registration builds one `UClass` per class even when no instance exists),
 or an engine-side `Classes.csv` for `Core`/`IpDrv`/`Engine` natives.
 
+**The class object's constructor field is not carried, and that is the last literal-free route closed
+(2026-11-10).** `tools/xemu/class-ctor-field.py` walks the object array in a booted **M00**
+(`drive.py --gdb=12441 --linger=1800`, 48,646 objects), takes the **1,059** objects whose `+0x00` is the
+`Class` table `0x004d4870` as the registered classes, reads each one's own `FName` at `+0x20`, and scans
+the whole object body -- window from the gap to the next object, clamped to `Class`'s 1,312 bytes -- for
+every dword equal to a constructor or a destructor in `inventory/class_constructors.csv` (**1,011** VAs).
+**Not one class object carries any of them**: 0 hits over 1,059 class objects (7 of 347 pages unreadable),
+so the read reproduces **0 of the 466** names it already has. That failure is the measurement: this build
+keeps a class's constructor in its registration code and does not store it in the `UClass` instance, which
+is also why the registration literal and the installer's callers were the two edges that worked. The
+seventeen stay constrained. What would settle them is an engine-side `Classes.csv` for the `Core`/`IpDrv`/
+`Engine` natives, or a breakpoint on a registration call that reads the `UClass` as the registration fills
+it -- not another field of the class object.
+
 **The site's "fourth and fifth pushes" were already read, and the docs were wrong to call them
 unread.** `0x004d0e90` is `L"System"` -- argument 9 in `docs/NATIVE_CLASSES.md`'s own table -- and the
 per-site string VA is argument 7, the class literal; `tools/registration-sites.py` decodes both, which
