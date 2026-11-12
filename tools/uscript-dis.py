@@ -1325,25 +1325,29 @@ def _kind_key(kind):
     return kind[1:] if kind.startswith("U") and kind.endswith("Property") else kind
 
 
-def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
+def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
+                   import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None):
     """The class the receiver expression's declared type names, or "" when its token cannot say."""
-    return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types)[0]
+    return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types,
+                             import_owner, owner_fixed, owner_conflict, owner_agree)[0]
 
 
-def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None):
+def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
+                      import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None):
     """(the class the expression's declared type names, why it names none).
 
     A property's type comes from its declaration in `inventory/class_properties.csv`; a *local* is a property
     record the function owns, so the export table gives its name and the class's own ScriptText the type
-    (`source_declarations`); an imported property is looked up by name and accepted only when every class
-    declaring that name agrees on the type. The second half of the pair is what a residue site is counted by, so
-    the split says whether the gap is a missing declaration, a disagreement between packages, or a type that is
-    not a class at all.
+    (`source_declarations`); an imported property is looked up by name. A name several classes declare is not a
+    tie to break by count: the import's own `OuterIndex` names the class the variable belongs to, and that is the
+    declaration the compiler resolved against, so it wins over the corpus-wide vote (`import_owner`). The second
+    half of the pair is what a residue site is counted by, so the split says whether the gap is a missing
+    declaration, a disagreement between packages, or a type that is not a class at all.
     """
     nm = expr["name"]
     if nm in ("Context", "ClassContext") and expr["children"]:
         return _receiver_reading(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
-                                 local_types)
+                                 local_types, import_owner, owner_fixed, owner_conflict, owner_agree)
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
         value, _e = read_index(expr["operands"], 0)
         target = export_at.get(value)
@@ -1381,6 +1385,25 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         if not decl:
             return "", "import: no package declares that property"
         types = {_class_of_type(c[2]) for c in decl}
+        # The import's OuterIndex is the class the variable belongs to (`-outer` is a negative import index), so
+        # the owner's own declaration is the one the compiler resolved against -- a vote between same-named
+        # properties of unrelated classes is not a tie to break by count.
+        iowner = (import_owner or {}).get(-value) or ""
+        own = prop_type.get((iowner, name)) if iowner else None
+        if own is not None and _kind_key(own[0]) == _kind_key(kind):
+            cls = _class_of_type(own[1])
+            if len(types) > 1:
+                if cls and owner_fixed is not None:
+                    owner_fixed[iowner] += 1
+            elif cls and types:
+                # The control on the rule: where every declarer agrees, the owner's own class should agree too --
+                # a case where it does not is a real disagreement, counted rather than silently preferred.
+                if cls in types:
+                    if owner_agree is not None:
+                        owner_agree[iowner] += 1
+                elif owner_conflict is not None:
+                    owner_conflict[name] += 1
+            return (cls, "") if cls else ("", "import: the owner declares it, but not as a class")
         if len(types) > 1:
             return "", "import: the packages that declare it disagree"
         cls = types.pop()
@@ -1558,6 +1581,12 @@ def calls_report(path, table, out=None):
     below_none = collections.Counter()
     gap_class = []
     import_owners = collections.Counter()
+    # Receivers typed by the import's own owner class, where the packages disagree on the type.
+    owner_fixed = collections.Counter()
+    # The owner's own declaration differing from a unanimous vote: a real disagreement, counted.
+    owner_conflict = collections.Counter()
+    # The owner's own declaration agreeing with a unanimous vote: the rule's control.
+    owner_agree = collections.Counter()
     walked = seen = 0
     for one in files:
         pkg = Package(one)
@@ -1646,7 +1675,9 @@ def calls_report(path, table, out=None):
                     if prev is not None:
                         if rtoken in OBJECT_TOKENS:
                             rtype, why = _receiver_reading(prev, export_at, import_at, prop_type,
-                                                           prop_type_by_name, here_locals)
+                                                           prop_type_by_name, here_locals,
+                                                           import_owner, owner_fixed,
+                                                           owner_conflict, owner_agree)
                         else:
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
@@ -1763,6 +1794,17 @@ def calls_report(path, table, out=None):
     if import_owners:
         print("      the class those imports belong to: %s"
               % ", ".join("%s %d" % kv for kv in import_owners.most_common(8)))
+    if owner_fixed:
+        print("      typed by the import's own owner class: %d site(s) over %d class(es), top: %s"
+              % (sum(owner_fixed.values()), len(owner_fixed),
+                 ", ".join("%s %d" % kv for kv in owner_fixed.most_common(6))))
+    if owner_agree or owner_conflict:
+        print("      where every declarer agrees, the owner's own class agrees in %d site(s) "
+              "and differs in %d" % (sum(owner_agree.values()), len(owner_conflict)))
+    if owner_conflict:
+        print("      where the owner declares a type the other declarers do not: %d name(s), top: %s"
+              % (len(owner_conflict),
+                 ", ".join("%s %d" % kv for kv in owner_conflict.most_common(6))))
     if gap_class:
         print("      a receiver import that names a class rather than a variable: %s" % "; ".join(gap_class[:6]))
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]

@@ -304,18 +304,19 @@ only because one byte cannot spell 256.
           of those, 223 name a function only a *state* of that class declares (the class owns the state)
         by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top:
           ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        on the receiver's chain: 1757 (547 names) -- the expression in front of the call types to a class
-          (247 distinct; 529 of the 1,757 had a local in front, typed from the class's own ScriptText)
+        on the receiver's chain: 2194 (598 names) -- the expression in front of the call types to a class
+          (251 distinct; 529 of the 2,194 had a local in front, typed from the class's own ScriptText)
           of those, 26 place because the receiver's type names a class in another case (pawn 14, GameHUD 4, ...)
         below the receiver's chain: 6 reach exactly one descendant that declares the name, top:
           IsUnconscious -> StargateGame.BotEnemy 3, GetAggroLevel -> StargateGame.BotEnemy 3
-        decided by the receiver: 1133 site(s) across 277 names, top: SetText 107 over 5 classes, ...
-          an object expression with no recorded type: 654 -- 81 of them a local, 573 not
-          an expression that typed to a class whose chain declares no such name: 16, of which 6 reach exactly
-            one descendant that declares it; the other 10 are a dispatch the static type cannot decide
+        decided by the receiver: 696 site(s) across 167 names, top: SetText 107 over 5 classes, ...
+          an object expression with no recorded type: 181 -- 81 of them a local, 100 not
+          an expression that typed to a class whose chain declares no such name: 52, of which 6 reach exactly
+            one descendant that declares it; the other 46 are a dispatch the static type cannot decide
           a completed value in front (a self-call, or a receiver the walk did not reach): 469
-          why an expression in front names no class: import: no package declares that property 473, ...
-          properties no package declares, by name: UIWidget 80, HaakenMK2Weapon 59, Instigator 56, ...
+          why an expression in front names no class: local: the class source does not declare it 81, ...
+          typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, ...
+          where every declarer agrees, the owner's own class agrees in 698 site(s) and differs in 0
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in
@@ -342,10 +343,25 @@ same class `UObjectProperty` (its C++ name), so an equality test between the two
 the corpus -- and inside that dead branch a `c[3]` indexed a three-field tuple, which nothing noticed because the
 branch never ran. Comparing the names with the prefix stripped types **233 more receivers**, all of them imported
 variables: the receiver's chain goes 1,757 -> **1,954** (569 names, 249 distinct receiver types, `Pawn` 260) and the
-untyped-object-expression residue 654 -> **421** (340 not a local). What is left of the imports is a different
-question: **240 name a property several packages declare with different types** (`UIWidget` 61, `HaakenMK2Weapon` 50,
-`Controller` 48, `InitComponent` 20), owned by `Pawn` 33, `GUI` 30, `GUIListBox` 16, `ScriptedController` 9 -- the
-import's own outer names the owner, so the next step is to prefer the owner's declaration over a corpus-wide vote.
+untyped-object-expression residue 654 -> **421** (340 not a local). What was left of the imports was a different
+question -- **240 sites naming a property several packages declare with different types** (`UIWidget` 61,
+`HaakenMK2Weapon` 50, `Controller` 48, `InitComponent` 20), owned by `Pawn` 33, `GUI` 30, `GUIListBox` 16,
+`ScriptedController` 9 -- which the next round closed, because the import's own outer already names the owner.
+
+**The owner settles the vote: a disagreeing import is typed by the class it names, not by the corpus.** An import's
+`OuterIndex` is a negative import index, and for a property it names the class that declares the variable -- the
+declaration the compiler resolved against. A corpus-wide vote between same-named properties of unrelated classes is
+not a tie to break by count (`UIWidget.Type` and `GUIText.Type` are different variables), so `_receiver_reading`
+prefers the owner's own record: **423 receiver readings** in the corpus come from a disagreeing import and are typed
+that way (`Pawn` 177, `Actor` 57, `GUI` 57, `LevelInfo` 46, `GUIListBox` 37, `BotBase` 19, over 15 owner classes), of
+which **240 were sites the chain had left unplaced** and all 240 now place -- 1,954 -> **2,194** on the receiver's
+chain, by-name placement **12,571 -> 12,811 of 13,507 (94.8%)**, the unplaced residue 936 -> **696**. They land on
+`Engine.Weapon` 67, `Engine.Controller` 47, `GUI.GUIListBase` 35, `Engine.GameInfo` 32, `GUI.GUIController` 30,
+`StargateGame.SquadAIBasic` 8 and `GamePlay.LatentScriptedAction` 8; `CloseMenu` 17, `Add` 17, `GetAggroLevel` 10,
+`TeamIDLookup` 9 and `GetPlayerController` 9 are the names they carry. **The rule is controlled where the corpus does
+agree: 698 sites declare the name with one type in every package, and the owner's own class agrees in all 698 and
+differs in 0** -- so preferring the owner is not a way to disagree with a consensus, it is the vote a tie was
+missing. No disagreeing import remains in the residue.
 
 **And a class name is matched without regard to case, which the source does not respect.** UnrealScript is
 case-insensitive; the `ScriptText` writes `local pawn P;` and `Cast<inventory>(...)` while `classes.csv` says `Pawn`
@@ -399,22 +415,24 @@ untyped by construction when its class ships no `ScriptText`, when the source ha
 name in that function, when the class declares the name with two different types, or when the declared type
 is not a class at all.
 
-**So 12,571 of the 13,507 (93.1%) by-name sites now name a declaring class, and the 936 that do not are a
+**So 12,811 of the 13,507 (94.8%) by-name sites now name a declaring class, and the 696 that do not are a
 typing gap, not a dispatch gap.** `SetText` 107 sites over 5 classes, `SetFont` 105 over 4, `GetValue` 42 over 10,
-`ClientMessage` 27 over 3, `GetViewRotation` 35 over 9. Of the 936: **421 have an object expression in front of them that names no class at all** (81 a local, 340
-not; 240 of them a property several packages declare with different types), **46 name a class whose chain and subtree
-both declare nothing of that name** (was 47 before the three keyings above), and **469 have a completed value in front**, which is a self-call whose name no class on the chain
-declares, or a receiver the walk did not reach.
+`ClientMessage` 27 over 3, `GetString` 23 over 15. Of the 696: **181 have an object expression in front of them that
+names no class at all** (81 a local its source does not declare, 70 a literal or cast, 30 not a variable at all --
+**no import is among them**), **46 name a class whose chain and subtree both declare nothing of that name**, and
+**469 have a completed value in front**, which is a self-call whose name no class on the chain declares, or a
+receiver the walk did not reach.
 
 **The last of the typed residue is a dispatch, and looking below the receiver settles most of it.** A receiver whose
-static type is a base can hold any subclass, so after the chain the tool looks *below* it: of the **16** sites whose
-expression typed to a class whose chain declares no such name (`BotBase` 12, `UnrealScriptedSequence` 3, `Pawn` 1),
-**6 name a function exactly one descendant declares** and place as `descendant:Pkg.Class` -- `IsUnconscious` and
-`GetAggroLevel`, each 3 sites, both to `StargateGame.BotEnemy`, where the first is declared inside `state
-BotUnconscious`. The other **10 stay a dispatch**: `CallToArms` 3, `UnPossess` 1 and `Possess` 1 name a function
-several descendants of `BotBase` declare, and `GetMoveTarget` 2, `GetMyPlayer`, `TakeOver` and `SetPawnClass` name one
-only classes *outside* the receiver's subtree declare. **No name in that residue is missing from the corpus (0)**, which
-is the useful negative: the gap is which object, not which build.
+static type is a base can hold any subclass, so after the chain the tool looks *below* it: of the **52** sites whose
+expression typed to a class whose chain declares no such name (`Object` 36, `BotBase` 12, `UnrealScriptedSequence` 3,
+`Pawn` 1), **6 name a function exactly one descendant declares** and place as `descendant:Pkg.Class` --
+`IsUnconscious` and `GetAggroLevel`, each 3 sites, both to `StargateGame.BotEnemy`, where the first is declared inside
+`state BotUnconscious`. The other **46 stay a dispatch**: `ClientMessage` 25 -- an `Object`-typed receiver is a
+dispatch over every class in the build, not a lookup -- then `CallToArms` 3, `Possess` 2 and `ValidIndex` 1 over
+several descendants, and `GetMoveTarget` 2, `GetMyPlayer` 1, `TakeOver` 1 and `SetPawnClass` 1 naming only classes
+*outside* the receiver's subtree. **No name in that residue is missing from the corpus (0)**, which is the useful
+negative: the gap is which object, not which build.
 
 **The 654 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
 its expression typed to nothing: **473 of the 654 (before the kind fix below, which places 233 of them) reference a property no package in the corpus declares**
@@ -528,13 +546,14 @@ page does not yet describe, and the census records that instead of guessing at i
 * **Operand semantics -- measured, and the receiver is read from the expression in front of the call.** What the
   reference operands *name* is measured per opcode (`--resolve`, above): objects for the variable, cast and
   final-call tokens, the name table for the virtual and global calls and `NameConst`. The `0x05` switch's byte is
-  settled above (the compared value's width). By-name sites are now placed three ways: 8,251 on the caller's chain,
-  2,332 by the one class in the corpus that declares the name, and 1,732 on the **receiver's** chain -- the receiver
-  is the expression the emitter evaluated in front of the call, and its declared type names a class (a property's
-  from `class_properties.csv`, a local's from the class's own `ScriptText`). What is left is **1,192 sites over 295
-  names**: 656 with an expression that names no class (474 of them a property no package declares), 47 typed to a
-  class whose chain lacks the name, and 489 with a completed value in front; see "The calls the scripts make" for
-  the counts, the reason split, the shuffle control and the 10% reading ambiguity.
+  settled above (the compared value's width). By-name sites are now placed four ways: 8,321 on the caller's chain,
+  2,290 by the one class in the corpus that declares the name, 2,194 on the **receiver's** chain and 6 on the one
+  descendant below the receiver that declares it -- the receiver is the expression the emitter evaluated in front of
+  the call, and its declared type names a class (a property's from `class_properties.csv`, an import's from the owner
+  class its outer names, a local's from the class's own `ScriptText`). What is left is **696 sites over 167 names**:
+  181 with an expression that names no class (81 a local its source does not declare, 70 a literal or cast, 30 not a
+  variable), 46 typed to a class whose chain lacks the name, and 469 with a completed value in front; see "The calls
+  the scripts make" for the counts, the reason split, the shuffle control and the 10% reading ambiguity.
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
   declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by

@@ -1345,6 +1345,22 @@ packages declare with *different* types (`UIWidget` 61, `HaakenMK2Weapon` 50, `C
 already names the owning class (`Pawn` 33, `GUI` 30, `GUIListBox` 16), so the next instrument is to prefer the owner's
 declaration instead of requiring the corpus to agree.
 
+**2026-11-11, and the residue above is closed by that instrument: the import's own outer settles the vote.** The 240
+sites named a property that two or more packages declare with *different* types, and requiring the whole corpus to
+agree was the wrong rule -- `UIWidget.Type` and `GUIText.Type` are different variables, not a tie to break by count.
+An import's `OuterIndex` names the class that declares the property, and that is the declaration the compiler resolved
+against, so `_receiver_reading` now prefers the owner's own record. **423 receiver readings** come from a disagreeing
+import and type that way (`Pawn` 177, `Actor` 57, `GUI` 57, `LevelInfo` 46, `GUIListBox` 37, `BotBase` 19; 15 owner
+classes), and **all 240 sites that were unplaced** place: the receiver's chain 1,954 -> **2,194**, by-name placement
+**12,811 of 13,507 (94.8%)**, the unplaced residue **936 -> 696**. What is left is 181 expressions that name no class
+at all (81 a local its source does not declare, 70 a literal or cast, 30 not a variable -- **no import**), **46**
+typed to a class whose chain and subtree lack the name (`Object` 36, `BotBase` 12, `UnrealScriptedSequence` 3, `Pawn`
+1; `ClientMessage` 25 of the names, a dispatch over every class in the build) and **469** a completed value in front.
+The rule's control: where every declaring package agrees (698 sites) the owner's own class agrees 698 of 698 and
+differs 0, so it supplies the vote a tie was missing rather than outvoting a consensus. The remaining gap is which
+*object* a completed-value or `Object`-typed site calls on -- not something another reading of these packages can
+settle.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all

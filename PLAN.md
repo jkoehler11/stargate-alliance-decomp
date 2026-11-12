@@ -1031,6 +1031,26 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the import's owner class settles the property vote)
+
+- **A disagreeing property import is typed by the class its outer names; requiring the corpus to vote was the wrong
+  rule.** An import's `OuterIndex` is a negative import index that names the declaring class -- the declaration the
+  compiler resolved against -- so a vote between same-named properties of unrelated classes (`UIWidget.Type`,
+  `GUIText.Type`) was never a tie to break by count. `_receiver_reading` now prefers the owner's own record: **423
+  receiver readings** come from a disagreeing import (`Pawn` 177, `Actor` 57, `GUI` 57, `LevelInfo` 46, `GUIListBox`
+  37, `BotBase` 19; 15 owner classes), the **240 unplaced sites** that were the residue's whole import bucket all
+  place, the receiver's chain goes 1,954 -> **2,194**, the unplaced residue 936 -> **696**, and by-name placement is
+  **12,811 of 13,507 (94.8%)**.
+- **The control is the cases where the corpus already agrees, and it is clean.** At the 698 sites whose property every
+  declaring package types the same way, the owner's own class agrees 698 of 698 and differs 0 -- preferring the owner
+  adds no disagreement with a consensus, it supplies the vote a tie was missing. That is the check to ask for before
+  trusting the 240.
+- What is left is 181 expressions naming no class (81 a local its source does not declare, 70 a literal or cast, 30
+  not a variable; no import), 46 typed to a class with no declarer (`Object` 36 is a dispatch over every class in the
+  build) and 469 with a completed value in front -- all questions about which object, not about the build.
+- Tool (the owner map into `_receiver_reading`, the `owner_fixed` / `owner_agree` / `owner_conflict` counters and
+  their report lines) + `inventory/script_calls.csv` regenerated + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`.
+
 ### Execution notes (2026-11-11, the property import branch was dead code — the tagged stream writes the C++ `U`)
 
 - **The 473 "property no package declares" were a suffix mismatch, not a missing declaration.** The tagged property
