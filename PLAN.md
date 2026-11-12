@@ -1052,6 +1052,21 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-12, the native tables share no function with any class table)
+
+- **0 of the 232 unmapped tables hold a mapped class's virtual function.** `tools/native-vtable.py --share`
+  (`inventory/native_vtable_shared.csv`) compares every unmapped table's slot bodies against all 492 class tables,
+  with the same index twice: `matched` (equal code pointers at the same slot) and `prefix` (the run from slot 0, the
+  shape of a shared base layout). **0** reach three matched bodies, **0** reach a three-slot prefix. Unmasked, two
+  60-slot tables share six and four slots with `AudioSubsystem` -- all of them the one-byte `ret` stub 327 class
+  tables hold at 19/20 -- so the mode masks bodies under 16 bytes and the two tables go to zero with it.
+- **What that settles.** The native vtables are a separate population, not a UObject hierarchy the map lost: the
+  install site can name a secondary table's owner (48 of 232) but the slot bodies carry no mapped function, so naming
+  the other 184 still needs a signature or an asserting caller.
+- Tool (`--share`, `share_scan`, `overlap`, `read_slots`, five overlap self-tests -- 30 in `--check`) + `make
+  native-vtable` writes `inventory/native_vtable_shared.csv` (232 rows) + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. Reads the image; no boot.
+
 ### Execution notes (2026-11-12, no `.text` site names a table, and the store rule was 20 tables short)
 
 - **722 of the 724 install-started tables are named only by their install store.** `tools/native-vtable.py --reach`

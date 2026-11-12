@@ -715,3 +715,25 @@ runs begin with a table** (not 468) and **114 runs hold two or more** (not 109);
 which had no install store at all and now start tables. The two scans agree once both reach the whole
 addressing space: `objdump`'s operand census and the byte-level store census count the same 1,503
 stores for all 724 rows, which is the cross-check that found the gap.
+
+## The native tables share no function with any class table (2026-11-12)
+
+`tools/native-vtable.py --share` (`inventory/native_vtable_shared.csv`) asks whether the 232 unmapped
+tables are *related* to the 492 mapped class tables at all: for every unmapped table it counts, against
+every mapped table, the slot indexes that hold the same code pointer (`matched`) and the run of equal
+pointers from slot 0 (`prefix`), which is what a shared base-class layout looks like.
+
+**0 of 232.** No unmapped table shares three slot bodies with any of the 492 class tables, and none
+shares a three-slot prefix -- the native vtables carry not one of a mapped class's virtual functions,
+so they are a separate population rather than a UObject hierarchy the map failed to name. The
+comparison masks every body shorter than 16 bytes first, and that mask is the measurement, not a
+convenience: unmasked, two 60-slot tables (`0x4eaf68`, `0x51a810`) "share" six and four slots with
+`AudioSubsystem`'s table, and each of them is the one-byte `ret` stub that 327 of the 492 tables also
+hold at slots 19/20. A shared stub is not a shared function; masking it takes the image from two
+tables with a mapped neighbour to none.
+
+**This stacks with the install-site result above.** 48 of the 232 unmapped tables are installed by a
+body that also installs a mapped class's table, and that names the *owner* of a secondary base table
+-- but the slot bodies carry no mapped function, so nothing in the table itself says what its virtuals
+do. Naming the 184 with no install neighbour and no shared body needs a signature or an asserting
+caller, which is where U8 already stands, now with the static routes enumerated and closed.
