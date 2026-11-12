@@ -405,6 +405,53 @@ these the same way, and on three rows the copy's own length is **exactly the fie
 `class_name_of(owner)`, which printed `Class` on all 400 rows) -- without it these three rows could not be looked up
 at all, since a function name is not unique in a package.
 
+### The field is exact in every copy found, and the gap is one or two one-byte slots (U13, 2026-11-12)
+
+`--sizefield` left 43 residue rows. Reading them one at a time against six 128 MiB `pmemsave` images of a loaded
+`M00` -- `script-ram.py --residue`, one line per row, `--slots` for the per-slot detail -- turns the shape into a
+count: **13 rows have a guest copy that aligns span for span, and 10 of those copies are the field's own number.** In
+every one of the 10 the difference between the model and the copy is *exactly* the slots the guest left at their file
+width, so no row needs a second rule:
+
+| package | class.function | field | narrow slot(s) |
+|---|---|---:|---|
+| `Engine.u` | `PlayerController.ServerJoinVoiceChannel` | 327 | 212 `op01` |
+| `Engine.u` | `TexOscillatorTriggered.Trigger` | 174 | 86 `op00`, 89 `op00` |
+| `Engine.u` | `TexPannerTriggered.Trigger` | 174 | 86 `op00`, 89 `op00` |
+| `Engine.u` | `StreamBase.ConvertToFileExtension` | 207 | 202 `op00` |
+| `Engine.u` | `LadderInfo.GetMatchInfo` | 196 | 110 `op00` |
+| `GUI.u` | `GUIComponent.MenuStateChange` | 455 | 281 `op01` |
+| `GUI.u` | `GUIMultiComponent.MapControls` | 952 | 507 `op02` |
+| `GUI.u` | `GUIHorzList.InternalOnKeyEvent` | 222 | 135 `op00` |
+| `StargateGame.u` | `WeaponZoomInteraction.KeyEvent` | 120 | 97 `op00` |
+| `StargateGame.u` | `StargateWeapon.PlayFiring` | 464 | 183 `op00`, 186 `op01` |
+
+* **13 narrow slots, every one at file width 1, and all on the three variable tokens**: `op00` `LocalVariable` 9,
+  `op01` `InstanceVariable` 3, `op02` `DefaultVariable` 1. The widened slots in those same scripts are both widths
+  (`2 -> 4` and `1 -> 4`), so "every compact index widens" is a corpus rule and not the loader's per-slot behaviour.
+* **Neither the opcode nor the value decides.** `Trigger` has four one-byte slots: 36 and 41 (`op01`, indices 4 and
+  14) are widened in the copy, 86 and 89 (`op00`, indices 7 and -27) are not. A one-byte index of 4 widens at offset
+  36 of `WeaponZoomInteraction.KeyEvent` and stays at offset 202 of `ConvertToFileExtension`, so a small value is not
+  the discriminator either -- the same negative the `-3` rows gave, now measured on the guest side instead of inferred
+  from the field.
+* **The million-scale rows are settled from the guest side.** Three of the 13 complete copies are *not* the field:
+  `StreamPlaylistManager.InitializeParsers` (copy 183, field 11,665,408), `StargatePlayer.EnableShadows` (124 against
+  7,798,784) and `SemektetMortarGun.CalcPathPoint` (65 against 3,932,160) -- and each copy is exactly the model's
+  predicted length. So the body loads as the widening model predicts and `name_end+12` on those payloads is not this
+  field at all, which is the `--diverge` "no such dword anywhere in the header" negative confirmed without another
+  header scan.
+* **The 30 rows that do not align are three different negatives.** Rows / complete copies / deepest alignment in
+  spans, per package: `Engine.u` 12/6/212, `GUI.u` 5/3/505, `StargateGame.u` 5/3/252, `StargateVehicles.u` 1/1/36,
+  `StargateMenus.u` 8/0/9, `UWindow.u` 7/0/10, `UDebugMenu.u` 2/0/5, and `GamePlay.u`, `IpDrv.u`,
+  `StargateContent.u` 1/0/**0** each. The three at zero have no body of theirs in any of the six images -- not
+  resident, a different negative from a divergence -- while the menu packages peak at 5-10 spans, the size of a wrong
+  anchor, and `Engine.u`/`GUI.u` run hundreds of spans before stopping.
+* **`Actor.DisplayDebug` (+9, the largest row, 1,605 spans) stops at 212 spans with the reverse shape**: the model
+  and the copy agree for 455 bytes and then three slots the model counts as one byte hold four-byte pointers in the
+  copy (`80 49 fe 00`-style, in-image addresses). A narrow slot *shortens* a copy, so this is the opposite direction
+  and it means the table's width for that token is one byte too small -- the remainder is still a slot width, not a
+  second field.
+
 ## The shipped scripts, as disassembled
 
 With the start at `name_end + 16` the disassembler runs on real functions rather than on hex literals:

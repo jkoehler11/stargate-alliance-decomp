@@ -5546,6 +5546,27 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the residue is one question -- which slots are one byte -- and 10 copies are the field exactly)
+
+- **All 43 residue rows were read against six guest images, and the answer is a slot width rather than a second rule.**
+  `script-ram.py --residue CSV` (new) aligns the model span by span with an index operand free to be 1, 2 or 4 bytes
+  in the copy: **13 rows align completely, 10 of those copies are the field's own number**, and in each the model's
+  excess is exactly the slots the guest left at file width. The 13 narrow slots are all one byte wide and all on
+  `op00`/`op01`/`op02` (9/3/1); neither the opcode nor the value decides -- `Trigger` widens indices 4 and 14 at
+  offsets 36/41 and leaves 7 at 86 alone, and a one-byte 4 widens in `KeyEvent` while it stays in
+  `ConvertToFileExtension`.
+- **The million-scale rows are settled from the guest side.** `InitializeParsers` (copy 183), `EnableShadows` (124)
+  and `CalcPathPoint` (65) each have a complete copy that is the *model's* length, so those payloads do not carry this
+  field at `name_end+12` -- the `--diverge` negative, confirmed without another header scan.
+- **The rows that do not align are three negatives, not one.** `GamePlay.u`, `IpDrv.u` and `StargateContent.u` have no
+  body of theirs in these six images (deepest alignment 0 spans), the three menu packages peak at 5-10 spans (a wrong
+  anchor), and `Engine.u`/`GUI.u` align hundreds of spans before stopping -- `Actor.DisplayDebug` (+9, the largest
+  row) at 212 of 1,605, where three slots the model counts as one byte hold four-byte pointers in the copy.
+- **Next:** the token at `DisplayDebug`'s stop (file offset `0x165`), named from the copy -- the last row whose
+  difference is not a slot this read can already name.
+- Tool (`script-ram.py --slots`/`--residue` and its self-test, `uscript-dis.py --residue-csv`) + docs/BYTECODE.md
+  + docs/UNKNOWNS.md U13 + PLAN 3.7. Reads the packages and six existing `pmemsave` images; no boot, no artifact.
+
 ### Execution notes (2026-11-12, the -3 rows are the model over-counting, and the slot is not the token class)
 
 - **The mirror shape is measured, and its copy is the field's number.** `StreamBase.ConvertToFileExtension` -- field

@@ -1875,6 +1875,21 @@ the copy and the script's last one stays a single byte, so the residual question
 slot", and each of the 43 residue rows now has a location this instrument can name. The listing that made these rows
 findable is fixed in the same change (`--sizefield --lists` printed `Class`, the metaclass, for every row).
 
+**Twelfth session, 2026-11-12: the residue is a slot width, and 10 of the 43 rows are answered.** The dword is not one
+field with an exception list; it is `len(script) + sum(4 - width)` over the slots the *loader* widened, and a guest
+copy is the only witness to which those are. `tools/xemu/script-ram.py --residue CSV` aligns the model span by span
+(an index operand free to be 1, 2 or 4 bytes) over six existing `pmemsave` images: **13 rows align completely, 10 of
+those copies are the field's own number**, and the difference is exactly the 1-2 slots left at file width -- all of
+them one byte wide, on `op00`/`op01`/`op02` (9/3/1). Neither the opcode nor the operand's value selects them.
+`InitializeParsers`, `EnableShadows` and `CalcPathPoint` (the three million-scale fields) have complete copies of the
+*model's* length, so those payloads simply do not carry this field at `name_end+12`. The 30 rows still without a copy
+split into "not resident in these six images" (`GamePlay.u`, `IpDrv.u`, `StargateContent.u`: 0 spans) and a real
+divergence (`Actor.DisplayDebug` at 212 of 1,605 spans, where three slots the model counts as one byte hold four-byte
+pointers -- the reverse of the `-3` rows). **What would settle the rest:** name the token at `DisplayDebug`'s stop
+from the copy (the bytes are in the model at file offset `0x165`), which is the last row whose difference is not a
+slot this reading can already name; and re-read the 8 `StargateMenus.u` and 7 `UWindow.u` rows against a dump taken
+with a menu open, since no body of those packages is resident in an in-game image.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
