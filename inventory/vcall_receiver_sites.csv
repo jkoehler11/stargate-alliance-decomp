@@ -1,107 +1,107 @@
-site_va,slot,reg,function,defining_va,bytes,form,source,base,disp,value,value_kind,candidates,walk,aligned,oracle,oracle_form
-0x0001daf6,19,eax,FUN_0001daf0,0x0001daf3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,4,yes,agree,call   DWORD PTR [eax+0x4c]
-0x0001db55,19,eax,FUN_0001db50,0x0001db53,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x4c]
-0x0001dbf3,19,eax,FUN_0001db50+0xa3,0x0001dbeb,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,67,yes,agree,call   DWORD PTR [eax+0x4c]
-0x0007f097,19,edx,FUN_0007ef20,0x0007f094,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,124,yes,agree,call   DWORD PTR [edx+0x4c]
-0x0023292a,19,edx,Core_UnObjBas,0x00232925,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,1036,yes,agree,call   DWORD PTR [edx+0x4c]
-0x0029270c,19,eax,FUN_00292590+0x17c,0x0029270a,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,129,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002c4924,19,eax,FUN_002c48e0,0x002c491d,8b 06,"mov eax,[esi]",object-head,esi,,,,0,24,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002c9827,19,eax,FUN_002c95a0,0x002c9822,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,149,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002c9cb1,19,eax,FUN_002c95a0,0x002c9cac,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,444,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002c9dc3,19,edx,FUN_002c95a0,0x002c9dc1,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,514,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002ccea0,19,edx,FUN_002cce70,0x002cce99,8b 16,"mov edx,[esi]",object-head,esi,,,,0,17,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cd1d5,19,eax,FUN_002cd190,0x002cd1d1,8b 07,"mov eax,[edi]",object-head,edi,,,,0,27,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cd211,19,eax,FUN_002cd190,0x002cd20d,8b 07,"mov eax,[edi]",object-head,edi,,,,0,52,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cd273,19,eax,FUN_002cd220,0x002cd26f,8b 07,"mov eax,[edi]",object-head,edi,,,,0,30,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cd2d6,19,edx,FUN_002cd220,0x002cd2d2,8b 17,"mov edx,[edi]",object-head,edi,,,,0,70,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cd78c,19,edx,FUN_002cd660,0x002cd785,8b 16,"mov edx,[esi]",object-head,esi,,,,0,79,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cdbb0,19,edx,FUN_002cdb50,0x002cdbab,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,29,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002ce6a4,19,eax,dtor_MasterServerUplink+0x2d4,0x002ce69f,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,182,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cf045,19,edx,dtor_MasterServerUplink+0xc75,0x002cf040,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,805,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cf14b,19,eax,FUN_002cf100,0x002cf146,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,26,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cf3e2,19,edx,FUN_002cf290,0x002cf3dd,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,102,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cf95b,19,eax,FUN_002cf900,0x002cf956,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,29,yes,agree,call   DWORD PTR [eax+0x4c]
-0x002cfaa6,19,edx,FUN_002cf970,0x002cfaa1,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,100,yes,agree,call   DWORD PTR [edx+0x4c]
-0x002cff9b,19,edx,FUN_002cfc20,0x002cff96,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,259,yes,agree,call   DWORD PTR [edx+0x4c]
-0x00331247,19,eax,FUN_0033122a,0x00331245,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,10,yes,agree,call   DWORD PTR [eax+0x4c]
-0x00331279,19,eax,FUN_0033124e,0x00331277,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,16,yes,agree,call   DWORD PTR [eax+0x4c]
-0x003343bd,19,edx,FUN_003341dd,0x0033439e,8b 10,"mov edx,[eax]",object-head,eax,,,,0,148,yes,agree,call   DWORD PTR [edx+0x4c]
-0x00335194,19,ecx,FUN_00334f87,0x00335174,8b 08,"mov ecx,[eax]",object-head,eax,,,,0,150,yes,agree,call   DWORD PTR [ecx+0x4c]
-0x00336d69,19,ecx,FUN_00336b8f,0x00336d4d,8b 08,"mov ecx,[eax]",object-head,eax,,,,0,144,yes,agree,call   DWORD PTR [ecx+0x4c]
-0x00336f5b,19,edx,FUN_00336b8f,0x00336f43,8b 10,"mov edx,[eax]",object-head,eax,,,,0,303,yes,agree,call   DWORD PTR [edx+0x4c]
-0x00344615,19,eax,FUN_003445f0,0x00344607,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,15,yes,agree,call   DWORD PTR [eax+0x4c]
-0x000121f9,20,edx,FUN_00012110,0x000121f5,8b 16,"mov edx,[esi]",object-head,esi,,,,0,66,yes,agree,call   DWORD PTR [edx+0x50]
-0x00012a67,20,edx,Core_UnObjBas,0x00012a63,8b 16,"mov edx,[esi]",object-head,esi,,,,0,273,yes,agree,call   DWORD PTR [edx+0x50]
-0x0001672a,20,eax,Core_UnObjBas,0x00016728,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,3709,yes,agree,call   DWORD PTR [eax+0x50]
-0x00016901,20,eax,Core_UnObjBas,0x000168ff,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,3837,yes,agree,call   DWORD PTR [eax+0x50]
-0x0001c0cc,20,eax,FUN_0001bc30+0x49c,0x0001c0c7,8b 45 00,"mov eax,[ebp]",stack,ebp,+0x0,,,0,368,yes,agree,call   DWORD PTR [eax+0x50]
-0x0001c426,20,eax,FUN_0001bc30+0x7f6,0x0001c422,8b 06,"mov eax,[esi]",object-head,esi,,,,0,621,yes,agree,call   DWORD PTR [eax+0x50]
-0x0001f766,20,edx,FUN_0001f5c0+0x1a6,0x0001f761,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,130,yes,agree,call   DWORD PTR [edx+0x50]
-0x0001f772,20,eax,FUN_0001f5c0+0x1b2,0x0001f770,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,135,yes,agree,call   DWORD PTR [eax+0x50]
-0x0001fa28,20,edx,FUN_0001f9d0,0x0001fa26,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,28,yes,agree,call   DWORD PTR [edx+0x50]
-0x0003c211,20,ecx,Core_UnClass,0x0003c20c,0f 84 25 fc ff ff,je     0x3be37,not-a-boundary,,,,,0,0,no,spans,je     0x3be37
-0x00047654,20,ecx,Native_65,0x00047651,8d 4c 01 ff,"lea    ecx,[ecx+eax*1-0x1]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ecx+eax*1-0x1]"
-0x00058670,20,edx,FUN_00058580,0x0005866c,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,76,yes,agree,call   DWORD PTR [edx+0x50]
-0x00058dd2,20,eax,FUN_00058d60,0x00058dce,8b 06,"mov eax,[esi]",object-head,esi,,,,0,48,yes,agree,call   DWORD PTR [eax+0x50]
-0x000592eb,20,eax,Core_UnTemplate,0x000592e7,8b 06,"mov eax,[esi]",object-head,esi,,,,0,58,yes,agree,call   DWORD PTR [eax+0x50]
-0x000596bb,20,edx,FUN_00059650,0x000596b4,8b 16,"mov edx,[esi]",object-head,esi,,,,0,33,yes,agree,call   DWORD PTR [edx+0x50]
-0x0005979b,20,edx,FUN_00059650+0x14b,0x00059794,8b 16,"mov edx,[esi]",object-head,esi,,,,0,111,yes,agree,call   DWORD PTR [edx+0x50]
-0x000598ed,20,edx,FUN_000597f0,0x000598e6,8b 16,"mov edx,[esi]",object-head,esi,,,,0,75,yes,agree,call   DWORD PTR [edx+0x50]
-0x0006dfc8,20,edi,Core_UnObj,0x0006dfc3,8d 85 44 fd ff ff,"lea    eax,[ebp-0x2bc]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2bc]"
-0x0006f57d,20,esi,Core_UnObjBas,0x0006f578,8d 85 40 fd ff ff,"lea    eax,[ebp-0x2c0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2c0]"
-0x000c33b7,20,ecx,Engine_UnActCol+0xd47,0x000c33b2,0f 84 a7 fb ff ff,je     0xc2f5f,not-a-boundary,,,,,0,0,no,spans,je     0xc2f5f
-0x001d6f3c,20,edx,FUN_001d6e00,0x001d6f36,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,80,yes,agree,call   DWORD PTR [edx+0x50]
-0x001da536,20,edx,FUN_001d9fa0,0x001da52f,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,358,yes,agree,call   DWORD PTR [edx+0x50]
-0x001eff39,20,ebx,Core_UnTemplate,0x001eff38,85 ff,"test   edi,edi",not-a-boundary,,,,,0,0,no,spans,"test   edi,edi"
-0x001f1f93,20,edx,FUN_001f1f50,0x001f1f78,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,23,yes,agree,call   DWORD PTR [edx+0x50]
-0x001f473a,20,edx,FUN_001f4700,0x001f471f,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,23,yes,agree,call   DWORD PTR [edx+0x50]
-0x002a21a1,20,ebx,FUN_002a1b70,0x002a21a0,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff
-0x002c48c5,20,edx,IpDrv_InternetLink+0x1d5,0x002c489b,8b 16,"mov edx,[esi]",object-head,esi,,,,0,151,yes,agree,call   DWORD PTR [edx+0x50]
-0x002d0d6e,20,edx,FUN_002d0c70,0x002d0d69,8d 95 e8 fb ff ff,"lea    edx,[ebp-0x418]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x418]"
-0x002d1126,20,edx,FUN_002d1030,0x002d1121,8d 95 a4 fe ff ff,"lea    edx,[ebp-0x15c]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x15c]"
-0x002d113c,20,ecx,FUN_002d1030,0x002d1137,8d 8d a4 fe ff ff,"lea    ecx,[ebp-0x15c]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x15c]"
-0x002d1191,20,edx,FUN_002d1030,0x002d118c,8d 95 b8 fa ff ff,"lea    edx,[ebp-0x548]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x548]"
-0x002d13ba,20,edx,FUN_002d1030,0x002d13b5,8d 95 b8 fa ff ff,"lea    edx,[ebp-0x548]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x548]"
-0x002d2ee6,20,edi,FUN_002d2cd0,0x002d2ee5,33 ff,"xor    edi,edi",not-a-boundary,,,,,0,0,no,spans,"xor    edi,edi"
-0x003300d3,20,ecx,FUN_0033009c,0x003300ce,8d 8d fc fe ff ff,"lea    ecx,[ebp-0x104]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x104]"
-0x00333881,20,edx,FUN_0033385e,0x0033387b,8b 10,"mov edx,[eax]",object-head,eax,,,,0,8,yes,agree,call   DWORD PTR [edx+0x50]
-0x00333fec,20,edx,FUN_00333fd3,0x00333fde,8b 10,"mov edx,[eax]",object-head,eax,,,,0,11,yes,agree,call   DWORD PTR [edx+0x50]
-0x003363ac,20,edx,FUN_00336389,0x003363a6,8b 10,"mov edx,[eax]",object-head,eax,,,,0,8,yes,agree,call   DWORD PTR [edx+0x50]
-0x003363c9,20,edx,FUN_003363b0,0x003363bb,8b 10,"mov edx,[eax]",object-head,eax,,,,0,11,yes,agree,call   DWORD PTR [edx+0x50]
-0x00340018,20,ecx,FUN_0033ffee,0x00340015,8d 4c 09 ff,"lea    ecx,[ecx+ecx*1-0x1]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ecx+ecx*1-0x1]"
-0x003400e9,20,edi,FUN_0033ffee,0x003400e4,8d 85 94 fe ff ff,"lea    eax,[ebp-0x16c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x16c]"
-0x00340248,20,ebx,FUN_0034016f,0x00340243,8d 85 18 fd ff ff,"lea    eax,[ebp-0x2e8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2e8]"
-0x00348503,20,ecx,FUN_003484e0,0x003484fe,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]"
-0x00349dc1,20,ecx,FUN_00349d54,0x00349dbc,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]"
-0x0034a3ed,20,ecx,FUN_0034a374,0x0034a3e8,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]"
-0x00354d90,20,ecx,FUN_00354c69,0x00354d8b,8d 8d b0 fe ff ff,"lea    ecx,[ebp-0x150]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x150]"
-0x00359f11,20,eax,FUN_00359d19,0x00359f0c,8d 85 d0 fe ff ff,"lea    eax,[ebp-0x130]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x130]"
-0x0035a7c1,20,eax,FUN_0035a15f,0x0035a7bc,8d 85 1c fd ff ff,"lea    eax,[ebp-0x2e4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2e4]"
-0x0035f74f,20,edi,FUN_0035f650,0x0035f74a,8d 85 2c fd ff ff,"lea    eax,[ebp-0x2d4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d4]"
-0x0035fd2f,20,ebx,FUN_0035fa26,0x0035fd2a,8d 85 6c fe ff ff,"lea    eax,[ebp-0x194]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x194]"
-0x00360705,20,ecx,FUN_003604bf,0x003606ff,8d 84 3d 5c f4 ff ff,"lea    eax,[ebp+edi*1-0xba4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+edi*1-0xba4]"
-0x00361831,20,edi,FUN_0036142e,0x0036182c,8d 85 28 fd ff ff,"lea    eax,[ebp-0x2d8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d8]"
-0x00361877,20,eax,FUN_0036142e,0x00361872,8d 85 a8 fa ff ff,"lea    eax,[ebp-0x558]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x558]"
-0x00361952,20,edi,FUN_0036142e,0x0036194d,8d 85 28 fd ff ff,"lea    eax,[ebp-0x2d8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d8]"
-0x00361998,20,eax,FUN_0036142e,0x00361993,8d 85 a8 fa ff ff,"lea    eax,[ebp-0x558]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x558]"
-0x0036234c,20,ebx,FUN_00362244,0x00362348,05 c0 fe ff ff,"add    eax,0xfffffec0",not-a-boundary,,,,,0,0,no,spans,"add    eax,0xfffffec0"
-0x00362f70,20,esi,FUN_00362f06,0x00362f6a,8d 84 85 00 fb ff ff,"lea    eax,[ebp+eax*4-0x500]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*4-0x500]"
-0x0036467e,20,ecx,FUN_00363c90,0x00364678,8d 84 05 d8 fe ff ff,"lea    eax,[ebp+eax*1-0x128]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*1-0x128]"
-0x003647e5,20,ecx,FUN_00363c90,0x003647df,8d 84 05 d8 fe ff ff,"lea    eax,[ebp+eax*1-0x128]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*1-0x128]"
-0x0036c420,20,esi,FUN_0036c3f8,0x0036c41b,8d 85 6c fd ff ff,"lea    eax,[ebp-0x294]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x294]"
-0x0036c603,20,ebx,FUN_0036c59f,0x0036c5fe,8d 85 50 fd ff ff,"lea    eax,[ebp-0x2b0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2b0]"
-0x0036c9b1,20,ebx,FUN_0036c7ea,0x0036c9ab,8d 84 85 a0 fd ff ff,"lea    eax,[ebp+eax*4-0x260]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*4-0x260]"
-0x0036ca25,20,edi,FUN_0036c7ea,0x0036ca20,8d 85 a0 fd ff ff,"lea    eax,[ebp-0x260]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x260]"
-0x0036cb1d,20,eax,FUN_0036c7ea,0x0036cb18,8d 85 60 fc ff ff,"lea    eax,[ebp-0x3a0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x3a0]"
-0x0036e918,20,eax,FUN_0036e8af,0x0036e913,8d 85 64 fd ff ff,"lea    eax,[ebp-0x29c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x29c]"
-0x0036eb20,20,eax,FUN_0036eac2,0x0036eb1b,8d 85 64 fd ff ff,"lea    eax,[ebp-0x29c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x29c]"
-0x0036edc6,20,edi,FUN_0036ecec,0x0036edc1,8d 85 58 eb ff ff,"lea    eax,[ebp-0x14a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x14a8]"
-0x0036ee9a,20,edi,FUN_0036ecec,0x0036ee95,8d 85 58 f4 ff ff,"lea    eax,[ebp-0xba8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0xba8]"
-0x0036f116,20,edi,FUN_0036ecec,0x0036f111,8d 85 58 eb ff ff,"lea    eax,[ebp-0x14a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x14a8]"
-0x0036f1b0,20,edi,FUN_0036ecec,0x0036f1ab,8d 85 58 f4 ff ff,"lea    eax,[ebp-0xba8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0xba8]"
-0x0036f244,20,edi,FUN_0036ecec,0x0036f23f,8d 85 58 fd ff ff,"lea    eax,[ebp-0x2a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2a8]"
-0x003c44c4,20,esi,FUN_003c4350,0x003c44c0,e8 4b 8c ff ff,call   0x3bd110,not-a-boundary,,,,,0,0,no,spans,call   0x3bd110
-0x003d2201,20,edx,FUN_003d1f20,0x003d2200,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff
-0x003d2729,20,edx,FUN_003d26d0,0x003d2728,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff
-0x003e003c,20,edx,FUN_003dfe20,0x003e0037,8d 95 f4 fb ff ff,"lea    edx,[ebp-0x40c]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x40c]"
-0x003ee314,20,ebx,FUN_003ee1f1,0x003ee30f,8d 9d 5c ff ff ff,"lea    ebx,[ebp-0xa4]",not-a-boundary,,,,,0,0,no,spans,"lea    ebx,[ebp-0xa4]"
+site_va,slot,reg,function,defining_va,bytes,form,source,base,disp,value,value_kind,candidates,walk,aligned,oracle,oracle_form,origin,origin_va,origin_chain
+0x0001daf6,19,eax,FUN_0001daf0,0x0001daf3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,4,yes,agree,call   DWORD PTR [eax+0x4c],this,,esi<-ecx
+0x0001db55,19,eax,FUN_0001db50,0x0001db53,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x4c],this,,esi<-ecx
+0x0001dbf3,19,eax,FUN_0001db50+0xa3,0x0001dbeb,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,67,yes,agree,call   DWORD PTR [eax+0x4c],field,0x0001db8d,ebx<-ecx
+0x0007f097,19,edx,FUN_0007ef20,0x0007f094,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,124,yes,agree,call   DWORD PTR [edx+0x4c],global,0x0007f08b,ecx
+0x0023292a,19,edx,Core_UnObjBas,0x00232925,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,1036,yes,agree,call   DWORD PTR [edx+0x4c],argument,0x00232166,ebx
+0x0029270c,19,eax,FUN_00292590+0x17c,0x0029270a,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,129,yes,agree,call   DWORD PTR [eax+0x4c],global,0x00292700,ecx
+0x002c4924,19,eax,FUN_002c48e0,0x002c491d,8b 06,"mov eax,[esi]",object-head,esi,,,,0,24,yes,agree,call   DWORD PTR [eax+0x4c],this,,esi<-ecx
+0x002c9827,19,eax,FUN_002c95a0,0x002c9822,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,149,yes,agree,call   DWORD PTR [eax+0x4c],field,0x002c981f,ecx
+0x002c9cb1,19,eax,FUN_002c95a0,0x002c9cac,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,444,yes,agree,call   DWORD PTR [eax+0x4c],field,0x002c9ca9,ecx
+0x002c9dc3,19,edx,FUN_002c95a0,0x002c9dc1,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,514,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002c9dbe,ecx
+0x002ccea0,19,edx,FUN_002cce70,0x002cce99,8b 16,"mov edx,[esi]",object-head,esi,,,,0,17,yes,agree,call   DWORD PTR [edx+0x4c],stack,0x002cce72,esi
+0x002cd1d5,19,eax,FUN_002cd190,0x002cd1d1,8b 07,"mov eax,[edi]",object-head,edi,,,,0,27,yes,agree,call   DWORD PTR [eax+0x4c],stack,0x002cd197,edi
+0x002cd211,19,eax,FUN_002cd190,0x002cd20d,8b 07,"mov eax,[edi]",object-head,edi,,,,0,52,yes,agree,call   DWORD PTR [eax+0x4c],stack,0x002cd197,edi
+0x002cd273,19,eax,FUN_002cd220,0x002cd26f,8b 07,"mov eax,[edi]",object-head,edi,,,,0,30,yes,agree,call   DWORD PTR [eax+0x4c],stack,0x002cd243,edi
+0x002cd2d6,19,edx,FUN_002cd220,0x002cd2d2,8b 17,"mov edx,[edi]",object-head,edi,,,,0,70,yes,agree,call   DWORD PTR [edx+0x4c],stack,0x002cd243,edi
+0x002cd78c,19,edx,FUN_002cd660,0x002cd785,8b 16,"mov edx,[esi]",object-head,esi,,,,0,79,yes,agree,call   DWORD PTR [edx+0x4c],stack,0x002cd71f,esi
+0x002cdbb0,19,edx,FUN_002cdb50,0x002cdbab,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,29,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002cdba8,ecx
+0x002ce6a4,19,eax,dtor_MasterServerUplink+0x2d4,0x002ce69f,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,182,yes,agree,call   DWORD PTR [eax+0x4c],field,0x002ce69c,ecx
+0x002cf045,19,edx,dtor_MasterServerUplink+0xc75,0x002cf040,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,805,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002cf03d,ecx
+0x002cf14b,19,eax,FUN_002cf100,0x002cf146,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,26,yes,agree,call   DWORD PTR [eax+0x4c],field,0x002cf143,ecx
+0x002cf3e2,19,edx,FUN_002cf290,0x002cf3dd,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,102,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002cf3da,ecx
+0x002cf95b,19,eax,FUN_002cf900,0x002cf956,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,29,yes,agree,call   DWORD PTR [eax+0x4c],field,0x002cf953,ecx
+0x002cfaa6,19,edx,FUN_002cf970,0x002cfaa1,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,100,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002cfa9e,ecx
+0x002cff9b,19,edx,FUN_002cfc20,0x002cff96,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,259,yes,agree,call   DWORD PTR [edx+0x4c],field,0x002cff93,ecx
+0x00331247,19,eax,FUN_0033122a,0x00331245,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,10,yes,agree,call   DWORD PTR [eax+0x4c],field,0x0033123e,ecx
+0x00331279,19,eax,FUN_0033124e,0x00331277,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,16,yes,agree,call   DWORD PTR [eax+0x4c],field,0x00331270,ecx
+0x003343bd,19,edx,FUN_003341dd,0x0033439e,8b 10,"mov edx,[eax]",object-head,eax,,,,0,148,yes,agree,call   DWORD PTR [edx+0x4c],field,0x00334398,eax
+0x00335194,19,ecx,FUN_00334f87,0x00335174,8b 08,"mov ecx,[eax]",object-head,eax,,,,0,150,yes,agree,call   DWORD PTR [ecx+0x4c],field,0x0033516e,eax
+0x00336d69,19,ecx,FUN_00336b8f,0x00336d4d,8b 08,"mov ecx,[eax]",object-head,eax,,,,0,144,yes,agree,call   DWORD PTR [ecx+0x4c],field,0x00336d47,eax
+0x00336f5b,19,edx,FUN_00336b8f,0x00336f43,8b 10,"mov edx,[eax]",object-head,eax,,,,0,303,yes,agree,call   DWORD PTR [edx+0x4c],field,0x00336f3a,eax
+0x00344615,19,eax,FUN_003445f0,0x00344607,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,15,yes,agree,call   DWORD PTR [eax+0x4c],field,0x00344600,ecx
+0x000121f9,20,edx,FUN_00012110,0x000121f5,8b 16,"mov edx,[esi]",object-head,esi,,,,0,66,yes,agree,call   DWORD PTR [edx+0x50],call-result,0x000121df,esi<-eax
+0x00012a67,20,edx,Core_UnObjBas,0x00012a63,8b 16,"mov edx,[esi]",object-head,esi,,,,0,273,yes,agree,call   DWORD PTR [edx+0x50],call-result,0x00012a49,esi<-eax
+0x0001672a,20,eax,Core_UnObjBas,0x00016728,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,3709,yes,agree,call   DWORD PTR [eax+0x50],stack,0x0001671e,ecx
+0x00016901,20,eax,Core_UnObjBas,0x000168ff,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,3837,yes,agree,call   DWORD PTR [eax+0x50],stack,0x000168f5,ecx
+0x0001c0cc,20,eax,FUN_0001bc30+0x49c,0x0001c0c7,8b 45 00,"mov eax,[ebp]",stack,ebp,+0x0,,,0,368,yes,agree,call   DWORD PTR [eax+0x50],frame,,ebp
+0x0001c426,20,eax,FUN_0001bc30+0x7f6,0x0001c422,8b 06,"mov eax,[esi]",object-head,esi,,,,0,621,yes,agree,call   DWORD PTR [eax+0x50],call-result,0x0001c01b,esi<-eax
+0x0001f766,20,edx,FUN_0001f5c0+0x1a6,0x0001f761,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,130,yes,agree,call   DWORD PTR [edx+0x50],field,0x0001f757,ecx
+0x0001f772,20,eax,FUN_0001f5c0+0x1b2,0x0001f770,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,135,yes,agree,call   DWORD PTR [eax+0x50],field,0x0001f76d,ecx
+0x0001fa28,20,edx,FUN_0001f9d0,0x0001fa26,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,28,yes,agree,call   DWORD PTR [edx+0x50],field,0x0001fa1c,ecx
+0x0003c211,20,ecx,Core_UnClass,0x0003c20c,0f 84 25 fc ff ff,je     0x3be37,not-a-boundary,,,,,0,0,no,spans,je     0x3be37,,,
+0x00047654,20,ecx,Native_65,0x00047651,8d 4c 01 ff,"lea    ecx,[ecx+eax*1-0x1]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ecx+eax*1-0x1]",,,
+0x00058670,20,edx,FUN_00058580,0x0005866c,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,76,yes,agree,call   DWORD PTR [edx+0x50],global,0x00058662,ecx
+0x00058dd2,20,eax,FUN_00058d60,0x00058dce,8b 06,"mov eax,[esi]",object-head,esi,,,,0,48,yes,agree,call   DWORD PTR [eax+0x50],stack,0x00058d8f,esi
+0x000592eb,20,eax,Core_UnTemplate,0x000592e7,8b 06,"mov eax,[esi]",object-head,esi,,,,0,58,yes,agree,call   DWORD PTR [eax+0x50],stack,0x00059297,esi
+0x000596bb,20,edx,FUN_00059650,0x000596b4,8b 16,"mov edx,[esi]",object-head,esi,,,,0,33,yes,agree,call   DWORD PTR [edx+0x50],stack,0x00059688,esi
+0x0005979b,20,edx,FUN_00059650+0x14b,0x00059794,8b 16,"mov edx,[esi]",object-head,esi,,,,0,111,yes,agree,call   DWORD PTR [edx+0x50],stack,0x00059768,esi
+0x000598ed,20,edx,FUN_000597f0,0x000598e6,8b 16,"mov edx,[esi]",object-head,esi,,,,0,75,yes,agree,call   DWORD PTR [edx+0x50],call-result,0x000598c1,esi<-eax
+0x0006dfc8,20,edi,Core_UnObj,0x0006dfc3,8d 85 44 fd ff ff,"lea    eax,[ebp-0x2bc]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2bc]",,,
+0x0006f57d,20,esi,Core_UnObjBas,0x0006f578,8d 85 40 fd ff ff,"lea    eax,[ebp-0x2c0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2c0]",,,
+0x000c33b7,20,ecx,Engine_UnActCol+0xd47,0x000c33b2,0f 84 a7 fb ff ff,je     0xc2f5f,not-a-boundary,,,,,0,0,no,spans,je     0xc2f5f,,,
+0x001d6f3c,20,edx,FUN_001d6e00,0x001d6f36,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,80,yes,agree,call   DWORD PTR [edx+0x50],stack,0x001d6f18,ebx
+0x001da536,20,edx,FUN_001d9fa0,0x001da52f,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,358,yes,agree,call   DWORD PTR [edx+0x50],frame,,ebp
+0x001eff39,20,ebx,Core_UnTemplate,0x001eff38,85 ff,"test   edi,edi",not-a-boundary,,,,,0,0,no,spans,"test   edi,edi",,,
+0x001f1f93,20,edx,FUN_001f1f50,0x001f1f78,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,23,yes,agree,call   DWORD PTR [edx+0x50],field,0x001f1f72,ecx
+0x001f473a,20,edx,FUN_001f4700,0x001f471f,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,23,yes,agree,call   DWORD PTR [edx+0x50],field,0x001f471c,ecx
+0x002a21a1,20,ebx,FUN_002a1b70,0x002a21a0,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff,,,
+0x002c48c5,20,edx,IpDrv_InternetLink+0x1d5,0x002c489b,8b 16,"mov edx,[esi]",object-head,esi,,,,0,151,yes,agree,call   DWORD PTR [edx+0x50],stack,0x002c488d,esi
+0x002d0d6e,20,edx,FUN_002d0c70,0x002d0d69,8d 95 e8 fb ff ff,"lea    edx,[ebp-0x418]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x418]",,,
+0x002d1126,20,edx,FUN_002d1030,0x002d1121,8d 95 a4 fe ff ff,"lea    edx,[ebp-0x15c]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x15c]",,,
+0x002d113c,20,ecx,FUN_002d1030,0x002d1137,8d 8d a4 fe ff ff,"lea    ecx,[ebp-0x15c]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x15c]",,,
+0x002d1191,20,edx,FUN_002d1030,0x002d118c,8d 95 b8 fa ff ff,"lea    edx,[ebp-0x548]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x548]",,,
+0x002d13ba,20,edx,FUN_002d1030,0x002d13b5,8d 95 b8 fa ff ff,"lea    edx,[ebp-0x548]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x548]",,,
+0x002d2ee6,20,edi,FUN_002d2cd0,0x002d2ee5,33 ff,"xor    edi,edi",not-a-boundary,,,,,0,0,no,spans,"xor    edi,edi",,,
+0x003300d3,20,ecx,FUN_0033009c,0x003300ce,8d 8d fc fe ff ff,"lea    ecx,[ebp-0x104]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x104]",,,
+0x00333881,20,edx,FUN_0033385e,0x0033387b,8b 10,"mov edx,[eax]",object-head,eax,,,,0,8,yes,agree,call   DWORD PTR [edx+0x50],field,0x0033386f,eax
+0x00333fec,20,edx,FUN_00333fd3,0x00333fde,8b 10,"mov edx,[eax]",object-head,eax,,,,0,11,yes,agree,call   DWORD PTR [edx+0x50],field,0x00333fd8,eax
+0x003363ac,20,edx,FUN_00336389,0x003363a6,8b 10,"mov edx,[eax]",object-head,eax,,,,0,8,yes,agree,call   DWORD PTR [edx+0x50],field,0x0033639a,eax
+0x003363c9,20,edx,FUN_003363b0,0x003363bb,8b 10,"mov edx,[eax]",object-head,eax,,,,0,11,yes,agree,call   DWORD PTR [edx+0x50],field,0x003363b5,eax
+0x00340018,20,ecx,FUN_0033ffee,0x00340015,8d 4c 09 ff,"lea    ecx,[ecx+ecx*1-0x1]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ecx+ecx*1-0x1]",,,
+0x003400e9,20,edi,FUN_0033ffee,0x003400e4,8d 85 94 fe ff ff,"lea    eax,[ebp-0x16c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x16c]",,,
+0x00340248,20,ebx,FUN_0034016f,0x00340243,8d 85 18 fd ff ff,"lea    eax,[ebp-0x2e8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2e8]",,,
+0x00348503,20,ecx,FUN_003484e0,0x003484fe,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]",,,
+0x00349dc1,20,ecx,FUN_00349d54,0x00349dbc,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]",,,
+0x0034a3ed,20,ecx,FUN_0034a374,0x0034a3e8,8d 88 00 a0 ff ff,"lea    ecx,[eax-0x6000]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[eax-0x6000]",,,
+0x00354d90,20,ecx,FUN_00354c69,0x00354d8b,8d 8d b0 fe ff ff,"lea    ecx,[ebp-0x150]",not-a-boundary,,,,,0,0,no,spans,"lea    ecx,[ebp-0x150]",,,
+0x00359f11,20,eax,FUN_00359d19,0x00359f0c,8d 85 d0 fe ff ff,"lea    eax,[ebp-0x130]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x130]",,,
+0x0035a7c1,20,eax,FUN_0035a15f,0x0035a7bc,8d 85 1c fd ff ff,"lea    eax,[ebp-0x2e4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2e4]",,,
+0x0035f74f,20,edi,FUN_0035f650,0x0035f74a,8d 85 2c fd ff ff,"lea    eax,[ebp-0x2d4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d4]",,,
+0x0035fd2f,20,ebx,FUN_0035fa26,0x0035fd2a,8d 85 6c fe ff ff,"lea    eax,[ebp-0x194]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x194]",,,
+0x00360705,20,ecx,FUN_003604bf,0x003606ff,8d 84 3d 5c f4 ff ff,"lea    eax,[ebp+edi*1-0xba4]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+edi*1-0xba4]",,,
+0x00361831,20,edi,FUN_0036142e,0x0036182c,8d 85 28 fd ff ff,"lea    eax,[ebp-0x2d8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d8]",,,
+0x00361877,20,eax,FUN_0036142e,0x00361872,8d 85 a8 fa ff ff,"lea    eax,[ebp-0x558]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x558]",,,
+0x00361952,20,edi,FUN_0036142e,0x0036194d,8d 85 28 fd ff ff,"lea    eax,[ebp-0x2d8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2d8]",,,
+0x00361998,20,eax,FUN_0036142e,0x00361993,8d 85 a8 fa ff ff,"lea    eax,[ebp-0x558]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x558]",,,
+0x0036234c,20,ebx,FUN_00362244,0x00362348,05 c0 fe ff ff,"add    eax,0xfffffec0",not-a-boundary,,,,,0,0,no,spans,"add    eax,0xfffffec0",,,
+0x00362f70,20,esi,FUN_00362f06,0x00362f6a,8d 84 85 00 fb ff ff,"lea    eax,[ebp+eax*4-0x500]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*4-0x500]",,,
+0x0036467e,20,ecx,FUN_00363c90,0x00364678,8d 84 05 d8 fe ff ff,"lea    eax,[ebp+eax*1-0x128]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*1-0x128]",,,
+0x003647e5,20,ecx,FUN_00363c90,0x003647df,8d 84 05 d8 fe ff ff,"lea    eax,[ebp+eax*1-0x128]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*1-0x128]",,,
+0x0036c420,20,esi,FUN_0036c3f8,0x0036c41b,8d 85 6c fd ff ff,"lea    eax,[ebp-0x294]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x294]",,,
+0x0036c603,20,ebx,FUN_0036c59f,0x0036c5fe,8d 85 50 fd ff ff,"lea    eax,[ebp-0x2b0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2b0]",,,
+0x0036c9b1,20,ebx,FUN_0036c7ea,0x0036c9ab,8d 84 85 a0 fd ff ff,"lea    eax,[ebp+eax*4-0x260]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp+eax*4-0x260]",,,
+0x0036ca25,20,edi,FUN_0036c7ea,0x0036ca20,8d 85 a0 fd ff ff,"lea    eax,[ebp-0x260]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x260]",,,
+0x0036cb1d,20,eax,FUN_0036c7ea,0x0036cb18,8d 85 60 fc ff ff,"lea    eax,[ebp-0x3a0]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x3a0]",,,
+0x0036e918,20,eax,FUN_0036e8af,0x0036e913,8d 85 64 fd ff ff,"lea    eax,[ebp-0x29c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x29c]",,,
+0x0036eb20,20,eax,FUN_0036eac2,0x0036eb1b,8d 85 64 fd ff ff,"lea    eax,[ebp-0x29c]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x29c]",,,
+0x0036edc6,20,edi,FUN_0036ecec,0x0036edc1,8d 85 58 eb ff ff,"lea    eax,[ebp-0x14a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x14a8]",,,
+0x0036ee9a,20,edi,FUN_0036ecec,0x0036ee95,8d 85 58 f4 ff ff,"lea    eax,[ebp-0xba8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0xba8]",,,
+0x0036f116,20,edi,FUN_0036ecec,0x0036f111,8d 85 58 eb ff ff,"lea    eax,[ebp-0x14a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x14a8]",,,
+0x0036f1b0,20,edi,FUN_0036ecec,0x0036f1ab,8d 85 58 f4 ff ff,"lea    eax,[ebp-0xba8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0xba8]",,,
+0x0036f244,20,edi,FUN_0036ecec,0x0036f23f,8d 85 58 fd ff ff,"lea    eax,[ebp-0x2a8]",not-a-boundary,,,,,0,0,no,spans,"lea    eax,[ebp-0x2a8]",,,
+0x003c44c4,20,esi,FUN_003c4350,0x003c44c0,e8 4b 8c ff ff,call   0x3bd110,not-a-boundary,,,,,0,0,no,spans,call   0x3bd110,,,
+0x003d2201,20,edx,FUN_003d1f20,0x003d2200,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff,,,
+0x003d2729,20,edx,FUN_003d26d0,0x003d2728,6a ff,push   0xffffffff,not-a-boundary,,,,,0,0,no,spans,push   0xffffffff,,,
+0x003e003c,20,edx,FUN_003dfe20,0x003e0037,8d 95 f4 fb ff ff,"lea    edx,[ebp-0x40c]",not-a-boundary,,,,,0,0,no,spans,"lea    edx,[ebp-0x40c]",,,
+0x003ee314,20,ebx,FUN_003ee1f1,0x003ee30f,8d 9d 5c ff ff ff,"lea    ebx,[ebp-0xa4]",not-a-boundary,,,,,0,0,no,spans,"lea    ebx,[ebp-0xa4]",,,
