@@ -1930,6 +1930,25 @@ the six images, not resident" line was an inference from a failed anchor, not a 
 one instrument, not more images: locate a copy by a *content* anchor (a literal the function carries) instead of a
 prefix, and read the true script start back from the guest -- the same start problem U13's first rows were about.
 
+**2026-11-12, a content anchor places none of the residue rows, and it clears the *start* of the ones it reaches.**
+`tools/xemu/script-ram.py --anchor-literal` derives a copy's start from a literal the script carries
+(`hit - model offset`) rather than from the model's prefix, which is the route this entry's last line asked for. Over
+the 43 `--sizefield` residue rows against the four 128 MiB images still on disk it closes **0 of the 30 unaligned
+rows** -- 13 complete copies and 10 the field's own number, unchanged -- and the population says why: **21 of the 30
+carry no literal of 6+ bytes at all**, and **6 of the 9 that do** (three of them `StargateMenus.u` buttons) carry one
+that occurs nowhere in any of the four images, so those scripts are absent from the guest rather than hard to anchor.
+The three rows that do hit align exactly as far as the prefix search did (`Actor.DisplayDebug` 212 of 1,605 spans from
+45 candidate starts, `LadderInfo.UpdateLadders` 0 of 415, `CommandInterface.executeScriptCommand` 0 of 286), so a
+wrong start was never what they were missing; **14 of the 30 align nothing at all** (0 spans, e.g. `GameMessage.GetString`
+0 of 285, `UWindowWindow.WindowEvent` 0 of 323, `UWindowListBox.DrawItem` 0 of 193). Where a copy is placed the anchor
+also answers the start from the guest side: on `PlayerController.ServerJoinVoiceChannel` (327 bytes at `0x00d72000`)
+and `StargateWeapon.PlayFiring` (464 at `0x012dc700`) the 16 bytes in front of the derived start match the payload's
+header tail in 9 and 10 of 16 positions, never more than 2 from the right, so the export's header does not precede the
+script in memory and `name_end + 16` is confirmed from the guest. **What would settle the rest** is an image taken
+while one of those functions is running rather than a better anchor: a break (or a read of the `Script` store) at
+`0x48cf5` with the menu's own class live, and -- for the `op 1f` wedge inside `Actor.DisplayDebug` -- the writer of the
+`0x00fe4980` dword, which no image names and `default.xbe` does not contain.
+
 
 
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
