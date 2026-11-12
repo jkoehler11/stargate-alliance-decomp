@@ -37,6 +37,9 @@ Steps, in order:
     cpu=COUNT   sample the guest's EIP COUNT times over QMP: pixels cannot tell a key that was ignored from a guest
                 that stopped executing, so every sequence that reads "no change" needs this
     noise=SECS  capture, wait SECS with no input, capture again: the screen's own animation, in pixels
+    console=NAME[:want]  capture NAME.png and judge the console's own line with console-line.py (`want` is `drawn`,
+                `typed` or `absent`, default `drawn`): the crop is the menu panel, so a console step's repaint delta
+                is 0 px and FAILs on a line that drew at the bottom left
     watch=TEXT  dump all of guest RAM inside the boot, find TEXT (UTF-16LE with its terminator, or — when a repeated
                 key has grown the string, measured 2026-11-06 — as the prefix of a longer one) in it, translate its *physical* address to the *linear* one the CPU uses (the page
                 tables are in the same dump, CR3 from `info registers`, `tools/xemu/vamap.py`), then arm a *read*
@@ -465,7 +468,7 @@ class FocusElsewhere(Exception):
 
 
 STEPS = ("shot", "key", "xkey", "type", "xtype", "wait", "activate", "raise", "noise", "cpu", "monitor",
-         "focus", "gkey", "pad", "watch", "brk")
+         "focus", "gkey", "pad", "watch", "brk", "console")
 
 PAD = None          # the virtual pad, when a step needs one (created before xemu starts, see vpad.py)
 PAD_MAPPING = ""    # the pad's SDL mapping, handed to xemu through SDL_GAMECONTROLLERCONFIG
@@ -488,6 +491,44 @@ def parse_step(text):
     if name != "activate" and not value:
         raise SystemExit("step '%s' needs a value (%s=...)" % (text, name))
     return name, value
+
+
+CONSOLE_WANTS = ("drawn", "typed", "absent")
+
+
+def console_line(path):
+    """What a frame's console line is: (state, detail) from console-line.py, or (None, reason) if it cannot say.
+
+    The harness's own `--crop` is the menu panel, so a console step's repaint delta is 0 px and FAILs while the line
+    is drawn at the bottom left of a frame the crop never covers (measured 2026-11-12, twice). `console-line.py` reads
+    the line's cyan pixels; this wraps it so a `--step=console=` is judged inside the run instead of afterwards.
+    """
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "console-line.py")
+    try:
+        got = subprocess.run([sys.executable, tool, path], capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, "console-line.py did not run: %s" % exc
+    text = (got.stdout or "").strip()
+    if text.startswith("console line: "):
+        state, _, detail = text[len("console line: "):].partition(" (")
+        return state.strip(), detail[:-1] if detail.endswith(")") else detail
+    return None, "console-line.py answered %r" % text[:120]
+
+
+def console_verdict(state, want):
+    """Whether a state satisfies a requirement, and the sentence that says what was required.
+
+    `want` is `drawn` (anything on the line), `typed` (text on it) or `absent` (nothing drawn). `None` -- the tool
+    could not read the frame -- is never `absent`: a frame nobody could read is not a measurement, and the log has to
+    say `UNREAD` instead of reporting a shape it never saw.
+    """
+    if state is None:
+        return False, "UNREAD -- the console line was never judged"
+    if want == "typed":
+        return state == "typed", "text on the console line"
+    if want == "absent":
+        return state == "absent", "no console line drawn"
+    return state != "absent", "a console line drawn"
 
 
 def send(window, name, value):
@@ -646,6 +687,16 @@ def selftest():
             handle.write("xemu_version: 0.8.139\nAppRun: terminating on signal 15 from pid 1 ()\n")
         case("a clean log names no image", lost_images(log) == [])
         case("a log that is not there names no image", lost_images(os.path.join(out3, "absent.log")) == [])
+
+    # 8. A console step's verdict: the three states, the cyan that is not a line, and the frame nobody could read.
+    case("console verdict: a typed line satisfies typed", console_verdict("typed", "typed")[0])
+    case("console verdict: an empty prompt does not satisfy typed", not console_verdict("prompt", "typed")[0])
+    case("console verdict: an empty prompt satisfies drawn", console_verdict("prompt", "drawn")[0])
+    case("console verdict: nothing drawn does not satisfy drawn", not console_verdict("absent", "drawn")[0])
+    case("console verdict: nothing drawn satisfies absent", console_verdict("absent", "absent")[0])
+    case("console verdict: cyan that is not a line is not typed", not console_verdict("other", "typed")[0])
+    case("console verdict: an unreadable frame is UNREAD, never absent",
+         not console_verdict(None, "absent")[0])
 
     bad = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
@@ -1371,6 +1422,27 @@ def main():
             if name == "wait":
                 time.sleep(float(value))
                 say("step %d: wait %ss" % (index, value))
+                continue
+            if name == "console":
+                # A console step: capture the frame, then judge the console's own line rather than the crop's repaint.
+                shot_name, _, want = value.partition(":")
+                want = (want or "drawn").strip().lower()
+                if want not in CONSOLE_WANTS:
+                    say("FAIL: console step '%s' wants %r (known: %s)"
+                        % (value, want, ", ".join(CONSOLE_WANTS)))
+                    return 3
+                path = os.path.join(args.out, "%s.png" % shot_name)
+                ok, window = regrab(window, path)
+                if not ok:
+                    say("FAIL: could not capture %s" % path)
+                    return 3
+                state, detail = console_line(path)
+                good, required = console_verdict(state, want)
+                say("step %d: console %s %s -- %s (wants %s) %s"
+                    % (index, shot_name, state or "UNREAD", detail, required, "PASS" if good else "FAIL"))
+                shots += 1
+                if not good:
+                    failures.append(shot_name)
                 continue
             if name == "shot":
                 path = os.path.join(args.out, "%s.png" % value)

@@ -4239,6 +4239,9 @@ attaches at the menu has already missed it -- arm at launch and let the breakpoi
   visibly drawn: the console renders at the bottom left, outside the crop. Judge a console step with
   `tools/xemu/console-line.py` (400 cyan px, box `542x30`, default crop data at `+0+691`), never with the crop
   delta -- and note that its reported box is relative to that crop, so the absolute `y` is `691 + 209`.
+  `drive.py --step=console=NAME[:typed]` now does that inside the run: it captures `NAME.png` and reports the state
+  (`absent`/`prompt`/`typed`/`other`) with PASS/FAIL against the requirement, so a sequence no longer needs a `shot=`
+  step whose crop delta is guaranteed to FAIL.
 - **`_` and `.` are typeable**: `sendkey shift-minus` and `sendkey dot` both answered `ok` and the transcribed line
   carries the underscores and the extension exactly.
 
