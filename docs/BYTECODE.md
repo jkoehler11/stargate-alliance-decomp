@@ -318,6 +318,25 @@ Three consequences, and two things not to redo:
   difference, and no class times any small coefficient fits even the 113 rows under ±64. So the residue is a handful
   of individual token encodings rather than a second rule. `--sizefield --lists N` names each row with the widths of
   its index operands for the session that wants to chase one.
+* **`--diverge` then asks each residue row where its difference could start, and there is no first operand.** Every
+  span of every residue row is tried as *the* explanation -- an `index` operand the compiler did not widen (it moves
+  the prediction by `-(4 - width)`) or a `fixed` operand whose bytes decode as a compact index of exactly its own
+  width (it moves it by `+(4 - width)` without moving the walk). **9 of the 117 rows have exactly one such operand**
+  (`index-not-widened` at ops `01` 81 sites, `00` 31, `1b` 7, `1c` 1; `fixed-is-index` at `39` 19 sites, `2c` 10,
+  `05` 4, `06`/`0a`/`07` 1 each), 9 more have several, and **99 have none anywhere in the script** -- so for those
+  there is no single operand whose class is a mis-width; the difference is accumulated over the row.
+* **A class of feature does not explain them either, and `case` values are ruled out as the +4 mode.** The rule
+  `dword - widened_length == k * count(feature)` was tested for every feature a row is made of -- 297 opcodes, operand
+  widths and pattern items -- at every k 1..8, over all 11,602 walked rows: **2,376 rules, none exact**, the closest
+  (`op 43` x2) leaving 70 rows unexplained. The largest difference is **+4 in 40 rows**, spread over at least eight
+  classes (`GUI.GUIController` 5, `GUI.GUIMessageBox` 4, `StargateGame.GameMenu` 4, `Engine.StreamPlaylist` 3,
+  `Engine.StreamInteraction` 3), so it is not one class's compiler path; and those 40 rows carry **no `case` value at
+  all**, while 58 *exact* rows do -- a u16 case widened to a u32 would have fitted 2 rows, so that reading is dead
+  rather than merely unlikely.
+* **What is left needs the guest, not the files.** The +4 mode is the one shape with no file-side explanation, and the
+  instrument that already settled the widening itself was a live read: `StargateHUD.DrawOrderTarget` shows `b8 2a` in
+  the package and `a0 1e 26 01` in RAM. The same read on one +4 row -- `Engine.u`'s `StreamPlaylist.AddStream`, dword 200
+  against a predicted 196 -- names the bytes the loader added where the files cannot.
 
 ## The shipped scripts, as disassembled
 

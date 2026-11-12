@@ -1820,6 +1820,22 @@ their header decode is ambiguous); `--sizefield --lists N` names each row with i
 operand class explains them** — every pattern item's count per residue row was compared against the difference and
 nothing fits — so they are individual token encodings, not a second rule.
 
+**Seventh session, 2026-11-12: the residue is asked per row, and 99 of the 117 have no first operand to blame.**
+`--diverge` tries every span of every residue row as *the* explanation, in the two shapes a single operand can take:
+an `index` the compiler did not widen (moving the prediction by `-(4 - width)`) or a `fixed` operand whose bytes decode
+as a compact index of exactly its own width (moving it by `+(4 - width)` while the walk stays put). **9 rows have
+exactly one** such operand -- 81 `index-not-widened` sites at op `01`, 31 at `00`, 7 at `1b`, and 19 `fixed-is-index`
+sites at op `39`, 10 at `2c` -- 9 have several, and **99 have none**, so most of the set is not a mis-widthed operand
+but an accumulated difference. The corpus-wide rule test agrees: 2,376 single-feature rules (`dword - widened ==
+k * count(feature)` over 297 features of the rows, k 1..8) were tried against all 11,602 walked rows and **none is
+exact**; the closest leaves 70 rows. One arithmetic reading is dead rather than merely unproven: the largest
+difference is **+4 in 40 rows over at least eight classes** (`GUI.GUIController` 5, `GUI.GUIMessageBox` 4,
+`StargateGame.GameMenu` 4), and a `case` value widened from u16 to u32 would have fitted 2 of the 117 while 58 *exact*
+rows carry a case. **What would settle the +4 mode is a guest read**: the same instrument that proved the widening
+(`StargateHUD.DrawOrderTarget`, `b8 2a` in the package against `a0 1e 26 01` in RAM) applied to one +4 row
+(`Engine.StreamPlaylist.AddStream`, dword 200 against a predicted 196) shows which bytes the loader added where the
+files cannot speak.
+
 **And the anchor now accounts for every declaration in the corpus**: 466 anchored, 2 declared twice under one
 key, 82 with no body, and **0 unanchored payloads carrying a script** — a line `--start-anchor` prints for this
 claim, since a row there would be a declaration with an unmeasured return type *and* a script to measure it from.
