@@ -406,3 +406,43 @@ gameplay, the teardown and 200 s of the reloaded level, **0 stops** landed at `0
 control stopped at once on the sampled `EIP` (`0x003ed669`). A full actor teardown therefore does not run either body,
 which rules out the reading that the pair is a per-actor lifecycle virtual (`Destroy` and its kin): that would fire
 thousands of times over one level restart. `tools/xemu/restart-level.sh` is the runner.
+
+
+## What loads the receiver at the 106 pattern hits (2026-11-12)
+
+`inventory/vcall_dispatch_sites.csv` counted 106 `.text` hits for the two displacements slots 19 and 20 sit at
+(`+0x4c`, `+0x50`) and said out loud that a displacement is not unique to this table. `tools/vcall-receiver.py`
+(`inventory/vcall_receiver_sites.csv`, 106 rows) reads the instruction that loads the register each hit
+dispatches through, and the first thing that measures is how many of the hits are call sites at all:
+
+| measurement | value |
+|---|---|
+| `.text` pattern hits | 106 (slot 19: 31, slot 20: 75) |
+| not an instruction boundary | **58** (slot 19: 12, slot 20: 46) |
+| real dispatch sites | **48** |
+| receiver = `[obj]`, the object's first dword | **38** |
+| receiver = a stack local (`mov reg,[ebp]`) | 2 |
+| receiver unread | 8 |
+
+**A `0xFF` at `+0x4c`/`+0x50` is often a displacement byte, not an opcode.** At `0x002d0d6e` the bytes are
+`8d 95 e8 fb ff ff 52 50` -- `lea edx,[ebp-0x418]`, `push edx`, `push eax` -- and the `ff` the census read as
+`call [edx+0x50]` is the last byte of that `lea`'s displacement. The tell is that no instruction ends at the site
+*with a chain of instruction ends behind it*, so a single landed decode is not accepted as proof: the row keeps
+the instruction that spans it (`not-a-boundary`), and the 58 are named rather than dropped. Slot 20 is the worse
+half (46 of 75 against 12 of 31), the same asymmetry the seven library sections showed -- `+0x50` is the noisy
+displacement and `+0x4c` the specific one.
+
+**Every real site is a vtable dispatch on the object's own first dword.** 38 of the 48 load the receiver with a
+two-byte `mov reg,[reg2]` -- `eax,[ecx]` 8, `eax,[esi]` 6, `edx,[ecx]` 6, `edx,[eax]` 6, `edx,[esi]` 5, then
+`eax,[edi]` 3 and the rest once each -- so the call is `call [[obj]+0x4c]`: slot 19 or 20 of the vtable the object
+points at, and 14 of the 38 dispatch through `ecx`, the member-function `this`. Two more read the receiver from
+`[ebp]` (a stack local). No site loads it from an absolute global and none reads a table named in
+`inventory/class_table_slot_pairs.csv`, which is what makes slots 19/20 a C++ virtual pair of the 165
+`Actor`-subtree tables rather than a separate `UClass` dispatch path.
+
+**What the read costs, honestly.** 40 rows decode from the function's own start (`aligned`), and that is the
+strong case: the linear sweep must land *exactly* on the call, so the receiver is the last write to that register
+on the way in. The other 66 fall back to a backward walk from the site, and 8 stay `unread` with their bytes kept
+-- `FUN_002d1030`, `FUN_002d2cd0`, `FUN_0033ffee`, `FUN_0034016f`, `FUN_00359d19`, `FUN_0035f650`, `FUN_0036c7ea`,
+`FUN_003dfe20` -- every one a function whose instruction stream stops decoding from its start, so the sweep cannot
+be trusted and the walk finds no write to the register at all. `unread` is reported, never read as "no receiver".

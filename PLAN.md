@@ -1050,6 +1050,29 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the 106 pattern hits are 48 calls, and every one is a vtable dispatch)
+
+- **Half the census was displacement bytes.** `tools/vcall-receiver.py` (`inventory/vcall_receiver_sites.csv`,
+  106 rows) reads the instruction that loads the register each `.text` `+0x4c`/`+0x50` hit dispatches through, and
+  first tests whether the hit is an instruction boundary at all: **58 of 106 are not** (slot 19: 12 of 31, slot 20:
+  46 of 75). At `0x002d0d6e` the bytes are `8d 95 e8 fb ff ff 52 50` -- `lea edx,[ebp-0x418]`, `push edx`,
+  `push eax` -- so the `ff` the earlier census read as `call [edx+0x50]` is that `lea`'s last displacement byte.
+  Each such row keeps the instruction that spans it, so the correction names all 58 instead of dropping them.
+- **Of the 48 real sites, 38 load the receiver from the object's first dword** (a two-byte `mov reg,[reg2]`:
+  `eax,[ecx]` 8, `eax,[esi]` 6, `edx,[ecx]` 6, `edx,[eax]` 6, `edx,[esi]` 5, then single rows), 2 from `[ebp]` (a
+  stack local) and **8 stay unread** with their bytes kept. The pair is therefore called as `call [[obj]+0x4c]` on
+  the object's own vtable -- 14 of the 38 through `ecx`, the member-function `this` -- and no site reaches it
+  through an absolute class table or a global, which is what makes slots 19/20 a C++ virtual pair of the 165
+  `Actor`-subtree tables rather than a separate `UClass` dispatch path.
+- **The read is exact-length and says what it could not do.** 40 rows decode from the function's own start and the
+  sweep must land exactly on the call; the other 66 fall back to a backward walk from the site, and an opcode the
+  narrow decoder does not know stops the sweep rather than shortening an instruction. `--check` covers the verdict
+  table on synthetic bytes: every source shape, an unwritten register as `unread`, and a site with no chain of
+  instruction ends behind it as `not-a-boundary`.
+- Tool (`tools/vcall-receiver.py`) + `inventory/vcall_receiver_sites.csv` + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. What is left for U8 is the one question the static read cannot answer: which class an
+  arbitrary `[obj]` belongs to at run time -- the multiplayer/dedicated path a stock disc never reaches.
+
 ### Execution notes (2026-11-12, the harness can judge a console step, and its crop cannot)
 
 - **The console step is part of the sequence now.** `drive.py --step=console=NAME[:want]` captures `NAME.png` and
