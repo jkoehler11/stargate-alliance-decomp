@@ -1916,6 +1916,20 @@ what the loader writes there is a **replaced opcode**, not a widened `StringCons
 `0xfe4xxx` heap page of the same shape), or break at `0x48cf5` with `Actor.DisplayDebug` running and read the opcode
 that actually arrives at the stop -- and re-read the 8 `StargateMenus.u` / 7 `UWindow.u` rows against a dump taken
 with a menu open, which no run has done yet.
+**2026-11-12, a menu-open dump does not place the 15 menu rows, and "not resident" is disproved.** A seventh image taken
+with the front end's menus open (`$WORK/menu1/ram.bin`, `frame-diff` passed) reads the 8 `StargateMenus.u` rows at
+9/9/0/5/5/1/1/5 spans and the 7 `UWindow.u` rows at 0/10/0/5/0/0/0 -- no complete copy, the same 5-10 span peak, so
+the menu packages' bodies are not laid out at the modelled offsets even while a menu is running. The image does answer
+whether they are there: `tools/xemu/resident-names.py --residue` counts each row's class name in the `FNameEntry` pool
+(wide name at `+0x0c`), and **41 of the 43 residue rows' class names are resident in it**, the two exceptions being
+`UDebugMenu.u`'s `UGraphParticlePage` and `UDebugMenuBar` -- the package `docs/NATIVE_VM.md` already measured as never
+loaded. Two of the six in-game images read the same way (`msg1/try1`, `xemu/findtext4`): `GamePlay.u`,
+`StargateContent.u` and `StargateVehicles.u`'s class names are resident in both, while `findtext4` lacks `ExtrasPage`,
+a menu class that image never loads -- so the counter separates images, and the earlier "no body of theirs in any of
+the six images, not resident" line was an inference from a failed anchor, not a measurement. **What is left** here is
+one instrument, not more images: locate a copy by a *content* anchor (a literal the function carries) instead of a
+prefix, and read the true script start back from the guest -- the same start problem U13's first rows were about.
+
 
 
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)

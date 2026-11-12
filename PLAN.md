@@ -5587,6 +5587,23 @@ and a deliberate one-line script break is caught by the boot test.
 - Tool (`tools/gnatives-body.py`) + docs/NATIVE_VM.md + docs/BYTECODE.md + docs/UNKNOWNS.md U13 + PLAN 3.7. Reads the
   image and the committed inventories; no boot, no artifact, no game data.
 
+### Execution notes (2026-11-12, a menu-open dump moves no row, and the name pools refute "not resident")
+
+- **The menu-open image is not the missing witness.** A seventh dump taken with the front end's menus open reads the 8
+  `StargateMenus.u` rows at 9/9/0/5/5/1/1/5 spans and the 7 `UWindow.u` rows at 0/10/0/5/0/0/0 against the 43-row
+  residue -- no complete copy, the same 5-10 span peak as the in-game images, so the menu packages' scripts are not at
+  the modelled offsets while a menu runs either.
+- **"Not resident" was the inference, and it is wrong.** `tools/xemu/resident-names.py RAMBIN --residue CSV` counts a
+  row's class name in the image's `FNameEntry` pool (wide name at `+0x0c`, ASCII when the name also appears as a
+  literal): **41 of 43 class names are resident in the menu image**, the two exceptions being `UDebugMenu.u`'s
+  `UGraphParticlePage` and `UDebugMenuBar`, the package the build never loads. `GamePlay.u`, `IpDrv.u` and
+  `StargateContent.u` -- the three the page called "not resident" -- are resident, so a zero-span peak is an anchor
+  failure, and the counter discriminates: `findtext4` lacks `ExtrasPage`, which the menu image has.
+- **Next:** a content anchor (a literal the function carries) instead of a prefix, so a copy is found where the prefix
+  scan fails and the script's true start is read back from the guest.
+- Tool (`tools/xemu/resident-names.py`, `--check` green with no dump) + docs/UNKNOWNS.md U13 + docs/BYTECODE.md + this
+  note. Reads existing 128 MiB images and the committed residue CSV; no boot, no artifact, no game data.
+
 
 - **All 43 residue rows were read against six guest images, and the answer is a slot width rather than a second rule.**
   `script-ram.py --residue CSV` (new) aligns the model span by span with an index operand free to be 1, 2 or 4 bytes
