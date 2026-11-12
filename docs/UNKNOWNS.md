@@ -951,6 +951,20 @@ once -- and that pointer is not a class table), **3 are a copy of `this`** (`esi
 *held* object, and the question this entry carries narrows: the class of that object at run time, with the three
 global-pointer sites the only ones where a single shared instance carries the pair.
 
+**2026-11-12, the field offsets are measured and no table names their owner.** The 28 field origins decode to six
+offsets -- `+0x4c` 12, `+0x220` 8, `+0x48` 3, `+0x1c` 2, `+0x2c` 2, `+0x310` 1 -- every one a plain
+`mov reg,[base+disp]` with no indexed or absolute load in the set, and they split into two populations: 20 read the
+function's own `this` and 8 read `[eax+0x220]` on an object that arrives as an argument, those 8 sitting in eight
+small functions whose single direct callers all live in `0x335007`-`0x337318`
+(`inventory/vcall_field_owners.csv`, `tools/vcall-field-owner.py`). **Both naming routes answer zero:** a class table
+holds virtuals only, and not one of the 23 containing functions is a slot target of any of the 492 tables, nor is any
+of their direct callers -- so the class of the held object cannot be read out of the tables at all, which is the
+thing this entry's earlier text hoped for ("a call site that dispatches `+0x4c`/`+0x50` through a known object"). What
+is left needs a **class layout**: the property stream carries names, kinds and types but no byte offsets, so it cannot
+turn `+0x220` into a property name; a `Serialize` override (slot 11, `0x392b0`) that stores its fields at fixed
+offsets, or a live object's vtable pointer from a RAM dump (the route that named `StargateHUD+0x398` as `Console`),
+would settle it without another boot.
+
 **2026-11-12, corrected by a second decoder: the 106 hits are 55 calls, not 48, and none is unread.** The
 paragraph below counted with one narrow decoder, and that decoder was wrong in both directions. It *accepted* 8
 displacement bytes, because a `lea`'s own bytes decode as an `add` that lands on the site behind a chain of

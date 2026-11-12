@@ -470,3 +470,47 @@ last dword of its section; `0x5bf514` once, whose pointer `0x5c1a0c` is not a cl
 from an argument** (`[ebp+0x18]`). So the pair is mostly dispatched on an object *another object holds*, not on the
 caller's own `this`: a vtable-level virtual that the 165 `Actor`-subtree tables and the classes reached through
 these fields both carry.
+
+## What holds the object: the field offsets, and the table that cannot name their owner
+
+`inventory/vcall_receiver_sites.csv` says 28 of the 55 real slot-19/20 sites read the object out of a *field* of
+another object. The field is only a displacement until something reads it as one, so `tools/vcall-field-owner.py`
+(`make vcall-field-owner`, `inventory/vcall_field_owners.csv`, 28 rows) decodes the member load the origin points at
+and records the offset, the base register and every static route that could name the owner's class:
+
+| offset | sites | base register | reading |
+|---|---:|---|---|
+| `+0x4c` | 12 | `esi` 11, `ebx` 1 | the function's own object |
+| `+0x220` | 8 | `eax` 8 | an object passed in as an argument |
+| `+0x48` | 3 | `esi` 3 | the function's own object |
+| `+0x1c` | 2 | `esi` 2 | the function's own object |
+| `+0x2c` | 2 | `esi` 1, `eax` 1 | own object / argument |
+| `+0x310` | 1 | `esi` 1 | the function's own object |
+
+**28 of 28 decode, and every one is a plain `mov reg,[base+disp]`** -- 0 indexed (SIB) loads, 0 absolute ones, 0
+unread -- so a field site is never a container walk or a static. Two populations, not six: **20 read from the
+function's own `this`** (base `esi`/`ebx`, the chain rooted at an `ecx` nothing writes) and **8 read from an object
+that arrives as an argument** (`eax` is never written before the read), and those 8 *are* the whole `+0x220` group.
+All eight sit in small functions with exactly one direct `E8` caller each, and all eight callers fall in
+`0x335007`-`0x337318`: one family, one offset, one object graph -- which the earlier "six different offsets, so not
+one shared object graph" reading understated by counting offsets instead of owners.
+
+**No table names the owner, and that is measured, not assumed.** A class table holds virtuals only, so this tool
+tries two routes and records both verdicts per row: `table` (the containing function is itself a slot target of one
+of the 492 tables, whose class is then named) and `caller` (every direct caller is a slot target of a single named
+class, so the object handed to it is that class). Both answer **0 of 28**: not one of the 23 containing functions is
+a table slot, and of the 20 sites whose function has any direct caller, no caller is a slot target either. The
+containing functions are plain member functions, so the image carries no class for them at all, and the object
+handed to them is typed by nothing in `.text`.
+
+**A shared displacement is not a shared field.** `+0x4c` is also the byte offset of the slot-19 displacement, and 12
+of the 28 field reads are at `+0x4c`; the same holds for the 51 displacement bytes the earlier census had to reject,
+all of them slot 20. One number, two unrelated meanings -- which is why a census keyed on the displacement alone
+conflates a vtable slot with a member.
+
+**What is left is a layout, not another census.** `field_offset` resolves to a property name only against a class
+layout, and the property stream (`inventory/class_properties.csv`) carries tag names, kinds and types but **no byte
+offsets**, so its 11,497 rows cannot be joined to these six numbers. The two routes that would settle it are one
+class layout read the hard way -- a `Serialize` override (slot 11, `0x392b0`) stores and loads its fields at fixed
+offsets -- or a live object's vtable pointer out of a RAM dump, the way `inventory/hud_console_link.csv` names
+`StargateHUD+0x398` as `Console`.
