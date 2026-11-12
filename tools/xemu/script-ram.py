@@ -260,7 +260,7 @@ def kind_at(marks, offset):
     return "%s of op%02x" % (last[2], last[3])
 
 
-def slot_lines(at, matched, length, path, complete, field, body=None, dis=None):
+def slot_lines(at, matched, length, path, complete, field, body=None, dis=None, blob=None, spans=None):
     """The per-slot reading of one copy, as lines. Nothing here is game data: offsets, widths and opcodes."""
     narrow = narrow_slots(path)
     out = ["  copy at %#010x: %d span(s) aligned (%s), guest copy %d bytes, field %d (%+d)"
@@ -287,6 +287,17 @@ def slot_lines(at, matched, length, path, complete, field, body=None, dis=None):
             cells.append("%d %d %d%s%d%s" % (a, value, width, "->" if width != guest else "=", guest,
                                              " op%02x" % op))
         out.append("      " + "; ".join(cells))
+    if not complete and body is not None and blob is not None and spans is not None:
+        # Where the alignment stopped, in the copy's own bytes: the next span's opcode and pattern, the file's bytes
+        # there and the guest's. A stop is either a slot width this reading does not model or a token the guest
+        # encodes differently -- the two are told apart by looking, not by a rule.
+        guest = (at or 0) + sum(row[2] for row in path)
+        here = sum(row[1] for row in path)
+        a, b, kind, op = spans[len(path)]
+        out.append("    stopped before span %d: file %#x kind %s op %02x pattern %r"
+                   % (len(path), a, kind, op, dis.Table().pattern(op)[0]))
+        out.append("      file : %s" % body[a:a + 20].hex())
+        out.append("      guest: %s" % blob[guest + (a - here):guest + (a - here) + 20].hex())
     return out
 
 
@@ -327,10 +338,11 @@ def residue_report(csvpath, rams, dump, slots=False):
                 continue
             best = (None, 0, 0, [], False)
             where = None
+            best_blob = None
             for name, blob in blobs:
                 got = copy_for(blob, body, spans)
                 if got[1] > best[1] or got[4]:
-                    best, where = got, name
+                    best, where, best_blob = got, name, blob
                 if got[4]:
                     break
             at, matched, length, aln, complete = best
@@ -350,7 +362,7 @@ def residue_report(csvpath, rams, dump, slots=False):
                   % (pkgname, cls, fn, field, length, field - length, len(narrow),
                      " ".join("%d:w%d:op%02x" % row for row in narrow[:6])))
             if slots:
-                for line in slot_lines(at, matched, length, aln, complete, field, body, dis):
+                for line in slot_lines(at, matched, length, aln, complete, field, body, dis, best_blob, spans):
                     print(line)
             if length == field:
                 agreed += 1
@@ -477,7 +489,7 @@ def main():
               % (len(pat), sum(4 - w for w in widths), field, len(pat), field - len(pat)))
         if args.slots:
             at, matched, length, aln, complete = copy_for(blob, body, spans)
-            for line in slot_lines(at, matched, length, aln, complete, field, body, dis):
+            for line in slot_lines(at, matched, length, aln, complete, field, body, dis, blob, spans):
                 print(line)
             continue
         full, anchor, partial = search(blob, pat, args.max_hits)

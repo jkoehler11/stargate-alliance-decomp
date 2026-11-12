@@ -5561,7 +5561,9 @@ and a deliberate one-line script break is caught by the boot test.
 - **The rows that do not align are three negatives, not one.** `GamePlay.u`, `IpDrv.u` and `StargateContent.u` have no
   body of theirs in these six images (deepest alignment 0 spans), the three menu packages peak at 5-10 spans (a wrong
   anchor), and `Engine.u`/`GUI.u` align hundreds of spans before stopping -- `Actor.DisplayDebug` (+9, the largest
-  row) at 212 of 1,605, where three slots the model counts as one byte hold four-byte pointers in the copy.
+  row) at 212 of 1,605, at an `op 1f` `str` token where each one-byte `1f` of the file is four bytes in the copy
+  (the same in-image value `0x00fe4980` twice) -- the copy is longer there, the reverse of a narrow slot, and
+  `--slots` now prints that stop.
 - **Next:** the token at `DisplayDebug`'s stop (file offset `0x165`), named from the copy -- the last row whose
   difference is not a slot this read can already name.
 - Tool (`script-ram.py --slots`/`--residue` and its self-test, `uscript-dis.py --residue-csv`) + docs/BYTECODE.md
