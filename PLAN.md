@@ -5546,7 +5546,25 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
-### Execution notes (2026-11-12, the residue is one question -- which slots are one byte -- and 10 copies are the field exactly)
+### Execution notes (2026-11-12, the string-const stop is a four-byte opcode prefix only some literals get)
+
+- **The token at `DisplayDebug`'s stop is measured, and it is not a width rule.** `script-ram.py` gained a second model
+  (`op1f`) that counts an `op 1f` opcode as four bytes with the literal after it unchanged, tried only where the strict
+  model stops. On `DisplayDebug` it desynchronises at span 16 -- the first literal that is *not* expanded -- and keyed
+  on the preceding `0f 00` pair it reaches 214 spans. Eight `StringConst`s in the 455 bytes the strict model reproduces
+  are verbatim, and only the two at file 0x167/0x16a are expanded: 2 of the script's 83.
+- **The four bytes are a constant, and not that literal's address.** `0x00fe4980` at both slots, the same in all six
+  dumps, 125 occurrences in one 128 MiB image; the target reads zeros and pointers, and `default.xbe` holds no such
+  dword (0 matches) -- a load-time heap address the image does not name.
+- **Corpus-wide the rule closes 0 of the 30 unaligned rows** (13 complete copies, 10 the field's own number,
+  unchanged). The hex in `docs/BYTECODE.md` and this entry had `REMOVE ROLE` where the bytes are `REMOTE ROLE`
+  (`54 45`), which a dump search exposes; both are corrected. `--slots` prints the stop and each `op 1f` slot's four
+  bytes, `--residue` prints complete copies by rule.
+- **Next:** the body behind `GNatives[0x1f]` (live table at `0x6313e8 + 4*0x1f`, `docs/NATIVE_VM.md`) to see whether
+  the four-byte slot is read at all, or a byte-diff over many more copies correlating which literals expand.
+- Tool (`script-ram.py` `op1f` model, `copy_best`, a `--check` case) + docs/BYTECODE.md + docs/UNKNOWNS.md U13 +
+  PLAN 3.7. Reads the packages and the six existing `pmemsave` images; no boot, no artifact, no game data.
+
 
 - **All 43 residue rows were read against six guest images, and the answer is a slot width rather than a second rule.**
   `script-ram.py --residue CSV` (new) aligns the model span by span with an index operand free to be 1, 2 or 4 bytes

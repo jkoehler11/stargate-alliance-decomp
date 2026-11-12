@@ -1890,6 +1890,21 @@ from the copy (the bytes are in the model at file offset `0x165`), which is the 
 slot this reading can already name; and re-read the 8 `StargateMenus.u` and 7 `UWindow.u` rows against a dump taken
 with a menu open, since no body of those packages is resident in an in-game image.
 
+**2026-11-12, the stop is a four-byte *opcode* prefix that only some literals get, and a global rule does not fit.**
+`tools/xemu/script-ram.py` carries a second model (`op1f`: an `op 1f` opcode is four bytes, the literal after it
+unchanged) and reports which rule read each copy. On `Actor.DisplayDebug` the eight `StringConst`s inside the 455
+bytes the strict model reproduces are all copied verbatim, and only the two at file 0x167/0x16a are expanded -- 2 of
+that script's 83. So widening every `op 1f` desynchronises at the first unexpanded literal (16 spans, 32 bytes), and
+keying on the preceding `0f 00` pair reaches 214 spans before the second expanded literal: the deciding property is
+per literal, not per opcode and not the preceding token. The four bytes are the same value `0x00fe4980` for both
+literals, in all six dumps, 125 times in one 128 MiB image; the target reads as zeros and pointers rather than text,
+and `default.xbe` does not contain that dword at all (0 matches), so it is a load-time heap address, not something the
+image names -- "a resolved pointer to this literal" is what the bytes disprove. Corpus-wide the rule closes **0 of the
+30 unaligned rows**. It also corrects the literal above: it is ` REMOTE ROLE ` (`54 45`), not ` REMOVE ROLE `. **What
+would settle it** is the handler rather than the payload: the body behind `GNatives[0x1f]` (`docs/NATIVE_VM.md`) says
+whether the four-byte slot is read at all, or a byte-diff over many more copies correlates which literals expand
+inside one script.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
