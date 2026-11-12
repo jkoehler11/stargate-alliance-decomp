@@ -5546,6 +5546,28 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the residue has no first operand and no feature class)
+
+- **The question the last note named -- "per row, find the first operand where the widened-size prediction diverges" --
+  is answered, and the answer is that 99 of 117 rows have none.** `--diverge` (same tool, `operand_spans` refactored to
+  keep each span's owning opcode) tries every span of every residue row as the single explanation, in both shapes one
+  operand can take: an `index` the compiler did not widen (it moves the prediction by `-(4 - width)`) and a `fixed`
+  operand whose bytes decode as a compact index of exactly its own width (it moves it by `+(4 - width)` while the walk
+  stays put). **9 rows are explained by exactly one operand, 9 by several, 99 by none** -- 81 `index-not-widened` sites
+  at op `01`, 31 at `00`, 7 at `1b`, 1 at `1c`; 19 `fixed-is-index` at `39`, 10 at `2c`, 4 at `05`. A single mis-widthed
+  table row would have to be one of the 18 explained rows, so the rest of the set is accumulated, not one operand.
+- **No single class of feature fits either, and `case` values are dead as the +4 mode.** The rule
+  `dword - widened == k * count(feature)` was tried for 297 row features (opcodes, operand widths, pattern items) at
+  k 1..8 against all 11,602 walked rows: **2,376 rules, none exact**, the closest (`op 43` x2) still leaving 70 rows.
+  The mode is **+4 in 40 rows over at least eight classes** (`GUI.GUIController` 5, `GUI.GUIMessageBox` 4,
+  `StargateGame.GameMenu` 4, `Engine.StreamPlaylist` 3, `Engine.StreamInteraction` 3), so it is not one class's compile
+  path -- and those 40 rows hold no `case` value at all, while 58 *exact* rows do, so a u16 case widened to u32 (which
+  would have explained 2 rows) is refuted by the population rather than merely unfound.
+- Tool (`--diverge`, `_payload_scripts`, `_spans_with_op`; the case value now carries its own span kind) +
+  `docs/BYTECODE.md` "The dword before the script is its size in memory" + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the
+  packages; no boot, no Ghidra, no artifact. The next instrument on the +4 mode is a guest read of one such row
+  (`StreamPlaylist.AddStream`), which is the read that proved the widening in the first place.
+
 ### Execution notes (2026-11-12, the anchor accounts for every declaration, and no literal rule is missing)
 
 - **The population closes, and the one rule an earlier note named as next is not needed.** `--start-anchor` prints

@@ -1216,10 +1216,11 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     return 0
 
 
-def operand_spans(data, table):
-    """`(start, end, kind)` for every token's own bytes, following the table's grammar.
+def _spans_with_op(data, table):
+    """`(start, end, kind, opcode)` for every token's own bytes, following the table's grammar.
 
-    kind is `opcode`, `index` or `fixed`. This is a position-aware copy of `parse`'s walk (that one builds a tree and
+    kind is `opcode`, `index` or `fixed`, and the fourth field is the opcode of the token that owns the span (for a
+    token's own `opcode` span, itself). This is a position-aware copy of `parse`'s walk (that one builds a tree and
     drops operand offsets), and it exists for one reason: a compact index operand is the one thing the package loader
     rewrites on the way into memory, so a RAM search for a function's code has to leave those bytes open.
     Measured on a 128 MiB dump of a loaded `M00`: `StargateHUD.DrawOrderTarget`'s log call reads `b8 2a` in the
@@ -1234,7 +1235,7 @@ def operand_spans(data, table):
         pattern, _name = table.pattern(op)
         if pattern == "bad-token":
             raise Refused("%#x: opcode %02x is the walker's bad-token case" % (pos, op))
-        spans.append((pos, pos + 1, "opcode"))
+        spans.append((pos, pos + 1, "opcode", op))
         q = pos + 1
         for item in (pattern.split(",") if pattern else []):
             if item == "expr":
@@ -1246,7 +1247,7 @@ def operand_spans(data, table):
                         break
             elif item == "case":
                 value = struct.unpack_from("<H", data, q)[0]
-                spans.append((q, q + 2, "fixed"))
+                spans.append((q, q + 2, "case", op))
                 q += 2
                 if value != 0xFFFF:
                     q, _op = token(q)
@@ -1261,18 +1262,18 @@ def operand_spans(data, table):
                     b = data[q]
                     q += 1
                     cont = b & 0x80
-                spans.append((start, q, "index"))
+                spans.append((start, q, "index", op))
             elif item.startswith("bytes:"):
                 n = int(item.split(":", 1)[1])
                 if q + n > len(data):
                     raise Refused("%#x: opcode %02x wants %d operand bytes, %d left" % (pos, op, n, len(data) - q))
-                spans.append((q, q + n, "fixed"))
+                spans.append((q, q + n, "fixed", op))
                 q += n
             elif item == "str":
                 end = data.find(b"\0", q)
                 if end < 0:
                     raise Refused("%#x: string operand of %02x is not NUL-terminated" % (pos, op))
-                spans.append((q, end + 1, "fixed"))
+                spans.append((q, end + 1, "fixed", op))
                 q = end + 1
             elif item == "utf16":
                 start = q
@@ -1283,7 +1284,7 @@ def operand_spans(data, table):
                     q += 2
                     if unit == 0:
                         break
-                spans.append((start, q, "fixed"))
+                spans.append((start, q, "fixed", op))
             elif item == "labeltable":
                 start = q
                 while True:
@@ -1293,7 +1294,7 @@ def operand_spans(data, table):
                     q += 8
                     if entry == 0:
                         break
-                spans.append((start, q, "fixed"))
+                spans.append((start, q, "fixed", op))
             else:
                 raise Refused("%#x: unknown pattern item %r in the table" % (pos, item))
         return q, op
@@ -1303,6 +1304,11 @@ def operand_spans(data, table):
         pos, _op = token(pos)
     spans.sort()
     return spans
+
+
+def operand_spans(data, table):
+    """`(start, end, kind)` for every token's own bytes -- `_spans_with_op` without the owning opcode."""
+    return [(a, b, k) for a, b, k, _op in _spans_with_op(data, table)]
 
 
 def hex_pattern(data, spans, limit):
@@ -3070,6 +3076,177 @@ def sizefield_report(path, rows=0):
     return 0
 
 
+def _payload_scripts(one):
+    """`(export, body, want)` for every Function export in one package whose script this walk can locate."""
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    pkg = Package(one)
+    pkg.read_names()
+    pkg.read_imports()
+    pkg.read_exports()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    for e in pkg.exports:
+        if pkg.class_name_of(e) != "Function":
+            continue
+        pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+        n = len(pay)
+        off, last, aligned = 0, None, False
+        for _ in range(8):
+            try:
+                last, off = read_index(pay, off)
+            except IndexError:
+                break
+            if last == e["name"]:
+                aligned = True
+                break
+        if not aligned:
+            continue
+        if n >= 10 and pay[n - 10:n - 7] == epilogue:
+            end = n - 7
+        elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+            end = n - 9
+        else:
+            continue
+        start = off + 16
+        if start > end:
+            continue
+        yield pkg, e, pay[start:end], struct.unpack_from("<I", pay, off + 12)[0]
+
+
+def _index_width(data, start, end):
+    """Width of the compact index occupying `[start, end)`, or None if those bytes do not decode as one."""
+    if start >= len(data):
+        return None
+    q = start + 1
+    cont = data[start] & 0x40
+    while cont:
+        if q >= len(data):
+            return None
+        cont = data[q] & 0x80
+        q += 1
+    return q - start
+
+
+def _row_features(spans):
+    """What a row is *made of*, counted for the rule test: one key per opcode, operand width and pattern item."""
+    counts = collections.Counter()
+    for start, end, kind, op in spans:
+        counts["op:%02x" % op] += 1
+        if kind == "index":
+            counts["index:w%d" % (end - start)] += 1
+        elif kind == "case":
+            counts["case:%d" % (end - start)] += 1
+        elif kind == "fixed":
+            counts["fixed:%d" % (end - start)] += 1
+    return counts
+
+
+def diverge_report(path, rows=0):
+    """Where a `--sizefield` residue row's difference could come from, asked one operand at a time.
+
+    `--sizefield` says the dword at `name_end+12` is the script with every compact index operand widened to four
+    bytes, and is exact for 11,485 of 11,602 walked payloads. This mode asks the 117 residue rows two questions the
+    counts cannot:
+
+    * **is one operand responsible?** A single operand explains the row when its class, changed, moves the prediction
+      onto the dword without moving the walk -- an `index` operand the compiler did **not** widen (moving it by
+      `-(4 - width)`) or a `fixed` operand whose bytes decode as a compact index of exactly its own width (moving it
+      by `+(4 - width)`, so the bytes consumed do not change). Every span of every residue row is tried.
+    * **is one *class* of feature responsible?** For each feature a row is made of (an opcode, an operand width, a
+      pattern item) the rule `dword - widened_length == k * count(feature)` is tested over the whole walked corpus
+      for k in 1..8, so a rule that explains a residue row while any exact row contains that feature is visible as a
+      violation rather than a fit.
+
+    Neither answers yes for most of the set, which is the result: the residue is individual token encodings, not a
+    second rule and not one mis-widthed table row.
+    """
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    table = Table()
+    walked = exact = 0
+    residue = []
+    features = []
+    for one in files:
+        for pkg, e, body, want in _payload_scripts(one):
+            try:
+                spans = _spans_with_op(body, table)
+            except (Refused, IndexError, struct.error):
+                continue
+            walked += 1
+            widths = [b - a for a, b, k, _op in spans if k == "index"]
+            predicted = len(body) + sum(4 - w for w in widths)
+            counts = _row_features(spans)
+            features.append((want - predicted, counts))
+            if predicted == want:
+                exact += 1
+                continue
+            delta = want - predicted
+            cands = []
+            for a, b, kind, op in spans:
+                if kind == "index":
+                    if -(4 - (b - a)) == delta:
+                        cands.append(("index-not-widened", op, b - a, a))
+                elif kind == "fixed":
+                    w = _index_width(body, a, b)
+                    if w is not None and w == b - a and (4 - w) == delta:
+                        cands.append(("fixed-is-index", op, w, a))
+            owner = pkg.exports[e["outer"] - 1] if e["outer"] > 0 else None
+            residue.append((os.path.basename(one),
+                            pkg.name(owner["name"]) if owner is not None else "?",
+                            pkg.name(e["name"]), len(body), want, predicted, delta, want - len(body),
+                            len(widths), cands))
+
+    if not walked:
+        print("%s: no walked payloads" % path)
+        return 1
+    print("%s: %d walked, %d exact, %d residue" % (path, walked, exact, len(residue)))
+    print("  rows with exactly one explaining operand: %d (dword larger %d, smaller %d); with none: %d"
+          % (sum(1 for r in residue if len(r[9]) == 1),
+             sum(1 for r in residue if len(r[9]) == 1 and r[6] > 0),
+             sum(1 for r in residue if len(r[9]) == 1 and r[6] < 0),
+             sum(1 for r in residue if not r[9])))
+    by_kind = collections.Counter((c[0], "op %02x" % c[1], "w%d" % c[2]) for r in residue for c in r[9])
+    if by_kind:
+        print("  explaining operands: %s"
+              % ", ".join("%s %s/%s=%d" % (k[0], k[1], k[2], n) for k, n in by_kind.most_common()))
+    groups = collections.Counter((r[0], r[1], r[6]) for r in residue)
+    print("  residue groups (package, class, difference), largest first: %s"
+          % ", ".join("%s/%s %+d=%d" % (k[0], k[1], k[2], n) for k, n in groups.most_common(8)))
+    alone = [r[6] for r in residue if not r[9]]
+    if alone:
+        print("  the %d rows no single operand explains, by difference: %s"
+              % (len(alone), dict(sorted(collections.Counter(alone).items()))))
+
+    best = None
+    tried = 0
+    rules_feasible = []
+    names = set()
+    for _d, c in features:
+        names.update(c)
+    for name in sorted(names):
+        for k in range(1, 9):
+            tried += 1
+            bad = sum(1 for d, c in features if d != k * c.get(name, 0))
+            if bad == 0:
+                rules_feasible.append("%s*%d" % (name, k))
+            if best is None or bad < best[0]:
+                best = (bad, name, k)
+    print("  feature rules tried: %d over %d features (dword - widened == k * count(feature), k 1..8)"
+          % (tried, len(names)))
+    print("  rules exact over all %d walked rows: %s" % (walked, rules_feasible or "none"))
+    if best:
+        print("  closest single-feature rule: %s*%d leaves %d row(s) unexplained" % (best[1], best[2], best[0]))
+    if rows:
+        print("  named rows (up to %d):" % min(rows, len(residue)))
+        for pkgname, cls, fn, slen, want, predicted, delta, vs_len, nix, cands in residue[:rows]:
+            print("    %-15s %-22s %-26s script %-5d dword %-7d predicted %-6d %+d (dword - script %+d)"
+                  " %d index  %s"
+                  % (pkgname, cls[:22], fn[:26], slen, want, predicted, delta, vs_len, nix,
+                     " ".join("%s@op%02x/w%d@%#x" % (c[0], c[1], c[2], c[3]) for c in cands)
+                     or "no single operand"))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -3113,6 +3290,9 @@ def main():
     ap.add_argument("--sizefield", metavar="PATH",
                     help="what the dword 16 bytes before a script counts: the script with every "
                          "compact index widened to four bytes")
+    ap.add_argument("--diverge", metavar="PATH",
+                    help="which operand, if any, accounts for a --sizefield residue row (one round of every "
+                         "operand tried, plus a rule test over the whole corpus)")
     args = ap.parse_args()
     if args.shuffle and not args.calls:
         ap.error("--shuffle is a control on --calls: give it a package or a System directory")
@@ -3148,6 +3328,8 @@ def main():
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.sizefield:
         return sizefield_report(args.sizefield, args.lists)
+    if args.diverge:
+        return diverge_report(args.diverge, args.lists)
     if args.selftest:
         return selftest()
     if args.payloads:
