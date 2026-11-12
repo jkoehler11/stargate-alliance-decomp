@@ -1864,6 +1864,17 @@ loader does not widen, i.e. this question in the other direction), with small `+
 million-scale rows this entry already carries as a misaligned header. Each of those needs the same guest instrument
 rather than another file-side census.
 
+**Twelfth session, 2026-11-12: the `-3` and `-6` rows read in a guest, and the chosen slot is not the token class.**
+The mirror residue is the model over-widening, not the loader mis-reading: `StreamBase.ConvertToFileExtension`
+(field 207, predicted 210) has a copy at `0x00cd8b00` that is **207 bytes -- the field's own number** and `205 + 2`,
+with 208 of 210 model bytes agreeing; `GameMessage.GetString` (499 against 505) and `TexOscillatorTriggered.Trigger`
+(174 against 180) land on their fields the same way. `Trigger`'s last six bytes name the mechanism: the model has four
+wildcards, `86 00`, four more, `39 3a`, while the copy carries `07 86 00 9b 39 3a` -- **two slots of one byte**, one
+per -3. And the opcode does not decide it: one `LocalVariable` operand in `ConvertToFileExtension` is four bytes in
+the copy and the script's last one stays a single byte, so the residual question is not "which opcode" but "which
+slot", and each of the 43 residue rows now has a location this instrument can name. The listing that made these rows
+findable is fixed in the same change (`--sizefield --lists` printed `Class`, the metaclass, for every row).
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

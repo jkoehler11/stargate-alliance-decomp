@@ -379,6 +379,32 @@ four-byte slot. `tools/xemu/script-ram.py` is the read that settled it, on `Engi
   when both its indices are two bytes wide. A rule over a token's *count* cannot express a rule about its *operand
   widths*, which is why the census kept pointing at `op 43` without ever fitting.
 
+### The `-3` and `-6` rows are the same question in the other direction (U13, 2026-11-12)
+
+With the `+4` mode gone the largest residue shape is `-3`: the dword is three *smaller* than
+`len(script) + sum(4 - width)`, i.e. the model widens one operand that the guest does not. `script-ram.py` answers
+these the same way, and on three rows the copy's own length is **exactly the field's number**:
+
+    Engine.u StreamBase.ConvertToFileExtension         script 205  dword 207  predicted 210   copy at 0x00cd8b00: 208 of 210 bytes agree, epilogue at +204 -> 207 bytes
+    Engine.u GameMessage.GetString                     script 400  dword 499  predicted 505   copy at 0x00d63400:  30 of 505 bytes agree, epilogue at +496 -> 499 bytes
+    Engine.u TexOscillatorTriggered.Trigger            script 134  dword 174  predicted 180   copy at 0x00c2fc00: 114 of 180 bytes agree, epilogue at +171 -> 174 bytes
+
+* **`Trigger` shows where the six bytes went, and they are two slots of one byte.** Around the disagreement the model
+  has four wildcards, then `86 00`, then four more, then `39 3a`; the copy has `07 86 00 9b 39 3a` -- a **one-byte**
+  slot on each side of the shared literal, i.e. `-3` twice. So the `-6` rows are two un-widened one-byte indices, and
+  `-3` is one, which is what the difference distribution says without a guest (`-3` 14 rows, `-6` 4).
+* **The opcode does not decide which indices widen.** In `ConvertToFileExtension` both un-widened candidates are
+  `op00` `LocalVariable`, and one of that script's `LocalVariable` operands is four bytes in the copy (`6a59`) while
+  the script's last one stays one byte. So "every compact index widens to four" is right for the corpus (99.63%) and
+  wrong per slot: the loader's choice is not the token class, and this is the measurement that says so.
+* **These rows are not a compiler-versus-loader disagreement at all.** The field counts `205 + 2 = 207`, the copy is
+  207 bytes: the compiler and the loader agree, and it is the *model* that over-counts. That is the opposite of the
+  `+4` rows, where the model was short and the table row was wrong -- worth keeping apart when either is quoted.
+
+`--sizefield --lists` now names the owning class rather than the metaclass (`pkg.name(owner)`, not
+`class_name_of(owner)`, which printed `Class` on all 400 rows) -- without it these three rows could not be looked up
+at all, since a function name is not unique in a package.
+
 ## The shipped scripts, as disassembled
 
 With the start at `name_end + 16` the disassembler runs on real functions rather than on hex literals:

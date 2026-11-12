@@ -5546,6 +5546,25 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the -3 rows are the model over-counting, and the slot is not the token class)
+
+- **The mirror shape is measured, and its copy is the field's number.** `StreamBase.ConvertToFileExtension` -- field
+  207, predicted 210 -- has its copy at `0x00cd8b00` and it is **207 bytes (`205 + 2`), the dword 16 bytes before the
+  script**, with 208 of 210 model bytes agreeing; `GameMessage.GetString` (499 vs 505) and
+  `TexOscillatorTriggered.Trigger` (174 vs 180) land on their fields too. So these rows are not a compiler/loader
+  disagreement: the model over-widens.
+- **`Trigger` names the mechanism**: the model has four wildcards, `86 00`, four more, `39 3a`; the copy has
+  `07 86 00 9b 39 3a` -- **two slots of one byte**, one per `-3` (which is why `-6` rows are twice `-3`).
+- **And the opcode does not decide which slots widen.** Both candidates in `ConvertToFileExtension` are `op00`
+  `LocalVariable`, and one `LocalVariable` operand in that same script is four bytes in the copy while the last one is
+  one byte. "Every index widens" is a corpus rule (99.63%), not a per-slot one; the 43 residue rows each need the
+  slot named, which `script-ram.py` now does per row.
+- **The listing that made this possible is fixed too**: `--sizefield --lists` printed `Class` for every row (the
+  owner's metaclass), so no residue row could be looked up by class -- a function name alone is ambiguous in a
+  package (`Destroyed` is exported from dozens of classes).
+- Tool (`script-ram.py` reused, `sizefield_report`'s class column) + docs/BYTECODE.md + U13 + PLAN 3.7. Reads the
+  packages and one existing `pmemsave` image; no boot, no artifact.
+
 ### Execution notes (2026-11-12, the +4 rows were one opcode's operand, and a guest copy proves it)
 
 - **The row the last note sent to the guest is measured, and the answer is a table correction rather than a loader

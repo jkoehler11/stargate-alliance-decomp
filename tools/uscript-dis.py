@@ -3046,8 +3046,11 @@ def sizefield_report(path, rows=0):
                 height[want - predicted] += 1
                 if len(residue) < 4000:
                     owner = pkg.exports[e["outer"] - 1] if e["outer"] > 0 else None
+                    # The owner's *name* is the class (or the state) that declares the function; its `class_name_of`
+                    # is the metaclass, which answers `Class` for every row and made the listing unusable for
+                    # picking one to read (`--sizefield --lists` named 400 rows all `Class`).
                     residue.append((os.path.basename(one),
-                                    pkg.class_name_of(owner) if owner is not None else "?",
+                                    pkg.name(owner["name"]) if owner is not None else "?",
                                     pkg.name(e["name"]), len(body), want, predicted, want - predicted,
                                     len(widths), dict(sorted(collections.Counter(widths).items()))))
         per_pkg.append((os.path.basename(one), n_pkg, n_walk, n_exact))
