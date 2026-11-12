@@ -183,6 +183,45 @@ because they are Net functions, and **756** carry it at neither position — the
 is why `natives.csv`'s 797 joinable are almost exactly that set. What the tail does *not* give is where the script
 starts, because the header in front of it serialises object references and a name whose widths differ per payload.
 
+## Where the script starts, anchored on the shipped source
+
+The start is `name_end + 16`, and the two readings that used to support it are weaker than they read. `--start-scan`
+walks from **every** delta between `name_end+8` and `name_end+40` and counts the ones whose walk lands exactly on the
+epilogue: over `Engine.u` the clean share is **99.3% at +14, 99.2% at +16, 87.1% at +11, 79.3% at +13** and still 73%
+at +30 — most opcodes are one byte, so a garbage stream consumes the payload exactly and "the walk reaches the
+epilogue" is true almost wherever it starts. That reading therefore counts the opcode table's coverage; it does not
+locate the script, and the same is true of any count of payloads that "walk from +16" (3,328 of them).
+
+The anchor that discriminates is content. A `Function` export's class ships its `ScriptText`, so a body whose first
+statement is `return true;`, `return false;`, `return;`, `return 0;`, `return 1;`, a leading `if (` or `assert (`
+fixes its first opcode bytes — `04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`. `--start-anchor` walks no
+tokens: it asks which `name_end + delta` in `+lo..+hi` carries the bytes the source fixes, and only then whether the
+walk from there reaches the epilogue.
+
+    $ python3 tools/uscript-dis.py --start-anchor System
+    System: 2474 anchored payloads (ScriptText fixes the first opcode) of 2474 with a located epilogue
+      anchored opcodes: {'07': 2137, '0428': 193, '0427': 108, '0425': 26, '09': 7, '040b': 2, '0426': 1}
+        +4     20 / 2474    11 walk
+        +9     44 / 2474    20 walk
+       +16   1514 / 2474  1514 walk   <- the fixed run start_report assumes
+       +20     23 / 2474    17 walk
+       +23     54 / 2474    50 walk
+      peak delta +16 with 1514 of 2474 anchored payloads and 1514 clean walks
+      no delta matched: 815; the same bytes at payload offset 0: 0
+        of those, by anchored opcode: {'07': 665, '0428': 92, '0427': 38, '0425': 19, '0426': 1}
+      dword at name_end+12 minus the script's length, over the anchored payloads: {0: 187, 2: 24, 3: 6, 4: 73, 5: 20, 6: 81, 7: 13, 8: 99}
+        equal in 187 of 1659 (11.3%), and never negative: yes
+
+**1,514 of 2,474** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 1,514** walk from
+there to the epilogue; the strongest other delta is `+23` with 54 matches (2.2%), then `+9` with 44 and `+20` with 23,
+and the same bytes sit at payload offset 0 in **0**. A wrong start does not survive this test because the bytes have
+to be the ones the source wrote.
+
+Two residues are named rather than smoothed. **815** anchored payloads carry the expected opcode at no delta in
+`+4..+40` — 665 of them `if`-anchored — which is a header-alignment or body-classification question for the next
+pass; and the dword at `name_end+12` is **never smaller** than the script in 1,659 payloads (equal in 187, otherwise
+2..8 bytes larger), so the field is a size that counts something beyond the script's bytes and is still unidentified.
+
 ## The shipped scripts, as disassembled
 
 With the start at `name_end + 16` the disassembler runs on real functions rather than on hex literals:
@@ -584,7 +623,9 @@ page does not yet describe, and the census records that instead of guessing at i
      **25 bytes**, with the two spikes at **26** (1,380 payloads) and **28** (801): `16 + 3 + 7` and `16 + 3 + 9`.
      A 12-byte run would put the floor at 22, where nothing is ever seen.
   2. **How deep the walk from `name_end + 16` gets.** A wrong start desynchronises within a token or two; this one
-     walks to the epilogue. Of the payloads whose epilogue is at the 7-byte trailer position, **11,269 walk all the
+     walks to the epilogue. (**Corrected 2026-11-12:** a walk also succeeds from almost *every* other delta — see
+     "Where the script starts, anchored on the shipped source" — so this count is the opcode table's coverage and
+     not a locator.) Of the payloads whose epilogue is at the 7-byte trailer position, **11,269 walk all the
      way**, 28 stop between 16 and 63 bytes, 36 between 64 and 255, 11 beyond 256 and 6 between 4 and 15 — the
      remainder is the opcode table's coverage, which the `index` correction above cut from 4,022 refusals to 81.
   3. **What the dword 16 bytes past the name is.** It is what a `ScriptStorageSize` field would carry, and it is

@@ -1731,6 +1731,22 @@ is the archive's **compact index** (bit 7 sign, bit 6 continuation, six bits the
 3.7 was waiting on, and it was one rule — not the 690-payload `BadToken` case, which a width change still rescues at
 most 75 of.
 
+**2026-11-12, the start is anchored on the shipped source, and the walk that used to prove it proves nothing.**
+`tools/uscript-dis.py --start-scan` walks from every delta in `name_end+8..+40` and counts the ones that land on the
+epilogue: over `Engine.u` that share is **99.3% at +14, 99.2% at +16, 87.1% at +11, 79.3% at +13** and 73% at +30,
+because most opcodes are one byte and a garbage stream consumes the payload exactly. So "the walk from +16 reaches the
+epilogue" is a coverage figure for the opcode table, not a locator, and the same is true of the payload-floor reading
+(a floor of 25 bytes fits any 16-byte run that keeps `3 + 7` behind it). The anchor that discriminates is content:
+a `Function` export's class ships its `ScriptText`, so a body opening with `return true;`/`return false;`/`return;`/
+`return 0;`/`return 1;`/`if (`/`assert (` fixes its first opcode bytes (`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`,
+`07`, `09`), and `--start-anchor` asks which `name_end + delta` carries them. Over the 18 packages: **2,474 anchored
+payloads, 1,514 with the expected bytes exactly at +16 and all 1,514 walking from there to the epilogue**; the next
+best delta is `+23` with 54 (2.2%), then `+9` with 44 and `+20` with 23, and the bytes sit at payload offset 0 in
+**0**. Two residues stay open and are counted rather than smoothed: **815** anchored payloads carry the expected
+opcode at no delta in `+4..+40` (665 `if`-anchored — a header-alignment or body-classification question), and the
+dword at `name_end+12` is **never smaller** than the script (equal in 187 of 1,659, otherwise 2..8 bytes larger), so
+the field is a size with an unexplained excess rather than the script's length.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
