@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands class-table-residual
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands class-table-residual vcall-dispatch
 
 help:
 	@echo "targets:"
@@ -966,6 +966,7 @@ native-opcodes:
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@echo "  class-table-parents  name a class table from the callers of the function that installs it"
 	@echo "  class-table-residual  what a registration call pushes, and what slots 19/20 hold (needs the dump)"
+	@echo "  vcall-dispatch  every .text site that dispatches slots 19/20 (needs the dump)"
 
 # U8's two residuals (docs/NATIVE_CLASS_TREE.md): every registration call's argument list, and what slots 19/20
 # hold in all 492 class tables. Needs the image; both artifacts are addresses and counts, no game data.
@@ -974,3 +975,10 @@ class-table-residual:
 	@$(PYTHON) tools/class-table-residual.py sites --xbe "$(GAME_DIR)/default.xbe" -o inventory/registration_arguments.csv
 	@$(PYTHON) tools/class-table-residual.py slots --xbe "$(GAME_DIR)/default.xbe" -o inventory/class_table_slot_pairs.csv
 	@echo "wrote inventory/registration_arguments.csv and inventory/class_table_slot_pairs.csv"
+
+# U8's third residual (docs/NATIVE_CLASS_TREE.md): which `.text` sites dispatch the two virtuals the Actor tables
+# install. Pure decode of the image; the artifact is addresses and counts, no game data.
+vcall-dispatch:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/vcall-dispatch.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/vcall_dispatch_sites.csv
+	@echo "wrote inventory/vcall_dispatch_sites.csv"

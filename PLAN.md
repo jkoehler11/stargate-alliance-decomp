@@ -337,7 +337,8 @@ leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`)
       any of the 493 sites (`docs/NATIVE_CLASS_TREE.md`, `make class-table-residual`) -- so the route left is
       a registration-time breakpoint, and that is now the
       written next step rather than a guess.
-      shared constructor, and that is now the written next step rather than a guess.
+      The census of those dispatch sites is measured (`make vcall-dispatch`, 106 in `.text`) and their
+      runtime reading is started, not finished: see the execution note above.
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
       maps to the VM native table slot → script this into a Ghidra script that renames the target functions.
       *This is the single highest-leverage task in the project — it names hundreds of engine functions for free.*
@@ -1032,6 +1033,38 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-11, the pair's dispatch census: 106 `.text` sites, all of them the object layer)
+
+- **The 82 was an undercount, and the census says where the pair is called.** `tools/vcall-dispatch.py`
+  (`inventory/vcall_dispatch_sites.csv`, 141 rows) decodes every `call [reg+disp]` form in the nine executable
+  sections and keeps the two displacements a class table's slots 19/20 occupy (`19*4 = 0x4c`, `20*4 = 0x50`).
+  `.text` -- the game's own code -- holds **106**: 31 at `+0x4c`, 75 at `+0x50`, through edx 37, eax 30, ecx 15,
+  edi 12, ebx 8, esi 4 and never `ebp`. The 35 in the seven statically linked library sections are the control:
+  33 of them sit at `+0x50`, a field of some library struct, and no table of this build is dispatched there, so
+  `+0x50` is the noisy displacement and `+0x4c` the specific one.
+- **Every named function that flag hits is `Core`'s object machinery.** 14 sites sit inside a named body:
+  `Core_UnObjBas` 5, `Core_UnTemplate` 2, `Core_UnClass`, `Core_UnObj`, `Native_65`, two
+  `MasterServerUplink` destructors, and offsets into `Engine_UnActCol` and `IpDrv_InternetLink`. Nine of the
+  ten values are `UObject`/`UClass` translation units, which matches the bodies read last round (they take
+  `[this+0xa4]`, then `[that+0xf4]`, and call a virtual on `this` at `+0xc`/`+0x8`): the pair belongs to the
+  object/class layer, not to gameplay code.
+- **The runtime half is started and its first reading is a zero.** An execution breakpoint on each body armed
+  `OK` at a loaded `M00` (`tools/xemu/bp-args.py --arm-after 0`, print of both `OK`s in
+  `~/sg1/work/vslot/bp.log`) and **recorded 0 stops in 30 s** of the level, so the pair does not dispatch while
+  a level idles. The arm that would sit *before* a level loads -- the window in which an `Actor`-installed pair
+  should fire -- cannot be taken by that tool: the front end idles in the kernel (`EIP=0xfffffe5c`,
+  `0x80065996`, `0x80024a97` ten seconds apart at the title) and `bp-args` refuses a kernel-context arm. A
+  forced arm needs a read-back of the patched byte, because the stub's `OK` is not evidence that the `0xCC`
+  landed in the mapping the game executes; `~/sg1/work/vslot3-arm.py` does that (arms, reads the byte back,
+  records `EIP`/`ESP`/`ECX` and `[ecx+0]` per stop) and is a run artifact, not a tool.
+- **Two boots were lost to the desktop's display, not to the measurement**: `drive.py` answered `no xemu window
+  on :0` while `xdotool search --onlyvisible --name .` listed 0 of 9 windows. That is a session state, so the
+  guest read is unfinished rather than negative.
+- Tool (`vcall-dispatch.py` scans with synthetic `--check`; `vcall-stops.py` reads stops with a synthetic
+  `--check`) + `inventory/vcall_dispatch_sites.csv` + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8.
+  The stray half-line the previous round left under 4.3 ("shared constructor, and that is now the written next
+  step") is removed here.
 
 ### Execution notes (2026-11-11, a registration carries a name and never a table, and slots 19/20 are one Actor-level pair)
 
