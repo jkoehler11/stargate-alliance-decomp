@@ -1765,6 +1765,18 @@ made twice in one class, 10 whose return type has no measured rule, and the 2,13
 rows whose start is +16 — true of this trivial-`return` population and not of the corpus, where the same dword is
 larger far more often: the field is equal here and still unidentified.
 
+**2026-11-12, later still: a state's body is reachable from the class's own ScriptText.** The 2,137 `Function`
+exports owned by a `State` object are not class declarations, but the class's `ScriptText` does carry its
+`state <name> { ... }` blocks, so keying those payloads by (class, state, function) applies the same three rules —
+and they hold there even more sharply: **93 anchored, 92 at `name_end+16`, all 92 walking**, 1 with no match (its
+body compiles empty). With the 441 class-owned payloads that makes **534 anchored, 514 at +16 and all 514 walking**,
+at most 10 at any other delta in `+4..+40`, 0 at payload offset 0, and the dword at `name_end+12` equal to the
+script's length in **512 of the 514** rows whose start is +16. What remains unanchored is 31 declarations made twice
+under one key and 10 whose return type has no measured rule; what remains unmatched is 13 payloads (4 empty bodies,
+8 opening with `07`, 1 with `04 82`). A trap worth recording: offsets inside a spliced state body are already
+relative to it, so `first_statement_kind(body, m.end())` — not `m.end() - block_offset` — is the call, and the wrong
+one turns the 92-of-93 peak into a flat histogram over `+16..+39`.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

@@ -218,13 +218,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
       **The locator is solved and now sharp** (U13): the script starts **16 bytes past `FriendlyName`**, measured by
-      content — `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **422 of 441**
-      `return`-anchored payloads and every one of those walks to the epilogue, against at most 9 at any other delta
-      in `+4..+40` and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7 and
-      28 = 16+3+9). Two rules were needed for that peak: the anchor is keyed by (class, function), because one
-      class's declaration is not evidence for a same-named export in another, and the literal's opcode is chosen by
-      the declaration's **return type** (a void function writes `return <expr>;` as a bare `04 0b`; `float` → `04 1e`
-      plus the float; `byte` → `04 24` plus the byte).
+      content — `--start-anchor`, the first opcode the body's own `ScriptText` declaration fixes, sits at +16 in
+      **514 of 534** anchored payloads and every one of those walks to the epilogue, against at most 10 at any other
+      delta in `+4..+40` and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7
+      and 28 = 16+3+9). Three rules were needed for that peak: the anchor is keyed by (class, function) — and by
+      (class, state, function) for the 93 state-owned bodies, which the class's own `ScriptText` still declares, since
+      one class's declaration is not evidence for a same-named export in another — and the literal's opcode is chosen
+      by the declaration's **return type** (a void function writes `return <expr>;` as a bare `04 0b`; `float` →
+      `04 1e` plus the float; `byte` → `04 24` plus the byte).
       An `if (`/`assert (` body is not an anchor (the condition is emitted before the jump); the walk's depth from
       +16 is **not** a locator either, because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
@@ -5430,6 +5431,25 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, a state's body is anchored from the class's own ScriptText too)
+
+- **The 2,137 `Function` exports owned by a `State` are reachable, and they agree with the class-owned peak.**
+  A state's body is not the class declaration, so the class-scoped key skipped them; but the class's `ScriptText`
+  carries the `state <name> { ... }` block, and keying by (class, state, function) gives **93 anchored payloads, 92
+  at `name_end+16`, all 92 walking**, 1 with no match (an empty body). With the 441 class-owned payloads: **534
+  anchored, 514 at +16 and all 514 walking**, at most 10 at any other delta in `+4..+40`, 0 at payload offset 0, and
+  the dword at `name_end+12` equal to the script's length in **512 of 514**.
+- **The off-by-the-block-offset bug is the shape a false negative takes.** The first cut handed
+  `first_statement_kind` an index into the *class* text (`m.end() - block_offset`) while iterating a spliced state
+  body, so it read the wrong `{`: the population fell to 93 with a flat histogram — 57 at +16, then hits at +18, +20,
+  +21, +25, +27…+39 and 49 with no match at all — which reads exactly like "a state's body does not follow the
+  class's layout". Offsets inside a spliced body are already relative to it.
+- **What is left is named.** 13 payloads carry the expected bytes at no delta (4 compile empty, 8 open with `07`, 1
+  with `04 82`), 31 declarations are made twice under one key, and 10 have a return type with no measured rule.
+- Tool (`--start-anchor` keyed by class, state and return type) + `docs/BYTECODE.md` "Where the script starts" +
+  `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
+
 
 ### Execution notes (2026-11-12, the anchor was mispaired by name, and the return type chooses the literal)
 
