@@ -1050,6 +1050,32 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the 106 hits are 55 calls: a second decoder corrects the first in both directions)
+
+- **The narrow boundary test was wrong both ways.** `tools/vcall-receiver.py` now runs `objdump -D -b binary -m
+  i386 -M intel` over each site's function start and records its verdict per row (`oracle`: `agree` / `spans`),
+  because one decoder's "an instruction ends here behind a chain" was neither necessary nor sufficient. **8 hits
+  were accepted** as boundaries where the `ff` is the last byte of a `lea`'s displacement -- at `0x002d113c` the
+  `lea ecx,[ebp-0x15c]` bytes decode as `add [ebp-0x15b73],ecx`, which lands on the site behind a chain of
+  wrong-length decodes -- and **15 were rejected** where a byte the narrow decoder does not know broke the chain in
+  front of a real call. The 8 `unread` rows of the previous note are the first group: they are displacement bytes,
+  not a decoder gap, and the backward walk that note described as carrying 66 rows never supplied a receiver.
+- **55 of 106 are calls, and every one dispatches a vtable on the object's own first dword.** The oracle's listing
+  starts an instruction at the site in 55 rows, and it is `call DWORD PTR [reg+0x4c]`/`[reg+0x50]` in all 55. The
+  other 51 sit inside a `lea`'s displacement and **all 51 are slot 20**: every slot-19 hit (31) is a call, so
+  `+0x4c` is the specific displacement and `+0x50` the noisy one. The read now covers all 55 -- **53 receiver =
+  `mov reg,[reg2]`** (24 through `ecx`, 14 `esi`, 8 `eax`, 4 `edi`, 3 `ebx`), **2 = `mov reg,[ebp]`**, **0
+  unread** -- and all 55 decode from the function's own start, so the receiver is the last write to the register on
+  the way in.
+- **The control is the rows the narrow path already read.** On the 40 rows whose narrow sweep landed exactly on the
+  call, the oracle sweep picks the same defining instruction in **40 of 40** and the same source shape, so the 15
+  recovered rows are read the way the 40 always were.
+- Tool (`tools/vcall-receiver.py`: `parse_objdump`, `written_regs`, `oracle_sweep`, `objdump_read`, the `oracle`
+  column, `--oracle`/`--no-oracle`, and selftest cases for a spanned site, an oracle-only sweep and an unwritten
+  register) + `inventory/vcall_receiver_sites.csv` regenerated (106 rows) + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. What is left is the object pointer's own provenance (`this` / argument / field / local),
+  and the run-time class, which no boot on a stock disc can reach.
+
 ### Execution notes (2026-11-12, the 106 pattern hits are 48 calls, and every one is a vtable dispatch)
 
 - **Half the census was displacement bytes.** `tools/vcall-receiver.py` (`inventory/vcall_receiver_sites.csv`,

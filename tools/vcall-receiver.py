@@ -25,17 +25,29 @@ window that decodes to nothing is `unread` and keeps its bytes, so a silent deco
     python3 tools/vcall-receiver.py --xbe DUMP/default.xbe -o inventory/vcall_receiver_sites.csv
     python3 tools/vcall-receiver.py --check       # synthetic bytes, no dump, writes nothing
 
-The decoder is deliberately narrow -- the 32-bit integer mov/lea/pop/immediate/arith forms and the
-call forms -- rather than a disassembler: this file ships no dependency, and an opcode it does not
-know makes a row `unread` instead of guessing a length.
+**A second, independent decoder decides the boundary.** The narrow decoder below matches the byte pattern
+with its own instruction lengths, and an instruction that *ends* at the site is not proof: at `0x2d113c`
+the bytes `ff 51 50` are the tail of a `lea ecx,[ebp-0x15c]` displacement, and a wrong-length decode of
+that `lea` (`add [ebp-0x15b73],ecx`) lands on the site with a chain of wrong-length decodes behind it, so
+the three-link test passes. `objdump` (`-D -b binary -m i386`, no dump needed) decodes the same bytes from
+the function's own start and says whether an instruction starts at the site, spans it, or its own sweep
+desynced before it. The verdict is recorded per row (`oracle`), the oracle also supplies the sweep for the
+receivers the narrow decoder cannot reach (`oracle_sweep`), and `--no-oracle` reproduces the old reading.
+The decoder is deliberately narrow -- the 32-bit integer mov/lea/pop/immediate/arith forms and the call
+forms -- rather than a disassembler: an opcode it does not know makes a row `unread` instead of guessing,
+and it is the oracle, not this file, that guarantees a boundary.
 
 Addresses and counts only: nothing here carries game data.
 """
 import argparse
 import csv
 import os
+import re
+import shutil
 import struct
+import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -44,7 +56,8 @@ SITES = os.path.join(ROOT, "inventory", "vcall_dispatch_sites.csv")
 TABLES = os.path.join(ROOT, "inventory", "class_table_slot_pairs.csv")
 OUT = os.path.join(ROOT, "inventory", "vcall_receiver_sites.csv")
 HEADER = ["site_va", "slot", "reg", "function", "defining_va", "bytes", "form", "source",
-          "base", "disp", "value", "value_kind", "candidates", "walk", "aligned"]
+          "base", "disp", "value", "value_kind", "candidates", "walk", "aligned", "oracle",
+          "oracle_form"]
 
 WINDOW = 24
 REGS = ["eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"]
@@ -429,6 +442,103 @@ def decode(code, i):
     return None
 
 
+OBJDUMP_LINE = re.compile(r"^\s*([0-9a-f]+):\t(.*)$")
+DEST_FIRST = set("mov lea movzx movsx movsxd add sub and or xor adc sbb imul shl sal shr sar rol ror "
+                 "rcl rcr inc dec neg not pop xchg bswap cmpxchg".split())
+SIZE_PTR = re.compile(r"^(BYTE|WORD|DWORD|QWORD|XMMWORD|TBYTE|FWORD) PTR ")
+CALL_CLOBBER = {"eax", "ecx", "edx"}
+
+
+def parse_objdump(text):
+    """(instructions, desync addresses) from an `objdump -D` listing: (va, length, text, bytes)."""
+    insns, desync = [], []
+    for line in text.splitlines():
+        m = OBJDUMP_LINE.match(line)
+        if not m:
+            continue
+        va, body = int(m.group(1), 16), m.group(2)
+        fields = body.split("\t")
+        hexs = fields[0]
+        mnem = (fields[1] if len(fields) > 1 else fields[0]).strip()
+        if mnem.startswith(".byte"):
+            desync.append(va)
+            continue
+        toks = [t for t in hexs.split() if re.fullmatch(r"[0-9a-f]{2}", t)]
+        insns.append((va, len(toks), mnem, hexs.strip()))
+    return insns, desync
+
+
+def written_regs(insn):
+    """The 32-bit GPRs an objdump instruction writes (Intel syntax); nothing is guessed for SSE."""
+    mnem, _, rest = insn[2].partition(" ")
+    op = mnem.lower()
+    if op in ("call", "callq"):
+        return set(CALL_CLOBBER)
+    if op in ("mul", "div", "idiv"):
+        return {"eax", "edx"}
+    if op in ("cdq", "cwd"):
+        return {"edx"}
+    if op.startswith(("cmov", "set", "f", "movs", "movap", "movd", "movq", "pxor", "pand", "por")):
+        return set()
+    rest = rest.strip()
+    if not rest:
+        return set()
+    ops = [o.strip() for o in rest.split(",")]
+    first = SIZE_PTR.sub("", ops[0])
+    out = set()
+    if op in DEST_FIRST:
+        if first in REGS:
+            out.add(first)
+        if op == "xchg" and len(ops) > 1 and ops[1] in REGS:
+            out.add(ops[1])
+    return out
+
+
+def oracle_sweep(insns, site_va, reg):
+    """The last instruction before the site that writes `reg`, from an objdump listing.
+
+    A linear walk over the oracle's own starts: unlike the narrow sweep this cannot desync, because
+    objdump decoded every byte between the function's start and the site. `None` means the register
+    is never written on the way in -- the receiver is the value passed in.
+    """
+    writer, steps = None, 0
+    for insn in insns:
+        if insn[0] >= site_va:
+            break
+        steps += 1
+        if reg in written_regs(insn):
+            writer = insn
+    return writer, steps
+
+
+def objdump_read(exe, blob, base_va, lo_off, site_off, site_va):
+    """What the independent decoder says about the site: agree / spans / desync / none.
+
+    Returns (verdict, instructions, text at the site or of the instruction that spans it). A `.byte`
+    before the site means objdump's own sweep lost alignment, so its verdict is not evidence there
+    and the row keeps the narrow decoder's reading.
+    """
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as fh:
+        fh.write(blob[lo_off:min(site_off + 16, len(blob))])
+        path = fh.name
+    try:
+        out = subprocess.run([exe, "-D", "-b", "binary", "-m", "i386", "-M", "intel",
+                              "--adjust-vma=0x%x" % (base_va + lo_off), path],
+                             capture_output=True, text=True, check=False).stdout
+    finally:
+        os.unlink(path)
+    insns, desync = parse_objdump(out)
+    if any(va < site_va for va in desync):
+        return "desync", insns, ""
+    here = [i for i in insns if i[0] == site_va]
+    if here:
+        return "agree", insns, here[0][2]
+    cont = [i for i in insns if i[0] < site_va < i[0] + i[1]]
+    if cont:
+        return "spans", insns, cont[0][2]
+    return "none", insns, ""
+
+
 def sweep(blob, fn_off, site_off, limit=8000):
     """Linear sweep from the function's start to the call, tracking the last write of each register.
 
@@ -531,13 +641,15 @@ def spanning(blob, off):
     return None
 
 
-def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None):
-    """One row: whether the site is an instruction boundary, and what loads the receiver there."""
+def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None, oracle=None):
+    """One row: whether the site is a boundary (a disagreement between the decoders is named), and
+    what loads the receiver there. `oracle` is (verdict, instructions, text) from `objdump_read`."""
     off = site_va - base_va
+    verdict, oracle_insns, oracle_text = oracle if oracle else ("", [], "")
     row = {"site_va": "0x%08x" % site_va, "reg": reg, "defining_va": "",
            "bytes": blob[max(0, off - WINDOW):off].hex(" "), "form": "", "source": "unread",
            "base": "", "disp": "", "value": "", "value_kind": "", "candidates": "0", "walk": "0",
-           "aligned": "no"}
+           "aligned": "no", "oracle": verdict, "oracle_form": oracle_text}
     # A `call [reg+0x4c]` is a byte pattern, so it also matches the tail of some other instruction's
     # displacement. An instruction that *ends* exactly at the site is what makes it a real boundary.
     ends = [s for s in range(max(0, off - 15), off)
@@ -547,7 +659,18 @@ def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None):
     # A real boundary has a chain of instruction ends behind it; require three links.
     if ends and max(chain_links(blob, s, 4) for s in ends) < 3:
         ends = []
-    if not ends:
+    # The narrow decoder can also be talked into a chain of wrong-length decodes (0x2d113c: the
+    # `lea`'s own bytes read as `add [ebp-0x15b73],ecx`), so the independent decoder decides.
+    if verdict == "spans":
+        cont = [i for i in oracle_insns if i[0] < site_va < i[0] + i[1]]
+        row["source"] = "not-a-boundary"
+        if cont:
+            va, length, text, hexs = cont[0]
+            row["defining_va"] = "0x%08x" % va
+            row["bytes"] = blob[va - base_va:va - base_va + length].hex(" ")
+            row["form"] = text
+        return row
+    if not ends and verdict != "agree":
         span = spanning(blob, off)
         row["source"] = "not-a-boundary"
         row["form"] = span[1].text if span else ""
@@ -570,6 +693,25 @@ def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None):
                 row["form"] = "(%s as passed in)" % reg
                 row["defining_va"] = "0x%08x" % fn_va
                 return row
+    if ins is None and verdict == "agree" and fn_va is not None and oracle_insns:
+        # the narrow decoder could not follow the stream to the site; walk the oracle's own starts
+        writer, steps = oracle_sweep(oracle_insns, site_va, reg)
+        row["walk"] = str(steps)
+        row["aligned"] = "yes"
+        if writer is None:
+            row["source"] = "entry-register"
+            row["form"] = "(%s as passed in)" % reg
+            row["defining_va"] = "0x%08x" % fn_va
+            return row
+        start = writer[0] - base_va
+        row["defining_va"] = "0x%08x" % writer[0]
+        row["bytes"] = blob[start:start + writer[1]].hex(" ")
+        ins = decode(blob, start)
+        if ins is None:
+            # the oracle read the boundary and the writer, this decoder not the instruction's shape
+            row["form"] = writer[2]
+            row["source"] = "unread"
+            return row
     if ins is None:
         got = backward(blob, off, reg)
         if got is None:
@@ -651,6 +793,48 @@ def selftest():
     row = analyse(_StubXbe(), {}, b"\x0f\x0b\x0f\x0b\xff\x52\x4c", base, base + 4, "edx")
     if row["source"] != "not-a-boundary":
         bad.append("a site with no chain behind it read as %s" % row["source"])
+
+    # the oracle: its listing parses to (va, length, text), it names what each instruction writes, and
+    # a site it says is inside an instruction is `not-a-boundary` even where the narrow chain passes
+    listing = (" 1000:\t55                   \tpush   ebp\n"
+               " 1001:\t8b ec                \tmov    ebp,esp\n"
+               " 1003:\t8b 06                \tmov    eax,DWORD PTR [esi]\n"
+               " 1005:\tff 50 4c             \tcall   DWORD PTR [eax+0x4c]\n"
+               " 1008:\t8d                   \t.byte 0x8d\n")
+    insns, desync = parse_objdump(listing)
+    if [(va, n) for va, n, _t, _b in insns] != [(0x1000, 1), (0x1001, 2), (0x1003, 2), (0x1005, 3)]:
+        bad.append("objdump listing parsed as %r" % (insns,))
+    if desync != [0x1008]:
+        bad.append(".byte line not recorded as a desync: %r" % (desync,))
+    if written_regs(insns[2]) != {"eax"} or written_regs(insns[0]) or written_regs(insns[3]) != {"eax", "ecx", "edx"}:
+        bad.append("written_regs: %r %r %r" % (written_regs(insns[0]), written_regs(insns[2]),
+                                               written_regs(insns[3])))
+    writer, _steps = oracle_sweep(insns, 0x1005, "eax")
+    if writer is None or writer[0] != 0x1003:
+        bad.append("oracle sweep picked %r" % (writer,))
+    if oracle_sweep(insns, 0x1005, "edi")[0] is not None:
+        bad.append("oracle sweep invented a writer for edi")
+
+    # `spans`: the site is the last displacement byte of a `lea`, so it is not a call at all
+    spans_blob = b"\x90\x90\x90\x90" + b"\x8d\x8d\xa4\xfe\xff\xff" + b"\x51\x50"
+    spans_insns = [(base + 4, 6, "lea    ecx,[ebp-0x15c]", "8d 8d a4 fe ff ff")]
+    row = analyse(_StubXbe(), {}, spans_blob, base, base + 9, "ecx",
+                  oracle=("spans", spans_insns, "lea    ecx,[ebp-0x15c]"))
+    if row["source"] != "not-a-boundary" or row["oracle_form"] != "lea    ecx,[ebp-0x15c]":
+        bad.append("a spanned site read as %s %r" % (row["source"], row["oracle_form"]))
+    # `agree` where the narrow sweep cannot follow the stream: the oracle sweep still reads it
+    gap_blob = b"\xc4\x01\x90\x90\x8b\x06\xff\x50\x4c"
+    gap_insns = [(base, 2, "les    eax,[ecx]", "c4 01"), (base + 2, 1, "nop", "90"),
+                 (base + 3, 1, "nop", "90"), (base + 4, 2, "mov    eax,DWORD PTR [esi]", "8b 06")]
+    row = analyse(_StubXbe(), {}, gap_blob, base, base + 6, "eax", fn_va=base,
+                  oracle=("agree", gap_insns, "call   DWORD PTR [eax+0x4c]"))
+    if row["source"] != "object-head" or row["defining_va"] != "0x%08x" % (base + 4):
+        bad.append("oracle sweep row read as %s %s" % (row["source"], row["defining_va"]))
+    # ...and a register the oracle never sees written is the value passed in, not "unread"
+    row = analyse(_StubXbe(), {}, gap_blob, base, base + 6, "edi", fn_va=base,
+                  oracle=("agree", gap_insns, "call   DWORD PTR [edi+0x4c]"))
+    if row["source"] != "entry-register":
+        bad.append("unwritten oracle register read as %s" % row["source"])
     for line in bad:
         print("FAIL " + line)
     if bad:
@@ -671,6 +855,10 @@ def main():
     ap.add_argument("--sites", default=SITES)
     ap.add_argument("--tables", default=TABLES)
     ap.add_argument("-o", "--out", default=OUT)
+    ap.add_argument("--oracle", metavar="PATH",
+                    help="independent decoder used to decide the boundary (default: objdump on PATH)")
+    ap.add_argument("--no-oracle", action="store_true",
+                    help="narrow decoder only: reproduces the pre-oracle reading")
     ap.add_argument("--check", action="store_true",
                     help="synthetic self-test; no dump, writes nothing")
     ap.add_argument("--summary", action="store_true", help="print the histogram only, write nothing")
@@ -680,6 +868,9 @@ def main():
         return 0
     if not args.xbe:
         ap.error("--xbe is required unless --check")
+    exe = None if args.no_oracle else (args.oracle or shutil.which("objdump"))
+    if exe is None and not args.no_oracle:
+        print("no objdump on PATH: falling back to the narrow decoder only", file=sys.stderr)
     from xbe import Xbe  # imported late so --check needs no dump
     xbe = Xbe(args.xbe)
     tables = class_tables(args.tables)
@@ -694,7 +885,13 @@ def main():
                 continue
             blob = xbe.read_va(section.va, section.vsize)
             fn_va = int(site["function_va"], 16) if site.get("function_va") else None
-            row = analyse(xbe, tables, blob, section.va, va, site["reg"], fn_va=fn_va)
+            oracle = None
+            if exe:
+                lo = (fn_va - section.va) if fn_va is not None and fn_va < va \
+                    else max(0, va - section.va - 0x600)
+                oracle = objdump_read(exe, blob, section.va, lo, va - section.va, va)
+            row = analyse(xbe, tables, blob, section.va, va, site["reg"], fn_va=fn_va,
+                          oracle=oracle)
             row["slot"] = site["slot"]
             row["function"] = site["function"]
             rows.append(row)
@@ -716,6 +913,7 @@ def main():
     print("%d .text site(s)" % len(rows))
     print("  slot: " + counts(rows, "slot"))
     print("  source: " + counts(rows, "source"))
+    print("  oracle: " + counts([r for r in rows if r["oracle"]], "oracle"))
     print("  form: " + counts(rows, "form"))
     print("  base: " + counts([r for r in rows if r["base"]], "base"))
     print("  unread %d, aligned from the function start %d, entry-register %d"

@@ -941,6 +941,21 @@ has no window a boot can add -- what would settle it is a typed receiver at one 
 `[reg+0x50]` sites (`inventory/vcall_dispatch_sites.csv`), not another boot.
 
 
+**2026-11-12, corrected by a second decoder: the 106 hits are 55 calls, not 48, and none is unread.** The
+paragraph below counted with one narrow decoder, and that decoder was wrong in both directions. It *accepted* 8
+displacement bytes, because a `lea`'s own bytes decode as an `add` that lands on the site behind a chain of
+wrong-length decodes -- `0x002d113c` is the last byte of `lea ecx,[ebp-0x15c]` -- and it *rejected* 15 real calls,
+because a byte it does not know broke the chain in front of them. `tools/vcall-receiver.py` now runs `objdump` over
+each site's function start (`oracle`: `agree` / `spans`): **55 of the 106 hits are `call DWORD PTR [reg+0x4c|0x50]`**
+and 51 are inside a `lea`'s displacement -- **all 51 in slot 20**, since every slot-19 hit is a call. On the 40 rows
+the narrow sweep already read, the oracle picks the same defining instruction in **40 of 40**. All 55 now read from
+the function's own start: **53 load the receiver from the object's own first dword** (`mov reg,[reg2]`, 24 of them
+through `ecx`, 14 `esi`, 8 `eax`), **2 from a stack local**, **0 unread**, and no site reaches the pair through an
+absolute global or a class table. The question this entry carries is unchanged -- which *class* an arbitrary `[obj]`
+belongs to at run time, which a stock-disc boot cannot answer because the multiplayer/dedicated path never runs --
+and the static half of it is now the object pointer's own provenance (`this`, an argument, a field, a local), which
+the same oracle sweep can read next.
+
 **2026-11-12, and the 106 hits are 48 calls: the rest are displacement bytes.** `tools/vcall-receiver.py`
 (`inventory/vcall_receiver_sites.csv`) reads the instruction that loads the register each `.text` hit dispatches
 through. **58 of the 106 are not instruction boundaries at all** -- at `0x002d0d6e` the `ff` is the last byte of
