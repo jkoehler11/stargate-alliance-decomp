@@ -323,6 +323,9 @@ only because one byte cannot spell 256.
           typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, ...
           where every declarer agrees, the owner's own class agrees in 700 site(s) and differs in 0
 
+`--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name; it writes no CSV
+and exists only to measure how much of the reading the declarations decided (see "The check is a shuffle" below).
+
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in
 the package that declares each ancestor** -- the earlier census only asked its own package, which is why a parent's
@@ -432,9 +435,18 @@ more than 30 of them (offset 4 hits 30, offset 5 hits 16, offset 3 hits 8), so t
 once per package (`source_declarations`) and answers a local's type from it. That takes the untyped locals
 from **628 to 81** and places **504 of the 628**, 80% of them.
 
-**The check is a shuffle.** Permuting the declared types inside each class and re-running the same walk
-collapses `Engine.u`'s local placements from **82 to 13** (and its whole receiver group from 313 to 244), so
-the placements come from the declarations and not from a name that would land on any chain. A local stays
+**The check is a shuffle, and it is a flag: `--calls --shuffle`.** Before the walk, each class's declared types --
+its `local <Type> <Name>;` lines and its declared return types, one pool -- are rotated onto the next name in
+sorted order (`shuffled_source`), so the source keeps the same functions and the same set of type spellings and
+loses only the binding that placed a site. The same walk then reports what survives: **13,258 of 13,507 by-name
+sites name a declaring class as shipped, 12,753 (94.4%) do so shuffled** -- and the part that moves is the part
+the declarations placed. `Engine.u` alone: the receiver group **357 -> 264** and the sites whose receiver is a
+typed local **117 -> 25** (-79%); the whole corpus **2,641 -> 2,123** and its typed-local front **582 -> 80**
+(-86%), with the case-folded placements **33 -> 10** and the call-result placements **72 -> 18** (the 54 lost are
+the ones the callee's declared return type decided). **So a local placement is the declaration doing work about
+six times in seven, and 2,123 receiver placements survive a rotation because the permuted type still names
+*some* class whose chain declares that name** (`ClientMessage`, `GetItemName` and `GetTitle` are on dozens of
+chains) -- the control measures the evidence a declaration adds, not the whole of the reading. A local stays
 untyped by construction when its class ships no `ScriptText`, when neither its class nor any ancestor has a
 declaration for that name in that function, when the class declares the name with two different types, or when
 the declared type is not a class at all. The names from the text are matched **without case**, because the

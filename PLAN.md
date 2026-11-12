@@ -1031,6 +1031,28 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the control is a flag — a shuffled declaration still places 2,123 of the receiver sites)
+
+- **The shuffle is `--calls --shuffle` now, not a paragraph.** `shuffled_source` rotates a class's own declared types
+  (its `local <Type> <Name>;` lines and its return types, one sorted pool) onto the next name before the walk, so the
+  source keeps the same functions and the same type spellings and loses only the binding that placed a site. It
+  writes no CSV, and `--selftest` asserts the rotation moves every value and keeps the pool -- a control that dropped
+  a type would make its own collapse unreadable.
+- **What it measures.** The whole corpus: by-name sites naming a declaring class **13,258 of 13,507 (98.2%)** as
+  shipped, **12,753 (94.4%)** shuffled; the receiver group **2,641 -> 2,123**, the sites fronted by a *typed local*
+  **582 -> 80** (-86%), the case-folded placements **33 -> 10** and the call-result placements **72 -> 18**.
+  `Engine.u` alone: receiver group **357 -> 264**, typed-local front **117 -> 25** (-79%). So a local placement is the
+  declaration deciding about six times in seven.
+- **The survivors are the honest half of the result: 2,123 receiver placements do not move**, because a rotated type
+  still names some class whose chain declares that name (`ClientMessage`, `GetItemName`, `GetTitle` sit on dozens of
+  chains), and the properties, imports and array elements the shuffle never touches stay placed by construction. The
+  control therefore bounds the *marginal* evidence a declaration adds; it does not license the claim that every
+  receiver placement is unique, and the page says so.
+- Tool (`shuffled_source`, `_SHUFFLE` in `class_source`, the `--shuffle` flag and its guard, a selftest) +
+  `docs/BYTECODE.md` + `docs/UNKNOWNS.md`. `inventory/script_calls.csv` is untouched: a control run is not a census.
+- The static call table is dry -- the 41 multi-descendant sites in the residue are a dispatch only the runtime can
+  settle, so the next task is off this table.
+
 ### Execution notes (2026-11-11, the source's own spelling — a name matched without case places 53 sites, and a call result is typed by its callee)
 
 - **A call's result is a receiver, and its type is the callee's declared return type.** `GetOwner().Foo()` carries no
