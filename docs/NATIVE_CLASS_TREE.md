@@ -514,3 +514,48 @@ offsets**, so its 11,497 rows cannot be joined to these six numbers. The two rou
 class layout read the hard way -- a `Serialize` override (slot 11, `0x392b0`) stores and loads its fields at fixed
 offsets -- or a live object's vtable pointer out of a RAM dump, the way `inventory/hud_console_link.csv` names
 `StargateHUD+0x398` as `Console`.
+
+## The live heap: the six offsets belong to 149 classes, and `+0x220` is dominated by a class's function
+
+The static half above ends on a layout, and a boot can read one: `GObjObjects` holds every `UObject`, an object's
+`+0x00` is its class's table, `+0x24` its `UClass` and that class object's `+0x20` its `FName`
+(`tools/xemu/names.py`, measured by `class-tables-live.py`). `tools/xemu/field-objects.py` walks the array, reads the
+six offsets across the whole live heap, and reports per offset which class holds **another live object** there and
+what class it holds (`inventory/field_object_owners.csv`, 779 rows). Measured 2026-11-12 at the title screen:
+**42,128 of 42,137** array entries are plausible objects, every class header read (0 unreadable), 294 blocks /
+19.3 MB / 998 RSP calls.
+
+| offset | sites | owner classes | held classes | largest single population |
+|---|---:|---:|---:|---|
+| `+0x2c` | 28,591 | 78 | 28 | `Function` holds `Function` 7,637 of 8,510 |
+| `+0x4c` | 19,240 | 37 | 27 | `FloatProperty` holds `FloatProperty` 2,036 of 4,402 |
+| `+0x310` | 9,770 | 58 | 27 | `Function` holds `LinkerLoad` 7,904 of 8,496 |
+| `+0x48` | 765 | 58 | 45 | `Package` holds `LinkerLoad` 71 of 332 |
+| `+0x220` | 714 | 38 | 35 | `Class` holds `Function` 533 of 1,004 |
+| `+0x1c` | **0** | 0 | 0 | none |
+
+**A shared displacement is not a shared field, and the heap says so with numbers.** The six offsets resolve to
+**149 distinct owner classes**, and inside one offset two meanings sit side by side: at `+0x2c` a `Shader` holds a
+`Texture` in 107 of 107 objects and a `ColorModifier` holds one in 116 of 116 -- a material's texture slot -- while a
+`FloatProperty` holds another `FloatProperty` in 2,026 of 4,402, a sibling link in a property list and not a shader's
+property. So the 28 sites' "six offsets" are six *displacements* that appear in many unrelated layouts; a class
+layout is what turns one into a name, and this artifact names classes, not properties.
+
+**`+0x220` has a dominant population, and it is a class object holding a function.** 539 of the offset's 714 sites
+hold a `Function`, and 533 of those are `Class` -- a `UClass`, whose `+0x220` is a function pointer, at 533 of the
+1,004 live class objects. Behind it come a GUI widget chain that is **complete** (`GUIButton` 10 of 10, and nine
+more `GUI*` page and widget classes at 1 of 1 or 2 of 2) and `AnimNotify_Script` holding a
+`LinkerLoad` in 45 of 63. Every other row of the 71 is one or two objects out of thousands, which is what two
+unrelated fields sharing a displacement looks like. The eight `[eax+0x220]` sites read that slot off an object that
+arrives as an argument, so the class carrying it is one of **38 candidates**, headed by `Class` at eight times the
+next population.
+
+**`+0x1c` is the negative the static half predicted**: not one live object at the title screen holds a live `UObject`
+at `+0x1c`, so the two `+0x1c` sites read a dword that is either not an object pointer or is only filled later
+(a mission's actor classes are not in this walk). The two `+0x2c` sites, by contrast, sit in a displacement that 78
+classes populate.
+
+**What this artifact cannot say.** A title-screen heap is not a level's: 42,128 objects with no mission loaded and
+34 blocks unmapped, so the classes a mission instantiates are absent. And "the same displacement in two classes" is
+not "the same property" -- each row is a candidate, which is why the eight-site group is reported as 38 classes
+rather than one name. The next static read is which of them the callers at `0x335007`-`0x337318` pass.
