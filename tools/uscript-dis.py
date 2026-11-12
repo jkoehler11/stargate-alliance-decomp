@@ -10,6 +10,7 @@ a label table, and so on. This tool applies that table to a byte string and prin
     python3 tools/uscript-dis.py --file script.bin
     python3 tools/uscript-dis.py --selftest            # dump-free; what `make ci` runs
     python3 tools/uscript-dis.py --payloads DUMP/.../System/Engine.u
+    python3 tools/uscript-dis.py --sizefield DUMP/.../System
 
 `--payloads` is the measurement behind `docs/UNKNOWNS.md` U13: it reports where a `Function` export's payload
 stops looking like a header (the `FunctionFlags` dword at `payload_end-4`), where the script's own epilogue
@@ -2946,6 +2947,116 @@ def compare_report(path_a, path_b, table, out=None):
     return 0
 
 
+def sizefield_report(path, rows=0):
+    """What the dword 16 bytes before a script is: the script's size with every compact index widened to four.
+
+    `operand_spans` carries the fact this reads: the loader widens a compact index operand to four bytes on the way
+    into memory (measured on `StargateHUD.DrawOrderTarget`'s log call, `b8 2a` in the package and `a0 1e 26 01` in
+    the guest). A size the compiler wrote *before* that widening is therefore
+
+        len(script) + sum(4 - width)  over the script's index operands
+
+    and that is the field, exactly, in **11,485 of 11,602 walked payloads (98.99%)** -- while only 2,141 payloads
+    carry the *stored* length there. So the dword is not a length a reader can locate an end with (the loader uses
+    `SerialSize`), it is the size the script has **in memory**, and it is a usable check on an extent instead: any
+    end a walk reports must satisfy it. The residue is 117 payloads, 97 above the prediction and 20 below, each
+    named by `--lists` with the widths of its index operands.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    table = Table()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    total = walked = exact = stored = 0
+    sign = collections.Counter()
+    height = collections.Counter()
+    per_pkg = []
+    residue = []
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        n_pkg = n_walk = n_exact = 0
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            off, last, aligned = 0, None, False
+            for _ in range(8):
+                try:
+                    last, off = read_index(pay, off)
+                except IndexError:
+                    break
+                if last == e["name"]:
+                    aligned = True
+                    break
+            if not aligned:
+                continue
+            if n >= 10 and pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            start = off + 16
+            if start > end:
+                continue
+            body = pay[start:end]
+            want = struct.unpack_from("<I", pay, off + 12)[0]
+            total += 1
+            n_pkg += 1
+            if want == len(body):
+                stored += 1
+            try:
+                spans = operand_spans(body, table)
+            except (Refused, IndexError, struct.error):
+                continue
+            walked += 1
+            n_walk += 1
+            widths = [b - a for a, b, k in spans if k == "index"]
+            predicted = len(body) + sum(4 - w for w in widths)
+            if predicted == want:
+                exact += 1
+                n_exact += 1
+            else:
+                sign["dword larger" if want > predicted else "dword smaller"] += 1
+                height[want - predicted] += 1
+                if len(residue) < 4000:
+                    owner = pkg.exports[e["outer"] - 1] if e["outer"] > 0 else None
+                    residue.append((os.path.basename(one),
+                                    pkg.class_name_of(owner) if owner is not None else "?",
+                                    pkg.name(e["name"]), len(body), want, predicted, want - predicted,
+                                    len(widths), dict(sorted(collections.Counter(widths).items()))))
+        per_pkg.append((os.path.basename(one), n_pkg, n_walk, n_exact))
+
+    name = os.path.basename(path.rstrip(os.sep)) or path
+    print("%s: %d payload(s) with a located epilogue, %d walked" % (name, total, walked))
+    if not walked:
+        return 1
+    print("  dword@name_end+12 == the script with every index widened to 4 bytes: %d of %d (%.2f%%)"
+          % (exact, walked, 100.0 * exact / walked))
+    print("  dword@name_end+12 == the stored script length: %d of %d (%.2f%%)"
+          % (stored, walked, 100.0 * stored / walked))
+    if os.path.isdir(path):
+        print("  per package (payloads / walked / widened match):")
+        for pkgname, t, w, x in per_pkg:
+            if t:
+                print("    %-22s %5d %5d %5d%s" % (pkgname, t, w, x, "" if x == w else "   <- residue"))
+    print("  residue by sign: %s; by the difference (dword - widened length): %s"
+          % (dict(sign.most_common()), dict(sorted(height.items()))))
+    if rows and residue:
+        print("  named residue (%d row(s), up to %d named):" % (len(residue), min(rows, len(residue))))
+        for pkgname, cls, fn, slen, want, predicted, diff, count, widths in residue[:rows]:
+            print("    %-16s %-26s %-30s script %-5d dword %-7d predicted %-6d %+d"
+                  "  %d index operand(s) by width %s"
+                  % (pkgname, cls, fn, slen, want, predicted, diff, count, widths))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
@@ -2984,9 +3095,11 @@ def main():
     ap.add_argument("--scan-lo", type=int, default=8, help="first delta --start-scan tries (default 8)")
     ap.add_argument("--scan-hi", type=int, default=40, help="last delta --start-scan tries (default 40)")
     ap.add_argument("--lists", type=int, default=0, metavar="N",
-                    help="with --start-anchor: name up to N rows of each residue (unmatched payloads, declarations "
-                         "dropped as made twice, return types with no measured rule) instead of counting them")
+                    help="with --start-anchor or --sizefield: name up to N rows of each residue instead of counting them")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
+    ap.add_argument("--sizefield", metavar="PATH",
+                    help="what the dword 16 bytes before a script counts: the script with every "
+                         "compact index widened to four bytes")
     args = ap.parse_args()
     if args.shuffle and not args.calls:
         ap.error("--shuffle is a control on --calls: give it a package or a System directory")
@@ -3020,6 +3133,8 @@ def main():
         return class_refs_report(args.class_refs, Table(), args.out)
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
+    if args.sizefield:
+        return sizefield_report(args.sizefield, args.lists)
     if args.selftest:
         return selftest()
     if args.payloads:

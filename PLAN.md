@@ -221,7 +221,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       content — `--start-anchor`, the first opcode the body's own `ScriptText` declaration fixes, sits at +16 in
       **466 of 466** anchored payloads and every one of those walks to the epilogue, 0 at payload offset 0 and only
       `+18` (10 second occurrences of the same bytes) anywhere else in `+4..+40` — and by the payload floor (25 bytes,
-      with spikes at 26 = 16+3+7 and 28 = 16+3+9). Five rules were needed for that peak: the anchor is keyed by
+      with spikes at 26 = 16+3+7 and 28 = 16+3+9). **Its last field is identified too**: the dword at
+      `name_end+12` is the script's size **with every compact index widened to four bytes** (`--sizefield`, exact
+      in 11,485 of 11,602 walked payloads, 98.99%, against 2,141 that carry the stored length), so it is an
+      extent check rather than a length field, and there is nothing left to find in the header.
+      Five rules were needed for that peak: the anchor is keyed by
       (class, function) — and by (class, state, function) for the state-owned bodies, which the class's own
       `ScriptText` still declares, since one class's declaration is not evidence for a same-named export in another —
       the literal's opcode is chosen by the declaration's **return type** (a void function writes `return <expr>;` as
@@ -5434,6 +5438,24 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, U13's last field is the script's size in memory)
+
+- **The dword at `name_end+12` counts the script's bytes with every compact index widened to four.** A new
+  `--sizefield` mode reads each payload's script, walks it with the committed table, and compares the field with
+  `len(script) + sum(4 - width)` over the script's index operands: **11,485 of 11,602** walked payloads match exactly
+  (98.99%) against **2,141** (18.45%) that equal the stored length. The reading comes from a fact the tool already
+  carried — the loader widens a compact index to four bytes on the way into memory — so this is not a second guess at
+  the same field: the anchored population's `return` bodies match only because they have no operand to widen.
+- **The negative worth carrying: there is no length field in front of a script, and no single operand class explains
+  the residue.** 117 payloads differ (97 above, 20 below, mostly ±1..±9, four with a dword in the millions where the
+  header decode is ambiguous); tabulating every pattern item's count per residue row against the difference fits
+  nothing at any small coefficient, so the residue is individual token encodings rather than a second rule.
+- **What the field buys:** an extent check that does not depend on the opcode table — a candidate end for a script
+  must satisfy it — which is what 3.8 can score a compiled script against. It is not a locator: the loader uses
+  `SerialSize`, which is why 464 of 466 equal the stored length only on operand-free bodies.
+- Tool (`--sizefield`, reusing `operand_spans`) + `docs/BYTECODE.md` "The dword before the script is its size in
+  memory" + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
 
 ### Execution notes (2026-11-12, the anchor's residue was a declaration with no body)
 

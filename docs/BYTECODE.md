@@ -272,8 +272,40 @@ implementation lives in a state, which is why their payload is an empty script �
 (**82 of 82 empty, 0 carrying a script**). The four "empty body" payloads an earlier pass listed as a residue are in
 this group, and their `04 0b 47` was the compiler being right. The dword at `name_end+12` is the script's length in
 **464 of the 466** rows whose start is +16 (residues 14 and 18) — a statement about the trivial `return` bodies this
-population is made of: corpus-wide the same dword is *larger* than the script far more often than it is equal, so the
-field is equal here and still unidentified.
+population is made of: corpus-wide the same dword is *larger* than the script far more often than it is equal, so
+the field is equal here only because these bodies have no operand to widen -- it is identified below, "The dword
+before the script is its size in memory".
+
+## The dword before the script is its size in memory (U13, 2026-11-12)
+
+`python3 tools/uscript-dis.py --sizefield System` closes the fourth word of the fixed run. It is **the script's size
+with every compact index operand widened to four bytes**, i.e. `len(script) + sum(4 - width)` over the script's own
+index operands:
+
+    System: 11687 payload(s) with a located epilogue, 11602 walked
+      dword@name_end+12 == the script with every index widened to 4 bytes: 11485 of 11602 (98.99%)
+      dword@name_end+12 == the stored script length: 2141 of 11602 (18.45%)
+
+The reading is not a guess about the field but a consequence of a measured one: the loader widens exactly those
+operands on the way into memory (the note above `operand_spans`: `StargateHUD.DrawOrderTarget`'s log call is `b8 2a`
+in the package and `a0 1e 26 01` in the guest), so a size the compiler wrote *before* that widening is larger than
+the stored script by three bytes per one-byte index and two per two-byte one. That is why the difference tracks the
+script's index widths rather than its length — and why the anchored population's trivial `return` bodies, which have
+no operands to widen at all, are exactly where the two coincide (464 of the 466).
+
+Three consequences, and two things not to redo:
+
+* **It is not a locator, and there is no length field to find in front of a script.** Only 18.45% of payloads carry
+  the stored length there, and the loader reads the payload's `SerialSize` anyway.
+* **It is a check on an extent.** Any candidate end for a script must satisfy the identity — a second test beside
+  "the walk reaches the epilogue", and the only one that does not depend on the opcode table. It is what a rebuild
+  (3.8) can score a compiled script against.
+* **The residue is 117 payloads of 11,602** (97 above the prediction, 20 below), differences of ±1..±9 with four
+  payloads whose dword is in the millions (the header decode is ambiguous there, not a different field).
+  **No single operand class explains them**: every pattern item's count per residue row was tabulated against the
+  difference, and no class times any small coefficient fits even the 113 rows under ±64. So the residue is a handful
+  of individual token encodings rather than a second rule. `--sizefield --lists N` names each row with the widths of
+  its index operands for the session that wants to chase one.
 
 ## The shipped scripts, as disassembled
 
@@ -683,14 +715,18 @@ page does not yet describe, and the census records that instead of guessing at i
      remainder is the opcode table's coverage, which the `index` correction above cut from 4,022 refusals to 81.
   3. **What the dword 16 bytes past the name is.** It is what a `ScriptStorageSize` field would carry, and it is
      **not that**: against the physical script length it is larger in **9,298** payloads and equal in **2,052**, never
-     smaller. So the fourth word of the run is some other field, and a size field is not needed anyway — the loader
-     knows the payload's `SerialSize`, which fixes the script's end without reading a length.
+     smaller. **Updated 2026-11-12:** the fourth word is identified — it is the script's size *in memory*, with
+     every compact index operand widened to four bytes (`--sizefield`, "The dword before the script is its size in
+     memory") — so it is larger than the stored script wherever the script has an index operand. The conclusion
+     stands and for the same reason: no length field is needed there, because this one is not the stored length;
+     the loader knows the payload's `SerialSize`, which fixes the script's end without reading a length.
 
   **So the script starts 16 bytes past `FriendlyName`, and every count in the earlier sessions can be read against
   that.** What the four words of the run are is now the open question, together with the table's unnamed opcodes: the
   header's encoded part is a fixed four values for a `Class` and five for a `Function` whatever their child count
   (`--header` reports the per-position classification), which is why the per-child `Children`-chain model this
-  document used to propose is dead — and its +1/+2/+3 residuals were the compact encoding's widths.
+  document used to propose is dead — and its +1/+2/+3 residuals were the compact encoding's widths. The fourth
+  word of that run is no longer open (it is the in-memory size, above); what the first three encode is.
 * **Operand semantics -- measured, and the receiver is read from the expression in front of the call.** What the
   reference operands *name* is measured per opcode (`--resolve`, above): objects for the variable, cast and
   final-call tokens, the name table for the virtual and global calls and `NameConst`. The `0x05` switch's byte is
