@@ -418,31 +418,43 @@ dispatches through, and the first thing that measures is how many of the hits ar
 | measurement | value |
 |---|---|
 | `.text` pattern hits | 106 (slot 19: 31, slot 20: 75) |
-| not an instruction boundary | **58** (slot 19: 12, slot 20: 46) |
-| real dispatch sites | **48** |
-| receiver = `[obj]`, the object's first dword | **38** |
+| not an instruction boundary | **51** (slot 19: 0, slot 20: 51) |
+| real dispatch sites | **55** (slot 19: 31, slot 20: 24) |
+| receiver = `[obj]`, the object's own first dword | **53** |
 | receiver = a stack local (`mov reg,[ebp]`) | 2 |
-| receiver unread | 8 |
+| receiver unread | **0** |
+| read from the function's own start (`aligned`) | 55 of 55 |
 
 **A `0xFF` at `+0x4c`/`+0x50` is often a displacement byte, not an opcode.** At `0x002d0d6e` the bytes are
 `8d 95 e8 fb ff ff 52 50` -- `lea edx,[ebp-0x418]`, `push edx`, `push eax` -- and the `ff` the census read as
-`call [edx+0x50]` is the last byte of that `lea`'s displacement. The tell is that no instruction ends at the site
-*with a chain of instruction ends behind it*, so a single landed decode is not accepted as proof: the row keeps
-the instruction that spans it (`not-a-boundary`), and the 58 are named rather than dropped. Slot 20 is the worse
-half (46 of 75 against 12 of 31), the same asymmetry the seven library sections showed -- `+0x50` is the noisy
-displacement and `+0x4c` the specific one.
+`call [edx+0x50]` is the last byte of that `lea`'s displacement. **51 of the 106 hits are that shape and all 51 are
+slot 20**: every slot-19 hit (31) is a call, so `+0x4c` is the specific displacement and `+0x50` the noisy one --
+the asymmetry the seven library sections showed, now measured on this pair.
 
-**Every real site is a vtable dispatch on the object's own first dword.** 38 of the 48 load the receiver with a
-two-byte `mov reg,[reg2]` -- `eax,[ecx]` 8, `eax,[esi]` 6, `edx,[ecx]` 6, `edx,[eax]` 6, `edx,[esi]` 5, then
-`eax,[edi]` 3 and the rest once each -- so the call is `call [[obj]+0x4c]`: slot 19 or 20 of the vtable the object
-points at, and 14 of the 38 dispatch through `ecx`, the member-function `this`. Two more read the receiver from
-`[ebp]` (a stack local). No site loads it from an absolute global and none reads a table named in
-`inventory/class_table_slot_pairs.csv`, which is what makes slots 19/20 a C++ virtual pair of the 165
-`Actor`-subtree tables rather than a separate `UClass` dispatch path.
+**Two decoders, because the narrow one is wrong in both directions.** The first pass accepted a boundary only when
+an instruction *ended* at the site behind a chain of instruction ends, and that test is neither necessary nor
+sufficient. At `0x002d113c` the `ff` is the last byte of `lea ecx,[ebp-0x15c]`, and the `lea`'s own bytes decode as
+`add [ebp-0x15b73],ecx`, which lands on the site with a chain of wrong-length decodes behind it -- so 8 displacement
+bytes were accepted (the 8 rows the first pass could not read beyond); in 15 other functions a byte the narrow
+decoder does not know breaks the chain in front of a real call -- so 15 calls were rejected. `objdump -D -b binary
+-m i386 -M intel` over each site's function start settles both, and the verdict is kept per row (`oracle`):
+**55 of the 106 hits are an instruction start where a `call DWORD PTR [reg+0x4c|0x50]` sits**, and the other 51 are
+inside a `lea`'s displacement. The control is the 40 rows the narrow sweep already read: the oracle picks the same
+defining instruction in **40 of 40**.
 
-**What the read costs, honestly.** 40 rows decode from the function's own start (`aligned`), and that is the
-strong case: the linear sweep must land *exactly* on the call, so the receiver is the last write to that register
-on the way in. The other 66 fall back to a backward walk from the site, and 8 stay `unread` with their bytes kept
--- `FUN_002d1030`, `FUN_002d2cd0`, `FUN_0033ffee`, `FUN_0034016f`, `FUN_00359d19`, `FUN_0035f650`, `FUN_0036c7ea`,
-`FUN_003dfe20` -- every one a function whose instruction stream stops decoding from its start, so the sweep cannot
-be trusted and the walk finds no write to the register at all. `unread` is reported, never read as "no receiver".
+**Every real site is a vtable dispatch on the object's own first dword.** 53 of the 55 load the receiver with a
+two-byte `mov reg,[reg2]` -- `eax,[ecx]` 12, `edx,[ecx]` 12, `edx,[esi]` 8, `eax,[esi]` 6, `edx,[eax]` 6,
+`eax,[edi]` 3, `ecx,[eax]` 2, `edx,[ebx]` 2, `eax,[ebx]` and `edx,[edi]` 1 each -- so the call is
+`call [[obj]+0x4c]`: slot 19 or 20 of the vtable the object points at. Two more read the receiver from `[ebp]` (a
+stack local). By base register the object pointer comes from `ecx` 24, `esi` 14, `eax` 8, `edi` 4, `ebx` 3 and
+`ebp` 2; no site loads it from an absolute global and none reads a table named in
+`inventory/class_table_slot_pairs.csv`, which is what makes slots 19/20 a C++ virtual pair of the 165 `Actor`-subtree
+tables rather than a separate `UClass` dispatch path.
+
+**What the read costs, honestly.** All 55 rows decode from the function's own start, so the receiver is the last
+write to that register on the way in and **`unread` is empty**: the 8 rows the first pass kept as `unread` were
+displacement bytes, not a decoder gap, and the backward walk the first write-up described as carrying 66 rows never
+supplied a receiver at all. The 24 rows that load through `ecx` are the member-function `this` only if nothing wrote
+`ecx` first, so which register the *object pointer itself* came from (`this`, an argument, a field, a local) is the
+next static read -- and the class an arbitrary `[obj]` belongs to at run time is the one a stock disc cannot answer
+(the multiplayer/dedicated path never runs; U8).
