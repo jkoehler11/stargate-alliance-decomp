@@ -1060,7 +1060,11 @@ table (36 of those bodies named `ctor_*`/`dtor_*`, 32 with two slots or fewer, i
 have no mapped neighbour. The same pass corrected the census it reads: `immediate_store` never accepted
 `mov [ebp+disp8],imm32` or `mov [esp+disp8],imm32`, so the table count was 20 short -- **724 starts, 476 runs beginning
 with a table, 114 runs holding two or more**, against 704 / 468 / 109 -- and the two independent scans now agree on all
-1,503 stores.
+1,503 stores. The tables are also **not related to the class tables at all**: `tools/native-vtable.py --share` compares every
+unmapped table's slot bodies against all 492 class tables and finds **0 of 232** with three bodies at the same index
+and **0** with a three-slot layout prefix once bodies under 16 bytes are masked -- unmasked, the only "matches" are
+the one-byte `ret` stub 327 class tables hold at slots 19/20 -- so a native vtable carries no mapped class's virtual
+function and the naming problem is not a lost hierarchy.
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 

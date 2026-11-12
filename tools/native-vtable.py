@@ -6,6 +6,7 @@ Usage:
                      [-o inventory/native_vtable_census.csv] [--json]
     native-vtable.py DUMP/default.xbe --block [-o inventory/native_vtable_merges.csv]
     native-vtable.py DUMP/default.xbe --reach [-o inventory/native_vtable_reach.csv]
+    native-vtable.py DUMP/default.xbe --share [-o inventory/native_vtable_shared.csv]
     native-vtable.py --check          # synthetic self-test, no dump, writes nothing
 
 Why this exists
@@ -543,6 +544,97 @@ def load_function_spans(path):
     return out
 
 
+def overlap(u, m):
+    """(`prefix`, `matched`) between two slot lists; slot 0 counts only when both hold code.
+
+    `prefix` is the run of equal code pointers from slot 0 -- the evidence that two tables share a
+    base-class layout -- and `matched` counts equal code pointers at the same index anywhere in the
+    shorter of the two.
+    """
+    limit = min(len(u), len(m))
+    prefix = 0
+    while prefix < limit and u[prefix] and u[prefix] == m[prefix]:
+        prefix += 1
+    matched = sum(1 for k in range(limit) if u[k] and u[k] == m[k])
+    return prefix, matched
+
+
+def read_slots(xbe, va, n, text):
+    """The table's slot bodies that are code pointers, 0 elsewhere (a data slot is not a body)."""
+    out = []
+    for k in range(n):
+        try:
+            d = struct.unpack("<I", xbe.read_va(va + 4 * k, 4))[0]
+        except KeyError:
+            d = 0
+        out.append(d if text.contains(d) else 0)
+    return out
+
+
+def share_scan(xbe, tables, mapped, classes, text, insns=None, min_matched=3, min_body=16):
+    """For every unmapped table, the mapped class table whose slot bodies it shares most.
+
+    A secondary base table and its derived class's table share the base's virtual functions at the
+    same slot indexes, so a long `prefix` is a layout relation, not a coincidence.  Two filters keep
+    the comparison honest: a slot whose body is shorter than `min_body` bytes is masked out (the
+    image's tables all share the one-byte `ret` stub at slots 19/20, which is not a shared function),
+    and only a class that reaches `min_matched` shared bodies counts at all.  `family` counts the
+    mapped tables reaching it, which is how a table belonging to several hierarchies shows up.
+    """
+    sizes = {}
+
+    def real_body(va):
+        if not va or insns is None:
+            return va
+        if va not in sizes:
+            end = body_extent(insns, va) if va in insns else va
+            sizes[va] = end - va
+        return va if sizes[va] >= min_body else 0
+
+    bodies = {}
+    neighbours = {}
+    for tva, n in tables.items():
+        bodies[tva] = [real_body(b) for b in read_slots(xbe, tva, n, text)]
+    for mva, n in mapped.items():
+        bodies.setdefault(mva, [real_body(b) for b in read_slots(xbe, mva, n, text)])
+    rows = []
+    for tva in sorted(tables):
+        if tva in mapped:
+            continue
+        u = bodies[tva]
+        best, family = None, 0
+        for mva in sorted(mapped):
+            m = bodies.get(mva) or []
+            prefix, matched = overlap(u, m)
+            if matched >= min_matched:
+                family += 1
+            key = (prefix, matched, -abs(len(m) - len(u)))
+            if matched >= min_matched and (best is None or key > best[0]):
+                best = (key, mva, prefix, matched, len(m))
+        row = {
+            "table_va": f"{tva:#010x}",
+            "table_slots": tables.get(tva, 0),
+            "best_va": "",
+            "best_class": "",
+            "prefix": 0,
+            "matched": 0,
+            "best_slots": 0,
+            "family": family,
+        }
+        if best:
+            _, mva, prefix, matched, slots = best
+            row.update({
+                "best_va": f"{mva:#010x}",
+                "best_class": classes.get(mva, ""),
+                "prefix": prefix,
+                "matched": matched,
+                "best_slots": slots,
+            })
+        neighbours[tva] = row
+        rows.append(row)
+    return rows
+
+
 def load_table_rows(path, key="table_va"):
     """{table_va: row} from a committed class-table inventory (mapped tables)."""
     out = {}
@@ -619,11 +711,18 @@ def cmd_check():
              "slot_counts": "21 2", "install_sites": "0x004c7800 0x004c7854"}]
     eq("table starts", table_starts(fake), {0x4C7800: 21, 0x4C7854: 2})
 
+    # slot overlap: prefix counts from slot 0, matched counts the same index anywhere
+    eq("identical", overlap([1, 2, 3], [1, 2, 3]), (3, 3))
+    eq("prefix then diverge", overlap([1, 2, 9], [1, 2, 3]), (2, 2))
+    eq("same bodies, other order", overlap([9, 2, 3], [3, 2, 1]), (0, 1))
+    eq("empty slot never matches", overlap([0, 2], [1, 2]), (0, 1))
+    eq("truncated to the shorter", overlap([1, 2], [1, 2, 3]), (2, 2))
+
     if fails:
         for f in fails:
             print("FAIL " + f)
         return 1
-    print("ok: 12 terminator cases, 6 immediate-store cases, 19 dispatch cases")
+    print("ok: 12 terminator cases, 6 immediate-store cases, 19 dispatch cases, 5 overlap cases")
     return 0
 
 
@@ -639,6 +738,8 @@ def main():
                     help="census every code-pointer run in a data section, split at install starts")
     ap.add_argument("--reach", action="store_true",
                     help="census how .text references every install-started table, and its dispatches")
+    ap.add_argument("--share", action="store_true",
+                    help="for every unmapped table, the mapped class table whose slots it shares")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
@@ -694,6 +795,35 @@ def main():
               f"{sum(1 for r in reach if r['absolute'])} tables; "
               f"{sum(1 for r in reach for d in r['dispatch'].split())} register-base dispatch sites, "
               f"{sum(1 for r in reach if r['dispatch'])} tables")
+        print(f"wrote {out}")
+        return 0
+    if args.share:
+        x = X.Xbe(args.xbe)
+        tables = table_starts(block_scan(x))
+        text = next((s for s in x.sections if s.name == ".text"), None)
+        if text is None:
+            raise SystemExit(".text: section not found")
+        mapped = {va: int(r.get("slots") or 0) for va, r in
+                  load_table_rows(os.path.join(here, "inventory", "xbe_class_tables.csv")).items()}
+        classes = {va: r.get("class", "") for va, r in
+                   load_table_rows(os.path.join(here, "inventory",
+                                                "xbe_class_table_names.csv")).items()}
+        shared = share_scan(x, tables, mapped, classes, text, sweep(x, text)[0])
+        out = args.out or os.path.join(here, "inventory", "native_vtable_shared.csv")
+        with open(out, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=["table_va", "table_slots", "best_va", "best_class",
+                                              "prefix", "matched", "best_slots", "family"])
+            w.writeheader()
+            w.writerows(shared)
+
+        def count(pred):
+            return sum(1 for r in shared if pred(r))
+
+        print(f"{len(shared)} unmapped tables against {len(mapped)} mapped class tables")
+        print(f"  a mapped neighbour (>=3 shared slots)  {count(lambda r: r['matched'] >= 3):4d}")
+        print(f"  a shared layout prefix (>=3 slots)     {count(lambda r: r['prefix'] >= 3):4d}")
+        print(f"  sharing with two or more classes       {count(lambda r: r['family'] >= 2):4d}")
+        print(f"  no mapped neighbour at all             {count(lambda r: r['matched'] < 3):4d}")
         print(f"wrote {out}")
         return 0
     if args.block:
