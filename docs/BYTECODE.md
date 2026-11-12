@@ -449,15 +449,36 @@ width, so no row needs a second rule:
 * **`Actor.DisplayDebug` (+9, the largest row, 1,605 spans) stops at 212 spans, and the copy is longer there, not
   shorter.** The model and the copy agree for 455 bytes; the stop is at file offset `0x167`, an `op 1f` `str` token:
 
-      file : 1f 70 00        1f 1f 20 52 45 4d 4f 56 45 20 52 4f 4c 45 20 00 16
-      guest: 80 49 fe 00  70 00  80 49 fe 00  1f 20 52 45 4d 4f 56 45 20 52 ...
+      file : 1f 70 00        1f 1f 20 52 45 4d 4f 54 45 20 52 4f 4c 45 20 00 16
+      guest: 80 49 fe 00  70 00  80 49 fe 00  1f 20 52 45 4d 4f 54 45 20 52 ...
 
-  so each `op 1f` byte of the file is four bytes in the copy -- the same value (`0x00fe4980`) both times -- and the
-  string that follows it is unchanged. A narrow slot *shortens* a copy, so this is the opposite direction and the
-  remainder is still a slot width rather than a second field, but **what those four bytes are is open**: `0x00fe4980`
-  is inside the image and its target holds binary, not the string, so "a resolved pointer" is a reading the bytes do
-  not establish. `--slots` now prints this stop (file offset, opcode, pattern, and the file/guest bytes) so the next
-  read starts from the bytes instead of from this paragraph.
+  so each of the two `op 1f` bytes of the file is four bytes in the copy -- the same value (`0x00fe4980`) both times --
+  and the literal that follows is unchanged. (The literal is ` REMOTE ROLE `, `54 45`; a dump search for
+  `REMOVE ROLE` finds nothing, which is how the wrong byte in the first version of this paragraph surfaced.)
+
+  **The four bytes are a constant, and no per-token rule reproduces the copy.** Measured with the second model
+  `script-ram.py` now carries (`op1f`: an `op 1f` opcode is four bytes, the literal after it unchanged, tried only
+  where the strict model stops):
+
+  * **Eight `StringConst`s sit inside the 455 bytes the strict model reproduces byte for byte** -- `TEST` (file
+    0x16), ` DELETED (b` (0x5c), `ROLE ` (0xcf), `None` (0xe5), `DumbProxy` (0xfa), `SimulatedProxy` (0x114),
+    `AutonomousProxy` (0x133), `Authority` (0x153) -- **and none of them is expanded.** The first two that are, are the
+    pair at 0x167/0x16a, out of **83** `StringConst`s in the script.
+  * **A rule keyed on the opcode desynchronises at the first literal that is not expanded**: widening every `op 1f`
+    aligns 16 spans, 32 of the model's 3,486 bytes. Keying it on the preceding `0f 00` pair buys one more token
+    (214 spans) and stops at the second of the two. The deciding property is **per literal**, and it is not the
+    preceding token either.
+  * **The four bytes are not that literal's address.** Both slots hold `0x00fe4980` -- two different literals, one
+    value -- in **all six** dumps, 125 times in a 128 MiB image; `0x00fe4980` reads as zeros and pointers, not text;
+    and the dword does not occur in `default.xbe` at all (0 matches), so it is a load-time heap address whose value is
+    deterministic, not something the image names. `script-ram.py --slots` prints the stop and, when the second rule is
+    what read the copy, every `op 1f` slot with its four bytes; `--residue` reports complete copies by rule, and the
+    rule closes **0 of the 30 unaligned rows** (13 complete / 10 the field's own number, unchanged) because the wedge
+    appears in exactly one of them.
+
+  What would settle it is the handler rather than the payload: `GNatives[0x1f]` in a live table (`docs/NATIVE_VM.md`)
+  decides whether the four-byte slot is read at all -- or a byte-diff over many more copies that correlates which
+  literals expand inside one script.
 
 ## The shipped scripts, as disassembled
 

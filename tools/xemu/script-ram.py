@@ -32,6 +32,14 @@ every residue row against each RAM image given and reports how many copies are t
 
     python3 tools/uscript-dis.py --sizefield DUMP/System --residue-csv $WORK/residue.csv
     python3 tools/xemu/script-ram.py $WORK/*/ram.bin --dump DUMP --residue $WORK/residue.csv
+
+**`op 1f` is the one token whose opcode byte is four bytes in the copy.** `Actor.DisplayDebug` stopped at file
+offset 0x167, an `EX_StringConst`: the file has `1f 70 00` (opcode, then the literal `p\\0`) and the copy has
+`80 49 fe 00 70 00` -- the opcode byte itself is a four-byte value and the literal follows it unchanged. Every
+literal in the copy carries the same four bytes (`0x00fe4980`), in all six dumps, so they are not that literal's
+address. So the model has two rules: the strict one, and one that counts an `op 1f` opcode as four bytes. The second
+is tried only where the first stops, so a row that already aligned keeps its number; `--slots` and `--residue` print
+which rule read the copy.
 """
 import argparse
 import collections
@@ -42,6 +50,7 @@ import sys
 TOOLS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EPILOGUE = bytes([0x04, 0x0B, 0x47])
 NEAR = 24               # how far past the model's own end the copy's epilogue may sit
+STR_OP = 0x1F           # `EX_StringConst`: the one token whose *opcode* byte is four bytes in the memory image
 
 
 def _dis():
@@ -99,12 +108,27 @@ def locate(dis, pkg_path, want_class, want_function):
     return found
 
 
-def model(body, spans):
+def widened(spans, str4):
+    """The spans with `EX_StringConst`'s opcode marked `str4`.
+
+    Measured on `Actor.DisplayDebug`: at file offset 0x167 the file has `1f 70 00` (`StringConst` + `p\\0`) and the
+    guest copy has `80 49 fe 00 70 00` -- the *opcode byte itself* is four bytes there, and the literal follows it
+    unchanged. The same four bytes (`0x00fe4980`, the same in all six dumps) sit in front of every literal in the
+    copy, so they are not that literal's data. This is a second model, tried only when the strict one stops at an
+    `op 1f`, so the rows that already align keep the numbers they had.
+    """
+    if not str4:
+        return spans
+    return [(a, b, "str4" if (kind == "opcode" and op == STR_OP) else kind, op)
+            for a, b, kind, op in spans]
+
+
+def model(body, spans, str4=False):
     """The script's memory image: opcodes and fixed operands exact, each index operand four `None` bytes."""
     pat, marks = [], []
-    for a, b, kind, op in spans:
+    for a, b, kind, op in widened(spans, str4):
         marks.append((a, len(pat), kind, op))
-        pat.extend([None] * 4 if kind == "index" else body[a:b])
+        pat.extend([None] * 4 if kind in ("index", "str4") else body[a:b])
     return pat, marks
 
 
@@ -145,7 +169,7 @@ def candidates(blob, pat, runs_n=8, limit=300):
     return sorted(found)
 
 
-def align(blob, at, body, spans, beam_width=8):
+def align(blob, at, body, spans, beam_width=8, str4=False):
     """Longest alignment of the model's spans to guest bytes, an index operand free to be 1, 2 or 4 bytes.
 
     `(spans matched, guest length, slots, complete)`, where a slot is `(file offset, file width, guest width, op)` for
@@ -154,6 +178,7 @@ def align(blob, at, body, spans, beam_width=8):
     what a `--sizefield` residue row is: `-3` is one such slot (four predicted, one present), `-6` is two, and a
     `+9` row is three slots that are one byte where the model counts four.
     """
+    spans = widened(spans, str4)
     best = (0, at, [], False)
     live = [(0, at, [])]
     while live:
@@ -164,7 +189,12 @@ def align(blob, at, body, spans, beam_width=8):
                 continue
             a, b, kind, op = spans[i]
             width = b - a
-            if kind == "index":
+            if kind == "str4":
+                # Four bytes, not "up to four": the rule is a measurement, and leaving the width free let the walk
+                # drift into the literal's own bytes and past the copy's end (measured on `DisplayDebug`: 1,394
+                # spans and 51 phantom narrow slots before this was pinned).
+                nxt.setdefault((i + 1, g + 4), path + [(a, width, 4, kind, op)])
+            elif kind == "index":
                 for w in (4, 1, 2):
                     nxt.setdefault((i + 1, g + w), path + [(a, width, w, kind, op)])
             elif blob[g:g + width] == body[a:b]:
@@ -186,16 +216,37 @@ def narrow_slots(path):
     return [(a, width, op) for a, width, guest, kind, op in path if kind == "index" and width == guest]
 
 
-def copy_for(blob, body, spans):
+def copy_for(blob, body, spans, str4=False):
     """The longest alignment of one script's model in one dump: `(at, matched, guest length, path, complete)`."""
-    pat, _marks = model(body, spans)
+    pat, _marks = model(body, spans, str4)
     best = (None, 0, 0, [], False)
     for at in candidates(blob, pat):
-        matched, length, path, complete = align(blob, at, body, spans)
+        matched, length, path, complete = align(blob, at, body, spans, str4=str4)
         if complete:
             return (at, matched, length, path, True)
         if matched > best[1]:
             best = (at, matched, length, path, False)
+    return best
+
+
+def copy_best(blob, body, spans):
+    """The best copy, strict model first and the `op 1f` four-byte rule second: `(..., complete, rule)`.
+
+    The second model is only tried where the first one found the copy: a stop at an `op 1f` is a disagreement about
+    the *width* of a token, not about where the script starts, so the strict alignment's own start is the seed and the
+    search does not have to be run twice over the whole image.
+    """
+    got = copy_for(blob, body, spans, False)
+    if got[4]:
+        return got + ("model",)
+    best = got + ("model",)
+    starts = [best[0]] if best[0] is not None else candidates(blob, model(body, spans, True)[0])
+    for at in starts:
+        matched, length, path, complete = align(blob, at, body, spans, str4=True)
+        if complete:
+            return (at, matched, length, path, True, "op1f")
+        if matched > best[1]:
+            best = (at, matched, length, path, False, "op1f")
     return best
 
 
@@ -260,14 +311,26 @@ def kind_at(marks, offset):
     return "%s of op%02x" % (last[2], last[3])
 
 
-def slot_lines(at, matched, length, path, complete, field, body=None, dis=None, blob=None, spans=None):
+def slot_lines(at, matched, length, path, complete, field, body=None, dis=None, blob=None, spans=None,
+               rule="model"):
     """The per-slot reading of one copy, as lines. Nothing here is game data: offsets, widths and opcodes."""
     narrow = narrow_slots(path)
-    out = ["  copy at %#010x: %d span(s) aligned (%s), guest copy %d bytes, field %d (%+d)"
-           % (at or 0, matched, "all" if complete else "some", length, field, field - length)]
+    out = ["  copy at %#010x: %d span(s) aligned (%s), guest copy %d bytes, field %d (%+d), rule %s"
+           % (at or 0, matched, "all" if complete else "some", length, field, field - length, rule)]
     out.append("    %d index slot(s); the guest left %d at its file width: %s"
                % (len([r for r in path if r[3] == "index"]), len(narrow),
                   ", ".join("offset %d width %d op%02x" % row for row in narrow[:10]) or "none"))
+    strs = [(a, width, guest) for a, width, guest, kind, _op in path if kind == "str4"]
+    if strs:
+        # The four bytes are a *measured* constant, not that literal's address: print them so the next read does not
+        # have to trust a paragraph about it.
+        values = []
+        if blob is not None:
+            for a, width, guest in strs:
+                g = (at or 0) + sum(row[2] for row in path if row[0] < a)
+                values.append(blob[g:g + 4].hex())
+        out.append("    %d `op 1f` opcode(s) at four bytes%s"
+                   % (len(strs), ("; guest bytes %s" % ", ".join(sorted(set(values)))) if values else ""))
     if narrow:
         out.append("    the field accounts for them exactly" if length == field else
                    "    but the field is %+d off the copy, so a slot is not the whole story" % (field - length))
@@ -321,6 +384,8 @@ def residue_report(csvpath, rams, dump, slots=False):
     per_pkg = {}
     rows_by_pkg = {}
     deepest = {}
+    by_rule = collections.Counter()
+    rule_agreed = collections.Counter()
     for row in rows:
         pkgname, cls, fn = row["package"], row["class"], row["function"]
         path = os.path.join(dump, "System", pkgname)
@@ -336,17 +401,18 @@ def residue_report(csvpath, rams, dump, slots=False):
             except (dis.Refused, IndexError, dis.struct.error) as exc:
                 print("%-16s %-26s %-30s the walk refuses (%s)" % (pkgname, cls, fn, exc))
                 continue
-            best = (None, 0, 0, [], False)
+            best = (None, 0, 0, [], False, "model")
             where = None
             best_blob = None
             for name, blob in blobs:
-                got = copy_for(blob, body, spans)
+                got = copy_best(blob, body, spans)
                 if got[1] > best[1] or got[4]:
                     best, where, best_blob = got, name, blob
                 if got[4]:
                     break
-            at, matched, length, aln, complete = best
+            at, matched, length, aln, complete, rule = best
             reads += 1
+            by_rule[rule if complete else "none"] += 1
             per_pkg[pkgname] = per_pkg.get(pkgname, 0) + (1 if complete else 0)
             rows_by_pkg[pkgname] = rows_by_pkg.get(pkgname, 0) + 1
             deepest[pkgname] = max(deepest.get(pkgname, 0), matched)
@@ -358,18 +424,24 @@ def residue_report(csvpath, rams, dump, slots=False):
             narrow = narrow_slots(aln)
             for _a, width, op in narrow:
                 by_op["op%02x:w%d" % (op, width)] += 1
-            print("%-16s %-26s %-30s field %-6d copy %-6d %+3d  %2d narrow slot(s)  %s"
+            strs = len([r for r in aln if r[3] == "str4"])
+            print("%-16s %-26s %-30s field %-6d copy %-6d %+3d  %2d narrow slot(s)  %s%s"
                   % (pkgname, cls, fn, field, length, field - length, len(narrow),
-                     " ".join("%d:w%d:op%02x" % row for row in narrow[:6])))
+                     " ".join("%d:w%d:op%02x" % row for row in narrow[:6]),
+                     ("  %d op1f" % strs) if strs else ""))
             if slots:
-                for line in slot_lines(at, matched, length, aln, complete, field, body, dis, best_blob, spans):
+                for line in slot_lines(at, matched, length, aln, complete, field, body, dis, best_blob, spans,
+                                       rule=rule):
                     print(line)
             if length == field:
                 agreed += 1
+                rule_agreed[rule] += 1
             else:
                 unexplained.append((pkgname, cls, fn, field, length))
     print("%d residue row(s) read from %s," % (reads, csvpath))
     print("  a guest copy aligns completely: %d;  its length IS the field: %d" % (reads - len(disagreed), agreed))
+    print("  complete copies by rule: %s;  the field agrees: %s"
+          % (dict(sorted(by_rule.items())), dict(sorted(rule_agreed.items()))))
     print("  no complete copy: %d %s" % (len(disagreed), disagreed[:6]))
     print("  complete copy but the field disagrees: %d %s" % (len(unexplained), unexplained[:6]))
     print("  narrow slots by opcode and file width: %s" % dict(sorted(by_op.items())))
@@ -411,6 +483,32 @@ def selftest():
         return 1
     print("ok script-ram: model widens the index operand; one copy found at the model's length and a two-byte-longer "
           "copy reported as +2")
+    # The `op 1f` rule: a body whose first token is a string const, and a guest that puts four bytes where the file
+    # has the opcode byte and copies the literal unchanged. The strict model must stop there; the second must align to
+    # the end and say which rule did it.
+    sbody = bytes([0x1F, 0x41, 0x00]) + EPILOGUE
+    try:
+        sspans = dis._spans_with_op(sbody, table)
+    except dis.Refused as exc:
+        print("FAIL script-ram: the table refuses a synthetic string const: %s" % exc)
+        return 1
+    if not sspans or sspans[0][2] != "opcode" or sspans[0][3] != STR_OP:
+        print("FAIL script-ram: a synthetic string const walked as %r" % (sspans[:1],))
+        return 1
+    if model(sbody, sspans, True)[0].count(None) != 4:
+        print("FAIL script-ram: the `op 1f` rule does not widen the opcode: %r" % (model(sbody, sspans, True)[0],))
+        return 1
+    sguest = b"\x80\x49\xfe\x00" + sbody[1:]
+    got = copy_best(b"\xA5" * 21 + sguest + b"\xA5" * 21, sbody, sspans)
+    if not got[4] or got[5] != "op1f" or got[2] != len(sbody) + 3:
+        print("FAIL script-ram: a four-byte `op 1f` copy read as %r, expected a complete `op1f` copy %d bytes"
+              % (got, len(sbody) + 3))
+        return 1
+    strict = copy_for(b"\xA5" * 21 + sguest + b"\xA5" * 21, sbody, sspans)
+    if strict[4]:
+        print("FAIL script-ram: the strict model aligned a copy that widens `op 1f`")
+        return 1
+    print("ok script-ram: the strict model stops at `op 1f`, and the second rule reads the same copy whole at +3")
     # The slot read: a guest that leaves the index at two bytes is a complete alignment two bytes shorter than the
     # model, and the slot it names is the one the loader did not widen.
     matched, length, aln, complete = align(b"\xA5" * 21 + exact + b"\xA5" * 21, 21, body, spans)
@@ -488,8 +586,8 @@ def main():
         print("  model %d bytes (script + %d widening(s)); field at name_end+12 = %d, predicted %d, %+d"
               % (len(pat), sum(4 - w for w in widths), field, len(pat), field - len(pat)))
         if args.slots:
-            at, matched, length, aln, complete = copy_for(blob, body, spans)
-            for line in slot_lines(at, matched, length, aln, complete, field, body, dis, blob, spans):
+            at, matched, length, aln, complete, rule = copy_best(blob, body, spans)
+            for line in slot_lines(at, matched, length, aln, complete, field, body, dis, blob, spans, rule=rule):
                 print(line)
             continue
         full, anchor, partial = search(blob, pat, args.max_hits)
