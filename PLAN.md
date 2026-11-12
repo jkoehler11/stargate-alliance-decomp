@@ -217,10 +217,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
-      **The locator is solved** (U13): the script starts **16 bytes past `FriendlyName`**, measured by content —
-      `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **225 of 658**
-      `return`-anchored payloads and every one of those walks to the epilogue, against at most 4 at any other delta
-      and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9).
+      **The locator is solved and now sharp** (U13): the script starts **16 bytes past `FriendlyName`**, measured by
+      content — `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **422 of 441**
+      `return`-anchored payloads and every one of those walks to the epilogue, against at most 9 at any other delta
+      in `+4..+40` and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7 and
+      28 = 16+3+9). Two rules were needed for that peak: the anchor is keyed by (class, function), because one
+      class's declaration is not evidence for a same-named export in another, and the literal's opcode is chosen by
+      the declaration's **return type** (a void function writes `return <expr>;` as a bare `04 0b`; `float` → `04 1e`
+      plus the float; `byte` → `04 24` plus the byte).
       An `if (`/`assert (` body is not an anchor (the condition is emitted before the jump); the walk's depth from
       +16 is **not** a locator either, because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
@@ -5426,6 +5430,30 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, the anchor was mispaired by name, and the return type chooses the literal)
+
+- **The 422 unmatched payloads were the anchor's own defect, not a header question.** `--start-anchor` keyed its
+  declaration by the function *name*, so one class's `return false;` anchored every same-named export in the package;
+  `Engine.u` exports `Destroyed` from dozens of classes, and each of those payloads was searched for bytes its own
+  source never contained. Keying by (class, function) — the export's `Outer` — takes the population from 658 anchored
+  payloads with **225** at +16 to 451 with **347** at +16 and all 347 walking.
+- **The literal is chosen by the declared return type, and that is the second half.** A function declared with no
+  return type drops `return <expr>;` entirely (script `04 0b`; 69 of the 104 remaining misses); a `float` function
+  writes `04 1e` plus the float (`04 1e 00 00 80 3f` for `return 1;`), a `byte` function `04 24` plus the byte, and
+  only `bool`/`int` bodies reach `04 25`/`04 26`/`04 27`/`04 28`. With both rules the 18 packages give **441 anchored
+  payloads, 422 at `name_end+16` and all 422 walking to the epilogue**, at most 9 at any other delta in `+4..+40`
+  and 0 at payload offset 0.
+- **The residue is 12, and named by shape.** 3 compile to an empty body (`04 0b 47`) although the source returns a
+  literal, 8 open with `07` (the compiler emitted a condition first, so the source's `return` is not the body's first
+  byte there either), 1 opens `04 82`. Off the population: 31 declarations made twice in one class, 10 whose return
+  type has no measured rule, and 2,137 `Function` exports owned by a `State` object rather than by the class — a
+  state's body is its own, so a class-scoped key must not anchor it.
+- **The dword at `name_end+12` reads as the script's length on this population**: equal in **420 of 422** payloads
+  whose start is +16 (residues 14 and 18). Corpus-wide the same dword is larger far more often, so this is the trivial
+  `return` body's shape, not an identification of the field — the page carries both numbers.
+- Tool (`--start-anchor` keyed by class and return type) + `docs/BYTECODE.md` "Where the script starts, anchored on
+  the shipped source" + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
 
 ### Execution notes (2026-11-12, the script's start is anchored on the shipped source, and a walk cannot tell starts apart)
 

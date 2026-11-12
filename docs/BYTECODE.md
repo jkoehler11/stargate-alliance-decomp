@@ -192,37 +192,62 @@ at +30 — most opcodes are one byte, so a garbage stream consumes the payload e
 epilogue" is true almost wherever it starts. That reading therefore counts the opcode table's coverage; it does not
 locate the script, and the same is true of any count of payloads that "walk from +16" (3,328 of them).
 
-The anchor that discriminates is content. A `Function` export's class ships its `ScriptText`, so a body whose first
-statement is `return true;`, `return false;`, `return;`, `return 0;` or `return 1;` fixes its first opcode bytes —
-`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`. `--start-anchor` walks no tokens: it asks which `name_end + delta` in
-`+lo..+hi` carries the bytes the source fixes, and only then whether the walk from there reaches the epilogue.
+The anchor that discriminates is content. A `Function` export's class ships its `ScriptText`, so a body whose
+first statement is `return true;`, `return false;`, `return;`, `return 0;` or `return 1;` fixes its first opcode
+bytes. `--start-anchor` walks no tokens: it asks which `name_end + delta` in `+lo..+hi` carries those bytes, and only
+then whether the walk from there reaches the epilogue.
+
+**Two rules decide the bytes, and both are load-bearing (measured 2026-11-12).** The first is *which class* the
+payload belongs to: a `Function` export names its class only through its `Outer`, so the anchor is keyed by
+(class, function). Keyed by the function name alone, one class's `Destroyed` declaration anchored every same-named
+export in the package — `Engine.u` alone exports it from dozens of classes — and those payloads were then searched
+for bytes their own source never contained. That mispairing, not the header, is what the previous pass counted as
+422 unmatched payloads. The second rule is the declaration's **return type**, which chooses the literal: a function
+declared with no return type writes `return <expr>;` as a bare `Return Nothing` (`04 0b`, the value dropped — 69 of
+the 104 payloads the type-blind table missed), a `float` function writes `04 1e` plus the float (`04 1e 00 00 80 3f`
+for `return 1;`), a `byte` function `04 24` plus the byte, and only `bool`/`int` bodies reach `04 25`/`04 26` for 0/1
+and `04 27`/`04 28` for true/false. A return type with no measured rule (`vector`, `rotator`, a struct, an array) is
+left unanchored rather than guessed, so the denominator stays honest.
 
 **An `if (` or `assert (` anchor is invalid and this tool no longer takes one.** This compiler evaluates the
 condition first and emits the conditional jump behind it, so `07`/`09` are not the body's first byte; with those two
 patterns in the list the anchored population was 2,474 payloads and **597 of the 716 that matched at no delta did not
 carry the expected byte anywhere in the payload** — the signature of a wrong anchor, not of a wrong header (a later
 run measured 31 payloads with the byte one byte *before* the name's end, i.e. inside the header's own encoded part).
-On the `return`-only population:
 
-    $ python3 tools/uscript-dis.py --start-anchor System --scan-lo 4 --scan-hi 24
-    System: 658 anchored payloads (ScriptText fixes the first opcode) of 658 with a located epilogue
-      anchored opcodes: {'0428': 341, '0427': 231, '040b': 47, '0425': 38, '0426': 1}
-          +16   225 /  658   225 walk   <- the fixed run start_report assumes
-          +18     4 /  658     4 walk
-          +20     4 /  658     4 walk
-      peak delta +16 with 225 of 658 anchored payloads and 225 clean walks
-      no delta matched: 422; the same bytes at payload offset 0: 0
+    $ python3 tools/uscript-dis.py --start-anchor System --scan-lo 4 --scan-hi 40
+    System: 441 anchored payloads (ScriptText fixes the first opcode) of 441 with a located epilogue
+      anchored opcodes: {'0428': 191, '0427': 136, '040b': 77, '0425': 19, '041e00000000': 10,
+                         '042400': 6, '041e0000803f': 1, '0426': 1}
+      not anchored: 31 declaration(s) made twice in one class, 10 whose return type has no measured rule,
+                    2137 Function export(s) owned by a State
+          +16   422 /  441   422 walk   <- the fixed run start_report assumes
+          +18     9 /  441     9 walk
+          +21     4 /  441     4 walk
+          +22     1 /  441     1 walk
+          +28     2 /  441     2 walk
+      peak delta +16 with 422 of 441 anchored payloads and 422 clean walks
+      no delta matched: 12; by the script's own first two bytes at +16: {'040b': 3, '0722': 2, '0482': 1,
+                        '0713': 1, '0747': 1, '0711': 1, '0732': 1, '0760': 1, '0739': 1};
+                        the same bytes at payload offset 0: 0
+      dword at name_end+12 minus the script's length, over the payloads whose start is +16: {0: 420, 14: 1, 18: 1}
+        equal in 420 of 422 (99.5%), and never negative: yes
 
-**225 of 658** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 225** walk from there to
-the epilogue; no other delta in `+4..+24` reaches more than **4**, and the same bytes sit at payload offset 0 in **0**.
-A wrong start does not survive this test because the bytes have to be the ones the source wrote.
+**422 of 441** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 422** walk from there to
+the epilogue; no other delta in `+4..+40` reaches more than **9**, and the same bytes sit at payload offset 0 in **0**.
+A wrong start does not survive this test, because the bytes have to be the ones the source wrote *and* the literal the
+declaration's own return type predicts.
 
-Two residues are named rather than smoothed. **422** anchored payloads carry the expected bytes at no delta in
-`+4..+24` (216 `0428`, 153 `0427`) — under a valid anchor that is a header-alignment question rather than a
-classification one, and it is the next pass's work. And the dword at `name_end+12` equals the script's length in
-**223 of 236** rows the anchor matched, which is a statement about the trivial `return` bodies this population is
-made of: corpus-wide the same dword is *larger* than the script far more often than it is equal, so the field is a
-size whose relation to the script's bytes is not constant and is still unidentified.
+The residue is named rather than smoothed. **12** payloads carry the expected bytes at no delta (`0428` 5, `040b` 5,
+`0427` 2), in three shapes: **3** compile to an empty body (`04 0b 47`) although the source returns a literal, **8**
+open with `07` — the statement the compiler emitted first is a condition, so the source's `return` is not the body's
+first byte there either — and **1** opens `04 82`. Off the population entirely are 31 declarations made twice in one
+class (a state override), 10 whose return type has no measured rule, and **2,137** `Function` exports owned by a
+`State` object, which a class-scoped key cannot reach: a state's body is its own, so the class declaration is not
+evidence for it. The dword at `name_end+12` is the script's length in **420 of the 422** rows whose start is +16
+(residues 14 and 18) — which is a statement about the trivial `return` bodies this population is made of: corpus-wide
+the same dword is *larger* than the script far more often than it is equal, so the field is equal here and still
+unidentified.
 
 ## The shipped scripts, as disassembled
 
