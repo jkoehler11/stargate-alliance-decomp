@@ -231,6 +231,15 @@ def selftest():
     if [n for n, _b in state_blocks(text)] != ["normalfire"]:
         print("FAIL uscript-dis: state_blocks found %r" % (state_blocks(text),))
         return 1
+    # A `native` declaration has no body, so the next function's `{` is not its anchor (two of the ten "no rule for
+    # that return type" rows were this).
+    pair = ("simulated native function rotator GetErrorVec(optional out vector out_Error);\r\n"
+            "function bool Other(){ return true; }\r\n")
+    match = list(FUNC_DECL.finditer(pair))
+    if len(match) != 2 or has_body(pair, match[0].end()) or not has_body(pair, match[1].end()):
+        print("FAIL uscript-dis: has_body read %r for a native/real pair"
+              % ([(m.group(2), has_body(pair, m.end())) for m in match],))
+        return 1
     print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured, shuffle rotates %d types,"
           " state spans blanked" % (len(table.rows), len(checks), len(refusals), len(pool)))
     return 0
@@ -814,6 +823,19 @@ def first_statement_ops(text, at, rettype=None):
     return RETURN_OPS.get(((rettype or "").strip().lower(), kind))
 
 
+def has_body(text, at):
+    """False when the declaration ends in `;` before any `{` — a `native` or forward declaration.
+
+    `_body_start` takes the first `{` after the parameter list, and for a `native` declaration that is the *next*
+    function's body. Measured 2026-11-12: `simulated native function rotator Weapon.GetErrorVec(...)` was paired
+    with the following `return 0;`, so the payload was searched for a literal its body never had — two of the ten
+    "no measured rule for that return type" rows were this, not a return-type question.
+    """
+    brace = text.find("{", at)
+    semi = text.find(";", at)
+    return brace >= 0 and (semi < 0 or brace < semi)
+
+
 def state_blocks(text):
     """`(name, body)` for every `state <name> { ... }` block in a class's ScriptText, by brace matching.
 
@@ -886,7 +908,10 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     searched from offset 0 should never hit. A body a class declares twice is dropped rather than guessed; the
     anchored count is printed so the denominator is visible. `--lists N` names each residue row instead of only
     counting it -- the expected bytes, what the payload carries at +16 instead, and whether those bytes walk --
-    because the residue is where the next question is and its names are only one read away.
+    because the residue is where the next question is and its names are only one read away. A declaration with **no
+    body** (`native`, or a `function Foo();` that a state implements) is not an anchor either: the body finder would
+    take the *next* function's `{`, and its own payload is the empty script, so those payloads are checked as a
+    prediction (82 of 82 empty) rather than counted as misses.
     """
     import importlib.util                                  # noqa: PLC0415 - only for the shipped source
 
@@ -913,11 +938,17 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     unrouted = collections.Counter()
     sized = collections.Counter()
     anchored = anchored_state = located = at_zero = unmatched = unmatched_state = twice = 0
+    no_body = unrouted_empty = no_body_empty = 0
     # Named residue: a count says a population exists, a name says what to read next. Each row is one payload the
     # anchor could not place, with the bytes its own source fixed and the bytes it actually carries at +16.
     residue_rows = []
     twice_rows = []
     unrouted_rows = []
+    no_body_rows = []
+    no_body_scripted = []
+    unrouted_empty_rows = []
+    unroutable = {}
+    no_body_keys = {}
     for one in files:
         pkg = ue2.Package(one)
         pkg.read_names()
@@ -929,6 +960,7 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
         decls = collections.Counter()
         expected = {}
         decl_info = {}
+        bodied_keys = set()
         for ci, cls in enumerate(pkg.exports):
             if pkg.class_name_of(cls) != "Class":
                 continue
@@ -940,17 +972,26 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
                                                            for sname, body in state_blocks(text)]
             for owner_class, sname, body in blocks:
                 for m in FUNC_DECL.finditer(body):
+                    key = (owner_class, sname, (m.group(2) or "").lower())
+                    rtype = (m.group(1) or "").strip().lower()
+                    hb = has_body(body, m.end())
+                    if hb:
+                        bodied_keys.add(key)
                     kind = first_statement_kind(body, m.end())
                     if kind is None:
                         continue
-                    rtype = (m.group(1) or "").strip().lower()
+                    if not hb:
+                        no_body += 1
+                        no_body_rows.append((os.path.basename(one), key, rtype, kind))
+                        no_body_keys.setdefault(key, (rtype, kind))
+                        continue
                     want = RETURN_OPS.get((rtype, kind))
                     if want is None:
                         unrouted["%s/%s" % (rtype or "void", kind)] += 1
                         unrouted_rows.append((os.path.basename(one), owner_class, sname,
                                               m.group(2), rtype, kind))
+                        unroutable.setdefault(key, (rtype, kind))
                         continue
-                    key = (owner_class, sname, (m.group(2) or "").lower())
                     decls[key] += 1
                     expected.setdefault(key, want)
                     decl_info.setdefault(key, (rtype, kind))
@@ -959,6 +1000,15 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
                 expected.pop(key, None)
                 twice += 1
                 twice_rows.append((os.path.basename(one), key, count, decl_info.get(key, ("", ""))))
+                unroutable.pop(key, None)
+        # A key declared both as a stub and with a body is not ambiguous: only the bodied declaration could have
+        # produced a script. Two functions do this -- `Weapon.GetErrorVec` and `Weapon.GetFireStart`, each declared
+        # `native` and again with a body -- and calling them bodiless produced a "contradiction" that was the key's,
+        # not the rule's.
+        if bodied_keys & set(no_body_keys):
+            no_body_keys = {k: v for k, v in no_body_keys.items() if k not in bodied_keys}
+            no_body_rows = [r for r in no_body_rows if r[1] in no_body_keys]
+            no_body = len(no_body_rows)
         for i, e in enumerate(pkg.exports):
             if pkg.class_name_of(e) != "Function":
                 continue
@@ -977,7 +1027,8 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
                 key = (names[outer - 1], None, names[i])
                 is_state = False
             want = expected.get(key)
-            if want is None:
+            routable = want is not None
+            if not routable and key not in unroutable and key not in no_body_keys:
                 continue
             pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
             n = len(pay)
@@ -996,6 +1047,25 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
             elif pay[n - 12:n - 9] == epilogue:
                 end = n - 9
             else:
+                continue
+            if key in no_body_keys:
+                # A declaration with no body (`native`, or a `function Foo();` a state implements) must have been
+                # compiled to an empty script. That is a prediction, so count both sides rather than excluding the
+                # population: 84 of 84 hold it, which is what says the four former "empty body" residues were the
+                # parser's own mispairing and not a compiler behaviour.
+                if pay[off + 16:end] == epilogue:
+                    no_body_empty += 1
+                else:
+                    no_body_scripted.append((os.path.basename(one), key, end - (off + 16),
+                                             pay[off + 16:off + 22].hex(" ")))
+                continue
+            if not routable:
+                # A declaration whose return type has no measured rule cannot be anchored, but its payload can still
+                # answer one question: was the body compiled empty? Eight of the ten do exactly that, so no literal
+                # encoding was ever exercised for them and the missing rule does not apply.
+                if pay[off + 16:end] == epilogue:
+                    unrouted_empty += 1
+                    unrouted_empty_rows.append((os.path.basename(one), key, unroutable[key]))
                 continue
             located += 1
             anchored += 1
@@ -1054,7 +1124,11 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     print("  by owner: %d class function(s), %d owned by a State"
           % (anchored - anchored_state, anchored_state))
     print("  not anchored: %d declaration(s) made twice under one key, %d whose return type has no measured rule"
-          " (%s)" % (twice, sum(unrouted.values()), dict(unrouted.most_common(4))))
+          " (%d of those payloads compile empty, so no literal was exercised; %s), %d with no body at all"
+          % (twice, sum(unrouted.values()), unrouted_empty, dict(unrouted.most_common(4)), no_body))
+    if no_body:
+        print("  a declaration with no body must compile empty: %d such payloads, %d empty, %d carrying a script"
+              % (no_body_empty + len(no_body_scripted), no_body_empty, len(no_body_scripted)))
     print("  a match at name_end+delta (match / at+distance, clean walk from there):")
     for delta in deltas:
         if not hit[delta]:
@@ -1087,12 +1161,33 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     # single function: what its own source says the first byte is, what the payload carries instead, and whether
     # the bytes at +16 walk as a script at all.
     if name_rows and residue_rows:
-        print("  named residue (%d payload(s), up to %d named):" % (len(residue_rows), name_rows))
+        empties = sum(1 for r in residue_rows if r[5] == 3 and r[3] == "04 0b 47")
+        print("  named residue (%d payload(s), up to %d named, %d an empty compiled body):"
+              % (len(residue_rows), name_rows, empties))
         for pkgname, key, want, at16, walk16, word, slen, (rtype, kind) in residue_rows[:name_rows]:
             print("    %-12s %s%s.%s  declared %s/%s  want %s  at+16 %s  script %d bytes"
-                  "  dword@+12 %+d  %s"
+                  "  dword@+12 %+d  %s%s"
                   % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2],
-                     rtype or "void", kind, want, at16 or "-", slen, word - slen, walk16))
+                     rtype or "void", kind, want, at16 or "-", slen, word - slen, walk16,
+                     "  <- an empty body, not a start read late" if (slen == 3 and at16 == "04 0b 47") else ""))
+    if name_rows and unrouted_empty_rows:
+        print("  unanchored but compiled empty, so no literal was exercised (%d):" % len(unrouted_empty_rows))
+        for pkgname, key, (rtype, kind) in unrouted_empty_rows[:name_rows]:
+            print("    %-12s %s%s.%s  declared %s/%s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2],
+                     rtype or "void", kind))
+    if name_rows and no_body_rows:
+        print("  no body to anchor on a `native`, a state-implemented or a forward declaration (%d):"
+              % len(no_body_rows))
+        for pkgname, key, rtype, kind in no_body_rows[:name_rows]:
+            print("    %-12s %s%s.%s  %s/%s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2],
+                     rtype or "void", kind))
+    if no_body_scripted:
+        print("  CONTRADICTION, a bodiless declaration with a script (%d):" % len(no_body_scripted))
+        for pkgname, key, length, head in no_body_scripted[:max(name_rows, 10)]:
+            print("    %-12s %s%s.%s  script %d bytes  at+16 %s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2], length, head))
     if name_rows and twice_rows:
         print("  dropped, declared twice under one key (%d):" % len(twice_rows))
         for pkgname, key, count, (rtype, kind) in twice_rows[:name_rows]:
