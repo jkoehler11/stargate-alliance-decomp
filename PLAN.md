@@ -1031,6 +1031,36 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the source's own spelling — a name matched without case places 53 sites, and a call result is typed by its callee)
+
+- **A call's result is a receiver, and its type is the callee's declared return type.** `GetOwner().Foo()` carries no
+  variable to type: the receiver is the first call's *result*, and the only statement of its type is the callee's own
+  declaration (`function Actor GetOwner()`), which `source_returns` now reads off the class `ScriptText`; a
+  `FinalFunction` names its Function export (the callee's class is that export's outer, a `State`'s function belonging
+  to the class that owns the state) and a `VirtualFunction`/`GlobalFunction` callee is resolved on the caller's chain.
+  The three call tokens had to join `OBJECT_TOKENS` or the branch is unreachable. **822 sites** front a by-name call
+  with another call and the reading is asked at every one: **72 type** (`sound` 33, `PlayerController` 22,
+  `SGFormation` 6), **534 the callee returns nothing**, **131 the operand names no Function of this package** (an
+  imported or native callee -- the declaration is in another package), 72 a value that is not a class, 11 no
+  declaration, 2 not on the caller's chain. Only **4** of the sites it places are call results: the residue it was
+  pointed at is 39 sites and 22 of them are statement tails (`JumpIfNot` 1,250 asked, `Let` 520, `Jump` 318), not
+  receivers at all -- the rule is right and this residue is nearly dry.
+- **A local's declaration can be in an ancestor's source, and the compiler folds case while the source does not.**
+  `local_chain` reads the ancestor's `ScriptText` for the same function, the walk a by-name self-call takes, and types
+  **7** (three classes: `Engine.Vehicle` 3, `Engine.Actor` 2, `StargateGame.DeathMatch` 2). The larger half is
+  spelling: `_folded` matches a declared name the way the class index already does and **149 sites type from a
+  declaration the source spells in another case** (`Msg` 30, `t` 13, `i` 12, `Dir` 8, `Image` 7) -- the same defect as
+  `pawn` and `class<LocalMessage>`, and it takes the untyped local bucket **81 -> 28**.
+- **By-name placement is 13,258 of 13,507 (98.2%)**, residue **306 -> 249**: 181 an object expression that names no
+  class (28 a local neither its class nor an ancestor declares, 70 a literal or cast, 40 an array element of a
+  non-class array, 25 not a variable, 18 a call result with nothing to type), 46 typed to a class whose chain and
+  subtree lack the name (`Object` 36 is a dispatch over every class in the build) and 22 a completed value in front.
+  The receiver's chain goes 2,584 -> **2,641** (624 names, 267 distinct receiver classes), the receiver-typed local
+  share 529 -> **582**, and **57 sites place off the receiver: 53 with a local in front, 4 with a call result**.
+- Tool (`source_returns`, `_folded`, `class_source`'s cached per-class source read across packages, `call_result` and
+  `local_chain` in `_receiver_reading`, the call tokens in `OBJECT_TOKENS`, five report lines) +
+  `inventory/script_calls.csv` regenerated (18,931 rows) + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`.
+
 ### Execution notes (2026-11-11, an array element receiver is its array's element type)
 
 - **430 of the 469 "completed value in front" sites were `A[i].Foo()`.** The token in front of the call is

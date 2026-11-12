@@ -300,22 +300,25 @@ only because one byte cannot spell 256.
     11687 scripts with an epilogue, 11602 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
+        naming a declaring class: 13258 of 13507 (98.2%)
         on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, ...)
           of those, 223 name a function only a *state* of that class declares (the class owns the state)
         by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top:
           ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        on the receiver's chain: 2584 (613 names) -- the expression in front of the call types to a class
-          (259 distinct; 529 of the 2,584 had a local in front, typed from the class's own ScriptText)
-          of those, 26 place because the receiver's type names a class in another case (pawn 14, GameHUD 4, ...)
+        on the receiver's chain: 2641 (624 names) -- the expression in front of the call types to a class
+          (267 distinct; 582 of the 2,641 had a local in front, typed from the class's own ScriptText)
+          of those, 33 place because the receiver's type names a class in another case (pawn 14, GameHUD 4, ...)
         below the receiver's chain: 6 reach exactly one descendant that declares the name, top:
           IsUnconscious -> StargateGame.BotEnemy 3, GetAggroLevel -> StargateGame.BotEnemy 3
-        decided by the receiver: 306 site(s) across 134 names, top: ClientMessage 27 over 3 classes, ...
-          an object expression with no recorded type: 221 -- 81 of them a local, 140 not
+        decided by the receiver: 249 site(s) across 111 names, top: ClientMessage 27 over 3 classes, ...
+          an object expression with no recorded type: 181 -- 28 of them a local, 153 not
           an expression that typed to a class whose chain declares no such name: 52, of which 6 reach exactly
             one descendant that declares it; the other 46 are a dispatch the static type cannot decide
-          a completed value in front (a self-call, or a receiver the walk did not reach): 39
-          why an expression in front names no class: local: the class source does not declare it 81, ...
-          a receiver that is an array element: 501 site(s) over 49 (token, class) pairs, top:
+          a completed value in front (a self-call, or a receiver the walk did not reach): 22
+          why an expression in front names no class: a literal or cast that names no class 70, ...
+          a local whose declaration the source spells in another case: 149 site(s), top: Msg 30, t 13, ...
+          a receiver that is a call result: 822 site(s), 72 typed from the callee's declared return type
+          a receiver that is an array element: 501 site(s) over 50 (token, class) pairs, top:
             ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ...
           typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, ...
           where every declarer agrees, the owner's own class agrees in 700 site(s) and differs in 0
@@ -432,17 +435,35 @@ from **628 to 81** and places **504 of the 628**, 80% of them.
 **The check is a shuffle.** Permuting the declared types inside each class and re-running the same walk
 collapses `Engine.u`'s local placements from **82 to 13** (and its whole receiver group from 313 to 244), so
 the placements come from the declarations and not from a name that would land on any chain. A local stays
-untyped by construction when its class ships no `ScriptText`, when the source has no declaration for that
-name in that function, when the class declares the name with two different types, or when the declared type
-is not a class at all.
+untyped by construction when its class ships no `ScriptText`, when neither its class nor any ancestor has a
+declaration for that name in that function, when the class declares the name with two different types, or when
+the declared type is not a class at all. The names from the text are matched **without case**, because the
+compiler does (`local pawn P;` is the export's `Pawn`) -- 149 sites were untyped for nothing but that.
 
-**So 13,201 of the 13,507 (97.7%) by-name sites now name a declaring class, and the 306 that do not are a
-typing gap, not a dispatch gap.** `ClientMessage` 27 sites over 3 classes, `GetString` 21 over 15, `WeaponFireAgain`
-11 over 9, `GetUIXInteraction` 10 over 2, `GetPickupItemName` 9 over 2. Of the 306: **221 have an object expression
-in front of them that names no class at all** (81 a local its source does not declare, 70 a literal or cast, 40 an
-array element whose array's type is not a class, 30 not a variable at all -- **no import is among them**), **46 name
-a class whose chain and subtree both declare nothing of that name**, and **39 have a completed value in front**,
-which is a call's return or a receiver the walk did not reach.
+**So 13,258 of the 13,507 (98.2%) by-name sites now name a declaring class, and the 249 that do not are a
+typing gap, not a dispatch gap.** `ClientMessage` 27 sites over 3 classes, `WeaponFireAgain` 11 over 9,
+`GetUIXInteraction` 10 over 2, `SetPause` 9 over 4, `GetPickupItemName` 7 over 2. Of the 249: **181 have an object
+expression in front of them that names no class at all** (28 a local neither its class nor an ancestor declares,
+70 a literal or cast, 40 an array element whose array's type is not a class, 25 not a variable at all, 18 a call
+result the callee's own statement could not type -- **no import is among them**), **46 name a class whose chain and subtree
+both declare nothing of that name**, and **22 have a completed value in front**, which is a call's return or a
+receiver the walk did not reach.
+
+**Three readings took the residue from 306 to 249, and the third one is a spelling bug.** A receiver that is a
+**call result** is typed from the callee's *declared return type*, read off the class's own `ScriptText`
+(`function Actor GetOwner()`), and the reading is asked at all 822 sites that front a by-name call with another
+call: **72 type** (`sound` 33, `PlayerController` 22), **534 name a callee that returns nothing**, 131 one whose
+Function is imported rather than in the package (its declaration is in another package), 72 a return value that is
+not a class, 11 a callee whose class declares no return type for it and 2 a callee outside the caller's chain. A
+local the caller's own source does not declare is looked for in an **ancestor's** `ScriptText`, which types 7. And
+**a declared name is matched without case**, the way the compiler matches it: the source spells `msg`, `t`, `dir`
+and the export table `Msg`, `T`, `Dir`, so `_folded` types **149 sites** whose declaration was there all along
+(`Msg` 30, `t` 13, `i` 12, `Dir` 8, `Image` 7) -- the same defect that `pawn`, `class<LocalMessage>` and
+`GameHUD` had. Altogether **57 sites place off the receiver** (53 with a local in front, 4 with a call result):
+the receiver's chain 2,584 -> **2,641** over 624 names and 267 distinct receiver classes, the receiver-typed local
+share 529 -> **582**, and the untyped local bucket 81 -> **28**. The check on the call-result rule is that only
+**4** of the 57 are call results: most of those 822 sites were already placed on the caller's chain, and this
+residue is nearly dry -- a fourth reading of the same packages is not where the rest of it is.
 
 **The last of the typed residue is a dispatch, and looking below the receiver settles most of it.** A receiver whose
 static type is a base can hold any subclass, so after the chain the tool looks *below* it: of the **52** sites whose
@@ -568,13 +589,15 @@ page does not yet describe, and the census records that instead of guessing at i
   reference operands *name* is measured per opcode (`--resolve`, above): objects for the variable, cast and
   final-call tokens, the name table for the virtual and global calls and `NameConst`. The `0x05` switch's byte is
   settled above (the compared value's width). By-name sites are now placed four ways: 8,321 on the caller's chain,
-  2,290 by the one class in the corpus that declares the name, 2,584 on the **receiver's** chain and 6 on the one
+  2,290 by the one class in the corpus that declares the name, 2,641 on the **receiver's** chain and 6 on the one
   descendant below the receiver that declares it -- the receiver is the expression the emitter evaluated in front of
   the call, and its declared type names a class (a property's from `class_properties.csv`, an import's from the owner
-  class its outer names, an array element's from its array, a local's from the class's own `ScriptText`). What is left
-  is **306 sites over 134 names**: 221 with an expression that names no class (81 a local its source does not declare,
-  70 a literal or cast, 40 an array element of a non-class array, 30 not a variable), 46 typed to a class whose chain
-  lacks the name, and 39 with a completed value in front; see "The calls the scripts make" for the counts, the reason
+  class its outer names, an array element's from its array, a local's from the class's own `ScriptText` or an
+  ancestor's, and a call result's from the callee's declared return type). What is left
+  is **249 sites over 111 names**: 181 with an expression that names no class (28 a local neither its class nor an
+  ancestor declares, 70 a literal or cast, 40 an array element of a non-class array, 25 not a variable, 18 a call
+  result with nothing to type), 46 typed to a class whose chain
+  lacks the name, and 22 with a completed value in front; see "The calls the scripts make" for the counts, the reason
   split, the shuffle control and the 10% reading ambiguity.
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`

@@ -1042,7 +1042,10 @@ CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalF
 OBJECT_TOKENS = {"InstanceVariable", "LocalVariable", "DefaultVariable", "ObjectConst", "Context",
                  "ClassContext", "DynamicCast", "MetaCast", "StructMember", "NativeParm", "NoObject",
                  # An array element is an object expression too: `A[i]` leaves the element.
-                 "ArrayElement", "DynamicArrayElement"}
+                 "ArrayElement", "DynamicArrayElement",
+                 # A call leaves its result, so a call in front of a call is a receiver as well: `GetOwner().Foo()`
+                 # dispatches on the callee's declared return type (`source_returns`).
+                 "FinalFunction", "VirtualFunction", "GlobalFunction"}
 
 
 def native_calls_report(path, table, out=None):
@@ -1267,6 +1270,41 @@ _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+
                         re.I)
 
 
+def source_returns(text):
+    """{function: declared return type} from a class's ScriptText, or {} when it ships none.
+
+    `_SRC_FUNC`'s first group is the token between `function` and the name, i.e. the return type. A call in
+    front of another call leaves that type on the stack, so `GetOwner().Foo()` dispatches on the class the
+    callee is *declared* to return -- which the bytecode does not carry and the source states outright. A
+    function the class declares twice with different types is dropped rather than guessed; a function that
+    returns nothing is kept as "" so a caller can say why its result is not an object.
+    """
+    if not text:
+        return {}
+    text = _SRC_COMMENT.sub("", text)
+    out = collections.defaultdict(set)
+    for m in _SRC_FUNC.finditer(text):
+        out[m.group(2)].add((m.group(1) or "").strip().lower())
+    return {fn: (next(iter(t)) if len(t) == 1 else None) for fn, t in out.items()}
+
+
+def _folded(table, name):
+    """The value a declared name has, matched without case -- the compiler folds case and the source does not.
+
+    UnrealScript matches identifiers case-insensitively while the source spells a class `pawn` and the export table
+    `Pawn`, so a declaration read from the text has to be looked up the same way the class index is (the same
+    defect that made `class<LocalMessage>` and `pawn` type nothing). `None` is a real value in these tables (a
+    name declared twice with two types), so the caller separates "absent" from "present with no type" itself.
+    """
+    if not table or name in table:
+        return table.get(name)
+    low = name.lower()
+    for k, v in table.items():
+        if k.lower() == low:
+            return v
+    return None
+
+
 def _operand_name(expr, export_at, import_at):
     """The export's or import's own name for a variable token's operand, or "" -- never the call's target."""
     if not expr or not expr.get("operands"):
@@ -1333,14 +1371,17 @@ def _kind_key(kind):
 
 
 def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
-                   import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None):
+                   import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None,
+                   call_result=None, local_chain=None, ancestor_local=None, local_case=None):
     """The class the receiver expression's declared type names, or "" when its token cannot say."""
     return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types,
-                             import_owner, owner_fixed, owner_conflict, owner_agree)[0]
+                             import_owner, owner_fixed, owner_conflict, owner_agree,
+                             call_result, local_chain, ancestor_local, local_case)[0]
 
 
 def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
-                      import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None):
+                      import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None,
+                      call_result=None, local_chain=None, ancestor_local=None, local_case=None):
     """(the class the expression's declared type names, why it names none).
 
     A property's type comes from its declaration in `inventory/class_properties.csv`; a *local* is a property
@@ -1354,17 +1395,23 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
     nm = expr["name"]
     if nm in ("Context", "ClassContext") and expr["children"]:
         return _receiver_reading(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
-                                 local_types, import_owner, owner_fixed, owner_conflict, owner_agree)
+                                 local_types, import_owner, owner_fixed, owner_conflict, owner_agree,
+                                 call_result, local_chain, ancestor_local, local_case)
     if nm in ("ArrayElement", "DynamicArrayElement") and expr["children"]:
         # An array element is the array's declared element type: `_class_of_type` unwraps `array<Pawn>` to `Pawn`.
         # The two children are the index and the array (in that order, measured), so the index names nothing and the
         # array is whichever child the declarations do type.
         for child in expr["children"]:
             cls, _why = _receiver_reading(child, export_at, import_at, prop_type, prop_type_by_name, local_types,
-                                          import_owner, owner_fixed, owner_conflict, owner_agree)
+                                          import_owner, owner_fixed, owner_conflict, owner_agree,
+                                          call_result, local_chain, ancestor_local, local_case)
             if cls:
                 return cls, ""
         return "", "array element: the array's type names no class"
+    if nm in CALL_TOKENS and call_result is not None:
+        # A call leaves its result on the stack, so a call in front of a call is a receiver too:
+        # `GetOwner().Foo()` dispatches on whatever `GetOwner` is *declared* to return.
+        return call_result(expr)
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
         value, _e = read_index(expr["operands"], 0)
         target = export_at.get(value)
@@ -1379,6 +1426,25 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
             return "", "local: the operand names no record"
         name = export_at[value][0]
         if name not in (local_types or {}):
+            folded = _folded(local_types, name)
+            if folded is not None:
+                cls = _class_of_type(folded)
+                if cls:
+                    if local_case is not None:
+                        local_case[name] += 1
+                    return cls, ""
+            if local_chain is not None:
+                # A function a class inherits is not in its own source, and neither are the locals its body
+                # declares, so the declaration is looked for on the caller's chain -- in the ScriptText of the
+                # ancestor that declares the same function.
+                hit, where = local_chain(name)
+                if hit is not None:
+                    cls = _class_of_type(hit)
+                    if cls:
+                        if ancestor_local is not None:
+                            ancestor_local[where] += 1
+                        return cls, ""
+                    return "", "local: the declaring ancestor does not type it as a class"
             return "", "local: the class source does not declare it"
         hit = local_types[name]
         if hit is None:
@@ -1454,6 +1520,10 @@ def calls_report(path, table, out=None):
 
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
+    # The package each class's source is read from, by package name: an ancestor's declaration lives outside
+    # the package being walked, and `class_source` opens it on first ask.
+    pkg_paths = {os.path.basename(one).rsplit(".", 1)[0]: one for one in files}
+    sourced = {}
     # (package, class) -> (package the super is declared in, super): the chain a by-name call is resolved along.
     supers = {}
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
@@ -1606,6 +1676,14 @@ def calls_report(path, table, out=None):
     owner_conflict = collections.Counter()
     # The owner's own declaration agreeing with a unanimous vote: the rule's control.
     owner_agree = collections.Counter()
+    # A receiver that is a call result, by the token and what the callee's declaration typed it to.
+    call_sites = collections.Counter()
+    # A local typed from an ancestor's declaration rather than the caller's own.
+    ancestor_local = collections.Counter()
+    # A local whose declaration the source spells in another case than the export table.
+    local_case = collections.Counter()
+    # The token that produced a value a later call sits in front of: what is left after the call results.
+    value_tokens = collections.Counter()
     walked = seen = 0
     for one in files:
         pkg = Package(one)
@@ -1633,15 +1711,43 @@ def calls_report(path, table, out=None):
         for k, x in enumerate(pkg.exports, 1):
             if pkg.class_name_of(x) == "Class":
                 class_export.setdefault(pkg.name(x["name"]), (k, x))
-        decls_by_class = {}
+
+        def class_source(one_pkg, cls_name):
+            """(locals by function, return types by function) for one class, from its own ScriptText.
+
+            A local's type and a function's return type are both statements of the source, not fields of the
+            record, and an ancestor's answer lives in the package that declares it -- so the parse is cached by
+            (package, class) and every other package is opened on first ask, once.
+            """
+            key = (one_pkg, cls_name)
+            if key not in sourced:
+                text = None
+                if one_pkg == pkg_name:
+                    hit = class_export.get(cls_name)          # the package being walked is already open
+                    text = _script_text(pkg, hit[1], hit[0] - 1) if hit else None
+                else:
+                    other = pkg_paths.get(one_pkg)
+                    if other:
+                        pkg2 = Package(other)
+                        pkg2.read_names()
+                        pkg2.read_imports()
+                        pkg2.read_exports()
+                        for k, x in enumerate(pkg2.exports, 1):
+                            if pkg2.class_name_of(x) == "Class" and pkg2.name(x["name"]) == cls_name:
+                                text = _script_text(pkg2, x, k - 1)
+                                break
+                sourced[key] = (source_declarations(text), source_returns(text))
+            return sourced[key]
 
         def local_decls(cls_name, fn_name):
             """{local name: declared type} for one function of `cls_name`, from its ScriptText."""
-            if cls_name not in decls_by_class:
-                hit = class_export.get(cls_name)
-                text = _script_text(pkg, hit[1], hit[0] - 1) if hit else None
-                decls_by_class[cls_name] = source_declarations(text)
-            return decls_by_class[cls_name].get(fn_name, {})
+            locs = class_source(pkg_name, cls_name)[0]
+            hit = locs.get(fn_name)
+            if hit is None:
+                for fn, d in locs.items():
+                    if fn.lower() == fn_name.lower():
+                        return d
+            return hit or {}
 
         # A by-name call carries a name-table index; whether it names a function is a question for the chain above.
         for e in pkg.exports:
@@ -1679,7 +1785,81 @@ def calls_report(path, table, out=None):
             owner = pkg.name(oe["name"]) if oe is not None else "?"
             if oe is not None and oe.get("outer") and pkg.class_name_of(oe) == "State":
                 owner = pkg.name(pkg.exports[oe["outer"] - 1]["name"])
-            here_locals = local_decls(owner, pkg.name(e["name"]))
+            here_fn = pkg.name(e["name"])
+            here_locals = local_decls(owner, here_fn)
+
+            def call_result(expr):
+                """The class a call's declared return type names: the receiver a chained call dispatches on.
+
+                `GetOwner().Foo()` has no variable to type -- the receiver is the first call's *result*, and the
+                only statement of its type is the callee's declaration (`function Actor GetOwner()`), which the
+                class's own `ScriptText` carries. A `FinalFunction` names its Function export, so the callee's
+                class is that export's outer (a State's function belongs to the class that owns the state); a
+                `VirtualFunction` or `GlobalFunction` names a name, resolved on the caller's chain the way a
+                self-call is.
+                """
+                value, _e = read_index(expr["operands"], 0)
+                if expr["name"] == "FinalFunction":
+                    callee = None
+                    if 0 < value <= len(pkg.exports):
+                        x = pkg.exports[value - 1]
+                        if pkg.class_name_of(x) == "Function" and x.get("outer"):
+                            outer = pkg.exports[x["outer"] - 1]
+                            cls = pkg.name(outer["name"])
+                            if pkg.class_name_of(outer) == "State" and outer.get("outer"):
+                                cls = pkg.name(pkg.exports[outer["outer"] - 1]["name"])
+                            callee = (pkg_name, cls, pkg.name(x["name"]))
+                    if callee is None:
+                        return "", "call result: the operand names no Function of this package"
+                else:
+                    name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
+                    where, decl = on_chain(pkg_name, owner, name)
+                    if where == "package":
+                        callee = (pkg_name, owner, name)
+                    elif where == "ancestor":
+                        op, oc = decl.split(".", 1)
+                        callee = (op, oc, name)
+                    else:
+                        return "", "call result: the callee is not declared on the caller's chain"
+                rets = class_source(callee[0], callee[1])[1]
+                ret = _folded(rets, callee[2])
+                if callee[2] not in rets and ret is None:
+                    low = {k.lower(): v for k, v in rets.items()}
+                    if callee[2].lower() not in low:
+                        return "", "call result: the callee's class declares no return type for it"
+                    ret = low[callee[2].lower()]
+                if ret is None:
+                    return "", "call result: the callee is declared twice with different types"
+                if not ret:
+                    return "", "call result: the callee returns nothing"
+                cls = _class_of_type(ret)
+                return (cls, "") if cls else ("", "call result: the callee returns a value that is not a class")
+
+            def local_chain(name):
+                """A local the caller's own source does not declare: the ancestor that declares the function.
+
+                A function a class inherits is not in its own source, and neither are the locals its body
+                declares, so the chain is walked the way a by-name self-call walks it, reading each ancestor's
+                `ScriptText` for the same function name.
+                """
+                here, seen = (pkg_name, owner), set()
+                while here in supers and here not in seen:
+                    seen.add(here)
+                    here = supers[here]
+                    if not here[1]:
+                        break
+                    locs = class_source(here[0], here[1])[0]
+                    decls = locs.get(here_fn)
+                    if decls is None:
+                        for fn, d in locs.items():
+                            if fn.lower() == here_fn.lower():
+                                decls = d
+                                break
+                    hit = _folded(decls, name) if decls else None
+                    if hit is not None:
+                        return hit, "%s.%s" % here
+                return None, ""
+
             for node, i, sibs, parent in _tree(nodes):
                 kind = CALL_TOKENS.get(table.rows[node["opcode"]]["name"])
                 if kind is None or not node["operands"]:
@@ -1696,8 +1876,12 @@ def calls_report(path, table, out=None):
                             rtype, why = _receiver_reading(prev, export_at, import_at, prop_type,
                                                            prop_type_by_name, here_locals,
                                                            import_owner, owner_fixed,
-                                                           owner_conflict, owner_agree)
+                                                           owner_conflict, owner_agree,
+                                                           call_result, local_chain, ancestor_local, local_case)
+                            if rtoken in CALL_TOKENS:
+                                call_sites[(rtoken, rtype or (why or "no reason"))] += 1
                         else:
+                            value_tokens[rtoken] += 1
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
                     if rtype and rtoken in ("ArrayElement", "DynamicArrayElement"):
@@ -1758,6 +1942,9 @@ def calls_report(path, table, out=None):
     only = {r[5]: r[9] for r in corpus}
     wide_n = {r[5]: r[8] for r in wide}
     print("  by name (VirtualFunction, GlobalFunction): %d" % len(by_name))
+    print("    naming a declaring class: %d of %d (%.1f%%)"
+          % (len(by_name) - len(wide), len(by_name),
+             100.0 * (len(by_name) - len(wide)) / max(1, len(by_name))))
     print("    on the caller's chain: %d -- %d in its own class, %d on an ancestor (top: %s)"
           % (len(here) + len(above), len(here), len(above),
              ", ".join("%s %d" % kv for kv in collections.Counter(r[7] for r in above).most_common(5))))
@@ -1788,6 +1975,14 @@ def calls_report(path, table, out=None):
           % (len(untyped), len(locals_), len(untyped) - len(locals_)))
     print("      of the receiver-typed sites, %d had a local in front (typed from the class's own ScriptText)"
           % len([r for r in recv if r[10] == "LocalVariable"]))
+    if local_case:
+        print("      a local whose declaration the source spells in another case: %d site(s), top: %s"
+              % (sum(local_case.values()), ", ".join("%s %d" % kv for kv in local_case.most_common(6))))
+    if ancestor_local:
+        print("      of the locals the caller's own source does not declare, %d are typed from an ancestor's "
+              "declaration (%d class(es), top: %s)"
+              % (sum(ancestor_local.values()), len(ancestor_local),
+                 ", ".join("%s %d" % kv for kv in ancestor_local.most_common(6))))
     print("      an expression that typed to a class whose chain declares no such name: %d, of which %d reach "
           "exactly one descendant that declares it (descendant:Pkg.Class, %d names), top: %s"
           % (len(typed_gap) + len(below_rows), len(below_rows), len({r[5] for r in below_rows}),
@@ -1807,6 +2002,23 @@ def calls_report(path, table, out=None):
           % ", ".join("%s %d" % kv for kv in below_none.most_common(6)))
     print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
           % (len(open_) - len(untyped) - len(typed_gap)))
+    if value_tokens:
+        print("        the token that produced that value: %s"
+              % ", ".join("%s %d" % kv for kv in value_tokens.most_common(8)))
+    if call_sites:
+        typed_c, rest_c = collections.Counter(), collections.Counter()
+        for (tok, what), n in call_sites.items():
+            if what and not what.startswith("call result"):
+                typed_c[what] += n
+            else:
+                rest_c[what or "no reason"] += n
+        print("      a receiver that is a call result: %d site(s), %d typed from the callee's declared return "
+              "type (top: %s)"
+              % (sum(call_sites.values()), sum(typed_c.values()),
+                 ", ".join("%s %d" % kv for kv in typed_c.most_common(6))))
+        if rest_c:
+            print("        the rest by what the callee's own statement says: %s"
+                  % ", ".join("%s %d" % kv for kv in rest_c.most_common(6)))
     print("      why an expression in front names no class: %s"
           % ", ".join("%s %d" % kv for kv in receiver_gap.most_common(7)))
     if array_fixed:
