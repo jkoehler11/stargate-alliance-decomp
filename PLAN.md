@@ -1050,6 +1050,23 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the base is a `.data` singleton and the 38 candidates are a different field)
+
+- **The read U8 asked for was one instruction further back than the callers.** `tools/vcall-field-owner.py` now
+  follows each member load's *base register* to its writer (`base_origin` in `inventory/vcall_field_owners.csv`):
+  **11 sites are `this`, 8 load `eax` from the absolute global `.data:0x7b9ba0`, 7 read the stack and 2 an incoming
+  register** -- so the earlier "20 `this`, 8 an argument" was the receiver chain's answer read as the field's.
+- **The eight `+0x220` sites all name one singleton, and it is not a `UObject`.** `0x7b9ba0` has one store
+  (`0x331a6e` in `FUN_003319fc`) and 177 `mov`-form loads, and that store's path is create-once: `0x224` bytes,
+  ctor `0x330b35`, init `0x3315d4`, a counter at `+0x190`, the pointer returned through an out-parameter. `0x224` is
+  the whole object, so `+0x220` is its last dword, written once at `0x3316b7` with a 32-byte helper built by
+  `0x331381`, whose constructor installs vtable `0x0053f770` -- outside the 492 packed class tables
+  (`0x004c78c0`-`0x0053b168`). So "which of the 38 classes do the callers pass" answers **none of them**: the
+  displacement has two owners and the heap table's `Class`->`Function` rows are the other one.
+- Tool (`tools/vcall-field-owner.py`: `store_before`, `global_refs`, `base_origin`, six new self-test cases -- 24
+  total) + regenerated `inventory/vcall_field_owners.csv` (28 rows, 8 new columns) + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. Reads the image; no boot.
+
 ### Execution notes (2026-11-12, the live heap names the holders of all six offsets, and `+0x1c` holds nothing)
 
 - **The layout question is answered from a boot, not a decompile.** `tools/xemu/field-objects.py` (`--selftest`
