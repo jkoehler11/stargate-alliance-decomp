@@ -715,8 +715,11 @@ def scan_report(path, lo=8, hi=40):
     return 0
 
 
-FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native)\s+)*(?:function|event)\s+"
-                       r"(?:[\w<>\[\]]+\s+)?(\w+)\s*\(", re.IGNORECASE | re.MULTILINE)
+# ==== new anchor block, spliced over FUNC_DECL .. argparser ====
+
+FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native|protected|private|public)\s+)*"
+                       r"(?:function|event)\s+(?:([\w<>\[\]]+)\s+)?(\w+)\s*\(",
+                       re.IGNORECASE | re.MULTILINE)
 
 # The first statement's leading token where the source fixes it *and the emitter writes that token first*.
 # `return <literal>;` qualifies: `EX_Return` is the statement's first byte. `if (...)` and `assert (...)` do not --
@@ -724,12 +727,29 @@ FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native)\s+)*
 # would be searched for a `07` that is not its first byte at all (measured 2026-11-12: with the two patterns in the
 # list, 597 of 716 anchored payloads whose expected byte was absent from the payload entirely were `07`-anchored).
 FIRST_STATEMENT = [
-    (re.compile(r"return\s*;"), bytes([0x04, 0x0B])),
-    (re.compile(r"return\s+true\s*;", re.IGNORECASE), bytes([0x04, 0x27])),
-    (re.compile(r"return\s+false\s*;", re.IGNORECASE), bytes([0x04, 0x28])),
-    (re.compile(r"return\s+0\s*;"), bytes([0x04, 0x25])),
-    (re.compile(r"return\s+1\s*;"), bytes([0x04, 0x26])),
+    (re.compile(r"return\s*;"), "none"),
+    (re.compile(r"return\s+true\s*;", re.IGNORECASE), "true"),
+    (re.compile(r"return\s+false\s*;", re.IGNORECASE), "false"),
+    (re.compile(r"return\s+0\s*;"), "zero"),
+    (re.compile(r"return\s+1\s*;"), "one"),
 ]
+
+# The literal's opcode is chosen by the *declared return type*, not by the source alone (measured 2026-11-12).
+# A function declared with no return type writes `return <expr>;` as a bare `Return Nothing` -- the value is
+# dropped, `04 0b` -- and that single rule accounts for 69 of the 104 payloads the type-blind anchor missed; a
+# `float` function writes `04 1e` plus the float (11), a `byte` function `04 24` plus the byte (6), and only
+# `bool`/`int` reach the `04 25`/`04 26`/`04 27`/`04 28` the first version assumed for every body. A return type
+# with no measured rule is left unanchored rather than guessed, so the denominator stays honest.
+RETURN_OPS = {
+    ("", "none"): b"\x04\x0b", ("", "true"): b"\x04\x0b", ("", "false"): b"\x04\x0b",
+    ("", "zero"): b"\x04\x0b", ("", "one"): b"\x04\x0b",
+    ("bool", "none"): b"\x04\x0b", ("bool", "true"): b"\x04\x27", ("bool", "false"): b"\x04\x28",
+    ("bool", "zero"): b"\x04\x25", ("bool", "one"): b"\x04\x26",
+    ("int", "none"): b"\x04\x0b", ("int", "zero"): b"\x04\x25", ("int", "one"): b"\x04\x26",
+    ("byte", "none"): b"\x04\x0b", ("byte", "zero"): b"\x04\x24\x00", ("byte", "one"): b"\x04\x24\x01",
+    ("float", "none"): b"\x04\x0b", ("float", "zero"): b"\x04\x1e\x00\x00\x00\x00",
+    ("float", "one"): b"\x04\x1e\x00\x00\x80\x3f",
+}
 
 
 def _body_start(text, at):
@@ -752,15 +772,27 @@ def _body_start(text, at):
     return text[i:]
 
 
-def first_statement_ops(text, at):
-    """The opcode bytes the shipped source fixes for the body that opens after `at`, or None."""
+def first_statement_kind(text, at):
+    """Which `return` form the body that opens after `at` starts with, or None."""
     body = _body_start(text, at)
     if body is None:
         return None
-    for pattern, ops in FIRST_STATEMENT:
+    for pattern, kind in FIRST_STATEMENT:
         if pattern.match(body):
-            return ops
+            return kind
     return None
+
+
+def first_statement_ops(text, at, rettype=None):
+    """The opcode bytes the shipped compiler writes first for the body that opens after `at`, or None.
+
+    `rettype` is the declaration's own return type (`None` for a `function Foo()`), because the emitted literal
+    depends on it: see `RETURN_OPS`.
+    """
+    kind = first_statement_kind(text, at)
+    if kind is None:
+        return None
+    return RETURN_OPS.get(((rettype or "").strip().lower(), kind))
 
 
 def anchor_report(path, lo=8, hi=40):
@@ -769,13 +801,17 @@ def anchor_report(path, lo=8, hi=40):
     The walk alone cannot answer it: `--start-scan` finds a clean walk from **every** delta between +11 and +16
     on 99% of payloads, because most bytes decode as one-byte opcodes and a garbage stream still consumes the
     payload exactly. So the anchor is content. Each `Function` export's class ships its `ScriptText`, and a body
-    that opens with `return true;` (`return false;`, `return;`, `return 0/1;`, a leading `if (`/`assert (`) fixes
-    its first opcode bytes -- `04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`. For every such payload this
-    pass asks which `name_end + delta` carries those bytes, and whether the walk from there reaches the epilogue.
+    that opens with `return true;` (`return false;`, `return;`, `return 0/1;`) fixes its first opcode bytes -- but
+    only together with the declaration's own return type, which is what chooses the literal (`RETURN_OPS`), and
+    only for the class that *owns* the export: a name declared once in a package is not an anchor for the same
+    name in another class. Both rules are load-bearing. Keying by name alone paired `Engine.u`'s one
+    `Destroyed` declaration with every same-named export in the package, and left 658 anchored payloads of which
+    225 sat at +16; keying by (class, function) and by the return type gives 441 of which **422** sit at +16 and
+    all 422 walk from there to the epilogue.
 
     A fixed header length is a peak at one delta against a flat control everywhere else, and the same bytes
-    searched from offset 0 should never hit. A name declared twice in one class with different bodies is dropped
-    rather than guessed; the anchored count is printed so the denominator is visible.
+    searched from offset 0 should never hit. A body a class declares twice (a state override) is dropped rather
+    than guessed; the anchored count is printed so the denominator is visible.
     """
     import importlib.util                                  # noqa: PLC0415 - only for the shipped source
 
@@ -796,17 +832,17 @@ def anchor_report(path, lo=8, hi=40):
     walked = collections.Counter()
     opcodes = collections.Counter()
     unmatched_by_op = collections.Counter()
+    unmatched_shape = collections.Counter()
+    unrouted = collections.Counter()
     sized = collections.Counter()
-    anchored = located = at_zero = unmatched = 0
+    anchored = located = at_zero = unmatched = twice = state_owned = 0
     for one in files:
         pkg = ue2.Package(one)
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
-        # A Function export names its class only through its `Outer`, and this pass keys the anchor by the
-        # function's name -- so a name declared more than once in the package is dropped rather than guessed,
-        # even when every declaration agrees. A class that overrides a parent's body is exactly the case where
-        # the wrong declaration would be paired with the wrong payload.
+        # A Function export names its class only through its `Outer`: a class-scoped key is what keeps one class's
+        # `return false;` from anchoring every same-named payload in the package.
         decls = collections.Counter()
         expected = {}
         for cls in pkg.exports:
@@ -815,20 +851,35 @@ def anchor_report(path, lo=8, hi=40):
             text = pst.script_text(pkg, cls)
             if not text:
                 continue
+            cname = pkg.name(cls["name"]).lower()
             for m in FUNC_DECL.finditer(text):
-                ops = first_statement_ops(text, m.end())
-                if ops is None:
+                kind = first_statement_kind(text, m.end())
+                if kind is None:
                     continue
-                key = m.group(1).lower()
+                rtype = (m.group(1) or "").strip().lower()
+                want = RETURN_OPS.get((rtype, kind))
+                if want is None:
+                    unrouted["%s/%s" % (rtype or "void", kind)] += 1
+                    continue
+                key = (cname, (m.group(2) or "").lower())
                 decls[key] += 1
-                expected.setdefault(key, ops)
+                expected.setdefault(key, want)
         for key, count in list(decls.items()):
             if count != 1:
                 expected.pop(key, None)
+                twice += 1
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function":
                 continue
-            want = expected.get(pkg.name(e["name"]).lower())
+            outer = e["outer"]
+            if outer < 1 or outer > len(pkg.exports):
+                continue
+            owner = pkg.exports[outer - 1]
+            if pkg.class_name_of(owner) == "State":
+                state_owned += 1                     # its body is the state's, not the class declaration's
+                continue
+            key = (pkg.name(owner["name"]).lower(), pkg.name(e["name"]).lower())
+            want = expected.get(key)
             if want is None:
                 continue
             pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
@@ -872,13 +923,19 @@ def anchor_report(path, lo=8, hi=40):
             if not found:
                 unmatched += 1
                 unmatched_by_op[want.hex()] += 1
-            else:
+                unmatched_shape[pay[off + 16:end][:2].hex()] += 1
+            elif off + 16 + len(want) <= end and pay[off + 16:off + 16 + len(want)] == want:
+                # Only the rows whose start is the claimed +16 say anything about the dword at +12: a match at
+                # +18 or +21 is a second occurrence of the same bytes, not the start.
                 word = struct.unpack_from("<I", pay, off + 12)[0]
                 sized[word - (end - (off + 16))] += 1
     name = os.path.basename(path.rstrip(os.sep)) or path
     print("%s: %d anchored payloads (ScriptText fixes the first opcode) of %d with a located epilogue"
           % (name, anchored, located))
     print("  anchored opcodes: %s" % dict(opcodes.most_common()))
+    print("  not anchored: %d declaration(s) made twice in one class, %d whose return type has no measured rule"
+          " (%s), %d Function export(s) owned by a State"
+          % (twice, sum(unrouted.values()), dict(unrouted.most_common(4)), state_owned))
     print("  a match at name_end+delta (match / at+distance, clean walk from there):")
     for delta in deltas:
         if not hit[delta]:
@@ -890,14 +947,16 @@ def anchor_report(path, lo=8, hi=40):
         peak, most = hit.most_common(1)[0]
         print("  peak delta +%d with %d of %d anchored payloads and %d clean walks"
               % (peak, most, anchored, walked[peak]))
-    print("  no delta matched: %d; the same bytes at payload offset 0: %d" % (unmatched, at_zero))
+    print("  no delta matched: %d; by the script's own first two bytes at +16: %s;"
+          " the same bytes at payload offset 0: %d"
+          % (unmatched, dict(unmatched_shape.most_common()), at_zero))
     if unmatched_by_op:
         print("    of those, by anchored opcode: %s" % dict(unmatched_by_op.most_common()))
     # The dword at name_end+12 against the script's own length (name_end+16 .. the epilogue). Zero means the
     # field is that length; a positive residue is what the field counts beyond it.
     if sized:
         exact = sized.get(0, 0)
-        print("  dword at name_end+12 minus the script's length, over the anchored payloads: %s"
+        print("  dword at name_end+12 minus the script's length, over the payloads whose start is +16: %s"
               % dict(sorted(sized.items())[:8]))
         print("    equal in %d of %d (%.1f%%), and never negative: %s"
               % (exact, sum(sized.values()), 100.0 * exact / sum(sized.values()),

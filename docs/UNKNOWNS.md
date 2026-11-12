@@ -1750,6 +1750,21 @@ header-alignment question now that the anchor is valid; and the dword at `name_e
 **223 of 236** rows the anchor matched, while corpus-wide it is larger far more often — so it is a size whose
 relation to the script is not constant, and it is still unidentified.
 
+**2026-11-12, later: the 422 were a mispairing, and two rules close the locator.** `--start-anchor` had keyed its
+declaration by the function *name* alone, so a single class's `return false;` anchored every same-named `Function`
+export in the package (`Destroyed` is exported from dozens of classes in `Engine.u` alone); those payloads were then
+searched for bytes their own source never contained, which is why 422 of 658 matched at no delta. Keyed by
+(class, function) — the export's own `Outer` — and with the literal's opcode chosen by the declaration's **declared
+return type** (no return type writes `return <expr>;` as a bare `Return Nothing`, `04 0b`; `float` writes `04 1e`
+plus the float; `byte` writes `04 24` plus the byte; only `bool`/`int` reach `04 25`/`04 26`/`04 27`/`04 28`), the 18
+packages give **441 anchored payloads, of which 422 carry the expected bytes exactly at `name_end+16` and all 422
+walk from there to the epilogue**, against at most **9** at any other delta in `+4..+40` and **0** at payload offset
+0. What is left is **12** payloads (3 compile to an empty body, 8 open with `07`, 1 with `04 82`), 31 declarations
+made twice in one class, 10 whose return type has no measured rule, and the 2,137 `Function` exports owned by a
+`State` object, which this key does not reach. The dword at `name_end+12` is the script's length in **420 of the 422**
+rows whose start is +16 — true of this trivial-`return` population and not of the corpus, where the same dword is
+larger far more often: the field is equal here and still unidentified.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
