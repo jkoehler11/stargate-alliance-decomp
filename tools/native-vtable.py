@@ -257,6 +257,56 @@ def load_symbols(path):
     return names
 
 
+
+def block_scan(xbe, section_name=".rdata", min_slots=3):
+    """Every run of >= `min_slots` code pointers in one data section, split at install starts.
+
+    A linker packs class vtables back to back with no delimiter, so "code pointers until one is not
+    code" merges neighbours: this walk keeps the run and the install starts inside it, which is the
+    only evidence that a run holds more than one table.
+    """
+    text = next((s for s in xbe.sections if s.name == ".text"), None)
+    data = next((s for s in xbe.sections if s.name == section_name), None)
+    if text is None or data is None:
+        raise SystemExit(f"{section_name}: section not found")
+    installs = {}
+    for s in xbe.sections:
+        if not s.executable:
+            continue
+        blob = xbe.data[s.foff:s.foff + min(s.fsize, s.vsize)]
+        for i in range(len(blob) - 4):
+            v = struct.unpack_from("<I", blob, i)[0]
+            if v % 4 or not data.contains(v):
+                continue
+            if immediate_store(blob, i, v):
+                installs.setdefault(v, []).append(s.va + i)
+    n = data.vsize // 4
+    vals = struct.unpack_from("<%dI" % n, xbe.data, data.foff)
+    rows, i = [], 0
+    while i < n:
+        if not text.contains(vals[i]):
+            i += 1
+            continue
+        j = i
+        while j < n and text.contains(vals[j]):
+            j += 1
+        if j - i >= min_slots:
+            run_va, slots = data.va + i * 4, j - i
+            ends = sorted(s for s in installs if run_va <= s < run_va + 4 * slots)
+            bounds = ends + [run_va + 4 * slots]
+            counts = [(b - a) // 4 for a, b in zip(ends, ends[1:] + [bounds[-1]])] if ends else [slots]
+            rows.append({
+                "run_va": f"{run_va:#010x}",
+                "run_slots": slots,
+                "tables": len(ends) if ends else 0,
+                "first_is_table": "yes" if run_va in installs else "no",
+                "slot_counts": " ".join(str(c) for c in counts),
+                "install_sites": " ".join(f"{s:#010x}" for s in ends),
+            })
+        i = j
+    return rows
+
+
 # ---------------------------------------------------------------- self-test
 
 def cmd_check():
@@ -308,12 +358,28 @@ def main():
                                                       "xbox_functions.csv"))
     ap.add_argument("-o", "--out", default="inventory/native_vtable_census.csv")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--block", action="store_true",
+                    help="census every code-pointer run in a data section, split at install starts")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
         return cmd_check()
     if not args.xbe:
         ap.error("an XBE is required unless --check")
+    if args.block:
+        rows = block_scan(X.Xbe(args.xbe))
+        with open(args.out, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=["run_va", "run_slots", "tables", "first_is_table",
+                                              "slot_counts", "install_sites"])
+            w.writeheader()
+            w.writerows(rows)
+        multi = [r for r in rows if r["tables"] >= 2]
+        tables = sum(r["tables"] for r in rows)
+        print(f"{len(rows)} runs of >=3 code pointers, {tables} table starts, "
+              f"{len(multi)} runs holding two or more tables "
+              f"({sum(1 for r in rows if r['first_is_table'] == 'yes')} runs start with a table)")
+        print(f"wrote {args.out}")
+        return 0
     va = int(args.va, 0)
     x = X.Xbe(args.xbe)
     first = struct.unpack("<I", x.read_va(va, 4))[0]
