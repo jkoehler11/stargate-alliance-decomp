@@ -1,0 +1,29 @@
+site_va,slot,function,field_va,field_bytes,field_form,field_base,field_offset,origin_chain,module,own_register,table_class,table_slot,callers,caller_classes,named_class,route,reason
+0x0001dbf3,19,FUN_0001db50+0xa3,0x0001db8d,8b 4e 2c,"mov ecx,[esi+0x2c]",esi,0x2c,ebx<-ecx,,yes,,,0x01dd92,,,,function is no table slot; no caller is a table slot
+0x002c9827,19,FUN_002c95a0,0x002c981f,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x002c9cb1,19,FUN_002c95a0,0x002c9ca9,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x002c9dc3,19,FUN_002c95a0,0x002c9dbe,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x002cdbb0,19,FUN_002cdb50,0x002cdba8,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,IpDrv,yes,,,0x2cd54f;0x2cf8a9,,,,function is no table slot; no caller is a table slot
+0x002ce6a4,19,dtor_MasterServerUplink+0x2d4,0x002ce69c,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x002cf045,19,dtor_MasterServerUplink+0xc75,0x002cf03d,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x002cf14b,19,FUN_002cf100,0x002cf143,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,Core,yes,,,0x2ce780,,,,function is no table slot; no caller is a table slot
+0x002cf3e2,19,FUN_002cf290,0x002cf3da,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,Core,yes,,,0x2ceb73;0x2cebe8;0x2cec97,,,,function is no table slot; no caller is a table slot
+0x002cf95b,19,FUN_002cf900,0x002cf953,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,Core,yes,,,0x2cf873,,,,function is no table slot; no caller is a table slot
+0x002cfaa6,19,FUN_002cf970,0x002cfa9e,8b 4b 4c,"mov ecx,[ebx+0x4c]",ebx,0x4c,ecx,Core,yes,,,0x2cf87a;0x2cfb52,,,,function is no table slot; no caller is a table slot
+0x002cff9b,19,FUN_002cfc20,0x002cff93,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,Core,yes,,,0x2cfb4b,,,,function is no table slot; no caller is a table slot
+0x00331247,19,FUN_0033122a,0x0033123e,8b 4e 1c,"mov ecx,[esi+0x1c]",esi,0x1c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x00331279,19,FUN_0033124e,0x00331270,8b 4e 1c,"mov ecx,[esi+0x1c]",esi,0x1c,ecx,,yes,,,,,,,function is no table slot; no direct caller
+0x003343bd,19,FUN_003341dd,0x00334398,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x335007,,,,function is no table slot; no caller is a table slot
+0x00335194,19,FUN_00334f87,0x0033516e,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x335534,,,,function is no table slot; no caller is a table slot
+0x00336d69,19,FUN_00336b8f,0x00336d47,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x337318,,,,function is no table slot; no caller is a table slot
+0x00336f5b,19,FUN_00336b8f,0x00336f3a,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x337318,,,,function is no table slot; no caller is a table slot
+0x00344615,19,FUN_003445f0,0x00344600,8b 48 48,"mov ecx,[eax+0x48]",eax,0x48,ecx,,yes,,,0x344a77,,,,function is no table slot; no caller is a table slot
+0x0001f766,20,FUN_0001f5c0+0x1a6,0x0001f757,8b 4e 48,"mov ecx,[esi+0x48]",esi,0x48,ecx,,yes,,,0x01f52c,,,,function is no table slot; no caller is a table slot
+0x0001f772,20,FUN_0001f5c0+0x1b2,0x0001f76d,8b 4e 4c,"mov ecx,[esi+0x4c]",esi,0x4c,ecx,,yes,,,0x01f52c,,,,function is no table slot; no caller is a table slot
+0x0001fa28,20,FUN_0001f9d0,0x0001fa1c,8b 4e 48,"mov ecx,[esi+0x48]",esi,0x48,ecx,Core,yes,,,0x01fbeb,,,,function is no table slot; no caller is a table slot
+0x001f1f93,20,FUN_001f1f50,0x001f1f72,8b 8e 10 03 00 00,"mov ecx,[esi+0x310]",esi,0x310,ecx,Engine,yes,,,0x1f20e1;0x1f2152;0x1f2174;0x1f6fb1;0x1f7028;0x21e8a0;0x317fe4;0x3188a0;0x318ea4;0x318f80;0x3192f3;0x319529;0x319610;0x31ab90;0x31b583,,,,function is no table slot; no caller is a table slot
+0x001f473a,20,FUN_001f4700,0x001f471c,8b 4e 2c,"mov ecx,[esi+0x2c]",esi,0x2c,ecx,,yes,,,0x0ffbb7;0x101c7b;0x101f03;0x102477;0x102f0a;0x1034e4;0x1324b6;0x133fe9;0x1763a9;0x176402;0x176743;0x1dae3e;0x1dafbb;0x1db18c;0x1db245;0x1db74d;0x1dbe9a;0x1f485b;0x1f49df;0x1f4c6f;0x1f50fe;0x1f75eb,,,,function is no table slot; no caller is a table slot
+0x00333881,20,FUN_0033385e,0x0033386f,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x335382,,,,function is no table slot; no caller is a table slot
+0x00333fec,20,FUN_00333fd3,0x00333fd8,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x335360,,,,function is no table slot; no caller is a table slot
+0x003363ac,20,FUN_00336389,0x0033639a,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x337040,,,,function is no table slot; no caller is a table slot
+0x003363c9,20,FUN_003363b0,0x003363b5,8b 80 20 02 00 00,"mov eax,[eax+0x220]",eax,0x220,eax,,,,,0x33701d,,,,function is no table slot; no caller is a table slot

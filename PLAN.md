@@ -1050,6 +1050,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the field holds the object at six offsets, and no table names its owner)
+
+- **28 field origins decode to six offsets, and they are two populations, not six.** `tools/vcall-field-owner.py`
+  reads the member load at each `origin_va` of `inventory/vcall_receiver_sites.csv` and writes
+  `inventory/vcall_field_owners.csv` (28 rows): `+0x4c` 12, `+0x220` 8, `+0x48` 3, `+0x1c` 2, `+0x2c` 2, `+0x310` 1,
+  **every one a plain `mov reg,[base+disp]`** -- 0 SIB, 0 absolute, 0 undecoded. 20 read the function's own `this`
+  (the chain rooted at an unwritten `ecx`) and 8 read `[eax+0x220]` on an object that arrives as an argument, so the
+  `+0x220` group is one object graph: eight small functions, exactly one direct `E8` caller each, every caller in
+  `0x335007`-`0x337318`.
+- **Both static routes to the owner's class answer zero, and that is the measured result.** A class table holds
+  virtuals only, so the tool tries the containing function as a table slot (0 of 23) and every direct caller as one
+  (0 of the 20 sites that have a caller). The containing functions are plain member functions, so `.text` types the
+  object handed to them nowhere -- the "a call site that dispatches `+0x4c` through a known object" that U8 asked for
+  exists, and it is not typed.
+- **A layout is what is left, and the property stream cannot supply it** (`class_properties.csv` has name, kind and
+  type, no byte offsets), so the next instrument is one class layout -- a `Serialize` override at slot 11 (`0x392b0`)
+  or a RAM dump's vtable pointer, which named `StargateHUD+0x398` as `Console`.
+- Tool (`tools/vcall-field-owner.py`: `decode_member_load`, `table_slots`, `direct_callers`, the `route`/`reason`
+  columns and a 15-case `--check` that needs no dump) + `make vcall-field-owner` +
+  `inventory/vcall_field_owners.csv` (28 rows) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8.
+
 ### Execution notes (2026-11-12, the pair dispatches on an object another object holds -- only 3 sites are `this`)
 
 - **The receiver load is one hop; the object pointer is the second.** `tools/vcall-receiver.py` now walks the
