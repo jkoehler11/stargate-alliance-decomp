@@ -218,11 +218,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
       **The locator is solved** (U13): the script starts **16 bytes past `FriendlyName`**, measured by content —
-      `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **1,514 of 2,474**
-      anchored payloads and every one of those walks to the epilogue, against 54 at the next best delta — and by the
-      payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9). The dword at +12 is a size but not the
-      script's length (never smaller than it, equal in 187 of 1,659); the walk's depth from +16 is **not** a locator,
-      because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
+      `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **225 of 658**
+      `return`-anchored payloads and every one of those walks to the epilogue, against at most 4 at any other delta
+      and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9).
+      An `if (`/`assert (` body is not an anchor (the condition is emitted before the jump); the walk's depth from
+      +16 is **not** a locator either, because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
       compact index, which takes the corpus from 3,444 to 11,602 scripts walking (99.3%), so *long* shipped scripts
       are disassembled end
@@ -5436,16 +5436,23 @@ and a deliberate one-line script break is caught by the boot test.
   begins -- so the "walk's depth from that offset" and the 3,328 payloads that "reach the epilogue" say nothing
   about the 16-byte run.
 - **Content anchors it instead.** A `Function` export's class ships its `ScriptText`, so a body that opens with
-  `return true;`/`return false;`/`return;`/`return 0;`/`return 1;`/`if (`/`assert (` fixes its first opcode bytes
-  (`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`). `--start-anchor` finds **1,514 of 2,474** anchored
-  payloads carrying those bytes exactly at `name_end+16` -- and **all 1,514** walk from there to the epilogue --
-  against 54 at the next best delta (`+23`, 2.2%), 44 at `+9`, 23 at `+20`, and **0** at payload offset 0. A name
-  declared more than once in a package is dropped rather than guessed, because a class overriding a parent's body is
-  exactly the case that would pair the wrong declaration with the payload.
-- **Two residues, counted rather than smoothed.** **815** anchored payloads carry the expected opcode at no delta in
-  `+4..+40` (665 of them `if`-anchored): a header-alignment or body-classification question, not a missing reading.
-  And the dword at `name_end+12` is **never smaller** than the script (equal in 187 of 1,659, otherwise 2..8 bytes
-  larger), so it is a size with an unexplained excess -- the field U13 still wants named.
+  `return true;`/`return false;`/`return;`/`return 0;`/`return 1;` fixes its first opcode bytes (`04 27`, `04 28`,
+  `04 0b`, `04 25`, `04 26`). `--start-anchor` finds **225 of 658** anchored payloads carrying those bytes exactly at
+  `name_end+16` -- and **all 225** walk from there to the epilogue -- against at most **4** at any other delta in
+  `+4..+24` and **0** at payload offset 0. A name declared more than once in a package is dropped rather than
+  guessed, because a class overriding a parent's body is exactly the case that would pair the wrong declaration with
+  the payload.
+- **An `if (` body is not an anchor, and taking it as one inflated the first version of this note.** This compiler
+  evaluates the condition first and emits `JumpIfNot` behind it, so `07` is not the body's first byte: with `if` and
+  `assert` in the list the population read 2,474 / 1,514, and **597 of the 716 payloads that matched at no delta did
+  not carry the expected byte anywhere in the payload** -- a wrong anchor's signature, not a wrong header's (31 sat
+  one byte *before* the name's end, inside the header's own encoded part). The `return`-only numbers above replace
+  them.
+- **Two residues, counted rather than smoothed.** **422** anchored payloads carry the expected bytes at no delta in
+  `+4..+24` (216 `0428`, 153 `0427`): with a valid anchor that is a header-alignment question. And the dword at
+  `name_end+12` equals the script's length in **223 of 236** rows the anchor matched -- true of the trivial bodies
+  this population is made of, and *not* of the corpus, where it is larger far more often -- so it is a size whose
+  relation to the script is not constant and the field is still unidentified.
 - Tool (`--start-scan`, `--start-anchor`, `--scan-lo/--scan-hi`) + `docs/BYTECODE.md` "Where the script starts,
   anchored on the shipped source" + `docs/UNKNOWNS.md` U13. Reads the image and the packages; no boot, no Ghidra, no
   artifact.

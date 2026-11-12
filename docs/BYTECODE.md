@@ -193,34 +193,36 @@ epilogue" is true almost wherever it starts. That reading therefore counts the o
 locate the script, and the same is true of any count of payloads that "walk from +16" (3,328 of them).
 
 The anchor that discriminates is content. A `Function` export's class ships its `ScriptText`, so a body whose first
-statement is `return true;`, `return false;`, `return;`, `return 0;`, `return 1;`, a leading `if (` or `assert (`
-fixes its first opcode bytes — `04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`. `--start-anchor` walks no
-tokens: it asks which `name_end + delta` in `+lo..+hi` carries the bytes the source fixes, and only then whether the
-walk from there reaches the epilogue.
+statement is `return true;`, `return false;`, `return;`, `return 0;` or `return 1;` fixes its first opcode bytes —
+`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`. `--start-anchor` walks no tokens: it asks which `name_end + delta` in
+`+lo..+hi` carries the bytes the source fixes, and only then whether the walk from there reaches the epilogue.
 
-    $ python3 tools/uscript-dis.py --start-anchor System
-    System: 2474 anchored payloads (ScriptText fixes the first opcode) of 2474 with a located epilogue
-      anchored opcodes: {'07': 2137, '0428': 193, '0427': 108, '0425': 26, '09': 7, '040b': 2, '0426': 1}
-        +4     20 / 2474    11 walk
-        +9     44 / 2474    20 walk
-       +16   1514 / 2474  1514 walk   <- the fixed run start_report assumes
-       +20     23 / 2474    17 walk
-       +23     54 / 2474    50 walk
-      peak delta +16 with 1514 of 2474 anchored payloads and 1514 clean walks
-      no delta matched: 815; the same bytes at payload offset 0: 0
-        of those, by anchored opcode: {'07': 665, '0428': 92, '0427': 38, '0425': 19, '0426': 1}
-      dword at name_end+12 minus the script's length, over the anchored payloads: {0: 187, 2: 24, 3: 6, 4: 73, 5: 20, 6: 81, 7: 13, 8: 99}
-        equal in 187 of 1659 (11.3%), and never negative: yes
+**An `if (` or `assert (` anchor is invalid and this tool no longer takes one.** This compiler evaluates the
+condition first and emits the conditional jump behind it, so `07`/`09` are not the body's first byte; with those two
+patterns in the list the anchored population was 2,474 payloads and **597 of the 716 that matched at no delta did not
+carry the expected byte anywhere in the payload** — the signature of a wrong anchor, not of a wrong header (a later
+run measured 31 payloads with the byte one byte *before* the name's end, i.e. inside the header's own encoded part).
+On the `return`-only population:
 
-**1,514 of 2,474** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 1,514** walk from
-there to the epilogue; the strongest other delta is `+23` with 54 matches (2.2%), then `+9` with 44 and `+20` with 23,
-and the same bytes sit at payload offset 0 in **0**. A wrong start does not survive this test because the bytes have
-to be the ones the source wrote.
+    $ python3 tools/uscript-dis.py --start-anchor System --scan-lo 4 --scan-hi 24
+    System: 658 anchored payloads (ScriptText fixes the first opcode) of 658 with a located epilogue
+      anchored opcodes: {'0428': 341, '0427': 231, '040b': 47, '0425': 38, '0426': 1}
+          +16   225 /  658   225 walk   <- the fixed run start_report assumes
+          +18     4 /  658     4 walk
+          +20     4 /  658     4 walk
+      peak delta +16 with 225 of 658 anchored payloads and 225 clean walks
+      no delta matched: 422; the same bytes at payload offset 0: 0
 
-Two residues are named rather than smoothed. **815** anchored payloads carry the expected opcode at no delta in
-`+4..+40` — 665 of them `if`-anchored — which is a header-alignment or body-classification question for the next
-pass; and the dword at `name_end+12` is **never smaller** than the script in 1,659 payloads (equal in 187, otherwise
-2..8 bytes larger), so the field is a size that counts something beyond the script's bytes and is still unidentified.
+**225 of 658** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 225** walk from there to
+the epilogue; no other delta in `+4..+24` reaches more than **4**, and the same bytes sit at payload offset 0 in **0**.
+A wrong start does not survive this test because the bytes have to be the ones the source wrote.
+
+Two residues are named rather than smoothed. **422** anchored payloads carry the expected bytes at no delta in
+`+4..+24` (216 `0428`, 153 `0427`) — under a valid anchor that is a header-alignment question rather than a
+classification one, and it is the next pass's work. And the dword at `name_end+12` equals the script's length in
+**223 of 236** rows the anchor matched, which is a statement about the trivial `return` bodies this population is
+made of: corpus-wide the same dword is *larger* than the script far more often than it is equal, so the field is a
+size whose relation to the script's bytes is not constant and is still unidentified.
 
 ## The shipped scripts, as disassembled
 
