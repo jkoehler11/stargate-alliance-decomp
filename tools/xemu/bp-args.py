@@ -17,6 +17,10 @@ Two things learned from the stub, both of which read as a broken tool otherwise:
   CPU is in the kernel can write the `0xCC` into a different mapping than the one the game executes in, and then
   the breakpoint simply never fires. `--arm-after` waits for the guest to be executing game code (it samples
   `EIP`/`CS` and refuses to arm while `CPL` is 0).
+* **A forced arm is proven by the byte, not by the reply.** `--force` arms in whatever context the CPU is in --
+  the front end idles in the kernel between frames, so that is the only way to sit on a body *before* a level
+  loads -- and because `Z0` patches through the current context, every arm reads its byte back (`0xcc`) and the
+  JSON keeps `armed_bytes`. An arm whose byte is not `cc` would never fire, and the reply alone does not say.
 * **A stop is not always your breakpoint.** The stub reports a `T` packet for interrupts and watchpoints too, so
   each stop's `EIP` is compared with the armed set and anything else is recorded as a `not-mine` stop instead of
   being reported as a hit.
@@ -114,10 +118,20 @@ def main():
         return 3
 
     armed = []
+    armed_bytes = {}
     for va in breaks:
         reply = gdb.watch(va, 1, kind="exec")
         ok = reply in (b"OK", b"")
-        print("break 0x%08x: stub answered %r" % (va, reply))
+        # The stub's `OK` is not evidence that the `0xCC` landed in the mapping the game executes: `Z0` patches
+        # through the *current* MMU context, and a forced arm taken while the CPU idles in the kernel writes into
+        # that context. Read the byte back through the same context and keep it in the record -- `cc` is the
+        # patch, anything else is an arm that would never fire, and the difference is invisible without the read.
+        try:
+            back = gdb.read(va, 1).hex()
+        except (IOError, OSError) as exc:
+            back = "error:%s" % exc
+        armed_bytes[va] = back
+        print("break 0x%08x: stub answered %r, byte read back %s" % (va, reply, back))
         if ok:
             armed.append(va)
     if not armed:
@@ -197,7 +211,9 @@ def main():
             pass
     if args.json:
         with open(args.json, "w") as fh:
-            json.dump({"breaks": ["0x%08x" % b for b in breaks], "stops": hits}, fh, indent=1)
+            json.dump({"breaks": ["0x%08x" % b for b in breaks],
+                       "armed_bytes": {"0x%08x" % k: v for k, v in armed_bytes.items()},
+                       "stops": hits}, fh, indent=1)
         print("wrote %s" % args.json)
     print("%d stop(s), %d at an armed address" % (len(hits), len([h for h in hits if h["hit"]])))
     gdb.close()

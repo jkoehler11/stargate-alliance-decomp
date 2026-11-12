@@ -58,6 +58,16 @@ evidence that the `0xCC` landed in the mapping the game executes — and two fur
 desktop answering `no xemu window on :0` while `xdotool search --onlyvisible --name .` listed 0 of 9 windows.
 So the guest half is **unfinished, not negative**.
 
+**Measured 2026-11-11: the forced arm's read-back says the patch never reaches the game's mapping.** `bp-args.py
+--force` now reads every armed byte back through the same context and keeps it in the record (`armed_bytes`). Armed at
+the title (`CPL 0`, `EIP=0x80071009`), both bodies answered the stub `OK`, and the bytes read back `f6` at
+`0x000c4f60` and `56` at `0x000c6d00` -- the XBE's own bytes at both addresses, unchanged. A `Z0` set while the CPU
+idles in the kernel therefore patches a mapping the game does not execute in, and the breakpoint can never fire: the
+stub's `OK` is exactly the thing that cannot tell. The route this page proposed -- force the arm before the level
+loads -- is retired for this instrument; what is left is to sample the front end until it is in game context and arm
+there, because the halt loop (`0x80024a97`, `0xfffffe5c`, `0x80065996`) makes it a matter of timing rather than of
+patching.
+
 `tools/vcall-stops.py` is the read half: it turns a `bp-args` record into (slot, caller, receiver class) rows —
 caller by exact start, by containment in a sized body, or nearest-below; receiver from the `ecx+0x0` dump,
 whose first dword is the class table that `inventory/xbe_class_table_names.csv` names. It writes

@@ -1034,6 +1034,22 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, the forced arm is taken and its read-back refuses it)
+
+- **The arm the last round asked for can be taken, and the read-back says it never reaches the game's mapping.**
+  `tools/xemu/bp-args.py` now reads every armed byte back through the same context and keeps it in the record
+  (`armed_bytes`), because the stub's `OK` is not evidence that the `0xCC` landed where the game executes. Armed at
+  the title with the front end in the kernel (`CPL 0`, `EIP=0x80071009`), both slot-19/20 bodies answered `OK` and
+  the bytes read back `f6` at `0x000c4f60` and `56` at `0x000c6d00` -- the XBE's own bytes there
+  (`f6 81 dc 02 00 00 01 74`, `56 8b f1 8d 8e 00 01 00`), unchanged. So a forced `Z0` in kernel context patches a
+  mapping the game does not execute in and no stop can ever arrive; the loaded-`M00` arm keeps its earlier zero (0
+  stops in 30 s). The pair stays **unfinished, not negative**, and the remaining question is now a sampling one: the
+  arm has to be taken with `CPL 3`, and the front end's halt loop (`0x80024a97`, `0xfffffe5c`, `0x80065996`) means
+  waiting for a user-context moment rather than forcing the patch.
+- Tool (`tools/xemu/bp-args.py`: the byte read-back, the `armed_bytes` field and the docstring bullet that explains
+  why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
+  run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
+
 ### Execution notes (2026-11-11, the pair's dispatch census: 106 `.text` sites, all of them the object layer)
 
 - **The 82 was an undercount, and the census says where the pair is called.** `tools/vcall-dispatch.py`
@@ -1056,8 +1072,9 @@ are limited to expected fields (checksum/timestamp) and documented.
   should fire -- cannot be taken by that tool: the front end idles in the kernel (`EIP=0xfffffe5c`,
   `0x80065996`, `0x80024a97` ten seconds apart at the title) and `bp-args` refuses a kernel-context arm. A
   forced arm needs a read-back of the patched byte, because the stub's `OK` is not evidence that the `0xCC`
-  landed in the mapping the game executes; `~/sg1/work/vslot3-arm.py` does that (arms, reads the byte back,
-  records `EIP`/`ESP`/`ECX` and `[ecx+0]` per stop) and is a run artifact, not a tool.
+  landed in the mapping the game executes; `bp-args.py --force` now does both -- it arms in whatever context
+  the CPU is in and reads the byte back into its record (`armed_bytes`) -- and the read is negative: the patch does
+  not reach the game's mapping (execution note below).
 - **Two boots were lost to the desktop's display, not to the measurement**: `drive.py` answered `no xemu window
   on :0` while `xdotool search --onlyvisible --name .` listed 0 of 9 windows. That is a session state, so the
   guest read is unfinished rather than negative.
