@@ -876,6 +876,13 @@ and recorded **0 stops in 30 s**, and the arm that would sit *before* a level lo
 idles in the kernel (`EIP=0xfffffe5c`, `0x80065996`, `0x80024a97`). What would settle it: a forced arm plus a
 read-back of the patched byte before the level loads, then `tools/vcall-stops.py` over the recorded stops.
 
+**Measured 2026-11-11: the forced arm is taken, and the read-back is itself the negative.** `tools/xemu/bp-args.py
+--force` armed both bodies at the title with the CPU in the kernel (`CPL 0`, `EIP=0x80071009`); the stub answered
+`OK` for each, and the bytes it read back through the same context were `f6` at `0x000c4f60` and `56` at
+`0x000c6d00` -- the XBE's own bytes there, so the `0xCC` went into a mapping the game never executes. That is the
+read-back doing the work the `OK` cannot, and it closes the force-the-arm route as this instrument stands: the arm
+has to be taken with `CPL 3`, and the front end's halt loop makes that a sampling problem, not an arming one.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
