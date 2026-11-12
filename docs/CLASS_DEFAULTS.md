@@ -427,6 +427,8 @@ residue is the 540 candidates that do not (`inventory/class_tails.csv`, `--repor
 | the byte before the start is `00` | **1,328** (79.8%) | 47 (top byte `04`, 59) |
 | the four bytes before the start repeat at a stride of 4..24 | **1** | 69 (stride 9: 41) |
 | the tail arrays decode backwards with compact counts | 636 | 105 |
+| a clean bytecode walk ends exactly on the start | 5 (longest 26 B) | 11 (longest 35 B) |
+| the payload carries the script epilogue `04 0b 47` | 0 | 0 |
 
 Three readings, and the first two are negatives about the route the previous note proposed:
 
@@ -447,12 +449,20 @@ Three readings, and the first two are negatives about the route the previous not
   least one declared property -- finds a better start for **one** residue class, and finds one for one control class
   too, so the rule has no discriminating power.
 
+* **Nor is the tail bytecode, and that closes the forward route the same way.** Walking every window that ends on a
+  known-good start with the image's own operand table (`tools/uscript-dis.py`, opcodes `0x48..0x5f` and the
+  walker's bad-token case refused) finds a clean run ending exactly on the start for **5 of 1,664** control payloads,
+  longest 26 bytes -- the length a two-token false positive would give -- and the script epilogue `04 0b 47` occurs in
+  **none** of them. That is what `docs/BYTECODE.md` predicts from the other side: a class export carries its script
+  *text* reference, and the bytecode lives in each `Function` export, so the class record's tail is neither a tag
+  stream nor a script.
+
 So the 545 withheld blocks are not relocated by reading the payload backwards, and the residue's periodicity says why:
 their payloads are a record whose tail is a table of fixed-size entries, and a tag-stream reader cannot find the seam
-from the block end because there is no tag stream there to end at. What would settle it is the length of the script
-buffer `UStruct::Serialize` writes into the same record -- a size plus bytes, walked token by token when it loads
-(`docs/BYTECODE.md`'s opcode table is the walker) -- because a record decoded forward from byte 0 ends where the
-defaults begin without any guess about the block's shape.
+from the block end because there is no tag stream there to end at. Both encodings a stream-side guess could offer --
+counts and elements, or a token walk -- are now measured and refused on the control, so what is left is the record's
+own field widths: `UStruct::Serialize`'s body (`0x000392b0`) is where the prefix's encodings come from, and every
+candidate for the tail's 9-byte unit is a guess until that body is read.
 
 ## The shipped text is not an oracle for defaults
 

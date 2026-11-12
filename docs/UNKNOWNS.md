@@ -2709,8 +2709,8 @@ block accounts for itself as the control. The field in front of a start is a pla
 three empty fields on **0**, and a one-byte compact count walks back cleanly on **636 of 1,664** at scattered
 offsets -- so the stream's tail cannot be walked from the block end in the order the object's own table gives. The
 540 withheld candidates differ in the way "start inside a table" predicts (69 periodic against 1,664's 1), and
-walking those runs back relocates exactly **1**. What is left is the record's forward decode: `UStruct::Serialize`
-writes the script as a size plus bytes and the loader walks it token by token, so decoding a record from byte 0 ends
-where the defaults begin without guessing at the block's shape. Numbers: `docs/CLASS_DEFAULTS.md`, *The bytes in
-front of a block start, measured*.
+walking those runs back relocates exactly **1**. A bytecode walk over the same windows is refused too -- a clean run
+ends exactly on a start for **5 of 1,664** control payloads at most 26 bytes long, and the epilogue `04 0b 47` in
+none -- so the record's tail is neither a tag stream nor script, and the field widths in `UStruct::Serialize`'s body
+(`0x000392b0`) are what is left. Numbers: `docs/CLASS_DEFAULTS.md`, *The bytes in front of a block start, measured*.
 

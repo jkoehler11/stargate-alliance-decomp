@@ -1190,10 +1190,15 @@ are limited to expected fields (checksum/timestamp) and documented.
   inside a fixed-size table". Walking those runs back and re-parsing at every offset they reach -- block ending on
   the payload's last byte, no invented name, at least one declared property -- relocates **1** of 540, and also
   "relocates" 1 of 1,664 control classes, so the rule cannot separate the two populations and stays a reading.
-- **What is left is the record's forward decode, not the block's backward one.** `UStruct::Serialize` writes the
-  script as a size plus bytes and the loader walks it token by token (`docs/BYTECODE.md`'s operands and refusals are
-  that walker), so a record decoded from byte 0 ends where the defaults begin with no guess about the block's shape.
-  The 545 stay withheld; their payloads are a record whose tail is a table, not a tag stream with a record in front.
+- **The other stream-side reading is refused by the same control.** A clean bytecode walk, with the image's own
+  operand table, the walker's bad-token band and an exact end on the start, exists for **5 of 1,664** control payloads
+  (longest 26 bytes, i.e. a two-token false positive) and **11 of 540** residue ones, and the script epilogue
+  `04 0b 47` occurs in none of either. That agrees with `docs/BYTECODE.md`: the class export carries a script *text*
+  reference and the bytecode lives in the `Function` exports, so the record's tail is not script either.
+- **What is left is the record's field widths, not another stream guess.** Both encodings a reader could assume from
+  the block's side are measured and refused, so the next instrument is `UStruct::Serialize`'s body (`0x000392b0`) --
+  where the prefix's integers, indices and the tail's 9-byte unit come from -- rather than a third attempt to parse
+  the payload from either end. The 545 stay withheld until then.
 - Tool (`tools/class-tail.py`: `--class`, `--sweep`, `--report`, `--check`) + `inventory/class_tails.csv` (2,204 rows,
   1,664 control / 540 residue) + `docs/CLASS_DEFAULTS.md` (*The bytes in front of a block start, measured*) +
   `make class-tail` + this note. Reads the image; no boot, no value decoded.

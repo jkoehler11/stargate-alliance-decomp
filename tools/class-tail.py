@@ -17,6 +17,11 @@ and on the 545 candidates that do not account for themselves -- the residue:
 * **`stride`** / **`repeats`**: the smallest `k` in 4..24 for which the four bytes before the start repeat `k` bytes
   earlier, and how many times they repeat. A start that landed inside a table of fixed-size records shows this; a
   start that is a record's end does not.
+* **`walk`** / **`walk_len`** and **`epilogue`**: whether the bytes in front of the start are script bytecode --
+  a clean token walk (the image's own operand table, `tools/uscript-dis.py`) that ends exactly on the start -- and
+  whether the payload carries the script epilogue `04 0b 47` at all. A class record holds the class's script *text*
+  reference, not its bytecode (that lives in each `Function` export), so both are controls for "the record's tail is
+  bytecode", and a class that answers neither has a tail made of something else.
 * **`run_start`**: the offset the periodic run reaches when it is walked back -- the candidate true start if the
   residue is a table read too late. It is scored, not trusted: the tool re-parses at every offset in the run and keeps
   a start only when the block runs to the payload's last byte with no invented name and at least one declared
@@ -120,13 +125,48 @@ def decode(d, start, fname=2):
     return counts, c, p, fname
 
 
+def token_table():
+    """The image's operand table, loaded lazily: `--check` must not need the inventory."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uscript-dis.py")
+    spec = importlib.util.spec_from_file_location("uscript_dis", path)
+    mod = importlib.util.module_from_spec(spec)
+    argv = sys.argv
+    sys.argv = [path]
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        sys.argv = argv
+    return mod, mod.Table()
+
+
+def walkable(d, start, table, mod, minlen=24, window=96):
+    """The longest bytecode run that ends exactly on `start`, or 0.
+
+    A walk that merely does not fail is not evidence: it has to consume the window *exactly* to the start, which is
+    what an instruction stream ending where the defaults begin would do.
+    """
+    if table is None or start - minlen < 0:
+        return 0
+    best = 0
+    for p in range(max(0, start - window), start - minlen + 1):
+        try:
+            mod.parse(d[p:start], table)
+        except Exception:
+            continue
+        best = start - p
+    return best
+
+
 def tail12_zero(d, start):
     if start < 12:
         return False
     return not any(d[start - 12:start])
 
 
-def measure(d, start):
+EPILOGUE = b"\x04\x0b\x47"
+
+
+def measure(d, start, table=None, mod=None):
     """Every column for one payload and one candidate start."""
     k, n = stride(d, start)
     dec = None
@@ -148,6 +188,8 @@ def measure(d, start):
         "count_prior": dec[0][1] if dec else "",
         "count_12byte": dec[1] if dec else "",
         "record_end": dec[2] if dec else "",
+        "walk_len": walkable(d, start, table, mod),
+        "epilogue": int(d.rfind(EPILOGUE, 0, max(0, start - 1)) >= 0),
     }
 
 
@@ -224,6 +266,7 @@ def sweep(system, out):
             for r in csv.DictReader(fh):
                 shapes[(r["package"], r["class"])] = r
     mod = prop_stream()
+    dis, table = token_table()
     rows = []
     for pkg_name, pkg in walk(system):
         for exp in pkg.exports:
@@ -239,7 +282,7 @@ def sweep(system, out):
             if start < 1:
                 continue
             d = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-            m = measure(d, start)
+            m = measure(d, start, table, dis)
             row = {
                 "package": pkg_name,
                 "class": cls,
@@ -286,6 +329,10 @@ def report(rows):
         better = [r for r in sel if r["better_start"]]
         print("  a better start inside the run          : %d/%d" % (len(better), n))
         print("  tail arrays decode in field order      : %d/%d" % (sum(int(r["decode_ok"]) for r in sel), n))
+        walks = [int(r["walk_len"] or 0) for r in sel]
+        print("  a bytecode run ends on the start        : %d/%d (longest run %d bytes)"
+              % (sum(1 for w in walks if w), n, max(walks) if walks else 0))
+        print("  the payload carries 04 0b 47            : %d/%d" % (sum(int(r["epilogue"]) for r in sel), n))
         ends = collections.Counter(r["record_end"] for r in sel if str(r["decode_ok"]) == "1")
         print("  where the walk lands (offset, top five) : %s" % dict(ends.most_common(5)))
 
