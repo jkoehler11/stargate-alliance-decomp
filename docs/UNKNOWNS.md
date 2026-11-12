@@ -941,6 +941,17 @@ has no window a boot can add -- what would settle it is a typed receiver at one 
 `[reg+0x50]` sites (`inventory/vcall_dispatch_sites.csv`), not another boot.
 
 
+**2026-11-12, and the 106 hits are 48 calls: the rest are displacement bytes.** `tools/vcall-receiver.py`
+(`inventory/vcall_receiver_sites.csv`) reads the instruction that loads the register each `.text` hit dispatches
+through. **58 of the 106 are not instruction boundaries at all** -- at `0x002d0d6e` the `ff` is the last byte of
+`lea edx,[ebp-0x418]`'s displacement, followed by `52 50` (`push edx` / `push eax`) -- so the census over-counted
+the population by more than a factor of two, and `+0x50` is the worse half (46 of 75, against 12 of 31). Of the 48
+real sites, **38 load the receiver with a two-byte `mov reg,[reg2]`** (the object's own first dword, its vtable),
+2 from a stack local and 8 unread, so the pair is dispatched as `call [[obj]+0x4c]` on the object's own table and
+never through an absolute class table or global. The remaining question is unchanged and is now the only one:
+which *class* an arbitrary `[obj]` belongs to at run time -- which a stock-disc boot cannot answer, because the
+multiplayer/dedicated path never runs.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
