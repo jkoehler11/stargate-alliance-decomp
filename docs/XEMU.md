@@ -4241,3 +4241,27 @@ attaches at the menu has already missed it -- arm at launch and let the breakpoi
   delta -- and note that its reported box is relative to that crop, so the absolute `y` is `691 + 209`.
 - **`_` and `.` are typeable**: `sendkey shift-minus` and `sendkey dot` both answered `ok` and the transcribed line
   carries the underscores and the extension exactly.
+
+## `RestartLevel` completes the unload, and the pair is silent through it (measured 2026-11-12)
+
+- **`RestartLevel` is an `exec function` that travels.** `Engine/PlayerController.uc:3820` declares
+  `exec function RestartLevel()` and its standalone branch is `ClientTravel("?restart", NM_ListenServer, false)` --
+  an empty map name, so the engine tears the level down and loads the same one again. Typed into a loaded `M00` from
+  a USB keyboard attached before the title (`tab`, `spc` for `bIgnoreKeys`, one `gkey=` per character at 0.35 s), the
+  prompt drew `(> restartlevel_` and `console-line.py --require=typed` read **163 cyan px in a `242x33` box** at
+  `+34+209` of the default crop (absolute `y` 900), so the text was on the frame before the submit, not assumed.
+- **The unload completes and the guest survives it.** `ret` submitted the command and the frames name every step:
+  **+5 s** is the level-load screen carrying its own text `Loading... M00` / `Starting Story Mode Game`, **+20 s** is
+  gameplay with the `O'NEILL` HUD panel, and **+45 s** is M00's tutorial modal (`Press the X button to open the door`
+  / `New Objective : Open the door for the doctor`) -- the same modal the sequence dismissed before the command, so
+  the level restarted from its own script rather than resuming a checkpoint. `guest-halt.py` reports `running` on all
+  four post frames (`black` 0.6106 / 0.4508 / 0.1444 / 0.1444 against the BIOS screen's 0.997), and the last two are
+  byte-identical because that modal holds input -- the documented freeze, not a hung guest, with the frame before it
+  moving 6,381 px.
+- **The harness's crop still cannot see the console line.** The shot taken after typing measured **0 px changed and
+  FAILed** against `--crop=480x520+760+210`, exactly as the checkpoint-load section records: a console step is judged
+  by `console-line.py`, never by the crop delta, and `restart-level.sh` exits 2 on `typed: NO TEXT DRAWN` instead of
+  reading a silent boot as a result.
+- **A restart is a level load the harness can repeat for the price of one boot.** Nothing in it needs a rebuild, and
+  it exercises the load path a second time in the same session -- the route `missions.sh` cannot give without
+  another boot.

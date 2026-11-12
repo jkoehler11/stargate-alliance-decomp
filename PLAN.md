@@ -1050,6 +1050,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, `RestartLevel` completes the unload and the pair stays silent through it)
+
+- **The graceful unload exists, and it is one console command.** `RestartLevel` is an `exec function` on
+  `PlayerController` whose standalone branch is `ClientTravel("?restart", NM_ListenServer, false)`. Typed into a
+  loaded `M00` -- `tab`, `spc`, the word key by key, the line read off the frame as `(> restartlevel_` (163 cyan px,
+  `242x33`, `console-line.py --require=typed`) -- and submitted with `ret`, it took the level down and brought it back
+  with the guest alive: `Loading... M00` / `Starting Story Mode Game` at +5 s, the `O'NEILL` HUD at +20 s, and M00's
+  own tutorial modal at +45 s (identical at +85 s, the modal's documented input freeze). So the level restarted from
+  its script, not from a checkpoint, and no rebuild was needed to get a second load into one boot.
+- **The pair recorded 0 stops across the whole window.** Armed at the title with the control on the sampled `EIP`
+  (`0x003ed669`, fired at once), both bodies stayed silent through the select, the `M00` load, gameplay, the
+  teardown and 200 s of the reloaded level (380 s window). A full actor teardown not running either body rules out
+  the reading that slots 19/20 are a per-actor lifecycle virtual -- `Destroy` would have run thousands of times.
+- What is left for U8 is the multiplayer/dedicated path, which a stock disc boot cannot reach; the next instrument
+  is a typed receiver at one of the 106 dispatch sites, not another boot.
+- Tool (`tools/xemu/restart-level.sh`: the boot-to-level sequence, the console command, the frame verdicts and the
+  optional pair arm) + `docs/XEMU.md` + `docs/UNKNOWNS.md` U8 + `docs/NATIVE_CLASS_TREE.md`. No artifact: the record is
+  the run directory under `$WORK/rlevel1`.
+
 ### Execution notes (2026-11-12, the last two windows: a checkpoint load resets the guest, and the menu holds still)
 
 - **The checkpoint-load window is covered, and the route itself is the finding.** From a loaded `M00` the run typed

@@ -74,7 +74,8 @@ of them in ring 3, and with the range gate both boots armed on their first sampl
 arm -- a control breakpoint that fired on `0x002bb740` read its own `8b` back -- so the arm is proven by that control
 and the forced-arm negative above is withdrawn. With the arm proven, both bodies recorded **0 stops** over a window of
 420 s spanning the map-list select, the M00 load and 180 s of gameplay: the pair is a true zero in those windows, and
-what is left is a window that was not covered (level unload/travel, a checkpoint load, multiplayer).
+what is left is a window that was not covered (level unload/travel, a checkpoint load, multiplayer) --
+both of those are closed below, and by a boot, not by another scan.
 
 `tools/vcall-stops.py` is the read half: it turns a `bp-args` record into (slot, caller, receiver class) rows —
 caller by exact start, by containment in a sized body, or nearest-below; receiver from the `ecx+0x0` dump,
@@ -395,3 +396,13 @@ displacement is not unique to this table -- `[+0x4c]` is used on string- and arc
 site needs its receiver typed before the slot means anything, and the receiver typing is the same missing field name.
 What would settle it is a breakpoint at `0x000c4f60` and `0x000c6d00` in a booted guest, reading which object calls
 them and from which `this`: the two bodies are 40 and 69 bytes, so the two calls are cheap to stop on.
+
+**Measured 2026-11-12: the unload window is covered, and the pair does not dispatch in it.** A completed unload is
+reachable in one command: `RestartLevel` (an `exec function` on `PlayerController`, `ClientTravel("?restart", ...)` in
+standalone play) typed into a loaded `M00` -- `(> restartlevel_` read off the frame, `ret` submitted -- took the level
+down and back up with the guest alive (`Loading... M00` at +5 s, the HUD at +20 s, the tutorial modal at +45 s). With
+the pair armed through `bp-args.py --wait-user --control-self` over a 380 s window spanning the select, the load,
+gameplay, the teardown and 200 s of the reloaded level, **0 stops** landed at `0x000c4f60` or `0x000c6d00` while the
+control stopped at once on the sampled `EIP` (`0x003ed669`). A full actor teardown therefore does not run either body,
+which rules out the reading that the pair is a per-actor lifecycle virtual (`Destroy` and its kin): that would fire
+thousands of times over one level restart. `tools/xemu/restart-level.sh` is the runner.

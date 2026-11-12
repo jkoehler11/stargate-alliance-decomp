@@ -925,8 +925,21 @@ of another level does not load (see U5). Both bodies stayed silent through the s
 command; a `Z0` does not survive that reset, so the window ends there. A second boot walked the mid-game menu to try
 a *graceful* unload instead: three downs reached the bottom of the list (two frames byte-identical) and the
 confirmation left the screen unchanged, so the level was never unloaded and the pair recorded **0 stops** over a
-420 s window (four 60 s timeouts, control fired at once). Windows still uncovered: a completed unload and the
-multiplayer/dedicated path.
+420 s window (four 60 s timeouts, control fired at once). Windows still uncovered then: a completed unload and the
+multiplayer/dedicated path (the first is covered below).
+**Measured 2026-11-12: the unload window is covered, and it is a negative.** A graceful unload does exist and it is
+one console command: `RestartLevel` (`Engine/PlayerController.uc:3820`, `ClientTravel("?restart", NM_ListenServer,
+false)` in standalone play) typed into a loaded `M00`, read off the frame as `(> restartlevel_` (163 cyan px, `242x33`)
+before `ret` submitted it. The level came down and back up with the guest alive -- the load screen's own `Loading...
+M00` / `Starting Story Mode Game` at +5 s, the `O'NEILL` HUD at +20 s, M00's tutorial modal at +45 s (identical at
++85 s, which is that modal holding input). With the same proven arm and control over a 380 s window that spans the
+select, the load, gameplay, the teardown and 200 s of the reloaded level, both bodies recorded **0 stops** and the
+control fired at once (`EIP=0x003ed669`), so a full actor teardown is inside the pair's negative: neither body is a
+per-actor `Destroy`-style virtual, which would have run thousands of times across it. That leaves the
+multiplayer/dedicated path, which a stock disc boot cannot reach (there is no second client), so U8's slot question
+has no window a boot can add -- what would settle it is a typed receiver at one of the 106 `call [reg+0x4c]`/
+`[reg+0x50]` sites (`inventory/vcall_dispatch_sites.csv`), not another boot.
+
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
