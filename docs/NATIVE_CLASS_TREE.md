@@ -15,6 +15,55 @@ so it needs no image and no boot for the tree half.
     python3 tools/class-tree-edges.py --xbe DUMP/.../default.xbe   # + the registration-site join
     python3 tools/class-tree-edges.py --check         # synthetic self-test, no dump, writes nothing
 
+## Which sites dispatch slots 19 and 20 (PLAN 4.3)
+
+`inventory/class_table_slot_pairs.csv` settled what the two slots *hold*: `0x00020f00` (a one-byte `ret`)
+twice in 327 tables, `0x000c4f60`/`0x000c6d00` in the 165 under `Actor`. `tools/vcall-dispatch.py`
+(`make vcall-dispatch`, `inventory/vcall_dispatch_sites.csv`) asks the other half — who calls them — by
+decoding every `call [reg+disp]` form in the image and keeping the displacements those slots sit at
+(`19*4 = 0x4c`, `20*4 = 0x50`). A virtual call is a byte pattern, not a resolved call, so a row is a
+*candidate* dispatch: the displacement is not unique to a class table and only a typed receiver proves one.
+
+| measurement | value |
+|---|---|
+| executable sections scanned | 9 |
+| candidate sites, all sections | 141 |
+| **`.text`, the game's own code** | **106** |
+| … slot 19 (`+0x4c`) / slot 20 (`+0x50`) | 31 / 75 |
+| … by register | edx 37, eax 30, ecx 15, edi 12, ebx 8, esi 4 (never `ebp`) |
+| … inside a named function | 14, in 9 bodies |
+| the seven library sections | 35 (slot 19 x2, slot 20 x33) |
+| `.data` / `.rdata` (flagged executable) | 8 / 2 |
+
+The library rows are the control, and they are why `+0x50` is the noisy displacement: `D3DX`, `XONLINE`,
+`XNET`, `XGRPH`, `D3D` and `XPP` are statically linked Microsoft code, no class table of this build is
+dispatched there, and 33 of their 35 sit at `+0x50`. Among the `.text` sites, every one that lands in a named
+body lands in the object layer: `Core_UnObjBas` 5, `Core_UnTemplate` 2, `Core_UnClass`, `Core_UnObj`,
+`Native_65`, two `MasterServerUplink` destructors, plus offsets into `Engine_UnActCol` and
+`IpDrv_InternetLink`. That matches the bodies read from the other side — they take `[this+0xa4]`, then
+`[that+0xf4]`, and call a virtual on `this` at `+0xc`/`+0x8` — so the pair is part of the object/class layer,
+not of gameplay code. The census cannot name the virtual; it says where to boot.
+
+The earlier "82 sites" is not reproduced: a decode of every `FF /2` displacement form over `.text` gives 106,
+and that figure is superseded here.
+
+### What the boot measured, and what it did not
+
+An execution breakpoint on each body (`tools/xemu/bp-args.py --arm-after 0`) armed `OK` at a **loaded** `M00`
+and recorded **0 stops in 30 s**, so the pair does not dispatch while a level idles. The arm that would sit
+*before* a level load is the one that matters for an `Actor`-installed pair, and `bp-args` cannot take it: at
+the title the guest is in the kernel (`EIP=0xfffffe5c`, `0x80065996`, `0x80024a97` ten seconds apart) and the
+tool refuses a kernel-context arm. A forced arm needs a read-back of the patched byte — the stub's `OK` is not
+evidence that the `0xCC` landed in the mapping the game executes — and two further boots were lost to the
+desktop answering `no xemu window on :0` while `xdotool search --onlyvisible --name .` listed 0 of 9 windows.
+So the guest half is **unfinished, not negative**.
+
+`tools/vcall-stops.py` is the read half: it turns a `bp-args` record into (slot, caller, receiver class) rows —
+caller by exact start, by containment in a sized body, or nearest-below; receiver from the `ecx+0x0` dump,
+whose first dword is the class table that `inventory/xbe_class_table_names.csv` names. It writes
+`inventory/vcall_slot_stops.csv` only when a run records a hit; `--check` drives all three caller resolutions
+and an unnamed table with no boot.
+
 ## The edge
 
 Every class constructor installs its own table (`mov dword ptr [this], <table>`) and, *before* that

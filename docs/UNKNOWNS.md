@@ -863,6 +863,19 @@ arg 10 `0x4084004`, arg 11 the constructor, arg 12 `&DAT_000624d0`) leaves no un
 arguments that differ per site are the name (read), the size (read) and the constructor (measured as
 one shared default). That is why this section's remaining route is an edge, not an argument.
 
+**Measured 2026-11-11: the dispatch census, and one runtime zero.** `tools/vcall-dispatch.py`
+(`make vcall-dispatch`, `inventory/vcall_dispatch_sites.csv`) decodes every `call [reg+disp]` form in the nine
+executable sections and finds **106** sites in `.text` at the two displacements slots 19/20 occupy — 31 at
+`+0x4c`, 75 at `+0x50`, through edx 37, eax 30, ecx 15, edi 12, ebx 8, esi 4 — plus 35 in the statically linked
+library sections, 33 of those at `+0x50`, which is the control that marks `+0x50` as the noisy displacement.
+Fourteen `.text` sites sit inside a named body and every one of them is the object layer (`Core_UnObjBas` 5,
+`Core_UnTemplate` 2, `Core_UnClass`, `Core_UnObj`, `Native_65`, two `MasterServerUplink` destructors,
+`IpDrv_InternetLink`, `Engine_UnActCol`), so the pair is dispatched by object/class machinery rather than by
+gameplay. The runtime half is started and not finished: a breakpoint on both bodies armed `OK` at a loaded `M00`
+and recorded **0 stops in 30 s**, and the arm that would sit *before* a level loads is refused — the front end
+idles in the kernel (`EIP=0xfffffe5c`, `0x80065996`, `0x80024a97`). What would settle it: a forced arm plus a
+read-back of the patched byte before the level loads, then `tools/vcall-stops.py` over the recorded stops.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
