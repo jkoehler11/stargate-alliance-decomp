@@ -1031,6 +1031,29 @@ are limited to expected fields (checksum/timestamp) and documented.
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
 
+### Execution notes (2026-11-11, an array element receiver is its array's element type)
+
+- **430 of the 469 "completed value in front" sites were `A[i].Foo()`.** The token in front of the call is
+  `ArrayElement` 349 / `DynamicArrayElement` 81, its children are the **index and the array** (measured, not
+  assumed), and the element's class is the array's declared element type -- `array<Pawn>` unwrapped by the
+  `_class_of_type` that already accepted `array<>`. **The reading branch alone changed nothing**: `--calls` only asks
+  `_receiver_reading` about a token in `OBJECT_TOKENS`, so the new branch was unreachable until those two tokens
+  joined the set -- a site that types to nothing and a site nobody asked about are indistinguishable in every count.
+- **With the set fixed: 501 sites type over 49 (token, class) pairs and 390 place.** Receiver's chain 2,194 ->
+  **2,584**, by-name placement **12,811 -> 13,201 of 13,507 (97.7%)**, unplaced residue 696 -> **306**, "completed
+  value in front" 469 -> **39**.
+- **A declared type with a struct's inlining flags had been read as a class name.** `_class_of_type` answered
+  `export editinline Order` / `editinlinenotify GUIComponent` for the tagged type fields, so 21 sites sat on a class
+  no table has; a class is one identifier, so a type with a space or an angle bracket is now "not a class" and no
+  placement moves (untyped residue 187 -> 221 across the sanitisation, 306 unplaced either way).
+- Left: 221 expressions naming no class (81 a local its source does not declare, 70 a literal or cast, 40 an array
+  element of a non-class array, 30 not a variable), 46 typed with no declarer (`Object` 36 is a dispatch over every
+  class in the build) and 39 a completed value in front. **Next instrument: a callee's declared return type** (12
+  `FinalFunction`, 5 `VirtualFunction` receivers) off the same `ScriptText` -- not attempted.
+- Tool (the two tokens in `OBJECT_TOKENS`, the `ArrayElement` branch, the identifier rule in `_class_of_type`, the
+  `array_fixed` counter and report line) + `inventory/script_calls.csv` regenerated + `docs/BYTECODE.md` +
+  `docs/UNKNOWNS.md`.
+
 ### Execution notes (2026-11-11, the import's owner class settles the property vote)
 
 - **A disagreeing property import is typed by the class its outer names; requiring the corpus to vote was the wrong
