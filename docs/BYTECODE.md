@@ -446,6 +446,17 @@ width, so no row needs a second rule:
   `StargateContent.u` 1/0/**0** each. The three at zero have no body of theirs in any of the six images -- not
   resident, a different negative from a divergence -- while the menu packages peak at 5-10 spans, the size of a wrong
   anchor, and `Engine.u`/`GUI.u` run hundreds of spans before stopping.
+* **A seventh image, taken with the front-end menus open, moves neither number -- and the name pools say the reason is
+  the anchor, not the package.** The 8 `StargateMenus.u` rows align to 9, 9, 0, 5, 5, 1, 1, 5 spans in it and the 7
+  `UWindow.u` rows to 0, 10, 0, 5, 0, 0, 0: no complete copy, the same 5-10 span peak, so a menu-open image is not the
+  missing witness. What it does answer is whether those bodies are there at all:
+  `tools/xemu/resident-names.py RAMBIN --residue CSV` counts each row's **class name** in the image's `FNameEntry`
+  pool (the wide name at `+0x0c`), and **41 of the 43 rows' class names are resident in it** -- the two that are not
+  are `UDebugMenu.u`'s `UGraphParticlePage` and `UDebugMenuBar`, a package the shipped build never loads. So
+  `GamePlay.u`, `IpDrv.u` and `StargateContent.u` -- the three packets this page called "not resident" -- do have
+  their classes in the image, and the zero-span reading means the **anchor** found nothing, not that the body is
+  missing.
+
 * **`Actor.DisplayDebug` (+9, the largest row, 1,605 spans) stops at 212 spans, and the copy is longer there, not
   shorter.** The model and the copy agree for 455 bytes; the stop is at file offset `0x167`, an `op 1f` `str` token:
 
