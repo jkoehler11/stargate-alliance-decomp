@@ -5604,6 +5604,28 @@ and a deliberate one-line script break is caught by the boot test.
 - Tool (`tools/xemu/resident-names.py`, `--check` green with no dump) + docs/UNKNOWNS.md U13 + docs/BYTECODE.md + this
   note. Reads existing 128 MiB images and the committed residue CSV; no boot, no artifact, no game data.
 
+### Execution notes (2026-11-12, a content anchor places no residue row, and the copy starts at the script's first byte)
+
+- **The anchor the last note asked for is built, and it does not place the rows that need it.**
+  `tools/xemu/script-ram.py --anchor-literal` derives a copy's start from a literal the script carries
+  (`hit - model offset`) instead of from the model's prefix. Over the 43 residue rows against the four 128 MiB images
+  still on disk it closes **0 of the 30 unaligned rows** (13 complete / 10 the field's own number, unchanged): **21 of
+  the 30 carry no literal of 6+ bytes at all**, 6 of the 9 that do carry one that occurs nowhere in the four images
+  -- three of the eight `StargateMenus.u` rows among them, so those scripts are absent rather than unmatchable -- and
+  the three rows that do hit align 212/0/0 spans, exactly as far as the prefix search did. The start was never what
+  those rows were missing, and **14 of the 30 align nothing at all**.
+- **Where a copy is placed, the anchor answers the start question from the guest side.** `ServerJoinVoiceChannel`
+  (327 bytes at `0x00d72000`) and `StargateWeapon.PlayFiring` (464 at `0x012dc700`) align **complete** from a literal,
+  at the same start the prefix found, and the 16 bytes in front of that start match the payload's header tail in 9 and
+  10 of 16 positions with **2 from the right** in both -- the export's header is not copied in front of the script, so
+  the copy's first byte is the script's first byte (`name_end + 16`, confirmed from the guest).
+- **Next:** the 14 rows that align nothing need an image taken while the function runs (a `Script` store read at
+  `0x48cf5`, or a break there with the owning class live), not another anchor; the `op 1f` wedge inside
+  `Actor.DisplayDebug` still wants the writer of `0x00fe4980`.
+- Tool (`tools/xemu/script-ram.py` `--anchor-literal`, `copy_via_literal`, `literals`, a `--check` case) +
+  docs/BYTECODE.md + docs/UNKNOWNS.md U13 + PLAN 3.7. Reads the packages and four existing `pmemsave` images; no
+  boot, no artifact, no game data.
+
 
 - **All 43 residue rows were read against six guest images, and the answer is a slot width rather than a second rule.**
   `script-ram.py --residue CSV` (new) aligns the model span by span with an index operand free to be 1, 2 or 4 bytes

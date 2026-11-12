@@ -501,6 +501,25 @@ width, so no row needs a second rule:
   why the rule desynchronises at the next unexpanded literal and closes no row.
 
 
+
+* **A content anchor places no residue row either, and it says why.** `script-ram.py --anchor-literal` derives a
+  copy's start from a literal the script carries (`hit - model offset`) instead of from the model's prefix, so a
+  rewritten prefix no longer hides a copy. Over the 43 residue rows against the four 128 MiB images still on disk it
+  closes **0 of the 30 unaligned rows** (13 complete / 10 the field's own number, unchanged): **21 of the 30 carry no
+  literal of 6+ bytes at all**, 6 of the 9 that do carry one that occurs **nowhere** in the four images -- three of the
+  eight `StargateMenus.u` rows among them, so those scripts are absent rather than unmatchable -- and the three rows
+  that do hit (`Actor.DisplayDebug` 45 candidate starts, `LadderInfo.UpdateLadders` 2,
+  `CommandInterface.executeScriptCommand` 1) align 212/0/0 spans, exactly as far as the prefix search did. The *start*
+  was never what those rows were missing.
+
+* **Where a copy is placed, the anchor reads the script's first byte back from the guest.** `ServerJoinVoiceChannel`
+  (327 bytes at `0x00d72000`) and `StargateWeapon.PlayFiring` (464 at `0x012dc700`) align **complete** from a literal,
+  at the same start the prefix search found, and the 16 bytes in front of that start match the payload's header tail in
+  **9 and 10 of 16 positions, never more than 2 from the right** -- so the export's header is not copied in front of
+  the script, and the copy's first byte is the script's first byte: `name_end + 16`, confirmed from the guest side.
+  `--anchor-literal` prints that read-back for whichever copy it places; `--residue --anchor-literal` retries every
+  row the prefix could not place and prints each row's literal population and candidate-start count.
+
 ## The shipped scripts, as disassembled
 
 With the start at `name_end + 16` the disassembler runs on real functions rather than on hex literals:

@@ -20,6 +20,16 @@ operand kind name which tokens they are.
 
     python3 tools/xemu/script-ram.py RAMBIN --dump DUMP --pkg Engine.u --class StreamPlaylist --function AddStream
 
+**`--anchor-literal` places a copy by a literal the script carries instead of by a prefix.** A prefix anchor needs the
+model's first bytes to be right; a literal is *content*, and the loader copies literals verbatim (slot `0x1f` reads
+them through to the NUL), so `hit - model offset of the literal` is an independent start. That is what the 43
+`--sizefield` residue rows need: several of them are short scripts whose three-byte prefix matches thousands of
+places, and the menu packages' bodies may be laid out differently rather than absent. `--residue --anchor-literal`
+retries the rows the prefix could not place and reports which rule read each copy.
+
+    python3 tools/xemu/script-ram.py RAMBIN --dump DUMP --pkg StargateMenus.u --class ExtrasPage \
+        --function ButtonClick --anchor-literal
+
 A dump is guest data: it stays on the desktop, is never committed, and this prints offsets, operand kinds and counts,
 the rule the other `tools/xemu` readers follow.
 
@@ -104,7 +114,7 @@ def locate(dis, pkg_path, want_class, want_function):
         start = off + 16
         if start > end:
             continue
-        found.append((pay[start:end], dis.struct.unpack_from("<I", pay, off + 12)[0]))
+        found.append((pay[start:end], dis.struct.unpack_from("<I", pay, off + 12)[0], pay, start))
     return found
 
 
@@ -250,6 +260,78 @@ def copy_best(blob, body, spans):
     return best
 
 
+def _model_offsets(spans, str4=False):
+    """File offset -> model offset for every span the model walks: `(offsets, model length)`."""
+    out, m = {}, 0
+    for a, b, kind, _op in widened(spans, str4):
+        out[a] = m
+        m += 4 if kind in ("index", "str4") else (b - a)
+    return out, m
+
+
+def literals(body, spans, min_len=6):
+    """`(model offset, literal)` for every string const the script carries, longest first.
+
+    A literal is a **content** anchor: the loader copies it unchanged (`tools/gnatives-body.py --slot 31` reads slot
+    `0x1f`'s bytes at `FFrame::Code` through to the NUL), so its offset in an image does not depend on the model's
+    prefix being right. A prefix-anchored search cannot place a row whose leading bytes the loader rewrote; this can.
+    The length floor is what keeps `"\\n"` from proposing thousands of starts.
+    """
+    offs, _n = _model_offsets(spans)
+    out = []
+    for a, b, kind, op in spans:
+        if kind != "opcode" or op != STR_OP or a not in offs:
+            continue
+        end = body.find(b"\x00", b)
+        if end < 0:
+            continue
+        text = body[b:end]
+        if len(text) >= min_len:
+            out.append((offs[a] + (b - a), text))
+    out.sort(key=lambda row: -len(row[1]))
+    return out
+
+
+def literal_copies(blob, body, spans, min_len=6, limit=64):
+    """Candidate copy starts proposed by the script's own literals: `(literals, [(start, model offset, literal)])`.
+
+    The start is `hit - model offset`, so it is derived from content rather than from a prefix.
+    """
+    lits = literals(body, spans, min_len)
+    if not lits:
+        return [], []
+    hits = {}
+    for m, text in lits:
+        needle = text + b"\x00"
+        pos, seen = blob.find(needle), 0
+        while pos >= 0 and seen < limit:
+            at = pos - m
+            if at >= 0:
+                hits.setdefault(at, (m, text))
+            seen += 1
+            pos = blob.find(needle, pos + 1)
+    return lits, sorted(hits.items())
+
+
+def copy_via_literal(blob, body, spans):
+    """The best copy a literal anchors: `(at, matched, length, path, complete, rule)`.
+
+    `rule` is `literal` for the strict model and `literal-op1f` when the `op 1f` four-byte rule read it; a script with
+    no literal long enough to anchor returns `(None, 0, 0, [], False, None)` -- a negative that means "no content
+    anchor", not "no copy".
+    """
+    _lits, hits = literal_copies(blob, body, spans)
+    best = (None, 0, 0, [], False, None)
+    for at, _spot in hits:
+        for str4, rule in ((False, "literal"), (True, "literal-op1f")):
+            matched, length, path, complete = align(blob, at, body, spans, str4=str4)
+            if complete:
+                return (at, matched, length, path, True, rule)
+            if matched > best[1] or best[0] is None:
+                best = (at, matched, length, path, False, rule)
+    return best
+
+
 def matched(blob, at, pat):
     """How many bytes of the model agree at `at` from the model's start, stopping at the first disagreement."""
     for i, byte in enumerate(pat):
@@ -364,7 +446,7 @@ def slot_lines(at, matched, length, path, complete, field, body=None, dis=None, 
     return out
 
 
-def residue_report(csvpath, rams, dump, slots=False):
+def residue_report(csvpath, rams, dump, slots=False, anchor=False):
     """Every `--sizefield` residue row against every guest dump given: does a copy exist, and what explains it?"""
     import csv
 
@@ -395,7 +477,7 @@ def residue_report(csvpath, rams, dump, slots=False):
         if not found:
             print("%-16s %-26s %-30s no located payload" % (pkgname, cls, fn))
             continue
-        for body, field in found:
+        for body, field, _pay, _start in found:
             try:
                 spans = dis._spans_with_op(body, table)
             except (dis.Refused, IndexError, dis.struct.error) as exc:
@@ -410,6 +492,15 @@ def residue_report(csvpath, rams, dump, slots=False):
                     best, where, best_blob = got, name, blob
                 if got[4]:
                     break
+            if not best[4] and anchor:
+                # The prefix could not place this row; a literal the script carries is an anchor the loader did not
+                # rewrite, so the start comes from content instead.
+                for name, blob in blobs:
+                    got = copy_via_literal(blob, body, spans)
+                    if got[4] or (got[1] > best[1] and not best[4]):
+                        best, where, best_blob = got, name, blob
+                    if got[4]:
+                        break
             at, matched, length, aln, complete, rule = best
             reads += 1
             by_rule[rule if complete else "none"] += 1
@@ -417,8 +508,10 @@ def residue_report(csvpath, rams, dump, slots=False):
             rows_by_pkg[pkgname] = rows_by_pkg.get(pkgname, 0) + 1
             deepest[pkgname] = max(deepest.get(pkgname, 0), matched)
             if not complete:
-                print("%-16s %-26s %-30s field %-6d no complete copy: best %d of %d span(s) in %s"
-                      % (pkgname, cls, fn, field, matched, len(spans), where))
+                lits, hits = literal_copies(best_blob if best_blob is not None else blobs[0][1], body, spans)
+                print("%-16s %-26s %-30s field %-6d no complete copy: best %d of %d span(s) in %s; "
+                      "%d literal(s) of 6+ bytes, %d content anchor(s)"
+                      % (pkgname, cls, fn, field, matched, len(spans), where, len(lits), len(hits)))
                 disagreed.append((pkgname, cls, fn))
                 continue
             narrow = narrow_slots(aln)
@@ -530,6 +623,34 @@ def selftest():
         return 1
     print("ok script-ram: a copy that leaves an index at its file width aligns completely, %d bytes short, and names "
           "the slot" % (len(exact) - length))
+    # The content anchor: a literal places the copy even where the model's first bytes do not match, which is the
+    # whole point of it. The synthetic guest's first byte is wrong and everything after the opcode is the file's.
+    lbody = bytes([STR_OP]) + b"SG1ANCHOR\x00" + EPILOGUE
+    try:
+        lspans = dis._spans_with_op(lbody, table)
+    except dis.Refused as exc:
+        print("FAIL script-ram: the table refuses a synthetic literal body: %s" % exc)
+        return 1
+    lits = literals(lbody, lspans)
+    if lits != [(1, b"SG1ANCHOR")]:
+        print("FAIL script-ram: literals read as %r, expected [(1, 9 bytes)]" % (lits,))
+        return 1
+    guest = b"\xA5" * 21 + b"\x00" + lbody[1:] + b"\xA5" * 21
+    got = copy_via_literal(guest, lbody, lspans)
+    if got[0] != 21 or got[4]:
+        print("FAIL script-ram: a literal-anchored copy read as %r, expected start 21 and no complete alignment"
+              % (got[:2] + got[4:],))
+        return 1
+    good = copy_via_literal(b"\xA5" * 21 + lbody + b"\xA5" * 21, lbody, lspans)
+    if not good[4] or good[0] != 21 or good[1] != len(lspans):
+        print("FAIL script-ram: an exact literal-anchored copy read as %r" % (good[:2] + good[4:],))
+        return 1
+    empty = copy_via_literal(b"\xA5" * 64, b"\x04\x0B\x47", dis._spans_with_op(b"\x04\x0B\x47", table))
+    if empty[0] is not None or empty[5] is not None:
+        print("FAIL script-ram: a body with no literal anchored on %r" % (empty,))
+        return 1
+    print("ok script-ram: a literal anchors the copy's true start (%d) even when the model's first byte does not "
+          "match" % got[0])
     return 0
 
 
@@ -545,6 +666,8 @@ def main():
                     help="align the copy span by span and read each index operand's guest width")
     ap.add_argument("--residue", metavar="CSV",
                     help="every `uscript-dis.py --sizefield --residue-csv` row, read against each RAM image given")
+    ap.add_argument("--anchor-literal", action="store_true",
+                    help="place the copy by a literal the script carries instead of by a prefix")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no dump and writes nothing")
     args = ap.parse_args()
 
@@ -553,7 +676,7 @@ def main():
     if args.residue:
         if not (args.ram and args.dump):
             ap.error("--residue needs at least one RAM image and --dump")
-        return residue_report(args.residue, args.ram, args.dump, args.slots)
+        return residue_report(args.residue, args.ram, args.dump, args.slots, args.anchor_literal)
     if not (args.ram and args.dump and args.cls and args.function):
         ap.error("a search needs RAM, --dump, --class and --function (or --check)")
     args.ram = args.ram[0]
@@ -571,7 +694,7 @@ def main():
     if not rows:
         print("%s %s.%s: no Function export with a located epilogue" % (args.pkg, args.cls, args.function))
         return 1
-    for body, field in rows:
+    for body, field, pay, start in rows:
         try:
             spans = dis._spans_with_op(body, table)
         except (dis.Refused, IndexError, dis.struct.error) as exc:
@@ -585,6 +708,34 @@ def main():
                  dict(sorted(collections.Counter(widths).items()))))
         print("  model %d bytes (script + %d widening(s)); field at name_end+12 = %d, predicted %d, %+d"
               % (len(pat), sum(4 - w for w in widths), field, len(pat), field - len(pat)))
+        if args.anchor_literal:
+            lits, hits = literal_copies(blob, body, spans)
+            print("  content anchor: %d literal(s) of 6+ bytes, by length %s; %d candidate start(s) in %d byte(s) "
+                  "of RAM" % (len(lits), dict(sorted(collections.Counter(len(t) for _m, t in lits).items())),
+                              len(hits), len(blob)))
+            at, matched, length, aln, complete, rule = copy_via_literal(blob, body, spans)
+            if at is None:
+                print("    no literal to anchor on, so this read adds nothing to the prefix search")
+                continue
+            for line in slot_lines(at, matched, length, aln, complete, field, body, dis, blob, spans,
+                                   rule=rule or "literal"):
+                print(line)
+            # The one thing a content anchor can say that a prefix cannot: whether the payload's own header sits in
+            # front of the copy in the guest, i.e. whether the loader copies the export wholesale or only the script.
+            head = pay[max(0, start - 16):start]
+            before = blob[max(0, at - 16):at]
+            if len(head) == 16 and len(before) == 16:
+                agree = sum(1 for x, y in zip(head, before) if x == y)
+                suffix = 0
+                for x, y in zip(reversed(head), reversed(before)):
+                    if x != y:
+                        break
+                    suffix += 1
+                print("    the guest's 16 bytes before the derived start agree with the payload's header tail in "
+                      "%d of 16 positions (%d from the right), so the loader %s"
+                      % (agree, suffix,
+                         "copies the export's header too" if suffix >= 8 else "copies the script alone"))
+            continue
         if args.slots:
             at, matched, length, aln, complete, rule = copy_best(blob, body, spans)
             for line in slot_lines(at, matched, length, aln, complete, field, body, dis, blob, spans, rule=rule):
