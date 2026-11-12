@@ -718,16 +718,17 @@ def scan_report(path, lo=8, hi=40):
 FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native)\s+)*(?:function|event)\s+"
                        r"(?:[\w<>\[\]]+\s+)?(\w+)\s*\(", re.IGNORECASE | re.MULTILINE)
 
-# The first statement's leading token where the source fixes it beyond argument. `return <literal>;` and a
-# leading `if (`/`assert (` are the shapes whose spelling is the same in every class this build ships.
+# The first statement's leading token where the source fixes it *and the emitter writes that token first*.
+# `return <literal>;` qualifies: `EX_Return` is the statement's first byte. `if (...)` and `assert (...)` do not --
+# this compiler evaluates the condition first and emits the conditional jump behind it, so an `if`-anchored payload
+# would be searched for a `07` that is not its first byte at all (measured 2026-11-12: with the two patterns in the
+# list, 597 of 716 anchored payloads whose expected byte was absent from the payload entirely were `07`-anchored).
 FIRST_STATEMENT = [
     (re.compile(r"return\s*;"), bytes([0x04, 0x0B])),
     (re.compile(r"return\s+true\s*;", re.IGNORECASE), bytes([0x04, 0x27])),
     (re.compile(r"return\s+false\s*;", re.IGNORECASE), bytes([0x04, 0x28])),
     (re.compile(r"return\s+0\s*;"), bytes([0x04, 0x25])),
     (re.compile(r"return\s+1\s*;"), bytes([0x04, 0x26])),
-    (re.compile(r"if\s*\("), bytes([0x07])),
-    (re.compile(r"assert\s*\("), bytes([0x09])),
 ]
 
 

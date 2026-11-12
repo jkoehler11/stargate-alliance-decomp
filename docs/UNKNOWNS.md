@@ -1739,13 +1739,16 @@ epilogue" is a coverage figure for the opcode table, not a locator, and the same
 (a floor of 25 bytes fits any 16-byte run that keeps `3 + 7` behind it). The anchor that discriminates is content:
 a `Function` export's class ships its `ScriptText`, so a body opening with `return true;`/`return false;`/`return;`/
 `return 0;`/`return 1;`/`if (`/`assert (` fixes its first opcode bytes (`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`,
-`07`, `09`), and `--start-anchor` asks which `name_end + delta` carries them. Over the 18 packages: **2,474 anchored
-payloads, 1,514 with the expected bytes exactly at +16 and all 1,514 walking from there to the epilogue**; the next
-best delta is `+23` with 54 (2.2%), then `+9` with 44 and `+20` with 23, and the bytes sit at payload offset 0 in
-**0**. Two residues stay open and are counted rather than smoothed: **815** anchored payloads carry the expected
-opcode at no delta in `+4..+40` (665 `if`-anchored — a header-alignment or body-classification question), and the
-dword at `name_end+12` is **never smaller** than the script (equal in 187 of 1,659, otherwise 2..8 bytes larger), so
-the field is a size with an unexplained excess rather than the script's length.
+`07`, `09`), and `--start-anchor` asks which `name_end + delta` carries them. An `if (` or `assert (` body is **not** an anchor: this compiler evaluates the condition before it emits the
+conditional jump, so `07`/`09` is not the body's first byte — with those two in the list, 597 of 716 payloads that
+matched at no delta carried the expected byte nowhere in the payload at all, which is what a wrong anchor looks
+like. On the `return`-only population (`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`) the 18 packages give **658 anchored
+payloads, 225 with the expected bytes exactly at +16 and all 225 walking from there to the epilogue**, against at
+most **4** at any other delta in `+4..+24` and **0** at payload offset 0. Two residues stay open and are counted:
+**422** anchored payloads carry the expected bytes at no delta in `+4..+24` (216 `0428`, 153 `0427`), a
+header-alignment question now that the anchor is valid; and the dword at `name_end+12` equals the script's length in
+**223 of 236** rows the anchor matched, while corpus-wide it is larger far more often — so it is a size whose
+relation to the script is not constant, and it is still unidentified.
 
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
