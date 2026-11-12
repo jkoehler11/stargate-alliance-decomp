@@ -1356,10 +1356,25 @@ classes), and **all 240 sites that were unplaced** place: the receiver's chain 1
 at all (81 a local its source does not declare, 70 a literal or cast, 30 not a variable -- **no import**), **46**
 typed to a class whose chain and subtree lack the name (`Object` 36, `BotBase` 12, `UnrealScriptedSequence` 3, `Pawn`
 1; `ClientMessage` 25 of the names, a dispatch over every class in the build) and **469** a completed value in front.
-The rule's control: where every declaring package agrees (698 sites) the owner's own class agrees 698 of 698 and
+The rule's control: where every declaring package agrees (700 sites) the owner's own class agrees 700 of 700 and
 differs 0, so it supplies the vote a tie was missing rather than outvoting a consensus. The remaining gap is which
 *object* a completed-value or `Object`-typed site calls on -- not something another reading of these packages can
 settle.
+
+**2026-11-11, second half of the same residue: an array element is an object expression and the caller had never asked
+for one.** 430 of the 469 "completed value in front" sites were `A[i].Foo()`: the token in front of the call is
+`ArrayElement` 349 or `DynamicArrayElement` 81, its two children are the index and the array (in that order, measured),
+and the element's class is the array's declared element type (`array<Pawn>` -> `Pawn`). The reading branch alone moved
+**nothing** -- `--calls` only asked `_receiver_reading` about a token in `OBJECT_TOKENS` -- so the fix is the set plus
+the branch: **501 sites type over 49 (token, class) pairs** and **390 place** on the receiver's chain (2,194 ->
+**2,584**), for **13,201 of 13,507 by-name sites placed (97.7%)** and a residue of **696 -> 306**. It also exposed
+that a tagged type carrying a struct's inlining flags (`export editinline Order`, `editinlinenotify GUIComponent`) had
+been read as a class name: a class is one identifier, so those 21 sites are now "declared, but not as a class" and no
+placement moves. What is left of the 306: 221 object expressions that name no class (81 a local its source does not
+declare, 70 a literal or cast, 40 an array element of a non-class array, 30 not a variable), 46 typed to a class whose
+chain and subtree lack the name (`Object` 36 -- a dispatch over every class in the build) and 39 a completed value in
+front. The next reading worth trying is the callee's **declared return type** (12 `FinalFunction` and 5
+`VirtualFunction` receivers), which needs a function's return type off the same `ScriptText`; not attempted.
 
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,

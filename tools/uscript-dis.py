@@ -1040,7 +1040,9 @@ CALL_TOKENS = {"FinalFunction": "static", "VirtualFunction": "by name", "GlobalF
 # by-name call dispatches on. The receiver is not an operand: the emitter evaluates the object before
 # the call token, so the site carries it as the expression in front (docs/BYTECODE.md).
 OBJECT_TOKENS = {"InstanceVariable", "LocalVariable", "DefaultVariable", "ObjectConst", "Context",
-                 "ClassContext", "DynamicCast", "MetaCast", "StructMember", "NativeParm", "NoObject"}
+                 "ClassContext", "DynamicCast", "MetaCast", "StructMember", "NativeParm", "NoObject",
+                 # An array element is an object expression too: `A[i]` leaves the element.
+                 "ArrayElement", "DynamicArrayElement"}
 
 
 def native_calls_report(path, table, out=None):
@@ -1234,6 +1236,11 @@ def _class_of_type(friendly):
         return _class_of_type(friendly.rsplit(".", 1)[-1])
     if friendly in ("int", "float", "bool", "byte", "string", "name", "object", "pointer"):
         return ""
+    # A property's declared type can carry a struct's inlining flags (`export editinline Order`,
+    # `editinlinenotify GUIComponent`), which is not a class name at all: a class is one identifier, so a space or an
+    # angle bracket left after the wrappers above says this is not one.
+    if " " in friendly or "<" in friendly or ">" in friendly:
+        return ""
     return friendly
 
 
@@ -1348,6 +1355,16 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
     if nm in ("Context", "ClassContext") and expr["children"]:
         return _receiver_reading(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
                                  local_types, import_owner, owner_fixed, owner_conflict, owner_agree)
+    if nm in ("ArrayElement", "DynamicArrayElement") and expr["children"]:
+        # An array element is the array's declared element type: `_class_of_type` unwraps `array<Pawn>` to `Pawn`.
+        # The two children are the index and the array (in that order, measured), so the index names nothing and the
+        # array is whichever child the declarations do type.
+        for child in expr["children"]:
+            cls, _why = _receiver_reading(child, export_at, import_at, prop_type, prop_type_by_name, local_types,
+                                          import_owner, owner_fixed, owner_conflict, owner_agree)
+            if cls:
+                return cls, ""
+        return "", "array element: the array's type names no class"
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
         value, _e = read_index(expr["operands"], 0)
         target = export_at.get(value)
@@ -1581,6 +1598,8 @@ def calls_report(path, table, out=None):
     below_none = collections.Counter()
     gap_class = []
     import_owners = collections.Counter()
+    # Receivers that are an array element, typed from the array's declared element type.
+    array_fixed = collections.Counter()
     # Receivers typed by the import's own owner class, where the packages disagree on the type.
     owner_fixed = collections.Counter()
     # The owner's own declaration differing from a unanimous vote: a real disagreement, counted.
@@ -1681,6 +1700,8 @@ def calls_report(path, table, out=None):
                         else:
                             rtoken = "value"
                     where, nowners, uniq = resolve_name(pkg_name, owner, name) if name else ("", 0, "")
+                    if rtype and rtoken in ("ArrayElement", "DynamicArrayElement"):
+                        array_fixed[(rtoken, rtype)] += 1
                     if not where and rtype and name:
                         placed = place_on_receiver(rtype, name, recv_state)
                         if placed:
@@ -1788,6 +1809,11 @@ def calls_report(path, table, out=None):
           % (len(open_) - len(untyped) - len(typed_gap)))
     print("      why an expression in front names no class: %s"
           % ", ".join("%s %d" % kv for kv in receiver_gap.most_common(7)))
+    if array_fixed:
+        print("      a receiver that is an array element: %d site(s) over %d (token, class) "
+              "pairs, top: %s"
+              % (sum(array_fixed.values()), len(array_fixed),
+                 ", ".join("%s/%s %d" % (k[0], k[1], v) for k, v in array_fixed.most_common(6))))
     if gap_names:
         print("      the imported properties, by name: %s"
               % ", ".join("%s %d" % kv for kv in gap_names.most_common(8)))
