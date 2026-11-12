@@ -2966,7 +2966,7 @@ def compare_report(path_a, path_b, table, out=None):
     return 0
 
 
-def sizefield_report(path, rows=0):
+def sizefield_report(path, rows=0, residue_csv=None):
     """What the dword 16 bytes before a script is: the script's size with every compact index widened to four.
 
     `operand_spans` carries the fact this reads: the loader widens a compact index operand to four bytes on the way
@@ -3068,6 +3068,17 @@ def sizefield_report(path, rows=0):
         for pkgname, t, w, x in per_pkg:
             if t:
                 print("    %-22s %5d %5d %5d%s" % (pkgname, t, w, x, "" if x == w else "   <- residue"))
+    if residue_csv:
+        # The rows a guest read has to explain, in the one shape `script-ram.py --residue` reads. Nothing here is game
+        # data: a package, two names the inventories already carry, and three numbers.
+        with open(residue_csv, "w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["package", "class", "function", "script", "field", "predicted", "diff",
+                             "index_slots", "widths"])
+            for row in residue:
+                writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
+                                 ";".join("%d:%d" % kv for kv in sorted(row[8].items()))])
+        print("  residue rows written to %s" % residue_csv)
     print("  residue by sign: %s; by the difference (dword - widened length): %s"
           % (dict(sign.most_common()), dict(sorted(height.items()))))
     if rows and residue:
@@ -3308,6 +3319,8 @@ def main():
     ap.add_argument("--diverge", metavar="PATH",
                     help="which operand, if any, accounts for a --sizefield residue row (one round of every "
                          "operand tried, plus a rule test over the whole corpus)")
+    ap.add_argument("--residue-csv", metavar="PATH",
+                    help="with --sizefield: write the residue rows in the shape script-ram.py --residue reads")
     args = ap.parse_args()
     if args.shuffle and not args.calls:
         ap.error("--shuffle is a control on --calls: give it a package or a System directory")
@@ -3342,7 +3355,7 @@ def main():
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.sizefield:
-        return sizefield_report(args.sizefield, args.lists)
+        return sizefield_report(args.sizefield, args.lists, args.residue_csv)
     if args.diverge:
         return diverge_report(args.diverge, args.lists)
     if args.selftest:
