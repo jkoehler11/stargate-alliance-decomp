@@ -332,8 +332,10 @@ leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`)
       `FractalTexture`) and `FireTexture`'s resolves to a constructor that installs `IceTexture`'s table
       -- **not one of the 27 lands on its own class's table**. The same test validates the rest (459 of
       493 sites: the pushed constructor installs the site's own class table) -- `tools/ctor-argument.py`,
-      `inventory/registration_ctor_arguments.csv`. U8's 26 need an argument that is not the constructor
-      (the site's fourth/fifth pushes, unread) or a registration-time breakpoint, and that is now the
+      `inventory/registration_ctor_arguments.csv`. U8's 26 need an argument that is not the constructor -- and
+      the site's fourth/fifth pushes are now read: they are the class and outer *strings*, with no table at
+      any of the 493 sites (`docs/NATIVE_CLASS_TREE.md`, `make class-table-residual`) -- so the route left is
+      a registration-time breakpoint, and that is now the
       written next step rather than a guess.
       shared constructor, and that is now the written next step rather than a guess.
 - [x] 4.4 Auto-generate native symbol names from the packages: each `native(index)` declaration in `inventory/classes.csv`
@@ -1030,6 +1032,35 @@ are limited to expected fields (checksum/timestamp) and documented.
       `0x09322100` (`GameHud`), `commandInterfacePtr` `0x096ff230`, `Pawn` `0x089e0000` -- so the console's silence is
       a guard on the message path, not a null sink; the same boot's read cost 85 page reads / 43 s once a page with a
       hole stopped being retried as a whole page (`docs/XEMU.md`, U15).
+
+### Execution notes (2026-11-11, a registration carries a name and never a table, and slots 19/20 are one Actor-level pair)
+
+- **PLAN 4.3's "fourth/fifth pushes" is measured, and it cannot name a table.** `tools/class-table-residual.py`
+  (`make class-table-residual`) decodes every `68 imm32` before each of the **493** registration calls and classifies
+  the immediate: all 493 call the same function (`0x0003af60`), **493 push at least one string** (median 8 pushes,
+  range 7-10), **493 push `0x04084004`**, 3 push a function start, and **0 push a class table**. `Property`'s site at
+  `0x000778d9` reads `push 0x624d0` (a one-byte `ret`), `push 0x34650` (the null-check thunk onto `0x62ce0`),
+  `push 0x4084004`, `push "System"`, `push "Property"`, `push 0x6c` -- the table arrives through the constructor,
+  never as an argument. The decode is validated by a second artifact rather than by itself: the `literals` column
+  `registration_sites.csv` mines independently equals the string pushes on **493 of 493** sites, in order.
+- **The 27 shared-default sites are the engine base classes, and their name strings are read**: `Exporter`,
+  `Factory`, `Field`, `Object`, `Subsystem`, `Language`, `Property`, `VoiceSubsystem`, `Viewport`, `CameraEffect`,
+  `Client`, `Channel`, `RenderDevice`, `Engine`, `LevelBase`, `Material`, `BitmapMaterial`, `RenderedMaterial`,
+  `NetDriver`, `PendingLevel`, `Player`, `RenderResource`, `VertexStreamBase`, `Texture`, `FractalTexture`,
+  `WaterTexture` (each outered to `System`), plus the site `0x0010d6a9` the census leaves unnamed, which pushes
+  `NetConnection` outered to `User`. Name known, table not: the two questions are separate.
+- **Slots 19 and 20 are one pair, installed at `AActor`.** `--slots` reads both from all 492 tables: **two distinct
+  pairs, no third** -- `0x00020f00` twice (a one-byte `ret`) in **327**, `0x000c4f60`/`0x000c6d00` (40 and 69 bytes)
+  in **165**. All 165 are under `Actor` by the script super chain with `Actor` itself among them, and **all 26
+  unnamed tables are in the 327**, so the division is the `Actor` subtree against everything else. Both bodies test
+  `[this+0x2dc] & 1`, take `[this+0xa4]`, then `[that+0xf4]`, and call a virtual with `this` (`+0xc` / `+0x8`, the
+  second emptying a 4-byte-stride array at `+0x100` first) -- a delegating notification through two pointer fields.
+- **U8's dispatch-site route is counted and is not the next instrument.** `.text` holds 82 `call [reg+0x4c]` /
+  `[reg+0x50]` sites, but the displacement is not unique to this table, so each needs its receiver typed first --
+  the same missing field name. A breakpoint at the two bodies in a booted guest is what would settle it.
+- Tool (`sites`/`slots` modes, synthetic `--check` needing neither dump nor artifact) +
+  `inventory/registration_arguments.csv` (493 rows) + `inventory/class_table_slot_pairs.csv` (492 rows) +
+  `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8 + the `make class-table-residual` target.
 
 ### Execution notes (2026-11-11, the control is a flag — a shuffled declaration still places 2,123 of the receiver sites)
 

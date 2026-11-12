@@ -893,6 +893,17 @@ literal and 0 from a byte-identical twin, so the string-based route is exhausted
 image. That leaves this entry's unblock as written: a locally supplied signature database, scored against
 the section table in `docs/LIBRARIES.md`.
 
+**Measured 2026-11-11, both halves narrowed (`tools/class-table-residual.py`, `make class-table-residual`).**
+The registration-push route is read for all 493 sites: every one calls `0x0003af60` and pushes the class's **name and
+outer strings**, a constant flags word `0x04084004`, the constructor and a size -- and **none pushes a class table**,
+so the table is installed by the constructor and the 26 names are not on the site at all. The string decode agrees
+with `registration_sites.csv`'s independent `literals` column on 493 of 493 rows. Slots 19 and 20 are **one pair**,
+not many: `0x00020f00` twice in 327 tables and `0x000c4f60`/`0x000c6d00` in 165, and all 165 are under `Actor` with
+`Actor` itself carrying the pair, so those two virtuals are installed once at `AActor`; all 26 unnamed tables are in
+the 327. The dispatch-site route is counted (82 `call [reg+0x4c]`/`[reg+0x50]` sites, mixed vtables) and needs a
+typed receiver first, so the next instrument is a breakpoint on the two bodies in a booted guest, not another
+`.text` scan. `docs/NATIVE_CLASS_TREE.md` carries the numbers.
+
 **Status.** Open, blocked on data the project may not ship.
 
 ## U10. The tagged property record's field order — closed 2026-10-24

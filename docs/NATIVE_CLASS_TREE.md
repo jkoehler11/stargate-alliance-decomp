@@ -279,3 +279,52 @@ registration code, not in the `UClass` instance. So this page's status stands as
 tree (375/391) and the installer's callers (466/466, five named, nineteen constrained) are the two edges that
 work, and the engine's own base classes need an engine-side `classes.csv` or a registration breakpoint.
 `docs/UNKNOWNS.md` U8.
+
+## The two residuals, from the registration's arguments and from the slots (2026-11-11)
+
+`tools/class-table-residual.py` (`make class-table-residual`) answers U8's two open halves with the image alone,
+and both answers come out narrower than the questions assumed. Its artifacts are `inventory/registration_arguments.csv`
+(one row per registration site) and `inventory/class_table_slot_pairs.csv` (one row per class table).
+
+**No registration call carries a table.** All **493** sites in `inventory/registration_sites.csv` call the same
+function, `0x0003af60`. The tool decodes every `68 imm32` push in the 96 bytes before each call and classifies the
+immediate by what it is -- a UTF-16 literal the image carries, a known function start, a class table, or an unmapped
+immediate: **493 of 493 push at least one string** (median 8 pushes, range 7-10), **493 push the flags word
+`0x04084004`**, 3 push a function start, **0 push a class table**. The strings are the class's own name and its
+outer (package) name. For `Property`'s site at `0x000778d9` the window reads `push 0x624d0` (a one-byte `ret`),
+`push 0x34650` (the null-check thunk onto `0x62ce0`), `push 0x4084004`, `push "System"`, `push "Property"` and
+`push 0x6c` -- so the class table arrives through the constructor the site passes, never as an argument. PLAN 4.3's
+"the site's fourth/fifth pushes" is therefore read and dead as a naming route, which is why the 26 tables stay
+unnamed rather than mis-named.
+
+**The decode is validated by a second artifact, not by itself.** `registration_sites.csv` mines a `literals` column
+per site with a different pass; the tool's string pushes equal that column on **493 of 493** sites, in order, so an
+argument list quoted here is the call's, not a window artefact.
+
+**The 27 shared-default sites are the engine base classes, and they name themselves too.** In address order:
+`Exporter`, `Factory`, `Field`, `Object`, `Subsystem`, `Language`, `Property`, `VoiceSubsystem`, `Viewport`,
+`CameraEffect`, `Client`, `Channel`, `RenderDevice`, `Engine`, `LevelBase`, `Material`, `BitmapMaterial`,
+`RenderedMaterial`, `NetDriver`, `PendingLevel`, `Player`, `RenderResource`, `VertexStreamBase`, `Texture`,
+`FractalTexture`, `WaterTexture` -- all outered to `System` -- and the site `0x0010d6a9` the census leaves unnamed
+pushes `NetConnection` outered to `User`. Their tables are a separate question from their names: the name is on the
+site, the table is not.
+
+**Slots 19 and 20 hold exactly two implementations, and the split is the `Actor` subtree.** `--slots` reads the pair
+out of all 492 tables: **two distinct pairs and no third** -- `0x00020f00` twice (a one-byte `ret`) in **327**
+tables, and `0x000c4f60` / `0x000c6d00` (40 and 69 bytes) in **165**. Every one of the 165 is under `Actor` by the
+script super chain, `Actor` itself among them, and **all 26 unnamed tables are in the 327**, so the division is the
+`Actor` subtree against everything else -- not, as the earlier reading had it, "real bodies in 165 of 492" without
+saying which 165 or how many kinds of body.
+
+**What the two bodies are, as far as the image says.** Both test `[this+0x2dc] & 1`; on a set bit they take
+`[this+0xa4]`, then that object's `[+0xf4]`, and call a virtual on the result with `this` as its argument (`+0xc` in
+the 40-byte body, `+0x8` in the second, which first empties a 4-byte-stride array at `+0x100` by pushing 4 to
+`0x00055ed0` and zeroing `+4`/`+8` of it). Either null field returns immediately. That is a delegating notification
+through two pointer fields; the *name* needs those fields' names, which is property data the packages do not carry.
+
+**The dispatch-site route is counted and is not the next instrument.** U8 proposed "a call site that dispatches
+`+0x4c`/`+0x50` through a known object". `.text` holds **82** such `call [reg+0x4c]`/`[reg+0x50]` sites, but the
+displacement is not unique to this table -- `[+0x4c]` is used on string- and archive-shaped objects as well -- so each
+site needs its receiver typed before the slot means anything, and the receiver typing is the same missing field name.
+What would settle it is a breakpoint at `0x000c4f60` and `0x000c6d00` in a booted guest, reading which object calls
+them and from which `this`: the two bodies are 40 and 69 bytes, so the two calls are cheap to stop on.
