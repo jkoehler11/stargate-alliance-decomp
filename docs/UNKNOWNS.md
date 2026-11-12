@@ -1777,6 +1777,23 @@ under one key and 10 whose return type has no measured rule; what remains unmatc
 relative to it, so `first_statement_kind(body, m.end())` — not `m.end() - block_offset` — is the call, and the wrong
 one turns the 92-of-93 peak into a flat histogram over `+16..+39`.
 
+**2026-11-12, later again: the residue was the anchor reading a state's body as the class's.** `--start-anchor
+--lists N` now names each unmatched payload instead of only counting it (`--lists` prints the expected bytes, what
+the payload carries at +16, whether those walk, and the dword at `name_end+12`, plus the two off-population groups),
+and the 12 of the 13 above came back as one cause: the class-level pass ran the declaration regex over the whole
+`ScriptText`, which also matches every function declared inside a `state { … }` block. Where the class's own
+declaration is not an anchor — `Engine.u`'s `Weapon.IsFiring` is `return ((Instigator != None) && …)`, while a state's
+`IsFiring` is `return true;` — the state's literal became the class-level expectation, and the class-owned export was
+searched for bytes only the state's body has. Blanking those spans before the class-level pass (same length, so every
+offset stays valid) takes the corpus to **540 anchored, 536 at `name_end+16` and all 536 walking**, at most 10 at any
+other delta (`+18` only, its `+21`/`+22`/`+28` tails gone), **2** declarations dropped as doubled, **10** with no
+measured rule, and **4** unmatched. All four are one shape and are not a header misread: they carry `04 0b 47` with a
+length field of 3, so the compiled body is empty — `Pawn.CanMultiJump`, `Pawn.CanDoubleJump`,
+`ScriptedController.SetRouteToGoal`, `BotEnemy[BotUnconscious].WeaponFireAgain`. **A literal `return` can compile to
+nothing, but it is not the rule:** the other 422 bool-literal declarations emit `04 27`/`04 28`, and nothing in the
+payload separates the four (same `0x00020000` flags), so what would settle it is their own declaration text and one
+`--script` read per case.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

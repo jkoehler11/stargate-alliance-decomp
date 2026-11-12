@@ -219,13 +219,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
       **The locator is solved and now sharp** (U13): the script starts **16 bytes past `FriendlyName`**, measured by
       content — `--start-anchor`, the first opcode the body's own `ScriptText` declaration fixes, sits at +16 in
-      **514 of 534** anchored payloads and every one of those walks to the epilogue, against at most 10 at any other
+      **536 of 540** anchored payloads and every one of those walks to the epilogue, against at most 10 at any other
       delta in `+4..+40` and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7
-      and 28 = 16+3+9). Three rules were needed for that peak: the anchor is keyed by (class, function) — and by
+      and 28 = 16+3+9). Four rules were needed for that peak: the anchor is keyed by (class, function) — and by
       (class, state, function) for the 93 state-owned bodies, which the class's own `ScriptText` still declares, since
-      one class's declaration is not evidence for a same-named export in another — and the literal's opcode is chosen
+      one class's declaration is not evidence for a same-named export in another — the literal's opcode is chosen
       by the declaration's **return type** (a void function writes `return <expr>;` as a bare `04 0b`; `float` →
-      `04 1e` plus the float; `byte` → `04 24` plus the byte).
+      `04 1e` plus the float; `byte` → `04 24` plus the byte) — and the class-level pass must blank the `state`
+      blocks first, because a state's `return true;` also sits inside the class's text and otherwise anchors the
+      class-owned export (that defect was 12 of the 13 residues). The 4 that remain are an empty compiled body with
+      a length field that agrees, and `--lists` names them.
       An `if (`/`assert (` body is not an anchor (the condition is emitted before the jump); the walk's depth from
       +16 is **not** a locator either, because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
@@ -5431,6 +5434,34 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, the anchor was reading a state's body for a class's export)
+
+- **`--lists N` names the residue, and the names killed 12 of the 13.** `--start-anchor` counted its unmatched
+  payloads by shape only, so the next question had to start by re-finding them; `--lists N` now prints each one with
+  the bytes its declaration fixed, the bytes the payload carries at `+16`, whether those walk, and the dword at
+  `name_end+12` against the script's length — plus the twice-declared and unmeasured-return-type groups. Reading
+  them showed a single cause: the class-level pass ran the declaration regex over the whole `ScriptText`, which also
+  matches every function declared inside a `state { … }` block, so where the class's own body is not an anchor
+  (`Weapon.IsFiring` is `return ((Instigator != None) && …)`) a *state's* `return true;` became the class-level
+  expectation and the class-owned export was searched for bytes only the state's body has.
+- **Blanking the state spans before the class-level pass is the fix, and it is measurable.** Same length, newlines
+  kept, so every offset handed to `first_statement_kind` stays valid: **534 anchored (514 at +16, 13 unmatched, 31
+  dropped as doubled)** becomes **540 anchored, 536 at +16 and all 536 walking, 4 unmatched, 2 dropped**. The
+  spurious `+21`/`+22`/`+28` matches (7 payloads) go with it — `+18` is now the only other delta — and the
+  state-owned half is unchanged at 93/92, which is the control that the fix took nothing away.
+- **The last four are one shape, and a literal `return` *can* compile away — 4 times in 460.** All four carry
+  `04 0b 47` at +16 with a length field of 3 (`Pawn.CanMultiJump`, `Pawn.CanDoubleJump`,
+  `ScriptedController.SetRouteToGoal`, `BotEnemy[BotUnconscious].WeaponFireAgain`), and their payloads are
+  self-consistent — `00 00 75 a4 01 00 69 a4 01 51 50 00 00 00 00 d7 0b 00 00 98 5c 01 00 | 03 00 00 00 | 04 0b 47 |
+  00 00 00 00 00 02 00` — so this is a compiled empty body, not a start read late. The other 422 bool-literal
+  declarations emit `04 28` (235) / `04 27` (187), and the residue's own `FunctionFlags` is the same `0x00020000`,
+  so the difference is not in the payload: the next probe is the four declarations' own text, now named above.
+- **Off the population: 2 doubled declarations and 10 unmeasured return types** (`array<voicechatroom>/false` 3,
+  `rotator/zero` 2, `int/false` 2, `vector/zero` 1, `esquadcover/false` 1) — the vector/rotator/struct/array literal
+  encodings are the next rule to measure, not guess.
+- Tool (`--lists`, state spans blanked before the class-level pass) + `docs/BYTECODE.md` "Where the script starts"
+  + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
 
 ### Execution notes (2026-11-12, a state's body is anchored from the class's own ScriptText too)
 
