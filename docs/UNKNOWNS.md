@@ -1834,7 +1834,10 @@ difference is **+4 in 40 rows over at least eight classes** (`GUI.GUIController`
 rows carry a case. **What would settle the +4 mode is a guest read**: the same instrument that proved the widening
 (`StargateHUD.DrawOrderTarget`, `b8 2a` in the package against `a0 1e 26 01` in RAM) applied to one +4 row
 (`Engine.StreamPlaylist.AddStream`, dword 200 against a predicted 196) shows which bytes the loader added where the
-files cannot speak.
+files cannot speak. The four rows carried as "header decode ambiguous" are one smaller step further in: `--diverge`
+searches the 44 header bytes for a dword equal to the prediction at every offset, and **none of the four carries one**
+(11,665,408; 3,932,095; 7,798,660; 261,119 differences), so their dword is not this field read a few bytes off -- it is
+a payload whose header this reader misaligns, and only a live loader read names what it actually is.
 
 **And the anchor now accounts for every declaration in the corpus**: 466 anchored, 2 declared twice under one
 key, 82 with no body, and **0 unanchored payloads carrying a script** — a line `--start-anchor` prints for this

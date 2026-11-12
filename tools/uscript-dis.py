@@ -3110,7 +3110,7 @@ def _payload_scripts(one):
         start = off + 16
         if start > end:
             continue
-        yield pkg, e, pay[start:end], struct.unpack_from("<I", pay, off + 12)[0]
+        yield (pkg, e, pay[start:end], struct.unpack_from("<I", pay, off + 12)[0], pay[off:off + 44])
 
 
 def _index_width(data, start, end):
@@ -3167,7 +3167,7 @@ def diverge_report(path, rows=0):
     residue = []
     features = []
     for one in files:
-        for pkg, e, body, want in _payload_scripts(one):
+        for pkg, e, body, want, header in _payload_scripts(one):
             try:
                 spans = _spans_with_op(body, table)
             except (Refused, IndexError, struct.error):
@@ -3191,10 +3191,17 @@ def diverge_report(path, rows=0):
                     if w is not None and w == b - a and (4 - w) == delta:
                         cands.append(("fixed-is-index", op, w, a))
             owner = pkg.exports[e["outer"] - 1] if e["outer"] > 0 else None
+            # A dword in the millions is a header decode that aligned on the wrong value: say whether the payload
+            # carries the prediction at some *other* offset in the 44 bytes the header occupies, and where.
+            elsewhere = ""
+            if abs(delta) > (1 << 20):
+                hits = [k for k in range(0, len(header) - 3, 1)
+                        if struct.unpack_from("<I", header, k)[0] == predicted]
+                elsewhere = ",".join("%+d" % (k - 12) for k in hits) or "-"
             residue.append((os.path.basename(one),
                             pkg.name(owner["name"]) if owner is not None else "?",
                             pkg.name(e["name"]), len(body), want, predicted, delta, want - len(body),
-                            len(widths), cands))
+                            len(widths), cands, elsewhere))
 
     if not walked:
         print("%s: no walked payloads" % path)
@@ -3236,14 +3243,19 @@ def diverge_report(path, rows=0):
     print("  rules exact over all %d walked rows: %s" % (walked, rules_feasible or "none"))
     if best:
         print("  closest single-feature rule: %s*%d leaves %d row(s) unexplained" % (best[1], best[2], best[0]))
+    wild = [r for r in residue if abs(r[6]) > (1 << 20)]
+    if wild:
+        print("  dword in the millions: %d row(s), and the prediction sits elsewhere in the header at: %s"
+              % (len(wild), ", ".join("%s %s@%s" % (r[0], r[2], r[10]) for r in wild)))
     if rows:
         print("  named rows (up to %d):" % min(rows, len(residue)))
-        for pkgname, cls, fn, slen, want, predicted, delta, vs_len, nix, cands in residue[:rows]:
+        for pkgname, cls, fn, slen, want, predicted, delta, vs_len, nix, cands, elsewhere in residue[:rows]:
             print("    %-15s %-22s %-26s script %-5d dword %-7d predicted %-6d %+d (dword - script %+d)"
                   " %d index  %s"
                   % (pkgname, cls[:22], fn[:26], slen, want, predicted, delta, vs_len, nix,
                      " ".join("%s@op%02x/w%d@%#x" % (c[0], c[1], c[2], c[3]) for c in cands)
-                     or "no single operand"))
+                     or "no single operand")
+                  + ("  header-aligned dword at %s" % elsewhere if elsewhere else ""))
     return 0
 
 
