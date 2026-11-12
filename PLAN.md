@@ -1050,6 +1050,34 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the last two windows: a checkpoint load resets the guest, and the menu holds still)
+
+- **The checkpoint-load window is covered, and the route itself is the finding.** From a loaded `M00` the run typed
+  `checkpointload c_m02a_drillsite.sgs` at the console (an `exec function` on `PlayerController` that issues the
+  engine's own `LoadCheckPoint` command, checked in the extracted `Engine/PlayerController.uc`), and the line was
+  read off the frame rather than assumed: `tools/xemu/console-line.py` counted **400 cyan px in a 542x30 box** and the
+  crop read `(> checkpointload c_m02a_drillsite.sgs_`. `ret` submitted it -- the line was gone 50 s later -- and the
+  frame at that point was the **BIOS prompt** (`Please insert an Xbox disc...`): the guest reset. So a checkpoint of
+  *another* level, taken from a shipped profile, does not load; the sequence unloads the level and leaves the console
+  with nothing to boot. `RestartCheckpoint` only ever composes `c_<current level>_<checkpoint>`, so this is
+  consistent with a checkpoint being loadable only inside its own level, and it means U16's "the only routes are
+  `Continue` and checkpoint loads" is now measured down to one route.
+- **The pair recorded zero stops across it.** `tools/xemu/bp-args.py --wait-user --control-self --window 900` armed
+  both bodies at the title (control on the sampled `EIP` `0x00030688`, which fired at once) and the two bodies stayed
+  silent through the map-list select (22,358 px), the `M00` load, gameplay and the checkpoint-load command. The
+  post-reset silence is **not** part of the evidence: a `Z0` lives in guest memory and a reset remaps it, so the
+  window ends where the guest resets.
+- **The graceful unload did not happen, and the menu is what stopped it.** A second boot opened the mid-game menu
+  with `pad=start` and stepped it: `05-menu-down` 575 px, `06-menu-down` 1,188 px, then `07` and `08` **0 px** -- the
+  selection had reached the bottom of the list -- and `pad=a` took a confirmation (3,570 px, and byte-identical 20 s
+  later, so it was not a level change). Two presses per list is already past its end, so the exit is not the item
+  that three downs land on. The pair again recorded **0 stops** (four 60 s timeouts inside a 420 s window, control
+  fired at once, dump `ecx` -> `0x004cfba0`).
+- What is left is now one window and one instrument gap: a *completed* unload (the menu's own exit, read off a frame
+  before pressing, or `RestartLevel` from the console) and the multiplayer/dedicated path.
+- Tool: none this round -- the run used `bp-args.py` and `console-line.py` as shipped, and the record is the two
+  `$WORK/vslot8`, `$WORK/vslot9` directories. Docs: this note, `docs/UNKNOWNS.md` U8 and U5, `docs/XEMU.md`.
+
 ### Execution notes (2026-11-11, the read-back was blind; the control proves the arm, and the pair is a true zero)
 
 - **The previous note's negative was an artefact of the instrument.** `bp-args.py`'s byte read-back cannot witness a

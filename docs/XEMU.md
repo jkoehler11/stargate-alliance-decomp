@@ -4224,3 +4224,20 @@ in `docs/UNKNOWNS.md` U11. Two practical notes from that run: a `GLog` call is `
 where the message pointer is a **UTF-16 string**, not an `FString` struct, so read `2n` bytes and decode
 `utf-16-le`; and the create call (`0x2b2dcd`) is reached within seconds of the title starting, so a probe that
 attaches at the menu has already missed it -- arm at launch and let the breakpoint stop the boot.
+
+## The console's `checkpointload`, and the crop that cannot see the console line (measured 2026-11-12)
+
+- **`checkpointload <file>` is an exec function, and it runs.** `Engine/PlayerController.uc:3663` declares
+  `exec function CheckpointLoad(String Filename)` -> `ConsoleCommand("LoadCheckPoint" @ Filename)`. Typed into a
+  loaded `M00` from a USB keyboard attached before the title (`tab`, `spc` for `bIgnoreKeys`, one `gkey=` per
+  character at 0.35 s, `ret`), the line drew and the submit cleared it: the command reached the guest.
+- **A checkpoint of another level takes the guest down with it.** `checkpointload c_m02a_drillsite.sgs` (a shipped
+  `DefaultProfile` file) left the frame at the kernel prompt `Please insert an Xbox disc...` within 50 s -- the
+  failure mode is a reset, not an assert, so `guest-halt.py` on that frame is the check that names it.
+- **The harness's own PASS/FAIL cannot see a console line.** `drive.py --crop` is the *menu panel*
+  (`480x520+760+210`), so the shot taken after typing measured **0 px changed and FAILed** while the line was
+  visibly drawn: the console renders at the bottom left, outside the crop. Judge a console step with
+  `tools/xemu/console-line.py` (400 cyan px, box `542x30`, default crop data at `+0+691`), never with the crop
+  delta -- and note that its reported box is relative to that crop, so the absolute `y` is `691 + 209`.
+- **`_` and `.` are typeable**: `sendkey shift-minus` and `sendkey dot` both answered `ok` and the transcribed line
+  carries the underscores and the extension exactly.

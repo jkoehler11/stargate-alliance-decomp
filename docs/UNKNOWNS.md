@@ -456,6 +456,15 @@ filename is composed there, `c_<mission>_<checkpoint>.sgs`. `GameInfo.PostLogin`
 Eligibility is opt-in and per-class: `MarkForSaveGame` is called from six places, four of them the engine's own
 `PreSaveGame` hook, which is consistent with the exporter's actor set rather than a bespoke selection pass.
 
+**Measured 2026-11-12: the exec route to a checkpoint does not load, and it costs the guest.** From a loaded
+`M00`, `checkpointload c_m02a_drillsite.sgs` (`exec function CheckpointLoad(Filename)` ->
+`ConsoleCommand("LoadCheckPoint" @ Filename)`, `Engine/PlayerController.uc`) is accepted and executed -- the console
+line drew and the submit cleared it -- and the guest is at the kernel's `Please insert an Xbox disc...` prompt inside
+50 s. The file is one of the nine shipped `System/Profiles/DefaultProfile/C_*.sgs`, and the command names it exactly,
+so the failure is not a missing name: a checkpoint appears to be loadable only inside the level that wrote it
+(`RestartCheckpoint` composes `c_<current level>_<checkpoint>.sgs`). Any future save-based route into the other 30
+maps has to start from a `Continue` profile, not from a checkpoint of a different level.
+
 **Addresses, with no boot (2026-11-09).** The registration table (`inventory/native_targets.csv`, `docs/NATIVE_VM.md`
 *The registration table*) names both bodies: `GameInfo.SavePackage` is `0x00298bb0` and `GameInfo.LoadSaveGame` is
 `0x00149370`. So the `0x0012xxxx` neighbourhood search is no longer the way in — these are the two functions to read,
@@ -907,6 +916,17 @@ What is left is a window rather than an instrument. The pair is dispatched by ob
 it could still fire are the ones neither boot covered: a level *unload* or travel, a checkpoint load, and a
 multiplayer/dedicated path. `--window` is the knob for that (the tool used to end its measurement at the first 60 s
 of silence, which is why the first boot covered only the front end).
+
+**Measured 2026-11-12: the checkpoint-load window, and why it is the last one a boot can reach.** With the same
+proven arm and control, a loaded `M00` was sent `checkpointload c_m02a_drillsite.sgs` at the console -- typed key by
+key, read back off the frame as `(> checkpointload c_m02a_drillsite.sgs_` (400 cyan px, `console-line.py`), and
+submitted with `ret`. The command executes and the guest **resets to the BIOS prompt** within 50 s, so a checkpoint
+of another level does not load (see U5). Both bodies stayed silent through the select, the load, gameplay and the
+command; a `Z0` does not survive that reset, so the window ends there. A second boot walked the mid-game menu to try
+a *graceful* unload instead: three downs reached the bottom of the list (two frames byte-identical) and the
+confirmation left the screen unchanged, so the level was never unloaded and the pair recorded **0 stops** over a
+420 s window (four 60 s timeouts, control fired at once). Windows still uncovered: a completed unload and the
+multiplayer/dedicated path.
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
