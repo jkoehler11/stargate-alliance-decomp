@@ -19,7 +19,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body
 
 help:
 	@echo "targets:"
@@ -56,6 +56,7 @@ help:
 	@echo "  release-notes generate the body for a milestone release (MILESTONE=a..f)"
 	@echo "  class-graph   walk the subclass tree under a root (ROOT=BotBase) with states and usage"
 	@echo "  ai-states     read every AI controller state out of the shipped text into inventory/ai_states.csv"
+	@echo "  ai-state-body walk each AI state body as a statement tree into inventory/ai_state_bodies.csv"
 	@echo "  package-names parse every .u header and name table (PLAN 5.2/4.7 prerequisite)"
 	@echo "  nightly       run the dump-free gate plus every dump-side check, one summary per run (PLAN 7.5)"
 	@echo "  pkg-exports   list a class's exports and their sizes from a package (PKG=... CLASS=...)"
@@ -309,6 +310,7 @@ ci:
 	@$(PYTHON) tools/xemu/map-loads.py --check-doc docs/MAP_LOADS.md
 	@$(PYTHON) tools/vehicle-seats.py --check-doc docs/systems/VEHICLES.md
 	@$(PYTHON) tools/ai-states.py --check-doc docs/systems/AI.md
+	@$(PYTHON) tools/ai-state-body.py --check-doc docs/systems/AI.md
 	@$(PYTHON) tools/voice-packs.py --check-doc docs/systems/AUDIO.md
 	@$(PYTHON) tools/voice-sets.py --check-doc docs/systems/AUDIO.md
 	@$(PYTHON) tools/voice-descs.py --check-doc docs/systems/AUDIO.md
@@ -923,6 +925,15 @@ ai-states:
 	$(PYTHON) tools/ai-states.py \
 		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
 		-o inventory/ai_states.csv --write-doc docs/systems/AI.md
+
+# A state's own statements and the handlers it overrides are different behaviour: the first is what the state
+# runs, the second is code the engine calls while it is active. This walks a body as a statement tree and keeps
+# kinds and callee names only -- never the code -- so the read is repeatable without publishing script (PLAN 3.10).
+ai-state-body:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
+	$(PYTHON) tools/ai-state-body.py \
+		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
+		-o inventory/ai_state_bodies.csv --write-doc docs/systems/AI.md
 
 # A seat is a default property value, not behaviour, so this reads the emitter's tree rather than a boot: the
 # two arrays are declared once on `StargateVehicle` and tile one tagged struct per slot.
