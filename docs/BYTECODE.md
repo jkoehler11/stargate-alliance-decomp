@@ -629,6 +629,50 @@ list, and two numbering schemes meeting at 96 -- are wrong. The stream is a para
 numbering: the token is `GNatives`' own index from 112 (`Object.Concat_StrStr`) upward, and the two-byte form exists
 only because one byte cannot spell 256.
 
+## The name column is the image's own, not a token list that stops at `0x47`
+
+The table's names came from UELib's UE2 token map, which is a list of *expression* tokens and ends at `0x47`. The
+operators and natives above it had a shape and no name, so **126 of the 184 opcodes the shipped corpus uses** printed
+as `op77`, `op61`, `opaf` -- and those 126 are exactly the 48,422 native-call tokens, every one of them anonymous in
+the disassembly. No external list is needed there: the token *is* the `GNatives` index, and the image already carries
+`intUObjectexec<Function>` for every slot it populates (`inventory/gnatives_records.csv`).
+`tools/opcode-table.py` joins that record into the CSV's `name`, `source` (`record` / `record-high`) and `note`
+columns, and `--check` refuses a row whose name disagrees with the record table.
+
+| band | opcodes | what names it | corpus tokens |
+|---|---:|---|---:|
+| `0x70..0xff` | 120 used | the token *is* the slot: `0x77` is slot 119 `intUObjectexecNotEqual_ObjectObject` | 44,174 |
+| `0x60..0x6f` | 6 used of 16 | `HighNative<n>`; with operand byte `b` the native is `(op-0x60)*256 + b`, so `0x61 0x16` is 278 `Actor.Spawn` | 4,248 |
+| `0x48..0x5f` | 0 | **nothing**: the image has no `GNatives` record at any of those 24 slots | 0 |
+
+That third row is a third independent confirmation that the walker's bad-token band is not an opcode band: it rejects
+`0x48..0x5f` and the image has no slot there either.
+
+Two checks say the join is the naming rather than a plausible one, and both are by content:
+
+* **Direct band** -- 111 of the 120 spell the function the shipped script declares at that exact index
+  (`inventory/natives.csv`), and the nine that do not differ only in spelling: `Concat_StringString` in C++ where
+  `Object.uc` declares `Concat_StrStr` (the nine are `Concat`, `Less`, `Greater`, `LessEqual`, `GreaterEqual`,
+  `EqualEqual`, `NotEqual`, `ComplementEqual`, `At`). Those rows carry the declaration in their `note`.
+* **High band** -- 84 distinct natives, **83 identical** to a declaration, one differing the same way
+  (`ConcatEqual_StringString`), and **4,246 of 4,248 tokens** resolve. `python3 tools/uscript-dis.py --highnative
+  DUMP/System` prints that comparison; it is `inventory/native_opcodes.csv`'s row set cut by band, so the two
+  artifacts corroborate each other rather than duplicating a measurement.
+
+What the disassembler therefore prints is the operator's own name -- `AndAnd_BoolBool`, `Multiply_FloatFloat` -- and
+for a `HighNative` token the callee its operand byte names:
+
+    $ python3 tools/uscript-dis.py --hex 611616
+    0000  HighNative1 (Spawn)      16                   3 byte(s)
+
+`inventory/opcode_usage.csv` and the walk are otherwise unchanged (184 opcodes, 11,608 scripts walk clean, the same
+token counts), so what moved here is names, not measurements.
+
+**Not claimed.** Two tokens name nothing: `0x67 0x08` resolves to native(1800) and `0x6e 0x43` to native(3651), one
+token each, with no `GNatives` record and no `native()` declaration anywhere in the shipped script (both rows stay
+empty in `inventory/native_opcodes.csv`). Naming those is a question about slots the record table does not populate,
+not about the token encoding.
+
 ## The calls the scripts make
 
 `--calls` walks the corpus and records every call site, resolving each one as far as its operand rules allow:

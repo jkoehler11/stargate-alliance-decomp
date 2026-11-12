@@ -33,11 +33,32 @@ class Refused(Exception):
     pass
 
 
+RECORDS = os.path.join(ROOT, "inventory", "gnatives_records.csv")
+
+
+def exec_name(symbol):
+    """`intUObjectexecSwitch` -> `Switch`, `intAActorexecSleep` -> `Sleep`."""
+    m = re.match(r"^int\w*?exec(\w+)$", symbol or "")
+    return m.group(1) if m else ""
+
+
 class Table:
     def __init__(self, path=TABLE):
         self.rows = {}
         for r in csv.DictReader(open(path)):
             self.rows[int(r["opcode"], 16)] = r
+        self.records = {}
+        if os.path.exists(RECORDS):
+            for r in csv.DictReader(open(RECORDS)):
+                nm = exec_name((r.get("record_name") or "").strip())
+                if nm:
+                    self.records[int(r["slot"])] = nm
+
+    def high_native(self, op, byte):
+        """The native a `HighNative` token names: `(op - 0x60) * 256 + operand byte` (0x61,b=0 -> 256)."""
+        if byte is None or not 0x60 <= op <= 0x6F:
+            return None
+        return self.records.get((op - 0x60) * 256 + byte)
 
     def pattern(self, op):
         r = self.rows.get(op)
@@ -60,7 +81,8 @@ def parse(data, table):
         pattern, name = table.pattern(op)
         if pattern == "bad-token":
             raise Refused("%#x: opcode %#02x is the walker's bad-token case" % (pos, op))
-        node = {"offset": pos, "opcode": op, "name": name, "operands": b"", "children": [], "end": pos}
+        node = {"offset": pos, "opcode": op, "name": name, "operands": b"", "children": [],
+                "native": None, "end": pos}
         q = pos + 1
         items = pattern.split(",") if pattern else []
         for item in items:
@@ -136,6 +158,10 @@ def parse(data, table):
             else:
                 raise Refused("%#x: unknown pattern item %r in the table" % (pos, item))
         node["end"] = q
+        if 0x60 <= op <= 0x6F and node["operands"]:
+            # The token is `HighNative<n>` and its operand byte is the low half of a native index >= 256, so the
+            # image's own record table names the callee (docs/BYTECODE.md).
+            node["native"] = table.high_native(op, node["operands"][0])
         return node
 
     out = []
@@ -152,6 +178,8 @@ def render(nodes, out=None, depth=0):
     for n in nodes:
         operands = n["operands"].hex() if n["operands"] else ""
         name = n["name"] or "op%02x" % n["opcode"]
+        if n.get("native"):
+            name = "%s (%s)" % (name, n["native"])
         out.append("%s%04x  %-24s %-20s %s" % ("  " * depth, n["offset"], name, operands,
                                                "%d byte(s)" % (n["end"] - n["offset"])))
         if n["children"] and depth < 4:
@@ -179,6 +207,7 @@ def selftest():
         ("jump over a byte", bytes([0x06, 0x02, 0x00, 0x47]), 2, 4),
         ("iterator pop, no operands", bytes([0x30, 0x31]), 2, 2),
         ("extended native (0x60): byte then parameter list", bytes([0x60, 0x01, 0x16]), 1, 3),
+        ("high native 1, byte 0: native 256, then a parameter list", bytes([0x61, 0x00, 0x16]), 1, 3),
     ]
     for label, data, want_tokens, want_len in checks:
         try:
@@ -190,6 +219,17 @@ def selftest():
         if len(nodes) != want_tokens or total != want_len:
             print("FAIL uscript-dis: %s: %d tokens / %d bytes, expected %d / %d"
                   % (label, len(nodes), total, want_tokens, want_len))
+            return 1
+    if table.records:
+        nodes = parse(bytes([0x61, 0x00, 0x16]), table)
+        got = nodes[0]["native"]
+        want = table.records.get(256)
+        if got != want:
+            print("FAIL uscript-dis: 0x61 0x00 resolved to %r, the slot 256 record says %r" % (got, want))
+            return 1
+        hi = parse(bytes([0x70, 0x16]), table)[0]
+        if hi["native"] is not None:
+            print("FAIL uscript-dis: a direct-band token carries a high-native name")
             return 1
     refusals = [
         ("the bad-token opcode", bytes([0x03])),
@@ -1395,11 +1435,10 @@ def function_script(path, want_class, want_function, table, hex_bytes=0):
     return 1
 
 
-def usage_report(path, table, out=None):
-    """Which opcodes the shipped scripts actually use, over every payload whose script walks clean.
+def _payload_trees(path, table, stats):
+    """Yield the parsed token tree of every `Function` payload whose script walks clean end to end.
 
-    A census, not a guess: an opcode no script uses cannot be checked against anything, and one that appears in
-    thousands of payloads is worth naming first.
+    `stats` is updated in place (`seen`, `walked`), because both censuses quote those two counts.
     """
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
@@ -1407,10 +1446,6 @@ def usage_report(path, table, out=None):
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
     epilogue = bytes([0x04, 0x0B, 0x47])
-    counts = collections.Counter()
-    payloads = collections.Counter()
-    walked = 0
-    seen = 0
     for one in files:
         pkg = Package(one)
         pkg.read_names()
@@ -1436,7 +1471,7 @@ def usage_report(path, table, out=None):
                 end = n - 9
             else:
                 continue
-            seen += 1
+            stats["seen"] += 1
             start = off + 16
             if start >= end:
                 continue
@@ -1446,17 +1481,93 @@ def usage_report(path, table, out=None):
                 continue
             if sum(x["end"] - x["offset"] for x in nodes) != end - start:
                 continue
-            walked += 1
-            here = set()
+            stats["walked"] += 1
+            yield nodes
 
-            def visit(items):
-                for node in items:
-                    counts[node["opcode"]] += 1
-                    here.add(node["opcode"])
-                    visit(node["children"])
-            visit(nodes)
-            for op in here:
-                payloads[op] += 1
+
+def highnative_report(path, table):
+    """Which natives the `HighNative` band calls, over every script that walks clean end to end.
+
+    A token in `0x60..0x6f` is `HighNative<n>` and carries one byte; the index it names is
+    `(opcode - 0x60) * 256 + byte`, so `0x61 0x1c` is native 284 and the image's record table gives its name.
+    Unresolved rows are counted, not dropped: a native index with no record is a finding.
+    """
+    declared = {}
+    nat = os.path.join(ROOT, "inventory", "natives.csv")
+    if os.path.exists(nat):
+        for r in csv.DictReader(open(nat)):
+            tok = (r.get("native_token") or "").strip()
+            if tok:
+                declared.setdefault(int(tok), []).append("%s.%s" % (r.get("class", "?"), r.get("function", "?")))
+    stats = {"seen": 0, "walked": 0}
+    counts = collections.Counter()
+    payloads = collections.Counter()
+    for nodes in _payload_trees(path, table, stats):
+        here = set()
+
+        def visit(items):
+            for node in items:
+                op = node["opcode"]
+                if 0x60 <= op <= 0x6F and node["operands"]:
+                    key = (op, node["operands"][0])
+                    counts[key] += 1
+                    here.add(key)
+                visit(node["children"])
+        visit(nodes)
+        for key in here:
+            payloads[key] += 1
+    print("%d scripts with an epilogue, %d walk clean end to end" % (stats["seen"], stats["walked"]))
+    print("%-6s %-7s %7s %-28s %-28s %10s %9s"
+          % ("op", "byte", "native", "record name", "declared", "tokens", "payloads"))
+    rows = []
+    for (op, byte), _n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+        index = (op - 0x60) * 256 + byte
+        rows.append((op, byte, index, table.records.get(index, ""), counts[(op, byte)], payloads[(op, byte)]))
+    for op, byte, index, name, tok, pay in rows[:40]:
+        print("0x%02x   0x%02x    %7d %-28s %-28s %10d %9d"
+              % (op, byte, index, name or "-", ", ".join(declared.get(index, [])) or "-", tok, pay))
+    named = sum(tok for _o, _b, _i, name, tok, _p in rows if name)
+    total = sum(tok for _o, _b, _i, _n_, tok, _p in rows)
+    unresolved = [(i, tok) for _o, _b, i, name, tok, _p in rows if not name]
+    print("%d distinct (opcode, byte) pairs name %d natives; %d token(s) of %d resolve to a record name"
+          % (len(rows), len({i for _o, _b, i, name, _t, _p in rows if name}), named, total))
+    if unresolved:
+        print("unresolved native indices: %s" % ", ".join("%d (%d token(s))" % u for u in unresolved[:8]))
+    named_idx = {i for _o, _b, i, name, _t, _p in rows if name}
+    confirmed = [i for i in sorted(named_idx)
+                 if any(d.split(".", 1)[1] == table.records.get(i) for d in declared.get(i, []))]
+    differ = [i for i in sorted(named_idx) if declared.get(i) and i not in confirmed]
+    absent = [i for i in sorted(named_idx) if not declared.get(i)]
+    print("%d of %d named indices carry a shipped `native(<index>)` declaration; %d name it identically, "
+          "%d differ, %d have no declaration" % (len(confirmed) + len(differ), len(named_idx), len(confirmed),
+                                                 len(differ), len(absent)))
+    for i in differ[:6]:
+        print("   native(%d): record `%s`, script declares `%s`"
+              % (i, table.records.get(i), ", ".join(declared[i])))
+    return 0
+
+
+def usage_report(path, table, out=None):
+    """Which opcodes the shipped scripts actually use, over every payload whose script walks clean.
+
+    A census, not a guess: an opcode no script uses cannot be checked against anything, and one that appears in
+    thousands of payloads is worth naming first.
+    """
+    counts = collections.Counter()
+    payloads = collections.Counter()
+    stats = {"seen": 0, "walked": 0}
+    for nodes in _payload_trees(path, table, stats):
+        here = set()
+
+        def visit(items):
+            for node in items:
+                counts[node["opcode"]] += 1
+                here.add(node["opcode"])
+                visit(node["children"])
+        visit(nodes)
+        for op in here:
+            payloads[op] += 1
+    walked, seen = stats["walked"], stats["seen"]
     print("%d scripts with an epilogue, %d walk clean end to end" % (seen, walked))
     print("%-6s %-24s %10s %9s" % ("op", "name", "tokens", "payloads"))
     for op, _n in sorted(payloads.items(), key=lambda kv: -payloads[kv[0]]):
@@ -3299,6 +3410,9 @@ def main():
                     help="for each index operand, what the value points at (a check on the operand rules)")
     ap.add_argument("--switches", metavar="PATH",
                     help="what a 0x05 switch's operand byte is: the width of the value it compares")
+    ap.add_argument("--highnative", metavar="PATH",
+                    help="census the HighNative band (0x60..0x6f): which native each token calls "
+                         "(console report; inventory/native_opcodes.csv is the full row set)")
     ap.add_argument("--usage", metavar="PATH",
                     help="which opcodes the shipped scripts that walk clean actually use")
     ap.add_argument("-o", "--out", help="write inventory/opcode_usage.csv into this directory (with --usage)")
@@ -3339,6 +3453,8 @@ def main():
         return switches_report(args.switches, Table(), args.out)
     if args.usage:
         return usage_report(args.usage, Table(), args.out)
+    if args.highnative:
+        return highnative_report(args.highnative, Table())
     if args.resolve:
         return resolve_report(args.resolve, Table())
     if args.native_calls:
