@@ -203,8 +203,20 @@ def selftest():
             continue
         print("FAIL uscript-dis: %s was accepted, expected a refusal" % label)
         return 1
-    print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured"
-          % (len(table.rows), len(checks), len(refusals)))
+    # `--shuffle` is a control, so it has to move every value and keep the pool it moves (a rotation that dropped
+    # a type would make the control's collapse unreadable as evidence).
+    decls = {"F": {"p": "pawn", "c": "controller"}, "G": {"a": "actor"}}
+    rets = {"H": "sound"}
+    loc_s, ret_s = shuffled_source(decls, rets)
+    pool = sorted([v for d in loc_s.values() for v in d.values()] + list(ret_s.values()))
+    if pool != sorted(["pawn", "controller", "actor", "sound"]):
+        print("FAIL uscript-dis: the shuffle dropped or invented a declared type: %s" % pool)
+        return 1
+    if loc_s["F"]["p"] == "pawn" or ret_s["H"] == "sound":
+        print("FAIL uscript-dis: the shuffle left a declared type on its own name")
+        return 1
+    print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured, shuffle rotates %d types"
+          % (len(table.rows), len(checks), len(refusals), len(pool)))
     return 0
 
 
@@ -1249,6 +1261,9 @@ def _class_of_type(friendly):
 
 _SCRIPT_TEXT = None
 
+# `--calls --shuffle`: rotate each class's declared types before the walk, as a control on the placements.
+_SHUFFLE = False
+
 
 def _script_text(pkg, export, index):
     """The class's own `ScriptText` (the source it ships), or None. `pkg-script-text` is loaded lazily once."""
@@ -1359,6 +1374,34 @@ def source_declarations(text):
                     out[fn][nm.strip()].add(lm.group(1))
     return {fn: {n: (next(iter(t)) if len(t) == 1 else None) for n, t in decls.items()}
             for fn, decls in out.items()}
+
+
+def shuffled_source(decls, rets):
+    """A control: the same class's declarations with every type rotated onto a neighbouring name.
+
+    The receiver walk places a site when the expression in front of the call declares a type that names a class
+    *and* that class's chain declares the call's name, so a placement is only evidence if the declaration is doing
+    the work. Rotating the class's own declared types (its locals and its return types, one pool) onto the next
+    name leaves the shape of the source intact -- the same functions, the same number of names, the same set of
+    type spellings -- and breaks exactly the binding that placed the site. What survives the rotation is a name
+    that lands on any chain, which is the number a `--calls --shuffle` run exists to report.
+
+    A name whose declaration the parser dropped (two spellings, a type that is not a class) has no value in the
+    pool, so it stays absent rather than gaining one: the rotation must not hand a site a declaration it never had.
+    """
+    slots = [("local", fn, name, t) for fn, d in decls.items() for name, t in d.items()]
+    slots += [("return", fn, "", t) for fn, t in rets.items()]
+    slots.sort()
+    values = [s[3] for s in slots]
+    if len(values) > 1:
+        values = values[1:] + values[:1]
+    loc, ret = {}, {}
+    for (kind, fn, name, _was), value in zip(slots, values):
+        if kind == "local":
+            loc.setdefault(fn, {})[name] = value
+        else:
+            ret[fn] = value
+    return loc, ret
 
 
 def _kind_key(kind):
@@ -1737,6 +1780,8 @@ def calls_report(path, table, out=None):
                                 text = _script_text(pkg2, x, k - 1)
                                 break
                 sourced[key] = (source_declarations(text), source_returns(text))
+                if _SHUFFLE:
+                    sourced[key] = shuffled_source(*sourced[key])
             return sourced[key]
 
         def local_decls(cls_name, fn_name):
@@ -2326,6 +2371,8 @@ def main():
                     help="what the opcodes above 0x5f call: each index read against the caller's native chain")
     ap.add_argument("--calls", metavar="PATH",
                     help="every script-level call site, static or by name, for a package or a System directory")
+    ap.add_argument("--shuffle", action="store_true",
+                    help="with --calls: a control, each class's declared types rotated onto a neighbouring name")
     ap.add_argument("--class-refs", metavar="PATH",
                     help="which classes the scripts name in code: class literals and cast targets")
     ap.add_argument("--resolve", metavar="PATH",
@@ -2339,6 +2386,8 @@ def main():
                     help="three readings of where a script starts: payload floor, walk depth, the dword's meaning")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     args = ap.parse_args()
+    if args.shuffle and not args.calls:
+        ap.error("--shuffle is a control on --calls: give it a package or a System directory")
 
     if args.header:
         return header_report(args.header)
@@ -2355,6 +2404,11 @@ def main():
     if args.native_calls:
         return native_calls_report(args.native_calls, Table(), args.out)
     if args.calls:
+        global _SHUFFLE
+        _SHUFFLE = args.shuffle
+        if _SHUFFLE:
+            print("CONTROL RUN: each class's declared local and return types are rotated onto a neighbouring "
+                  "name, so no placement below can be attributed to a declaration")
         return calls_report(args.calls, Table(), args.out)
     if args.class_refs:
         return class_refs_report(args.class_refs, Table(), args.out)

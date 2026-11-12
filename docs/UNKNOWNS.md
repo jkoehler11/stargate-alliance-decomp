@@ -1292,8 +1292,12 @@ parameter list bind exactly the name the export table gives, so `--calls` parses
 package and reads the type from there. **490 of the 628 local sites are placed that way**, which takes the
 untyped locals to **138** and the by-name sites that name a declaring class from 11,811 to **12,301 of 13,507
 (91%)**; the residue is **1,206 sites**, 717 with an untyped object expression (138 locals, 579 properties the
-script does not type) and 489 with a completed value in front. The control is a shuffle: permuting the declared
-types inside each class collapses `Engine.u`'s local placements from **82 to 13**. What is left of this route
+script does not type) and 489 with a completed value in front. The control is a shuffle, and it is a flag now
+(`--calls --shuffle`): the same walk with each class's declared types rotated onto a neighbouring name leaves
+**12,753 of 13,507 (94.4%)** by-name sites naming a declaring class against **13,258 (98.2%)** as shipped, and the
+typed-local receiver placements fall **582 -> 80** (whole receiver group **2,641 -> 2,123**) -- so about six in
+seven of the local placements are the declaration deciding, and the survivors are names that land on any chain.
+What is left of this route
 is a local whose source binds no class -- no `ScriptText` for the class, no declaration for the name, two
 different declarations of it, or a declared type that is not a class. The 579 untyped properties are the next
 instrument, and their declarations come from the tagged property stream that `class_properties.csv` is read
