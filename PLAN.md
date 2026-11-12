@@ -1050,6 +1050,26 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the live heap names the holders of all six offsets, and `+0x1c` holds nothing)
+
+- **The layout question is answered from a boot, not a decompile.** `tools/xemu/field-objects.py` (`--selftest`
+  needs no guest) walks `GObjObjects`, reads the six offsets of `inventory/vcall_field_owners.csv` across every
+  live object, and writes `inventory/field_object_owners.csv` (779 rows): per offset, which class holds another
+  live object there and which class it holds. **42,128 of 42,137** array entries are plausible objects, 0 class
+  headers unreadable, 294 blocks / 19.3 MB / 998 RSP calls at the title screen.
+- **The six offsets are six displacements, not six fields: 149 owner classes.** `+0x2c` 78 owner classes / 28,591
+  sites, `+0x48` 58 / 765, `+0x310` 58 / 9,770, `+0x220` 38 / 714, `+0x4c` 37 / 19,240, `+0x1c` **0**. One offset
+  carries a material's texture (`Shader` holds a `Texture` 107 of 107) beside a property list's sibling link
+  (`FloatProperty` holds a `FloatProperty` 2,026 of 4,402) -- the "shared displacement is not a shared field" rule
+  the static half stated, now with the classes that prove it.
+- **`+0x220`, the eight-site group, is dominated by a class object's function pointer.** 539 of its 714 sites hold a
+  `Function`, 533 of them on a `Class` (533 of 1,004 live class objects); a complete GUI widget chain follows
+  (`GUIButton` 10 of 10) and `AnimNotify_Script`→`LinkerLoad` 45 of 63. The owner is one of 38 candidates with
+  `Class` eight times ahead of the next; what is left is which of them the callers at `0x335007`-`0x337318` pass.
+- **`+0x1c` is a measured negative**: no live object at the title screen holds a live `UObject` there.
+- Tool + `inventory/field_object_owners.csv` + `make field-objects` + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. It reads a guest, so the target wants `PORT=<stub>` and is not part of `make ci`.
+
 ### Execution notes (2026-11-12, the field holds the object at six offsets, and no table names its owner)
 
 - **28 field origins decode to six offsets, and they are two populations, not six.** `tools/vcall-field-owner.py`

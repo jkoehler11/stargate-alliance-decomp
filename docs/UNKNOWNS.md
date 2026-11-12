@@ -951,6 +951,21 @@ once -- and that pointer is not a class table), **3 are a copy of `this`** (`esi
 *held* object, and the question this entry carries narrows: the class of that object at run time, with the three
 global-pointer sites the only ones where a single shared instance carries the pair.
 
+**2026-11-12, the layout half is measured on a live heap, and `+0x220` is dominated by a class's function pointer.**
+Of the two routes this entry named, the RAM-dump one is taken: a boot's `GObjObjects` names, for each of the six
+offsets, the class that holds a live object there and the class it holds (`tools/xemu/field-objects.py`,
+`inventory/field_object_owners.csv`, 779 rows over 42,128 objects at the title screen). The *displacement* question
+is answered and the *property name* question is not: the six offsets resolve to **149 distinct owner classes**
+(`+0x2c` 78, `+0x48` 58, `+0x310` 58, `+0x220` 38, `+0x4c` 37, `+0x1c` **0**), so one offset carries different
+properties in different classes -- `Shader+0x2c` holds a `Texture` in 107 of 107 objects while `FloatProperty+0x2c`
+holds another `FloatProperty` in 2,026 of 4,402. At `+0x220` one population dominates: 539 of 714 sites hold a
+`Function`, and 533 of those are a `Class` object (533 of the 1,004 live class objects), with a complete GUI widget
+chain behind it (`GUIButton` 10 of 10) and `AnimNotify_Script`→`LinkerLoad` 45 of 63 -- so the eight `[eax+0x220]`
+sites' owner is one of **38 candidate classes**, headed by `Class` at eight times the next. Naming *which* of the 38
+a given site gets needs the argument's class at that call site, i.e. the callers in `0x335007`-`0x337318` read for
+what they pass, not another dump. `+0x1c` is a measured negative: no live object holds a live `UObject` there at the
+title screen, so the two `+0x1c` sites read either a non-object dword or one a mission fills in.
+
 **2026-11-12, the field offsets are measured and no table names their owner.** The 28 field origins decode to six
 offsets -- `+0x4c` 12, `+0x220` 8, `+0x48` 3, `+0x1c` 2, `+0x2c` 2, `+0x310` 1 -- every one a plain
 `mov reg,[base+disp]` with no indexed or absolute load in the set, and they split into two populations: 20 read the

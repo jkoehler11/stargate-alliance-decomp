@@ -18,7 +18,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects
 
 help:
 	@echo "targets:"
@@ -968,6 +968,7 @@ native-opcodes:
 	@echo "  class-table-residual  what a registration call pushes, and what slots 19/20 hold (needs the dump)"
 	@echo "  vcall-dispatch  every .text site that dispatches slots 19/20 (needs the dump)"
 	@echo "  vcall-field-owner  which field holds the object at each of those sites (needs the dump)"
+	@echo "  field-objects  which class holds a live object at each of those offsets (needs a boot and PORT)"
 
 # U8's two residuals (docs/NATIVE_CLASS_TREE.md): every registration call's argument list, and what slots 19/20
 # hold in all 492 class tables. Needs the image; both artifacts are addresses and counts, no game data.
@@ -990,3 +991,12 @@ vcall-field-owner:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
 	@$(PYTHON) tools/vcall-field-owner.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/vcall_field_owners.csv
 	@echo "wrote inventory/vcall_field_owners.csv"
+
+# U8's layout half: which class holds a live object at each of the six field offsets, read from a booted guest
+# (docs/NATIVE_CLASS_TREE.md). It needs a run and that run's GDB stub, so it is not part of `make ci`.
+field-objects:
+	@test -n "$(PORT)" || { echo "set PORT to the guest's GDB stub (tools/xemu/drive.py --gdb=PORT --linger=SECS)"; exit 2; }
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/xemu/field-objects.py --port $(PORT) --xbe "$(GAME_DIR)/default.xbe" \
+		--from-csv inventory/vcall_field_owners.csv --csv inventory/field_object_owners.csv
+	@echo "wrote inventory/field_object_owners.csv"
