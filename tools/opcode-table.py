@@ -32,6 +32,7 @@ comes from the committed slot table.
 import argparse
 import csv
 import os
+import re
 import struct
 import sys
 
@@ -124,6 +125,80 @@ NOTES = {
 }
 
 COLUMNS = ["opcode", "group", "handler", "name", "pattern", "fixed_bytes", "source", "note"]
+
+RECORDS = os.path.join(ROOT, "inventory", "gnatives_records.csv")
+
+
+def exec_name(symbol):
+    """`intUObjectexecSwitch` -> `Switch`, `intAActorexecSleep` -> `Sleep`."""
+    m = re.match(r"^int\w*?exec(\w+)$", symbol or "")
+    return m.group(1) if m else ""
+
+
+def declarations(path=None):
+    """native index -> sorted `Class.Function` names the shipped script text declares at that index."""
+    out = {}
+    path = path or os.path.join(ROOT, "inventory", "natives.csv")
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path)):
+        tok = (r.get("native_token") or "").strip()
+        if not tok:
+            continue
+        out.setdefault(int(tok), []).append("%s.%s" % (r.get("class", "?"), r.get("function", "?")))
+    for tok in out:
+        out[tok] = sorted(set(out[tok]))
+    return out
+
+
+def record_names(path=None):
+    """slot -> (exec name, symbol, live address, record address) for every slot the image's record table names."""
+    out = {}
+    path = path or RECORDS
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path)):
+        sym = (r.get("record_name") or "").strip()
+        name = exec_name(sym)
+        if name:
+            out[int(r["slot"])] = (name, sym, (r.get("live_address") or "").strip(),
+                                   (r.get("record_va") or "").strip())
+    return out
+
+
+def apply_records(rows, path=None):
+    """Name the opcodes above the walker's 72-entry map from the image's own GNatives record table.
+
+    The token *is* the GNatives index, which is why UELib's token map -- a list of expression tokens that stops at
+    0x47 -- leaves the operator band blank: 0x70..0xff are direct slots, and 0x60..0x6f are `HighNative0..15`, whose
+    one operand byte carries the low half of a native index at or above 256. Above 0x5f the walker's own image names
+    every opcode it does not reject, so no external token list is needed there.
+    """
+    recs = record_names(path)
+    declared = declarations()
+    for r in rows:
+        op = int(r["opcode"], 16)
+        if op < 0x60:
+            continue                       # 0x48..0x5f: rejected by the walker, and the image has no slot there
+        hit = recs.get(op)
+        if not hit:
+            continue
+        name, sym, addr, _rva = hit
+        r["name"] = name
+        r["source"] = "record" if op >= 0x70 else "record-high"
+        note = "GNatives slot %d is `%s` at %s" % (op, sym, addr or "?")
+        if op <= 0x6F:
+            if op == 0x60:
+                note += ("; no token in the corpus uses it (its byte would name natives 0..255, which the direct "
+                         "band already supplies)")
+            else:
+                note += "; its operand byte b names native %d + b" % ((op - 0x60) * 256)
+        hits = declared.get(op) or []
+        if hits and name not in [h.split(".", 1)[1] for h in hits]:
+            note += "; the shipped script declares `%s` at native(%d) -- the exec and the operator are named " \
+                    "differently" % (", ".join(hits), op)
+        r["note"] = (r["note"] + "; " if r["note"] else "") + note
+    return rows
 
 
 def fixed_bytes(pattern):
@@ -232,7 +307,7 @@ def build_rows(xbe_path, slots, symbols):
             rows.append({"opcode": "0x%02x" % op, "group": "", "handler": "",
                          "name": "", "pattern": "parms", "fixed_bytes": 0,
                          "source": "range", "note": "above 0x6f: no byte, a nested walk until 0x16"})
-    return rows, bmap, handlers
+    return apply_records(rows), bmap, handlers
 
 
 def show(bmap, handlers):
@@ -259,7 +334,7 @@ def check(path):
         if op != i:
             problems.append("row %d is opcode %#x" % (i, op))
         seen.add(op)
-        if r["source"] not in ("map", "range"):
+        if r["source"] not in ("map", "range", "record", "record-high"):
             problems.append("opcode %#x: source %r" % (op, r["source"]))
         if r["source"] == "map":
             g = int(r["group"])
@@ -277,6 +352,17 @@ def check(path):
                 problems.append("opcode %#x: range pattern %r, expected %r" % (op, r["pattern"], want))
     if seen != set(range(256)):
         problems.append("opcode set is not 0..255")
+    recs = record_names()
+    for r in rows:
+        op = int(r["opcode"], 16)
+        if op < 0x60:
+            continue
+        want = recs.get(op)
+        if want and r["name"] != want[0]:
+            problems.append("opcode %#x: name %r, GNatives slot %d says %r"
+                            % (op, r["name"], op, want[0]))
+        if not want and r["name"]:
+            problems.append("opcode %#x: names %r but the image has no GNatives slot for it" % (op, r["name"]))
     groups = {int(r["group"]) for r in rows if r["source"] == "map"}
     expected = set(GROUPS)
     if groups != expected:

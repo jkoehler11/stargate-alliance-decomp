@@ -217,6 +217,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
+      **Above `0x5f` the name column is the image's own**: every populated `GNatives` slot carries
+      `intUObjectexec<Function>`, which names 120 direct opcodes and the six used `HighNative` ones -- the 126 opcodes
+      the corpus uses that had no name (all 48,422 native-call tokens) -- and `0x48..0x5f` has no slot at all.
       **The locator is solved and now sharp** (U13): the script starts **16 bytes past `FriendlyName`**, measured by
       content — `--start-anchor`, the first opcode the body's own `ScriptText` declaration fixes, sits at +16 in
       **466 of 466** anchored payloads and every one of those walks to the epilogue, 0 at payload offset 0 and only
@@ -1172,6 +1175,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool (`tools/ai-state-body.py`, `--outline`, `--write-doc`/`--check-doc`, 20 assertions in `--check`) +
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
+
+### Execution notes (2026-11-12, the opcode names above `0x5f` are the image's own, and 126 of 184 were blank)
+
+- **The blank names were an external list's edge, not a gap in the build.** The table's `name` column comes from
+  UELib's UE2 token map, which stops at `0x47`; the corpus uses **184 opcodes**, so **126 printed as `opNN`** -- and
+  those 126 are exactly the 48,422 native-call tokens, the whole operator and native mass of the disassembly.
+  `inventory/gnatives_records.csv` already names every slot the image populates, and the token *is* the slot.
+- **The join covers both bands.** `tools/opcode-table.py` now writes 120 names for `0x70..0xff` (token == slot) and
+  the six used `0x60..0x6f` tokens as `HighNative<n>`, where operand byte `b` names native `(op-0x60)*256 + b`;
+  `0x48..0x5f` has **no record at any of its 24 slots**, which corroborates the walker's bad-token band from the
+  image's side. Corpus unchanged: 184 opcodes, 11,608 scripts walk clean, same token counts.
+- **Both bands were checked by content, not by tiling.** 111 of 120 direct names equal the `native(<index>)`
+  declaration in the shipped script text, and the nine that differ are the `_StringString`/`_StrStr` spelling
+  (`Concat`, `At`, the six comparisons, `ComplementEqual`) -- now in the row's `note`. The high band's arithmetic
+  resolves **4,246 of 4,248 tokens**, 83 of 84 names identical to their declaration, with two unresolved indices
+  (`0x67 0x08` -> native(1800), `0x6e 0x43` -> native(3651)) recorded rather than dropped.
+- **Tool:** `opcode-table.py` (join + a `--check` that fails when a name disagrees with the record table),
+  `uscript-dis.py` (`Table.high_native`, `--highnative` console report, one shared payload walk behind both
+  censuses, and `render` printing the resolved name), `inventory/opcode_table.csv` + `inventory/opcode_usage.csv`
+  regenerated, `docs/BYTECODE.md`. Reads the dump; no boot.
 
 ### Execution notes (2026-11-12, the native tables share no function with any class table)
 
