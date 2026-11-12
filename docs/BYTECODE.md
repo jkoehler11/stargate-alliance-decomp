@@ -446,11 +446,18 @@ width, so no row needs a second rule:
   `StargateContent.u` 1/0/**0** each. The three at zero have no body of theirs in any of the six images -- not
   resident, a different negative from a divergence -- while the menu packages peak at 5-10 spans, the size of a wrong
   anchor, and `Engine.u`/`GUI.u` run hundreds of spans before stopping.
-* **`Actor.DisplayDebug` (+9, the largest row, 1,605 spans) stops at 212 spans with the reverse shape**: the model
-  and the copy agree for 455 bytes and then three slots the model counts as one byte hold four-byte pointers in the
-  copy (`80 49 fe 00`-style, in-image addresses). A narrow slot *shortens* a copy, so this is the opposite direction
-  and it means the table's width for that token is one byte too small -- the remainder is still a slot width, not a
-  second field.
+* **`Actor.DisplayDebug` (+9, the largest row, 1,605 spans) stops at 212 spans, and the copy is longer there, not
+  shorter.** The model and the copy agree for 455 bytes; the stop is at file offset `0x167`, an `op 1f` `str` token:
+
+      file : 1f 70 00        1f 1f 20 52 45 4d 4f 56 45 20 52 4f 4c 45 20 00 16
+      guest: 80 49 fe 00  70 00  80 49 fe 00  1f 20 52 45 4d 4f 56 45 20 52 ...
+
+  so each `op 1f` byte of the file is four bytes in the copy -- the same value (`0x00fe4980`) both times -- and the
+  string that follows it is unchanged. A narrow slot *shortens* a copy, so this is the opposite direction and the
+  remainder is still a slot width rather than a second field, but **what those four bytes are is open**: `0x00fe4980`
+  is inside the image and its target holds binary, not the string, so "a resolved pointer" is a reading the bytes do
+  not establish. `--slots` now prints this stop (file offset, opcode, pattern, and the file/guest bytes) so the next
+  read starts from the bytes instead of from this paragraph.
 
 ## The shipped scripts, as disassembled
 
