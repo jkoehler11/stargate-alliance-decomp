@@ -1,0 +1,166 @@
+package,class,state,in_text,children,functions,other_children,bytes,funcs
+AmbientCreatures,Birds,Wandering,no,3,3,0,454,BeginState PickDestination PickSlaveDestination
+AmbientCreatures,CirclingBirds,Circling,no,4,4,0,630,BeginState MaxHiddenTime PickDestination PickSlaveDestination
+AmbientCreatures,HerdAnimal,grazing,yes,7,7,0,1050,BeginState HearNoise NotifyBump NotifyLanded Trigger Wander damageAttitudeTo
+AmbientCreatures,HerdAnimal,stampeding,yes,3,3,0,352,NotifyHitWall PickDestination Stampede
+AmbientCreatures,MigratingBirds,Migrating,no,5,5,0,1081,BeginState InitialLocation MaxHiddenTime PickDestination PickSlaveDestination
+AmbientCreatures,TransientAmbientCreature,Wandering,no,0,0,0,0,
+GamePlay,ScriptedController,Broken,no,1,1,0,65,BeginState
+GamePlay,ScriptedController,Scripting,yes,20,20,0,3058,AbortScript AnimEnd BeginState CompleteAction DisplayDebug EndState GetAggroLevel InitForNextAction IsRunningScript LIPSincAnimEnd LeaveScripting MayShootAtEnemy MayShootTarget SetMoveTarget Tick Timer Trigger UnPossess UpdateRotation WeaponFireAgain
+GamePlay,ScriptedTriggerController,Scripting,yes,2,2,0,111,LeaveScripting Trigger
+StargateContent,BotGoauld,FocusedAttack,yes,5,5,0,299,BeginState EndState Timer WeaponFireAgain WhatToDoNext
+StargateContent,BotScarab,Buried,yes,3,3,0,196,BeginState EndState Timer
+StargateContent,BotScarab,Mellee,yes,6,6,0,730,BeginState EndState NotifyBump NotifyHitWall PickDestination Timer
+StargateContent,ExtreniteAutoTurretController,CloseIdle,yes,1,1,0,123,Tick
+StargateContent,ExtreniteAutoTurretController,Goo,yes,1,1,0,45,BeginState
+StargateContent,ExtreniteAutoTurretController,Malfunction,yes,4,4,0,289,AnimEnd BeginState SeePlayer Tick
+StargateContent,GoaAutoTurretController,Close,yes,2,2,0,84,AnimEnd BeginState
+StargateContent,GoaAutoTurretController,CloseIdle,yes,2,2,0,91,BeginState Tick
+StargateContent,GoaAutoTurretController,Open,yes,2,2,0,84,AnimEnd BeginState
+StargateContent,GoaAutoTurretController,OpenIdle,yes,3,3,0,283,BeginState SeePlayer Tick
+StargateContent,GoaAutoTurretController,Shoot,yes,2,2,0,96,AnimEnd BeginState
+StargateContent,GoaAutoTurretMK2Controller,Deactivated,yes,3,3,0,100,BeginState EndState Timer
+StargateContent,GoaAutoTurretMK2Controller,FireDelay,yes,3,3,0,129,BeginState EndState Timer
+StargateContent,GoaAutoTurretMK2Controller,Idle,yes,3,3,0,220,BeginState EndState Timer
+StargateContent,GoaAutoTurretMK2Controller,Shoot,yes,4,4,0,326,AnimEnd BeginState EndState Timer
+StargateContent,GoaAutoTurretMK2Controller,Wait,yes,3,3,0,130,BeginState EndState Timer
+StargateContent,HaakenBot,MeleeAttack,yes,4,4,0,228,AnimEnd BeginState EndState WeaponFireAgain
+StargateContent,HaakenBot,ShieldCover,yes,10,10,0,887,ActivatingWeaponShieldFinished BeginState EndState NotifyShieldDown NotifyWeaponCharging PickDestination ReceiveWarning ShouldPositionShield Timer WeaponFireAgain
+StargateContent,HaakenLeaderBot,SeizeMindControl,yes,11,11,0,746,ActivatingWeaponShieldFinished BeginState EndState NotifyCrystalDeactivated NotifyCrystalSeizeControl NotifyKilled NotifyShieldDown NotifyTakeHit PickDestination ReceiveWarning StartMindControl
+StargateContent,JaffaBotHeavy,Hunt,yes,4,4,0,440,BeginState EnemyNotVisible SeePlayer Timer
+StargateContent,JaffaBotHeavy,Mellee,yes,6,6,0,1268,BeginState EnemyNotVisible PickDestination SeePlayer ShouldStartMelleeCharge Timer
+StargateContent,JaffaBotHeavy,MelleeCharge,yes,13,13,0,782,BeginState ChooseAttackMode EndState EnemyNotVisible IgnoreTeleport MonitoredPawnAlert NotifyBump NotifyTakeHit ReceiveWarning StartMelleeCharge Tick WeaponFireAgain WhatToDoNext
+StargateContent,JaffaBotHeavy,Sniper,yes,2,2,0,84,BeginState UpdateCrouchToShoot
+StargateContent,JaffaBotLight,CoveredAttack,yes,1,1,0,118,SelectNextCoverState
+StargateContent,JaffaBotLight,Mellee,yes,2,2,0,1166,PickDestination Timer
+StargateContent,JaffaBotLight,Sniper,yes,7,7,0,807,BeginState EndState EnemyNotVisible NotifyTakeHit NotifyWeaponCharging SeePlayer Timer
+StargateContent,JaffaBotMedium,CoveredAttack,yes,1,1,0,166,SelectNextCoverState
+StargateContent,JaffaBotMedium,Mellee,yes,2,2,0,1166,PickDestination Timer
+StargateContent,MindControlledBot,MindControlGuard,yes,2,2,0,179,BeginState PickDestination
+StargateContent,PteroBossBot,Attacking,yes,5,5,0,348,BeginState EndState NotifyTakeHit PickDestination Timer
+StargateContent,PteroBossBot,Guarding,yes,3,3,0,183,BeginState EndState Timer
+StargateContent,PteroBossBot,Nesting,yes,3,3,0,144,BeginState EndState Timer
+StargateContent,PteroBossBot,Protected,yes,4,4,0,300,BeginState EndState NotifyTakeHit Timer
+StargateContent,PteroBossBot,Searching,yes,1,1,0,49,EndState
+StargateContent,PteroBossBot,Swiping,yes,4,4,0,360,BeginState NeedToTurn NotifyTakeHit Timer
+StargateContent,PteroBossBot,Waiting,yes,1,1,0,46,BeginState
+StargateContent,PteroBot,Attacking,yes,5,5,0,273,BeginState EndState NotifyTakeHit PickDestination Timer
+StargateContent,PteroBot,Landing,yes,1,1,0,82,PickDestination
+StargateContent,PteroBot,Searching,yes,2,2,0,381,BeginState PickDestination
+StargateContent,ReetouBot,Ambush,yes,0,0,0,0,
+StargateContent,ReetouBot,Berserk,yes,0,0,0,0,
+StargateContent,ReetouBot,Combat,yes,6,6,0,506,BeginState DodgePhaseTorch NotifyPhaseTorchHit PickDestination ReadyForMeleeAttack WhatToDoNext
+StargateContent,ReetouBot,Escape,yes,4,4,0,369,BeginState PickDestination PickEscapeDestination WhatToDoNext
+StargateContent,ReetouBot,Hunt,yes,3,3,0,136,BeginState PickDestination WhatToDoNext
+StargateContent,ReetouBot,Melee,yes,4,4,0,299,BeginState EndState PickDestination WhatToDoNext
+StargateContent,ReetouBot,Ranged,yes,0,0,0,0,
+StargateContent,ReetouBot,Sneak,yes,5,5,0,279,BeginState NotifyPhaseTorchHit PickDestination SeePlayer WhatToDoNext
+StargateContent,ReetouBot,Waiting,yes,1,1,0,33,BeginState
+StargateContent,ReetouProtectorBot,Attacking,yes,3,3,0,144,BeginState PickDestination Timer
+StargateContent,ReetouProtectorBot,Waiting,yes,2,2,0,94,BeginState Timer
+StargateContent,SuperSoldierBot,ChasePlayer,yes,6,6,0,746,BeginState EndState NotifyHitWall PickDestination SeePlayer Timer
+StargateContent,SuperSoldierBot,GrabAndThrow,yes,4,4,0,246,AnimEnd BeginState EndState WeaponFireAgain
+StargateContent,SuperSoldierBot,Ranged,yes,1,1,0,54,NotifyTakeHit
+StargateContent,SuperSoldierBot,SuperPunch,yes,4,4,0,253,AnimEnd BeginState EndState WeaponFireAgain
+StargateGame,BotBase,Dead,yes,10,10,0,576,BeginState Celebrate ChooseAttackMode DoWait EnemyChanged FearThisSpot ReceiveWarning SetAttractionState Timer WhatToDoNext
+StargateGame,BotBase,ReactionDelay,yes,7,7,0,370,BeginState EndState ReceiveWarning ShouldRunAwayFromFearSpot Tick WeaponFireAgain WhatToDoNext
+StargateGame,BotBase,RunAwayFromFearSpot,yes,9,9,0,707,BeginState CheckifNeedToMove EndState ReceiveWarning ShouldRunAwayFromFearSpot TargetedAlert UpdateRunAwayTarget WeaponFireAgain WhatToDoNext
+StargateGame,BotBase,Scripting,no,6,6,0,544,AbortScript CompleteAction EndState LeaveScripting Restart Timer
+StargateGame,BotBase,Waiting,yes,3,3,0,125,BeginState EndState Timer
+StargateGame,BotEnemy,ActivateAlarm,yes,4,4,0,224,AlarmActivationFinished BeginState EndState NotifyTakeHit
+StargateGame,BotEnemy,AlertSquad,yes,7,7,0,547,AlertingFinished BeginState EndState PlayAlertAnim SetEnemy Timer WhatToDoNext
+StargateGame,BotEnemy,BotBeingElectrocuted,yes,11,11,0,526,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotBurning,yes,7,7,0,435,BeginState EndState IgnoreTeleport PickDestination ReceiveWarning Tick _GetRand
+StargateGame,BotEnemy,BotGrabbed,yes,12,12,0,509,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage Tick WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotGunning,yes,12,12,0,1366,BeginState DisplayDebug EndState FindLocalCover FindNewStakeOutDir FindTurretGoal FindVehicleGoal MustHoldFire NeedToTurn SeePlayer Tick Timer
+StargateGame,BotEnemy,BotHacking,yes,7,7,0,536,BeginState CheckIfShouldCrouch EndState IgnoreTeleport NotifyTakeHit ReceiveWarning Tick
+StargateGame,BotEnemy,BotKnockedBack,yes,12,12,0,541,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage Tick WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotMeleeDash,yes,11,11,0,488,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning Tick WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotPrepareGrabbed,yes,11,11,0,458,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotStaggered,yes,12,12,0,541,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage Tick WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,BotUnconscious,yes,14,14,0,718,BeginState ChooseAttackMode EndState FearThisSpot IgnoreTeleport IsUnconscious MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage Tick Timer WeaponFireAgain WhatToDoNext
+StargateGame,BotEnemy,CoveredAttack,yes,8,8,0,1648,BeginState DoCoveredFire EndState EnemyNotVisible NotifyTakeHit PickAttackDestination SeePlayer WeaponReloading
+StargateGame,BotEnemy,CoveredHide,yes,4,4,0,574,BeginState EnemyNotVisible SeePlayer Timer
+StargateGame,BotEnemy,CoveredMove,yes,6,6,0,371,BeginState EndState EnemyNotVisible SeePlayer TargetedAlert Timer
+StargateGame,BotEnemy,Dead,yes,11,11,0,724,BeginState Celebrate ChooseAttackMode DoWait EnemyChanged FearThisSpot IgnoreTeleport ReceiveWarning SetAttractionState Timer WhatToDoNext
+StargateGame,BotEnemy,DriveHunting,yes,9,9,0,588,BeginState EnemyNotVisible FearThisSpot FindLocalCover FindTurretGoal FindVehicleGoal PickDestination SeePlayer Timer
+StargateGame,BotEnemy,DriveRamming,yes,3,3,0,190,BeginState EndState Timer
+StargateGame,BotEnemy,DriveRanged,yes,7,7,0,454,BeginState EndState EnemyNotVisible FearThisSpot FindLocalCover NeedToTurn Timer
+StargateGame,BotEnemy,EnemySpotted,yes,3,3,0,252,BeginState EndState WhatToDoNext
+StargateGame,BotEnemy,FallbackMove,yes,4,4,0,888,NotifyTakeHit PickDestination PickFallbackDestination ShouldRun
+StargateGame,BotEnemy,FindAir,yes,7,7,0,377,BeginState EndState EnemyNotVisible NotifyHeadVolumeChange NotifyHitWall PickDestination Timer
+StargateGame,BotEnemy,Flee,yes,5,5,0,259,BeginState EndFleeingMovement EndState ReceiveWarning WeaponFireAgain
+StargateGame,BotEnemy,FormationCombat,yes,4,4,0,307,BeginState CheckIfShouldCrouch EndState Timer
+StargateGame,BotEnemy,GetInFormation,no,6,6,0,467,BeginState DoAlertSquad EndState FaceSquadRotation Timer WaitForManInFront
+StargateGame,BotEnemy,Hunt,yes,6,6,0,1010,BeginState EndState EnemyNotVisible PickDestination SeePlayer Timer
+StargateGame,BotEnemy,InteractUseObject,yes,1,1,0,54,BeginState
+StargateGame,BotEnemy,Mellee,yes,6,6,0,1997,BeginState EndState NotifyBump NotifyHitWall PickDestination Timer
+StargateGame,BotEnemy,MoveInFormation,no,8,8,0,1076,BeginState DetermineFollowLocation DoAlertSquad EndState Tick Timer calculateGroundSpeed getOffsetDistance
+StargateGame,BotEnemy,MoveToHackingPos,yes,8,8,0,500,ArePawnsTouching BeginState CheckIfShouldCrouch EndState IgnoreTeleport NotifyTakeHit PickDestination ReceiveWarning
+StargateGame,BotEnemy,Ranged,yes,5,5,0,419,BeginState EndState EnemyNotVisible NotifyTakeHit Timer
+StargateGame,BotEnemy,RunToTurret,yes,3,3,0,134,BeginState EndState FindLocalCover
+StargateGame,BotEnemy,RunToVehicle,yes,2,2,0,94,BeginState FindLocalCover
+StargateGame,BotEnemy,Scripting,no,4,4,0,165,DisplayDebug DoAlertSquad PawnIsInPain Timer
+StargateGame,BotEnemy,ShootFromCover,yes,19,19,0,2391,AssignCoverEnemy AssignToCovering BeginState CalcTacticalMoveDest CanCampHere EndState EnemyNotVisible GetDebugLocation LastAttackHitCover NotifyHitWall NotifyTakeHit PickCoverDestination PickForwardDestination ReceiveWarning ReleaseFromCovering SelectNextCoverState SquadCoverFinish SquadCoverRequest Timer
+StargateGame,BotEnemy,StaggeredAssist,yes,3,3,0,103,BeginState EndState PawnIsInPain
+StargateGame,BotEnemy,StaggeredMove,yes,5,5,0,683,BeginState EndState IsInStaggeredMove PickDestination SeePlayer
+StargateGame,BotEnemy,Suspicious,yes,6,6,0,812,BeginState EndState HearNoise PickDestination SeePlayer Tick
+StargateGame,BotEnemy,TakePoint,no,8,8,0,566,BeginState DoAlertSquad EndState IsRunningScript LeaderNotifySuspicious MemberSuspicious Tick Timer
+StargateGame,BotEnemy,Waiting,yes,2,2,0,189,BeginState Timer
+StargateGame,BotEnemy,WaitingForFormation,no,3,3,0,128,BeginState DoAlertSquad Timer
+StargateGame,BotGuide,Follow,yes,5,5,0,374,BeginState MayFall PickDestination SetNewScript Timer
+StargateGame,BotGuide,ReturnToPlayer,yes,1,1,0,63,ShouldPerformScript
+StargateGame,BotGuide,Scripting,yes,1,1,0,47,BeginState
+StargateGame,BotLite,Dead,yes,2,2,0,105,BeginState Timer
+StargateGame,BotLite,Hunting,yes,2,2,0,138,BeginState Timer
+StargateGame,BotLite,Scripting,no,5,5,0,414,EndState LeaveScripting Restart SetMoveTarget Tick
+StargateGame,BotLite,TacticalMove,yes,6,6,0,1066,BeginState EndState EngageDirection NotifyHitWall PickDestination Timer
+StargateGame,BotLite,Waiting,yes,3,3,0,166,BeginState EndState Timer
+StargateGame,BotRep,Hunt,yes,4,4,0,343,BeginState EndState PickDestination Timer
+StargateGame,BotRep,MoveInFormation,no,8,8,0,1389,BeginState DetermineFollowLocation EndState FaceSquadRotation Tick Timer calculateGroundSpeed getOffsetDistance
+StargateGame,BotRep,TakePoint,no,3,3,0,205,BeginState EndState Timer
+StargateGame,BotRep,Waiting,yes,2,2,0,204,BeginState Timer
+StargateGame,BotSG,BotUnconscious,yes,10,10,0,669,BeginState EndState FearThisSpot MonitoredPawnAlert NotifyInvisible NotifyTakeHit ReceiveWarning TakeDamage Tick Timer
+StargateGame,BotSG,ConcentrateFire,yes,5,5,0,993,BeginState EndState HearNoise PickDestination SeePlayer
+StargateGame,BotSG,CoveredAttack,yes,0,0,0,0,
+StargateGame,BotSG,HuntMellee,yes,3,3,0,137,BeginState EndState Tick
+StargateGame,BotSG,InvisibleRest,yes,13,13,0,499,BeginState CallToArms DoCombatScript FearThisSpot MonitoredPawnAlert NotifyTakeHit ReceiveWarning TakeDamage TargetedAlert Timer WarnSuspicious WeaponFireAgain WhatToDoNext
+StargateGame,BotSG,RestFormation,yes,10,10,0,2079,BeginState EndState Formation GetDebugLocation MayFall NotifyApproachingDestination NotifyBump NotifyHitWall PickDestination Timer
+StargateGame,BotSG,Roaming,yes,5,5,0,679,BeginState EndState MonitoredPawnAlert PickDestination Timer
+StargateGame,BotSG,Stakeout,yes,8,8,0,1160,AdjustAim BeginState DoStakeout EndState FindNewStakeOutDir NotifyTakeHit SeePlayer Timer
+StargateGame,BotSG,TacticalMove,yes,8,8,0,1806,BeginState EndState EnemyNotVisible EngageDirection NotifyHitWall PickDestination SetFall Timer
+StargateGame,BotSG,Waiting,yes,0,0,0,0,
+StargateVehicles,AirborneTurretController,Shoot,yes,2,2,0,434,BeginState ComputeAimingLocation
+StargateVehicles,AlkeshBomberBot,Ascending,yes,2,2,0,108,BeginState EndState
+StargateVehicles,AlkeshBomberBot,BombingRun,yes,6,6,0,620,BeginState DetermineBombingRunTarget EndState GetReachablePoint IsRunFinished Timer
+StargateVehicles,AlkeshBomberBot,CarpetBombing,yes,6,6,0,483,BeginState CanBomb CarpetBombingDuration CheckCarpetBombingTarget DoBombDrop EndState
+StargateVehicles,AlkeshBomberBot,Chasing,yes,1,1,0,156,PickDestination
+StargateVehicles,AlkeshBomberBot,DescendToTransportHeight,yes,2,2,0,104,BeginState EndState
+StargateVehicles,AlkeshBomberBot,GroundAttack,yes,3,3,0,218,BeginState EndState Timer
+StargateVehicles,AlkeshBomberBot,Landing,yes,3,3,0,477,BeginState PickDestination PickLandingPoint
+StargateVehicles,AlkeshBomberBot,OrderedLanding,yes,2,2,0,81,BeginState PickLandingPoint
+StargateVehicles,AlkeshBomberBot,RingTransport,yes,5,5,0,344,BeginState EndState HearNoise SeePlayer Trigger
+StargateVehicles,AlkeshBomberBot,Scripting,yes,3,3,0,239,CompleteAction InitForNextAction Tick
+StargateVehicles,AlkeshBomberBot,Searching,yes,2,2,0,447,NotifyHitWall PickDestination
+StargateVehicles,AlkeshBomberBot,StabiliseForTransport,yes,5,5,0,311,BeginState EndState HearNoise SeePlayer Timer
+StargateVehicles,AlkeshBomberBot,Waiting,yes,1,1,0,37,EndState
+StargateVehicles,DeathGliderBot,Attacking,yes,5,5,0,215,BeginState NotifyAboveMoveTarget NotifyCloseToGround PickDestination Timer
+StargateVehicles,DeathGliderBot,PullUpAttacking,yes,4,4,0,297,BeginState NotifyCloseToGround PickDestination Timer
+StargateVehicles,DeathGliderBot,Searching,yes,1,1,0,396,PickDestination
+StargateVehicles,DeathGliderBot,StallTurn,yes,5,5,0,444,BeginState EndState NotifyCloseToGround PickDestination Timer
+StargateVehicles,DeathGliderBot,Waiting,yes,1,1,0,37,EndState
+StargateVehicles,GoauldDroneBot,Attacking,yes,4,4,0,829,BeginState EndState PickDestination Timer
+StargateVehicles,GoauldDroneBot,Pursuit,yes,8,8,0,675,BeginState CallOffPursuit DetermineMoveTarget EndState GetCloserMoveTarget NotifyBump NotifyHitWall Timer
+StargateVehicles,GoauldDroneBot,Searching,yes,5,5,0,611,BeginState EndState NotifyHitWall PickDestination Timer
+StargateVehicles,GoauldDroneBot,Waiting,yes,2,2,0,94,BeginState Timer
+StargateVehicles,GoauldKillerDroidBot,Pursuit,yes,3,3,0,274,BeginState NotifyBump NotifyHitWall
+StargateVehicles,GoauldKillerDroidBot,Searching,yes,2,2,0,159,NotifyBump NotifyHitWall
+StargateVehicles,HoverTankPilotBot,TroopDrop,yes,0,0,0,0,
+StargateVehicles,TeltakBot,Ascending,yes,2,2,0,108,BeginState EndState
+StargateVehicles,TeltakBot,DescendToTransportHeight,yes,2,2,0,104,BeginState EndState
+StargateVehicles,TeltakBot,Landing,yes,3,3,0,477,BeginState PickDestination PickLandingPoint
+StargateVehicles,TeltakBot,OrderedLanding,yes,2,2,0,81,BeginState PickLandingPoint
+StargateVehicles,TeltakBot,RingTransport,yes,5,5,0,275,BeginState EndState HearNoise SeePlayer Trigger
+StargateVehicles,TeltakBot,Searching,yes,2,2,0,528,NotifyHitWall PickDestination
+StargateVehicles,TeltakBot,StabiliseForTransport,yes,5,5,0,311,BeginState EndState HearNoise SeePlayer Timer
+StargateVehicles,TeltakBot,Waiting,yes,1,1,0,37,EndState
