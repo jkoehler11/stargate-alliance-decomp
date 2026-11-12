@@ -1804,9 +1804,21 @@ the empty script and none carrying one — so the four "empty bodies" above were
 being wrong, and the 70 `04 0b` payloads that had been counted as anchored were anchored on a borrowed `return;`.
 The two remaining exclusions are `Weapon.GetErrorVec` and `Weapon.GetFireStart`, each declared both `native` and with a
 body; they are filed under the bodied declaration (and that body's first statement is not a literal, so they are not
-anchors either). What is left of U13's locator question is only the field itself: the dword at `name_end+12` equals
-the script's length in 464 of the 466 rows and is larger corpus-wide, so it counts something the trivial `return`
-bodies this population is made of always have exactly.
+anchors either).
+
+**Sixth session, 2026-11-12, and this closes it: the field is the script's size in memory, and there is no length
+to find.** The dword at `name_end+12` is **the script with every compact index operand widened to four bytes** —
+`len(script) + sum(4 - width)` over its index operands. `python3 tools/uscript-dis.py --sizefield System` measures
+it exactly in **11,485 of 11,602** walked payloads (98.99%), against **2,141** (18.45%) that carry the stored
+length; the 464 of 466 above equal it only because those `return` bodies have no operand to widen. That agrees
+with the loader, which widens those operands on the way into memory (`StargateHUD.DrawOrderTarget`'s log call is
+`b8 2a` in the package and `a0 1e 26 01` in the guest), and it explains why every search for a *length* in front
+of a script failed: the loader reads the payload's `SerialSize`, and this field is a check on an extent instead
+— a candidate end must satisfy it, which is the first test here that does not depend on the opcode table.
+The residue is **117 payloads** (97 above the prediction, 20 below, four of them with a dword in the millions, so
+their header decode is ambiguous); `--sizefield --lists N` names each row with its index widths, and **no single
+operand class explains them** — every pattern item's count per residue row was compared against the difference and
+nothing fits — so they are individual token encodings, not a second rule.
 
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
