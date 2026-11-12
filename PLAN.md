@@ -284,7 +284,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       Vehicles done — `docs/systems/VEHICLES.md`: the seat/turret wiring is a default property value rather than
       behaviour, so `tools/vehicle-seats.py` reads `DriverWeapons`/`PassengerWeapons` out of the emitted defaults
       tree into `inventory/vehicle_seats.csv` (25 slots over 11 classes, and the page's table is generated from it).
-      The other two systems (AI scripts, checkpoint saves) are open.
+      **AI is done too** — `docs/systems/AI.md` *What the states do*: the state bodies are not only in an
+      extracted tree, they are in each class's shipped `ScriptText`, and `tools/ai-states.py` reduces every
+      `state` block to a row (`inventory/ai_states.csv`): parent, `auto`, statement-level labels, function
+      overrides, literal and dynamic `GotoState`, `Goto` jumps, latent sleeps. The controller tree is **151 states
+      over 32 classes** (216 labels, 189 sleeps), ten of them `auto` -- eight called `Waiting` -- and the dispatch
+      layer is **127 `GotoState` calls outside every state body**, so the machine parks and is pushed rather than
+      chained. The text is a floor: five classes carry more `UState` exports than any class's text declares
+      (`BotEnemy` 36/41) and four of those names are dispatched to while declared nowhere. Checkpoint saves were
+      already covered by `docs/systems/CHECKPOINTS.md`; what remains under this item is a per-state read of the
+      bodies themselves.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
@@ -1065,6 +1074,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
 
+
+### Execution notes (2026-11-12, the AI states are in the package's own text, and the machine parks then dispatches)
+
+- **Every state body is in the class's shipped `ScriptText`, so this page's "the bodies are under `$WORK`, which
+  this repository does not carry" was wrong in one direction.** `tools/ai-states.py --system DUMP/System -o
+  inventory/ai_states.csv` reads the text out of each class's `TextBuffer` export (`tools/pkg-script-text.py`),
+  brace-matches every `state` block and keeps what is countable: the `extends` parent, `auto`, the labels at
+  statement level, the functions the state overrides, literal and computed `GotoState`, `Goto('label')` jumps,
+  latent `Sleep`s and lines. The `AIController` tree is **151 states over 32 classes**, 216 labels, 189 sleeps,
+  against **161 `UState` exports** for those same classes. The depth map that decides "statement level" is built
+  over comment-masked text with every offset preserved, so a `GotoState` inside a comment is not an edge and a
+  label inside one of the state's functions is not a state label -- `--check` drives both, plus a class-level
+  `GotoState` counting once per class rather than once per state it declares.
+- **The numbers the page said it could not have.** Ten states are `auto` -- the state a controller spawns in --
+  and eight of the ten are called `Waiting` (the turret's is `Idle`, `HerdAnimal`'s `grazing`), so the AI **parks
+  and is dispatched**: **127 `GotoState` calls sit outside every state body**, in `WhatToDoNext`/`SetEnemy`/the
+  timers, and the in-degree table is that layer seen from the states' side (`Scripting` 11, `Hunt` 5, `Waiting` 5,
+  `StaggeredAssist` 4). Cover combat is the largest behaviour in the game's AI: `BotEnemy.ShootFromCover` 475
+  lines with 19 overrides, `CoveredAttack` 446 with ten sleeps, against a median state of 57 lines;
+  `ScriptedController.Scripting` (496) is the biggest state and the most-named one.
+- **Two negatives worth carrying into 3.10's per-state reads.** (1) The shipped text is a **floor**: five classes
+  carry more `UState` exports than any class's text declares (`BotEnemy` 36/41, `BotRep` 2/4, `BotBase` 4/5,
+  `BotLite` 4/5, `ScriptedController` 1/2), and four of the ten missing names -- `GetInFormation`,
+  `MoveInFormation`, `TakePoint`, `WaitingForFormation` -- are dispatched to by `BotEnemy`'s own decision code
+  while declared by no text in the corpus, so a rebuild driven by the text alone drops them. (2) A subclass that
+  redeclares an inherited state name gets a **second** state: `AlkeshBomberBot`'s `Scripting`/`Waiting` are
+  reached by no literal `GotoState` because every one of them resolves to `ScriptedController`'s -- a state name
+  is not a key until it is resolved along the `super` chain and case folded (`HerdAnimal` declares `grazing`,
+  dispatches `Grazing`), which is what the tool does before counting an edge. 30 of 151 states are still entered
+  only by a computed target or a native body.
+- Tool (`tools/ai-states.py`) + `inventory/ai_states.csv` + `docs/systems/AI.md` (*What the states do*, both
+  tables generated from the artifact) + `make ai-states` + `make ci` holding the page to the artifact + this note.
 
 ### Execution notes (2026-11-12, the native tables share no function with any class table)
 

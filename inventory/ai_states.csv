@@ -1,0 +1,152 @@
+package,class,state,parent,auto,ignores,labels,functions,gotos,gotos_dynamic,gotos_label,sleeps,lines,targets,class_gotos,class_targets,record_states
+StargateVehicles,AirborneTurretController,Shoot,,no,0,0,2,0,0,0,0,58,,0,,1
+StargateVehicles,AlkeshBomberBot,Ascending,,no,0,2,2,0,0,2,1,39,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,BombingRun,,no,0,2,6,0,1,3,2,125,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,CarpetBombing,,no,0,2,6,0,0,1,1,86,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,Chasing,,no,0,3,1,0,0,1,1,56,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,DescendToTransportHeight,,no,0,2,2,0,0,1,1,32,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,GroundAttack,,no,0,2,3,0,0,1,1,43,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,Landing,,no,0,1,3,0,0,1,1,118,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,OrderedLanding,Landing,no,0,1,2,2,0,3,2,57,DescendToTransportHeight Landing,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,RingTransport,,no,0,1,5,1,0,1,0,49,Ascending,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,Scripting,,no,0,0,3,0,0,0,0,33,,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,Searching,,no,0,3,2,1,0,2,1,134,Searching,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,StabiliseForTransport,,no,0,0,5,1,0,0,0,34,RingTransport,2,CarpetBombing RingTransport,13
+StargateVehicles,AlkeshBomberBot,Waiting,,no,0,2,1,0,0,1,2,21,,2,CarpetBombing RingTransport,13
+StargateGame,BotBase,Dead,,no,0,2,8,1,0,1,2,66,GameEnded,8,Broken ReactionDelay RunAwayFromFearSpot Scripting Waiting,5
+StargateGame,BotBase,ReactionDelay,,no,0,0,6,1,1,0,0,43,Scripting,8,Broken ReactionDelay RunAwayFromFearSpot Scripting Waiting,5
+StargateGame,BotBase,RunAwayFromFearSpot,,no,3,1,8,1,0,1,0,87,Waiting,8,Broken ReactionDelay RunAwayFromFearSpot Scripting Waiting,5
+StargateGame,BotBase,Waiting,,yes,0,0,3,0,0,0,0,15,,8,Broken ReactionDelay RunAwayFromFearSpot Scripting Waiting,5
+StargateGame,BotEnemy,ActivateAlarm,,no,3,1,3,0,0,3,3,93,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,AlertSquad,,no,0,1,7,0,0,0,0,60,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotBeingElectrocuted,,no,0,0,6,0,0,0,0,35,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotBurning,,no,6,1,6,1,0,1,1,57,Scripting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotGrabbed,,no,0,0,7,0,0,0,0,36,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotGunning,,no,2,1,12,1,0,1,1,198,Waiting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotHacking,,no,0,0,5,2,0,0,0,60,Waiting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotKnockedBack,,no,0,0,7,1,0,0,0,43,Scripting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotMeleeDash,,no,0,0,7,0,0,0,0,39,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotPrepareGrabbed,,no,0,0,6,0,0,0,0,31,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotStaggered,,no,0,0,7,1,0,0,0,43,Scripting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,BotUnconscious,,no,0,0,9,0,0,0,0,57,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,CoveredAttack,ShootFromCover,no,0,4,8,1,0,6,10,446,CoveredAttack,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,CoveredHide,ShootFromCover,no,0,2,4,1,0,3,3,159,CoveredHide,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,CoveredMove,ShootFromCover,no,0,1,6,0,0,1,4,140,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Dead,,no,0,2,9,1,0,1,2,81,GameEnded,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,DriveHunting,,no,3,1,8,1,0,1,1,115,DriveHunting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,DriveRamming,DriveRanged,no,1,3,3,0,0,1,0,68,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,DriveRanged,,no,4,3,6,0,0,1,2,81,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,EnemySpotted,,no,2,1,3,0,0,1,1,50,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,FallbackMove,Ranged,no,0,4,4,0,0,2,1,200,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,FindAir,,no,3,2,7,0,0,0,0,54,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Flee,,no,4,1,4,0,0,1,1,39,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,FormationCombat,,no,3,4,4,1,0,0,1,86,FormationCombat,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Hunt,,no,0,3,6,1,0,1,1,175,Hunt,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,InteractUseObject,,no,0,1,1,0,0,4,2,60,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Mellee,,no,0,3,6,3,0,1,3,227,Hunt Mellee,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,MoveToHackingPos,,no,0,1,6,2,0,1,1,77,BotHacking Scripting,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Ranged,,no,2,4,5,0,0,2,1,103,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,RunToTurret,,no,1,3,3,0,0,6,3,71,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,RunToVehicle,,no,1,3,2,0,0,6,3,66,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,ShootFromCover,,no,0,1,19,0,0,1,3,475,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,StaggeredAssist,,no,1,2,2,0,0,1,2,47,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,StaggeredMove,,no,0,2,5,0,0,2,2,145,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Suspicious,,no,0,3,6,0,0,6,6,260,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateGame,BotEnemy,Waiting,,yes,0,2,2,0,0,1,2,51,,45,ActivateAlarm AlertSquad BotBurning BotGunning Broken CoveredAttack CoveredHide CoveredMove DriveHunting DriveRamming DriveRanged EnemySpotted FallbackMove Flee FormationCombat GetInFormation Hunt InteractUseObject Mellee MoveInFormation MoveToHackingPos Ranged RunToTurret RunToVehicle Scripting ShootFromCover StaggeredAssist StaggeredMove Suspicious TakePoint Waiting WaitingForFormation,41
+StargateContent,BotGoauld,FocusedAttack,Ranged,no,0,0,5,0,0,0,0,58,,1,FocusedAttack,1
+StargateGame,BotGuide,Follow,,no,1,2,5,0,0,2,2,96,,2,Follow ReturnToPlayer,3
+StargateGame,BotGuide,ReturnToPlayer,,no,0,1,1,0,0,3,4,74,,2,Follow ReturnToPlayer,3
+StargateGame,BotGuide,Scripting,,no,0,0,1,0,0,0,0,7,,2,Follow ReturnToPlayer,3
+StargateGame,BotLite,Dead,,no,0,1,2,0,0,0,1,21,,2,Broken Scripting,5
+StargateGame,BotLite,Hunting,,no,3,2,2,2,0,1,0,66,Hunting TacticalMove,2,Broken Scripting,5
+StargateGame,BotLite,TacticalMove,,no,3,2,6,3,0,1,0,151,Hunting TacticalMove,2,Broken Scripting,5
+StargateGame,BotLite,Waiting,,yes,0,0,3,0,0,0,0,28,,2,Broken Scripting,5
+StargateGame,BotRep,Hunt,,no,0,1,4,1,0,1,1,84,Hunt,5,MoveInFormation StaggeredAssist TakePoint,4
+StargateGame,BotRep,Waiting,,yes,0,2,2,0,0,1,2,47,,5,MoveInFormation StaggeredAssist TakePoint,4
+StargateGame,BotSG,BotUnconscious,,no,0,0,4,0,0,0,0,99,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,ConcentrateFire,,no,0,1,5,1,0,1,4,189,ConcentrateFire,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,CoveredAttack,,no,0,4,0,0,0,6,7,158,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,HuntMellee,Hunt,no,0,0,3,0,0,0,0,22,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,InvisibleRest,RestFormation,no,0,0,4,0,0,0,0,22,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,RestFormation,,no,1,3,10,2,0,6,6,418,RestFormation,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,Roaming,,no,2,3,4,0,0,2,1,145,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,Stakeout,,no,1,1,8,1,0,0,2,156,StakeOut,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,TacticalMove,,no,2,5,8,1,0,2,3,266,TacticalMove,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateGame,BotSG,Waiting,,yes,0,2,0,0,0,1,3,24,,10,ConcentrateFire HuntMellee InvisibleRest RestFormation Roaming Scripting StaggeredAssist Stakeout TacticalMove,10
+StargateContent,BotScarab,Buried,,no,0,2,3,1,0,1,2,41,Buried,1,Buried,2
+StargateContent,BotScarab,Mellee,,no,0,3,6,4,0,1,0,163,Buried Mellee Surfaced,1,Buried,2
+StargateVehicles,DeathGliderBot,Attacking,,no,0,2,5,1,0,2,2,75,StallTurn,3,Attacking PullUpAttacking Searching,5
+StargateVehicles,DeathGliderBot,PullUpAttacking,,no,1,2,3,0,0,1,1,53,,3,Attacking PullUpAttacking Searching,5
+StargateVehicles,DeathGliderBot,Searching,,no,0,2,1,0,0,0,1,85,,3,Attacking PullUpAttacking Searching,5
+StargateVehicles,DeathGliderBot,StallTurn,,no,1,1,4,0,0,1,1,61,,3,Attacking PullUpAttacking Searching,5
+StargateVehicles,DeathGliderBot,Waiting,,no,0,2,1,0,0,1,2,21,,3,Attacking PullUpAttacking Searching,5
+StargateContent,ExtreniteAutoTurretController,CloseIdle,,no,0,0,1,3,0,0,0,14,Goo Malfunction Open,0,,3
+StargateContent,ExtreniteAutoTurretController,Goo,,no,0,0,1,0,0,0,0,6,,0,,3
+StargateContent,ExtreniteAutoTurretController,Malfunction,,no,0,0,4,1,0,0,0,39,Close,0,,3
+StargateContent,GoaAutoTurretController,Close,,no,0,0,2,1,0,0,0,11,CloseIdle,2,CloseIdle Open,5
+StargateContent,GoaAutoTurretController,CloseIdle,,no,0,0,2,1,0,0,0,14,Open,2,CloseIdle Open,5
+StargateContent,GoaAutoTurretController,Open,,no,0,0,2,1,0,0,0,11,OpenIdle,2,CloseIdle Open,5
+StargateContent,GoaAutoTurretController,OpenIdle,,no,0,0,3,2,0,0,0,43,Close Shoot,2,CloseIdle Open,5
+StargateContent,GoaAutoTurretController,Shoot,,no,0,0,2,1,0,0,0,12,OpenIdle,2,CloseIdle Open,5
+StargateContent,GoaAutoTurretMK2Controller,Deactivated,,no,0,1,3,0,0,0,1,17,,2,Deactivated Idle,5
+StargateContent,GoaAutoTurretMK2Controller,FireDelay,,no,1,0,3,1,0,0,0,19,Shoot,2,Deactivated Idle,5
+StargateContent,GoaAutoTurretMK2Controller,Idle,,yes,0,0,3,2,0,0,0,34,FireDelay Shoot,2,Deactivated Idle,5
+StargateContent,GoaAutoTurretMK2Controller,Shoot,,no,1,0,4,2,0,0,0,57,Wait,2,Deactivated Idle,5
+StargateContent,GoaAutoTurretMK2Controller,Wait,,no,0,0,3,1,0,0,0,17,Idle,2,Deactivated Idle,5
+StargateVehicles,GoauldDroneBot,Attacking,,no,0,1,4,0,0,2,2,159,,3,Attacking Pursuit Searching,4
+StargateVehicles,GoauldDroneBot,Pursuit,,no,0,3,8,2,0,2,2,152,Pursuit,3,Attacking Pursuit Searching,4
+StargateVehicles,GoauldDroneBot,Searching,,no,0,3,5,1,0,2,1,126,Searching,3,Attacking Pursuit Searching,4
+StargateVehicles,GoauldDroneBot,Waiting,,no,0,0,2,0,0,0,0,14,,3,Attacking Pursuit Searching,4
+StargateVehicles,GoauldKillerDroidBot,Pursuit,,no,0,0,3,1,0,0,0,39,Pursuit,0,,2
+StargateVehicles,GoauldKillerDroidBot,Searching,,no,0,0,2,0,0,0,0,16,,0,,2
+StargateContent,HaakenBot,MeleeAttack,,no,5,0,4,0,0,0,0,36,,2,MeleeAttack ShieldCover,2
+StargateContent,HaakenBot,ShieldCover,,no,0,4,10,0,0,1,1,184,,2,MeleeAttack ShieldCover,2
+StargateContent,HaakenLeaderBot,SeizeMindControl,,no,0,2,11,0,0,1,1,121,,1,SeizeMindControl,1
+AmbientCreatures,HerdAnimal,grazing,,yes,2,4,7,1,0,2,2,120,Grazing,3,Grazing Stampeding,2
+AmbientCreatures,HerdAnimal,stampeding,,no,4,3,3,1,0,1,3,51,Stampeding,3,Grazing Stampeding,2
+StargateVehicles,HoverTankPilotBot,TroopDrop,,no,0,1,0,0,0,1,1,10,,1,TroopDrop,1
+StargateContent,JaffaBotHeavy,Hunt,,no,0,0,4,0,0,0,0,55,,1,MelleeCharge,4
+StargateContent,JaffaBotHeavy,Mellee,,no,0,3,6,2,0,1,2,239,Hunt Mellee,1,MelleeCharge,4
+StargateContent,JaffaBotHeavy,MelleeCharge,,no,0,5,11,4,0,4,3,162,MelleeCharge Waiting,1,MelleeCharge,4
+StargateContent,JaffaBotHeavy,Sniper,,no,0,0,2,0,0,0,0,12,,1,MelleeCharge,4
+StargateContent,JaffaBotLight,CoveredAttack,,no,0,0,1,0,0,0,0,14,,1,Sniper,3
+StargateContent,JaffaBotLight,Mellee,,no,0,3,2,2,0,1,2,149,Hunt Mellee,1,Sniper,3
+StargateContent,JaffaBotLight,Sniper,Ranged,no,1,3,7,1,0,2,3,189,Sniper,1,Sniper,3
+StargateContent,JaffaBotMedium,CoveredAttack,,no,0,0,1,0,0,0,0,27,,0,,2
+StargateContent,JaffaBotMedium,Mellee,,no,0,3,2,2,0,1,2,149,Hunt Mellee,0,,2
+StargateContent,MindControlledBot,MindControlGuard,,no,0,2,2,0,0,1,1,63,,1,MindControlGuard,1
+StargateContent,PteroBossBot,Attacking,,no,0,2,5,0,0,2,2,95,,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Guarding,,no,0,2,3,0,0,3,2,120,,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Nesting,,no,0,3,3,2,0,4,1,78,Invulnerable,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Protected,,no,0,2,4,2,0,1,1,45,Invulnerable,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Searching,,no,0,0,1,0,0,0,0,7,,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Swiping,,no,0,1,4,0,0,2,2,68,,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBossBot,Waiting,,yes,0,0,1,0,0,0,0,7,,4,Guarding Nesting Protected Swiping,7
+StargateContent,PteroBot,Attacking,,no,0,2,5,0,0,2,2,82,,3,Attacking Landing Searching,3
+StargateContent,PteroBot,Landing,,no,0,2,1,0,0,1,0,62,,3,Attacking Landing Searching,3
+StargateContent,PteroBot,Searching,,no,0,1,2,0,0,0,1,97,,3,Attacking Landing Searching,3
+StargateContent,ReetouBot,Ambush,,no,0,0,0,0,0,0,0,3,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Berserk,,no,0,0,0,0,0,0,0,2,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Combat,,no,2,4,6,0,2,3,3,164,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Escape,,no,2,2,4,0,0,1,7,136,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Hunt,,no,0,2,3,0,0,1,2,56,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Melee,,no,2,3,4,0,0,2,1,92,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Ranged,,no,0,0,0,0,0,0,0,3,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Sneak,,no,0,2,5,0,0,1,3,97,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouBot,Waiting,,yes,0,2,1,0,0,0,1,20,,9,Ambush Berserk Combat Escape Hunt Melee Ranged Sneak Waiting,9
+StargateContent,ReetouProtectorBot,Attacking,,no,0,1,3,0,0,2,3,55,,1,Attacking,2
+StargateContent,ReetouProtectorBot,Waiting,,yes,0,0,2,0,0,0,0,14,,1,Attacking,2
+GamePlay,ScriptedController,Scripting,,no,0,1,20,6,0,1,1,496,Broken Scripting,1,Scripting,2
+GamePlay,ScriptedTriggerController,Scripting,,no,0,1,2,3,0,1,1,38,Broken,1,Scripting,1
+StargateContent,SuperSoldierBot,ChasePlayer,,no,1,2,6,2,0,1,1,141,ChasePlayer,11,ChasePlayer GrabAndThrow PlayerWalking StaggeredAssist SuperPunch Waiting,4
+StargateContent,SuperSoldierBot,GrabAndThrow,,no,5,0,4,0,0,0,0,39,,11,ChasePlayer GrabAndThrow PlayerWalking StaggeredAssist SuperPunch Waiting,4
+StargateContent,SuperSoldierBot,Ranged,,no,2,0,1,0,0,0,0,9,,11,ChasePlayer GrabAndThrow PlayerWalking StaggeredAssist SuperPunch Waiting,4
+StargateContent,SuperSoldierBot,SuperPunch,,no,5,0,4,0,0,0,0,41,,11,ChasePlayer GrabAndThrow PlayerWalking StaggeredAssist SuperPunch Waiting,4
+StargateVehicles,TeltakBot,Ascending,,no,0,2,2,0,0,2,1,42,,1,RingTransport,8
+StargateVehicles,TeltakBot,DescendToTransportHeight,,no,0,2,2,0,0,1,1,35,,1,RingTransport,8
+StargateVehicles,TeltakBot,Landing,,no,0,1,3,0,0,1,1,121,,1,RingTransport,8
+StargateVehicles,TeltakBot,OrderedLanding,Landing,no,0,1,2,2,0,3,2,57,DescendToTransportHeight Landing,1,RingTransport,8
+StargateVehicles,TeltakBot,RingTransport,,no,0,1,5,1,0,1,0,42,Ascending,1,RingTransport,8
+StargateVehicles,TeltakBot,Searching,,no,0,3,2,1,0,2,1,136,Searching,1,RingTransport,8
+StargateVehicles,TeltakBot,StabiliseForTransport,,no,0,0,5,1,0,0,0,34,RingTransport,1,RingTransport,8
+StargateVehicles,TeltakBot,Waiting,,no,0,2,1,0,0,1,2,21,,1,RingTransport,8
