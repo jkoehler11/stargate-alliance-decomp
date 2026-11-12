@@ -307,6 +307,13 @@ Python client, 2 MiB scanned in 14 s including string extraction, so a full 128 
 a targeted region is seconds. `--find` reports offsets only — the strings are guest data and stay out of the
 repository unless `--show` is given.
 
+**Two stub behaviours that make a breakpoint look absent.** `Z0` here leaves no `0xCC` in the bytes `m` returns: a
+control breakpoint armed at `0x000544e8` and at `0x002bb740` stopped on those addresses with the read-back still
+`8b`, the bodies' own byte, so a read-back can neither confirm nor deny an arm -- prove an arm by breaking on an
+address the CPU is executing and letting that hit answer. And `CS` is `0x8` (`CPL 0`) for the kernel, the front end
+and the game alike (88 samples in one boot, 84 of them inside the image), so the ring is not a way to tell game code
+from kernel code on this build; use the image's `0x00010000..0x007d9000` range.
+
 **What this does not solve.** The stub reaches memory, not pixels: `screendump` is still missing and the serial log is
 still empty, so "the title screen is up" becomes "the title's label exists in RAM", which is a *proxy* assertion and
 should be described as one. And a title-screen run still needs the disc as a regular file (see the pitfall above) —

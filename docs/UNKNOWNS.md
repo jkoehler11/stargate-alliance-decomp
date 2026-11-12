@@ -883,6 +883,31 @@ read-back of the patched byte before the level loads, then `tools/vcall-stops.py
 read-back doing the work the `OK` cannot, and it closes the force-the-arm route as this instrument stands: the arm
 has to be taken with `CPL 3`, and the front end's halt loop makes that a sampling problem, not an arming one.
 
+**Measured 2026-11-11, the read-back is blind and `CPL 3` is unreachable: the arm does land, and the pair is a true
+zero in every window covered so far.** Two boots, each arming through `tools/xemu/bp-args.py --wait-user
+--control-self`, where the control is a `Z0` on the sampled `EIP` -- an address the CPU is executing at that moment,
+so it has to fire at once if the arm landed anywhere:
+
+- **The ring is not the discriminator.** 88 context samples over one boot all came back `CS=0x8` (`CPL 0`), 84 of
+  them with `EIP` deep inside the image (`0x00454510`, `0x00463864`, `0x000c8010`). This build runs the front end,
+  the menus and the game at ring 0, so the `CPL 3` the note above asks for can never arrive: that route was
+  unreachable, not unsampled. `--wait-user` now gates on the image's `0x00010000..0x007d9000` range and both boots
+  armed on their **first** sample (`EIP=0x000544e8`, `EIP=0x002bb740`, both `CPL 0`).
+- **The armed byte is not a witness, in either direction.** A `Z0` on this stub leaves no `0xCC` in the bytes a
+  memory read returns: the control's own byte read back `8b` -- its body's own byte -- and the control stopped on
+  that address anyway, in both boots, while the two measured bodies read back `f6`/`56` and never fired. So "the
+  patch never reached the game's mapping" was read off an instrument that cannot see a patch, and the forced-arm
+  negative above is withdrawn on that ground.
+- **With the arm proven, the pair still does not dispatch.** The first boot's window was 60 s (front end, map list).
+  The second kept it open **420 s** across the map-list select, the M00 load (`02-mission` 20,414 px changed) and
+  180 s of gameplay (`03-gameplay` 6,829 px), and recorded **0 stops at either body** (`0x000c4f60`, `0x000c6d00`)
+  while the control fired at once. A window with a proven arm and a silent body is a measurement, not a stall.
+
+What is left is a window rather than an instrument. The pair is dispatched by object/class machinery, so the places
+it could still fire are the ones neither boot covered: a level *unload* or travel, a checkpoint load, and a
+multiplayer/dedicated path. `--window` is the knob for that (the tool used to end its measurement at the first 60 s
+of silence, which is why the first boot covered only the front end).
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature

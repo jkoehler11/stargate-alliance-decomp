@@ -1050,6 +1050,28 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-11, the read-back was blind; the control proves the arm, and the pair is a true zero)
+
+- **The previous note's negative was an artefact of the instrument.** `bp-args.py`'s byte read-back cannot witness a
+  `Z0` on this stub: a control breakpoint armed at the sampled `EIP` stopped on that address while its read-back was
+  still the body's own byte (`8b`, twice), and the two measured bodies read back `f6`/`56` unchanged for the same
+  reason. So "the `0xCC` went into a mapping the game never executes" is withdrawn; what the round measured was a
+  breakpoint that was registered and never executed.
+- **`CPL 3` is unreachable and the docs asked for it.** 88 context samples over one boot were all `CPL 0`, 84 of them
+  inside the image (`0x00454510`, `0x00463864`, `0x000c8010`): the front end, the menus and the game all run at ring 0
+  here, so a ring gate waits forever. `--wait-user` now gates on the image range and armed on its first sample in both
+  boots (`0x000544e8`, `0x002bb740`).
+- **The pair is a true zero in every window covered.** With the control firing at once, the two bodies
+  (`0x000c4f60`, `0x000c6d00`) recorded 0 stops over 420 s that spanned the map-list select, the M00 load
+  (`02-mission` 20,414 px) and 180 s of gameplay (`03-gameplay` 6,829 px). Covered windows: front end, map list,
+  level load, gameplay. Not covered: level unload/travel, a checkpoint load, multiplayer.
+- **A per-hit timeout was short-circuiting the measurement.** The first boot's tool exited 60 s after the control, in
+  the middle of the select; `--window` now keeps the stop loop open across quiet `--timeout` periods, which is what
+  turned the front-end zero into a load-and-gameplay zero.
+- Tool (`tools/xemu/bp-args.py`: image-range `--wait-user`, `--control-self`, `--window`; `tools/vcall-stops.py`:
+  the `control` label, kept out of the slot counts) + `docs/UNKNOWNS.md` U8 + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/XEMU.md` (two stub behaviours). No artifact: the record is a run artifact under `$WORK`.
+
 ### Execution notes (2026-11-11, the pair's dispatch census: 106 `.text` sites, all of them the object layer)
 
 - **The 82 was an undercount, and the census says where the pair is called.** `tools/vcall-dispatch.py`
