@@ -217,10 +217,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch is a 72-byte opcode→group map at `0x39ec0` over a 31-entry jump table at `0x39e44`, every group's
       operand stream is measured (fixed bytes, nested tokens, `0x16` parameter lists, NUL-terminated strings, label
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
-      **The locator is solved** (U13): the script starts **16 bytes past `FriendlyName`**, measured three ways — the
-      payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9), the walk's depth from that offset (3,328
-      reach the epilogue and most others stop 16–255 bytes in), and the dword at +12 not being a size (larger than
-      the script in 9,298 payloads, equal in 2,052, never smaller). What blocks long scripts now is the **opcode
+      **The locator is solved** (U13): the script starts **16 bytes past `FriendlyName`**, measured by content —
+      `--start-anchor`, the first opcode the class's own `ScriptText` fixes, sits at +16 in **1,514 of 2,474**
+      anchored payloads and every one of those walks to the epilogue, against 54 at the next best delta — and by the
+      payload floor (25 bytes, with spikes at 26 = 16+3+7 and 28 = 16+3+9). The dword at +12 is a size but not the
+      script's length (never smaller than it, equal in 187 of 1,659); the walk's depth from +16 is **not** a locator,
+      because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
       compact index, which takes the corpus from 3,444 to 11,602 scripts walking (99.3%), so *long* shipped scripts
       are disassembled end
@@ -5424,6 +5426,29 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, the script's start is anchored on the shipped source, and a walk cannot tell starts apart)
+
+- **The reading this page has used as its locator does not locate.** `tools/uscript-dis.py --start-scan` walks from
+  every delta in `name_end+8..+40`: over `Engine.u` **99.3% of payloads walk cleanly from +14, 99.2% from +16,
+  87.1% from +11, 79.3% from +13** and still 73% from +30, because most opcodes are one byte and a garbage stream
+  consumes the payload exactly. A clean walk is the opcode table's coverage, not evidence about where the script
+  begins -- so the "walk's depth from that offset" and the 3,328 payloads that "reach the epilogue" say nothing
+  about the 16-byte run.
+- **Content anchors it instead.** A `Function` export's class ships its `ScriptText`, so a body that opens with
+  `return true;`/`return false;`/`return;`/`return 0;`/`return 1;`/`if (`/`assert (` fixes its first opcode bytes
+  (`04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`). `--start-anchor` finds **1,514 of 2,474** anchored
+  payloads carrying those bytes exactly at `name_end+16` -- and **all 1,514** walk from there to the epilogue --
+  against 54 at the next best delta (`+23`, 2.2%), 44 at `+9`, 23 at `+20`, and **0** at payload offset 0. A name
+  declared more than once in a package is dropped rather than guessed, because a class overriding a parent's body is
+  exactly the case that would pair the wrong declaration with the payload.
+- **Two residues, counted rather than smoothed.** **815** anchored payloads carry the expected opcode at no delta in
+  `+4..+40` (665 of them `if`-anchored): a header-alignment or body-classification question, not a missing reading.
+  And the dword at `name_end+12` is **never smaller** than the script (equal in 187 of 1,659, otherwise 2..8 bytes
+  larger), so it is a size with an unexplained excess -- the field U13 still wants named.
+- Tool (`--start-scan`, `--start-anchor`, `--scan-lo/--scan-hi`) + `docs/BYTECODE.md` "Where the script starts,
+  anchored on the shipped source" + `docs/UNKNOWNS.md` U13. Reads the image and the packages; no boot, no Ghidra, no
+  artifact.
 
 ### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
 

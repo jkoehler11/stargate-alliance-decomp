@@ -609,6 +609,301 @@ def start_report(path):
 dis_parse = parse
 
 
+def scan_report(path, lo=8, hi=40):
+    """Where the script starts, measured instead of assumed: every candidate start is walked.
+
+    `start_report` tests the one offset a fixed 16-byte run predicts. This pass drops that assumption: for every
+    payload whose six-value header ends on its own name index and whose epilogue sits at the trailer position it
+    walks from **every** `name_end + delta` in `[lo, hi]` and keeps the deltas whose token walk lands exactly on
+    the epilogue. Three numbers come out of one sweep:
+
+    * the delta histogram -- a sharp peak is the header's length measured by content, while a flat profile would
+      say no fixed run exists and the bytes after the name are part of the script;
+    * how many payloads have exactly one clean delta, i.e. whose start is pinned rather than chosen;
+    * for the peak delta, whether the dword in front of it equals the script's length -- the size-field question
+      U13 is open on, asked at the start the content chose rather than at the one the reader assumed.
+
+    The ceiling is the opcode table: a script that stops on an opcode the table does not name cannot walk from
+    anywhere, so a payload refused at every delta is counted as `none` and is not evidence about the start.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    table = Table()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    deltas = list(range(lo, hi + 1))
+    clean = collections.Counter()
+    tried = collections.Counter()
+    sized = collections.defaultdict(collections.Counter)
+    smallest = collections.Counter()
+    unique = choices = none = 0
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            if n < 24:
+                continue
+            last, off = None, 0
+            try:
+                for _ in range(6):
+                    last, off = read_index(pay, off)
+            except IndexError:
+                continue
+            if last != e["name"]:
+                continue
+            if pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            hits = []
+            for delta in deltas:
+                start = off + delta
+                if start + 4 > end:
+                    continue
+                tried[delta] += 1
+                try:
+                    nodes = parse(pay[start:end], table)
+                except (Refused, IndexError, struct.error):
+                    continue
+                if sum(x["end"] - x["offset"] for x in nodes) == end - start:
+                    clean[delta] += 1
+                    hits.append((delta, end - start))
+            if not hits:
+                none += 1
+                continue
+            if len(hits) == 1:
+                unique += 1
+            else:
+                choices += 1
+            smallest[min(d for d, _ in hits)] += 1
+            for delta, length in hits:
+                word = struct.unpack_from("<I", pay, off + delta - 4)[0]
+                sized[delta]["equal" if word == length else ("larger" if word > length else "smaller")] += 1
+    total = unique + choices + none
+    if not total:
+        print("no Function export decoded")
+        return 1
+    name = os.path.basename(path.rstrip(os.sep)) or path
+    print("%s: %d Function payloads with a six-value header ending on their own name and a located epilogue"
+          % (name, total))
+    print("  a clean walk from name_end+delta to the epilogue, per delta (clean / tried):")
+    for delta in deltas:
+        if not tried[delta]:
+            continue
+        print("    +%-2d  %5d / %5d  %5.1f%%%s"
+              % (delta, clean[delta], tried[delta], 100.0 * clean[delta] / tried[delta],
+                 "   <- the fixed run start_report assumes" if delta == 16 else ""))
+    if clean:
+        peak, hits = clean.most_common(1)[0]
+        print("  peak delta +%d with %d clean walks" % (peak, hits))
+    print("  payloads whose start is pinned: %d exactly one clean delta, %d more than one, %d none"
+          % (unique, choices, none))
+    print("  smallest clean delta per payload: %s" % dict(sorted(smallest.items())))
+    for delta, _ in clean.most_common(4):
+        print("  +%-2d: the dword in front of that start against the script's length: %s"
+              % (delta, dict(sized[delta].most_common())))
+    return 0
+
+
+FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native)\s+)*(?:function|event)\s+"
+                       r"(?:[\w<>\[\]]+\s+)?(\w+)\s*\(", re.IGNORECASE | re.MULTILINE)
+
+# The first statement's leading token where the source fixes it beyond argument. `return <literal>;` and a
+# leading `if (`/`assert (` are the shapes whose spelling is the same in every class this build ships.
+FIRST_STATEMENT = [
+    (re.compile(r"return\s*;"), bytes([0x04, 0x0B])),
+    (re.compile(r"return\s+true\s*;", re.IGNORECASE), bytes([0x04, 0x27])),
+    (re.compile(r"return\s+false\s*;", re.IGNORECASE), bytes([0x04, 0x28])),
+    (re.compile(r"return\s+0\s*;"), bytes([0x04, 0x25])),
+    (re.compile(r"return\s+1\s*;"), bytes([0x04, 0x26])),
+    (re.compile(r"if\s*\("), bytes([0x07])),
+    (re.compile(r"assert\s*\("), bytes([0x09])),
+]
+
+
+def _body_start(text, at):
+    """The first statement of the body whose `{` follows `at`, with whitespace and comments stripped."""
+    i = text.find("{", at)
+    if i < 0:
+        return None
+    i += 1
+    while i < len(text):
+        while i < len(text) and text[i] in " \t\r\n":
+            i += 1
+        if text.startswith("//", i):
+            j = text.find("\n", i)
+            i = len(text) if j < 0 else j + 1
+        elif text.startswith("/*", i):
+            j = text.find("*/", i)
+            i = len(text) if j < 0 else j + 2
+        else:
+            break
+    return text[i:]
+
+
+def first_statement_ops(text, at):
+    """The opcode bytes the shipped source fixes for the body that opens after `at`, or None."""
+    body = _body_start(text, at)
+    if body is None:
+        return None
+    for pattern, ops in FIRST_STATEMENT:
+        if pattern.match(body):
+            return ops
+    return None
+
+
+def anchor_report(path, lo=8, hi=40):
+    """Where the script starts, anchored by the source rather than by a walk.
+
+    The walk alone cannot answer it: `--start-scan` finds a clean walk from **every** delta between +11 and +16
+    on 99% of payloads, because most bytes decode as one-byte opcodes and a garbage stream still consumes the
+    payload exactly. So the anchor is content. Each `Function` export's class ships its `ScriptText`, and a body
+    that opens with `return true;` (`return false;`, `return;`, `return 0/1;`, a leading `if (`/`assert (`) fixes
+    its first opcode bytes -- `04 27`, `04 28`, `04 0b`, `04 25`, `04 26`, `07`, `09`. For every such payload this
+    pass asks which `name_end + delta` carries those bytes, and whether the walk from there reaches the epilogue.
+
+    A fixed header length is a peak at one delta against a flat control everywhere else, and the same bytes
+    searched from offset 0 should never hit. A name declared twice in one class with different bodies is dropped
+    rather than guessed; the anchored count is printed so the denominator is visible.
+    """
+    import importlib.util                                  # noqa: PLC0415 - only for the shipped source
+
+    spec = importlib.util.spec_from_file_location("pkg_script_text",
+                                                  os.path.join(ROOT, "tools", "pkg-script-text.py"))
+    pst = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pst)
+    spec2 = importlib.util.spec_from_file_location("ue2pkg_scan", os.path.join(ROOT, "tools", "ue2pkg.py"))
+    ue2 = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(ue2)
+
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    table = Table()
+    epilogue = bytes([0x04, 0x0B, 0x47])
+    deltas = list(range(lo, hi + 1))
+    hit = collections.Counter()
+    walked = collections.Counter()
+    opcodes = collections.Counter()
+    unmatched_by_op = collections.Counter()
+    sized = collections.Counter()
+    anchored = located = at_zero = unmatched = 0
+    for one in files:
+        pkg = ue2.Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        # A Function export names its class only through its `Outer`, and this pass keys the anchor by the
+        # function's name -- so a name declared more than once in the package is dropped rather than guessed,
+        # even when every declaration agrees. A class that overrides a parent's body is exactly the case where
+        # the wrong declaration would be paired with the wrong payload.
+        decls = collections.Counter()
+        expected = {}
+        for cls in pkg.exports:
+            if pkg.class_name_of(cls) != "Class":
+                continue
+            text = pst.script_text(pkg, cls)
+            if not text:
+                continue
+            for m in FUNC_DECL.finditer(text):
+                ops = first_statement_ops(text, m.end())
+                if ops is None:
+                    continue
+                key = m.group(1).lower()
+                decls[key] += 1
+                expected.setdefault(key, ops)
+        for key, count in list(decls.items()):
+            if count != 1:
+                expected.pop(key, None)
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function":
+                continue
+            want = expected.get(pkg.name(e["name"]).lower())
+            if want is None:
+                continue
+            pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
+            n = len(pay)
+            if n < 24:
+                continue
+            last, off = None, 0
+            try:
+                for _ in range(6):
+                    last, off = read_index(pay, off)
+            except IndexError:
+                continue
+            if last != e["name"]:
+                continue
+            if pay[n - 10:n - 7] == epilogue:
+                end = n - 7
+            elif pay[n - 12:n - 9] == epilogue:
+                end = n - 9
+            else:
+                continue
+            located += 1
+            anchored += 1
+            opcodes[want.hex()] += 1
+            if pay[:len(want)] == want:
+                at_zero += 1
+            found = False
+            for delta in deltas:
+                pos = off + delta
+                if pos + len(want) > end:
+                    continue
+                if pay[pos:pos + len(want)] != want:
+                    continue
+                found = True
+                hit[delta] += 1
+                try:
+                    nodes = parse(pay[pos:end], table)
+                except (Refused, IndexError, struct.error):
+                    continue
+                if sum(x["end"] - x["offset"] for x in nodes) == end - pos:
+                    walked[delta] += 1
+            if not found:
+                unmatched += 1
+                unmatched_by_op[want.hex()] += 1
+            else:
+                word = struct.unpack_from("<I", pay, off + 12)[0]
+                sized[word - (end - (off + 16))] += 1
+    name = os.path.basename(path.rstrip(os.sep)) or path
+    print("%s: %d anchored payloads (ScriptText fixes the first opcode) of %d with a located epilogue"
+          % (name, anchored, located))
+    print("  anchored opcodes: %s" % dict(opcodes.most_common()))
+    print("  a match at name_end+delta (match / at+distance, clean walk from there):")
+    for delta in deltas:
+        if not hit[delta]:
+            continue
+        print("    +%-2d  %4d / %4d  %4d walk%s"
+              % (delta, hit[delta], anchored, walked[delta],
+                 "   <- the fixed run start_report assumes" if delta == 16 else ""))
+    if hit:
+        peak, most = hit.most_common(1)[0]
+        print("  peak delta +%d with %d of %d anchored payloads and %d clean walks"
+              % (peak, most, anchored, walked[peak]))
+    print("  no delta matched: %d; the same bytes at payload offset 0: %d" % (unmatched, at_zero))
+    if unmatched_by_op:
+        print("    of those, by anchored opcode: %s" % dict(unmatched_by_op.most_common()))
+    # The dword at name_end+12 against the script's own length (name_end+16 .. the epilogue). Zero means the
+    # field is that length; a positive residue is what the field counts beyond it.
+    if sized:
+        exact = sized.get(0, 0)
+        print("  dword at name_end+12 minus the script's length, over the anchored payloads: %s"
+              % dict(sorted(sized.items())[:8]))
+        print("    equal in %d of %d (%.1f%%), and never negative: %s"
+              % (exact, sum(sized.values()), 100.0 * exact / sum(sized.values()),
+                 "yes" if min(sorted(sized)) >= 0 else "no (min %d)" % min(sorted(sized))))
+    return 0
+
+
 def operand_spans(data, table):
     """`(start, end, kind)` for every token's own bytes, following the table's grammar.
 
@@ -2384,6 +2679,12 @@ def main():
     ap.add_argument("-o", "--out", help="write inventory/opcode_usage.csv into this directory (with --usage)")
     ap.add_argument("--start", metavar="PATH",
                     help="three readings of where a script starts: payload floor, walk depth, the dword's meaning")
+    ap.add_argument("--start-scan", metavar="PATH",
+                    help="walk every start in name_end+8..+40 and report which deltas reach the epilogue")
+    ap.add_argument("--start-anchor", metavar="PATH",
+                    help="anchor the start on the opcode the shipped ScriptText fixes for the first statement")
+    ap.add_argument("--scan-lo", type=int, default=8, help="first delta --start-scan tries (default 8)")
+    ap.add_argument("--scan-hi", type=int, default=40, help="last delta --start-scan tries (default 40)")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     args = ap.parse_args()
     if args.shuffle and not args.calls:
@@ -2393,6 +2694,10 @@ def main():
         return header_report(args.header)
     if args.start:
         return start_report(args.start)
+    if args.start_scan:
+        return scan_report(args.start_scan, args.scan_lo, args.scan_hi)
+    if args.start_anchor:
+        return anchor_report(args.start_anchor, args.scan_lo, args.scan_hi)
     if args.script:
         return function_script(args.script[0], args.script[1], args.script[2], Table(), hex_bytes=args.hex_bytes)
     if args.switches:
