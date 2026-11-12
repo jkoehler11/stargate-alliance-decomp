@@ -298,7 +298,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       dispatch, 55 that complete in one tick, three loops and no `switch` in the whole tree -- and
       `docs/systems/AI.md` (*What the bodies do*) reads `ShootFromCover` (16 statements, no `GotoState` in it or
       its 19 override handlers), `CoveredAttack` (four labels of its own, ten computed sleeps) and `Scripting`
-      (eight `CompleteAction` exits) in full. That closes the item.
+      (eight `CompleteAction` exits) in full. **The states the text does not declare were read too**
+      (`tools/state-exports.py`, `inventory/state_exports.csv`): 159 state exports over the tree's 36 classes,
+      14 of them declared by no text -- 13 carrying 64 function children and 7,184 payload bytes, including the
+      four names `BotEnemy` dispatches to -- four creature classes the text census never saw, and 6 names a
+      text declares that no export carries. That closes the item.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
@@ -1111,6 +1115,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   only by a computed target or a native body.
 - Tool (`tools/ai-states.py`) + `inventory/ai_states.csv` + `docs/systems/AI.md` (*What the states do*, both
   tables generated from the artifact) + `make ai-states` + `make ci` holding the page to the artifact + this note.
+
+### Execution notes (2026-11-12, the states the text does not declare are exports with 64 function bodies)
+
+- **The floor negative had one more direction to read.** `tools/ai-states.py` could only say a state was
+  missing: five classes export more `UState` objects than their text declares. A `UState` is an export like any
+  other and its body is the `Function` exports whose `Outer` is the state, so `tools/state-exports.py
+  --system DUMP/System -o inventory/state_exports.csv` reads the export table directly and diffs it against the
+  text -- one row per export **and** one per declared-but-unexported name, so neither side is the only one
+  counted (`--check` drives the fold, the child resolution, the payload sum and the declared-only row).
+- **What it found.** **159 state exports over 36 classes**, of which **14 are declared by no class text** and
+  **13 of those carry 64 function children and 7,184 bytes** of payload: `BotEnemy`'s five (the four names its
+  decision code dispatches to -- `GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation` -- plus
+  `Scripting`, 29 children / 2,402 bytes), `BotBase`/`BotLite`/`BotRep`'s `Scripting` and formation states, and
+  `ScriptedController.Broken`, the second export of that class and a name five other classes dispatch to. So a
+  text-driven rebuild loses bodies, but not objects: the missing states are in the package.
+- **Four creature classes were never in the text census at all** -- `Birds`, `CirclingBirds`, `MigratingBirds`,
+  `TransientAmbientCreature` -- and their states (`Wandering`, `Circling`, `Migrating`) are export-only, which is
+  why the census stopped at 32 classes. `TransientAmbientCreature.Wandering` carries no function: native
+  behaviour, and the one export in the set with nothing to read.
+- **The residue is symmetric, and it is why the counts never meet.** **6 names a text declares and no export in
+  the class's package carries**: `ReetouBot`'s `Ambush`/`Berserk`/`Ranged`, `HoverTankPilotBot`'s `TroopDrop`, and
+  `BotSG`'s `CoveredAttack`/`Waiting`, which repeat states `BotEnemy` already exports. `classes.csv`'s `states`
+  column is therefore a *declared* count: it sums to 164 over these classes against 159 exports, and the doc
+  quotes the export count whenever it means objects.
+- Tool (`tools/state-exports.py`, `--write-doc`/`--check-doc`, `--check` with no dump) +
+  `inventory/state_exports.csv` + `docs/systems/AI.md` (*The states the text never declares are compiled*) +
+  `make state-exports` + `make ci` holding the page to the artifact + this note.
 
 ### Execution notes (2026-11-12, the state bodies are thin and the overrides hold the behavior)
 

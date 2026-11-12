@@ -106,7 +106,8 @@ Two findings change how the rest of this page should be read.
   their text declares (`BotEnemy` 36/41, `BotRep` 2/4, `BotBase` 4/5, `BotLite` 4/5, `ScriptedController` 1/2),
   and four of the ten missing names -- `GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation` --
   are declared by no class's text anywhere in the corpus, while `BotEnemy`'s own decision code dispatches to all
-  four. A rebuild driven by the text alone would silently drop those states.
+  four. A rebuild driven by the text alone would silently drop those states -- but they are not lost: they are
+  export-side objects with compiled bodies (*The states the text never declares are compiled*, below).
 * **A subclass that redeclares an inherited state name gets a second state.** `AlkeshBomberBot` declares its own
   `Scripting` and `Waiting`; every `GotoState('Scripting')` in the tree resolves to `ScriptedController`'s, so the
   bomber's two are entered by nothing this read can see. A state name is not a key until it is resolved along the
@@ -177,6 +178,60 @@ States by in-degree — how many states or class dispatchers name each one with 
 Thirty of the 151 states are neither named by a literal `GotoState` nor name one. They are entered by a computed
 target or from a native body, and that is the residue this reading leaves -- the same shape as the rest of this
 page: a count is measurable, an entry point sometimes is not.
+
+### The states the text never declares are compiled
+
+The floor above is a floor on the *source*, not on the machine. A `UState` is an export like any other, and its
+body is not in the class's text export at all -- it is the `Function` exports whose `Outer` is the state -- so
+what the text does not declare can still be read out of the package, with no boot and no decompiler.
+
+    python3 tools/state-exports.py --system DUMP/System -o inventory/state_exports.csv
+
+Output: `inventory/state_exports.csv`, one row per state export **and** one row for every state a text declares
+that no export carries, so neither side can hide a disagreement by being the only one counted. `bytes` sums the
+function exports' serial sizes (a payload, not a script: what a body does still needs `tools/uscript-dis.py`).
+
+<!-- generated:state-exports -->
+**159 state exports over 36 classes; 14 are declared by no class text, and 6 are declared by a text and not exported.**
+
+| class | state | functions | other children | bytes | callees the text cannot show |
+|---|---|---:|---:|---:|---|
+| `Birds` | `Wandering` | 3 | 0 | 454 | `BeginState`, `PickDestination`, `PickSlaveDestination` |
+| `BotBase` | `Scripting` | 6 | 0 | 544 | `AbortScript`, `CompleteAction`, `EndState`, `LeaveScripting`, `Restart`, `Timer` |
+| `BotEnemy` | `GetInFormation` | 6 | 0 | 467 | `BeginState`, `DoAlertSquad`, `EndState`, `FaceSquadRotation`, `Timer`, `WaitForManInFront` |
+| `BotEnemy` | `MoveInFormation` | 8 | 0 | 1076 | `BeginState`, `DetermineFollowLocation`, `DoAlertSquad`, `EndState`, `Tick`, `Timer` |
+| `BotEnemy` | `Scripting` | 4 | 0 | 165 | `DisplayDebug`, `DoAlertSquad`, `PawnIsInPain`, `Timer` |
+| `BotEnemy` | `TakePoint` | 8 | 0 | 566 | `BeginState`, `DoAlertSquad`, `EndState`, `IsRunningScript`, `LeaderNotifySuspicious`, `MemberSuspicious` |
+| `BotEnemy` | `WaitingForFormation` | 3 | 0 | 128 | `BeginState`, `DoAlertSquad`, `Timer` |
+| `BotLite` | `Scripting` | 5 | 0 | 414 | `EndState`, `LeaveScripting`, `Restart`, `SetMoveTarget`, `Tick` |
+| `BotRep` | `MoveInFormation` | 8 | 0 | 1389 | `BeginState`, `DetermineFollowLocation`, `EndState`, `FaceSquadRotation`, `Tick`, `Timer` |
+| `BotRep` | `TakePoint` | 3 | 0 | 205 | `BeginState`, `EndState`, `Timer` |
+| `CirclingBirds` | `Circling` | 4 | 0 | 630 | `BeginState`, `MaxHiddenTime`, `PickDestination`, `PickSlaveDestination` |
+| `MigratingBirds` | `Migrating` | 5 | 0 | 1081 | `BeginState`, `InitialLocation`, `MaxHiddenTime`, `PickDestination`, `PickSlaveDestination` |
+| `ScriptedController` | `Broken` | 1 | 0 | 65 | `BeginState` |
+| `TransientAmbientCreature` | `Wandering` | 0 | 0 | 0 | — |
+
+The 9 class(es) whose export table outran their text: `Birds`, `BotBase`, `BotEnemy`, `BotLite`, `BotRep`, `CirclingBirds`, `MigratingBirds`, `ScriptedController`, `TransientAmbientCreature`.
+
+Declared but not exported: `ReetouBot.Ambush`, `ReetouBot.Berserk`, `ReetouBot.Ranged`, `BotSG.CoveredAttack`, `BotSG.Waiting`, `HoverTankPilotBot.TroopDrop`.
+<!-- /generated:state-exports -->
+
+**14 state exports are declared by no class text, and 13 of them carry 64 function children and 7,184 bytes of
+payload** -- the states a text-driven rebuild would drop are not lost, they are export-side objects with bodies.
+`BotEnemy`'s five are the four names its own decision code dispatches to plus `Scripting` (29 children, 2,402
+bytes); `BotBase`, `BotLite` and `BotRep` each add a `Scripting` or a formation state; `ScriptedController`'s
+second export is `Broken`, a state five other classes dispatch to by name.
+
+Four whole classes appear **only** on the export side -- `Birds` (`Wandering`), `CirclingBirds` (`Circling`),
+`MigratingBirds` (`Migrating`) and `TransientAmbientCreature` (`Wandering`) -- so the 32-class text census never
+saw them at all. `TransientAmbientCreature.Wandering` carries no function: its behaviour is native, and it is the
+one export in the set with nothing to read.
+
+The residue is symmetric, which is why the two counts never quite meet: **6 names a text declares and no export
+in the class's package carries** -- `ReetouBot`'s `Ambush`, `Berserk` and `Ranged`, `HoverTankPilotBot`'s
+`TroopDrop`, and `BotSG`'s `CoveredAttack`/`Waiting`, which repeat states `BotEnemy` already exports. So the
+class record's `states` column is a *declared* count, not an exported one: it sums to 164 over these classes
+where the packages export 159, and this page quotes the export count whenever it means objects.
 
 ## What the bodies do
 
@@ -292,5 +347,10 @@ not when a state body is, which is why `WhatToDoNext` and `SetEnemy` are worth r
   constant per wait.
 * `AIScript` and `AIMsgManager` internals beyond their function counts (3 and 39). `AIScript` is a
   `Keypoint` actor, not the controller, so mission AI scripting is level data — a 5.2 question.
+* Whether the five names a text declares and no chain exports exist in the image. `BotSG`'s `CoveredAttack` and
+  `Waiting` are inherited states its text repeats, but `ReetouBot`'s three and `HoverTankPilotBot`'s `TroopDrop`
+  are exported nowhere on their chain; settling it needs a name-index xref per package, since a `GotoState`
+  literal naming a state does not prove the object exists.
+
 * Whether `IntelligentSpawner` configuration is in the map, the checkpoint or both. The counts say the
   instances are in checkpoints; how the spawner was configured before the checkpoint existed is open.
