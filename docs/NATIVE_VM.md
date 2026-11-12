@@ -769,6 +769,46 @@ that the disassembler needs is the same dispatch the interpreter uses, and the s
 can be checked against rather than a guess. The `'G'` marker also explains why some payloads may not decode as
 bytecode directly: a script can be stored compressed.
 
+### `UClass::Serialize` (`0x0003a800`): the defaults are a buffer, and the record's tail is arrays
+
+`UStruct::Serialize` is not the last reader on a class export's path. `UClass::Serialize` (`0x0003a800`, 1,310 bytes)
+calls it through `UState::Serialize` (`0x000394c0`) first and then writes the class's own fields. Read from the
+decompiled body (under `$WORK`, never committed), the order is:
+
+| field | offsets | how it is written |
+|---|---|---|
+| `UStruct` (Super, Children, `FriendlyName`, line, text position, script) | — | `UStruct::Serialize` (`0x000392b0`) |
+| object flags, version < `0x3e` only | `+0x1c` | one dword, then `ObjectFlags |= 0x80004` |
+| five dwords | `+0x498`, `+0x4a0`, `+0x4a4`, `+0x4a8`, `+0x4ac` | `Ar << dword` (`0x00037110` / `0x000370e0`: archive vtable `+4`, length 4) |
+| `TArray` of 12-byte records | `+0x4d0` (data), `+0x4d4`, `+0x4d8` | `0x0003d900`: count (`0x000637e0`), then `n` x 12 bytes |
+| config name (`FName`) | `+0x4b0`, `+0x4b4` | version >= `0x3e` only, through two virtuals; `L"System"` is what the older path stores |
+| `TArray<dword>` | `+0x4dc`, `+0x4e0`, `+0x4e4` | `0x0003d160`: count, then `n` x 4 bytes |
+| `TArray<dword>`, version > `0x62` | `+0x4f4`, `+0x4f8`, `+0x4fc` | the same helper |
+| **defaults** | `+0x4e8` data, `+0x4ec` Num, `+0x4f0` Max | read by vtable **+0x98** = `0x0003bdc0`, written by **+0x94** = `0x0003a220` |
+
+Three consequences:
+
+* **the defaults are a `UClass` field, not a `UStruct` one, and their length is not in the payload.** The load path
+  sizes the buffer with `GetPropertiesSize()` (vtable **+0x88** = `0x0003d520`) and asserts
+  `Defaults.Num()==GetPropertiesSize()` before and after the stream is read (`UnClass.cpp:0x454` saving, `0x459`
+  loading, `UnClass.h:0x235` after the read). So every "a size field in front of the block" search -- U13's and
+  `docs/CLASS_DEFAULTS.md`'s -- was looking for something the build never writes: the stream is delimited by its own
+  `None` terminator and bounded by the property record.
+* **one reader for every class object.** These four slots are resolved through `Class`'s own table (`0x004d4870`), not
+  through the per-class tables in `.rdata` -- those describe *instances* of a class, so their `+0x88`/`+0x94`/`+0x98`
+  entries are a different function for nearly every class (109 / 140 / 105 distinct targets over the 492 tables) and
+  none of them is this reader. `python3 tools/class-serialize-slots.py --xbe <dump>/default.xbe --class Class` prints
+  the object's ABI by name.
+* **all 2,319 class payloads end on the stream's terminator.** `inventory/class_records.csv`'s `last_byte` is `00` for
+  every class export in the corpus, which is what a `None`-terminated tagged stream looks like when it is the last
+  thing written -- and it is why a *forward* scan from a guessed start lands in the record's tail instead: the two
+  `TArray` fields above are the "hash-like 4-byte values that repeat across classes" `docs/CLASS_DEFAULTS.md` had
+  recorded without an owner.
+
+What that leaves is a direction rather than a route: a class's defaults block is the last thing in the payload and
+ends on its last byte, so it can be read **backwards** from that terminator instead of forwards from a candidate
+start, with the record's tail now a named set of fields rather than unknown bytes.
+
 ### The `+0xa0` slot is `0x000398e0`, and it is inherited more than overridden
 
 `UStruct::Serialize` calls a virtual at `+0xa0` while it rebuilds the script buffer, so that slot is the token walker

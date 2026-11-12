@@ -1176,6 +1176,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the defaults are a buffer the reader sizes, and the record's tail is named arrays)
+
+- **The class record's reader is `UClass::Serialize` and it was never read; now it is.** `0x0003a800` (1,310 bytes)
+  calls `UStruct::Serialize` through `UState::Serialize` first, then writes the class's own fields -- five dwords at
+  `+0x498`..`+0x4ac`, a `TArray` of 12-byte records at `+0x4d0`, two `TArray<dword>`s at `+0x4dc` and (version > `0x62`)
+  `+0x4f4` -- and only then the defaults: a byte buffer at `+0x4e8`/`+0x4ec`/`+0x4f0` that the loader **sizes from the
+  class itself** (`GetPropertiesSize()`, vtable +0x88 = `0x0003d520`) and reads with a vtable slot (+0x98 =
+  `0x0003bdc0`) under the assert `Defaults.Num()==GetPropertiesSize()` (`UnClass.cpp:0x454`/`0x459`, `UnClass.h:0x235`).
+- **That settles why no size field was ever found.** U13's sizefield work and this page both looked for a length in
+  front of the block; the format has none -- the stream is delimited by its `None` terminator and bounded by the
+  property record. It also names the "hash-like 4-byte values that repeat across classes" in the 545's candidate:
+  they are the record's own `TArray` fields, which a forward scan from a candidate start reads as name/type pairs.
+- **The 545 are therefore a *start* problem, and the fix has a direction.** All 2,319 class payloads end on `00`
+  (`inventory/class_records.csv`'s `last_byte`), i.e. the defaults stream is the last thing written, so the next
+  instrument reads it **backwards** from the payload's last byte instead of scanning forward for a tag that parses.
+  The record's tail is now a named set of fields rather than unknown bytes, which is what that walk needs.
+- Tool (`tools/class-serialize-slots.py --class <name>` names the four object slots by role: Serialize,
+  GetPropertiesSize, SaveProperties, LoadProperties, ScriptWalk) + `docs/NATIVE_VM.md` (*`UClass::Serialize`*) +
+  `docs/CLASS_DEFAULTS.md` (the tail's owner) + `docs/UNKNOWNS.md` U17 + this note. Reads the image; no boot, no
+  artifact change (the per-class table columns stay as they are: those slots are *instance* virtuals, not this ABI).
+
 ### Execution notes (2026-11-12, the opcode names above `0x5f` are the image's own, and 126 of 184 were blank)
 
 - **The blank names were an external list's edge, not a gap in the build.** The table's `name` column comes from
