@@ -481,19 +481,22 @@ and records the offset, the base register and every static route that could name
 | offset | sites | base register | reading |
 |---|---:|---|---|
 | `+0x4c` | 12 | `esi` 11, `ebx` 1 | the function's own object |
-| `+0x220` | 8 | `eax` 8 | an object passed in as an argument |
+| `+0x220` | 8 | `eax` 8 | the absolute global `.data:0x7b9ba0`, a singleton (see the last section) |
 | `+0x48` | 3 | `esi` 3 | the function's own object |
 | `+0x1c` | 2 | `esi` 2 | the function's own object |
 | `+0x2c` | 2 | `esi` 1, `eax` 1 | own object / argument |
 | `+0x310` | 1 | `esi` 1 | the function's own object |
 
 **28 of 28 decode, and every one is a plain `mov reg,[base+disp]`** -- 0 indexed (SIB) loads, 0 absolute ones, 0
-unread -- so a field site is never a container walk or a static. Two populations, not six: **20 read from the
-function's own `this`** (base `esi`/`ebx`, the chain rooted at an `ecx` nothing writes) and **8 read from an object
-that arrives as an argument** (`eax` is never written before the read), and those 8 *are* the whole `+0x220` group.
-All eight sit in small functions with exactly one direct `E8` caller each, and all eight callers fall in
-`0x335007`-`0x337318`: one family, one offset, one object graph -- which the earlier "six different offsets, so not
-one shared object graph" reading understated by counting offsets instead of owners.
+unread -- so a field site is never a container walk or a static. The base register is a second claim, and reading
+the instruction that writes it (`base_origin` in the same artifact) splits the 28 three ways rather than two: **11
+are the function's own `this`**, **8 load `eax` from the absolute global `.data:0x7b9ba0`**, **7 read the stack**
+and **2 an incoming register**. The earlier "20 read `this`, 8 read an argument" was the *receiver* chain's answer
+(`own_register`) read as the field's: a base that arrives on the stack is not `this`, and an `eax` with no chain is
+not an argument until its writer is looked at. Those 8 are still exactly the whole `+0x220` group, they sit in small
+functions with exactly one direct `E8` caller each, and all eight callers fall in `0x335007`-`0x337318`: one family,
+one offset, one object graph -- which the earlier "six different offsets, so not one shared object graph" reading
+understated by counting offsets instead of owners.
 
 **No table names the owner, and that is measured, not assumed.** A class table holds virtuals only, so this tool
 tries two routes and records both verdicts per row: `table` (the containing function is itself a slot target of one
@@ -546,9 +549,10 @@ hold a `Function`, and 533 of those are `Class` -- a `UClass`, whose `+0x220` is
 1,004 live class objects. Behind it come a GUI widget chain that is **complete** (`GUIButton` 10 of 10, and nine
 more `GUI*` page and widget classes at 1 of 1 or 2 of 2) and `AnimNotify_Script` holding a
 `LinkerLoad` in 45 of 63. Every other row of the 71 is one or two objects out of thousands, which is what two
-unrelated fields sharing a displacement looks like. The eight `[eax+0x220]` sites read that slot off an object that
-arrives as an argument, so the class carrying it is one of **38 candidates**, headed by `Class` at eight times the
-next population.
+unrelated fields sharing a displacement looks like. The eight `[eax+0x220]` sites do **not** read that slot off an
+object passed in as an argument: `eax` comes from the absolute global `.data:0x7b9ba0`, so those 38 candidates
+describe a different field at the same displacement and **none of them owns these eight sites** -- the base-origin
+read at the end of this page is what names the holder, and it is a singleton, not a class.
 
 **`+0x1c` is the negative the static half predicted**: not one live object at the title screen holds a live `UObject`
 at `+0x1c`, so the two `+0x1c` sites read a dword that is either not an object pointer or is only filled later
@@ -558,4 +562,37 @@ classes populate.
 **What this artifact cannot say.** A title-screen heap is not a level's: 42,128 objects with no mission loaded and
 34 blocks unmapped, so the classes a mission instantiates are absent. And "the same displacement in two classes" is
 not "the same property" -- each row is a candidate, which is why the eight-site group is reported as 38 classes
-rather than one name. The next static read is which of them the callers at `0x335007`-`0x337318` pass.
+rather than one name. The static read that settles it is the base register's own writer, not the callers: it puts
+all eight sites on a `.data` singleton, below.
+
+
+## The `+0x220` base is a `.data` singleton, and the helper it holds is not a UObject
+
+`base_origin` in `inventory/vcall_field_owners.csv` follows the instruction that writes each member load's base
+register through `tools/vcall-receiver.py`'s decoder, instead of trusting the register's name or the receiver chain.
+**11 of the 28 field sites read `this`, 8 read an absolute global, 7 read the stack and 2 an incoming register**, and
+the eight globals are the whole `+0x220` group, all naming one address: the `mov eax,ds:0x7b9ba0` at `0x334390`,
+`0x335163`, `0x333864`, `0x336d3c`, `0x336f35`, `0x333fd3`, `0x33638f` and `0x3363b0`.
+
+**The owner is a lazy singleton in `.data`, not a UObject.** `0x7b9ba0` has **one store and 177 `mov`-form loads**
+in the whole image (190 dword references; the rest are pushes). The store is `0x331a6e` in `FUN_003319fc`, a
+create-once path: `mov eax,[0x7b9ba0]; test eax,eax; je` down to `push 0x8003; push 0x224; call 0x33ace5` (operator
+new) -> ctor `0x330b35` -> init `0x3315d4` -> `mov [0x7b9ba0],esi`, a counter increment at `[esi+0x190]`, and the
+pointer returned through an out-parameter; when it already exists the same path only increments `+0x190` and returns
+it. **`0x224` is the object's whole size, so `+0x220` is its last dword**, and the init fills it exactly once, at
+`0x3316b7`: `push 0x20; call operator new; push esi; call 0x331381; mov [esi+0x220],eax` -- a 32-byte helper the
+singleton owns.
+
+**That helper is a native C++ interface.** Its constructor `0x331381` ends in `c7 00 70 f7 53 00`, i.e. vtable
+`0x0053f770`, which sits **outside** the 492 packed class tables (`0x004c78c0`-`0x0053b168`): the class-table map has
+no row for it and no `vtable-reach` class follows from it. The family dispatches three of its slots -- `+0x44` (17),
+`+0x4c` (19) and `+0x50` (20) -- which is why the slot-19/20 census found them at all: the pair is dispatched here on
+a singleton's helper, not on a `UObject`.
+
+**What this settles, and what it does not.** U8 asked which of 38 classes the callers pass; the answer is that they
+pass none, because the eight sites are one native module's singleton talking to its own interface, and the `+0x220`
+row of the live-heap table is a different field that merely shares the displacement (`Class` holding a `Function`).
+It does not name the module: every function in `0x334e00`-`0x337500` is unattributed, none of the family carries a
+`__FILE__` assert, and the only outside edge is the XONLINE section's entry stubs (`0x42bf49`, `0x42bf54`, `0x42bf97`,
+`0x42bfb8`, `0x42bfc3`, `0x42bfce`, each `mov ecx,[0x7ba330]` then a `jmp` back into `.text`) -- the family calls the
+Xbox Live library, which does not say what the family is.

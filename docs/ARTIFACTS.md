@@ -129,7 +129,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/token_map.csv` | 57 | 8 | `make token-map` |
 | `inventory/ucpp_vtables.csv` | 15 | 7 | `make ucpp-vtables` |
 | `inventory/vcall_dispatch_sites.csv` | 141 | 7 | `make vcall-dispatch` |
-| `inventory/vcall_field_owners.csv` | 28 | 18 | `make vcall-field-owner` |
+| `inventory/vcall_field_owners.csv` | 28 | 27 | `make vcall-field-owner` |
 | `inventory/vcall_receiver_sites.csv` | 106 | 20 | `make vcall-field-owner` |
 | `inventory/vehicle_seats.csv` | 25 | 7 | `make help` |
 | `inventory/voice_descs.csv` | 25 | 21 | `make help` |

@@ -941,6 +941,21 @@ has no window a boot can add -- what would settle it is a typed receiver at one 
 `[reg+0x50]` sites (`inventory/vcall_dispatch_sites.csv`), not another boot.
 
 
+**2026-11-12, the base is a `.data` singleton, so the 38 candidates are the wrong field.** The callers were the
+route this entry named, but the base they pass is not an argument at all: reading the instruction that writes it
+(`base_origin` in `inventory/vcall_field_owners.csv`) shows all eight `+0x220` sites loading `eax` from the absolute
+`.data:0x7b9ba0`, which has **one store and 177 `mov`-form loads** in the image. That global is a lazily created
+singleton (`FUN_003319fc`: create once, `0x224` bytes, a counter at `+0x190`, the pointer returned through an
+out-parameter), and its last dword `+0x220` is filled at `0x3316b7` with a 32-byte helper from `0x331381` whose
+constructor installs vtable `0x0053f770` -- outside the 492 packed class tables, so the holder is a **native C++
+interface, not a `UObject`**. The eight sites are therefore none of the 38 heap candidates: the `Class`->`Function`
+rows (533 of 1,004) are a different field at the same displacement, which is the shared-displacement rule this entry
+already stated, now with the exact site group that was supposed to break it. What stays open is the module's name,
+and no instrument here has it -- every function in `0x334e00`-`0x337500` is unattributed and carries no `__FILE__`
+assert, and the family's only outside edge is the XONLINE section's entry stubs (`0x42bf49` and neighbours, each
+`mov ecx,[0x7ba330]` then a `jmp` back into `.text`). What would settle that is a name for the singleton's
+constructor family -- a signature, or a caller that asserts with a source path -- not another boot.
+
 **2026-11-12, the object pointer's origin: the pair is dispatched on an object another object holds.** The receiver
 load names which object, not where the pointer came from, so the same oracle listing is walked one hop further
 (`origin`, `origin_va`, `origin_chain` in `inventory/vcall_receiver_sites.csv`). Of the 55 real sites, **28 read the
