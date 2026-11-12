@@ -643,7 +643,7 @@ The `0x53f770` case is not a curiosity: the linker packs every class's vtable ba
 adjacent. `tools/native-vtable.py --block` (`inventory/native_vtable_merges.csv`) walks **every** run
 of three or more code pointers in `.rdata` and splits each at its install stores: **1,007 runs**,
 **704 table starts**, **468 runs that begin with a table**, and **109 runs holding two or more
-tables**.
+tables** (the store-form fix in the last section moves these to **724 / 476 / 114**).
 
 The merges are not marginal. `0x4c7958` is one run of 233 dwords that installs **six** tables
 (`0x4c7958`, `0x4c7a10`, `0x4c7ac8`, `0x4c7b88`, `0x4c7c00`, `0x4c7c78`) -- the `Material` /
@@ -654,7 +654,64 @@ them reads as a single table if the run is taken as the unit.
 **What this changes, and what it does not.** The 492 UObject class tables were named from their
 install literals, so their *starts* are unaffected -- but their *slot counts* are read from the next
 start, and 109 runs show that the next start is not always the next run. The same holds for every
-native interface: 704 install-started tables in `.rdata`, against the 492 the map holds, so a large
+native interface: 704 install-started tables in `.rdata` (724 once every store form is read), against the 492 the map holds, so a large
 minority of them are native C++ vtables like the `+0x220` helper's, and for those the install store
 is the only delimiter there is. `make native-vtable` writes both artifacts, so a run that looks like
 one table can be checked against the stores that say otherwise.
+
+## 724 tables, one literal dispatch, and no name from a call site (2026-11-12)
+
+`tools/native-vtable.py --reach` (`inventory/native_vtable_reach.csv`) reads back the question the
+two notes above leave open -- 724 install-started tables against 492 mapped class tables, so where
+could the other 232 names come from? -- by sweeping `.text` once with `objdump` (8 s over the 4.2 MB
+section) and classifying every instruction whose operand holds a table address or a table slot:
+`install` (`mov [mem],imm32`), `load` (`mov reg,imm32`), `lea reg,[abs]`, `push`, `absolute`
+(`call`/`jmp DWORD PTR ds:<slot>`) and `other`.
+
+**722 of the 724 tables are named by their install store and by nothing else.** No table address is
+pushed as an argument, and **no site dispatches through a register base** -- `mov reg,table` followed
+by `call [reg+disp]` -- anywhere in `.text`: 0 of 724. A vtable here is only ever reached through an
+object pointer the code loaded from memory, so a call site cannot be where a table's name comes from:
+the caller never says which table it is calling. That closes the route the last note's next step
+proposed ("a name could come from a caller rather than a literal") -- there is nothing to find at
+dispatch sites, in the mapped 492 as much as in the native 232.
+
+**One table is named by a call, and it is unmapped.** `0x00564dbc` (9 slots) is called absolutely at
+slot 0 from `0x00385936` and `0x0038b29a` (`call DWORD PTR ds:0x564dbc`, the second preceded by
+`mov [esp+0x1c],0x564dbc`), and its three install stores are `0x00385932`, `0x0038b1c4` and
+`0x0038b296`. Two fixed calls through a known function pointer are the only place in the image where
+a caller names a table at all, and it names an unnamed one -- so the census adds a caller edge to
+`0x564dbc`, not a name.
+
+**The only other non-install reference is a data descriptor.** `0x004d0d80` (25 slots) is loaded into
+`ebx` at `0x00012918` inside `Core_UnObjBas` (`0x00012620`), together with `0x004d13e4` and
+`0x9fe3c5a3`; the three are stored as a `{start, end, constant}` triplet at `[ebp-0xb0]`,
+`[ebp-0xa8]`, `[ebp-0xa4]`, and nothing calls through `ebx`. The address is the start of a `.rdata`
+block, which is how the same function also treats `0x4c85ac`.
+
+**Install sites are the naming lever, and they cover 48 of the 232.** 48 unmapped tables are
+installed by a body that also installs a mapped class's table, 36 of those bodies are named
+`ctor_*`/`dtor_*`, and 32 of the 48 have two slots or fewer: the layout of a secondary base-class
+table laid down by the derived class's own constructor. `0x4ddf70` (2 slots) sits beside `TextBuffer`'s
+`0x4ddf78` in `dtor_TextBuffer`, `0x4c960c`/`0x4c9610` beside `0x4c9618` `XboxViewport`,
+`0x4d0470`/`0x4d0474` beside `0x4d0480` `TcpipConnection`, `0x4da720` (22 slots) beside `0x4da778`
+`LinkerLoad`. Those 48 can be reported from committed data as "<class>'s secondary table"; the other
+**184** are installed only by bodies that install nothing mapped, and that is where the naming
+problem actually lives.
+
+**Install counts already separate the populations.** 444 of the 492 mapped tables are installed
+exactly twice, which is what one constructor and one destructor of the class look like, against 114
+unmapped tables installed once and a long tail: `0x4c7860` (22 slots) has 41 stores in 41 bodies,
+`Core_UnObjBas`, `Core_UnObj`, `Core_UnClass` and `Engine_UnChan` among them, and `0x53d590` (4 slots)
+18 stores across 18 sibling `FUN_00329c80`-`FUN_0032a7b0` factory bodies.
+
+**The table count itself had to be fixed first: the store rule read three addressing forms short.**
+`immediate_store` accepted `c7 /0` only for mod 00/01/10 **without a SIB byte**, so
+`mov [ebp+disp8],imm32` (modrm `45`) and `mov [esp+disp8],imm32` (modrm `44 24`) were dropped, and
+`0x4dd488`'s run of 132 dwords read as two tables (22 + 110) instead of six of 22. With
+`store_prefix_len` decoding every form, the same walk reports **724 table starts** (not 704), **476
+runs begin with a table** (not 468) and **114 runs hold two or more** (not 109); 28 rows of
+`inventory/native_vtable_merges.csv` move, including `0x4c85b0` and `0x4c9a98` (25 and 22 slots),
+which had no install store at all and now start tables. The two scans agree once both reach the whole
+addressing space: `objdump`'s operand census and the byte-level store census count the same 1,503
+stores for all 724 rows, which is the cross-check that found the gap.

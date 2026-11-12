@@ -970,7 +970,7 @@ native-opcodes:
 	@echo "  vcall-dispatch  every .text site that dispatches slots 19/20 (needs the dump)"
 	@echo "  vcall-field-owner  which field holds the object at each of those sites (needs the dump)"
 	@echo "  field-objects  which class holds a live object at each of those offsets (needs a boot and PORT)"
-	@echo "  native-vtable  how long a native vtable really is, and which boundary rule carries it (needs the dump)"
+	@echo "  native-vtable  how long a native vtable really is, which rule carries it, and who mentions it (needs the dump)"
 
 # U8's two residuals (docs/NATIVE_CLASS_TREE.md): every registration call's argument list, and what slots 19/20
 # hold in all 492 class tables. Needs the image; both artifacts are addresses and counts, no game data.
@@ -1001,6 +1001,8 @@ native-vtable:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
 	@$(PYTHON) tools/native-vtable.py "$(GAME_DIR)/default.xbe" --block -o inventory/native_vtable_merges.csv
 	@echo "wrote inventory/native_vtable_merges.csv"
+	@$(PYTHON) tools/native-vtable.py "$(GAME_DIR)/default.xbe" --reach -o inventory/native_vtable_reach.csv
+	@echo "wrote inventory/native_vtable_reach.csv"
 
 # U8's layout half: which class holds a live object at each of the six field offsets, read from a booted guest
 # (docs/NATIVE_CLASS_TREE.md). It needs a run and that run's GDB stub, so it is not part of `make ci`.

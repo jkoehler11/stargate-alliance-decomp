@@ -1052,11 +1052,32 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-12, no `.text` site names a table, and the store rule was 20 tables short)
+
+- **722 of the 724 install-started tables are named only by their install store.** `tools/native-vtable.py --reach`
+  (`inventory/native_vtable_reach.csv`) classifies every `.text` instruction that holds a table address: **0**
+  register-base dispatches (`mov reg,table` then `call [reg+disp]`), **1** absolutely-called table (`0x00564dbc`,
+  slot 0, from `0x00385936` and `0x0038b29a`), **1** address loaded as a data descriptor (`0x004d0d80` in
+  `Core_UnObjBas`, a `{start, end, constant}` triplet, never called through). So a call site cannot name a table, in
+  the 492 mapped tables as much as in the 232 native ones -- the "a name could come from a caller" route is closed.
+- **The install store is the lever that survives.** 48 of the 232 unmapped tables are installed by a body that also
+  installs a mapped class's table, 36 of those bodies named `ctor_*`/`dtor_*`, 32 with two slots or fewer: secondary
+  base tables (`0x4ddf70` beside `TextBuffer`'s `0x4ddf78`, `0x4c960c`/`0x4c9610` beside `XboxViewport`,
+  `0x4da720` beside `LinkerLoad`). 184 have no mapped neighbour at all.
+- **The store rule itself was wrong, and the table count moves with it.** `immediate_store` accepted `c7 /0` only
+  without a SIB byte, dropping `mov [ebp+disp8],imm32` and `mov [esp+disp8],imm32`: **724 table starts, 476 runs that
+  begin with a table, 114 runs holding two or more**, against 704 / 468 / 109 before (`0x4dd488` is six 22-slot tables,
+  not 22 + 110; `0x4c85b0` and `0x4c9a98` had no store at all and now start tables). The `objdump` census and the byte
+  census now agree on all 1,503 stores, which is the cross-check that found the gap.
+- Tool (`--reach`, `reach_scan`, `store_prefix_len`, five new store-form self-tests) + `make native-vtable` now writes
+  `inventory/native_vtable_reach.csv` (724 rows) beside the merges + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md`
+  U8. Reads the image; no boot.
+
 ### Execution notes (2026-11-12, a run of code pointers is not a table: 109 of 1,007 hold two)
 
 - **The over-read is the block's normal shape.** `tools/native-vtable.py --block` splits every `.rdata` run of three or
   more code pointers at its install stores and reports **1,007 runs, 704 table starts, 468 runs that begin with a table,
-  109 runs holding two or more** (`inventory/native_vtable_merges.csv`). The biggest merges are the class-tree
+  109 runs holding two or more** (now **724 / 476 / 114** once every store form is read -- next note) (`inventory/native_vtable_merges.csv`). The biggest merges are the class-tree
   families: `0x4c7958` is one run of 233 dwords installing **six** tables (`Material`, `RenderedMaterial`,
   `BitmapMaterial`, `CameraEffect` and two more), `0x4c9348` (`Player`) five, `0x4ca618` 797 dwords over six.
 - **What moves and what does not.** The 492 UObject tables' starts are unaffected -- they were named from install
