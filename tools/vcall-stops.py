@@ -156,6 +156,10 @@ def read_stops(path):
 
 def rows_from(record, functions, tables, names, slots):
     rows = []
+    try:
+        control = int(record.get("control"), 0) if record.get("control") else None
+    except (TypeError, ValueError):
+        control = None
     for index, stop in enumerate(record.get("stops", [])):
         if not stop.get("hit"):
             continue
@@ -172,9 +176,14 @@ def rows_from(record, functions, tables, names, slots):
                 caller = None
         this, table, cls = receiver(stop, tables, names)
         slot = sorted(slots.get(target, []))
+        # The self-breakpoint control (`bp-args.py --control-self`) sits on an address the CPU was executing when
+        # it was sampled, so its firing says the arm landed and nothing about the pair: label it, never count it
+        # as a slot-19/20 row.
+        label = "control" if control is not None and target == control else (
+            "/".join(str(s) for s in slot) if slot else "")
         rows.append({
             "target": "0x%08x" % target,
-            "slot": "/".join(str(s) for s in slot) if slot else "",
+            "slot": label,
             "stop": index,
             "caller_eip": "0x%08x" % caller if caller is not None else "",
             "caller_symbol": resolve_caller(caller, functions) if caller is not None else "",
@@ -209,10 +218,12 @@ def main():
             {"hit": True, "regs": {"eip": 0xC6D00}, "stack": ["0x00009000"],
              "dumps": [{"expr": "ecx+0x0", "addr": 0x2A0000, "words": ["0x00410000"]}]},
             {"hit": False, "regs": {"eip": 0x2000000}, "stack": [], "dumps": []},
+            {"hit": True, "regs": {"eip": 0x1000}, "stack": ["0x00001020"], "dumps": []},
         ]}
+        record["control"] = "0x00001000"
         rows = rows_from(record, functions, tables, names, slots)
         problems = []
-        if len(rows) != 3:
+        if len(rows) != 4:
             problems.append("a not-mine stop was kept as a hit (%d rows)" % len(rows))
         else:
             if rows[0]["slot"] != "19":
@@ -232,12 +243,14 @@ def main():
                 problems.append("a table outside xbe_class_tables.csv got a name %r" % rows[2]["class"])
         if rows and rows[1]["slot"] != "20":
             problems.append("slot label %r for the 0x000c6d00 body, wanted '20'" % rows[1]["slot"])
+        if len(rows) == 4 and rows[3]["slot"] != "control":
+            problems.append("the self-breakpoint control got slot %r, wanted 'control'" % rows[3]["slot"])
         for problem in problems:
             print("FAIL: " + problem)
         if problems:
             return 1
-        print("ok: 3 of 4 stops are the armed bodies; caller resolution exact/contained/nearest all "
-              "answer; an unknown table stays unnamed")
+        print("ok: 3 of 5 stops are the armed bodies, the 4th is labelled control; caller resolution "
+              "exact/contained/nearest all answer; an unknown table stays unnamed")
         return 0
 
     if not args.json:
@@ -258,14 +271,23 @@ def main():
         writer.writerows(rows)
 
     breaks = record.get("breaks") or []
-    print("breaks armed: %s; stops recorded: %d; of them at an armed body: %d"
-          % (", ".join(str(b) for b in breaks) or "none", len(record.get("stops", [])), len(rows)))
-    if not rows:
+    pairing = [r for r in rows if r["slot"] != "control"]
+    controls = [r for r in rows if r["slot"] == "control"]
+    print("breaks armed: %s; stops recorded: %d; of them at an armed body: %d; at the control: %d"
+          % (", ".join(str(b) for b in breaks) or "none", len(record.get("stops", [])), len(pairing),
+             len(controls)))
+    if controls:
+        print("control: %d stop(s) at %s -- the arm landed in the mapping the game executes, so a zero on the "
+              "pair is a negative and not a broken arm" % (len(controls), record.get("control")))
+    elif record.get("control"):
+        print("control: the self-breakpoint at %s never fired -- this record cannot separate 'no dispatch' from "
+              "'the arm never landed'" % record.get("control"))
+    if not pairing:
         print("no armed body was reached: the boot measured that this pair does not dispatch in the "
               "window it covered -- see the doc for what that rules out")
         return 0
     counts = {}
-    for row in rows:
+    for row in pairing:
         key = (row["slot"], row["caller_symbol"], row["class"] or "?")
         counts[key] = counts.get(key, 0) + 1
     for (slot, caller, cls), n in sorted(counts.items()):

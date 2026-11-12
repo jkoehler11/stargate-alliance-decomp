@@ -68,6 +68,14 @@ loads -- is retired for this instrument; what is left is to sample the front end
 there, because the halt loop (`0x80024a97`, `0xfffffe5c`, `0x80065996`) makes it a matter of timing rather than of
 patching.
 
+**Measured 2026-11-11, the sampling route is taken and the ring was never the question.** `--wait-user` gates on the
+image's address range, not `CPL 3`: this build runs the game at `CS=0x8` (`CPL 0`), 88 samples in one boot and not one
+of them in ring 3, and with the range gate both boots armed on their first sample. The `0xCC` read-back cannot see the
+arm -- a control breakpoint that fired on `0x002bb740` read its own `8b` back -- so the arm is proven by that control
+and the forced-arm negative above is withdrawn. With the arm proven, both bodies recorded **0 stops** over a window of
+420 s spanning the map-list select, the M00 load and 180 s of gameplay: the pair is a true zero in those windows, and
+what is left is a window that was not covered (level unload/travel, a checkpoint load, multiplayer).
+
 `tools/vcall-stops.py` is the read half: it turns a `bp-args` record into (slot, caller, receiver class) rows —
 caller by exact start, by containment in a sized body, or nearest-below; receiver from the `ecx+0x0` dump,
 whose first dword is the class table that `inventory/xbe_class_table_names.csv` names. It writes
