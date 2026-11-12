@@ -521,6 +521,52 @@ which is the strongest evidence available short of a symbol: a routine that walk
 not an `FFrame`. The exec bodies' operand reads at `[frame+0xc]` were already consistent with `Code`
 at `+0x0c`.
 
+### The body behind one slot: `GNatives[0x1f]` is `execStringConst`
+
+The map answers *which* address sits in a slot. What a bytecode reader needs next is what that body consumes
+from the code stream, and `tools/gnatives-body.py --slot N` reads it: the address and channel from the committed
+registration evidence (`inventory/gnatives_slots.csv`, `gnatives_records.csv`, `gnatives_stubs.csv`,
+`gnatives_write_sites.csv`), the extent from `symbols/xbox_functions.csv` (or the terminator rule when the map has no
+size for it), then the body with direct calls named, `call [reg*4+0x6313e8]` rendered as a table dispatch, and every
+immediate that lands inside a section marked. Slot `0x1f` is the smallest complete answer it gives:
+
+```
+slot 31 (0x1f): slot-only
+  store       0x0040d962 -> 0x00047bf0
+  .data record intUObjectexecStringConst at 0x005c1b70
+  declarers   none -- an engine-internal exec
+  body 0x00047bf0: 69 byte(s), extent from symbols/xbox_functions.csv, map name Native_31
+  00047bf0  56              push esi
+  00047bf1  8b 74 24 08     mov esi,[esp+0x8]          ; FFrame&
+  00047bf5  8b 46 0c        mov eax,[esi+0xc]          ; FFrame::Code
+  00047bf8  68 00 04 00 00  push 0x400
+  00047bfd  6a 00           push 0x0
+  00047bff  50              push eax
+  00047c00  e8 3b 0b 01 00  call 0x00058740            ; bounded copy, cap 0x400
+  00047c05  8b 4c 24 18     mov ecx,[esp+0x18]         ; RESULT_DECL
+  00047c0c  50              push eax
+  00047c0d  e8 ae 40 09 00  call 0x000dbcc0            ; FString::operator=(ANSICHAR*)
+  00047c12  8b 4e 0c        mov ecx,[esi+0xc]
+  00047c15  80 39 00        cmp byte [ecx],0
+  00047c18  74 14           je 0x47c2e
+  00047c20  8b 4e 0c        mov ecx,[esi+0xc]
+  00047c23  41              inc ecx
+  00047c26  89 4e 0c        mov [esi+0xc],ecx
+  00047c29  80 3a 00        cmp byte [edx],0
+  00047c2c  75 f2           jne 0x47c20
+  00047c2e  ff 46 0c        inc dword [esi+0xc]
+  00047c31  5e              pop esi
+  00047c32  c2 08 00        ret 8
+```
+
+Three readings follow. `FFrame::Code` is the frame's `+0x0c`, the same offset the exec bodies read; the literal is
+passed through a helper with a **fixed `0x400` cap** and only then assigned to the result `FString`; and the token's
+length is discovered by **walking the bytes one at a time to the NUL**, then advancing one more. So
+`EX_StringConst` carries **no count, no header and no operand to widen**, `ret 8` matches the `(FFrame&,
+RESULT_DECL)` signature the binder installs at `0x0003a030`, and the 1,023-character limit is the helper's, not the
+token's. `docs/UNKNOWNS.md` U13's four bytes therefore cannot be this token's payload -- `docs/BYTECODE.md` carries
+what they are instead.
+
 ### `FFrame::Step` at `0x000398e0` (1,583 bytes)
 
 Reached from the exec bodies, this is the expression/token decoder: it takes the next byte from the
