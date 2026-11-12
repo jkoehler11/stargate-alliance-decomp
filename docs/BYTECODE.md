@@ -479,6 +479,16 @@ width, so no row needs a second rule:
   What would settle it is the handler rather than the payload: `GNatives[0x1f]` in a live table (`docs/NATIVE_VM.md`)
   decides whether the four-byte slot is read at all -- or a byte-diff over many more copies that correlates which
   literals expand inside one script.
+  **The handler answers the first half of that: the four-byte slot is not read.** `GNatives[0x1f]` is
+  `intUObjectexecStringConst` at `0x00047bf0` -- 69 bytes, listed in `docs/NATIVE_VM.md` from
+  `tools/gnatives-body.py --slot 31`: it copies the literal at `FFrame::Code` through a `0x400`-capped helper into the
+  result `FString` and then walks `Code` **one byte at a time** to the NUL. There is no count and no operand, and the
+  executor reads the opcode as **one byte** (`0x48ce5` `movzx edx,[eax]`, `0x48cf5` `call [edx*4+0x6313e8]`), so at
+  both stops the copy's `80 49 fe 00` is opcode `0x80` -- `GNatives[128]`, `execLeft` -- with three operand bytes
+  behind it, and the literal that follows is not reachable through slot 31 from there. The `op1f` model is the right
+  byte count and the wrong token: the copy holds a **replaced opcode** where the file has a one-byte one, which is also
+  why the rule desynchronises at the next unexpanded literal and closes no row.
+
 
 ## The shipped scripts, as disassembled
 

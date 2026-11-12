@@ -1904,6 +1904,19 @@ image names -- "a resolved pointer to this literal" is what the bytes disprove. 
 would settle it** is the handler rather than the payload: the body behind `GNatives[0x1f]` (`docs/NATIVE_VM.md`) says
 whether the four-byte slot is read at all, or a byte-diff over many more copies correlates which literals expand
 inside one script.
+**2026-11-12, the handler is read and it reads no four-byte slot.** `GNatives[0x1f]` is
+`intUObjectexecStringConst` at `0x00047bf0`, 69 bytes (`tools/gnatives-body.py --slot 31`, listed in
+`docs/NATIVE_VM.md`): it copies the literal at `FFrame::Code` through a fixed `0x400`-cap helper into the result
+`FString` and advances `Code` **one byte at a time** to the NUL and one past it. So the token has no count and no
+operand, and the executor's own opcode read is a single byte (`0x48ce5`), which makes the copy's `80 49 fe 00` at both
+stops opcode `0x80` (`GNatives[128]`, `execLeft`) plus three operand bytes -- the two literals are not read through
+slot 31 from those offsets. The `op1f` model in `script-ram.py` keeps the right byte count and loses the wrong claim:
+what the loader writes there is a **replaced opcode**, not a widened `StringConst`. **What is left** is who writes it
+-- read the 16 bytes at `0x00fe4980` and the object they point into (125 such dwords in one 128 MiB image, all in a
+`0xfe4xxx` heap page of the same shape), or break at `0x48cf5` with `Actor.DisplayDebug` running and read the opcode
+that actually arrives at the stop -- and re-read the 8 `StargateMenus.u` / 7 `UWindow.u` rows against a dump taken
+with a menu open, which no run has done yet.
+
 
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 

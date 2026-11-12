@@ -5565,6 +5565,28 @@ and a deliberate one-line script break is caught by the boot test.
 - Tool (`script-ram.py` `op1f` model, `copy_best`, a `--check` case) + docs/BYTECODE.md + docs/UNKNOWNS.md U13 +
   PLAN 3.7. Reads the packages and the six existing `pmemsave` images; no boot, no artifact, no game data.
 
+### Execution notes (2026-11-12, the string-const handler reads no four-byte slot, and a slot reader ships)
+
+- **The body behind `GNatives[0x1f]` is measured, and it does not read the four bytes.** Slot 31 is
+  `intUObjectexecStringConst` at `0x00047bf0` (store `0x0040d962`, `.data` record at `0x005c1b70`), 69 bytes: it copies
+  the literal at `FFrame::Code` (`[frame+0x0c]`) through a `0x400`-capped helper (`0x00058740`) into the result
+  `FString` (`0x000dbcc0`) and then advances `Code` **one byte at a time** to the NUL and one past it. So
+  `EX_StringConst` has no count, no header and no operand to widen, and the executor's own opcode read is one byte
+  (`0x48ce5` `movzx edx,[eax]` / `0x48cf5` `call [edx*4+0x6313e8]`): the copy's `80 49 fe 00` at both stops is opcode
+  `0x80` (`GNatives[128]`, `execLeft`) with three operand bytes, not a widened `StringConst`. The `op1f` model keeps
+  its byte count and loses that name.
+- **The instrument is a slot reader now.** `tools/gnatives-body.py --slot N` (or `--va`) joins the committed
+  registration evidence (`inventory/gnatives_slots.csv`, `gnatives_records.csv`, `gnatives_stubs.csv`,
+  `gnatives_write_sites.csv`) to the image, takes the extent from `symbols/xbox_functions.csv` or the terminator rule,
+  and prints the body with direct calls named from the function map, `call [reg*4+0x6313e8]` rendered as a table
+  dispatch, section-landing immediates marked, field reads kept with their displacement and the `ret` arity last.
+  `--check` drives all of it on a synthetic body, so `make ci` covers it with no dump; nothing is written.
+- **Next:** who writes `0x00fe4980` -- read the 16 bytes it points at in a dump, or break at `0x48cf5` with
+  `Actor.DisplayDebug` running and read the opcode that arrives at the stop; then the 8 `StargateMenus.u` / 7
+  `UWindow.u` rows against a dump taken with a menu open, all in `docs/UNKNOWNS.md` U13.
+- Tool (`tools/gnatives-body.py`) + docs/NATIVE_VM.md + docs/BYTECODE.md + docs/UNKNOWNS.md U13 + PLAN 3.7. Reads the
+  image and the committed inventories; no boot, no artifact, no game data.
+
 
 - **All 43 residue rows were read against six guest images, and the answer is a slot width rather than a second rule.**
   `script-ram.py --residue CSV` (new) aligns the model span by span with an index operand free to be 1, 2 or 4 bytes
