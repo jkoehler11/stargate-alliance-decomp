@@ -1176,6 +1176,28 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the bytes in front of a defaults start are measured, and the backward walk has no foothold)
+
+- **The route the last note proposed was measured first, and it refuses.** `UClass::Serialize`'s tail arrays were read
+  from the block's side on the 1,664 starts whose block accounts for itself: the four bytes before a start are a
+  plausible 32-bit `TArray` count on **1** of them, twelve zero bytes (two empty counts and an empty `FName` number)
+  on **none**, and a one-byte compact count -- which the `00` in front of 79.8% of the starts invites -- walks back
+  cleanly on only **636 of 1,664**, landing at scattered offsets rather than a record boundary. The fields are in the
+  record; their encodings are not the ones a walk from the block end can assume, so "read the block backwards from
+  the payload's terminator" is now a measured dead end rather than an untried direction.
+- **The residue's shape is the useful part.** 69 of the 540 withheld candidates are preceded by a repeating 4-byte
+  unit (stride 9 in 41) against **1** of 1,664 control starts, which is the measured form of "the candidate began
+  inside a fixed-size table". Walking those runs back and re-parsing at every offset they reach -- block ending on
+  the payload's last byte, no invented name, at least one declared property -- relocates **1** of 540, and also
+  "relocates" 1 of 1,664 control classes, so the rule cannot separate the two populations and stays a reading.
+- **What is left is the record's forward decode, not the block's backward one.** `UStruct::Serialize` writes the
+  script as a size plus bytes and the loader walks it token by token (`docs/BYTECODE.md`'s operands and refusals are
+  that walker), so a record decoded from byte 0 ends where the defaults begin with no guess about the block's shape.
+  The 545 stay withheld; their payloads are a record whose tail is a table, not a tag stream with a record in front.
+- Tool (`tools/class-tail.py`: `--class`, `--sweep`, `--report`, `--check`) + `inventory/class_tails.csv` (2,204 rows,
+  1,664 control / 540 residue) + `docs/CLASS_DEFAULTS.md` (*The bytes in front of a block start, measured*) +
+  `make class-tail` + this note. Reads the image; no boot, no value decoded.
+
 ### Execution notes (2026-11-12, the defaults are a buffer the reader sizes, and the record's tail is named arrays)
 
 - **The class record's reader is `UClass::Serialize` and it was never read; now it is.** `0x0003a800` (1,310 bytes)

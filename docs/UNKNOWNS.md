@@ -2703,3 +2703,14 @@ buffer sized by `GetPropertiesSize()` (+0x88 = `0x0003d520`) and asserted `Defau
 question: the reader reads tagged properties, the stream carries no length, and the record in front of it ends in two
 named `TArray` fields (12-byte and 4-byte elements) that a forward scan lands inside. Depth: `docs/NATIVE_VM.md`,
 *`UClass::Serialize`*, and `docs/CLASS_DEFAULTS.md`'s *What the 545 withheld classes are*.
+**2026-11-12: reading the payload backwards is measured, and it does not relocate the 545.** `tools/class-tail.py`
+reads the four fields `UClass::Serialize` writes before the defaults from the block's side, on the 1,664 starts whose
+block accounts for itself as the control. The field in front of a start is a plausible 32-bit count on **1** of them,
+three empty fields on **0**, and a one-byte compact count walks back cleanly on **636 of 1,664** at scattered
+offsets -- so the stream's tail cannot be walked from the block end in the order the object's own table gives. The
+540 withheld candidates differ in the way "start inside a table" predicts (69 periodic against 1,664's 1), and
+walking those runs back relocates exactly **1**. What is left is the record's forward decode: `UStruct::Serialize`
+writes the script as a size plus bytes and the loader walks it token by token, so decoding a record from byte 0 ends
+where the defaults begin without guessing at the block's shape. Numbers: `docs/CLASS_DEFAULTS.md`, *The bytes in
+front of a block start, measured*.
+

@@ -413,6 +413,47 @@ those two reasons do not mean "a block the renderer could not match" — their i
 the 1,687 / 522 split, the six names behind it and the per-reason breakdown, and `--check` covers the read with a
 declared name, a non-property name and an offset past the payload.
 
+## The bytes in front of a block start, measured
+
+`tools/class-tail.py` reads the four fields `UClass::Serialize` writes *before* the defaults (`docs/NATIVE_VM.md`)
+from the other side: for every candidate start it records what sits at `start-1`, `start-12`, `start-4`, and whether
+the bytes before it repeat at a fixed stride. The control is the 1,664 starts whose block accounts for itself; the
+residue is the 540 candidates that do not (`inventory/class_tails.csv`, `--report`).
+
+| measure | control (1,664) | residue (540) |
+|---|---:|---:|
+| the last four bytes are a plausible 32-bit `TArray` count | **1** | 47 |
+| the twelve bytes before the start are all zero | **0** | 4 |
+| the byte before the start is `00` | **1,328** (79.8%) | 47 (top byte `04`, 59) |
+| the four bytes before the start repeat at a stride of 4..24 | **1** | 69 (stride 9: 41) |
+| the tail arrays decode backwards with compact counts | 636 | 105 |
+
+Three readings, and the first two are negatives about the route the previous note proposed:
+
+* **The field in front of a block start is not a 32-bit count, and not three empty fields.** A `TArray<dword>` count
+  read as a little-endian dword at `start-4` is plausible on **one** of 1,664 known-good starts, and twelve zero
+  bytes (two empty counts plus an empty `FName` number) occur on none of them. Whatever the record's tail is, it does
+  not end in the shape "read a count, skip its elements" that a backward walk needs to take its first step.
+* **Compact counts do not rescue it.** Reading each count as a one-byte index -- which 79.8% of the control's
+  starts invite, since `00` in front of a start is exactly what an empty array looks like -- walks back cleanly on
+  only **636 of 1,664** control starts, and where it lands is scattered (offsets 50, 62, 52, 63, 384 in the top
+  five), not at a record boundary. The order in `UClass::Serialize`'s table is a property of the *object*, and the
+  stream does not agree with it byte for byte: the fields are there, their encodings are not the ones a walk from
+  the block end can assume.
+* **The residue's starts sit inside fixed-size runs, and walking those runs back relocates nothing.** 69 of the 540
+  residue starts are preceded by a repeating 4-byte unit (stride 9 in 41 of them) against 1 of 1,664 control starts,
+  which is the measured form of "the candidate began inside a table rather than at its end". But re-parsing at every
+  offset the run reaches -- keeping only a parse that ends on the payload's last byte, invents no name and names at
+  least one declared property -- finds a better start for **one** residue class, and finds one for one control class
+  too, so the rule has no discriminating power.
+
+So the 545 withheld blocks are not relocated by reading the payload backwards, and the residue's periodicity says why:
+their payloads are a record whose tail is a table of fixed-size entries, and a tag-stream reader cannot find the seam
+from the block end because there is no tag stream there to end at. What would settle it is the length of the script
+buffer `UStruct::Serialize` writes into the same record -- a size plus bytes, walked token by token when it loads
+(`docs/BYTECODE.md`'s opcode table is the walker) -- because a record decoded forward from byte 0 ends where the
+defaults begin without any guess about the block's shape.
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds
