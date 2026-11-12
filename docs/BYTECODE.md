@@ -197,7 +197,7 @@ first statement is `return true;`, `return false;`, `return;`, `return 0;` or `r
 bytes. `--start-anchor` walks no tokens: it asks which `name_end + delta` in `+lo..+hi` carries those bytes, and only
 then whether the walk from there reaches the epilogue.
 
-**Four rules decide the bytes, and all are load-bearing (measured 2026-11-12).** The first is *which body* the
+**Five rules decide the bytes, and all are load-bearing (measured 2026-11-12).** The first is *which body* the
 payload is: a `Function` export names its owner only through its `Outer`, so the anchor is keyed by
 (class, function) — and, when that owner is a `State`, by (class, state, function), because a state's body is its
 own and the class-level declaration is not evidence for it. That second case is reachable: the class's `ScriptText`
@@ -222,6 +222,16 @@ unmatched, 2 dropped**; the spurious `+21`/`+22`/`+28` matches (7 payloads) go w
 unchanged at 93 anchored / 92 at +16, and the twice-declared population falls from 31 to the two that really are
 declared twice in one body.
 
+The fifth rule closes the population: **a declaration with no body is not an anchor, and its payload is a prediction.**
+82 declarations are `native` or state-implemented stubs — `function bool CanMultiJump();`, whose body lives in a state
+or in native code — and since the body finder takes the first `{` after the parameter list, each was paired with the
+*next* function's body. That pairing is also what kept the last four residues alive: the borrowed literal never
+matched, while the payload's `04 0b 47` is exactly what a bodiless declaration compiles to. Excluding the stub and
+checking its payload instead gives **82 of 82 empty**, and it removes 74 payloads that had been counted as anchored on
+a borrowed `return;` — the `04 0b` anchored opcodes fall from 81 to 11. A key declared both `native` and with a body
+(`Weapon.GetErrorVec`, `Weapon.GetFireStart`) is filed under the bodied declaration, the only one that could have
+produced a script; a key declared twice *with* bodies is still dropped rather than guessed.
+
 **An `if (` or `assert (` anchor is invalid and this tool no longer takes one.** This compiler evaluates the
 condition first and emits the conditional jump behind it, so `07`/`09` are not the body's first byte; with those two
 patterns in the list the anchored population was 2,474 payloads and **597 of the 716 that matched at no delta did not
@@ -229,54 +239,41 @@ carry the expected byte anywhere in the payload** — the signature of a wrong a
 run measured 31 payloads with the byte one byte *before* the name's end, i.e. inside the header's own encoded part).
 
     $ python3 tools/uscript-dis.py --start-anchor System --lists 20
-    System: 540 anchored payloads (ScriptText fixes the first opcode) of 540 with a located epilogue
-      anchored opcodes: {'0428': 235, '0427': 187, '040b': 81, '0425': 19, '041e00000000': 10,
+    System: 466 anchored payloads (ScriptText fixes the first opcode) of 466 with a located epilogue
+      anchored opcodes: {'0428': 232, '0427': 186, '0425': 19, '040b': 11, '041e00000000': 10,
                          '042400': 6, '041e0000803f': 1, '0426': 1}
-      by owner: 447 class function(s), 93 owned by a State
-      not anchored: 2 declaration(s) made twice under one key, 10 whose return type has no measured rule
-                    ({'array<voicechatroom>/false': 3, 'rotator/zero': 2, 'int/false': 2, 'vector/zero': 1})
-          +16   536 /  540   536 walk   <- the fixed run start_report assumes
-          +18    10 /  540    10 walk
-      peak delta +16 with 536 of 540 anchored payloads and 536 clean walks
-      state-owned only: 93 anchored, 92 at +16 (92 walk), no match at any delta: 1
-      no delta matched: 4; by the script's own first two bytes at +16: {'040b': 4};
-                        the same bytes at payload offset 0: 0
-      dword at name_end+12 minus the script's length, over the payloads whose start is +16: {0: 534, 14: 1, 18: 1}
-        equal in 534 of 536 (99.6%), and never negative: yes
-      named residue (4 payload(s), up to 20 named):
-        Engine.u     pawn.canmultijump  declared bool/false  want 04 28  at+16 04 0b 47  script 3 bytes  ...
-        Engine.u     pawn.candoublejump  declared bool/false  want 04 28  at+16 04 0b 47  script 3 bytes  ...
-        GamePlay.u   scriptedcontroller.setroutetogoal  declared bool/false  want 04 28  at+16 04 0b 47  ...
-        StargateGame.u botenemy[state botunconscious].weaponfireagain  declared bool/true  want 04 27  ...
+      by owner: 386 class function(s), 80 owned by a State
+      not anchored: 2 declaration(s) made twice under one key, 0 whose return type has no measured rule,
+                    82 with no body at all
+      a declaration with no body must compile empty: 82 such payloads, 82 empty, 0 carrying a script
+          +16   466 /  466   466 walk   <- the fixed run start_report assumes
+          +18    10 /  466    10 walk
+      peak delta +16 with 466 of 466 anchored payloads and 466 clean walks
+      state-owned only: 80 anchored, 80 at +16 (80 walk), no match at any delta: 0
+      no delta matched: 0; the same bytes at payload offset 0: 0
+      dword at name_end+12 minus the script's length, over the payloads whose start is +16: {0: 464, 14: 1, 18: 1}
+        equal in 464 of 466 (99.6%), and never negative: yes
       dropped, declared twice under one key (2):
         Engine.u     mover.selftriggered  x2  bool/true
         StargateContent.u haakenweaponshield.isready  x2  bool/false
 
-**536 of 540** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 536** walk from there to
-the epilogue; no other delta in `+4..+40` reaches more than **10**, and the same bytes sit at payload offset 0 in **0**.
-A wrong start does not survive this test, because the bytes have to be the ones the source wrote *and* the literal the
-declaration's own return type predicts.
+**466 of 466** anchored payloads carry the expected bytes exactly at `name_end+16`, and **all 466** walk from there to
+the epilogue; **no** payload carries them at no delta, **none** at payload offset 0, and `+18` is the only other delta
+(10 second occurrences of the same bytes, not starts). A wrong start does not survive this test, because the bytes have
+to be the ones the source wrote *and* the literal the declaration's own return type predicts.
 
-The residue is named rather than smoothed, because a count is not actionable and the names are one read away:
-`--lists N` prints each unmatched payload with the bytes its declaration fixed, the bytes it carries at +16, whether
-those walk, and the dword at `name_end+12` against the script's length — plus the two off-population groups, so the
-denominator stays visible instead of implied.
+What is off the population is named rather than smoothed, because a count is not actionable and the names are one read
+away: `--lists N` prints each row with the bytes its declaration fixed, the bytes it carries at +16, whether those walk,
+the dword at `name_end+12` against the script's length — and the three groups that are excluded instead of anchored.
 
-**The four that remain are one shape, and it is not a header misread.** All four carry `04 0b 47` at +16, and their
-payload agrees with itself: `Engine.u`'s `function bool CanMultiJump() { return false; }` is stored as
-
-    00 00 75 a4 01 00 69 a4 01 51 50 00 00 00 00 d7 0b 00 00 98 5c 01 00 | 03 00 00 00 | 04 0b 47 | 00 00 00 00 00 02 00
-    header, name_end at 11                                                    length 3     empty body  trailer, flags 0x00020000
-
-— a 3-byte script whose length field says 3, so this is a compiled empty body rather than a start read 16 bytes late.
-A literal `return` therefore *can* compile to nothing: but it is not the rule, since the other **422** bool-literal
-declarations all emit their opcode (`04 28` 235, `04 27` 187) and only these four carry nothing. Nothing in the payload
-marks the difference — the flags dword is the `0x00020000` the anchored rows carry too — so the next probe is the four
-declarations themselves, which the listing above names: one `--script` read and its own source line per case.
-
-Off the population: **2** declarations really are made twice in one body (`Mover.SelfTriggered`, a `bool` returning
-`true`; `HaakenWeaponShield.IsReady`) and **10** have a return type with no measured rule — `vector`/`rotator` plus a
-struct and two array types, whose literal encodings are the next rule to measure rather than guess.
+**2** declarations are made twice with bodies in one class (`Mover.SelfTriggered`, `HaakenWeaponShield.IsReady`) and
+are dropped rather than guessed. **82** have no body at all: `native` declarations and `function Foo();` stubs whose
+implementation lives in a state, which is why their payload is an empty script — and that is checked, not assumed
+(**82 of 82 empty, 0 carrying a script**). The four "empty body" payloads an earlier pass listed as a residue are in
+this group, and their `04 0b 47` was the compiler being right. The dword at `name_end+12` is the script's length in
+**464 of the 466** rows whose start is +16 (residues 14 and 18) — a statement about the trivial `return` bodies this
+population is made of: corpus-wide the same dword is *larger* than the script far more often than it is equal, so the
+field is equal here and still unidentified.
 
 ## The shipped scripts, as disassembled
 

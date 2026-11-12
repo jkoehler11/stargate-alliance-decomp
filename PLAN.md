@@ -219,16 +219,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       tables), 35 of 256 opcodes are refused, and the table is cross-checked against the pinned UELib token map.
       **The locator is solved and now sharp** (U13): the script starts **16 bytes past `FriendlyName`**, measured by
       content — `--start-anchor`, the first opcode the body's own `ScriptText` declaration fixes, sits at +16 in
-      **536 of 540** anchored payloads and every one of those walks to the epilogue, against at most 10 at any other
-      delta in `+4..+40` and 0 at payload offset 0 — and by the payload floor (25 bytes, with spikes at 26 = 16+3+7
-      and 28 = 16+3+9). Four rules were needed for that peak: the anchor is keyed by (class, function) — and by
-      (class, state, function) for the 93 state-owned bodies, which the class's own `ScriptText` still declares, since
-      one class's declaration is not evidence for a same-named export in another — the literal's opcode is chosen
-      by the declaration's **return type** (a void function writes `return <expr>;` as a bare `04 0b`; `float` →
-      `04 1e` plus the float; `byte` → `04 24` plus the byte) — and the class-level pass must blank the `state`
-      blocks first, because a state's `return true;` also sits inside the class's text and otherwise anchors the
-      class-owned export (that defect was 12 of the 13 residues). The 4 that remain are an empty compiled body with
-      a length field that agrees, and `--lists` names them.
+      **466 of 466** anchored payloads and every one of those walks to the epilogue, 0 at payload offset 0 and only
+      `+18` (10 second occurrences of the same bytes) anywhere else in `+4..+40` — and by the payload floor (25 bytes,
+      with spikes at 26 = 16+3+7 and 28 = 16+3+9). Five rules were needed for that peak: the anchor is keyed by
+      (class, function) — and by (class, state, function) for the state-owned bodies, which the class's own
+      `ScriptText` still declares, since one class's declaration is not evidence for a same-named export in another —
+      the literal's opcode is chosen by the declaration's **return type** (a void function writes `return <expr>;` as
+      a bare `04 0b`; `float` → `04 1e` plus the float; `byte` → `04 24` plus the byte) — the class-level pass must
+      blank the `state` blocks first, because a state's `return true;` also sits inside the class's text and otherwise
+      anchors the class-owned export — and a declaration with **no body** (`native`, or `function Foo();` implemented
+      in a state) is not an anchor at all: its payload is a prediction, and 82 of 82 are the empty script.
       An `if (`/`assert (` body is not an anchor (the condition is emitted before the jump); the walk's depth from
       +16 is **not** a locator either, because 99% of payloads also walk cleanly from +11 through +15. What blocks long scripts now is the **opcode
       table's coverage** — now largely closed: five groups' operand width was four fixed bytes and is the archive's
@@ -5434,6 +5434,30 @@ and a deliberate one-line script break is caught by the boot test.
   or pinning one start from a source-visible first token).
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
+
+### Execution notes (2026-11-12, the anchor's residue was a declaration with no body)
+
+- **The last four residues and all ten "no measured rule" rows were one thing: stubs.** `Engine.u` declares
+  `function bool CanMultiJump();` with no body — the implementation lives in a state or in native code — and the body
+  finder takes the first `{` after the parameter list, so every stub was anchored on the *next* function's literal.
+  82 declarations are like this (all the `VoiceChatReplicationInfo` accessors, `Pawn.ProcessMove`,
+  `Pawn.UpdateRocketAcceleration`, the `Actor.Notify*` events). Checking `;` before `{` removes 74 payloads that had
+  been counted as anchored on a borrowed `return;` (the `04 0b` anchored opcodes fall 81 → 11) and turns the residue
+  into a prediction instead of a miss.
+- **The population closes at 466 of 466.** `--start-anchor` now prints **466 anchored, 466 at `name_end+16`, all 466
+  walking, 0 unmatched**, with `+18` (10 second occurrences of the same bytes) the only other delta in `+4..+40`,
+  0 at payload offset 0, and the dword at `name_end+12` equal to the script's length in 464 of the 466.
+- **The four "empty bodies" were the compiler being right.** A bodiless declaration must compile to the empty script,
+  and it does: **82 of 82 empty, 0 carrying a script** — the check that replaces the anchor, so the exclusion is
+  measured rather than assumed. `Weapon.GetErrorVec` and `Weapon.GetFireStart` are each declared twice (`native` and
+  with a body); a key with a bodied declaration is filed under it, and those two bodies do not start with a literal,
+  so they are not anchors either.
+- **A lesson about the gate, not the game:** the first cut of this rule was wrong in the other direction (any `;`
+  before the first `{` after `(`), and it dropped 84 *real* functions to 466 from 540 — visible immediately only
+  because the tool prints both sides of every population. Print the counter that would fall if the rule were wrong.
+- Tool (`has_body`, bodiless payloads checked instead of anchored, `--lists` names all four groups) +
+  `docs/BYTECODE.md` "Where the script starts" + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no
+  Ghidra, no artifact.
 
 ### Execution notes (2026-11-12, the anchor was reading a state's body for a class's export)
 

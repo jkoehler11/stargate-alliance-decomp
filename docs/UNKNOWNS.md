@@ -1794,6 +1794,20 @@ nothing, but it is not the rule:** the other 422 bool-literal declarations emit 
 payload separates the four (same `0x00020000` flags), so what would settle it is their own declaration text and one
 `--script` read per case.
 
+**2026-11-12, closing it: their declaration text was the answer, and it has no body.** `function bool CanMultiJump();`
+— a declaration-only stub, implemented in a state or in native code. The anchor's body finder takes the first `{`
+after the parameter list, so for every such stub it paired the *next* function's body: 82 declarations in the corpus
+are like this (all the `VoiceChatReplicationInfo` accessors among them), each searched for a literal its own export
+never contained. Checking `;` before `{` and treating the payload as a prediction instead gives
+**466 anchored, 466 at `name_end+16`, all 466 walking, 0 unmatched**, with **82 of 82** bodiless payloads compiled to
+the empty script and none carrying one — so the four "empty bodies" above were the compiler being right and the parser
+being wrong, and the 70 `04 0b` payloads that had been counted as anchored were anchored on a borrowed `return;`.
+The two remaining exclusions are `Weapon.GetErrorVec` and `Weapon.GetFireStart`, each declared both `native` and with a
+body; they are filed under the bodied declaration (and that body's first statement is not a literal, so they are not
+anchors either). What is left of U13's locator question is only the field itself: the dword at `name_end+12` equals
+the script's length in 464 of the 466 rows and is larger corpus-wide, so it counts something the trivial `return`
+bodies this population is made of always have exactly.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
