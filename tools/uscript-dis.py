@@ -215,8 +215,24 @@ def selftest():
     if loc_s["F"]["p"] == "pawn" or ret_s["H"] == "sound":
         print("FAIL uscript-dis: the shuffle left a declared type on its own name")
         return 1
-    print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured, shuffle rotates %d types"
-          % (len(table.rows), len(checks), len(refusals), len(pool)))
+    # The class-level pass must not see a state's declarations: a state's `return true;` sits inside the class's
+    # own ScriptText and would otherwise anchor the class-owned export of the same name (measured 2026-11-12:
+    # 12 of the 13 unmatched payloads were exactly that).
+    text = ("function bool IsFiring(){ return ((X != None)); }\r\n"
+            "state NormalFire { function bool IsFiring(){ return true; } }\r\n")
+    stripped = strip_states(text)
+    if len(stripped) != len(text):
+        print("FAIL uscript-dis: strip_states moved an offset (%d bytes out, %d in)" % (len(stripped), len(text)))
+        return 1
+    kinds = [first_statement_kind(stripped, m.end()) for m in FUNC_DECL.finditer(stripped)]
+    if kinds != [None]:
+        print("FAIL uscript-dis: the class-level pass read %r, expected only the class declaration" % (kinds,))
+        return 1
+    if [n for n, _b in state_blocks(text)] != ["normalfire"]:
+        print("FAIL uscript-dis: state_blocks found %r" % (state_blocks(text),))
+        return 1
+    print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured, shuffle rotates %d types,"
+          " state spans blanked" % (len(table.rows), len(checks), len(refusals), len(pool)))
     return 0
 
 
@@ -806,6 +822,11 @@ def state_blocks(text):
     `first_statement_kind` must be handed `m.end()` and never `m.end() - offset` (an off-by-the-block-offset
     version read the wrong `{` and turned a 92-of-93 peak into a flat histogram over +16..+39).
     """
+    return [(name, text[start:end]) for name, start, end in state_spans(text)]
+
+
+def state_spans(text):
+    """`(name, body_start, body_end)` for every `state <name> { ... }` block, by brace matching."""
     out = []
     for m in STATE_DECL.finditer(text):
         i = text.find("{", m.start())
@@ -820,11 +841,29 @@ def state_blocks(text):
                 if depth == 0:
                     break
             j += 1
-        out.append((m.group(1).lower(), text[i + 1:j]))
+        out.append((m.group(1).lower(), i + 1, j))
     return out
 
 
-def anchor_report(path, lo=8, hi=40):
+def strip_states(text):
+    """The class text with every `state <name> { ... }` block blanked to spaces, offsets unchanged.
+
+    A state's functions are declared *inside* the class text, so a class-level pass over the whole text matches
+    them too -- and the class-level key is then searched for a literal only the state's body contains. Measured
+    2026-11-12 on `Engine.u`'s `Weapon.IsFiring`, whose class body is `return ((Instigator != None) && ...)`
+    (not an anchor, so it is skipped) while a state's `IsFiring` opens `return true;`: the class-level export was
+    anchored on the state's bytes and became one of the 13 unmatched payloads. Blanking keeps every offset valid,
+    so `first_statement_kind` can still be handed `m.end()` on the result.
+    """
+    out = list(text)
+    for _name, start, end in state_spans(text):
+        for k in range(start, min(end + 1, len(out))):
+            if out[k] not in "\r\n":
+                out[k] = " "
+    return "".join(out)
+
+
+def anchor_report(path, lo=8, hi=40, name_rows=0):
     """Where the script starts, anchored by the source rather than by a walk.
 
     The walk alone cannot answer it: `--start-scan` finds a clean walk from **every** delta between +11 and +16
@@ -845,7 +884,9 @@ def anchor_report(path, lo=8, hi=40):
 
     A fixed header length is a peak at one delta against a flat control everywhere else, and the same bytes
     searched from offset 0 should never hit. A body a class declares twice is dropped rather than guessed; the
-    anchored count is printed so the denominator is visible.
+    anchored count is printed so the denominator is visible. `--lists N` names each residue row instead of only
+    counting it -- the expected bytes, what the payload carries at +16 instead, and whether those bytes walk --
+    because the residue is where the next question is and its names are only one read away.
     """
     import importlib.util                                  # noqa: PLC0415 - only for the shipped source
 
@@ -872,6 +913,11 @@ def anchor_report(path, lo=8, hi=40):
     unrouted = collections.Counter()
     sized = collections.Counter()
     anchored = anchored_state = located = at_zero = unmatched = unmatched_state = twice = 0
+    # Named residue: a count says a population exists, a name says what to read next. Each row is one payload the
+    # anchor could not place, with the bytes its own source fixed and the bytes it actually carries at +16.
+    residue_rows = []
+    twice_rows = []
+    unrouted_rows = []
     for one in files:
         pkg = ue2.Package(one)
         pkg.read_names()
@@ -882,6 +928,7 @@ def anchor_report(path, lo=8, hi=40):
         # class-scoped key is what keeps one class's `return false;` from anchoring every same-named payload.
         decls = collections.Counter()
         expected = {}
+        decl_info = {}
         for ci, cls in enumerate(pkg.exports):
             if pkg.class_name_of(cls) != "Class":
                 continue
@@ -889,7 +936,8 @@ def anchor_report(path, lo=8, hi=40):
             if not text:
                 continue
             cname = names[ci]
-            blocks = [(cname, None, text)] + [(cname, sname, body) for sname, body in state_blocks(text)]
+            blocks = [(cname, None, strip_states(text))] + [(cname, sname, body)
+                                                           for sname, body in state_blocks(text)]
             for owner_class, sname, body in blocks:
                 for m in FUNC_DECL.finditer(body):
                     kind = first_statement_kind(body, m.end())
@@ -899,14 +947,18 @@ def anchor_report(path, lo=8, hi=40):
                     want = RETURN_OPS.get((rtype, kind))
                     if want is None:
                         unrouted["%s/%s" % (rtype or "void", kind)] += 1
+                        unrouted_rows.append((os.path.basename(one), owner_class, sname,
+                                              m.group(2), rtype, kind))
                         continue
                     key = (owner_class, sname, (m.group(2) or "").lower())
                     decls[key] += 1
                     expected.setdefault(key, want)
+                    decl_info.setdefault(key, (rtype, kind))
         for key, count in list(decls.items()):
             if count != 1:
                 expected.pop(key, None)
                 twice += 1
+                twice_rows.append((os.path.basename(one), key, count, decl_info.get(key, ("", ""))))
         for i, e in enumerate(pkg.exports):
             if pkg.class_name_of(e) != "Function":
                 continue
@@ -975,6 +1027,19 @@ def anchor_report(path, lo=8, hi=40):
                 unmatched += 1
                 unmatched_by_op[want.hex()] += 1
                 unmatched_shape[pay[off + 16:end][:2].hex()] += 1
+                at16 = pay[off + 16:end]
+                walk16 = "no-script"
+                if at16:
+                    try:
+                        nodes = parse(at16, table)
+                        used = sum(x["end"] - x["offset"] for x in nodes)
+                        walk16 = ("walks %d tok / %d bytes" % (len(nodes), used) if used == len(at16)
+                                  else "stops after %d of %d bytes" % (used, len(at16)))
+                    except (Refused, IndexError, struct.error) as exc:
+                        walk16 = "refused: %s" % exc
+                residue_rows.append((os.path.basename(one), key, want.hex(" "), at16[:6].hex(" "),
+                                     walk16, struct.unpack_from("<I", pay, off + 12)[0], len(at16),
+                                     decl_info.get(key, ("", ""))))
                 if is_state:
                     unmatched_state += 1
             elif off + 16 + len(want) <= end and pay[off + 16:off + 16 + len(want)] == want:
@@ -1018,6 +1083,27 @@ def anchor_report(path, lo=8, hi=40):
         print("    equal in %d of %d (%.1f%%), and never negative: %s"
               % (exact, sum(sized.values()), 100.0 * exact / sum(sized.values()),
                  "yes" if min(sorted(sized)) >= 0 else "no (min %d)" % min(sorted(sized))))
+    # Named residue. A count of 13 is not actionable; these rows are, and each one reads as a question about that
+    # single function: what its own source says the first byte is, what the payload carries instead, and whether
+    # the bytes at +16 walk as a script at all.
+    if name_rows and residue_rows:
+        print("  named residue (%d payload(s), up to %d named):" % (len(residue_rows), name_rows))
+        for pkgname, key, want, at16, walk16, word, slen, (rtype, kind) in residue_rows[:name_rows]:
+            print("    %-12s %s%s.%s  declared %s/%s  want %s  at+16 %s  script %d bytes"
+                  "  dword@+12 %+d  %s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2],
+                     rtype or "void", kind, want, at16 or "-", slen, word - slen, walk16))
+    if name_rows and twice_rows:
+        print("  dropped, declared twice under one key (%d):" % len(twice_rows))
+        for pkgname, key, count, (rtype, kind) in twice_rows[:name_rows]:
+            print("    %-12s %s%s.%s  x%d  %s/%s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2], count,
+                     rtype or "void", kind))
+    if name_rows and unrouted_rows:
+        print("  unanchored, no measured rule for that return type (%d):" % len(unrouted_rows))
+        for pkgname, cname, sname, fname, rtype, kind in unrouted_rows[:name_rows]:
+            print("    %-12s %s%s.%s  %s/%s"
+                  % (pkgname, cname, ("[state %s]" % sname) if sname else "", fname, rtype or "void", kind))
     return 0
 
 
@@ -2802,6 +2888,9 @@ def main():
                     help="anchor the start on the opcode the shipped ScriptText fixes for the first statement")
     ap.add_argument("--scan-lo", type=int, default=8, help="first delta --start-scan tries (default 8)")
     ap.add_argument("--scan-hi", type=int, default=40, help="last delta --start-scan tries (default 40)")
+    ap.add_argument("--lists", type=int, default=0, metavar="N",
+                    help="with --start-anchor: name up to N rows of each residue (unmatched payloads, declarations "
+                         "dropped as made twice, return types with no measured rule) instead of counting them")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     args = ap.parse_args()
     if args.shuffle and not args.calls:
@@ -2814,7 +2903,7 @@ def main():
     if args.start_scan:
         return scan_report(args.start_scan, args.scan_lo, args.scan_hi)
     if args.start_anchor:
-        return anchor_report(args.start_anchor, args.scan_lo, args.scan_hi)
+        return anchor_report(args.start_anchor, args.scan_lo, args.scan_hi, args.lists)
     if args.script:
         return function_script(args.script[0], args.script[1], args.script[2], Table(), hex_bytes=args.hex_bytes)
     if args.switches:
