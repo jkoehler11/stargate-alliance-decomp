@@ -1039,13 +1039,28 @@ assert), none is a direct call target, and the module's name still needs a signa
 
 **2026-11-12, and the merge is general: 109 of the image's 1,007 code-pointer runs hold two tables.** `tools/native-vtable.py
 --block` (`inventory/native_vtable_merges.csv`) splits every run of three or more code pointers in `.rdata` at its install
-stores: **704 table starts** over **1,007 runs**, **468 runs begin with a table**, and **109 runs hold two or more**
+stores: **704 table starts** over **1,007 runs**, **468 runs begin with a table**, and **109 runs hold two or more** (re-measured after the store-form fix below: **724** starts, **476** begin with a table, **114** hold two or more)
 (`0x4c7958` six, `0x4c9348` five, `0x4ca618` 797 dwords over six). So the `0x53f770` over-read that this entry
 corrected is the normal shape of a packed block, not an anomaly: a slot count read from the next run boundary is wrong
 for 109 runs, while the install store is exact for all 704. The UObject class tables' starts are unaffected (they were
 named from install literals); their slot counts are read from the next *start*, which is the rule this census shows is
 the safe one.
 
+
+**2026-11-12, no `.text` site names a table, and the store rule was three addressing forms short.**
+`tools/native-vtable.py --reach` (`inventory/native_vtable_reach.csv`) classifies every `.text` instruction that
+mentions one of the install-started tables: **722 of 724 are mentioned by their install store and nothing else**, **0**
+are dispatched through a register base (`mov reg,table` then `call [reg+disp]`), **1** is called absolutely
+(`0x00564dbc`, slot 0, from `0x00385936` and `0x0038b29a`), and **1** is loaded into `ebx` as the start of a
+`{start, end, constant}` data descriptor inside `Core_UnObjBas` (`0x4d0d80`). So a vtable in this image is only ever
+reached through an object pointer, and no call site can supply a name to *any* table, mapped or not -- the "name from a
+caller" route is closed for all 724, not only for the native ones. What remains open is the naming question itself, now
+with one measured lever: **48 of the 232** unmapped tables are installed by a body that also installs a mapped class's
+table (36 of those bodies named `ctor_*`/`dtor_*`, 32 with two slots or fewer, i.e. secondary base tables), while **184**
+have no mapped neighbour. The same pass corrected the census it reads: `immediate_store` never accepted
+`mov [ebp+disp8],imm32` or `mov [esp+disp8],imm32`, so the table count was 20 short -- **724 starts, 476 runs beginning
+with a table, 114 runs holding two or more**, against 704 / 468 / 109 -- and the two independent scans now agree on all
+1,503 stores.
 
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
