@@ -717,9 +717,12 @@ def scan_report(path, lo=8, hi=40):
 
 # ==== new anchor block, spliced over FUNC_DECL .. argparser ====
 
+# ==== anchor block v2: class- and state-owned declarations ====
+
 FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native|protected|private|public)\s+)*"
                        r"(?:function|event)\s+(?:([\w<>\[\]]+)\s+)?(\w+)\s*\(",
                        re.IGNORECASE | re.MULTILINE)
+STATE_DECL = re.compile(r"\bstate\s*(?:\([^)]*\))?\s*(\w*)\s*\{", re.IGNORECASE)
 
 # The first statement's leading token where the source fixes it *and the emitter writes that token first*.
 # `return <literal>;` qualifies: `EX_Return` is the statement's first byte. `if (...)` and `assert (...)` do not --
@@ -795,6 +798,32 @@ def first_statement_ops(text, at, rettype=None):
     return RETURN_OPS.get(((rettype or "").strip().lower(), kind))
 
 
+def state_blocks(text):
+    """`(name, body)` for every `state <name> { ... }` block in a class's ScriptText, by brace matching.
+
+    A `Function` export owned by a `State` export carries that state's body, and the class's own ScriptText is the
+    only place the declaration exists -- but the offsets inside a returned `body` are already relative to it, so
+    `first_statement_kind` must be handed `m.end()` and never `m.end() - offset` (an off-by-the-block-offset
+    version read the wrong `{` and turned a 92-of-93 peak into a flat histogram over +16..+39).
+    """
+    out = []
+    for m in STATE_DECL.finditer(text):
+        i = text.find("{", m.start())
+        if i < 0:
+            continue
+        depth, j = 0, i
+        while j < len(text):
+            if text[j] == "{":
+                depth += 1
+            elif text[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        out.append((m.group(1).lower(), text[i + 1:j]))
+    return out
+
+
 def anchor_report(path, lo=8, hi=40):
     """Where the script starts, anchored by the source rather than by a walk.
 
@@ -802,16 +831,21 @@ def anchor_report(path, lo=8, hi=40):
     on 99% of payloads, because most bytes decode as one-byte opcodes and a garbage stream still consumes the
     payload exactly. So the anchor is content. Each `Function` export's class ships its `ScriptText`, and a body
     that opens with `return true;` (`return false;`, `return;`, `return 0/1;`) fixes its first opcode bytes -- but
-    only together with the declaration's own return type, which is what chooses the literal (`RETURN_OPS`), and
-    only for the class that *owns* the export: a name declared once in a package is not an anchor for the same
-    name in another class. Both rules are load-bearing. Keying by name alone paired `Engine.u`'s one
-    `Destroyed` declaration with every same-named export in the package, and left 658 anchored payloads of which
-    225 sat at +16; keying by (class, function) and by the return type gives 441 of which **422** sit at +16 and
-    all 422 walk from there to the epilogue.
+    only together with the declaration's own return type, which chooses the literal (`RETURN_OPS`), and only for
+    the class that *owns* the export: a name declared once in a package is not an anchor for the same name in
+    another class. Both rules are load-bearing. Keying by name alone paired `Engine.u`'s one `Destroyed`
+    declaration with every same-named export in the package, and left 658 anchored payloads of which 225 sat at
+    +16.
+
+    A `Function` export owned by a `State` export is keyed by (class, state, function) instead: a state's body is
+    its own, so the class-level declaration is not evidence for it, but the class's ScriptText does carry the
+    `state <name> { ... }` block and the declaration is there. Over the 18 packages that adds 93 anchored payloads
+    of which **92** sit at +16 and all 92 walk; with the 441 class-owned ones the total is **534 anchored, 514 at
+    +16**.
 
     A fixed header length is a peak at one delta against a flat control everywhere else, and the same bytes
-    searched from offset 0 should never hit. A body a class declares twice (a state override) is dropped rather
-    than guessed; the anchored count is printed so the denominator is visible.
+    searched from offset 0 should never hit. A body a class declares twice is dropped rather than guessed; the
+    anchored count is printed so the denominator is visible.
     """
     import importlib.util                                  # noqa: PLC0415 - only for the shipped source
 
@@ -830,55 +864,66 @@ def anchor_report(path, lo=8, hi=40):
     deltas = list(range(lo, hi + 1))
     hit = collections.Counter()
     walked = collections.Counter()
+    hit_state = collections.Counter()
+    walked_state = collections.Counter()
     opcodes = collections.Counter()
     unmatched_by_op = collections.Counter()
     unmatched_shape = collections.Counter()
     unrouted = collections.Counter()
     sized = collections.Counter()
-    anchored = located = at_zero = unmatched = twice = state_owned = 0
+    anchored = anchored_state = located = at_zero = unmatched = unmatched_state = twice = 0
     for one in files:
         pkg = ue2.Package(one)
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
-        # A Function export names its class only through its `Outer`: a class-scoped key is what keeps one class's
-        # `return false;` from anchoring every same-named payload in the package.
+        names = [pkg.name(e["name"]).lower() for e in pkg.exports]
+        # A Function export names its class only through its `Outer`, and a state-owned one names a State: a
+        # class-scoped key is what keeps one class's `return false;` from anchoring every same-named payload.
         decls = collections.Counter()
         expected = {}
-        for cls in pkg.exports:
+        for ci, cls in enumerate(pkg.exports):
             if pkg.class_name_of(cls) != "Class":
                 continue
             text = pst.script_text(pkg, cls)
             if not text:
                 continue
-            cname = pkg.name(cls["name"]).lower()
-            for m in FUNC_DECL.finditer(text):
-                kind = first_statement_kind(text, m.end())
-                if kind is None:
-                    continue
-                rtype = (m.group(1) or "").strip().lower()
-                want = RETURN_OPS.get((rtype, kind))
-                if want is None:
-                    unrouted["%s/%s" % (rtype or "void", kind)] += 1
-                    continue
-                key = (cname, (m.group(2) or "").lower())
-                decls[key] += 1
-                expected.setdefault(key, want)
+            cname = names[ci]
+            blocks = [(cname, None, text)] + [(cname, sname, body) for sname, body in state_blocks(text)]
+            for owner_class, sname, body in blocks:
+                for m in FUNC_DECL.finditer(body):
+                    kind = first_statement_kind(body, m.end())
+                    if kind is None:
+                        continue
+                    rtype = (m.group(1) or "").strip().lower()
+                    want = RETURN_OPS.get((rtype, kind))
+                    if want is None:
+                        unrouted["%s/%s" % (rtype or "void", kind)] += 1
+                        continue
+                    key = (owner_class, sname, (m.group(2) or "").lower())
+                    decls[key] += 1
+                    expected.setdefault(key, want)
         for key, count in list(decls.items()):
             if count != 1:
                 expected.pop(key, None)
                 twice += 1
-        for e in pkg.exports:
+        for i, e in enumerate(pkg.exports):
             if pkg.class_name_of(e) != "Function":
                 continue
             outer = e["outer"]
             if outer < 1 or outer > len(pkg.exports):
                 continue
             owner = pkg.exports[outer - 1]
-            if pkg.class_name_of(owner) == "State":
-                state_owned += 1                     # its body is the state's, not the class declaration's
-                continue
-            key = (pkg.name(owner["name"]).lower(), pkg.name(e["name"]).lower())
+            ocls = pkg.class_name_of(owner)
+            if ocls == "State":
+                so = owner["outer"]
+                if so < 1 or so > len(pkg.exports):
+                    continue
+                key = (names[so - 1], names[outer - 1], names[i])
+                is_state = True
+            else:
+                key = (names[outer - 1], None, names[i])
+                is_state = False
             want = expected.get(key)
             if want is None:
                 continue
@@ -903,6 +948,8 @@ def anchor_report(path, lo=8, hi=40):
             located += 1
             anchored += 1
             opcodes[want.hex()] += 1
+            if is_state:
+                anchored_state += 1
             if pay[:len(want)] == want:
                 at_zero += 1
             found = False
@@ -914,16 +961,22 @@ def anchor_report(path, lo=8, hi=40):
                     continue
                 found = True
                 hit[delta] += 1
+                if is_state:
+                    hit_state[delta] += 1
                 try:
                     nodes = parse(pay[pos:end], table)
                 except (Refused, IndexError, struct.error):
                     continue
                 if sum(x["end"] - x["offset"] for x in nodes) == end - pos:
                     walked[delta] += 1
+                    if is_state:
+                        walked_state[delta] += 1
             if not found:
                 unmatched += 1
                 unmatched_by_op[want.hex()] += 1
                 unmatched_shape[pay[off + 16:end][:2].hex()] += 1
+                if is_state:
+                    unmatched_state += 1
             elif off + 16 + len(want) <= end and pay[off + 16:off + 16 + len(want)] == want:
                 # Only the rows whose start is the claimed +16 say anything about the dword at +12: a match at
                 # +18 or +21 is a second occurrence of the same bytes, not the start.
@@ -933,9 +986,10 @@ def anchor_report(path, lo=8, hi=40):
     print("%s: %d anchored payloads (ScriptText fixes the first opcode) of %d with a located epilogue"
           % (name, anchored, located))
     print("  anchored opcodes: %s" % dict(opcodes.most_common()))
-    print("  not anchored: %d declaration(s) made twice in one class, %d whose return type has no measured rule"
-          " (%s), %d Function export(s) owned by a State"
-          % (twice, sum(unrouted.values()), dict(unrouted.most_common(4)), state_owned))
+    print("  by owner: %d class function(s), %d owned by a State"
+          % (anchored - anchored_state, anchored_state))
+    print("  not anchored: %d declaration(s) made twice under one key, %d whose return type has no measured rule"
+          " (%s)" % (twice, sum(unrouted.values()), dict(unrouted.most_common(4))))
     print("  a match at name_end+delta (match / at+distance, clean walk from there):")
     for delta in deltas:
         if not hit[delta]:
@@ -947,6 +1001,9 @@ def anchor_report(path, lo=8, hi=40):
         peak, most = hit.most_common(1)[0]
         print("  peak delta +%d with %d of %d anchored payloads and %d clean walks"
               % (peak, most, anchored, walked[peak]))
+    if anchored_state:
+        print("  state-owned only: %d anchored, %d at +16 (%d walk), no match at any delta: %d"
+              % (anchored_state, hit_state[16], walked_state[16], unmatched_state))
     print("  no delta matched: %d; by the script's own first two bytes at +16: %s;"
           " the same bytes at payload offset 0: %d"
           % (unmatched, dict(unmatched_shape.most_common()), at_zero))
