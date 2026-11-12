@@ -20,10 +20,7 @@ Engine.u,StreamPlaylistManager,GetPlaylistType,93,60,71,45,0x6c,,parameter-list,
 Engine.u,StreamPlaylistManager,HandleDebugExec,358,324,175,148,0x3d,DelegateFunctionCmpEq,bad-token,opcode 0x3d is the walker's bad-token case
 Engine.u,TestInfo,TestSwitch,177,144,113,87,0x79,,parameter-list,parameter list of 79 never reaches 0x16
 Engine.u,VoiceChatReplicationInfo,GetDescriptionText,231,197,69,42,0x4c,,bad-token,opcode 0x4c is the walker's bad-token case
-Engine.u,VotingReplicationInfoBase,SendCommand,50,14,34,7,0x54,,bad-token,opcode 0x54 is the walker's bad-token case
-Engine.u,VotingReplicationInfoBase,SendResponse,50,14,34,7,0x52,,bad-token,opcode 0x52 is the walker's bad-token case
 GUI.u,GUIArrowScrollPanel,createParts,802,770,787,762,0x15,LineNumber,bad-token,opcode 0x15 is the walker's bad-token case
-GUI.u,GUINumericEdit,EditOnChange,55,23,43,18,0x1c,FinalFunction,parameter-list,parameter list of 1c never reaches 0x16
 GUI.u,GUIScrollBar,createParts,1037,1006,312,288,0xbe,,parameter-list,parameter list of be never reaches 0x16
 GUI.u,GUISlider,OnXControllerEvent,95,62,82,56,0x48,,bad-token,opcode 0x48 is the walker's bad-token case
 GUI.u,moListEditBox,OnScrollButtonClick,71,39,35,10,0x03,BadToken,bad-token,opcode 0x3 is the walker's bad-token case
@@ -43,8 +40,6 @@ StargateGame.u,StargateHUD,Message,341,307,131,104,0x69,,parameter-list,paramete
 StargateGame.u,StargatePawn,GetWeaponClass,565,531,533,506,0x59,,bad-token,opcode 0x59 is the walker's bad-token case
 StargateGame.u,StargateVehicle,DisplayDebug,2305,2273,714,689,0x54,,bad-token,opcode 0x54 is the walker's bad-token case
 StargateGame.u,VoiceSelector,DiscardRecentlyUsedVoices,448,414,90,63,0x5e,,bad-token,opcode 0x5e is the walker's bad-token case
-StargateMenus.u,ChapterSelectionPanel,InternalOnChange,42,11,29,5,0x42,DebugInfo,operand-bytes,"opcode 42 wants 13 operand bytes, 5 left"
-StargateMenus.u,GameModeSelectionPanel,InternalOnChange,42,11,29,5,0x49,,bad-token,opcode 0x49 is the walker's bad-token case
 StargateMenus.u,InGameMenu,ButtonClick,167,136,109,85,0x2b,BadToken,bad-token,opcode 0x2b is the walker's bad-token case
 StargateMenus.u,LoadGameMenu,InternalOnXControllerEvent,97,66,79,55,0x0c,LabelTable,label-table,label table of 0c is not zero-terminated
 StargateMenus.u,MultiPlayerInGame,ButtonClick,82,50,66,41,0x52,,bad-token,opcode 0x52 is the walker's bad-token case
@@ -55,7 +50,6 @@ StargateMenus.u,MultiplayerSelectProfile,InternalOnXControllerEvent,138,107,119,
 StargateMenus.u,OptionsEditBase,InternalOnXControllerEvent,71,40,53,29,0x0c,LabelTable,label-table,label table of 0c is not zero-terminated
 StargateMenus.u,OptionsEditProfile,InternalOnXControllerEvent,60,29,42,18,0x0c,LabelTable,label-table,label table of 0c is not zero-terminated
 StargateMenus.u,OptionsPage,InternalOnXControllerEvent,230,198,211,186,0x49,,bad-token,opcode 0x49 is the walker's bad-token case
-StargateMenus.u,ProfilePanel,InternalOnChange,42,11,29,5,0x54,,bad-token,opcode 0x54 is the walker's bad-token case
 StargateMenus.u,RestartGame,ButtonClick,142,110,126,101,0x52,,bad-token,opcode 0x52 is the walker's bad-token case
 StargateMenus.u,SaveGameMenu,InternalOnXControllerEvent,270,239,252,228,0x0c,LabelTable,label-table,label table of 0c is not zero-terminated
 StargateMenus.u,SavedGameInfo,GetTypeString,122,90,110,85,0x7f,,parameter-list,parameter list of 7f never reaches 0x16
