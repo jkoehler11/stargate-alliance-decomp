@@ -635,3 +635,26 @@ at `+0x4`.
 therefore the only evidence of its own extent. `inventory/native_vtable_census.csv` holds the 26
 rows; the naming question stays where U8 leaves it, and the module's name needs a signature or a
 caller that asserts with a source path, not another boot.
+
+## A run of code pointers is not a table, image-wide (2026-11-12)
+
+The `0x53f770` case is not a curiosity: the linker packs every class's vtable back to back in
+`.rdata`, so "count code pointers until one is not code" merges neighbours wherever two tables are
+adjacent. `tools/native-vtable.py --block` (`inventory/native_vtable_merges.csv`) walks **every** run
+of three or more code pointers in `.rdata` and splits each at its install stores: **1,007 runs**,
+**704 table starts**, **468 runs that begin with a table**, and **109 runs holding two or more
+tables**.
+
+The merges are not marginal. `0x4c7958` is one run of 233 dwords that installs **six** tables
+(`0x4c7958`, `0x4c7a10`, `0x4c7ac8`, `0x4c7b88`, `0x4c7c00`, `0x4c7c78`) -- the `Material` /
+`RenderedMaterial` / `BitmapMaterial` / `CameraEffect` family the class-tree thread names one by
+one; `0x4c9348` (`Player`) holds five; `0x4ca618` holds 797 dwords over six. Every one of
+them reads as a single table if the run is taken as the unit.
+
+**What this changes, and what it does not.** The 492 UObject class tables were named from their
+install literals, so their *starts* are unaffected -- but their *slot counts* are read from the next
+start, and 109 runs show that the next start is not always the next run. The same holds for every
+native interface: 704 install-started tables in `.rdata`, against the 492 the map holds, so a large
+minority of them are native C++ vtables like the `+0x220` helper's, and for those the install store
+is the only delimiter there is. `make native-vtable` writes both artifacts, so a run that looks like
+one table can be checked against the stores that say otherwise.

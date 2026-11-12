@@ -1037,6 +1037,16 @@ What stays open is unchanged and is not a coverage problem: no body references a
 assert), none is a direct call target, and the module's name still needs a signature or an asserting caller.
 
 
+**2026-11-12, and the merge is general: 109 of the image's 1,007 code-pointer runs hold two tables.** `tools/native-vtable.py
+--block` (`inventory/native_vtable_merges.csv`) splits every run of three or more code pointers in `.rdata` at its install
+stores: **704 table starts** over **1,007 runs**, **468 runs begin with a table**, and **109 runs hold two or more**
+(`0x4c7958` six, `0x4c9348` five, `0x4ca618` 797 dwords over six). So the `0x53f770` over-read that this entry
+corrected is the normal shape of a packed block, not an anomaly: a slot count read from the next run boundary is wrong
+for 109 runs, while the install store is exact for all 704. The UObject class tables' starts are unaffected (they were
+named from install literals); their slot counts are read from the next *start*, which is the rule this census shows is
+the safe one.
+
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature

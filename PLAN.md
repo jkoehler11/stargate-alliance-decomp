@@ -1051,6 +1051,22 @@ are limited to expected fields (checksum/timestamp) and documented.
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
 
+
+### Execution notes (2026-11-12, a run of code pointers is not a table: 109 of 1,007 hold two)
+
+- **The over-read is the block's normal shape.** `tools/native-vtable.py --block` splits every `.rdata` run of three or
+  more code pointers at its install stores and reports **1,007 runs, 704 table starts, 468 runs that begin with a table,
+  109 runs holding two or more** (`inventory/native_vtable_merges.csv`). The biggest merges are the class-tree
+  families: `0x4c7958` is one run of 233 dwords installing **six** tables (`Material`, `RenderedMaterial`,
+  `BitmapMaterial`, `CameraEffect` and two more), `0x4c9348` (`Player`) five, `0x4ca618` 797 dwords over six.
+- **What moves and what does not.** The 492 UObject tables' starts are unaffected -- they were named from install
+  literals -- but a slot count taken from the next *run* boundary is wrong for 109 runs, and the install store is the
+  exact delimiter for all 704. 704 starts against 492 mapped class tables also says a large minority of `.rdata`'s
+  tables are native C++ vtables like the `+0x220` helper's, which is why no map row will ever name them.
+- Tool (`--block`, `block_scan`; the single-pass install scan is 1.5 s over the image) + `make native-vtable` now
+  writes both artifacts + `inventory/native_vtable_merges.csv` (1,007 rows) + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. Reads the image; no boot.
+
 ### Execution notes (2026-11-12, the helper's table is 21 slots and the boundary is a terminator)
 
 - **The run of code pointers is two classes, not one.** `tools/native-vtable.py` reads the table the `+0x220` helper

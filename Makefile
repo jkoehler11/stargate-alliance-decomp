@@ -999,8 +999,8 @@ vcall-field-owner:
 # addresses and counts, no game data.
 native-vtable:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
-	@$(PYTHON) tools/native-vtable.py "$(GAME_DIR)/default.xbe" --va $(VA) -o inventory/native_vtable_census.csv
-	@echo "wrote inventory/native_vtable_census.csv"
+	@$(PYTHON) tools/native-vtable.py "$(GAME_DIR)/default.xbe" --block -o inventory/native_vtable_merges.csv
+	@echo "wrote inventory/native_vtable_merges.csv"
 
 # U8's layout half: which class holds a live object at each of the six field offsets, read from a booted guest
 # (docs/NATIVE_CLASS_TREE.md). It needs a run and that run's GDB stub, so it is not part of `make ci`.
