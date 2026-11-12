@@ -276,6 +276,18 @@ population is made of: corpus-wide the same dword is *larger* than the script fa
 the field is equal here only because these bodies have no operand to widen -- it is identified below, "The dword
 before the script is its size in memory".
 
+**Every declaration in the corpus is accounted for, and the missing literal rules are not exercised.** The tool
+prints the accounting beside the peak delta: **466 anchored, 2 declared twice under one key, 82 with no body, and 0
+unanchored payloads carrying a script** (`--start-anchor System --lists 100`). The last of those lines exists for this
+claim — a row there is a declaration whose return type has no rule *and* whose payload holds a script, i.e. a literal
+to measure — and it is empty over all 16 packages that ship bytecode. So the `vector`/`rotator`/`struct`/`array`
+literal encodings an earlier note named as the next rule are not needed for any shipped body: the declarations that
+named those types are bodiless stubs (`Weapon.UpdateLeadLag` `rotator/zero`, `VoiceChatReplicationInfo`'s
+`GetChannels`/`GetPublicChannels`/`GetPlayerChannels` `array<voicechatroom>/false`, its
+`GetPublicChannelCount`/`GetPlayerChannelCount` `int/false`, `BotEnemy.SquadCoverRequest` `esquadcover/false`), and
+the tenth row, `vector/zero`, appears in neither residue. A rule measured from those bodies would have been measured
+from nothing, which is why the check to run before measuring one is **count the population that would exercise it**.
+
 ## The dword before the script is its size in memory (U13, 2026-11-12)
 
 `python3 tools/uscript-dis.py --sizefield System` closes the fourth word of the fixed run. It is **the script's size
