@@ -273,7 +273,7 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       lines in 2,319 class files** (681 functions + 97 operators + 11 events, 0 unmarked, byte-identical on a second
       pass), so every declaration the shipped text carries is cross-linked to the C++ that implements it. This closes
       3.9: what is left is the C++ at the target path, which is Phase 4's reconstruction and what the marker names.
-- [~] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
+- [x] 3.10 Write class-level documentation for the game systems: mission objective graph, interaction system
       (`SGInteraction`), AI scripts, vehicle driver/passenger weapon structs, checkpoint saves.
       Objectives done — `docs/systems/mission-objectives.md`: the model, the one-event state machine
       (activate, then complete), child aggregation, the panel, placement (61 of 73 maps, exactly one per
@@ -292,8 +292,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       layer is **127 `GotoState` calls outside every state body**, so the machine parks and is pushed rather than
       chained. The text is a floor: five classes carry more `UState` exports than any class's text declares
       (`BotEnemy` 36/41) and four of those names are dispatched to while declared nowhere. Checkpoint saves were
-      already covered by `docs/systems/CHECKPOINTS.md`; what remains under this item is a per-state read of the
-      bodies themselves.
+      already covered by `docs/systems/CHECKPOINTS.md`. **The per-state read of the bodies is done too** --
+      `tools/ai-state-body.py` reduces every body to its statement tree (`inventory/ai_state_bodies.csv`):
+      1,426 own statements against 2,350 inside 570 overrides, 29 states with no own statement, 38 that never
+      dispatch, 55 that complete in one tick, three loops and no `switch` in the whole tree -- and
+      `docs/systems/AI.md` (*What the bodies do*) reads `ShootFromCover` (16 statements, no `GotoState` in it or
+      its 19 override handlers), `CoveredAttack` (four labels of its own, ten computed sleeps) and `Scripting`
+      (eight `CompleteAction` exits) in full. That closes the item.
 - [x] 4.1 Install Ghidra + `ghidra-xbe`; load `default.xbe` at base `0x00010000`; verify section mapping and imports.
 - [~] 4.2 Apply Xbox SDK / MSVC 7.1 signature libraries (xbox-includes, FLIRT-style sigs) to auto-name CRT,
       XAPI, D3D8, XNet, XOnline, zlib and math routines.
@@ -1106,6 +1111,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   only by a computed target or a native body.
 - Tool (`tools/ai-states.py`) + `inventory/ai_states.csv` + `docs/systems/AI.md` (*What the states do*, both
   tables generated from the artifact) + `make ai-states` + `make ci` holding the page to the artifact + this note.
+
+### Execution notes (2026-11-12, the state bodies are thin and the overrides hold the behavior)
+
+- **A body can be read as an outline, so "what the state does" is a measurement now.** `tools/ai-state-body.py`
+  walks one state body's statement tree out of the same `ScriptText` `tools/ai-states.py` reads -- blocks,
+  labels, `if`/loop/`switch` headers, simple statements -- and keeps the *kind* of each node plus the identifiers
+  it calls, never the statement text: the outline goes to stdout for a reader, the artifact
+  (`inventory/ai_state_bodies.csv`, 151 rows) carries counts and the top callee names, which is the identifier
+  vocabulary `inventory/ai_states.csv` already publishes. An override's statements are counted in their own
+  column, because a handler the engine calls is not a step the state runs.
+- **The numbers that came out.** 151 bodies hold **1,426 own statements against 2,350 inside 570 overrides**;
+  29 states have no own statements, 38 neither dispatch nor jump to a label, and **55 run to completion in one
+  tick** (no `Sleep`, no `Finish`/`Wait`). The tree contains **three loop statements and zero `switch`**, against
+  1,419 assignments and 641 conditionals, and 169 `Goto('label')` jumps to 99 `GotoState` calls: a state repeats
+  by restarting or by being re-entered, not by iterating. 189 sleeps, 90 of them computed -- `sleep_seconds`
+  totals 62.17 s of literal wait in the whole controller tree.
+- **The three reads.** `BotEnemy.ShootFromCover` is 16 statements (choose cover, fire, `MoveTo`, sleep,
+  `WhatToDoNext`, `Goto('Begin')`) with **no `GotoState` anywhere in it or its 19 overrides** -- the class-level
+  dispatcher owns its exit. `BotEnemy.CoveredAttack` is 67 statements over **four labels of its own**
+  (`Begin`/`Move`/`FinishedAttack`/`NoCover`), with all ten sleeps computed and `PickAttackDestination` tracing
+  left/right perpendiculars at `TACTICALMOVEDIST`. `ScriptedController.Scripting` is an action interpreter whose
+  exit is **`CompleteAction()` eight times**, from `Trigger`, `Timer`, `AnimEnd`, `LIPSincAnimEnd`, a reached
+  destination and a finished rotation.
+- **What it changes.** A rebuild driven by the 151 bodies alone would produce controllers that park: the
+  behaviour is in the override handlers and the 127 class-level `GotoState` calls, so `WhatToDoNext` and
+  `SetEnemy` come before the states in any port -- and the five classes whose `UState` exports outnumber their
+  text lose behaviour when a handler is dropped, not when a body is.
+- Tool (`tools/ai-state-body.py`, `--outline`, `--write-doc`/`--check-doc`, 20 assertions in `--check`) +
+  `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
+  `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 ### Execution notes (2026-11-12, the native tables share no function with any class table)
 

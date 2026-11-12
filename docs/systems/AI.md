@@ -178,12 +178,118 @@ Thirty of the 151 states are neither named by a literal `GotoState` nor name one
 target or from a native body, and that is the residue this reading leaves -- the same shape as the rest of this
 page: a count is measurable, an entry point sometimes is not.
 
+## What the bodies do
+
+`tools/ai-states.py` counts a state's labels, overrides, `GotoState` targets and sleeps. The bodies are readable
+too: every class ships its own source, and `tools/ai-state-body.py` walks one body's statement tree -- blocks,
+labels, simple statements -- and keeps only the *kind* of each node and the identifiers it calls. A 475-line body
+becomes a one-page outline, and only counts and callee names are written, so the code never enters the repo.
+
+    python3 tools/ai-state-body.py --system DUMP/System -o inventory/ai_state_bodies.csv
+    python3 tools/ai-state-body.py --system DUMP/System --outline BotEnemy.ShootFromCover
+
+Output: `inventory/ai_state_bodies.csv`, one row per state. Two columns carry the finding: `stmts` counts the
+state's **own** statements and `override_stmts` the ones inside a `function`/`event` it overrides -- an override
+is a handler the engine calls, not a step the state runs, and folding the two together would make a state that
+only declares `SetEnemy` read as busy. `sleep_seconds` sums literal `Sleep` arguments only: 90 of the tree's 189
+sleeps take a computed one and add nothing to it.
+
+<!-- generated:ai-state-bodies -->
+**151 bodies hold 1426 simple statements (2350 more inside overrides), 189 sleeps (62.2 s of literal wait) and 268 dispatch calls; 3 loop, and 55 run to completion in one tick with no `Sleep` and no `Finish`/`Wait` call.**
+
+| class | state | stmts | overrides | if | loop | sleeps | sleep s | calls | `GotoState` | top callees |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `BotEnemy` | `CoveredAttack` | 67 | 7 | 47 | 0 | 10 | 0 | 131 | 1 | `Sleep:10`, `CoverInfo:8`, `WhatToDoNext:8`, `FRand:7` |
+| `BotSG` | `CoveredAttack` | 58 | 0 | 16 | 0 | 7 | 0 | 70 | 0 | `Sleep:7`, `WhatToDoNext:7`, `Goto:6`, `log:5` |
+| `BotSG` | `RestFormation` | 51 | 10 | 46 | 0 | 6 | 0.35 | 121 | 2 | `log:8`, `Pawn:7`, `ShouldCrouch:7`, `Goto:6` |
+| `ScriptedController` | `Scripting` | 39 | 19 | 42 | 0 | 1 | 2 | 127 | 6 | `CompleteAction:8`, `Log:7`, `DrawText:6`, `GotoState:6` |
+| `BotEnemy` | `Suspicious` | 32 | 6 | 27 | 0 | 6 | 4.2 | 56 | 0 | `Goto:6`, `Sleep:6`, `ShouldCrouch:5`, `StargatePawn:4` |
+| `JaffaBotHeavy` | `MelleeCharge` | 28 | 8 | 8 | 0 | 3 | 5.1 | 49 | 4 | `Goto:4`, `GotoState:4`, `JaffaBase:4`, `FinishMelleeChargeAttack:3` |
+| `BotEnemy` | `CoveredMove` | 26 | 6 | 10 | 0 | 4 | 0.6 | 43 | 0 | `Sleep:4`, `StopFastRun:4`, `DoCoveredFire:3`, `FireWeaponAt:3` |
+| `BotSG` | `ConcentrateFire` | 26 | 4 | 17 | 0 | 4 | 0.1 | 57 | 1 | `Sleep:4`, `SquadAISG:4`, `FRand:3`, `log:3` |
+| `BotSG` | `TacticalMove` | 26 | 8 | 19 | 0 | 3 | 0.22 | 79 | 1 | `FRand:10`, `vect:6`, `FMax:4`, `StopFiring:4` |
+| `JaffaBotLight` | `Sniper` | 26 | 7 | 14 | 0 | 3 | 1.5 | 58 | 1 | `Enable:6`, `Disable:4`, `FireWeaponAt:4`, `LineOfSightTo:4` |
+| `BotEnemy` | `ActivateAlarm` | 23 | 3 | 10 | 0 | 3 | 1.5 | 35 | 0 | `GetUserPosition:5`, `WhatToDoNext:5`, `Goto:3`, `Sleep:3` |
+| `BotEnemy` | `InteractUseObject` | 23 | 1 | 7 | 0 | 2 | 1.5 | 25 | 0 | `Goto:4`, `WhatToDoNext:4`, `Log:3`, `sleep:3` |
+| `BotEnemy` | `CoveredHide` | 22 | 4 | 15 | 0 | 3 | 0.1 | 59 | 1 | `Enable:6`, `MustHoldFire:4`, `FireWeaponAt:3`, `Goto:3` |
+| `BotGuide` | `ReturnToPlayer` | 22 | 1 | 12 | 0 | 4 | 2 | 46 | 0 | `ACTION_SGWaitForPlayer:9`, `GetMyPlayer:6`, `Sleep:4`, `WhatToDoNext:4` |
+| `GoauldDroneBot` | `Pursuit` | 22 | 8 | 9 | 1 | 2 | 0 | 45 | 2 | `PointReachable:6`, `FRand:4`, `MoveTo:4`, `WhatToDoNext:3` |
+<!-- /generated:ai-state-bodies -->
+
+### The code is in the overrides, not in the state body
+
+The 151 bodies hold **1,426 own statements against 2,350 inside 570 overrides** -- 1.6x as much handler code as
+state code. 29 states have no own statements at all (a set of overrides plus a label), and 38 neither dispatch
+(`GotoState`) nor jump to a label, so their successor is decided entirely outside them.
+
+The idiom is a **short body that sets fields, takes one action and hands off**, not a script with a loop: the
+whole tree's state bodies contain **three `while`/`for` statements and zero `switch`**, against 1,419
+assignments and 641 conditional branches, and a state repeats by `Goto('Begin')` (169 label jumps) or by being
+re-entered, not by iterating. 55 of the 151 run to completion in one tick -- no `Sleep` and no `Finish`/`Wait`
+call -- which is what makes the dispatch layer, rather than the bodies, the thing a rebuild has to get right.
+
+### `BotEnemy.ShootFromCover` -- 475 lines, 16 own statements, 19 overrides
+
+Sixteen statements, three of them inside one `if`: `Target = Enemy`, `CheckBurning()`, `ShouldStartHacking()`;
+if the state is meant to hold position and `ShouldAdvance()` agrees, fire, wait and ask `WhatToDoNext()`; then
+`Sleep`, `UpdateCoverStatus()`, `SelectNextCoverState()`, `HideAction = COVEREDFIRE_NoValidCover`,
+`UpdateCrouchToShoot()`, `FireWeaponAt()`, `MoveTo(...)`, `Sleep`, `WhatToDoNext()`, `Goto('Begin')`.
+
+So one pass is: choose a cover action in a helper, fire at the current target, walk to the destination the helper
+chose, wait briefly, hand control to the class-level dispatcher -- which is free to leave the state -- and
+restart. There is **not one `GotoState` in the body or in any of its 19 overrides**: the state never chooses its
+own successor. The behaviour is in the handlers: `Timer` (choose an attack mode or fire, then
+`SelectNextCoverState` and re-arm), the four squad-cover entry points (`SquadCoverRequest`, `SquadCoverFinish`,
+`AssignToCovering`, `ReleaseFromCovering`), `NotifyTakeHit`/`ReceiveWarning` accumulating
+`EnemyDamageAccumulator`, `NotifyHitWall` re-aiming 96 units off the normal it hit, and `SelectNextCoverState`'s
+fallback / hold-fire / `IsHealthLow` branches over `PickCoverDestination` and `PickForwardDestination`. Three
+`Sleep`s totalling 0.6 s: the state waits on its timer and on its moves, not on fixed delays.
+
+### `BotEnemy.CoveredAttack` -- 446 lines, 67 own statements, 7 overrides
+
+`CoveredAttack` spends its code in the body instead of the handlers, and carries **four labels of its own** --
+`Begin`, `Move`, `FinishedAttack`, `NoCover` -- so it is the clearest case of a state that is a small machine:
+it opens with a `DoCoveredFire()`, then `Begin` aims and starts the move, `Move` decides whether the pawn has
+arrived (and whether it can camp), strafes around the cover with `FindBestPathToward`, or bails to `NoCover`;
+`FinishedAttack` fires, waits a random moment and hands back; `NoCover` fires, marks the hide action invalid and
+asks `WhatToDoNext()`.
+
+All ten of its sleeps take **computed** arguments -- no literal wait at all -- and `PickAttackDestination` is
+where the body's 38 conditionals concentrate: it traces the enemy's perpendicular left and right at
+`TACTICALMOVEDIST` (or an advanced-move distance), inverts the side when the first trace is blocked, and falls
+back to standing still when both are. The seven handlers are the event surface, and one of them is the state's
+only `GotoState`: `SeePlayer` re-targets through `SetEnemy`, and if it can attack it fires from where it stands
+and leaves the state.
+
+### `ScriptedController.Scripting` -- 496 lines, 39 own statements, 19 overrides
+
+Biggest body in the tree and the one every scripted bot returns to, and it is not a behaviour loop but an
+**action interpreter**. `InitForNextAction()` takes the sequence script and calls `SetActions()`, resetting
+`bEventReceived`; the body then handles the fire/alt-fire flags, a `PerformSpecialMove` branch, and a three-way
+goal: `MoveToGoal` (set movement physics, `WaitForLanding`, then label `KeepMoving`: `SetMoveTarget`,
+`MayShootTarget`, `MoveToward`, and on a failed path find `FailedScriptPathFindCount++`, a `Sleep` and a
+`GotoState`), `TurnToGoal` (`FinishRotation`, then `CompleteAction()`), or a face-and-shoot branch.
+
+**`CompleteAction()` is the exit vocabulary**: eight calls, from `Trigger`, `Timer`, `AnimEnd`,
+`LIPSincAnimEnd`, a reached destination and a finished rotation. The action therefore advances on whichever event
+its `CompleteOn*` flag names, and the body's six `GotoState` calls sit in `CompleteAction`, `LeaveScripting`,
+`SetMoveTarget` and the bad-path branch. Its `DisplayDebug` override draws the script's own state as text on the
+HUD (`DrawText`) -- the one place in the AI tree where a state body is also a debug instrument.
+
+### What this changes for the rebuild
+
+The three bodies say the same thing at three scales: the state is a *frame*, and the behaviour is in the
+overrides and in the class-level dispatcher that pushes the controller from outside. A port that reproduces the
+151 bodies and stops would produce controllers that mostly park. That also re-orders the missing-state negative:
+the five classes whose `UState` exports outnumber their text lose behaviour when their handlers are dropped,
+not when a state body is, which is why `WhatToDoNext` and `SetEnemy` are worth reading before the states.
+
 ## Not measured
 
-* What a state body *computes*. The graph above is structure -- which state can hand control to which --
-  and a label, an override and a sleep are countable; whether a body does what its name says is a per-state read
-  of the 151 bodies, and the three combat states worth reading first are `BotEnemy.ShootFromCover`,
-  `CoveredAttack` and `ScriptedController.Scripting`.
+* What a body's expressions *resolve to*. The outline above names the callees and counts the branches, but not
+  what `CanAttack()`, `PointReachable()` or a `CoverInfo` accessor answer at runtime, and 90 of the 189 sleeps
+  wait on a computed duration. The first needs a boot with the decision logged per tick; the second only a named
+  constant per wait.
 * `AIScript` and `AIMsgManager` internals beyond their function counts (3 and 39). `AIScript` is a
   `Keypoint` actor, not the controller, so mission AI scripting is level data — a 5.2 question.
 * Whether `IntelligentSpawner` configuration is in the map, the checkpoint or both. The counts say the
