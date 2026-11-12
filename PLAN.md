@@ -1050,6 +1050,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the pair dispatches on an object another object holds -- only 3 sites are `this`)
+
+- **The receiver load is one hop; the object pointer is the second.** `tools/vcall-receiver.py` now walks the
+  register the receiver reads from (`origin`, `origin_va`, `origin_chain`, over the same objdump listing), following
+  register-to-register copies so that `mov esi,ecx` still counts as `this` and stopping at the instruction that
+  produced the pointer. Of the 55 real sites: **28 field** (`mov ecx,[esi+0x4c]`, `[esi+0x48]`, `[esi+0x2c]`,
+  `[eax+0x220]`, `[esi+0x1c]`, `[esi+0x310]` -- six offsets), **14 stack** (7 `[esp+..]`, 5 `pop`, 2 `[ebp-0x40]`),
+  **4 call-result**, **3 global** (`.data`: `0x5fbed4` twice, `0x5bf514` once, whose pointer `0x5c1a0c` is not a
+  class table), **3 `this`** (`esi<-ecx`, `ecx` unwritten), **2 frame** (the stack-slot receiver) and **1
+  argument** (`[ebp+0x18]`).
+- **What it changes.** The pair is not a virtual a class calls on itself: 46 of the 55 dispatch on an object the
+  caller holds -- a field of another object, a stack slot, a call's return -- so the class that carries slots 19/20
+  is the class of *those* objects, and the one class the whole image shares is the three global-pointer sites. The
+  earlier line "no site loads it from an absolute global" holds for the receiver and not for the pointer: three
+  sites do take the pointer from `.data`, which is what a singleton instance looks like.
+- Tool (`tools/vcall-receiver.py`: `origin_of`, the three columns, the selftest cases for a `this` chain and a field
+  read) + `inventory/vcall_receiver_sites.csv` regenerated (106 rows) + `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8. What is left is the class of the held object at run time -- a boot cannot supply it
+  (U8's multiplayer/dedicated path), so the next static instrument is the class of the field's owner, which the
+  property stream names.
+
 ### Execution notes (2026-11-12, the 106 hits are 55 calls: a second decoder corrects the first in both directions)
 
 - **The narrow boundary test was wrong both ways.** `tools/vcall-receiver.py` now runs `objdump -D -b binary -m

@@ -37,6 +37,13 @@ The decoder is deliberately narrow -- the 32-bit integer mov/lea/pop/immediate/a
 forms -- rather than a disassembler: an opcode it does not know makes a row `unread` instead of guessing,
 and it is the oracle, not this file, that guarantees a boundary.
 
+**The object pointer has its own origin.** The receiver load names the object (`mov edx,[esi]`); the
+register it reads from was produced somewhere as well -- a copy of `this`, a field of another object, a
+stack slot, a call's return value, an argument or an absolute global. `origin`, `origin_va` and
+`origin_chain` record that walk over the same oracle listing (`esi<-ecx`, or `field` with the VA of the
+load that read it), so a site that dispatches on another object is distinguishable from one that
+dispatches on its own.
+
 Addresses and counts only: nothing here carries game data.
 """
 import argparse
@@ -57,7 +64,7 @@ TABLES = os.path.join(ROOT, "inventory", "class_table_slot_pairs.csv")
 OUT = os.path.join(ROOT, "inventory", "vcall_receiver_sites.csv")
 HEADER = ["site_va", "slot", "reg", "function", "defining_va", "bytes", "form", "source",
           "base", "disp", "value", "value_kind", "candidates", "walk", "aligned", "oracle",
-          "oracle_form"]
+          "oracle_form", "origin", "origin_va", "origin_chain"]
 
 WINDOW = 24
 REGS = ["eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"]
@@ -511,6 +518,60 @@ def oracle_sweep(insns, site_va, reg):
     return writer, steps
 
 
+FRAME_REGS = ("esp", "ebp")
+
+
+def origin_of(blob, base_va, insns, reg, upto_va, depth=0):
+    """Where the register that holds the receiver's object pointer came from.
+
+    The receiver load is often one hop: `mov edx,[esi]` dispatches on the vtable of the object `esi`
+    points at, and `esi` itself was loaded from a field, a stack slot, a call or an argument. A
+    register-to-register copy is followed (`mov esi,ecx` is still `this`), and the walk stops at the
+    first instruction that produces a pointer. Categories:
+
+        this        a copy chain that ends at `ecx` with no write since the function was entered
+        incoming    the same, for a register other than `ecx` (a caller's value, not `this`)
+        argument    read from the stack past the saved `ebp` and the return address
+        stack       a stack slot below the frame, or a `pop`
+        field       read through another object (`mov ecx,[esi+0x4c]`)
+        call-result a `call`'s return value
+        global      an absolute address
+        frame       the receiver *is* a stack slot (`mov eax,[ebp]`)
+        unknown     the walk met an instruction this decoder cannot shape
+
+    Returns (category, va, chain); `va` is the instruction that produced the pointer and `chain` the
+    register hops, e.g. `esi<-ecx`.
+    """
+    if reg in FRAME_REGS:
+        return "frame", 0, reg
+    if depth > 4:
+        return "unknown", 0, reg
+    writer, _steps = oracle_sweep(insns, upto_va, reg)
+    if writer is None:
+        return ("this" if reg == "ecx" else "incoming"), 0, reg
+    ins = decode(blob, writer[0] - base_va)
+    if ins is None:
+        return "unknown", writer[0], reg
+    if ins.kind == "register" and writer[2].startswith("mov"):
+        src = writer[2].split(",")[-1].strip()
+        if src in REGS:
+            cat, va, chain = origin_of(blob, base_va, insns, src, writer[0], depth + 1)
+            return cat, va, "%s<-%s" % (reg, chain)
+    if ins.kind == "stack":
+        if ins.base == "ebp" and ins.disp is not None and ins.disp >= 8:
+            return "argument", writer[0], reg
+        return "stack", writer[0], reg
+    if ins.kind in ("head", "field", "array"):
+        return "field", writer[0], reg
+    if ins.kind == "global":
+        return "global", writer[0], reg
+    if ins.kind == "call":
+        return "call-result", writer[0], reg
+    if ins.kind in ("immediate", "zero"):
+        return ins.kind, writer[0], reg
+    return "unknown", writer[0], reg
+
+
 def objdump_read(exe, blob, base_va, lo_off, site_off, site_va):
     """What the independent decoder says about the site: agree / spans / desync / none.
 
@@ -649,7 +710,8 @@ def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None, oracle=None):
     row = {"site_va": "0x%08x" % site_va, "reg": reg, "defining_va": "",
            "bytes": blob[max(0, off - WINDOW):off].hex(" "), "form": "", "source": "unread",
            "base": "", "disp": "", "value": "", "value_kind": "", "candidates": "0", "walk": "0",
-           "aligned": "no", "oracle": verdict, "oracle_form": oracle_text}
+           "aligned": "no", "oracle": verdict, "oracle_form": oracle_text,
+           "origin": "", "origin_va": "", "origin_chain": ""}
     # A `call [reg+0x4c]` is a byte pattern, so it also matches the tail of some other instruction's
     # displacement. An instruction that *ends* exactly at the site is what makes it a real boundary.
     ends = [s for s in range(max(0, off - 15), off)
@@ -724,6 +786,10 @@ def analyse(xbe, tables, blob, base_va, site_va, reg, fn_va=None, oracle=None):
     def finish(source, base="", disp="", value="", value_kind=""):
         row["source"], row["base"], row["disp"] = source, base, disp
         row["value"], row["value_kind"] = value, value_kind
+        if oracle_insns and ins is not None and ins.base:
+            cat, va, chain = origin_of(blob, base_va, oracle_insns, ins.base, base_va + start)
+            row["origin"], row["origin_chain"] = cat, chain
+            row["origin_va"] = "0x%08x" % va if va else ""
         return row
 
     if ins.kind == "call":
@@ -835,6 +901,20 @@ def selftest():
                   oracle=("agree", gap_insns, "call   DWORD PTR [edi+0x4c]"))
     if row["source"] != "entry-register":
         bad.append("unwritten oracle register read as %s" % row["source"])
+    # the object pointer's own origin: `mov esi,ecx` is still `this`, a field read is not
+    this_blob = b"\x8b\xf1\x8b\x06\xff\x50\x4c"
+    this_insns = [(base, 2, "mov    esi,ecx", "8b f1"), (base + 2, 2, "mov    eax,DWORD PTR [esi]", "8b 06")]
+    row = analyse(_StubXbe(), {}, this_blob, base, base + 4, "eax", fn_va=base,
+                  oracle=("agree", this_insns, "call   DWORD PTR [eax+0x4c]"))
+    if row["origin"] != "this" or row["origin_chain"] != "esi<-ecx":
+        bad.append("this-origin read as %s %r" % (row["origin"], row["origin_chain"]))
+    field_blob = b"\x8b\x4e\x4c\x8b\x01\xff\x51\x4c"
+    field_insns = [(base, 3, "mov    ecx,DWORD PTR [esi+0x4c]", "8b 4e 4c"),
+                   (base + 3, 2, "mov    eax,DWORD PTR [ecx]", "8b 01")]
+    row = analyse(_StubXbe(), {}, field_blob, base, base + 5, "eax", fn_va=base,
+                  oracle=("agree", field_insns, "call   DWORD PTR [eax+0x4c]"))
+    if row["origin"] != "field" or row["origin_va"] != "0x%08x" % base:
+        bad.append("field-origin read as %s %s" % (row["origin"], row["origin_va"]))
     for line in bad:
         print("FAIL " + line)
     if bad:
@@ -914,6 +994,7 @@ def main():
     print("  slot: " + counts(rows, "slot"))
     print("  source: " + counts(rows, "source"))
     print("  oracle: " + counts([r for r in rows if r["oracle"]], "oracle"))
+    print("  origin: " + counts([r for r in rows if r["origin"]], "origin"))
     print("  form: " + counts(rows, "form"))
     print("  base: " + counts([r for r in rows if r["base"]], "base"))
     print("  unread %d, aligned from the function start %d, entry-register %d"

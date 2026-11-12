@@ -458,3 +458,15 @@ supplied a receiver at all. The 24 rows that load through `ecx` are the member-f
 `ecx` first, so which register the *object pointer itself* came from (`this`, an argument, a field, a local) is the
 next static read -- and the class an arbitrary `[obj]` belongs to at run time is the one a stock disc cannot answer
 (the multiplayer/dedicated path never runs; U8).
+
+**Where the object pointer itself comes from.** The receiver load names the object, not its origin, so the same
+oracle listing is walked one hop further (`origin`, `origin_va`, `origin_chain`) to the instruction that produced
+the register holding the pointer. Of the 55 sites: **28 read the object from a field of another object**
+(`mov ecx,[esi+0x4c]`, `[esi+0x48]`, `[esi+0x2c]`, `[eax+0x220]`, `[esi+0x1c]`, `[esi+0x310]` -- six different
+offsets, so not one shared object graph), **14 from a stack slot or a `pop`** (7 `mov reg,[esp+..]`, 5 `pop`, 2
+`[ebp-0x40]`), **4 from a call's return value**, **3 from an absolute `.data` address** (`0x5fbed4` twice, at the
+last dword of its section; `0x5bf514` once, whose pointer `0x5c1a0c` is not a class table), **3 are copies of
+`this`** (chains `esi<-ecx` whose `ecx` is never written), **2 are the stack-slot receiver itself** and **1 comes
+from an argument** (`[ebp+0x18]`). So the pair is mostly dispatched on an object *another object holds*, not on the
+caller's own `this`: a vtable-level virtual that the 165 `Actor`-subtree tables and the classes reached through
+these fields both carry.

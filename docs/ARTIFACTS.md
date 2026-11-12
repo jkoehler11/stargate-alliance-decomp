@@ -128,7 +128,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/token_map.csv` | 57 | 8 | `make token-map` |
 | `inventory/ucpp_vtables.csv` | 15 | 7 | `make ucpp-vtables` |
 | `inventory/vcall_dispatch_sites.csv` | 141 | 7 | `make vcall-dispatch` |
-| `inventory/vcall_receiver_sites.csv` | 106 | 17 | **vcall-receiver.py (no target runs it)** |
+| `inventory/vcall_receiver_sites.csv` | 106 | 20 | **vcall-receiver.py (no target runs it)** |
 | `inventory/vehicle_seats.csv` | 25 | 7 | `make help` |
 | `inventory/voice_descs.csv` | 25 | 21 | `make help` |
 | `inventory/voice_packs.csv` | 61 | 5 | `make help` |

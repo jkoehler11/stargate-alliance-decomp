@@ -941,6 +941,16 @@ has no window a boot can add -- what would settle it is a typed receiver at one 
 `[reg+0x50]` sites (`inventory/vcall_dispatch_sites.csv`), not another boot.
 
 
+**2026-11-12, the object pointer's origin: the pair is dispatched on an object another object holds.** The receiver
+load names which object, not where the pointer came from, so the same oracle listing is walked one hop further
+(`origin`, `origin_va`, `origin_chain` in `inventory/vcall_receiver_sites.csv`). Of the 55 real sites, **28 read the
+object from a field of another object** (six different offsets, so not one object graph), **14** from a stack slot
+or a `pop`, **4** from a call's return value, **3** from an absolute `.data` address (`0x5fbed4` twice, `0x5bf514`
+once -- and that pointer is not a class table), **3 are a copy of `this`** (`esi<-ecx` with `ecx` never written),
+**2** are the stack-slot receiver itself and **1** comes from an argument. So slot 19/20 is dispatched mostly on a
+*held* object, and the question this entry carries narrows: the class of that object at run time, with the three
+global-pointer sites the only ones where a single shared instance carries the pair.
+
 **2026-11-12, corrected by a second decoder: the 106 hits are 55 calls, not 48, and none is unread.** The
 paragraph below counted with one narrow decoder, and that decoder was wrong in both directions. It *accepted* 8
 displacement bytes, because a `lea`'s own bytes decode as an `add` that lands on the site behind a chain of
