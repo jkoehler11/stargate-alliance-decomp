@@ -1050,6 +1050,18 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+### Execution notes (2026-11-12, the harness can judge a console step, and its crop cannot)
+
+- **The console step is part of the sequence now.** `drive.py --step=console=NAME[:want]` captures `NAME.png` and
+  judges it with `tools/xemu/console-line.py` instead of with the repaint delta: `want` is `drawn` (default), `typed`
+  or `absent`, and the report line carries the state, the pixel count and PASS/FAIL. The `shot=` step it replaces
+  measured **0 px and FAILed** on a line that was visibly drawn, twice in two runs, because `--crop` is the menu panel
+  (`480x520+760+210`) and the console draws at the bottom left -- a FAIL that a reader could only resolve by hand.
+- **`UNREAD` is not `absent`.** A frame the tool cannot read (`console-line.py` missing, or its output unrecognised)
+  is a FAIL with `UNREAD` in the reason, so a silent instrument never reads as a console that drew nothing.
+- `drive.py --selftest` (in `make ci`) covers the verdict table: `typed` for a typed line, not for an empty prompt,
+  `absent` for nothing drawn, `other` for cyan that is not a line, and `UNREAD` for a state of `None`.
+
 ### Execution notes (2026-11-12, `RestartLevel` completes the unload and the pair stays silent through it)
 
 - **The graceful unload exists, and it is one console command.** `RestartLevel` is an `exec function` on
