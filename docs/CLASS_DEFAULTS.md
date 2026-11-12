@@ -263,6 +263,19 @@ is that these payloads hold a small table (the bytes between the names are hash-
 across classes: `b31d40ff`, `2c08ad6c`, `5911e68c`) and that the class sets no defaults at all — but the same
 signature could also be a struct block belonging to a component table, so it is **not** settled.
 
+**The record's tail has an owner now (2026-11-12).** `UClass::Serialize` (`0x0003a800`) is read in
+`docs/NATIVE_VM.md`: after `UStruct`'s fields it writes a `TArray` of 12-byte records at `+0x4d0` and two
+`TArray<dword>`s at `+0x4dc` and (version > `0x62`) `+0x4f4`, and only then the defaults, which a vtable slot reads
+into a buffer sized from the class's own `GetPropertiesSize()`. So the "small table (the bytes between the names are
+hash-like 4-byte values that repeat across classes: `b31d40ff`, `2c08ad6c`, `5911e68c`)" above is the record's own
+arrays, not a component table belonging to the defaults: a scan that starts inside one reads an array element as a
+name index and the next byte as a tag type, which is exactly what "a candidate that parses a package name as a
+property" looks like. Each class's record length is still not measured, so this does not relocate the 545 by itself --
+but it fixes the direction: the block is the last thing in the payload and ends on the payload's last byte
+(`inventory/class_records.csv`'s `last_byte` is `00` for all 2,319 class exports), so it is read **backwards** from
+that terminator, not forwards from a candidate start.
+
+
 Three explanations have been tested and rejected, which is why the residue stays labelled rather than explained:
 
 * **the 64-byte trailer bound** — relaxing it to 4,096 bytes recovers **2** classes and 4 properties;

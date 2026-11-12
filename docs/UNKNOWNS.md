@@ -2694,3 +2694,12 @@ i.e. L1 by the mapping tiers in `AGENTS.md`, with PLAN 3.8's comparator for the 
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.
+
+**2026-11-12: the reader is `UClass`'s, and it is read -- the residue is a start problem, not a grammar one.**
+`UClass::Serialize` (`0x0003a800`) is the function that decides this entry's open half, and `UStruct::Serialize` is
+not: the defaults are a `UClass` field (`+0x4e8`/`+0x4ec`/`+0x4f0`), read by vtable **+0x98** = `0x0003bdc0` into a
+buffer sized by `GetPropertiesSize()` (+0x88 = `0x0003d520`) and asserted `Defaults.Num()==GetPropertiesSize()`
+(`UnClass.cpp:0x454`/`0x459`, `UnClass.h:0x235`). So the 545 withheld blocks are not a `SerializeExpr`-versus-tag
+question: the reader reads tagged properties, the stream carries no length, and the record in front of it ends in two
+named `TArray` fields (12-byte and 4-byte elements) that a forward scan lands inside. Depth: `docs/NATIVE_VM.md`,
+*`UClass::Serialize`*, and `docs/CLASS_DEFAULTS.md`'s *What the 545 withheld classes are*.

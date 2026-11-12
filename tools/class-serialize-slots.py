@@ -26,6 +26,13 @@ SERIALIZE_SLOT = 11
 # `UStruct::Serialize` calls a virtual at vtable +0xa0 once per script byte while it rebuilds the script buffer;
 # +0xa0 / 4 is therefore the token-walk slot, and the next question is which function each class puts there.
 SCRIPT_WALK_SLOT = 0xA0 // 4
+SCRIPT_WALK_SLOT = 0xA0 // 4
+# `UClass::Serialize` (`0x0003a800`) resolves the class object's own property size and its two defaults streams
+# through *this* table, not through the per-class ones: +0x88 is `GetPropertiesSize`, +0x94 and +0x98 are the two
+# defaults streams and +0xa0 the script walk. The per-class tables describe instances, so the same offsets there are
+# a different function for nearly every class -- naming these roles is what `--class Class` exists for.
+SLOT_ROLES = {SERIALIZE_SLOT: "Serialize", 0x88 // 4: "GetPropertiesSize", 0x94 // 4: "SaveProperties",
+              0x98 // 4: "LoadProperties", SCRIPT_WALK_SLOT: "ScriptWalk"}
 SLOT_COUNT = 64
 
 
@@ -115,6 +122,10 @@ def main():
                      "script_walk": ("0x%08x" % slots[SCRIPT_WALK_SLOT]) if length > SCRIPT_WALK_SLOT else "",
                      "script_walk_symbol": owner(slots[SCRIPT_WALK_SLOT]) if length > SCRIPT_WALK_SLOT else ""})
         if args.cls and cls == args.cls:
+            for slot, role in sorted(SLOT_ROLES.items()):
+                if slot < length and slots[slot]:
+                    print("  %-18s slot %2d (+%#04x): %#010x %s"
+                          % (role, slot, slot * 4, slots[slot], owner(slots[slot])))
             if args.walk:
                 for i, s in enumerate(slots):
                     print("  slot %2d: %#010x %s" % (i, s, owner(s)))
