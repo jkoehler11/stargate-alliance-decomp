@@ -66,7 +66,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x40,27,0x00039b49,DynamicArrayInsert,"expr,expr,expr",0,map,three nested tokens
 0x41,27,0x00039b49,DynamicArrayRemove,"expr,expr,expr",0,map,three nested tokens
 0x42,28,0x00039a1a,DebugInfo,bytes:13,13,map,three int32 then one byte
-0x43,29,0x00039ac1,DelegateFunction,"bytes:4,expr",4,map,reference then the expression
+0x43,29,0x00039ac1,DelegateFunction,"index,index,expr",0,map,"two compact indices (object, name) then the expression: the file stores 4 bytes and a guest copy carries 8, and the dword before the script counts both widenings"
 0x44,19,0x00039e04,DelegateProperty,index,0,map,an index
 0x45,10,0x00039b55,LetDelegate,"expr,expr",0,map,"two nested tokens (lvalue, value)"
 0x46,30,0x00039e1f,BadToken,bad-token,0,map,UELib: BadToken; rejected here too

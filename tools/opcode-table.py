@@ -82,7 +82,8 @@ GROUPS = {
     26: ("bytes:1,expr",     "PrimitiveCast", "cast type byte then the expression"),
     27: ("expr,expr,expr",   "DynamicArrayInsert,DynamicArrayRemove", "three nested tokens"),
     28: ("bytes:13",         "DebugInfo", "three int32 then one byte"),
-    29: ("bytes:4,expr",     "DelegateFunction", "reference then the expression"),
+    29: ("index,index,expr", "DelegateFunction",
+         "two compact indices (object, name) then the expression: the file stores 4 bytes and a guest copy carries 8, and the dword before the script counts both widenings"),
     30: ("bad-token",        None, "the handler logs \"Bad expr token %02x\" and returns"),
 }
 

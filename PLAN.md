@@ -5546,6 +5546,27 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the +4 rows were one opcode's operand, and a guest copy proves it)
+
+- **The row the last note sent to the guest is measured, and the answer is a table correction rather than a loader
+  rule.** `tools/xemu/script-ram.py` (new) searches a `pmemsave` image for a script's memory model and reports where
+  the copy's epilogue actually sits. `Engine.u`'s `StreamPlaylist.AddStream` -- script 146, dword 200 against a
+  predicted 196 -- has its copy at `0x00cd84c0` (the same offset in two more dumps, a third shifted by `0x20000`):
+  **176 of 196 model bytes agree**, the first disagreement is the `0x43` `DelegateFunction` reference (**8 bytes in
+  RAM**, 4 in the file), and every byte after it agrees again **shifted by exactly +4** to the same epilogue -- so
+  the copy is 200 bytes, the field's own number, and the four extra bytes are one token's operand rather than an
+  accumulation.
+- **`0x43`'s reference is two compact indices**, `45 1b` (1733) and `7b 06` (443), which is the arithmetic
+  `146 + (4-2) + (4-2) = 200`. `tools/opcode-table.py`'s group 29 said `bytes:4`; corrected to `index,index,expr`, the
+  System directory goes to **11,608 walked (was 11,602), 11,565 exact (99.63%, was 11,485 of 11,602), residue 43 rows
+  (was 117)**: ten of eleven `+4` rows and the one `+8` gone, six previously-refused payloads walking, none regressed.
+  `inventory/opcode_table.csv`, `inventory/opcode_usage.csv` and `inventory/opcode_refusals.csv` regenerate.
+- **The lesson is a counting one**: `op 43` x2 was the closest of 2,376 single-feature rules and left 70 rows, because
+  a rule over a token's *count* cannot express a rule about its *operand widths*. What is left is 43 rows, `-3`
+  largest (14) -- an index the loader does not widen, i.e. the same question in the other direction.
+- Tool (`tools/xemu/script-ram.py` with a dump-free `--check`, and the group-29 row) + docs/BYTECODE.md + U13 + PLAN
+  3.7. The guest read is one `pmemsave`; the corpus numbers need the packages and no boot.
+
 ### Execution notes (2026-11-12, the ambiguous rows are not the same dword read off by a few bytes)
 
 - **The four rows every note hedged as "their header decode is ambiguous" are measured, and the hedge is wrong.**

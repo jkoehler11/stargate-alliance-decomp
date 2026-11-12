@@ -294,9 +294,9 @@ from nothing, which is why the check to run before measuring one is **count the 
 with every compact index operand widened to four bytes**, i.e. `len(script) + sum(4 - width)` over the script's own
 index operands:
 
-    System: 11687 payload(s) with a located epilogue, 11602 walked
-      dword@name_end+12 == the script with every index widened to 4 bytes: 11485 of 11602 (98.99%)
-      dword@name_end+12 == the stored script length: 2141 of 11602 (18.45%)
+    System: 11687 payload(s) with a located epilogue, 11608 walked
+      dword@name_end+12 == the script with every index widened to 4 bytes: 11565 of 11608 (99.63%)
+      dword@name_end+12 == the stored script length: 2141 of 11608 (18.44%)
 
 The reading is not a guess about the field but a consequence of a measured one: the loader widens exactly those
 operands on the way into memory (the note above `operand_spans`: `StargateHUD.DrawOrderTarget`'s log call is `b8 2a`
@@ -312,36 +312,72 @@ Three consequences, and two things not to redo:
 * **It is a check on an extent.** Any candidate end for a script must satisfy the identity — a second test beside
   "the walk reaches the epilogue", and the only one that does not depend on the opcode table. It is what a rebuild
   (3.8) can score a compiled script against.
-* **The residue is 117 payloads of 11,602** (97 above the prediction, 20 below), differences of ±1..±9 with four
-  payloads whose dword is in the millions (the header decode is ambiguous there, not a different field).
-  **No single operand class explains them**: every pattern item's count per residue row was tabulated against the
-  difference, and no class times any small coefficient fits even the 113 rows under ±64. So the residue is a handful
-  of individual token encodings rather than a second rule. `--sizefield --lists N` names each row with the widths of
-  its index operands for the session that wants to chase one.
-* **`--diverge` then asks each residue row where its difference could start, and there is no first operand.** Every
-  span of every residue row is tried as *the* explanation -- an `index` operand the compiler did not widen (it moves
-  the prediction by `-(4 - width)`) or a `fixed` operand whose bytes decode as a compact index of exactly its own
-  width (it moves it by `+(4 - width)` without moving the walk). **9 of the 117 rows have exactly one such operand**
-  (`index-not-widened` at ops `01` 81 sites, `00` 31, `1b` 7, `1c` 1; `fixed-is-index` at `39` 19 sites, `2c` 10,
-  `05` 4, `06`/`0a`/`07` 1 each), 9 more have several, and **99 have none anywhere in the script** -- so for those
-  there is no single operand whose class is a mis-width; the difference is accumulated over the row.
-* **A class of feature does not explain them either, and `case` values are ruled out as the +4 mode.** The rule
+* **The residue is 43 payloads of 11,608** -- it was 117 of 11,602 until the `0x43` row below was corrected, and
+  that one correction took the `+4` mode with it. What remains is `-3` (14 rows, one index the loader does not
+  widen), small `±1..±10` differences, and three payloads whose dword is in the millions (the header decode is
+  ambiguous there, not a different field). **No single operand class explains the rest**: every pattern item's
+  count per residue row is tabulated against the difference, and no class times any small coefficient fits.
+  `--sizefield --lists N` names each row with the widths of its index operands for the session that wants to
+  chase one.
+* **`--diverge` then asks each residue row where its difference could start, and 24 of the 43 have no first
+  operand.** Every span of every residue row is tried as *the* explanation -- an `index` operand the compiler did not
+  widen (it moves the prediction by `-(4 - width)`) or a `fixed` operand whose bytes decode as a compact index of
+  exactly its own width (it moves it by `+(4 - width)` without moving the walk). Re-run against the corrected table:
+  **9 rows have exactly one such operand, 10 have several, and 24 have none anywhere in the script**
+  (`index-not-widened` at ops `01` 92 sites, `00` 31, `1b` 9, `02` 3, `1c` 1; `fixed-is-index` at `39` 19, `2c` 10,
+  `05` 4, `06` 2, `0a`/`07` 1 each). For the 24 the difference is accumulated over the row rather than owned by one
+  operand: `-6` 4, `+5` 3, `-48`/`-4`/`-1`/`+1`/`+2`/`+4`/`+10` 1 each, `+7`/`+9` 2 each, plus the three
+  million-scale rows.
+* **A class of feature does not explain the rest either, and `case` values were never the `+4` mode.** The rule
   `dword - widened_length == k * count(feature)` was tested for every feature a row is made of -- 297 opcodes, operand
-  widths and pattern items -- at every k 1..8, over all 11,602 walked rows: **2,376 rules, none exact**, the closest
-  (`op 43` x2) leaving 70 rows unexplained. The largest difference is **+4 in 40 rows**, spread over at least eight
-  classes (`GUI.GUIController` 5, `GUI.GUIMessageBox` 4, `StargateGame.GameMenu` 4, `Engine.StreamPlaylist` 3,
-  `Engine.StreamInteraction` 3), so it is not one class's compiler path; and those 40 rows carry **no `case` value at
-  all**, while 58 *exact* rows do -- a u16 case widened to a u32 would have fitted 2 rows, so that reading is dead
-  rather than merely unlikely.
+  widths and pattern items -- at every k 1..8 over all 11,608 walked rows: **2,376 rules, none exact**, the closest
+  (`op:0d` x3) still leaving 42 rows. The `+4` rows it could not fit had **no `case` value at all**, while 58 *exact*
+  rows do -- a u16 case widened to a u32 was dead rather than merely unlikely -- and the shape it kept pointing at
+  (`op 43` x2) was real but counted at the wrong granularity: see the subsection below, which removes the whole mode
+  with one table row.
 * **The four "ambiguous header" rows are not a shifted read of the same dword.** `--diverge` also searches the
   44 bytes the header occupies for a dword equal to the prediction, at every byte offset: the three rows whose dword
   is above 10^6 (`InitializeParsers` at 11,665,408, `EnableShadows` 3,932,095, `CalcPathPoint` 7,798,660) and the
   fourth with a 261,119 difference carry **no such dword anywhere in the header** (the report prints `-` per row), so
   whatever those four payloads' `name_end+12` is, it is not this field read a few bytes off.
-* **What is left needs the guest, not the files.** The +4 mode is the one shape with no file-side explanation, and the
-  instrument that already settled the widening itself was a live read: `StargateHUD.DrawOrderTarget` shows `b8 2a` in
-  the package and `a0 1e 26 01` in RAM. The same read on one +4 row -- `Engine.u`'s `StreamPlaylist.AddStream`, dword 200
-  against a predicted 196 -- names the bytes the loader added where the files cannot.
+
+### The `+4` rows are one opcode's operand, measured in a guest (U13, 2026-11-12)
+
+The rows whose dword sat four above the prediction had one thing in common that the feature census could not see,
+because it counted *tokens* rather than the bytes inside one: **`0x43` `DelegateFunction`**. The table recorded its
+reference as four fixed bytes (`bytes:4`), and in a guest it is **eight** -- two compact indices, each widened to a
+four-byte slot. `tools/xemu/script-ram.py` is the read that settled it, on `Engine.u`'s `StreamPlaylist.AddStream`
+(script 146, dword 200 against a predicted 196):
+
+    $ python3 tools/xemu/script-ram.py RAMBIN --dump DUMP --pkg Engine.u --class StreamPlaylist --function AddStream
+    Engine.u StreamPlaylist.AddStream: script 146 bytes, 25 index operand(s) by width {2: 25}
+      model 196 bytes (script + 50 widening(s)); field at name_end+12 = 200, predicted 196, +4
+      search: 134217728 byte(s) of RAM, 5-byte anchor; 0 copy(ies) at the model's length, 3 near miss(es)
+        copy at 0x00cd84c0: 176 of 196 model byte(s) agree, then fixed of op43; epilogue at +197, so the copy is
+          200 bytes (+4 the model)
+
+* **The model matches for 176 bytes and then the copy is four longer.** The copy's first disagreement is the `0x43`
+  token's reference: eight bytes in RAM where the file has four (`90 0d 42 01 d7 08 00 00` against `45 1b 7b 06`).
+  Every byte after it matches the model again **shifted by exactly +4** and ends on the same epilogue, so the +4 is
+  one token's operand and not an accumulation. The same copy is in three independent 128 MiB dumps -- `brk6` and
+  `findtext4` at `0x00cd84c0`, `msg1` at `0x00cb84c0` (the heap shifted) -- so it is a load-time allocation, not one
+  boot's leftover. **Counting tokens cannot see this**: the token sits in 82 payloads, and the rows that move are the
+  ones whose two indices are both two bytes wide.
+* **The file's four bytes are two compact indices**, `45 1b` (1733) and `7b 06` (443): each starts a two-byte index,
+  and the compiler's own arithmetic is `146 + (4-2) + (4-2) = 200`, which is the field. The two slots in RAM do not
+  hold those two numbers -- the first reads `0x01420d90`, above the image end, so a pointer, and the second `0x8d7` --
+  so the loader resolves the reference as well as widening it; the **width** is what this question needed, and the
+  corpus confirms it.
+* **Correcting that one row collapses the mode.** With `0x43` as `index,index,expr`, the System directory gives
+  **11,608 walked (was 11,602), 11,565 exact (was 11,485), 43 residue rows (was 117)**: ten of the eleven `+4` rows
+  and the single `+8` are gone, six payloads the walker used to refuse now walk
+  (`VotingReplicationInfoBase.SendCommand` and `.SendResponse`, `GUINumericEdit.EditOnChange`, and
+  `ChapterSelectionPanel`/`GameModeSelectionPanel`/`ProfilePanel`'s `InternalOnChange`), and no payload got worse.
+  `Engine.u` alone goes from 24 residue rows to 12.
+* **The earlier feature rules were not wrong, they were counted at the wrong granularity.** `op 43` x2 was the
+  *closest* of the 2,376 single-feature rules and left 70 rows, because one `DelegateFunction` adds **four** only
+  when both its indices are two bytes wide. A rule over a token's *count* cannot express a rule about its *operand
+  widths*, which is why the census kept pointing at `op 43` without ever fitting.
 
 ## The shipped scripts, as disassembled
 

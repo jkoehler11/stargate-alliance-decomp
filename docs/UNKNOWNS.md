@@ -1848,6 +1848,22 @@ not exercised by any shipped body: every declaration that named one of those typ
 and two `int/false` counters, `BotEnemy.SquadCoverRequest` `esquadcover/false`), and the `vector/zero` row appears
 in neither residue.
 
+**Eleventh session, 2026-11-12: the `+4` mode is one opcode's operand -- measured in a guest, then confirmed on
+the files.** The previous sessions' feature census counted *tokens*, and the missing quantity lives inside one: the
+`0x43` `DelegateFunction` reference is **two compact indices**, not the four fixed bytes the table recorded.
+`tools/xemu/script-ram.py` searches a `pmemsave` image for a script's memory model (opcodes and fixed operands exact,
+every index operand four wildcard bytes) and measures where the copy's epilogue actually sits. On `Engine.u`'s
+`StreamPlaylist.AddStream` (script 146, dword 200, predicted 196) the copy at `0x00cd84c0` agrees with the model for
+**176 bytes**, disagrees first at the `0x43` reference -- **8 bytes in RAM** against 4 in the file -- and then agrees
+with the model's whole tail **shifted by exactly +4**, ending on the same epilogue: the copy is **200 bytes**, the
+field's own number, and `45 1b` / `7b 06` are two two-byte indices, which is exactly the +4 the field counts.
+With the row corrected to `index,index,expr`: **11,608 of 11,687 payloads walk (was 11,602), 11,565 of 11,608 satisfy
+the identity (99.63%, was 11,485 of 11,602), and the residue falls from 117 rows to 43** -- six previously-refused
+payloads now walk and none regressed. **What is left** is 43 rows: `-3` is now the largest shape (14, an index the
+loader does not widen, i.e. this question in the other direction), with small `+-1..+-10` differences and the three
+million-scale rows this entry already carries as a misaligned header. Each of those needs the same guest instrument
+rather than another file-side census.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
