@@ -1050,6 +1050,32 @@ are limited to expected fields (checksum/timestamp) and documented.
   why the reply is not the proof) + `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. No artifact: the record is a
   run artifact under `$WORK`, and `tools/vcall-stops.py` has nothing to read because no stop was recorded.
 
+
+### Execution notes (2026-11-12, the helper's table is 21 slots and the boundary is a terminator)
+
+- **The run of code pointers is two classes, not one.** `tools/native-vtable.py` reads the table the `+0x220` helper
+  installs and reports **26 code pointers over two tables**: `0x0053f770` with **21 slots** and `0x53f7c4` with **5**.
+  The split is visible only in the store census -- `0x53f7c4` has its own `mov [eax],0x53f7c4` at `0x3313ce`, inside
+  slot 0's factory for a `0x14`-byte adapter -- because **all 26 addresses are valid function starts**, so
+  "code pointers until a non-code dword" over-reads the class by five slots. The previous note's 26 was that over-read.
+- **The boundary rule is the terminator, and it is the only one that covers the table.** Per slot: `map` (an exact
+  function start) **6 of 21**, `call` (an `E8` target) **0 of 21**, `tail` (the preceding bytes complete a
+  `ret`/`ret imm16`/`int3`/`jmp rel`/`jmp [reg(+disp)]`) **21 of 21**; the 5-slot sibling scores 2/0/5. A rule that
+  demanded a known function start -- the previous run's proposal -- would name under a third of the table and leave the
+  extent undefined.
+- **The table dispatches U8's pair from inside itself.** Slots 17 (`0x33122a`) and 18 (`0x33124e`) do
+  `ecx=[esi+0x1c]; eax=[ecx]; call [eax+0x4c]`; slot 20 (`0x33049a`) does `call [eax+0x44]`, `call [eax+0x48]` and
+  nothing else on that object. Two rows of `inventory/vcall_dispatch_sites.csv` (`0x331247`, `0x331279`) are those
+  `+0x4c` calls, and **no body dispatches `+0x50`**, which corrects the earlier phrasing "the family dispatches
+  `+0x44`, `+0x4c` and `+0x50`" (those are the slots it sits at, not what it calls). The 5-slot sibling forwards
+  `[ecx]`, `[ecx+4]`, `[ecx+8]`, `[ecx+c]`.
+- **Naming still has no instrument here.** 0 of the 26 bodies references a string, so there is no `__FILE__` assert to
+  read, and 0 of 21 is a direct call target; the table is the only evidence of its own extent. What would settle the
+  module is a signature or a caller that asserts with a source path.
+- Tool (`tools/native-vtable.py`: the run/store split, the three boundary flags, the dispatch scan, an 18-case
+  `--check` with no dump) + `make native-vtable` + `inventory/native_vtable_census.csv` (26 rows) +
+  `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8. Reads the image; no boot.
+
 ### Execution notes (2026-11-12, the base is a `.data` singleton and the 38 candidates are a different field)
 
 - **The read U8 asked for was one instruction further back than the callers.** `tools/vcall-field-owner.py` now
