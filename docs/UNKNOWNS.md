@@ -1021,6 +1021,22 @@ never through an absolute class table or global. The remaining question is uncha
 which *class* an arbitrary `[obj]` belongs to at run time -- which a stock-disc boot cannot answer, because the
 multiplayer/dedicated path never runs.
 
+**2026-11-12, the helper's table is 21 slots, not 26, and the boundary is a terminator.** `tools/native-vtable.py`
+(`inventory/native_vtable_census.csv`) re-reads the table the `.data` singleton's `+0x220` helper installs and finds
+**26 code pointers spanning two classes**: `0x53f770` with **21 slots** and `0x53f7c4` with **5**, split because
+`0x53f7c4` carries its own install store (`mov [eax],0x53f7c4` at `0x3313ce`, inside slot 0's factory for a `0x14`-byte
+adapter). The over-read was not an address error -- every one of the 26 is a valid function start -- it was a missing
+rule: a table cannot contain another table's start. On the boundary rule the previous note asked for, a slot qualifies
+as `map` (an exact start in `symbols/xbox_functions.csv`) 6 of 21, as `call` (an `E8` target) **0 of 21**, and as
+`tail` (the byte before completes `ret`/`ret imm16`/`int3`/`jmp rel`/`jmp [reg]`) **21 of 21**; the sibling scores
+2/0/5. So the cheapest naming-free rule is the terminator, and "requires a known function start" would have named under
+a third of the table. The bodies also place the pair: slots 17/18 (`0x33122a`, `0x33124e`) call `[eax+0x4c]` on the
+object held at `+0x1c`, and slot 20 (`0x33049a`) calls `[eax+0x44]`/`[eax+0x48]` on that same object -- two of the 55
+`+0x4c` sites U8 counts are these calls (`0x331247`, `0x331279`) -- while **no body in the table dispatches `+0x50`**.
+What stays open is unchanged and is not a coverage problem: no body references a string (0 of 26, so no `__FILE__`
+assert), none is a direct call target, and the module's name still needs a signature or an asserting caller.
+
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature

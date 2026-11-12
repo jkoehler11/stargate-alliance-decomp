@@ -596,3 +596,42 @@ It does not name the module: every function in `0x334e00`-`0x337500` is unattrib
 `__FILE__` assert, and the only outside edge is the XONLINE section's entry stubs (`0x42bf49`, `0x42bf54`, `0x42bf97`,
 `0x42bfb8`, `0x42bfc3`, `0x42bfce`, each `mov ecx,[0x7ba330]` then a `jmp` back into `.text`) -- the family calls the
 Xbox Live library, which does not say what the family is.
+
+## The helper's table is 21 slots, and the five after it are a second class (2026-11-12)
+
+`tools/native-vtable.py` (`--check` is a synthetic byte test, no dump) censuses a native vtable from
+the image: extent, per-slot boundary evidence, body size and the dispatches inside each body. Run at
+`0x0053f770` it reports **26 code pointers in the run but two tables** -- `0x53f770` with **21
+slots** and `0x53f7c4` with **5** -- because `0x53f7c4` has an install store of its own: `mov
+[eax],0x53f7c4` at `0x3313ce`, inside the body of slot 0 of the first table (a factory that
+allocates `0x14` bytes at line `0x8019` and returns the adapter). A table cannot contain another
+table's start, and the dwords alone cannot show the split, because **all 26 addresses are perfectly
+good function starts**; "count code pointers until one is not code" over-reads the class by five
+slots. The previous note's 26 is that over-read, corrected here.
+
+**The boundary rule the previous note proposed would have named eight slots, not 21.** Each slot is
+measured three independent ways: an exact function start in `symbols/xbox_functions.csv` (`map`), a
+direct `E8 rel32` call target (`call`), and "the bytes ending one past it complete a terminator"
+(`tail`: `ret`, `ret imm16`, `int3` fill, `jmp rel8`/`rel32`, `jmp [reg]`/`jmp [reg+disp]` with the
+displacement inside the window). On the first table the scores are `map` **6 of 21**, `call` **0 of
+21**, `tail` **21 of 21**; the sibling scores 2 / 0 / 5. A census that required a known function
+start would leave three quarters of the table unnamed and the extent undefined, while the terminator
+rule needs neither a map nor a decompiler and covers all of it. That is why the tool makes `tail`
+its primary rule and reports `map`/`call` beside it.
+
+**The bodies dispatch the pair U8 counts, through one field.** Slot 17 (`0x33122a`) and slot 18
+(`0x33124e`) both do `ecx = [esi+0x1c]; eax = [ecx]; call [eax+0x4c]` -- slot 19 of the object the
+interface holds at `+0x1c` -- and slot 20 (`0x33049a`) does `call [eax+0x44]` then `call
+[eax+0x48]` (slots 17 and 18) on the same held object, with four arguments. Two rows of
+`inventory/vcall_dispatch_sites.csv` (`0x331247`, `0x331279`) are exactly those `+0x4c` calls, so
+U8's own population contains callers from inside this family, and **no body here dispatches
+`+0x50`**: the "family dispatches `+0x44`, `+0x4c` and `+0x50`" of the previous note is true of the
+slots they sit at, not of the displacements they call. The five-slot sibling is a forwarder by the
+same measurement: its slots 1-4 call `[ecx]`, `[ecx+0x4]`, `[ecx+0x8]` and `[ecx+0xc]` on the object
+at `+0x4`.
+
+**What it does not do is name the module.** Not one of the 26 bodies references a string
+(`0 of 26`, `__FILE__` asserts included), none of them is a direct call target, and the table is
+therefore the only evidence of its own extent. `inventory/native_vtable_census.csv` holds the 26
+rows; the naming question stays where U8 leaves it, and the module's name needs a signature or a
+caller that asserts with a source path, not another boot.
