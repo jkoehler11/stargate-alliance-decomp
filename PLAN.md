@@ -5546,6 +5546,17 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the ambiguous rows are not the same dword read off by a few bytes)
+
+- **The four rows every note hedged as "their header decode is ambiguous" are measured, and the hedge is wrong.**
+  `--diverge` now searches the 44 bytes a header occupies for a dword equal to the prediction at *every* byte offset:
+  the three rows whose dword is above 10^6 (`InitializeParsers` 11,665,408 over a 183-byte script, `EnableShadows`
+  3,932,095, `CalcPathPoint` 7,798,660) and the fourth at 261,119 carry **no such dword anywhere in those bytes**, so
+  the field cannot be this one read a few bytes off. They are payloads this reader misaligns, and the read that names
+  what they hold is the loader's, not another offset scan -- carry it as such rather than as a near-miss.
+- Tool (`--diverge`'s `wild` line and its per-row `header-aligned dword at` column) + `docs/BYTECODE.md` + `docs/UNKNOWNS.md`
+  U13 + PLAN 3.7. Reads the packages; no boot, no artifact.
+
 ### Execution notes (2026-11-12, the residue has no first operand and no feature class)
 
 - **The question the last note named -- "per row, find the first operand where the widened-size prediction diverges" --

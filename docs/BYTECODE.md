@@ -333,6 +333,11 @@ Three consequences, and two things not to redo:
   `Engine.StreamInteraction` 3), so it is not one class's compiler path; and those 40 rows carry **no `case` value at
   all**, while 58 *exact* rows do -- a u16 case widened to a u32 would have fitted 2 rows, so that reading is dead
   rather than merely unlikely.
+* **The four "ambiguous header" rows are not a shifted read of the same dword.** `--diverge` also searches the
+  44 bytes the header occupies for a dword equal to the prediction, at every byte offset: the three rows whose dword
+  is above 10^6 (`InitializeParsers` at 11,665,408, `EnableShadows` 3,932,095, `CalcPathPoint` 7,798,660) and the
+  fourth with a 261,119 difference carry **no such dword anywhere in the header** (the report prints `-` per row), so
+  whatever those four payloads' `name_end+12` is, it is not this field read a few bytes off.
 * **What is left needs the guest, not the files.** The +4 mode is the one shape with no file-side explanation, and the
   instrument that already settled the widening itself was a live read: `StargateHUD.DrawOrderTarget` shows `b8 2a` in
   the package and `a0 1e 26 01` in RAM. The same read on one +4 row -- `Engine.u`'s `StreamPlaylist.AddStream`, dword 200
