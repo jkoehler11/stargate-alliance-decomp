@@ -1376,6 +1376,26 @@ chain and subtree lack the name (`Object` 36 -- a dispatch over every class in t
 front. The next reading worth trying is the callee's **declared return type** (12 `FinalFunction` and 5
 `VirtualFunction` receivers), which needs a function's return type off the same `ScriptText`; not attempted.
 
+**2026-11-11, and the return-type reading is attempted: the residue it was pointed at is not there, but a spelling bug
+beside it placed 57 sites.** `source_returns` reads a function's declared return type off the same `ScriptText` (the
+first group of `_SRC_FUNC`), and `_receiver_reading` answers a call-token receiver from it: a `FinalFunction` names its
+Function export, so the callee's class is that export's outer (a `State`'s function belongs to the class that owns the
+state), and a `VirtualFunction`/`GlobalFunction` callee is resolved on the caller's chain. `OBJECT_TOKENS` had to gain
+the three call tokens first, or the branch is unreachable -- the same gate that cost the array round a session.
+**822 sites** front a by-name call with another call; **72 type** from the callee's declaration (`sound` 33,
+`PlayerController` 22, `SGFormation` 6), **534 name a callee that returns nothing**, **131 an imported `Function`**
+(declared in another package -- the route for anyone who wants it, though only 12 of those sites are unplaced), 72 a
+return value that is not a class, 11 a callee whose class declares no return type for it and 2 outside the caller's
+chain. Only **4** placements come from it, because most of those 822 were already placed on the caller's chain, and
+the 39 "completed value in front" turned out to be mostly statement tails (`JumpIfNot` 1,250 sites asked, `Let` 520,
+`Jump` 318), not receivers. Two readings beside it did the work instead: the **ancestor's** `ScriptText` for a local
+its own class does not declare (**7**, `Engine.Vehicle` 3, `Engine.Actor` 2, `StargateGame.DeathMatch` 2), and
+**matching a declared name without case** the way the compiler does (**149 sites**: `Msg` 30, `t` 13, `i` 12, `Dir` 8
+-- the same defect as `pawn` and `class<LocalMessage>`). By-name placement **13,201 -> 13,258 of 13,507 (98.2%)**,
+residue **306 -> 249**, the receiver's chain 2,584 -> **2,641**, untyped locals **81 -> 28**. What is left is 181
+expressions that name no class, 46 a base- or `Object`-typed dispatch and 22 statement tails, and none of those is a
+question another reading of these eighteen packages can answer -- which is the negative this entry closes on.
+
 **Fourteenth session, 2026-10-29: two negatives worth keeping.** The 85 scripts that still refuse after the operand
 correction are a per-opcode tail, not a rule: `LabelTable` non-termination 16, then `0x52` 6, `0x54` 5, `0x49` 5,
 `0x03` 4, `0x4c` 3, `0x2b` 3 and four parameter lists ending on `0xff`. And **class scripts are not compressed**: all
