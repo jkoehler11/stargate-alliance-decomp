@@ -5439,6 +5439,21 @@ and a deliberate one-line script break is caught by the boot test.
 - **Next:** a route to the script start that does not involve guessing the header, or content work (3.10/8.3) as the
   next finishable unit.
 
+### Execution notes (2026-11-12, the anchor accounts for every declaration, and no literal rule is missing)
+
+- **The population closes, and the one rule an earlier note named as next is not needed.** `--start-anchor` prints
+  **466 anchored, 2 declared twice under one key, 82 with no body, 0 unanchored payloads carrying a script**. The last
+  line is new and exists for the claim: a row there is a declaration with an unmeasured return type *and* a script in
+  its payload, i.e. a literal to measure. It is empty.
+- **Corrected in place, in the note below that named them**: the `vector`/`rotator`/`struct`/`array` literal
+  encodings are not exercised by any shipped body. Every declaration that named one of those types
+  (`Weapon.UpdateLeadLag` `rotator/zero`, `VoiceChatReplicationInfo`'s three `array<voicechatroom>/false` accessors and
+  two `int/false` counters, `BotEnemy.SquadCoverRequest` `esquadcover/false`) is a bodiless stub, and `vector/zero`
+  appears in neither residue. Measuring a "next rule" from a population of zero is the failure this note prevents:
+  count the population that would exercise a rule before measuring it.
+- Tool (`unrouted_scripted_rows`, always printed) + `docs/BYTECODE.md` "Where the script starts" + `docs/UNKNOWNS.md`
+  U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
+
 ### Execution notes (2026-11-12, U13's last field is the script's size in memory)
 
 - **The dword at `name_end+12` counts the script's bytes with every compact index widened to four.** A new
@@ -5505,7 +5520,8 @@ and a deliberate one-line script break is caught by the boot test.
   so the difference is not in the payload: the next probe is the four declarations' own text, now named above.
 - **Off the population: 2 doubled declarations and 10 unmeasured return types** (`array<voicechatroom>/false` 3,
   `rotator/zero` 2, `int/false` 2, `vector/zero` 1, `esquadcover/false` 1) — the vector/rotator/struct/array literal
-  encodings are the next rule to measure, not guess.
+  encodings are the next rule to measure, not guess. **Corrected in the note above:** those ten declarations are
+  bodiless stubs, so no shipped body exercises those literals and there is no rule to measure.
 - Tool (`--lists`, state spans blanked before the class-level pass) + `docs/BYTECODE.md` "Where the script starts"
   + `docs/UNKNOWNS.md` U13 + PLAN 3.7. Reads the packages; no boot, no Ghidra, no artifact.
 

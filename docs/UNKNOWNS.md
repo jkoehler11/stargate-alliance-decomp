@@ -1820,6 +1820,15 @@ their header decode is ambiguous); `--sizefield --lists N` names each row with i
 operand class explains them** — every pattern item's count per residue row was compared against the difference and
 nothing fits — so they are individual token encodings, not a second rule.
 
+**And the anchor now accounts for every declaration in the corpus**: 466 anchored, 2 declared twice under one
+key, 82 with no body, and **0 unanchored payloads carrying a script** — a line `--start-anchor` prints for this
+claim, since a row there would be a declaration with an unmeasured return type *and* a script to measure it from.
+So the `vector`/`rotator`/`struct`/`array` literal encodings an earlier note named as the next measurement are
+not exercised by any shipped body: every declaration that named one of those types is a bodiless stub
+(`Weapon.UpdateLeadLag` `rotator/zero`, `VoiceChatReplicationInfo`'s three `array<voicechatroom>/false` accessors
+and two `int/false` counters, `BotEnemy.SquadCoverRequest` `esquadcover/false`), and the `vector/zero` row appears
+in neither residue.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

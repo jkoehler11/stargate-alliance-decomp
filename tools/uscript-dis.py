@@ -948,6 +948,7 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     no_body_rows = []
     no_body_scripted = []
     unrouted_empty_rows = []
+    unrouted_scripted_rows = []
     unroutable = {}
     no_body_keys = {}
     for one in files:
@@ -1067,6 +1068,11 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
                 if pay[off + 16:end] == epilogue:
                     unrouted_empty += 1
                     unrouted_empty_rows.append((os.path.basename(one), key, unroutable[key]))
+                else:
+                    # A rule is missing for this return type and the payload does carry a script, so its first
+                    # bytes are the literal the compiler emitted: print them instead of leaving the rule to guess.
+                    unrouted_scripted_rows.append((os.path.basename(one), key, unroutable[key],
+                                                   end - (off + 16), pay[off + 16:off + 24].hex(" ")))
                 continue
             located += 1
             anchored += 1
@@ -1200,6 +1206,13 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
         for pkgname, cname, sname, fname, rtype, kind in unrouted_rows[:name_rows]:
             print("    %-12s %s%s.%s  %s/%s"
                   % (pkgname, cname, ("[state %s]" % sname) if sname else "", fname, rtype or "void", kind))
+    print("  unanchored payloads carrying a script (each one is a literal rule to measure): %d"
+          % len(unrouted_scripted_rows))
+    if name_rows and unrouted_scripted_rows:
+        for pkgname, key, (rtype, kind), slen, at16 in unrouted_scripted_rows[:name_rows]:
+            print("    %-12s %s%s.%s  %s/%s  script %d bytes  at+16 %s"
+                  % (pkgname, key[0], ("[state %s]" % key[1]) if key[1] else "", key[2],
+                     rtype or "void", kind, slen, at16))
     return 0
 
 
