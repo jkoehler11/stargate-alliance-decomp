@@ -1655,12 +1655,12 @@ callee is handed. A site is kept only when a forward decode from a start offset 
 12-byte element grammar, and the image contains exactly one call that can produce one -- so "a second member of the
 same element type, packed elsewhere" is refuted for this build: nowhere else is `FUN_0003d900` called at all.
 
-**Which is why the middle belongs to the other writer.** The two bodies agree on their `TArray` skeleton -- reserve,
-count through `FUN_000637e0`, then one archive call per element -- and differ only in the element: twelve bytes
-through archive slot `+0x18` for `0x3d900`, four bytes through the name slot `+0x1c` for `0x3d160`, which writes one
-or two bytes per element to the file. A 20-byte middle is therefore a count and roughly two to seven names, and the
-"two twelve-byte records" parse that made it look like a second record array is a coincidence of a stream that
-small rather than the field's shape.
+**Which writer the middle belongs to is named; its encoding is not.** The two bodies agree on their `TArray`
+skeleton -- reserve, count through `FUN_000637e0`, then one archive call per element -- and differ only in the
+element: twelve bytes through archive slot `+0x18` for `0x3d900`, four bytes through the name slot `+0x1c` for
+`0x3d160`. So the middle is handed to the `+0x4dc` writer and is not packed by a second record writer, which settles
+the owner and leaves the shape open -- the subsection below measures the reader's own field order over the same gap
+and it closes on no class at all.
 
 **And the reader's second call is handed its member from under the first one.** At `0x3a8af` the instruction
 immediately before the call is a single `PUSH EAX`, and `EAX` holds the value just returned by the call at
@@ -1680,10 +1680,25 @@ calls the archive's `+0x18` with the reference and its two dwords; `FUN_0003d160
 count the same way, then per element calls the archive's `+0x1c` -- the name method -- which is why its file elements
 are one and two bytes. Both `return param_1`.
 
-What this leaves open is no longer the call but the parse: the `+0x4dc` name array's element count against the
-middle's bytes, which is a grammar test on data already in `inventory/class_record_gap.csv` -- the count plus that
-many archive names, closing on the same 361 classes the twelve-byte parse claims, would retire the second-array
-reading without another read of the image.
+What this leaves open is the middle's **encoding**, not its owner: both grammars in the corpus fit its bytes -- a
+compact count and twelve-byte records on 361 classes, a compact count and compact pairs on 408 -- and neither parse
+closes the gap at its position, so the field is written by `FUN_0003d160` in a shape the corpus's parse of
+`FUN_0003d160` does not model. The next read is that writer's own reservation against the middle's leading byte.
+
+### The gap does not decompose in the reader's own field order either
+
+`tools/class-record-gap.py` (`make class-record-gap`, `inventory/class_record_gap.csv`, `--check` in `make ci`)
+re-reads each class's gap the way the reader writes it: the `+0x4dc` names (`FUN_0003d160`: a compact count and that
+many compact pairs), the config name (two compact fields), then the `+0x4f4` names, requiring the last to end exactly
+on the defaults start. **0 of 549 classes close**, and the control says the position is not the problem -- the same
+three-part parse started one to eight bytes later closes on **15**. The middle read as a count-plus-pairs list alone
+parses on 408 of 549, but consumes a median of 6 bytes and leaves 21: what it matches is the leading count of the
+twelve-byte array, not a field of its own.
+
+So two grammars fit the middle's bytes and neither accounts for its position, which is why naming the writer did not
+name the field. The next instrument is the element width `FUN_0003d160` reserves -- `count*4` through archive slot
+`+0x14`, then one name call per element -- read against the middle's leading byte, rather than another grammar over
+the same bytes.
 
 (A previous version of this section concluded that no site in the image is handed `+0x4dc`, from the pushes nearest
 each call. The negative was the census's window, not the build.)
