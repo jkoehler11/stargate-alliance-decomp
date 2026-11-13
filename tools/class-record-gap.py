@@ -20,6 +20,10 @@ decomposing the gap instead of naming its fields:
   array + 8-byte config `FName`" reading calls the config: two int32s. The artifact carries them (`cfg_a`, `cfg_b`)
   and `cfg_ok` says whether they are *semantically* an `FName` (the first a name index inside the table, the second
   a duplicate counter of at most 64) -- the test the structural split cannot make;
+* **which member it is** -- the two arrays' reference lists side by side (`first_refs`, `second_refs`):
+  identical lists mean the writer packed one member twice, disjoint ones two members, and `ref_shared`
+  counts the values in common; `first_kinds` / `second_kinds` name the class of each referenced object, so
+  "a copy" and "a second class-reference list" are different rows rather than different opinions;
 * **the control** -- the same array grammar started at each of the next 8 bytes, counting the starts that parse and
   the ones whose end is exactly the defaults start. A grammar that fits the real position and the shifted ones
   about equally describes the arithmetic, not the record.
@@ -56,7 +60,9 @@ WINDOW = 8                               # the control's start offsets, 1..8 pas
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "array_end", "gap", "shape",
            "first_count", "second_count", "second_len", "second_widths", "second_refs_ok", "second_zero",
            "ctl_parsed", "ctl_exact", "rest", "rest_lead", "list_count", "list_len", "list_exact",
-           "cfg_a", "cfg_b", "cfg_ok"]
+           "cfg_a", "cfg_b", "cfg_ok",
+           "first_refs", "second_refs", "ref_same", "ref_same_set", "ref_shared", "array_same",
+           "first_kinds", "second_kinds"]
 
 
 def read_index(buf, off):
@@ -124,6 +130,26 @@ def walk_pairs(buf, p):
     return {"count": count, "widths": widths, "end": o, "len": o - p}
 
 
+def kind_of(pkg, v):
+    """What one array reference points at: an export's own class, an import's class name, or null."""
+    if v == 0:
+        return "null"
+    if v > 0:
+        return pkg.class_name_of(pkg.exports[v - 1]) if v <= len(pkg.exports) else "out-of-range"
+    i = -v - 1
+    if i < len(pkg.imports):
+        return "import:" + pkg.name(pkg.imports[i]["class"])
+    return "out-of-range"
+
+
+def kinds(pkg, refs):
+    return "+".join("%s:%d" % kv for kv in sorted(collections.Counter(kind_of(pkg, v) for v in refs).items()))
+
+
+def split_refs(text):
+    return [int(x) for x in text.split("+")] if text else []
+
+
 def in_tables(v, nimp, nex):
     return v == 0 or (v > 0 and v <= nex) or (v < 0 and -v <= nimp)
 
@@ -134,17 +160,29 @@ def measure(data, prefix_end, block, array_end, nimp, nex, nnames):
            "shape": "none", "first_count": "", "second_count": "", "second_len": "",
            "second_widths": "", "second_refs_ok": "", "second_zero": "", "ctl_parsed": 0, "ctl_exact": 0,
            "rest": "", "rest_lead": "", "list_count": "", "list_len": "", "list_exact": "",
-           "cfg_a": "", "cfg_b": "", "cfg_ok": ""}
+           "cfg_a": "", "cfg_b": "", "cfg_ok": "",
+           "first_refs": "", "second_refs": "", "ref_same": "", "ref_same_set": "", "ref_shared": "",
+           "array_same": ""}
     first = walk_array(data, prefix_end + DOC_OFFSET)
     if first:
         row["first_count"] = first["count"]
+        row["first_refs"] = "+".join(str(v) for v in first["refs"])
     second = walk_array(data, array_end)
     if second and second["end"] <= block:
         row.update({"shape": "second", "second_count": second["count"], "second_len": second["len"],
                     "second_widths": "+".join(str(w) for w in second["widths"]),
                     "second_refs_ok": int(all(in_tables(v, nimp, nex) for v in second["refs"])),
-                    "second_zero": int(not any(second["refs"]))})
+                    "second_zero": int(not any(second["refs"])),
+                    "second_refs": "+".join(str(v) for v in second["refs"])})
         p = second["end"]
+        if first:
+            # Identical lists mean the writer packed the same member twice; disjoint ones mean two members.
+            row["ref_same"] = int(first["refs"] == second["refs"])
+            row["ref_same_set"] = int(collections.Counter(first["refs"]) == collections.Counter(second["refs"]))
+            row["ref_shared"] = sum((collections.Counter(first["refs"])
+                                     & collections.Counter(second["refs"])).values())
+            row["array_same"] = int(data[prefix_end + DOC_OFFSET:first["end"]]
+                                    == data[array_end:second["end"]])
     else:
         p = array_end
         if walk_array(data, array_end) or walk_pairs(data, array_end):
@@ -228,6 +266,10 @@ def sweep(args):
             row = {"package": name, "class": key[1], "payload": len(data)}
             row.update(measure(data, prefix_end, block, array_end, len(pkg.imports), len(pkg.exports),
                                len(pkg.names)))
+            if row["first_refs"]:
+                row["first_kinds"] = kinds(pkg, split_refs(row["first_refs"]))
+            if row["second_refs"]:
+                row["second_kinds"] = kinds(pkg, split_refs(row["second_refs"]))
             rows.append(row)
     if args.out:
         os.makedirs(args.out, exist_ok=True)
@@ -255,7 +297,8 @@ def report(rows):
     for r in rows:
         for k in ("gap", "array_end", "block_start", "first_count", "second_count", "second_len",
                   "second_refs_ok", "second_zero", "ctl_parsed", "ctl_exact", "rest", "rest_lead",
-                  "list_count", "list_len", "list_exact", "cfg_a", "cfg_b", "cfg_ok"):
+                  "list_count", "list_len", "list_exact", "cfg_a", "cfg_b", "cfg_ok",
+                  "ref_same", "ref_same_set", "ref_shared", "array_same"):
             if r[k] not in ("", None):
                 r[k] = int(r[k])
     print("located classes: %d" % len(rows))
@@ -279,6 +322,21 @@ def report(rows):
         print("  every reference inside the package's object tables: %d of %d"
               % (sum(1 for r in second if r["second_refs_ok"]), len(second)))
         print("  all-null records: %d" % sum(1 for r in second if r["second_zero"]))
+        cmp = [r for r in second if r["ref_same"] not in ("", None)]
+        print("  its reference list against the first array's: identical %d, same values in another order %d, "
+              "sharing one or more values %d, disjoint %d"
+              % (sum(1 for r in cmp if r["ref_same"]), sum(1 for r in cmp if r["ref_same_set"]),
+                 sum(1 for r in cmp if r["ref_shared"]), sum(1 for r in cmp if r["ref_shared"] == 0)))
+        print("  identical bytes over the whole array: %d of %d"
+              % (sum(1 for r in cmp if r["array_same"]), len(cmp)))
+        for label, key in (("the first array points at", "first_kinds"), ("the second array points at", "second_kinds")):
+            total = collections.Counter()
+            for r in cmp:
+                for part in (r[key] or "").split("+"):
+                    if ":" in part:
+                        name, n = part.rsplit(":", 1)
+                        total[name] += int(n)
+            print("  %s: %s" % (label, total.most_common(6)))
     print("no second array parses: %d (a list directly at the tail: %d)"
           % (len(rows) - len(second), sum(1 for r in rows if r["shape"] == "list-only")))
     print("the same grammar started 1..%d bytes later: %d starts parse, %d land on the defaults start"
@@ -372,6 +430,16 @@ def self_check():
     assert row["rest"] == 7, row
     assert row["list_count"] == 3 and row["list_exact"] == 1, row
     assert row["ctl_exact"] == 0, "a shifted start must not land on the block: %r" % row
+    assert row["ref_same"] == 0 and row["ref_same_set"] == 0 and row["ref_shared"] == 1, row
+    assert row["array_same"] == 0 and row["first_refs"] == "1+1+1", row
+
+    # The same array packed twice: identical values in identical order, byte for byte.
+    span = data[prefix_end + DOC_OFFSET:array_end]
+    body = data[:array_end] + span
+    row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
+    assert row["second_count"] == 3 and row["second_len"] == len(span), row
+    assert row["ref_same"] == 1 and row["ref_same_set"] == 1 and row["array_same"] == 1, row
+    assert row["ref_shared"] == 3 and row["rest"] == 0, row
 
     # An empty list is a zero count byte, and the record still closes on it.
     body = data[:block - 7] + compact(0)

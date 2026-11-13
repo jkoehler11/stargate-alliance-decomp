@@ -28,7 +28,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_record_array.csv` | 2204 | 27 | `make class-record-array` |
 | `inventory/class_record_element.csv` | 549 | 15 | `make class-record-element` |
 | `inventory/class_record_fields.csv` | 2209 | 13 | `make class-record-fields` |
-| `inventory/class_record_gap.csv` | 549 | 24 | `make class-record-gap` |
+| `inventory/class_record_gap.csv` | 549 | 32 | `make class-record-gap` |
 | `inventory/class_record_middle.csv` | 2204 | 19 | `make class-record-middle` |
 | `inventory/class_record_run.csv` | 2204 | 32 | `make class-record-run` |
 | `inventory/class_record_tail.csv` | 291 | 22 | `make class-record-tail` |

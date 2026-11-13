@@ -2972,3 +2972,16 @@ comparison of the two arrays' reference lists per class: identical values mean o
 values mean two members -- both ends are already in the artifact, so it is a column, not a boot. Numbers:
 `docs/NATIVE_VM.md`, *The 20-byte middle is a second record array, and the config name is not in it*;
 `docs/CLASS_DEFAULTS.md`, *The 27-byte gap is an array and a list*.
+
+**2026-11-13 (fifth): the second array is a different member, and it is a class-reference list.** The test this
+entry named -- identical reference lists mean one array written twice, disjoint ones mean two members -- is measured
+on 361 classes (`inventory/class_record_gap.csv`): **0** identical in order, **0** holding the same values
+reordered, **0** identical byte spans, **333** with no reference in common and 28 sharing one to ten. So the two
+arrays are not the same list, and the count matching on 319 rows makes them parallel rather than copied. Their
+contents separate them further: the second array's references are **93.5% exports of class `Class`** (738 of 789
+resolvable) and 94.4% of its imports, against 4.0% of the corpus's exports, while the first array is 80.3% classes
+padded with 735 nulls. **What would settle it now** is the writer: the reader `0x0003a800` calls the record writer
+`FUN_0003d900` once (`0x3a8a6`) and the pair writer `FUN_0003d160` twice (`0x3a8af`, `0x3a904`), so a 20-byte
+two-record array at the tail is not packed by that body -- a census of the `0x3d900` call sites and the member
+displacement each one passes names the offset the second array occupies without a boot. Numbers:
+`docs/NATIVE_VM.md`, *The second array is a different member, not `+0x4d0` written twice*.
