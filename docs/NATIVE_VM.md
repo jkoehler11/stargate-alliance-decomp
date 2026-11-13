@@ -807,6 +807,41 @@ which is what the last note asked for; the field *list* is still short of the re
 are not relocated by this route either, and the per-class body between the end of these fields and the block
 start is what remains.
 
+### The stride-9 array is in the middle, and the leftover is not one grammar
+
+Two readings walked the record from its own field table and one from the block backwards; all three refused. This one
+stops asking for a field list and asks what the bytes between the prefix's end and the block start *are*.
+`tools/class-record-middle.py` (`make class-record-middle`, `inventory/class_record_middle.csv`, `--check` in
+`make ci`) measures three things on the 2,204 classes whose block start is located.
+
+**The 12-byte record array is in the middle, found by its period rather than by its count.** The element
+`FUN_0003d900` writes is one object reference plus two dwords -- 9 bytes in a cooked package -- so consecutive
+identical records repeat one 4-byte field every 9 bytes. **536 classes (24.3%)** hold a run of at least three such
+units: median 5 units, p90 14, and **269 units (2,421 bytes)** in `StargateGame.SGMenuInteraction`. In every one of
+the 536 a second byte inside the unit varies while that dword repeats, which is the `[reference][dword][dword]`
+split the writer names. The control is the same search over a window of the middle's length taken from the block
+start: **13 classes (0.6%)**. So the run is the record array and not a permissive grammar -- but where it starts is a
+distribution, not a constant: its first unit sits a median 128 bytes from the prefix's end, with modes at +78 (28
+classes) and +84 (26). That is why the count field in front of it has not been found: the array can be located by
+its period for a quarter of the corpus, and no single offset in the field table precedes it.
+
+**The leftover after the documented walk is not one grammar.** Of the 1,166 classes whose walk stays inside the
+payload, the window from the walk's end to the block start labels as **1,037 `mixed`** (median 42 bytes, commonest
+size 20 on 190 classes), 47 `overshoot` (the walk ends past the block), 44 `dwords` (a whole number of dwords with a
+repeat), 27 `records` (a whole number of 9-byte units), 7 `compact` (a chain of in-range compact indices) and 4
+`zero`. The leftover's own mode, 20 bytes, is the width of the five-dword group, so "one more field in front of the
+block" is the shape the corpus rules out: a field list that closed the walk would have to close it 20 bytes before
+the block, not in front of it.
+
+**The fit sweep refuses, and its own control says why.** If the middle were the record's own tail, some start offset
+for the *same* field list would end exactly on the block start. Swept over offsets 0-40 with the five-dword group
+where `UClass::Serialize` writes it, **80 classes (3.6%)** land -- against 46 (2.1%) for the same sweep aimed 8 bytes
+past the block start. With the dword group moved after the two name arrays, 618 (28.0%) land against a control of 74
+(3.4%) -- but **360 of those 618 are the 367 classes whose middle is exactly 88 bytes**, a size at which a short
+window walks at many offsets (98% of that class fits somewhere); among middles of every other size the rate is 258
+of 1,837 (14%). So the sweep measures how easily a short middle walks, not the field order, and it is recorded as a
+negative: the ordering claim it appears to make does not survive a size-controlled reading.
+
 ### `UClass::Serialize` (`0x0003a800`): the defaults are a buffer, and the record's tail is arrays
 
 `UStruct::Serialize` is not the last reader on a class export's path. `UClass::Serialize` (`0x0003a800`, 1,310 bytes)

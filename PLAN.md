@@ -1176,6 +1176,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the record array is found by its period, and the leftover is not one grammar)
+
+- **The 9-byte record array is in the middle on a quarter of the corpus, and it is found by its period.** The
+  element `FUN_0003d900` writes is a one-byte object reference plus two dwords, so identical consecutive records
+  repeat a 4-byte field every 9 bytes: **536 of 2,204** located classes (24.3%) hold a run of at least three such
+  units, median 5, p90 14, max **269 units (2,421 bytes)** in `StargateGame.SGMenuInteraction`, and in all 536 a
+  byte inside the unit varies while the dword repeats -- the `[reference][dword][dword]` split. The same search over
+  a window of the middle's length taken from the block start finds **13** (0.6%), so the run is structure, not a
+  permissive grammar. The run's first unit sits a median **128** bytes from the prefix's end (+78 on 28 classes,
+  +84 on 26), so the array is locatable where no count field in front of it is.
+- **The leftover is labelled, and its commonest size rules out one more field.** Of 1,166 classes whose field walk
+  stays inside the payload, the window from the walk's end to the block start is `mixed` on **1,037** (median 42
+  bytes, commonest 20 on 190), `overshoot` 47, `dwords` 44, `records` 27, `compact` 7, `zero` 4. The mode is exactly
+  the five-dword group's width, so the next field cannot be "one more in front of the block".
+- **The offset sweep is a negative, and its control is what says so.** With the dwords where `UClass::Serialize`
+  writes them 80 classes (3.6%) land on the block start against a control of 46 (2.1%); with the dword group after
+  the arrays 618 (28.0%) land against 74 (3.4%) -- but 360 of those 618 are the 367 classes whose middle is exactly
+  88 bytes, where a short window walks at many offsets, and among other sizes the rate is 258 of 1,837 (14%). The
+  sweep measures how easily a short middle walks, not the field order, and is recorded as a negative.
+- Tool (`tools/class-record-middle.py`: `--class`, `--sweep`, `--report`, `--check`) +
+  `inventory/class_record_middle.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The stride-9 array is in the middle*) +
+  `docs/CLASS_DEFAULTS.md` (*The middle is a record array and a mixed tail*) + `docs/UNKNOWNS.md` U17 +
+  `make class-record-middle` + this note. Reads the packages and two committed artifacts; no boot, no value decoded.
+
 ### Execution notes (2026-11-12, the record's widths come from its writers, and the 9-byte unit is one record)
 
 - **Three writers had never been read, and they settle the widths.** `FUN_000637e0` writes a count as a raw 4-byte
