@@ -1178,6 +1178,40 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the super chain was case-sensitive on the package, and 70 rows spell GamePlay as Gameplay)
+
+- **The five names the last note called "only classes outside the subtree declare" were behind a cut chain, not a
+  dispatch.** `inventory/classes.csv` spells a package two ways: its `package` column carries the file's spelling
+  (`GamePlay`) while `package_of_super` carries the import's (`Gameplay`) -- **70 rows**, every one of them pointing
+  into `GamePlay.u`. The super-chain index in `--calls` is keyed on `(package, class)`, so each of those steps landed
+  on a key nothing holds and the walk stopped silently; a chain that ends early looks exactly like a class with
+  nothing above it. **Twelve chain targets** were unreachable that way, `ScriptedAction` alone the super of 46 classes.
+  `tools/compile-readiness.py` and `docs/COMPILE.md` had already folded this case for ancestry -- the call table was
+  the one consumer that had not.
+- **The fold places all eight sites of those five names.** `GetMoveTarget` 2 on `receiver:Engine.AIScript` (the
+  `GoalScript` field), `TakeOver` 2 on `GamePlay.ScriptedSequence`/`receiver:GamePlay.ScriptedSequence`
+  (`EnemyAcquisitionScript`, and the chained `Trigger`), `SetPawnClass` on `receiver:Engine.Controller` (`BotBase`
+  local `NewBot`), `GetMyPlayer` 3 on `GamePlay.ScriptedController`'s chain -- one more than the note above counted,
+  because two `BotGuide` sites were in a different bucket. `UnrealScriptedSequence extends ScriptedSequence extends
+  AIScript` and `BotBase extends ScriptedController`, so both paths were inside a subtree that exists; the assignment
+  walk the last note named as the next measurement is **not needed**, and the `Let` reading it proposed is still
+  unbuilt on purpose rather than by omission.
+- **Typed residue 54 -> 36, and the 36 are one reading.** All `Object`-typed, 25 of them `ClientMessage`, 0 placed on
+  a descendant, 0 names outside the subtree: `Outer` is the root's own `object` property, so an `Object`-typed
+  receiver is a dispatch over every declaring class in the build -- the runtime question, which is now the only one
+  left in that residue. By-name placement **13,433 -> 13,461 of 13,507 (99.7%)**, the caller's chain **8,321 ->
+  8,413** (own class 5,778 unchanged, ancestors 2,543 -> 2,635), the corpus-alone lookup **2,290 -> 2,234**, "decided
+  by the receiver" **74 -> 46**, the untyped-object residue **5 -> 3**, and a completed value in front **22 -> 7**.
+- **`inventory/script_calls.csv` moves 109 rows and loses none** (92 onto the caller's chain -- `Engine.Controller` 36,
+  `GamePlay.ScriptedController` 14, `Core.Object` 7, `Engine.Actor` 6 -- 28 onto a resolution they did not have, 7
+  off a descendant guess). The report prints the fold's own audit beside the chain line (`70 row(s) over 1 package(s)
+  (Gameplay->GamePlay 70), and 12 of 12 chain target(s) had no key before the fold`), so the repair is a number on
+  every run instead of a claim in a commit message.
+- Tool (`--calls` folds the package spelling in the chain index and audits the fold) + the regenerated
+  `inventory/script_calls.csv` + `docs/BYTECODE.md` (the capture, *The last of the typed residue* and *The super chain
+  was case-sensitive on the package*) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra
+  round.
+
 ### Execution notes (2026-11-13, the 54 typed receivers are a dispatch, and 36 of them are one property)
 
 - **The residue the last note named is measured, and none of it is a parse gap.** `--lists` prints the typed residue

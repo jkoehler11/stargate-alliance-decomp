@@ -2068,6 +2068,27 @@ narrow it -- while the five names outside the subtree (`GetMoveTarget`, `GetMyPl
 are a different question the corpus can still be asked: what the field or local in front is *assigned*, which types
 it far more sharply than its declaration does.
 
+**2026-11-13, the five names outside the subtree were a package spelling, and the assignment walk is not needed.**
+The question the entry above left open was answered by a cheaper measurement than the one it named: those five names
+are not declared outside the receiver's subtree, their receivers' chains were **cut**. `classes.csv` spells a
+package two ways -- its own `package` column carries the file's spelling (`GamePlay`) while `package_of_super` carries
+the import's (`Gameplay`), 70 rows, all pointing into `GamePlay.u` -- and the super-chain index is keyed by
+`(package, class)`, so every step into that one package landed on a key nothing holds and the walk stopped silently.
+Twelve chain targets were unreachable that way, `ScriptedAction` alone the super of 46 classes. Folding the package to
+the file's spelling (and printing the fold's own audit beside the chain line) takes the typed residue **54 -> 36** and
+places **all eight** sites of those five names: `GetMoveTarget` on `receiver:Engine.AIScript` (2), `TakeOver` on
+`receiver:GamePlay.ScriptedSequence` and `GamePlay.ScriptedSequence`'s chain (2), `SetPawnClass` on
+`receiver:Engine.Controller`, and `GetMyPlayer` (3, one more than the count above) on
+`GamePlay.ScriptedController`'s chain -- `UnrealScriptedSequence extends ScriptedSequence extends AIScript` and
+`BotBase extends ScriptedController`, so both paths were inside the subtree of a chain that exists. By-name placement
+**13,433 -> 13,461 of 13,507 (99.7%)**, the caller's chain **8,321 -> 8,413**, the corpus-alone lookup **2,290 ->
+2,234**, `inventory/script_calls.csv` moves **109 rows and loses none** (92 onto the caller's chain, 28 onto a
+resolution they lacked, 7 off a descendant guess). **What is left in the typed residue is 36 sites and one reading**:
+`Outer` is the root's own `object` property, so an `Object`-typed receiver is a dispatch over every declaring class --
+the runtime question above, unchanged and now the only one. A lesson worth carrying past this entry: a chain that
+ends early and a class with nothing above it look identical from the outside, so a walk that folds case for *class*
+names has to fold it for *package* names too, and should print how many steps it repaired.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

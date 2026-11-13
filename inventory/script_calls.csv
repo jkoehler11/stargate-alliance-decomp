@@ -6629,7 +6629,7 @@ StargateContent,PteroBot,WhatToDoNext,VirtualFunction,by name,DoSearch,Function,
 StargateContent,PteroBot,Timer,VirtualFunction,by name,DoSearch,Function,package,5,,self,
 StargateContent,Replicator,SpawnGibs,VirtualFunction,by name,TriggerParticle,Function,receiver:Stargateeffects.P90Shells,4,,InstanceVariable,P90Shells
 StargateContent,PteroBossBot,CloseEnoughForSwipe,VirtualFunction,by name,ReachedDestination,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateContent,PteroBossBot,EnemyNearGuardFocus,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateContent,PteroBossBot,EnemyNearGuardFocus,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateContent,PteroBossBot,EnemyNearGuardFocus,VirtualFunction,by name,SetEnemy,Function,StargateGame.BotBase,10,,value,
 StargateContent,PteroBossBot,SetNewGuardFocus,FinalFunction,static,SetNewGuardFocus,Function,,,,,
 StargateContent,PteroBossBot,EndState,FinalFunction,static,EndState,Function,,,,,
@@ -6649,7 +6649,7 @@ StargateContent,PteroBossBot,Timer,VirtualFunction,by name,FireWeaponAt,Function
 StargateContent,PteroBossBot,Timer,VirtualFunction,by name,WhatToDoNext,Function,package,16,,self,
 StargateContent,PteroBossBot,NotifyTakeHit,FinalFunction,static,NotifyTakeHit,Function,,,,,
 StargateContent,PteroBossBot,NotifyTakeHit,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
-StargateContent,PteroBossBot,Trigger,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateContent,PteroBossBot,Trigger,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateContent,PteroBossBot,Trigger,VirtualFunction,by name,DoGuard,Function,package,1,,value,
 StargateContent,PteroBot,PickDestination,VirtualFunction,by name,NearestLandingNode,Function,package,1,,LocalVariable,NavigationPoint
 StargateContent,PteroBot,PickDestination,VirtualFunction,by name,DoSearch,Function,package,5,,value,
@@ -6692,7 +6692,7 @@ StargateContent,SuperSoldierBot,NotifyBump,VirtualFunction,by name,DoPunchOrThro
 StargateContent,SuperSoldierBot,NotifyBump,VirtualFunction,by name,SetEnemy,Function,StargateGame.BotEnemy,10,,value,
 StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,GetHuntedTarget,Function,package,1,,LocalVariable,Actor
 StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,SetHuntedSquad,Function,package,1,,value,
 StargateContent,ReetouBot,SelectHuntedTarget,VirtualFunction,by name,SetHuntedEnemy,Function,package,1,,value,
 StargateContent,SuperSoldierBot,DoStepBack,VirtualFunction,by name,SetWalking,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -6768,9 +6768,9 @@ StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,StopInvisibilit
 StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,_StartMeleeDash,Function,receiver:StargateGame.StargatePawn,2,,DynamicCast,StargatePawn
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,ChangedWeapon,Function,receiver:Engine.Pawn,7,,InstanceVariable,Pawn
+StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,ChangedWeapon,Function,Engine.Controller,7,,InstanceVariable,Pawn
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,PutDown,Function,receiver:Engine.Weapon,5,,Context,Weapon
-StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,ClientSwitchToBestWeapon,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,ClientSwitchToBestWeapon,Function,Engine.Controller,1,,value,
 StargateContent,ReetouBot,WhatToDoNext,GlobalFunction,by name,WhatToDoNext,Function,package,16,,self,
 StargateContent,ReetouBot,PickDestination,VirtualFunction,by name,GetHuntedTarget,Function,package,1,,LocalVariable,Actor
 StargateContent,ReetouBot,WhatToDoNext,VirtualFunction,by name,GetLastPhaseTorchHitDelay,Function,package,1,,self,
@@ -6812,7 +6812,7 @@ StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDire
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
-StargateContent,ReetouProtectorBot,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,Context,Controller
+StargateContent,ReetouProtectorBot,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,Engine.Controller,3,,Context,Controller
 StargateContent,JaffaBotHeavy,BeginState,FinalFunction,static,BeginState,Function,,,,,
 StargateContent,ReetouProtectorBot,FireWeaponAt,VirtualFunction,by name,HasAmmo,Function,receiver:Engine.Weapon,9,,Context,Weapon
 StargateContent,ReetouProtectorBot,FireWeaponAt,VirtualFunction,by name,WeaponFireAgain,Function,StargateGame.BotBase,9,,self,
@@ -6872,7 +6872,7 @@ StargateContent,GoaAutoTurretMK2Controller,AdjustAim,FinalFunction,static,QuatFr
 StargateContent,GoaAutoTurretMK2Controller,AdjustAim,FinalFunction,static,QuatSlerp,Function,,,,,
 StargateContent,GoaAutoTurretMK2Controller,AdjustAim,FinalFunction,static,QuatToRotator,Function,,,,,
 StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,damageAttitudeTo,Function,StargateGame.BotEnemy,5,,value,
 StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,CanCrouchForCover,Function,StargateGame.BotEnemy,1,,self,
 StargateContent,JaffaBotLight,NotifyTakeHit,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -8418,7 +8418,7 @@ StargateContent,ZatPulse,HitWall,FinalFunction,static,HitWall,Function,,,,,
 StargateContent,ZatPulse,ProcessTouch,FinalFunction,static,ProcessTouch,Function,,,,,
 StargateContent,ZatPulse,ProcessTouch,VirtualFunction,by name,HitByZatGun,Function,receiver:StargateGame.StargatePawn,10,,DynamicCast,StargatePawn
 StargateContent,ZatPulse,ProcessTouch,VirtualFunction,by name,Electrocute,Function,package,2,,LocalVariable,
-StargateContent,AlarmLight,DisableLight,VirtualFunction,by name,EndEvent,Function,receiver:Engine.Actor,3,,InstanceVariable,Actor
+StargateContent,AlarmLight,DisableLight,VirtualFunction,by name,EndEvent,Function,Engine.Actor,3,,InstanceVariable,Actor
 StargateContent,TestScreenplay,Init,VirtualFunction,by name,SetGlobalEvents,Function,Engine.Screenplay,1,,self,
 StargateContent,TestScreenplay,Init,VirtualFunction,by name,NewEvent,Function,Engine.Screenplay,1,,VirtualFunction,
 StargateContent,TestScreenplay,Init,VirtualFunction,by name,Condition,Function,Engine.Screenplay,1,,VirtualFunction,
@@ -8691,7 +8691,7 @@ StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,ShowCrysta
 StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,EnableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
 StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,EnableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
 StargateContent,MindControlCrystal,EndState,VirtualFunction,by name,DisableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
-StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,IsUnconscious,Function,descendant:StargateGame.BotEnemy,3,,DynamicCast,BotBase
+StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,DynamicCast,BotBase
 StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,DeActivate,Function,package,8,,value,
 StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,DoMindControl,Function,package,1,,value,
 StargateContent,MindControlCrystal,ShowCrystalActivation,VirtualFunction,by name,ShowActiveMaterial,Function,package,1,,self,
@@ -8700,7 +8700,7 @@ StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,GrabMind,F
 StargateContent,MindControlCrystal,EndState,VirtualFunction,by name,ReleaseMind,Function,package,1,,self,
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveFromTeam,Function,corpus:Engine.TeamInfo,1,Engine.TeamInfo,StructMember,UnrealTeamInfo
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveBot,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,StructMember,SquadAIBasic
-StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,UnPossess,name,,11,,LocalVariable,BotBase
+StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,UnPossess,Function,receiver:GamePlay.ScriptedController,11,,LocalVariable,BotBase
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,Possess,Function,receiver:StargateContent.MindControlledBot,15,,InstanceVariable,MindControlledBot
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,TeamIDLookup,Function,receiver:StargateGame.UnrealMPGameInfo,5,,DynamicCast,UnrealMPGameInfo
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddToTeam,Function,receiver:Engine.TeamInfo,2,,LocalVariable,UnrealTeamInfo
@@ -8719,7 +8719,7 @@ StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,RemoveFro
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,RemoveBot,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,Context,SquadAIBasic
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,IsUnconscious,Function,receiver:StargateGame.BotEnemy,3,,InstanceVariable,MindControlledBot
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,UnPossess,Function,receiver:StargateContent.MindControlledBot,11,,InstanceVariable,MindControlledBot
-StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,Possess,name,,15,,StructMember,BotBase
+StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,Possess,Function,receiver:Engine.Controller,15,,StructMember,BotBase
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,AddToTeam,Function,receiver:Engine.TeamInfo,2,,StructMember,UnrealTeamInfo
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,AddBot,Function,receiver:StargateGame.SquadAIBasic,3,,StructMember,SquadAIBasic
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,GetSGFormation,Function,receiver:StargateGame.SquadAIBasic,2,,StructMember,SquadAIBasic
@@ -8835,8 +8835,8 @@ StargateContent,ACTION_GivePlayerHint,InitActionFor,VirtualFunction,by name,Show
 StargateContent,ACTION_GivePlayerHint,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
 StargateContent,ACTION_Hack,InitActionFor,VirtualFunction,by name,ShouldStartHacking,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
 StargateContent,ACTION_Hack,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
-StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,corpus:GamePlay.ScriptedAction,1,GamePlay.ScriptedAction,value,
-StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,corpus:GamePlay.ScriptedAction,1,GamePlay.ScriptedAction,value,
+StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,GamePlay.ScriptedAction,1,,value,
+StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,GamePlay.ScriptedAction,1,,value,
 StargateContent,ACTION_Jump,InitActionFor,VirtualFunction,by name,DoJump,Function,receiver:Engine.Pawn,2,,Context,Pawn
 StargateContent,ACTION_Jump,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
 StargateContent,ACTION_MindControl,InitActionFor,VirtualFunction,by name,FindMindControlCrystal,Function,package,1,,LocalVariable,MindControlCrystal
@@ -8881,7 +8881,7 @@ StargateContent,Roster_Tokra_Councillor,InitPawn,FinalFunction,static,InitPawn,F
 StargateContent,Roster_Tokra_Councillor,InitPawn,VirtualFunction,by name,SelectFace,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,LocalVariable,StargatePawn
 StargateContent,Roster_Tokra_CouncillorFemale,InitPawn,FinalFunction,static,InitPawn,Function,,,,,
 StargateContent,Roster_Tokra_CouncillorFemale,InitPawn,VirtualFunction,by name,SelectFace,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,LocalVariable,StargatePawn
-StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,MustHoldFire,Function,package,4,,self,
 StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,CallToArms,Function,package,5,,InstanceVariable,SquadAIBasic
 StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,CallToArms,Function,package,5,,value,
@@ -8890,7 +8890,7 @@ StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,TryToDuck,Function,
 StargateGame,BotEnemy,ReceiveWarning,VirtualFunction,by name,TryToDuck,Function,package,1,,value,
 StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
 StargateGame,BotEnemy,NotifyTakeHit,FinalFunction,static,NotifyTakeHit,Function,,,,,
-StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,MustHoldFire,Function,package,4,,self,
 StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,CallToArms,Function,package,5,,InstanceVariable,SquadAIBasic
 StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,CallToArms,Function,package,5,,value,
@@ -8903,13 +8903,13 @@ StargateGame,BotEnemy,Tick,VirtualFunction,by name,ForceTeleportToPoint,Function
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,CompleteAction,Function,package,4,,Context,
 StargateGame,BotBase,FearThisSpot,VirtualFunction,by name,ShouldRunAwayFromFearSpot,Function,package,4,,value,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SetAggroStatus,Function,StargateGame.BotBase,1,,value,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SetEnemy,Function,package,10,,VirtualFunction,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SetNextEnemy,Function,StargateGame.BotBase,3,,VirtualFunction,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,DoEnemySpotted,Function,package,1,,VirtualFunction,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,ShouldBeSuspicious,Function,package,4,,self,
-StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,WarnSuspicious,Function,receiver:Engine.Controller,3,,LocalVariable,Controller
+StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,WarnSuspicious,Function,Engine.Controller,3,,LocalVariable,Controller
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,DoSuspicious,Function,package,1,,Context,
 StargateGame,StargatePlayer,SwitchWeapon,VirtualFunction,by name,ItemColumnSelected,Function,corpus:StargateGame.SelectionMenu,1,StargateGame.SelectionMenu,DynamicCast,WeaponMenu
 StargateGame,BotEnemy,WhatToDoNext,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
@@ -8957,7 +8957,7 @@ StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,CanFire,Function,re
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,StopInvisibility,Function,package,3,,value,
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,DoBotFire,Function,package,1,,self,
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,IsFiring,Function,receiver:Engine.Weapon,3,,Context,Weapon
-StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,NeedToTurn,name,,13,,self,
+StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,NeedToTurn,Function,GamePlay.ScriptedController,13,,self,
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,CanAttack,Function,receiver:Engine.Weapon,9,,Context,Weapon
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,StopInvisibility,Function,package,3,,value,
 StargateGame,BotBase,WeaponFireAgain,VirtualFunction,by name,DoBotFire,Function,package,1,,self,
@@ -9021,9 +9021,9 @@ StargateGame,StargateWeapon,ZoomToggle,VirtualFunction,by name,DoZoomToggle,Func
 StargateGame,StargateWeapon,PrevWeaponFunction,VirtualFunction,by name,ServerPrevWeaponFunction,Function,package,2,,self,
 StargateGame,StargateWeapon,NextWeaponFunction,VirtualFunction,by name,ServerNextWeaponFunction,Function,package,2,,self,
 StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,ShouldBeSuspicious,Function,package,4,,self,
-StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,WarnSuspicious,Function,receiver:Engine.Controller,3,,LocalVariable,Controller
+StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,WarnSuspicious,Function,Engine.Controller,3,,LocalVariable,Controller
 StargateGame,BotEnemy,HearNoise,VirtualFunction,by name,DoSuspicious,Function,package,1,,Context,
 StargateGame,ShieldBelt,StopInvisible,VirtualFunction,by name,NotifyInvisible,Function,receiver:Engine.Controller,3,,LocalVariable,Controller
 StargateGame,ShieldBelt,StopInvisible,VirtualFunction,by name,InvisOff,Function,corpus:StargateGame.ShieldBeltAttach,1,StargateGame.ShieldBeltAttach,DynamicCast,ShieldBeltAttach
@@ -9033,7 +9033,7 @@ StargateGame,BotEnemy,CheckIfShouldCrouch,VirtualFunction,by name,ShouldCrouch,F
 StargateGame,BotEnemy,CheckIfShouldCrouch,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,IsRunningScript,Function,package,2,,self,
 StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,AdjustAround,Function,package,1,,value,
-StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,AdjustAround,Function,package,1,,value,
 StargateGame,BotEnemy,NotifyBump,VirtualFunction,by name,SetEnemy,Function,package,10,,value,
 StargateGame,BotEnemy,EvalWhatToDoNext,VirtualFunction,by name,TooManyBots,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
@@ -9086,7 +9086,7 @@ StargateGame,BotSG,MonitoredPawnAlert,VirtualFunction,by name,SetMovementMarker,
 StargateGame,BotSG,MonitoredPawnAlert,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,
 StargateGame,BotSG,MonitoredPawnAlert,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,BotSG,NotifyTakeHit,FinalFunction,static,NotifyTakeHit,Function,,,,,
-StargateGame,BotSG,NotifyTakeHit,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,NotifyTakeHit,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,NotifyTakeHit,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,NotifyTakeHit,VirtualFunction,by name,ShouldFallback,Function,package,2,,self,
 StargateGame,BotSG,NotifyTakeHit,VirtualFunction,by name,DoFallbackMove,Function,StargateGame.BotEnemy,1,,value,
@@ -9123,11 +9123,11 @@ StargateGame,BotBase,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,
 StargateGame,BotBase,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,MustHoldFire,Function,package,4,,self,
 StargateGame,BotBase,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
-StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
-StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
-StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
-StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
-StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
+StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,BotBase,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
 StargateGame,BotBase,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,BotBase,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,BotBase,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
@@ -9151,7 +9151,7 @@ StargateGame,BotBase,Timer,VirtualFunction,by name,CheckIfPlayerInVehicle,Functi
 StargateGame,BotBase,Timer,VirtualFunction,by name,CompleteAction,Function,package,4,,value,
 StargateGame,BotBase,Timer,VirtualFunction,by name,IsAllowedFreeFire,Function,package,2,,self,
 StargateGame,BotBase,Timer,VirtualFunction,by name,SetNextEnemy,Function,package,3,,value,
-StargateGame,BotBase,Timer,VirtualFunction,by name,FireWeaponAt,name,,9,,value,
+StargateGame,BotBase,Timer,VirtualFunction,by name,FireWeaponAt,Function,Engine.Controller,9,,value,
 StargateGame,BotBase,EndState,FinalFunction,static,EndState,Function,,,,,
 StargateGame,BotBase,EndState,VirtualFunction,by name,SetCombatTimer,Function,package,2,,FinalFunction,
 StargateGame,BotBase,BeginState,VirtualFunction,by name,SetCombatTimer,Function,package,2,,self,
@@ -9238,8 +9238,8 @@ StargateGame,BotEnemy,Possess,VirtualFunction,by name,SetPeripheralVision,Functi
 StargateGame,BotEnemy,Possess,VirtualFunction,by name,SetMovementPhysics,Function,receiver:Engine.Pawn,3,,InstanceVariable,Pawn
 StargateGame,BotEnemy,FindVehicleGoal,VirtualFunction,by name,hasAvailableSeat,Function,corpus:StargateGame.StargateVehicle,1,StargateGame.StargateVehicle,LocalVariable,StargateVehicle
 StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,Occupied,Function,corpus:Engine.Vehicle,1,Engine.Vehicle,LocalVariable,StargateWeaponEmplacement
-StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,GetTeamNum,Function,receiver:Engine.Pawn,3,,InstanceVariable,Pawn
-StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,LineOfSightTo,Function,receiver:Engine.Pawn,3,,LocalVariable,StargateWeaponEmplacement
+StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,GetTeamNum,Function,Engine.Controller,3,,InstanceVariable,Pawn
+StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,LineOfSightTo,Function,Engine.Controller,3,,LocalVariable,StargateWeaponEmplacement
 StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,RateSelf,Function,receiver:Engine.Weapon,14,,Context,Weapon
 StargateGame,BotEnemy,FindTurretGoal,VirtualFunction,by name,RateSelf,Function,receiver:Engine.Weapon,14,,Context,Weapon
 StargateGame,BotEnemy,FightEnemy,VirtualFunction,by name,ProcessMoveMode,Function,package,1,,self,
@@ -9286,11 +9286,11 @@ StargateGame,BotEnemy,BeginState,VirtualFunction,by name,RemoveBot,Function,corp
 StargateGame,BotEnemy,EndState,VirtualFunction,by name,BringUp,Function,receiver:Engine.Weapon,13,,Context,Weapon
 StargateGame,BotEnemy,EndState,VirtualFunction,by name,EndUnconscious,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,UpdateUnconscious,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
-StargateGame,BotEnemy,Timer,VirtualFunction,by name,KilledBy,name,,5,,self,
+StargateGame,BotEnemy,Timer,VirtualFunction,by name,KilledBy,Function,Engine.Controller,5,,self,
 StargateGame,AIMSG_Stargate,Reset,FinalFunction,static,Reset,Function,,,,,
 StargateGame,BotSG,ReceiveWarning,FinalFunction,static,ReceiveWarning,Function,,,,,
 StargateGame,BotSG,SeePlayer,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotSG,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotSG,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotSG,SeePlayer,VirtualFunction,by name,SetEnemy,Function,package,10,,value,
 StargateGame,BotSG,Timer,VirtualFunction,by name,ReachedCoverLocation,Function,StargateGame.BotEnemy,1,,self,
 StargateGame,BotSG,BeginState,VirtualFunction,by name,SetPeripheralVision,Function,StargateGame.BotBase,1,,value,
@@ -9428,7 +9428,7 @@ StargateGame,TeamDeathMatch,Logout,VirtualFunction,by name,ClearOrders,Function,
 StargateGame,GameObject,Score,VirtualFunction,by name,CalcSetHome,Function,package,1,,value,
 StargateGame,GameObject,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateGame,BotBase,BeginState,VirtualFunction,by name,TooManyBots,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
-StargateGame,BotBase,BeginState,VirtualFunction,by name,SetNewGuardFocus,name,,3,,value,
+StargateGame,BotBase,BeginState,VirtualFunction,by name,SetNewGuardFocus,Function,GamePlay.ScriptedController,3,,value,
 StargateGame,BotBase,BeginState,VirtualFunction,by name,StopFiring,Function,package,6,,value,
 StargateGame,CTFGame,ScoreFlag,VirtualFunction,by name,Position,Function,corpus:StargateGame.GameObject,1,StargateGame.GameObject,LocalVariable,CTFFlag
 StargateGame,CTFGame,ScoreFlag,VirtualFunction,by name,GameEvent,Function,StargateGame.UnrealMPGameInfo,2,,value,
@@ -9553,7 +9553,7 @@ StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,HandlePickup
 StargateGame,StargateAmmo,HasAmmo,FinalFunction,static,HasAmmo,Function,,,,,
 StargateGame,StargatePlayer,CreatePauseOverlay,VirtualFunction,by name,AddCameraEffect,Function,Engine.PlayerController,1,,value,
 StargateGame,BotSG,HearNoise,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotSG,HearNoise,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotSG,HearNoise,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotSG,HearNoise,VirtualFunction,by name,SetEnemy,Function,package,10,,value,
 StargateGame,BotSG,WhatToDoNext,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateGame,BotSG,WhatToDoNext,VirtualFunction,by name,DoWait,Function,StargateGame.BotEnemy,4,,VirtualFunction,
@@ -9607,12 +9607,12 @@ StargateGame,BotEnemy,BeginState,VirtualFunction,by name,ShouldCrouch,Function,c
 StargateGame,BotEnemy,Timer,VirtualFunction,by name,FireWeaponAt,Function,package,9,,self,
 StargateGame,BotEnemy,Timer,VirtualFunction,by name,ChooseAttackMode,Function,package,3,,value,
 StargateGame,BotEnemy,NotifyTakeHit,GlobalFunction,by name,NotifyTakeHit,Function,package,15,,self,
-StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,FormationCenter,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
 StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,FindBestPathToward,Function,package,8,,self,
 StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,CancelIfActorUnreachable,Function,corpus:GamePlay.MoveOrder,1,GamePlay.MoveOrder,InstanceVariable,MoveOrder
 StargateGame,BotEnemy,Timer,VirtualFunction,by name,FireWeaponAt,Function,package,9,,value,
-StargateGame,BotEnemy,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotEnemy,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,BotEnemy,ShouldAdvance,VirtualFunction,by name,IsHealthLow,Function,package,3,,self,
 StargateGame,BotEnemy,ShouldAdvance,VirtualFunction,by name,UpdateMoveModeExpiration,Function,StargateGame.BotBase,1,,value,
 StargateGame,BotEnemy,ShouldAdvance,VirtualFunction,by name,GetMaxDistToTarget,Function,receiver:GamePlay.MoveOrder,7,,InstanceVariable,MoveOrder
@@ -9625,19 +9625,19 @@ StargateGame,BotEnemy,BeginState,VirtualFunction,by name,ShouldCrouch,Function,c
 StargateGame,BotEnemy,WanderOrCamp,VirtualFunction,by name,DoWait,Function,package,4,,self,
 StargateGame,BotEnemy,damageAttitudeTo,VirtualFunction,by name,SetEnemy,Function,package,10,,value,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustToss,Function,corpus:Engine.Controller,1,Engine.Controller,LocalVariable,
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustToss,Function,Engine.Controller,1,,LocalVariable,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,DefendMelee,Function,package,1,,self,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustAimError,Function,package,3,,LocalVariable,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,SplashDamage,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,RefireRate,Function,receiver:Engine.Weapon,2,,Context,Weapon
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustToss,Function,corpus:Engine.Controller,1,Engine.Controller,LocalVariable,
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustToss,Function,Engine.Controller,1,,LocalVariable,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,GetErrorVec,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,SetFireYaw,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,StructMember,
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,InstantWarnTarget,Function,corpus:Engine.Controller,1,Engine.Controller,StructMember,
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,WarnTarget,Function,corpus:Engine.Controller,1,Engine.Controller,value,
-StargateGame,BotEnemy,ShouldPerformScript,VirtualFunction,by name,Trigger,Function,receiver:Engine.Actor,118,,InstanceVariable,ScriptedSequence
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,SetFireYaw,Function,GamePlay.ScriptedController,1,,StructMember,
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,InstantWarnTarget,Function,Engine.Controller,1,,StructMember,
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,WarnTarget,Function,Engine.Controller,1,,value,
+StargateGame,BotEnemy,ShouldPerformScript,VirtualFunction,by name,Trigger,Function,GamePlay.ScriptedController,118,,InstanceVariable,ScriptedSequence
 StargateGame,BotEnemy,ShouldPerformScript,VirtualFunction,by name,SetNewScript,Function,StargateGame.BotBase,4,,value,
 StargateGame,BotEnemy,ShouldPerformScript,VirtualFunction,by name,SetNewScript,Function,StargateGame.BotBase,4,,value,
 StargateGame,BotEnemy,ShouldPerformScript,VirtualFunction,by name,isInPatrollingStatus,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
@@ -9661,8 +9661,8 @@ StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,Ge
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
-StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
-StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetItemName,Function,corpus:Core.Object,1,Core.Object,value,
+StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,IsActive,Function,receiver:StargateGame.AlarmPanel,10,,InstanceVariable,AlarmPanel
@@ -9672,7 +9672,7 @@ StargateGame,SquadAIBasic,GetAllowedHideRange,VirtualFunction,by name,GetSGForma
 StargateGame,BotBase,StopFiring,FinalFunction,static,StopFiring,Function,,,,,
 StargateGame,BotBase,DoCombatScript,VirtualFunction,by name,SetNextEnemy,Function,package,3,,self,
 StargateGame,BotBase,DoCombatScript,VirtualFunction,by name,SetNewScript,Function,package,4,,value,
-StargateGame,BotBase,ShouldPerformScript,VirtualFunction,by name,Trigger,Function,receiver:Engine.Actor,118,,InstanceVariable,ScriptedSequence
+StargateGame,BotBase,ShouldPerformScript,VirtualFunction,by name,Trigger,Function,GamePlay.ScriptedController,118,,InstanceVariable,ScriptedSequence
 StargateGame,BotBase,ShouldPerformScript,VirtualFunction,by name,SetNewScript,Function,package,4,,value,
 StargateGame,BotBase,ShouldPerformScript,VirtualFunction,by name,SetNewScript,Function,package,4,,value,
 StargateGame,BotEnemy,WeaponPreference,VirtualFunction,by name,ModifyDamageRating,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -9684,7 +9684,7 @@ StargateGame,StargateVoicePack,EndSpeech,VirtualFunction,by name,GetString,Funct
 StargateGame,StargateVoicePack,EndSpeech,VirtualFunction,by name,GetOwner,Function,package,2,,self,
 StargateGame,StargateVoicePack,EndSpeech,VirtualFunction,by name,GetOwner,Function,package,2,,self,
 StargateGame,StargateVoicePack,EndSpeech,FinalFunction,static,StoreSpeech,Function,,,,,
-StargateGame,BotBase,SetViewFocus,VirtualFunction,by name,IsRunningScript,name,,2,,self,
+StargateGame,BotBase,SetViewFocus,VirtualFunction,by name,IsRunningScript,Function,GamePlay.ScriptedController,2,,self,
 StargateGame,BotBase,SetViewFocus,VirtualFunction,by name,GetViewFocus,Function,package,2,,InstanceVariable,Actor
 StargateGame,StargateVoicePack,AbortSpeech,VirtualFunction,by name,GetOwner,Function,package,2,,self,
 StargateGame,StargateVoicePack,AbortSpeech,VirtualFunction,by name,GetOwner,Function,package,2,,self,
@@ -9692,10 +9692,10 @@ StargateGame,StargateVoicePack,AbortSpeech,VirtualFunction,by name,GetOwner,Func
 StargateGame,StargateVoicePack,AbortSpeech,VirtualFunction,by name,GetString,Function,receiver:Engine.Speech,15,,InstanceVariable,Speech
 StargateGame,StargateVoicePack,AbortSpeech,VirtualFunction,by name,GetOwner,Function,package,2,,self,
 StargateGame,StargateVoicePack,AbortSpeech,FinalFunction,static,StoreSpeech,Function,,,,,
-StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,Context,Controller
-StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,Context,Controller
+StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,Engine.Controller,3,,Context,Controller
+StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,Engine.Controller,3,,Context,Controller
 StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,RemoveEnemy,Function,package,5,,InstanceVariable,SquadAIBasic
-StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,Context,Controller
+StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,IsUnconscious,Function,Engine.Controller,3,,Context,Controller
 StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,RemoveEnemy,Function,package,5,,InstanceVariable,SquadAIBasic
 StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,RemoveEnemy,Function,package,5,,InstanceVariable,SquadAIBasic
 StargateGame,BotBase,SetNextEnemy,VirtualFunction,by name,UpdatePassiveStance,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -9709,8 +9709,8 @@ StargateGame,BotBase,NotifyKilled,VirtualFunction,by name,RemoveEnemy,Function,p
 StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,SetWalking,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,SetSprinting,Function,receiver:Engine.Pawn,2,,InstanceVariable,Pawn
-StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,ClearAnimation,name,,2,,Context,
-StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,UnPossess,name,,11,,value,
+StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,ClearAnimation,Function,GamePlay.ScriptedController,2,,Context,
+StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,UnPossess,Function,GamePlay.ScriptedController,11,,value,
 StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,SetEnemyReaction,Function,package,5,,value,
 StargateGame,BotBase,LeaveScripting,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,SquadAIBasic,FormationCenterLocation,VirtualFunction,by name,FormationCenter,Function,package,1,,self,
@@ -9734,7 +9734,7 @@ StargateGame,BotBase,ActivateHelmet,VirtualFunction,by name,ActivateHelmet,Funct
 StargateGame,SquadAIBasic,FormationCenter,VirtualFunction,by name,PickNewLeader,Function,package,1,,value,
 StargateGame,BotBase,AbortScript,VirtualFunction,by name,FreeScript,Function,package,4,,value,
 StargateGame,BotBase,AbortScript,VirtualFunction,by name,DoWait,Function,package,4,,VirtualFunction,
-StargateGame,BotBase,CompleteAction,VirtualFunction,by name,SendWarningMessage,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,InstanceVariable,
+StargateGame,BotBase,CompleteAction,VirtualFunction,by name,SendWarningMessage,Function,GamePlay.ScriptedController,1,,InstanceVariable,
 StargateGame,BotBase,CompleteAction,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,BotBase,CompleteAction,FinalFunction,static,CompleteAction,Function,,,,,
 StargateGame,BotBase,GetViewFocus,VirtualFunction,by name,TurnToGoal,Function,receiver:GamePlay.LatentScriptedAction,3,,InstanceVariable,LatentScriptedAction
@@ -9746,7 +9746,7 @@ StargateGame,SquadAIBasic,WarnFriendlyTargets,VirtualFunction,by name,ShouldAvoi
 StargateGame,SquadAIBasic,WarnFriendlyTargets,VirtualFunction,by name,TargetedAlert,Function,receiver:StargateGame.BotBase,4,,LocalVariable,BotBase
 StargateGame,BotBase,TeleportToPawn,VirtualFunction,by name,IgnoreTeleport,Function,package,3,,self,
 StargateGame,BotBase,TeleportToPawn,VirtualFunction,by name,RefreshAnchor,Function,receiver:Engine.Pawn,2,,LocalVariable,Pawn
-StargateGame,SquadAIBasic,teamKnockedOut,VirtualFunction,by name,IsUnconscious,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SquadAIBasic,teamKnockedOut,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,LocalVariable,BotBase
 StargateGame,SquadAIBasic,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateGame,SquadAIBasic,Destroyed,VirtualFunction,by name,NotifySquadRemoved,Function,corpus:StargateGame.TeamAI,1,StargateGame.TeamAI,Context,TeamAI
 StargateGame,SquadAIBasic,Destroyed,VirtualFunction,by name,RestartSpawner,Function,corpus:StargateGame.IntelligentSpawner,1,StargateGame.IntelligentSpawner,InstanceVariable,IntelligentSpawner
@@ -9796,7 +9796,7 @@ StargateGame,BotBase,SetManInFront,VirtualFunction,by name,GetSGFormation,Functi
 StargateGame,BotBase,SetManInFront,VirtualFunction,by name,GetSGFormation,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
 StargateGame,BotBase,SetSuggestedNextState,VirtualFunction,by name,WhatToDoNext,Function,package,16,,LocalVariable,
 StargateGame,BotBase,CheckIfPlayerInVehicle,VirtualFunction,by name,CheckIfAllSquadMembersInVehicle,Function,package,1,,self,
-StargateGame,BotBase,CheckIfPlayerInVehicle,VirtualFunction,by name,GetMyPlayer,name,,2,,LocalVariable,Pawn
+StargateGame,BotBase,CheckIfPlayerInVehicle,VirtualFunction,by name,GetMyPlayer,Function,GamePlay.ScriptedController,2,,LocalVariable,Pawn
 StargateGame,BotBase,CheckIfPlayerInVehicle,VirtualFunction,by name,CheckIfPawnInVehicle,Function,package,1,,self,
 StargateGame,BotBase,CheckIfAllSquadMembersInVehicle,VirtualFunction,by name,CheckIfPawnInVehicle,Function,package,1,,self,
 StargateGame,BotEnemy,CanAttack,VirtualFunction,by name,CanPerformMeleeDash,Function,receiver:StargateGame.StargatePawn,2,,DynamicCast,StargatePawn
@@ -9822,7 +9822,7 @@ StargateGame,SquadAIBasic,WaitAtThisPosition,VirtualFunction,by name,GetTargetDe
 StargateGame,SquadAIBasic,WaitAtThisPosition,VirtualFunction,by name,CanIgnoreFormationPosition,Function,receiver:StargateGame.BotBase,2,,LocalVariable,BotBase
 StargateGame,SquadAIBasic,WaitAtThisPosition,VirtualFunction,by name,CloseToLeader,Function,package,2,,self,
 StargateGame,BotEnemy,GetMessageIndex,VirtualFunction,by name,GetMessageIndex,Function,package,5,,Context,VoicePack
-StargateGame,BotEnemy,SendMessage,VirtualFunction,by name,SendVoiceMessage,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotEnemy,SendMessage,VirtualFunction,by name,SendVoiceMessage,Function,Engine.Controller,1,,value,
 StargateGame,BotBase,DoBotFire,VirtualFunction,by name,BotFire,Function,receiver:Engine.Weapon,7,,Context,Weapon
 StargateGame,BotBase,DoBotFire,VirtualFunction,by name,BotFire,Function,receiver:Engine.Weapon,7,,Context,Weapon
 StargateGame,BotEnemy,SquadNeedsAlerting,VirtualFunction,by name,NeedsAlerting,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
@@ -9849,14 +9849,14 @@ StargateGame,DMRoster,AddToTeam,VirtualFunction,by name,AddBot,Function,receiver
 StargateGame,BotEnemy,NotifyVehicleIncoming,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
 StargateGame,BotEnemy,NotifyVehicleIncoming,VirtualFunction,by name,TryToVehicleDuck,Function,package,1,,value,
 StargateGame,BotEnemy,NotifyVehicleIncoming,VirtualFunction,by name,TryToVehicleDuck,Function,package,1,,value,
-StargateGame,BotBase,updateSenses,VirtualFunction,by name,GetAggroLevel,name,,3,,self,
-StargateGame,BotBase,updateSenses,VirtualFunction,by name,GetAggroLevel,name,,3,,self,
-StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotBase,updateSenses,VirtualFunction,by name,GetAggroLevel,Function,GamePlay.ScriptedController,3,,self,
+StargateGame,BotBase,updateSenses,VirtualFunction,by name,GetAggroLevel,Function,GamePlay.ScriptedController,3,,self,
+StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,SetFall,Function,package,3,,value,
 StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,SplashDamage,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,IsFiring,Function,receiver:Engine.Weapon,3,,Context,Weapon
 StargateGame,BotEnemy,TryToVehicleDuck,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
-StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,SetFall,Function,package,3,,value,
 StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,SplashDamage,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,IsFiring,Function,receiver:Engine.Weapon,3,,Context,Weapon
@@ -9864,7 +9864,7 @@ StargateGame,BotEnemy,TryToDuck,VirtualFunction,by name,StopFiring,Function,Star
 StargateGame,BotBase,SetAggroStatus,VirtualFunction,by name,updateSenses,Function,package,1,,LocalVariable,
 StargateGame,BotBase,ReSetSkill,VirtualFunction,by name,SetCombatTimer,Function,package,2,,value,
 StargateGame,BotEnemy,TakeFriendlyHit,VirtualFunction,by name,PlayFriendlyFireReaction,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
-StargateGame,BotEnemy,TakeFriendlyHit,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotEnemy,TakeFriendlyHit,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotEnemy,TakeFriendlyHit,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotBase,SetNewTeam,VirtualFunction,by name,RemoveSquad,Function,receiver:StargateGame.TeamAI,3,,Context,TeamAI
 StargateGame,BotBase,SetNewTeam,FinalFunction,static,SetNewTeam,Function,,,,,
@@ -9876,7 +9876,7 @@ StargateGame,BotBase,PostLoadSavedGame,VirtualFunction,by name,WhatToDoNext,Func
 StargateGame,SquadAIBasic,Initialize,VirtualFunction,by name,SetLeader,Function,package,1,,value,
 StargateGame,SquadAIBasic,SetLeader,VirtualFunction,by name,AddBot,Function,package,3,,value,
 StargateGame,BotEnemy,IsSniping,VirtualFunction,by name,ReachedDestination,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateGame,BotEnemy,IsSniping,VirtualFunction,by name,GetMoveTarget,name,,2,,InstanceVariable,UnrealScriptedSequence
+StargateGame,BotEnemy,IsSniping,VirtualFunction,by name,GetMoveTarget,Function,receiver:Engine.AIScript,2,,InstanceVariable,UnrealScriptedSequence
 StargateGame,BotEnemy,SetRouteToGoal,VirtualFunction,by name,SoakStop,Function,package,2,,value,
 StargateGame,SquadAIBasic,RemoveBot,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
 StargateGame,SquadAIBasic,RemoveBot,VirtualFunction,by name,LeaveFormation,Function,receiver:StargateGame.SGFormation,2,,VirtualFunction,sgformation
@@ -9888,7 +9888,7 @@ StargateGame,SquadAIBasic,AddBot,VirtualFunction,by name,SetFormation,Function,c
 StargateGame,SquadAIBasic,SetTeamOrderedScript,VirtualFunction,by name,FreeScript,Function,receiver:StargateGame.BotBase,4,,LocalVariable,BotBase
 StargateGame,SquadAIBasic,SetTeamOrderedScript,VirtualFunction,by name,SetNewScript,Function,receiver:StargateGame.BotBase,4,,LocalVariable,BotBase
 StargateGame,BotEnemy,BotVoiceMessage,VirtualFunction,by name,BotVoiceMessage,Function,package,3,,InstanceVariable,SquadAIBasic
-StargateGame,SquadAIBasic,GetNumValidMembers,VirtualFunction,by name,IsUnconscious,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SquadAIBasic,GetNumValidMembers,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,LocalVariable,BotBase
 StargateGame,SquadAIBasic,GetNumValidMembers,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,InstanceVariable,Controller
 StargateGame,BotEnemy,NotifyPhysicsVolumeChange,VirtualFunction,by name,CheckWaterJump,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,NotifyPhysicsVolumeChange,VirtualFunction,by name,JumpOutOfWater,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -10044,7 +10044,7 @@ StargateGame,BotEnemy,AlarmActivationFinished,VirtualFunction,by name,ActivateAl
 StargateGame,BotEnemy,AlarmActivationFinished,VirtualFunction,by name,WhatToDoNext,Function,package,16,,Context,
 StargateGame,StargatePlayer,NotifyReceivedAmmo,VirtualFunction,by name,SetEnable,Function,receiver:StargateGame.WeaponMenu,2,,DynamicCast,WeaponMenu
 StargateGame,BotEnemy,SeePlayer,GlobalFunction,by name,SeePlayer,Function,package,18,,self,
-StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,CanCrouchForCover,Function,package,1,,self,
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,CanBotMove,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,DynamicCast,TacticalTarget
 StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,FinishedMove,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,DynamicCast,TacticalTarget
@@ -10114,7 +10114,7 @@ StargateGame,StargatePlayer,NotifyLowHealth,VirtualFunction,by name,GetHumanRead
 StargateGame,StargatePlayer,NotifyLowHealth,VirtualFunction,by name,SetSubtitle,Function,corpus:StargateGame.StargateHUD,1,StargateGame.StargateHUD,DynamicCast,StargateHUD
 StargateGame,StargatePlayer,NotifyLowHealth,VirtualFunction,by name,GetHumanReadableName,Function,Engine.Controller,9,,LocalVariable,Pawn
 StargateGame,StargatePlayer,GetInteractAnimType,VirtualFunction,by name,GetInteractAnimType,Function,package,2,,DynamicArrayElement,SGInteraction
-StargateGame,BotEnemy,CompleteAction,VirtualFunction,by name,SendWarningMessage,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,InstanceVariable,
+StargateGame,BotEnemy,CompleteAction,VirtualFunction,by name,SendWarningMessage,Function,GamePlay.ScriptedController,1,,InstanceVariable,
 StargateGame,BotEnemy,CompleteAction,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,StargatePlayer,UseInteractiveObject,VirtualFunction,by name,UseContextActor,Function,corpus:StargateGame.CommandInterface,1,StargateGame.CommandInterface,DynamicCast,CommandInterface
 StargateGame,StargatePlayer,UseInteractiveObject,VirtualFunction,by name,ResetInteractionContext,Function,corpus:StargateGame.CommandInterface,1,StargateGame.CommandInterface,DynamicCast,CommandInterface
@@ -10175,7 +10175,7 @@ StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,PickFallbackDestin
 StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,GetFallbackRange,Function,package,1,,InstanceVariable,Pawn
 StargateGame,UnrealScriptedSequence,Reset,VirtualFunction,by name,FreeScript,Function,package,4,,self,
 StargateGame,UnrealScriptedSequence,Trigger,FinalFunction,static,Trigger,Function,,,,,
-StargateGame,UnrealScriptedSequence,Trigger,VirtualFunction,by name,TakeOver,name,,2,,FinalFunction,
+StargateGame,UnrealScriptedSequence,Trigger,VirtualFunction,by name,TakeOver,Function,GamePlay.ScriptedSequence,2,,FinalFunction,
 StargateGame,BotEnemy,ShouldRun,VirtualFunction,by name,CanDamage,Function,package,3,,self,
 StargateGame,BotEnemy,ShouldRun,VirtualFunction,by name,GetFallbackRange,Function,package,1,,self,
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,SetPeripheralVision,Function,StargateGame.BotBase,1,,self,
@@ -10194,7 +10194,7 @@ StargateGame,BotEnemy,SeePlayer,VirtualFunction,by name,FireWeaponAt,Function,pa
 StargateGame,BotEnemy,DisplayDebug,GlobalFunction,by name,DisplayDebug,Function,package,68,,self,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
-StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
+StargateGame,BotEnemy,DisplayDebug,VirtualFunction,by name,GetViewRotation,Function,Engine.Controller,9,,InstanceVariable,Pawn
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargatePlayer,EndState,VirtualFunction,by name,ForceRaiseHands,Function,corpus:StargateGame.CommandInterface,1,StargateGame.CommandInterface,DynamicCast,CommandInterface
 StargateGame,StargatePlayer,BeginState,VirtualFunction,by name,ForceRaiseHands,Function,corpus:StargateGame.CommandInterface,1,StargateGame.CommandInterface,DynamicCast,CommandInterface
@@ -10202,10 +10202,10 @@ StargateGame,BotEnemy,Timer,VirtualFunction,by name,SetNextEnemy,Function,Starga
 StargateGame,BotEnemy,Timer,VirtualFunction,by name,FireWeaponAt,Function,package,9,,VirtualFunction,
 StargateGame,ScriptedSpawner,Trigger,VirtualFunction,by name,SetNewScript,Function,receiver:GamePlay.ScriptedTriggerController,4,,InstanceVariable,ScriptedTriggerController
 StargateGame,BotEnemy,Tick,GlobalFunction,by name,Tick,Function,package,120,,self,
-StargateGame,BotEnemy,Tick,VirtualFunction,by name,PawnDied,name,,8,,value,
+StargateGame,BotEnemy,Tick,VirtualFunction,by name,PawnDied,Function,Engine.Controller,8,,value,
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,UpdateAimingRotation,Function,receiver:StargateGame.VehicleWeapon,7,,LocalVariable,VehicleWeapon
-StargateGame,BotEnemy,Tick,VirtualFunction,by name,LineOfSightTo,Function,receiver:Engine.Pawn,3,,LocalVariable,StargateWeaponEmplacement
+StargateGame,BotEnemy,Tick,VirtualFunction,by name,LineOfSightTo,Function,Engine.Controller,3,,LocalVariable,StargateWeaponEmplacement
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,SGOrderOpenFire,issueOrder,VirtualFunction,by name,assignBots,Function,StargateGame.SGOrder,1,,value,
 StargateGame,SGOrderOpenFire,issueOrder,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotEnemy,16,,DynamicCast,BotEnemy
@@ -10261,7 +10261,7 @@ StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,SetNewGuardFocus,F
 StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,CallToArms,Function,receiver:StargateGame.BotEnemy,5,,DynamicCast,BotEnemy
 StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotEnemy,16,,DynamicCast,BotEnemy
 StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,SetNewGuardFocus,Function,receiver:StargateGame.BotEnemy,3,,DynamicCast,BotEnemy
-StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,CallToArms,name,,5,,LocalVariable,BotBase
+StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,CallToArms,Function,receiver:GamePlay.ScriptedController,5,,LocalVariable,BotBase
 StargateGame,SGOrderFollow,issueOrder,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotBase,16,,LocalVariable,BotBase
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,assignBots,Function,StargateGame.SGOrder,1,,value,
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,SetTargetType,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,Context,TacticalTarget
@@ -10271,8 +10271,8 @@ StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,Functio
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,Function,receiver:StargateGame.BotEnemy,5,,DynamicCast,BotEnemy
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotEnemy,16,,DynamicCast,BotEnemy
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,AddBotToTarget,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,Context,TacticalTarget
-StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,name,,5,,LocalVariable,BotBase
-StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,name,,5,,LocalVariable,BotBase
+StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,Function,receiver:GamePlay.ScriptedController,5,,LocalVariable,BotBase
+StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,CallToArms,Function,receiver:GamePlay.ScriptedController,5,,LocalVariable,BotBase
 StargateGame,SGOrderAttack,issueOrder,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotBase,16,,LocalVariable,BotBase
 StargateGame,BotEnemy,SetViewFocus,VirtualFunction,by name,IsRunningScript,Function,package,2,,self,
 StargateGame,BotEnemy,SetViewFocus,VirtualFunction,by name,GetViewFocus,Function,StargateGame.BotBase,2,,InstanceVariable,Actor
@@ -10403,7 +10403,7 @@ StargateGame,BotEnemy,BeginState,VirtualFunction,by name,TooManyBots,Function,re
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,CanBotMove,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,DynamicCast,TacticalTarget
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,FinishedMove,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,DynamicCast,TacticalTarget
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,SetNewGuardFocus,Function,package,3,,Context,
-StargateGame,BotEnemy,BeginState,VirtualFunction,by name,RemoveController,Function,receiver:GamePlay.AmbushInfo,2,,Context,AmbushInfo
+StargateGame,BotEnemy,BeginState,VirtualFunction,by name,RemoveController,Function,Engine.Controller,2,,Context,AmbushInfo
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateGame,BotEnemy,NotifyHeadVolumeChange,GlobalFunction,by name,NotifyHeadVolumeChange,Function,package,2,,self,
 StargateGame,BotEnemy,NotifyHeadVolumeChange,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
@@ -10482,7 +10482,7 @@ StargateGame,BotEnemy,PickDestination,VirtualFunction,by name,FindBestPathToward
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,AllowUnCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,PlayHacking,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
-StargateGame,BotEnemy,BeginState,VirtualFunction,by name,UsedBy,Function,receiver:Engine.Actor,28,,InstanceVariable,Pawn
+StargateGame,BotEnemy,BeginState,VirtualFunction,by name,UsedBy,Function,Engine.Actor,28,,InstanceVariable,Pawn
 StargateGame,BotEnemy,Tick,VirtualFunction,by name,Tool_AngleSmoothInterpolate,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,AllowUnCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -10500,9 +10500,9 @@ StargateGame,BotGuide,Tick,VirtualFunction,by name,MoveToGoal,Function,receiver:
 StargateGame,BotGuide,Tick,VirtualFunction,by name,ForceTeleportToPoint,Function,receiver:GamePlay.ScriptedAction,5,,InstanceVariable,LatentScriptedAction
 StargateGame,BotGuide,Tick,VirtualFunction,by name,CompleteAction,Function,StargateGame.BotEnemy,4,,Context,
 StargateGame,BotGuide,HearNoise,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotGuide,HearNoise,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotGuide,HearNoise,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotGuide,SeePlayer,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotGuide,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotGuide,SeePlayer,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotGuide,SeePlayer,VirtualFunction,by name,SetEnemy,Function,StargateGame.BotEnemy,10,,value,
 StargateGame,BotGuide,EvalWhatToDoNext,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateGame,BotGuide,EvalWhatToDoNext,VirtualFunction,by name,SetNewHideNode,Function,StargateGame.BotEnemy,2,,value,
@@ -10518,9 +10518,9 @@ StargateGame,BotGuide,EvalWhatToDoNext,VirtualFunction,by name,DoFollow,Function
 StargateGame,BotGuide,EvalWhatToDoNext,VirtualFunction,by name,PerformDefaultScript,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,BotGuide,EvalWhatToDoNext,VirtualFunction,by name,DoWait,Function,StargateGame.BotEnemy,4,,value,
 StargateGame,BotGuide,GoBackToPlayer,VirtualFunction,by name,SetNewGuardFocus,Function,StargateGame.BotEnemy,3,,value,
-StargateGame,BotGuide,GoBackToPlayer,VirtualFunction,by name,GetMyPlayer,name,,2,,self,
+StargateGame,BotGuide,GoBackToPlayer,VirtualFunction,by name,GetMyPlayer,Function,GamePlay.ScriptedController,2,,self,
 StargateGame,BotGuide,ShouldPerformScript,VirtualFunction,by name,ReachedDestination,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateGame,BotGuide,ShouldPerformScript,VirtualFunction,by name,GetMyPlayer,name,,2,,self,
+StargateGame,BotGuide,ShouldPerformScript,VirtualFunction,by name,GetMyPlayer,Function,GamePlay.ScriptedController,2,,self,
 StargateGame,BotGuide,ShouldPerformScript,GlobalFunction,by name,ShouldPerformScript,Function,package,3,,self,
 StargateGame,BotGuide,BeginState,FinalFunction,static,BeginState,Function,,,,,
 StargateGame,BotGuide,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -10572,7 +10572,7 @@ StargateGame,BotRep,crawlerWhatToDoNext,VirtualFunction,by name,GetIntoFormation
 StargateGame,BotRep,crawlerWhatToDoNext,VirtualFunction,by name,PerformDefaultScript,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,BotRep,EvalWhatToDoNext,VirtualFunction,by name,crawlerWhatToDoNext,Function,package,1,,self,
 StargateGame,BotRep,EvalWhatToDoNext,VirtualFunction,by name,DoWait,Function,StargateGame.BotEnemy,4,,value,
-StargateGame,BotRep,NotifyBump,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotRep,NotifyBump,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,BotRep,NotifyBump,VirtualFunction,by name,ShouldDeferTo,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
 StargateGame,BotRep,NotifyBump,VirtualFunction,by name,AdjustAround,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,BotRep,NotifyBump,VirtualFunction,by name,AdjustAround,Function,StargateGame.BotEnemy,1,,value,
@@ -10950,7 +10950,7 @@ StargateGame,SGMenuInteraction,drawObjectivesMenu,FinalFunction,static,SetPos,Fu
 StargateGame,SGMenuInteraction,drawObjectivesMenu,FinalFunction,static,DrawTextWindow,Function,,,,,
 StargateGame,BotSG,GetMyPlayer,FinalFunction,static,GetMyPlayer,Function,,,,,
 StargateGame,BotSG,WeaponPreference,VirtualFunction,by name,ReachedDestination,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateGame,BotSG,WeaponPreference,VirtualFunction,by name,GetMoveTarget,name,,2,,InstanceVariable,UnrealScriptedSequence
+StargateGame,BotSG,WeaponPreference,VirtualFunction,by name,GetMoveTarget,Function,receiver:Engine.AIScript,2,,InstanceVariable,UnrealScriptedSequence
 StargateGame,BotSG,WeaponPreference,VirtualFunction,by name,ModifyDamageRating,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,SGMenuInteraction,drawMainPDAMenu,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,SGMenuInteraction,drawMainPDAMenu,FinalFunction,static,SetPos,Function,,,,,
@@ -10980,9 +10980,9 @@ StargateGame,BotSG,UpdateCoverStatus,VirtualFunction,by name,UpdateCoverNodes,Fu
 StargateGame,BotSG,UpdateCoverStatus,VirtualFunction,by name,GetSquadCoverNodes,Function,corpus:StargateGame.SquadAISG,1,StargateGame.SquadAISG,DynamicCast,SquadAISG
 StargateGame,BotSG,UpdateCoverStatus,VirtualFunction,by name,UpdateCoverNodes,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,BotSG,UpdateCoverStatus,VirtualFunction,by name,CanUse,Function,receiver:StargateGame.CoverInfo,2,,DynamicCast,CoverInfo
-StargateGame,BotSG,QueueForceFire,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,QueueForceFire,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,QueueForceFire,FinalFunction,static,NewAIMsg,Function,,,,,
-StargateGame,BotSG,ClearForceFire,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,InstanceVariable,
+StargateGame,BotSG,ClearForceFire,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,InstanceVariable,
 StargateGame,BotSG,ClearForceFire,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,ClearForceFire,VirtualFunction,by name,SwitchToBestWeapon,Function,package,7,,value,
 StargateGame,BotSG,ActivateSpecialAttack,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -10997,14 +10997,14 @@ StargateGame,SGMenuInteraction,PreRender,FinalFunction,static,SetTextWinDimensio
 StargateGame,SGMenuInteraction,PreRender,FinalFunction,static,SetTextWinCursor,Function,,,,,
 StargateGame,SGMenuInteraction,PreRender,FinalFunction,static,SetTextWinMaterials,Function,,,,,
 StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,FindLocalCover,Function,package,3,,self,
-StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,ForceTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,aimessage
-StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,ForceTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,ClearTakeCover,VirtualFunction,by name,SetNewHideNode,Function,package,2,,value,
 StargateGame,BotSG,ClearTakeCover,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,
-StargateGame,BotSG,ClearTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,VirtualFunction,
+StargateGame,BotSG,ClearTakeCover,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,VirtualFunction,
 StargateGame,BotSG,ClearTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,CanIgnoreFormationPosition,VirtualFunction,by name,InvisActive,Function,package,2,,self,
 StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
@@ -11012,16 +11012,16 @@ StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,StartInvisible,Function
 StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,RemoveAllSquadEnemies,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
 StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,SetAggroStatus,Function,StargateGame.BotBase,1,,Context,
 StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,
-StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,VirtualFunction,
+StargateGame,BotSG,ForceCloaking,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,VirtualFunction,
 StargateGame,BotSG,ForceCloaking,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,ClearCloaking,VirtualFunction,by name,StopInvisible,Function,corpus:StargateGame.ShieldBelt,1,StargateGame.ShieldBelt,LocalVariable,ShieldBelt
-StargateGame,BotSG,ClearCloaking,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,Context,
+StargateGame,BotSG,ClearCloaking,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,Context,
 StargateGame,BotSG,ClearCloaking,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,SGMenuInteraction,drawHudMenu,VirtualFunction,by name,drawHudCursor,Function,package,1,,value,
 StargateGame,SGMenuInteraction,drawHudMenu,VirtualFunction,by name,drawReadmeMenu,Function,package,1,,value,
 StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,SetTargetType,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,LocalVariable,TacticalTarget
 StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,AddBotToTarget,Function,corpus:StargateGame.TacticalTarget,1,StargateGame.TacticalTarget,LocalVariable,TacticalTarget
-StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,AddController,Function,receiver:GamePlay.AmbushInfo,2,,Context,AmbushInfo
+StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,AddController,Function,Engine.Controller,2,,Context,AmbushInfo
 StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,SetEnemy,Function,package,10,,value,
 StargateGame,BotSG,AssignAmbushPoint,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateGame,BotSG,UpdateAmbush,VirtualFunction,by name,SetNewGuardFocus,Function,StargateGame.BotEnemy,3,,value,
@@ -11136,7 +11136,7 @@ StargateGame,StargatePlayer,NotifyHealing,FinalFunction,static,NewAIMsg,Function
 StargateGame,StargatePlayer,NotifyTakeHit,FinalFunction,static,NotifyTakeHit,Function,,,,,
 StargateGame,StargatePlayer,NotifyTakeHit,VirtualFunction,by name,SameTeamAs,Function,Engine.Controller,1,,self,
 StargateGame,StargatePlayer,NotifyTakeHit,VirtualFunction,by name,CallToArms,Function,receiver:StargateGame.SquadAIBasic,5,,InstanceVariable,SquadAIBasic
-StargateGame,BotSG,NotifyHealed,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,self,
+StargateGame,BotSG,NotifyHealed,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,self,
 StargateGame,BotSG,NotifyHealed,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,StargatePlayer,ReceiveWarning,VirtualFunction,by name,CallToArms,Function,receiver:StargateGame.SquadAIBasic,5,,InstanceVariable,SquadAIBasic
 StargateGame,BotSG,ShieldNotReady,VirtualFunction,by name,GetStatus,Function,corpus:Engine.Shield,1,Engine.Shield,Context,Shield
@@ -11146,7 +11146,7 @@ StargateGame,StargatePlayer,PawnDied,VirtualFunction,by name,AbortControl,Functi
 StargateGame,StargatePlayer,PawnDied,VirtualFunction,by name,ClientPawnDied,Function,package,1,,value,
 StargateGame,StargatePlayer,PawnDied,FinalFunction,static,PawnDied,Function,,,,,
 StargateGame,BotSG,EnemyChanged,VirtualFunction,by name,SetEnemyInfo,Function,StargateGame.BotBase,1,,self,
-StargateGame,BotSG,EnemyChanged,VirtualFunction,by name,TakeOver,name,,2,,InstanceVariable,UnrealScriptedSequence
+StargateGame,BotSG,EnemyChanged,VirtualFunction,by name,TakeOver,Function,receiver:GamePlay.ScriptedSequence,2,,InstanceVariable,UnrealScriptedSequence
 StargateGame,BotSG,UpdateEnemyInfo,FinalFunction,static,UpdateEnemyInfo,Function,,,,,
 StargateGame,StargatePlayer,Destroyed,VirtualFunction,by name,Cleanup,Function,receiver:StargateGame.NotificationManager,8,,InstanceVariable,NotificationManager
 StargateGame,StargatePlayer,Destroyed,FinalFunction,static,RemoveInteraction,Function,,,,,
@@ -11163,12 +11163,12 @@ StargateGame,BotSG,WanderOrCamp,VirtualFunction,by name,DoRoam,Function,package,
 StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,CanDamage,Function,package,3,,self,
 StargateGame,BotSG,FireWeaponAt,FinalFunction,static,FireWeaponAt,Function,,,,,
 StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,CallToArms,Function,package,5,,InstanceVariable,SquadAIBasic
-StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,FireWeaponAt,FinalFunction,static,NewAIMsg,Function,,,,,
-StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,FireWeaponAt,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,FireWeaponAt,FinalFunction,static,FindReceivedAIMsg,Function,,,,,
-StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
+StargateGame,BotSG,FireWeaponAt,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,value,
 StargateGame,BotSG,FireWeaponAt,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,SquadAIBasic,RegisterAlarmRunner,VirtualFunction,by name,IsAlarmRunner,Function,package,1,,self,
 StargateGame,BotSG,SetMovementMarker,VirtualFunction,by name,SetNewHideNode,Function,package,2,,value,
@@ -11201,7 +11201,7 @@ StargateGame,StargatePlayer,OrderSGFollow,VirtualFunction,by name,ClientMessage,
 StargateGame,StargatePlayer,OrderSGFollow,VirtualFunction,by name,issueOrder,Function,receiver:Engine.Order,7,,DynamicArrayElement,Order
 StargateGame,StargatePlayer,OrderSGOpenFire,VirtualFunction,by name,ClientMessage,Function,Engine.PlayerController,3,,value,
 StargateGame,StargatePlayer,OrderSGOpenFire,VirtualFunction,by name,issueOrder,Function,receiver:Engine.Order,7,,DynamicArrayElement,Order
-StargateGame,BotSG,MayFall,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotSG,MayFall,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,SquadAIBasic,SetCombatScriptFor,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
 StargateGame,SquadAIBasic,SetCombatScriptFor,VirtualFunction,by name,DoCombatScript,Function,receiver:StargateGame.BotBase,2,,LocalVariable,BotBase
 StargateGame,StargatePlayer,OrderSGAttack,VirtualFunction,by name,ClientMessage,Function,Engine.PlayerController,3,,value,
@@ -11318,7 +11318,7 @@ StargateGame,BotSG,PickDestination,VirtualFunction,by name,DoRanged,Function,Sta
 StargateGame,StargatePlayer,DisableMatineeSkip,VirtualFunction,by name,SetServerSloMo,Function,package,1,,value,
 StargateGame,StargatePlayer,CallForHelp,VirtualFunction,by name,ServerCallForHelp,Function,package,1,,self,
 StargateGame,StargatePlayer,SetServerSloMo,VirtualFunction,by name,ServerSloMo,Function,package,1,,self,
-StargateGame,BotSG,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotSG,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,BotSG,EngageDirection,VirtualFunction,by name,RecommendSplashDamage,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,BotSG,EngageDirection,VirtualFunction,by name,NeedToTurn,Function,StargateGame.BotEnemy,13,,self,
 StargateGame,BotSG,EngageDirection,VirtualFunction,by name,FireWeaponAt,Function,package,9,,value,
@@ -11357,7 +11357,7 @@ StargateGame,BotSG,BeginState,VirtualFunction,by name,FindNewStakeOutDir,Functio
 StargateGame,BotSG,BeginState,VirtualFunction,by name,FindNewStakeOutDir,Function,package,2,,value,
 StargateGame,BotSG,BeginState,FinalFunction,static,BeginState,Function,,,,,
 StargateGame,BotSG,BeginState,VirtualFunction,by name,ClearForceFire,Function,package,2,,value,
-StargateGame,BotSG,BeginState,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,VirtualFunction,
+StargateGame,BotSG,BeginState,VirtualFunction,by name,PostAIMsg,Function,Engine.Controller,1,,VirtualFunction,
 StargateGame,BotSG,BeginState,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,BeginState,VirtualFunction,by name,AddWaypoint,Function,corpus:StargateGame.GameHud,1,StargateGame.GameHud,LocalVariable,GameHud
 StargateGame,StargatePlayer,SetPause,FinalFunction,static,ToggleMenuPauseOverlay,Function,,,,,
@@ -11371,7 +11371,7 @@ StargateGame,StargatePlayer,SetClientScreenEffects,FinalFunction,static,CreateEm
 StargateGame,StargatePlayer,SetClientScreenEffects,FinalFunction,static,CreatePauseOverlay,Function,,,,,
 StargateGame,SquadAISG,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateGame,SquadAISG,Tick,VirtualFunction,by name,ResetFormationPosition,Function,corpus:StargateGame.BotSG,1,StargateGame.BotSG,DynamicCast,BotSG
-StargateGame,BotSG,Timer,VirtualFunction,by name,KilledBy,Function,receiver:Engine.Pawn,5,,InstanceVariable,Pawn
+StargateGame,BotSG,Timer,VirtualFunction,by name,KilledBy,Function,Engine.Controller,5,,InstanceVariable,Pawn
 StargateGame,BotSG,Timer,VirtualFunction,by name,Trigger,Function,package,118,,InstanceVariable,Pawn
 StargateGame,BotSG,Timer,FinalFunction,static,Timer,Function,,,,,
 StargateGame,BotSG,Tick,FinalFunction,static,Tick,Function,,,,,
@@ -11462,7 +11462,7 @@ StargateGame,SquadAISG,UpdateTakeCoverStatus,VirtualFunction,by name,GetHideSear
 StargateGame,SquadAISG,UpdateTakeCoverStatus,VirtualFunction,by name,GetAllowedHideRange,Function,package,2,,self,
 StargateGame,SquadAISG,UpdateTakeCoverStatus,VirtualFunction,by name,GetHideSearchCenter,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
 StargateGame,SquadAISG,UpdateTakeCoverStatus,VirtualFunction,by name,ClearTakeCover,Function,package,4,,DynamicCast,BotEnemy
-StargateGame,BotLite,SetEnemy,VirtualFunction,by name,SetNewGuardFocus,name,,3,,value,
+StargateGame,BotLite,SetEnemy,VirtualFunction,by name,SetNewGuardFocus,Function,GamePlay.ScriptedController,3,,value,
 StargateGame,BotLite,SetEnemy,VirtualFunction,by name,SetWalking,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotLite,SetEnemy,VirtualFunction,by name,SetWalking,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotLite,SetRouteToGoal,VirtualFunction,by name,SelectNextState,Function,package,1,,value,
@@ -11490,7 +11490,7 @@ StargateGame,SquadAISG,ForceTakeCover,FinalFunction,static,GetNumRecipients,Func
 StargateGame,SquadAISG,ForceTakeCover,FinalFunction,static,GetNumRecipients,Function,,,,,
 StargateGame,SquadAISG,ForceTakeCover,FinalFunction,static,GetNumRecipients,Function,,,,,
 StargateGame,SquadAISG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,InstanceVariable,Controller
-StargateGame,BotLite,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,corpus:Engine.Actor,1,Engine.Actor,InstanceVariable,Pawn
+StargateGame,BotLite,EngageDirection,VirtualFunction,by name,GetCollisionExtent,Function,Engine.Actor,1,,InstanceVariable,Pawn
 StargateGame,SquadAISG,ClearTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,InstanceVariable,Controller
 StargateGame,SquadAISG,ClearTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,SquadAISG,QueueSquadForceFire,VirtualFunction,by name,IsPendingForceFire,Function,receiver:StargateGame.BotBase,2,,LocalVariable,BotBase
@@ -11510,17 +11510,17 @@ StargateGame,BotLite,BeginState,VirtualFunction,by name,SetCombatTimer,Function,
 StargateGame,BotLite,Timer,VirtualFunction,by name,FireWeaponAt,Function,package,9,,value,
 StargateGame,BotLite,Timer,VirtualFunction,by name,SelectNextState,Function,package,1,,value,
 StargateGame,BotLite,BeginState,VirtualFunction,by name,SetCombatTimer,Function,StargateGame.BotBase,2,,self,
-StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,SendWarningMessage,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,InstanceVariable,
-StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,ClearAnimation,name,,2,,value,
-StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,UnPossess,name,,11,,value,
+StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,SendWarningMessage,Function,GamePlay.ScriptedController,1,,InstanceVariable,
+StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,ClearAnimation,Function,GamePlay.ScriptedController,2,,value,
+StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,UnPossess,Function,GamePlay.ScriptedController,11,,value,
 StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,FreeScript,Function,StargateGame.BotBase,4,,value,
 StargateGame,BotLite,LeaveScripting,VirtualFunction,by name,SelectNextState,Function,package,1,,VirtualFunction,
 StargateGame,BotLite,EndState,FinalFunction,static,EndState,Function,,,,,
 StargateGame,BotLite,SetMoveTarget,FinalFunction,static,SetMoveTarget,Function,,,,,
 StargateGame,BotLite,SetMoveTarget,VirtualFunction,by name,ReachedDestination,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-StargateGame,BotLite,Tick,VirtualFunction,by name,MayShootTarget,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,value,
+StargateGame,BotLite,Tick,VirtualFunction,by name,MayShootTarget,Function,GamePlay.ScriptedController,1,,value,
 StargateGame,BotLite,Tick,VirtualFunction,by name,StillTicking,Function,receiver:GamePlay.LatentScriptedAction,4,,InstanceVariable,LatentScriptedAction
-StargateGame,BotLite,Tick,VirtualFunction,by name,UpdateRotation,name,,3,,value,
+StargateGame,BotLite,Tick,VirtualFunction,by name,UpdateRotation,Function,GamePlay.ScriptedController,3,,value,
 StargateGame,BotLite,BeginState,VirtualFunction,by name,FreeScript,Function,StargateGame.BotBase,4,,value,
 StargateGame,BotLite,BeginState,VirtualFunction,by name,StopFiring,Function,package,6,,value,
 StargateGame,SquadAISG,ClearForceFireQueue,VirtualFunction,by name,IsPendingForceFire,Function,receiver:StargateGame.BotBase,2,,LocalVariable,BotBase
@@ -12408,7 +12408,7 @@ StargateGame,SquadMenu,PostRender,VirtualFunction,by name,Update,Function,receiv
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,SetPosImmediate,Function,corpus:StargateGame.UIWidget,1,StargateGame.UIWidget,StructMember,UIWidget
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,Update,Function,receiver:StargateGame.UIWidget,18,,StructMember,UIWidget
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,SetHighlightColumn,Function,StargateGame.SelectionMenu,1,,value,
-StargateGame,SquadMenu,PostRender,VirtualFunction,by name,IsUnconscious,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SquadMenu,PostRender,VirtualFunction,by name,IsUnconscious,Function,receiver:Engine.Controller,3,,LocalVariable,BotBase
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,DeathTimerPercentage,Function,corpus:StargateGame.BotSG,1,StargateGame.BotSG,DynamicCast,BotSG
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,ChangeColour,Function,receiver:StargateGame.UIWidget,2,,StructMember,UIWidget
 StargateGame,SquadMenu,PostRender,VirtualFunction,by name,SetEnable,Function,receiver:StargateGame.UIWidget,2,,StructMember,UIWidget
@@ -13535,7 +13535,7 @@ StargateGame,GameObject,CalcSetHome,VirtualFunction,by name,LogReturned,Function
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitializeBot,Function,StargateGame.UnrealMPGameInfo,2,,value,
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitPawn,Function,receiver:StargateGame.RosterEntry,12,,LocalVariable,RosterEntry
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,KDriverEnter,Function,receiver:Engine.Vehicle,13,,DynamicCast,Vehicle
-StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,Possess,name,,15,,LocalVariable,BotBase
+StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,Possess,Function,receiver:Engine.Controller,15,,LocalVariable,BotBase
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,AddDefaultInventory,Function,package,6,,value,
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitializeDefaultScript,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,LocalVariable,BotBase
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,PostInitRoster,Function,receiver:StargateGame.RosterEntry,4,,LocalVariable,RosterEntry
@@ -13631,7 +13631,7 @@ StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,GetBotTeam,Function,
 StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,ChooseBotClass,Function,corpus:StargateGame.UnrealTeamInfo,1,StargateGame.UnrealTeamInfo,LocalVariable,UnrealTeamInfo
 StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,InitializeBot,Function,StargateGame.UnrealMPGameInfo,2,,value,
 StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,SetBotOrders,Function,receiver:StargateGame.UnrealTeamInfo,3,,LocalVariable,UnrealTeamInfo
-StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,SetPawnClass,name,,2,,LocalVariable,BotBase
+StargateGame,StoryModeGame,SpawnBot,VirtualFunction,by name,SetPawnClass,Function,receiver:Engine.Controller,2,,LocalVariable,BotBase
 StargateGame,SGLoadingPageBase,AddMultiLineText,VirtualFunction,by name,AddText,Function,package,5,,LocalVariable,DrawOpText
 StargateGame,SGLoadingPageBase,AddMultiLineText,VirtualFunction,by name,SetSize,Function,receiver:StargateGame.DrawOpBase,3,,LocalVariable,DrawOpText
 StargateGame,UnrealPawn,CreateInventory,VirtualFunction,by name,GetInventoryClass,Function,corpus:Engine.Mutator,1,Engine.Mutator,Context,Mutator
@@ -14333,11 +14333,11 @@ StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetOwner,Fun
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetNumEnemies,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,LocalVariable,SquadAIBasic
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetNumEnemiesWithAggroLevel,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,LocalVariable,SquadAIBasic
-StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetAggroLevel,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetAggroLevel,Function,receiver:GamePlay.ScriptedController,3,,LocalVariable,BotBase
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,IsFiring,Function,receiver:Engine.Pawn,3,,Context,Pawn
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetAggroLevel,Function,receiver:Engine.Controller,3,,Context,Controller
 StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
-StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetAggroLevel,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SG1AIMsgManager,IsInCombatMode,VirtualFunction,by name,GetAggroLevel,Function,receiver:GamePlay.ScriptedController,3,,LocalVariable,BotBase
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
@@ -14345,7 +14345,7 @@ StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetOwner,Fu
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetOwner,Function,Engine.AIMsgManager,2,,self,
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetNumEnemies,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,LocalVariable,SquadAIBasic
 StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetNumEnemiesWithAggroLevel,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,LocalVariable,SquadAIBasic
-StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetAggroLevel,Function,descendant:StargateGame.BotEnemy,3,,LocalVariable,BotBase
+StargateGame,SG1AIMsgManager,IsInStealthMode,VirtualFunction,by name,GetAggroLevel,Function,receiver:GamePlay.ScriptedController,3,,LocalVariable,BotBase
 StargateGame,TeamAI,SendSquadToInvestigateAlarm,VirtualFunction,by name,isInIdleStatus,Function,receiver:StargateGame.SquadAIBasic,2,,LocalVariable,SquadAIBasic
 StargateGame,TeamAI,SendSquadToInvestigateAlarm,VirtualFunction,by name,isInPatrollingStatus,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,LocalVariable,SquadAIBasic
 StargateGame,TeamAI,SendSquadToInvestigateAlarm,VirtualFunction,by name,FormationCenterLocation,Function,receiver:StargateGame.SquadAIBasic,2,,LocalVariable,SquadAIBasic
