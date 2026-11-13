@@ -3414,3 +3414,17 @@ closing run's own grammar: its count and index bytes on the payloads whose block
 `inventory/class_record_gap.csv`'s array counts, which would say whether those six bytes are the tail of the
 version-gated `+0x4f4` name array or a field of its own.
 
+**2026-11-13 (fifteenth): the closing run is the writers whole group, and the six bytes are a names array, an
+import reference, a config name and an empty list.** The fourteenth entry deferred the run's grammar and named a
+join against `inventory/class_record_gap.csv`'s array counts. `UClass::Serialize` fixes the order -- `+0x4dc` as
+names, `+0x4b0` through slot `+0x18`, `+0x4b4` through slot `+0x1c`, then `+0x4f4` as names when the archive
+version is at least 99 -- and `inventory/archive_slots.csv` measures both slots as one compact field, so
+`tools/class-tail-run.py` parses exactly that group and requires the parse to end on the block start. It holds on
+**953 of the 1,318** rows whose run is at most twelve bytes (72.3%), and on 984 of the 2,139 located rows overall.
+The byte that defeated every earlier reading is the reference: compact `83` is **-3**, and the field is negative on
+981 of 984 parses with every magnitude inside the import table -- an import-side reference. The `+0x4f4` array is
+**empty on 801 of 984** classes. **What the join settles, negatively**, is the census: `class_record_gap.csv` says
+`nm_mid_count = 2` on all 294 overlapping rows while this tool reads 3 or 4, so that column is measuring a
+position inside the record's unit stream and its `nm_*` block needs re-deriving before it is quoted.
+**What is still open** is that re-derivation: join each row's `last_unit + 8` to the census's `array_end` and, if
+it lands inside a unit, recompute the census from the group above. Nothing here needs a boot or a decompile.

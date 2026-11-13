@@ -2162,3 +2162,62 @@ the 24 are `*VoicePack` classes `inventory/voice_sets.csv` already marks `silent
     python3 tools/class-tail-units.py --report
     python3 tools/class-tail-units.py --dump DUMP --join
 
+### The closing run is the writers group: a names array, an import reference, a config name and an empty list
+
+`tools/class-tail-units.py` measured the bytes between the record's last unit and the block (6-9 bytes on
+**1,180 of 2,204** located rows) and left their grammar open, naming a join against
+`inventory/class_record_gap.csv`'s array counts. `UClass::Serialize` writes four fields there, and its own listing
+gives the order and the versions (`~/sg1/work/module-export/Core/0003a800_Core_UnClass.c`):
+
+    0x3a8a6  CALL 0x0003d900   the record array: &+0x4d0 into &+0x4dc, returns the archive
+    0x3a8af  CALL 0x0003d160   &+0x4dc written as names: a compact count, then ONE compact index per element
+    0x3a8ba  CMP [Ar+4],0x3e   version >= 62:  &+0x4b0 through slot +0x18, then &+0x4b4 through slot +0x1c
+    0x3a8f6  CMP [Ar+4],0x63   version >= 99:  &+0x4f4 through 0x0003d160 (count + one compact per element)
+
+`inventory/archive_slots.csv` measures both name slots as **one compact field** on the cooking archive
+(`0x4d40d0`, proxy slots `+0x24` and `+0x20`), so the run is the whole group, in this order:
+
+    <count> <name index> ...        +0x4dc: a names array
+    <reference>                     an object reference, negative for an import slot
+    <name>                          the config name index
+    <count> <name index> ...        +0x4f4: written only at version >= 99, and empty on most classes here
+
+`tools/class-tail-run.py` (`make class-tail-run`, `inventory/class_tail_run.csv`) parses the run against exactly
+that order and accepts a row only when the parse **ends on the block start** and every name index is inside the
+package's name table -- so the anchor that made the six bytes look ungrammatical is not a fudge factor:
+
+| population | rows | parse as names-ref-name-list |
+|---|---:|---:|
+| every payload with a unit before a located block | 2,139 | 984 (46.0%) |
+| the same, run no longer than 12 bytes (the unit table's population) | 1,318 | 953 (72.3%) |
+
+Three measurements follow, and the first is the one the earlier reading missed:
+
+* **the reference field is negative on 981 of 984 parses (99.7%)**, and every one resolves inside the import
+  table (`|ref| <=` the package's import count); the values are `-6` on 437, `-3` on 223, `-4` on 135, `-9` on 84,
+  `-7` on 72, `-2` on 18, `-16` on 7 and positive on 3. That single byte is why six bytes refused to parse as
+  names: `83` is a compact **-3**, not a name index, and no reading of a name array can hold it.
+* **the config name index is inside the name table on all 984**, so the two fields after the array are a reference
+  and a name, in the order the listing has them.
+* **the `+0x4f4` array is empty on 801 of 984 rows** (count 0; 1 on 126, 6 on 33, 4 on 11, 2 on 11, 3 on 2). The
+  version-gated array is written, and it is a one-byte zero on four fifths of the corpus -- which is also why the
+  24 `no-declared-tag` payloads of the room table end 1 to 2 bytes from the payload end: those bytes are this
+  count and the empty list behind it, not a tag.
+
+Parses by run length: 6 bytes 149 of 169, 7 bytes 413 of 449, 8 bytes 202 of 261, 9 bytes 163 of 185, 5 bytes 3 of
+33, 10-12 bytes 23 of 55. What does not parse is bounded and named rather than hidden: 52 runs are **empty**
+(the last unit ends exactly on the block, so the group is not in the payload), and the commonest refusals are
+`02` (21), `4502010284` (17) and `450201028403010e` (12) -- payloads whose located block swallows part or all of
+the group.
+
+**The join is a negative, and it is the useful one.** 294 of the 412 rows that also carry a
+`class_record_gap.csv` row parse here, and that census reports `nm_mid_count = 2` on **all 294** while the count
+this tool reads for the same array is 3 on 217 and 4 on 69. A count that is constant across every overlapping row
+is not a count of these arrays: the census starts its mid parse at `array_end`, which sits inside the record's own
+unit stream, so its `nm_*` columns describe a position the writer never writes an array at. The tail measurement
+above does not depend on it -- it lands on the block start from the other side -- but a column that reads the same
+value on 294 rows should be re-derived before it is quoted again.
+
+The run is therefore **not** the tail of the version-gated `+0x4f4` array and not a field of its own: it is the
+whole four-field group, and the part that looked like an unexplained byte is the archive's reference slot writing
+an import index negative.
