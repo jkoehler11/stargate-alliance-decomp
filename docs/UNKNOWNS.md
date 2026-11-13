@@ -3347,3 +3347,21 @@ stands, and what the array's tail leaves in front of the block start -- 20 bytes
 is still neither the writer's fields nor an element width. **What would settle what U18 asks now** is that residue
 read against `UStruct::Serialize`'s own tail (`0x000392b0`), which is where the prefix came from, rather than another
 element grammar.
+
+**2026-11-13 (twelfth): the array's own head is a bound, and no located start that has room for the record sits
+inside it.** The tenth entry left the array's head as the test the tiling census could not be -- the count and the
+`+0x4d0` member checked against the located start. `tools/class-record-bound.py` (`make class-record-bound`,
+`inventory/class_record_bound.csv`) reads it at the writer's position (`prefix_end + 42`) on all 2,204 located classes
+and credits a head only when every element is an object reference inside the package's tables *and* every index of both
+name arrays is inside the name table: **297** heads survive, their count is **2** on 290 of them, their second name
+array is empty on all 297, and the block start sits a median **20** bytes past the record's own end (20 on 183, 19-21 on
+202) -- the same sixteen zero dwords plus a 3-5 byte front that *The gap's last sixteen bytes are zero* measured
+forward. The control is one byte later: 435 heads decode there and **48** survive both tests. Only **two** rows put the
+start inside the bound (`Engine.KBSJoint`, `StargateContent.CTFGateTeleporter`, margin -27), and both have a located
+middle of **41**, one byte short of the 42 the writer always writes, so they refute the locator rather than the bound;
+32 located rows in all leave fewer than 42 bytes between the prefix and the block. **This settles what the entry
+asked** -- no located start sits inside a record array that has room for the record -- and it does not explain the two
+menu pages: `GUI.MenuItemOverlay`'s start is 267 bytes past its array's bare end, so its 110-byte value is not the
+array's bytes. **What would still settle the two menu pages** is unchanged: `UDelegateProperty`'s own value serialiser
+(not the slot-11 body inherited from the common base), or a second package from the same build that ships the same
+property with a value short enough to read directly.

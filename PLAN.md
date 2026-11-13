@@ -1201,6 +1201,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the array's own head bounds the block start, and the bound lands on the 20-byte front)
+
+- **The route the tenth note left was a query, and it answers from the packages.** `tools/class-record-bound.py`
+  (`make class-record-bound`, `inventory/class_record_bound.csv`, `--check` in `make ci`) reads the `+0x4d0` array at
+  the position `UClass::Serialize` writes it (`prefix_end + 42`) on every located class, and credits the head only when
+  the archive's own contracts hold: every element a reference inside the package's tables, every index of both name
+  arrays inside the name table. **297 of 2,204** records have such a head (1,332 decode, 365 pass the reference test),
+  the count is **2** on 290 of them, the second name array is empty on all 297.
+- **The bound is the 20-byte front, measured from the other side.** The located block start sits a median **20** bytes
+  past the record's own end -- 20 on 183, 19-21 on 202 -- which is sixteen zero dwords plus a 3-5 byte compact front,
+  the same region *The gap's last sixteen bytes are zero* measured forward. The control makes the offset a
+  measurement: one byte later 435 heads decode and only **48** survive both tests, against 297 at `+42`.
+- **The two rows that contradict it are locator rows the field order forbids, and there are more of them than two.**
+  `Engine.KBSJoint` and `StargateContent.CTFGateTeleporter` put the start inside the record by 27 bytes, and both have
+  a located middle of **41** -- one byte short of the 42 bytes the writer always writes. In all **32** located rows
+  leave fewer than 42 bytes between the prefix and the block, 15 of them at offset 1 or before on payloads under 120
+  bytes, so a record-field precondition is the cheaper locator test for that tail.
+- **The element references alone are too weak a credit test.** They leave six contradictions (the two above plus
+  `MindControlledBot`, `Reetou`, `HaakenGrunt`, `SGOrder`); a run of 54 references that all land in a 415-export
+  package is not evidence, and requiring both name arrays drops all four extras. U18's answer is therefore scoped to
+  the heads that survive both, and its remaining route -- `UDelegateProperty`'s own value serialiser -- is unchanged.
+- Tool (`--sweep`, `--report`, 5 synthetic cases in `--check`) + `inventory/class_record_bound.csv` (2,204 rows) +
+  `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (twelfth) + `make class-record-bound` + this note. Reads
+  the packages; no boot, no Ghidra round, no defaults value decoded.
+
 ### Execution notes (2026-11-13, the record's third field is a ScriptText reference, and that closes the residue question)
 
 - **The prefix's third field is an object reference, and it lands on `ScriptText` on 2,209 of 2,209.** The last note
