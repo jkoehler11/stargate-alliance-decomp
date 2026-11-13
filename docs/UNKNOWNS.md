@@ -3267,18 +3267,38 @@ byte (trailer 0), so the tag's extent is the format's.
 | `StargateMenus.ExtrasPage` | `0xbf` | type 15 `FixedArray`, index flag | 12 | 3 | 10 indices over 12 bytes |
 | `StargateMenus.CreditsPage` | `0xbf` | type 15 `FixedArray`, index flag | 12 | 3 | 10 indices over 12 bytes |
 
-**Why it is not rendered.** The tag map this reader uses (UELib's, 0-15: `Invalid` … `FixedArray`) has no delegate
-type, so a delegate's default is not written by the tag grammar — a delegate is engine-written state, which is why
-the locator's type-agreement check leaves `UDelegateProperty` unconstrained in the first place. Two further negatives,
-both from the shape rows: neither the 110-byte nor the 12-byte value is a bound function name (the 110-byte one is
-twelve repeats of a nine-byte record plus two bytes; the two 12-byte ones differ in a single byte), and the greedy
-index tiling that lands exactly on the size is also what a run of small bytes does, so it is a shape and not a read.
+**Why it is not rendered.** The tag map this reader uses (UELib's, 0-15: `Invalid` ... `FixedArray`) has no
+delegate type, so a delegate's default is not described by the tag grammar. The renderer therefore typed these three
+by their nibble -- `String` in most classes, `Invalid` in one, `FixedArray` in two -- and read the bytes as text,
+which they are not.
 
-**What would settle it.** The two routes that have worked on this build's other format questions: the read side of
-the defaults buffer (`UClass::Serialize` at `0x0003a800` is already read; its counterpart sizes the buffer from
-`GetPropertiesSize()`, so a Ghidra round on that caller would show what writes a delegate's bytes), or a live `UClass`
-default object read at the delegate property's offset on a loaded level, where the engine's own `FScriptDelegate`
-layout would show whether the value is `{Object, Name}` or a table. A third, cheaper test: a class whose delegate the
-game *does* bind — the shipped text declares `OnXControllerEvent` handlers, so a class that assigns one in script
-would serialize a non-zero value, and comparing its tag to these three would separate "unset" from "a shape this
-reader has not named".
+**Measured -- a delegate default is `{object, function}`** (`tools/delegate-defaults.py`, `make delegate-defaults`,
+`inventory/delegate_defaults.csv`): 42 class-level delegate values across the 18 packages, and **39 of them tile
+exactly as two UE1/UE2 compact indices** (bit 7 the sign, bit 6 "one more byte"):
+
+| index | reading |
+|---|---|
+| first | a signed **object reference** -- negative indexes the import table, positive the export table, 0 is `Class` |
+| second | the **FName index** of the bound function |
+
+All 39 resolve the object to **the class's own export** and the name to **a function that the class or one of its
+ancestors declares**, so the shipped default for a delegate is "this class handles it itself": `GUILabelButton` binds
+`InternalOnKeyEvent` and `InternalOnXControllerEvent`, `MainMenu` binds `MapKeyEvent`, `SGPageBase` binds
+`MyKeyEvent`. The value's **width is the object index's width** -- one byte for export 2 (`SGPageBase`,
+`RightLockingPanel`), two for export 107 and up -- which is why the same property is 2 bytes in one class and 3 in
+another, under two different tag bytes (`0x17` and `0x57`: same type nibble 7, different size class). Nothing in the
+value is delegate-specific beyond that pair: no table, no arity, no state reference.
+
+**The three above are not delegate values of that shape, and their tag offsets are the open question.** Their first
+two indices resolve to no declared function (`MenuItemOverlay` tiles ten indices over its 110 bytes, the two menu
+pages ten over 12 and differ in a single byte), the 110-byte value is eleven repeats of a nine-byte record, and the
+property's own name index recurs inside it -- a property-block shape, not a value's. Compare that with the 39: a
+value that is a delegate always is two indices and always names a declared function, so the test separates the two
+cases without a guess.
+
+**The writer route is closed at slot 11.** `DelegateProperty`'s class table is `0x004e16a8`
+(`inventory/class_constructors.csv`) and its slot 11 is `0x00077f70` -- **byte-identical in shape** to
+`StructProperty`'s slot 11 at `0x00079660`: `push [esp+0xc]`, `call 0x77630`, `add esi,0x6c`, `push esi`,
+`call [eax+0x18]`, `ret 4`. Two different property classes cannot share a per-class value serialiser, so that slot is
+inherited from a common base and is not the delegate reader; the payload measurement above is what answers this, not
+another vtable round.
