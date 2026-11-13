@@ -1145,6 +1145,36 @@ at offset 246 of a 1,365-byte payload, while the 15-unit run the earlier note bu
 further into the record. The count that run never had in front of it is at the *array's* head, which is 905 bytes
 in front of the run and not adjacent to it.
 
+### The element is three fields, and only the first is a compact reference
+
+`FUN_0003d900`'s element loop hands the archive **three** pointers, not one: `Data + index*0xc` is computed once
+(`LEA EDX,[EBP + EBP*0x2]` then `LEA EAX,[EAX + EDX*0x4]`), then `element+8`, `element+4` and `element+0` are pushed
+and a single `CALL dword ptr [EDX+0x18]` takes them (`0x3d99a`-`0x3d9b0`). The count is `FUN_000637e0` on the array's
+`Num` word (`0x3d941`, and again at `0x3d9df` on the save path), the archive's `+0x14` slot is handed
+`Max*12`/`Num*12` before the loop (`0x3d90e`-`0x3d927`), and the load path clears `Max` and re-allocates with a
+`push 0xc` per element (`0x3d94d`). So the *memory* element is three dwords and the writer serializes all three.
+
+That is the writer's shape; the bytes settle the width. `tools/class-record-element-fields.py`
+(`make class-record-element-fields`, `inventory/class_record_element_fields.csv`, `--check` in `make ci`) walks the
+array at the same position with three compact fields per element and compares the landing with the one-reference
+walk:
+
+| measure | value |
+|---|---|
+| classes the shipped walk read at `k=2` | 395 |
+| three compact fields walk clean | 364 |
+| ... landing exactly on the block start | **0** |
+| ... stopping short of the one-reference walk | 363 (past it: 1) |
+| span between the two walks | **17 bytes on 293**, 18 on 21, 16 on 9 |
+| bytes per element under three compact fields | median **3.00** |
+
+Three one-byte fields make a 3-byte element, so that grammar would end the array at a third of the width the shipped
+walk measures; instead the walk stops a near-constant 17 bytes short, which is the two name arrays re-read from an
+earlier offset rather than six bytes lost per element. The element therefore stays
+`[compact reference][dword][dword]` -- 9 bytes at width 1, exactly `HerdAnimal`'s 199 bytes for 22 elements -- and
+the `+0x18` slot writes a raw dword for its second and third calls even though the writer hands all three fields to
+it.
+
 ### After the last name array the body writes nothing, so the gap belongs to the array
 
 The last note left one measurement named: read `UClass::Serialize`'s body between the `+0x4f4` call and the defaults
