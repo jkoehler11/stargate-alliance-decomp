@@ -1178,6 +1178,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the 110-byte residue sits in the record array, and the two menu pages are real tags)
+
+- **A decoded delegate is 2, 3 or 4 bytes, and that is the discriminator the shape test lacked.** `tools/delegate-defaults.py`
+  measured what the pair is; `tools/defaults-blockstart.py` (`make defaults-blockstart`, `inventory/delegate_blockstart.csv`,
+  synthetic `--check`) measures where each of the 42 tags sits: its offset inside the block, how many whole streamed
+  record units tile its value, and for a tag at offset 0 the earliest later start whose block also closes on the
+  payload's last byte. Width separates the cases without a guess -- the 39 fit the object index's width plus the
+  name's, the residues are 110 and 12.
+- **`GUI.MenuItemOverlay`'s residue is twelve record units, and re-locating its start does not recover a value.**
+  108 of its 110 bytes are twelve whole `[compact reference][dword][dword]` records (U17's unit); the block re-read
+  90 bytes (ten units) later opens on the same property name, the same tag byte and the same 110-byte value, with 11
+  properties against 20. So the tag is inside the record array at both starts and no start within 160 bytes yields
+  a pair: this row is a locator result, and its delegate default is not recoverable this way. Five of the 42 tags
+  are their block's first property and all five have such a second start; only this one's gap is a whole number of
+  record units.
+- **The two `StargateMenus` pages are genuine tags.** Their second start is one byte further on and names nothing
+  (`?`), so 83 is the only start whose tags name declared properties; their 12 bytes are one record unit plus three
+  spare, so the record test does not explain them. The value stays open, narrowed to ten compact indices over twelve
+  bytes with the two classes differing in exactly one of them. U18 is rewritten with the measurement, the locator
+  negative and the two routes that remain.
+- Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
+  packages; no boot, no Ghidra round.
+
 ### Execution notes (2026-11-13, a delegate default is {object, function} -- 39 of 42 measured, 3 still residues)
 
 - **The value the tag grammar cannot describe is two compact indices, and both resolve.** `tools/delegate-defaults.py`

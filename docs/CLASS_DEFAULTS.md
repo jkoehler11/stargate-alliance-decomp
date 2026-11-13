@@ -771,10 +771,42 @@ class handles its own event". The width differs per class only because the expor
 is export 2, 3 bytes where it is export 107 or higher, under tag bytes `0x17` and `0x57` (same type nibble, different
 size class). The three that do not tile -- `GUI.MenuItemOverlay` and the two `StargateMenus` menu pages -- are the
 `defaults-residue` rows, and their `{first, second}` pair names no declared function, so they are a tag-offset
-question rather than a delegate layout one.
+question, and the next section measures it: one of the three is a misplaced block start, the other two
+are tags whose value is still open.
 
 The source form these values come from is the familiar one: the shipped text writes
 `OnXControllerEvent=cFriends.InternalOnXControllerEvent`, i.e. the same object-and-function pair, resolved at load.
+
+## The three residue tags: one sits in the record array, two are real tags
+
+`tools/defaults-blockstart.py` (`make defaults-blockstart`, `inventory/delegate_blockstart.csv`) reads each of the
+42 delegate values against its own block a second time and reports what the value shape cannot: where the tag sits
+inside the block, how many whole **streamed record units** tile the value region (U17's unit: a compact object
+reference plus two dwords, nine bytes at reference width 1, as `FUN_0003d900` streams it), and -- for a tag that is
+its block's *first* property, the only case where a different block start moves it -- the earliest later start whose
+block also parses clean and closes on the payload's last byte.
+
+* **A decoded delegate is 2, 3 or 4 bytes, and every one of the 39 is inside that band.** That is the object
+  index's width plus the name's, and it is the discriminator the shape test did not name: the residues are 110 and
+  12 bytes, 27x and 3x the widest value that decodes.
+* **`GUI.MenuItemOverlay`'s 110 bytes are twelve whole record units and two spare bytes** (108 of 110 consumed).
+  No decoded value tiles as even one unit, because none is nine bytes long. A value that is twelve records of the
+  class record's own streamed element is the record array, not a default.
+* **Moving the start does not recover it.** Five of the 42 tags are their block's first property and all five have a
+  second start that also closes on the payload's last byte; for this class that start is exactly **ten record units**
+  further on (90 bytes) and it opens on **the same property name** -- with the same tag byte and the same 110-byte
+  value, its block holding 11 properties against the located one's 20. The tag is inside the record array at both
+  starts, and no start within 160 bytes yields a `{object, name}` pair, so this row is a **locator** result and not a
+  delegate one: the class's delegate default is not recoverable by re-locating its block.
+* **The two menu pages are a genuine tag, and their value is still open.** Their second start is one byte further
+  on and its first tag names nothing (`?`), so `83` is the only start whose tags name declared properties -- their
+  tag offset is not in doubt. Their 12 bytes are one record unit plus three spare, so the record test does not
+  explain them either: the residue stays open, narrowed to ten compact indices over twelve bytes, not a
+  `{object, name}` pair, with `ExtrasPage` and `CreditsPage` differing in exactly one of the twelve.
+* **No residue carries a delegate type nibble.** The 39 all sit on nibble 7 (`0x17`, `0x27`, `0x57` -- one type,
+  three size classes), while the residues are `0x50` (type 0 `Invalid`) and `0xbf` (type 15 `FixedArray`). A tag
+  type outside nibble 7 is therefore the first test, and the record tiling is what separates "the block start is
+  wrong" from "the value is unknown".
 
 ## Not measured
 
