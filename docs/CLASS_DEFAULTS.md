@@ -657,9 +657,11 @@ per package rather than once per class.
 **Where the list sits, from the reader's own listing.** `0x0003a800` writes nothing between the last field it reads
 (`+0x4f4`'s name array, version-gated at `0x63`, `0x3a8f6`-`0x3a904`) and the defaults buffer (`0x3a96d`), so the
 6-to-9-byte list is that array and not bytes left over before the block: the count of 3 is its element count and the
-three two-byte elements are its elements. The 20-byte middle behind it is the `+0x4dc` array plus the 8-byte config
-name, and the config name is one `FName` written by **two** virtual calls on two adjacent members (`+0x18` on
-`+0x4b0`, then `+0x1c` on `+0x4b4`). Depth: `docs/NATIVE_VM.md`, *The reader writes nothing between the last field
+three two-byte elements are its elements. The 20-byte middle behind it is the `+0x4dc` array plus two separate fields, not one 8-byte `FName`: `+0x4b0`
+is the class reference `ClassWithin` (the image's own assert at `0x397b0` names it) and `+0x4b4` is the
+config name, each one compact field through a different archive slot (`+0x18` for the reference, `+0x1c` for
+the name). That is the correction the pair census made; depth in `docs/NATIVE_VM.md`, *The pair at
++0x4b0/+0x4b4 is a class reference and a name, and the image names the first*. Depth: `docs/NATIVE_VM.md`, *The reader writes nothing between the last field
 and the defaults, so the list is a field*.
 
 
