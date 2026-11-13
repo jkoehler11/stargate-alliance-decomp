@@ -1201,6 +1201,33 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the closing run is a names array, an import reference, a config name and an empty list)
+
+- **The run is the writers whole group, not one field, and the writer says so in four call sites.**
+  `UClass::Serialize` (`0003a800_Core_UnClass.c`) writes `+0x4d0` through `0x3d900` into `+0x4dc`, writes that
+  through `0x3d160` as names, writes `+0x4b0` and `+0x4b4` through archive slots `+0x18` and `+0x1c` at version
+  **62**, and writes `+0x4f4` as names again at version **99**; `inventory/archive_slots.csv` measures both slots as
+  one compact field on the cooking archive. `tools/class-tail-run.py` parses exactly that order, ends on the block
+  start, and holds on **953 of 1,318** rows with a run of at most twelve bytes (72.3%), 984 of 2,139 overall.
+- **The byte that refused every earlier reading is a negative reference.** Compact `83` is **-3**, and the
+  reference field is negative on **981 of 984** parses, every magnitude inside the import table (`-6` on 437, `-3`
+  on 223, `-4` on 135, `-9` on 84, `-7` on 72); the config name is in range on all 984. So the six anchor bytes
+  `02 01 02 83 03 00` read: two names, an import reference, the config name, an empty list.
+- **The version-gated `+0x4f4` array is empty on 801 of 984 classes** (one element on 126, six on 33, four on 11,
+  two on 11, three on 2) -- written, and a one-byte zero on four fifths of the corpus, which is also what the 24
+  `no-declared-tag` payloads carry in their last byte.
+- **The join is a negative the census needs.** 294 of the 412 rows that also have a `class_record_gap.csv` row parse
+  here, and the census reports `nm_mid_count = 2` on all 294 while the count this tool reads is 3 (217 rows) or 4
+  (69): a column that is constant across every overlap is not counting this array, and the census starts its mid
+  parse at `array_end`, inside the record's unit stream. Recorded in U18 (fifteenth) as the remaining open item.
+- Tool (`tools/class-tail-run.py`: `--sweep`, `--report`, `--check` driving four synthetic groups and three
+  refusals) + `inventory/class_tail_run.csv` (2,139 rows) + `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md`
+  U18 (fifteenth) + `make class-tail-run` + this note. Reads the packages and two committed tables; no boot, no
+  Ghidra round, no property value decoded.
+- **Next measurement, named:** join each row's `last_unit + 8` to `inventory/class_record_gap.csv`'s `array_end` --
+  if that offset lands inside a record unit on the overlap, the census is reading its mid array from a position the
+  writer never writes one at, and its `nm_*` block should be recomputed from the group this note measured.
+
 ### Execution notes (2026-11-13, the 32 starts the record forbids are all at their payloads' end, and 24 of them are empty blocks)
 
 - **The room filter is the locator the tag walk's tail needed, and it decides without reading a value.** The last note
