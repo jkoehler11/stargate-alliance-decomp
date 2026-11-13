@@ -1176,6 +1176,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the element is twelve bytes in memory and nine on disk, and the parse at +42 is all-null)
+
+- **The writer fixes the element span, and it is not a disk width.** `FUN_0003d900` scales both `TArray` words by
+  twelve and addresses element *i* as `base + i*12`, then makes three archive calls per element: the reference through
+  vtable `+0x18`, then two raw dwords through `0x00037110` / `0x000370e0` (both are `Serialize(ptr,4)` through `+4`
+  behind a byte-clock bump, so they are one primitive). A record is therefore **12 bytes in memory** and **`ref + 8`
+  on disk** (9-13), which rules out the fixed 12-byte disk element the last note weighed -- and names the stride-9
+  unit `docs/CLASS_DEFAULTS.md` recorded.
+- **With that span the array's own tail is a second parse of the same grammar on 386 classes, and the record closes
+  on 291 of them** (75.4%), against 76 of 10,384 for the same grammar started anywhere in the next 40 bytes (0.7%).
+  Every one of the 291 is a class whose parse at `prefix_end + 42` was **all-null records** (336 of 549 are), and no
+  second parse is all-null, so the +42 position holds a same-shaped field with null references and the array begins at
+  its tail. `GamePlay.WaterZone`: 46 = two null records (19 bytes), 65 = two records with an export and an import
+  reference, 85 = a three-element name array, 92 = the defaults, exact to the byte.
+- **A second array would need a second writer, and there is none.** `UClass::Serialize` calls `0x3d900` once
+  (`0x3a8a6`); its other array writers, `FUN_0003d160` on `+0x4dc` and `+0x4f4`, stride four bytes and write one
+  `FName` per element through `+0x1c`. So the field in front of the array is a member the record's field list lacks.
+- Tool (`tools/class-record-element.py`: the restart walk, the 40-byte control window, `--class`, `--report`, and a
+  synthetic `--check` that drives both answers) + `inventory/class_record_element.csv` (549 rows) +
+  `make class-record-element` + `docs/NATIVE_VM.md` (*The element is twelve bytes in memory...*, *The bytes at the
+  array's own tail parse as the same array again*) + `docs/UNKNOWNS.md` U17 + this note. Reads the packages and the
+  array's committed CSV; no boot, no Ghidra, no value decoded.
+- **Next measurement, named so the next run does not re-derive it:** the identity of the all-null same-shaped field
+  (19 bytes on the zone family, a compact count of 2 and eighteen zero bytes) -- it is not written by
+  `UClass::Serialize`, so read the class's constructor for the `TArray` whose member sits just before `+0x4d0` -- and
+  the disk width of one `FName` through vtable `+0x1c`, which sizes the two name arrays at the end of every gap.
+
 ### Execution notes (2026-11-12, the body after the last array is empty and the gap is the array's own)
 
 - **The field the last note named is not there, and the instruction after the call is what says so.** In
