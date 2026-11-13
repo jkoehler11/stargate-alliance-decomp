@@ -2101,3 +2101,64 @@ text, which is the declaration the tool already reads.
     python3 tools/class-record-room.py --dump DUMP --sweep -o inventory
     python3 tools/class-record-room.py --report
 
+### The record's own tail: the block starts 6-9 bytes past its last unit, and four re-located starts are inside it
+
+`tools/class-record-room.py` left two questions on its 32 rows: whether the four it re-located to a declared tag (with
+a 14-25 byte tail) are a tag followed by a second table, and whether the 24 it called empty carry a bare terminator.
+Both are questions about the bytes between the record and the payload's end, and four classes in the corpus settle
+them from the **block** side, because their block is known rather than chosen: `Engine.SubActionCameraShake`,
+`SubActionFOV`, `SubActionSceneSpeed` and `SubActionTrigger` each declare one property and set it, so the single
+declared tag that tiles the payload exactly *is* the block (`class-defaults.py`'s `single_declared_block`, all four at
+start **97**, type `Str`, value the literal string the payload ends on).
+
+Read forward from the record's last streamed field, every one of the 32 payloads ends in a run of units and a short
+closing run:
+
+    <name index> 01 00 00 00 <4 bytes>          ... one or more units
+    02 01 02 83 03 00 <Desc tag> <None>         the anchors: closing run, then the block
+
+`tools/class-tail-units.py` (`make class-tail-units`, `inventory/class_tail_units.csv`) reports three things per row,
+none of them assuming a tag grammar: the unit offsets, the bytes after the last unit, and whether a declared tag tiles.
+Two of those are measurements over the whole corpus:
+
+| distance, last unit -> block start | rows | share |
+|---|---:|---:|
+| 6 bytes | 169 | 7.7% |
+| 7 bytes | 449 | 20.4% |
+| 8 bytes | 261 | 11.8% |
+| 9 bytes | 185 | 8.4% |
+| within 12 bytes | 1,318 | 59.8% |
+| no unit in front of the block | 65 | 2.9% |
+| further back | 821 | 37.3% |
+
+The mode is **7**, the anchors are all **6**, and the shape of that peak is the point: a block start lands a handful of
+bytes past the last unit on most classes because the closing run is the record's, and its length follows the class's
+name arrays rather than being one constant. A unit is therefore a landmark, not a guess: on the four anchors the block
+begins six bytes past it, and on the 32 rows the last unit is at 77-83 of a 95-115 byte payload.
+
+**All four re-located starts are inside a unit.** `Engine.KBSJoint` claims 69 and its units are at 70 and 80 -- one
+byte before the first unit's flag dword; `StargateContent.HaakenMK2Weapon_Bot` 68 and `P90Torch` 68 have units at 69
+and 79, the same relation; `StargateVehicles.AttachedDeathGliderTurretController` claims 75 with units at 68 and 78,
+and 75 is inside the earlier unit's four trailing bytes. In each case the parse that accepted the start read a unit's
+`01 00 00 00` flag dword as a property value, and the property name it landed on (`bHidden`, `FidgetAnims`,
+`RunMovementAnims`, `KParams`) is a coincidence of the name table at that index. A defaults block cannot begin inside
+the record, and what follows each claimed start is the closing run plus a terminator -- the same bytes the empty
+payloads end on -- not a second tag table.
+
+**The 24 stand as a negative, with the anchors as the control.** On every one of them no single declared tag tiles the
+payload at any offset, and that is exactly the test that finds all four anchors; their record ends 1 to 2 bytes short
+of the payload's end where the anchors' leaves a ten-byte tag. The verdict is therefore `no-declared-tag` and not
+`empty`: the payload does not carry a tag the class declares, which is the strongest statement it supports. Seven of
+the 24 are `*VoicePack` classes `inventory/voice_sets.csv` already marks `silent`.
+
+| verdict | rows | what it says |
+|---|---:|---|
+| `block` | 4 | a declared tag tiles the payload: the `SubAction*` anchors |
+| `record` | 4 | the claimed start is inside a record unit |
+| `no-declared-tag` | 24 | no declared tag tiles anywhere in the payload |
+
+    make class-tail-units
+    python3 tools/class-tail-units.py --dump DUMP --sweep -o inventory
+    python3 tools/class-tail-units.py --report
+    python3 tools/class-tail-units.py --dump DUMP --join
+
