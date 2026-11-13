@@ -2838,3 +2838,19 @@ name arrays that end every gap. Numbers: `docs/NATIVE_VM.md`, *The element is tw
 thirteen on disk* and *The bytes at the array's own tail parse as the same array again*;
 `inventory/class_record_element.csv` (549 rows).
 
+**2026-11-12: the last bytes are a value/reference pair list, and it is package-constant on five of seven packages.**
+`tools/class-record-tail.py` reads the 6-to-9-byte gap end on the 291 closing records (`inventory/class_record_tail.csv`)
+as a compact count (3 on 219, 2 on 6) plus that many (compact, compact) pairs, ending exactly on the block start on 219
+with **0 of 225** when the same grammar starts one to three bytes later. The middle pair's second value is negative on
+219 of 225 and takes four distinct values across the whole corpus -- one per package (-6, -3, -4, -7) -- and every first
+value resolves in the package's own name table, so the pair is a value and a *reference*, not the two `FName` indices
+this entry's name-array reading assumed. The tail is also byte-identical across all 51 `Stargateeffects` classes, all 6
+`StargateGame`, 123 of 149 `Sharpeffects`, 5 of 6 `Engine` and 7 of 12 `GamePlay`, so on five of the seven packages it is
+package-level content and not class data; `StargateContent` (48 distinct over 61) and `StargateVehicles` (6 over 6) vary
+per class. **What would settle it:** parse the defaults property stream from `block_start - width` on those 291 classes
+and ask whether it accounts for the payload to its last byte, as the stream already does from `block_start` on 543 of
+551 -- a stream that also parses from the earlier position would make the pair list the first tag of the defaults block
+and not a field of the record, and one that parses only from `block_start` leaves a field nothing in `UClass::Serialize`
+writes. Numbers: `docs/NATIVE_VM.md`, *The tail's elements are a value and a reference*; `docs/CLASS_DEFAULTS.md`,
+*The bytes after the array are a pair list*.
+
