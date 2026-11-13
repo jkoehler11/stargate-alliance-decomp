@@ -2704,6 +2704,15 @@ field set is not: what would settle the 545 is the writer that produced the per-
 and the defaults block, and the record's own `+0x4d0` array is now known to be a streamed 9-byte record rather
 than a fixed table. Numbers: `docs/NATIVE_VM.md`, *The record's field widths are compact, and a 12-byte record is
 nine*; `docs/CLASS_DEFAULTS.md`, *The tail's widths are named*.
+**2026-11-12: the middle is measured -- a record array found by its period, and a tail that is not one
+grammar.** `tools/class-record-middle.py` locates the 9-byte record array by its *period* (a run of >=3 identical
+units whose reference byte varies) on **536 of 2,204** classes -- median 5 units, max 269 -- against **13** in a
+same-length window taken from the block start, so the array is really in the middle and its count field is not where
+the field table looks. The leftover after the walk is `mixed` on 1,037 of 1,166, with `dwords` 44, `records` 27,
+`compact` 7, `zero` 4, and its commonest size, 20 bytes (190 classes), is the five-dword group's own width, so the
+545 are not moved by adding a field in front of the block. The offset sweep lands 80 (3.6%) in the documented order
+and 618 (28.0%) with the dword group moved after the arrays, but 360 of the 618 sit in the 367 classes whose middle
+is exactly 88 bytes, so the sweep is recorded as a negative rather than as evidence for an ordering.
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.

@@ -478,6 +478,29 @@ residue is one of those streamed records** -- a one-byte reference and two dword
 91-byte middle, leaving **42** before the block. So the widths are settled and the field *set* is not; the 545
 stay withheld for the same reason as before, with one fewer unknown in the record.
 
+### The middle is a record array and a mixed tail, and neither closes the 545
+
+`tools/class-record-middle.py` reads the window between the measured prefix's end and the block start on all 2,204
+located classes and labels it, so "what is in front of a block start" has a census rather than another candidate
+field list (`inventory/class_record_middle.csv`; depth in `docs/NATIVE_VM.md`, *The stride-9 array is in the
+middle*):
+
+| measure | value |
+|---|---|
+| a stride-9 run of >=3 identical units in the middle | **536 of 2,204** (24.3%), median 5 units, max 269 (2,421 bytes) |
+| the same search on the block itself (control) | **13** (0.6%) |
+| leftover after the documented walk: `mixed` | 1,037 of 1,166, median 42 bytes, commonest size 20 on 190 classes |
+| ... `dwords` / `records` / `compact` / `zero` | 44 / 27 / 7 / 4 |
+| ... `overshoot` (the walk ends past the block) | 47 |
+| the fit sweep in the documented order | 80 land (3.6%); control at +8: 46 (2.1%) |
+| the fit sweep with the five dwords after the arrays | 618 (28.0%); control 74 (3.4%), but 360 of the 618 are classes with an 88-byte middle |
+
+Two consequences for the 545 withheld blocks. The record's tail holds the 9-byte record array on a quarter of the
+classes, and it can be found by its *period*, so an instrument that reads that array no longer needs the count
+field. And no field added in front of the block can close the walk, because the leftover's commonest size -- 20
+bytes -- is the five-dword group's own width. What remains is the window's grammar per class, not one more field of
+`UClass::Serialize`.
+
 ### What the record writes in front of the block, now that the prefix is measured
 
 `tools/class-prefix.py` decodes the record's opening with `UStruct::Serialize`'s own field order and scores it against
