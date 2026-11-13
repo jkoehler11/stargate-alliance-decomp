@@ -2998,3 +2998,20 @@ stack (`0x66a93`). No site in the image is handed `+0x4dc`, which is the offset 
 second call. **What would settle the 20-byte middle now** is what `0x3a8af` invokes with one argument: whether
 `FUN_0003d160` has a one-argument entry reachable there, or the reader's field order is off by one call. Numbers:
 `docs/NATIVE_VM.md`, *Only one call site writes the record array, and the reader's second call is not a member*.
+
+**2026-11-13 (seventh): the reader's second call *is* handed a member, staged under the previous call's pushes.**
+This entry's question was whether `0x3a8af` invokes a one-argument entry of `FUN_0003d160` or the field order is off
+by one call; it is neither. The reader emits `LEA EDX,[ESI+0x4dc]; PUSH EDX` at `0x3a897`, before the `+0x4d0`/`EBP`
+pair, `FUN_0003d900` is handed two arguments and pops neither, and the `ADD ESP,0x8` at `0x3a8ab` skips exactly those
+two -- so `+0x4dc` is still on the stack when `0x3d160` runs and the call is handed `(archive, &+0x4dc)`. The frame
+is measured rather than read off the nearest pushes: `tools/record-writer-calls.py` now stack-accounts each site (the
+arity from the caller's own `add esp,imm`, the arguments from the topmost dwords of the window, the leftovers
+reported per site as staged), and the eight sites answer `record` 1 site / 2 args (leaving `+0x4dc` staged) and
+`pairs` 7 sites / 2 args on six. So nothing was missing the `+0x4dc` push; the census's window started after it.
+The consequence is that the 20-byte middle is the `+0x4dc` name array's stream -- `0x3d160`'s element is a name
+write of one or two bytes through archive slot `+0x1c` -- and not a second array of twelve-byte records. **What would
+settle that** needs no new data: parse each class's middle as a count followed by that many archive names and ask
+whether it closes on the same 361 classes the twelve-byte parse claims; one of the two grammars accounting for the
+bytes to their last one is the field's shape. Numbers: `inventory/record_writer_calls.csv` (`args`, `staged`,
+`staged_member`); `docs/NATIVE_VM.md`, the section formerly titled *Only one call site writes the record array, and
+the reader's second call is not a member*.

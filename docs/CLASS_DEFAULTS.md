@@ -727,3 +727,8 @@ on 321, references resolving on 355 -- followed by the **count-plus-pairs list**
 on 219. The control that makes the position mean something: the same grammar a byte later parses 811 times and
 lands on the defaults start once. `docs/NATIVE_VM.md` (*The 20-byte middle is a second record array*) carries the
 table and the refutation of the config-`FName` reading of the 8 bytes in front of the list.
+
+The middle's **owner** is named since: the reader is handed `+0x4dc` at `0x3a8af`, staged under the record writer's
+own call (`docs/NATIVE_VM.md`, *Only one call site writes the record array, and its reader stages the second member
+under that call*), and that writer's file element is a name of one or two bytes -- so the 20 bytes are more likely
+its name stream than two twelve-byte records, which is the parse this CSV does not yet try.

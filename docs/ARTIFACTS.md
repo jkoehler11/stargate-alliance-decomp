@@ -129,7 +129,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/packages.csv` | 18 | 18 | `make help` |
 | `inventory/property_classes.csv` | 15 | 8 | `make property-types` |
 | `inventory/property_types.csv` | 17 | 4 | `make property-types` |
-| `inventory/record_writer_calls.csv` | 8 | 11 | `make record-writer-calls` |
+| `inventory/record_writer_calls.csv` | 8 | 14 | `make record-writer-calls` |
 | `inventory/registration_arguments.csv` | 493 | 12 | `make class-table-residual` |
 | `inventory/registration_ctor_arguments.csv` | 493 | 17 | `make class-table-residual` |
 | `inventory/registration_sites.csv` | 493 | 6 | `make registration-sites` |

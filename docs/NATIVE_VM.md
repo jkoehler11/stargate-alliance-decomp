@@ -1638,7 +1638,7 @@ array is not written by this body: either the located array is not the member `+
 the same element type sits beside it and is packed elsewhere (a version-gated or load-side path). Naming it is the
 next read, and it is a call census of `0x3d900` rather than a boot.
 
-### Only one call site writes the record array, and the reader's second call is not a member
+### Only one call site writes the record array, and its reader stages the second member under that call
 
 `tools/record-writer-calls.py` (`make record-writer-calls`, `inventory/record_writer_calls.csv`, `--check` in
 `make ci`) scans the image's executable sections for `E8 rel32` into the two record writers and decodes backwards to
@@ -1646,22 +1646,33 @@ the instruction that last wrote the register each call pushes, so a call site yi
 callee is handed. A site is kept only when a forward decode from a start offset behind it lands exactly on the call
 (`tools/vcall-receiver.py`'s boundary rule); every one of the eight candidates in the image passes that test.
 
-| writer | sites | member displacements |
-|---|---|---|
-| `FUN_0003d900` (12-byte records) | **1** -- `0x3a8a6` in `Core_UnClass` | `+0x4d0` |
-| `FUN_0003d160` (name array) | 7 | `+0x4f4` (`0x3a904`), `+0x70` (`0x500a1`), `+0x2ec` and `+0x2f8` (one function, `0x22d53f`/`0x22d54c`) |
+| writer | sites | argument frames | member displacements |
+|---|---|---|---|
+| `FUN_0003d900` (12-byte records) | **1** -- `0x3a8a6` in `Core_UnClass` | 2 (`archive`, `&array`) | `+0x4d0`, leaving `+0x4dc` staged |
+| `FUN_0003d160` (name array) | 7 | 2 on six, 1 on `0x172fe4` | `+0x4dc` (`0x3a8af`, staged), `+0x4f4` (`0x3a904`), `+0x70` (`0x500a1`), `+0x2ec`/`+0x2f8` (`0x22d53f`/`0x22d54c`); `0x66a93` takes its first argument from the stack |
 
 **There is no second call site into the record writer.** The corpus's second array is 361 classes of the same
 12-byte element grammar, and the image contains exactly one call that can produce one -- so "a second member of the
 same element type, packed elsewhere" is refuted for this build: nowhere else is `FUN_0003d900` called at all.
 
-**And the reader's second call is not handed a member.** At `0x3a8af` the instruction before the call is a single
-`PUSH EAX`, and `EAX` holds the value just returned by the call at `0x3a8a6`; `FUN_0003d900` ends `return
-param_1`, i.e. it returns its archive argument, so what reaches `FUN_0003d160` there is the archive and not a
-`TArray` field. The section above attributes that call to the `+0x4dc` name array; the instructions say the argument
-isn't a member, and no site in the image is handed `+0x4dc` at all. Two of the seven name-array sites have this
-one-argument, chained shape (`0x3a8af` after `0x3d900`, `0x172fe4` after `0x172fe0`); the other five push a member
-and the archive.
+**Which is why the middle belongs to the other writer.** The two bodies agree on their `TArray` skeleton -- reserve,
+count through `FUN_000637e0`, then one archive call per element -- and differ only in the element: twelve bytes
+through archive slot `+0x18` for `0x3d900`, four bytes through the name slot `+0x1c` for `0x3d160`, which writes one
+or two bytes per element to the file. A 20-byte middle is therefore a count and roughly two to seven names, and the
+"two twelve-byte records" parse that made it look like a second record array is a coincidence of a stream that
+small rather than the field's shape.
+
+**And the reader's second call is handed its member from under the first one.** At `0x3a8af` the instruction
+immediately before the call is a single `PUSH EAX`, and `EAX` holds the value just returned by the call at
+`0x3a8a6` (`FUN_0003d900` ends `return param_1`, i.e. it returns its archive argument). But the frame of a call is
+not the run of pushes nearest it: at `0x3a897` the reader emits `LEA EDX,[ESI+0x4dc]` and pushes it into that run
+**first**, `0x3d900` is handed two arguments (`archive`, `&+0x4d0`) and pops neither, and the caller's `ADD ESP,0x8`
+at `0x3a8ab` skips exactly those two -- so `+0x4dc` is still on the stack when `0x3d160` runs, and that call is
+handed `(archive, &+0x4dc)`. The tool reads frames that way for every site: the arity is the caller's own
+`add esp,imm`, the arguments are the topmost dwords of the window's push accounting, and pushes a site leaves on the
+stack are reported as *staged*. Two of the seven name-array sites take the archive from the previous call
+(`0x3a8af` after `0x3d900`, `0x172fe4` after `0x172fe0`); `0x172fe4` is the only one that comes out one-argument,
+and the window is what says so.
 
 **Both bodies are the same shape, which is what makes the offsets readable.** `FUN_0003d900` reserves
 `count*0xc` bytes through the archive's slot `+0x14`, writes the count with `FUN_000637e0`, then per 12-byte element
@@ -1669,7 +1680,10 @@ calls the archive's `+0x18` with the reference and its two dwords; `FUN_0003d160
 count the same way, then per element calls the archive's `+0x1c` -- the name method -- which is why its file elements
 are one and two bytes. Both `return param_1`.
 
-What this leaves open is narrow and is a read, not a boot: the 20-byte middle is written by a call that has no
-member argument on the stack, and the next thing to read is what `0x3a8af` is actually invoking -- whether
-`FUN_0003d160` has a one-argument entry point reachable there, or the field order in the section above is off by one
-call.
+What this leaves open is no longer the call but the parse: the `+0x4dc` name array's element count against the
+middle's bytes, which is a grammar test on data already in `inventory/class_record_gap.csv` -- the count plus that
+many archive names, closing on the same 361 classes the twelve-byte parse claims, would retire the second-array
+reading without another read of the image.
+
+(A previous version of this section concluded that no site in the image is handed `+0x4dc`, from the pushes nearest
+each call. The negative was the census's window, not the build.)
