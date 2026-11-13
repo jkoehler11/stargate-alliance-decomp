@@ -591,8 +591,16 @@ Numbers: `docs/NATIVE_VM.md`, *The array's count is its own first field, and its
 
 The gap between the located array's tail and a class's defaults start is 27 bytes at the median, and the last 6 to 9 of
 them are a **pair list**: `tools/class-record-tail.py` reads 291 closing records and 225 of them as a compact count (3 on
-219, 2 on 6) plus that many (compact, compact) pairs, ending exactly on the block start on 219 with a control of **0 of
+219, 2 on 6) plus that many `(compact, compact)` pairs, ending exactly on the block start on 219 with a control of **0 of
 225** when the same grammar starts one to three bytes later (`inventory/class_record_tail.csv`).
+
+**And the archive's name slot writes one field, not two, which closes that reading from the other side.** `0x38bf0`
+(vtable `0x4d40d0`+0x1c) converts an `FName` to a single index through its proxied name table and writes it as **one**
+compact field (`tools/archive-slots.py`), so an element is 1-5 bytes and a name index is unsigned -- bit 7 of a leading
+byte is the sign. A seven-byte tail holding three names would need three two-byte indices, and its bytes instead read
+as a count of three plus three `(small value, negative reference)` pairs, which is what `class_record_tail.csv`
+records. The pair list is therefore not the two `TArray<FName>`s under either width, and the field list in front of it
+is still open.
 
 The second value of the middle pair is negative on **219 of 225** and only four distinct values occur across the corpus,
 one per package (-6 on 149 classes, -3 on 52, -4 on 12, -7 on 6). An `FName` number is an unsigned duplicate counter, so

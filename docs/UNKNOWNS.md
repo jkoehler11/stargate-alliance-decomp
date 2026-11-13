@@ -2725,6 +2725,20 @@ image. Corpus-wide the same instrument places 765 members on 493 destructors (`i
 read the element loop inside `0x1aa30` and `0x1b310` past the shared template prologue, and a 12-byte element freed
 through an object-reference destructor names it.
 
+**2026-11-13 (third): the archive's name slot writes one compact field per element, and the middle's count of 2 is
+decided by that width.** `tools/archive-slots.py` (`make archive-slots`, `inventory/archive_slots.csv`, `--check`
+with no dump) finds the archive object by the version pair every payload carries (130 at `+4`, licensee 4 at
+`+0xc`): **six** constructors store it beside a vtable, so the pin alone names nothing, and the one table whose
+`+0x18` and `+0x1c` slots are *different* functions is `0x004d40d0`. There `+0x14` is `0x000ea7f0` (`ret 8`, a no-op
+`Preload`), `+0x18` is `0x00038bc0` (one compact field, through the proxied table's reference half `[eax+0x24]`), and
+`+0x1c` is `0x00038bf0` (one compact field, through its name half `[eax+0x20]`). An `FName` on disk is therefore one
+1-5 byte index and an array of `n` names spans at most `1 + 5n` bytes -- which supersedes this entry's "two compact
+indices per element" everywhere it appears. Re-reading the record's gap with that width
+(`tools/class-record-gap.py`) closes on **3 of 549** against a control of **14**, and the arithmetic bound is what
+settles the disputed middle: a name array of the middle's own leading count fits on **14 of 414** parsed rows and on
+**2 of 325** of the count-2 middles (median 27 bytes, bound 11), so the middle is not that array and its 20 bytes are
+two twelve-byte records of `3+3+3` and `2+8`.
+
 **2026-11-13 (second): every placed member's element width is measured, and it excludes one candidate for the
 tail.** The `TArray` destructor template varies in exactly one instruction -- the `PUSH imm32` range-destroy argument
 that is the element size: `Class`'s three adjacent arrays are 8 (`+0x4b8`), 4 (`+0x4c4`) and 12 (`+0x4d0`, the record

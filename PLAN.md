@@ -1176,6 +1176,39 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the archive's name slot writes one compact field, and that decides the count of 2)
+
+- **The element width was read from the archive, not from the array's bytes.** `tools/archive-slots.py` finds every
+  table whose constructor stores this build's version pair (130 at `+4`, licensee 4 at `+0xc`) beside its vtable
+  store -- **six** in this image, so the pin alone does not name the object -- and classifies the slots the record
+  writers are handed. Only `0x004d40d0` has a distinct function at each: `+0x14` is `0x000ea7f0`, a `ret 8` no-op
+  (`Preload`); `+0x18` is `0x00038bc0`, which converts the element's reference through the proxied table
+  (`call [eax+0x24]`) and writes **one** compact field with `FUN_000637e0`; `+0x1c` is `0x00038bf0`, the same shape
+  through the table's *name* half (`call [eax+0x20]`) and **one** compact field, not an `(index, number)` pair.
+- **So an `FName` on disk is one index of 1-5 bytes and an array of `n` names spans at most `1 + 5n`.** That
+  corrects the field table's "two compact indices per element", which was a field *list* read off the bytecode
+  attempt and never measured against the writer.
+- **Re-read with that width, the gap still refuses the reader's field order, and now by arithmetic as well.**
+  `tools/class-record-gap.py` closes on **3 of 549** (control **14**), and `nm_fits` -- the bound `1 + 5*count`
+  against the middle's own width -- holds on only **14 of the 414** rows whose middle parses as names: on the
+  disputed count of 2 (325 middles, median 27 bytes, bound 11) on **2 of 325**. The middle's leading byte is
+  therefore not a name count; two twelve-byte records of `3+3+3` and `2+8` span 19 bytes, which is the one reading
+  of the corpus's commonest middle that the measured widths allow.
+- **A check compared a string to an integer, and the artifact path answered zero for everything.** The report's
+  `nm_*` keys were not in its own int-conversion list, so `--report` over the committed CSV printed "0 of 549 close"
+  and "0 of 414 fit" while the same rows in memory printed 3 and 14 -- the numbers in this note are the corrected
+  ones, and the conversion list now carries every `nm_*` key.
+- Tool (`tools/archive-slots.py`: `--image`, `-o`, `--report`, a synthetic `--check` that drives the pin store, the
+  no-op `Preload` and both element slots) + `inventory/archive_slots.csv` (24 rows, six tables) + `tools/class-record-gap.py`
+  (`walk_names` replaces the pair walk; `nm_mid_max` / `nm_fits` added) + `inventory/class_record_gap.csv` (549 rows) +
+  `docs/NATIVE_VM.md` (*The element width is one compact field*; the gap section) + `docs/CLASS_DEFAULTS.md` (the tail
+  section) + `docs/UNKNOWNS.md` U17 + `make archive-slots` + this note. Reads the image and the packages; no boot, no
+  Ghidra round, no value decoded.
+- **Next measurement, named:** the middle's *own* writer at its tail -- the gap's 23 leftover bytes after the name
+  parse begin at a position the twelve-byte array does not end on, so the candidate is the array's second member
+  (`+0x4c4`, four-byte elements) written by a body `UClass::Serialize` does not call: find the `+0x4c4` store map in
+  the class constructors and read the writer that fills it.
+
 ### Execution notes (2026-11-13, the gap does not decompose in the reader's own field order)
 
 - **The measurement the last note named is done, and it refuses the reading.** `tools/class-record-gap.py` now
