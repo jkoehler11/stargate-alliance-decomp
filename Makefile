@@ -19,7 +19,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair member-assert-names class-record-order class-record-gap-front
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair member-assert-names class-record-order class-record-gap-front defaults-residue
 
 help:
 	@echo "targets:"
@@ -148,6 +148,7 @@ help:
 	@echo "  library-bodies   the library sections' own evidence: strings, source paths, RTTI, direct calls (needs the dump)"
 	@echo "  body-name        which bodies name themselves from their own literals or a byte-identical twin (needs the export)"
 	@echo "  defaults-misses  why each class has no fully declared defaults block (needs the dump)"
+	@echo "  defaults-residue the values the defaults renderer refuses, as shape rows (needs the dump)"
 	@echo "  maps-parse       map summary from the package headers (needs the dump and Sg1Tool)"
 	@echo "  artifact-hashes  the expected SHA-256 of every committed artifact (checked in make ci)"
 	@echo "  versions         check tools/versions.lock against this machine (--strict to fail on a mismatch)"
@@ -933,6 +934,11 @@ module-attribution:
 defaults-misses:
 	@$(PYTHON) tools/class-defaults.py --misses "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@echo "wrote inventory/class_defaults_misses.csv"
+
+# The values the defaults renderer refuses, reported as shape rows rather than values (PLAN 3.5, U18).
+defaults-residue:
+	@$(PYTHON) tools/defaults-residue.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --csv inventory/defaults_residue.csv
+	@echo "wrote inventory/defaults_residue.csv"
 
 # The state bodies are not only in an extracted tree: each class ships its own `ScriptText`, and a `state` block
 # is part of it. This reads the AI controllers' states, labels, overrides, gotos and sleeps straight out of the
