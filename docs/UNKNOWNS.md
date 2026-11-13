@@ -3333,3 +3333,17 @@ a tiled value: the count and the `+0x4d0` member from `UClass::Serialize` (`docs
 located start, a bound the tiling test does not have. Numbers: `docs/CLASS_DEFAULTS.md`, *The record-unit test has an
 88% base rate, so it does not locate a block start*.
 
+
+**2026-11-13 (eleventh): the array's element keeps two raw dwords, so the 20-byte residue is not an element width.**
+The route the tenth entry left -- read the writer for the element's widths -- is closed, and it corrects the
+reason that entry gave. `FUN_0003d900` passes **three** fields per element to the archive's `+0x18` slot
+(`element+0`, `+4`, `+8`, pushed at `0x3d9a3`-`0x3d9b0`), so a three-compact-field element was a live hypothesis.
+`tools/class-record-element-fields.py` (`make class-record-element-fields`,
+`inventory/class_record_element_fields.csv`) ran it on the 395 classes the shipped walk read at `k=2`: 364 complete,
+**0** land on the block start, 363 stop short of the one-reference walk (past it: 1), the span between the two walks
+is **17 bytes on 293** of them (18 on 21, 16 on 9) rather than six bytes per element, and the three-field element
+reads a median **3.00** bytes against the shipped model's 9. The second and third dwords are raw, the 9-byte element
+stands, and what the array's tail leaves in front of the block start -- 20 bytes past the two name arrays, 27 bare --
+is still neither the writer's fields nor an element width. **What would settle what U18 asks now** is that residue
+read against `UStruct::Serialize`'s own tail (`0x000392b0`), which is where the prefix came from, rather than another
+element grammar.

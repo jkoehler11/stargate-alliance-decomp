@@ -1201,6 +1201,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the element is three fields and only the first is compact)
+
+- **The writer's body was one grep away, and it says the element is three serialized fields.** `FUN_0003d900` is
+  already in `~/sg1/work/module-export/Core-800/`, so the read cost no Ghidra round: the element loop computes
+  `Data + index*0xc` once and pushes `element+8`, `element+4`, `element+0` before one `CALL [EDX+0x18]`
+  (`0x3d99a`-`0x3d9b0`); the count is `FUN_000637e0` on the array's `Num` word (`0x3d941`, and `0x3d9df` on the save
+  path); `Max*12`/`Num*12` go to the archive's `+0x14` slot first, and the load path clears `Max` and re-allocates
+  with a `push 0xc`. "One reference plus two raw dwords" was a width the corpus gave the page, not the writer's
+  shape -- which made a three-compact-field element the one test that shape implies.
+- **The corpus refuses it, and the refusal is a constant rather than a per-element difference.**
+  `tools/class-record-element-fields.py` (`make class-record-element-fields`,
+  `inventory/class_record_element_fields.csv`, 395 rows) walks the array at `prefix_end + 42` with three compact
+  fields per element: 364 complete, **0** land on the block start, 363 stop short of the one-reference walk (past it:
+  1), the span between the two walks is **17 bytes on 293** (18 on 21, 16 on 9) rather than six bytes per element,
+  and the three-field element reads a median **3.00** bytes against the shipped model's 9. A three-compact element
+  would shrink the array by two thirds; instead the two name arrays are re-read from an earlier offset, so the second
+  and third dwords are raw and the 9-byte element stands.
+- What it changes: `docs/NATIVE_VM.md` now separates the writer's three-pointer shape from the measured 1+4+4 width,
+  and U18 drops "read the writer for the element widths" as a route -- the 20-byte residue that is left belongs to
+  `UStruct::Serialize`'s tail, not to an element width.
+- Tool (`--sweep`, `--report`, 4 assertions in `--check`) + `inventory/class_record_element_fields.csv` +
+  `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (eleventh) + `make class-record-element-fields` + this
+  note. Reads the packages and one committed CSV; no boot, no Ghidra round, no value decoded.
+
 ### Execution notes (2026-11-13, the record-unit test is calibrated and it does not locate a block start)
 
 - **Tiling is a property of the width, not of the position.** `tools/defaults-blockstart.py` gains `--census`
