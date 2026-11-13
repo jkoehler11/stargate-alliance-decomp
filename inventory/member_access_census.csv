@@ -16,3 +16,47 @@ disp,site_va,function,module,function_class,function_route,form,base,index,insn,
 0x4b8,0x00308a20,Core_UnTemplate,,,plain,field,esi,,"mov eax,[esi+0x4b8]",2,eax,4,0x00308a26,"mov ecx,[eax+edi*4]",14,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
 0x4b8,0x0035508e,FUN_00354f44,,,plain,store,edi,,"mov byte [edi+0x4b8],eax",2,,,,,23,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
 0x4b8,0x00358c4a,FUN_00358bb6,,,plain,field,ecx,,"mov edx,[ecx+0x4b8]",2,edx,8,0x00358c50,"lea eax,[edx+eax*8]",27,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4c4,0x0003a675,FUN_0003a670,,Class@10,table,lea-field,esi,,"lea ecx,[esi+0x4c4]",2,ecx,,,,39,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x0003ad98,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x4c4],edi",2,,,,,26,store,Class GameReplicationInfo,Class=4
+0x4c4,0x0003aea1,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x4c4],edi",2,,,,,39,store,Class GameReplicationInfo,Class=4
+0x4c4,0x0003afda,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x4c4],edi",2,,,,,27,store,Class GameReplicationInfo,Class=4
+0x4c4,0x0003dc60,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x4c4]",2,ecx,,,,13,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x000c7be7,FUN_000c7bd0,,Pawn@57,table,lea-field,esi,,"lea eax,[esi+0x4c4]",2,eax,,,,30,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x000d3ba5,FUN_000d3990,,Controller@30,table,field,esi,,"mov edi,[esi+0x4c4]",2,edi,,,,178,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x000dcc4e,ctor_GameReplicationInfo,,,plain,lea-field,esi,,"lea eax,[esi+0x4c4]",2,eax,,,,17,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x000dcd13,dtor_GameReplicationInfo,,,plain,lea-field,esi,,"lea ecx,[esi+0x4c4]",2,ecx,,,,47,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x0012b490,FUN_0012aab0,,,plain,field,ecx,,"mov edi,[ecx+0x4c4]",2,edi,,,,223,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x0012c2bf,FUN_0012c0b0,,,plain,field,esi,,"mov eax,[esi+0x4c4]",2,eax,,,,28,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001958ef,FUN_00195830,,,plain,field,ebx,,"mov edi,[ebx+0x4c4]",2,edi,,,,1326,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x0019f2ca,FUN_0019e700,,Pawn@124,table,lea-field,esi,,"lea ebp,[esi+0x4c4]",2,ebp,,,,1052,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001a3056,FUN_001a2e10,,,plain,lea-field,esi,,"lea ebp,[esi+0x4c4]",2,ebp,,,,387,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001a7f2d,FUN_001a7f20,,,plain,lea-field,esi,,"lea edi,[esi+0x4c4]",2,edi,,,,715,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001a9308,FUN_001a92e0,,Pawn@89,table,lea-field,ecx,,"lea eax,[ecx+0x4c4]",2,eax,,,,62,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001ae93c,FUN_001ae3a0,,Pawn@88,table,lea-field,esi,,"lea ecx,[esi+0x4c4]",2,ecx,,,,324,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001aee18,FUN_001ae3a0,,Pawn@88,table,lea-field,esi,,"lea eax,[esi+0x4c4]",2,eax,,,,8,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001b2fe1,Core_UnClass,,Pawn@85,table,lea-field,esi,,"lea ecx,[esi+0x4c4]",2,ecx,,,,211,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001b3900,FUN_001b3550,,,plain,lea-field,esi,,"lea eax,[esi+0x4c4]",2,eax,,,,383,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001b47a8,FUN_001b4780,,,plain,lea-field,esi,,"lea edi,[esi+0x4c4]",2,edi,,,,1022,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001b5c23,FUN_001b5890,,Pawn@87,table,lea-field,esi,,"lea eax,[esi+0x4c4]",2,eax,,,,1149,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001b6532,FUN_001b5890,,Pawn@87,table,lea-field,esi,,"lea ebx,[esi+0x4c4]",2,ebx,,,,658,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001fcfed,FUN_001fc630,,,plain,field,ecx,,"mov eax,[ecx+0x4c4]",2,eax,,,,597,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x001fd005,FUN_001fc630,,,plain,store,ecx,,"mov [ecx+0x4c4],imm",2,,,,,590,store,Class GameReplicationInfo,Class=4
+0x4c4,0x001fd018,FUN_001fc630,,,plain,field,ecx,,"mov eax,[ecx+0x4c4]",2,eax,,,,587,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x0020be21,ctor_SceneManager,,,plain,store,esi,,"mov byte [esi+0x4c4],eax",2,,,,,13,store,Class GameReplicationInfo,Class=4
+0x4c4,0x00245602,FUN_002455f0,,SparkEmitter@47,table,field,eax,,"mov ebx,[eax+0x4c4]",2,ebx,,,,169,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4c4,0x00245872,FUN_002455f0,,SparkEmitter@47,table,field,eax,,"mov ebx,[eax+0x4c4]",1,ebx,,,,16,no indexed use in 12,Class GameReplicationInfo,Class=4
+0x4d0,0x0003a68a,FUN_0003a670,,Class@10,table,lea-field,esi,,"lea ecx,[esi+0x4d0]",2,ecx,,,,33,no indexed use in 12,Class,Class=12
+0x4d0,0x0003a89e,Core_UnClass,,Class@11,table,lea-field,esi,,"lea eax,[esi+0x4d0]",2,eax,,,,332,no indexed use in 12,Class,Class=12
+0x4d0,0x0003adaa,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x4d0],edi",2,,,,,23,store,Class,Class=12
+0x4d0,0x0003aeb3,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x4d0],edi",2,,,,,36,store,Class,Class=12
+0x4d0,0x0003afec,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x4d0],edi",2,,,,,24,store,Class,Class=12
+0x4d0,0x0003dc50,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x4d0]",2,ecx,,,,16,no indexed use in 12,Class,Class=12
+0x4d0,0x000851c2,FUN_000850e0,,xEmitter@35,table,field,esi,,"mov ecx,[esi+0x4d0]",2,ecx,,,,294,no indexed use in 12,Class,Class=12
+0x4d0,0x00112e03,FUN_00112e00,,Controller@52,table,field,esi,,"mov ecx,[esi+0x4d0]",2,ecx,,,,9,no indexed use in 12,Class,Class=12
+0x4d0,0x00112e14,FUN_00112e00,,Controller@52,table,store,esi,,"mov [esi+0x4d0],imm",2,,,,,3,store,Class,Class=12
+0x4d0,0x00112ec5,FUN_00112e80,,PlayerController@52,table,field,esi,,"mov ecx,[esi+0x4d0]",2,ecx,,,,11,no indexed use in 12,Class,Class=12
+0x4d0,0x00112edc,FUN_00112e80,,PlayerController@52,table,store,esi,,"mov byte [esi+0x4d0],edi",2,,,,,4,store,Class,Class=12
+0x4d0,0x0019591f,FUN_00195830,,,plain,lea-field,ebx,,"lea esi,[ebx+0x4d0]",2,esi,,,,1317,no indexed use in 12,Class,Class=12
+0x4d0,0x001cb8ab,FUN_001cb850,,,plain,lea-field,ebx,,"lea esi,[ebx+0x4d0]",2,esi,,,,92,no indexed use in 12,Class,Class=12
+0x4d0,0x001d2b8b,FUN_001d26b0,,,plain,lea-field,esi,,"lea ebx,[esi+0x4d0]",2,ebx,,,,199,no indexed use in 12,Class,Class=12
+0x4d0,0x00297544,FUN_00296720,,,plain,lea-field,esi,,"lea ecx,[esi+0x4d0]",2,ecx,,,,123,no indexed use in 12,Class,Class=12
