@@ -1201,6 +1201,28 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the record-unit test is calibrated and it does not locate a block start)
+
+- **Tiling is a property of the width, not of the position.** `tools/defaults-blockstart.py` gains `--census`
+  (`make defaults-blockstart-census`, `inventory/defaults_blockstart_census.csv`, 2,209 located blocks, 16,788
+  properties): every settled block's first value is tiled with U17's streamed record unit (a compact reference and two
+  dwords, nine bytes at width 1), and the same grammar is run 1-4 bytes into the same region as a control. **159 of
+  the 181** blocks whose first value is two units or more wide tile at their own start (87.8%); the control tiles
+  **151/149/147/153 of the same 181** (82-85%). A unit opens on a compact index -- any small byte satisfies one -- and
+  then skips eight bytes whole, so almost any value of two units or more tiles.
+- **`GUI.MenuItemOverlay`'s twelve units are exactly the control's twelve.** Its value tiles as 12 units at its own
+  start and 12 at each of the four shifted starts, and 154 of the 159 tiling blocks have a later clean start, so
+  neither feature #464 read as a locator result is rare. The class's delegate default is still unrecovered for the
+  reason that does hold -- 110 bytes is 27x the widest value that decodes as `{object, name}`, and the re-read 90 bytes
+  on repeats the same name, tag and size -- but the page and U18 now say that rather than "the value is the record
+  array".
+- What it changes: the test that could place a start is the array's own head (its count and the `+0x4d0` member in
+  `docs/NATIVE_VM.md`) checked against the located start; tiling cannot, and the census now says so with numbers
+  instead of leaving the assumption in the page.
+- Tool (`--census`, 7-case synthetic `--check`) + `inventory/defaults_blockstart_census.csv` +
+  `docs/CLASS_DEFAULTS.md` (new section, one bullet corrected) + U18 + this note. Reads the packages; no boot, no
+  Ghidra round.
+
 ### Execution notes (2026-11-13, a delegate default is {object, function} -- 39 of 42 measured, 3 still residues)
 
 - **The value the tag grammar cannot describe is two compact indices, and both resolve.** `tools/delegate-defaults.py`

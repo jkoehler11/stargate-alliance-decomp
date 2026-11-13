@@ -790,8 +790,10 @@ block also parses clean and closes on the payload's last byte.
   index's width plus the name's, and it is the discriminator the shape test did not name: the residues are 110 and
   12 bytes, 27x and 3x the widest value that decodes.
 * **`GUI.MenuItemOverlay`'s 110 bytes are twelve whole record units and two spare bytes** (108 of 110 consumed).
-  No decoded value tiles as even one unit, because none is nine bytes long. A value that is twelve records of the
-  class record's own streamed element is the record array, not a default.
+  No decoded value tiles as even one unit, because none is nine bytes long. Twelve records of the
+  class record's own streamed element look like the record array rather than a default -- but the next
+  section measures that test's base rate and finds it at 88% wherever it starts, so the tiling alone does
+  not place the tag.
 * **Moving the start does not recover it.** Five of the 42 tags are their block's first property and all five have a
   second start that also closes on the payload's last byte; for this class that start is exactly **ten record units**
   further on (90 bytes) and it opens on **the same property name** -- with the same tag byte and the same 110-byte
@@ -807,6 +809,34 @@ block also parses clean and closes on the payload's last byte.
   three size classes), while the residues are `0x50` (type 0 `Invalid`) and `0xbf` (type 15 `FixedArray`). A tag
   type outside nibble 7 is therefore the first test, and the record tiling is what separates "the block start is
   wrong" from "the value is unknown".
+
+## The record-unit test has an 88% base rate, so it does not locate a block start
+
+`tools/defaults-blockstart.py --census` (`make defaults-blockstart-census`,
+`inventory/defaults_blockstart_census.csv`) asks the section above's question of the whole corpus instead of the three
+residues: for each of the **2,209** classes whose block the locator settles, does the block's first value tile as
+whole streamed record units -- and does the same grammar started 1, 2, 3 or 4 bytes into the same region tile just as
+often?
+
+* **It tiles almost always, and wherever it starts.** 181 of the 2,209 blocks have a first value at least two units
+  wide, and **159 of those (87.8%)** tile as two or more whole units with less than one unit spare. The control --
+  the same grammar one to four bytes into the same value region -- tiles **151 / 149 / 147 / 153 of the same 181**
+  (82-85%). Tiling is a property of the width, not of the position: a record unit opens on a compact index, which any
+  small byte satisfies, and then skips its two dwords whole.
+* **`GUI.MenuItemOverlay`'s twelve units are what a shifted start gives anyway.** Its value tiles as 12 units at its
+  own start and as **12, 12, 12, 12** at the four controls (`ctrl_units` in the CSV), so "twelve record units" says
+  nothing about where the block starts. The row's second feature is common too: of the 159 blocks that tile, **154**
+  also have a later start whose block parses clean and closes on the payload's last byte, so a second clean start is
+  not evidence either.
+* **What is left of the row is the re-read.** The start 90 bytes later opens on the same property name, the same tag
+  byte and the same 110-byte value, with 11 properties against 20 -- a repeat that no shifted control reproduces. The
+  width argument (110 bytes is 27x the widest value that decodes as `{object, name}`) is unchanged, and the two menu
+  pages' 12 bytes still are not a pair. So the delegate default stays unrecovered, but for the width reason and the
+  re-read, not because the value "is the record array".
+* **No block in the corpus is shown to be mislocated by this test.** That is a negative about the instrument: a start
+  cannot be separated from its neighbours by tiling, so an in-array failure cannot be counted this way at all. A test
+  that could would have to read the **array's own head** -- the count and the member `UClass::Serialize` puts at
+  `+0x4d0`, which `docs/NATIVE_VM.md` already measures -- rather than the bytes a candidate start happens to open on.
 
 ## Not measured
 
