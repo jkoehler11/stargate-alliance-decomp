@@ -563,7 +563,7 @@ Engine,Controller,ServerReStartPlayer,VirtualFunction,by name,RestartPlayer,Func
 Engine,Pawn,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,,
 Engine,Pawn,DisplayDebug,VirtualFunction,by name,GetScreenplay,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Engine,Pawn,DisplayDebug,VirtualFunction,by name,GetScreenplay,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
-Engine,Pawn,DisplayDebug,VirtualFunction,by name,DisplayDebug,Function,package,68,,Context,
+Engine,Pawn,DisplayDebug,VirtualFunction,by name,DisplayDebug,Function,package,68,,Context,screenplay
 Engine,Pawn,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 Engine,Pawn,DisplayDebug,FinalFunction,static,InGodMode,Function,,,,,
 Engine,Pawn,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
@@ -10999,7 +10999,7 @@ StargateGame,SGMenuInteraction,PreRender,FinalFunction,static,SetTextWinMaterial
 StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,FindLocalCover,Function,package,3,,self,
 StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
 StargateGame,BotSG,ForceTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
-StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,
+StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,WhatToDoNext,Function,package,16,,VirtualFunction,aimessage
 StargateGame,BotSG,ForceTakeCover,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,value,
 StargateGame,BotSG,ForceTakeCover,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,BotSG,ClearTakeCover,VirtualFunction,by name,SetNewHideNode,Function,package,2,,value,
@@ -13000,12 +13000,12 @@ StargateGame,GameHud,SetAccuracyIndicatorVisible,VirtualFunction,by name,Fade,Fu
 StargateGame,GameHud,SetAccuracyIndicatorVisible,VirtualFunction,by name,Fade,Function,receiver:StargateGame.UIWidget,2,,InstanceVariable,UIWidget
 StargateGame,GameHud,SetAccuracyIndicatorVisible,VirtualFunction,by name,Fade,Function,receiver:StargateGame.UIWidget,2,,InstanceVariable,UIWidget
 StargateGame,StargatePawn,CreateShield,VirtualFunction,by name,GetGameClass,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-StargateGame,StargatePawn,CreateShield,VirtualFunction,by name,AskForShieldClass,name,,3,,Context,
+StargateGame,StargatePawn,CreateShield,VirtualFunction,by name,AskForShieldClass,Function,receiver:Engine.GameInfo,3,,Context,gameinfo
 StargateGame,StargatePawn,CreateShield,FinalFunction,static,ResetSkins,Function,,,,,
 StargateGame,StargatePawn,CreateShield,VirtualFunction,by name,AttachToPawn,Function,receiver:Engine.Inventory,3,,InstanceVariable,Shield
 StargateGame,StargatePawn,CreateShield,VirtualFunction,by name,Activate,Function,receiver:Engine.Powerups,9,,InstanceVariable,Shield
 StargateGame,StargatePawn,CreateHealthRegenerator,VirtualFunction,by name,GetGameClass,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-StargateGame,StargatePawn,CreateHealthRegenerator,VirtualFunction,by name,AskForHealthRegenClass,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,
+StargateGame,StargatePawn,CreateHealthRegenerator,VirtualFunction,by name,AskForHealthRegenClass,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,gameinfo
 StargateGame,StargatePawn,CreateHealthRegenerator,VirtualFunction,by name,AttachToPawn,Function,receiver:Engine.Inventory,3,,InstanceVariable,HealthRegenerator
 StargateGame,StargatePawn,CreateHealthRegenerator,VirtualFunction,by name,Activate,Function,receiver:Engine.Powerups,9,,InstanceVariable,HealthRegenerator
 StargateGame,GameHud,SetCrosshairColour,VirtualFunction,by name,ChangeColour,Function,receiver:StargateGame.UIWidget,2,,InstanceVariable,UIWidget

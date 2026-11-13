@@ -2733,7 +2733,9 @@ def calls_report(path, table, out=None, lists=0):
                 class's own `ScriptText` carries. A `FinalFunction` names its Function export, so the callee's
                 class is that export's outer (a State's function belongs to the class that owns the state); a
                 `VirtualFunction` or `GlobalFunction` names a name, resolved on the caller's chain the way a
-                self-call is.
+                self-call is, and then by the corpus when exactly one class declares it -- the same last lookup a
+                by-name call site gets, because the chained call's receiver is that callee's own object and the
+                corpus-only answer needs no receiver.
                 """
                 value, _e = read_index(expr["operands"], 0)
                 if expr["name"] == "FinalFunction":
@@ -2772,7 +2774,20 @@ def calls_report(path, table, out=None, lists=0):
                         op, oc = decl.split(".", 1)
                         callee = (op, oc, name)
                     else:
-                        return "", "call result: the callee is not declared on the caller's chain"
+                        # The chain is the caller's; the callee may still be declared by one class elsewhere in
+                        # the corpus (`GetMoveTarget` and three others are), and a name exactly one class declares
+                        # resolves there whatever the receiver is -- the rule the by-name call table already uses.
+                        owners = decls.get(name, set())
+                        if len(owners) != 1:
+                            # Named, not counted: a residue row has to say which callee it could not place and
+                            # how many classes claim it, or the next session re-finds it from the bytes.
+                            if not owners:
+                                return "", ("call result: the callee %s is declared by no class in the corpus"
+                                            % (name or "?"))
+                            return "", ("call result: the callee %s is declared by %d classes, none on the "
+                                        "caller's chain" % (name, len(owners)))
+                        (op, oc), = owners
+                        callee = (op, oc, name)
                 rets = class_source(callee[0], callee[1])[1]
                 ret = _folded(rets, callee[2])
                 if callee[2] not in rets and ret is None:

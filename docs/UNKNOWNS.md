@@ -2023,6 +2023,18 @@ no declared return type. **What would settle the 5** is whether their receiver's
 name is declared by a class outside the receiver's subtree, so the question is which class the site's object
 expression really holds, and the receiver chain the tool already writes is the list to read them from.
 
+**2026-11-13, a chained callee is resolved by the corpus too, and the four left are a dispatch.** A call in front
+of a call is typed from its callee's declared return type, and the callee was looked up on the caller's super chain
+only; the by-name call table already has a second, receiver-free lookup (a name exactly one class in the corpus
+declares), so the chained callee now takes it as well. **One site places** (`StargatePawn.CreateShield`'s
+`AskForShieldClass` -> `receiver:Engine.GameInfo`), three rows gain the `receiver_type` that says why, by-name
+placement goes **13,397 -> 13,398 of 13,507**, the receiver's chain **2,779 -> 2,780**, and the untyped-object
+residue **41 -> 40**. The four that stay untyped are named *with their declarer count*: `GetInstigator` 2 classes,
+`SetSprinting` 2, `TeamIDLookup` 5, and one callee (`UnrealScriptedSequence`'s `Trigger`) with no declared return
+type. **What would settle them is not another parse of this corpus:** several classes declare each name, so the
+callee is a virtual dispatch whose receiver the site does not carry -- a runtime question, and the residue's first
+shape of that kind.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
