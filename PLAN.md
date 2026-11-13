@@ -1178,6 +1178,32 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, a chained callee takes the corpus lookup, and the four left are a dispatch)
+
+- **The chained call was resolved with one of the two lookups the call table already has.** A call in front of a call
+  is typed from the callee's *declared* return type (`function Actor GetOwner()`), and that callee was resolved on the
+  caller's super chain only. `resolve_name`'s second step -- a name **exactly one class in the corpus declares**
+  resolves there whatever the receiver is -- needs no receiver, so it applies to a chained callee as much as to a
+  call site. Using it **places one site** (`StargatePawn.CreateShield`'s `AskForShieldClass` ->
+  `receiver:Engine.GameInfo`) and fills `receiver_type` on three more rows (`StargatePawn.DisplayDebug`'s
+  `screenplay`, `CreateHealthRegenerator`'s `gameinfo`, `BotSG.ForceTakeCover`'s `aimessage`) without moving their
+  placement. By-name placement **13,397 -> 13,398 of 13,507 (99.2%)**, the receiver's chain **2,779 -> 2,780**, the
+  untyped-object residue **41 -> 40**.
+- **The four that stay untyped are named, with their declarer count, and they are a dispatch.** `GetInstigator` is
+  declared by 2 classes, `SetSprinting` by 2, `TeamIDLookup` by 5, and `UnrealScriptedSequence`'s `Trigger` with no
+  return type at all. Several declarers means the callee is a virtual dispatch and the *callee's own* receiver is not
+  in the site, so the static text cannot decide it -- a runtime question, and the first residue shape of that kind.
+  The reason string carries the name and the count now, so the next session does not have to re-find them from the
+  bytes (`--lists` prints them in one run).
+- Tool (the corpus fallback in `call_result`, and the named reason) + `inventory/script_calls.csv` regenerated +
+  `docs/BYTECODE.md` (*A chained call's callee gets the corpus lookup too...*) + `docs/UNKNOWNS.md` U13 + this note.
+  Reads the packages; no boot, no Ghidra round.
+- **Next measurement, named:** the 35 struct-array elements, asked as one question the corpus can answer -- each
+  array's declared type names a struct, and `source_structs` already holds every member list, so the pass is to ask
+  whether any of those structs declares a member that is a class (an element that *does* leave an object on the stack)
+  and to keep the rest as the negative they are. `TArray<ScriptDirection>`, `TArray<PlayInfo>`, `TArray<StreamPlaylist>`
+  are the three named in the last note, and their member lists decide it.
+
 ### Execution notes (2026-11-13, the last local was behind a preprocessor directive, and the residue is 41)
 
 - **The declaration was never missing -- a directive line was in front of the body.** `Engine.InteractionMaster.AddInteraction`

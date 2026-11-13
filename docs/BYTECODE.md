@@ -985,12 +985,23 @@ corpus-only lookup; the strip fills its `receiver_type` (`StargateHUD`) and so s
 `SetSubtitle`. A hundred and seventy-three texts carry directives and 4 declarations were split by one, which is
 what says this is a parse rule and not a one-off patch for a single class.
 
-**What the 41 are now: three shapes, none of them a declaration.** 35 arrays whose element type is a struct (an
-element of a struct array is not an object: a negative), 5 receivers whose name the caller's chain does not declare
-(`GetMoveTarget`, `GetMyPlayer`, `TakeOver`, `SetPawnClass`), and 1 call result whose callee
-(`UnrealScriptedSequence`'s `Trigger`) is declared with no return type. `--check` drives seventeen assertions over
-synthetic blocks now, three of them the guarded declaration: a body after an `#endif`, a directive inside a struct
-block, and the census row that names a split declaration.
+**A chained call's callee gets the corpus lookup too, and the four that remain are dispatch, not a gap.** A call
+in front of a call is typed from the callee's *declared* return type, and that callee was resolved on the caller's
+super chain only -- so a `Context` whose inner expression calls a name the caller does not inherit stayed untyped even
+though the call table has a second, receiver-free lookup for exactly that: a name **one class in the corpus declares**
+resolves there whatever the receiver is. Giving the chained callee that same last step **places one site**
+(`StargatePawn.CreateShield`'s `AskForShieldClass` -> `receiver:Engine.GameInfo`) and fills `receiver_type` on three
+more rows without moving their placement, so by-name placement goes **13,397 -> 13,398 of 13,507**, the receiver's
+chain **2,779 -> 2,780**, and the residue **41 -> 40**. The four chained callees that stay untyped are named by the
+reason string now, with their declarer count: **`GetInstigator` 2 classes, `SetSprinting` 2, `TeamIDLookup` 5**, and
+one callee (`UnrealScriptedSequence`'s `Trigger`) declared with no return type. That is a *dispatch* the static text
+cannot decide -- several classes declare the name and the site carries no receiver of its own -- not a reading gap,
+and it is the first residue shape in the table that a rebuild has to resolve at runtime rather than at parse time.
+
+**What the 40 are, and one shape of them is left to a decoder.** 35 arrays whose element type is a struct (an element
+of a struct array is not an object: a negative), 4 chained callees several classes declare, and 1 callee declared with
+no return type. `--check` drives seventeen assertions over synthetic blocks, three of them the guarded declaration: a
+body after an `#endif`, a directive inside a struct block, and the census row that names a split declaration.
 
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
