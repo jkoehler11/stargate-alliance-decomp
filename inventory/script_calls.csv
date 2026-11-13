@@ -843,7 +843,7 @@ Engine,PlayerController,ServerUse,VirtualFunction,by name,TryToDrive,Function,re
 Engine,PlayerController,ServerUse,VirtualFunction,by name,UsedBy,Function,Engine.Actor,28,,LocalVariable,Actor
 Engine,PlayerController,ServerUse,VirtualFunction,by name,UsedBy,Function,Engine.Actor,28,,Context,Actor
 Engine,PlayerController,RestartLevel,VirtualFunction,by name,ClientTravel,Function,package,1,,value,
-Engine,PlayerController,RestartLevel,VirtualFunction,by name,ClientTravel,Function,package,1,,LocalVariable,
+Engine,PlayerController,RestartLevel,VirtualFunction,by name,ClientTravel,Function,package,1,,LocalVariable,PlayerController
 Engine,PlayerController,RestartLevel,VirtualFunction,by name,ClientTravel,Function,package,1,,value,
 Engine,PlayerController,Jump,VirtualFunction,by name,SetPause,Function,package,4,,value,
 Engine,PlayerController,GetFreeMove,FinalFunction,static,Clear,Function,,,,,
@@ -2001,7 +2001,7 @@ Engine,PlayerController,ShowMidGameMenu,VirtualFunction,by name,StopForceFeedbac
 Engine,PlayerController,ShowMidGameMenu,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,InstanceVariable,
 Engine,PlayerController,ShowMidGameMenu,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,value,
 Engine,PlayerController,ActivateInventoryItem,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
-Engine,PlayerController,ActivateInventoryItem,VirtualFunction,by name,Activate,name,,9,,LocalVariable,
+Engine,PlayerController,ActivateInventoryItem,VirtualFunction,by name,Activate,Function,receiver:Engine.Powerups,9,,LocalVariable,Powerups
 Engine,PlayerController,ServerThrowWeapon,VirtualFunction,by name,CanThrowWeapon,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 Engine,PlayerController,ServerThrowWeapon,VirtualFunction,by name,GetViewRotation,Function,package,9,,self,
 Engine,PlayerController,ServerThrowWeapon,VirtualFunction,by name,TossWeapon,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -2212,7 +2212,7 @@ Engine,PlayerController,Possess,VirtualFunction,by name,TurnOff,Function,receive
 Engine,PlayerController,ServerRestartGame,VirtualFunction,by name,PlayerCanRestartGame,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Engine,PlayerController,ServerRestartGame,VirtualFunction,by name,RestartGame,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
 Engine,PlayerController,Fire,VirtualFunction,by name,GetGameClass,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-Engine,PlayerController,Fire,VirtualFunction,by name,HandleGameEndedFor,name,,3,,LocalVariable,
+Engine,PlayerController,Fire,VirtualFunction,by name,HandleGameEndedFor,Function,receiver:Engine.GameInfo,3,,LocalVariable,GameInfo
 Engine,PlayerController,AltFire,VirtualFunction,by name,Fire,Function,package,30,,self,
 Engine,PlayerController,PlayerMove,VirtualFunction,by name,LimitYaw,Function,receiver:Engine.Pawn,2,,InstanceVariable,Pawn
 Engine,PlayerController,PlayerMove,VirtualFunction,by name,LimitPitch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -2276,7 +2276,7 @@ Engine,PlayerController,CalcBehindView,FinalFunction,static,OrthoRotation,Functi
 Engine,PlayerController,ServerReStartPlayer,VirtualFunction,by name,PlayerCanRestart,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Engine,PlayerController,ServerReStartPlayer,FinalFunction,static,ServerReStartPlayer,Function,,,,,
 Engine,PlayerController,Fire,VirtualFunction,by name,GetGameClass,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-Engine,PlayerController,Fire,VirtualFunction,by name,HandleGameEndedFor,name,,3,,LocalVariable,
+Engine,PlayerController,Fire,VirtualFunction,by name,HandleGameEndedFor,Function,receiver:Engine.GameInfo,3,,LocalVariable,GameInfo
 Engine,PlayerController,AltFire,VirtualFunction,by name,Fire,Function,package,30,,self,
 Engine,PlayerController,Use,VirtualFunction,by name,ShowMenu,Function,package,1,,value,
 Engine,PlayerController,ServerMove,GlobalFunction,by name,ServerMove,Function,package,2,,self,
@@ -2347,7 +2347,7 @@ Engine,PlayerController,Command,VirtualFunction,by name,ParseVoiceCommand,Functi
 Engine,ScoreBoard,GetMediumFontFor,VirtualFunction,by name,GetMediumFontFor,Function,package,2,,InstanceVariable,HUD
 Engine,PlayerController,ServerVoiceCommand,VirtualFunction,by name,ParseVoiceCommand,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Engine,PlayerController,Join,VirtualFunction,by name,GetChannel,Function,corpus:Engine.VoiceChatReplicationInfo,1,Engine.VoiceChatReplicationInfo,InstanceVariable,VoiceChatReplicationInfo
-Engine,PlayerController,Join,VirtualFunction,by name,IsMember,name,,2,,LocalVariable,
+Engine,PlayerController,Join,VirtualFunction,by name,IsMember,Function,receiver:Engine.VoiceChatRoom,2,,LocalVariable,VoiceChatRoom
 Engine,PlayerController,Join,VirtualFunction,by name,ServerJoinVoiceChannel,Function,package,1,,value,
 Engine,PlayerController,Join,VirtualFunction,by name,ClientMessage,Function,package,3,,value,
 Engine,PlayerController,Join,VirtualFunction,by name,AssembleMessage,Function,corpus:Engine.ChatRoomMessage,1,Engine.ChatRoomMessage,InstanceVariable,ChatRoomMessage
@@ -2949,10 +2949,10 @@ Engine,HUD,DrawRoute,FinalFunction,static,Draw3DLine,Function,,,,,
 Engine,HUD,DrawRoute,FinalFunction,static,Draw3DLine,Function,,,,,
 Engine,StreamInteraction,GetStreamDuration,VirtualFunction,by name,IsPlaying,Function,package,3,,self,
 Engine,StreamInteraction,GetStreamDuration,VirtualFunction,by name,PC,Function,package,1,,self,
-Engine,StreamInteraction,GetStreamDuration,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,VirtualFunction,
+Engine,StreamInteraction,GetStreamDuration,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,VirtualFunction,playercontroller
 Engine,StreamInteraction,GetStreamVolume,VirtualFunction,by name,HasPlayer,Function,package,1,,self,
 Engine,StreamInteraction,GetStreamVolume,VirtualFunction,by name,PC,Function,package,1,,self,
-Engine,StreamInteraction,GetStreamVolume,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,VirtualFunction,
+Engine,StreamInteraction,GetStreamVolume,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,VirtualFunction,playercontroller
 Engine,HUD,DisplayProgressMessages,VirtualFunction,by name,LoadProgressFont,Function,package,1,,Context,Font
 Engine,HUD,DisplayProgressMessages,FinalFunction,static,SetPos,Function,,,,,
 Engine,HUD,DisplayProgressMessages,FinalFunction,static,SetPos,Function,,,,,
@@ -2968,7 +2968,7 @@ Engine,StreamInteraction,PlayStream,FinalFunction,static,StopStream,Function,,,,
 Engine,StreamInteraction,PlayStream,VirtualFunction,by name,PC,Function,package,1,,self,
 Engine,StreamInteraction,PlayStream,FinalFunction,static,StopStream,Function,,,,,
 Engine,StreamInteraction,PlayStream,VirtualFunction,by name,PC,Function,package,1,,self,
-Engine,StreamInteraction,PlayStream,VirtualFunction,by name,ClientMessage,name,,3,,VirtualFunction,
+Engine,StreamInteraction,PlayStream,VirtualFunction,by name,ClientMessage,Function,receiver:Engine.PlayerController,3,,VirtualFunction,playercontroller
 Engine,StreamInteraction,PlayStream,VirtualFunction,by name,PC,Function,package,1,,self,
 Engine,StreamInteraction,PlayStream,FinalFunction,static,AllowMusicPlayback,Function,,,,,
 Engine,StreamInteraction,PlayStream,VirtualFunction,by name,ClearSongInfo,Function,package,1,,Context,
@@ -3122,12 +3122,12 @@ Engine,AccessControl,AdminLogin,VirtualFunction,by name,ValidLogin,Function,pack
 Engine,Projectile,ProcessTouch,VirtualFunction,by name,Explode,Function,package,17,,value,
 Engine,AccessControl,SaveAdmins,VirtualFunction,by name,Get,Function,receiver:Engine.xAdminUserList,5,,InstanceVariable,xAdminUserList
 Engine,Projectile,HitWall,VirtualFunction,by name,Explode,Function,package,17,,self,
-Engine,Projectile,HitWall,VirtualFunction,by name,SetDelayedDamageInstigatorController,Function,Engine.Actor,2,,LocalVariable,
-Engine,Projectile,HitWall,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,
+Engine,Projectile,HitWall,VirtualFunction,by name,SetDelayedDamageInstigatorController,Function,Engine.Actor,2,,LocalVariable,actor
+Engine,Projectile,HitWall,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,actor
 Engine,Projectile,HitWall,VirtualFunction,by name,DriverRadiusDamage,Function,corpus:Engine.Vehicle,1,Engine.Vehicle,DynamicCast,Vehicle
 Engine,Projectile,HitWall,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-Engine,Projectile,HitWall,VirtualFunction,by name,BeyondViewDistance,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,
-Engine,Projectile,HitWall,VirtualFunction,by name,BeyondViewDistance,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,
+Engine,Projectile,HitWall,VirtualFunction,by name,BeyondViewDistance,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
+Engine,Projectile,HitWall,VirtualFunction,by name,BeyondViewDistance,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 Engine,Projectile,HitWall,VirtualFunction,by name,NotifyAttackHit,Function,corpus:Engine.Controller,1,Engine.Controller,InstanceVariable,Controller
 Engine,GameInfo,GetServerPort,VirtualFunction,by name,GetAddressURL,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 Engine,Projectile,BlowUp,VirtualFunction,by name,HurtRadius,Function,package,4,,self,
@@ -3164,8 +3164,8 @@ Engine,KActor,PreSaveGame,FinalFunction,static,MarkForSaveGame,Function,,,,,
 Engine,KActor,PreSaveGame,FinalFunction,static,KIsAwake,Function,,,,,
 Engine,KActor,PostLoadSavedGame,FinalFunction,static,PostLoadSavedGame,Function,,,,,
 Engine,KActor,PostLoadSavedGame,FinalFunction,static,KWake,Function,,,,,
-Engine,StreamPlaylistManager,CreatePlaylist,VirtualFunction,by name,SetTitle,name,,2,,LocalVariable,
-Engine,StreamPlaylistManager,CreatePlaylist,VirtualFunction,by name,Save,Function,package,5,,LocalVariable,
+Engine,StreamPlaylistManager,CreatePlaylist,VirtualFunction,by name,SetTitle,Function,receiver:Engine.StreamPlaylist,2,,LocalVariable,StreamPlaylist
+Engine,StreamPlaylistManager,CreatePlaylist,VirtualFunction,by name,Save,Function,package,5,,LocalVariable,StreamPlaylist
 Engine,StreamPlaylistManager,SetRepeatAll,VirtualFunction,by name,SetRepeat,Function,package,1,,value,
 Engine,StreamPlaylistManager,SetRepeat,VirtualFunction,by name,SetRepeatAll,Function,package,1,,value,
 Engine,StreamPlaylistManager,SetShuffleAll,VirtualFunction,by name,SetShuffle,Function,package,1,,value,
@@ -3426,7 +3426,7 @@ Engine,MissionObjective,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 Engine,StreamPlaylistManager,InitializeParsers,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,StreamPlaylistManager,InitializeParsers,VirtualFunction,by name,SetType,Function,corpus:Engine.PlaylistParserBase,1,Engine.PlaylistParserBase,DynamicArrayElement,
 Engine,StreamPlaylistManager,InitializePlaylists,FinalFunction,static,GetPerObjectNames,Function,,,,,
-Engine,StreamPlaylistManager,InitializePlaylists,VirtualFunction,by name,CreatePlaylist,Function,package,1,,LocalVariable,
+Engine,StreamPlaylistManager,InitializePlaylists,VirtualFunction,by name,CreatePlaylist,Function,package,1,,LocalVariable,StreamPlaylist
 Engine,StreamPlaylistManager,InitializePlaylists,VirtualFunction,by name,AppendPlaylist,Function,package,1,,value,
 Engine,StreamPlaylistManager,InitializePlaylists,VirtualFunction,by name,CreateDefaultPlaylist,Function,package,1,,value,
 Engine,StreamPlaylistManager,InitializePlaylists,VirtualFunction,by name,ActivatePlaylist,Function,package,1,,self,
@@ -4074,9 +4074,9 @@ Engine,MaplistManager,GetMapListTitle,VirtualFunction,by name,ValidRecordIndex,F
 Engine,MaplistManager,GetMapListTitle,VirtualFunction,by name,GetTitle,name,,4,,DynamicArrayElement,
 Engine,CheatManager,KillViewedActor,FinalFunction,static,SetViewTarget,Function,,,,,
 Engine,CheatManager,KillViewedActor,VirtualFunction,by name,ReportCheat,Function,package,2,,Context,
-Engine,CheatManager,KillTarget,VirtualFunction,by name,Died,name,,8,,LocalVariable,
+Engine,CheatManager,KillTarget,VirtualFunction,by name,Died,Function,receiver:Engine.Pawn,8,,LocalVariable,Pawn
 Engine,CheatManager,KillTarget,VirtualFunction,by name,ReportCheat,Function,package,2,,Context,
-Engine,CheatManager,TakeDamage,VirtualFunction,by name,TakeDamage,Function,package,62,,LocalVariable,
+Engine,CheatManager,TakeDamage,VirtualFunction,by name,TakeDamage,Function,package,62,,LocalVariable,Pawn
 Engine,CheatManager,TakeDamage,VirtualFunction,by name,ReportCheat,Function,package,2,,Context,
 Engine,CheatManager,Teleport,VirtualFunction,by name,areCheatsEnabled,Function,package,1,,self,
 Engine,CheatManager,Teleport,VirtualFunction,by name,ReportCheat,Function,package,2,,Context,
@@ -4119,7 +4119,7 @@ Engine,CheatManager,God,VirtualFunction,by name,ClientMessage,name,,3,,InstanceV
 Engine,CheatManager,God,VirtualFunction,by name,ReportCheat,Function,package,2,,Context,
 Engine,CheatManager,SG1God,VirtualFunction,by name,areCheatsEnabled,Function,package,1,,self,
 Engine,CheatManager,SG1God,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
-Engine,CheatManager,SG1God,VirtualFunction,by name,GetHumanReadableName,name,,9,,LocalVariable,
+Engine,CheatManager,SG1God,VirtualFunction,by name,GetHumanReadableName,Function,receiver:Engine.Controller,9,,LocalVariable,Controller
 Engine,CheatManager,SG1God,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
 Engine,CheatManager,SG1God,VirtualFunction,by name,ReportCheat,Function,package,2,,value,
 Engine,CheatManager,ShowDebugIcons,VirtualFunction,by name,areCheatsEnabled,Function,package,1,,self,
@@ -4177,7 +4177,7 @@ Engine,CheatManager,ViewTurret,VirtualFunction,by name,BecomeViewTarget,Function
 Engine,CheatManager,ViewTurret,VirtualFunction,by name,FixFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,Object
 Engine,CheatManager,ViewTurret,VirtualFunction,by name,ViewSelf,Function,package,1,,value,
 Engine,CheatManager,ViewClass,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
-Engine,CheatManager,ViewClass,VirtualFunction,by name,GetHumanReadableName,name,,9,,LocalVariable,
+Engine,CheatManager,ViewClass,VirtualFunction,by name,GetHumanReadableName,Function,receiver:Engine.Actor,9,,LocalVariable,actor
 Engine,CheatManager,ViewClass,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
 Engine,CheatManager,ViewClass,FinalFunction,static,SetViewTarget,Function,,,,,
 Engine,CheatManager,ViewClass,VirtualFunction,by name,BecomeViewTarget,Function,receiver:Engine.Actor,2,,Context,Actor
@@ -4424,10 +4424,10 @@ Engine,GameProfile,SetPosition,VirtualFunction,by name,EnumPositionDescription,F
 Engine,MaplistManager,AddGroup,VirtualFunction,by name,GetGameIndex,Function,package,2,,LocalVariable,
 Engine,MaplistManager,AddGroup,VirtualFunction,by name,GenerateGroupMaplist,Function,package,1,,value,
 Engine,MaplistManager,AddGroup,VirtualFunction,by name,AddGameType,Function,package,1,,VirtualFunction,
-Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,
+Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,MaplistRecord
 Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,AddGroup,Function,package,2,,LocalVariable,
-Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,
-Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,SetCacheMaps,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,
+Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,MaplistRecord
+Engine,MaplistManager,AddMaplistRecord,VirtualFunction,by name,SetCacheMaps,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,MaplistRecord
 Engine,GameInfo,BeginPlay,FinalFunction,static,BeginPlay,Function,,,,,
 Engine,GameInfo,BeginPlay,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,GameInfo,BeginPlay,VirtualFunction,by name,SetDebug,Function,receiver:Engine.Screenplay,4,,InstanceVariable,Screenplay
@@ -4442,9 +4442,9 @@ Engine,GameInfo,StartScreenplay,VirtualFunction,by name,IsMultiplayer,Function,p
 Engine,GameInfo,StartScreenplay,VirtualFunction,by name,Trigger,Function,Engine.Actor,118,,InstanceVariable,Screenplay
 Engine,GameInfo,StartScreenplay,VirtualFunction,by name,Trigger,Function,Engine.Actor,118,,InstanceVariable,Screenplay
 Engine,MaplistManager,InitializeMaplistRecords,FinalFunction,static,GetPerObjectNames,Function,,,,,
-Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,CreateRecord,Function,package,1,,LocalVariable,
+Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,CreateRecord,Function,package,1,,LocalVariable,MaplistRecord
 Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,ValidGameType,Function,package,2,,self,
-Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,
+Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,GetGameType,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,LocalVariable,MaplistRecord
 Engine,MaplistManager,InitializeMaplistRecords,VirtualFunction,by name,AddMaplistRecord,Function,package,1,,value,
 Engine,MaplistManager,GetDefaultMaps,FinalFunction,static,DynamicLoadObject,Function,,,,,
 Engine,MaplistManager,GetDefaultMaps,VirtualFunction,by name,StaticGetMaps,Function,corpus:Engine.MapList,1,Engine.MapList,LocalVariable,Maplist
@@ -5006,10 +5006,10 @@ GUI,GUIController,RestoreMenu,FinalFunction,static,FindMenuIndex,Function,,,,,
 GUI,GUIController,RestoreMenu,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,value,
 GUI,GUIController,RestoreMenu,VirtualFunction,by name,SetControllerStatus,Function,package,2,,value,
 GUI,GUIController,RestoreMenu,FinalFunction,static,ClearRepeatBuffer,Function,,,,,
-GUI,GUIController,RestoreMenu,VirtualFunction,by name,InitComponent,name,,103,,LocalVariable,
-GUI,GUIController,RestoreMenu,VirtualFunction,by name,Opened,name,,7,,LocalVariable,
-GUI,GUIController,RestoreMenu,VirtualFunction,by name,SetFocus,Function,Engine.Interaction,9,,LocalVariable,
-GUI,GUIController,RestoreMenu,VirtualFunction,by name,HandleParameters,name,,20,,LocalVariable,
+GUI,GUIController,RestoreMenu,VirtualFunction,by name,InitComponent,Function,receiver:GUI.GUIPage,103,,LocalVariable,GUIPage
+GUI,GUIController,RestoreMenu,VirtualFunction,by name,Opened,Function,receiver:GUI.GUIMultiComponent,7,,LocalVariable,GUIPage
+GUI,GUIController,RestoreMenu,VirtualFunction,by name,SetFocus,Function,Engine.Interaction,9,,LocalVariable,GUIPage
+GUI,GUIController,RestoreMenu,VirtualFunction,by name,HandleParameters,Function,receiver:GUI.GUIPage,20,,LocalVariable,GUIPage
 GUI,GUIController,RestoreMenu,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,
 GUI,GUIScrollText,SetContent,FinalFunction,static,EndScrolling,Function,,,,,
 GUI,GUIScrollText,SetContent,FinalFunction,static,Restart,Function,,,,,
@@ -5803,12 +5803,12 @@ GUI,GUIController,CloseAll,FinalFunction,static,SaveRestorePages,Function,,,,,
 GUI,GUIController,CloseAll,VirtualFunction,by name,CloseMenu,Function,package,3,,self,
 GUI,GUIController,PushMenu,VirtualFunction,by name,SetControllerStatus,Function,package,2,,value,
 GUI,GUIController,PushMenu,FinalFunction,static,ResetInput,Function,,,,,
-GUI,GUIController,PushMenu,VirtualFunction,by name,InitComponent,name,,103,,LocalVariable,
-GUI,GUIController,PushMenu,VirtualFunction,by name,Opened,name,,7,,LocalVariable,
-GUI,GUIController,PushMenu,VirtualFunction,by name,SetFocus,Function,Engine.Interaction,9,,LocalVariable,
-GUI,GUIController,PushMenu,VirtualFunction,by name,HandleParameters,name,,20,,LocalVariable,
-GUI,GUIController,PopMenu,VirtualFunction,by name,Closed,name,,11,,LocalVariable,
-GUI,GUIController,PopMenu,VirtualFunction,by name,Free,name,,3,,LocalVariable,
+GUI,GUIController,PushMenu,VirtualFunction,by name,InitComponent,Function,receiver:GUI.GUIPage,103,,LocalVariable,GUIPage
+GUI,GUIController,PushMenu,VirtualFunction,by name,Opened,Function,receiver:GUI.GUIMultiComponent,7,,LocalVariable,GUIPage
+GUI,GUIController,PushMenu,VirtualFunction,by name,SetFocus,Function,Engine.Interaction,9,,LocalVariable,GUIPage
+GUI,GUIController,PushMenu,VirtualFunction,by name,HandleParameters,Function,receiver:GUI.GUIPage,20,,LocalVariable,GUIPage
+GUI,GUIController,PopMenu,VirtualFunction,by name,Closed,Function,receiver:GUI.GUIMultiComponent,11,,LocalVariable,GUIPage
+GUI,GUIController,PopMenu,VirtualFunction,by name,Free,Function,receiver:GUI.GUIPage,3,,LocalVariable,GUIPage
 GUI,GUIController,PopMenu,FinalFunction,static,FindMenuIndex,Function,,,,,
 GUI,GUIVertList,Down,FinalFunction,static,SetTopItem,Function,,,,,
 GUI,GUIVertList,Down,VirtualFunction,by name,ItemCount,Function,GUI.GUIListBase,6,,self,
@@ -5900,7 +5900,7 @@ GUI,GUIController,DumpMaps,VirtualFunction,by name,GetMapList,Function,package,5
 GUI,GUIController,DumpMaps,VirtualFunction,by name,GetMapList,Function,package,5,,value,
 GUI,GUIController,DumpMaps,VirtualFunction,by name,GetMapList,Function,package,5,,value,
 GUI,GUIController,ShowFocus,FinalFunction,static,GetViewportCount,Function,,,,,
-GUI,GUIController,ShowFocus,VirtualFunction,by name,GetFocusedControlAt,Function,package,3,,LocalVariable,
+GUI,GUIController,ShowFocus,VirtualFunction,by name,GetFocusedControlAt,Function,package,3,,LocalVariable,GUIComponent
 GUI,GUIController,ShowFocus,FinalFunction,static,GetViewport,Function,,,,,
 GUI,GUIController,ShowFocus,FinalFunction,static,GetFocusedControlAt,Function,,,,,
 GUI,GUIComponent,RemoveFriendlyComponent,FinalFunction,static,FindFriendlyComponentIndex,Function,,,,,
@@ -6038,7 +6038,7 @@ GamePlay,PuzzleMover,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,
 GamePlay,TimedTrigger,Timer,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,self,
 GamePlay,TriggeredCondition,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 GamePlay,MessageTextureClient,Replace,VirtualFunction,by name,Replace,Function,package,3,,value,
-GamePlay,MusicEvent,Trigger,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+GamePlay,MusicEvent,Trigger,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 GamePlay,MusicEvent,Trigger,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 GamePlay,MessageTextureClient,RenderTexture,FinalFunction,static,TextSize,Function,,,,,
 GamePlay,MessageTextureClient,RenderTexture,FinalFunction,static,DrawText,Function,,,,,
@@ -6155,7 +6155,7 @@ GamePlay,TriggerLight,Trigger,VirtualFunction,by name,EndEvent,Function,Engine.A
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,BeginEvent,Function,Engine.Actor,2,,InstanceVariable,Actor
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,EndEvent,Function,Engine.Actor,3,,InstanceVariable,Actor
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,BeginEvent,Function,Engine.Actor,2,,InstanceVariable,Actor
-GamePlay,TriggeredScript,FindInstigator,VirtualFunction,by name,GetInstigator,name,,2,,DynamicCast,
+GamePlay,TriggeredScript,FindInstigator,VirtualFunction,by name,GetInstigator,Function,receiver:Engine.Vehicle,2,,DynamicCast,Vehicle
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,EndEvent,Function,Engine.Actor,3,,InstanceVariable,Actor
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,BeginEvent,Function,Engine.Actor,2,,InstanceVariable,Actor
 GamePlay,TriggerLight,UnTrigger,VirtualFunction,by name,EndEvent,Function,Engine.Actor,3,,InstanceVariable,Actor
@@ -6163,17 +6163,17 @@ GamePlay,TriggerLight,UnTrigger,VirtualFunction,by name,BeginEvent,Function,Engi
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,EndEvent,Function,Engine.Actor,3,,InstanceVariable,Actor
 GamePlay,TriggerLight,Trigger,VirtualFunction,by name,BeginEvent,Function,Engine.Actor,2,,InstanceVariable,Actor
 GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,FindInstigator,Function,package,2,,LocalVariable,Actor
-GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
-GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,name,,2,,DynamicCast,
-GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,WasPlayerPawn,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
-GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,name,,2,,DynamicCast,
-GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,name,,2,,DynamicCast,
+GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
+GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
+GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,WasPlayerPawn,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
+GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
+GamePlay,TriggeredScript,IsRelevant,VirtualFunction,by name,IsPlayerPawn,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
 GamePlay,SP_IntVar,SetValue,VirtualFunction,by name,Update,Function,receiver:Engine.ScriptObject,18,,DynamicArrayElement,ScriptObject
 GamePlay,SP_Timer,Timer,VirtualFunction,by name,Notify,Function,receiver:Engine.ScriptObject,38,,DynamicArrayElement,ScriptObject
 GamePlay,SP_Trigger,PostTouch,FinalFunction,static,TouchingActor,Function,,,,,
 GamePlay,SP_Trigger,PostTouch,VirtualFunction,by name,Update,Function,receiver:Engine.ScriptObject,18,,InstanceVariable,ScriptObject
 GamePlay,SP_Trigger,PostTouch,VirtualFunction,by name,Update,Function,receiver:Engine.ScriptObject,18,,InstanceVariable,ScriptObject
-GamePlay,AnimNotify_FireWeapon,Notify,VirtualFunction,by name,ThirdPersonEffects,name,,5,,DynamicCast,
+GamePlay,AnimNotify_FireWeapon,Notify,VirtualFunction,by name,ThirdPersonEffects,Function,receiver:Engine.WeaponAttachment,5,,DynamicCast,WeaponAttachment
 GamePlay,TriggeredScript,Trigger,VirtualFunction,by name,CheckTouchList,Function,package,2,,value,
 GamePlay,ScriptedAction,ProceedToSectionEnd,VirtualFunction,by name,StartsSection,Function,package,4,,LocalVariable,ScriptedAction
 GamePlay,ScriptedAction,ProceedToSectionEnd,VirtualFunction,by name,EndsSection,Function,package,2,,LocalVariable,ScriptedAction
@@ -6203,7 +6203,7 @@ GamePlay,ACTION_MoveToPoint,ForceTeleportToPoint,VirtualFunction,by name,GetMove
 GamePlay,ACTION_MoveToPoint,ForceTeleportToPoint,VirtualFunction,by name,GetInstigator,Function,receiver:GamePlay.ScriptedController,2,,LocalVariable,ScriptedController
 GamePlay,ACTION_MoveToPoint,InitActionFor,VirtualFunction,by name,ForceTeleportToPoint,Function,package,5,,value,
 GamePlay,ACTION_MoveToPoint,GetMoveTargetFor,VirtualFunction,by name,GetMoveTarget,Function,receiver:Engine.AIScript,2,,Context,ScriptedSequence
-GamePlay,ACTION_MoveToPoint,GetMoveTargetFor,VirtualFunction,by name,GetMoveTarget,name,,2,,DynamicCast,
+GamePlay,ACTION_MoveToPoint,GetMoveTargetFor,VirtualFunction,by name,GetMoveTarget,Function,receiver:Engine.AIScript,2,,DynamicCast,AIScript
 GamePlay,TriggeredScript,Reset,FinalFunction,static,Reset,Function,,,,,
 GamePlay,ACTION_TeleportSpecificPawn,InitActionFor,VirtualFunction,by name,GetMoveTarget,Function,receiver:Engine.AIScript,2,,Context,ScriptedSequence
 GamePlay,ACTION_TeleportSpecificPawn,InitActionFor,VirtualFunction,by name,PlayTeleportEffect,Function,receiver:Engine.Pawn,4,,InstanceVariable,Pawn
@@ -6259,14 +6259,14 @@ GamePlay,ACTION_IfRandomPct,ProceedToNextAction,VirtualFunction,by name,ProceedT
 GamePlay,ScriptedSequence,TakeOver,VirtualFunction,by name,PendingStasis,Function,receiver:Engine.Controller,2,,Context,Controller
 GamePlay,ScriptedSequence,TakeOver,VirtualFunction,by name,TakeControlOf,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,LocalVariable,ScriptedController
 GamePlay,ScriptedSequence,TakeOver,VirtualFunction,by name,SetNewScript,Function,receiver:GamePlay.ScriptedController,4,,LocalVariable,ScriptedController
-GamePlay,ACTION_KillActor,InitActionFor,VirtualFunction,by name,Died,name,,8,,DynamicCast,
+GamePlay,ACTION_KillActor,InitActionFor,VirtualFunction,by name,Died,Function,receiver:Engine.Pawn,8,,DynamicCast,Pawn
 GamePlay,ACTION_KillActor,InitActionFor,VirtualFunction,by name,Died,Function,receiver:Engine.Pawn,8,,Context,Pawn
 GamePlay,ACTION_Killinstigator,InitActionFor,VirtualFunction,by name,GetInstigator,Function,receiver:GamePlay.ScriptedController,2,,LocalVariable,ScriptedController
 GamePlay,ACTION_Killinstigator,InitActionFor,VirtualFunction,by name,Died,name,,8,,Context,
 GamePlay,ACTION_PlayLocalSound,InitActionFor,VirtualFunction,by name,ClientPlaySound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 GamePlay,ScriptedSequence,SpawnControllerFor,FinalFunction,static,SpawnControllerFor,Function,,,,,
 GamePlay,ScriptedSequence,SpawnControllerFor,VirtualFunction,by name,TakeOver,Function,package,2,,FinalFunction,
-GamePlay,ACTION_PlayMusic,InitActionFor,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+GamePlay,ACTION_PlayMusic,InitActionFor,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 GamePlay,ACTION_PlayMusic,InitActionFor,VirtualFunction,by name,GetInstigator,Function,receiver:GamePlay.ScriptedController,2,,LocalVariable,ScriptedController
 GamePlay,ACTION_PlayMusic,InitActionFor,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 GamePlay,ACTION_PlaySound,InitActionFor,VirtualFunction,by name,GetSoundSource,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,LocalVariable,ScriptedController
@@ -6469,8 +6469,8 @@ Sharpeffects,SE_RandomSpawn,SetTimers,FinalFunction,static,RandRange,Function,,,
 Sharpeffects,StargateEffect,Trigger,VirtualFunction,by name,SetGameSpeed,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,SetGameSpeed,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
-Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,SetLuminance,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,
-Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,SetBloomColour,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,
+Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,SetLuminance,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,StargatePlayer
+Sharpeffects,StargateEffect,Tick,VirtualFunction,by name,SetBloomColour,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,StargatePlayer
 StargateContent,ReetouBot,WhatToDoNext,VirtualFunction,by name,ShouldPerformScript,Function,StargateGame.BotBase,3,,self,
 StargateContent,ReetouBot,WhatToDoNext,VirtualFunction,by name,GetLastTimeOutOfPhaseDelay,Function,package,1,,self,
 StargateContent,ReetouBot,WhatToDoNext,VirtualFunction,by name,GetLastTimeEscapeDelay,Function,package,1,,self,
@@ -6506,19 +6506,19 @@ StargateContent,ReetouBot,GetNearestValidSquadPawn,VirtualFunction,by name,IsVal
 StargateContent,ReetouBot,NotifyPhaseTorchHit,VirtualFunction,by name,GetLastPhaseTorchHitDelay,Function,package,1,,self,
 StargateContent,ReetouBot,NotifyPhaseTorchHit,VirtualFunction,by name,Say,Function,receiver:StargateGame.StargateVoicePack,2,,Context,StargateVoicePack
 StargateContent,JaffaBotLight,BeginState,VirtualFunction,by name,ShouldCharge,Function,receiver:GamePlay.ShootOrder,2,,InstanceVariable,ShootOrder
-StargateContent,StaffWeaponMeleeAmmo,ProcessTraceHit_Melee,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,StaffWeaponMeleeAmmo,ProcessTraceHit_Melee,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,StaffWeaponMeleeAmmo,ProcessTraceHit_Melee,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,StaffWeaponMeleeAmmo,ProcessTraceHit_Melee,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,StaffWeaponMeleeAmmo,ProcessTraceHit_Melee,FinalFunction,static,ProcessTraceHit_Melee,Function,,,,,
 StargateContent,StargateGrenadeProjectile,Explode,VirtualFunction,by name,ExplosionImpact,Function,package,4,,value,
 StargateContent,StargateGrenadeProjectile,Explode,VirtualFunction,by name,CalcFloorSurface,Function,Engine.Actor,2,,self,
 StargateContent,StargateGrenadeProjectile,Explode,VirtualFunction,by name,BlowUp,Function,StargateGame.StargateProjectile,3,,VirtualFunction,
 StargateContent,StargateGrenadeProjectile,Explode,VirtualFunction,by name,ShakeView,Function,StargateGame.StargateProjectile,3,,VirtualFunction,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,ResetZoom,Function,StargateGame.StargateWeapon,3,,Context,
 StargateContent,SHOTGUN,BeginState,FinalFunction,static,BeginState,Function,,,,,
 StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,EndFireLoop,Function,Engine.Weapon,1,,FinalFunction,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,WeaponReloading,name,,2,,DynamicCast,
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,WeaponReloading,Function,receiver:StargateGame.BotBase,2,,DynamicCast,BotBase
 StargateContent,GateEventHorizon,Touch,FinalFunction,static,Touch,Function,,,,,
 StargateContent,HANDOFLIGHT,Tick,VirtualFunction,by name,ReduceHealth,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicArrayElement,StargatePawn
 StargateContent,HANDOFLIGHT,Tick,VirtualFunction,by name,SetBurning,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicArrayElement,StargatePawn
@@ -6762,10 +6762,10 @@ StargateContent,JaffaBotMedium,FightEnemy,VirtualFunction,by name,DoMellee,Funct
 StargateContent,JaffaBotMedium,FightEnemy,VirtualFunction,by name,DoRanged,Function,StargateGame.BotEnemy,3,,value,
 StargateContent,JaffaBotHeavy,Tick,VirtualFunction,by name,NeedToTurn,Function,StargateGame.BotEnemy,13,,self,
 StargateContent,JaffaBotHeavy,EndState,VirtualFunction,by name,StopFastRun,Function,StargateGame.BotBase,1,,value,
-StargateContent,JaffaBotHeavy,EndState,VirtualFunction,by name,_EndMeleeDash,name,,2,,DynamicCast,
+StargateContent,JaffaBotHeavy,EndState,VirtualFunction,by name,_EndMeleeDash,Function,receiver:StargateGame.StargatePawn,2,,DynamicCast,StargatePawn
 StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,StopInvisibility,Function,StargateGame.BotBase,3,,VirtualFunction,
-StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,_StartMeleeDash,name,,2,,DynamicCast,
+StargateContent,JaffaBotHeavy,BeginState,VirtualFunction,by name,_StartMeleeDash,Function,receiver:StargateGame.StargatePawn,2,,DynamicCast,StargatePawn
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateContent,ReetouBot,SwitchWeapon,VirtualFunction,by name,ChangedWeapon,Function,receiver:Engine.Pawn,7,,InstanceVariable,Pawn
@@ -6807,7 +6807,7 @@ StargateContent,ReetouProtectorBot,DoWait,FinalFunction,static,DoWait,Function,,
 StargateContent,ReetouProtectorBot,SetEnemies,VirtualFunction,by name,SetAggroStatus,Function,StargateGame.BotBase,1,,self,
 StargateContent,JaffaBotHeavy,Timer,VirtualFunction,by name,SetupGrenadeThrow,Function,package,1,,value,
 StargateContent,JaffaBotHeavy,Timer,VirtualFunction,by name,FireWeaponAt,Function,StargateGame.BotEnemy,9,,value,
-StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,IsStanding,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,IsStanding,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
 StargateContent,JaffaBotHeavy,PickDestination,VirtualFunction,by name,EngageDirection,Function,StargateGame.BotEnemy,3,,self,
@@ -6819,7 +6819,7 @@ StargateContent,ReetouProtectorBot,FireWeaponAt,VirtualFunction,by name,WeaponFi
 StargateContent,ReetouProtectorBot,FireWeaponAt,VirtualFunction,by name,RefireRate,Function,receiver:Engine.Weapon,2,,Context,Weapon
 StargateContent,JaffaBotHeavy,EnemyNotVisible,VirtualFunction,by name,StopCharge,Function,receiver:Engine.Weapon,3,,Context,Weapon
 StargateContent,ReetouProtectorBot,MeleeFireWeapon,VirtualFunction,by name,IsFiring,Function,receiver:Engine.Weapon,3,,Context,Weapon
-StargateContent,ReetouProtectorBot,MeleeFireWeapon,VirtualFunction,by name,MeleeFire,Function,corpus:StargateGame.StargateWeapon,1,StargateGame.StargateWeapon,DynamicCast,
+StargateContent,ReetouProtectorBot,MeleeFireWeapon,VirtualFunction,by name,MeleeFire,Function,corpus:StargateGame.StargateWeapon,1,StargateGame.StargateWeapon,DynamicCast,StargateWeapon
 StargateContent,ReetouProtectorBot,CanAttack,VirtualFunction,by name,CanAttack,Function,package,9,,Context,Weapon
 StargateContent,JaffaBotHeavy,SeePlayer,FinalFunction,static,SeePlayer,Function,,,,,
 StargateContent,JaffaBotHeavy,SeePlayer,VirtualFunction,by name,CanCharge,Function,receiver:Engine.Weapon,3,,Context,Weapon
@@ -6933,7 +6933,7 @@ StargateContent,StaffWeaponAmmo,SpawnStaffWeaponProjectile,VirtualFunction,by na
 StargateContent,StaffWeaponAmmo,SpawnStaffWeaponProjectile,VirtualFunction,by name,SetChargedEnergy,Function,corpus:StargateContent.StaffWeaponProjectile,1,StargateContent.StaffWeaponProjectile,DynamicCast,StaffWeaponProjectile
 StargateContent,StaffWeaponAmmo,SpawnStaffWeaponProjectile,VirtualFunction,by name,ApplyKick,Function,StargateGame.StargateAmmo,1,,Context,
 StargateContent,HaakenLeaderBot,EndState,VirtualFunction,by name,TurnOffShield,Function,corpus:StargateContent.HaakenMK2Weapon,1,StargateContent.HaakenMK2Weapon,DynamicCast,HaakenMK2Weapon
-StargateContent,HaakenLeaderBot,BeginState,VirtualFunction,by name,PlayActivatingWeaponShield,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,HaakenLeaderBot,BeginState,VirtualFunction,by name,PlayActivatingWeaponShield,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,HaakenLeaderBot,BeginState,VirtualFunction,by name,TurnOnShield,Function,corpus:StargateContent.HaakenMK2Weapon,1,StargateContent.HaakenMK2Weapon,DynamicCast,HaakenMK2Weapon
 StargateContent,HaakenLeaderBot,BeginState,VirtualFunction,by name,StartMindControl,Function,package,1,,Context,
 StargateContent,HaakenLeaderBot,AssignRole,VirtualFunction,by name,GetPawnMindControlledSlot,Function,package,1,,LocalVariable,MindControlSlot
@@ -6942,7 +6942,7 @@ StargateContent,HaakenLeaderBot,AssignRole,VirtualFunction,by name,ForceGuard,Fu
 StargateContent,HaakenLeaderBot,AssignRole,VirtualFunction,by name,ForceSpecialAttack,Function,corpus:StargateContent.MindControlledBot,1,StargateContent.MindControlledBot,DynamicCast,MindControlledBot
 StargateContent,HaakenLeaderBot,AssignRole,VirtualFunction,by name,WhatToDoNext,Function,StargateGame.BotEnemy,16,,DynamicCast,MindControlledBot
 StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,IsFree,Function,corpus:StargateContent.MindControlCrystal,1,StargateContent.MindControlCrystal,StructMember,
-StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,IsUnconscious,Function,StargateGame.BotEnemy,3,,DynamicCast,
+StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,IsUnconscious,Function,StargateGame.BotEnemy,3,,DynamicCast,BotBase
 StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,GetEnemySquad,Function,package,1,,LocalVariable,SquadAIBasic
 StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,IsUnconscious,Function,StargateGame.BotEnemy,3,,LocalVariable,BotBase
 StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,VirtualFunction,by name,IsPawnControlled,Function,package,1,,self,
@@ -6992,8 +6992,8 @@ StargateContent,ReetouDeviceAmmo,ReetouAttack,VirtualFunction,by name,AddDefault
 StargateContent,HaakenBot,EndState,VirtualFunction,by name,TurnOffShield,Function,corpus:StargateContent.HaakenMK2Weapon,1,StargateContent.HaakenMK2Weapon,DynamicCast,HaakenMK2Weapon
 StargateContent,HaakenBot,EndState,VirtualFunction,by name,StopCharge,Function,receiver:StargateContent.HaakenMK1Weapon,3,,DynamicCast,HaakenMK2Weapon
 StargateContent,HaakenBot,BeginState,VirtualFunction,by name,SetCombatTimer,Function,StargateGame.BotBase,2,,value,
-StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,Actor
 StargateContent,ReetouMeleeAmmo,ProcessTraceHit,VirtualFunction,by name,GetPawnDamageSound,Function,corpus:Engine.DamageType,1,Engine.DamageType,InstanceVariable,DamageType
 StargateContent,ReetouMeleeAmmo,ProcessTraceHit,FinalFunction,static,PlayOwnedSound,Function,,,,,
@@ -7050,8 +7050,8 @@ StargateContent,GoauldShield,EndState,VirtualFunction,by name,Lower,Function,pac
 StargateContent,GoauldShield,EndState,FinalFunction,static,EndState,Function,,,,,
 StargateContent,GoauldShield,Lower,VirtualFunction,by name,TurnOffEffect,Function,package,1,,value,
 StargateContent,GoauldShield,Rise,VirtualFunction,by name,TurnOnEffect,Function,package,1,,value,
-StargateContent,GoauldShield,TurnOnEffect,VirtualFunction,by name,ShieldFlashOn,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,GoauldShield,TurnOffEffect,VirtualFunction,by name,ShieldFlashOff,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,GoauldShield,TurnOnEffect,VirtualFunction,by name,ShieldFlashOn,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,GoauldShield,TurnOffEffect,VirtualFunction,by name,ShieldFlashOff,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,GoauldShield,ArmorAbsorbDamage,VirtualFunction,by name,Lower,Function,package,5,,value,
 StargateContent,GoauldShield,ArmorAbsorbDamage,FinalFunction,static,ArmorAbsorbDamage,Function,,,,,
 StargateContent,BotScarab,BeginState,VirtualFunction,by name,SetPeripheralVision,Function,StargateGame.BotBase,1,,self,
@@ -7060,21 +7060,21 @@ StargateContent,GoauldShield,Tick,VirtualFunction,by name,Rise,Function,package,
 StargateContent,BotScarab,EvalWhatToDoNext,VirtualFunction,by name,crawlerWhatToDoNext,Function,StargateGame.BotRep,1,,self,
 StargateContent,BotScarab,FightEnemy,VirtualFunction,by name,DoMellee,Function,StargateGame.BotEnemy,3,,value,
 StargateContent,BotScarab,FightEnemy,VirtualFunction,by name,DoHunting,Function,StargateGame.BotEnemy,1,,value,
-StargateContent,JaffaHelmetAttachment,AnimNotify_HelmetProtecting,VirtualFunction,by name,AnimNotify_HelmetProtecting,Function,package,2,,DynamicCast,
-StargateContent,JaffaHelmetAttachment,AnimNotify_HelmetDone,VirtualFunction,by name,AnimNotify_HelmetDone,Function,package,2,,DynamicCast,
+StargateContent,JaffaHelmetAttachment,AnimNotify_HelmetProtecting,VirtualFunction,by name,AnimNotify_HelmetProtecting,Function,package,2,,DynamicCast,StargatePawn
+StargateContent,JaffaHelmetAttachment,AnimNotify_HelmetDone,VirtualFunction,by name,AnimNotify_HelmetDone,Function,package,2,,DynamicCast,StargatePawn
 StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,Context,Controller
 StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,ProcessTraceHit_Melee,Function,receiver:StargateContent.StaffWeaponMeleeAmmo,3,,DynamicCast,StaffWeaponMeleeAmmo
-StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,StaffWeaponAttachment,_DoMeleeDashTrace,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,FinalFunction,static,GetBoneCoords,Function,,,,,
-StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,GetWeaponBoneFor,name,,15,,DynamicCast,
+StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,GetWeaponBoneFor,Function,receiver:Engine.Pawn,15,,DynamicCast,Pawn
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,StaffWeaponAttachment,DoCheckMeleeDashColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,StaffWeaponAttachment,DoCheckMeleeSwingColDet,FinalFunction,static,GetBoneCoords,Function,,,,,
-StargateContent,StaffWeaponAttachment,DoCheckMeleeSwingColDet,VirtualFunction,by name,GetWeaponBoneFor,name,,15,,DynamicCast,
+StargateContent,StaffWeaponAttachment,DoCheckMeleeSwingColDet,VirtualFunction,by name,GetWeaponBoneFor,Function,receiver:Engine.Pawn,15,,DynamicCast,Pawn
 StargateContent,StaffWeaponAttachment,DoCheckMeleeSwingColDet,VirtualFunction,by name,_DoMeleeDashTrace,Function,package,1,,value,
 StargateContent,Binoculars,DrawHUD,VirtualFunction,by name,CheckPawns,Function,package,1,,InstanceVariable,
 StargateContent,Binoculars,DrawHUD,VirtualFunction,by name,DrawZoomIndicator,Function,package,2,,VirtualFunction,
@@ -7111,11 +7111,11 @@ StargateContent,AttachmentRepAcidJet,GetEffectStart,FinalFunction,static,GetBone
 StargateContent,AttachmentRepAcidJet,GetEffectStart,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateContent,AttachmentRepAcidJet,GetEffectStart,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateContent,ShieldPickup,UsedBy,VirtualFunction,by name,ValidTouch,Function,Engine.Pickup,1,,self,
-StargateContent,ShieldPickup,UsedBy,VirtualFunction,by name,CreateShield,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,ShieldPickup,UsedBy,VirtualFunction,by name,CreateShield,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,ShieldPickup,UsedBy,VirtualFunction,by name,AnnouncePickup,Function,Engine.Pickup,1,,Context,
 StargateContent,ShieldPickup,UsedBy,VirtualFunction,by name,SetRespawn,Function,package,3,,VirtualFunction,
 StargateContent,ShieldPickup,SetRespawn,VirtualFunction,by name,StartSleeping,Function,Engine.Pickup,2,,self,
-StargateContent,HealthPickup,UsedBy,VirtualFunction,by name,ResetShieldCharge,Function,corpus:StargateGame.ShieldBelt,1,StargateGame.ShieldBelt,DynamicCast,
+StargateContent,HealthPickup,UsedBy,VirtualFunction,by name,ResetShieldCharge,Function,corpus:StargateGame.ShieldBelt,1,StargateGame.ShieldBelt,DynamicCast,ShieldBelt
 StargateContent,HealthPickup,UsedBy,FinalFunction,static,UsedBy,Function,,,,,
 StargateContent,HealthPickup,SetRespawn,VirtualFunction,by name,StartSleeping,Function,Engine.Pickup,2,,self,
 StargateContent,ShockGrenadePickup,UsedBy,VirtualFunction,by name,ValidTouch,Function,Engine.Pickup,1,,self,
@@ -7138,7 +7138,7 @@ StargateContent,Binoculars,DrawTargeted,VirtualFunction,by name,SameTeamAs,Funct
 StargateContent,Binoculars,DrawTargeted,FinalFunction,static,GetCollisionBoundingBox,Function,,,,,
 StargateContent,StargateWeaponPickup,GetInteractionText,VirtualFunction,by name,GetPressActionButtonText,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 StargateContent,StargateWeaponPickup,GetInteractionText,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-StargateContent,StargateWeaponPickup,GetInteractionText,VirtualFunction,by name,NeedToDropItem,name,,2,,DynamicCast,
+StargateContent,StargateWeaponPickup,GetInteractionText,VirtualFunction,by name,NeedToDropItem,Function,receiver:StargateGame.StargatePlayer,2,,DynamicCast,StargatePlayer
 StargateContent,StargateWeaponPickup,GetInteractionText,VirtualFunction,by name,GetPressActionButtonText,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 StargateContent,StargateWeaponPickup,SpawnCopy,FinalFunction,static,SpawnCopy,Function,,,,,
 StargateContent,StargateWeaponPickup,SpawnCopy,VirtualFunction,by name,ChangedWeapon,Function,receiver:Engine.Pawn,7,,LocalVariable,Pawn
@@ -7183,8 +7183,8 @@ StargateContent,C4Mission,_DrawScorchAllDirections,VirtualFunction,by name,_Draw
 StargateContent,C4Mission,_DrawScorchAllDirections,VirtualFunction,by name,_DrawScorch,Function,package,2,,value,
 StargateContent,C4Mission,_DrawScorchAllDirections,VirtualFunction,by name,_DrawScorch,Function,package,2,,value,
 StargateContent,C4Mission,_DrawScorchAllDirections,VirtualFunction,by name,_DrawScorch,Function,package,2,,value,
-StargateContent,C4Mission,DoExplode,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,C4Mission,DoExplode,VirtualFunction,by name,_SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,C4Mission,DoExplode,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,C4Mission,DoExplode,VirtualFunction,by name,_SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,C4Mission,DoExplode,VirtualFunction,by name,TakeDamage,Function,Engine.Trigger,62,,LocalVariable,Actor
 StargateContent,SNIPERRIFLE,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,SNIPERRIFLE,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
@@ -7244,25 +7244,25 @@ StargateContent,TransportPlatformTeleporter,BeginState,VirtualFunction,by name,D
 StargateContent,SNIPERRIFLE,ResetZoom,FinalFunction,static,ResetZoom,Function,,,,,
 StargateContent,SNIPERRIFLE,ResetZoom,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 StargateContent,SNIPERRIFLE,BeginState,FinalFunction,static,BeginState,Function,,,,,
-StargateContent,SNIPERRIFLE,BeginState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,SNIPERRIFLE,BeginState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,SNIPERRIFLE,EndState,FinalFunction,static,EndState,Function,,,,,
-StargateContent,SNIPERRIFLE,EndState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,SNIPERRIFLE,EndState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,SNIPERRIFLE,ZoomToggle,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateContent,SNIPERRIFLE,ZoomToggle,VirtualFunction,by name,DoZoomState,Function,StargateGame.ScopedWeapon,3,,value,
 StargateContent,SNIPERRIFLE,Timer,VirtualFunction,by name,AnimEnd,Function,StargateGame.ScopedWeapon,44,,InstanceVariable,
 StargateContent,SNIPERRIFLE,Fire,VirtualFunction,by name,AnimEnd,Function,StargateGame.ScopedWeapon,44,,self,
 StargateContent,SNIPERRIFLE,Fire,VirtualFunction,by name,ServerFire,Function,StargateGame.StargateWeapon,10,,VirtualFunction,
-StargateContent,SNIPERRIFLE,BeginState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateContent,SNIPERRIFLE,EndState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,SNIPERRIFLE,BeginState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateContent,SNIPERRIFLE,EndState,VirtualFunction,by name,WeaponSway,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,WeapRepDefault,TraceFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateContent,WeapRepDefault,TraceFire,VirtualFunction,by name,GetFireStart,Function,StargateGame.StargateWeapon,27,,LocalVariable,vector
 StargateContent,WeapRepDefault,TraceFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
 StargateContent,WeapRepDefault,TraceFire,VirtualFunction,by name,GetMaxRange,Function,Engine.Weapon,1,,self,
 StargateContent,WeapRepDefault,TraceFire,VirtualFunction,by name,ProcessTraceHit,Function,receiver:Engine.Ammunition,5,,InstanceVariable,Ammunition
 StargateContent,TransportPlatformTeleporter,BeginState,VirtualFunction,by name,Activated,Function,receiver:StargateContent.TransportPlatform,4,,DynamicCast,TransportPlatform
-StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,SetViewRotation,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
-StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,ClientSetRotation,name,,2,,DynamicCast,
-StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,SetMoveTarget,name,,3,,DynamicCast,
+StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,SetViewRotation,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
+StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,ClientSetRotation,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
+StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,SetMoveTarget,Function,receiver:Engine.Pawn,3,,DynamicCast,Pawn
 StargateContent,TransportPlatformTeleporter,Accept,VirtualFunction,by name,PlayTeleportEffect,Function,Engine.Actor,4,,LocalVariable,actor
 StargateContent,WeapRepDefault,ServerFire,VirtualFunction,by name,GiveAmmo,Function,StargateGame.StargateRechargeWeapons,4,,value,
 StargateContent,WeapRepDefault,ServerFire,VirtualFunction,by name,UseCharge,Function,receiver:StargateGame.RechargingAmmo,2,,DynamicCast,RepAmmo
@@ -7282,9 +7282,9 @@ StargateContent,WeapRepDefault,ClientFinish,FinalFunction,static,ClientFinish,Fu
 StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,LocalVariable,weapon
 StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,SetHand,Function,Engine.Weapon,2,,value,
-StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,EndZoom,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,EndZoom,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,WeapRepDefault,BringUp,VirtualFunction,by name,PlaySelect,Function,StargateGame.StargateWeapon,5,,value,
-StargateContent,TransportPlatformTeleporter,DoActualTeleport,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateContent,TransportPlatformTeleporter,DoActualTeleport,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateContent,TransportPlatformTeleporter,DoActualTeleport,VirtualFunction,by name,SendPlayer,Function,receiver:Engine.GameInfo,2,,Context,GameInfo
 StargateContent,TransportPlatformTeleporter,DoActualTeleport,VirtualFunction,by name,PlayTeleportEffect,Function,Engine.Actor,4,,LocalVariable,Actor
 StargateContent,TransportPlatformTeleporter,DoActualTeleport,VirtualFunction,by name,Accept,Function,package,5,,InstanceVariable,TransportPlatformTeleporter
@@ -7301,11 +7301,11 @@ StargateContent,LinkedGateTeleporter,DisplayDebug,FinalFunction,static,DisplayDe
 StargateContent,LinkedGateTeleporter,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 StargateContent,LinkedGateTeleporter,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateContent,AttachedMothershipTurretGun,GetMuzzlePos,VirtualFunction,by name,GetFireStart,Function,package,27,,self,
-StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,SetViewRotation,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
-StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,ClientSetRotation,name,,2,,DynamicCast,
-StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,SetMoveTarget,name,,3,,DynamicCast,
+StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,SetViewRotation,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
+StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,ClientSetRotation,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
+StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,SetMoveTarget,Function,receiver:Engine.Pawn,3,,DynamicCast,Pawn
 StargateContent,LinkedGateTeleporter,Accept,VirtualFunction,by name,PlayTeleportEffect,Function,Engine.Actor,4,,LocalVariable,actor
-StargateContent,LinkedGateTeleporter,DoActualTeleport,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateContent,LinkedGateTeleporter,DoActualTeleport,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateContent,LinkedGateTeleporter,DoActualTeleport,VirtualFunction,by name,SendPlayer,Function,receiver:Engine.GameInfo,2,,Context,GameInfo
 StargateContent,LinkedGateTeleporter,DoActualTeleport,VirtualFunction,by name,PlayTeleportEffect,Function,Engine.Actor,4,,LocalVariable,Actor
 StargateContent,LinkedGateTeleporter,DoActualTeleport,VirtualFunction,by name,Accept,Function,package,5,,InstanceVariable,LinkedGateTeleporter
@@ -7352,11 +7352,11 @@ StargateContent,SGC_DestructibleSecurityDoor,ToggleLock,FinalFunction,static,Tog
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,SpawnDestructibleActor,Function,package,1,,value,
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,FinalFunction,static,SetStaticMesh,Function,,,,,
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,TakeDamage,Function,package,62,,InstanceVariable,DestructableActor
-StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,UpdateBlocked,Function,corpus:Engine.Door,1,Engine.Door,DynamicCast,
+StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,UpdateBlocked,Function,corpus:Engine.Door,1,Engine.Door,DynamicCast,Door
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,Trigger,Function,StargateContent.SGC_SecurityDoor,118,,value,
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,FinalFunction,static,SetStaticMesh,Function,,,,,
 StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,FinalFunction,static,SetStaticMesh,Function,,,,,
-StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,UpdateBlocked,Function,corpus:Engine.Door,1,Engine.Door,DynamicCast,
+StargateContent,SGC_DestructibleSecurityDoor,TakeDamage,VirtualFunction,by name,UpdateBlocked,Function,corpus:Engine.Door,1,Engine.Door,DynamicCast,Door
 StargateContent,C4Weapon,DoIgniteC4,VirtualFunction,by name,CheckOutOfAmmo,Function,receiver:Engine.Ammunition,2,,InstanceVariable,Ammunition
 StargateContent,SGC_DestructibleSecurityDoor,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
 StargateContent,C4Weapon,ShowC4OnHand,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
@@ -7378,7 +7378,7 @@ StargateContent,C4Weapon,AnimEnd,VirtualFunction,by name,ClientFinish,Function,p
 StargateContent,C4Weapon,AnimEnd,VirtualFunction,by name,DoIgniteC4,Function,package,1,,VirtualFunction,
 StargateContent,SGC_SecurityDoor,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,SGAssaultRifleShells,TriggerParticle,VirtualFunction,by name,SpawnParticle,Function,Engine.Emitter,2,,DynamicArrayElement,
-StargateContent,SearchLight,AlertEnemies,VirtualFunction,by name,CallToArms,name,,5,,DynamicCast,
+StargateContent,SearchLight,AlertEnemies,VirtualFunction,by name,CallToArms,Function,receiver:StargateGame.BotEnemy,5,,DynamicCast,BotEnemy
 StargateContent,SearchLight,AlertEnemies,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateContent,SearchLight,Tick,VirtualFunction,by name,TargetTick,Function,package,1,,value,
 StargateContent,SearchLight,Tick,VirtualFunction,by name,SearchTick,Function,package,1,,value,
@@ -7390,7 +7390,7 @@ StargateContent,SearchLight,SearchTick,FinalFunction,static,QuatFromRotator,Func
 StargateContent,SearchLight,SearchTick,FinalFunction,static,QuatFromRotator,Function,,,,,
 StargateContent,SearchLight,SearchTick,FinalFunction,static,QuatSlerp,Function,,,,,
 StargateContent,SearchLight,SearchTick,FinalFunction,static,QuatToRotator,Function,,,,,
-StargateContent,SearchLight,SearchTick,VirtualFunction,by name,GetTeamNum,name,,3,,DynamicCast,
+StargateContent,SearchLight,SearchTick,VirtualFunction,by name,GetTeamNum,Function,receiver:Engine.Pawn,3,,DynamicCast,Pawn
 StargateContent,SearchLight,SearchTick,VirtualFunction,by name,SelectNewTarget,Function,package,1,,value,
 StargateContent,SearchLight,SearchTick,VirtualFunction,by name,AlertEnemies,Function,package,2,,value,
 StargateContent,STAFFWEAPON,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
@@ -7417,7 +7417,7 @@ StargateContent,STAFFWEAPON,AltFire,FinalFunction,static,AltFire,Function,,,,,
 StargateContent,MindControlLinkEmitter,EnableEffect,FinalFunction,static,AttachToBone,Function,,,,,
 StargateContent,STAFFWEAPON,ServerAltFire,VirtualFunction,by name,DoChargingMelee,Function,package,1,,self,
 StargateContent,STAFFWEAPON,ServerAltFire,FinalFunction,static,ServerAltFire,Function,,,,,
-StargateContent,STAFFWEAPON,DoChargingMelee,VirtualFunction,by name,CanPerformMeleeDash,name,,2,,DynamicCast,
+StargateContent,STAFFWEAPON,DoChargingMelee,VirtualFunction,by name,CanPerformMeleeDash,Function,receiver:StargateGame.StargatePawn,2,,DynamicCast,StargatePawn
 StargateContent,STAFFWEAPON,DoZoomState,VirtualFunction,by name,ResetZoom,Function,StargateGame.StargateWeapon,3,,InstanceVariable,
 StargateContent,STAFFWEAPON,DoZoomState,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,value,
 StargateContent,STAFFWEAPON,DoZoomState,VirtualFunction,by name,PlayIdleAnim,Function,StargateGame.StargateWeapon,5,,value,
@@ -7449,7 +7449,7 @@ StargateContent,STAFFWEAPON,Tick,FinalFunction,static,SetRelativeLocation,Functi
 StargateContent,STAFFWEAPON,Tick,FinalFunction,static,PressingAltFire,Function,,,,,
 StargateContent,STAFFWEAPON,Tick,VirtualFunction,by name,AltFire,Function,package,25,,InstanceVariable,Pawn
 StargateContent,STAFFWEAPON,Tick,VirtualFunction,by name,NotifyWeaponCharging,Function,receiver:Engine.Controller,4,,Context,Controller
-StargateContent,STAFFWEAPON,AnimEnd,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateContent,STAFFWEAPON,AnimEnd,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateContent,EmptyHands,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,GateKawoosh,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,ReetouDeviceSpray,Touch,VirtualFunction,by name,AddSprayedPawn,Function,corpus:StargateContent.ReetouDevice,1,StargateContent.ReetouDevice,DynamicCast,ReetouDevice
@@ -7606,11 +7606,11 @@ StargateContent,GRENADE,CleanupPathVisualisation,VirtualFunction,by name,HideArc
 StargateContent,GRENADE,Destroyed,VirtualFunction,by name,ResetArcPointList,Function,package,1,,value,
 StargateContent,GRENADE,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateContent,GRENADE,PlayPrepareToThrowAnim,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,self,
-StargateContent,GRENADE,PlayPrepareToThrowAnim,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,GRENADE,PlayPrepareToThrowAnim,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,GRENADE,PlayReadyToThrowAnim,VirtualFunction,by name,LoopWeaponAnim,Function,StargateGame.StargateWeapon,1,,self,
-StargateContent,GRENADE,PlayReadyToThrowAnim,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,GRENADE,PlayReadyToThrowAnim,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,GRENADE,PlayGrenadeFire,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,value,
-StargateContent,GRENADE,PlayGrenadeFire,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,GRENADE,PlayGrenadeFire,VirtualFunction,by name,PlayFiringChannelAnim,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,ExtreniteAutoTurret,Tick,VirtualFunction,by name,Tool_SmoothInterpolate,Function,Engine.Pawn,3,,InstanceVariable,
 StargateContent,ExtreniteAutoTurret,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateContent,GRENADE,ServerFire,VirtualFunction,by name,GiveAmmo,Function,StargateGame.StargateWeapon,4,,value,
@@ -7640,7 +7640,7 @@ StargateContent,GRENADE,EndState,VirtualFunction,by name,CleanupPathVisualisatio
 StargateContent,GRENADE,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateContent,GRENADE,Tick,VirtualFunction,by name,UpdatePathVisualisation,Function,package,2,,FinalFunction,
 StargateContent,GoaAutoTurret,DoFire,VirtualFunction,by name,Fire,Function,Engine.Pawn,30,,InstanceVariable,StargateWeapon
-StargateContent,GRENADE,BeginState,VirtualFunction,by name,StopInvisibility,name,,3,,DynamicCast,
+StargateContent,GRENADE,BeginState,VirtualFunction,by name,StopInvisibility,Function,receiver:StargateGame.StargatePawn,3,,DynamicCast,StargatePawn
 StargateContent,GRENADE,BeginState,VirtualFunction,by name,PlayGrenadeFire,Function,package,1,,self,
 StargateContent,GRENADE,BeginState,VirtualFunction,by name,GrenadeFire,Function,package,2,,value,
 StargateContent,GRENADE,AnimNotify_LaunchGrenade,VirtualFunction,by name,HideGrenade,Function,package,1,,self,
@@ -7697,9 +7697,9 @@ StargateContent,HaakenMK1Weapon,Tick,FinalFunction,static,PressingFire,Function,
 StargateContent,HaakenMK1Weapon,Tick,VirtualFunction,by name,Fire,Function,package,30,,value,
 StargateContent,HaakenMK1Weapon,Tick,VirtualFunction,by name,NotifyWeaponCharging,Function,receiver:Engine.Controller,4,,Context,Controller
 StargateContent,SuperSoldier,AnimNotify_Throw,VirtualFunction,by name,GetKnockedBack,Function,StargateGame.StargatePawn,1,,InstanceVariable,StargatePawn
-StargateContent,HaakenMK1Weapon,BeginState,VirtualFunction,by name,ThirdPersonEffects,name,,5,,DynamicCast,
+StargateContent,HaakenMK1Weapon,BeginState,VirtualFunction,by name,ThirdPersonEffects,Function,receiver:Engine.WeaponAttachment,5,,DynamicCast,WeaponAttachment
 StargateContent,HaakenMK1Weapon,BeginState,VirtualFunction,by name,ResetZoom,Function,StargateGame.StargateWeapon,3,,Context,
-StargateContent,HaakenMK1Weapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateContent,HaakenMK1Weapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateContent,SuperSoldier,AnimNotify_Grab,VirtualFunction,by name,GetGrabbed,Function,StargateGame.StargatePawn,1,,InstanceVariable,StargatePawn
 StargateContent,SuperSoldier,AnimNotify_Grab,FinalFunction,static,StopAnimating,Function,,,,,
 StargateContent,SuperSoldier,AnimNotify_Grab,VirtualFunction,by name,AnimEnd,Function,StargateGame.StargatePawn,44,,InstanceVariable,Controller
@@ -7810,14 +7810,14 @@ StargateContent,InteractionHands,ShowCard,FinalFunction,static,ResetSkins,Functi
 StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,FakeRaise,Function,package,2,,value,
 StargateContent,InteractionHands,PlayIdleAnim,FinalFunction,static,PlayIdleAnim,Function,,,,,
 StargateContent,InteractionHands,Fire,VirtualFunction,by name,ServerFire,Function,package,10,,self,
-StargateContent,InteractionHands,BeginState,VirtualFunction,by name,FakeRaise,Function,package,2,,DynamicCast,
+StargateContent,InteractionHands,BeginState,VirtualFunction,by name,FakeRaise,Function,package,2,,DynamicCast,StargateWeapon
 StargateContent,InteractionHands,BeginState,VirtualFunction,by name,PlayIdleAnim,Function,package,5,,value,
-StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,GetInteractAnimType,name,,2,,DynamicCast,
+StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,GetInteractAnimType,Function,receiver:StargateGame.StargatePlayer,2,,DynamicCast,StargatePlayer
 StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,ShowCard,Function,package,1,,value,
 StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,ShowNeedle,Function,package,1,,value,
 StargateContent,InteractionHands,FakeRaise,VirtualFunction,by name,ShowOnlyHands,Function,package,1,,value,
 StargateContent,InteractionHands,AnimEnd,VirtualFunction,by name,PlayIdleAnim,Function,package,5,,value,
-StargateContent,InteractionHands,Timer,VirtualFunction,by name,UseInteractiveObject,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,
+StargateContent,InteractionHands,Timer,VirtualFunction,by name,UseInteractiveObject,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,DynamicCast,StargatePlayer
 StargateContent,InteractionHands,AnimEnd,VirtualFunction,by name,ClientFinish,Function,package,8,,self,
 StargateContent,P90Prototype,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,P90Prototype,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
@@ -7914,7 +7914,7 @@ StargateContent,JaffaSerpentL,PostBeginPlay,VirtualFunction,by name,BindBoneToSu
 StargateContent,JaffaSerpentL,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,JaffaSerpentL,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,ReetouWeapon,AnimEnd,FinalFunction,static,Fire,Function,,,,,
-StargateContent,ReetouWeapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateContent,ReetouWeapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateContent,RepQueenEnergyWeapon,GetFireStart,VirtualFunction,by name,EyePosition,Function,receiver:Engine.Pawn,6,,InstanceVariable,Pawn
 StargateContent,JaffaSerpentH,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,JaffaSerpentH,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,value,
@@ -7993,14 +7993,14 @@ StargateContent,JaffaHorusL,PostBeginPlay,VirtualFunction,by name,BindBoneToSurf
 StargateContent,JaffaHorusL,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,JaffaHorusL,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,value,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,value,
-StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayWeaponAnim,Function,StargateGame.StargateWeapon,1,,self,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,SHOTGUN,BeginState,VirtualFunction,by name,PlayReloadCustom,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,ClientFinish,Function,StargateGame.StargateWeapon,8,,value,
 StargateContent,SHOTGUN,AnimEnd,VirtualFunction,by name,Finish,Function,StargateGame.StargateWeapon,7,,value,
 StargateContent,JaffaHorusH,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
@@ -8014,10 +8014,10 @@ StargateContent,JaffaHorusH,PostBeginPlay,VirtualFunction,by name,BindBoneToSurf
 StargateContent,JaffaHorusH,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,JaffaHorusH,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
 StargateContent,JaffaHorusH,PostBeginPlay,VirtualFunction,by name,BindBoneToSurface,Function,Engine.Pawn,1,,VirtualFunction,
-StargateContent,JaffaBase,FinishAdvancedAttack,VirtualFunction,by name,_FinishAdvancedAttack,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,
+StargateContent,JaffaBase,FinishAdvancedAttack,VirtualFunction,by name,_FinishAdvancedAttack,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
 StargateContent,JaffaBase,FinishAdvancedAttack,VirtualFunction,by name,ClientFinish,Function,receiver:Engine.Weapon,8,,InstanceVariable,Weapon
 StargateContent,JaffaBase,FinishAdvancedAttack,VirtualFunction,by name,PlayWaiting,Function,StargateGame.StargatePawn,3,,value,
-StargateContent,JaffaBase,ActivateAdvancedAttack,VirtualFunction,by name,_ActivateAdvancedAttack,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,
+StargateContent,JaffaBase,ActivateAdvancedAttack,VirtualFunction,by name,_ActivateAdvancedAttack,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
 StargateContent,JaffaBase,ActivateAdvancedAttack,FinalFunction,static,AnimBlendToAlpha,Function,,,,,
 StargateContent,JaffaBase,AnimateSprinting,FinalFunction,static,AnimateSprinting,Function,,,,,
 StargateContent,JaffaBase,AnimateBurningStanding,FinalFunction,static,AttachToBone,Function,,,,,
@@ -8180,7 +8180,7 @@ StargateContent,SuperSoldierGun,ProjectileFire,VirtualFunction,by name,GetGunPos
 StargateContent,SuperSoldierGun,ProjectileFire,VirtualFunction,by name,GetFireStart,Function,package,27,,LocalVariable,Vector
 StargateContent,SuperSoldierGun,ProjectileFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
 StargateContent,SuperSoldierGun,ProjectileFire,VirtualFunction,by name,SpawnProjectile,Function,receiver:Engine.Ammunition,5,,InstanceVariable,Ammunition
-StargateContent,SuperSoldierGun,AnimEnd,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateContent,SuperSoldierGun,AnimEnd,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateContent,Scarab,SpawnGibs,VirtualFunction,by name,ActivateScarabPussSight,Function,receiver:Engine.PlayerController,2,,LocalVariable,PlayerController
 StargateContent,TERWEAPON,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,TERWEAPON,PostBeginPlay,VirtualFunction,by name,DisableProjector,Function,corpus:Engine.DynamicProjector,1,Engine.DynamicProjector,InstanceVariable,DynamicProjector
@@ -8206,24 +8206,24 @@ StargateContent,TERWEAPON,BringUp,VirtualFunction,by name,EnableProjector,Functi
 StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,SwapControllers,Function,package,4,,VirtualFunction,
-StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ResetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,DeactivateReplicatorSight,name,,2,,DynamicCast,
+StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ResetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,DeactivateReplicatorSight,Function,receiver:StargateGame.StargatePlayer,2,,DynamicCast,StargatePlayer
 StargateContent,ReplicatorPossess,AbortControl,FinalFunction,static,DynamicLoadObject,Function,,,,,
 StargateContent,ReplicatorPossess,AbortControl,FinalFunction,static,DynamicLoadObject,Function,,,,,
-StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ClientSetHUD,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ClientSetBehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ClientSetHUD,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateContent,ReplicatorPossess,AbortControl,VirtualFunction,by name,ClientSetBehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,TERWEAPON,ProjectileFire,VirtualFunction,by name,GetFireStart,Function,package,27,,LocalVariable,Vector
 StargateContent,TERWEAPON,ProjectileFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
 StargateContent,TERWEAPON,ProjectileFire,VirtualFunction,by name,SpawnProjectile,Function,receiver:Engine.Ammunition,5,,InstanceVariable,Ammunition
 StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,IsPlayerPawn,Function,Engine.Pawn,2,,LocalVariable,Pawn
 StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,SwapControllers,Function,package,4,,value,
-StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ClientSetBehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ClientSetBehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateContent,ReplicatorPossess,Trigger,FinalFunction,static,DynamicLoadObject,Function,,,,,
 StargateContent,ReplicatorPossess,Trigger,FinalFunction,static,DynamicLoadObject,Function,,,,,
-StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ClientSetHUD,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ActivateReplicatorSight,name,,2,,DynamicCast,
+StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ClientSetHUD,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,ActivateReplicatorSight,Function,receiver:StargateGame.StargatePlayer,2,,DynamicCast,StargatePlayer
 StargateContent,ReplicatorPossess,Trigger,VirtualFunction,by name,AbortControl,Function,package,2,,value,
 StargateContent,ReplicatorPossess,SwapControllers,VirtualFunction,by name,UnPossessed,Function,StargateGame.StargatePawn,4,,LocalVariable,Pawn
 StargateContent,ReplicatorPossess,SwapControllers,VirtualFunction,by name,UnPossessed,Function,StargateGame.StargatePawn,4,,LocalVariable,Pawn
@@ -8275,8 +8275,8 @@ StargateContent,StaffCannon,SetYawBoneRotation,FinalFunction,static,SetBoneRotat
 StargateContent,DecipheringProjectile,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateContent,DecipheringProjectile,Tick,VirtualFunction,by name,_ChangeVelocityTowardsTarget,Function,package,3,,value,
 StargateContent,StaffCannon,PossessedBy,FinalFunction,static,PossessedBy,Function,,,,,
-StargateContent,DecipheringProjectile,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
-StargateContent,DecipheringProjectile,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
+StargateContent,DecipheringProjectile,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
+StargateContent,DecipheringProjectile,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
 StargateContent,StaffCannon,LineOfSightTo,VirtualFunction,by name,Tool_FindAngleDiff,Function,Engine.Pawn,1,,self,
 StargateContent,StaffCannon,LineOfSightTo,VirtualFunction,by name,Tool_FindAngleDiff,Function,Engine.Pawn,1,,self,
 StargateContent,StaffCannon,LineOfSightTo,VirtualFunction,by name,Tool_FindAngleDiff,Function,Engine.Pawn,1,,self,
@@ -8297,8 +8297,8 @@ StargateContent,GoaDropTurret,Tick,VirtualFunction,by name,UpdateDropSpeed,Funct
 StargateContent,GoaDropTurret,Tick,VirtualFunction,by name,DoLegsStage,Function,package,1,,value,
 StargateContent,GoaDropTurret,Tick,VirtualFunction,by name,DoFlapsStage,Function,package,1,,value,
 StargateContent,GoauldRibbonProjectile,Touch,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,Context,Controller
-StargateContent,GoauldRibbonProjectile,Touch,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,GoauldRibbonProjectile,Touch,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,GoauldRibbonProjectile,Touch,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,GoauldRibbonProjectile,Touch,VirtualFunction,by name,SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,GoaDropTurret,KDriverEnter,FinalFunction,static,KDriverEnter,Function,,,,,
 StargateContent,ExtreniteAutoTurretGunProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,ExtreniteWeaponProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
@@ -8311,8 +8311,8 @@ StargateContent,ExtreniteWeaponProjectileAlt,Timer,VirtualFunction,by name,_Find
 StargateContent,ExtreniteWeaponProjectileAlt,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateContent,ExtreniteWeaponProjectileAlt,Tick,VirtualFunction,by name,_ChangeVelocityTowardsTarget,Function,package,3,,value,
 StargateContent,ExtreniteWeaponProjectileAlt,_FindTarget,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,Context,Controller
-StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
-StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
+StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
+StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
 StargateContent,TeamVoicePack,Timer,VirtualFunction,by name,TeamMessage,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 StargateContent,TeamVoicePack,Timer,FinalFunction,static,GetSoundDuration,Function,,,,,
 StargateContent,StargateGrenadeProjectile,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
@@ -8337,8 +8337,8 @@ StargateContent,TeamVoicePack,BotInitialize,VirtualFunction,by name,SetTauntMess
 StargateContent,TeamVoicePack,BotInitialize,VirtualFunction,by name,SetOrderMessage,Function,package,1,,value,
 StargateContent,TeamVoicePack,BotInitialize,VirtualFunction,by name,SetOtherMessage,Function,package,1,,value,
 StargateContent,StargateGrenadeProjectile,HitWall,FinalFunction,static,RandRange,Function,,,,,
-StargateContent,StargateGrenadeProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,
-StargateContent,StargateGrenadeProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,StargateGame.StargateProjectile,47,,DynamicCast,
+StargateContent,StargateGrenadeProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,FluidSurfaceInfo
+StargateContent,StargateGrenadeProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,StargateGame.StargateProjectile,47,,DynamicCast,FluidSurfaceInfo
 StargateContent,StargateGrenadeProjectile,ProcessTouch,VirtualFunction,by name,Explode,Function,package,17,,value,
 StargateContent,SG1VoicePack,GetDirection,FinalFunction,static,Normalize,Function,,,,,
 StargateContent,FragGrenadeProjectile,InBlastRadius,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,LocalVariable,StargatePawn
@@ -8381,8 +8381,8 @@ StargateContent,HandOfLight_AstralSenseParticle,Timer,VirtualFunction,by name,_U
 StargateContent,HandOfLight_AstralSenseParticle,Timer,FinalFunction,static,RandRange,Function,,,,,
 StargateContent,HandOfLight_AstralSenseParticle,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateContent,HandOfLight_AstralSenseParticle,Tick,VirtualFunction,by name,_ChangeVelocityTowardsTarget,Function,package,3,,InstanceVariable,
-StargateContent,HandOfLight_AstralSenseParticle,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
-StargateContent,HandOfLight_AstralSenseParticle,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,
+StargateContent,HandOfLight_AstralSenseParticle,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
+StargateContent,HandOfLight_AstralSenseParticle,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
 StargateContent,KullDisruptorProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateContent,KullDisruptorProjectile,ProcessTouch,VirtualFunction,by name,GetControllerDamageMult,Function,receiver:Engine.Controller,2,,Context,Controller
 StargateContent,KullDisruptorProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,Actor
@@ -8405,8 +8405,8 @@ StargateContent,StingerProjectile,Touch,VirtualFunction,by name,ClientSideTouch,
 StargateContent,StingerProjectile,Touch,VirtualFunction,by name,Explode,Function,package,17,,value,
 StargateContent,StingerProjectile,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
 StargateContent,StingerProjectile,Tick,FinalFunction,static,Tick,Function,,,,,
-StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,
-StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,package,47,,DynamicCast,
+StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,FluidSurfaceInfo
+StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,package,47,,DynamicCast,FluidSurfaceInfo
 StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,GetControllerDamageMult,Function,receiver:Engine.Controller,2,,Context,Controller
 StargateContent,StingerProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,Actor
 StargateContent,SuperSoldierProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
@@ -8416,7 +8416,7 @@ StargateContent,ZatPulse,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,
 StargateContent,ZatPulse,Electrocute,VirtualFunction,by name,StartArcing,Function,corpus:StargateGame.Electrocutor,1,StargateGame.Electrocutor,LocalVariable,Electrocutor
 StargateContent,ZatPulse,HitWall,FinalFunction,static,HitWall,Function,,,,,
 StargateContent,ZatPulse,ProcessTouch,FinalFunction,static,ProcessTouch,Function,,,,,
-StargateContent,ZatPulse,ProcessTouch,VirtualFunction,by name,HitByZatGun,name,,10,,DynamicCast,
+StargateContent,ZatPulse,ProcessTouch,VirtualFunction,by name,HitByZatGun,Function,receiver:StargateGame.StargatePawn,10,,DynamicCast,StargatePawn
 StargateContent,ZatPulse,ProcessTouch,VirtualFunction,by name,Electrocute,Function,package,2,,LocalVariable,
 StargateContent,AlarmLight,DisableLight,VirtualFunction,by name,EndEvent,Function,receiver:Engine.Actor,3,,InstanceVariable,Actor
 StargateContent,TestScreenplay,Init,VirtualFunction,by name,SetGlobalEvents,Function,Engine.Screenplay,1,,self,
@@ -8515,8 +8515,8 @@ StargateContent,AlarmSiren,TakeDamage,VirtualFunction,by name,DisableSiren,Funct
 StargateContent,C4Prop,Timer,VirtualFunction,by name,Ignite,Function,package,1,,self,
 StargateContent,C4Prop,Ignite,VirtualFunction,by name,ExplosionImpact,Function,receiver:Engine.SurfaceInfo,4,,Context,SurfaceInfo
 StargateContent,C4Prop,Ignite,VirtualFunction,by name,CalcFloorSurface,Function,Engine.Actor,2,,self,
-StargateContent,C4Prop,Ignite,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
-StargateContent,C4Prop,Ignite,VirtualFunction,by name,_SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,
+StargateContent,C4Prop,Ignite,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
+StargateContent,C4Prop,Ignite,VirtualFunction,by name,_SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,DynamicCast,StargatePawn
 StargateContent,C4Prop,Ignite,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,LocalVariable,Actor
 StargateContent,C4Prop,_DrawScorchAllDirections,VirtualFunction,by name,_DrawScorch,Function,package,2,,value,
 StargateContent,C4Prop,_DrawScorchAllDirections,VirtualFunction,by name,_DrawScorch,Function,package,2,,value,
@@ -8691,7 +8691,7 @@ StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,ShowCrysta
 StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,EnableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
 StargateContent,MindControlCrystal,BeginState,VirtualFunction,by name,EnableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
 StargateContent,MindControlCrystal,EndState,VirtualFunction,by name,DisableEffect,Function,corpus:StargateContent.MindControlLinkEmitter,1,StargateContent.MindControlLinkEmitter,InstanceVariable,MindControlLinkEmitter
-StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,IsUnconscious,name,,3,,DynamicCast,
+StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,IsUnconscious,Function,descendant:StargateGame.BotEnemy,3,,DynamicCast,BotBase
 StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,DeActivate,Function,package,8,,value,
 StargateContent,MindControlCrystal,Timer,VirtualFunction,by name,DoMindControl,Function,package,1,,value,
 StargateContent,MindControlCrystal,ShowCrystalActivation,VirtualFunction,by name,ShowActiveMaterial,Function,package,1,,self,
@@ -8702,7 +8702,7 @@ StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveFromTe
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveBot,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,StructMember,
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,UnPossess,name,,11,,LocalVariable,BotBase
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,Possess,Function,receiver:StargateContent.MindControlledBot,15,,InstanceVariable,MindControlledBot
-StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,TeamIDLookup,name,,5,,DynamicCast,
+StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,TeamIDLookup,Function,receiver:StargateGame.UnrealMPGameInfo,5,,DynamicCast,UnrealMPGameInfo
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddToTeam,Function,receiver:Engine.TeamInfo,2,,LocalVariable,UnrealTeamInfo
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddBot,Function,receiver:StargateGame.SquadAIBasic,3,,Context,SquadAIBasic
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,GetSize,Function,receiver:StargateGame.SquadAIBasic,2,,Context,SquadAIBasic
@@ -8710,12 +8710,12 @@ StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddSquadWith
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddBot,Function,receiver:StargateGame.SquadAIBasic,3,,InstanceVariable,SquadAIBasic
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,GetSize,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,SetMindController,Function,corpus:StargateContent.MindControlledBot,1,StargateContent.MindControlledBot,InstanceVariable,MindControlledBot
-StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveEnemy,name,,5,,DynamicCast,
+StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,RemoveEnemy,Function,receiver:StargateGame.BotBase,5,,DynamicCast,BotBase
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,SetAggroStatus,Function,corpus:StargateGame.BotBase,1,StargateGame.BotBase,InstanceVariable,MindControlledBot
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,SetForcedEnemy,Function,receiver:StargateGame.BotBase,5,,InstanceVariable,MindControlledBot
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,AddSafeEnemy,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,StructMember,
 StargateContent,MindControlCrystal,GrabMind,VirtualFunction,by name,NotifyCrystalSeizeControl,Function,corpus:StargateContent.HaakenLeaderBot,1,StargateContent.HaakenLeaderBot,DynamicCast,HaakenLeaderBot
-StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,RemoveFromTeam,Function,corpus:Engine.TeamInfo,1,Engine.TeamInfo,DynamicCast,
+StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,RemoveFromTeam,Function,corpus:Engine.TeamInfo,1,Engine.TeamInfo,DynamicCast,UnrealTeamInfo
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,RemoveBot,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,Context,SquadAIBasic
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,IsUnconscious,Function,receiver:StargateGame.BotEnemy,3,,InstanceVariable,MindControlledBot
 StargateContent,MindControlCrystal,ReleaseMind,VirtualFunction,by name,UnPossess,Function,receiver:StargateContent.MindControlledBot,11,,InstanceVariable,MindControlledBot
@@ -8833,7 +8833,7 @@ StargateContent,ACTION_DeactivateAstralSight,InitActionFor,VirtualFunction,by na
 StargateContent,ACTION_DeactivateAstralSight,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
 StargateContent,ACTION_GivePlayerHint,InitActionFor,VirtualFunction,by name,ShowHint,Function,corpus:StargateGame.StargatePlayer,1,StargateGame.StargatePlayer,LocalVariable,StargatePlayer
 StargateContent,ACTION_GivePlayerHint,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
-StargateContent,ACTION_Hack,InitActionFor,VirtualFunction,by name,ShouldStartHacking,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,
+StargateContent,ACTION_Hack,InitActionFor,VirtualFunction,by name,ShouldStartHacking,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
 StargateContent,ACTION_Hack,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
 StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,corpus:GamePlay.ScriptedAction,1,GamePlay.ScriptedAction,value,
 StargateContent,ACTION_IfProximity,ProceedToNextAction,VirtualFunction,by name,ProceedToSectionEnd,Function,corpus:GamePlay.ScriptedAction,1,GamePlay.ScriptedAction,value,
@@ -9340,7 +9340,7 @@ StargateGame,StargateWeapon,Finish,VirtualFunction,by name,HasAmmo,Function,pack
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,HasAmmo,Function,package,9,,InstanceVariable,Ammunition
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,SwitchToBestWeapon,Function,receiver:Engine.Controller,7,,Context,Controller
-StargateGame,StargateWeapon,Finish,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateGame,StargateWeapon,Finish,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,HasAmmo,Function,package,9,,InstanceVariable,Ammunition
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,IsLocallyControlled,Function,receiver:Engine.Pawn,2,,InstanceVariable,Pawn
 StargateGame,StargateWeapon,Finish,VirtualFunction,by name,SwitchToWeaponWithAmmo,Function,Engine.Weapon,1,,value,
@@ -9548,7 +9548,7 @@ StargateGame,UnrealPlayer,ClientPlayTakeHit,VirtualFunction,by name,PlayTakeHit,
 StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,AddAmmoInPocket,Function,package,2,,LocalVariable,
 StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,AnnouncePickup,Function,corpus:Engine.Pickup,1,Engine.Pickup,LocalVariable,pickup
 StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,SetRespawn,Function,receiver:Engine.Pickup,3,,LocalVariable,pickup
-StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,SetRetriggerTimer,name,,2,,DynamicCast,
+StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,SetRetriggerTimer,Function,receiver:Engine.Ammo,2,,DynamicCast,Ammo
 StargateGame,StargateAmmo,HandlePickupQuery,VirtualFunction,by name,HandlePickupQuery,Function,package,7,,InstanceVariable,Inventory
 StargateGame,StargateAmmo,HasAmmo,FinalFunction,static,HasAmmo,Function,,,,,
 StargateGame,StargatePlayer,CreatePauseOverlay,VirtualFunction,by name,AddCameraEffect,Function,Engine.PlayerController,1,,value,
@@ -9628,7 +9628,7 @@ StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,StopFiring,Function,Star
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustToss,Function,corpus:Engine.Controller,1,Engine.Controller,LocalVariable,vector
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,DefendMelee,Function,package,1,,self,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,AdjustAimError,Function,package,3,,LocalVariable,
-StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,StopFiring,Function,StargateGame.BotBase,6,,value,
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,SplashDamage,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,BotEnemy,AdjustAim,VirtualFunction,by name,RefireRate,Function,receiver:Engine.Weapon,2,,Context,Weapon
@@ -9654,10 +9654,10 @@ StargateGame,SquadAIBasic,CloseToLeader,VirtualFunction,by name,GetSGFormation,F
 StargateGame,BotBase,SetEnemyReaction,VirtualFunction,by name,SetSquadEnemyReaction,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
 StargateGame,BotBase,SetEnemyReaction,VirtualFunction,by name,RemoveAllSquadEnemies,Function,corpus:StargateGame.SquadAIBasic,1,StargateGame.SquadAIBasic,InstanceVariable,SquadAIBasic
 StargateGame,SGVoicePackExtended,SearchSuitableVoices,FinalFunction,static,IsSubTypeOf,Function,,,,,
-StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,SearchVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,
-StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,GetNumFoundVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,
+StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,SearchVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,VoiceSelector
+StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,GetNumFoundVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,VoiceSelector
 StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,GetOwner,Function,StargateGame.StargateVoicePack,2,,self,
-StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,GetNumFoundVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,
+StargateGame,SGVoicePackExtended,SearchSuitableVoices,VirtualFunction,by name,GetNumFoundVoices,Function,corpus:StargateGame.VoiceSelector,1,StargateGame.VoiceSelector,LocalVariable,VoiceSelector
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 StargateGame,BotEnemy,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
@@ -9909,7 +9909,7 @@ StargateGame,SquadAIBasic,TellBotToFollow,VirtualFunction,by name,GetLocationFor
 StargateGame,SquadAIBasic,TellBotToFollow,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
 StargateGame,SquadAIBasic,TellBotToFollow,VirtualFunction,by name,RecommendPositionFor,Function,corpus:StargateGame.SGFormation,1,StargateGame.SGFormation,VirtualFunction,sgformation
 StargateGame,SquadAIBasic,TellBotToFollow,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
-StargateGame,UnrealTeamInfo,SetAggroMode,VirtualFunction,by name,CallToArms,name,,5,,DynamicCast,
+StargateGame,UnrealTeamInfo,SetAggroMode,VirtualFunction,by name,CallToArms,Function,receiver:GamePlay.ScriptedController,5,,DynamicCast,ScriptedController
 StargateGame,UnrealTeamInfo,Reset,FinalFunction,static,Reset,Function,,,,,
 StargateGame,BotEnemy,NotifyLanded,VirtualFunction,by name,SetRouteToGoal,Function,package,4,,value,
 StargateGame,UnrealTeamInfo,PreSaveGame,FinalFunction,static,PreSaveGame,Function,,,,,
@@ -10130,9 +10130,9 @@ StargateGame,StargatePlayer,ServerUse,VirtualFunction,by name,UseInteractiveObje
 StargateGame,SquadAIBasic,tellFollowingBotsToFollowNode,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
 StargateGame,SquadAIBasic,tellFollowingBotsToFollowNode,VirtualFunction,by name,GetSGFormation,Function,package,2,,self,
 StargateGame,BotEnemy,SeePlayer,GlobalFunction,by name,SeePlayer,Function,package,18,,value,
-StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,IgnoreTeleport,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,TeleportToPawn,Function,corpus:StargateGame.BotBase,1,StargateGame.BotBase,LocalVariable,
-StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,WhatToDoNext,name,,16,,LocalVariable,
+StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,IgnoreTeleport,Function,receiver:StargateGame.BotBase,3,,LocalVariable,BotBase
+StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,TeleportToPawn,Function,corpus:StargateGame.BotBase,1,StargateGame.BotBase,LocalVariable,BotBase
+StargateGame,StargatePlayer,AssembleMembers,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotBase,16,,LocalVariable,BotBase
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotEnemy,BeginState,VirtualFunction,by name,StartFastRun,Function,StargateGame.BotBase,1,,Context,
 StargateGame,BotEnemy,EndState,VirtualFunction,by name,EndFleeingMovement,Function,package,1,,self,
@@ -11087,7 +11087,7 @@ StargateGame,BotSG,EvalWhatToDoNext,VirtualFunction,by name,DoInvisRest,Function
 StargateGame,BotSG,EvalWhatToDoNext,VirtualFunction,by name,ChooseAttackMode,Function,StargateGame.BotEnemy,3,,value,
 StargateGame,BotSG,EvalWhatToDoNext,VirtualFunction,by name,WanderOrCamp,Function,package,2,,value,
 StargateGame,BotSG,CheckForVehicleTarget,VirtualFunction,by name,DoRunToVehicle,Function,StargateGame.BotEnemy,1,,value,
-StargateGame,BotSG,CheckForVehicleTarget,VirtualFunction,by name,KDriverLeave,name,,13,,DynamicCast,
+StargateGame,BotSG,CheckForVehicleTarget,VirtualFunction,by name,KDriverLeave,Function,receiver:Engine.Vehicle,13,,DynamicCast,Vehicle
 StargateGame,BotSG,CheckForVehicleTarget,VirtualFunction,by name,DoBotGunning,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,BotSG,CheckForVehicleTarget,VirtualFunction,by name,DoWait,Function,StargateGame.BotEnemy,4,,value,
 StargateGame,BotSG,FightEnemy,VirtualFunction,by name,ProcessMoveMode,Function,StargateGame.BotEnemy,1,,self,
@@ -11195,7 +11195,7 @@ StargateGame,BotSG,DoVehicleRam,VirtualFunction,by name,DoRoam,Function,package,
 StargateGame,BotSG,DoVehicleRam,FinalFunction,static,DoVehicleRam,Function,,,,,
 StargateGame,StargatePlayer,OrderSGHold,VirtualFunction,by name,ClientMessage,Function,Engine.PlayerController,3,,value,
 StargateGame,StargatePlayer,OrderSGHold,VirtualFunction,by name,issueOrder,name,,7,,DynamicArrayElement,
-StargateGame,BotSG,NotifyBump,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateGame,BotSG,NotifyBump,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateGame,BotSG,NotifyBump,VirtualFunction,by name,AdjustAround,Function,StargateGame.BotEnemy,1,,value,
 StargateGame,StargatePlayer,OrderSGFollow,VirtualFunction,by name,ClientMessage,Function,Engine.PlayerController,3,,value,
 StargateGame,StargatePlayer,OrderSGFollow,VirtualFunction,by name,issueOrder,name,,7,,DynamicArrayElement,
@@ -11231,9 +11231,9 @@ StargateGame,BotSG,PickDestination,VirtualFunction,by name,SetNewHideNode,Functi
 StargateGame,BotSG,PickDestination,VirtualFunction,by name,CalcBestCoverLoc,Function,StargateGame.BotEnemy,1,,InstanceVariable,Vector
 StargateGame,BotSG,PickDestination,VirtualFunction,by name,DesiredTargetLocation,Function,package,1,,InstanceVariable,Vector
 StargateGame,BotSG,PickDestination,VirtualFunction,by name,FindBestPathTo,Function,StargateGame.BotEnemy,1,,self,
-StargateGame,StargatePlayer,ShowTeamSelect,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,ShowHint,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,ToggleInfoScreen,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
+StargateGame,StargatePlayer,ShowTeamSelect,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
+StargateGame,StargatePlayer,ShowHint,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInfoScreen,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
 StargateGame,StargatePlayer,ToggleInfoScreen,VirtualFunction,by name,SetPause,Function,package,4,,Context,
 StargateGame,StargatePlayer,ToggleMusicState,VirtualFunction,by name,RequestState,Function,corpus:Engine.IMusicController,1,Engine.IMusicController,Context,IMusicController
 StargateGame,StargatePlayer,EditSpeed,VirtualFunction,by name,ServerEditSpeed,Function,package,1,,self,
@@ -11283,20 +11283,20 @@ StargateGame,StargatePlayer,PlayerTick,VirtualFunction,by name,ClearForcedEnemy,
 StargateGame,StargatePlayer,PlayerTick,VirtualFunction,by name,ClearForcedEnemy,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
 StargateGame,StargatePlayer,PlayerTick,VirtualFunction,by name,ViewFlash,Function,package,2,,value,
 StargateGame,StargatePlayer,PlayerTick,VirtualFunction,by name,Lower,Function,receiver:StargateGame.StargateWeapon,5,,DynamicCast,StargateWeapon
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,CloseMenu,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameScoreboard,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
 StargateGame,SquadAIBasic,LoadSkins,VirtualFunction,by name,SetupSkin,Function,package,2,,DynamicCast,StargatePawn
 StargateGame,SquadAIBasic,LoadSkins,VirtualFunction,by name,SetupSkin,Function,package,2,,DynamicCast,StargatePawn
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
-StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,OpenMenu,name,,3,,LocalVariable,
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,TopPage,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
+StargateGame,StargatePlayer,ToggleInGameMenu,VirtualFunction,by name,OpenMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
 StargateGame,BotSG,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,BotSG,EndState,VirtualFunction,by name,StopFastRun,Function,StargateGame.BotBase,1,,self,
 StargateGame,BotSG,SeePlayer,VirtualFunction,by name,IgnoreStimuliDueToScript,Function,StargateGame.BotBase,1,,self,
@@ -11324,7 +11324,7 @@ StargateGame,BotSG,EngageDirection,VirtualFunction,by name,NeedToTurn,Function,S
 StargateGame,BotSG,EngageDirection,VirtualFunction,by name,FireWeaponAt,Function,package,9,,value,
 StargateGame,BotSG,EngageDirection,VirtualFunction,by name,SplashJump,Function,corpus:Engine.Weapon,1,Engine.Weapon,Context,Weapon
 StargateGame,StargatePlayer,UnStick,VirtualFunction,by name,ServerUnStick,Function,package,1,,self,
-StargateGame,StargatePlayer,ShowBeacons,VirtualFunction,by name,MakeVisible,name,,2,,LocalVariable,
+StargateGame,StargatePlayer,ShowBeacons,VirtualFunction,by name,MakeVisible,Function,receiver:StargateGame.Beacons,2,,LocalVariable,Beacons
 StargateGame,StargatePlayer,ForceReload,FinalFunction,static,ForceReload,Function,,,,,
 StargateGame,StargatePlayer,toggleBinoculars,VirtualFunction,by name,SetWeaponByName,Function,receiver:Engine.Pawn,2,,InstanceVariable,Pawn
 StargateGame,StargatePlayer,toggleBinoculars,VirtualFunction,by name,SetWeaponByItemName,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -11401,10 +11401,10 @@ StargateGame,SquadAISG,CautiousAdvance,VirtualFunction,by name,ReachedCoverLocat
 StargateGame,BotSG,UnPossess,FinalFunction,static,UnPossess,Function,,,,,
 StargateGame,BotSG,InitializeSkill,FinalFunction,static,InitializeSkill,Function,,,,,
 StargateGame,BotSG,InitializeSkill,VirtualFunction,by name,GetSGShieldScale,Function,corpus:StargateGame.StoryModeGame,1,StargateGame.StoryModeGame,LocalVariable,StoryModeGame
-StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,GetNextTeamMember,Function,package,1,,LocalVariable,
+StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,GetNextTeamMember,Function,package,1,,LocalVariable,ESGTeamMembers
 StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,CommandSGTeamMember,Function,package,1,,value,
 StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,GetSize,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
-StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,GetNextTeamMember,Function,package,1,,LocalVariable,
+StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,GetNextTeamMember,Function,package,1,,LocalVariable,ESGTeamMembers
 StargateGame,StargatePlayer,CycleCommanded,VirtualFunction,by name,CommandSGTeamMember,Function,package,1,,value,
 StargateGame,StargatePlayer,CommandJackson,VirtualFunction,by name,CommandSGTeamMember,Function,package,1,,self,
 StargateGame,StargatePlayer,CommandCarter,VirtualFunction,by name,CommandSGTeamMember,Function,package,1,,self,
@@ -11611,7 +11611,7 @@ StargateGame,SquadAISG,NotifyKilled,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,SquadAISG,NotifyKilled,VirtualFunction,by name,PostAIMsg,Function,corpus:Engine.Controller,1,Engine.Controller,LocalVariable,Controller
 StargateGame,SquadAISG,NotifyKilled,FinalFunction,static,NewAIMsg,Function,,,,,
 StargateGame,UnrealPlayer,TurnTowardNearestEnemy,VirtualFunction,by name,IsPlayerPawn,Function,receiver:Engine.Pawn,2,,LocalVariable,Pawn
-StargateGame,StargateAmmo,ProcessTraceHit,VirtualFunction,by name,IsHeadShot,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateGame,StargateAmmo,ProcessTraceHit,VirtualFunction,by name,IsHeadShot,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateGame,StargateAmmo,ProcessTraceHit,VirtualFunction,by name,ProcessHeadShot,Function,package,1,,value,
 StargateGame,StargateAmmo,ProcessTraceHit,VirtualFunction,by name,ProcessTraceHit_Common,Function,package,1,,value,
 StargateGame,UnrealPlayer,BeginState,VirtualFunction,by name,ShouldCrouch,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
@@ -11745,7 +11745,7 @@ StargateGame,StargateWeaponAttachment,ThirdPersonEffects,FinalFunction,static,At
 StargateGame,StargateWeaponAttachment,ThirdPersonEffects,FinalFunction,static,AttachToBone,Function,,,,,
 StargateGame,StargateWeaponAttachment,ThirdPersonEffects,FinalFunction,static,SetRelativeRotation,Function,,,,,
 StargateGame,StargateWeaponAttachment,ThirdPersonEffects,FinalFunction,static,SetRelativeLocation,Function,,,,,
-StargateGame,StargateWeaponAttachment,ThirdPersonEffects,VirtualFunction,by name,TriggerParticle,name,,4,,DynamicCast,
+StargateGame,StargateWeaponAttachment,ThirdPersonEffects,VirtualFunction,by name,TriggerParticle,Function,receiver:Stargateeffects.P90Shells,4,,DynamicCast,P90Shells
 StargateGame,StargateWeaponAttachment,InitFor,FinalFunction,static,InitFor,Function,,,,,
 StargateGame,StargateArmor,ArmorPriority,VirtualFunction,by name,CanStop,Function,package,1,,self,
 StargateGame,StargateWeaponAttachment,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
@@ -11895,7 +11895,7 @@ StargateGame,UnrealMPGameInfo,GameEvent,VirtualFunction,by name,GameEvent,Functi
 StargateGame,StargateWeapon,TraceFire,FinalFunction,static,TraceFire,Function,,,,,
 StargateGame,StargateWeapon,TraceFire,VirtualFunction,by name,GetMuzzlePos,Function,package,10,,value,
 StargateGame,StargateWeapon,TraceFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
-StargateGame,LockedObjective,Touch,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,
+StargateGame,LockedObjective,Touch,VirtualFunction,by name,FindInventoryType,Function,corpus:Engine.Pawn,1,Engine.Pawn,DynamicCast,Pawn
 StargateGame,LockedObjective,Touch,VirtualFunction,by name,UnLock,Function,corpus:StargateGame.KeyInventory,1,StargateGame.KeyInventory,LocalVariable,KeyInventory
 StargateGame,LockedObjective,DisableObjective,FinalFunction,static,DisableObjective,Function,,,,,
 StargateGame,StargateWeapon,MeleeFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
@@ -11940,7 +11940,7 @@ StargateGame,StargateWeapon,AttachToPawn,FinalFunction,static,SetRelativeLocatio
 StargateGame,StargateWeapon,AttachToPawn,FinalFunction,static,SetRelativeRotation,Function,,,,,
 StargateGame,CTFBase,Touch,VirtualFunction,by name,SameTeam,Function,corpus:StargateGame.CTFFlag,1,StargateGame.CTFFlag,InstanceVariable,CTFFlag
 StargateGame,CTFBase,Touch,VirtualFunction,by name,ScoreGameObject,Function,receiver:StargateGame.UnrealMPGameInfo,2,,DynamicCast,UnrealMPGameInfo
-StargateGame,CTFBase,Touch,VirtualFunction,by name,Score,name,,2,,LocalVariable,
+StargateGame,CTFBase,Touch,VirtualFunction,by name,Score,Function,receiver:StargateGame.CTFFlag,2,,LocalVariable,CTFFlag
 StargateGame,CTFBase,Touch,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,Context,
 StargateGame,CTFBase,SetGRI,VirtualFunction,by name,UpdateForTeam,Function,package,2,,value,
 StargateGame,CTFBase,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
@@ -12033,7 +12033,7 @@ StargateGame,DustStormVolume,PawnEnteredVolume,VirtualFunction,by name,StartFade
 StargateGame,DustStormVolume,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateGame,WillowWhisp,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateGame,WillowWhisp,PostBeginPlay,VirtualFunction,by name,StartNextPath,Function,package,1,,value,
-StargateGame,DeathMatch,ChangeName,VirtualFunction,by name,ReceiveLocalizedMessage,name,,2,,DynamicCast,
+StargateGame,DeathMatch,ChangeName,VirtualFunction,by name,ReceiveLocalizedMessage,Function,receiver:Engine.PlayerController,2,,DynamicCast,PlayerController
 StargateGame,DeathMatch,ChangeName,VirtualFunction,by name,SetPlayerName,Function,corpus:Engine.PlayerReplicationInfo,1,Engine.PlayerReplicationInfo,Context,PlayerReplicationInfo
 StargateGame,DeathMatch,ChangeName,VirtualFunction,by name,BroadcastLocalizedMessage,Function,Engine.Actor,1,,LocalVariable,
 StargateGame,RepAcidHitsWall,PostNetBeginPlay,VirtualFunction,by name,SpawnSound,Function,package,1,,self,
@@ -12091,7 +12091,7 @@ StargateGame,GravCraneProjector,Reset,VirtualFunction,by name,AttachProjector,Fu
 StargateGame,GravCraneProjector,Reset,VirtualFunction,by name,DetachProjector,Function,Engine.Projector,1,,VirtualFunction,
 StargateGame,GravCraneProjector,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,package,1,,LocalVariable,
-StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,package,1,,StructMember,
 StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,package,1,,StructMember,
 StargateGame,StargateWeapon,UpdateZoom,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,package,1,,StructMember,
@@ -12125,7 +12125,7 @@ StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,ClientFinish,Functio
 StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,Finish,Function,package,7,,value,
 StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,CheckAnimating,Function,package,2,,VirtualFunction,
 StargateGame,StargateWeapon,EndState,VirtualFunction,by name,StopPlayFiring,Function,receiver:Engine.Pawn,2,,InstanceVariable,Pawn
-StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,ThirdPersonEffects,name,,5,,DynamicCast,
+StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,ThirdPersonEffects,Function,receiver:Engine.WeaponAttachment,5,,DynamicCast,WeaponAttachment
 StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,PlayClubbing,Function,package,1,,Context,
 StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,ResetZoom,Function,package,3,,VirtualFunction,
 StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,setCrosshairToOff,Function,corpus:StargateGame.GameHud,1,StargateGame.GameHud,LocalVariable,GameHud
@@ -12143,7 +12143,7 @@ StargateGame,DeathMatch,SpawnBot,VirtualFunction,by name,InitializeBot,Function,
 StargateGame,StargateWeapon,FakeRaise,VirtualFunction,by name,PlayWeaponAnim,Function,package,1,,value,
 StargateGame,StargateWeapon,Raise,VirtualFunction,by name,IsHumanControlled,Function,corpus:Engine.Pawn,1,Engine.Pawn,InstanceVariable,Pawn
 StargateGame,StargateWeapon,Raise,VirtualFunction,by name,SetHand,Function,Engine.Weapon,2,,value,
-StargateGame,StargateWeapon,Raise,VirtualFunction,by name,EndZoom,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,StargateWeapon,Raise,VirtualFunction,by name,EndZoom,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,StargateWeapon,Raise,FinalFunction,static,AnimIsInGroup,Function,,,,,
 StargateGame,StargateWeapon,Raise,VirtualFunction,by name,PlayWeaponAnim,Function,package,1,,value,
 StargateGame,StargateWeapon,BeginState,VirtualFunction,by name,FastTweenDown,Function,package,1,,value,
@@ -12167,7 +12167,7 @@ StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,NeedsToReload,Functi
 StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,HasAmmo,Function,package,9,,InstanceVariable,Ammunition
 StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,RepeatFire,Function,Engine.Weapon,1,,self,
 StargateGame,StargateWeapon,AnimEnd,GlobalFunction,by name,ServerFire,Function,package,10,,value,
-StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateGame,StargateWeapon,AnimEnd,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateGame,StargateWeapon,AnimEnd,GlobalFunction,by name,ServerFire,Function,package,10,,value,
 StargateGame,StargateWeapon,AnimEnd,FinalFunction,static,PressingFire,Function,,,,,
 StargateGame,StargateWeapon,AnimEnd,GlobalFunction,by name,ServerFire,Function,package,10,,value,
@@ -12237,7 +12237,7 @@ StargateGame,DeathMatch,StartMatch,VirtualFunction,by name,AddBot,Function,packa
 StargateGame,StargatePawn,AddInventory,FinalFunction,static,AddInventory,Function,,,,,
 StargateGame,StargatePawn,AddInventory,VirtualFunction,by name,ChangedWeapon,Function,package,7,,value,
 StargateGame,ScopedWeapon,InvisEffectOn,FinalFunction,static,InvisEffectOn,Function,,,,,
-StargateGame,ScopedWeapon,InvisEffectOn,VirtualFunction,by name,InvisEffectOn,Function,package,6,,DynamicCast,
+StargateGame,ScopedWeapon,InvisEffectOn,VirtualFunction,by name,InvisEffectOn,Function,package,6,,DynamicCast,WeaponAttachment
 StargateGame,ScopedWeapon,DrawWeapon,VirtualFunction,by name,DrawWeaponInScope,Function,package,1,,InstanceVariable,
 StargateGame,ScopedWeapon,DrawWeapon,FinalFunction,static,DrawWeapon,Function,,,,,
 StargateGame,StargatePawn,ToggleInvisibility,VirtualFunction,by name,ToggleInvisible,Function,corpus:StargateGame.ShieldBelt,1,StargateGame.ShieldBelt,LocalVariable,ShieldBelt
@@ -12265,7 +12265,7 @@ StargateGame,ScopedWeapon,ResetZoom,FinalFunction,static,RemoveInteraction,Funct
 StargateGame,ScopedWeapon,ResetZoom,FinalFunction,static,ResetZoom,Function,,,,,
 StargateGame,ScopedWeapon,EnterScope,FinalFunction,static,SetDrawType,Function,,,,,
 StargateGame,ScopedWeapon,EnterScope,VirtualFunction,by name,BehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,StargatePlayer
-StargateGame,ScopedWeapon,EnterScope,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,ScopedWeapon,EnterScope,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,ScopedWeapon,EnterScope,VirtualFunction,by name,GetTargetFOV,Function,package,2,,self,
 StargateGame,ScopedWeapon,EnterScope,VirtualFunction,by name,GetTargetDistance,Function,package,1,,Context,
 StargateGame,StargatePawn,StartBeingElectrocuted,FinalFunction,static,StopAnimating,Function,,,,,
@@ -12273,7 +12273,7 @@ StargateGame,ScopedWeapon,LeaveScope,FinalFunction,static,SetDrawType,Function,,
 StargateGame,ScopedWeapon,LeaveScope,FinalFunction,static,ResetSkins,Function,,,,,
 StargateGame,ScopedWeapon,LeaveScope,VirtualFunction,by name,InvisEffectOn,Function,package,6,,InstanceVariable,
 StargateGame,ScopedWeapon,LeaveScope,VirtualFunction,by name,BehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,StargatePlayer
-StargateGame,ScopedWeapon,LeaveScope,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,ScopedWeapon,LeaveScope,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,ScopedWeapon,LeaveScope,VirtualFunction,by name,GetTargetDistance,Function,package,1,,Context,
 StargateGame,StargatePawn,CompleteSetBurning,FinalFunction,static,AttachToBone,Function,,,,,
 StargateGame,StargatePawn,SetBurning,VirtualFunction,by name,HOLFlashOn,Function,package,1,,value,
@@ -12300,18 +12300,18 @@ StargateGame,ScopedWeapon,AnimEnd,FinalFunction,static,AnimEnd,Function,,,,,
 StargateGame,ScopedWeapon,PlayIdleAnim,FinalFunction,static,PlayIdleAnim,Function,,,,,
 StargateGame,ScopedWeapon,BeginState,VirtualFunction,by name,GetTargetFOV,Function,package,2,,InstanceVariable,
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,StargateGame.StargateWeapon,1,,LocalVariable,
-StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,Finish,Function,StargateGame.StargateWeapon,7,,value,
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,ClientFinish,Function,StargateGame.StargateWeapon,8,,value,
 StargateGame,ScopedWeapon,BeginState,VirtualFunction,by name,GetTargetFOV,Function,package,2,,InstanceVariable,
-StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,SetFlashScaling,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
-StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,ClientFlash,name,,2,,DynamicCast,
+StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,SetFlashScaling,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
+StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,ClientFlash,Function,receiver:Engine.PlayerController,2,,DynamicCast,PlayerController
 StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,CanSustainImpact,Function,package,1,,self,
 StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,_SustainImpact,Function,package,1,,value,
 StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,KilledBy,Function,Engine.Pawn,5,,value,
 StargateGame,StargatePawn,HitByShockGrenade,VirtualFunction,by name,BeUnconscious,Function,package,1,,value,
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,Tool_SinCurveInterpolate,Function,StargateGame.StargateWeapon,1,,LocalVariable,
-StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,SetFOV,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,Finish,Function,StargateGame.StargateWeapon,7,,value,
 StargateGame,ScopedWeapon,Tick,VirtualFunction,by name,ClientFinish,Function,StargateGame.StargateWeapon,8,,value,
 StargateGame,DeathMatch,Timer,FinalFunction,static,Timer,Function,,,,,
@@ -12352,7 +12352,7 @@ StargateGame,WeaponMenu,PostRender,VirtualFunction,by name,SelectItem,Function,p
 StargateGame,StargatePawn,EndUnconscious,VirtualFunction,by name,AnimEnd,Function,package,44,,value,
 StargateGame,WeaponMenu,SelectItem,FinalFunction,static,SelectItem,Function,,,,,
 StargateGame,DeathMatch,Timer,FinalFunction,static,Timer,Function,,,,,
-StargateGame,DeathMatch,Timer,VirtualFunction,by name,ServerReStartPlayer,name,,2,,DynamicCast,
+StargateGame,DeathMatch,Timer,VirtualFunction,by name,ServerReStartPlayer,Function,receiver:Engine.PlayerController,2,,DynamicCast,PlayerController
 StargateGame,DeathMatch,Timer,VirtualFunction,by name,NeedPlayers,Function,package,2,,self,
 StargateGame,DeathMatch,Timer,VirtualFunction,by name,AddBot,Function,package,3,,value,
 StargateGame,DeathMatch,Timer,VirtualFunction,by name,EndGame,Function,package,4,,value,
@@ -12456,7 +12456,7 @@ StargateGame,SquadMenu,Initialized,VirtualFunction,by name,CreateWidget,Function
 StargateGame,SquadMenu,Initialized,VirtualFunction,by name,Fade,name,,2,,StructMember,
 StargateGame,SquadMenu,Initialized,VirtualFunction,by name,CreateWidget,Function,package,2,,StructMember,
 StargateGame,StargateHUD,Reset,FinalFunction,static,Reset,Function,,,,,
-StargateGame,StargateHUD,ToggleGameHUD,VirtualFunction,by name,HideHud,Function,package,4,,LocalVariable,
+StargateGame,StargateHUD,ToggleGameHUD,VirtualFunction,by name,HideHud,Function,package,4,,LocalVariable,GameHUD
 StargateGame,DeathMatch,Timer,FinalFunction,static,Timer,Function,,,,,
 StargateGame,DeathMatch,Timer,VirtualFunction,by name,RestartGame,Function,StargateGame.UnrealMPGameInfo,3,,value,
 StargateGame,StargateHUD,DrawDebugVision,FinalFunction,static,Acos,Function,,,,,
@@ -12866,7 +12866,7 @@ StargateGame,StargatePawn,RunFootStep,FinalFunction,static,PlayOwnedSound,Functi
 StargateGame,StargatePawn,RunFootStep,FinalFunction,static,RandRange,Function,,,,,
 StargateGame,StargatePawn,StargatePawnRunStep,FinalFunction,static,PlayOwnedSound,Function,,,,,
 StargateGame,StargatePawn,StargatePawnRunStep,FinalFunction,static,RandRange,Function,,,,,
-StargateGame,TeamDeathMatch,CanSpectate,VirtualFunction,by name,IsPlayerPawn,name,,2,,DynamicCast,
+StargateGame,TeamDeathMatch,CanSpectate,VirtualFunction,by name,IsPlayerPawn,Function,receiver:Engine.Pawn,2,,DynamicCast,Pawn
 StargateGame,StargatePawn,WalkFootStep,VirtualFunction,by name,TouchingWaterVolume,Function,Engine.Pawn,1,,self,
 StargateGame,StargatePawn,WalkFootStep,VirtualFunction,by name,ShouldPlayFootStepSound,Function,package,1,,self,
 StargateGame,StargatePawn,WalkFootStep,VirtualFunction,by name,WalkFootStep,Function,package,4,,Context,SurfaceInfo
@@ -13132,14 +13132,14 @@ StargateGame,CTFGame,CheckEndGame,VirtualFunction,by name,GameHasEnded,Function,
 StargateGame,CTFGame,CheckEndGame,VirtualFunction,by name,ClientSetBehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 StargateGame,CTFGame,CheckEndGame,VirtualFunction,by name,PlayWinMessage,Function,StargateGame.DeathMatch,3,,value,
 StargateGame,CTFGame,CheckEndGame,VirtualFunction,by name,ClientGameEnded,Function,receiver:Engine.Controller,2,,LocalVariable,PlayerController
-StargateGame,ReplicatorHUD,Order,VirtualFunction,by name,SetOrders,Function,corpus:Engine.AIController,1,Engine.AIController,LocalVariable,
+StargateGame,ReplicatorHUD,Order,VirtualFunction,by name,SetOrders,Function,corpus:Engine.AIController,1,Engine.AIController,LocalVariable,BotBase
 StargateGame,ReplicatorHUD,Order,VirtualFunction,by name,SetOrders,Function,corpus:Engine.AIController,1,Engine.AIController,DynamicCast,BotEnemy
 StargateGame,StargatePawn,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateGame,StargatePawn,AddInfluence,FinalFunction,static,DynamicLoadObject,Function,,,,,
 StargateGame,GameHud,UpdateStatusBar,VirtualFunction,by name,SetProgress,Function,corpus:StargateGame.UIProgressBar,1,StargateGame.UIProgressBar,LocalVariable,UIProgressBar
 StargateGame,ReplicatorHUD,DrawTextAt,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargatePawn,PlayTeleportEffect,VirtualFunction,by name,IsHumanControlled,Function,Engine.Pawn,1,,self,
-StargateGame,StargatePawn,PlayTeleportEffect,VirtualFunction,by name,SetFOVAngle,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,StargatePawn,PlayTeleportEffect,VirtualFunction,by name,SetFOVAngle,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,StargatePawn,PlayDyingSound,VirtualFunction,by name,Say,Function,receiver:StargateGame.StargateVoicePack,2,,InstanceVariable,StargateVoicePack
 StargateGame,StargatePawn,DrawBeacon,VirtualFunction,by name,DrawBeacon,Function,package,2,,LocalVariable,Beacons
 StargateGame,ReplicatorHUD,PostBeginPlay,FinalFunction,static,DynamicLoadObject,Function,,,,,
@@ -13427,8 +13427,8 @@ StargateGame,GameHud,PulseHud,VirtualFunction,by name,PulseColour,Function,recei
 StargateGame,GameHud,PulseHud,VirtualFunction,by name,PulseColour,Function,receiver:StargateGame.TeamMemberStatusIcon,2,,InstanceVariable,TeamMemberStatusIcon
 StargateGame,StargateProjectile,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
 StargateGame,StargateProjectile,PostNetBeginPlay,VirtualFunction,by name,SetRange,Function,package,6,,value,
-StargateGame,StargateProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,
-StargateGame,StargateProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,package,47,,DynamicCast,
+StargateGame,StargateProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,FluidSurfaceInfo
+StargateGame,StargateProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,package,47,,DynamicCast,FluidSurfaceInfo
 StargateGame,StargateProjectile,ProcessTouch,FinalFunction,static,ProcessTouch,Function,,,,,
 StargateGame,StoryModeGame,HandleCheckPointReset,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,LocalVariable,GUIController
 StargateGame,StargateProjectile,Explode,VirtualFunction,by name,BlowUp,Function,package,3,,self,
@@ -13534,7 +13534,7 @@ StargateGame,StoryModeGame,AddSquadFromSpawner,VirtualFunction,by name,WhatToDoN
 StargateGame,GameObject,CalcSetHome,VirtualFunction,by name,LogReturned,Function,package,2,,value,
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitializeBot,Function,StargateGame.UnrealMPGameInfo,2,,value,
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitPawn,Function,receiver:StargateGame.RosterEntry,12,,LocalVariable,RosterEntry
-StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,KDriverEnter,name,,13,,DynamicCast,
+StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,KDriverEnter,Function,receiver:Engine.Vehicle,13,,DynamicCast,Vehicle
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,Possess,name,,15,,LocalVariable,BotBase
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,AddDefaultInventory,Function,package,6,,value,
 StargateGame,StoryModeGame,AddBotRoster,VirtualFunction,by name,InitializeDefaultScript,Function,corpus:GamePlay.ScriptedController,1,GamePlay.ScriptedController,LocalVariable,BotBase
@@ -13618,7 +13618,7 @@ StargateGame,SGLoadingPageBase,AddImage,VirtualFunction,by name,SetPos,Function,
 StargateGame,SGLoadingPageBase,AddImage,VirtualFunction,by name,SetSize,Function,receiver:StargateGame.DrawOpBase,3,,LocalVariable,DrawOpImage
 StargateGame,SGLoadingPageBase,AddImageStretched,VirtualFunction,by name,AddImage,Function,package,1,,LocalVariable,DrawOpImage
 StargateGame,UnrealPawn,ChunkUp,VirtualFunction,by name,PawnDied,Function,receiver:Engine.Controller,8,,InstanceVariable,Controller
-StargateGame,UnrealPawn,ChunkUp,VirtualFunction,by name,UseLowGore,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,
+StargateGame,UnrealPawn,ChunkUp,VirtualFunction,by name,UseLowGore,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,GameInfo
 StargateGame,UnrealPawn,ChunkUp,VirtualFunction,by name,SpawnGibs,Function,package,5,,value,
 StargateGame,UnrealPawn,PlayFootStep,VirtualFunction,by name,FootStepping,Function,package,2,,self,
 StargateGame,UnrealPawn,TakeDrowningDamage,VirtualFunction,by name,TakeDamage,Function,package,62,,self,
@@ -13737,7 +13737,7 @@ StargateGame,StargateWeaponEmplacement,LimitRotation,FinalFunction,static,Normal
 StargateGame,AlarmPanel,Timer,VirtualFunction,by name,DeactivateAlarm,Function,package,1,,self,
 StargateGame,AlarmPanel,Trigger,VirtualFunction,by name,UsedBy,Function,package,28,,value,
 StargateGame,StoryModeGame,Timer,FinalFunction,static,Timer,Function,,,,,
-StargateGame,StoryModeGame,Timer,VirtualFunction,by name,ServerReStartPlayer,name,,2,,DynamicCast,
+StargateGame,StoryModeGame,Timer,VirtualFunction,by name,ServerReStartPlayer,Function,receiver:Engine.PlayerController,2,,DynamicCast,PlayerController
 StargateGame,StoryModeGame,Timer,VirtualFunction,by name,NeedPlayers,Function,package,2,,self,
 StargateGame,StoryModeGame,Timer,VirtualFunction,by name,AddBot,Function,package,3,,value,
 StargateGame,StargateWeaponEmplacement,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,,
@@ -13912,7 +13912,7 @@ StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,Killed,Funct
 StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,IsHumanControlled,Function,Engine.Pawn,1,,self,
-StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,ForceDeathUpdate,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,StargateWeaponEmplacement,Died,VirtualFunction,by name,ForceDeathUpdate,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,StargateWeaponEmplacement,PostNetBeginPlay,VirtualFunction,by name,GiveTo,Function,receiver:Engine.Weapon,2,,DynamicArrayElement,Weapon
 StargateGame,StargateWeaponEmplacement,PostNetBeginPlay,VirtualFunction,by name,AttachToPawn,Function,receiver:Engine.Inventory,3,,DynamicArrayElement,Weapon
 StargateGame,StargateWeaponEmplacement,PostNetBeginPlay,VirtualFunction,by name,SetActiveWeapon,Function,package,2,,value,
@@ -14012,7 +14012,7 @@ StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,Killed,Functi
 StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,IsHumanControlled,Function,Engine.Pawn,1,,self,
-StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,ForceDeathUpdate,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateGame,StargateVehiclePassenger,Died,VirtualFunction,by name,ForceDeathUpdate,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateGame,GravCraneLifter,CalcNonKarmaAntiGravPhysics,VirtualFunction,by name,SetActorAcceleration,Function,package,1,,value,
 StargateGame,StargateVehiclePassenger,VehicleFire,FinalFunction,static,VehicleFire,Function,,,,,
 StargateGame,StargateVehiclePassenger,VehicleFire,VirtualFunction,by name,AltFire,Function,Engine.Vehicle,25,,InstanceVariable,Weapon
@@ -14268,9 +14268,9 @@ StargateGame,TeamAI,SetBotOrders,VirtualFunction,by name,AddBot,Function,receive
 StargateGame,UIWidget,SetSkin,VirtualFunction,by name,SetupColourModifier,Function,package,1,,value,
 StargateGame,UIWidget,SetDrawIcon,VirtualFunction,by name,SetupColourModifier,Function,package,1,,value,
 StargateGame,TeamAI,AddSquad,VirtualFunction,by name,InsertSquad,Function,package,1,,value,
-StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,ParseKillMessage,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,
+StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,ParseKillMessage,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,GameInfo
 StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,SuicideMessage,Function,corpus:Engine.DamageType,1,Engine.DamageType,value,
-StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,ParseKillMessage,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,
+StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,ParseKillMessage,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,ObjectConst,GameInfo
 StargateGame,StargateDeathMessage,GetString,VirtualFunction,by name,DeathMessage,Function,corpus:Engine.DamageType,1,Engine.DamageType,value,
 StargateGame,TeamAI,AddSquadWithLeader,VirtualFunction,by name,Initialize,Function,receiver:StargateGame.SquadAIBasic,8,,LocalVariable,SquadAIBasic
 StargateGame,UIWidget,PulseColour,VirtualFunction,by name,ChangeColour,Function,package,2,,self,
@@ -14594,7 +14594,7 @@ StargateGame,SGFormation,SetFormation,VirtualFunction,by name,GetLocationFor,Fun
 StargateGame,SGFormation,SetFormation,VirtualFunction,by name,LeaveFormation,Function,package,2,,value,
 StargateGame,SGFormation,SetFormation,VirtualFunction,by name,EnterFormation,Function,corpus:StargateGame.BotBase,1,StargateGame.BotBase,LocalVariable,BotBase
 StargateGame,SGFormation,SetFormation,VirtualFunction,by name,ResetFormation,Function,package,1,,value,
-StargateGame,ACTION_SetBotToSnipe,InitActionFor,VirtualFunction,by name,AssignAmbushPoint,name,,2,,DynamicCast,
+StargateGame,ACTION_SetBotToSnipe,InitActionFor,VirtualFunction,by name,AssignAmbushPoint,Function,receiver:GamePlay.ScriptedController,2,,DynamicCast,ScriptedController
 StargateGame,SGFormation,LeaveFormation,VirtualFunction,by name,ResetFormation,Function,package,1,,LocalVariable,
 StargateGame,SGFormation,LeaveFormation,VirtualFunction,by name,LeaveFormation,Function,package,2,,LocalVariable,BotBase
 StargateGame,StoryModeScoreboard,DrawTrailer,FinalFunction,static,SetPos,Function,,,,,
@@ -14621,7 +14621,7 @@ StargateGame,ACTION_SpawnSquad,InitActionFor,VirtualFunction,by name,AddSquad,Fu
 StargateGame,ACTION_StopGuardPlayer,InitActionFor,VirtualFunction,by name,SetNewGuardFocus,Function,receiver:GamePlay.ScriptedController,3,,LocalVariable,ScriptedController
 StargateGame,ACTION_SuggestNextState,InitActionFor,VirtualFunction,by name,SetSuggestedNextState,Function,corpus:StargateGame.BotBase,1,StargateGame.BotBase,LocalVariable,BotBase
 StargateGame,ACTION_VehicleEnter,InitActionFor,VirtualFunction,by name,DoRunToVehicle,Function,corpus:StargateGame.BotEnemy,1,StargateGame.BotEnemy,DynamicCast,BotEnemy
-StargateGame,ACTION_VehicleExit,InitActionFor,VirtualFunction,by name,KDriverLeave,name,,13,,DynamicCast,
+StargateGame,ACTION_VehicleExit,InitActionFor,VirtualFunction,by name,KDriverLeave,Function,receiver:Engine.Vehicle,13,,DynamicCast,Vehicle
 StargateGame,SGFontInfo,GetSmallFont,VirtualFunction,by name,GetStaticSmallFont,Function,package,2,,ArrayElement,Font
 StargateGame,DrawOpBase,GetFont,VirtualFunction,by name,GetGUIFont,Function,package,1,,LocalVariable,Font
 StargateGame,DrawOpBase,GetFont,FinalFunction,static,DynamicLoadObject,Function,,,,,
@@ -14636,8 +14636,8 @@ StargateGame,DrawOpImage,Draw,VirtualFunction,by name,MaterialVSize,Function,cor
 StargateGame,DrawOpImage,Draw,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,DrawOpImage,Draw,FinalFunction,static,DrawTileStretched,Function,,,,,
 StargateGame,SGFontInfo,GetHugeFont,VirtualFunction,by name,GetStaticHugeFont,Function,package,2,,ArrayElement,Font
-StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,
-StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,
+StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,Actor
+StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,Actor
 StargateGame,StargateVoicePack,GetVoiceDescString,FinalFunction,static,GetEnum,Function,,,,,
 StargateGame,StargateVoicePack,GetVoiceDescString,FinalFunction,static,GetEnum,Function,,,,,
 StargateGame,GameMenu,AddIndexedCommand,VirtualFunction,by name,SetPosImmediate,Function,corpus:StargateGame.UIWidget,1,StargateGame.UIWidget,DynamicArrayElement,UIWidget
@@ -14861,9 +14861,9 @@ StargateGame,VoiceSelector,DumpFoundVoices,VirtualFunction,by name,GetVoiceDescS
 StargateGame,VoiceSelector,DumpFoundVoices,VirtualFunction,by name,GetVoiceDescString,Function,corpus:StargateGame.StargateVoicePack,1,StargateGame.StargateVoicePack,ObjectConst,StargateVoicePack
 StargateGame,VoiceSelector,DumpFoundVoices,VirtualFunction,by name,GetVoiceDescString,Function,corpus:StargateGame.StargateVoicePack,1,StargateGame.StargateVoicePack,ObjectConst,StargateVoicePack
 StargateGame,VoiceSet,GetString,VirtualFunction,by name,GetVoiceDescString,Function,corpus:StargateGame.StargateVoicePack,1,StargateGame.StargateVoicePack,ObjectConst,StargateVoicePack
-StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,
-StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,
-StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,
+StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,Actor
+StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,Actor
+StargateGame,VoiceSet,Build,VirtualFunction,by name,GetMsgTypeFromString,Function,corpus:Engine.Actor,1,Engine.Actor,ObjectConst,Actor
 StargateGame,VoiceSet,Check,VirtualFunction,by name,CheckMsgID,Function,receiver:StargateGame.StargateAIMsgManager,2,,ObjectConst,StargateAIMsgManager
 StargateGame,VoiceSet,Check,VirtualFunction,by name,CheckRecipient,Function,package,1,,self,
 StargateGame,VoiceSet,Check,VirtualFunction,by name,CheckSubject,Function,package,1,,self,
@@ -14974,14 +14974,14 @@ StargateMenus,DeleteSavedGamePage,InternalOnClick,VirtualFunction,by name,CloseM
 StargateMenus,ServerSelectionListBox,RefreshListBox,VirtualFunction,by name,Clear,Function,receiver:GUI.GUIListBase,24,,InstanceVariable,GUIVertList
 StargateMenus,ServerSelectionListBox,RefreshListBox,VirtualFunction,by name,CancelPings,Function,package,2,,InstanceVariable,
 StargateMenus,ServerSelectionListBox,RefreshListBox,VirtualFunction,by name,BroadcastPingRequest,Function,corpus:IpDrv.ServerQueryClient,1,IpDrv.ServerQueryClient,InstanceVariable,LANQueryClient
-StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,EnableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveFriendsMenu,ButtonClick,VirtualFunction,by name,ShowFriends,Function,package,4,,self,
-StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,ShowFriends,Function,package,4,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,XBoxLiveFriendsMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -14999,12 +14999,12 @@ StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,Clear,
 StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,UpdateServerListInfo,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,SetTimer,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
-StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,XBoxLiveMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
-StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
@@ -15030,7 +15030,7 @@ StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,DisableCompone
 StargateMenus,WaitingForPlayers,StartGame,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,StartMatch,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,CloseAll,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
-StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
@@ -15039,7 +15039,7 @@ StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,StartSignIn
 StargateMenus,WaitingForPlayers,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,Closed,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
 StargateMenus,WaitingForPlayers,Closed,FinalFunction,static,Closed,Function,,,,,
-StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,ShowFriends,Function,package,4,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -15048,7 +15048,7 @@ StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,PlayerOwner,F
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,InitComponent,VirtualFunction,by name,ServerSetReadyToPlay,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
-StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,ShowPlayers,Function,package,3,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,SystemLinkMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
@@ -15059,7 +15059,7 @@ StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Functi
 StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,XBoxLivePlayMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,SinglePlayerTutorial,HandleParameters,VirtualFunction,by name,SetURL,Function,package,2,,value,
-StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
@@ -15173,7 +15173,7 @@ StargateMenus,OptionsEditVideo,SaveSettings,FinalFunction,static,PlayerOwner,Fun
 StargateMenus,OptionsEditVideo,SaveSettings,VirtualFunction,by name,ConsoleCommand,Function,receiver:Engine.Actor,4,,LocalVariable,Actor
 StargateMenus,OptionsEditVideo,SaveSettings,FinalFunction,static,GetIndex,Function,,,,,
 StargateMenus,OptionsEditVideo,SaveSettings,VirtualFunction,by name,ConsoleCommand,Function,receiver:Engine.Actor,4,,LocalVariable,Actor
-StargateMenus,OptionsEditVideo,SaveSettings,VirtualFunction,by name,BehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,
+StargateMenus,OptionsEditVideo,SaveSettings,VirtualFunction,by name,BehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 StargateMenus,OptionsEditVideo,SaveSettings,FinalFunction,static,SaveSettings,Function,,,,,
 StargateMenus,OptionsEditVideo,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,OptionsEditVideo,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
@@ -15204,7 +15204,7 @@ StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,SetComponen
 StargateMenus,OptionsEditAudio,InitComponent,FinalFunction,static,GetCategoryVolume,Function,,,,,
 StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,SetComponentValue,Function,receiver:GUI.moEditBox,6,,InstanceVariable,moEditBox
 StargateMenus,OptionsEditAudio,InitComponent,FinalFunction,static,GetCategoryVolume,Function,,,,,
-StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,StartSignOut,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,OptionsEditAppearance,SaveSettings,FinalFunction,static,PlayerOwner,Function,,,,,
@@ -15377,7 +15377,7 @@ StargateMenus,CoopPlayerPanel,Closed,FinalFunction,static,Closed,Function,,,,,
 StargateMenus,EnterProfileNamePage,DoneSelected,FinalFunction,static,GetValue,Function,,,,,
 StargateMenus,EnterProfileNamePage,DoneSelected,VirtualFunction,by name,ReplaceMenu,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,EnterFriendNamePage,DoneSelected,FinalFunction,static,GetValue,Function,,,,,
-StargateMenus,EnterFriendNamePage,DoneSelected,VirtualFunction,by name,GetUIXInteraction,name,,2,,ObjectConst,
+StargateMenus,EnterFriendNamePage,DoneSelected,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,EnterFriendNamePage,DoneSelected,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,EnterFriendNamePage,DoneSelected,FinalFunction,static,DoneSelected,Function,,,,,
 StargateMenus,ServerSelectionPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -15565,7 +15565,7 @@ StargateVehicles,StargateHover,KDriverLeave,FinalFunction,static,FreezeAnimAt,Fu
 StargateVehicles,StargateHover,KDriverLeave,FinalFunction,static,KDriverLeave,Function,,,,,
 StargateVehicles,StargateHover,DrawHUD,FinalFunction,static,DrawHUD,Function,,,,,
 StargateVehicles,StargateHover,DrawHUD,FinalFunction,static,MakeColor,Function,,,,,
-StargateVehicles,StargateHover,DrawHUD,VirtualFunction,by name,GetConsoleFont,name,,2,,ObjectConst,
+StargateVehicles,StargateHover,DrawHUD,VirtualFunction,by name,GetConsoleFont,Function,receiver:Engine.HUD,2,,ObjectConst,HUD
 StargateVehicles,StargateHover,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
 StargateVehicles,StargateHover,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
 StargateVehicles,StargateHover,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
@@ -15658,7 +15658,7 @@ StargateVehicles,SemektetAttachment,Destroyed,FinalFunction,static,Destroyed,Fun
 StargateVehicles,HoverTankCannonAttachment,SetAimingBoneRotation,FinalFunction,static,SetBoneRotation,Function,,,,,
 StargateVehicles,HoverTankCannonAttachment,SetAimingBoneRotation,FinalFunction,static,Normalize,Function,,,,,
 StargateVehicles,HoverTankCannonAttachment,SetAimingBoneRotation,FinalFunction,static,SetBoneRotation,Function,,,,,
-StargateVehicles,HoverTankPilotBot,AlertEnemies,VirtualFunction,by name,CallToArms,Function,StargateGame.BotEnemy,5,,DynamicCast,
+StargateVehicles,HoverTankPilotBot,AlertEnemies,VirtualFunction,by name,CallToArms,Function,StargateGame.BotEnemy,5,,DynamicCast,BotEnemy
 StargateVehicles,HoverCraftTurretGunAttachment,SetAimingBoneRotation,FinalFunction,static,QuatFromRotator,Function,,,,,
 StargateVehicles,HoverCraftTurretGunAttachment,SetAimingBoneRotation,FinalFunction,static,QuatFromRotator,Function,,,,,
 StargateVehicles,HoverCraftTurretGunAttachment,SetAimingBoneRotation,FinalFunction,static,QuatProduct,Function,,,,,
@@ -15681,7 +15681,7 @@ StargateVehicles,TeltakBot,SetTeam,VirtualFunction,by name,TeamIDLookup,Function
 StargateVehicles,TeltakBot,SetEnemyReaction,FinalFunction,static,SetEnemyReaction,Function,,,,,
 StargateVehicles,AlkeshEngine,SetEngineIdx,FinalFunction,static,SetStaticMesh,Function,,,,,
 StargateVehicles,VehicleWeakPoint,TakeDamage,FinalFunction,static,TakeDamage,Function,,,,,
-StargateVehicles,VehicleWeakPoint,TakeDamage,VirtualFunction,by name,NotifySubPartDestroyed,name,,2,,DynamicCast,
+StargateVehicles,VehicleWeakPoint,TakeDamage,VirtualFunction,by name,NotifySubPartDestroyed,Function,receiver:Engine.Vehicle,2,,DynamicCast,Vehicle
 StargateVehicles,GoauldKillerDroid,DoPreExplosion,FinalFunction,static,SetDrawType,Function,,,,,
 StargateVehicles,GoauldKillerDroid,DoPreExplosion,VirtualFunction,by name,HurtRadius,Function,Engine.Actor,4,,value,
 StargateVehicles,TeltakBot,FreezeTeltak,VirtualFunction,by name,Freeze,Function,receiver:StargateVehicles.StargateCopter,3,,InstanceVariable,Teltak
@@ -15711,7 +15711,7 @@ StargateVehicles,GoauldDrone,CreateInventory,VirtualFunction,by name,PickupFunct
 StargateVehicles,GoauldDrone,Died,FinalFunction,static,Died,Function,,,,,
 StargateVehicles,GoauldDrone,TakeDamage,FinalFunction,static,TakeDamage,Function,,,,,
 StargateVehicles,GoauldDrone,TakeDamage,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,InstanceVariable,Controller
-StargateVehicles,GoauldDrone,TakeDamage,VirtualFunction,by name,SetEnemy,name,,10,,DynamicCast,
+StargateVehicles,GoauldDrone,TakeDamage,VirtualFunction,by name,SetEnemy,Function,receiver:StargateGame.BotBase,10,,DynamicCast,BotBase
 StargateVehicles,GoauldDrone,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateVehicles,GoauldDrone,PostBeginPlay,VirtualFunction,by name,CreateInventory,Function,package,3,,value,
 StargateVehicles,GoauldDrone,PostBeginPlay,VirtualFunction,by name,PlayCalmAmbientSound,Function,package,1,,value,
@@ -15737,7 +15737,7 @@ StargateVehicles,StargateVehicleSeat,VehicleFire,VirtualFunction,by name,AltFire
 StargateVehicles,StargateVehicleSeat,VehicleFire,VirtualFunction,by name,Fire,Function,Engine.Vehicle,30,,Context,Weapon
 StargateVehicles,TeltakBot,BeginState,VirtualFunction,by name,FreezeTeltak,Function,package,1,,self,
 StargateVehicles,TeltakBot,BeginState,VirtualFunction,by name,FreezeTeltak,Function,package,1,,self,
-StargateVehicles,TeltakBot,Trigger,VirtualFunction,by name,IsSpawning,Function,corpus:StargateGame.TransportRings,1,StargateGame.TransportRings,DynamicCast,
+StargateVehicles,TeltakBot,Trigger,VirtualFunction,by name,IsSpawning,Function,corpus:StargateGame.TransportRings,1,StargateGame.TransportRings,DynamicCast,TransportRings
 StargateVehicles,TeltakBot,Trigger,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateVehicles,TeltakBot,BeginState,VirtualFunction,by name,FreezeTeltak,Function,package,1,,self,
 StargateVehicles,TeltakBot,BeginState,VirtualFunction,by name,OpenTransportRingsBay,Function,receiver:StargateVehicles.Teltak,2,,InstanceVariable,Teltak
@@ -15814,7 +15814,7 @@ StargateVehicles,VehicleTurret,GetCameraLocationStart,FinalFunction,static,GetBo
 StargateVehicles,DeathGlider,DrawHUD,FinalFunction,static,DrawHUD,Function,,,,,
 StargateVehicles,DeathGlider,DrawHUD,FinalFunction,static,MakeColor,Function,,,,,
 StargateVehicles,DeathGlider,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
-StargateVehicles,DeathGlider,DrawHUD,VirtualFunction,by name,GetConsoleFont,name,,2,,ObjectConst,
+StargateVehicles,DeathGlider,DrawHUD,VirtualFunction,by name,GetConsoleFont,Function,receiver:Engine.HUD,2,,ObjectConst,HUD
 StargateVehicles,DeathGlider,FinishedInterpolation,FinalFunction,static,UpdateKValuesFromActor,Function,,,,,
 StargateVehicles,DeathGlider,FinishedInterpolation,VirtualFunction,by name,UnFreeze,Function,package,3,,FinalFunction,
 StargateVehicles,DeathGlider,StartInterpolation,VirtualFunction,by name,Freeze,Function,package,3,,value,
@@ -15959,7 +15959,7 @@ StargateVehicles,StargateCar,KDriverEnter,FinalFunction,static,GetSoundDuration,
 StargateVehicles,StargateCar,DrawHUD,FinalFunction,static,DrawHUD,Function,,,,,
 StargateVehicles,StargateCar,DrawHUD,FinalFunction,static,MakeColor,Function,,,,,
 StargateVehicles,StargateCar,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
-StargateVehicles,StargateCar,DrawHUD,VirtualFunction,by name,GetConsoleFont,name,,2,,ObjectConst,
+StargateVehicles,StargateCar,DrawHUD,VirtualFunction,by name,GetConsoleFont,Function,receiver:Engine.HUD,2,,ObjectConst,HUD
 StargateVehicles,StargateCar,SVehicleUpdateParams,FinalFunction,static,SVehicleUpdateParams,Function,,,,,
 StargateVehicles,StargateCar,SVehicleUpdateParams,VirtualFunction,by name,InitStayUprightParams,Function,package,1,,value,
 StargateVehicles,StargateCar,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
@@ -15977,7 +15977,7 @@ StargateVehicles,AlkeshBomberBot,DetermineBombingRunTarget,VirtualFunction,by na
 StargateVehicles,AlkeshBomberBot,GetReachablePoint,VirtualFunction,by name,GetScaledMoveDestination,Function,package,2,,LocalVariable,vector
 StargateVehicles,AlkeshBomberBot,BeginState,VirtualFunction,by name,FreezeBomber,Function,package,1,,self,
 StargateVehicles,AlkeshBomberBot,BeginState,VirtualFunction,by name,FreezeBomber,Function,package,1,,self,
-StargateVehicles,AlkeshBomberBot,Trigger,VirtualFunction,by name,IsSpawning,Function,corpus:StargateGame.TransportRings,1,StargateGame.TransportRings,DynamicCast,
+StargateVehicles,AlkeshBomberBot,Trigger,VirtualFunction,by name,IsSpawning,Function,corpus:StargateGame.TransportRings,1,StargateGame.TransportRings,DynamicCast,TransportRings
 StargateVehicles,AlkeshBomberBot,Trigger,VirtualFunction,by name,WhatToDoNext,Function,package,16,,value,
 StargateVehicles,AlkeshBomberBot,BeginState,VirtualFunction,by name,FreezeBomber,Function,package,1,,self,
 StargateVehicles,AlkeshBomberBot,BeginState,VirtualFunction,by name,OpenTransportRingsBay,Function,receiver:StargateVehicles.AlkeshBomber,2,,InstanceVariable,AlkeshBomber
@@ -16119,10 +16119,10 @@ StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by
 StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,SetupMuzzleFlashBarrels,Function,StargateContent.StaffCannonGun,1,,value,
 StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,GetLeftFireStart,Function,package,3,,LocalVariable,Vector
 StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
-StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,SpawnProjectileCharged,Function,corpus:StargateContent.StaffCannonAmmo,1,StargateContent.StaffCannonAmmo,DynamicCast,
+StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,SpawnProjectileCharged,Function,corpus:StargateContent.StaffCannonAmmo,1,StargateContent.StaffCannonAmmo,DynamicCast,StaffCannonAmmo
 StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,GetRightFireStart,Function,package,3,,LocalVariable,Vector
 StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
-StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,SpawnProjectileCharged,Function,corpus:StargateContent.StaffCannonAmmo,1,StargateContent.StaffCannonAmmo,DynamicCast,
+StargateVehicles,SemektetStaffCannonGun,ProjectileFireBarrels,VirtualFunction,by name,SpawnProjectileCharged,Function,corpus:StargateContent.StaffCannonAmmo,1,StargateContent.StaffCannonAmmo,DynamicCast,StaffCannonAmmo
 StargateVehicles,AlkeshBomber,ActivateTurret,VirtualFunction,by name,Activate,Function,receiver:StargateContent.GoaAutoTurretMK2Controller,9,,DynamicCast,AttachedAlkeshTurretController
 StargateVehicles,AlkeshBomber,ActivateTurret,VirtualFunction,by name,DeActivate,Function,receiver:StargateContent.GoaAutoTurretMK2Controller,8,,DynamicCast,AttachedAlkeshTurretController
 StargateVehicles,AlkeshBomber,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
@@ -16189,7 +16189,7 @@ StargateVehicles,Teltak,PostBeginPlay,FinalFunction,static,AttachToBone,Function
 StargateVehicles,StargateCopter,DrawHUD,FinalFunction,static,DrawHUD,Function,,,,,
 StargateVehicles,StargateCopter,DrawHUD,FinalFunction,static,MakeColor,Function,,,,,
 StargateVehicles,StargateCopter,DrawHUD,FinalFunction,static,SetPos,Function,,,,,
-StargateVehicles,StargateCopter,DrawHUD,VirtualFunction,by name,GetConsoleFont,name,,2,,ObjectConst,
+StargateVehicles,StargateCopter,DrawHUD,VirtualFunction,by name,GetConsoleFont,Function,receiver:Engine.HUD,2,,ObjectConst,HUD
 StargateVehicles,StargateCopter,KDriverLeave,FinalFunction,static,KDriverLeave,Function,,,,,
 StargateVehicles,StargateCopter,KDriverEnter,FinalFunction,static,KDriverEnter,Function,,,,,
 StargateVehicles,AlkeshCannon,IsFacing,VirtualFunction,by name,GetBarrelRotation,Function,package,2,,LocalVariable,Rotator
@@ -16206,7 +16206,7 @@ StargateVehicles,APCM60Gun,RenderOverlays,VirtualFunction,by name,DrawCrossHair,
 StargateVehicles,APCM60Gun,GetMuzzlePos,VirtualFunction,by name,GetFireStart,Function,package,27,,self,
 StargateVehicles,APCM60Gun,GetFireStart,VirtualFunction,by name,GetBarrelBoneCoords,Function,corpus:StargateVehicles.APCM60GunAttachment,1,StargateVehicles.APCM60GunAttachment,DynamicCast,APCM60GunAttachment
 StargateVehicles,APCM60Gun,FinishShooting,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
-StargateVehicles,APCM60Gun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateVehicles,APCM60Gun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateVehicles,GatlingGun,Fire,VirtualFunction,by name,CanFire,Function,Engine.Weapon,4,,DynamicCast,GatlingGunAttachment
 StargateVehicles,GatlingGun,Fire,FinalFunction,static,Fire,Function,,,,,
 StargateVehicles,DeathGliderGun,ProjectileFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
@@ -16217,7 +16217,7 @@ StargateVehicles,DeathGliderGun,ProjectileFire,VirtualFunction,by name,GetMuzzle
 StargateVehicles,DeathGliderGun,ProjectileFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
 StargateVehicles,DeathGliderGun,ProjectileFire,VirtualFunction,by name,SpawnProjectile,Function,receiver:Engine.Ammunition,5,,InstanceVariable,Ammunition
 StargateVehicles,DeathGliderGun,FinishShooting,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
-StargateVehicles,DeathGliderGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateVehicles,DeathGliderGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateVehicles,GoauldTurretEmplacementGun,GetFireStart,FinalFunction,static,GetBoneCoords,Function,,,,,
 StargateVehicles,GoauldTurretEmplacementGun,GetMuzzlePos,FinalFunction,static,GetBoneCoords,Function,,,,,
 StargateVehicles,GoauldTurretEmplacementGun,GetMuzzlePos,VirtualFunction,by name,GetFireStart,Function,package,27,,self,
@@ -16255,13 +16255,13 @@ StargateVehicles,HoverTankCannon,ProjectileFire,VirtualFunction,by name,SpawnPro
 StargateVehicles,HoverTankCannon,IsFacing,VirtualFunction,by name,GetBarrelRotation,Function,package,2,,LocalVariable,Rotator
 StargateVehicles,HoverTankCannon,IsFacing,VirtualFunction,by name,GetBarrelLocation,Function,package,2,,LocalVariable,Vector
 StargateVehicles,HoverTankCannon,FinishShooting,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
-StargateVehicles,HoverTankCannon,FinishShooting,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateVehicles,HoverTankCannon,FinishShooting,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateVehicles,M60TurretGun,GetFireStart,FinalFunction,static,GetBoneCoords,Function,,,,,
 StargateVehicles,M60TurretGun,GetMuzzlePos,VirtualFunction,by name,GetFireStart,Function,package,27,,self,
 StargateVehicles,M60TurretGun,SetupMuzzleFlash,VirtualFunction,by name,GetMuzzlePos,Function,package,10,,value,
 StargateVehicles,M60TurretGun,RenderOverlays,VirtualFunction,by name,DrawCrossHair,Function,StargateGame.StargateWeapon,6,,value,
 StargateVehicles,M60TurretGun,FinishShooting,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
-StargateVehicles,M60TurretGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateVehicles,M60TurretGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateVehicles,SemektetMortarGun,ProjectileFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateVehicles,SemektetMortarGun,ProjectileFire,VirtualFunction,by name,GetFireStart,Function,package,27,,LocalVariable,Vector
 StargateVehicles,SemektetMortarGun,ProjectileFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
@@ -16292,13 +16292,13 @@ StargateVehicles,SemektetMortarGun,CalcGrenadeLanding,VirtualFunction,by name,Ge
 StargateVehicles,SemektetMortarGun,CalcGrenadeLanding,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateVehicles,SemektetMortarGun,CalcGrenadeLanding,VirtualFunction,by name,GetFireStart,Function,package,27,,LocalVariable,Vector
 StargateVehicles,SemektetMortarGun,CalcGrenadeLanding,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
-StargateVehicles,TempleTurretGun,GetFireStart,VirtualFunction,by name,GetAimingBoneCoords,Function,StargateGame.StargateWeapon,3,,DynamicCast,
+StargateVehicles,TempleTurretGun,GetFireStart,VirtualFunction,by name,GetAimingBoneCoords,Function,StargateGame.StargateWeapon,3,,DynamicCast,StargateWeaponEmplacement
 StargateVehicles,TempleTurretGun,ProjectileFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 StargateVehicles,TempleTurretGun,ProjectileFire,VirtualFunction,by name,GetFireStart,Function,package,27,,LocalVariable,Vector
 StargateVehicles,TempleTurretGun,ProjectileFire,VirtualFunction,by name,AdjustAim,Function,Engine.Weapon,12,,InstanceVariable,Rotator
 StargateVehicles,TempleTurretGun,ProjectileFire,VirtualFunction,by name,SpawnProjectile,Function,receiver:Engine.Ammunition,5,,InstanceVariable,Ammunition
 StargateVehicles,TempleTurretGun,FinishShooting,VirtualFunction,by name,HasAmmo,Function,StargateGame.StargateWeapon,9,,InstanceVariable,Ammunition
-StargateVehicles,TempleTurretGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,name,,9,,DynamicCast,
+StargateVehicles,TempleTurretGun,FinishShooting,VirtualFunction,by name,WeaponFireAgain,Function,receiver:Engine.AIController,9,,DynamicCast,AIController
 StargateVehicles,AlkeshBombProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateVehicles,AlkeshBombProjectile,InBlastRadius,VirtualFunction,by name,CanSustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,LocalVariable,StargatePawn
 StargateVehicles,AlkeshBombProjectile,InBlastRadius,VirtualFunction,by name,_SustainImpact,Function,corpus:StargateGame.StargatePawn,1,StargateGame.StargatePawn,LocalVariable,StargatePawn
@@ -16329,8 +16329,8 @@ StargateVehicles,SemektetMortarGunProjectile,ExplosionImpact,VirtualFunction,by 
 StargateVehicles,SemektetMortarGunProjectile,ExplosionImpact,VirtualFunction,by name,ClientExplosionImpact,Function,package,2,,Context,
 StargateVehicles,SemektetMortarGunProjectile,ClientExplosionImpact,VirtualFunction,by name,ExplosionImpact,Function,package,4,,Context,SurfaceInfo
 StargateVehicles,SemektetMortarGunProjectile,HitWall,VirtualFunction,by name,Explode,Function,package,17,,self,
-StargateVehicles,SemektetMortarGunProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,
-StargateVehicles,SemektetMortarGunProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,StargateGame.StargateProjectile,47,,DynamicCast,
+StargateVehicles,SemektetMortarGunProjectile,ProcessTouch,VirtualFunction,by name,TakeDamage,Function,Engine.Actor,62,,DynamicCast,FluidSurfaceInfo
+StargateVehicles,SemektetMortarGunProjectile,ProcessTouch,VirtualFunction,by name,Touch,Function,StargateGame.StargateProjectile,47,,DynamicCast,FluidSurfaceInfo
 StargateVehicles,SemektetMortarGunProjectile,ProcessTouch,VirtualFunction,by name,Explode,Function,package,17,,value,
 StargateVehicles,TempleTurretGunProjectile,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 StargateVehicles,ACTION_CarpetBombing,InitActionFor,VirtualFunction,by name,DoCarpetBombing,Function,corpus:StargateVehicles.AlkeshBomberBot,1,StargateVehicles.AlkeshBomberBot,DynamicCast,AlkeshBomberBot
@@ -16338,7 +16338,7 @@ StargateVehicles,ACTION_CarpetBombing,InitActionFor,FinalFunction,static,InitAct
 StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,VirtualFunction,by name,SetNewGuardFocus,Function,receiver:GamePlay.ScriptedController,3,,LocalVariable,ScriptedController
 StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,VirtualFunction,by name,SetSpawningRoster,Function,receiver:StargateVehicles.TeltakBot,2,,DynamicCast,TeltakBot
 StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,VirtualFunction,by name,SetSpawningRoster,Function,receiver:StargateVehicles.AlkeshBomberBot,2,,DynamicCast,AlkeshBomberBot
-StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,VirtualFunction,by name,WhatToDoNext,name,,16,,DynamicCast,
+StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,VirtualFunction,by name,WhatToDoNext,Function,receiver:StargateGame.BotBase,16,,DynamicCast,BotBase
 StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,FinalFunction,static,InitActionFor,Function,,,,,
 StargateVehicles,ACTION_VehicleActivateTurret,InitActionFor,VirtualFunction,by name,ActivateTurret,Function,receiver:StargateVehicles.AlkeshBomber,2,,DynamicCast,AlkeshBomber
 StargateVehicles,ACTION_VehicleActivateTurret,InitActionFor,VirtualFunction,by name,ActivateTurret,Function,receiver:StargateVehicles.DeathGlider,2,,DynamicCast,DeathGlider

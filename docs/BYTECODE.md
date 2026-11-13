@@ -678,34 +678,62 @@ not about the token encoding.
 `--calls` walks the corpus and records every call site, resolving each one as far as its operand rules allow:
 
     $ python3 tools/uscript-dis.py --calls DUMP/System -o inventory
-    11687 scripts with an epilogue, 11602 walked; 18931 call sites
+    11687 scripts with an epilogue, 11608 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
-        naming a declaring class: 13258 of 13507 (98.2%)
-        on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, ...)
+        naming a declaring class: 13356 of 13507 (98.9%)
+        on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, Engine.Pawn 246, StargateGame.BotBase 191, Editor.BrushBuilder 187, StargateGame.BotEnemy 187)
           of those, 223 name a function only a *state* of that class declares (the class owns the state)
-        by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top:
-          ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, ...
-        on the receiver's chain: 2641 (624 names) -- the expression in front of the call types to a class
-          (267 distinct; 582 of the 2,641 had a local in front, typed from the class's own ScriptText)
-          of those, 33 place because the receiver's type names a class in another case (pawn 14, GameHUD 4, ...)
-        below the receiver's chain: 6 reach exactly one descendant that declares the name, top:
-          IsUnconscious -> StargateGame.BotEnemy 3, GetAggroLevel -> StargateGame.BotEnemy 3
-        decided by the receiver: 249 site(s) across 111 names, top: ClientMessage 27 over 3 classes, ...
-          an object expression with no recorded type: 181 -- 28 of them a local, 153 not
-          an expression that typed to a class whose chain declares no such name: 52, of which 6 reach exactly
-            one descendant that declares it; the other 46 are a dispatch the static type cannot decide
+        by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top: ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, SetPosImmediate -> StargateGame.UIWidget 51, GetLocalPlayerController -> Engine.LevelInfo 40, PostAIMsg -> Engine.Controller 40
+        on the receiver's chain: 2738 (638 names) -- the expression in front of the call types to a class (271 distinct, top: Pawn 274, UWindowEditControl 189, Controller 149, UWindowCheckbox 138, Weapon 111)
+          of those, 35 place because the receiver's type names a class in another case, top: pawn 14, GameHUD 4, inventory 3, stargateammo 3, pickup 2, Direction 2
+          and 11 name a function only a *state* of the receiver's chain declares
+        decided by the receiver: 151 site(s) across 63 names, top: ClientMessage 26 over 3 classes, SetPause 9 over 4 classes, GetPickupItemName 7 over 2 classes, issueOrder 7 over 7 classes, GetTitle 6 over 4 classes
+          an object expression with no recorded type: 83 -- 1 of them a local, 82 not
+          of the receiver-typed sites, 609 had a local in front (typed from the class's own ScriptText)
+          a local whose declaration the source spells in another case: 164 site(s), top: Msg 30, GUI 20, t 13, i 12, Dir 8, Image 7
+          an expression that typed to a class whose chain declares no such name: 53, of which 7 reach exactly one descendant that declares it (descendant:Pkg.Class, 2 names), top: IsUnconscious -> StargateGame.BotEnemy 4, GetAggroLevel -> StargateGame.BotEnemy 3
+            the rest stay a dispatch: 41 over several descendants (14 names, top: ClientMessage 25, CallToArms 3, Possess 2, ValidIndex 1), 5 a name only classes outside the subtree declare, 0 a name no class in the corpus declares
+            those 53 receivers by class: Object 36, BotBase 13, UnrealScriptedSequence 3, Pawn 1
+            names only outside the subtree declare: GetMoveTarget 2, GetMyPlayer 1, TakeOver 1, SetPawnClass 1
+            names no class declares: 
           a completed value in front (a self-call, or a receiver the walk did not reach): 22
-          why an expression in front names no class: a literal or cast that names no class 70, ...
-          a local whose declaration the source spells in another case: 149 site(s), top: Msg 30, t 13, ...
-          a receiver that is a call result: 822 site(s), 72 typed from the callee's declared return type
-          a receiver that is an array element: 501 site(s) over 50 (token, class) pairs, top:
-            ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ...
-          typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, ...
+            the token that produced that value: JumpIfNot 1250, Let 520, Jump 318, Return 133, False 108, True 72, LetBool 69, Log 54
+          a receiver that is a call result: 822 site(s), 75 typed from the callee's declared return type (top: sound 33, playercontroller 25, sgformation 6, herdanimal 4, stargateammo 4, vector 3)
+            the rest by what the callee's own statement says: call result: the callee returns nothing 542, call result: the operand names no Function of this package 131, call result: the callee returns a value that is not a class 72, call result: the callee is not declared on the caller's chain 2
+          why an expression in front names no class: array element: the array's type names no class 40, not an object expression 25, call result: the operand names no Function of this package 12, call result: the callee is not declared on the caller's chain 5, local: the class source does not declare it 1
+          a receiver that is an array element: 501 site(s) over 50 (token, class) pairs, top: ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ArrayElement/UWindowLabelControl 42, DynamicArrayElement/UIProgressBar 14, DynamicArrayElement/GameMenu 12, ArrayElement/GUIButton 10
+          typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, GUI 57, LevelInfo 46, GUIListBox 37, BotBase 19
           where every declarer agrees, the owner's own class agrees in 700 site(s) and differs in 0
 
 `--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name; it writes no CSV
 and exists only to measure how much of the reading the declarations decided (see "The check is a shuffle" below).
+
+**The residue is named, not just counted, and two of its reasons were the tool's.** `--lists N` prints every site of
+the residue -- package, class, function, call name, the token in front of it, that token's own operand name and the
+reason -- because a count says a reading failed and only the name says which. On the first run the 181 sites were five
+shapes, and two of them were reading gaps rather than the build's:
+
+* **70 were casts whose class the package imports.** `DynamicCast Pawn` in `StargateContent` names `Engine.Pawn`
+  through the *import* table, and the cast branch consulted only the export table, so every cast of a class declared
+  in another package answered "names no class". Reading the import (and requiring its kind to be `Class`) is one of
+  the two changes below; all 70 place.
+* **27 of the 28 untyped locals were declarations the source regex could not see.** `GUI.GUIController` declares
+  `protected final event PushMenu(int Index, GUIPage NewMenu, string Param1, string Param2)`; the modifier list
+  accepted `final` but not `protected` (nor `exec`), so the function was never keyed and none of its locals was
+  declared. Accepting them types **27 more local receivers** (609 sites now read a local in front) and leaves **one**
+  untyped local.
+
+Together: by-name sites naming a declaring class **13,258 -> 13,356 of 13,507 (98.9%)**, sites on the receiver's chain
+**2,641 -> 2,738**, the untyped-object residue **181 -> 83**, and 238 rows of `inventory/script_calls.csv` moved.
+
+**What the remaining 83 are**, by shape: **40 array elements whose array holds a struct** (`TArray<ScriptDirection>`
+in `Engine.ScriptEvent`, `TArray<PlayInfo>` in `Engine.PlayInfo`, `TArray<StreamPlaylist>`) -- an element of a struct
+array is not an object, so that is a negative and not a gap; **25 struct members whose declared type is a class**
+(`StargateGame.SquadMenu.PostRender`'s `FaceWidget`, `GoauldConsoleHud.DrawHUD`'s `Message`), which needs the struct
+declarations the class `ScriptText` already carries -- the next instrument; **17 call results** whose callee is an
+import with no return type anywhere in this corpus; and **one local**, `Engine.InteractionMaster.AddInteraction`'s
+`NewInteraction`, which the class text does declare, so the body scan still stops short of that line.
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in

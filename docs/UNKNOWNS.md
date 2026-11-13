@@ -1951,6 +1951,21 @@ while one of those functions is running rather than a better anchor: a break (or
 
 
 
+**2026-11-13: the call residue is named, and the two readings it lost were the tool's.** `--calls --lists N` prints
+every site of the untyped-object residue with its package, class, function, call name, the token in front and that
+token's operand name; the 181 sites were five shapes -- 70 casts, 28 locals, 40 array elements, 25 struct members, 18
+others -- and two of them were reading gaps. A cast names its class through the package's **import** table whenever the
+class is declared elsewhere, and the cast branch consulted only the export table; and the shipped source writes
+`protected` (and `exec`) before a declaration, which the modifier list did not accept, so a class's own
+`protected final event PushMenu` was never keyed and its `local GUIPage NewMenu` read as undeclared. Reading the import
+and accepting the modifiers takes the residue **181 -> 83**, by-name placement to **13,356 of 13,507 (98.9%)** and the
+receiver's chain to **2,738 sites** (was 2,641). **What is left** is 40 array elements of *struct* arrays (an element
+of a struct array is not an object: a negative, not a gap), 25 struct members whose declared type is a class
+(`StargateGame.SquadMenu.PostRender`'s `FaceWidget`, `GoauldConsoleHud.DrawHUD`'s `Message`), 17 call results whose
+callee is an import with no return type in this corpus, and one local of `Engine.InteractionMaster.AddInteraction`.
+**What would settle the 25** is the struct's own member declarations, which the class `ScriptText` carries -- the same
+file-level parse as the local pass, with no boot and no Ghidra round.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
