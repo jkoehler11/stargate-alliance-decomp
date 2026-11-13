@@ -1178,6 +1178,33 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the imported static call was the twelfth shape, and eleven of twelve place)
+
+- **`PlayerOwner` in front of a call is a function, not a variable.** The twelve residue sites that read "the
+  operand names no Function of this package" all had a `FinalFunction` in front whose operand is `PlayerOwner`, a
+  function `UWindow` declares and the menu packages import -- and the `call_result` reading consulted only the
+  export table, so a static call across a package boundary looked like a gap. The import's OuterIndex names the
+  declaring class, its return type is a `function` line in that class's text, and `class_pairs` names the package
+  `class_source` opens: **the call-result reading goes 75 -> 131 sites typed** (77 `playercontroller`, lowercase in
+  the UWindow source), **eleven of the twelve place**, by-name placement **13,385 -> 13,396 of 13,507 (99.2%)**,
+  the receiver's chain **2,767 -> 2,778**, and the untyped-object residue **53 -> 42**.
+- **What the 42 are.** 35 arrays whose element type is a struct (a negative: the element is not an object), 5
+  receivers whose name the caller's chain does not declare (`GetMoveTarget`, `GetMyPlayer`, `TakeOver`,
+  `SetPawnClass`), 1 local `Engine.InteractionMaster.AddInteraction` declares and the class text does not, and 1
+  call result whose callee (`UnrealScriptedSequence`'s `Trigger`) is declared with no return type. Seven imported
+  functions name a class the eighteen packages do not declare, and each of those sites is placed on the caller's
+  chain anyway, so none is in the residue.
+- Tool (the `FinalFunction` import arm in `call_result`: import kind, `class_pairs`, and three new negatives --
+  not a function, the class is not in the corpus, two packages declare it) + `inventory/script_calls.csv`
+  regenerated (18,931 rows, 131 call-result-typed receivers) + `docs/BYTECODE.md` (*A static call to another
+  package's function is an import too*) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no
+  Ghidra round.
+- **Next measurement, named:** the one local `Engine.InteractionMaster.AddInteraction` declares and the class text
+  does not -- the note that first named it says the body scan stops short of that function, so one read of the
+  function's brace span against `source_declarations` answers whether the text really lacks the declaration or the
+  scan left the body early. It is one function and it is the only site of its shape.
+
+
 ### Execution notes (2026-11-13, a struct member's class is a `var` line, and the twenty-five names are in)
 
 - **The block was the missing file, and it is the same parse one span deeper.** `StructMember` was the only object

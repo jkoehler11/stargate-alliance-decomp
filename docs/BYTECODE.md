@@ -947,6 +947,24 @@ list (`config`, `globalconfig`, `editconst`, `editinline`/`editinlinenotify`, `n
 was accepted. `--check` drives fourteen assertions over synthetic blocks and hand-built expressions, so the parse
 and its four negatives are testable without the dump.
 
+
+**A static call to another package's function is an import too, and eleven sites were waiting on it.** The
+`call_result` reading took a `FinalFunction` operand for a `Function` *export* of the package being walked, so the
+twelve sites whose expression in front of the call is `PlayerOwner` -- a function `UWindow` declares and this
+package imports -- read "names no Function of this package". The import's own OuterIndex names the class that
+declares the function, so its return type is a statement in *that* class's text: `class_pairs` names the package
+and `class_source` opens it. **131 call-result sites are typed now, against 75** (77 `playercontroller`, which the
+UWindow source spells lowercase and the export table does not), **eleven of the twelve place**, by-name placement
+goes **13,385 -> 13,396 of 13,507 (99.2%)**, the receiver's chain **2,767 -> 2,778**, and the untyped-object
+residue **53 -> 42**.
+
+**What the 42 are, and none of them is a reading the corpus can close.** 35 arrays whose element type is a struct
+(an element of a struct array is not an object: a negative), 5 receivers whose name the caller's chain does not
+declare, 1 local the class text does not declare, and 1 call result whose callee -- `UnrealScriptedSequence`'s
+`Trigger` -- is declared with no return type. Seven further sites name an imported function whose class the
+eighteen packages do not declare at all; each of those is still placed on the caller's chain, so none of them is
+in the residue.
+
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
 `receiver:Pkg.Class` for the receiver's chain, or `descendant:Pkg.Class` for the one class below it that declares the

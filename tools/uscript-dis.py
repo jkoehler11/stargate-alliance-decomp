@@ -2711,6 +2711,21 @@ def calls_report(path, table, out=None, lists=0):
                             if pkg.class_name_of(outer) == "State" and outer.get("outer"):
                                 cls = pkg.name(pkg.exports[outer["outer"] - 1]["name"])
                             callee = (pkg_name, cls, pkg.name(x["name"]))
+                    elif value < 0 and -value in import_at:
+                        # A function another package declares is an *import*, and the import's own OuterIndex
+                        # names the class that declares it -- so the return type is a statement in that class's
+                        # text and not in this package at all. Twelve sites read "names no Function of this
+                        # package" with a `PlayerOwner` import in front, which is a function, not a variable.
+                        iname, ikind = import_at[-value]
+                        iowner = (import_owner or {}).get(-value) or ""
+                        pairs = class_pairs(iowner) if iowner else []
+                        if _kind_key(ikind) != "Function":
+                            return "", "call result: the import names a %s, not a function" % (ikind or "object")
+                        if not pairs:
+                            return "", "call result: the imported function's class is not in the corpus"
+                        if len({p for p, _c in pairs}) > 1:
+                            return "", "call result: the imported function's class is declared by two packages"
+                        callee = (pairs[0][0], pairs[0][1], iname)
                     if callee is None:
                         return "", "call result: the operand names no Function of this package"
                 else:
