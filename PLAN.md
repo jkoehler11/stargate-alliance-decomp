@@ -1201,6 +1201,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 - **Next measurement, named:** unchanged -- the `+0x4b0`/`+0x4b4` config pair, the last field of the record with
   no store map (`--disp 0x4b0 --disp 0x4b4`).
 
+### Execution notes (2026-11-13, the middle's writers have an order, and the array is 19 bytes further on)
+
+- **The order was never a guess after this read.** `UClass::Serialize`'s listing and decompiled form agree: `UState::Serialize`,
+  one dword, four dwords, the `+0x4d0` record array, the `+0x4dc` name array, the `+0x4b0` reference, the `+0x4b4`
+  config name, the version-gated `+0x4f4` name array, then the defaults. **The pair is after both arrays**, which is
+  why every reading that put it first missed, and the two slots are the same one-compact encoding -- `0x00038bc0` and
+  `0x00038bf0` differ only in `call [eax+0x24]` versus `call [eax+0x20]`, then both `call 0x637e0`. The earlier
+  question "which encoding is the middle's first compact value" is therefore not answerable from a width; the call
+  order is what decides the position.
+- **Where it closes: `prefix_end + 61`, not `+42`.** The walk closes on **0 of 2,204** classes at the field table's
+  own offset and on **1,626 (73.8%)** somewhere in `+0..+31`; the mode is `+19` with **732** classes, **700 of them at
+  exactly one offset**, and the neighbours are `+20` (518) and `+21` (232). On those 732 the array's count is 2 on
+  708, the reference is one byte and inside the package's tables on all 732, the config name is a valid index on all
+  732. Controls close on 167 (pair in front), 33 (adjacent name arrays) and 37 (last array dropped) classes across 32
+  offsets each.
+- **The negative is the 19 bytes.** `0x371d0` pushes 8 (twice), `0x37080` pushes 2, `0x370e0` pushes 4 and the five
+  dwords are 20: the writers the body names account for exactly 42, so the gap in front of the array belongs to
+  `UStruct::Serialize` (`0x000392b0`), whose output the prefix page cuts short at its three documented fields. The
+  20-byte residue the name-width work measured from the array's tail is the same gap from the other side.
+- Tool (`tools/class-record-order.py`: `--dump`, `--class`, `--sweep`, `-o`, `--report`, and a `--check` that drives
+  the writer order, a 19-byte insertion and three controls) + `inventory/class_record_order.csv` (2,204 rows) +
+  `make class-record-order` + `docs/NATIVE_VM.md` (*The middle's field order is the writer's, and the array is
+  nineteen bytes further than the field table said*) + `docs/UNKNOWNS.md` U17 (fourth) + this note. Reads the
+  packages, the committed prefix table and `default.xbe`; no boot, no Ghidra round, no value decoded.
+- **Next measurement, named:** `UStruct::Serialize`'s body at `0x000392b0` after its third reference -- the writers
+  it calls should sum to 19-21 bytes, and reading them names the field (or the compact) that makes the width vary
+  between the 732 classes at `+19` and the 518 at `+20`.
+
 ### Execution notes (2026-11-13, the assert that named ClassWithin names nineteen more members)
 
 - **The route that named `+0x4b0` is mechanical, so it is a census.** `ClassWithin` came from an assert expression

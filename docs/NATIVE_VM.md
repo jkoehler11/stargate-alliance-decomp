@@ -1829,3 +1829,63 @@ a word list; and the base register is whatever the body loaded, which is not alw
 
     make member-assert-names
     python3 tools/member-assert-names.py --xbe DUMP/default.xbe --report
+
+### The middle's field order is the writer's, and the array is nineteen bytes further than the field table said
+
+`UClass::Serialize` (`0x0003a800`) is straight-line code, so the order of its calls *is* the order of the record's
+fields, and its listing and decompiled form agree on it:
+
+| call | what it writes |
+|---|---|
+| `FUN_000394c0(archive)` | `UState::Serialize` -- `UStruct::Serialize` first, then 8 + 8 + 2 + 4 bytes |
+| `FUN_000370e0(archive, +0x498)` | one dword (`Serialize(ptr,4)` on the proxy) |
+| `FUN_000370e0(archive, +0x4a0 .. +0x4ac)` | four dwords -- 20 bytes |
+| `FUN_0003d900(archive, +0x4d0)` | the 12-byte-record array: a compact count, then count x (compact reference, dword, dword) |
+| `FUN_0003d160(archive, +0x4dc)` | `TArray<FName>`: a compact count, one compact field per element |
+| `slot[+0x18](&+0x4b0)` | one object reference, `ClassWithin` |
+| `slot[+0x1c](&+0x4b4)` | one `FName`, the config name |
+| `FUN_0003d160(archive, +0x4f4)` | the second name array, version > `0x62` only |
+| `slot[+0x98](...)` | the defaults buffer |
+
+So the pair at `+0x4b0`/`+0x4b4` is written **after** both arrays, not in front of them -- which is why every reading
+that put it first missed -- and the two slots have the same on-disk width. They are nine bytes each and differ only
+in which proxy map they consult before the write:
+
+    0x00038bc0   mov edx,[arg]; mov edx,[edx]; mov ecx,[ecx+0x4c]; mov eax,[ecx]; push edx
+                 call [eax+0x24]                          ; proxy->MapObject(object)
+                 push &value; push archive; call 0x637e0   ; one FCompactIndex
+    0x00038bf0   the same, `call [eax+0x20]`              ; proxy->MapName(name)
+
+Both end in `FUN_000637e0`, so the reference field and the name field are the *same* encoding and the same 1-5 byte
+width: the open question "which encoding is the middle's first compact value" cannot be answered from a width at
+all. The order of the writer's calls is what answers it.
+
+`tools/class-record-order.py` (`make class-record-order`, `inventory/class_record_order.csv`, its `--check` in
+`make ci`) therefore walks that order and asks, per class, where it lands against the defaults block start -- from
+`prefix_end + 42` (22 bytes of `UState::Serialize` plus the five dwords) and then from each of the next 32 byte
+positions, because the field table's own sum is the thing on trial:
+
+| measure | result |
+|---|---|
+| closes at the field table's own offset (`prefix_end + 42`) | **0 of 2,204** |
+| closes somewhere in `+0..+31` | **1,626 (73.8%)** |
+| closes at `+19` (`prefix_end + 61`) | **732**, and **700 of them at exactly one offset** |
+| the next two offsets | `+20` 518, `+21` 232 -- a 1-3 byte spread |
+| controls: any offset closing for the pair-in-front reading | 167 |
+| controls: the two name arrays adjacent | 33 |
+| controls: the version-gated last array dropped | 37 |
+
+On the 732 classes that close at `+19` the fields are coherent: the array's count is **2 on 708** (the "middle's
+leading 2" the name-width work measured), the first name array's count is 3 on 484, the second is 0 on 619 and 1 on
+95, the reference is **one byte on all 732** and inside the package's tables on all of them (null on 2), and the
+config name is a valid name index on all 732 (one byte on 641, two on 91). The middle's median is 88 bytes.
+
+The negative is the offset itself. The writers the body names between the five dwords and `FUN_0003d900` account
+for exactly 42 bytes -- `0x371d0` pushes `8` and is called twice, `0x37080` pushes `2`, `0x370e0` pushes `4`, and
+the five dwords are 20 -- so the 19 to 21 bytes in front of the array belong to `UStruct::Serialize` (`0x000392b0`),
+whose output the record's prefix page cuts short at its three documented fields. The residue of 20 bytes the
+name-width work measured from the array's tail is that same gap seen from the other side.
+
+    make class-record-order
+    python3 tools/class-record-order.py --dump DUMP --class AmbientCreatures.HerdAnimal
+    python3 tools/class-record-order.py --report
