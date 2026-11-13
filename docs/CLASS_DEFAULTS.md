@@ -572,6 +572,17 @@ next field after the tail, and they are what stands between the record's field l
 `defaultproperties` blocks. The stride-9 run the three preceding notes measured sits inside this array's element
 span on only 98 of 536 classes; on `AmbientCreatures.HerdAnimal` the array is 22 one-byte-referenced records
 ending at offset 246, and the run it was read from starts at 952.
+The 20 bytes that paragraph leaves are the array's own end, not a field (below).
+
+**The 20 bytes are not a field, and the writer's body is why (2026-11-12).** `UClass::Serialize` between the second
+name array's call (`0x3a904`) and the defaults branch (`0x3a90c`) is four bytes of stack cleanup and the branch
+itself: the `0x63` version gate at `0x3a8f6` is the last one in the function and it guards only the `+0x4f4` array,
+so nothing is written behind it. The fields the writer does write there -- a name array, the 8-byte config `FName`,
+a name array -- close the gap on **0 of 549** classes; measured from the array's *bare* tail the gap is 27 bytes on
+188 of them (the 20 above is that gap minus the 7 bytes the two-name-array walk had already consumed), 29 on 61 and
+28 on 30, and on 13 classes the walk runs *past* the defaults start. So the residue is the array's own end -- its
+element span -- and not a field after it.
+
 
 Numbers: `docs/NATIVE_VM.md`, *The array's count is its own first field, and its writer has one caller*;
 `inventory/class_record_array.csv`.
