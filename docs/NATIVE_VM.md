@@ -1175,6 +1175,38 @@ earlier offset rather than six bytes lost per element. The element therefore sta
 the `+0x18` slot writes a raw dword for its second and third calls even though the writer hands all three fields to
 it.
 
+### The prefix's third field is a ScriptText export, on all 2,209 records
+
+`UStruct::Serialize` writes five fields after `Children` -- `FriendlyName` through the archive's `+0x1c` slot, a
+dword behind the `0x77` version gate, two more dwords and `ScriptText` -- so the record's 3-6 byte prefix can only
+carry the ones the cooker kept, and *which* ones is a question the bytes answer without a width argument. The
+archive's `+0x18` slot takes an **object reference**: a positive value indexes the export table, a negative one the
+import table, and nothing else. So if the prefix's third field is the class's script it must land on an export of
+class `ScriptText`, and if it were `FriendlyName` it could not land on anything.
+
+`tools/class-scripttext-ref.py` (`make class-scripttext-ref`, `inventory/class_scripttext_refs.csv`, `--check` in
+`make ci`) decodes the three compact fields and resolves the third through that method:
+
+| measure | value |
+|---|---|
+| class records with a decoded prefix | **2,209** |
+| third field is a positive export reference | **2,209** |
+| ... whose export is named `ScriptText` | **2,209** |
+| third field is a null reference | 0 |
+| `Children` is a null reference | **2,209** |
+
+A perfect landing is the field order confirming itself: the record writes `Super`, a null `Children` and a
+**reference to the class's own `ScriptText` export**, which is why no script bytes sit in the record and why the
+reader resolves it as an object. `FriendlyName` is not in the record at all -- the body's assert
+`FriendlyName!=NAME_None` (`UnClass.cpp:0x2e2`) is a *reader*'s precondition, satisfied by the name the export table
+already carries, not by a field in this stream.
+
+That closes the residue question from the other side. The 20/27 bytes in front of a defaults block cannot be a
+`UStruct::Serialize` tail field, because every field that tail writes after `Children` is measurably absent from the
+record: no `FriendlyName`, no line, no text position, no script bytes, and the one field that does exist there is a
+single reference that the record's own prefix already carries. The gap stays the array's (see *The element is three
+fields, and only the first is a compact reference* and *After the last name array...*).
+
 ### After the last name array the body writes nothing, so the gap belongs to the array
 
 The last note left one measurement named: read `UClass::Serialize`'s body between the `+0x4f4` call and the defaults
