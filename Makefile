@@ -78,7 +78,7 @@ help:
 	@echo "  class-record-element   restart the array grammar at its own tail: element span, second parse, control"
 	@echo "  class-record-tail      the bytes after the array: a value/reference pair list, and its per-package share"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"
-	@echo "  member-access-census  every access to one member displacement, and the stride it indexes at"
+	@echo "  member-access-census  every access to a member displacement, and the stride it indexes at"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  native-bodies mark every native body in the extracted tree + the cross-link table (PLAN 3.9, needs the dump)"
@@ -1097,8 +1097,10 @@ class-member-map:
 	@python3 tools/class-member-map.py --report
 
 member-access-census:
-	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory
-	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe --report
+	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe \
+		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 -o inventory
+	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe \
+		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report
 
 class-record-tail:
 	python3 tools/class-record-tail.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory

@@ -2898,3 +2898,19 @@ candidate stands, unowned. **What would settle it:** the same census at `+0x4c4`
 of the three arrays a `Class` is read through at all), and the same census with each base register's
 origin followed, so the two stride-8 objects are typed rather than assumed. Numbers:
 `docs/NATIVE_VM.md`, *Every `+0x4b8` access in the image, and the two that index it at eight*.
+
+**2026-11-13 (fourth): the group of three is censused together, and `+0x4b8` is the one array no
+`Class` code names.** `member-access-census.py --disp 0x4b8 --disp 0x4c4 --disp 0x4d0` gives **61
+sites**: 29 at `+0x4c4` (8 loads, 16 `lea`, 5 stores) and 15 at `+0x4d0` (3 loads, 7 `lea`, 5 stores)
+beside the 17 already measured. `Class`'s own region initialiser `0x3a670` (table slot 10) takes
+`+0x4c4`'s and `+0x4d0`'s addresses and passes `push 0x4` and `push 0xc` to the same helper, and
+`UClass::Serialize` takes `+0x4d0`'s address at `0x3a89e` -- so the record array's writer is reached
+by address, which is why no site at these displacements indexes what it loads. No `Class` function
+takes `+0x4b8`'s address at all: it is zero-filled inline by three constructors and destroyed, and
+nothing else. The displacement is also shared by seven other classes at `+0x4c4` (`Pawn` at six
+slots, `Controller@30`, `SparkEmitter@47`) and three at `+0x4d0` (`xEmitter@35`, `Controller@52`,
+`PlayerController@52`), so a displacement is not a member. **What would settle the tail:** the body of
+`FUN_0003d900` past its element loop -- the writer is handed the record array's address from
+`UClass::Serialize`, so whatever writes the 3 x 9-byte tail after that loop is in the same function
+and not in a member of the class. Numbers: `docs/NATIVE_VM.md`, *The group of three, and the one array
+no `Class` code names*.

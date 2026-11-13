@@ -1176,6 +1176,32 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the group of three: `Class` names `+0x4c4` and `+0x4d0`, and never `+0x4b8`)
+
+- **One sweep per displacement, one artifact for the group.** `tools/member-access-census.py --disp` is now
+  repeatable, and `make member-access-census` censuses the three adjacent arrays together:
+  `inventory/member_access_census.csv` is **61 sites** -- 17 at `+0x4b8` (unchanged), 29 at `+0x4c4` (8 loads, 16
+  `lea`, 5 stores) and 15 at `+0x4d0` (3 loads, 7 `lea`, 5 stores) -- with 8 and 2 stack forms counted apart.
+- **`Class`'s region initialiser names two of the three.** `0x3a670` (table slot 10) takes each array's address,
+  zeroes the `count`/`max` pair and calls the shared helper with the element width: `push 0x4` for `+0x4c4`,
+  **`push 0xc`** for `+0x4d0`, `push 0x4` for `+0x4dc`. Those widths match the destructor's independently measured
+  ones, and `UClass::Serialize` (slot 11) takes `+0x4d0`'s address at `0x3a89e`. **No `Class` function takes
+  `+0x4b8`'s address**: it is zero-filled inline by the three constructors and destroyed, and named nowhere else.
+- **Neither of the two is indexed anywhere, and the reason is the callee.** All 44 sites at `+0x4c4`/`+0x4d0` pass
+  the array's address on -- the shape of an initialiser and a destructor, not a reader -- which is also why the
+  record array's writer `FUN_0003d900` can produce the record's bytes without any index loop over a member.
+- **The displacement is shared, so attribution is the finding.** Seven classes are named at `+0x4c4` (`Pawn` at
+  slots 57/85/87/88/89/124, `Controller@30`, `SparkEmitter@47`) and three at `+0x4d0` (`xEmitter@35`,
+  `Controller@52`, `PlayerController@52`); a displacement alone is not a member, which is what the `class` columns
+  are for.
+- Tool (`--disp` repeatable; report groups per displacement) + `inventory/member_access_census.csv` (61 rows) +
+  `docs/NATIVE_VM.md` (*The group of three, and the one array no `Class` code names*) + `docs/UNKNOWNS.md` U17 +
+  `make member-access-census` + this note. Reads `default.xbe` with the repo's own decoder; no boot, no Ghidra, no
+  value decoded and no name published.
+- **Next measurement, named:** read `FUN_0003d900` past its element loop. `UClass::Serialize` hands it the record
+  array's address, so whatever writes the 3 x 9-byte pair list after the loop is in that function and not in a
+  member of the class -- one body, already partly read.
+
 ### Execution notes (2026-11-13, the `+0x4b8` census has two stride-8 readers and neither is a `Class`)
 
 - **The displacement is censused over the whole image, not sampled.** `tools/member-access-census.py` sweeps all

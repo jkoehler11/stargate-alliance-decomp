@@ -24,8 +24,9 @@ candidate is an instruction the decoder produced at an exact boundary of a linea
 known function start, and each row carries a `chain` count (how many consecutive instruction ends
 confirm that boundary) so a site inside a body the decoder desynced can be seen rather than trusted.
 
-    python3 tools/member-access-census.py --xbe DUMP/default.xbe --disp 0x4b8 -o inventory
-    python3 tools/member-access-census.py --report --window-show
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report --window-show
     python3 tools/member-access-census.py --check          # synthetic bytes, no dump, writes nothing
 
 Reads `default.xbe` plus the committed inventories; writes one CSV and prints addresses and counts
@@ -206,25 +207,6 @@ def field_sites(blob, base_va, funcs, disp, window=12):
     return sites, stack, global_, undecodable
 
 
-def owner_classes(path, disp):
-    """Which classes place a member at `disp`, and the element size its destructor measures."""
-    owners, elem = {}, {}
-    if not os.path.isfile(path):
-        return owners, elem
-    key = "0x%03x" % disp if disp < 0x1000 else "0x%x" % disp
-    with open(path, newline="", encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            if (row.get("disp") or "").lower() != key.lower():
-                continue
-            cls = (row.get("class") or "").strip()
-            if not cls:
-                continue
-            owners.setdefault(cls, set()).add(row.get("form") or "")
-            if row.get("target_va"):
-                elem.setdefault(cls, set()).add(row["target_va"])
-    return owners, elem
-
-
 def dtor_elem_sizes(path):
     out = {}
     if not os.path.isfile(path):
@@ -300,32 +282,36 @@ def run(args):
     blob = raw[sec.foff:sec.foff + sec.fsize]
 
     funcs = functions(args.functions)
-    sites, stack, glob, undecodable = field_sites(blob, sec.va, funcs, args.disp, args.window)
-    owners, _ = owner_classes(args.members, args.disp)
-    elem = dtor_elem_sizes(args.dtors)
     classes = class_of_targets(xbe, args.tables, args.table_names)
-    # the member map's lea-call target IS the destructor, so its element size is the member's width
-    owner_dtor = {}
-    if os.path.isfile(args.members):
-        key = "0x%03x" % args.disp
-        with open(args.members, newline="", encoding="utf-8") as fh:
-            for row in csv.DictReader(fh):
-                if (row.get("disp") or "").lower() == key and row.get("target_va"):
-                    owner_dtor[(row.get("class") or "").strip()] = row["target_va"].lower()
+    elem = dtor_elem_sizes(args.dtors)
+    all_rows, groups, sites_all, undecodable = [], [], [], 0
+    for disp in args.disps:
+        sites, stack, glob, undecodable = field_sites(blob, sec.va, funcs, disp, args.window)
+        # the member map's lea-call target IS the destructor, so its element size is the member's width
+        owner_dtor = {}
+        if os.path.isfile(args.members):
+            key = "0x%03x" % disp
+            with open(args.members, newline="", encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    if (row.get("disp") or "").lower() == key and row.get("target_va"):
+                        owner_dtor[(row.get("class") or "").strip()] = row["target_va"].lower()
+        rows = []
+        for fn_va, row in sites:
+            cls, slot = classes.get(fn_va, ("", -1))
+            row["function_class"] = ("%s@%d" % (cls, slot)) if cls else ""
+            row["function_route"] = "table" if cls else "plain"
+            names = sorted(c for c, targets in owner_dtor.items() if targets)
+            row["owner_classes"] = " ".join(names)
+            sizes = [elem.get(owner_dtor[c].lower(), "") for c in names]
+            row["member_elem_size"] = " ".join("%s=%s" % (c, s) for c, s in zip(names, sizes) if s)
+            row["disp"] = "0x%x" % disp
+            rows.append(row)
+        rows.sort(key=lambda r: r["site_va"])
+        all_rows.extend(rows)
+        groups.append((disp, rows, len(stack), len(glob)))
+        sites_all.extend(sites)
 
-    rows = []
-    for fn_va, row in sites:
-        cls, slot = classes.get(fn_va, ("", -1))
-        row["function_class"] = ("%s@%d" % (cls, slot)) if cls else ""
-        row["function_route"] = "table" if cls else "plain"
-        names = sorted(c for c, targets in owner_dtor.items() if targets)
-        row["owner_classes"] = " ".join(names)
-        sizes = [elem.get(owner_dtor[c].lower(), "") for c in names]
-        row["member_elem_size"] = " ".join("%s=%s" % (c, s) for c, s in zip(names, sizes) if s)
-        row["disp"] = "0x%x" % args.disp
-        rows.append(row)
-
-    rows.sort(key=lambda r: r["site_va"])
+    rows = sorted(all_rows, key=lambda r: (int(r["disp"], 16), r["site_va"]))
     if args.out:
         path = os.path.join(args.out, "member_access_census.csv")
         with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -336,35 +322,35 @@ def run(args):
         print("wrote %s (%d rows)" % (path, len(rows)))
 
     if args.report or not args.out:
-        report(args, rows, stack, glob, undecodable, len(funcs), blob, sec.va, sites)
+        report(groups, undecodable, len(funcs), blob, sec.va, sites_all if args.window_show else None,
+               args.window)
     return 0
 
 
-def report(args, rows, stack, glob, undecodable, nfuncs, blob=None, base_va=0, sites=None):
+def report(groups, undecodable, nfuncs, blob=None, base_va=0, sites=None, window=12):
     print("swept %d functions; %d bodies the decoder could not finish" % (nfuncs, undecodable))
-    print("disp 0x%x: %d field sites, %d stack, %d absolute" % (args.disp, len(rows), len(stack),
-                                                                len(glob)))
-    forms = {}
-    for row in rows:
-        forms[row["form"]] = forms.get(row["form"], 0) + 1
-    print("forms: " + ", ".join("%s x%d" % (k, v) for k, v in sorted(forms.items())))
-    strides = {}
-    for row in rows:
-        strides[row["stride"] or "none"] = strides.get(row["stride"] or "none", 0) + 1
-    print("stride of the loaded value: " + ", ".join(
-        "%s x%d" % (k, v) for k, v in sorted(strides.items(), key=lambda kv: -kv[1])))
-    print("")
-    for row in rows:
-        print("%s  %-22s %-6s %-28s stride=%-4s %s" % (
-            row["site_va"], row["function"][:22], row["form"], row["insn"][:28],
-            row["stride"] or "-", row["function_class"] or row["function_route"]))
-    if rows:
+    for disp, rows, nstack, nglob in groups:
+        forms = {}
+        for row in rows:
+            forms[row["form"]] = forms.get(row["form"], 0) + 1
+        strides = {}
+        for row in rows:
+            strides[row["stride"] or "none"] = strides.get(row["stride"] or "none", 0) + 1
         print("")
-        print("owners of 0x%x (from the destructor map): %s" % (
-            args.disp, rows[0].get("owner_classes") or "(none)"))
-        if rows[0].get("member_elem_size"):
-            print("element width that destructor measures: %s" % rows[0]["member_elem_size"])
-    if args.window_show and blob is not None and sites:
+        print("disp 0x%x: %d field sites, %d stack, %d absolute -- forms %s" % (
+            disp, len(rows), nstack, nglob,
+            ", ".join("%s x%d" % (k, v) for k, v in sorted(forms.items())) or "(none)"))
+        print("  stride of the loaded value: " + ", ".join(
+            "%s x%d" % (k, v) for k, v in sorted(strides.items(), key=lambda kv: -kv[1])))
+        for row in rows:
+            print("  %s  %-22s %-9s %-28s stride=%-4s %s" % (
+                row["site_va"], row["function"][:22], row["form"], row["insn"][:28],
+                row["stride"] or "-", row["function_class"] or row["function_route"]))
+        if rows:
+            print("  owners (destructor map): %s%s" % (
+                rows[0].get("owner_classes") or "(none)",
+                ("  widths: " + rows[0]["member_elem_size"]) if rows[0].get("member_elem_size") else ""))
+    if blob is not None and sites:
         by_fn = {}
         for fn_va, row in sites:
             by_fn.setdefault(fn_va, []).append(row)
@@ -372,7 +358,7 @@ def report(args, rows, stack, glob, undecodable, nfuncs, blob=None, base_va=0, s
             foff = fn_va - base_va
             print("\n=== 0x%08x %s" % (fn_va, by_fn[fn_va][0]["function"]))
             cur, n = foff, 0
-            while n < args.window + 12:
+            while n < window + 12:
                 ins = recv.decode(blob, cur)
                 if not ins:
                     print("  0x%08x  <undecodable>" % (base_va + cur))
@@ -426,7 +412,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--xbe", help="DUMP/default.xbe")
     ap.add_argument("--dump", help="the game directory holding default.xbe")
-    ap.add_argument("--disp", default="0x4b8", help="the member displacement to census (default 0x4b8)")
+    ap.add_argument("--disp", action="append", default=None,
+                    help="the member displacement to census, repeatable (default 0x4b8)")
     ap.add_argument("--functions", default=os.path.join(ROOT, "symbols", "xbox_functions.csv"))
     ap.add_argument("--members", default=os.path.join(ROOT, "inventory", "class_member_map.csv"))
     ap.add_argument("--dtors", default=os.path.join(ROOT, "inventory", "class_member_dtors.csv"))
@@ -441,7 +428,7 @@ def main():
     args = ap.parse_args()
     if args.check:
         return selftest()
-    args.disp = int(args.disp, 0)
+    args.disps = [int(d, 0) for d in (args.disp or ["0x4b8"])]
     return run(args)
 
 

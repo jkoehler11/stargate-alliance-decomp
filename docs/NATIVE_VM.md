@@ -1407,3 +1407,46 @@ stride-8 objects are typed instead of assumed.
 
     python3 tools/member-access-census.py --xbe DUMP/default.xbe --disp 0x4b8 -o inventory
     python3 tools/member-access-census.py --xbe DUMP/default.xbe --disp 0x4b8 --report --window-show
+
+### The group of three, and the one array no `Class` code names
+
+The `+0x4b8` census left the record's tail unowned and named its successor: the same census at
+`+0x4c4` and `+0x4d0`, to say which of the three adjacent `TArray`s a `Class` is actually reached
+through. `tools/member-access-census.py` now takes `--disp` more than once and writes one artifact for
+the group -- **61 sites over the three displacements** (17 at `0x4b8`, 29 at `0x4c4`, 15 at `0x4d0`).
+
+**A `Class` names two of the three, and the third only through its constructors and destructor.**
+`0x3a670` (`Class` table slot 10) is the region's initialiser: it takes each array's address, zeroes
+the `count`/`max` pair at `+4`/`+8` and calls the same helper with that array's *element width*
+
+    lea  ecx,[esi+0x4c4] ; push 0x4  ; call 0x1b846
+    lea  ecx,[esi+0x4d0] ; push 0xc  ; call 0x1b833
+    lea  ecx,[esi+0x4dc] ; push 0x4  ; call ...
+
+and `UClass::Serialize` (`0x3a800`, slot 11) takes `+0x4d0`'s own address at `0x3a89e` -- the record
+array, at the width the destructor independently measures. The three constructors zero-fill all three
+and the destructor destroys all three. **No function whose class is `Class` takes `+0x4b8`'s
+address**: the 8-byte array is the one member of the region initialised inline, a dword at a time in
+each constructor, and never named again.
+
+**The displacement is shared, which is why the attribution column is the finding.** Of the 29 sites at
+`+0x4c4`, seven distinct classes are named by their own tables -- `Pawn` at slots 57, 85, 87, 88, 89
+and 124, `Controller@30` and `SparkEmitter@47` -- and only the `lea` at `0x3a675` plus the four
+constructor/destructor sites belong to `Class`. At `+0x4d0` the tables name `xEmitter@35`,
+`Controller@52` and `PlayerController@52` beside `Class@10` and `Class@11`. **None of the 44 sites at
+these two displacements indexes the value it loads at any stride**: they take the array's address and
+hand it to a callee, which is the shape a `TArray`'s initialiser and destructor have, not a reader's.
+
+**So the tail's owner is not any of the three on the read side, and the group's initialiser says why
+that is not a contradiction.** The record array's writer `FUN_0003d900` is reached with `+0x4d0`'s
+address from `UClass::Serialize`, so the bytes that produce the record's middle come from a function
+handed the array's address -- not from an index loop over any of the three, and a `TArray` nothing
+indexes can still be filled by the callee it is passed to. What is left is who fills the 8-byte array,
+and within this image nobody does: its six stores are the three constructors' zero-fill, one direct
+`Class` sibling, and two copies into objects of classes that carry neither `+0x4d0` nor
+`UClass::Serialize`. The named next measurement is the body of the writer itself, past its element
+loop.
+
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report
