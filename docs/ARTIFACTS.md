@@ -93,8 +93,8 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/lipsinc_sampler.csv` | 2231 | 12 | `make lipsinc-sampler` |
 | `inventory/lipsinc_tracks.csv` | 8 | 22 | `make lipsinc-tracks` |
 | `inventory/lipsinc_weights.csv` | 2231 | 11 | `make lipsinc-weights` |
-| `inventory/live_class_tables.csv` | 312 | 3 | **class-table-reconcile.py (no target runs it)** |
-| `inventory/live_class_tables_m00.csv` | 376 | 3 | **ctor-argument.py (no target runs it)** |
+| `inventory/live_class_tables.csv` | 312 | 3 | `make live-class-tables` |
+| `inventory/live_class_tables_m00.csv` | 376 | 3 | `make live-class-tables-m00` |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
 | `inventory/map_export_classes.csv` | 6658 | 3 | `make map-actors` |
 | `inventory/map_loads.csv` | 61 | 6 | `make help` |
