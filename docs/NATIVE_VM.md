@@ -1637,3 +1637,39 @@ class enrichment is the part that does.
 array is not written by this body: either the located array is not the member `+0x4d0` names, or a second member of
 the same element type sits beside it and is packed elsewhere (a version-gated or load-side path). Naming it is the
 next read, and it is a call census of `0x3d900` rather than a boot.
+
+### Only one call site writes the record array, and the reader's second call is not a member
+
+`tools/record-writer-calls.py` (`make record-writer-calls`, `inventory/record_writer_calls.csv`, `--check` in
+`make ci`) scans the image's executable sections for `E8 rel32` into the two record writers and decodes backwards to
+the instruction that last wrote the register each call pushes, so a call site yields the member displacement the
+callee is handed. A site is kept only when a forward decode from a start offset behind it lands exactly on the call
+(`tools/vcall-receiver.py`'s boundary rule); every one of the eight candidates in the image passes that test.
+
+| writer | sites | member displacements |
+|---|---|---|
+| `FUN_0003d900` (12-byte records) | **1** -- `0x3a8a6` in `Core_UnClass` | `+0x4d0` |
+| `FUN_0003d160` (name array) | 7 | `+0x4f4` (`0x3a904`), `+0x70` (`0x500a1`), `+0x2ec` and `+0x2f8` (one function, `0x22d53f`/`0x22d54c`) |
+
+**There is no second call site into the record writer.** The corpus's second array is 361 classes of the same
+12-byte element grammar, and the image contains exactly one call that can produce one -- so "a second member of the
+same element type, packed elsewhere" is refuted for this build: nowhere else is `FUN_0003d900` called at all.
+
+**And the reader's second call is not handed a member.** At `0x3a8af` the instruction before the call is a single
+`PUSH EAX`, and `EAX` holds the value just returned by the call at `0x3a8a6`; `FUN_0003d900` ends `return
+param_1`, i.e. it returns its archive argument, so what reaches `FUN_0003d160` there is the archive and not a
+`TArray` field. The section above attributes that call to the `+0x4dc` name array; the instructions say the argument
+isn't a member, and no site in the image is handed `+0x4dc` at all. Two of the seven name-array sites have this
+one-argument, chained shape (`0x3a8af` after `0x3d900`, `0x172fe4` after `0x172fe0`); the other five push a member
+and the archive.
+
+**Both bodies are the same shape, which is what makes the offsets readable.** `FUN_0003d900` reserves
+`count*0xc` bytes through the archive's slot `+0x14`, writes the count with `FUN_000637e0`, then per 12-byte element
+calls the archive's `+0x18` with the reference and its two dwords; `FUN_0003d160` reserves `count*4`, writes the
+count the same way, then per element calls the archive's `+0x1c` -- the name method -- which is why its file elements
+are one and two bytes. Both `return param_1`.
+
+What this leaves open is narrow and is a read, not a boot: the 20-byte middle is written by a call that has no
+member argument on the stack, and the next thing to read is what `0x3a8af` is actually invoking -- whether
+`FUN_0003d160` has a one-argument entry point reachable there, or the field order in the section above is off by one
+call.

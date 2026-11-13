@@ -2985,3 +2985,16 @@ padded with 735 nulls. **What would settle it now** is the writer: the reader `0
 two-record array at the tail is not packed by that body -- a census of the `0x3d900` call sites and the member
 displacement each one passes names the offset the second array occupies without a boot. Numbers:
 `docs/NATIVE_VM.md`, *The second array is a different member, not `+0x4d0` written twice*.
+
+**2026-11-13 (sixth): the record writer has one call site in the whole image, and it is handed `+0x4d0`.** A call
+census (`tools/record-writer-calls.py`, `inventory/record_writer_calls.csv`) scans the executable sections for
+`E8 rel32` into the two record writers and decodes back to the instruction that wrote the pushed argument's
+register. `FUN_0003d900` -- the 12-byte-record writer -- has **one** call site (`0x3a8a6`, member `+0x4d0`), so a
+second array of that element grammar is packed by nothing anywhere in this build, and the "second member packed
+elsewhere" reading is dead. `FUN_0003d160` (name array, archive slot `+0x1c` per element) has seven: `+0x4f4`
+(`0x3a904`), `+0x70` (`0x500a1`), `+0x2ec`/`+0x2f8` (one function at `0x22d53f`), two whose single pushed argument is
+the archive the previous call returned (`0x3a8af` after `0x3d900`, `0x172fe4` after `0x172fe0`), and one from the
+stack (`0x66a93`). No site in the image is handed `+0x4dc`, which is the offset the previous block gave the reader's
+second call. **What would settle the 20-byte middle now** is what `0x3a8af` invokes with one argument: whether
+`FUN_0003d160` has a one-argument entry reachable there, or the reader's field order is off by one call. Numbers:
+`docs/NATIVE_VM.md`, *Only one call site writes the record array, and the reader's second call is not a member*.
