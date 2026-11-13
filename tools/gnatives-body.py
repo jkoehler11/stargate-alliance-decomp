@@ -230,7 +230,7 @@ def check():
     mod = decode_module()
     body = bytes.fromhex("568b7424088b460c0fb6104089460cff1495e8136300c20800")
     want = [("push esi", 1), ("mov esi,[esp+0x8]", 4), ("mov eax,[esi+0xc]", 3),
-            ("movzx edx,[eax]", 3), ("inc eax", 1), ("mov byte [esi+0xc],eax", 3),
+            ("movzx edx,[eax]", 3), ("inc eax", 1), ("mov [esi+0xc],eax", 3),
             ("call [edx+0x6313e8]", 7), ("ret imm16", 3)]
     off = 0
     for text, length in want:

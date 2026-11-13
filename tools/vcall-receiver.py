@@ -343,7 +343,9 @@ def decode(code, i):
         if op == 0x8A:
             return Insn(i2 - start, "mov %s,byte %s" % (REGS[reg], text), [REGS[reg]],
                         kind="load8")
-        return Insn(i2 - start, "mov byte %s,%s" % (text, REGS[reg]), [], kind="store")
+        # 0x88 stores a byte and 0x89 a dword: the width is the opcode, not something to assume
+        return Insn(i2 - start, "mov %s%s,%s" % ("byte " if op == 0x88 else "", text, REGS[reg]),
+                    [], kind="store")
     if op in (0x84, 0x85):                        # test r/m, r: flags only
         got = operand(code, i)
         if not got:
@@ -375,11 +377,13 @@ def decode(code, i):
         immw = 1 if op == 0xC6 else 4
         if i2 + immw > len(code):
             return None
+        width = "byte " if op == 0xC6 else ""
         if mod == 3:
             imm = code[i2] if immw == 1 else struct.unpack_from("<I", code, i2)[0]
-            return Insn(i2 + immw - start, "mov %s,0x%x" % (REGS[rm], imm), [REGS[rm]],
+            return Insn(i2 + immw - start, "mov %s%s,0x%x" % (width, REGS[rm], imm), [REGS[rm]],
                         kind="immediate", imm=imm)
-        return Insn(i2 + immw - start, "mov %s,imm" % mtext(base, index, disp), [], kind="store")
+        return Insn(i2 + immw - start, "mov %s%s,imm" % (width, mtext(base, index, disp)), [],
+                    kind="store")
     if op in (0x69, 0x6B):
         got = operand(code, i)
         if not got:

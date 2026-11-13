@@ -1177,6 +1177,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-13, the census said byte for a dword store, and the reading survives the correction)
+
+- **`89 be c4 04 00 00` is a dword store, and the census printed `mov byte`.** `vcall-receiver`'s formatter
+  fixed the width of the `0x88`/`0x89` branch at `byte`, so the previous note's nine `mov byte [esi+0x4c4]`
+  zero-fills are `mov [esi+0x4c4],edi` -- dword stores of a zeroed register. Fixed from the opcode (`0x88` byte,
+  `0x89` dword; `0xC6`/`0xC7` the same for their immediate forms), and the census `--check` now drives a `0x89`
+  store, a `0x88` store and a `0xC7` store as its own cases, so the width cannot regress quietly.
+- **Both artifacts regenerate with only the `insn` column moved**: 34 of 217 rows in
+  `inventory/member_access_census.csv` and 13 of 70 in `inventory/class_array_head_census.csv`, with no
+  `site_va`, `form`, `stride`, `disp` or row count changed -- so every figure the two notes quote (70 sites,
+  29/30/11 by displacement, nine stores, the three constructors) stands, and the wrong word was the only
+  casualty.
+- **What the reading loses is a sentence, not the result.** The head is zeroed whole by dword stores, the shape
+  a `TArray` initialiser has, so an append into the array would still show as a non-zero count or as a read of
+  `+0x4c8`/`+0x4cc` on a `Class` -- and the sweep has neither. The verdict that the `+0x4c4` array has no writer
+  in this image survives its own correction, and the two earlier notes now say dword.
+- Tool (`tools/vcall-receiver.py`; `tools/member-access-census.py --check` extended) + both regenerated
+  artifacts + `docs/NATIVE_VM.md` (*Correction, same day: the census said `byte` for a dword store*) +
+  `docs/UNKNOWNS.md` U17 + `docs/CLASS_DEFAULTS.md` + `PLAN.md` (the two earlier notes corrected in place) +
+  this note. No boot, no Ghidra round; the artifacts come from the same sweep.
+- **Next measurement, named:** unchanged -- the `+0x4b0`/`+0x4b4` config pair, the last field of the record with
+  no store map (`--disp 0x4b0 --disp 0x4b4`).
+
 ### Execution notes (2026-11-13, the group's middle member has no writer, and its head censuses say so)
 
 - **The measurement the last note named is the array's head, not another grammar over the same bytes.** A `TArray`
@@ -1186,10 +1210,10 @@ are limited to expected fields (checksum/timestamp) and documented.
   `+0x4c4` (8 load, 16 `lea`, 5 store), 30 at `+0x4c8` (20 load, 5 `lea`, 5 store), 11 at `+0x4cc` (6 load, 1
   `lea`, 4 store) -- and **no site indexes any of the three at any stride**.
 - **On a `Class` all nine stores into the head are one-byte zero stores.** The three constructors (`0x3ad20`,
-  `0x3ae30`, `0x3af60`) each write one byte per dword -- `mov byte [esi+0x4c4],edi`, `[+0x4c8]`, `[+0x4cc]` -- and
-  nothing in the image writes a dword count or max at those displacements on a `Class`. The group's one dword store,
-  `0x001fd005 mov [ecx+0x4c4],imm`, is a scalar field of another class: the same body loads `[ecx+0x4c4]` twice and
-  never touches `+0x4c8`/`+0x4cc`.
+  `0x3ae30`, `0x3af60`) each write every head dword with a zeroed register -- `mov [esi+0x4c4],edi`, `[+0x4c8]`, `[+0x4cc]` -- and
+  nothing in the image writes a non-zero count or max at those displacements on a `Class`. The group's remaining
+  dword stores belong to other classes' own members: `0x001fd005 mov [ecx+0x4c4],imm` is a scalar (its body never
+  touches `+0x4c8`/`+0x4cc`), and `0x0020be21`/`0x00082f6a` write their own `+0x4c4`/`+0x4cc`.
 - **And nothing on a `Class` reads it.** The only two sites at `+0x4c4` that belong to `Class` are the region
   initialiser `0x3a670` (slot 10) at `0x3a675` -- `lea ecx,[esi+0x4c4]; push 0x4; call 0x1b846` -- and the
   destructor `0x3dc60` (`0x3d850`, the `~TArray` instantiation that pushes 4). The other fourteen `lea`s at the

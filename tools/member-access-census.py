@@ -399,6 +399,13 @@ def selftest():
     assert second["stride"] == "2", second["stride"]
     third = sites[2][1]
     assert third["form"] == "store" and third["note"] == "store", third
+    assert third["insn"] == "mov [esi+0x4b8],edi", third["insn"]      # 0x89 is a dword store
+    # the width of a store is its opcode: 0x88 writes one byte and 0x89 four, and 0xC6/0xC7 follow
+    one = field_sites(bytes([0x88, 0x5e, 0x04, 0xc3]), 0x3000, [(0x3000, "b", 4, "Test")], 0x4)
+    assert one[0] and one[0][0][1]["insn"] == "mov byte [esi+0x4],ebx", one
+    four = field_sites(bytes([0xc7, 0x46, 0x04, 0x00, 0x00, 0x00, 0x00, 0xc3]), 0x4000,
+                       [(0x4000, "w", 8, "Test")], 0x4)
+    assert four[0] and four[0][0][1]["insn"] == "mov [esi+0x4],imm", four
     # the decoy is an immediate, so it never reaches a row; the stack form is counted apart
     assert all("0x000004b8" not in r["insn"] for _, r in sites), "decoy counted"
     # a body the decoder cannot finish stops the sweep instead of inventing a site
@@ -406,7 +413,8 @@ def selftest():
                                     [(0x2000, "bad", 3, "Test")], 0x4b8)
     assert sites2 == [] and bad == 1, (sites2, bad)
     print("self-check ok: a field site with stride 4 and one with stride 2, the stack and absolute "
-          "forms counted apart, an immediate decoy rejected, a bad body stopping the sweep")
+          "forms counted apart, an immediate decoy rejected, a bad body stopping the sweep, and the "
+          "store widths 0x88/0x89/0xC7 read from their own opcodes")
     return 0
 
 

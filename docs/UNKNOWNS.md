@@ -3048,8 +3048,8 @@ the reader's own field order either*.
 left `+0x4c4` -- the 4-byte-element `TArray` between the 8-byte one and the record array -- as the candidate
 for the bytes the name parse leaves. The test is its head, not another grammar: data `+0x4c4`, count `+0x4c8`,
 max `+0x4cc`, and a writer must write the count or the max. `inventory/class_array_head_census.csv` (70 sites,
-`make class-array-head`) finds that on a `Class` **all nine stores into the head are one-byte zero stores**,
-three constructors writing one byte per dword, and no dword store touches the count or the max; the single
+`make class-array-head`) finds that on a `Class` **all nine stores into the head are the three constructors' dword
+zero-fills**, each writing every head dword with a zeroed register, and no site writes a non-zero count or max; the single
 dword store at the displacement (`0x001fd005`) is another class's scalar field, whose body never touches
 `+0x4c8`/`+0x4cc`. No site indexes any of the three at any stride, and on a `Class` the only two sites at all
 are the region initialiser (`0x3a675`, `push 0x4; call 0x1b846`) and the destructor (`0x3dc60` -> `0x3d850`).
