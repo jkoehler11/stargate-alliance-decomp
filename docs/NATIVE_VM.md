@@ -1515,3 +1515,37 @@ in the record region can hold such a pair, and a tail written once per package i
     make class-record-tail
     python3 tools/class-record-tail.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory
     python3 tools/class-record-tail.py --class WaterZone --package GamePlay --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15
+
+### The reader writes nothing between the last field and the defaults, so the list is a field
+
+`0x0003a800`'s listing (`$WORK/module-export/Core/`, 120 instructions from `0x3a894`) gives the record's **field
+order in the reader**, and it is the order of the file:
+
+| address | what |
+| --- | --- |
+| `0x3a8a6` | `CALL 0x0003d900` -- the record array at `+0x4d0` |
+| `0x3a8af` | `CALL 0x0003d160` -- the name array at `+0x4dc` |
+| `0x3a8b4` | `MOV EAX,[EBP+0x4]; CMP EAX,0x3e; JL 0x3a8de` -- version gate |
+| `0x3a8c2`-`0x3a8d9` | `LEA EAX,[ESI+0x4b0]` then `CALL [EDX+0x18]`, then `MOV EDX,[EAX]` / `LEA ECX,[ESI+0x4b4]` / `CALL [EDX+0x1c]` -- the config name |
+| `0x3a8f6`-`0x3a904` | `CMP [EBP+0x4],0x63; JL 0x3a90c` then `CALL 0x0003d160` -- the second name array at `+0x4f4` |
+| `0x3a90c`-`0x3a913` | `MOV EAX,[EBP+0x10]; TEST EAX,EAX; JZ 0x3ac63` -- the archive's direction flag |
+| `0x3a96d`-`0x3a981` | `LEA EDI,[ESI+0x4e8]`, `[EDI+0x4]=0`, `[EDI+0x8]=GetPropertiesSize()`, `CALL 0x00055ed0` -- the defaults buffer, and then its stream |
+
+Three consequences, all from the listing:
+
+- **There is no unowned tail.** Between the `+0x4f4` call and the defaults buffer the body writes nothing, so the
+  6-to-9-byte list `tools/class-record-tail.py` measures sits at the position of the **last field it writes**, the
+  version-gated `+0x4f4` name array -- count 3 plus three two-byte elements on the 219 three-pair rows, which is the
+  shape `FUN_0003d160` writes. It is a field, not free bytes before the defaults block.
+- **The 27-byte gap before a defaults start is those three fields.** On the rows where the list is 7 bytes the middle
+  is 20 bytes on 198 of 219 classes, and `first_count` is 2 on every one of them, so the 20 bytes are the `+0x4dc`
+  array and the 8-byte config name. Their split is not measured -- that is the next read, not a claim.
+- **The config name is two virtual calls on two adjacent members,** `+0x18` on `+0x4b0` and then `+0x1c` on `+0x4b4`
+  taken through the object the first call returned (`MOV EDX,[EAX]`; `MOV ECX,EAX`). So a vtable slot is not
+  "the reference method" or "the name method" on its own: the pair writes one `FName`, and every element count in
+  this region that was read as "through `+0x1c`, the name method" is one call of that pair.
+
+What this corrects in the tools above: `inventory/class_record_element.csv`'s `second_end` is *not* a field
+boundary -- the array that ends there is inside the 20-byte middle -- so "the bytes after the array" is the record's
+last field. A class whose `+0x4f4` array were empty would carry no list at all, which is the check that would falsify
+the placement and has not been run.
