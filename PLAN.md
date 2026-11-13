@@ -1176,6 +1176,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the defaults stream closes from the block start and not from the pair list)
+
+- **The named next measurement was run, and it lands on the block start.** `tools/class-record-tail.py` now runs the
+  property-tag parser (`tools/prop-stream.py`) from both positions on the 291 closing records, requiring the same
+  three things `class-defaults.py` does -- terminate on `None`, resolve every name, end exactly on the payload's last
+  byte: the stream closes on **291 of 291** from `block_start` and on **67 of 291** from `block_start - width`
+  (`def_exact` / `earlier_exact` in `inventory/class_record_tail.csv`). So the pair list is the record's own bytes and
+  not the defaults stream's first tag, and the block start every defaults measurement here rests on is confirmed from
+  the tag side rather than only from the boundary rule.
+- **67 is the number that matters as much as 291.** A sixth of the classes parse a *plausible* tag stream from one byte
+  range too early, which is why the boundary rule alone never placed a block: the tagged parse has to be required at
+  the position the record's own fields point at, not merely found somewhere in the payload.
+- **One correction to the previous note.** The coverage line read "225 of 225" first values inside the name table; the
+  measurement is **219 of 225**, and those 219 are exactly the rows whose middle pair is negative. The conclusion is
+  unchanged and sharper: well-formedness and the negative term are the same 219 rows.
+- Tool (`tools/class-record-tail.py`: two columns and two report lines added) + `inventory/class_record_tail.csv`
+  (291 rows, regenerated) + `docs/CLASS_DEFAULTS.md` (*The pair list is not the defaults stream's first tag*) +
+  `docs/NATIVE_VM.md` and this note's correction + `docs/UNKNOWNS.md` U17. Regenerating the artifact needs the dump;
+  `--check` and `--report` still answer without it.
+- **Next measurement, named:** the pair list's first element is a value that resolves in the name table on every
+  well-formed row and its second element is one import per package, so read that import's class in the package's own
+  import table (`Object` in `Core`) and ask what member would hold a `TMap`-shaped `(name, object)` list of length 3 --
+  `UClass`'s constructor stores `+0x4c0`..`+0x4cc` immediately before the record array, which is the member to read.
+
 ### Execution notes (2026-11-12, the bytes after the array are a pair list, and on five packages it is the same bytes)
 
 - **The tail reads as a value/reference pair list, and the negative term is what says so.** `tools/class-record-tail.py`
@@ -1185,7 +1209,8 @@ are limited to expected fields (checksum/timestamp) and documented.
   grammar aimed one to three bytes later lands on the block start on **0 of 225**, so the position is the record's.
 - **The middle pair's second value is negative on 219 of 225, and only four values occur in the corpus** -- -6 on 149
   classes, -3 on 52, -4 on 12, -7 on 6, one per package -- while every first value resolves in the package's own name
-  table (225 of 225). An `FName` duplicate number is an unsigned counter, so an element is a *value and a signed
+  table on 219 of 225, and those 219 are exactly the negative rows). An `FName` duplicate number is an unsigned
+  counter, so an element is a *value and a signed
   reference*, and the previous note's reading of these bytes as two `TArray<FName>`s (a count plus two name indices per
   element) has no term that can be negative. That reading is corrected in `docs/NATIVE_VM.md`.
 - **And on five of seven packages the tail does not vary between classes**, which is the number that keeps it out of the

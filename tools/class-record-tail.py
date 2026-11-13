@@ -43,7 +43,8 @@ SOURCE = "class_record_element.csv"          # the array's tail and the defaults
 MAX_COUNT = 4096
 MAX_ELEMENT = 8                              # a pair of compact indices is at most 4 bytes each
 COLUMNS = ["package", "class", "exact", "tail_start", "block_start", "width", "count", "pairs", "negatives",
-           "negative_at", "trail", "names_ok", "ctl_hits", "hash"]
+           "negative_at", "trail", "names_ok", "ctl_hits", "def_exact", "earlier_exact", "hash"]
+DEFAULTS_LIB = "prop-stream.py"              # the property-tag parser `class-defaults.py` already uses
 
 
 def read_index(buf, off):
@@ -59,6 +60,29 @@ def read_index(buf, off):
         val |= (b & 0x7F) << shift
         shift += 7
     return (-val if sign else val), off
+
+
+def load_defaults_reader():
+    """`tools/prop-stream.py` by path: `read_block` is the tag parser `class-defaults.py` locates blocks with."""
+    import importlib.util
+    path = os.path.join(HERE, DEFAULTS_LIB)
+    spec = importlib.util.spec_from_file_location("prop_stream", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def tag_stream_closes(mod, data, start, pkg):
+    """Does the defaults property stream parse from `start` and end exactly on the payload's last byte?"""
+    if start < 0 or start >= len(data):
+        return 0
+    try:
+        props, end, reason = mod.read_block(data[start:], pkg, False)
+    except Exception:  # noqa: BLE001
+        return 0
+    if reason != "None" or not props or any(p["name"] == "?" for p in props):
+        return 0
+    return int(start + end == len(data))
 
 
 def walk_pairs(buf, p, end):
@@ -144,6 +168,7 @@ def sweep(args):
     by_pkg = collections.defaultdict(list)
     for (pkg_name, cls), vals in src.items():
         by_pkg[pkg_name].append((cls, vals))
+    ps = load_defaults_reader()
     rows = []
     for pkg_name in sorted(by_pkg):
         path = os.path.join(args.dump, "System", pkg_name + ".u")
@@ -166,6 +191,8 @@ def sweep(args):
                 continue
             row = {"package": pkg_name, "class": cls, "exact": exact}
             row.update(measure(data, start, block, nnames))
+            row["def_exact"] = tag_stream_closes(ps, data, block, pkg)
+            row["earlier_exact"] = tag_stream_closes(ps, data, start, pkg)
             rows.append(row)
         print("%-18s %4d rows" % (pkg_name, len(by_pkg[pkg_name])), flush=True)
     out = os.path.join(args.out, ARTIFACT)
@@ -206,6 +233,10 @@ def report(path=None):
     print("trailing bytes                       %s" % trail.most_common(6))
     print("control: same grammar 1-3 bytes later %d of %d land on the block start"
           % (sum(1 for r in parsed if int(r["ctl_hits"] or 0) > 0), len(parsed)))
+    print("defaults stream closes from block_start    %d of %d"
+          % (sum(1 for r in rows if r["def_exact"] == "1"), len(rows)))
+    print("defaults stream closes from the tail       %d of %d"
+          % (sum(1 for r in rows if r["earlier_exact"] == "1"), len(rows)))
     print("")
     print("%-18s %5s %5s %5s  %s" % ("package", "rows", "tails", "share", "commonest tail"))
     by_pkg = collections.defaultdict(list)

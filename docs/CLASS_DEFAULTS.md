@@ -607,6 +607,14 @@ it. What is left is which object writes the pair list at all -- nothing inside `
 callees at `0x3a8a6` / `0x3a8af` write `+0x4d0`'s records and `+0x4dc`'s names, neither of which can be the negative
 term.
 
+**The pair list is not the defaults stream's first tag, and the tag side says so on all 291.** `class-record-tail.py`
+also runs the property-tag parser (`tools/prop-stream.py`, the one `class-defaults.py` locates blocks with) from both
+positions, requiring the stream to terminate on `None` with only declared names and end exactly on the payload's last
+byte: from `block_start` it closes on **291 of 291** classes, and from `block_start - width` on **67 of 291**. So the
+block start these measurements were built on is confirmed from the tag side a second time, and the 6-to-9 bytes in
+front of it belong to the record. 67 is not zero, which is why the boundary rule alone is not enough to place a block;
+requiring the *same* rule at the earlier position is what separates them.
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds

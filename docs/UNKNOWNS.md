@@ -2854,3 +2854,11 @@ and not a field of the record, and one that parses only from `block_start` leave
 writes. Numbers: `docs/NATIVE_VM.md`, *The tail's elements are a value and a reference*; `docs/CLASS_DEFAULTS.md`,
 *The bytes after the array are a pair list*.
 
+**2026-11-12 (second measurement): the tag side answers it, and the pair list is in the record.** `class-record-tail.py`
+`--sweep` now runs the property-tag parser from both positions with the same rule (terminates on `None`, declared names
+only, ends exactly on the payload's last byte): the stream closes on **291 of 291** classes from `block_start` and on
+**67 of 291** from `block_start - width`. The block start is confirmed from the tag side, the pair list is the record's
+own bytes, and the record's field list is complete only if something outside `UClass::Serialize`'s two callees writes
+them -- which is the residual this entry now carries. Numbers: `inventory/class_record_tail.csv` (`def_exact`,
+`earlier_exact`); `docs/CLASS_DEFAULTS.md`, *The pair list is not the defaults stream's first tag*.
+
