@@ -1734,17 +1734,17 @@ count or the max.
 29 at `+0x4c4` (8 load, 16 `lea`, 5 store), 30 at `+0x4c8` (20 load, 5 `lea`, 5 store) and 11 at `+0x4cc`
 (6 load, 1 `lea`, 4 store) -- and **no site in the image indexes any of the three at any stride**.
 
-**On a `Class` every one of the nine stores into the head is a one-byte zero.** The three constructors write
-the same three bytes, one per dword:
+**On a `Class` all nine stores into the head are the three constructors' own dword zero-fills.** Each constructor writes
+all three dwords, and the register it writes is zeroed above them:
 
-    ctor_Class    0x3ad98  mov byte [esi+0x4c4],edi     0x3ad9e  mov byte [esi+0x4c8],edi     0x3ada4  mov byte [esi+0x4cc],edi
-    FUN_0003ae30  0x3aea1  mov byte [esi+0x4c4],edi     0x3aea7  mov byte [esi+0x4c8],edi     0x3aead  mov byte [esi+0x4cc],edi
-    FUN_0003af60  0x3afda  mov byte [esi+0x4c4],edi     0x3afe0  mov byte [esi+0x4c8],edi     0x3afe6  mov byte [esi+0x4cc],edi
+    ctor_Class    0x3ad98  mov [esi+0x4c4],edi   0x3ad9e  mov [esi+0x4c8],edi   0x3ada4  mov [esi+0x4cc],edi
+    FUN_0003ae30  0x3aea1  mov [esi+0x4c4],edi   0x3aea7  mov [esi+0x4c8],edi   0x3aead  mov [esi+0x4cc],edi
+    FUN_0003af60  0x3afda  mov [esi+0x4c4],edi   0x3afe0  mov [esi+0x4c8],edi   0x3afe6  mov [esi+0x4cc],edi
 
-Not one of them writes a count or a max, and there is no `mov dword [reg+0x4c8]`/`[reg+0x4cc]` anywhere in
-the sweep. The one dword store in the group -- `0x001fd005  mov [ecx+0x4c4],imm` in `FUN_001fc630` -- is a
-scalar field of another class: the same body loads `[ecx+0x4c4]` twice and never touches `+0x4c8` or
-`+0x4cc`, which is not the shape of an array head. The same is true of every `lea` of count or max
+So the head is zeroed whole, and **no site in the sweep writes a non-zero count or a max**. The group's other
+dword stores belong to other classes' own members at the same displacement: `0x001fd005  mov [ecx+0x4c4],imm`
+in `FUN_001fc630` is a scalar (the body never touches `+0x4c8`/`+0x4cc`), and `0x0020be21` in
+`ctor_SceneManager` and `0x00082f6a` in an unnamed body write their own `+0x4c4`/`+0x4cc`. The same is true of every `lea` of count or max
 (`PlayerReplicationInfo`, `WarpZoneInfo`, `LevelInfo`, `Gui_UIXInteraction`): none of those bodies belongs to
 a `Class`.
 
@@ -1770,3 +1770,15 @@ that form. What the member is for stays unnamed; what it is not is the record's 
         --disp 0x4c4 --disp 0x4c8 --disp 0x4cc -o inventory --artifact class_array_head_census.csv
     python3 tools/member-access-census.py --xbe DUMP/default.xbe \
         --disp 0x4c4 --disp 0x4c8 --disp 0x4cc --report
+
+**Correction, same day: the census said `byte` for a dword store.** `vcall-receiver`'s formatter fixed the
+width of its `0x88`/`0x89` branch at `byte`, so `89 be c4 04 00 00` -- `mov dword ptr [esi+0x4c4],edi` --
+printed as `mov byte [esi+0x4c4],edi`, and the first version of this section read the nine zero-fills as
+one-byte writes. The width now comes from the opcode (`0x88` byte, `0x89` dword, `0xC6`/`0xC7` the same for
+their immediate forms) and the census's `--check` drives all three, so it cannot regress quietly. Both
+artifacts are regenerated and **only the `insn` column moved** -- 34 of 217 rows in the region sweep and 13 of
+70 in the head, with no site, form, stride, displacement or row count changed -- so every count in the notes
+stands. What the correction costs is a sentence: the head is zeroed whole by dword stores of a zeroed
+register, which is what a `TArray` initialiser does, and the negative that matters is unchanged, because an
+append would still show as a non-zero count or a read of `+0x4c8`/`+0x4cc` on a `Class`, and the sweep has
+neither.

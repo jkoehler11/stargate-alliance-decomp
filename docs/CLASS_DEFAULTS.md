@@ -744,7 +744,7 @@ compact-pair grammar fits 408, and neither closes the gap at its position (0 of 
 
 **The middle's other candidate array has no writer.** The 4-byte-element `TArray` at `+0x4c4` -- the group's
 middle member, between the 8-byte one and the record array -- is initialised empty and destroyed empty, and all
-nine stores into its head are the three constructors' one-byte zero stores
+nine stores into its head are the three constructors' dword zero-fills
 (`inventory/class_array_head_census.csv`, `docs/NATIVE_VM.md`, *The array at +0x4c4 is initialised and destroyed,
 and no body fills it*). So the 27-byte gap is not its stream either: the gap stays a located array plus a
 count-plus-pairs list, with one end still unexplained.
