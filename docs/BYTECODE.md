@@ -965,6 +965,33 @@ declare, 1 local the class text does not declare, and 1 call result whose callee
 eighteen packages do not declare at all; each of those is still placed on the caller's chain, so none of them is
 in the residue.
 
+**The last local sat behind a preprocessor directive, and the declaration was in the text all along.**
+`Engine.InteractionMaster.AddInteraction` is declared *twice* in the class text -- once inside `#ifdefXBOX`
+(`string InteractionName, optional Player AttachTo, optional bool bInFront`) and once inside `#ifndefXBOX`
+(`string InteractionName, optional Player AttachTo`) -- and the one body both branches share starts *after* the
+closing `#endif`. The declaration scan collected the parameters of both (the build declares one signature per
+branch) but then stepped to the next non-space character, found `#`, and never reached the `{`, so
+`local Interaction NewInteraction; local class<Interaction> NewInteractionClass;` were never keyed and the site read
+"the class source does not declare it". A directive line carries no braces, so stripping the directive lines before
+the parse (`_src_text`, used by the declaration, return-type and struct passes alike) reads the body: the local
+types `Interaction`, `NewInteraction.Initialize` places on the receiver's chain, and **the residue goes 42 -> 41 with
+no local left in it** -- by-name placement **13,396 -> 13,397 of 13,507 (99.2%)**, the receiver's chain
+**2,778 -> 2,779**, "decided by the receiver" 111 -> **110**, and two rows of `inventory/script_calls.csv` move.
+
+The population is small, and the report now names it instead of hiding it: **4 declarations over 173 class texts**
+carry a directive line between the declaration and its `{`, and they are two functions each declared twice under a
+guard -- `InteractionMaster.AddInteraction` and `StargatePawn.Talk`. `Talk`'s site was already placed by the
+corpus-only lookup; the strip fills its `receiver_type` (`StargateHUD`) and so says *why* the call reaches
+`SetSubtitle`. A hundred and seventy-three texts carry directives and 4 declarations were split by one, which is
+what says this is a parse rule and not a one-off patch for a single class.
+
+**What the 41 are now: three shapes, none of them a declaration.** 35 arrays whose element type is a struct (an
+element of a struct array is not an object: a negative), 5 receivers whose name the caller's chain does not declare
+(`GetMoveTarget`, `GetMyPlayer`, `TakeOver`, `SetPawnClass`), and 1 call result whose callee
+(`UnrealScriptedSequence`'s `Trigger`) is declared with no return type. `--check` drives seventeen assertions over
+synthetic blocks now, three of them the guarded declaration: a body after an `#endif`, a directive inside a struct
+block, and the census row that names a split declaration.
+
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
 `receiver:Pkg.Class` for the receiver's chain, or `descendant:Pkg.Class` for the one class below it that declares the

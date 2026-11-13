@@ -1178,6 +1178,36 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the last local was behind a preprocessor directive, and the residue is 41)
+
+- **The declaration was never missing -- a directive line was in front of the body.** `Engine.InteractionMaster.AddInteraction`
+  is declared twice in the class text, once inside `#ifdefXBOX` (`string InteractionName, optional Player AttachTo,
+  optional bool bInFront`) and once inside `#ifndefXBOX` (`string InteractionName, optional Player AttachTo`), and the
+  single body both branches share starts after the closing `#endif`. The declaration scan took the parameters of both
+  and then looked for the *next non-space character*, which is `#`, so it never reached the `{`: the two locals
+  (`Interaction NewInteraction`, `class<Interaction> NewInteractionClass`) were never keyed and the site read "the
+  class source does not declare it". Directives carry no braces, so `_src_text` drops the directive lines before the
+  parse -- the declaration, return-type and struct passes all go through it now -- and the body is read.
+  **Residue 42 -> 41 with no local left**, by-name placement **13,396 -> 13,397 of 13,507 (99.2%)**, the receiver's
+  chain **2,778 -> 2,779**, "decided by the receiver" 111 -> 110, and two rows of `inventory/script_calls.csv` move:
+  `Initialize` now reads `receiver:Engine.Interaction`, and `StargatePawn.Talk`'s `SetSubtitle` gains the
+  `receiver_type` that says why it reaches `StargateHUD`.
+- **The population is named, not estimated.** The call report prints the split declarations beside the local counter:
+  **4 declarations over 173 class texts**, and they are two functions each declared twice under a guard
+  (`AddInteraction`, `StargatePawn.Talk`). 173 texts carry a directive and 4 declarations were split by one, which is
+  the proportion that says this is a parse rule rather than a patch for one class.
+- **What the 41 are: three shapes and no declaration.** 35 arrays whose element type is a struct (an element of a
+  struct array is not an object: a negative), 5 receivers whose name the caller's chain does not declare
+  (`GetMoveTarget`, `GetMyPlayer`, `TakeOver`, `SetPawnClass`), and 1 call result whose callee
+  (`UnrealScriptedSequence`'s `Trigger`) is declared with no return type.
+- Tool (`_SRC_PREPROC`, `_src_text`, `_directive_gaps`, the census line in `--calls`, and three new assertions --
+  seventeen in `--check`) + `inventory/script_calls.csv` regenerated + `docs/BYTECODE.md` (*The last local sat
+  behind a preprocessor directive...*) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra
+  round.
+- **Next measurement, named:** the 5 receivers whose name the caller's chain does not declare -- each name is
+  declared by a class *outside* the receiver's subtree, so the read is whether the declared type of the receiver is
+  narrower than the object it holds, and `inventory/script_calls.csv`'s `receiver_type` column already lists the five.
+
 ### Execution notes (2026-11-13, the imported static call was the twelfth shape, and eleven of twelve place)
 
 - **`PlayerOwner` in front of a call is a function, not a variable.** The twelve residue sites that read "the
