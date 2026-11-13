@@ -25,7 +25,13 @@ alternate block's first property name, which the inventory CSVs already carry.
 
     python3 tools/defaults-blockstart.py DUMP/System
     python3 tools/defaults-blockstart.py DUMP/System --csv inventory/delegate_blockstart.csv
+    python3 tools/defaults-blockstart.py DUMP/System --census --census-csv inventory/defaults_blockstart_census.csv
     python3 tools/defaults-blockstart.py --check          # synthetic self-test, no dump, writes nothing
+
+`--census` asks the same question of the whole corpus instead of the 42 delegates: for every class the locator
+settles, does the block's *first* value tile as whole record units (the one value a wrong block start moves),
+how does that compare with the same grammar started 1..4 bytes into the same region, and -- for the blocks that
+do tile -- does a later start give a block that parses clean and closes on the payload's last byte?
 """
 import argparse
 import csv
@@ -227,6 +233,157 @@ def report(rows):
           "function" % (len(rows), len(first), len(with_alt), len(units), len(recs), len(reread)))
 
 
+CTRL_SHIFTS = 4      # control starts: the same grammar 1..4 bytes into the same value region
+CENSUS_COLUMNS = ["package", "class", "block_start", "props", "declared", "fully_declared",
+                  "first_property", "first_size", "first_units", "first_slack", "record_props",
+                  "ctrl_units", "alt_start", "alt_gap", "alt_first", "alt_declared", "note"]
+
+
+def record_like(buf, start, size):
+    """(units, slack) for the grammar started at `start` over a `size`-byte region."""
+    n, used = records(buf, start, size)
+    return n, size - used
+
+
+def census(system_dir, pkgs, per_class_csv):
+    """One row per located block: does its first value tile as whole streamed record units?
+
+    The delegate sweep found one block (`GUI.MenuItemOverlay`) whose 110-byte "value" is twelve record units,
+    i.e. the located start sits inside the record array. The question that finding leaves is whether the
+    locator does that elsewhere, so this walks every class the locator settles and asks it of the first
+    property -- the only value a wrong start moves. `ctrl_units` is the same count for the same grammar
+    started 1..4 bytes later (comma separated, `-` where the region runs past the payload), so a count that
+    aligned starts do not beat is a property of the bytes and not of the position.
+    """
+    global SUPERS
+    supers = cd.super_map()
+    SUPERS = supers
+    declared_all = cd.declared_properties()
+    located = {}
+    if os.path.isfile(per_class_csv):
+        with open(per_class_csv, newline="") as fh:
+            for r in csv.DictReader(fh):
+                located[(r["package"], r["class"])] = r
+    rows, stats = [], {"props": 0, "wide": 0, "aligned": 0, "ctrl": [0] * CTRL_SHIFTS,
+                       "ctrl_seen": [0] * CTRL_SHIFTS}
+    for pkg_name in pkgs:
+        path = os.path.join(system_dir, pkg_name + ".u")
+        if not os.path.isfile(path):
+            continue
+        pkg = Package(path)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            cls = pkg.name(exp["name"])
+            got, _why = de.block_of(pkg, cls, supers, declared_all, want_score=True)
+            if got is None:
+                continue
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            start = got[1]
+            buf = data[start:]
+            walked = walk(buf, pkg)
+            if not walked:
+                continue
+            decl = set()
+            cur, seen = cls, set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                decl |= declared_all.get(cur, set())
+                cur = supers.get(cur)
+            names = [w[1] for w in walked]
+            declared_n = sum(1 for n in names if n in decl)
+            first = walked[0]
+            units, slack = record_like(buf, first[4], first[3])
+            ctrl = []
+            for s in range(1, CTRL_SHIFTS + 1):
+                st = first[4] + s
+                if first[3] >= 2 * RECORD and st + first[3] <= len(buf):
+                    cu, cs = record_like(buf, st, first[3])
+                    ctrl.append(cu if cu >= 1 and cs < RECORD else 0)
+                    stats["ctrl_seen"][s - 1] += 1
+                    if cu >= 2 and cs < RECORD:
+                        stats["ctrl"][s - 1] += 1
+                else:
+                    ctrl.append("-")
+            rec_props = 0
+            for tag, name, info, size, voff in walked:
+                stats["props"] += 1
+                if size < 2 * RECORD:
+                    continue
+                stats["wide"] += 1
+                pu, psl = record_like(buf, voff, size)
+                if pu >= 2 and psl < RECORD:
+                    stats["aligned"] += 1
+                    rec_props += 1
+            row = {
+                "package": pkg_name, "class": cls, "block_start": start, "props": len(walked),
+                "declared": "%d/%d" % (declared_n, len(walked)),
+                "fully_declared": located.get((pkg_name, cls), {}).get("fully_declared", ""),
+                "first_property": first[1], "first_size": first[3], "first_units": units,
+                "first_slack": slack, "record_props": rec_props, "alt_start": "", "alt_gap": "",
+                "alt_first": "", "alt_declared": "", "note": "",
+            }
+            row["ctrl_units"] = ",".join(str(c) for c in ctrl)
+            notes = []
+            if units >= 2 and slack < RECORD:
+                notes.append("first value tiles as record units")
+                alt = alt_start(data, pkg, start)
+                if alt is not None:
+                    row["alt_start"] = alt[0]
+                    row["alt_gap"] = alt[0] - start
+                    row["alt_first"] = alt[2]
+                    abuf = data[alt[0]:]
+                    anames = [w[1] for w in walk(abuf, pkg)]
+                    row["alt_declared"] = "%d/%d" % (sum(1 for n in anames if n in decl), len(anames))
+            if rec_props >= 2 and units >= 2 and slack < RECORD:
+                notes.append("%d properties tile too" % rec_props)
+            row["note"] = "; ".join(notes)
+            rows.append(row)
+    return rows, stats
+
+
+def emit_census(rows, path):
+    with open(path, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=CENSUS_COLUMNS, lineterminator="\n")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in CENSUS_COLUMNS})
+
+
+def report_census(rows, stats):
+    hits = [r for r in rows if r["first_units"] is not None and r["first_units"] >= 2
+            and r["first_slack"] < RECORD]
+    print("%-14s %-30s %6s %5s %4s %5s %5s %s" % ("package", "class", "start", "props", "decl",
+                                                  "units", "slack", "ctrl/named"))
+    for r in hits:
+        print("%-14s %-30s %6d %5d %5s %4d %5d %s %s" % (r["package"], r["class"][:30],
+                                                         r["block_start"], r["props"], r["declared"],
+                                                         r["first_units"], r["first_slack"],
+                                                         r["ctrl_units"], r["first_property"][:22]))
+    print()
+    wide = [r for r in rows if r["first_size"] >= 2 * RECORD]
+    print("%d located block(s); %d whose first value is at least %d bytes wide; %d of those tile the "
+          "first value as two or more whole record units with less than one unit spare (%d of them not "
+          "fully declared)" % (len(rows), len(wide), 2 * RECORD, len(hits),
+                               sum(1 for r in hits if r["fully_declared"] == "0")))
+    print("control, same grammar 1..%d bytes into the same value region: %s record-like position(s) out of "
+          "%s tested" % (CTRL_SHIFTS, "/".join(str(c) for c in stats["ctrl"]),
+                         "/".join(str(c) for c in stats["ctrl_seen"])))
+    print("all %d properties: %d are at least %d bytes wide and %d of those tile (%.2f%%); the first-value "
+          "rate is %.2f%%" % (stats["props"], stats["wide"], 2 * RECORD, stats["aligned"],
+                              100.0 * stats["aligned"] / max(1, stats["wide"]),
+                              100.0 * len(hits) / max(1, len(wide))))
+    alt = [r for r in hits if r["alt_start"] != ""]
+    print("%d of the %d have a later start whose block also parses clean and closes on the payload end"
+          % (len(alt), len(hits)))
+    for r in alt:
+        print("  %-14s %-30s gap %3d bytes, alt block %s, alt names %s"
+              % (r["package"], r["class"][:30], r["alt_gap"], r["alt_declared"], r["alt_first"][:24]))
+
+
 def self_test():
     """Synthetic bodies only: `--check` answers without the dump and writes nothing."""
     class Names:
@@ -246,11 +403,14 @@ def self_test():
     assert records(bytes([0x02] + [0] * 8 + [0x02, 0, 0]), 0, 12) == (1, 9), \
         "a truncated second unit is not counted"
     assert records(bytes([0x02, 0x0f]), 0, 2) == (0, 0), "a two-byte value holds no record unit"
+    assert record_like(bytes([0x02] + [0] * 8), 0, 10) == (1, 1), "one whole unit leaves one byte spare"
+    assert record_like(bytes([0x02] + [0] * 8 + [0x02] + [0] * 8), 0, 18) == (2, 0), \
+        "two units consume the region exactly"
     # an alternative start: one byte of record, then a block that closes on the payload end
     data = bytes([0x00, 0x03, 0x5b, 0x00, 0x00])
     alt = alt_start(data, pkg, 0)
     assert alt is not None and alt[0] == 1 and alt[2] == "Ghost", "the later clean start is found"
-    print("self-test: ok (5 synthetic cases)")
+    print("self-test: ok (7 synthetic cases)")
     return 0
 
 
@@ -259,6 +419,12 @@ def main():
     ap.add_argument("dump", nargs="?", help="DUMP/System directory")
     ap.add_argument("--pkg", action="append", default=[], help="restrict to one package (repeatable)")
     ap.add_argument("--csv", help="write the rows here")
+    ap.add_argument("--census", action="store_true",
+                    help="the whole corpus: does each located block's first value tile as record units")
+    ap.add_argument("--census-csv", help="write the census rows here")
+    ap.add_argument("--per-class", default=os.path.join(ROOT, "inventory",
+                                                       "class_defaults_per_class.csv"),
+                    help="the locator's per-class table (fully_declared column)")
     ap.add_argument("--check", action="store_true", help="synthetic self-test, no dump needed")
     args = ap.parse_args()
     if args.check:
@@ -266,6 +432,13 @@ def main():
     if not args.dump:
         ap.error("a DUMP/System directory is required unless --check is given")
     pkgs = args.pkg or sorted(f[:-2] for f in os.listdir(args.dump) if f.endswith(".u"))
+    if args.census:
+        rows, stats = census(args.dump, pkgs, args.per_class)
+        report_census(rows, stats)
+        if args.census_csv:
+            emit_census(rows, args.census_csv)
+            print("wrote %s" % args.census_csv)
+        return 0
     rows = sweep(args.dump, pkgs)
     report(rows)
     if args.csv:

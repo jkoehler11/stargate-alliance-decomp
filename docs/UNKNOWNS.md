@@ -3317,3 +3317,19 @@ directly.
 `call [eax+0x18]`, `ret 4`. Two different property classes cannot share a per-class value serialiser, so that slot is
 inherited from a common base and is not the delegate reader; the payload measurement above is what answers this, not
 another vtable round.
+
+**2026-11-13 (tenth): the tiling test is calibrated, and it does not place the tag.** The entry above rested on
+`GUI.MenuItemOverlay`'s 110 bytes tiling as twelve streamed record units. `tools/defaults-blockstart.py --census`
+(`make defaults-blockstart-census`, `inventory/defaults_blockstart_census.csv`) asks that question of every block the
+locator settles -- **2,209** classes, 16,788 properties -- and the answer is a base rate: **159 of the 181** blocks
+whose first value is at least two units wide tile at their own start (87.8%), and the same grammar started 1-4 bytes
+into the same region tiles **151/149/147/153 of 181** (82-85%). This class's value tiles as 12 units at its own start
+and **12, 12, 12, 12** at the four controls, so the count is a property of the bytes, not of the position. The
+alt-start half of that entry is base-rate-common too: **154 of 159** tiling blocks have a later clean start. What
+survives is the re-read -- same property name, same tag byte, same 110-byte value 90 bytes on, 11 properties against
+20 -- together with the width argument, so the row stays a locator result and the two menu pages stay open. **What
+would settle whether any block start in the corpus sits inside the record array** is the array's own head rather than
+a tiled value: the count and the `+0x4d0` member from `UClass::Serialize` (`docs/NATIVE_VM.md`) checked against the
+located start, a bound the tiling test does not have. Numbers: `docs/CLASS_DEFAULTS.md`, *The record-unit test has an
+88% base rate, so it does not locate a block start*.
+
