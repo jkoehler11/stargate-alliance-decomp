@@ -24,6 +24,10 @@ decomposing the gap instead of naming its fields:
   identical lists mean the writer packed one member twice, disjoint ones two members, and `ref_shared`
   counts the values in common; `first_kinds` / `second_kinds` name the class of each referenced object, so
   "a copy" and "a second class-reference list" are different rows rather than different opinions;
+* **the reader's own field order** -- the gap re-read as `+0x4dc` names, the config `FName`, then `+0x4f4`
+  names (`docs/NATIVE_VM.md`, *Only one call site writes the record array, and its reader stages the second member
+  under that call*): `FUN_0003d160`'s file element is a compact pair, so all three are one stream of that shape.
+  `nm_exact` says it closes on the defaults start, `nm_ctl_exact` how many shifted starts do;
 * **the control** -- the same array grammar started at each of the next 8 bytes, counting the starts that parse and
   the ones whose end is exactly the defaults start. A grammar that fits the real position and the shifted ones
   about equally describes the arithmetic, not the record.
@@ -62,7 +66,9 @@ COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "array_en
            "ctl_parsed", "ctl_exact", "rest", "rest_lead", "list_count", "list_len", "list_exact",
            "cfg_a", "cfg_b", "cfg_ok",
            "first_refs", "second_refs", "ref_same", "ref_same_set", "ref_shared", "array_same",
-           "first_kinds", "second_kinds"]
+           "first_kinds", "second_kinds",
+           "nm_mid_count", "nm_mid_len", "nm_cfg_len", "nm_cfg_name", "nm_list_count", "nm_list_len",
+           "nm_exact", "nm_ctl_exact", "nm_shape", "nm_mid_rest"]
 
 
 def read_index(buf, off):
@@ -128,6 +134,52 @@ def walk_pairs(buf, p):
             widths.append(e - o)
             o = e
     return {"count": count, "widths": widths, "end": o, "len": o - p}
+
+
+def walk_name_gap(data, array_end, block, nnames):
+    """The same gap in the reader's own field order: `+0x4dc` names, the config name, then `+0x4f4` names.
+
+    `UClass::Serialize` writes three things between the record array's tail and the defaults buffer, in this order:
+    the `+0x4dc` array through `FUN_0003d160`, the config name through two archive slots on adjacent members
+    (`+0x18` on `+0x4b0`, then `+0x1c` on `+0x4b4`), and the `+0x4f4` array through the same writer -- and
+    `FUN_0003d160`'s file element is a compact pair, so the whole gap is one stream of that shape. Closing exactly
+    on the defaults start is what distinguishes this split from the twelve-byte second array the same bytes also
+    parse as; the shifted starts are the control.
+    """
+    out = {"nm_mid_count": "", "nm_mid_len": "", "nm_cfg_len": "", "nm_cfg_name": "", "nm_list_count": "",
+           "nm_list_len": "", "nm_exact": 0, "nm_ctl_exact": 0, "nm_shape": "", "nm_mid_rest": ""}
+
+    def run(p, stop):
+        mid = walk_pairs(data, p)
+        if not mid or mid["end"] + 2 > stop:
+            return None
+        q = mid["end"]
+        try:
+            name, q = read_index(data, q)
+            _number, q = read_index(data, q)
+        except IndexError:
+            return None
+        lst = walk_pairs(data, q)
+        if not lst or lst["end"] != stop:
+            return None
+        return mid, q - mid["end"], name, lst
+
+    alone = walk_pairs(data, array_end)
+    if alone and alone["end"] <= block:
+        out.update({"nm_mid_count": alone["count"], "nm_mid_len": alone["len"],
+                    "nm_mid_rest": block - alone["end"]})
+    got = run(array_end, block)
+    if got is None:
+        out["nm_shape"] = "open"
+    else:
+        mid, cfg_len, name, lst = got
+        out.update({"nm_cfg_len": cfg_len,
+                    "nm_cfg_name": int(0 <= name < nnames), "nm_list_count": lst["count"],
+                    "nm_list_len": lst["len"], "nm_exact": 1, "nm_shape": "names"})
+    for q in range(array_end + 1, array_end + 1 + WINDOW):
+        if run(q, block):
+            out["nm_ctl_exact"] += 1
+    return out
 
 
 def kind_of(pkg, v):
@@ -203,6 +255,7 @@ def measure(data, prefix_end, block, array_end, nimp, nex, nnames):
             b = int.from_bytes(data[start + 4:start + 8], "little", signed=True)
             row["cfg_a"], row["cfg_b"] = a, b
             row["cfg_ok"] = int(0 <= a < nnames and 0 <= b <= MAX_NUMBER)
+    row.update(walk_name_gap(data, array_end, block, nnames))
     for q in range(array_end + 1, array_end + 1 + WINDOW):
         got = walk_array(data, q)
         if not got:
@@ -365,6 +418,23 @@ def report(rows):
             print("  the others: median |a| %d, median |b| %d, largest |b| %d"
                   % (statistics.median([abs(r["cfg_a"]) for r in cfg if not r["cfg_ok"]]),
                      statistics.median([abs(b) for b in big]), max(abs(b) for b in big)))
+    names = [r for r in rows if r["nm_exact"] not in ("", None)]
+    if names:
+        exact = sum(1 for r in names if r["nm_exact"] == 1)
+        print("the same gap in the reader's field order (+0x4dc names, the config name, +0x4f4 names): "
+              "%d of %d close exactly (%.1f%%)"
+              % (exact, len(names), 100.0 * exact / len(names)))
+        parsed = [r for r in names if r["nm_mid_count"] not in ("", None)]
+        print("  the middle alone as a count-plus-pairs list: %d of %d, count %s, median %d bytes, leaving %s"
+              % (len(parsed), len(names),
+                 collections.Counter(r["nm_mid_count"] for r in parsed).most_common(4),
+                 _median(parsed, "nm_mid_len"), collections.Counter(r["nm_mid_rest"] for r in parsed).most_common(4)))
+        print("  the second name array closes on %d; the config's first field is a name index on %d"
+              % (sum(1 for r in names if r["nm_list_count"] not in ("", None)),
+                 sum(1 for r in names if r["nm_cfg_name"] == 1)))
+        print("  the control at 1..%d bytes later closes on %d"
+              % (WINDOW, sum(int(r["nm_ctl_exact"] or 0) for r in names)))
+
     twenty = [r for r in rest if r["gap"] == 27]
     if twenty:
         print("the 27-byte gap rows (the field walk's 20-byte leftover plus its 7-byte list): %d, a second array "
@@ -446,6 +516,16 @@ def self_check():
     row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
     assert row["rest"] == 1 and row["rest_lead"] == 0, row
     assert row["list_count"] == 0 and row["list_exact"] == 1, row
+
+    # The same gap read in the reader's order: names, the config name, names -- and it closes on the block too.
+    body = data[:array_end] + (compact(3) + compact(1) + compact(1) + compact(3) + compact(2)
+                               + compact(4) + compact(5)
+                               + compact(30) + compact(70)
+                               + compact(2) + compact(6) + compact(8) + compact(9) + compact(10))
+    row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
+    assert row["nm_exact"] == 1, row
+    assert (row["nm_mid_count"], row["nm_mid_len"], row["nm_cfg_len"], row["nm_list_count"]) == (3, 7, 3, 2), row
+    assert row["nm_cfg_name"] == 1 and row["nm_ctl_exact"] == 0, row
 
     # A record that carries no list field at all.
     body = data[:block - 7]

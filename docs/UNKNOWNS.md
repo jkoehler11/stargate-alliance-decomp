@@ -3015,3 +3015,17 @@ whether it closes on the same 361 classes the twelve-byte parse claims; one of t
 bytes to their last one is the field's shape. Numbers: `inventory/record_writer_calls.csv` (`args`, `staged`,
 `staged_member`); `docs/NATIVE_VM.md`, the section formerly titled *Only one call site writes the record array, and
 the reader's second call is not a member*.
+
+**2026-11-13 (eighth): the reader's field order does not account for the gap either.** The seventh entry named the
+middle's writer (`FUN_0003d160`, handed `+0x4dc` at `0x3a8af`) and proposed reading the middle as that writer's own
+stream. Measured on all 549 located classes (`tools/class-record-gap.py`, `inventory/class_record_gap.csv`, `nm_*`
+columns): the three-part reading -- `+0x4dc` names as a compact count plus compact pairs, the config name as two
+compact fields, `+0x4f4` names again, the last ending exactly on the defaults start -- closes on **0 of 549**, and
+the shifted-start control closes on 15, so the model is wrong rather than the position. The middle read as a
+count-plus-pairs list *alone* parses on 408 of 549 but consumes a median of 6 bytes and leaves 21, matching the
+leading count of the twelve-byte array rather than a field. Both grammars therefore fit the bytes and neither fits
+the position. **What would settle it** is the writer's reservation rather than another grammar: `FUN_0003d160`
+reserves `count*4` through archive slot `+0x14` and then calls `+0x1c` once per element, so a name element carries a
+4-byte proxy in memory -- read the middle's leading byte against that, and the count that the two grammars disagree
+about (2 for the twelve-byte parse) becomes decidable. Numbers: `docs/NATIVE_VM.md`, *The gap does not decompose in
+the reader's own field order either*.

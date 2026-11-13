@@ -1176,6 +1176,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the gap does not decompose in the reader's own field order)
+
+- **The measurement the last note named is done, and it refuses the reading.** `tools/class-record-gap.py` now
+  re-reads each class's gap in the reader's field order -- `+0x4dc` names (a compact count and that many compact
+  pairs), the config name (two compact fields), then `+0x4f4` names -- and requires the last to end exactly on the
+  defaults start: **0 of 549 classes close**, while the same three-part parse started one to eight bytes later closes
+  on 15. That control is what makes it a refusal rather than a position error. The middle as a count-plus-pairs list
+  *alone* parses on 408 of 549 but consumes a median of 6 bytes and leaves 21, so what it matches is the leading
+  count of the twelve-byte array.
+- **What that costs the previous note.** The frame measurement stands -- the reader is handed `+0x4dc` at `0x3a8af`,
+  two arguments, the member staged under the record writer's call -- but the inference drawn from it (that the
+  20-byte middle is that array's compact-pair stream) is measured false. The middle's *writer* is named; its
+  *encoding* is not, and the doc says so now instead of the other way round.
+- **Where that leaves the record.** Two grammars fit the middle's bytes (twelve-byte records 361, compact pairs 408)
+  and neither accounts for its position, so the next instrument is not another grammar: it is `FUN_0003d160`'s own
+  reservation (`count*4` through archive slot `+0x14`, one `+0x1c` call per element) read against the middle's
+  leading byte, which makes the count the two readings disagree about (2) decidable.
+- Tool (`tools/class-record-gap.py`, `--check` covers the reader-order split) + `inventory/class_record_gap.csv`
+  (`nm_*` columns) + `docs/NATIVE_VM.md` (*The gap does not decompose in the reader's own field order either*) +
+  `docs/CLASS_DEFAULTS.md` + `docs/UNKNOWNS.md` (eighth entry) + this note.
+
 ### Execution notes (2026-11-13, the reader's second call is handed `+0x4dc`, staged under the previous call)
 
 - **The question the last note left is a stack question, and the stack answers it.** `0x3a8af` has one `PUSH` in
