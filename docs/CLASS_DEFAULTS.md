@@ -615,6 +615,38 @@ block start these measurements were built on is confirmed from the tag side a se
 front of it belong to the record. 67 is not zero, which is why the boundary rule alone is not enough to place a block;
 requiring the *same* rule at the earlier position is what separates them.
 
+### The tail's leading value is a count, and each pair's second field is a reference
+
+The named next measurement was to parse each pair as one `FName` "and ask whether the leading compact value is the
+pair count or the first name's index". Both halves are measured on the 291 records that close
+(`inventory/class_record_tail.csv`; `fname_exact`, `refs`, `neg_target`, `names_kind`):
+
+- **The leading value is the count.** Read the other way -- the leading value as the first name's index and the rest
+  as a bare `(index, number)` sequence -- the tail closes on **0 of the 219** three-pair tails. It closes on the six
+  two-pair tails only because their byte count is even (6 and 8 bytes are three and four two-byte names), and even
+  there the reading leaves a negative number, which an `FName` cannot hold. A seven-byte tail is three two-byte
+  names and one byte over, so the count-leading parse is the only one that consumes the bytes it is given.
+- **The second field is a reference, and the negative one names the same object in every package.** Each pair's
+  second value fits `ue2pkg.class_name_of`'s encoding -- 0 null, negative import `-v-1`, positive export `v-1` -- on
+  **225 of 225** parsed tails. The negative one names **one import**, `Class.Object` (the import of `Core.Object`),
+  on **219 of 225** rows; the same test aimed one import earlier scatters over five targets (123 `Class.Emitter`,
+  52 `Package.Core`, 26 `Class.Pawn`, 12 `Class.Actor`, 6 others). So the four spellings measured above (-6 on 149,
+  -3 on 52, -4 on 12, -7 on 6) are **one object at four import-table positions**: the per-package constant is
+  positional, not a value.
+- **The three first values are the package, `Core` and `System`.** Classified as tokens rather than strings (no name
+  of the package's own content enters the artifact), the rows split `pkg;Core;System` **189**, `pkg;Core;other`
+  **18** (17 `StargateContent`, 1 `StargateVehicles` -- the third value is a per-class name there),
+  `other;Core;System` **12** (all `GamePlay`, whose name-table spelling is `Gameplay`, not the file stem) and
+  `pkg;?` **6** (`Engine`'s two-pair tails, whose first value is outside the name table). So the tail is
+  package-level content, which is what the hash groups above measured from the other side.
+
+The tail is therefore a compact count and three (name, reference) pairs, and neither field is an `FName`: an
+`FName`'s second field is an unsigned number, and this one is signed and resolves. What is still open is not the
+grammar but the **owner** -- the destructor places no member in the record region that can hold a (reference,
+value) pair, and the tail is identical across every class of five of the seven packages, so its writer runs once
+per package rather than once per class.
+
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds

@@ -1176,6 +1176,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the tail's leading value is the count, and its second field is one reference)
+
+- **The named next measurement is answered, and the answer is the count.** Read as a bare `(index, number)` sequence
+  -- the leading value as the first name's index -- the tail closes on **0 of the 219** three-pair tails
+  (`fname_exact`); it closes only on the six two-pair tails, whose even byte count lets three or four two-byte names
+  consume them, and there the reading leaves a negative number, which an `FName` cannot hold. The count-leading
+  parse consumes the bytes exactly on all 219.
+- **The second field is a reference, and the negative one names the same object in every package.** Each pair's
+  second value fits `class_name_of`'s encoding (0 null, `-v-1` import, `v-1` export) on **225 of 225** parsed tails;
+  the negative one names `Class.Object`, the import of `Core.Object`, on **219 of 225**, where the same test one
+  import earlier scatters over five targets (123 `Class.Emitter`, 52 `Package.Core`, 26 `Class.Pawn`, 12
+  `Class.Actor`, 6 others). The four spellings of the negative value (-6 on 149, -3 on 52, -4 on 12, -7 on 6) are
+  therefore one object at four import-table positions: the per-package constant is positional, not a value.
+- **The first values name the package, `Core` and `System`.** As tokens, not strings: `pkg;Core;System` 189,
+  `pkg;Core;other` 18 (17 `StargateContent`, 1 `StargateVehicles`), `other;Core;System` 12 (all `GamePlay`, whose
+  name-table spelling is `Gameplay`), `pkg;?` 6 (`Engine`'s two-pair tails, first value outside the name table). So
+  the tail is package-level content -- the same conclusion the hash groups reached from the other side.
+- Tool (`tools/class-record-tail.py`: `walk_fnames`, `resolve_ref`, a `names_kind` classifier; five new artifact
+  columns, four new report lines, eight new `--check` assertions) + `inventory/class_record_tail.csv` (291 rows,
+  five new columns) + `docs/CLASS_DEFAULTS.md` (*The tail's leading value is a count, and each pair's second field
+  is a reference*) + `docs/NATIVE_VM.md` + `docs/UNKNOWNS.md` U17 + `make class-record-tail`'s help line + this note.
+  Reads the packages and one committed CSV; no boot, no Ghidra, no value decoded, and the new column carries a class
+  of name rather than a name of the package's own content.
+- **Next measurement, named:** the writer. The tail is byte-identical across every class of five of the seven
+  packages, so whatever writes it runs per package rather than per class, and `UClass::Serialize`'s only per-class
+  writers after the record array are the two name-array calls at `0x3a8af` (`+0x4dc`) and `0x3a904` (`+0x4f4`).
+  Read `0x0003a800`'s body between the second of those and the defaults branch -- `$WORK/module-export/Core/`
+  already holds the decompile -- and name the member whose value would be three (name, reference) pairs long.
+
 ### Execution notes (2026-11-13, the record array's writer ends at its epilogue, and the four members behind it are arrays)
 
 - **The named next measurement is answered, and the answer is no.** `FUN_0003d900` read to its end is **306 bytes**

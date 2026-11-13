@@ -1496,3 +1496,22 @@ byte buffer, two 4-byte name arrays and a 2-byte string member, and that none of
     python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
     python3 tools/member-access-census.py --xbe DUMP/default.xbe \
         --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514 --report
+
+### The tail is a count of name/reference pairs, and not an `FName` array
+
+`tools/class-record-tail.py` now reads the 6-to-9-byte tail both ways on the 291 records that close. As a bare
+`(index, number)` `FName` sequence -- the leading value taken as the first name's index -- it closes **0 of the 219**
+three-pair tails (the six two-pair tails close only because 6 and 8 bytes are an even number of two-byte names, and
+they leave a negative number behind, which an `FName` cannot hold). As a compact count plus that many pairs it
+closes all 219, and every pair's second value then fits the archive's reference encoding (0 null, negative import
+`-v-1`, positive export `v-1`) on **225 of 225** parsed tails. The negative term names one import, `Class.Object`
+(the import of `Core.Object`), on **219 of 225** rows, against five distinct targets when the same test is aimed one
+import earlier -- so the four spellings that term takes across the corpus are one object at four import-table
+positions, and the field is a reference rather than a number. The pairs' first values classify as the package's own
+name, `Core` and `System` on 189 rows (`pkg;Core;other` 18, `other;Core;System` 12, `pkg;?` 6), which is why the same
+tail closes every class in five of the seven packages. The owner is still unnamed: no member the destructor places
+in the record region can hold such a pair, and a tail written once per package is not written per class.
+
+    make class-record-tail
+    python3 tools/class-record-tail.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory
+    python3 tools/class-record-tail.py --class WaterZone --package GamePlay --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15

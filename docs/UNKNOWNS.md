@@ -2930,3 +2930,18 @@ archive `+0x18` and a number through `+0x1c`, and the tail's (compact, compact) 
 that same two-field shape -- parse each pair as one `FName` and ask whether the leading compact value is the pair
 count or the first name's index. Numbers: `docs/NATIVE_VM.md`, *The array writer is 306 bytes, and the four members
 behind it are arrays*.
+
+**2026-11-13 (third): the tail's grammar is a count and three (name, reference) pairs, and neither field is an
+`FName`.** The previous "what would settle it" asked whether the leading compact value is the pair count or the
+first name's index. It is the count: the bare-`FName` reading closes **0 of the 219** three-pair tails, and the
+count-leading parse closes all 219 exactly. Each pair's second value fits the archive's reference encoding (0 null,
+`-v-1` import, `v-1` export) on **225 of 225** parsed tails, and the negative one names the same import --
+`Class.Object`, i.e. `Core.Object` -- on **219 of 225**, where the same test one import earlier scatters over five
+targets (123 `Class.Emitter`, 52 `Package.Core`, 26 `Class.Pawn`, 12 `Class.Actor`, 6 others). So the four spellings
+of that term are one object at four import-table positions, and an `FName`'s unsigned number cannot be it. The first
+values classify as the package's own name, `Core` and `System` on 189 rows, which is why a package's classes share
+one tail. **What would settle the tail's owner** is now its writer: the tail is written once per package, and
+`UClass::Serialize`'s only per-class writers after the record array are the two name-array calls at `0x3a8af` and
+`0x3a904`, so the body between the second of those and the defaults branch is the read. Numbers:
+`docs/CLASS_DEFAULTS.md`, *The tail's leading value is a count, and each pair's second field is a reference*;
+`inventory/class_record_tail.csv`.
