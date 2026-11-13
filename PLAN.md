@@ -1178,6 +1178,40 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the 54 typed receivers are a dispatch, and 36 of them are one property)
+
+- **The residue the last note named is measured, and none of it is a parse gap.** `--lists` prints the typed residue
+  with names now: **54 sites** whose receiver's static type's chain declares no such name, of which **7 place** on the
+  one descendant that declares it (`IsUnconscious` 4, `GetAggroLevel` 3 -> `StargateGame.BotEnemy`), **42 stay a
+  dispatch** over several descendants (14 names; `ClientMessage` 25, `Possess` 3, `CallToArms` 3, `ValidIndex` 1),
+  **5** name a function only classes outside the subtree declare, and **0** a function no class declares. By receiver
+  class: `Object` 36, `BotBase` 14, `UnrealScriptedSequence` 3, `Pawn` 1. So the answer to "which of the 14 names is
+  declared by exactly one class below each receiver" is none of them, and the residue's size is a *dispatch width*
+  that is now written down instead of a declaration that is still missing.
+- **36 of the 54 are `InstanceVariable Outer`, and it is the root's own property.** `Outer` is `Core.Object`'s
+  `var native const object Outer`, typed at the universal base, so every declaring class in the corpus is below the
+  receiver and the descendant lookup cannot narrow it; the callers (`Engine.CheatManager`, `AdminBase`,
+  `PlaylistParserBase`) extend `Object`, so their own chains are empty. The declarer counts are small and named:
+  `ClientMessage` 3 (`Pawn`, `PlayerController`, `Security`), `ConsoleCommand` 4, `PlayerCalcView` 3, `Possess` 5,
+  `Save` 5, `TriggerEvent` 3, `ClientReStart` 2, `ValidIndex` 2, the six SG1 sight toggles 2 each.
+- **The shipped source for those classes cannot be the source that compiled, and that is worth knowing before anyone
+  reads a receiver out of it.** `Engine.CheatManager`'s text calls `ClientMessage(...)` bare and declares no
+  `ClientMessage`; only `Security`, `PlayerController` and `Pawn` declare it in the eighteen packages, none on that
+  chain -- while the bytecode carries `Outer` as the receiver of each of those calls. So the bytecode outranks the
+  extracted text for a call site, the same way it already does for a body the decompiler lost.
+- **The 14 `BotBase` receivers split 7 / 6 / 1.** Seven place on `BotEnemy` (`IsUnconscious`, `GetAggroLevel`), six
+  stay a dispatch (`Possess` 2 over 10 bots, `CallToArms` 3 over `BotEnemy`/`BotLite`/`BotSG`, `UnPossess` 1 over 7),
+  one (`SetPawnClass`) has no declarer below the receiver.
+- Tool (`--lists` now names the typed residue: package, class, function, call, receiver type, the token in front and
+  its operand name, and the classes below the receiver) + `docs/BYTECODE.md` (*A receiver the class text never
+  shows*) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra round, no CSV row moves.
+- **Next measurement, named:** the five names only classes outside the subtree declare (`GetMoveTarget` 2,
+  `GetMyPlayer` 1, `TakeOver` 1, `SetPawnClass` 1) are the corpus question that is still open -- read the *sites that
+  assign* the field or local in front (`NewBot` in `StoryModeGame.AddBotRoster`, `GoalScript` in `BotEnemy` and
+  `BotSG`, `EnemyAcquisitionScript` in `BotSG.EnemyChanged`) and intersect the classes those assignments name with the
+  declarers of the call. A field's assignment is a sharper type than its declaration, and it is a `Let` walk the call
+  table already has the parse for.
+
 ### Execution notes (2026-11-13, the array element's modifiers were inside its brackets)
 
 - **The residue phrase that read like a negative was a parse gap.** 35 sites said "array element: the array's type names

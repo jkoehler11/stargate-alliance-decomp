@@ -2438,7 +2438,10 @@ def calls_report(path, table, out=None, lists=0):
     (`descendant:Pkg.Class`), several are a dispatch the static type cannot decide. `--lists N` prints
     the residue with names -- package, class, function, call, the token in front, that token's
     operand name and the reason -- because a residue that is only counted is a residue the next
-    session has to re-find. Locals are the exception --
+    session has to re-find. The typed residue is listed the same way: a receiver whose own chain declares no
+    such name, the classes below the receiver that do declare it, and the token's own operand name -- because
+    that set is what says whether the site is a dispatch or a reading that is still missing. Locals are the
+    exception --
     their type is not a class property, so it is not in `inventory/class_properties.csv` -- which is why they are
     counted separately below.
 
@@ -2593,6 +2596,9 @@ def calls_report(path, table, out=None, lists=0):
     gap_names = collections.Counter()
     # The receiver typed to a class whose chain declares nothing of that name: what the corpus knows *below* it.
     gap_classes = collections.Counter()
+    # The typed gap with names: a residue that is only counted is a residue the next session has to re-find,
+    # and the token in front plus the classes below the receiver are what says whether the site is a dispatch.
+    gap_rows = []
     chain_state = collections.Counter()
     recv_state = collections.Counter()
     case_fixed = collections.Counter()
@@ -2905,6 +2911,10 @@ def calls_report(path, table, out=None, lists=0):
                         else:
                             gap_classes[rtype] += 1
                             hits = place_below(rtype, name)
+                            gap_rows.append((pkg_name, owner, pkg.name(e["name"]), name, rtype,
+                                             _operand_name(prev, export_at, import_at),
+                                             (prev["name"] or "op%02x" % prev["opcode"]) if prev else "self",
+                                             ",".join(sorted("%s.%s" % h for h in hits))))
                             if len(hits) == 1:
                                 (hp, hc), = hits
                                 where = "descendant:%s.%s" % (hp, hc)
@@ -3017,6 +3027,13 @@ def calls_report(path, table, out=None, lists=0):
           % ", ".join("%s %d" % kv for kv in below_outside.most_common(6)))
     print("        names no class declares: %s"
           % ", ".join("%s %d" % kv for kv in below_none.most_common(6)))
+    if lists and gap_rows:
+        print("      the typed residue with names: %d site(s); the first %d"
+              % (len(gap_rows), min(lists, len(gap_rows))))
+        for r in sorted(gap_rows, key=lambda r: (r[4], r[3], r[0], r[1], r[2]))[:lists]:
+            print("        %-6s %-26s %-28s %-24s receiver %-6s %-16s %-18s below: %s"
+                  % (r[0], r[1][:26], r[2][:28], r[3][:24], r[4][:6], r[6][:16], r[5][:18],
+                     r[7] or "-"))
     print("      a completed value in front (a self-call, or a receiver the walk did not reach): %d"
           % (len(open_) - len(untyped) - len(typed_gap)))
     if value_tokens:
