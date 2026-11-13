@@ -880,6 +880,67 @@ i.e. import-shaped, on 227; positive on 204; a multi-byte or non-index byte on 1
 `83` (32) and `85` (30) -- so the period is mostly one small index value repeating at a 9-byte stride, not a hash
 or a pointer.
 
+### The walk back continues the record's own widths, and the count is still not at the end of it
+
+The previous note refused a fixed 9-byte lattice behind the run and kept the reading the writer implies: each
+record's reference is a compact index of 1 to 5 bytes, so the array's earlier elements need not be 9 wide and its
+head sits in front of a *variable*-stride body. `tools/class-record-walkback.py` (`make class-record-walkback`,
+`inventory/class_record_walkback.csv`, `--check` in `make ci`) walks exactly that: from the run's first element
+boundary -- the byte the period search identifies as the record's reference -- one element at a time, an element
+taken only where its reference decodes to exactly its own width and names an object the package has (a positive
+index inside the export table, a negative one inside the import table); a step with two candidate widths is
+recorded, not guessed. A head is accepted only where a compact count **ending exactly at the boundary the walk
+reached** equals the elements walked plus the run's units -- an array's count is adjacent to its first element, so
+the 1-5 bytes of slack the previous test allowed is a near miss here, not a hit. The null is the same walk, same
+widths, aimed one byte past that boundary.
+
+| measure | value |
+|---|---|
+| classes with a stride-9 run | 536 of 2,204 |
+| the walk takes at least one step | **242 of 536** (45.1%) |
+| three steps | 102 of 536 (19.0%) |
+| eight or more steps (11 on 24 classes, 32 at most) | 24 of 536 (4.5%) |
+| the null (one byte past the boundary) takes a step | 52 of 536 (9.7%), never more than 2 |
+| a count equal to the elements walked + the run's units, at the head | **1 of 536** (0.2%) |
+| the null finds a head | **3 of 536** (0.6%) |
+| a count equal to the walked total ending 1-5 bytes early, refused as not adjacent | 15 of 536 |
+| the chain stopped by two candidate widths | 28 of 536 (5.2%); by none 506; by the 32-step cap 2 |
+
+**The widths continue, so what is in front of the run is the record's own shapes.** 242 of 536 walk at least one
+element and 24 walk eight or more, against 52 and 0 for the same walk aimed one byte off, and a 9-13 byte element
+is taken only when its reference lands on an object the package's tables actually hold -- a chain that long is not
+what arbitrary bytes give. The run is therefore *inside* a variable-stride body of the same grammar rather than at
+the front of one.
+
+**And the count is still not at the end of that body.** One class of 536 has a count equal to the elements walked
+plus the units immediately in front of the boundary the chain reached, against three for the null: at chance, below
+the control rather than above it. The deepest case says the same thing in one window: `AmbientCreatures.HerdAnimal`
+has 15 units at offset 952 of a 1,215-byte middle, the chain walks **11** elements back from it (references `0xA1`
+and `0xB3` alternating, 9 bytes each), and stops at 853 where the next element would start on `51 0b ae f6 02 ...`,
+a byte group that is not a reference at any width. The 14 bytes in front of that stop are
+`05 00 00 00 00 51 0b ae f6 02 00 00 00 00` -- a dword 5, a zero, a four-byte value and a dword 2 -- and the count
+this array would need there is **26** (11 walked plus the run's 15). It is not there, and no index whose value could
+be a count is: five widths of search find *some* index ending at that position on 480 of the 506 unbranched
+chains, which is what any byte position gives when five widths are tried, and the value it spells sits 3-7
+**below** the unit count on the six commonest cases (a small integer, 2 on the commonest row).
+
+**The repeated dword does not name an object either.** Decoding it as the single-field index it looks like and
+resolving that through the package's own tables names *something* on 338 of 536 (63.1%), but every name it
+produces is the front of the table: import 5 `Pawn` (43 classes), import 33 `Canvas` (28), `UWindowCheckbox` (24),
+export 1 `Pawn` (19), import 12 `Actor` (12) -- 122 distinct (package, object) pairs, the commonest holding 24
+classes. In `AmbientCreatures` the same frequencies land on import 51, `bDeleteMe`, a `BoolProperty` that no record
+array holds. A one-byte index cannot name more than 63 objects and the ones it names are the first entries of each
+package's table, so "a table of references to one import" is not what the numbers say: the dword is a **small
+integer** -- `01`, `83` and `85`, i.e. 1, 3 and 5, in the commonest cases -- whose top bits read as a compact
+index's sign.
+
+**Two readings are left standing, and neither is a count in front of the elements.** Either the array's count is
+written as a field of the record *before* the body, so the ordering rather than the stream is what is missing, or
+the body is not a `TArray` at all but a run read until a terminator -- the shape the defaults themselves have, since
+`UClass::Serialize` writes them with no length. The next instrument is `FUN_0003d900`'s **caller**, which allocates
+the array it fills: its `push count; call operator new` pair, or the `TArray` head it passes in, is where a count of
+this body is written, and it is a read of code rather than another walk of the bytes.
+
 ### `UClass::Serialize` (`0x0003a800`): the defaults are a buffer, and the record's tail is arrays
 
 `UStruct::Serialize` is not the last reader on a class export's path. `UClass::Serialize` (`0x0003a800`, 1,310 bytes)
