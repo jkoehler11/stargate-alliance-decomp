@@ -1176,6 +1176,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the walk back finds the record's widths and still no count)
+
+- **The variable-stride walk the last note asked for is measured, and it continues the record's own shapes.**
+  `tools/class-record-walkback.py` steps back from the run's first element boundary one element at a time (one
+  compact reference of 1-5 bytes plus two dwords, an element taken only where its reference names an object in the
+  package's own tables, two candidate widths recorded rather than guessed): **242 of 536** classes take at least
+  one step, 102 three, **24 eight or more** (11 on `AmbientCreatures.HerdAnimal`), against **52 and 0** for the same
+  walk aimed one byte past the boundary. So the bytes in front of the run are the record's grammar and the run sits
+  inside a body, not at the front of one.
+- **The head is still not there, at chance or below it.** A compact count ending *exactly* at the boundary the walk
+  reached and equal to the elements walked plus the run's units exists on **1 of 536** (0.2%) against **3 of 536**
+  (0.6%) for the null; 15 more match the arithmetic but end 1-5 bytes early, which an array's count cannot do, and
+  are refused. On the deepest class the count would have to be 26 (11 + 15) and the bytes there are
+  `05 00 00 00 00 51 0b ae f6 02 00 00 00 00`.
+- **The repeated dword names the table's front, not a target.** It decodes as a one-field index on 338 of 536 and
+  resolves to an object -- `Pawn` 43, `Canvas` 28, `UWindowCheckbox` 24, export `Pawn` 19, `Actor` 12 -- but every
+  one of those is a low index (import 5, 33, 3; export 1), and on one package the same frequency lands on import 51
+  `bDeleteMe`, a `BoolProperty`. A one-byte index cannot name more than 63 objects, so the dword is a small integer
+  (1, 3, 5 in the commonest cases) whose top bits read as a sign, not a reference.
+- Tool (`tools/class-record-walkback.py`: `--class`, `--sweep`, `--report`, `--check`) +
+  `inventory/class_record_walkback.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The walk back continues the record's
+  own widths*) + `docs/CLASS_DEFAULTS.md` (*The elements continue past the run*) + `docs/UNKNOWNS.md` U17 +
+  `make class-record-walkback` + this note. Reads the packages and the committed prefix table; no boot, no value
+  decoded.
+- **Next measurement, named so the next run does not re-derive it:** `FUN_0003d900`'s caller -- the function that
+  allocates the array whose records it fills. Read its `push count; call operator new` pair and the `TArray` head
+  it passes in: that names where a count of this body is written (a field of the record before the body) instead of
+  another walk of the bytes, and it is one decompile in the Ghidra project the last rounds already built.
+
 ### Execution notes (2026-11-12, the record array's run has no head, and the null is what says so)
 
 - **The count in front of the run is not there, and the chance rate is the control.** The previous note located the

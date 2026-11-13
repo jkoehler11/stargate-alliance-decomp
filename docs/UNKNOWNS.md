@@ -2768,3 +2768,19 @@ length) and accepts a head only where the count there equals the elements it wal
 shifted start as the control, because a chain of variable steps is cheap to fit. Numbers: `docs/NATIVE_VM.md`, *The
 run has no head*; `docs/CLASS_DEFAULTS.md`, *The array's head is not in front of its run*.
 
+**2026-11-12: the walk back finds the record's widths and still no count.** `tools/class-record-walkback.py`
+(`make class-record-walkback`, `--check` in `make ci`, artifact `inventory/class_record_walkback.csv`) walks back
+from the 9-byte run's first element boundary at the widths its writer uses -- one compact reference of 1-5 bytes
+plus two dwords, an element taken only where its reference names an object the package's tables hold, a head
+accepted only where a compact count ends *exactly* at the boundary and equals the elements walked plus the run's
+units. The body is real: **242 of 536** classes walk at least one element back and **24** walk eight or more (11 on
+`AmbientCreatures.HerdAnimal`) against **52 and 0** for the same walk aimed one byte off. The head is not: **1 of
+536** (0.2%) against **3 of 536** (0.6%) for the null, with 15 more matching the arithmetic 1-5 bytes early. And the
+dword the run repeats is a small integer, not a reference -- resolving it names `Pawn` (43), `Canvas` (28),
+`UWindowCheckbox` (24), i.e. the first entries of each package's table (a one-byte index cannot name more than 63
+objects), and on one package it lands on `bDeleteMe`, a `BoolProperty`. So the run is a stretch inside a
+variable-stride body and the array's count is not at the end of it. **What would settle it:** the writer that
+allocates the array -- `FUN_0003d900`'s caller, whose `push count; call operator new` pair and `TArray` head say
+where the count is written -- or a reading in which the body is not a `TArray` but a run terminated by a sentinel,
+as `UClass`'s defaults are. Numbers: `docs/NATIVE_VM.md`, *The walk back continues the record's own widths*;
+`docs/CLASS_DEFAULTS.md`, *The elements continue past the run*.
