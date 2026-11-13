@@ -2008,6 +2008,16 @@ _SRC_FUNC = re.compile(r"^[ \t]*(?:(?:exec|protected|private|public|simulated|st
 _SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+)\s+(.+?);", re.I)
 _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+)\s+(\w+)\s*(?:=.*)?$",
                         re.I)
+# A struct's members are `var` lines, not `local` ones, and may carry a declaration category (`var() int X;`).
+# `struct` is matched with spaces and tabs only: `\s` would let the modifier run swallow the line break into the
+# opening brace and take the first member for the struct's own name.
+# A struct member's type can sit behind as many modifiers as a property's (`var config UIWidget Face;`,
+# `var() editconst array<Foo> List;`), and reading the first token as the type typed 23 members literally `config`.
+_SRC_VAR = re.compile(r"^\s*var(?:\s*\([^)]*\))?\s+(?:(?:const|config|globalconfig|private|protected|public|"
+                      r"transient|native|editconst|editinline|editinlinenotify|export|noexport|init|travel|input|"
+                      r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+)\s+(.+?);", re.I)
+_SRC_STRUCT = re.compile(r"^[ \t]*struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
+                         r"protected|public)[ \t]+)*(\w+)", re.I | re.M)
 
 
 def source_returns(text):
@@ -2101,6 +2111,47 @@ def source_declarations(text):
             for fn, decls in out.items()}
 
 
+def source_structs(text):
+    """{struct: {member: declared type}} from a class's ScriptText, or {} when it declares none.
+
+    A struct's members are `var` lines inside the struct's own block in the class text, and no record carries
+    their declared class: `SquadItemStruct.FaceWidget` is an export whose class is `ObjectProperty` and whose
+    Outer is the struct -- exactly as a local's record names it and not its type. So the block is the same
+    file-level parse the local pass already does, one brace span deeper, and a member declared inside a *nested*
+    struct block belongs to that struct, not to the one around it. A member the text declares with two types is
+    dropped rather than guessed (`None`), the same rule a local gets.
+    """
+    if not text:
+        return {}
+    text = _SRC_COMMENT.sub("", text)
+    out = collections.defaultdict(lambda: collections.defaultdict(set))
+    for m in _SRC_STRUCT.finditer(text):
+        j = text.find("{", m.end())
+        if j < 0:
+            continue
+        depth, k = 0, j
+        while k < len(text):
+            if text[k] == "{":
+                depth += 1
+            elif text[k] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            k += 1
+        rel = 0
+        for line in text[j:k].splitlines():
+            vm = _SRC_VAR.match(line) if rel <= 1 else None
+            rel += line.count("{") - line.count("}")
+            if not vm:
+                continue
+            for nm in vm.group(2).split(","):
+                nm = nm.strip()
+                if nm:
+                    out[m.group(1)][nm].add(vm.group(1))
+    return {s: {n: (next(iter(t)) if len(t) == 1 else None) for n, t in ms.items()}
+            for s, ms in out.items()}
+
+
 def shuffled_source(decls, rets):
     """A control: the same class's declarations with every type rotated onto a neighbouring name.
 
@@ -2140,16 +2191,16 @@ def _kind_key(kind):
 
 def _receiver_type(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
                    import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None,
-                   call_result=None, local_chain=None, ancestor_local=None, local_case=None):
+                   call_result=None, local_chain=None, ancestor_local=None, local_case=None, structs=None):
     """The class the receiver expression's declared type names, or "" when its token cannot say."""
     return _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types,
                              import_owner, owner_fixed, owner_conflict, owner_agree,
-                             call_result, local_chain, ancestor_local, local_case)[0]
+                             call_result, local_chain, ancestor_local, local_case, structs)[0]
 
 
 def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, local_types=None,
                       import_owner=None, owner_fixed=None, owner_conflict=None, owner_agree=None,
-                      call_result=None, local_chain=None, ancestor_local=None, local_case=None):
+                      call_result=None, local_chain=None, ancestor_local=None, local_case=None, structs=None):
     """(the class the expression's declared type names, why it names none).
 
     A property's type comes from its declaration in `inventory/class_properties.csv`; a *local* is a property
@@ -2164,7 +2215,7 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
     if nm in ("Context", "ClassContext") and expr["children"]:
         return _receiver_reading(expr["children"][-1], export_at, import_at, prop_type, prop_type_by_name,
                                  local_types, import_owner, owner_fixed, owner_conflict, owner_agree,
-                                 call_result, local_chain, ancestor_local, local_case)
+                                 call_result, local_chain, ancestor_local, local_case, structs)
     if nm in ("ArrayElement", "DynamicArrayElement") and expr["children"]:
         # An array element is the array's declared element type: `_class_of_type` unwraps `array<Pawn>` to `Pawn`.
         # The two children are the index and the array (in that order, measured), so the index names nothing and the
@@ -2172,7 +2223,7 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         for child in expr["children"]:
             cls, _why = _receiver_reading(child, export_at, import_at, prop_type, prop_type_by_name, local_types,
                                           import_owner, owner_fixed, owner_conflict, owner_agree,
-                                          call_result, local_chain, ancestor_local, local_case)
+                                          call_result, local_chain, ancestor_local, local_case, structs)
             if cls:
                 return cls, ""
         return "", "array element: the array's type names no class"
@@ -2194,6 +2245,34 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
                 return name, ""
             return "", "a cast whose import is a %s, not a class" % (kind or "object")
         return "", "a literal or cast that names no class"
+    if nm == "StructMember":
+        # A struct member's own record names the member and its Outer names the struct (`FaceWidget`'s outer is
+        # `SquadItemStruct`, `Message`'s is `LocalizedMessage`), and its class says only that it is a property --
+        # the declared class is a `var` line in the `struct` block of the class text (`source_structs`).
+        if structs is None:
+            return "", "struct member: the struct tables were not loaded"
+        value, _e = read_index(expr["operands"], 0)
+        name, owner = "", ""
+        if value > 0 and value in export_at:
+            name, _kind, owner = export_at[value]
+        elif value < 0 and -value in import_at:
+            # A class that uses a struct another class declares *imports* its members: the record is the import
+            # and its own OuterIndex is the struct (`HUDLocalizedMessage`), not a class's property, so the export
+            # table alone answers "names no record" for six of the twenty-five sites.
+            name, _kind = import_at[-value]
+            owner = (import_owner or {}).get(-value) or ""
+        if not owner:
+            return "", "struct member: the operand names no record"
+        members = structs(owner)
+        if members is None:
+            return "", "struct member: no class text declares the struct"
+        if (name or "").lower() not in members:
+            return "", "struct member: the struct does not declare it"
+        t = members[(name or "").lower()]
+        if t is None:
+            return "", "struct member: the struct declares it with two types"
+        cls = _class_of_type(t)
+        return (cls, "") if cls else ("", "struct member: declared, but not as a class")
     if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
         return "", "not an object expression"
     value, _e = read_index(expr["operands"], 0)
@@ -2533,6 +2612,45 @@ def calls_report(path, table, out=None, lists=0):
                         return d
             return hit or {}
 
+        # A struct's members are `var` lines in the `struct` block of the class text that declares it, and a
+        # struct may be declared in any package (`SquadItemStruct` in StargateGame, `LocalizedMessage` in
+        # Engine), so the corpus is walked once, on the first site that asks, into {struct: {member: type}}.
+        # Two classes that declare the same struct with different member types drop that member, not the struct.
+        struct_index = {}
+        struct_built = [False]
+
+        def build_structs():
+            """{struct: {member: declared type}} over every package's class texts, once."""
+            if struct_built[0]:
+                return
+            struct_built[0] = True
+            for pname in sorted(pkg_paths):
+                if pname == pkg_name:
+                    pobj, cexp = pkg, class_export
+                else:
+                    pobj = Package(pkg_paths[pname])
+                    pobj.read_names()
+                    pobj.read_imports()
+                    pobj.read_exports()
+                    cexp = {}
+                    for k, x in enumerate(pobj.exports, 1):
+                        if pobj.class_name_of(x) == "Class":
+                            cexp.setdefault(pobj.name(x["name"]), (k, x))
+                for _cname, (k, x) in cexp.items():
+                    for sname, members in source_structs(_script_text(pobj, x, k - 1)).items():
+                        sink = struct_index.setdefault(sname.lower(), {})
+                        for mname, t in members.items():
+                            low = mname.lower()
+                            if low not in sink:
+                                sink[low] = t
+                            elif sink[low] != t:
+                                sink[low] = None
+
+        def structs_for(name):
+            """{member: declared type} for one struct name, or None when no class text declares it."""
+            build_structs()
+            return struct_index.get((name or "").lower())
+
         # A by-name call carries a name-table index; whether it names a function is a question for the chain above.
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function":
@@ -2661,7 +2779,8 @@ def calls_report(path, table, out=None, lists=0):
                                                            prop_type_by_name, here_locals,
                                                            import_owner, owner_fixed,
                                                            owner_conflict, owner_agree,
-                                                           call_result, local_chain, ancestor_local, local_case)
+                                                           call_result, local_chain, ancestor_local, local_case,
+                                                           structs_for)
                             if rtoken in CALL_TOKENS:
                                 call_sites[(rtoken, rtype or (why or "no reason"))] += 1
                         else:
@@ -3407,11 +3526,83 @@ def diverge_report(path, rows=0):
     return 0
 
 
+def struct_check():
+    """A control on the struct reading: the parse, the four ways a member names nothing, the one that names a class.
+
+    No dump: every case is a synthetic `struct` block or a hand-built expression, so `tool-check-contract` can
+    drive it (`make ci`) and a site the reading places is attributable to the declaration that placed it.
+    """
+    fails = []
+
+    def want(label, got, expected):
+        if got != expected:
+            fails.append("%s: got %r, want %r" % (label, got, expected))
+
+    want("a struct and its members",
+         source_structs("class X extends Y;\n\nstruct A\n{\n\tvar int Count;\n\tvar UIWidget Face;\n}\n"),
+         {"A": {"Count": "int", "Face": "UIWidget"}})
+    want("a commented-out member is not a member",
+         source_structs("struct A\n{\n\tvar int Count;\n\t/* var UIWidget Face; */\n}\n"),
+         {"A": {"Count": "int"}})
+    want("a nested struct's member belongs to the nested struct",
+         source_structs("struct A\n{\n\tvar int Count;\n\tstruct B\n\t{\n\t\tvar UIWidget Face;\n\t};\n"
+                        "\tvar B Inner;\n}\n"),
+         {"A": {"Count": "int", "Inner": "B"}, "B": {"Face": "UIWidget"}})
+    want("a member declared twice with two types is dropped",
+         source_structs("struct A\n{\n\tvar int X;\n\tvar float X;\n\tvar name Y;\n}\n"),
+         {"A": {"X": None, "Y": "name"}})
+    want("a class with no struct block declares none", source_structs("function Touch(Actor A) {}\n"), {})
+    want("a modifier in front of the type is not the type",
+         source_structs("struct A\n{\n\tvar config UIWidget Face;\n\tvar() editconst array<Foo> List;\n}\n"),
+         {"A": {"Face": "UIWidget", "List": "array<Foo>"}})
+
+    expr = {"name": "StructMember", "operands": b"\x01", "children": [{"name": "LocalVariable",
+                                                                     "operands": b"\x01", "children": []}]}
+
+    def read(export_at, members):
+        return _receiver_reading(expr, export_at, {}, {}, {}, None, None, None, None, None, None, None, None, None,
+                                 (lambda _name: members) if members is not None else (lambda _name: None))
+
+    want("a member declared as a class names it",
+         read({1: ("Face", "ObjectProperty", "SquadItemStruct")}, {"face": "UIWidget"}), ("UIWidget", ""))
+    want("a member declared as a class<> names the inner class",
+         read({1: ("Message", "ClassProperty", "LocalizedMessage")}, {"message": "class<LocalMessage>"}),
+         ("LocalMessage", ""))
+    want("a member declared as a scalar names no class",
+         read({1: ("X", "IntProperty", "A")}, {"x": "int"}),
+         ("", "struct member: declared, but not as a class"))
+    want("a struct that declares the member twice names no class",
+         read({1: ("X", "IntProperty", "A")}, {"x": None}),
+         ("", "struct member: the struct declares it with two types"))
+    want("a member the struct does not declare",
+         read({1: ("X", "IntProperty", "A")}, {"y": "int"}),
+         ("", "struct member: the struct does not declare it"))
+    want("a struct no class text declares", read({1: ("X", "IntProperty", "A")}, None),
+         ("", "struct member: no class text declares the struct"))
+    want("a member that arrives as an import names its struct through the import's own outer",
+         _receiver_reading({"name": "StructMember", "operands": b"\x81", "children": []},
+                           {}, {1: ("Message", "ClassProperty")}, {}, {}, None, {1: "HUDLocalizedMessage"},
+                           None, None, None, None, None, None, None, lambda _name: {"message": "class<LocalMessage>"}),
+         ("LocalMessage", ""))
+    want("a member whose record is absent from the package",
+         _receiver_reading({"name": "StructMember", "operands": b"\x09", "children": []},
+                           {1: ("X", "IntProperty", "A")}, {}, {}, {}, None, None, None, None, None, None, None,
+                           None, None, lambda _name: {"x": "int"}),
+         ("", "struct member: the operand names no record"))
+
+    for one in fails:
+        print("FAIL " + one)
+    print("%d of 14 struct assertions pass" % (14 - len(fails)))
+    return 1 if fails else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hex", help="a script as hex")
     ap.add_argument("--file", help="a script as a binary file")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--check", action="store_true",
+                    help="self-test the struct reading on synthetic texts (no dump, writes nothing)")
     ap.add_argument("--header", metavar="PATH",
                     help="classify the five values in front of FriendlyName, for a package or a System directory")
     ap.add_argument("--script", nargs=3, metavar=("PACKAGE", "CLASS", "FUNCTION"),
@@ -3462,6 +3653,8 @@ def main():
     if args.shuffle and not args.calls:
         ap.error("--shuffle is a control on --calls: give it a package or a System directory")
 
+    if args.check:
+        return struct_check()
     if args.header:
         return header_report(args.header)
     if args.start:

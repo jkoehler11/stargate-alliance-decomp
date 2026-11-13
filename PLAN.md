@@ -1178,6 +1178,37 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, a struct member's class is a `var` line, and the twenty-five names are in)
+
+- **The block was the missing file, and it is the same parse one span deeper.** `StructMember` was the only object
+  expression the reading did not know: the member's record names the member and, through its Outer, the struct
+  (`FaceWidget` -> `SquadItemStruct`), but a property record carries no target class. The class text does -- `var
+  UIWidget FaceWidget;` inside the `struct` block -- so `source_structs` parses those blocks, the tool indexes them
+  over the corpus into `{struct: {member: type}}`, and the 25 sites that read `not an object expression` name a
+  class: **24 place on the receiver's chain** (15 `UIWidget` -- `SquadMenu.PostRender`'s five widget fields --
+  6 `Engine.LocalMessage` for `Message.GetOffset`, 2 `SquadAIBasic` and 1 `Engine.TeamInfo` from
+  `MindControlCrystal.ReleaseMind`), the twenty-fifth types to `BotBase` where `Possess` is a dispatch.
+  By-name placement **13,356 -> 13,385 of 13,507 (99.1%)**, the receiver's chain **2,738 -> 2,767**, the
+  untyped-object residue **83 -> 53**. Five `Engine.MaplistManager` array sites go with them (the array is a struct
+  member declared `array<...>`), which is why "array element" also falls 40 -> 35.
+- **Six of the twenty-five were imports, and twenty-three rows had a modifier for a type.** A class that uses
+  another class's struct imports its members, so the operand is an import whose own OuterIndex is the struct
+  (`HUDLocalizedMessage`) -- the export table alone answered "names no record" for six sites. And
+  `var config UIWidget Face;` put a modifier where the type belongs: 23 members were typed literally `config` in
+  `inventory/script_calls.csv` until the `var` line accepted the modifier list (`config`, `globalconfig`,
+  `editconst`, `editinline`/`editinlinenotify`, `noexport`, `travel`, `input`, `duplicatetransient`, ...).
+- **The residue is four named shapes now, and no script gap.** 35 arrays whose element type is a struct (a
+  negative: the element is not an object), 12 call results whose `FinalFunction` operand names no `Function` of the
+  package, 5 receivers whose subtree does not declare the name, 1 local the class text does not declare.
+- Tool (`source_structs`, the `StructMember` branch with its import arm, `_SRC_VAR`'s modifier list, and a
+  `--check` of fourteen assertions over synthetic blocks) + `inventory/script_calls.csv` regenerated (18,931 rows,
+  97 of them with a struct member as the receiver) + `docs/BYTECODE.md` (*A struct member's declared class is a
+  `var` line...*) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra round.
+- **Next measurement, named:** the 12 call results whose `FinalFunction` operand names no `Function` of the
+  package -- an operand that lands outside the export table is either an import or a mis-read width, and it is the
+  same import branch that named the six struct members.
+
+
 ### Execution notes (2026-11-13, the call residue is named, and two of its reasons were reading gaps)
 
 - **Naming the residue is what found the two bugs.** `--calls --lists N` prints every site of the untyped-object

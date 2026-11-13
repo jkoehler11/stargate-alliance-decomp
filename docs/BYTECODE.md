@@ -920,6 +920,33 @@ the conservative one for a rebuild, because it never invents a target class the 
 ambiguity is why a `receiver:` placement is written with its receiver class in the same row: a reader can re-judge
 any row individually.
 
+
+**A struct member's declared class is a `var` line in the class text, and it was the last typed residue.**
+`StructMember` was the one object expression the reading did not know: `FaceWidget.Update()` evaluates the struct
+member and then the call, and the member's own record names the member and its Outer the struct (`FaceWidget` ->
+`SquadItemStruct`, `Message` -> `HUDLocalizedMessage`) while its class says only `ObjectProperty` -- the declared
+class is a `var UIWidget FaceWidget;` line inside the `struct` block of the class that declares the struct.
+`source_structs` parses those blocks (a nested struct's members belong to the nested struct, and a member declared
+with two types is dropped rather than guessed), the tool indexes them once over the corpus into
+`{struct: {member: type}}`, and the 25 sites that read `not an object expression` now name a class: **24 place on
+the receiver's chain** -- 15 `UIWidget` (`SquadMenu.PostRender`'s five widget fields: `Fade` 6 with `Initialized`,
+`Update` 5, `ChangeColour` 2, `SetEnable` 2), 6 `Engine.LocalMessage` (`Message.GetOffset` in both HUDs), 2
+`StargateGame.SquadAIBasic` and 1 `Engine.TeamInfo` from `MindControlCrystal.ReleaseMind` -- and the twenty-fifth
+types to `BotBase`, where `Possess` stays the dispatch it always was. Naming them takes by-name placement
+**13,356 -> 13,385 of 13,507 (99.1%)**, the receiver's chain **2,738 -> 2,767**, and the untyped-object residue
+**83 -> 53**; `inventory/script_calls.csv` now carries 97 call sites whose receiver expression is a struct member.
+Five `Engine.MaplistManager` sites go with them, because the array there is a struct member declared `array<...>`
+and its element type sits behind the same block.
+
+**Two of the twenty-five needed the import table, and twenty-three rows had read a modifier as a type.** A class
+that uses a struct another class declares *imports* its members, so `Message`'s record in `GoauldConsoleHud` is an
+import whose own OuterIndex is the struct `HUDLocalizedMessage` -- six sites answered "the operand names no record"
+until the branch followed that field instead of the export table. And `var config UIWidget Face;` puts a modifier
+where the type belongs: 23 struct members were typed literally `config` in `script_calls.csv` before the modifier
+list (`config`, `globalconfig`, `editconst`, `editinline`/`editinlinenotify`, `noexport`, `travel`, `input`, ...)
+was accepted. `--check` drives fourteen assertions over synthetic blocks and hand-built expressions, so the parse
+and its four negatives are testable without the dump.
+
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
 `receiver:Pkg.Class` for the receiver's chain, or `descendant:Pkg.Class` for the one class below it that declares the

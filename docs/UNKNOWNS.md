@@ -1966,6 +1966,28 @@ callee is an import with no return type in this corpus, and one local of `Engine
 **What would settle the 25** is the struct's own member declarations, which the class `ScriptText` carries -- the same
 file-level parse as the local pass, with no boot and no Ghidra round.
 
+
+**2026-11-13, the struct members: the declared class is a `var` line in the class text, and it names 24 of 25.**
+The residue after the cast and modifier fixes was 83 sites over five reasons, and 25 of them were a `StructMember`
+whose record names the member (`FaceWidget`, `Message`) and, through its Outer, the struct (`SquadItemStruct`,
+`HUDLocalizedMessage`) but not the member's class -- a property record carries the kind `ObjectProperty` and no
+target class, the same limitation the local records have. The class text does carry it: a struct's members are
+`var` lines inside the `struct` block of the declaring class (`SquadItemStruct` in `SquadMenu`, `BackupData` in
+`MindControlCrystal`), which `source_structs` parses into `{struct: {member: type}}` and the tool indexes over the
+whole corpus. Six of the 25 are *imports* (a class that uses another class's struct imports its members, and the
+import's OuterIndex is the struct), so the reading follows that field too. **24 of 25 place on the receiver's
+chain** and the twenty-fifth types to `BotBase`, where `Possess` remains a dispatch; by-name placement goes
+**13,356 -> 13,385 of 13,507 (99.1%)** and the untyped-object residue **83 -> 53**. The count of "array element:
+the array's type names no class" falls 40 -> 35 for the same reason -- five `Engine.MaplistManager` arrays are
+struct members declared `array<...>`, so their element type was behind the same block.
+
+**What the 53 are, and none of them is a struct any more.** 35 arrays whose element type is a struct (an element
+of a struct array is not an object: a negative), 12 call results whose `FinalFunction` operand names no `Function`
+of the package, 5 receivers typed to a class whose subtree does not declare the name, and 1 local the class text
+does not declare. The next reading is one of those four, not another pass over the declarations: a `FinalFunction`
+operand that lands outside the export table is either an import or a mis-read width, and the import branch that
+named the struct members is the same test.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
