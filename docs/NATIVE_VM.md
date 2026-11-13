@@ -1090,3 +1090,56 @@ array walk and the bytecode walk were closed.
 
 Not measured yet: the walker's own dispatch (its jump table is the opcode table 3.7 needs), and whether any shipped
 function's script carries the `G` marker.
+
+### The array's count is its own first field, and its writer has one caller
+
+The previous note left one question open by name: `FUN_0003d900`'s caller, the function that "allocates the array
+whose records it fills", read from its `push count; call operator new` pair. That caller is `UClass::Serialize`
+itself, and it does not allocate anything: a direct-call census of the image (`python3 tools/call-census.py
+--target 0x3d900 --names`) finds **one** `E8` site for that function in 6.2 MB, `0x3a8a6`, inside `0x0003a800`,
+and there the archive and the class object's own member are pushed -- `this + 0x4d0`, with `this + 0x4dc` handed
+to the `FUN_0003d160` call that follows at `0x3a8af`. `FUN_0003d900` writes that member in place: `FUN_000637e0`
+on the `TArray`'s `Num` word first, then one element per unit through archive vtable `+0x18` (an object reference)
+and two raw dwords. The same census puts `0x3d160` at **7** call sites -- `0x3a8af` and `0x3a904` (the `+0x4dc`
+array and, on version > `0x62`, `+0x4f4`), `0x500a1`, `0x172fe4`, `0x22d53f`/`0x22d54c` and `0x66a93` in
+`UObject::Serialize` -- and `0x637e0` at **323**, which is what a count codec called by every array writer looks
+like. So there is no build-side allocation to find: the count is the array's **own first field**, written by the
+same function that writes the elements, and it counts the whole array rather than the elements a walk can reach.
+
+**Where the array therefore sits, and what the bytes say about it.** Because `UClass::Serialize` writes
+`UStruct`'s prefix and then, unconditionally, `UState`'s 22 bytes and five dwords before this field,
+`tools/class-record-array.py` (`make class-record-array`, `inventory/class_record_array.csv`, `--check` in
+`make ci`) reads the array at `prefix_end + 42` on every class and walks its tail -- the name arrays `+0x4dc` and,
+version-gated, `+0x4f4`, whose number is therefore 0, 1 or 2 rather than the two the field list assumed:
+
+| measure | value |
+|---|---|
+| located classes | 2,204 |
+| the array parses at `prefix_end + 42` | **549** (24.9%) |
+| ... with every element reference inside the package's tables | 365 of 549 (66.5%) |
+| ... walking on to land **exactly** on the defaults start | **3** of 549 (0.5%), none of them table-clean |
+| the same walk one byte later (`prefix_end + 43`) | **0** of 549 |
+| the same array with the dword group moved after it (`prefix_end + 22`) | 36 of 549 (6.6%), 0 exact |
+| where the walk stops short of the defaults: mode / median | **20** bytes (190 classes; 22 on 59, 21 on 31) |
+| the same grammar from every byte position of the middle | 1,214 of 2,204 (55.1%), against 602 (27.3%) aimed one byte short |
+
+**The position is the writer's, and the residue is one field wide.** Of the 549 classes where the array parses at
+`+42`, only 36 still parse when the dword group is moved after it, and a walk one byte late never lands at all --
+so the position in front of the array is decided: prefix, `UState`, five dwords, then the array. What follows the array is not another name array either: with 0, 1 or 2 of
+them tried, the walk misses the defaults by exactly **20 bytes** on 190 of 549 classes -- the dword group's own
+width -- where a missing name array would leave 2-3 bytes and a missing prefix would leave 42. The array is
+therefore real, sized from the record, and the 20 bytes between its tail and the defaults are the next field, not
+a rounding of this one.
+
+**And the free-position scan is why three readings could not settle this from the bytes.** The same grammar
+started at *every* position of the middle finds a walk that ends on the defaults on 1,214 of 2,204 classes, and on
+602 when the target end is one byte short: eleven-byte elements fit almost anything, so a head found by scanning is
+not a head. The earlier tools did not fail for want of a rule; they were asking a question the writer answers with
+a position and a count, and both of those are in the code.
+
+**What this does to the stride-9 run.** The run of identical 9-byte units sits inside this array's element span on
+**98 of 536** classes, so on most of them the run is a stretch of *something else* after the array -- on
+`AmbientCreatures.HerdAnimal` the array at `prefix_end + 42` is **22 records, every reference one byte**, ending
+at offset 246 of a 1,365-byte payload, while the 15-unit run the earlier note built on starts at 952, 706 bytes
+further into the record. The count that run never had in front of it is at the *array's* head, which is 905 bytes
+in front of the run and not adjacent to it.

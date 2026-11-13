@@ -1176,6 +1176,37 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the array's count is its own first field and its writer has one caller)
+
+- **The caller the last note named does not allocate, and the census is what says so.** `tools/call-census.py
+  --target 0x3d900 --names` finds **one** `E8` site for the array's writer in 6.2 MB: `0x3a8a6`, inside
+  `UClass::Serialize` (`0x0003a800`), which pushes the archive and the class object's own member at `+0x4d0`
+  (`+0x4dc` goes to the `FUN_0003d160` call at `0x3a8af`, `+0x4f4` to the one at `0x3a904` on version > `0x62`).
+  `FUN_0003d900` writes that member in place -- `FUN_000637e0` on its `Num` word first (compact index whenever
+  either archive flag is set, raw dword only when both are clear), then one element per unit -- so the count is the
+  array's **first** field and there is no `push count; call operator new` to find. The same census puts `0x3d160`
+  at 7 sites (including `0x66a93` in `UObject::Serialize`) and the count codec `0x637e0` at 323.
+- **The array is read at the position that gives it, and the residue after it is one field wide.**
+  `tools/class-record-array.py` walks `prefix_end + 42` (prefix, `UState`'s 22 bytes, five dwords) on all 2,204
+  located classes and tries 0, 1 or 2 trailing name arrays rather than the two the field list assumed: the array
+  parses on **549** (24.9%, table-clean on 365), against **36** of those 549 with the dword group moved after it
+  and **0** with the walk one byte late. **3** of the 549 land exactly on the defaults start; the rest stop short
+  by a mode of exactly **20 bytes** (190 classes; 22 on 59, 21 on 31), the five-dword group's own width -- so what
+  separates the record's fields from the 545 withheld blocks is a 20-byte field, not another name array.
+- **And the run the last three notes measured is not this array on most classes.** The stride-9 run lies inside
+  the array's element span on **98 of 536** classes; on `AmbientCreatures.HerdAnimal` the array at `prefix_end + 42`
+  is 22 records with every reference one byte (199 bytes, ending at 246) and the 15-unit run starts at 952, 706
+  bytes further in. The count that run never had in front of it is at the array's head, 905 bytes away.
+- Tool (`tools/class-record-array.py`: `--class`, `--sweep`, `--report`, `--check`) +
+  `inventory/class_record_array.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The array's count is its own first field,
+  and its writer has one caller*) + `docs/CLASS_DEFAULTS.md` (*The array's head is at +42 and the bytes after it
+  are one field, not a walk*) + `docs/UNKNOWNS.md` U17 + `make class-record-array` + this note. Reads the packages
+  and the committed prefix table; no boot, no value decoded.
+- **Next measurement, named so the next run does not re-derive it:** the 20-byte field between the array's tail and
+  the block start -- read `UClass::Serialize`'s body between the `+0x4f4` call and the defaults branch again for a
+  field that version gate hides, and pair it with the 190 classes whose residue is exactly 20 in
+  `inventory/class_record_array.csv` (`doc_residue`), which is the population that field must explain exactly.
+
 ### Execution notes (2026-11-12, the walk back finds the record's widths and still no count)
 
 - **The variable-stride walk the last note asked for is measured, and it continues the record's own shapes.**
