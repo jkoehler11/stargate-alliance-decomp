@@ -1201,6 +1201,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the 32 starts the record forbids are all at their payloads' end, and 24 of them are empty blocks)
+
+- **The room filter is the locator the tag walk's tail needed, and it decides without reading a value.** The last note
+  left 32 located rows whose block start sits closer to the prefix than the 42 bytes `UClass::Serialize` writes
+  unconditionally (room 2 on 7, **-4** on 15, 41 on 10, all on a **two-property** parse, all on payloads of 95-115
+  bytes). `tools/class-record-room.py` takes `class-defaults.py`'s candidate parses (8-14 per payload, median 9), keeps
+  the ones whose start clears `prefix + 42`, and keeps only tags that name a property the class declares. That
+  re-locates **8**; the other **24** name no declared property anywhere.
+- **Four of the eight close to the byte, and they are the walk's worst rows.** `Engine.SubActionCameraShake`/`FOV`/
+  `SceneSpeed`/`Trigger`: walk start 8 (room 2), re-located 97 (room 91), one `Desc` tag, trailer **0**, its value the
+  string the payload ends on. The four with tails (`KBSJoint` 69/21, `HaakenMK2Weapon_Bot` 68/24, `P90Torch` 68/25,
+  `AttachedDeathGliderTurretController` 75/14) locate a tag that begins there and do not tile the payload.
+- **The 24 are bounded, not explained, and an independent artifact agrees.** No parse names one of the 5-586
+  properties they declare; their last byte is the `None` terminator, an empty block at room 90-102, and seven are
+  `*VoicePack` classes `inventory/voice_sets.csv` already marks `silent` (`docs/systems/AUDIO.md`: 16 of 25 packs are
+  the class record alone). Recorded as the weaker verdict -- no default of its own, not a found tag.
+- Tool (`--sweep`, `--report`, 8 synthetic cases in `--check`) + `inventory/class_record_room.csv` (32 rows) +
+  `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (thirteenth) + `make class-record-room` + this note. Reads
+  the packages and three committed tables; no boot, no Ghidra round, no value decoded.
+
 ### Execution notes (2026-11-13, the array's head is after the sixteen zero bytes, and there its end is the block start)
 
 - **The first reading of the head was 19 to 21 bytes early, and its own margin said so.** `tools/class-record-bound.py`

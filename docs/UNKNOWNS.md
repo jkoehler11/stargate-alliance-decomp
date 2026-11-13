@@ -3366,3 +3366,31 @@ claim that a 20-byte gap sat between the two. What it does not explain is unchan
 from the common base) or a second package from the same build that ships the property with a value short enough to read
 directly. Independent of all of it: **32** located rows leave fewer than 42 bytes between prefix and block, which
 `UClass::Serialize`'s unconditional fields forbid, so those locator rows are wrong whatever the array's position is.
+**2026-11-13 (thirteenth): the 32 starts the record forbids are all at their payload's end, and 24 of them are empty
+blocks.** The twelfth entry left **32** located rows that put the defaults block closer to the prefix than
+`UClass::Serialize`'s unconditional 42 bytes allow, and called those rows wrong without locating anything better.
+`tools/class-record-room.py` makes the locator cheap: a block is a run of tagged properties, so every offset where one
+parses and ends at the payload's end is a candidate (`class-defaults.py`'s own `candidates()`, which also bounds the
+trailer at 64 bytes), and the record's room bounds the candidate from below. The candidates are not scarce -- **8 to 14
+per payload**, median 9 -- so only a tag that names a property the class declares counts, and the 32 declare 5 to 586
+names. That leaves **8** re-located and **24** with no declared tag anywhere in the payload:
+
+| verdict | rows | start | room | trailer |
+|---|---:|---|---:|---:|
+| `Engine.SubAction*` (4) | 4 | 97 | 91 | 0 |
+| `KBSJoint`, `HaakenMK2Weapon_Bot`, `P90Torch`, `AttachedDeathGliderTurretController` | 4 | 69/68/68/75 | 63/63/63/70 | 21/24/25/14 |
+| empty block at the payload's last byte | 24 | payload - 1 | 90-102 | 0 |
+
+The four `SubAction` classes are the clean ones: their walk start is **8** (room 2) on a two-property parse whose first
+tag is `Desc`, and the only candidate that clears the record is a single `Desc` tag at room 91 that tiles the payload
+exactly, its value being the string the payload ends on (`FOV`, `Shake`, `Scene Speed`, `Trigger`). That is the locator
+finding the same tag the walk found and the record then rejecting the walk's *position* -- the first case here where
+the room filter changed an answer rather than a column. The four with tails stop at a tag that begins at a clearing
+start and do not tile the payload, so their starts are located and their blocks are not. The 24 name no declared
+property in any of their 7-13 parses and their last byte is the `None` terminator, which is an empty block at room
+90-102; seven of them are `*VoicePack` classes that `inventory/voice_sets.csv` marks `silent`, the same payloads
+`docs/systems/AUDIO.md` calls the class record alone on 16 of 25 packs. **What is still open** is two things, and both
+are the tail: whether the four tails are a second table after a single tag, and whether the 24 carry a bare terminator
+or a one-tag block whose name the cooked stream does not declare. The route is `class-defaults.py`'s
+`single_declared_block` against a class whose single declared property is known from its script text.
+
