@@ -855,6 +855,11 @@ Two primitives the same run identified, because the widths turned out to belong 
   then serialises **exactly 4 bytes** through archive vtable **`+4`**. So integers in a payload are raw little-endian
   32-bit — no compact encoding.
 * **`0x00038dc0`** is `UField::Serialize`: it calls `UObject::Serialize`, then serialises `Next` (at `+0x28`) through
+  archive vtable **`+0x18`** — the *object-reference* method. **Its encoding is measured now, and it is the compact
+  codec**: on all 2,319 class payloads that reference decodes into the export's own `super` in 1 or 2 bytes and
+  never in 4 (*The class record's prefix* below), so the "not a compact index" reading this bullet used to carry
+  was wrong about the stream — what the payload-layout attempt got wrong was the field *list*, not the encoding.
+* **`0x00038dc0`** is `UField::Serialize`: it calls `UObject::Serialize`, then serialises `Next` (at `+0x28`) through
   archive vtable **`+0x18`** — the *object-reference* method, not a property block's compact index, which is why the
   payload-layout attempt below failed.
 
@@ -867,6 +872,49 @@ indices for the first three. **It validates for 0 of 3,931 `Engine.u` functions*
 object-reference method (vtable `+0x18`) and `FriendlyName` through its name method (`+0x1c`), and those are not the
 same encoding as a property block's compact index. The field *order* is right; the field *widths* belong to the
 archive, and the archive's own primitives (`FUN_000370e0`, `FUN_00037110`) are what to read next.
+
+Not measured yet: the walker's own dispatch (its jump table is the opcode table 3.7 needs), and whether any shipped
+function's script carries the `G` marker.
+**2026-11-12: the field widths are measured, and they are not what the failure above blamed.** The references are
+compact and the record's list is shorter than `UStruct::Serialize`'s body suggests, so the earlier attempt's field
+*set* was the problem, not its encoding. The measurement, and the third stream-side reading it closes, are below.
+
+### The class record's prefix: three references, 3-6 bytes
+
+`tools/class-prefix.py` (`make class-prefix`, `--check` in `make ci`) decodes every `Class` export's first field with
+`UStruct::Serialize`'s own order and asks the package's export table whether each answer is the right one, over all
+2,319 class payloads (`inventory/class_prefixes.csv`):
+
+| measure | answer |
+|---|---|
+| a compact index at offset 0 equals the export's `super` | **2,319 / 2,319** |
+| bytes that reference occupies | 1 on 1,451, 2 on 868, **4 on 0** |
+| the field after it is exactly one `00` byte | **2,319 / 2,319** |
+| the third field is a compact index naming the class's own `TextBuffer` | **2,319 / 2,319** |
+| where the prefix ends | offset 3 (19 rows), 4 (1,152), 5 (755), 6 (393) |
+
+Three consequences:
+
+* **The archive's object-reference method is the compact codec on this build.** A 32-bit index would make the first
+  field four bytes on every payload; it is one or two, and it agrees with the export table on every class. The two
+  references were never the obstacle.
+* **The byte between `Super` and the script reference is a null reference, not `FriendlyName`.** The reader asserts
+  `FriendlyName != NAME_None` (`UnClass.cpp:0x2e2`), so an `FName` in that slot could not encode as `00`; a null
+  object reference does, and 2,319 of 2,319 say `00`. The cooked record writes `Super`, a null `Children` and
+  `ScriptText` — **not** `Next`, `FriendlyName`, the source line, the text position or a script size — which is why
+  the field list the earlier attempt used could validate on none of the 3,931 functions.
+* **The record's middle is 91 bytes at the median and 394 at p90.** Where the locator found a block start, the
+  distance from the prefix's end to it runs 8..13,660 bytes; 15 rows answer a start *inside* the prefix (offset 1),
+  so those located starts are the locator's own false positives — named rather than averaged away.
+
+The `UClass` field list does not fill that middle either, and that is measured with a control: `tail_fits` scans
+**every** offset of each located payload for the list `UClass::Serialize` writes before the defaults — five dwords, a
+count plus 12-byte records, the config `FName`, then two count-plus-4-byte arrays, with the counts read as 32-bit
+**and** as compact and the `FName` as two dwords **and** as two compact indices — and requires the list to end
+exactly on the block start. **191 of 2,209** land, and **184 of 2,209** land when the same walk is aimed eight bytes
+short of the start: no discriminating power, and the 191 sit at 124 distinct offsets with the commonest holding 27.
+So the record's tail is not that field list either, which closes a third stream-side reading the way the backward
+array walk and the bytecode walk were closed.
 
 Not measured yet: the walker's own dispatch (its jump table is the opcode table 3.7 needs), and whether any shipped
 function's script carries the `G` marker.

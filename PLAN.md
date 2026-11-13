@@ -1176,6 +1176,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the class record opens with three references, and neither tail reading survives a control)
+
+- **The prefix is measured against the package's own export table, on every class.** `tools/class-prefix.py` reads the
+  first field with `UStruct::Serialize`'s order: a compact index at offset 0 equals the export's `super` on
+  **2,319/2,319**, occupying **1 byte on 1,451 and 2 on 868 -- never 4**, so the archive's object-reference method is
+  the compact codec and the earlier "not a compact index" reading of it was wrong about the stream.
+- **The byte between the two references decides which body field it is, and it says the list is shorter than the
+  body.** It is a single `00` on **2,319/2,319**: a null object reference. An `FName` there could not be `NAME_None`
+  (the reader asserts `FriendlyName != NAME_None`), so the cooked record writes `Super`, a null `Children` and
+  `ScriptText` and **omits** `Next`, `FriendlyName`, the source line, the text position and the script size. That is
+  why the field list the bytecode attempt used validated on 0 of 3,931 functions -- the *set* was wrong, not the
+  encoding. The prefix is 3-6 bytes (offset 3 on 19 rows, 4 on 1,152, 5 on 755, 6 on 393).
+- **`UClass::Serialize`'s tail field list is not in the record, measured with a control.** Scanning every offset for
+  the five dwords + 12-byte-record array + config `FName` + two 4-byte arrays (counts as 32-bit and as compact,
+  `FName` as two dwords and as two compact indices) and requiring an exact end on the block start lands on
+  **191 of 2,209** located classes -- and **184 of 2,209** when the same walk is aimed 8 bytes short, so the rule has
+  no discriminating power; the 191 sit at 124 distinct offsets, the commonest holding 27. A third stream-side reading
+  closes the way the backward array walk and the bytecode walk did.
+- **The middle is the remaining number, and one locator flaw fell out of it.** From the prefix's end to the located
+  block start is 91 bytes at the median (p90 394, max 13,660), and **15 rows answer a start inside the prefix**
+  (offset 1) -- the locator's own false positives, named rather than averaged into the distribution.
+- Tool (`tools/class-prefix.py`: `--class`, `--sweep`, `--report`, `--check`) + `inventory/class_prefixes.csv`
+  (2,319 rows) + `docs/NATIVE_VM.md` (*The class record's prefix*) + `docs/CLASS_DEFAULTS.md` + `docs/UNKNOWNS.md`
+  U17 + `make class-prefix` + this note. Reads the packages; no boot, no value decoded.
+
 ### Execution notes (2026-11-12, the bytes in front of a defaults start are measured, and the backward walk has no foothold)
 
 - **The route the last note proposed was measured first, and it refuses.** `UClass::Serialize`'s tail arrays were read
