@@ -2049,3 +2049,55 @@ read directly.
 
     make class-record-bound
     python3 tools/class-record-bound.py --dump DUMP --position
+### The 32 starts the record forbids are all at their payload's end
+
+`tools/class-record-bound.py --report` ends on a row it could not explain: **32** of the 2,204 located classes leave
+fewer than 42 bytes between the prefix and the defaults block, and `UClass::Serialize` writes 22 `UState` bytes and five
+dwords unconditionally. The starts are room **2** on 7 (all `Engine`), room **-4** on 15 (the start sits *inside* the
+prefix) and room **41** on 10, and the payloads are 95-115 bytes -- small enough that the record's own fields cannot fit
+in front of such a start. On all 32 the tag walk's parse is a **two-property** block.
+
+`tools/class-record-room.py` (`make class-record-room`, `inventory/class_record_room.csv`, its `--check` in `make ci`)
+re-locates them by the cheap question instead of the walk's tail: a block is a run of tagged properties, so a
+*candidate* start is any offset where one parses and ends at the payload's end, and the record then bounds the
+candidate from below. `tools/class-defaults.py`'s `candidates()` already refuses a parse that leaves more than 64 bytes
+behind it; the room filter is the second half. Candidates are plentiful -- **8 to 14 parses per payload**, median 9 --
+so a start counts as evidence only when its tags name something the class declares (`inventory/class_properties.csv`;
+the 32 declare 5 to 586 names):
+
+| verdict | rows | what the payload says |
+|---|---:|---|
+| re-located: a declared tag parses at a clearing start | **8** | room 63, 70 or 91 |
+| an empty block at the payload's last byte | **24** | no parse anywhere names a declared property |
+
+**Four of the eight close to the byte, and they are the ones the walk was furthest from.** The `Engine.SubAction*`
+classes (`CameraShake`, `FOV`, `SceneSpeed`, `Trigger`) get best start **97** at room **91**: one tag naming `Desc`,
+trailer **0**, whose value is the literal string the payload ends on (`FOV`, `Shake`, `Scene Speed`, `Trigger`). The
+walk's own start there is **8**, two bytes past the prefix, on a two-property parse whose first tag is `Desc` as well.
+The room filter is what separates them -- 8 - 6 = 2 bytes cannot hold the record's 42 -- and it separates them without
+reading a single value.
+
+The other four re-locate to a declared tag but leave a tail: `Engine.KBSJoint` room 63, trailer 21 (`bHidden`);
+`StargateContent.HaakenMK2Weapon_Bot` room 63, trailer 24 (`FidgetAnims`); `StargateContent.P90Torch` room 63, trailer
+25 (`RunMovementAnims`); `StargateVehicles.AttachedDeathGliderTurretController` room 70, trailer 14 (`KParams`). A tag
+that *begins* there and a block that *tiles* the payload are two claims, and only the first is measured here.
+
+**The 24 that are not re-located are still bounded, and an independent artifact agrees with them.** Each declares 5 to
+586 properties and its payload names **none** of them in any of its 7-13 parses, so the discriminator that works on the
+8 finds nothing here. What remains is the payload's last byte -- the `None` terminator, an **empty** block, which
+clears the record with room 90-102 on all 24 -- and seven of the 24 are `*VoicePack` classes that
+`inventory/voice_sets.csv` already marks `silent`, the family `docs/systems/AUDIO.md` describes as 16 of 25 payloads
+that are the class record alone. The empty verdict is recorded as the weaker one: it says the class sets no default of
+its own, not that a tag was found.
+
+**What it settles.** No start these 32 rows report can be a block start, and where the record's fields are respected
+the payload's own shape puts the block at its end -- four of them tiling it exactly. **What is still open** is the same
+question on the other side of the tail: whether the four leftover tails are a tag followed by a second table, and
+whether the 24 ship a bare terminator or a one-tag block whose name the cooked stream does not declare. The route is
+`tools/class-defaults.py`'s `single_declared_block` over a class whose one declared property is known from its script
+text, which is the declaration the tool already reads.
+
+    make class-record-room
+    python3 tools/class-record-room.py --dump DUMP --sweep -o inventory
+    python3 tools/class-record-room.py --report
+
