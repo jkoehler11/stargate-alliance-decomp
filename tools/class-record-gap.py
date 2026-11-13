@@ -14,7 +14,8 @@ decomposing the gap instead of naming its fields:
   and, per record, one compact reference plus eight raw bytes. Its count, its byte length (`second_len`), whether
   every reference lands inside the package's object tables, and whether its count matches the first array's;
 * **the rest** -- the bytes from that array's end to the defaults start, their length and their leading byte;
-  read as the writer's *other* array (`FUN_0003d160`: a count and that many `(compact, compact)` pairs) it is
+  read as the writer's *other* array (`FUN_0003d160`: a count and that many *single* compact fields, one `FName`
+  each -- `tools/archive-slots.py` measures the archive's name slot writing exactly one index per element) it is
   `list_count` / `list_len` / `list_exact`, and `rest == 0` is a record that carries no list field at all;
 * **the config-name reading, side by side** -- the 8 bytes immediately in front of the list are what the "name
   array + 8-byte config `FName`" reading calls the config: two int32s. The artifact carries them (`cfg_a`, `cfg_b`)
@@ -26,8 +27,10 @@ decomposing the gap instead of naming its fields:
   "a copy" and "a second class-reference list" are different rows rather than different opinions;
 * **the reader's own field order** -- the gap re-read as `+0x4dc` names, the config `FName`, then `+0x4f4`
   names (`docs/NATIVE_VM.md`, *Only one call site writes the record array, and its reader stages the second member
-  under that call*): `FUN_0003d160`'s file element is a compact pair, so all three are one stream of that shape.
-  `nm_exact` says it closes on the defaults start, `nm_ctl_exact` how many shifted starts do;
+  under that call*): `FUN_0003d160` calls the archive's name slot once per element and that slot writes one compact
+  index, so all three are one stream of that shape. `nm_exact` says it closes on the defaults start,
+  `nm_ctl_exact` how many shifted starts do, and `nm_fits` records the arithmetic bound a name array cannot cross
+  (a count plus at most five bytes per element) so a 20-byte middle is not a name array of two whatever it parses as;
 * **the control** -- the same array grammar started at each of the next 8 bytes, counting the starts that parse and
   the ones whose end is exactly the defaults start. A grammar that fits the real position and the shifted ones
   about equally describes the arithmetic, not the record.
@@ -68,7 +71,7 @@ COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "array_en
            "first_refs", "second_refs", "ref_same", "ref_same_set", "ref_shared", "array_same",
            "first_kinds", "second_kinds",
            "nm_mid_count", "nm_mid_len", "nm_cfg_len", "nm_cfg_name", "nm_list_count", "nm_list_len",
-           "nm_exact", "nm_ctl_exact", "nm_shape", "nm_mid_rest"]
+           "nm_exact", "nm_ctl_exact", "nm_shape", "nm_mid_rest", "nm_mid_max", "nm_fits"]
 
 
 def read_index(buf, off):
@@ -112,8 +115,14 @@ def walk_array(buf, p):
     return {"count": count, "refs": refs, "widths": widths, "end": o, "len": o - p}
 
 
-def walk_pairs(buf, p):
-    """`FUN_0003d160`'s other array: a compact count, then count x (compact, compact). A count of zero is empty."""
+def walk_names(buf, p):
+    """`FUN_0003d160`'s file stream: a compact count, then count x ONE compact field per `FName`.
+
+    The writer reserves `count*4` in memory and calls the archive's name slot once per element; that slot
+    (`0x38bf0`, the archive vtable's `+0x1c` entry at `0x4d40d0`) converts the element to one index through its
+    proxied name table and writes it with `FUN_000637e0`, the compact encoder -- one field of 1-5 bytes, not the
+    `(index, number)` pair the earlier reading of this stream assumed (`tools/archive-slots.py`).
+    """
     if p < 0 or p >= len(buf):
         return None
     try:
@@ -124,15 +133,14 @@ def walk_pairs(buf, p):
         return None
     widths = []
     for _ in range(count):
-        for _ in range(2):
-            if o >= len(buf):
-                return None
-            try:
-                _, e = read_index(buf, o)
-            except IndexError:
-                return None
-            widths.append(e - o)
-            o = e
+        if o >= len(buf):
+            return None
+        try:
+            _, e = read_index(buf, o)
+        except IndexError:
+            return None
+        widths.append(e - o)
+        o = e
     return {"count": count, "widths": widths, "end": o, "len": o - p}
 
 
@@ -142,15 +150,16 @@ def walk_name_gap(data, array_end, block, nnames):
     `UClass::Serialize` writes three things between the record array's tail and the defaults buffer, in this order:
     the `+0x4dc` array through `FUN_0003d160`, the config name through two archive slots on adjacent members
     (`+0x18` on `+0x4b0`, then `+0x1c` on `+0x4b4`), and the `+0x4f4` array through the same writer -- and
-    `FUN_0003d160`'s file element is a compact pair, so the whole gap is one stream of that shape. Closing exactly
-    on the defaults start is what distinguishes this split from the twelve-byte second array the same bytes also
-    parse as; the shifted starts are the control.
+    `FUN_0003d160`'s file element is ONE compact index per `FName`, so the whole gap is one stream of that shape.
+    Closing exactly on the defaults start is what distinguishes this split from the twelve-byte second array the
+    same bytes also parse as; the shifted starts are the control, and `nm_fits` is the arithmetic bound.
     """
     out = {"nm_mid_count": "", "nm_mid_len": "", "nm_cfg_len": "", "nm_cfg_name": "", "nm_list_count": "",
-           "nm_list_len": "", "nm_exact": 0, "nm_ctl_exact": 0, "nm_shape": "", "nm_mid_rest": ""}
+           "nm_list_len": "", "nm_exact": 0, "nm_ctl_exact": 0, "nm_shape": "", "nm_mid_rest": "",
+           "nm_mid_max": "", "nm_fits": ""}
 
     def run(p, stop):
-        mid = walk_pairs(data, p)
+        mid = walk_names(data, p)
         if not mid or mid["end"] + 2 > stop:
             return None
         q = mid["end"]
@@ -159,14 +168,18 @@ def walk_name_gap(data, array_end, block, nnames):
             _number, q = read_index(data, q)
         except IndexError:
             return None
-        lst = walk_pairs(data, q)
+        lst = walk_names(data, q)
         if not lst or lst["end"] != stop:
             return None
         return mid, q - mid["end"], name, lst
 
-    alone = walk_pairs(data, array_end)
+    alone = walk_names(data, array_end)
     if alone and alone["end"] <= block:
+        # A name array is a compact count plus at most five bytes per element: that bound is what says whether
+        # the middle could be this stream at all, independently of what it parses to.
         out.update({"nm_mid_count": alone["count"], "nm_mid_len": alone["len"],
+                    "nm_mid_max": 1 + MAX_REF * alone["count"],
+                    "nm_fits": int(1 + MAX_REF * alone["count"] >= block - array_end),
                     "nm_mid_rest": block - alone["end"]})
     got = run(array_end, block)
     if got is None:
@@ -237,16 +250,16 @@ def measure(data, prefix_end, block, array_end, nimp, nex, nnames):
                                     == data[array_end:second["end"]])
     else:
         p = array_end
-        if walk_array(data, array_end) or walk_pairs(data, array_end):
+        if walk_array(data, array_end) or walk_names(data, array_end):
             row["shape"] = "list-only"
     rest = block - p
     row["rest"] = rest
     if 0 <= rest and p < len(data):
         row["rest_lead"] = data[p]
-    pairs = walk_pairs(data, p)
-    if pairs and pairs["end"] <= block:
-        row.update({"list_count": pairs["count"], "list_len": pairs["len"],
-                    "list_exact": int(pairs["end"] == block)})
+    names = walk_names(data, p)
+    if names and names["end"] <= block:
+        row.update({"list_count": names["count"], "list_len": names["len"],
+                    "list_exact": int(names["end"] == block)})
     # The competing reading: the 8 bytes in front of the list are the config FName, two int32s.
     if rest > 0:
         start = block - rest - 8
@@ -351,7 +364,8 @@ def report(rows):
         for k in ("gap", "array_end", "block_start", "first_count", "second_count", "second_len",
                   "second_refs_ok", "second_zero", "ctl_parsed", "ctl_exact", "rest", "rest_lead",
                   "list_count", "list_len", "list_exact", "cfg_a", "cfg_b", "cfg_ok",
-                  "ref_same", "ref_same_set", "ref_shared", "array_same"):
+                  "ref_same", "ref_same_set", "ref_shared", "array_same",
+                  "nm_exact", "nm_ctl_exact", "nm_fits", "nm_cfg_name", "nm_mid_count", "nm_mid_len"):
             if r[k] not in ("", None):
                 r[k] = int(r[k])
     print("located classes: %d" % len(rows))
@@ -402,10 +416,10 @@ def report(rows):
           % (sum(1 for r in rest if r["rest"] == 0), sum(1 for r in rest if r["rest"] == 1),
              collections.Counter(r["rest_lead"] for r in rest if r["rest"] == 1).most_common(4)))
     pairs = [r for r in rest if r["list_exact"] == 1]
-    print("  reads as the writer's count-plus-pairs array and closes exactly: %d of %d (%.1f%%)"
+    print("  reads as the writer's count-plus-names array and closes exactly: %d of %d (%.1f%%)"
           % (len(pairs), len(rest), 100.0 * len(pairs) / len(rest)))
     if pairs:
-        print("  pairs per list: %s" % collections.Counter(r["list_count"] for r in pairs).most_common(4))
+        print("  names per list: %s" % collections.Counter(r["list_count"] for r in pairs).most_common(4))
 
     cfg = [r for r in rest if r["cfg_a"] not in ("", None)]
     if cfg:
@@ -425,10 +439,17 @@ def report(rows):
               "%d of %d close exactly (%.1f%%)"
               % (exact, len(names), 100.0 * exact / len(names)))
         parsed = [r for r in names if r["nm_mid_count"] not in ("", None)]
-        print("  the middle alone as a count-plus-pairs list: %d of %d, count %s, median %d bytes, leaving %s"
+        print("  the middle alone as a count-plus-names list: %d of %d, count %s, median %d bytes, leaving %s"
               % (len(parsed), len(names),
                  collections.Counter(r["nm_mid_count"] for r in parsed).most_common(4),
                  _median(parsed, "nm_mid_len"), collections.Counter(r["nm_mid_rest"] for r in parsed).most_common(4)))
+        print("  a name array of that count can span at most 1 + 5*count bytes; the middle fits on %d of %d"
+              % (sum(1 for r in parsed if r["nm_fits"] == 1), len(parsed)))
+        two = [r for r in parsed if r["nm_mid_count"] == 2]
+        if two:
+            print("  middles whose leading count is 2 (the reading this decides): %d, of median %d bytes, and the "
+                  "bound allows a name array on %d"
+                  % (len(two), _median(two, "gap"), sum(1 for r in two if r["nm_fits"] == 1)))
         print("  the second name array closes on %d; the config's first field is a name index on %d"
               % (sum(1 for r in names if r["nm_list_count"] not in ("", None)),
                  sum(1 for r in names if r["nm_cfg_name"] == 1)))
@@ -470,7 +491,7 @@ def one(args):
 
 
 def self_check():
-    """Synthetic record: a 3-record array, then a 2-record array, then a 3-pair list closing on the block."""
+    """Synthetic record: a 3-record array, then a 2-record array, then a 3-name list closing on the block."""
     def compact(v):
         """The reader above, inverted: bit 7 is the sign, bit 6 means a byte follows."""
         out = bytearray([(abs(v) & 0x3F) | (0x80 if v < 0 else 0)])
@@ -488,7 +509,7 @@ def self_check():
     array_end = len(data)
     data += compact(2) + (compact(1) + b"\x01\x00\x00\x00" + b"\x02\x00\x00\x00")
     data += (compact(-3) + b"\x03\x00\x00\x00" + b"\x04\x00\x00\x00")
-    data += compact(3) + compact(1) + compact(4) + compact(2) + compact(-4) + compact(3) + compact(6)
+    data += compact(3) + compact(1) + compact(2) + compact(3)          # three names, one field each
     block = len(data)
     data += b"\xaa\xbb\xcc\xdd" * 4
     row = measure(data, prefix_end, block, array_end, 40, 4000, 100)
@@ -497,7 +518,7 @@ def self_check():
     assert row["shape"] == "second", row
     assert row["second_count"] == 2 and row["second_len"] == 19, row
     assert row["second_refs_ok"] == 1 and row["second_zero"] == 0, row
-    assert row["rest"] == 7, row
+    assert row["rest"] == 4, row
     assert row["list_count"] == 3 and row["list_exact"] == 1, row
     assert row["ctl_exact"] == 0, "a shifted start must not land on the block: %r" % row
     assert row["ref_same"] == 0 and row["ref_same_set"] == 0 and row["ref_shared"] == 1, row
@@ -512,26 +533,33 @@ def self_check():
     assert row["ref_shared"] == 3 and row["rest"] == 0, row
 
     # An empty list is a zero count byte, and the record still closes on it.
-    body = data[:block - 7] + compact(0)
+    body = data[:block - 4] + compact(0)
     row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
     assert row["rest"] == 1 and row["rest_lead"] == 0, row
     assert row["list_count"] == 0 and row["list_exact"] == 1, row
 
     # The same gap read in the reader's order: names, the config name, names -- and it closes on the block too.
-    body = data[:array_end] + (compact(3) + compact(1) + compact(1) + compact(3) + compact(2)
-                               + compact(4) + compact(5)
+    # Each name is ONE compact field, so a three-name middle is the count plus three bytes, not plus six.
+    body = data[:array_end] + (compact(3) + compact(1) + compact(2) + compact(3)
                                + compact(30) + compact(70)
-                               + compact(2) + compact(6) + compact(8) + compact(9) + compact(10))
+                               + compact(2) + compact(6) + compact(8))
     row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
     assert row["nm_exact"] == 1, row
-    assert (row["nm_mid_count"], row["nm_mid_len"], row["nm_cfg_len"], row["nm_list_count"]) == (3, 7, 3, 2), row
-    assert row["nm_cfg_name"] == 1 and row["nm_ctl_exact"] == 0, row
+    assert (row["nm_mid_count"], row["nm_mid_len"], row["nm_cfg_len"], row["nm_list_count"]) == (3, 4, 3, 2), row
+    assert row["nm_cfg_len"] == 3 and row["nm_cfg_name"] == 1 and row["nm_ctl_exact"] == 0, row
+
+    # The arithmetic bound: a middle whose leading byte says two names cannot span twenty bytes, and the bound
+    # says so without any parse succeeding.
+    body = data[:array_end] + compact(2) + bytes(18)
+    row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
+    assert (row["nm_mid_count"], row["nm_mid_max"], row["nm_fits"]) == (2, 11, 0), row
+    assert row["nm_exact"] == 0, row
 
     # A record that carries no list field at all.
-    body = data[:block - 7]
+    body = data[:block - 4]
     row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
     assert row["rest"] == 0 and row["list_count"] == "", row
-    print("self-check ok: a 2-record array of 19 bytes, a 3-pair list, an empty list, and no list")
+    print("self-check ok: a 2-record array of 19 bytes, a 3-name list, an empty list, and no list")
     return 0
 
 

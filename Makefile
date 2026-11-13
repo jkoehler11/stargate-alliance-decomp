@@ -19,7 +19,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls class-member-map member-access-census
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census
 
 help:
 	@echo "targets:"
@@ -78,6 +78,7 @@ help:
 	@echo "  class-record-element   restart the array grammar at its own tail: element span, second parse, control"
 	@echo "  class-record-tail      the bytes after the array: a count of name/reference pairs, and its per-package share"
 	@echo "  class-record-gap       split the gap after the array: a second class-reference array, then the list"
+	@echo "  archive-slots          the archive's vtable and one compact field per FName, measured from its slots"
 	@echo "  record-writer-calls    every call into the record and name writers, and the member each is handed"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"
 	@echo "  member-access-census  every access to a member displacement, and the stride it indexes at"
@@ -1111,6 +1112,10 @@ class-record-tail:
 class-record-gap:
 	python3 tools/class-record-gap.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory
 	@python3 tools/class-record-gap.py --report
+
+archive-slots:
+	python3 tools/archive-slots.py --image $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory
+	@python3 tools/archive-slots.py --report
 
 record-writer-calls:
 	python3 tools/record-writer-calls.py --image $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory

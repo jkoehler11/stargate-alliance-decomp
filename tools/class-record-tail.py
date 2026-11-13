@@ -130,9 +130,11 @@ def walk_pairs(buf, p, end):
 def walk_fnames(buf, p, end):
     """The same bytes as a bare `FName` sequence: the leading value is the first name's index, not a count.
 
-    An `FName` through the archive's name method is two compact values, so this reading consumes the tail exactly
-    only when the byte count is even and no value straddles `end`. `exact` says it did; `fnames` is how many names
-    the reading got before it ran out or overshot.
+    This is the `(index, number)` shape the name method was *assumed* to write; measured, the archive's name slot
+    (`+0x1c`, `tools/archive-slots.py`) writes ONE compact index per element, and a name index is unsigned. The
+    reading is kept because it is the competing one the count parse has to beat, and because its failure is what
+    says the pair list is not the name arrays: it consumes the tail exactly only when the byte count is even and no
+    value straddles `end`. `exact` says it did; `fnames` is how many names the reading got before it ran out.
     """
     fnames, off = [], p
     while off < end:

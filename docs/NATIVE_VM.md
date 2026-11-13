@@ -779,7 +779,7 @@ Three writers say otherwise, read from the bodies under `$WORK/module-export/Cor
 |---|---|---|
 | `FUN_000637e0` | a count: a raw 4-byte integer (`0x00037110`) **only when both the loading and the saving flag are clear**, otherwise an `FCompactIndex` built byte by byte through `0x00037040` | in a cooked package -- a *saving* archive -- **every array count in the record is compact** |
 | `FUN_0003d900` | the 12-byte-record array: the count, then per record one **object reference** (archive vtable `+0x18`) and two 4-byte dwords (`0x00037110`, `0x000370e0`) | a record is **9 bytes** when its reference is one byte long |
-| `FUN_0003d160` | the two "dword" arrays: the count, then each element through archive vtable **`+0x1c`, the *name* method** -- the one `UStruct::Serialize` uses for `FriendlyName` | they are `TArray<FName>`, two compact indices per element, **not** `n x 4 bytes` |
+| `FUN_0003d160` | the two "dword" arrays: the count, then each element through archive vtable **`+0x1c`, the *name* method** -- the one `UStruct::Serialize` uses for `FriendlyName` | they are `TArray<FName>`, **one compact index per element** (`tools/archive-slots.py`), **not** `n x 4 bytes` |
 | `FUN_000394c0` (`UState::Serialize`) | runs before `UClass`'s own fields: `0x000371d0` writes **8** bytes at `+0x80` and again at `+0x88`, `0x00037080` writes **2** at `+0x90`, `0x000370e0` writes **4** at `+0x94` | **22 bytes** the field table did not have |
 
 **The stride-9 unit has an owner.** The residue's repeated 4-byte value at a stride of 9 (`docs/CLASS_DEFAULTS.md`,
@@ -1680,20 +1680,37 @@ calls the archive's `+0x18` with the reference and its two dwords; `FUN_0003d160
 count the same way, then per element calls the archive's `+0x1c` -- the name method -- which is why its file elements
 are one and two bytes. Both `return param_1`.
 
+**The element width is one compact field, and it is measured from the archive, not from the array's bytes.**
+`tools/archive-slots.py` (`make archive-slots`, `inventory/archive_slots.csv`, `--check` in `make ci`) finds every
+table whose constructor stores this build's version pair (130 at `+4`, licensee 4 at `+0xc`) beside a vtable store
+-- **six** in the image, so the pin alone does not name the object -- and decodes the slots the class-record writers
+are handed. Only `0x004d40d0` has a *distinct* function at each: `+0x14` is `0x000ea7f0`, a `ret 8` no-op
+(`Preload`); `+0x18` is `0x00038bc0`, which takes the element's reference, converts it through its proxied table
+(`call [eax+0x24]`) and writes **one** compact field with `FUN_000637e0`; `+0x1c` is `0x00038bf0`, the same shape
+through the *name* half of that table (`call [eax+0x20]`) and **one** compact field. So an `FName` on disk is one
+index of 1-5 bytes, an array of `n` names spans **at most `1 + 5n` bytes**, and the earlier reading of the tail as
+`(index, number)` pairs was a field list, not a width.
+
 What this leaves open is the middle's **encoding**, not its owner: both grammars in the corpus fit its bytes -- a
-compact count and twelve-byte records on 361 classes, a compact count and compact pairs on 408 -- and neither parse
+compact count and twelve-byte records on 361 classes, a compact count and one-field names on 414 -- and neither parse
 closes the gap at its position, so the field is written by `FUN_0003d160` in a shape the corpus's parse of
-`FUN_0003d160` does not model. The next read is that writer's own reservation against the middle's leading byte.
+`FUN_0003d160` does not model. What the width *does* decide is which of the two the middle cannot be.
 
 ### The gap does not decompose in the reader's own field order either
 
 `tools/class-record-gap.py` (`make class-record-gap`, `inventory/class_record_gap.csv`, `--check` in `make ci`)
 re-reads each class's gap the way the reader writes it: the `+0x4dc` names (`FUN_0003d160`: a compact count and that
-many compact pairs), the config name (two compact fields), then the `+0x4f4` names, requiring the last to end exactly
-on the defaults start. **0 of 549 classes close**, and the control says the position is not the problem -- the same
-three-part parse started one to eight bytes later closes on **15**. The middle read as a count-plus-pairs list alone
-parses on 408 of 549, but consumes a median of 6 bytes and leaves 21: what it matches is the leading count of the
-twelve-byte array, not a field of its own.
+many **single-field** names, the width `tools/archive-slots.py` measures), the config name (two compact fields), then
+the `+0x4f4` names, requiring the last to end exactly on the defaults start. **3 of 549 classes close**, against a
+control of **14** for the same three-part parse started one to eight bytes later -- so chance, and the reading is
+refused. The middle read as a count-plus-names list alone parses on 414 of 549, but consumes a median of 4 bytes and
+leaves 23: what it matches is the leading count of the twelve-byte array, not a field of its own.
+
+**And the width makes that arithmetic rather than an argument.** `nm_fits` records the bound: a name array of the
+middle's own leading count can span at most `1 + 5*count` bytes, and the middle is wider than that on **400 of the
+414** rows that parse -- on the disputed count of 2 (325 middles, median 27 bytes, bound 11) on **323 of 325**. So the
+middle's leading byte is not a name count: two twelve-byte records of `3+3+3` and `2+8` span 19 bytes, which is the
+only reading of the corpus's commonest middle that the measured element widths allow.
 
 So two grammars fit the middle's bytes and neither accounts for its position, which is why naming the writer did not
 name the field. The next instrument is the element width `FUN_0003d160` reserves -- `count*4` through archive slot
