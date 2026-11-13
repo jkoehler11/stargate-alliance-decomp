@@ -40,6 +40,14 @@ the two name arrays adjacent) and the same order with the version-gated last arr
     python3 tools/class-record-order.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-record-order.py --report
     python3 tools/class-record-order.py --check
+    python3 tools/class-record-order.py --gap-sweep -o inventory
+    python3 tools/class-record-order.py --gap-report
+
+The walk's own offsets say the array does not start at the field table's position: it starts 19 to 21 bytes
+later on the classes that close, and `--gap-sweep` reads those bytes instead of assuming them. Its finding is that
+the gap is **sixteen zero bytes immediately in front of the array plus three to five bytes of compact values in
+front of those** -- the only content in the whole gap -- so the sixteen the field table is short by are four
+dwords whose values are zero on the cook path, and the compact run is the part no writer names yet.
 
 Reads the packages and the committed prefix table; no boot, no Ghidra round, no value decoded.
 """
@@ -77,6 +85,10 @@ COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "middle",
            "last_count", "end", "residue", "exact",
            "ref_null", "ref_in_tables", "name_in_names",
            "ctl_pair_fit", "ctl_names_fit", "ctl_nolast_fit"]
+GAP_ARTIFACT = "class_record_gap_front.csv"
+GAP_COLUMNS = ["package", "class", "prefix_end", "block_start", "gap_len",
+               "front_hex", "front_values", "tail_zero", "last_nz", "arr_count"]
+TAIL_BYTES = 16          # the four dwords the struct body writes, at the gap's own end
 
 
 def walk_array(buf, p):
@@ -257,6 +269,43 @@ def measure(data, prefix_end, block_start):
     return row
 
 
+def front_values(buf):
+    """The gap's front read as compact indices, one per field, or None when a width overruns it."""
+    vals, o = [], 0
+    while o < len(buf):
+        try:
+            v, e = crf.read_index(buf, o)
+        except IndexError:
+            return None
+        if e <= o or e > len(buf):
+            return None
+        vals.append(v)
+        o = e
+    return vals
+
+
+def gap_measure(data, start, row):
+    """What the bytes between the field table's position and the array's head actually hold."""
+    out = {"gap_len": "", "front_hex": "", "front_values": "", "tail_zero": "", "last_nz": ""}
+    fit = row.get("head_fit")
+    if fit in ("", None):
+        return out
+    h = int(fit)
+    gap = data[start + DOC_OFFSET:start + DOC_OFFSET + h]
+    if len(gap) != h:
+        return out
+    out["gap_len"] = h
+    nz = [i for i, b in enumerate(gap) if b]
+    out["last_nz"] = max(nz) if nz else -1
+    if h > TAIL_BYTES:
+        front = gap[:h - TAIL_BYTES]
+        out["front_hex"] = front.hex(" ")
+        vals = front_values(front)
+        out["front_values"] = " ".join(str(v) for v in vals) if vals is not None else "unparsed"
+        out["tail_zero"] = int(gap[h - TAIL_BYTES:] == bytes(TAIL_BYTES))
+    return out
+
+
 def finish(row, nimp, nex, nnames):
     """The value checks, which need the package's tables and are not part of the walk."""
     row["ref_null"] = int(row["ref_value"] == 0) if row["ref_value"] != "" else 0
@@ -307,6 +356,60 @@ def sweep(args):
         print("wrote %s: %d rows" % (path, len(rows)))
     report(rows)
     return 0
+
+
+def sweep_gap(args):
+    """Every class whose walk closes: the gap's length, its front, and whether its tail is zero."""
+    rows = []
+    for (pkg_name, cls), data, start, block, nimp, nex, nnames in classes(args):
+        row = finish(measure(data, start, block), nimp, nex, nnames)
+        if row["head_fit"] in ("", None):
+            continue
+        row.update(gap_measure(data, start, row))
+        row.update({"package": pkg_name, "class": cls})
+        rows.append(row)
+    if args.out:
+        os.makedirs(args.out, exist_ok=True)
+        path = os.path.join(args.out, GAP_ARTIFACT)
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            wr = csv.DictWriter(fh, fieldnames=GAP_COLUMNS)
+            wr.writeheader()
+            wr.writerows([{k: r.get(k, "") for k in GAP_COLUMNS} for r in rows])
+        print("wrote %s: %d rows" % (path, len(rows)))
+    report_gap(rows)
+    return 0
+
+
+def report_gap(rows):
+    rows = [r for r in rows if r.get("gap_len") not in ("", None)]
+    n = len(rows)
+    if not n:
+        print("no class closes, so there is no gap to read")
+        return
+    by_len = collections.Counter(int(r["gap_len"]) for r in rows)
+    print("classes whose writer order closes: %d" % n)
+    print("the gap in front of the array is %d..%d bytes: %s"
+          % (min(by_len), max(by_len), by_len.most_common(4)))
+    tz = sum(int(r["tail_zero"]) for r in rows if r["tail_zero"] not in ("", None))
+    print("its last %d bytes are zero on %d (%.1f%%)" % (TAIL_BYTES, tz, _pct(tz, n)))
+    print("its last non-zero byte: %s"
+          % collections.Counter(int(r["last_nz"]) for r in rows
+                                if r["last_nz"] not in ("", None)).most_common(6))
+    front = collections.Counter(r["front_hex"] for r in rows)
+    print("the bytes in front of that tail: %d distinct, %s" % (len(front), front.most_common(5)))
+    print("read as compact indices, the most common fronts: %s"
+          % collections.Counter(r["front_values"] for r in rows).most_common(5))
+    mode = [r for r in rows if int(r["gap_len"]) in (19, 20, 21)]
+    if mode:
+        m = len(mode)
+        mz = sum(int(r["tail_zero"]) for r in mode if r["tail_zero"] not in ("", None))
+        print("at the modal lengths (19-21): %d classes, last %d bytes zero on %d (%.1f%%), last non-zero byte %s, "
+              "fronts %d distinct"
+              % (m, TAIL_BYTES, mz, _pct(mz, m),
+                 collections.Counter(int(r["last_nz"]) for r in mode).most_common(4),
+                 len(set(r["front_hex"] for r in mode))))
+    bad = sum(1 for r in rows if r["front_values"] == "unparsed")
+    print("fronts that do not parse as compact indices: %d (%.1f%%)" % (bad, _pct(bad, n)))
 
 
 def _ints(rows, key):
@@ -435,9 +538,22 @@ def self_check():
     wide = compact(4) + elems + names + b"\x40" * 6
     row4 = measure(prefix + prelude + wide + bytes(64), mid, len(prefix) + len(prelude) + len(wide) + 1)
     assert row4["end"] == "" and int(row4["exact"]) == 0, row4
+    # the gap read: 19 zeros are a three-value compact front and sixteen zero bytes at the end
+    g1 = gap_measure(prefix + prelude + bytes(19) + body, mid, row2)
+    assert g1["gap_len"] == 19 and g1["front_values"] == "0 0 0", g1
+    assert g1["tail_zero"] == 1 and g1["last_nz"] == -1, g1
+    # a front of two compact values, and a non-zero byte inside the tail
+    g2 = gap_measure(prefix + prelude + b"\x02\x10" + bytes(16) + body, mid, {"head_fit": "18"})
+    assert g2["gap_len"] == 18 and g2["front_values"] == "2 16" and g2["tail_zero"] == 1, g2
+    g3 = gap_measure(prefix + prelude + bytes(18) + b"\x01" + body, mid, {"head_fit": "19"})
+    assert g3["tail_zero"] == 0 and g3["last_nz"] == 18, g3
+    # a class that does not close has no gap to read
+    assert gap_measure(prefix + prelude + body, mid, row3)["gap_len"] == "", row3
+
     print("self-check ok: the writer's order (array, name array, reference, name, name array) closes at the field "
           "table's offset, still closes when 19 unaccounted bytes sit in front of the array -- at +19 --, the "
-          "pair-in-front reading never lands on the block start, and a six-byte reference is refused")
+          "pair-in-front reading never lands on the block start, a six-byte reference is refused, and the gap read "
+          "splits 19 zeros into a three-value compact front and sixteen zero bytes")
 
 
 def main():
@@ -449,12 +565,18 @@ def main():
     ap.add_argument("-o", "--out", help="artifact directory")
     ap.add_argument("--report", action="store_true", help="print the committed artifact's tables")
     ap.add_argument("--check", action="store_true", help="self-test, no dump")
+    ap.add_argument("--gap-sweep", action="store_true", help="census the gap in front of the array")
+    ap.add_argument("--gap-report", action="store_true", help="print the committed gap census")
     args = ap.parse_args()
     if args.check:
         return self_check()
     if args.report:
         with open(os.path.join(ROOT, "inventory", ARTIFACT), newline="", encoding="utf-8") as fh:
             report(list(csv.DictReader(fh)))
+        return 0
+    if args.gap_report:
+        with open(os.path.join(ROOT, "inventory", GAP_ARTIFACT), newline="", encoding="utf-8") as fh:
+            report_gap(list(csv.DictReader(fh)))
         return 0
     if not args.dump:
         ap.error("--dump is required (or --check)")
@@ -464,7 +586,9 @@ def main():
         return one(args)
     if args.sweep:
         return sweep(args)
-    ap.error("pick --sweep, --class or --report")
+    if args.gap_sweep:
+        return sweep_gap(args)
+    ap.error("pick --sweep, --gap-sweep, --class, --report or --gap-report")
 
 
 if __name__ == "__main__":

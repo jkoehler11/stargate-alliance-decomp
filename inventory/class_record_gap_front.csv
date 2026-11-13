@@ -1,0 +1,1627 @@
+package,class,prefix_end,block_start,gap_len,front_hex,front_values,tail_zero,last_nz,arr_count
+AmbientCreatures,TransientAmbientPawn,4,398,20,37 00 00 04,55 0 0 4,1,3,36
+AmbientCreatures,TransientAmbientCreature,4,515,20,16 00 00 04,22 0 0 4,1,3,49
+AmbientCreatures,Bird,4,155,20,36 00 00 04,54 0 0 4,1,3,9
+AmbientCreatures,AmbientCreatureManager,5,441,19,02 00 00,2 0 0,1,0,40
+AmbientCreatures,Birds,4,272,20,17 00 00 04,23 0 0 4,1,3,22
+AmbientCreatures,FishSchool,4,381,20,17 00 00 04,23 0 0 4,1,3,34
+AmbientCreatures,CarpSchool,5,94,2,,,,-1,4
+AmbientCreatures,FishBase,4,111,20,37 00 00 04,55 0 0 4,1,3,4
+AmbientCreatures,WanderingBirds,4,92,2,,,,-1,4
+AmbientCreatures,MigratingBirds,4,471,20,16 00 00 04,22 0 0 4,1,3,44
+AmbientCreatures,CirclingBirds,4,309,20,16 00 00 04,22 0 0 4,1,3,26
+AmbientCreatures,Carp,5,94,2,,,,-1,4
+AmbientCreatures,WaterAmbientCreatures,4,98,19,02 00 00,2 0 0,1,0,2
+AmbientCreatures,OpenTerrainAmbientCreatures,4,98,19,02 00 00,2 0 0,1,0,2
+AmbientCreatures,FishSpawner,4,98,19,02 00 00,2 0 0,1,0,2
+Core,Commandlet,4,88,18,00 00,0 0,1,-1,2
+Core,Time,4,72,18,00 00,0 0,1,-1,0
+Core,SimpleCommandlet,4,91,20,3a 00 00 00,58 0 0 0,1,0,2
+Core,HelloWorldCommandlet,4,91,20,3a 00 00 00,58 0 0 0,1,0,2
+Editor,BrushBuilder,4,89,18,00 00,0 0,1,-1,2
+Editor,VolumetricBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,TetrahedronBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,TerrainBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,SpiralStairBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,SheetBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,RawMaterialFactory,5,94,20,12 00 00 00,18 0 0 0,1,0,2
+Editor,LinearStairBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,FractalTextureFactory,5,93,19,00 00 00,0 0 0,1,-1,2
+Editor,CylinderBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,CurvedStairBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,CubeBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,ConeBuilder,4,91,19,00 00 00,0 0 0,1,-1,2
+Editor,EditorEngine,4,94,20,1e 01 00 00,30 1 0 0,1,1,2
+Engine,LevelInfo,6,402,13,,,,12,36
+Engine,Canvas,5,147,21,00 32 01 00 00,0 50 1 0 0,1,2,8
+Engine,GameInfo,5,5682,21,00 36 00 c0 06,0 54 0 -384,1,4,610
+Engine,AIMessage,5,660,21,00 12 00 00 08,0 18 0 0 8,1,4,64
+Engine,DamageType,5,182,20,37 00 00 00,55 0 0 0,1,0,12
+Engine,Sound,5,93,20,12 01 00 00,18 1 0 0,1,1,2
+Engine,NavigationPoint,5,225,21,00 16 00 00 00,0 22 0 0 0,1,1,16
+Engine,Pickup,5,478,21,00 37 0a 00 00,0 55 10 0 0,1,2,44
+Engine,HUD,5,2287,20,3e 40 00 00,62 0 0,1,1,243
+Engine,Texture,6,95,20,52 01 00 00,82 0 0,1,1,2
+Engine,Mutator,5,568,21,00 36 00 80 02,0 54 0 0 2,1,4,54
+Engine,Info,5,108,20,37 00 00 00,55 0 0 0,1,0,3
+Engine,Mover,5,1085,31,ff ff ff ff ff ff ff 00 00 00 00 16 08 00 04,-17179869183 -8191 0 0 0 22 8 0 4,1,14,111
+Engine,Player,5,94,21,00 16 01 00 00,0 22 1 0 0,1,2,2
+Engine,Ammunition,5,270,6,,,,5,22
+Engine,SurfaceInfo,5,824,21,00 12 00 00 00,0 18 0 0 0,1,1,75
+Engine,PlayerInput,5,217,21,00 1e 00 00 00,0 30 0 0 0,1,1,15
+Engine,AIController,5,412,21,00 16 00 00 04,0 22 0 0 4,1,4,37
+Engine,GameProfile,5,484,21,00 32 00 00 00,0 50 0 0 0,1,1,44
+Engine,AccessControl,5,1182,21,00 36 00 00 00,0 54 0 0 0,1,1,120
+Engine,Emitter,5,153,21,00 16 02 00 00,0 22 2 0 0,1,2,8
+Engine,PixelShaderMaterial,6,97,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PlayerProfile,5,299,21,00 36 00 00 00,0 54 0 0 0,1,1,23
+Engine,LocalMessage,5,253,20,36 00 00 00,54 0 0 0,1,0,19
+Engine,Stream,6,136,21,00 12 00 00 00,0 18 0 0 0,1,1,6
+Engine,ParticleEmitter,5,94,21,00 13 10 00 00,0 19 16 0 0,1,2,2
+Engine,ZoneInfo,5,156,20,36 02 00 00,54 2 0 0,1,1,8
+Engine,BroadcastHandler,5,763,21,00 36 00 00 00,0 54 0 0 0,1,1,74
+Engine,TestInfo,5,422,21,00 36 00 00 00,0 54 0 0 0,1,1,36
+Engine,Volume,6,132,21,00 36 00 00 00,0 54 0 0 0,1,1,6
+Engine,TexModifier,6,98,20,12 20 00 00,18 32 0 0,1,1,2
+Engine,ShadowProjector,6,283,21,00 16 02 00 00,0 22 2 0 0,1,2,21
+Engine,Ladder,6,147,21,00 16 02 00 00,0 22 2 0 0,1,2,7
+Engine,Projectile,5,755,21,00 17 00 00 00,0 23 0 0 0,1,1,75
+Engine,Triggers,5,94,4,,,,2,4
+Engine,Projector,5,148,21,00 16 02 00 00,0 22 2 0 0,1,2,8
+Engine,WeaponPickup,5,590,21,00 37 00 00 00,0 55 0 0 0,1,1,57
+Engine,AIMsgManager,5,1912,20,12 00 00 00,18 0 0 0,1,0,204
+Engine,ShadowBitmapMaterial,6,97,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,Keypoint,5,92,19,02 00 00,2 0 0,1,0,2
+Engine,LogEntry,5,164,21,00 16 00 00 00,0 22 0 0 0,1,1,9
+Engine,Trigger,6,455,19,02 00 04,2 0 4,1,2,42
+Engine,SVehicleTrigger,6,152,21,00 16 00 00 04,0 22 0 0 4,1,4,8
+Engine,SmallNavigationPoint,5,96,19,00 00 00,0 0 0,1,-1,2
+Engine,Screenplay,5,779,21,00 17 00 00 00,0 23 0 0 0,1,1,72
+Engine,ReplicationInfo,5,98,2,,,,-1,4
+Engine,StreamPlaylistManager,6,477,21,00 36 00 00 00,0 54 0 0 0,1,1,40
+Engine,LadderVolume,5,462,21,00 36 00 00 00,0 54 0 0 0,1,1,42
+Engine,AIScript,6,197,21,00 16 02 00 00,0 22 2 0 0,1,2,13
+Engine,Shader,6,241,21,00 12 30 00 00,0 18 48 0 0,1,2,18
+Engine,Effects,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,Console,5,256,1,,,,-1,22
+Engine,Crushed,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,GameMessage,6,184,21,00 36 00 00 00,0 54 0 0 0,1,1,11
+Engine,SoundTrigger,6,114,21,00 36 02 00 04,0 54 2 0 4,1,4,4
+Engine,SVehicleWheel,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,SGInteraction,5,148,21,00 32 10 00 00,0 50 16 0 0,1,2,8
+Engine,AdminBase,5,724,21,00 33 00 00 00,0 51 0 0 0,1,1,69
+Engine,InventorySpot,6,137,21,00 16 00 00 00,0 22 0 0 0,1,1,6
+Engine,PlayerStart,6,100,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,MissionObjective,5,273,8,,,,7,22
+Engine,LadderInfo,5,544,21,00 13 00 00 00,0 19 0 0 0,1,1,47
+Engine,LiftExit,5,630,21,00 16 02 00 00,0 22 2 0 0,1,2,61
+Engine,CameraEffect,5,94,21,00 13 01 00 00,0 19 1 0 0,1,2,2
+Engine,BaseGUIController,5,94,21,00 16 00 00 00,0 22 0 0 0,1,1,2
+Engine,MatAction,6,96,21,00 13 00 00 00,0 19 0 0 0,1,1,2
+Engine,KConstraint,6,96,4,,,,2,4
+Engine,KVehicle,5,626,21,00 37 02 00 06,0 55 2 0 6,1,4,61
+Engine,KarmaParams,6,96,4,,,,2,4
+Engine,ChatRoomMessage,6,111,21,00 36 00 00 00,0 54 0 0 0,1,1,3
+Engine,HudOverlay,5,103,21,00 16 00 00 00,0 22 0 0 0,1,1,3
+Engine,Decoration,5,268,1,,,,-1,23
+Engine,SVehicleFactory,5,147,20,16 02 00 00,22 2 0 0,1,1,8
+Engine,InventoryAttachment,5,103,21,00 16 08 00 04,0 22 8 0 4,1,4,3
+Engine,PathNode,5,96,19,02 00 00,2 0 0,1,0,2
+Engine,Shield,6,96,21,00 36 00 00 06,0 54 0 0 6,1,4,2
+Engine,Fragment,6,132,21,00 16 00 00 00,0 22 0 0 0,1,1,6
+Engine,fell,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,SVehicle,5,386,21,00 37 02 00 06,0 55 2 0 6,1,4,33
+Engine,PSBumpSpecular,6,101,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSBump,6,99,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSDistortionBaseMaterial,6,99,21,00 13 30 00 00,0 19 48 0 0,1,2,2
+Engine,I3DL2Listener,5,93,20,13 10 00 00,19 16 0 0,1,1,2
+Engine,AvoidMarker,6,224,21,00 16 00 00 04,0 22 0 0 4,1,4,16
+Engine,Door,5,470,21,00 16 02 00 00,0 22 2 0 0,1,2,43
+Engine,Light,5,94,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,KActor,5,193,21,00 16 02 00 04,0 22 2 0 4,1,4,13
+Engine,xPickUpBase,5,232,21,00 17 02 00 00,0 23 2 0 0,1,2,17
+Engine,XBoxPlayerInput,6,123,20,3e 00 00 00,62 0 0 0,1,0,5
+Engine,Suicided,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,FailedConnect,6,102,21,00 37 00 00 00,0 55 0 0 0,1,1,2
+Engine,DamRanOver,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,KarmaParamsCollision,5,94,4,,,,2,4
+Engine,LiftCenter,5,353,21,00 16 02 00 00,0 22 2 0 0,1,2,30
+Engine,AntiPortalActor,5,94,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,InterpolationPoint,6,94,19,02 00 00,2 0 0,1,0,2
+Engine,Brush,5,94,21,00 16 00 00 00,0 22 0 0 0,1,1,2
+Engine,SceneSubtitles,5,100,21,00 36 02 00 00,0 54 2 0 0,1,2,2
+Engine,AIMarker,6,100,21,00 16 00 00 00,0 22 0 0 0,1,1,2
+Engine,Ammo,5,283,21,00 37 02 00 00,0 55 2 0 0,1,2,23
+Engine,TexOscillator,6,99,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,FinalBlend,6,97,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,DecoCollideActor,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,TerrainInfo,5,94,21,00 36 03 00 00,0 54 3 0 0,1,2,2
+Engine,Engine,6,95,20,1e 01 00 00,30 1 0 0,1,1,2
+Engine,StaticMeshActor,5,164,21,00 16 02 00 00,0 22 2 0 0,1,2,9
+Engine,FluidSurfaceOscillator,5,94,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,FluidSurfaceInfo,5,221,20,36 03 00 00,54 3 0 0,1,1,16
+Engine,DefaultPhysicsVolume,5,94,21,00 36 00 00 00,0 54 0 0 0,1,1,2
+Engine,KRepulsor,5,94,4,,,,1,4
+Engine,KCarWheelJoint,6,96,4,,,,2,4
+Engine,DamTypeTelefragged,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,EFFECT_WaterVolume,6,94,19,10 00 00,16 0 0,1,0,2
+Engine,Exploded,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,FellLava,6,94,19,00 00 00,0 0 0,1,-1,2
+Engine,Gibbed,5,92,19,00 00 00,0 0 0,1,-1,2
+Engine,MaplistManager,6,638,21,00 36 00 00 00,0 54 0 0 0,1,1,61
+Engine,xMaterialController,5,257,21,00 16 02 00 00,0 22 2 0 0,1,2,19
+Engine,Speech,5,139,20,12 00 00 00,18 0 0 0,1,0,7
+Engine,SGUseTrigger,6,206,21,00 36 02 00 04,0 54 2 0 4,1,4,14
+Engine,Localizer,5,95,21,00 33 00 00 00,0 51 0 0 0,1,1,2
+Engine,LevelGravityChange,5,131,21,00 16 02 00 00,0 22 2 0 0,1,2,6
+Engine,KBSTriggeredJoint,6,97,21,00 16 02 00 04,0 22 2 0 4,1,4,2
+Engine,DynamicProjector,6,106,21,00 16 02 00 00,0 22 2 0 0,1,2,3
+Engine,DynamicLight,6,95,19,02 00 00,2 0 0,1,0,2
+Engine,DemoRecSpectator,5,312,21,00 36 00 00 04,0 54 0 0 4,1,4,26
+Engine,ClientMover,5,104,21,00 16 00 00 04,0 22 0 0 4,1,4,3
+Engine,ArmorPickup,5,68,16,,,,2,0
+Engine,xProcMesh,5,122,21,00 16 42 00 00,0 22 2 0,1,2,5
+Engine,xWeatherEffect,5,95,21,00 16 42 00 00,0 22 2 0,1,2,2
+Engine,KHinge,6,151,21,00 16 02 00 04,0 22 2 0 4,1,4,8
+Engine,KConeLimit,6,97,21,00 16 02 00 04,0 22 2 0 4,1,4,2
+Engine,KarmaParamsRBFull,6,97,21,00 12 10 00 04,0 18 16 0 4,1,4,2
+Engine,KTire,6,97,21,00 17 02 00 04,0 23 2 0 4,1,4,2
+Engine,Note,5,95,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,Vignette,5,95,21,00 1f 00 00 00,0 31 0 0 0,1,1,2
+Engine,AmbientSound,6,104,21,00 16 42 00 00,0 22 2 0,1,2,2
+Engine,TextToSpeechAlias,5,96,21,00 17 00 00 00,0 23 0 0 0,1,1,2
+Engine,Camera,5,94,19,00 00 04,0 0 4,1,2,2
+Engine,ReplicatorPathNode,6,101,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,AvoidanceWaypoint,5,93,19,00 00 00,0 0 0,1,-1,2
+Engine,Scout,5,96,4,,,,1,4
+Engine,WarpZoneMarker,6,150,21,00 16 00 00 00,0 22 0 0 0,1,1,7
+Engine,LineOfSightTrigger,6,106,21,00 16 02 00 04,0 22 2 0 4,1,4,3
+Engine,BlockingVolume,6,97,21,00 36 00 00 00,0 54 0 0 0,1,1,2
+Engine,JumpPad,5,297,21,00 16 00 00 00,0 22 0 0 0,1,1,24
+Engine,FlyingPathNode,6,99,19,02 00 00,2 0 0,1,0,2
+Engine,RoadPathNode,6,101,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+Engine,MapVolume,6,115,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+Engine,BeamEmitter,6,97,21,00 12 10 00 00,0 18 16 0 0,1,2,2
+Engine,SubActionCameraEffect,6,97,21,00 32 31 00 00,0 50 49 0 0,1,2,2
+Engine,ColorModifier,6,99,20,12 20 00 00,18 32 0 0,1,1,2
+Engine,TexPannerTriggered,6,136,21,00 12 30 00 00,0 18 48 0 0,1,2,6
+Engine,TexScaler,6,100,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,TexOscillatorTriggered,6,136,21,00 12 30 00 00,0 18 48 0 0,1,2,6
+Engine,TexEnvMap,6,100,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,MeshEmitter,6,97,21,00 12 10 00 00,0 18 16 0 0,1,2,2
+Engine,PSDepthOfFieldMaterial,6,98,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSMotionBlurMaterial,6,98,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,PSBloomSelectMaterial,6,98,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,PSBlurMaterial,6,97,20,12 30 00 00,18 48 0 0,1,1,2
+Engine,PSRefractionMaterial,6,98,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSEmissiveShader,6,97,20,12 20 00 00,18 32 0 0,1,1,2
+Engine,PSSimple,6,100,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSBumpBSP,6,100,19,20 00 00,32 0 0,1,0,2
+Engine,PSVDM,6,102,19,20 00 00,32 0 0,1,0,2
+Engine,PSReplicatorVision,6,98,19,20 00 00,32 0 0,1,0,2
+Engine,PSShieldMaterial,6,100,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,PSWater,6,100,21,00 12 20 00 00,0 18 32 0 0,1,2,2
+Engine,MatDemoActor,5,93,19,00 00 00,0 0 0,1,-1,2
+Engine,SubActionFade,6,97,21,00 32 10 00 00,0 50 16 0 0,1,2,2
+Engine,SubActionShowText,6,97,21,00 32 10 00 00,0 50 16 0 0,1,2,2
+Engine,LookTarget,6,95,19,02 00 00,2 0 0,1,0,2
+Engine,AnimNotify_Effect,6,98,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,AnimNotify_Sound,6,98,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,AnimNotify_LIPSinc,6,98,21,00 12 30 00 00,0 18 48 0 0,1,2,2
+Engine,SparkEmitter,6,69,16,,,,2,0
+Engine,SpriteEmitter,6,77,20,00 12 10 00,0 18 16 0,1,2,0
+Engine,TrailEmitter,6,97,21,00 12 10 00 00,0 18 16 0 0,1,2,2
+Engine,DecoVolumeObject,5,93,19,00 00 00,0 0 0,1,-1,2
+Engine,StreamInteraction,5,394,21,00 16 00 00 00,0 22 0 0 0,1,1,34
+GUI,GUIComponent,5,480,19,10 20 00,16 32 0,1,1,45
+GUI,GUIButton,4,100,20,36 10 20 00,54 16 32 0,1,2,3
+GUI,GUIController,4,1681,20,36 00 00 00,54 0 0 0,1,0,177
+GUI,GUIPage,4,108,19,10 20 00,16 32 0,1,1,4
+GUI,GUIImage,4,91,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUIStyles,5,101,19,10 20 00,16 32 0,1,1,3
+GUI,GUIListBase,4,136,20,36 10 20 00,54 16 32 0,1,2,7
+GUI,GUILabel,4,109,20,36 10 20 00,54 16 32 0,1,2,4
+GUI,GUIMultiComponent,4,496,20,36 10 20 00,54 16 32 0,1,2,47
+GUI,GUIPanel,4,127,20,36 10 20 00,54 16 32 0,1,2,6
+GUI,GUIVertList,4,192,20,36 10 20 00,54 16 32 0,1,2,13
+GUI,GUITabButton,4,118,20,36 10 20 00,54 16 32 0,1,2,5
+GUI,GUIHorzScrollButton,4,91,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUIEditBox,4,136,20,36 10 20 00,54 16 32 0,1,2,7
+GUI,GUIScrollBarBase,4,109,20,36 10 20 00,54 16 32 0,1,2,4
+GUI,GUIScrollText,4,99,19,10 20 00,16 32 0,1,1,3
+GUI,GUIImageListMap,5,184,20,36 10 20 00,54 16 32 0,1,2,12
+GUI,GUIMenuOption,4,353,20,36 10 20 00,54 16 32 0,1,2,31
+GUI,GUIMessageBox,4,726,19,10 20 00,16 32 0,1,1,71
+GUI,ControllerButton,4,173,20,36 10 20 00,54 16 32 0,1,2,11
+GUI,UIXInteraction,4,199,20,1a 01 00 00,26 1 0 0,1,1,13
+GUI,GUISlider,4,299,20,36 10 20 00,54 16 32 0,1,2,25
+GUI,STY_SquareButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUIMultiColumnList,4,118,19,10 20 00,16 32 0,1,1,5
+GUI,GUISpinnerButton,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUINumericEdit,4,222,20,36 10 20 00,54 16 32 0,1,2,16
+GUI,GUIVertScrollButton,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUIVertScrollBar,4,372,20,36 10 20 00,54 16 32 0,1,2,32
+GUI,GUIComboBox,4,704,20,36 10 20 00,54 16 32 0,1,2,68
+GUI,GUIVertGripButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUICheckBoxButton,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,STY_SGListBoxItem,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUIListBoxBase,4,236,20,36 10 20 00,54 16 32 0,1,2,18
+GUI,GUIVertScrollZone,4,101,20,36 10 20 00,54 16 32 0,1,2,3
+GUI,GUIHorzGripButton,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,STY_SGMenuButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_RoundButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ListBoxItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ListBox,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_OnScreenKeyboardButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUIHorzScrollZone,4,101,20,36 10 20 00,54 16 32 0,1,2,3
+GUI,GUIHorzScrollBar,4,304,20,36 10 20 00,54 16 32 0,1,2,25
+GUI,GUIMultiColumnListHeader,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,moTextOption,5,499,20,36 10 20 00,54 16 32 0,1,2,47
+GUI,GUIHorzList,4,202,1,,,,0,16
+GUI,GUIScrollBar,4,966,20,36 10 20 00,54 16 32 0,1,2,99
+GUI,GUIImageList,4,335,20,36 10 20 00,54 16 32 0,1,2,29
+GUI,GUILabelButton,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,STY_SmallText,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGListBox,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ProfileListItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_NoBackground,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUIScrollTextBox,5,247,20,36 10 20 00,54 16 32 0,1,2,19
+GUI,STY_Sui20pt_C8C8C87F,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,SGVertScrollBar,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_CharacterButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,SGListBox,5,112,20,36 10 20 00,54 16 32 0,1,2,4
+GUI,moCheckBox,5,152,20,36 10 20 00,54 16 32 0,1,2,8
+GUI,fntXboxSymbols,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntSmallMediumFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntSmallHeaderFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntSmallFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntMenuFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntMediumLargeFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntMediumFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntLargeFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntHugeFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntHeaderFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,GUIScrollingPanel,4,317,20,36 10 20 00,54 16 32 0,1,2,27
+GUI,STY_XBoxButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_TextLabel,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_TextButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_TabButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui28pt_C8C8C8FF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui24pt_C8C8C8FF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui18pt_FFFFFFFF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui18pt_FF9C00FF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui18pt_C8C8C8FF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Sui12pt_C8C8C8FF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SquareBar,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SmallTextNoBorder,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SmallListItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGScrollBoxItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGScrollBox,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGObjectiveListItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGLabel,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGHeader,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGDialogue,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGDialogBox,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SGCentralPanel,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ServerListItem,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ServerList,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_SectionPanel,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ScrollZone,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ScrollBox,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_RoundScaledButton,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ProfileList,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_OnScreenKeyboardButtonPressed,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_MessageBoxButton,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_MessageBox,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_MainMenu,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ListBoxHeader,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ImageStyle_13816BFF,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ImageListItem,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ImageListCursor,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Header,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_GroupingBox,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_Footer,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ControllerButtons,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ComboListBox,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_CheckboxButton,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_BigText,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,STY_AvarisButton,5,93,19,10 20 00,16 32 0,1,1,2
+GUI,STY_ArrowScrollPanel,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,SpinnyWeap,4,94,20,16 00 00 00,22 0 0 0,1,0,2
+GUI,SGScrollTextBox,5,130,20,36 10 20 00,54 16 32 0,1,2,6
+GUI,SGLabel,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,moSlider,5,174,20,36 10 20 00,54 16 32 0,1,2,10
+GUI,moNumericEdit,5,154,20,36 10 20 00,54 16 32 0,1,2,8
+GUI,moListEditBox,5,508,20,36 10 20 00,54 16 32 0,1,2,48
+GUI,moImageListMap,5,330,20,36 10 20 00,54 16 32 0,1,2,27
+GUI,moEditBox,5,157,20,36 10 20 00,54 16 32 0,1,2,9
+GUI,moComboBox,5,162,20,36 10 20 00,54 16 32 0,1,2,9
+GUI,ListObjectPropsCommandlet,5,149,20,3a 00 00 00,58 0 0 0,1,0,8
+GUI,GUIArrowScrollPanel,5,490,20,36 10 20 00,54 16 32 0,1,2,46
+GUI,fntSmallestFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,fntDefaultFont,4,91,19,10 20 00,16 32 0,1,1,2
+GUI,ExtendedConsole,4,427,20,36 00 00 00,54 0 0 0,1,0,39
+GUI,GUITitleBar,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUIProgressBar,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+GUI,GUIMultiColumnListBox,5,134,20,36 10 20 00,54 16 32 0,1,2,6
+GamePlay,ScriptedController,4,1113,20,16 00 00 04,22 0 0 4,1,3,115
+GamePlay,ScriptedAction,4,182,20,33 30 00 00,51 48 0 0,1,1,12
+GamePlay,ScriptedSequence,4,534,20,16 02 00 00,22 2 0 0,1,1,51
+GamePlay,PuzzleMover,4,148,20,16 00 00 04,22 0 0 4,1,3,8
+GamePlay,EngagementOrder,4,73,19,13 30 00,19 48 0,1,1,0
+GamePlay,Action_PLAYANIM,4,246,20,32 30 00 00,50 48 0 0,1,1,19
+GamePlay,CriticalEventPlus,5,100,19,00 00 00,0 0 0,1,-1,2
+GamePlay,ACTION_MoveToPoint,4,300,20,32 30 00 00,50 48 0 0,1,1,25
+GamePlay,Depressurized,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,SpecialEventTrigger,4,299,19,00 00 04,0 0 4,1,2,25
+GamePlay,AmbushInfo,5,136,20,36 02 00 00,54 2 0 0,1,1,6
+GamePlay,Burned,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,Corroded,4,93,20,37 00 00 00,55 0 0 0,1,0,2
+GamePlay,LavaVolume,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,Impact,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,FearSpot,5,122,20,16 02 00 04,22 2 0 4,1,3,5
+GamePlay,FadeViewTrigger,4,129,20,16 00 00 04,22 0 0 4,1,3,6
+GamePlay,EFFECT_WOODEN_SMALLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_SHORTPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,MessageTextureClient,5,200,20,36 02 00 00,54 2 0 0,1,1,13
+GamePlay,EFFECT_WOODEN_MEDIUMROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_LONGPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_LARGEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_HALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_CUPBOARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_COURTYARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_WOODEN_ALCOVE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Underwater,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Stoneroom,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_StoneCorridor,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_STADIUMTANNOY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_SQUASHCOURT,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_SMALLSWIMMINGPOOL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_GYMNASIUM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_FULLSTADIUM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPORT_EMPTYSTADIUM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_SMALLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_SHORTPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_MEDIUMROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_LONGPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_LARGEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_HALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_CUPBOARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SPACESTATION_ALCOVE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_SMALLWATERROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Sewerpipe,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Room,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,MusicEvent,4,165,20,16 00 00 04,22 0 0 4,1,3,10
+GamePlay,EFFECT_Quarry,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Psychotic,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PREFAB_WORKSHOP,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PREFAB_SCHOOLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PREFAB_PRACTISEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PREFAB_OUTHOUSE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,PressureVolume,4,498,20,36 00 00 00,54 0 0 0,1,0,47
+GamePlay,EFFECT_PREFAB_CARAVAN,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PIPE_SMALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PIPE_RESONANT,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PIPE_LONGTHIN,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PIPE_LARGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Parkinglot,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_PaddedCell,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_OUTDOORS_VALLEY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_OUTDOORS_ROLLINGPLAINS,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_OUTDOORS_DEEPCANYON,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_OUTDOORS_CREEK,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_OUTDOORS_BACKYARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_None,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Mountains,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_MOOD_MEMORY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_MOOD_HELL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_MOOD_HEAVEN,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Livingroom,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_SMALLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_SHORTPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_MEDIUMROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_LONGPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_LARGEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_HALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_CUPBOARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_COURTYARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ICEPALACE_ALCOVE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Hangar,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Hallway,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Forest,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_SMALLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,SHOOT_ORDER_Burst,4,93,20,12 30 00 00,18 48 0 0,1,1,2
+GamePlay,EFFECT_FACTORY_SHORTPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_MEDIUMROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,SHOOT_ORDER_Charge,4,93,20,12 30 00 00,18 48 0 0,1,1,2
+GamePlay,EFFECT_FACTORY_LONGPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_LARGEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_HALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_CUPBOARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_COURTYARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_FACTORY_ALCOVE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DUSTYROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Drugged,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_TUNNEL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_PITGARAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,VacuumVolume,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,EFFECT_DRIVING_INCAR_RACER,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_INCAR_LUXURY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_FULLGRANDSTAND,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_EMPTYGRANDSTAND,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DRIVING_COMMENTATOR,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DOME_TOMB,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_DOME_SAINTPAULS,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Dizzy,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_ConcertHall,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CITY_UNDERPASS,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CITY_SUBWAY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CITY_STREETS,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,SHOOT_ORDER_Snipe,4,93,20,12 30 00 00,18 48 0 0,1,1,2
+GamePlay,EFFECT_CITY_MUSEUM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CITY_LIBRARY,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CITY_ABANDONED,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_City,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,SlimeVolume,4,92,19,00 00 00,0 0 0,1,-1,2
+GamePlay,EFFECT_CHAPEL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Cave,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_SMALLROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_SHORTPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_MEDIUMROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_LONGPASSAGE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_LARGEROOM,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_HALL,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_CUPBOARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_COURTYARD,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CASTLE_ALCOVE,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_CarpetedHallway,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Bathroom,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Auditorium,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Arena,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,EFFECT_Alley,4,92,19,10 00 00,16 0 0,1,0,2
+GamePlay,Drowned,4,93,20,37 00 00 00,55 0 0 0,1,0,2
+GamePlay,Dispatcher,4,93,3,,,,1,4
+GamePlay,counter,4,111,20,36 02 00 04,54 2 0 4,1,3,4
+GamePlay,SpectatorCam,5,95,20,16 02 00 00,22 2 0 0,1,1,2
+GamePlay,Spotlight,5,94,19,02 00 00,2 0 0,1,0,2
+GamePlay,CameraTextureClient,5,164,20,36 02 00 00,54 2 0 0,1,1,9
+GamePlay,BlockPlayer,5,94,19,02 00 00,2 0 0,1,0,2
+GamePlay,BlockMonsters,5,94,19,02 00 00,2 0 0,1,0,2
+GamePlay,BlockAll,5,94,19,02 00 00,2 0 0,1,0,2
+GamePlay,SP_Trigger,4,147,20,16 02 00 00,22 2 0 0,1,1,8
+GamePlay,AlternatePath,4,97,20,16 00 00 00,22 0 0 0,1,0,2
+GamePlay,Sunlight,5,94,19,02 00 00,2 0 0,1,0,2
+GamePlay,ACTION_____________NONE,4,93,20,32 30 00 00,50 48 0 0,1,1,2
+GamePlay,ACTION_Walk,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,ACTION_WaitForPlayer,4,120,20,32 30 00 00,50 48 0 0,1,1,5
+GamePlay,ACTION_WaitForConditions,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,ACTION_WaitForAnimEnd,4,93,20,32 30 00 00,50 48 0 0,1,1,2
+GamePlay,ACTION_TurnTowardPlayer,4,129,20,32 30 00 00,50 48 0 0,1,1,6
+GamePlay,ACTION_TriggerMatinee,4,121,20,32 30 00 00,50 48 0 0,1,1,5
+GamePlay,TimedTrigger,4,93,3,,,,1,4
+GamePlay,ACTION_StopAnimation,4,102,20,32 30 00 00,50 48 0 0,1,1,3
+GamePlay,ACTION_Sprint,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,ACTION_SpecialMove,4,120,20,32 30 00 00,50 48 0 0,1,1,5
+GamePlay,TournamentConsole,4,208,20,16 00 00 00,22 0 0 0,1,0,14
+GamePlay,ACTION_SetViewTarget,4,219,20,32 30 00 00,50 48 0 0,1,1,16
+GamePlay,ACTION_SetStance,4,111,20,32 30 00 00,50 48 0 0,1,1,4
+GamePlay,TriggeredScript,5,448,19,02 00 00,2 0 0,1,0,41
+GamePlay,ACTION_SetAlertness,4,111,20,32 30 00 00,50 48 0 0,1,1,4
+GamePlay,ACTION_Run,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,TriggerLight,5,221,20,16 02 00 00,22 2 0 0,1,1,16
+GamePlay,ACTION_PlaySound,4,138,20,32 30 00 00,50 48 0 0,1,1,7
+GamePlay,ACTION_PlayMusic,4,183,20,32 30 00 00,50 48 0 0,1,1,12
+GamePlay,ACTION_PlayAmbientSound,4,264,20,32 30 00 00,50 48 0 0,1,1,21
+GamePlay,ACTION_MoveToPlayer,4,210,20,32 30 00 00,50 48 0 0,1,1,15
+GamePlay,ACTION_Killinstigator,4,129,20,32 30 00 00,50 48 0 0,1,1,6
+GamePlay,ACTION_KillActor,4,174,20,32 30 00 00,50 48 0 0,1,1,11
+GamePlay,ACTION_FadeView,4,246,20,32 30 00 00,50 48 0 0,1,1,19
+GamePlay,ACTION_FadeOutAmbientSound,4,165,20,32 30 00 00,50 48 0 0,1,1,10
+GamePlay,ACTION_DisplayMessage,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,ACTION_DestroyPawn,4,102,20,32 30 00 00,50 48 0 0,1,1,3
+GamePlay,ACTION_DamageInstigator,4,120,20,32 30 00 00,50 48 0 0,1,1,5
+GamePlay,ACTION_Crouch,4,147,20,32 30 00 00,50 48 0 0,1,1,8
+GamePlay,WaterVolume,4,93,20,36 00 00 00,54 0 0 0,1,0,2
+GamePlay,ACTION_ChangeTeam,4,102,20,32 30 00 00,50 48 0 0,1,1,3
+GamePlay,ACTION_ChangeScript,4,111,20,32 30 00 00,50 48 0 0,1,1,4
+GamePlay,VisibleTeleporter,5,66,14,,,,2,0
+GamePlay,ACTION_ChangeLevel,4,129,20,32 30 00 00,50 48 0 0,1,1,6
+GamePlay,ViewShaker,4,146,19,02 00 04,2 0 4,1,2,8
+GamePlay,EFFECT_DRIVING_INCAR_SPORTS,4,92,19,10 00 00,16 0 0,1,0,2
+IpDrv,UdpLink,5,99,19,00 00 00,0 0 0,1,-1,2
+IpDrv,UdpGamespyQuery,4,856,19,00 00 00,0 0 0,1,-1,86
+IpDrv,MasterServerUplink,5,255,20,3e 00 00 00,62 0 0 0,1,0,19
+IpDrv,MasterServerLink,4,99,20,3e 00 00 00,62 0 0 0,1,0,2
+IpDrv,UdpBeacon,4,134,19,00 00 00,0 0 0,1,-1,6
+IpDrv,UdpGamespyUplink,4,116,19,00 00 00,0 0 0,1,-1,4
+Sharpeffects,SE_BarrelHit,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,Barrel_Explode,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,barrel_damage,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_RibbonDeviceMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_RockImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ShotgunMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SimpleSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SniperMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SniperTrail,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SnowImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SprinklerEffect,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonBarrelElectric,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonBarrelSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonChargingEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffCannonProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponChargingEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponFullyChargedEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponImpactEmitterL,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponImpactEmitterM,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponProjectileEmitterL,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_StaffWeaponProjectileEmitterM,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SuperSoldierProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_SuperSoldierProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ToggleStaticMeshActor,4,93,3,,,,1,4
+Sharpeffects,SE_Warehouse_Beam,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_WaterWheel,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ZatExplosion,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ZatRayEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SimpleSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,StargateEffect,4,161,20,16 02 00 00,22 2 0 0,1,1,9
+Sharpeffects,WE_BulletDecal_Carpet,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Default,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Dirt,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Flesh,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Glass,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Grass,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Ice,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Metal,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_MetalGrate,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Rock,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Sand,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Snow,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletDecal_Wood,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Default,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Dirt,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Flesh,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Glass,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Grass,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Metal,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Pipe,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Rock,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Sand,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Snow,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Water,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_BulletHit_Wood,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_EnergyWeaponDecal_Default,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Carpet,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Default,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Dirt,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Glass,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Grass,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Ice,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Metal,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_MetalGrate,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Rock,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Sand,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Snow,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeDecal_Wood,4,94,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Default,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Dirt,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Grass,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Metal,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_MetalGrate,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Rock,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Sand,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Snow,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_GrenadeExplosion_Water,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,WE_ShockGrenadeExplosion_Default,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_PistolMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_P90MuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Monitor_Smoke,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Monitor_Explode,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_MetalImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_MetalHit,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_M60TurretMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_KullImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_KullDisruptorProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_KullDisruptorMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_Shoot,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_NotActive,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_Initial,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_Idle,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_HandCharge,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_BurnLoopEyes,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_BurnLoop,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_AstralSenseParticle,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HOL_AstralSenseGlowEffect,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HeatShimmer_01,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HeatShimmer,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Haaken_Gas_01,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Haaken_Gas,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponShieldDisabled,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponShieldDeploy,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponFullImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponChargingEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_HaakenWeaponAltFireProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GrenadeThrowEffect,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GrassImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoauldTurretProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoauldTurretProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoauldTurretMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaDropTurretProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaDropTurretProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaDropTurretMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk3ProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk3ProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk3MuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk2ProjectileImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk2ProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_GoaAutoTurretMk2MuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Fire_Small,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ExtreniteWeaponSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ExtreniteWeaponProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ExtreniteWeaponProjectileAltEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_ExplosiveKActor,4,321,20,16 02 00 04,22 2 0 4,1,3,27
+Sharpeffects,SE_Explosion_Blue,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Explosion_2_Blue,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_DirtWheel,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_DirtImpact,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Decals,4,95,20,16 02 00 00,22 2 0 0,1,1,2
+Sharpeffects,SE_CaptainStaffWeaponImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_Binoculars_Zoom,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_AnimatedActor,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Sharpeffects,SE_AdvExplosiveMeshActor,4,277,20,16 02 00 00,22 2 0 0,1,1,22
+Sharpeffects,SE_3rd_StaffWeaponMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_3rd_SniperMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_3rd_PistolMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_3rd_P90MuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,SE_3rd_KullDisruptorMuzzleEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,Pillar_Smash,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,M21_Haaken_Pod_Activate,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,M07_PotSmash_Sm,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,M07_PotSmash_Md,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,ExamplePot_Smash,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,ExamplePot_2_Smash,4,92,19,02 00 00,2 0 0,1,0,2
+Sharpeffects,cloth01_anim,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+StargateContent,JaffaBase,4,266,20,36 02 00 04,54 2 0 4,1,3,21
+StargateContent,Replicator,4,426,20,36 02 00 04,54 2 0 4,1,3,38
+StargateContent,JaffaHorusL,4,94,20,36 02 00 04,54 2 0 4,1,3,2
+StargateContent,HaakenMK2Weapon,5,295,20,36 00 00 06,54 0 0 6,1,3,24
+StargateContent,StargateWeaponPickup,5,246,20,37 02 00 00,55 2 0 0,1,1,18
+StargateContent,MindControlCrystal,4,827,20,16 02 00 00,22 2 0 0,1,1,81
+StargateContent,HaakenWeaponShield,5,240,20,16 00 00 00,22 0 0 0,1,0,18
+StargateContent,HackingPanelGadget,4,92,20,16 00 00 00,22 0 0 0,1,0,2
+StargateContent,Oneill,4,93,19,02 00 04,2 0 4,1,2,2
+StargateContent,Roster_JaffaSerpentL,4,92,19,30 00 00,48 0 0,1,0,2
+StargateContent,Carter,4,93,19,02 00 04,2 0 4,1,2,2
+StargateContent,NPC,4,93,19,02 00 04,2 0 4,1,2,2
+StargateContent,DestructableActor,5,193,20,16 02 00 00,22 2 0 0,1,1,13
+StargateContent,MindControlledBot,4,240,20,16 00 00 04,22 0 0 4,1,3,18
+StargateContent,SuperSoldier,4,238,20,36 02 00 04,54 2 0 4,1,3,18
+StargateContent,LinkedGateTeleporter,5,609,20,16 02 00 04,22 2 0 4,1,3,58
+StargateContent,HaakenWeaponShieldEffect,4,201,20,16 00 00 00,22 0 0 0,1,0,14
+StargateContent,GoaDropTurretBase,4,122,20,16 00 00 00,22 0 0 0,1,0,5
+StargateContent,LCDScreen,5,144,20,16 02 00 00,22 2 0 0,1,1,7
+StargateContent,SG1Pawn,4,143,20,36 02 00 04,54 2 0 4,1,3,7
+StargateContent,Reetou,4,124,20,36 02 00 04,54 2 0 4,1,3,5
+StargateContent,BotGoauld,4,215,20,16 00 00 04,22 0 0 4,1,3,15
+StargateContent,CrystalTunnelPiece,4,174,20,16 00 00 00,22 0 0 0,1,0,11
+StargateContent,GrenadeAmmo,4,125,20,36 00 00 06,54 0 0 6,1,3,5
+StargateContent,SGDamageMelee,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,STAFFWEAPON,4,503,20,36 00 00 06,54 0 0 6,1,3,47
+StargateContent,HaakenPodDoor,4,102,19,16 00 00,22 0 0,1,0,0
+StargateContent,JaffaBotLight,4,910,20,16 00 00 04,22 0 0 4,1,3,92
+StargateContent,GoaAutoTurretController,5,241,20,16 00 00 04,22 0 0 4,1,3,18
+StargateContent,TransportPlatformTeleporter,5,725,20,16 02 00 04,22 2 0 4,1,3,69
+StargateContent,ExtreniteAutoTurret,4,103,20,36 02 00 04,54 2 0 4,1,3,3
+StargateContent,GateEventHorizon,5,113,20,36 02 00 00,54 2 0 0,1,1,4
+StargateContent,HaakenLeaderBot,5,740,20,16 00 00 04,22 0 0 4,1,3,73
+StargateContent,Tealc,4,122,19,02 00 04,2 0 4,1,2,5
+StargateContent,JaffaBotHeavy,5,869,20,16 00 00 04,22 0 0 4,1,3,87
+StargateContent,GateIris,4,93,20,16 00 00 00,22 0 0 0,1,0,2
+StargateContent,CrystalTunnelLayer,4,344,20,16 00 00 00,22 0 0 0,1,0,29
+StargateContent,MindControlLinkEmitter,4,122,20,16 02 00 00,22 2 0 0,1,1,5
+StargateContent,ElectricLight,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,GoaDropTurret,5,259,20,36 02 00 06,54 2 0 6,1,3,20
+StargateContent,HaakenGrunt,4,167,20,36 02 00 04,54 2 0 4,1,3,10
+StargateContent,SGC_SecurityDoor,5,96,3,,,,0,4
+StargateContent,StaffWeaponMeleeAmmo,4,149,20,36 00 00 06,54 0 0 6,1,3,8
+StargateContent,StaffWeaponAmmo,4,123,20,36 00 00 06,54 0 0 6,1,3,5
+StargateContent,StaffWeaponProjectile,4,122,20,16 00 00 00,22 0 0 0,1,0,5
+StargateContent,StargateGrenadeProjectile,4,320,17,16,22,1,0,0
+StargateContent,Ptero,4,95,3,,,,1,4
+StargateContent,C4Prop,4,216,20,16 00 00 04,22 0 0 4,1,3,15
+StargateContent,TrainWagon,4,93,2,,,,-1,4
+StargateContent,MindControlBase,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+StargateContent,Roster_Haaken,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,ReetouBot,4,1607,20,16 00 00 04,22 0 0 4,1,3,169
+StargateContent,GoauldShield,5,150,20,36 00 00 06,54 0 0 6,1,3,8
+StargateContent,GateSymbolRing,4,103,20,16 00 00 00,22 0 0 0,1,0,3
+StargateContent,SG1VoicePack,5,224,20,37 00 00 00,55 0 0 0,1,0,14
+StargateContent,HaakenBot,4,604,20,16 00 00 04,22 0 0 4,1,3,58
+StargateContent,GoauldRibbonProjectile,4,197,20,16 00 00 00,22 0 0 0,1,0,13
+StargateContent,Roster_JaffaSerpentH,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_JaffaSerpentM,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Replicator,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Scarab,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,StaffCannonGun,4,427,20,36 00 00 06,54 0 0 6,1,3,38
+StargateContent,HaakenWeaponAmmo,4,104,20,36 00 00 06,54 0 0 6,1,3,3
+StargateContent,Extrenite,4,94,2,,,,0,4
+StargateContent,Roster_Ptero,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,DialHomeDevice,4,351,20,16 02 00 00,22 2 0 0,1,1,28
+StargateContent,C4Weapon,4,272,20,36 00 00 06,54 0 0 6,1,3,21
+StargateContent,GoaAutoTurretGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,GoaAutoTurretMK2Controller,5,358,20,16 00 00 04,22 0 0 4,1,3,31
+StargateContent,Gate,4,376,20,16 02 00 00,22 2 0 0,1,1,31
+StargateContent,GoaAutoTurretMK2Gun,4,104,20,36 00 00 06,54 0 0 6,1,3,3
+StargateContent,GoaAutoTurretMK2GunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,GoaAutoTurretMK2GunProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,Jackson,4,94,2,,,,0,4
+StargateContent,BinocularCommandTrigger,5,181,20,16 02 00 04,22 2 0 4,1,3,11
+StargateContent,ZatPulse,4,171,20,16 00 00 00,22 0 0 0,1,0,10
+StargateContent,JaffaBotMedium,4,431,20,16 00 00 04,22 0 0 4,1,3,39
+StargateContent,ZatGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,ZATGUN,4,206,20,36 00 00 06,54 0 0 6,1,3,14
+StargateContent,FragGrenade,5,97,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,StingerAmmo,4,141,20,36 00 00 06,54 0 0 6,1,3,7
+StargateContent,StaffWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,StaffCannonAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,HaakenMK1Weapon,4,317,20,36 00 00 06,54 0 0 6,1,3,26
+StargateContent,ONeill_Lite,4,95,3,,,,1,4
+StargateContent,Scarab,4,223,20,36 02 00 04,54 2 0 4,1,3,16
+StargateContent,Roster_SGC,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,ExtreniteWeaponAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,PteroClawsAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,GoauldRibbonAmmo,4,124,20,36 00 00 06,54 0 0 6,1,3,5
+StargateContent,GOAULDRIBBONDEVICE,4,168,20,36 00 00 06,54 0 0 6,1,3,10
+StargateContent,Roster_Extrenite,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,RepAmmo,5,195,20,36 00 00 06,54 0 0 6,1,3,13
+StargateContent,ReetouDeviceAmmo,4,223,20,36 00 00 06,54 0 0 6,1,3,16
+StargateContent,ReetouMeleeAmmo,4,186,20,36 00 00 06,54 0 0 6,1,3,12
+StargateContent,ReetouDevice,4,259,20,36 00 00 06,54 0 0 6,1,3,20
+StargateContent,Roster_ExtreniteChild,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_ExtreniteSG,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,PteroClaws,4,230,20,36 00 00 06,54 0 0 6,1,3,17
+StargateContent,HackableObject,4,93,3,,,,1,4
+StargateContent,Binoculars,5,1111,20,36 00 00 06,54 0 0 6,1,3,112
+StargateContent,GRENADE,4,680,20,36 00 00 06,54 0 0 6,1,3,66
+StargateContent,SGDamageRifle,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,Tokra,4,94,2,,,,0,4
+StargateContent,StaffCannon,5,172,20,36 02 00 06,54 2 0 6,1,3,10
+StargateContent,KULLDISRUPTOR,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,KullDisruptorAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,KullDisruptorProjectile,4,159,20,16 00 00 00,22 0 0 0,1,0,9
+StargateContent,KullDisruptorPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,KullDisruptorDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,StaffWeaponPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,StaffCannonProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,JaffaSerpentL,4,95,3,,,,1,4
+StargateContent,JaffaJackalL,4,95,3,,,,1,4
+StargateContent,DecipheringProjectile,4,185,20,16 00 00 00,22 0 0 0,1,0,12
+StargateContent,TERWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,ShotgunAmmo,4,167,20,36 00 00 06,54 0 0 6,1,3,10
+StargateContent,SGDamageZAT,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,P90MeleeAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,HandOfLight_AstralSenseParticle,4,167,20,16 00 00 00,22 0 0 0,1,0,10
+StargateContent,P90Pickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,P90Prototype,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,HackingPawnForBot,4,205,20,36 02 00 04,54 2 0 4,1,3,14
+StargateContent,Roster_Tokra,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,GoaAutoTurretBase,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,ExtreniteWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HaakenWeaponProjectileFull,4,279,20,16 00 00 00,22 0 0 0,1,0,22
+StargateContent,HaakenWeaponProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,HaakenWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,Roster_GrahamCoulder,4,112,20,12 30 00 00,18 48 0 0,1,1,4
+StargateContent,GoauldRibbonPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,HaakenPod,5,365,20,16 02 00 04,22 2 0 4,1,3,30
+StargateContent,HaakenWarrior,5,97,3,,,,1,4
+StargateContent,GoaAutoTurretGun,4,113,3,,,,0,6
+StargateContent,ExtreniteWeapon,4,214,20,36 00 00 06,54 0 0 6,1,3,15
+StargateContent,ReetouWeaponAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,ReetouProtector,4,95,3,,,,1,4
+StargateContent,JaffaCaptain,4,95,3,,,,1,4
+StargateContent,AttachmentP90Weap,5,97,3,,,,0,4
+StargateContent,BigReplicator,4,94,2,,,,0,4
+StargateContent,C4Pickup,4,104,20,36 02 00 00,54 2 0 0,1,1,3
+StargateContent,DemoSGTeamRoster,5,107,2,,,,0,4
+StargateContent,ExtreniteAutoTurretGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,FragGrenadePickup,4,104,20,36 02 00 00,54 2 0 0,1,1,3
+StargateContent,GoaDropTurretGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelCodeA,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelCodeB,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelCodeC,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelCodeD,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelRingA,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelRingB,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelRingC,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,HackingPanelRingD,4,92,19,00 00 00,0 0 0,1,-1,2
+StargateContent,Jacob_Selmak,4,94,2,,,,0,4
+StargateContent,MediumGreenReplicator,4,94,2,,,,0,4
+StargateContent,MediumPurpleReplicator,4,94,2,,,,0,4
+StargateContent,PteroBossBot,5,704,20,16 00 00 04,22 0 0 4,1,3,68
+StargateContent,ReetouMeleeAttack,4,194,20,36 00 00 06,54 0 0 6,1,3,13
+StargateContent,ReetouWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,RepQueenEnergyWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,TeamVoicePack,5,665,20,37 00 00 00,55 0 0 0,1,0,62
+StargateContent,SuperSoldierGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,ShockGrenade,5,97,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,ShockGrenadePickup,4,104,20,36 02 00 00,54 2 0 0,1,1,3
+StargateContent,SNIPERRIFLE,5,715,20,36 00 00 06,54 0 0 6,1,3,70
+StargateContent,StingerPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,StingerDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,SQUAD_GrahamCoulder,4,93,2,,,,0,4
+StargateContent,StaffWeaponAttachment,5,332,20,16 00 00 04,22 0 0 4,1,3,28
+StargateContent,StaffCannonDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,StaffCannonFullyChargedProjectile,5,96,19,00 00 00,0 0 0,1,-1,2
+StargateContent,SQUAD_HaakenPod,4,93,2,,,,0,4
+StargateContent,StingerTrail,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,SuperSoldierAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,SniperRiflePickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,SniperRifleAttachment,5,95,2,,,,-1,4
+StargateContent,SniperRifleAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,ShotgunPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,ShotgunMeleeAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,ShotgunAttachment,5,95,2,,,,-1,4
+StargateContent,SuperSoldierGun,4,186,20,36 00 00 06,54 0 0 6,1,3,12
+StargateContent,SHOTGUN,4,340,20,36 00 00 06,54 0 0 6,1,3,29
+StargateContent,ShockGrenadeProjectile,5,115,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,ShockGrenadeExplosion,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,ShockGrenadeAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,Shifu_Harsisis,4,94,2,,,,0,4
+StargateContent,SuperSoldierGunPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,SuperSoldierProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,SGDamageRepAcid,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,SGDamageBurning,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,SGC_DestructibleSecurityDoor,5,369,20,16 00 00 04,22 0 0 4,1,3,32
+StargateContent,SGCWalter,4,94,2,,,,0,4
+StargateContent,SGCOfficer,4,94,2,,,,0,4
+StargateContent,SGCMedic,4,94,2,,,,0,4
+StargateContent,SGCGrunt,4,94,2,,,,0,4
+StargateContent,SGCEngineer,4,94,2,,,,0,4
+StargateContent,ScarabClawsAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,Roster_Tokra_CouncillorFemale,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_Tokra_Councillor,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_Thor,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_SuperSoldier,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Shifu_Harsisis,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_SGCWalter,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,TERWEAPON,4,503,20,36 00 00 06,54 0 0 6,1,3,45
+StargateContent,TERWeaponAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,Roster_SGCOfficer,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_SGCMedic,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_SGCEngineer,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_ReplicatorQueen,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Reetou,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_PteroBoss,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Oma,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Langaran_Minister,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Langaran,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,TERWeaponPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,Roster_Jonas,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Jaffa_Captain,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,TERWeaponProjectile,4,140,20,16 00 00 00,22 0 0 0,1,0,7
+StargateContent,Roster_JaffaJackalM,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_JaffaJackalL,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_JaffaJackalH,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_JaffaHorusM,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Thor,4,94,2,,,,0,4
+StargateContent,Roster_JaffaHorusL,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_JaffaHorusH,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_Jacob_Selmak,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Tokra_Councillor,4,94,2,,,,0,4
+StargateContent,Roster_Haaken_Warrior,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_HaakenLeader,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_GoauldGrahamCoulder,5,141,20,12 30 00 00,18 48 0 0,1,1,7
+StargateContent,Tokra_CouncillorFemale,4,94,2,,,,0,4
+StargateContent,Roster_GoauldFirstPrime,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_Goauld,4,139,20,12 30 00 00,18 48 0 0,1,1,7
+StargateContent,Roster_GeneralHammond,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_FemaleDoctor,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_DropTurret_Serpent,4,140,20,12 30 00 00,18 48 0 0,1,1,7
+StargateContent,Roster_DropTurret_Jackal,4,140,20,12 30 00 00,18 48 0 0,1,1,7
+StargateContent,Roster_DropTurret_Horus,4,140,20,12 30 00 00,18 48 0 0,1,1,7
+StargateContent,Roster_BloodyGrahamCoulder,4,130,20,12 30 00 00,18 48 0 0,1,1,6
+StargateContent,Roster_Anubis,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,RepQueenEnergyWeaponProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,RepQueenEnergyWeaponAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,ReplicatorQueen,4,104,20,36 02 00 04,54 2 0 4,1,3,3
+StargateContent,ReetouWeaponProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,ReetouDeviceSpray,5,117,20,16 02 00 00,22 2 0 0,1,1,4
+StargateContent,PteroBossAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,PteroBoss,5,97,3,,,,1,4
+StargateContent,ZatGunPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,ZatMeleeAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,ProjDGLightPlasmaPrimary,4,264,0,,,,-1,22
+StargateContent,PistolPrototype,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,PistolPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,PistolMeleeAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,PistolAttachment,5,96,2,,,,-1,4
+StargateContent,PistolAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,P90Ammo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,Oma,4,94,2,,,,0,4
+StargateContent,Langaran_Minister,4,94,2,,,,0,4
+StargateContent,Langaran,4,94,2,,,,0,4
+StargateContent,KullDisruptorMeleeAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,KullDisruptorFullAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,KullDisruptorFull,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,KullDisruptorAttachment,5,95,2,,,,-1,4
+StargateContent,Jonas,4,94,2,,,,0,4
+StargateContent,JaffaSerpentM,4,95,3,,,,1,4
+StargateContent,JaffaSerpentH,4,95,3,,,,1,4
+StargateContent,JaffaKreeStaffWeaponMeleeAmmo,5,73,18,00 00,0 0,0,2,0
+StargateContent,JaffaJackalM,4,95,3,,,,1,4
+StargateContent,JaffaJackalH,4,95,3,,,,1,4
+StargateContent,JaffaHorusM,4,95,3,,,,1,4
+StargateContent,JaffaHorusH,4,95,3,,,,1,4
+StargateContent,JaffaHelmetAttachment,5,114,20,16 00 00 04,22 0 0 4,1,3,4
+StargateContent,JaffaGrunt,4,95,3,,,,1,4
+StargateContent,HandOfLightMeleeAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,HandOfLightAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,HANDOFLIGHT,4,429,20,36 00 00 06,54 0 0 6,1,3,39
+StargateContent,HaakenSwordDamage,5,73,18,00 00,0 0,1,-1,0
+StargateContent,HaakenMK2WeaponPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,HaakenMK1WeaponPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,HaakenLeader,5,96,2,,,,0,4
+StargateContent,GrenadeMeleeAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,GrahamCoulder,4,94,2,,,,0,4
+StargateContent,GoauldRibbonMeleeAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,GoauldRibbonDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,GoauldFirstPrime,5,96,2,,,,0,4
+StargateContent,Goauld,4,94,2,,,,0,4
+StargateContent,GoaDropTurretProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,GoaDropTurretGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,GoaDropTurretGun,4,132,20,36 00 00 06,54 0 0 6,1,3,6
+StargateContent,GoaAutoTurretMK3GunProjectile,5,96,19,00 00 00,0 0 0,1,-1,2
+StargateContent,GoaAutoTurretMK3GunAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,GoaAutoTurretMK3Gun,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,GoaAutoTurretGunProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,GoaAutoTurretGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,GeneralHammond,4,94,2,,,,0,4
+StargateContent,GateKawoosh,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+StargateContent,FragGrenadeProjectile,5,133,20,16 00 00 00,22 0 0 0,1,0,6
+StargateContent,FragGrenadeAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,FemaleDoctor,4,94,2,,,,0,4
+StargateContent,ExtreniteWeaponProjectileAlt,4,248,20,16 00 00 00,22 0 0 0,1,0,19
+StargateContent,ExtreniteWeaponProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,ExtreniteWeaponPickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,ExtreniteSG,5,96,2,,,,0,4
+StargateContent,ExtreniteChild,5,96,2,,,,0,4
+StargateContent,ExtreniteAutoTurretGunProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateContent,ExtreniteAutoTurretGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateContent,ExtreniteAutoTurretGun,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,EnslaveRibbonDevice,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,EnslaveRibbonAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,ElectricSparks,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,ElectricDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,CrystalTunnelCrushed,5,94,19,00 00 00,0 0 0,1,-1,2
+StargateContent,CrystalTunnel,4,394,20,16 02 00 00,22 2 0 0,1,1,33
+StargateContent,CaptainStaffWeaponProjectile,5,96,19,00 00 00,0 0 0,1,-1,2
+StargateContent,CaptainStaffWeaponAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,CaptainStaffWeapon,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,C4Ammo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,BloodyGrahamCoulder,4,94,2,,,,0,4
+StargateContent,AttachedMothershipTurretGunProjectile,5,96,19,00 00 00,0 0 0,1,-1,2
+StargateContent,AttachedMothershipTurretGunAmmo,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,AttachedMothershipTurretGun,5,124,20,36 00 00 06,54 0 0 6,1,3,5
+StargateContent,Anubis,4,94,2,,,,0,4
+StargateContent,ZatRayEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,ZatExplosion,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,WeapScarabNipper,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,WeapRepDefault,5,371,20,36 00 00 06,54 0 0 6,1,3,32
+StargateContent,VoiceSG,5,107,20,36 00 00 00,54 0 0 0,1,0,2
+StargateContent,Train,4,227,20,36 02 00 04,54 2 0 4,1,3,16
+StargateContent,StingerExplode,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,SQUAD_Tokra_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Tokra_CouncillorFemale,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Tokra_Councillor,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Tokra_Armed,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Thor,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SuperSoldier,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Shifu_Harsisis,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SGCWalter,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SGCOfficer,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SGCMedic,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SGCEngineer,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_SGC,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Scarab,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_ReplicatorQueen,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Replicator,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Reetou_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Ptero_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Ptero_Flock,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_PteroBoss_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Oma,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Langaran_Minister,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Langaran,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jonas,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jaffa_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jaffa_Patrol,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jaffa_Full_Patrol,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jaffa_Captain,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentM_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentM_Patrol,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentL_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentL_Patrol,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentH_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaSerpentH_Patrol,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaJackalM_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaJackalL_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaJackalH_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaHorusM_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaHorusL_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_JaffaHorusH_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Jacob_Selmak,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Haaken_Warrior,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_HaakenLeader,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Haaken,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_GoauldGrahamCoulder,5,95,2,,,,0,4
+StargateContent,SQUAD_GoauldFirstPrime,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Goauld,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_GeneralHammond,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_FemaleDoctor,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Extrenite_Single,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Extrenite_Quad,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_ExtreniteSG_Quad,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_ExtreniteChild,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_DropTurret_Serpent,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_DropTurret_Jackal,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_DropTurret_Horus,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_BloodyGrahamCoulder,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SQUAD_Anubis,4,93,19,30 00 04,48 0 4,1,2,2
+StargateContent,SniperTrail,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,SniperRifleDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,ShieldPickup,5,113,20,36 02 00 00,54 2 0 0,1,1,4
+StargateContent,SGTeamRoster,5,107,2,,,,0,4
+StargateContent,SGC_SecurityReader,5,191,20,16 02 00 04,22 2 0 4,1,3,12
+StargateContent,SGAssaultRifleShells,4,122,20,16 02 00 00,22 2 0 0,1,1,5
+StargateContent,SE_BulletTracerProjectile,4,103,20,16 00 00 00,22 0 0 0,1,0,3
+StargateContent,Roster_Jaffa_Grunt,4,93,19,30 00 00,48 0 0,1,0,2
+StargateContent,Roster_JaffaSerpentSniper,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_JaffaJackalSniper,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,Roster_JaffaHorusSniper,4,103,20,12 30 00 00,18 48 0 0,1,1,3
+StargateContent,RepTeamRoster,5,107,2,,,,0,4
+StargateContent,RepQueenEnergyWeapon,4,113,20,36 00 00 06,54 0 0 6,1,3,4
+StargateContent,ReplicatorPossess,4,503,20,36 02 00 04,54 2 0 4,1,3,46
+StargateContent,ReetouWeapon,4,178,20,36 00 00 06,54 0 0 6,1,3,11
+StargateContent,ReetouSuperMeleeAttack,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,ReetouDevicePickup,4,93,19,02 00 00,2 0 0,1,0,2
+StargateContent,PteroBossClaws,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,P90MuzzleFlash,5,95,2,,,,-1,4
+StargateContent,MorphTest,4,104,20,36 02 00 04,54 2 0 4,1,3,3
+StargateContent,KullDisruptorAmmoPickup,5,95,19,02 00 00,2 0 0,1,0,2
+StargateContent,KOniellRagdoll,5,94,2,,,,0,4
+StargateContent,KeyPickup_SGC,5,95,19,02 00 00,2 0 0,1,0,2
+StargateContent,JaffaTeamRoster,5,107,2,,,,0,4
+StargateContent,JaffaKreeStaffWeapon,5,96,19,00 00 06,0 0 6,1,2,2
+StargateContent,InteractionHands,4,232,20,36 00 00 06,54 0 0 6,1,3,17
+StargateContent,HealthPickup,5,141,20,36 02 00 00,54 2 0 0,1,1,7
+StargateContent,HackingPawn,4,277,20,36 02 00 04,54 2 0 4,1,3,21
+StargateContent,GrenadeSand,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+StargateContent,GoaAutoTurretMK3Pawn,4,93,19,02 00 04,2 0 4,1,2,2
+StargateContent,FragGrenadeExplosion,4,92,19,02 00 00,2 0 0,1,0,2
+StargateContent,FORMATION_Wedge,5,107,2,,,,-1,4
+StargateContent,FORMATION_SingleFileSpreadOut,5,107,2,,,,-1,4
+StargateContent,FORMATION_SingleFile,5,107,2,,,,-1,4
+StargateContent,FORMATION_HaakenPod,5,107,2,,,,-1,4
+StargateContent,FORMATION_2Column,5,107,2,,,,-1,4
+StargateContent,ForceField,4,94,20,36 02 00 04,54 2 0 4,1,3,2
+StargateContent,ExplosiveStaticMeshActor,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateContent,EmptyHands,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateContent,ElectrifiedObject,5,555,20,36 00 00 04,54 0 0 4,1,3,51
+StargateContent,ElectricStaticMeshActor,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+StargateContent,Dir_TriggerActive,5,115,20,12 00 00 00,18 0 0 0,1,0,4
+StargateContent,Dir_StopTimer,5,115,20,12 00 00 00,18 0 0 0,1,0,4
+StargateContent,Dir_StartTimer,5,125,20,12 00 00 00,18 0 0 0,1,0,5
+StargateContent,Dir_SetIntVar,5,125,20,12 00 00 00,18 0 0 0,1,0,5
+StargateContent,Dir_SceneJump,5,105,20,12 00 00 00,18 0 0 0,1,0,3
+StargateContent,Dir_JumpOnIntVar,5,125,20,12 00 00 00,18 0 0 0,1,0,5
+StargateContent,Dir_CreateTimer,5,105,20,12 00 00 00,18 0 0 0,1,0,3
+StargateContent,Dir_CreateIntVar,5,105,20,12 00 00 00,18 0 0 0,1,0,3
+StargateContent,DGPlasmaAmmo,5,95,19,00 00 06,0 0 6,1,2,2
+StargateContent,DemoSGTeamCarterRoster,5,107,2,,,,0,4
+StargateContent,CTFGate,4,121,20,16 02 00 00,22 2 0 0,1,1,5
+StargateContent,CTFDialHomeDevice,5,114,20,16 02 00 00,22 2 0 0,1,1,4
+StargateContent,Cond_WhenTimerEnds,5,125,20,12 00 00 00,18 0 0 0,1,0,5
+StargateContent,Cond_WhenIntVar,5,135,20,12 00 00 00,18 0 0 0,1,0,6
+StargateContent,C4Mission,5,266,20,36 02 00 04,54 2 0 4,1,3,21
+StargateContent,AttachedMothershipTurret,4,157,20,36 02 00 04,54 2 0 4,1,3,9
+StargateContent,AlarmSiren,4,103,20,16 02 00 00,22 2 0 0,1,1,3
+StargateContent,ACTION_SquadWander,5,323,20,32 30 00 00,50 48 0 0,1,1,26
+StargateContent,ACTION_MindControl,5,142,20,32 30 00 00,50 48 0 0,1,1,7
+StargateContent,ACTION_DeactivateAstralSight,5,133,20,32 30 00 00,50 48 0 0,1,1,6
+StargateContent,ACTION_ChangePodLock,5,116,20,32 30 00 00,50 48 0 0,1,1,4
+StargateContent,ACTION_ActivateAstralSight,5,133,20,32 30 00 00,50 48 0 0,1,1,6
+StargateGame,BotBase,5,2950,20,16 00 00 04,22 0 0 4,1,3,315
+StargateGame,UIWidget,5,909,20,16 00 00 00,22 0 0 0,1,0,92
+StargateGame,BotEnemy,5,11508,21,00 16 00 00 04,0 22 0 0 4,1,4,1259
+StargateGame,UnrealTeamInfo,5,387,20,36 02 00 04,54 2 0 4,1,3,34
+StargateGame,GameHud,5,4476,21,00 36 00 00 00,0 54 0 0 0,1,1,486
+StargateGame,StargateHUD,5,3528,21,00 3e 00 00 00,0 62 0 0 0,1,1,377
+StargateGame,TacticalTarget,6,374,20,16 02 00 00,22 2 0 0,1,1,33
+StargateGame,SGFormation,6,599,21,00 36 00 00 04,0 54 0 0 4,1,4,57
+StargateGame,UnrealPawn,5,670,21,00 37 02 00 04,0 55 2 0 4,1,4,64
+StargateGame,BotSG,5,5674,21,00 16 00 00 04,0 22 0 0 4,1,4,618
+StargateGame,RosterEntry,5,320,21,00 12 30 00 00,0 18 48 0 0,1,2,27
+StargateGame,UITextBox,5,617,21,00 16 00 00 00,0 22 0 0 0,1,1,60
+StargateGame,SquadAISG,5,3057,21,00 36 00 00 04,0 54 0 0 4,1,4,329
+StargateGame,UnrealScriptedSequence,6,188,21,00 16 02 00 00,0 22 2 0 0,1,2,12
+StargateGame,ShieldBelt,6,540,21,00 36 00 00 06,0 54 0 0 6,1,4,50
+StargateGame,StargateVoicePack,6,2041,21,00 36 00 00 00,0 54 0 0 0,1,1,217
+StargateGame,StoryModeGame,5,5444,21,00 36 00 00 06,0 54 0 0 6,1,4,585
+StargateGame,StargateAmmo,6,532,21,00 37 00 00 06,0 55 0 0 6,1,4,49
+StargateGame,CoverInfo,6,253,21,00 36 02 00 00,0 54 2 0 0,1,2,18
+StargateGame,UnrealMPGameInfo,5,758,20,36 00 00 06,54 0 0 6,1,3,72
+StargateGame,GameObjective,6,468,20,37 00 00 00,55 0 0 0,1,0,42
+StargateGame,SquadRoster,5,95,4,,,,2,4
+StargateGame,SelectionMenu,5,907,21,00 16 00 00 00,0 22 0 0 0,1,1,92
+StargateGame,WeaponMenu,6,620,21,00 16 00 00 00,0 22 0 0 0,1,1,60
+StargateGame,SGOrder,6,179,20,12 12 00 00,18 18 0 0,1,1,11
+StargateGame,IntelligentSpawner,5,323,21,00 16 02 00 04,0 22 2 0 4,1,4,27
+StargateGame,SquadMenu,6,855,21,00 16 00 00 00,0 22 0 0 0,1,1,86
+StargateGame,StargateWeaponEmplacement,5,564,21,00 36 02 00 06,0 54 2 0 6,1,4,54
+StargateGame,LevelGameRules,6,166,21,00 36 00 00 04,0 54 0 0 4,1,4,9
+StargateGame,AssaultPath,6,351,21,00 17 02 00 00,0 23 2 0 0,1,2,27
+StargateGame,GoauldConsole,5,289,21,00 36 02 00 04,0 54 2 0 4,1,4,23
+StargateGame,SGInsetCameraTarget,5,214,20,16 00 00 00,22 0 0 0,1,0,15
+StargateGame,FontInfo,6,103,21,00 36 00 00 00,0 54 0 0 0,1,1,2
+StargateGame,Waypoint,5,682,21,00 16 00 00 00,0 22 0 0 0,1,1,67
+StargateGame,AlarmPanel,5,257,21,00 16 02 00 04,0 22 2 0 4,1,4,19
+StargateGame,DrawOpText,6,231,21,00 32 00 00 00,0 50 0 0 0,1,1,17
+StargateGame,TransportRingMesh,5,113,21,00 16 00 00 00,0 22 0 0 0,1,1,4
+StargateGame,SGScreenDOF,6,97,21,00 12 31 00 00,0 18 49 0 0,1,2,2
+StargateGame,HelmetAttachment,6,124,21,00 16 00 00 04,0 22 0 0 4,1,4,5
+StargateGame,ShieldEffect,5,115,21,00 16 00 00 00,0 22 0 0 0,1,1,4
+StargateGame,GoauldConsoleCrystal,5,95,21,00 16 12 00 00,0 22 18 0 0,1,2,2
+StargateGame,FirstPersonHandsAttachment,5,93,19,00 00 00,0 0 0,1,-1,2
+StargateGame,ACTION_SGWaitForPlayer,6,243,21,00 32 30 00 00,0 50 48 0 0,1,2,18
+StargateGame,DrawOpImage,6,226,1,,,,-1,18
+StargateGame,GravCraneProjector,6,124,21,00 16 02 00 00,0 22 2 0 0,1,2,5
+StargateGame,ScopedWeapon,5,927,21,00 37 00 00 06,0 55 0 0 6,1,4,92
+StargateGame,VoiceSelector,5,580,21,00 32 00 00 00,0 50 0 0 0,1,1,55
+StargateGame,HealthRegenerator,6,197,21,00 36 00 00 06,0 54 0 0 6,1,4,13
+StargateGame,SGInsetCamera,6,197,21,00 36 00 00 00,0 54 0 0 0,1,1,12
+StargateGame,SGScreenBloom,6,97,21,00 12 31 00 00,0 18 49 0 0,1,2,2
+StargateGame,RechargingAmmo,5,142,21,00 36 00 00 06,0 54 0 0 6,1,4,7
+StargateGame,SGFontInfo,6,103,21,00 36 00 00 00,0 54 0 0 0,1,1,2
+StargateGame,SayMessagePlus,6,221,21,00 36 00 00 00,0 54 0 0 0,1,1,15
+StargateGame,ExplosiveMeshActor,6,124,21,00 16 00 00 00,0 22 0 0 0,1,1,5
+StargateGame,TeamSayMessagePlus,6,266,21,00 36 00 00 00,0 54 0 0 0,1,1,20
+StargateGame,StaticMenuPane,5,248,21,00 16 00 00 00,0 22 0 0 0,1,1,19
+StargateGame,TeamDeathMatch,6,1547,21,00 36 00 00 06,0 54 0 0 6,1,4,161
+StargateGame,SGScreenRadialBlur,6,97,21,00 12 31 00 00,0 18 49 0 0,1,2,2
+StargateGame,SGScreenEmissive,6,97,21,00 12 31 00 00,0 18 49 0 0,1,2,2
+StargateGame,CTFBase,6,367,21,00 37 00 00 00,0 55 0 0 0,1,1,31
+StargateGame,DrawOpBase,5,149,21,00 12 00 00 00,0 18 0 0 0,1,1,8
+StargateGame,StargateScoreBoard,6,1390,20,36 00 00 00,54 0 0 0,1,0,145
+StargateGame,VehicleWeaponAttachment,6,124,21,00 16 00 00 04,0 22 0 0 4,1,4,5
+StargateGame,HitEffectManager,5,239,21,00 16 00 00 00,0 22 0 0 0,1,1,18
+StargateGame,GravCraneConsoleScreen,6,194,21,00 16 02 00 00,0 22 2 0 0,1,2,12
+StargateGame,ShadowManager,5,246,21,00 16 00 00 00,0 22 0 0 0,1,1,18
+StargateGame,GoauldConsoleTrigger,6,441,21,00 16 02 00 04,0 22 2 0 4,1,4,40
+StargateGame,Influence,6,112,21,00 36 00 00 00,0 54 0 0 0,1,1,3
+StargateGame,KeyPickup,6,116,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+StargateGame,SGLevelGamePlay,6,102,3,,,,1,4
+StargateGame,MuzzleFlashAttachment,6,106,21,00 16 00 00 04,0 22 0 0 4,1,4,3
+StargateGame,LockedObjective,6,385,21,00 36 00 00 00,0 54 0 0 0,1,1,33
+StargateGame,StargateDeathMatch,6,477,21,00 36 00 00 06,0 54 0 0 6,1,4,43
+StargateGame,DeathMatch,5,2708,20,36 00 00 06,54 0 0 6,1,3,286
+StargateGame,ACTION_PlaySGSound,6,431,21,00 32 30 00 00,0 50 48 0 0,1,2,39
+StargateGame,WillowWhisp,6,169,21,00 16 02 00 00,0 22 2 0 0,1,2,10
+StargateGame,TimeMessage,6,122,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+StargateGame,TextTrigger,6,178,21,00 16 02 00 04,0 22 2 0 4,1,4,11
+StargateGame,StargateTextTrigger,6,268,21,00 16 02 00 04,0 22 2 0 4,1,4,21
+StargateGame,PickupMessagePlus,6,123,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+StargateGame,MovementMarker,5,135,21,00 36 02 00 00,0 54 2 0 0,1,2,6
+StargateGame,LevelGamePlay,6,101,2,,,,0,4
+StargateGame,CTFMessage,6,329,21,00 36 00 00 00,0 54 0 0 0,1,1,27
+StargateGame,BeamArc,6,106,21,00 16 02 00 00,0 22 2 0 0,1,2,3
+StargateGame,DestroyableObjective,6,245,21,00 36 00 00 00,0 54 0 0 0,1,1,18
+StargateGame,GoauldConsoleVessel,5,95,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+StargateGame,SGOrderFollow,6,268,21,00 12 12 00 00,0 18 18 0 0,1,2,21
+StargateGame,SGOrderHold,6,340,21,00 12 12 00 00,0 18 18 0 0,1,2,29
+StargateGame,WoodSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,WaterSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,VictimMessage,6,122,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+StargateGame,VentSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,VehicleWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,StartupMessage,6,374,21,00 36 00 00 00,0 54 0 0 0,1,1,32
+StargateGame,StargateGameReplicationInfo,5,99,2,,,,-1,4
+StargateGame,StargateDeathMessage,6,305,21,00 36 00 00 00,0 54 0 0 0,1,1,24
+StargateGame,SnowSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,SandSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,RockSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,ReflectionCamera,6,217,21,00 36 00 00 00,0 54 0 0 0,1,1,14
+StargateGame,RedFlag,5,95,21,00 16 00 00 00,0 22 0 0 0,1,1,2
+StargateGame,PlantSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,PipeSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,MudSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,MetalSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,MetalGrateSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,LevelGamePlay_DeathMatch,6,101,2,,,,0,4
+StargateGame,KillerMessagePlus,6,122,21,00 36 00 00 00,0 54 0 0 0,1,1,4
+StargateGame,HelptealcWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,HelpSGBotWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,HelponeillWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,HelpJacksonWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,HelpCarterWaypoint,6,95,19,00 00 00,0 0 0,1,-1,2
+StargateGame,GrassSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,GoauldConsoleSocket,5,95,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+StargateGame,GoauldConsoleHud,5,2678,21,00 3e 00 00 00,0 62 0 0 0,1,1,284
+StargateGame,GoauldConsoleFillVessel,5,93,19,00 00 00,0 0 0,1,-1,2
+StargateGame,FORMATION_Transporter,5,99,2,,,,-1,4
+StargateGame,FORMATION_4_Y_Tight,5,99,2,,,,-1,4
+StargateGame,FORMATION_4_Y,5,99,2,,,,-1,4
+StargateGame,FORMATION_4_Diamond_Combat,5,99,2,,,,-1,4
+StargateGame,DirtSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,defaultsurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,ConcreteSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,CarpetSurface,6,96,19,00 00 00,0 0 0,1,-1,2
+StargateGame,BlueFlag,5,95,21,00 16 00 00 00,0 22 0 0 0,1,1,2
+StargateGame,ZoneFogChange,5,196,21,00 16 02 00 00,0 22 2 0 0,1,2,12
+StargateGame,WaterWheel,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,TransportRings,5,403,21,00 16 02 00 00,0 22 2 0 0,1,2,34
+StargateGame,TeamTeleporter,6,176,21,00 16 02 00 04,0 22 2 0 4,1,4,10
+StargateGame,StoryModeScoreboard,6,419,21,00 36 00 00 00,0 54 0 0 0,1,1,37
+StargateGame,StargateTeamHUD,5,449,21,00 3e 00 00 00,0 62 0 0 0,1,1,41
+StargateGame,StargateProjectile,6,318,21,00 16 00 00 00,0 22 0 0 0,1,1,26
+StargateGame,SnowImpact,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,SkinSwapUseTrigger,6,152,21,00 36 02 00 04,0 54 2 0 4,1,4,8
+StargateGame,SGVoicePackExtended,5,1490,21,00 36 00 00 00,0 54 0 0 0,1,1,155
+StargateGame,SGServerLoading,6,203,21,00 1e 00 00 00,0 30 0 0 0,1,1,13
+StargateGame,SGOrderUse,6,96,19,12 00 00,18 0 0,1,0,2
+StargateGame,SGOrderTakePoint,6,96,19,12 00 00,18 0 0,1,0,2
+StargateGame,SGOrderOpenFire,6,269,21,00 12 12 00 00,0 18 18 0 0,1,2,21
+StargateGame,SGOrderHoldFire,6,96,19,12 00 00,18 0 0,1,0,2
+StargateGame,SGOrderGoto,6,350,21,00 12 12 00 00,0 18 18 0 0,1,2,30
+StargateGame,SGOrderEngineer,6,96,19,12 00 00,18 0 0,1,0,2
+StargateGame,SGOrderDecypher,6,96,19,12 00 00,18 0 0,1,0,2
+StargateGame,SGOrderAttack,6,476,21,00 12 12 00 00,0 18 18 0 0,1,2,44
+StargateGame,SGMenuInteraction,5,5296,21,00 32 00 00 00,0 50 0 0 0,1,1,578
+StargateGame,RockImpact,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,ReplicatorHUD,5,2788,21,00 3e 00 00 00,0 62 0 0 0,1,1,297
+StargateGame,RepAcidHitsWall,6,126,21,00 16 02 00 00,0 22 2 0 0,1,2,5
+StargateGame,RefractionCamera,6,144,21,00 36 00 00 00,0 54 0 0 0,1,1,6
+StargateGame,RedFlagBase,6,100,19,02 00 00,2 0 0,1,0,2
+StargateGame,MetalImpact,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,LastManTeamGame,6,115,20,00 36 00 00,0 54 0 0,0,4,0
+StargateGame,LastManStandingGame,6,115,21,00 36 00 00 06,0 54 0 0 6,1,4,3
+StargateGame,LastManScoreboard,6,681,21,00 36 00 00 00,0 54 0 0 0,1,1,66
+StargateGame,HOLScreenEffect,5,94,19,00 00 00,0 0 0,1,-1,2
+StargateGame,GrassImpact,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,FORMATION_4_Line,5,100,2,,,,-1,4
+StargateGame,FORMATION_4_Diamond,5,100,2,,,,-1,4
+StargateGame,FadeScreenEffect,5,94,19,00 00 00,0 0 0,1,-1,2
+StargateGame,DisplayActor,5,94,19,00 00 00,0 0 0,1,-1,2
+StargateGame,DirtWheel,6,96,19,02 00 00,2 0 0,1,0,2
+StargateGame,CTFScoreboard,6,735,21,00 36 00 00 00,0 54 0 0 0,1,1,72
+StargateGame,CTFGame,6,1101,21,00 36 00 00 06,0 54 0 0 6,1,4,112
+StargateGame,CTFFlagMesh,5,96,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+StargateGame,BlueFlagBase,6,100,19,02 00 00,2 0 0,1,0,2
+StargateGame,ACTION_WaitForPlayerGettingInVehicle,6,153,21,00 32 30 00 00,0 50 48 0 0,1,2,8
+StargateGame,ACTION_Talk,6,550,21,00 32 30 00 00,0 50 48 0 0,1,2,52
+StargateGame,ACTION_SpawnSquad,6,182,21,00 32 30 00 00,0 50 48 0 0,1,2,11
+StargateGame,ACTION_SetTeamAggroStatus,6,180,21,00 32 30 00 00,0 50 48 0 0,1,2,11
+StargateGame,ACTION_SetPlayerMoveRestrictions,6,153,21,00 32 30 00 00,0 50 48 0 0,1,2,8
+StargateGame,ACTION_DisplaySGText,6,153,21,00 32 30 00 00,0 50 48 0 0,1,2,8
+StargateGame,ACTION_ActivateHelmet,6,108,21,00 32 30 00 00,0 50 48 0 0,1,2,3
+StargateGame,SGGenericOrderActor,5,94,19,00 00 00,0 0 0,1,-1,2
+StargateGame,Electrocutor,6,98,21,00 16 02 00 00,0 22 2 0 0,1,2,2
+StargateGame,FarClipChange,5,132,21,00 16 02 00 00,0 22 2 0 0,1,2,6
+StargateGame,SubActionDepthOfField,6,98,21,00 32 30 00 00,0 50 48 0 0,1,2,2
+StargateMenus,SGPageBase,4,299,20,36 10 20 00,54 16 32 0,1,2,25
+StargateMenus,RightLockingPanel,4,92,20,36 10 20 00,54 16 32 0,1,2,2
+StargateMenus,SaveGamePanel,4,132,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,ServerSelectionPanel,5,114,17,36,54,0,2,0
+StargateMenus,CurrentCharPanel,5,130,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,ServerSelectionListBox,4,459,20,36 10 20 00,54 16 32 0,1,2,42
+StargateMenus,LeftLockingPanel,4,93,20,36 10 20 00,54 16 32 0,1,2,2
+StargateMenus,VirtualKeyboardPanel,4,1121,20,36 10 20 00,54 16 32 0,1,2,116
+StargateMenus,InGameMenu,4,138,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,OptionsEditBase,4,165,20,36 10 20 00,54 16 32 0,1,2,10
+StargateMenus,VirtualKeyboardPage,4,186,20,36 10 20 00,54 16 32 0,1,2,12
+StargateMenus,VSMainMenu,4,202,1,,,,0,16
+StargateMenus,CurrentProfilePanel,5,158,20,36 10 20 00,54 16 32 0,1,2,9
+StargateMenus,SinglePlayerSelectProfile,4,231,20,36 10 20 00,54 16 32 0,1,2,17
+StargateMenus,ObjectivesPanel,5,771,20,36 10 20 00,54 16 32 0,1,2,77
+StargateMenus,MapSelectionPanel,5,95,20,36 10 20 00,54 16 32 0,1,2,2
+StargateMenus,CurrentChapterPanel,5,140,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,CurrentGameModePanel,5,131,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,QuestionPage,4,129,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,XBoxLiveMenu,4,552,20,36 10 20 00,54 16 32 0,1,2,53
+StargateMenus,DeleteSavedGamePage,4,138,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,MultiplayerMenu,4,147,20,36 10 20 00,54 16 32 0,1,2,8
+StargateMenus,InGameInfoPanel,4,247,20,36 10 20 00,54 16 32 0,1,2,18
+StargateMenus,SinglePlayerChapterSelect,4,190,20,36 10 20 00,54 16 32 0,1,2,12
+StargateMenus,RestartGame,5,131,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,XBoxLivePlayMenu,4,363,20,36 10 20 00,54 16 32 0,1,2,32
+StargateMenus,OptionsEditProfile,4,147,20,36 10 20 00,54 16 32 0,1,2,8
+StargateMenus,DeleteProfilePage,4,147,20,36 10 20 00,54 16 32 0,1,2,8
+StargateMenus,LoadGameMenu,4,210,20,36 10 20 00,54 16 32 0,1,2,15
+StargateMenus,MainMenu,4,120,20,36 10 20 00,54 16 32 0,1,2,5
+StargateMenus,MultiPlayerInGame,5,104,20,36 10 20 00,54 16 32 0,1,2,3
+StargateMenus,MultiplayerServerSelect,5,94,19,10 20 00,16 32 0,1,1,2
+StargateMenus,ServerSelectionPage,4,177,20,36 10 20 00,54 16 32 0,1,2,11
+StargateMenus,QuitPage,5,122,20,36 10 20 00,54 16 32 0,1,2,5
+StargateMenus,XBoxLiveSignOutConfirm,4,129,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,TextGameInfo,4,139,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,SystemLinkMenu,4,138,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,SinglePlayerTutorial,4,139,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,SinglePlayerInGame,5,122,20,36 10 20 00,54 16 32 0,1,2,5
+StargateMenus,ServerList,4,156,20,36 10 20 00,54 16 32 0,1,2,9
+StargateMenus,XBoxLiveFindGameMenu,4,354,20,36 10 20 00,54 16 32 0,1,2,31
+StargateMenus,XBoxLiveFriendsMenu,4,273,20,36 10 20 00,54 16 32 0,1,2,22
+StargateMenus,SaveGameMenu,4,246,20,36 10 20 00,54 16 32 0,1,2,19
+StargateMenus,NotYetImplementedPage,4,102,20,36 10 20 00,54 16 32 0,1,2,3
+StargateMenus,NoMatchFoundPage,4,102,20,36 10 20 00,54 16 32 0,1,2,3
+StargateMenus,InGameScoreboard,4,473,20,36 10 20 00,54 16 32 0,1,2,44
+StargateMenus,HintScreen,4,186,20,36 10 20 00,54 16 32 0,1,2,12
+StargateMenus,XBoxLiveServerSelect,5,94,19,10 20 00,16 32 0,1,1,2
+StargateMenus,WaitingForPlayers,4,246,20,36 10 20 00,54 16 32 0,1,2,19
+StargateMenus,SinglePlayerNewGame,5,132,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,SinglePlayerMenu,4,138,20,36 10 20 00,54 16 32 0,1,2,7
+StargateMenus,SelectPawnPage,4,207,1,,,,0,16
+StargateMenus,QuickLoadMapTempPage,5,94,19,10 20 00,16 32 0,1,1,2
+StargateMenus,OptionsPage,5,176,20,36 10 20 00,54 16 32 0,1,2,11
+StargateMenus,OptionsEditVideo,5,329,20,36 10 20 00,54 16 32 0,1,2,28
+StargateMenus,OptionsEditAudio,5,221,20,36 10 20 00,54 16 32 0,1,2,16
+StargateMenus,OptionsEditAppearance,5,230,20,36 10 20 00,54 16 32 0,1,2,17
+StargateMenus,MultiplayerMapSelectionPanel,5,95,20,36 10 20 00,54 16 32 0,1,2,2
+StargateMenus,MultiplayerMapSelect,5,113,20,36 10 20 00,54 16 32 0,1,2,4
+StargateMenus,MultiplayerGameSelect,4,259,20,36 10 20 00,54 16 32 0,1,2,19
+StargateMenus,MultiplayerCharSelect,4,255,20,36 10 20 00,54 16 32 0,1,2,20
+StargateMenus,InGameInfoScreen,4,131,20,36 10 20 00,54 16 32 0,1,2,6
+StargateMenus,ErrorPage,4,138,20,36 10 20 00,54 16 32 0,1,2,7
+StargateVehicles,AlkeshBomber,5,744,19,02 00 06,2 0 6,1,2,74
+StargateVehicles,GoauldDrone,4,175,19,02 00 04,2 0 4,1,2,11
+StargateVehicles,AlkeshLandingZone,5,94,20,16 02 00 00,22 2 0 0,1,1,2
+StargateVehicles,Teltak,5,285,20,36 02 00 06,54 2 0 6,1,3,23
+StargateVehicles,DeathGlider,4,586,31,ff ff ff ff ff ff ff 00 00 00 00 36 02 00 06,-17179869183 -8191 0 0 0 54 2 0 6,1,14,55
+StargateVehicles,AttachedDeathGliderTurret,5,195,20,36 02 00 04,54 2 0 4,1,3,13
+StargateVehicles,AttachedAlkeshTurret,5,123,20,36 02 00 04,54 2 0 4,1,3,5
+StargateVehicles,AlkeshBomberBot,4,1796,20,16 00 00 04,22 0 0 4,1,3,190
+StargateVehicles,AlkeshEngine,5,98,3,,,,1,4
+StargateVehicles,VehicleTurret,5,205,20,36 00 00 06,54 0 0 6,1,3,14
+StargateVehicles,AlkeshUnderHull,5,97,2,,,,0,4
+StargateVehicles,AlkeshCockpit,5,97,2,,,,0,4
+StargateVehicles,FlipVehicleTrigger,5,103,20,16 00 00 04,22 0 0 4,1,3,3
+StargateVehicles,StargateCar,4,681,31,ff ff ff ff ff ff ff 00 00 00 00 37 02 00 06,-17179869183 -8191 0 0 0 55 2 0 6,1,14,64
+StargateVehicles,AlkeshBomb,4,149,20,36 00 00 06,54 0 0 6,1,3,8
+StargateVehicles,StargateVehicleSeat,5,311,20,36 00 00 06,54 0 0 6,1,3,26
+StargateVehicles,HoverTank,5,97,20,36 02 00 06,54 2 0 6,1,3,2
+StargateVehicles,APCM60GunAttachment,5,96,3,,,,0,4
+StargateVehicles,VehicleWeakPoint,5,107,20,16 02 00 04,22 2 0 4,1,3,3
+StargateVehicles,AlkeshBombAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,DeathGliderBot,4,841,20,16 00 00 04,22 0 0 4,1,3,84
+StargateVehicles,GatlingGunAttachment,5,124,20,16 00 00 04,22 0 0 4,1,3,5
+StargateVehicles,APCM60Gun,4,306,20,36 00 00 06,54 0 0 6,1,3,25
+StargateVehicles,SemektetMortarGunProjectile,4,276,20,16 00 00 00,22 0 0 0,1,0,21
+StargateVehicles,HummveeTurretRear,5,96,20,37 00 00 06,55 0 0 6,1,3,2
+StargateVehicles,SemektetAttachment,5,105,20,16 00 00 04,22 0 0 4,1,3,3
+StargateVehicles,AlkeshCannon,4,203,20,36 00 00 06,54 0 0 6,1,3,14
+StargateVehicles,SemektetStaffTurret,4,94,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,HoverCraftTurretGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,StargateHover,4,718,31,ff ff ff ff ff ff ff 00 00 00 00 37 02 00 06,-17179869183 -8191 0 0 0 55 2 0 6,1,14,67
+StargateVehicles,StargateCopter,4,277,31,ff ff ff ff ff ff ff 00 00 00 00 37 02 00 06,-17179869183 -8191 0 0 0 55 2 0 6,1,14,21
+StargateVehicles,GoauldDroneBot,4,1135,20,16 00 00 04,22 0 0 4,1,3,117
+StargateVehicles,GoauldKillerDroid,4,94,3,,,,1,4
+StargateVehicles,SemektetMortarGunAttachment,5,66,14,,,,2,0
+StargateVehicles,SemektetMortarGunAmmo,4,114,3,,,,0,6
+StargateVehicles,AlkeshBombProjectile,4,247,20,16 00 00 00,22 0 0 0,1,0,18
+StargateVehicles,HoverCraftTurretGunAttachment,5,105,20,16 00 00 04,22 0 0 4,1,3,3
+StargateVehicles,AlkeshBombDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,AlkeshCannonDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,APCM60GunAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,GoauldDroneWeaponDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,GoauldKillerDroidMeleeAmmo,4,212,20,36 00 00 06,54 0 0 6,1,3,15
+StargateVehicles,GoauldTurretEmplacementGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,HoverCraft,5,97,20,36 02 00 06,54 2 0 6,1,3,2
+StargateVehicles,HoverTankCannonDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,TempleTurretGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,TempleTurretGunProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateVehicles,TempleTurretGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,TempleTurretGun,4,258,20,36 00 00 06,54 0 0 6,1,3,20
+StargateVehicles,SemektetStaffCannonGunAmmo,5,125,20,36 00 00 06,54 0 0 6,1,3,5
+StargateVehicles,SemektetStaffCannonGun,5,164,20,36 00 00 06,54 0 0 6,1,3,9
+StargateVehicles,SemektetMortarTurret,4,94,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,SemektetMortarGun,4,422,20,36 00 00 06,54 0 0 6,1,3,38
+StargateVehicles,Roster_Teltak,5,105,20,12 30 00 00,18 48 0 0,1,1,3
+StargateVehicles,Roster_HoverTank,5,95,19,30 00 00,48 0 0,1,0,2
+StargateVehicles,Roster_Goauld_Killer_Droid,5,95,19,30 00 00,48 0 0,1,0,2
+StargateVehicles,Roster_Goauld_Drone,5,95,19,30 00 00,48 0 0,1,0,2
+StargateVehicles,Roster_DeathGlider,5,114,20,12 30 00 00,18 48 0 0,1,1,4
+StargateVehicles,Roster_Alkesh_Bomber,5,150,20,12 30 00 00,18 48 0 0,1,1,8
+StargateVehicles,QuadBikeSeat,4,93,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,M60TurretGun,4,276,20,36 00 00 06,54 0 0 6,1,3,22
+StargateVehicles,HummveeMachineGun,5,96,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,HummveeM60GunAttachment,5,95,2,,,,-1,4
+StargateVehicles,HoverTankTurret,4,94,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,HoverTankCannonProjectile,4,224,20,16 00 00 00,22 0 0 0,1,0,16
+StargateVehicles,HoverTankCannonAttachment,5,97,3,,,,0,4
+StargateVehicles,HoverTankCannonAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,HoverTankCannon,4,298,20,36 00 00 06,54 0 0 6,1,3,24
+StargateVehicles,HoverCraftTurretGunPawn,4,157,20,36 00 00 06,54 0 0 6,1,3,9
+StargateVehicles,HoverCraftTurretGunAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,HoverCraftTurretGun,4,295,20,36 00 00 06,54 0 0 6,1,3,24
+StargateVehicles,HoverCraftStarboardSeat,4,93,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,HoverCraftPortSeat,4,93,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,HoverCraftPlasmaProjectile,4,262,0,,,,-1,22
+StargateVehicles,HoverCraftLaserProjectile,4,224,20,16 00 00 00,22 0 0 0,1,0,16
+StargateVehicles,HoverCraftFixedGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,HoverCraftFixedGunAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,HoverCraftFixedGun,4,275,20,36 00 00 06,54 0 0 6,1,3,22
+StargateVehicles,GoauldTurretEmplacementProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateVehicles,GoauldTurretEmplacementGunAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,GoauldTurretEmplacementGun,4,159,20,36 00 00 06,54 0 0 6,1,3,9
+StargateVehicles,GoauldDroneWeaponProjectile,4,113,20,16 00 00 00,22 0 0 0,1,0,4
+StargateVehicles,GoauldDroneWeaponAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,GatlingGun,5,135,20,36 00 00 06,54 0 0 6,1,3,6
+StargateVehicles,DeathGliderGunProjectile,4,262,0,,,,-1,22
+StargateVehicles,DeathGliderGunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,DeathGliderGunAmmo,4,95,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,AttachedDeathGliderTurretGunProjectile,5,97,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,AttachedDeathGliderTurretGunAmmo,5,97,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,AttachedDeathGliderTurretGun,5,152,20,36 00 00 06,54 0 0 6,1,3,8
+StargateVehicles,AttachedAlkeshTurretGunProjectile,5,97,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,AttachedAlkeshTurretGunAmmo,5,97,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,AttachedAlkeshTurretGun,5,97,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,APCM60Turret,4,94,20,36 00 00 06,54 0 0 6,1,3,2
+StargateVehicles,APCM60GunMuzzleFlash,5,95,2,,,,-1,4
+StargateVehicles,APCM60GunDamage,5,95,19,00 00 00,0 0 0,1,-1,2
+StargateVehicles,AlkeshCannonProjectile,4,149,20,16 00 00 00,22 0 0 0,1,0,8
+StargateVehicles,AlkeshCannonAmmo,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,TempleTurretEmplacement,5,96,19,02 00 06,2 0 6,1,2,2
+StargateVehicles,SQUAD_Teltak_Single,5,95,2,,,,0,4
+StargateVehicles,SQUAD_HoverTank_Single,5,95,2,,,,0,4
+StargateVehicles,SQUAD_HoverTankPilots,5,95,2,,,,0,4
+StargateVehicles,SQUAD_Goauld_Killer_Droid_Single,5,95,2,,,,0,4
+StargateVehicles,SQUAD_Goauld_Drone_Single,5,95,2,,,,0,4
+StargateVehicles,SQUAD_DeathGlider_Single,5,95,2,,,,0,4
+StargateVehicles,SQUAD_Alkesh_Bomber_Single,5,95,2,,,,0,4
+StargateVehicles,SemektetStaffTurretRight,5,95,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,SemektetStaffTurretLeft,5,95,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,SemektetMortarGunTarget,5,96,19,02 00 00,2 0 0,1,0,2
+StargateVehicles,Semektet,5,97,20,36 02 00 06,54 2 0 6,1,3,2
+StargateVehicles,QuadBike,4,266,20,36 02 00 06,54 2 0 6,1,3,21
+StargateVehicles,M60TurretEmplacement,5,97,20,36 02 00 06,54 2 0 6,1,3,2
+StargateVehicles,Jeep,4,93,19,02 00 06,2 0 6,1,2,2
+StargateVehicles,HummveeTurretRearRight,5,95,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,HummveeTurretRearLeft,5,95,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,Hummvee,4,266,20,36 02 00 06,54 2 0 6,1,3,21
+StargateVehicles,GoauldTurretEmplacement,5,96,19,02 00 06,2 0 6,1,2,2
+StargateVehicles,GoauldKillerDroidWeapon,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,GoauldDroneWeaponAttachment,5,95,2,,,,-1,4
+StargateVehicles,GoauldDroneWeapon,4,94,19,00 00 06,0 0 6,1,2,2
+StargateVehicles,DeathGliderGun,4,266,20,36 00 00 06,54 0 0 6,1,3,21
+StargateVehicles,APC,4,266,20,36 02 00 06,54 2 0 6,1,3,21
+StargateVehicles,ACTION_VehicleTransportRings,5,142,20,32 30 00 00,50 48 0 0,1,1,7
+StargateVehicles,ACTION_VehicleActivateTurret,5,178,20,32 30 00 00,50 48 0 0,1,1,11
+StargateVehicles,ACTION_CarpetBombing,5,160,20,32 30 00 00,50 48 0 0,1,1,9
+Stargateeffects,Scorch,4,92,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,burnProjector,4,92,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,RepScarProjSmall,4,91,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AnimSpriteEffect,4,92,20,16 00 00 00,22 0 0 0,1,0,2
+Stargateeffects,DustStormEmitter,4,110,20,16 02 00 00,22 2 0 0,1,1,4
+Stargateeffects,UT_SpriteSmokePuff,4,101,20,16 00 00 00,22 0 0 0,1,0,3
+Stargateeffects,Blood,4,101,20,16 00 00 00,22 0 0 0,1,0,3
+Stargateeffects,PclRepAcidSmoke,4,91,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,Chip,4,92,20,16 00 00 00,22 0 0 0,1,0,2
+Stargateeffects,P90Shells,4,118,19,02 00 00,2 0 0,1,0,5
+Stargateeffects,bigRepScarProj,4,91,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,GravEffect,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,HaakenPodDoorOpenEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,HaakenPodLaunchEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,HoverCraftLaserEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,HoverCraftPlasmaEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,HoverTankHeavyPlasmaEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,PclQuickRepAcidSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,PclRepAcid,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,GravCranePowerEmitter,4,138,20,16 02 00 00,22 2 0 0,1,1,7
+Stargateeffects,pclSGAssaultRifleShells,4,120,20,16 02 00 00,22 2 0 0,1,1,5
+Stargateeffects,PclZatOverheatSmoke,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,Pock,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,Pot_2_Smash,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,Pot_Smash,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ReetouWeaponProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,RepQueenEnergyProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,RingTransportEmitter,4,174,20,16 02 00 00,22 2 0 0,1,1,11
+Stargateeffects,ScarabPuff,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,ScarabSplat,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,SE_BloodSpray,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SE_GibbEffect,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SE_HOLDeathEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SGBreakingGlassEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SGPock,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SGScarabTrail,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,SGShotgunPock,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,SGVehicleFragment,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SG_SpriteBloodPuff,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,SG_SpriteSmokePuff,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,TorchFire,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,TrainSmokeEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,TransportRingSpawn,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,GoauldDroneWeaponProjectileEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,GoauldDroneExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,GoaAutoTurretExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ForceFieldImpactEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ExplosiveScorch,4,93,20,16 02 00 00,22 2 0 0,1,1,2
+Stargateeffects,ExplosiveExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ExplosiveCrateEmitterC,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ExplosiveCrateEmitterB,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ExplosiveCrateEmitterA,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,ExplosiveCrateChips,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,DGLightPlasmaEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,DecipheringEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,Danger_Notify,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,CrystalTunnelGrow,4,111,20,16 02 00 00,22 2 0 0,1,1,4
+Stargateeffects,CrystalTunnelDissolve,4,111,20,16 02 00 00,22 2 0 0,1,1,4
+Stargateeffects,AcidBurn,4,102,20,16 02 00 00,22 2 0 0,1,1,3
+Stargateeffects,BurningEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,BulletTracer,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,BloodSpray,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,BloodSmudge,5,94,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,BloodDecal,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AlkeshHeavyPlasmaExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AlkeshHeavyPlasmaEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AlkeshExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AlkeshBombExplosionEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+Stargateeffects,AlkeshBombEmitter,4,92,19,02 00 00,2 0 0,1,0,2
+UDebugMenu,UDebugMapList,5,101,31,12 00 00 00 00 00 00 00 00 00 00 00 00 00 00,18 0 0 0 0 0 0 0 0 0 0 0 0 0 0,0,30,2
+UDebugMenu,UDebugMapListBox,5,158,20,12 00 00 00,18 0 0 0,1,0,9
+UDebugMenu,UDebugMapListWindow,4,94,20,32 00 00 00,50 0 0 0,1,0,2
+UDebugMenu,UDebugGraphWindow,4,94,20,32 00 00 00,50 0 0 0,1,0,2
+UDebugMenu,UDebugOpenWindow,4,289,20,32 00 00 00,50 0 0 0,1,0,23
+UDebugMenu,UDebugOpenCW,4,639,20,36 00 00 00,54 0 0 0,1,0,62
+UDebugMenu,UGraphVisibilityPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphTerrainPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphStencilPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphStatsPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphStaticMeshPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphProjectorPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphParticlePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphNetPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphMiscGamePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphMeshPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphMatineePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphLightMapPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphKarmaPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphHardwarePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphHardware2Page,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphGamePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphGame2Page,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphFramePage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphFluidPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphDecoLayerPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphCollisionPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphBSPPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UGraphBatchPage,4,401,20,36 00 00 00,54 0 0 0,1,0,36
+UDebugMenu,UDebugVideoWindow,4,93,19,00 00 00,0 0 0,1,-1,2
+UDebugMenu,UDebugVideoClient,4,427,20,32 00 00 00,50 0 0 0,1,0,38
+UDebugMenu,UDebugBlueLookAndFeel,4,5273,19,00 00 00,0 0 0,1,-1,564
+UPreview,UPreviewMapListClient,4,679,19,00 00 00,0 0 0,1,-1,67
+UPreview,UPreviewSkinnedDialogClientWindow,4,227,19,00 00 00,0 0 0,1,-1,17
+UPreview,UPreviewSkinnedButton,4,200,18,00 00,0 0,1,-1,14
+UWindow,UWindowRootWindow,4,976,20,16 00 00 00,22 0 0 0,1,0,98
+UWindow,UWindowComboControl,4,472,20,12 00 00 00,18 0 0 0,1,0,44
+UWindow,UWindowButton,4,201,20,12 00 00 00,18 0 0 0,1,0,14
+UWindow,UWindowConsoleWindow,4,192,20,32 00 00 00,50 0 0 0,1,0,13
+UWindow,UWindowListBox,5,746,20,12 00 00 00,18 0 0 0,1,0,73
+UWindow,UWindowListControl,4,129,20,12 00 00 00,18 0 0 0,1,0,6
+UWindow,UWindowDynamicTextArea,4,769,20,16 00 00 00,22 0 0 0,1,0,77
+UWindow,UWindowMessageBoxCW,5,622,20,32 00 00 00,50 0 0 0,1,0,59
+UWindow,UWindowTextAreaControl,4,345,20,12 00 00 00,18 0 0 0,1,0,30
+UWindow,WindowConsole,4,1248,20,16 00 00 00,22 0 0 0,1,0,129
+UWindow,UWindowWin95LookAndFeel,4,4861,19,00 00 00,0 0 0,1,-1,514
+UWindow,UWindowHTMLTextArea,5,798,20,16 00 00 00,22 0 0 0,1,0,80
+UnrealEd,LIPSincAnimProps,3,90,19,00 00 00,0 0 0,1,-1,2
+UnrealEd,LIPSincControllerProps,3,80,23,00 00 00 00 00 00 00,0 0 0 0 0 0 0,0,21,0
+UnrealEd,MeshEditProps,3,90,18,00 00,0 0,1,-1,2
+UnrealEd,BlendEditProps,3,90,19,00 00 00,0 0 0,1,-1,2
+UnrealEd,AnimBrowserMesh,3,90,18,00 00,0 0,1,-1,2

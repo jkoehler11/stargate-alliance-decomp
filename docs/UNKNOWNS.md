@@ -3091,3 +3091,24 @@ by the archive's `+0x18` (the reference method, measured as one compact field on
 `tools/archive-slots.py`), so a parse has to try that width where every earlier attempt tried a name index.
 Numbers: `docs/NATIVE_VM.md`, *The pair at +0x4b0/+0x4b4 is a class reference and a name, and the image names
 the first*.
+
+**2026-11-13 (tenth): the gap is three to five compact values in front of sixteen zero bytes.** The ninth entry left
+the array's head 19 to 21 bytes past the field table's own sum and attributed the difference to
+`UStruct::Serialize`. `tools/class-record-order.py --gap-sweep` reads those bytes on all 1,626 closing classes
+(`inventory/class_record_gap.csv`, `make class-record-gap-front`): the gap is 19/20/21 bytes on 732/518/232 of them,
+its **last sixteen bytes are zero on 1,481 of the 1,482**, its last non-zero byte is never past index 3, and the three
+to five bytes in front of that run **all parse as `FCompactIndex`** (95 distinct fronts, none overrunning). So the
+arithmetic closes at `prefix_end + 42 + 3..5 + 16 = prefix_end + 61..63` and the 1-3 byte spread is the front's
+width, not a mis-measured array.
+
+Two things are still open, and they are one question. The sixteen zero bytes are exactly the width of the four dwords
+`UStruct::Serialize` writes at `+0x5c`/`+0x58`/`+0x54`/script-size and are zero on every cooked class, but the body
+writes them before `UState`'s 22 bytes rather than after the five dwords, so either they are that tail and the writer
+order is not the stream's order here, or the tail is absent from the cooked stream as `FriendlyName`, the line and the
+text position already are. And the compact run in front of them is written by no body in `0x38dc0`/`0x392b0`/
+`0x394c0`/`0x3a800`.
+
+**What would settle it.** A live `UClass` from a link, read at `+0x5c`, `+0x58`, `+0x54` and `+0x4c`: if the tail is
+in the stream those members are non-zero on a class with a source line. Statically, the front's values are in the
+artifact beside each class's own table sizes, so the naming test is a query: three to five bytes cannot be a count
+plus elements, so the candidates are one `FName` plus one or two references, or one reference plus one `FName`.
