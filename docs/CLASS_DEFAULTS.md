@@ -369,48 +369,59 @@ where a tag's name index resolves to a property the class or an ancestor declare
 with no invented name. Nothing in the test reads the payload's last byte, which is what the residue asked for. A real
 block's every suffix parses too, so the candidate with the most properties is its front.
 
-The rule is scored against the 2,209 located block starts rather than trusted: it anchors **1,963 of the 2,319**
-payloads and reproduces **1,628 of the 2,209** located starts (73.7%). The miss is not a parse failure: the four
+The rule is scored against the 2,209 located block starts rather than trusted: it anchors **2,030 of the 2,319**
+payloads and reproduces **1,658 of the 2,209** located starts (75.1%). The miss is not a parse failure: the four
 sampled (`Core.Time`, `Engine.Material`, `Engine.SavedMove`, `AmbientCreatures.AmbientCreature`) have a located start
 whose tags decode to `Core`, `System`, `<` and `Lighting` — package and operator names, not properties — so those
-starts are a shape the tag rule does not confirm, and the 73.7% is agreement with the locator and not a correctness
+starts are a shape the tag rule does not confirm, and the 75.1% is agreement with the locator and not a correctness
 bound. Either way the rule cannot replace the end boundary, and the doc keeps the locator.
+
+**Both numbers moved when the ancestor walk was repaired.** A class's declared names are its own properties plus every
+ancestor's, and that walk is keyed on `(package, class)` while `inventory/classes.csv` spells one package two ways:
+`package_of_super` says `Gameplay` where the file (and the row's own `package` column) says `GamePlay`, 70 rows deep.
+Each of those steps landed on a key nothing holds, so a chain crossing into `GamePlay.u` stopped one link early and a
+`StargateGame.BotBase` descendant never saw `Controller`'s or `Actor`'s properties. Folding the spelling (`tools/
+class-record.py`, `fold_super_pkg`) adds **371 anchor starts over 67 payloads** — `StargateContent`'s bots under
+`BotBase` most of all (`ReetouBot` 28 -> 38, `JaffaBotHeavy` 9 -> 11), plus two payloads that had none at all
+(`ACTION_SquadMoveToPlayer`, `AlarmLight`) — and takes the rule's agreement from 1,628 to 1,658. The same cut chain in
+the call table is measured in `docs/BYTECODE.md`.
 
 Applied to the residue it is decisive in the other direction:
 
 | shape | no anchor | one tagged property | two or more tags |
 |---|---:|---:|---:|
-| `long-no-block` (60; 59 of them `empty-block`) | **27** | **33** (14 end on the payload's last byte, 19 with a 66–478-byte trailer) | **0** |
+| `long-no-block` (60; 59 of them `empty-block`) | **26** | **34** (14 end on the payload's last byte, 20 with a 30–478-byte trailer) | **0** |
 | `record-only` (50) | **45** | **5** (3 trailer ≤64) | **0** |
 
 **Not one of the 60 `long-no-block` payloads holds a block of two or more tags.** A rule that ignores the payload's
 end therefore finds nothing the locator could have missed there: the payload's tail is either a single named tag or
 no tag of the class at all. The 14 whose single tag ends exactly on the last byte are the same shape the
-`single-declared` reason already carries (263 classes), where one tag cannot be told from a table tail; the 19 with a
-trailer hold a tag followed by 66–478 bytes that no tag stream explains; the 27 name no declared property anywhere in
+`single-declared` reason already carries (263 classes), where one tag cannot be told from a table tail; the 20 with a
+trailer hold a tag followed by 30–478 bytes that no tag stream explains; the 26 name no declared property anywhere in
 the payload, so their tail is record body by elimination — the payload shape, not the locator, is what is left.
 
 `inventory/class_records.csv` gains `anchor_starts`, `anchor_start`, `anchor_props` and `anchor_trailer` on all 2,319
 rows, `--report` prints the four counts above, and `--check` covers the rule on a hand-built two-tag payload (a class
 that declares nothing claims no start).
 
-### The located start opens with a property tag on 1,687 of the 2,209 payloads
+### The located start opens with a property tag on 1,692 of the 2,209 payloads
 
 The same declared-name table reads the locator's own `block_start` as a tag, which every "located" count in this page
-rests on: **1,687 of the 2,209 located starts carry the name of a property the class declares, and 522 carry something
+rests on: **1,692 of the 2,209 located starts carry the name of a property the class declares, and 517 carry something
 else** — a package (`System` 121, `Core` 89, `Engine` 41), a state (`Lighting` 38), a struct (`Range` 29), a class
-(`Gameplay` 15) or a function (`GetMeshName` 5). A tagged property's name is a property, so those 522 starts are not
+(`Gameplay` 15) or a function (`GetMeshName` 5). A tagged property's name is a property, so those 517 starts are not
 property blocks; they are the payload's own footer read as one. `Engine.Material` is the sample: its 118-byte payload's
 "block" is the last nine bytes, parsing as `System` + `DefaultMaterial`, and the four neighbouring offsets parse to the
 same end with `Core`, `Engine`, `Object` and `?` instead — a block whose every byte is in question.
 
 The split against the reasons is exact and is the finding: **all 263 `single-declared` rows and all 252 `incomplete`
-rows are among the 522** (the rest: 4 of the 30 `type-contradiction`, and 3 classes this page calls fully declared). So
+rows are among the 517** (the rest: 2 of the 30 `type-contradiction`, and the three classes this page calls fully
+declared are no longer in it — the ancestor fold above made their first tag a declared name). So
 those two reasons do not mean "a block the renderer could not match" — their input is a parse of record bytes, and the
 `--verify` gaps this page records for them are the renderer being right about a block that is not there.
 
 `inventory/class_records.csv` gains `block_first_name` and `block_first_declared` beside `anchor_*`, `--report` prints
-the 1,687 / 522 split, the six names behind it and the per-reason breakdown, and `--check` covers the read with a
+the 1,692 / 517 split, the six names behind it and the per-reason breakdown, and `--check` covers the read with a
 declared name, a non-property name and an offset past the payload.
 
 ## The bytes in front of a block start, measured

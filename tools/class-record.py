@@ -119,11 +119,27 @@ def first_tag(data, off, pkg, declared):
     return name, 1 if name in declared else 0
 
 
+def fold_super_pkg(package_of_super, row_package, canon):
+    """The package a super's declaration is keyed under, folded to the corpus spelling.
+
+    `inventory/classes.csv` spells one package two ways: its own `package` column carries the file's spelling
+    (`GamePlay`) while `package_of_super` carries the import's (`Gameplay`). The ancestor walk is keyed on
+    `(package, class)`, so a step spelled the other way lands on a key nothing holds and the walk stops one link
+    early -- indistinguishable from a class with nothing above it. Fold it once, at the index, and count it.
+    """
+    raw = package_of_super or row_package
+    held = canon.get((raw or "").lower(), raw)
+    return held, held != raw
+
+
 def declared_tables(outdir=None):
     """(declared properties, super name, super's package) from the committed class artifacts.
 
     `class_properties.csv` is the class's own serialised property exports and `classes.csv` carries the super name
     and the package it was declared in, which is what makes an inherited name resolvable without a second walk.
+
+    The package is folded to the spelling the `package` column uses (see `fold_super_pkg`), and the count of rows
+    that moved is returned so a caller can print the repair instead of trusting it.
     """
     base = outdir or os.path.join(ROOT, "inventory")
     props, supers, super_pkg = collections.defaultdict(set), {}, {}
@@ -132,14 +148,22 @@ def declared_tables(outdir=None):
         with open(path, newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
                 props[(r["package"], r["class"])].add(r["property"])
+    rows, canon = [], {}
     path = os.path.join(base, "classes.csv")
     if os.path.isfile(path):
         with open(path, newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
-                key = (r["package"], r["class"])
-                supers[key] = r.get("super") or ""
-                super_pkg[key] = r.get("package_of_super") or r["package"]
-    return props, supers, super_pkg
+                rows.append(r)
+                canon.setdefault(r["package"].lower(), r["package"])
+    respelled = collections.Counter()
+    for r in rows:
+        key = (r["package"], r["class"])
+        supers[key] = r.get("super") or ""
+        held, moved = fold_super_pkg(r.get("package_of_super"), r["package"], canon)
+        if moved:
+            respelled[(r.get("package_of_super"), held)] += 1
+        super_pkg[key] = held
+    return props, supers, super_pkg, respelled
 
 
 def declared_names(props, supers, super_pkg, key):
@@ -275,7 +299,7 @@ def walk(system_dir):
 def sweep(system_dir, outdir):
     load_prop_stream()
     base = base_rows(outdir)
-    props, supers, super_pkg = declared_tables()
+    props, supers, super_pkg, respelled = declared_tables()
     rows, reasons = [], collections.Counter()
     for pkg_name, pkg in walk(system_dir):
         buffers = textbuffer_of(pkg)
@@ -307,6 +331,10 @@ def sweep(system_dir, outdir):
                     "anchor_trailer", "block_first_name", "block_first_declared"])
         w.writerows(rows)
     print("%d class exports: %s" % (len(rows), ", ".join("%s %d" % (k, v) for k, v in reasons.most_common())))
+    if respelled:
+        print("the ancestor walk folded %d package spelling(s): %s"
+              % (sum(respelled.values()),
+                 ", ".join("%s->%s %d" % (a, b, n) for (a, b), n in respelled.most_common(4))))
     print("wrote %s" % path)
     return rows
 
@@ -482,6 +510,11 @@ def selftest():
         problems.append("first_tag read past the payload")
     if declared_names({("A", "X"): {"P"}}, {("A", "X"): "Y"}, {("A", "X"): "B"}, ("A", "X")) != {"P"}:
         problems.append("declared_names invented a name across a package boundary")
+    # The ancestor walk folds a package spelled the other way; without it the walk stops one link early.
+    if fold_super_pkg("Gameplay", "StargateGame", {"gameplay": "GamePlay"}) != ("GamePlay", True):
+        problems.append("fold_super_pkg did not fold Gameplay onto the corpus spelling")
+    if fold_super_pkg("", "Engine", {}) != ("Engine", False):
+        problems.append("fold_super_pkg invented a spelling for a row that carries no super package")
     if problems:
         print("FAIL class-record: " + "; ".join(problems))
         return 1
@@ -513,7 +546,7 @@ def main():
     if not args.klass:
         ap.error("--class Package.Class, --sweep, --report or --check")
     want_pkg, _, want_cls = args.klass.partition(".")
-    props, supers, super_pkg = declared_tables()
+    props, supers, super_pkg, _respelled = declared_tables()
     for pkg_name, pkg in walk(args.system):
         if pkg_name != want_pkg:
             continue
