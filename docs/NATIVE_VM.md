@@ -1143,3 +1143,43 @@ a position and a count, and both of those are in the code.
 at offset 246 of a 1,365-byte payload, while the 15-unit run the earlier note built on starts at 952, 706 bytes
 further into the record. The count that run never had in front of it is at the *array's* head, which is 905 bytes
 in front of the run and not adjacent to it.
+
+### After the last name array the body writes nothing, so the gap belongs to the array
+
+The last note left one measurement named: read `UClass::Serialize`'s body between the `+0x4f4` call and the defaults
+branch for a field the version gate hides. Read at the instruction level, there is no such field -- the call is
+followed by four bytes of stack cleanup and the defaults branch itself:
+
+    0x3a8f6  CMP dword ptr [EBP + 4],0x63   ; the archive version, the last gate in this function
+    0x3a8fa  JL  0x0003a90c                ; below it the +0x4f4 array is not written at all
+    0x3a8fc  LEA ECX,[ESI + 0x4f4]
+    0x3a902  PUSH ECX
+    0x3a903  PUSH EBP
+    0x3a904  CALL 0x0003d160               ; the same count-plus-dwords helper as +0x4dc
+    0x3a909  ADD ESP,0x8                   ; stack cleanup only
+    0x3a90c  MOV EAX,[EBP + 0x10]          ; save-or-load, then the defaults
+
+So the record's field list is complete from the prefix to the defaults block: one name array at `+0x4dc`, the config
+`FName` at `+0x4b0`/`+0x4b4` (8 bytes on version >= `0x3e`, nothing below it), and, on version > `0x62`, the second
+name array at `+0x4f4`. Anything between the array's tail and the defaults start has to be those three fields.
+
+**They do not account for it, and the array's own end is what moves.** `tools/class-record-array.py` now measures the
+gap from the array's *bare* tail (`array_end`, `gap`) as well as from the name-array walks, and asks whether the
+writer's remaining fields consume it (`tail_ok`), over the same 549 classes that parse at `prefix_end + 42`:
+
+| measure | value |
+|---|---|
+| gap from the array's tail to the defaults start: mode | **27** bytes (188 classes; 29 on 61, 28 on 30, 30 on 9) |
+| gap: median | 27 bytes |
+| the array's walk running **past** the defaults start | 13 classes (-105 on 7, -109 on 6) |
+| name array + 8-byte config `FName` + name array closing the gap | **0** of 549 |
+| the defaults property stream parsed from the block start, terminating on the payload's last byte | 543 of 551 |
+
+The 20-byte mode the previous note reported is the same bytes read from a different boundary: on those rows its
+`k=2` walk had already consumed 7 bytes (a three-element name array, `03 01 04 02 84 03 06` on the `GamePlay` zones),
+so the gap from the array's own tail is 27, not 20. A field cannot be 27 bytes wide on 188 classes and 29 on 61 when
+the writer's body says nothing is written there at all, and no field *after* the array can put the walk past the
+defaults start on 13 classes -- so what is off is the array's element span (a compact reference plus two dwords),
+which ends somewhere other than where the writer's next field begins on nearly every class. The record's remaining
+gap is inside the array, not after it.
+

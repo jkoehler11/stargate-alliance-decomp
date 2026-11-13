@@ -1176,6 +1176,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the body after the last array is empty and the gap is the array's own)
+
+- **The field the last note named is not there, and the instruction after the call is what says so.** In
+  `UClass::Serialize` (`0x0003a800`), between the second name array's call (`0x3a904`) and the defaults branch
+  (`0x3a90c`) there is `ADD ESP,0x8` and `MOV EAX,[EBP+0x10]` and nothing else: the `0x63` test at `0x3a8f6` is the
+  last version gate in the function and it guards only the `+0x4f4` array. So no field hides behind that gate, and
+  the record's field list is complete from the prefix to the defaults block.
+- **The gap is the array's, and the 20 was a boundary artifact.** Measured from the array's bare tail
+  (`array_end`, `gap`), the defaults start is 27 bytes away on 188 classes (29 on 61, 28 on 30, 30 on 9) -- the 20
+  of the last note is that gap minus the 7 bytes its `k=2` name-array walk had already eaten -- and the fields the
+  writer actually writes there (a name array, the 8-byte config `FName`, a name array) close it on **0 of 549**,
+  while on 13 classes the walk runs past the block start (-105, -109). Nothing written after the array can do that,
+  so the array's element span ends where the writer's next field does not.
+- **Control: the block start is right.** Parsing the defaults property stream from `block_start` terminates on the
+  payload's last byte on 543 of 551 (from the array's tail, 65 -- chance), so the gap is record bytes, not the
+  defaults' head.
+- Tool (`tools/class-record-array.py`: the `array_end`, `gap` and `tail_ok` columns, and a `--check` that drives
+  both answers of the tail test) + `inventory/class_record_array.csv` (2,204 rows) + `docs/NATIVE_VM.md`
+  (*After the last name array the body writes nothing, so the gap belongs to the array*) + `docs/CLASS_DEFAULTS.md`
+  (*The 20 bytes are not a field, and the writer's body is why*) + `docs/UNKNOWNS.md` U17 + this note. Reads the
+  packages and the committed prefix table; no boot, no value decoded.
+- **Next measurement, named so the next run does not re-derive it:** the array's element span from its writer --
+  `FUN_0003d900`'s per-element loop (how wide an element is, and whether `FUN_000637e0` counts elements or something
+  smaller) -- paired with the config `FName` as an anchor: its name index must resolve in the package's own name
+  table, so locating it in each gap splits the gap into the writer's fields and says which side of the array is
+  short.
+
 ### Execution notes (2026-11-12, the array's count is its own first field and its writer has one caller)
 
 - **The caller the last note named does not allocate, and the census is what says so.** `tools/call-census.py

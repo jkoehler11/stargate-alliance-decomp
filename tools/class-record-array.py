@@ -24,6 +24,24 @@ start. A walk that lands **exactly** on it is the field order confirming itself 
 sized from the record; a walk that falls short leaves a residue, and the residue's own distribution is the next
 field's width.
 
+**The writer has nothing left to write after the last name array** (`0x3a904` -> `0x3a90c` in
+`UClass::Serialize`'s own body):
+
+    CMP dword [EBP+4],0x63      ; archive version, the last gate in the function
+    JL  0x3a90c                 ; below it: straight to the defaults branch
+    LEA ECX,[ESI+0x4f4]         ; the second name array
+    PUSH ECX / PUSH EBP
+    CALL 0x3d160
+    ADD ESP,0x8                 ; four bytes of stack cleanup -- no field
+    0x3a90c: MOV EAX,[EBP+0x10] ; save-or-load, then the defaults
+
+so the bytes between the array's tail and the defaults start can only be the fields listed above: one name array,
+the config `FName` at `+0x4b0`/`+0x4b4` (8 bytes, version >= `0x3e`, or nothing below it) and, on version > `0x62`,
+the second name array. The tool measures that gap from the array's **bare** tail (`array_end`, `gap`) as well as
+from the `k`-name-array walks (`doc_end`, `doc_residue`), and tests whether the writer's remaining field list closes
+it (`tail_ok`): on the shipped corpus it closes **0 of 551**, which is what says the array's own end -- its element
+width -- is the thing that is off, not a field after it.
+
 Two controls, because eleven-byte elements fit almost anything:
 
 * the same walk one byte later (`prefix_end + 43`): if the position is the writer's, this must do worse.
@@ -73,7 +91,8 @@ MAX_REF = 5                                   # the writer's own bound for a com
 TAILS = (0, 1, 2)                             # name arrays after the record array: version-gated, so all are tried
 ARTIFACT = "class_record_array.csv"
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "middle",
-           "doc_count", "doc_k", "doc_end", "doc_residue", "doc_refs_ok", "doc_exact", "doc_ctl_exact",
+           "doc_count", "doc_k", "doc_end", "doc_residue", "array_end", "gap", "tail_ok",
+           "doc_refs_ok", "doc_exact", "doc_ctl_exact",
            "alt_count", "alt_exact",
            "heads", "head_at", "head_off", "count", "tails", "refs_ok",
            "run_units", "run_inside", "ctl_heads"]
@@ -157,6 +176,23 @@ def in_tables(v, nimp, nex):
     return v == 0 or (v > 0 and v <= nex) or (v < 0 and -v <= nimp)
 
 
+def writer_tail(buf, p, block):
+    """The fields `UClass::Serialize` writes after its array -- a name array, the 8-byte config `FName`, a second
+    name array -- ending exactly on `block`; returns True when they consume the gap, False otherwise."""
+    o = p
+    for step in ("names", "fname", "names"):
+        if step == "names":
+            nm = walk_names(buf, o)
+            if not nm:
+                return False
+            o = nm["end"]
+        else:
+            o += 8
+        if o > block:
+            return False
+    return o == block
+
+
 def best_walk(buf, p, end):
     """The array at `p` with the `k` whose walk lands nearest `end`, preferring an exact landing."""
     best = None
@@ -201,12 +237,18 @@ def free_heads(buf, start, end):
 def measure(data, prefix_end, block_start, nimp, nex):
     row = {"payload": len(data), "prefix_end": prefix_end, "block_start": block_start,
            "middle": block_start - prefix_end,
-           "doc_count": "", "doc_k": "", "doc_end": "", "doc_residue": "", "doc_refs_ok": 0,
+           "doc_count": "", "doc_k": "", "doc_end": "", "doc_residue": "",
+           "array_end": "", "gap": "", "tail_ok": 0, "doc_refs_ok": 0,
            "doc_exact": 0, "doc_ctl_exact": 0, "alt_count": "", "alt_exact": 0,
            "heads": 0, "head_at": "", "head_off": "", "count": "", "tails": "", "refs_ok": 0,
            "run_units": "", "run_inside": "", "ctl_heads": 0}
     if block_start <= prefix_end:
         return row
+    # 0. the array's bare tail, and whether the fields the writer writes after it consume the gap
+    arr = walk_array(data, prefix_end + DOC_OFFSET)
+    if arr:
+        row.update({"array_end": arr["end"], "gap": block_start - arr["end"],
+                    "tail_ok": 1 if writer_tail(data, arr["end"], block_start) else 0})
     # 1. the documented position: prefix, UState's 22 bytes, five dwords, then this array
     doc = best_walk(data, prefix_end + DOC_OFFSET, block_start)
     if doc:
@@ -320,6 +362,13 @@ def report(rows):
               % (statistics.median(res), collections.Counter(res).most_common(10)))
         print("  name arrays on all rows (nearest landing): %s"
               % collections.Counter(str(r["doc_k"]) for r in doc).most_common(4))
+    arr = [r for r in rows if r["array_end"] not in ("", None)]
+    if arr:
+        g = _ints(arr, "gap")
+        print("the array's own tail to the block start: median %d, most common %s"
+              % (statistics.median(g), collections.Counter(g).most_common(6)))
+        print("  the fields the writer writes after the array (name array, 8-byte config FName, name array) "
+              "consume it on %d of %d" % (sum(int(r["tail_ok"]) for r in arr), len(arr)))
     head = [r for r in rows if int(r["heads"])]
     print("the same grammar from every byte position of the middle: a head on %d of %d (%.1f%%); aimed one byte "
           "short of the block start, %d (%.1f%%)"
@@ -388,6 +437,16 @@ def self_check():
     row = measure(payload, mid_start, block, 64, 4096)
     assert int(row["doc_exact"]) == 1 and int(row["doc_count"]) == 4 and int(row["doc_k"]) == 1, row
     assert int(row["doc_refs_ok"]) == 1 and int(row["doc_ctl_exact"]) == 0, row
+    assert int(row["array_end"]) == block - len(names) and int(row["gap"]) == len(names), row
+    assert int(row["tail_ok"]) == 0, row
+
+    # the fields the writer writes after the array consume the gap: a name array, the 8-byte config FName, a
+    # second name array. `tail_ok` is the only column that reads them, so both answers are driven here.
+    tail = names + compact(0) + bytes(7) + compact(1) + compact(0) + compact(0)
+    body_t = compact(4) + elems + tail
+    block_t = len(prefix) + len(prelude) + len(body_t)
+    row5 = measure(prefix + prelude + body_t, mid_start, block_t, 64, 4096)
+    assert int(row5["tail_ok"]) == 1 and int(row5["gap"]) == len(tail), row5
 
     # a count of 5 cannot consume the same bytes, so the row is not exact and its residue says so
     wrong = prefix + prelude + compact(5) + elems + names + bytes(6)
@@ -406,7 +465,8 @@ def self_check():
     assert int(row4["doc_exact"]) == 1 and int(row4["doc_k"]) == 0, row4
     print("self-check ok: a 4-element array plus one name array is found at prefix+%d with count 4 and k=1 ending "
           "exactly on the block start, one byte later finds nothing, a count of 5 leaves a residue, a walk that "
-          "leaves the package's tables is reported, and a record with no name array reads as k=0" % DOC_OFFSET)
+          "leaves the package's tables is reported, a record with no name array reads as k=0, and a gap made of a "
+          "name array, the 8-byte config FName and a second name array reads as tail_ok=1" % DOC_OFFSET)
 
 
 def main():

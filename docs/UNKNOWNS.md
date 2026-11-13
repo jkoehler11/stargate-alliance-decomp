@@ -2805,3 +2805,21 @@ read with `ExportAt.java` at `0x0003a800` and paired with the 190 classes whose 
 version-gated field above `+0x4f4` in the class object that the current field table does not carry. Numbers:
 `docs/NATIVE_VM.md`, *The array's count is its own first field, and its writer has one caller*;
 `docs/CLASS_DEFAULTS.md`, *The array's head is at +42 and the bytes after it are one field, not a walk*.
+
+**2026-11-12: the field between the array and the block does not exist, so U17 is about the array's own end.** This
+entry's "what would settle it" named `UClass::Serialize`'s body between the `+0x4f4` call and the defaults branch.
+That body is `ADD ESP,0x8` and `MOV EAX,[EBP+0x10]` -- no field, with the `0x63` version gate at `0x3a8f6` the last
+one in the function -- so the record's field list is complete and the gap can only be the three fields the writer
+already has: a name array, the 8-byte config `FName`, a name array. `inventory/class_record_array.csv`'s `gap`
+column measures that gap from the array's *bare* tail: 27 bytes on 188 of 549 classes (29 on 61, 28 on 30, 30 on 9;
+the earlier 20-byte mode is this gap minus the 7 bytes its `k=2` name-array walk had consumed), 13 classes where the
+walk runs past the block start, and **0** where the writer's remaining fields close it. Two controls: the defaults
+property stream parses from the block start to the payload's last byte on 543 of 551 (65 from the array's tail --
+chance), so the block start is not what is off, and the array aimed one byte later parses on 0 classes, so the head
+at `prefix_end + 42` is not either. **What would settle it:** the array's element span from its writer --
+`FUN_0003d900`'s per-element loop, which says how wide an element is and whether `FUN_000637e0` counts elements or
+something smaller -- or the config `FName`'s name index as an anchor: it must resolve in the package's own name
+table, so locating it in each gap splits the gap into the writer's own fields and says which side is short.
+Numbers: `docs/NATIVE_VM.md`, *After the last name array the body writes nothing, so the gap belongs to the array*;
+`docs/CLASS_DEFAULTS.md`, *The 20 bytes are not a field, and the writer's body is why*.
+
