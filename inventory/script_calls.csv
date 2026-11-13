@@ -2660,7 +2660,7 @@ Engine,Weapon,RenderOverlays,VirtualFunction,by name,UpdateWeaponRotation,Functi
 Engine,Weapon,UpdateWeaponRotation,VirtualFunction,by name,CalcDrawOffset,Function,receiver:Engine.Pawn,3,,InstanceVariable,Pawn
 Engine,Weapon,UpdateWeaponRotation,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
 Engine,InteractionMaster,AddInteraction,FinalFunction,static,DynamicLoadObject,Function,,,,,
-Engine,InteractionMaster,AddInteraction,VirtualFunction,by name,Initialize,name,,8,,LocalVariable,
+Engine,InteractionMaster,AddInteraction,VirtualFunction,by name,Initialize,Function,receiver:Engine.Interaction,8,,LocalVariable,Interaction
 Engine,Weapon,DrawCrossHair,FinalFunction,static,SetPos,Function,,,,,
 Engine,Weapon,DrawCrossHair,FinalFunction,static,SetDrawColor,Function,,,,,
 Engine,Weapon,CanFire,VirtualFunction,by name,HasAmmo,Function,package,9,,self,
@@ -12920,7 +12920,7 @@ StargateGame,StargatePawn,Talk,FinalFunction,static,PlayStream,Function,,,,,
 StargateGame,StargatePawn,Talk,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 StargateGame,StargatePawn,Talk,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 StargateGame,StargatePawn,Talk,VirtualFunction,by name,GetLocalPlayerController,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
-StargateGame,StargatePawn,Talk,VirtualFunction,by name,SetSubtitle,Function,corpus:StargateGame.StargateHUD,1,StargateGame.StargateHUD,LocalVariable,
+StargateGame,StargatePawn,Talk,VirtualFunction,by name,SetSubtitle,Function,corpus:StargateGame.StargateHUD,1,StargateGame.StargateHUD,LocalVariable,StargateHUD
 StargateGame,GoauldConsoleHud,Timer,VirtualFunction,by name,ClearMessage,Function,Engine.HUD,1,,value,
 StargateGame,GoauldConsoleHud,Timer,VirtualFunction,by name,CopyMessage,Function,Engine.HUD,1,,value,
 StargateGame,GoauldConsoleHud,Timer,VirtualFunction,by name,ClearMessage,Function,Engine.HUD,1,,VirtualFunction,

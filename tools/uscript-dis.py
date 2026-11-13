@@ -2018,6 +2018,34 @@ _SRC_VAR = re.compile(r"^\s*var(?:\s*\([^)]*\))?\s+(?:(?:const|config|globalconf
                       r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+)\s+(.+?);", re.I)
 _SRC_STRUCT = re.compile(r"^[ \t]*struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
                          r"protected|public)[ \t]+)*(\w+)", re.I | re.M)
+# The shipped text carries preprocessor conditionals (`#ifdefXBOX ... #else ... #endif`), and the xbox build
+# declares a function differently inside one. A directive *line* between a declaration and its `{` stopped the
+# body scan: `Engine.InteractionMaster.AddInteraction` is declared in an `#ifdefXBOX` branch and in an
+# `#ifndefXBOX` one, its body follows the `#endif`, and its two locals were the only untyped local left in the
+# call census. Directives carry no braces, so dropping the lines leaves the spans intact.
+_SRC_PREPROC = re.compile(r"^[ \t]*#[A-Za-z_]\w*[^\r\n]*", re.M)
+
+
+def _src_text(text):
+    """A ScriptText with comments and preprocessor directive lines removed (no offsets survive either)."""
+    return _SRC_PREPROC.sub("", _SRC_COMMENT.sub("", text))
+
+
+def _directive_gaps(text):
+    """The declarations the parse would lose to a directive line in front of their `{`, by name.
+
+    Counted on text with comments stripped and directives kept, i.e. exactly what the scan used to see, so the
+    rows are the population the `_src_text` strip repairs -- not an estimate of it.
+    """
+    masked = _SRC_COMMENT.sub("", text or "")
+    gaps = []
+    for m in _SRC_FUNC.finditer(masked):
+        j = m.end()
+        while j < len(masked) and masked[j] in " \t\r\n":
+            j += 1
+        if j < len(masked) and masked[j] == "#":
+            gaps.append(m.group(2))
+    return gaps
 
 
 def source_returns(text):
@@ -2031,7 +2059,7 @@ def source_returns(text):
     """
     if not text:
         return {}
-    text = _SRC_COMMENT.sub("", text)
+    text = _src_text(text)
     out = collections.defaultdict(set)
     for m in _SRC_FUNC.finditer(text):
         out[m.group(2)].add((m.group(1) or "").strip().lower())
@@ -2080,7 +2108,7 @@ def source_declarations(text):
     """
     if not text:
         return {}
-    text = _SRC_COMMENT.sub("", text)
+    text = _src_text(text)
     out = collections.defaultdict(lambda: collections.defaultdict(set))
     for m in _SRC_FUNC.finditer(text):
         fn, params = m.group(2), m.group(3)
@@ -2123,7 +2151,7 @@ def source_structs(text):
     """
     if not text:
         return {}
-    text = _SRC_COMMENT.sub("", text)
+    text = _src_text(text)
     out = collections.defaultdict(lambda: collections.defaultdict(set))
     for m in _SRC_STRUCT.finditer(text):
         j = text.find("{", m.end())
@@ -2382,6 +2410,7 @@ def calls_report(path, table, out=None, lists=0):
     # the package being walked, and `class_source` opens it on first ask.
     pkg_paths = {os.path.basename(one).rsplit(".", 1)[0]: one for one in files}
     sourced = {}
+    preproc = {"classes": 0, "gaps": 0, "names": []}   # texts with a directive line, and what it split
     # (package, class) -> (package the super is declared in, super): the chain a by-name call is resolved along.
     supers = {}
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
@@ -2597,6 +2626,12 @@ def calls_report(path, table, out=None, lists=0):
                             if pkg2.class_name_of(x) == "Class" and pkg2.name(x["name"]) == cls_name:
                                 text = _script_text(pkg2, x, k - 1)
                                 break
+                if text:
+                    if _SRC_PREPROC.search(_SRC_COMMENT.sub("", text)):
+                        preproc["classes"] += 1
+                    for fn in _directive_gaps(text):
+                        preproc["gaps"] += 1
+                        preproc["names"].append("%s.%s" % (cls_name, fn))
                 sourced[key] = (source_declarations(text), source_returns(text))
                 if _SHUFFLE:
                     sourced[key] = shuffled_source(*sourced[key])
@@ -2893,6 +2928,9 @@ def calls_report(path, table, out=None, lists=0):
                        for n, c in collections.Counter(r[5] for r in wide).most_common(5))))
     print("      an object expression with no recorded type: %d -- %d of them a local, %d not"
           % (len(untyped), len(locals_), len(untyped) - len(locals_)))
+    print("      a directive line between a declaration and its body: %d declaration(s) over %d class text(s)%s"
+          % (preproc["gaps"], preproc["classes"],
+             (": " + ", ".join(sorted(preproc["names"]))) if preproc["names"] else ""))
     print("      of the receiver-typed sites, %d had a local in front (typed from the class's own ScriptText)"
           % len([r for r in recv if r[10] == "LocalVariable"]))
     if local_case:
@@ -3542,7 +3580,8 @@ def diverge_report(path, rows=0):
 
 
 def struct_check():
-    """A control on the struct reading: the parse, the four ways a member names nothing, the one that names a class.
+    """A control on the struct and declaration readings: the parse, the directive strip, the ways a member
+    names nothing, the one that names a class.
 
     No dump: every case is a synthetic `struct` block or a hand-built expression, so `tool-check-contract` can
     drive it (`make ci`) and a site the reading places is attributable to the declaration that placed it.
@@ -3567,6 +3606,16 @@ def struct_check():
          source_structs("struct A\n{\n\tvar int X;\n\tvar float X;\n\tvar name Y;\n}\n"),
          {"A": {"X": None, "Y": "name"}})
     want("a class with no struct block declares none", source_structs("function Touch(Actor A) {}\n"), {})
+    want("a directive line between a declaration and its body keeps the body",
+         source_structs("struct A\n{\n\tvar int Count;\n#ifdefXBOX\n\tvar UIWidget Face;\n#endif\n}\n"),
+         {"A": {"Count": "int", "Face": "UIWidget"}})
+    want("a body after an #endif is read",
+         source_declarations("#ifdefXBOX\nfinal event Interaction Add(string N, optional bool bInFront)\n"
+                            "#endif\n#ifndefXBOX\nfinal event Interaction Add(string N)\n#endif\n"
+                            "{\n\tlocal Interaction Inner;\n\tlocal class<Interaction> Kind;\n}\n"),
+         {"Add": {"N": "string", "bInFront": "bool", "Inner": "Interaction", "Kind": "class<Interaction>"}})
+    want("a declaration split by a directive is named",
+         _directive_gaps("final event Interaction Add(string N)\n#endif\n{\n}\n"), ["Add"])
     want("a modifier in front of the type is not the type",
          source_structs("struct A\n{\n\tvar config UIWidget Face;\n\tvar() editconst array<Foo> List;\n}\n"),
          {"A": {"Face": "UIWidget", "List": "array<Foo>"}})
@@ -3607,7 +3656,7 @@ def struct_check():
 
     for one in fails:
         print("FAIL " + one)
-    print("%d of 14 struct assertions pass" % (14 - len(fails)))
+    print("%d of 17 struct assertions pass" % (17 - len(fails)))
     return 1 if fails else 0
 
 

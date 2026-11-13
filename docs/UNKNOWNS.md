@@ -2008,6 +2008,21 @@ do not declare, and every one of those sites is placed on the caller's chain any
 residue is 42 of 13,507 by-name sites, and the next pass over it would be a reading of the four shapes above, not
 of another declaration.
 
+**2026-11-13, the last local is a parse gap and not a missing declaration: a preprocessor directive sits between
+the declaration and its body.** `Engine.InteractionMaster.AddInteraction` is declared twice in its class text, once
+under `#ifdefXBOX` and once under `#ifndefXBOX`, and the body both share begins after the closing `#endif`, so the
+brace scan stepped onto `#` and dropped it; the archive's own local records name it, the text does declare it, and
+the two statements were one line apart. Stripping directive lines before the declaration parse types the local
+(`Interaction`), takes the untyped-object residue **42 -> 41**, by-name placement to **13,397 of 13,507 (99.2%)**
+and the receiver's chain to **2,779**, and empties the local shape entirely. The population is measured by the same
+report: **4 declarations over 173 class texts** are split by a directive, and they are two functions declared twice
+under a guard (`AddInteraction`, `StargatePawn.Talk`) -- so an `#ifdef`-guarded signature is now a parsed shape, not
+a class-specific exception. **What is left in the residue is three shapes and no declaration**: 35 struct-array
+elements (a negative), 5 receivers whose name the class subtree does not declare, and 1 call result whose callee has
+no declared return type. **What would settle the 5** is whether their receiver's declared type is too narrow -- each
+name is declared by a class outside the receiver's subtree, so the question is which class the site's object
+expression really holds, and the receiver chain the tool already writes is the list to read them from.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
