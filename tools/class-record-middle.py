@@ -342,7 +342,8 @@ def one(args):
             i, n = row["run_start"], row["run_units"] * UNIT
             for u in range(min(4, row["run_units"])):
                 print("   %s" % data[start + i + UNIT * u:start + i + UNIT * u + UNIT].hex())
-        print("fit sweep: delta %r, control %r" % (row["fit_delta"], row["fit_delta_ctl"]))
+        print("fit sweep: before %s/%s, after %s/%s (fit/control)"
+              % (row["fit_before"], row["ctl_before"], row["fit_after"], row["ctl_after"]))
         print("middle %s" % data[start:block][:200].hex())
         return 0
     print("no such class")

@@ -717,3 +717,13 @@ whose block could not be located or does not account for itself.
 * **The roster itself.** The squad scripts maps name (`TSS_7A_B_Jaffa_01`, `AI_Jaffa_Horus_Med_single`) appear in
   those packages' name tables but are neither imports nor exports, so the reference to them lives in data inside
   the `Level` export, which this reader does not parse.
+
+### The 27-byte gap is an array and a list, and the 20 bytes are the array
+
+`inventory/class_record_gap.csv` (`tools/class-record-gap.py`, `--check` in `make ci`) splits the gap the field
+walk leaves on the 549 located classes. The gap is 27 bytes on 188 of them, and it decomposes as a **second array
+of `FUN_0003d900`'s own grammar** -- 361 of 549 classes hold one, 20 bytes at the median and 20 on 260, two records
+on 321, references resolving on 355 -- followed by the **count-plus-pairs list**, which closes the record exactly
+on 219. The control that makes the position mean something: the same grammar a byte later parses 811 times and
+lands on the defaults start once. `docs/NATIVE_VM.md` (*The 20-byte middle is a second record array*) carries the
+table and the refutation of the config-`FName` reading of the 8 bytes in front of the list.

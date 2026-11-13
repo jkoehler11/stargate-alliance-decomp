@@ -1176,6 +1176,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the 20-byte middle is a second record array, and the config reading is dead)
+
+- **The split the last note named is measured, and it is not two fields.** `tools/class-record-gap.py` restarts
+  `FUN_0003d900`'s grammar at the located array's own tail on all 549 classes: a second array parses on **361**
+  (65.8%), is **20 bytes** on 260 of them (median 20), holds **2 records** on 321 with reference widths `2+1` on
+  258 -- so the 20 bytes are one array, its count plus a ten-byte and a nine-byte record, not an array plus an
+  8-byte name. Its references land inside the package's object tables on 355 of 361, and its count equals the
+  first array's on 319 of 361.
+- **The control says the position is the record's, not a scan's.** The same grammar started at each of the next
+  eight bytes parses 811 times and lands on the defaults start **once**, against 361 at the array's tail.
+- **The config `FName` reading is refuted by its own two int32s.** On the 355 rows where a list of one or more
+  bytes remains, the 8 bytes in front of it read as `(1, 0x<random>)` -- first int32 1 on 313 rows and 0 on 16, and
+  a second int32 whose median magnitude is 1.34e9 -- so **0 of 355** are an `FName` (a table index plus a counter
+  of at most 64). Those bytes are a record's second dword, not a name.
+- **And the falsifier the last note asked for is a bounded negative.** No class in the corpus carries an empty list
+  as a zero count byte: 7 rows carry **no list field at all**, 7 carry **one byte** (0x03 on 5, 0x02 on 2 -- a count
+  whose elements are absent), and the count-plus-pairs array closes the record on **219** rows, every one of them a
+  3-pair 7-byte list. A further 67 rows leave 9 bytes that grammar cannot close and 7 run past the block. So "a
+  class whose `+0x4f4` array is empty carries no list" is not observable in this corpus, and the placement it was
+  meant to test stands on the 219 rows where the list parses, not on the empty case.
+- Tool (`tools/class-record-gap.py`: `--sweep`, `--class`, `--report`, `--check`) + `inventory/class_record_gap.csv`
+  (549 rows) + `docs/NATIVE_VM.md` (*The 20-byte middle is a second record array*) + `docs/CLASS_DEFAULTS.md`
+  (*The 27-byte gap is an array and a list*) + `docs/UNKNOWNS.md` U17 + `make class-record-gap` + this note. Reads
+  the packages and one committed artifact; no boot, no Ghidra, no value decoded.
+- **Next measurement, named:** which member that second array is. `UClass::Serialize` has one call to `0x3d900`,
+  so this array is written by something else and the corpus separates the two candidates: a *second copy* of
+  `+0x4d0` or a second `TArray` of the same element type. The test is the reference lists -- the two arrays'
+  references are identical per class on a copy and disjoint on two members -- and `class_record_gap.csv` already
+  carries both ends, so the census is one pass over the payloads with no new instrument beyond a column.
+
 ### Execution notes (2026-11-13, the reader places the list as the record's last field)
 
 - **The named next measurement was "read `0x0003a800`'s body between the second name-array call and the defaults

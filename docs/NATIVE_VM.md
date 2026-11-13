@@ -1549,3 +1549,47 @@ What this corrects in the tools above: `inventory/class_record_element.csv`'s `s
 boundary -- the array that ends there is inside the 20-byte middle -- so "the bytes after the array" is the record's
 last field. A class whose `+0x4f4` array were empty would carry no list at all, which is the check that would falsify
 the placement and has not been run.
+
+### The 20-byte middle is a second record array, and the config name is not in it
+
+`tools/class-record-gap.py` (`make class-record-gap`, `inventory/class_record_gap.csv`, `--check` in `make ci`)
+takes every class whose array the reader locates (`inventory/class_record_array.csv`, 549 rows) and decomposes the
+gap from that array's *own* tail to the defaults start instead of naming its fields. The gap is 27 bytes on 188
+classes, and its first part is the writer's array grammar again -- a compact count and, per record, one compact
+reference plus eight raw bytes:
+
+| measure | value |
+|---|---|
+| a second array of `FUN_0003d900`'s grammar parses at the located array's tail | **361 of 549 (65.8%)** |
+| its byte length: median, most common | **20** bytes, 20 on **260** classes (21 on 33, 22 on 19, 19 on 9) |
+| records per array | 2 on 321, 11 on 4, 57 on 3, 1 on 8 |
+| reference widths, one per record | `2+1` on **258**, `2+2` on 31, `3+2` on 19, `1+1` on 9 |
+| its references inside the package's object tables | 355 of 361 |
+| its count equal to the first array's | 319 of 361 |
+| the same grammar started 1..8 bytes later: starts that parse / land on the defaults start | 811 / **1** |
+| after it: 7 bytes / 9 / 8 / 6 | 201 / 68 / 23 / 8 |
+| the count-plus-pairs array closes the record exactly | **219** (all 3-pair, 7-byte) |
+| no list field at all / a single byte | 7 / 7 (0x03 on 5, 0x02 on 2) |
+| 9 bytes left that the pairs grammar cannot close / the array running past the block | 67 / 7 |
+| the 8 bytes in front of the list read as an `FName` (a name index, a counter <= 64) | **0 of 355** |
+
+**So the 20 bytes are one array, not an array plus a config name.** A 2-record array whose references are two and
+one bytes wide is `1 + 10 + 9 = 20` bytes, which is the mode, and `first_count` is 2 on those rows because the
+second array's count is 2 -- not because a name array's count is. The alternative reading needs the 8 bytes in
+front of the list to be the config `FName`; they are `01 00 00 00` followed by a per-class 32-bit value whose
+median magnitude is 1.34e9, so the "number" would be a duplicate counter of a billion on every class. The first
+int32 being 1 is not a name index either: index 1 is the same name in every package, and the value tracks nothing
+in the name table.
+
+**And the falsifier the placement note asked for does not fire the way it was written.** If the list were the
+version-gated `+0x4f4` array, a class with that array empty would write its count (0x00) and nothing else -- one
+byte. The corpus instead shows 7 rows with **no** list bytes, 7 with **one** byte holding `0x02`/`0x03` (a count
+whose elements are missing), and the pairs array closing exactly on 219 rows. So the "empty array" case is not
+present as a zero count, and the placement it was meant to test is confirmed only where the list parses (219), not
+by an absence.
+
+**Two residue populations are named rather than explained.** 67 rows end in 9 bytes whose leading `4` needs eight
+more bytes and the pairs walk cannot close; on those the last field is not the count-plus-pairs shape (or the
+second array's end is two bytes early). 7 rows have the second array ending past the defaults start, which is the
+`-105` residue `inventory/class_record_array.csv` already reports from the other direction. Both are the next
+question's, not this one's.
