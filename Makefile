@@ -19,7 +19,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-ownerclass-table-residual vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair member-assert-names
 
 help:
 	@echo "targets:"
@@ -84,6 +84,7 @@ help:
 	@echo "  member-access-census  every access to a member displacement, and the stride it indexes at"
 	@echo "  class-array-head      the three head dwords of the Class +0x4c4 array, and who writes them"
 	@echo "  class-config-pair     the Class +0x4b0/+0x4b4 pair: the class reference and the config name"
+	@echo "  member-assert-names   the member displacements the image names in its own assert expressions"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"
 	@echo "  native-reconcile  script native() declarations vs the native records (PLAN 3.9, needs the dump)"
 	@echo "  native-bodies mark every native body in the extracted tree + the cross-link table (PLAN 3.9, needs the dump)"
@@ -1118,6 +1119,10 @@ class-config-pair:
 		--disp 0x4b0 --disp 0x4b4 -o inventory --artifact class_config_pair_census.csv
 	@python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe \
 		--disp 0x4b0 --disp 0x4b4 --report
+
+member-assert-names:
+	python3 tools/member-assert-names.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory
+	@python3 tools/member-assert-names.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe --report
 
 class-record-tail:
 	python3 tools/class-record-tail.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory

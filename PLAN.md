@@ -1201,6 +1201,35 @@ are limited to expected fields (checksum/timestamp) and documented.
 - **Next measurement, named:** unchanged -- the `+0x4b0`/`+0x4b4` config pair, the last field of the record with
   no store map (`--disp 0x4b0 --disp 0x4b4`).
 
+### Execution notes (2026-11-13, the assert that named ClassWithin names nineteen more members)
+
+- **The route that named `+0x4b0` is mechanical, so it is a census.** `ClassWithin` came from an assert expression
+  string eight instructions away from the load, and that shape -- `mov r32,[base+disp32]`; `test r32,r32`; `jcc`;
+  `push line`, `push file`, `push expression`, `call 0x58a30` -- occurs across the image:
+  `tools/member-assert-names.py` (`make member-assert-names`, `inventory/member_assert_names.csv`, `--check` in
+  `make ci`) finds **34 sites, 20 (displacement, name) pairs and 20 distinct displacements**, from `+0x54`
+  `LinearFileStillOpen` and `+0x70` `Input` through `+0xea0` `Viewport` to `+0x20660` `MemInit`.
+- **The names are the image's, and most are not in the map.** **15 of the 20 displacements** do not appear in
+  `inventory/class_member_map.csv` at all, and for four of the five that do, the map's owner is another class
+  (`+0x264` `Brush` against `ParticleEmitter`/`GUIEditBox`, `+0x3e4` `TerrainMap` against
+  `FileLog`/`SkeletalMeshInstance`) -- the destructor map places members per class, and an assert names the one
+  check that function made.
+- **The filter is the shape, not a word list.** A check whose expression is not an identifier
+  (`Index<=ArrayNum`, `Defaults.Num()==GetPropertiesSize()`) is dropped by construction, so nothing is lost from
+  the `+0x4b0` result: that one is in the artifact as `+0x4b0` `ClassWithin` at `0x000397cc`.
+- **One limit is stated in the page:** the base register is whatever the body loaded, so `+0x54`
+  `LinearFileStillOpen` is a file wrapper's member and not a game class's. The row carries its site so the claim
+  can be checked, and the page says to read the site before the name.
+- Tool (`tools/member-assert-names.py`: `--xbe`, `-o`, `--artifact`, `--report`, `--assert-va`, and a `--check`
+  that drives a synthetic assert body and a non-identifier expression) + `inventory/member_assert_names.csv`
+  (34 rows) + `make member-assert-names` + `docs/NATIVE_VM.md` (*The image names twenty member displacements in its
+  own assert expressions*) + this note. Reads `default.xbe` and the committed inventories; no boot, no Ghidra
+  round, no value decoded.
+- **Next measurement, named:** the seven `RenderedSound` and four `TerrainMap` sites are repeated checks, so the
+  cheap next read is whether each of the 20 names lands on a **member** of the containing function's class -- the
+  destructor map already answers that for five of them, and for the other fifteen the question is whether the base
+  register is `this` (the `own_register`/writer read in `references/autonomy.md` is the method).
+
 ### Execution notes (2026-11-13, the pair is a class reference and a name, and the image names the first)
 
 - **The named measurement was a census of two displacements, and the pair is not a pair.**
