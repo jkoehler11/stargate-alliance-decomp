@@ -3043,3 +3043,19 @@ reserves `count*4` through archive slot `+0x14` and then calls `+0x1c` once per 
 4-byte proxy in memory -- read the middle's leading byte against that, and the count that the two grammars disagree
 about (2 for the twelve-byte parse) becomes decidable. Numbers: `docs/NATIVE_VM.md`, *The gap does not decompose in
 the reader's own field order either*.
+
+**2026-11-13 (sixth): the `+0x4c4` array has no writer, so the middle is not its stream.** The previous note
+left `+0x4c4` -- the 4-byte-element `TArray` between the 8-byte one and the record array -- as the candidate
+for the bytes the name parse leaves. The test is its head, not another grammar: data `+0x4c4`, count `+0x4c8`,
+max `+0x4cc`, and a writer must write the count or the max. `inventory/class_array_head_census.csv` (70 sites,
+`make class-array-head`) finds that on a `Class` **all nine stores into the head are one-byte zero stores**,
+three constructors writing one byte per dword, and no dword store touches the count or the max; the single
+dword store at the displacement (`0x001fd005`) is another class's scalar field, whose body never touches
+`+0x4c8`/`+0x4cc`. No site indexes any of the three at any stride, and on a `Class` the only two sites at all
+are the region initialiser (`0x3a675`, `push 0x4; call 0x1b846`) and the destructor (`0x3dc60` -> `0x3d850`).
+So the member is initialised empty, destroyed empty and never appended, and a stream of it would be `1 + 4n`
+bytes (5/9/13/17/21) where the middle is 27, 20 or 23. **What would settle what U17 asks now** is the
+`+0x4b0`/`+0x4b4` pair -- the config `FName` the reader writes as two dwords at `0x3a8c2`/`0x3a8d9` -- which
+has never been censused: with the twelve-byte array, the compact pairs, the name array and now the 4-byte
+array eliminated, the config pair is the last field in the record without a store map. Numbers:
+`docs/NATIVE_VM.md`, *The array at +0x4c4 is initialised and destroyed, and no body fills it*.

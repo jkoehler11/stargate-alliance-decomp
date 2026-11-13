@@ -1719,3 +1719,54 @@ the same bytes.
 
 (A previous version of this section concluded that no site in the image is handed `+0x4dc`, from the pushes nearest
 each call. The negative was the census's window, not the build.)
+
+### The array at `+0x4c4` is initialised and destroyed, and no body fills it
+
+The last note left `+0x4c4` as the candidate for the bytes the record's name parse does not consume: the
+twelve-byte array does not end there, so the reader's 20-byte middle was re-read as the *other* member of
+the group -- the 4-byte-element `TArray` between the 8-byte one (`+0x4b8`) and the record array (`+0x4d0`).
+The way to test that is not another grammar over the same bytes: it is the array's head, which is three
+dwords -- data at `+0x4c4`, count at `+0x4c8`, max at `+0x4cc` -- and a writer that fills it must write the
+count or the max.
+
+`tools/member-access-census.py` now takes `--artifact`, so the head is a census of its own
+(`inventory/class_array_head_census.csv`, `make class-array-head`): **70 sites over the three dwords** --
+29 at `+0x4c4` (8 load, 16 `lea`, 5 store), 30 at `+0x4c8` (20 load, 5 `lea`, 5 store) and 11 at `+0x4cc`
+(6 load, 1 `lea`, 4 store) -- and **no site in the image indexes any of the three at any stride**.
+
+**On a `Class` every one of the nine stores into the head is a one-byte zero.** The three constructors write
+the same three bytes, one per dword:
+
+    ctor_Class    0x3ad98  mov byte [esi+0x4c4],edi     0x3ad9e  mov byte [esi+0x4c8],edi     0x3ada4  mov byte [esi+0x4cc],edi
+    FUN_0003ae30  0x3aea1  mov byte [esi+0x4c4],edi     0x3aea7  mov byte [esi+0x4c8],edi     0x3aead  mov byte [esi+0x4cc],edi
+    FUN_0003af60  0x3afda  mov byte [esi+0x4c4],edi     0x3afe0  mov byte [esi+0x4c8],edi     0x3afe6  mov byte [esi+0x4cc],edi
+
+Not one of them writes a count or a max, and there is no `mov dword [reg+0x4c8]`/`[reg+0x4cc]` anywhere in
+the sweep. The one dword store in the group -- `0x001fd005  mov [ecx+0x4c4],imm` in `FUN_001fc630` -- is a
+scalar field of another class: the same body loads `[ecx+0x4c4]` twice and never touches `+0x4c8` or
+`+0x4cc`, which is not the shape of an array head. The same is true of every `lea` of count or max
+(`PlayerReplicationInfo`, `WarpZoneInfo`, `LevelInfo`, `Gui_UIXInteraction`): none of those bodies belongs to
+a `Class`.
+
+**And no `Class` body ever reads the array either.** The only two sites on `Class` are the region initialiser
+`0x0003a670` (slot 10) at `0x3a675` -- `lea ecx,[esi+0x4c4]; push 0x4; call 0x1b846` -- and the destructor
+`0x3dc60`, which hands the same address to `0x3d850`. The other fourteen `lea`s at `+0x4c4` are `Pawn` at slots
+57/85/87/88/89/124, `Controller@30`, `SparkEmitter@47` or an unnamed body, and the eight loads are the same
+classes' members at the same displacement -- a displacement is not a field.
+
+**Two 4-byte arrays, two different initialisers.** `+0x4c4` is emptied through `0x1b846` and `+0x4dc` through
+`0x1b820`, both with `push 0x4`; the element width is the same and the function is not, so the initialiser
+identifies the element *type* rather than its size, and a width alone cannot name a `TArray` here. The
+record array's own `0x1b833` (width `0xc`) is a third instantiation.
+
+So the group's middle member is initialised empty, destroyed empty, and never appended in this image: it
+cannot be the producer of the stream the record carries. The arithmetic agrees before the writer is even
+asked -- a `TArray` of 4-byte elements streams `1 + 4n` bytes (5, 9, 13, 17, 21) and the middle is 27 bytes at
+the mode, 20 as twelve-byte records, and 23 as the residue the name parse leaves; none of the three is of
+that form. What the member is for stays unnamed; what it is not is the record's middle.
+
+    make class-array-head
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4c4 --disp 0x4c8 --disp 0x4cc -o inventory --artifact class_array_head_census.csv
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4c4 --disp 0x4c8 --disp 0x4cc --report

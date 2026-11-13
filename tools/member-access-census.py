@@ -27,6 +27,8 @@ confirm that boundary) so a site inside a body the decoder desynced can be seen 
     python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
     python3 tools/member-access-census.py --xbe DUMP/default.xbe \
         --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report --window-show
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4c4 --disp 0x4c8 --disp 0x4cc -o inventory --artifact class_array_head_census.csv
     python3 tools/member-access-census.py --check          # synthetic bytes, no dump, writes nothing
 
 Reads `default.xbe` plus the committed inventories; writes one CSV and prints addresses and counts
@@ -313,7 +315,7 @@ def run(args):
 
     rows = sorted(all_rows, key=lambda r: (int(r["disp"], 16), r["site_va"]))
     if args.out:
-        path = os.path.join(args.out, "member_access_census.csv")
+        path = os.path.join(args.out, args.artifact)
         with open(path, "w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=HEADER)
             w.writeheader()
@@ -420,7 +422,10 @@ def main():
     ap.add_argument("--tables", default=os.path.join(ROOT, "inventory", "xbe_class_tables.csv"))
     ap.add_argument("--table-names", default=os.path.join(ROOT, "inventory",
                                                           "xbe_class_table_names.csv"))
-    ap.add_argument("-o", "--out", help="directory for member_access_census.csv")
+    ap.add_argument("-o", "--out", help="directory for the census CSV")
+    ap.add_argument("--artifact", default="member_access_census.csv",
+                    help="file name to write under --out, so one displacement group can have its own "
+                         "artifact (default member_access_census.csv)")
     ap.add_argument("--window", type=int, default=12, help="instructions to look ahead for a stride")
     ap.add_argument("--report", action="store_true", help="print the census")
     ap.add_argument("--window-show", action="store_true", help="print each site's body window")
