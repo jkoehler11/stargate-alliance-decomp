@@ -1996,63 +1996,56 @@ the artifact carries each front's values and the class's own table sizes, so the
     python3 tools/class-record-order.py --dump DUMP --gap-sweep -o inventory
     python3 tools/class-record-order.py --gap-report
 
-### The array's own head bounds the block start, and the bound lands on the 20-byte front
+### The array's head sits after the sixteen zero bytes, and there its end is the block start
 
-U18's tenth entry named a test the tiling census could not give: tiling is a property of the bytes rather than of the
-position (159 of 181 blocks tile at their own start, 151-153 of 181 at a start one to four bytes in), so it cannot say
-whether a located block start sits *inside* the record array. The array's own head can, because it is a bound:
-`UClass::Serialize` (`0x0003a800`) writes `UStruct::Serialize` -- the record's measured 3-6 byte prefix -- and then,
-unconditionally, `UState::Serialize`'s 22 bytes and five dwords, so the `+0x4d0` array is read at `prefix_end + 42` on
-every class; `FUN_0003d900` streams it as a compact count and one `[object reference][dword][dword]` per element, and
-`FUN_0003d160` streams the version-gated `TArray<FName>` siblings immediately after it. The body writes nothing else
-before the defaults branch (*After the last name array the body writes nothing*), so the end of the last name array is
-the **earliest byte the block can begin at**.
+The first version of this test read the `+0x4d0` array at `prefix_end + 42` -- `UStruct`'s prefix, then
+`UState::Serialize`'s 22 bytes and five dwords -- and reported 297 heads that passed both table tests with the block
+start exactly twenty bytes past their end. That twenty is the reading refuting itself. This page's gap census had
+already measured where the array begins: **19 to 21 bytes** past the field table's position, after sixteen zero bytes
+and a three to five byte compact front (*The gap's last sixteen bytes are zero*). So the "count" at `+42` was the
+front's first value, and the twenty-byte "margin" was that front and the zero run read back as an array.
 
-`tools/class-record-bound.py` (`make class-record-bound`, `inventory/class_record_bound.csv`, `--check` in `make ci`)
-reads that head on every located class and credits it only when it survives the archive's own contracts: every element
-must be an object reference inside the package's tables, and every index of both name arrays must be inside the name
-table. It reports the bound for one and for two name arrays (the gate is archive version `> 0x62`, and these packages
-are 130/4), and runs the same grammar one byte later as a control.
+The offset is now a join rather than an assumption. `tools/class-record-bound.py --position` reads the compact value at
+`prefix_end + 42 + gap_len`, with the gap length the gap census committed per class, and compares it with that census's
+`arr_count`:
 
 | measure | value |
 |---|---|
-| classes with a located block start | **2,204** |
-| the head decodes at `prefix_end + 42` | 1,332 (60.4%) |
-| ... every element a reference inside the tables | 365 (16.6%) |
-| ... and both name arrays with every index inside the name table | **297** (13.5%) |
-| the count on those rows | median **2** -- 2 on 290, 1 on 4, 18 on 2, 54 on 1 |
-| the first name array | 2 elements on 290, 0 on 6, 1 on 1; the second is **empty on all 297** |
-| block start past the record's own end | median **20** -- 20 on 183, 19-21 on 202 |
-| block start inside the record's own end | **2** |
-| the same grammar one byte later (`+43`) | a head on 435, a bound that survives both tests on **48** |
+| classes in both artifacts | **1,626** |
+| the value at `prefix + 42 + gap_len` equals the census `arr_count` | **1,626** (100%) |
+| classes whose value at `prefix + 42` is a front value | 2,189 |
+| ... of the 297 the `+42` reading credited, where that value equals the census's first front value | **234** of the 234 with a census row |
 
-So the position is a measurement rather than an assumption -- 297 bounds at the writer's offset against 48 one byte off,
-6.2 to 1 -- and the margin it produces is the front this page measured forward in *The gap's last sixteen bytes are
-zero*: sixteen zero dwords plus a 3-5 byte compact front is 19-21 bytes, which is where 202 of the 297 land, and 20 on
-183 of them (16 + a four-byte front). The two measurements agree from opposite ends: the array ends where the writer's
-field list ends, and what stands between that end and the block is the front.
+The last row is why the wrong reading looked right: the front's first value equals the array's own count on 232 of
+those rows -- both are small, and `2` is the commonest of each -- so the number was right and the position was 19 to 21
+bytes early. The same test now finds the head where the writer's rule puts it, the count immediately after sixteen
+zero bytes, and credits it only when every element is an object reference inside the package's tables and every index
+of both name arrays is inside the name table. **4 of the 1,626** pass, because a large array rarely has every
+reference inside the tables:
 
-**The two rows that sit inside it refute the locator, not the bound.** `Engine.KBSJoint` and
-`StargateContent.CTFGateTeleporter` carry a margin of **-27**, and their located middle is **41** -- one byte short of
-the 42 bytes `UClass::Serialize` always writes -- so the byte read as a count at `prefix_end + 42` is inside the
-defaults block on those two rows. They are not exceptions to the bound; they are two locator results the record's own
-field order forbids. The population is larger than two: **32** of the 2,204 located rows put the block fewer than 42
-bytes after the prefix, 15 of them at offset 1 or before (middle -4) on payloads under 120 bytes, where the tag walk
-finds a "block" in the prefix itself. A record-field precondition is therefore a cheaper locator test than the tag walk
-for exactly that tail.
+| class | middle | head at | count | record ends | block start |
+|---|---:|---:|---:|---:|---:|
+| `Engine.PlayerInput` | 212 | **63** | 15 | 217 | 217 |
+| `Engine.AIMsgManager` | 1,907 | **62** | 204 | 1,912 | 1,912 |
+| `Engine.AdminBase` | 719 | **63** | 69 | 724 | 724 |
+| `Engine.XBoxPlayerInput` | 117 | **62** | 5 | 123 | 123 |
 
-**A count is not a head; the name arrays are what credit one.** On the element references alone, six rows place the
-start inside the array: the two above plus `StargateContent.MindControlledBot` (-8), `Reetou` (-421), `HaakenGrunt`
-(-392) and `StargateGame.SGOrder` (-34). A run of 54 references that all land in one package's tables is not evidence
-in a package with 415 exports -- the reference test admits almost any byte -- and requiring both name arrays drops all
-four, leaving the two rows already refuted by middle 41.
+**On all four the record ends exactly on the defaults block -- margin 0, no residue.** The field order closes to the
+byte once the head is read where the stream carries it: `prefix + 42 + front + 16 + count + count x 9 + two name
+arrays = block start`, on counts of 5, 15, 69 and 204 alike.
 
-**What it settles, for U18.** No located block start sits inside a record array that has room for the writer's 42
-bytes, on every head that survives both table tests: 295 of 297, with the margin at its known 20-byte front. In
-particular `GUI.MenuItemOverlay`'s start (460) is 267 bytes past its array's bare end (193, *The array's count is its
-own first field*), so its 110-byte delegate tag is not the record array's own bytes, and the twelve-unit tiling stays
-what the census called it -- a property of the bytes, not a locator. The two menu pages' 12-byte values are still
-unexplained, and the route U18 names is unchanged: `UDelegateProperty`'s own value serialiser, or a second package that
-ships the property with a value short enough to read directly.
+**The 32 locator rows the first version found stand, and they are independent of the array's position.** 32 of the
+2,204 located rows leave fewer than 42 bytes between the prefix and the block -- less than `UClass::Serialize` writes
+unconditionally -- 15 of them at offset 1 or before (middle -4) on payloads under 120 bytes, and `Engine.KBSJoint` and
+`StargateContent.CTFGateTeleporter` are the two whose located middle is 41. A record-field precondition is a cheaper
+locator test than the tag walk for that tail, and nothing about it depends on where the array begins.
+
+**What it settles, for U18.** Where a head can be credited the record's own end *is* the defaults block start, so no
+located start sits inside the record array and there is no residue between them to explain. What the earlier version
+reported as a 20-byte gap is a field *in front of* the array -- the front the gap census measures -- not a residue
+behind it. The two menu pages' 12-byte values stay open, and the route U18 names is unchanged:
+`UDelegateProperty`'s own value serialiser, or a second package that ships the property with a value short enough to
+read directly.
 
     make class-record-bound
+    python3 tools/class-record-bound.py --dump DUMP --position
