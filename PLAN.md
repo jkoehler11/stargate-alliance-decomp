@@ -1178,6 +1178,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the gap is a compact front and sixteen zero bytes, and the array follows)
+
+- **The named measurement was the bytes themselves, and they have one shape.** `tools/class-record-order.py
+  --gap-sweep` (`make class-record-gap-front`, `inventory/class_record_gap_front.csv`) reads the gap on all 1,626 classes
+  whose writer order closes: 19/20/21 bytes on **732/518/232**, the gap's **last 16 bytes zero on 1,481 of those
+  1,482**, its last non-zero byte never past index **3**, and the 3-5 bytes in front of that run **all parse as
+  `FCompactIndex`** -- 95 distinct fronts over 1,482 classes, none overrunning on any of the 1,626.
+- **The arithmetic closes, and the spread is the front's width.** `prefix_end + 42` (22 state bytes + five dwords)
+  `+ 3..5` (the compact run) `+ 16` (the zero bytes) is `prefix_end + 61..63`, which is where #451's sweep lands, so
+  the 1-3 byte spread across the 732/518/232 is the compact run getting wider, not the array moving.
+- **The sixteen zero bytes are the struct tail's width and not its position.** They are exactly `0x370e0` at
+  `+0x5c`, two `0x37110` at `+0x58`/`+0x54` and the script size at `+0x4c` -- 16 bytes -- and they are zero on every
+  cooked class, so no payload distinguishes them; but `UStruct::Serialize` writes them before `UState`'s 22 bytes,
+  while the measured zero run sits after the five dwords. Either the tail is in the stream and this order is not the
+  body's, or the tail is absent as `FriendlyName`, the line and the text position already are.
+- **The negative is the compact run**: no body in `0x38dc0`/`0x392b0`/`0x394c0`/`0x3a800` writes a compact between
+  the five dwords and the struct's four, so the front's owner is unnamed. Three to five bytes cannot be a count plus
+  elements, so the candidates are one `FName` plus one or two references, or one reference plus one `FName`.
+- Tool (`tools/class-record-order.py`: `--gap-sweep`, `--gap-report`, `gap_measure`/`front_values`, and a `--check`
+  that drives a 19-zero gap, a two-value front and a non-zero byte inside the tail) +
+  `inventory/class_record_gap_front.csv` (1,626 rows) + `make class-record-gap-front` + `docs/NATIVE_VM.md` (*The gap's last
+  sixteen bytes are zero...*, and the earlier attribution corrected in place) + `docs/UNKNOWNS.md` U17 (tenth) +
+  this note. Reads the packages and the committed prefix table; no boot, no Ghidra round, no value decoded.
+- **Next measurement, named:** the front's naming test as a query over the artifact -- each front's compact values
+  against that class's import/export/name counts, in the shape the `+0x4b0`/`+0x4b4` pair was tested -- and, if it
+  stays ambiguous, the live `UClass` read at `+0x5c`/`+0x58`/`+0x54`/`+0x4c` that says whether the tail is in the
+  stream at all.
+
 ### Execution notes (2026-11-13, the census said byte for a dword store, and the reading survives the correction)
 
 - **`89 be c4 04 00 00` is a dword store, and the census printed `mov byte`.** `vcall-receiver`'s formatter

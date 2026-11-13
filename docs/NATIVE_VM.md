@@ -1883,9 +1883,53 @@ config name is a valid name index on all 732 (one byte on 641, two on 91). The m
 The negative is the offset itself. The writers the body names between the five dwords and `FUN_0003d900` account
 for exactly 42 bytes -- `0x371d0` pushes `8` and is called twice, `0x37080` pushes `2`, `0x370e0` pushes `4`, and
 the five dwords are 20 -- so the 19 to 21 bytes in front of the array belong to `UStruct::Serialize` (`0x000392b0`),
-whose output the record's prefix page cuts short at its three documented fields. The residue of 20 bytes the
+whose output the record's prefix page cuts short at its three documented fields. **Measured 2026-11-13 and half right**
+(`--gap-sweep`, at the end of this page): the gap's last sixteen bytes are zero on 1,481 of the 1,482 modal classes, so
+the four dwords' *width* is right and their *position* is not, and the three to five compact bytes in front of them are
+written by no body in the chain. The residue of 20 bytes the
 name-width work measured from the array's tail is that same gap seen from the other side.
 
     make class-record-order
     python3 tools/class-record-order.py --dump DUMP --class AmbientCreatures.HerdAnimal
     python3 tools/class-record-order.py --report
+
+### The gap's last sixteen bytes are zero, and three to five compact values sit in front of them
+
+`tools/class-record-order.py --gap-sweep` (`make class-record-gap-front`, `inventory/class_record_gap_front.csv`, its
+`--check` in `make ci`) reads the bytes the walk steps over instead of assuming them. Every class whose writer order
+closes has a gap, and on **1,482 of the 1,626 closing classes it is 19, 20 or 21 bytes** -- 732 / 518 / 232, the same
+three offsets the walk measures. What those bytes hold is the same shape everywhere:
+
+| measure | result |
+|---|---|
+| the gap's **last 16 bytes are zero** | **1,481 of 1,482** at the modal lengths (1,494 of all 1,626) |
+| the gap's last non-zero byte | index **0** (528), **2** (323), **1** (299), **3** (161) -- never past **3** |
+| the bytes in front of that run | 3 to 5 bytes, **95 distinct** over the 1,482 |
+| those bytes read as `FCompactIndex` | **every one parses**, 0 overruns on all 1,626 |
+| the most common fronts | `2 0 0` (250), `0 0 0` (121), `16 0 0` (112), `54 16 32 0` (104), `16 32 0` (81) |
+
+So the gap is one shape and not a parse: **three to five compact values, then sixteen zero bytes, then the array's
+count.** The sixteen are exactly the four dwords `UStruct::Serialize` writes between `FriendlyName` and its script --
+`0x370e0` at `+0x5c`, two `0x37110` at `+0x58` and `+0x54`, and the script size at `+0x4c` -- and their value is zero
+on every cooked class, which is why nothing in the payload distinguishes them and why every reading that looked for a
+non-zero field there found none. The compact run in front of them is the only content in the gap, and no body in the
+chain (`0x38dc0`, `0x392b0`, `0x394c0`, `0x3a800`) writes one at that place.
+
+**What that settles and what it does not.** The arithmetic now closes: `prefix_end + 42` (22 state bytes and the five
+dwords) `+ 3..5` (the compact run) `+ 16` (the zero dwords) is `prefix_end + 61..63`, which is where the walk lands,
+and it explains the 1-3 byte spread as the front's own width rather than as a mis-measured array. It leaves two
+questions, and they are the same question: whether the zero run *is* the struct's tail (its width and its position
+both fit, but the body writes those dwords before `UState`'s 22 bytes, not after the five dwords), or whether the tail
+is absent from the cooked stream the way `FriendlyName`, the source line and the text position already are -- and in
+either case which field the compact run is.
+
+**What would settle it.** A live `UClass` from a link, read at `+0x5c`/`+0x58`/`+0x54`/`+0x4c`: if the tail is in the
+stream those four members are non-zero on a class whose source line is not (the assert at `0x397cc` carries
+`UnClass.cpp:0x2e2`, so at least one class has a line). Failing that, the compact run can be tested against the class's
+own tables the way the pair at `+0x4b0`/`+0x4b4` was -- a front of three to five bytes cannot be a count plus
+elements, so the candidates are one `FName` (two fields) plus one or two references, or one reference plus one `FName`;
+the artifact carries each front's values and the class's own table sizes, so the test is a query, not a boot.
+
+    make class-record-gap-front
+    python3 tools/class-record-order.py --dump DUMP --gap-sweep -o inventory
+    python3 tools/class-record-order.py --gap-report
