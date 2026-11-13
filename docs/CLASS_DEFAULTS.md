@@ -501,6 +501,23 @@ field. And no field added in front of the block can close the walk, because the 
 bytes -- is the five-dword group's own width. What remains is the window's grammar per class, not one more field of
 `UClass::Serialize`.
 
+### The array's head is not in front of its run
+
+`tools/class-record-run.py` reads the window in front of that run rather than around the block
+(`inventory/class_record_run.csv`, depth in `docs/NATIVE_VM.md`, *The run has no head*):
+a compact count equal to the run's unit count ends within six bytes in front of it on **16 of 536** (3.0%), while
+the same test at every other byte position of the same middles answers **9,675 of 268,834** (3.6%) -- expected 19,
+observed 16, so the run's head is at chance. A raw 4-byte count is in front of it on **none**, and a count equal to
+the whole array's element count at any 9-byte lattice point up to 40 units back lands on 184 classes (34.3%) where a
+41-point sweep over a 3.6% background should land on about 78%: below chance, not above. Because the writer stores
+each record's reference as a compact index of **1 to 5 bytes**, the array's earlier elements need not be 9 bytes
+wide, so a variable-stride walk back -- not another field in front of the block -- is what a head search needs next.
+
+What sits either side of the run is measured too: **131** bytes in front of it (`mixed` on 499 of 536) and **58**
+behind it (modes 5, 4 and 49). The repeating dword is one small index-shaped byte in a zero dword on **431 of 536**
+(import-shaped on 227, positive on 204), so the period is a value repeating at a 9-byte stride rather than a
+pointer.
+
 ### What the record writes in front of the block, now that the prefix is measured
 
 `tools/class-prefix.py` decodes the record's opening with `UStruct::Serialize`'s own field order and scores it against
