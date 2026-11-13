@@ -2751,3 +2751,20 @@ distinct offsets. What remains for the 545 is the middle itself (median 91 bytes
 field list, not a tag stream read backwards and not bytecode. Numbers: `docs/NATIVE_VM.md`, *The class record's
 prefix*; `docs/CLASS_DEFAULTS.md`, the section above.
 
+**2026-11-12: the run's head is not there, and the null says so.** The previous note read the record array's
+element by its period on 536 of 2,204 classes and recorded that "the count field in front of it has not been
+found". `tools/class-record-run.py` (`make class-record-run`, `--check` in `make ci`, artifact
+`inventory/class_record_run.csv`) asks that question with a null beside every answer: a compact count equal to the
+run's unit count ends within six bytes in front of it on **16 of 536** (3.0%) while the same test at every other
+byte position of the same middles answers **9,675 of 268,834** (3.6%) — expected 19, observed 16, so the head is at
+chance — a raw 4-byte count is there on **none**, and a count equal to the whole array's element count at a 9-byte
+lattice point up to 40 units back lands on 184 (34.3%) where 41 attempts over a 3.6% background should land on about
+78%, i.e. below chance rather than above. So the array is not head-located by a fixed 9-byte step count, and the
+reading that survives is the writer's own: an object reference is a compact index of **1 to 5 bytes**
+(`FUN_0003d900`, archive vtable `+0x18`), so the array's earlier elements need not be 9 bytes wide and its head sits
+in front of a *variable*-stride lattice. **What would settle it:** a walk back from the run that decodes each
+preceding element as one compact reference plus two dwords (9-13 bytes per element, chosen by the reference's own
+length) and accepts a head only where the count there equals the elements it walked — with the same walk aimed at a
+shifted start as the control, because a chain of variable steps is cheap to fit. Numbers: `docs/NATIVE_VM.md`, *The
+run has no head*; `docs/CLASS_DEFAULTS.md`, *The array's head is not in front of its run*.
+

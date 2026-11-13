@@ -842,6 +842,44 @@ window walks at many offsets (98% of that class fits somewhere); among middles o
 of 1,837 (14%). So the sweep measures how easily a short middle walks, not the field order, and it is recorded as a
 negative: the ordering claim it appears to make does not survive a size-controlled reading.
 
+### The run has no head: no count ends in front of it, in either encoding
+
+The last note left one question open in the plainest terms -- "why the count field in front of it has not been
+found" -- and the answer is that it is not in front of it. `tools/class-record-run.py` (`make class-record-run`,
+`inventory/class_record_run.csv`, `--check` in `make ci`) takes the 536 classes with a stride-9 run and asks one
+question about the run's head, with a null for every answer:
+
+| measure | value |
+|---|---|
+| a compact count equal to the units, ending within 6 bytes in front of the run | **16 of 536** (3.0%); all one-byte indices, 11 of them the value 3, 1 of them adjacent |
+| a raw 4-byte count in front of it (what a non-saving archive would write) | **0 of 536** |
+| the same test at every other byte position of the same middles | **9,675 of 268,834** (3.6%) |
+| a count equal to the *total* element count, at a lattice point 0..40 units back | 184 of 536 (34.3%), 168 of them further back than the run's own head |
+| the unit carries 2 distinct bytes outside the repeating dword | 503 of 536 (3 on the other 33) |
+
+**The head is at chance, not above it.** Sixteen hits against a background of 3.6% is 536 x 0.036 = 19 expected, so
+the run's first byte is no more likely to be preceded by its own count than any other byte of the same window. The
+41-point lattice sweep behind it does not rescue that either: with a 3.6% single-position rate, trying 41 positions
+should succeed on about 78% of the classes even when no count exists, and it succeeds on 34.3% -- below chance. So
+neither encoding of a `TArray` head is in front of the run, at its first unit or at any 9-byte lattice point up to
+40 units back.
+
+**Two readings survive, and they are the next measurement.** `FUN_0003d900` writes the record's reference through
+the archive's object-reference method, whose compact index is **1 to 5 bytes**, so the array's earlier elements
+need not be 9 bytes wide: the run can be the part of the array whose references happen to be one byte, and its head
+then sits in front of a lattice of *variable* stride, which no 9-byte step count reaches. (The other reading is that
+the period belongs to the values in the window rather than to an array head at all.) Nothing here says the run is
+not the record array -- its 0.6% control still does -- only that its head is not where a fixed 9-byte step count
+looks.
+
+**What is either side of it, measured rather than called a field.** In front of the run: a median **131** bytes
+(`mixed` on 499 of 536, `dwords` 19, `records` 2), against the field walk's own median 47 explained. Behind it: a
+median **58**, with modes at 5 bytes (39 classes), 4 (38) and 49 (28) -- and on 5 classes the run ends exactly on
+the block start. The dword that repeats is a single index-shaped byte in a zero dword on **431 of 536** (negative,
+i.e. import-shaped, on 227; positive on 204; a multi-byte or non-index byte on 105), most often `01` (62 classes),
+`83` (32) and `85` (30) -- so the period is mostly one small index value repeating at a 9-byte stride, not a hash
+or a pointer.
+
 ### `UClass::Serialize` (`0x0003a800`): the defaults are a buffer, and the record's tail is arrays
 
 `UStruct::Serialize` is not the last reader on a class export's path. `UClass::Serialize` (`0x0003a800`, 1,310 bytes)

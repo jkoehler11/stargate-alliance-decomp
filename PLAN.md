@@ -1176,6 +1176,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the record array's run has no head, and the null is what says so)
+
+- **The count in front of the run is not there, and the chance rate is the control.** The previous note located the
+  9-byte record array by its period on 536 classes and left "why the count field in front of it has not been found"
+  open. `tools/class-record-run.py` answers it: a compact count equal to the run's unit count ends within six bytes
+  in front of it on **16 of 536** (3.0%) -- all one-byte indices, 11 of them the value 3 and only 1 adjacent -- while
+  the *same test at every other byte position of the same middles* answers **9,675 of 268,834** (3.6%). Expected 19,
+  observed 16: the run's head is at chance. A raw 4-byte count is in front of it on **0 of 536**, so neither encoding
+  of a `TArray` head is there.
+- **A lattice sweep behind it is below chance, not above, which is why it is a negative.** Extending the array
+  backwards in 9-byte steps for a count equal to the total element count succeeds on 184 of 536 (34.3%), 168 of them
+  further back than the head -- but 41 attempts over a 3.6% single-position background should succeed on about 78%
+  of classes even with no count present, so 34.3% is under chance. The reading that survives is the writer's own
+  widths: `FUN_0003d900` stores each record's reference as a compact index of **1 to 5 bytes**, so the array's
+  earlier elements need not be 9 bytes wide and its head sits in front of a *variable*-stride lattice.
+- **What is either side of the run is a census now, not a candidate.** 131 bytes in front (median; `mixed` on 499 of
+  536, `dwords` 19, `records` 2) and 58 behind (modes 5 on 39 classes, 4 on 38, 49 on 28; the run ends exactly on the
+  block start on 5). The dword that repeats is one index-shaped byte in a zero dword on **431 of 536** -- negative,
+  import-shaped, on 227 and positive on 204 -- so the period is a small *value* repeating at a 9-byte stride rather
+  than a pointer.
+- Tool (`tools/class-record-run.py`: `--class`, `--sweep`, `--report`, `--check`) +
+  `inventory/class_record_run.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The run has no head*) +
+  `docs/CLASS_DEFAULTS.md` (*The array's head is not in front of its run*) + `docs/UNKNOWNS.md` U17 +
+  `make class-record-run` + this note. Reads the packages and two committed artifacts; no boot, no value decoded.
+- **Next measurement, named so the next run does not re-derive it:** a variable-stride walk back from the run --
+  each preceding element one compact reference plus two dwords, the step chosen by the reference's own length (9-13
+  bytes) -- accepting a head only where the count there equals the elements walked, with the same walk aimed at a
+  shifted start as the control.
+
 ### Execution notes (2026-11-12, the record array is found by its period, and the leftover is not one grammar)
 
 - **The 9-byte record array is in the middle on a quarter of the corpus, and it is found by its period.** The
