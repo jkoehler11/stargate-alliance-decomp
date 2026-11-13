@@ -14711,13 +14711,13 @@ StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Functio
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
-StargateGame,StargateVoicePack,FilterAIMsg,VirtualFunction,by name,CompareRecipients,Function,corpus:Engine.AIMessage,1,Engine.AIMessage,Context,
+StargateGame,StargateVoicePack,FilterAIMsg,VirtualFunction,by name,CompareRecipients,Function,corpus:Engine.AIMessage,1,Engine.AIMessage,Context,aimessage
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
 StargateGame,StargateVoicePack,FilterAIMsg,FinalFunction,static,GetAIMsg,Function,,,,,
-StargateGame,StargateVoicePack,FilterAIMsg,VirtualFunction,by name,CompareRecipients,Function,corpus:Engine.AIMessage,1,Engine.AIMessage,Context,
+StargateGame,StargateVoicePack,FilterAIMsg,VirtualFunction,by name,CompareRecipients,Function,corpus:Engine.AIMessage,1,Engine.AIMessage,Context,aimessage
 StargateGame,StargateVoicePack,FilterSquad,VirtualFunction,by name,GetSquadNumSpeeches,Function,package,1,,LocalVariable,
 StargateGame,StargateVoicePack,FilterSquad,VirtualFunction,by name,GetSize,Function,receiver:StargateGame.SquadAIBasic,2,,LocalVariable,SquadAIBasic
 StargateGame,SGVoicePackExtended,CustomizeSpeech,FinalFunction,static,GetVoiceCustomize,Function,,,,,
@@ -14899,10 +14899,10 @@ StargateMenus,VirtualKeyboardPanel,UpdateKeyboard,VirtualFunction,by name,GetSty
 StargateMenus,VirtualKeyboardPanel,UpdateKeyboard,VirtualFunction,by name,GetStyle,Function,corpus:GUI.GUIController,1,GUI.GUIController,InstanceVariable,GUIController
 StargateMenus,VirtualKeyboardPanel,UpdateKeyboard,FinalFunction,static,UpdateHint,Function,,,,,
 StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,SaveProfile,Function,,,,,
 StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,OptionsEditBase,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -14969,7 +14969,7 @@ StargateMenus,VirtualKeyboardPanel,PressKey,VirtualFunction,by name,GetFocusedCo
 StargateMenus,VirtualKeyboardPanel,ShiftKey,FinalFunction,static,KeyboardOnClick,Function,,,,,
 StargateMenus,VirtualKeyboardPanel,DeleteKey,FinalFunction,static,KeyboardOnClick,Function,,,,,
 StargateMenus,DeleteSavedGamePage,InternalOnClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,DeleteSavedGamePage,InternalOnClick,VirtualFunction,by name,DeleteSavedGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,DeleteSavedGamePage,InternalOnClick,VirtualFunction,by name,DeleteSavedGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,DeleteSavedGamePage,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,ServerSelectionListBox,RefreshListBox,VirtualFunction,by name,Clear,Function,receiver:GUI.GUIListBase,24,,InstanceVariable,GUIVertList
 StargateMenus,ServerSelectionListBox,RefreshListBox,VirtualFunction,by name,CancelPings,Function,package,2,,InstanceVariable,
@@ -14988,7 +14988,7 @@ StargateMenus,XBoxLiveFriendsMenu,InitComponent,FinalFunction,static,InitCompone
 StargateMenus,XBoxLiveFindGameMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,XBoxLiveFindGameMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,XBoxLiveFindGameMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,XBoxLiveFindGameMenu,Timer,FinalFunction,static,GetXboxLiveInterface,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,Timer,FinalFunction,static,UpdateServerListInfo,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,Timer,FinalFunction,static,SetTimer,Function,,,,,
@@ -15022,10 +15022,10 @@ StargateMenus,XBoxLiveFindGameMenu,InitComponent,FinalFunction,static,InitCompon
 StargateMenus,XBoxLiveMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,XBoxLiveMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,XBoxLiveMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,XBoxLiveMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,XBoxLiveMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,WaitingForPlayers,StartGame,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,StartGame,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,ServerSetReadyToPlay,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,ServerSetReadyToPlay,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,ControllerButton
 StargateMenus,WaitingForPlayers,StartGame,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,StartMatch,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
@@ -15037,7 +15037,7 @@ StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,getGamerTag
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,StartSignIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,WaitingForPlayers,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,WaitingForPlayers,Closed,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,WaitingForPlayers,Closed,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,WaitingForPlayers,Closed,FinalFunction,static,Closed,Function,,,,,
 StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowFriends,VirtualFunction,by name,ShowFriends,Function,package,4,,LocalVariable,UIXInteraction
@@ -15047,14 +15047,14 @@ StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,SetCaption,Fu
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
 StargateMenus,WaitingForPlayers,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,WaitingForPlayers,InitComponent,VirtualFunction,by name,ServerSetReadyToPlay,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,WaitingForPlayers,InitComponent,VirtualFunction,by name,ServerSetReadyToPlay,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,ShowPlayers,Function,package,3,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,ShowPlayers,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,SystemLinkMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,SystemLinkMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,SystemLinkMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SystemLinkMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SystemLinkMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,XBoxLivePlayMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -15064,7 +15064,7 @@ StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Functio
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
 StargateMenus,SinglePlayerTutorial,LoadMap,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SinglePlayerTutorial,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SinglePlayerTutorial,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerTutorial,LoadMap,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SinglePlayerTutorial,LoadMap,FinalFunction,static,Travel,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
@@ -15084,13 +15084,13 @@ StargateMenus,XBoxLivePlayMenu,Timer,VirtualFunction,by name,OpenMenu,Function,G
 StargateMenus,XBoxLivePlayMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,XBoxLivePlayMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,XBoxLivePlayMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,SinglePlayerMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,SinglePlayerMenu,HandleParameters,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SinglePlayerMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,SinglePlayerMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SinglePlayerMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SinglePlayerMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerMenu,ChangeHint,VirtualFunction,by name,ChangeHint,Function,package,9,,DynamicCast,RightLockingMenuPanel
 StargateMenus,SelectTeamPage,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,DeleteProfilePage,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
@@ -15104,15 +15104,15 @@ StargateMenus,DeleteSavedGamePage,HandleParameters,VirtualFunction,by name,SetFi
 StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,GetSelectedPawnClass,Function,receiver:StargateMenus.SelectPawnPanel,2,,InstanceVariable,SelectPawnPanel
 StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,SelectPawnPage,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SelectPawnPage,OnSelectClick,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SelectPawnPage,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SelectPawnPage,OnListBoxDblClick,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
 StargateMenus,OverwriteSavedGamePage,InternalOnClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,DeleteSavedGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,DeleteSavedGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OverwriteSavedGamePage,InternalOnClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,NewSaveGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,NewSaveGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,SelectPawnPage,InternalOnChange,VirtualFunction,by name,GetPawnClass,Function,corpus:StargateMenus.CurrentCharPanel,1,StargateMenus.CurrentCharPanel,InstanceVariable,CurrentCharPanel
 StargateMenus,SelectPawnPage,InternalOnChange,VirtualFunction,by name,GetSelectedPawnClass,Function,receiver:StargateMenus.SelectPawnPanel,2,,InstanceVariable,SelectPawnPanel
@@ -15126,9 +15126,9 @@ StargateMenus,SelectPawnPage,InitComponent,FinalFunction,static,InitComponent,Fu
 StargateMenus,HintScreen,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,HintScreen,HandleParameters,FinalFunction,static,SetContent,Function,,,,,
 StargateMenus,HintScreen,Opened,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,HintScreen,Opened,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,HintScreen,Opened,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,HintScreen,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,HintScreen,Closed,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,HintScreen,Closed,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,HintScreen,Closed,FinalFunction,static,Closed,Function,,,,,
 StargateMenus,SaveGameMenu,InternalOnChange,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
 StargateMenus,SaveGameMenu,InternalOnChange,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,ControllerButton
@@ -15149,21 +15149,21 @@ StargateMenus,SaveGameMenu,InitComponent,FinalFunction,static,InitComponent,Func
 StargateMenus,SaveGameMenu,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,ControllerButton
 StargateMenus,TextGameInfo,MapKeyEvent,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,TextGameInfo,MapKeyEvent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,TextGameInfo,MapKeyEvent,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,TextGameInfo,MapKeyEvent,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,TextGameInfo,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,TextGameInfo,InternalOnClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,TextGameInfo,InternalOnClick,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,TextGameInfo,InternalOnClick,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,SinglePlayerNewGame,HandleParameters,VirtualFunction,by name,SetURL,Function,package,2,,value,
 StargateMenus,SinglePlayerNewGame,LoadMap,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SinglePlayerNewGame,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SinglePlayerNewGame,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerNewGame,LoadMap,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SinglePlayerNewGame,LoadMap,FinalFunction,static,Travel,Function,,,,,
 StargateMenus,SinglePlayerNewGame,DoYes,VirtualFunction,by name,LoadMap,Function,package,3,,self,
 StargateMenus,QuitPage,DoNo,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,QuitPage,DoYes,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,QuitPage,DoYes,VirtualFunction,by name,DisableMatineeSkip,name,,2,,FinalFunction,
+StargateMenus,QuitPage,DoYes,VirtualFunction,by name,DisableMatineeSkip,Function,receiver:Engine.PlayerController,2,,FinalFunction,playercontroller
 StargateMenus,QuitPage,DoYes,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,QuitPage,DoYes,VirtualFunction,by name,ConsoleCommand,name,,4,,FinalFunction,
+StargateMenus,QuitPage,DoYes,VirtualFunction,by name,ConsoleCommand,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,VSMainMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,VSMainMenu,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,QuestionPage,ButtonClick,VirtualFunction,by name,DoYes,Function,package,3,,value,
@@ -15187,7 +15187,7 @@ StargateMenus,OptionsEditVideo,FillViewPointBox,FinalFunction,static,ReadOnly,Fu
 StargateMenus,OptionsEditVideo,FillViewPointBox,FinalFunction,static,SetIndex,Function,,,,,
 StargateMenus,OptionsEditVideo,FillViewPointBox,FinalFunction,static,SetIndex,Function,,,,,
 StargateMenus,OptionsEditAudio,SaveSettings,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditAudio,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditAudio,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditAudio,SaveSettings,FinalFunction,static,SetCategoryVolume,Function,,,,,
 StargateMenus,OptionsEditAudio,SaveSettings,VirtualFunction,by name,GetComponentValue,Function,receiver:GUI.moEditBox,6,,InstanceVariable,moEditBox
 StargateMenus,OptionsEditAudio,SaveSettings,FinalFunction,static,SetCategoryVolume,Function,,,,,
@@ -15197,7 +15197,7 @@ StargateMenus,OptionsEditAudio,SaveSettings,VirtualFunction,by name,GetComponent
 StargateMenus,OptionsEditAudio,SaveSettings,FinalFunction,static,SaveSettings,Function,,,,,
 StargateMenus,OptionsEditAudio,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,OptionsEditAudio,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,SetComponentValue,Function,receiver:GUI.moEditBox,6,,InstanceVariable,moEditBox
 StargateMenus,OptionsEditAudio,InitComponent,FinalFunction,static,GetCategoryVolume,Function,,,,,
 StargateMenus,OptionsEditAudio,InitComponent,VirtualFunction,by name,SetComponentValue,Function,receiver:GUI.moEditBox,6,,InstanceVariable,moEditBox
@@ -15208,7 +15208,7 @@ StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,Get
 StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,StartSignOut,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveSignOutConfirm,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,OptionsEditAppearance,SaveSettings,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditAppearance,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditAppearance,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditAppearance,SaveSettings,VirtualFunction,by name,GetSelectedCharacter,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
 StargateMenus,OptionsEditAppearance,SaveSettings,FinalFunction,static,SetCharacterClassName,Function,,,,,
 StargateMenus,OptionsEditAppearance,SaveSettings,FinalFunction,static,SaveSettings,Function,,,,,
@@ -15218,7 +15218,7 @@ StargateMenus,OptionsEditAppearance,InternalOnChange,VirtualFunction,by name,Get
 StargateMenus,OptionsEditAppearance,InternalOnChange,VirtualFunction,by name,SetCharacter,Function,corpus:StargateMenus.CurrentCharPanel,1,StargateMenus.CurrentCharPanel,InstanceVariable,CurrentCharPanel
 StargateMenus,OptionsEditAppearance,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,OptionsEditAppearance,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditAppearance,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditAppearance,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditAppearance,InitComponent,VirtualFunction,by name,SelectCharacter,Function,corpus:StargateMenus.CharacterSelectionList,1,StargateMenus.CharacterSelectionList,Context,CharacterSelectionList
 StargateMenus,OptionsEditAppearance,InitComponent,FinalFunction,static,GetCharacterClass,Function,,,,,
 StargateMenus,RightLockingPanel,Lock,FinalFunction,static,Animate,Function,,,,,
@@ -15247,7 +15247,7 @@ StargateMenus,SinglePlayerSelectProfile,MyOnReopen,VirtualFunction,by name,Lock,
 StargateMenus,MultiplayerMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,MultiplayerMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,MultiplayerMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,MultiplayerMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,MultiplayerMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,LeftLockingPanel,Retract,FinalFunction,static,Animate,Function,,,,,
 StargateMenus,MultiplayerMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,MultiplayerMenu,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
@@ -15255,7 +15255,7 @@ StargateMenus,CurrentChapterPanel,SetChapter,FinalFunction,static,DynamicLoadObj
 StargateMenus,MultiplayerMapSelect,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,SinglePlayerChapterSelect,LoadMap,VirtualFunction,by name,GetSelectedChapter,Function,receiver:StargateMenus.ChapterSelectionPanel,3,,InstanceVariable,ChapterSelectionPanel
 StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SinglePlayerChapterSelect,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SinglePlayerChapterSelect,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,Travel,Function,,,,,
 StargateMenus,CurrentCharPanel,SetCharacter,FinalFunction,static,DynamicLoadObject,Function,,,,,
@@ -15264,7 +15264,7 @@ StargateMenus,SinglePlayerChapterSelect,InitComponent,FinalFunction,static,Inter
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,GetSelectedGameMode,Function,corpus:StargateMenus.GameModeList,1,StargateMenus.GameModeList,Context,GameModeList
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,GetSelectedName,Function,corpus:StargateMenus.GameModeList,1,StargateMenus.GameModeList,Context,GameModeList
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,FinalFunction,static,GetCharacterClass,Function,,,,,
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,IsTeamGame,Function,receiver:StargateMenus.GameModeList,2,,Context,GameModeList
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
@@ -15279,17 +15279,17 @@ StargateMenus,CurrentProfilePanel,SetProfile,FinalFunction,static,DynamicLoadObj
 StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,GetSelectedPawnClass,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
 StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,MultiplayerCharSelect,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,MultiplayerCharSelect,OnSelectClick,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,MultiplayerCharSelect,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetPawnClass,Function,corpus:StargateMenus.CurrentCharPanel,1,StargateMenus.CurrentCharPanel,InstanceVariable,CurrentCharPanel
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetSelectedPawnClass,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetSelectedCharacter,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,SetCharacter,Function,corpus:StargateMenus.CurrentCharPanel,1,StargateMenus.CurrentCharPanel,InstanceVariable,CurrentCharPanel
 StargateMenus,MultiplayerCharSelect,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,MultiplayerCharSelect,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,MultiplayerCharSelect,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,MultiplayerCharSelect,InitComponent,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,MultiplayerCharSelect,InitComponent,VirtualFunction,by name,SelectCharacter,Function,corpus:StargateMenus.CharacterSelectionList,1,StargateMenus.CharacterSelectionList,Context,CharacterSelectionList
 StargateMenus,MultiplayerCharSelect,InitComponent,FinalFunction,static,GetCharacterClass,Function,,,,,
 StargateMenus,MainMenu,CanClose,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
@@ -15297,14 +15297,14 @@ StargateMenus,MainMenu,InitComponent,FinalFunction,static,InitComponent,Function
 StargateMenus,MainMenu,InitComponent,VirtualFunction,by name,GetBuildStamp,Function,corpus:GUI.GUIController,1,GUI.GUIController,LocalVariable,GUIController
 StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
 StargateMenus,LoadGameMenu,LoadGame,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,QuickLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,QuickLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,LoadGameMenu,LoadGame,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,QuickLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,QuickLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,LoadGameMenu,LoadGame,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,CheckpointLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,CheckpointLoad,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
 StargateMenus,LoadGameMenu,LoadGame,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,LoadGame,Function,package,2,,FinalFunction,
+StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,LoadGame,Function,package,2,,FinalFunction,playercontroller
 StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
 StargateMenus,RightLockingMenuPanel,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,RightLockingMenuPanel,ButtonClick,VirtualFunction,by name,ButtonClick,Function,package,20,,DynamicCast,SGPageBase
@@ -15344,15 +15344,15 @@ StargateMenus,RestartGame,InitComponent,FinalFunction,static,InitComponent,Funct
 StargateMenus,RestartGame,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,RestartGame,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,InGameMenu,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,InGameMenu,Closed,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,InGameMenu,Closed,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,InGameMenu,Closed,FinalFunction,static,Closed,Function,,,,,
 StargateMenus,InGameMenu,Opened,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,InGameMenu,Opened,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,InGameMenu,Opened,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,CoopPlayerPanel,AddPlayer,FinalFunction,static,AddedItem,Function,,,,,
 StargateMenus,InGameInfoScreen,InternalOnXControllerEvent,VirtualFunction,by name,InternalOnXControllerEvent,Function,package,30,,InstanceVariable,InGameInfoPanel
 StargateMenus,InGameInfoScreen,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,InGameInfoScreen,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,InGameInfoScreen,Closed,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,InGameInfoScreen,Closed,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,InGameInfoScreen,Closed,FinalFunction,static,Closed,Function,,,,,
 StargateMenus,CoopPlayerPanel,MyOnDrawItem,FinalFunction,static,Draw,Function,,,,,
 StargateMenus,CoopPlayerPanel,MyOnDrawItem,FinalFunction,static,Draw,Function,,,,,
@@ -15365,7 +15365,7 @@ StargateMenus,CoopPlayerPanel,MyOnDrawItem,FinalFunction,static,DrawText,Functio
 StargateMenus,CoopPlayerPanel,MyOnDrawItem,FinalFunction,static,GetCellLeftWidth,Function,,,,,
 StargateMenus,CoopPlayerPanel,MyOnDrawItem,FinalFunction,static,DrawText,Function,,,,,
 StargateMenus,InGameInfoScreen,Opened,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,InGameInfoScreen,Opened,VirtualFunction,by name,SetPause,name,,4,,FinalFunction,
+StargateMenus,InGameInfoScreen,Opened,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,InGameInfoScreen,Opened,VirtualFunction,by name,Update,Function,receiver:StargateMenus.InGameInfoPanel,18,,InstanceVariable,InGameInfoPanel
 StargateMenus,InGameInfoScreen,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,ErrorPage,DoOkay,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
@@ -15400,18 +15400,18 @@ StargateMenus,CreateNewProfile,CreateProfile,FinalFunction,static,NewProfile,Fun
 StargateMenus,CreateNewProfile,CreateProfile,FinalFunction,static,ImportProfile,Function,,,,,
 StargateMenus,CreateNewProfile,CreateProfile,FinalFunction,static,SaveProfile,Function,,,,,
 StargateMenus,CreateNewProfile,CreateProfile,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,CreateNewProfile,CreateProfile,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,CreateNewProfile,CreateProfile,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,CreateNewProfile,CreateProfile,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,CreateNewProfile,Closed,FinalFunction,static,DeleteProfile,Function,,,,,
 StargateMenus,CreateNewProfile,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,CreateNewProfile,InitComponent,FinalFunction,static,SetProfileName,Function,,,,,
 StargateMenus,CreateNewProfile,InitComponent,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,CreateNewProfile,InitComponent,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,CreateNewProfile,InitComponent,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditProfile,SetProfileName,FinalFunction,static,SetValue,Function,,,,,
 StargateMenus,OptionsEditProfile,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,OptionsEditProfile,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
 StargateMenus,OptionsEditProfile,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,OptionsEditProfile,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,OptionsEditProfile,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditProfile,HandleParameters,VirtualFunction,by name,SetProfileName,Function,package,3,,Context,
 StargateMenus,OptionsEditProfile,SaveProfile,VirtualFunction,by name,GetComponentValue,Function,receiver:GUI.moEditBox,6,,InstanceVariable,moEditBox
 StargateMenus,OptionsEditProfile,SaveProfile,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
@@ -15499,7 +15499,7 @@ StargateMenus,SavedGameList,MyCompareItem,VirtualFunction,by name,Compare,Functi
 StargateMenus,SavedGameList,GetSelected,FinalFunction,static,GetItem,Function,,,,,
 StargateMenus,SavedGameList,GetSelected,FinalFunction,static,GetObjectAtIndex,Function,,,,,
 StargateMenus,SavedGameList,Refresh,FinalFunction,static,PlayerOwner,Function,,,,,
-StargateMenus,SavedGameList,Refresh,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,
+StargateMenus,SavedGameList,Refresh,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SavedGameList,Refresh,VirtualFunction,by name,Clear,Function,receiver:GUI.GUIListBase,24,,InstanceVariable,GUIVertList
 StargateMenus,SavedGameList,Refresh,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,InstanceVariable,GUIVertList
 StargateMenus,SavedGameList,Refresh,VirtualFunction,by name,MakeInfo,Function,corpus:StargateMenus.SavedGameInfo,1,StargateMenus.SavedGameInfo,ObjectConst,SavedGameInfo
@@ -16397,23 +16397,23 @@ UDebugMenu,UDebugOpenWindow,Resized,FinalFunction,static,SetSize,Function,,,,,
 UDebugMenu,UDebugOpenWindow,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
 UDebugMenu,UDebugGraphWindow,Initialized,FinalFunction,static,Initialized,Function,,,,,
 UDebugMenu,UDebugVideoClient,BrightnessChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,BrightnessChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,BrightnessChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,BrightnessChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,MessageBoxDone,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,MessageBoxDone,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,MessageBoxDone,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,MessageBoxDone,VirtualFunction,by name,LoadAvailableSettings,Function,package,1,,value,
 UDebugMenu,UDebugVideoClient,MessageBoxDone,VirtualFunction,by name,MessageBox,Function,UWindow.UWindowWindow,1,,VirtualFunction,
 UDebugMenu,UDebugOpenWindow,Paint,VirtualFunction,by name,GetLookAndFeelTexture,Function,UWindow.UWindowFramedWindow,4,,LocalVariable,Texture
 UDebugMenu,UDebugOpenWindow,Paint,FinalFunction,static,DrawUpBevel,Function,,,,,
 UDebugMenu,UDebugOpenWindow,Paint,FinalFunction,static,Paint,Function,,,,,
 UDebugMenu,UDebugVideoClient,SettingsChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowComboControl,10,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugVideoClient,SettingsChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,LoadAvailableSettings,Function,package,1,,value,
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,MessageBox,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowMessageBox
 UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
@@ -16421,7 +16421,7 @@ UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,SetSize,Function,,
 UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,SetSize,Function,,,,,
 UDebugMenu,UDebugVideoClient,ResolutionChanged,FinalFunction,static,ResolutionChanged,Function,,,,,
 UDebugMenu,UDebugVideoClient,ResolutionChanged,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,ResolutionChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,ResolutionChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,ResolutionChanged,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowComboControl,10,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugVideoClient,ResolutionChanged,VirtualFunction,by name,LoadAvailableSettings,Function,package,1,,value,
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,Clear,Function,receiver:UWindow.UWindowComboControl,24,,InstanceVariable,UWindowComboControl
@@ -16432,9 +16432,9 @@ UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,AddIt
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,AddItem,Function,receiver:UWindow.UWindowComboControl,8,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,SetValue,Function,receiver:UWindow.UWindowComboControl,13,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,LoadAvailableSettings,VirtualFunction,by name,SetValue,Function,receiver:UWindow.UWindowHSliderControl,13,,InstanceVariable,UWindowHSliderControl
 UDebugMenu,UDebugRootWindow,Initialized,FinalFunction,static,Initialized,Function,,,,,
 UDebugMenu,UDebugRootWindow,Initialized,FinalFunction,static,CreateWindow,Function,,,,,
@@ -16475,7 +16475,7 @@ UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,Remove,Function,receiver
 UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowComboControl,10,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,ClearValue,Function,corpus:UWindow.UWindowComboControl,1,UWindow.UWindowComboControl,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugOpenCW,OpenURL,FinalFunction,static,GetParent,Function,,,,,
-UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,FinalFunction,
+UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,FinalFunction,uwindowwindow
 UDebugMenu,UDebugOpenCW,OpenURL,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
 UDebugMenu,UDebugOpenCW,Notify,FinalFunction,static,Notify,Function,,,,,
 UDebugMenu,UDebugOpenCW,Notify,VirtualFunction,by name,OpenURL,Function,package,1,,value,
@@ -17381,7 +17381,7 @@ UDebugMenu,UDebugMenuBar,NotifyAfterLevelChange,VirtualFunction,by name,NotifyAf
 UDebugMenu,UDebugMenuBar,NotifyBeforeLevelChange,VirtualFunction,by name,NotifyBeforeLevelChange,Function,package,3,,Context,UWindowPulldownMenu
 UDebugMenu,UDebugMenuBar,NotifyQuitUnreal,VirtualFunction,by name,NotifyQuitUnreal,Function,package,3,,Context,UWindowPulldownMenu
 UDebugMenu,UDebugMenuBar,LMouseDown,FinalFunction,static,GetPlayerOwner,Function,,,,,
-UDebugMenu,UDebugMenuBar,LMouseDown,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,
+UDebugMenu,UDebugMenuBar,LMouseDown,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugMenuBar,LMouseDown,FinalFunction,static,LMouseDown,Function,,,,,
 UDebugMenu,UDebugMenuBar,DrawMenuBar,FinalFunction,static,GetLevel,Function,,,,,
 UDebugMenu,UDebugMenuBar,DrawMenuBar,VirtualFunction,by name,Menu_DrawMenuBar,Function,receiver:UWindow.UWindowLookAndFeel,3,,InstanceVariable,UWindowLookAndFeel

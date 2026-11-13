@@ -1988,6 +1988,26 @@ does not declare. The next reading is one of those four, not another pass over t
 operand that lands outside the export table is either an import or a mis-read width, and the import branch that
 named the struct members is the same test.
 
+
+**2026-11-13, the twelfth shape is an import as well, and eleven of the twelve place.** The twelve residue sites
+whose receiver expression is a call result read "the operand names no Function of this package", and the operand
+was `PlayerOwner` -- not a variable but a function `UWindow` declares, imported into the menu packages. The
+`FinalFunction` reading consulted only the export table, so a static call to another package's function looked
+like a gap; the import's own OuterIndex names the class that declares it, its return type is a `function` line in
+that class's text, and `class_pairs` supplies the package to open. **The call-result reading goes 75 -> 131 sites
+typed** (77 `playercontroller`, spelled lowercase in the UWindow source), **eleven of the twelve place** on the
+receiver's chain, by-name placement **13,385 -> 13,396 of 13,507 (99.2%)**, the receiver's chain **2,767 ->
+2,778**, and the untyped-object residue **53 -> 42**.
+
+**What is left is four shapes, and only one of them is still a question about these packages.** 35 arrays whose
+element type is a struct (a negative -- the element is not an object), 5 receivers whose name the caller's chain
+does not declare (`GetMoveTarget`, `GetMyPlayer`, `TakeOver`, `SetPawnClass` -- classes outside the receiver's
+subtree), 1 local `Engine.InteractionMaster.AddInteraction` declares and the class text does not, and 1 call
+result whose callee is declared with no return type. Seven imported functions name a class the eighteen packages
+do not declare, and every one of those sites is placed on the caller's chain anyway. So the call table's untyped
+residue is 42 of 13,507 by-name sites, and the next pass over it would be a reading of the four shapes above, not
+of another declaration.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
