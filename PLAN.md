@@ -1176,6 +1176,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the record's widths come from its writers, and the 9-byte unit is one record)
+
+- **Three writers had never been read, and they settle the widths.** `FUN_000637e0` writes a count as a raw 4-byte
+  integer only when **both** the loading and the saving flag of the archive are clear and as an `FCompactIndex`
+  otherwise, built byte by byte through `0x00037040` -- so **every `TArray` count in a cooked class record is
+  compact**. `FUN_0003d900` writes the 12-byte-record array as the count plus, per record, one **object reference**
+  (archive vtable `+0x18`) and two 4-byte dwords, which is **9 bytes** when the reference is one byte: that is the
+  stride-9 unit the previous note measured in the 540 residue candidates and could not name. `FUN_0003d160` writes
+  its elements through archive vtable **`+0x1c`, the name method** -- so the two "dword" arrays in the field table
+  are `TArray<FName>`, two compact indices per element, and the page's "`n` x 4 bytes" is corrected.
+- **And the record has 22 bytes the table was missing.** `UState::Serialize` (`0x000394c0`) runs before `UClass`'s
+  own fields and writes 8 bytes at `+0x80`, 8 at `+0x88`, 2 at `+0x90` and 4 at `+0x94` (`0x371d0` = 8 bytes,
+  `0x37080` = 2, `0x370e0` = 4 -- all three measured from their own bodies).
+- **With the measured widths the forward walk still lands nowhere, and that is the number.** `tools/class-record-fields.py`
+  walks the list from the prefix's end on all 2,209 located classes: **0** end exactly on the block start, **1,038**
+  run off the payload, the walk explains a median **47** bytes of the 91-byte middle (p90 89, max 617) and leaves a
+  median **42** before the block (p90 374; 52 rows overshoot it). A wrong width yields plausible small counts --
+  0 on 712 classes and 2 on 335 -- so only the exact end counts as a fit, and it is zero. The 545 withheld blocks
+  are therefore not moved by this route either, and the per-class body between these fields and the block start is
+  what is left.
+- Tool (`tools/class-record-fields.py`: `--class`, `--sweep`, `--report`, `--check`) + `inventory/class_record_fields.csv`
+  (2,209 rows) + `docs/NATIVE_VM.md` (*The record's field widths are compact*) + `docs/CLASS_DEFAULTS.md` (*The
+  tail's widths are named*) + `docs/UNKNOWNS.md` U17 + `make class-record-fields` + this note. Reads the packages
+  and the committed prefix table; no boot, no value decoded.
+
 ### Execution notes (2026-11-12, the class record opens with three references, and neither tail reading survives a control)
 
 - **The prefix is measured against the package's own export table, on every class.** `tools/class-prefix.py` reads the

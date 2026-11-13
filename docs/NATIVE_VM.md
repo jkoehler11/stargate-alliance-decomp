@@ -769,6 +769,44 @@ that the disassembler needs is the same dispatch the interpreter uses, and the s
 can be checked against rather than a guess. The `'G'` marker also explains why some payloads may not decode as
 bytecode directly: a script can be stored compressed.
 
+### The record's field widths are compact, and a 12-byte record is nine
+
+`docs/NATIVE_VM.md` had the field *order* of a cooked class export from `UClass::Serialize` but not the *widths*,
+and every walk built on it assumed a `TArray` count is a 32-bit dword and that the two array fields hold dwords.
+Three writers say otherwise, read from the bodies under `$WORK/module-export/Core/` (never committed):
+
+| writer | what it writes | consequence for the stream |
+|---|---|---|
+| `FUN_000637e0` | a count: a raw 4-byte integer (`0x00037110`) **only when both the loading and the saving flag are clear**, otherwise an `FCompactIndex` built byte by byte through `0x00037040` | in a cooked package -- a *saving* archive -- **every array count in the record is compact** |
+| `FUN_0003d900` | the 12-byte-record array: the count, then per record one **object reference** (archive vtable `+0x18`) and two 4-byte dwords (`0x00037110`, `0x000370e0`) | a record is **9 bytes** when its reference is one byte long |
+| `FUN_0003d160` | the two "dword" arrays: the count, then each element through archive vtable **`+0x1c`, the *name* method** -- the one `UStruct::Serialize` uses for `FriendlyName` | they are `TArray<FName>`, two compact indices per element, **not** `n x 4 bytes` |
+| `FUN_000394c0` (`UState::Serialize`) | runs before `UClass`'s own fields: `0x000371d0` writes **8** bytes at `+0x80` and again at `+0x88`, `0x00037080` writes **2** at `+0x90`, `0x000370e0` writes **4** at `+0x94` | **22 bytes** the field table did not have |
+
+**The stride-9 unit has an owner.** The residue's repeated 4-byte value at a stride of 9 (`docs/CLASS_DEFAULTS.md`,
+69 of 540 candidates) is one streamed 12-byte record: a one-byte object reference followed by the record's two
+dwords, the first of which repeats. The last run could only call that unit a candidate; it is the element of the
+array `UClass::Serialize` writes at `+0x4d0`.
+
+**With those widths the forward walk still does not fit, and the failure is measured.** `tools/class-record-fields.py`
+(`make class-record-fields`, `inventory/class_record_fields.csv`, `--check` in `make ci`) walks the list from the
+measured prefix's end -- 22 state bytes, five dwords, compact count plus 9-byte records, the config `FName`, two
+compact counts of two-index names -- on all 2,209 classes whose block start is located:
+
+| measure | value |
+|---|---|
+| the walk runs past the payload (a count or an index) | **1,038 of 2,209** (47.0%) |
+| it ends exactly on the block start | **0** |
+| bytes of the middle it explains | median **47**, p90 89, max 617 (the middle's median is 91) |
+| bytes left before the block start | median **42**, p90 374; **52** rows overshoot it (to -281) |
+| record-array count read | 0 on 712, 2 on 335, 22 on 48, 18 on 25, 54 on 19 |
+| name arrays empty | 821 (`+0x4dc`) / 1,079 (`+0x4f4`) |
+
+A wrong width still yields plausible small counts -- 0 and 2 cover 47% of the corpus -- so "ends exactly on the
+block start" is the only test that counts, and it answers **zero**. The widths are now named rather than assumed,
+which is what the last note asked for; the field *list* is still short of the record, so the 545 withheld blocks
+are not relocated by this route either, and the per-class body between the end of these fields and the block
+start is what remains.
+
 ### `UClass::Serialize` (`0x0003a800`): the defaults are a buffer, and the record's tail is arrays
 
 `UStruct::Serialize` is not the last reader on a class export's path. `UClass::Serialize` (`0x0003a800`, 1,310 bytes)

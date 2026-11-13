@@ -2691,6 +2691,19 @@ compiler from any public UE2.5 release can consume these packages, and patching 
 The deciding test is the same either way: one trivial class compiled and byte-compared against the shipped package,
 i.e. L1 by the mapping tiers in `AGENTS.md`, with PLAN 3.8's comparator for the tiers above it.
 
+**2026-11-12: the field widths are measured from the writers, and the 9-byte unit is named.** A cooked
+package is a saving archive, so `FUN_000637e0` writes every `TArray` count as an `FCompactIndex`, not a dword;
+`FUN_0003d900` streams a 12-byte record as one object reference plus two dwords (9 bytes when the reference is one
+byte), which is exactly the stride-9 unit this entry's residue had measured without an owner; `FUN_0003d160`'s
+elements go through the archive's *name* method, so the two tail arrays are `TArray<FName>` and not `n x 4` dwords;
+and `UState::Serialize` (`0x000394c0`) writes 8 + 8 + 2 + 4 bytes before `UClass`'s five dwords -- 22 bytes the
+field table did not carry. The forward walk with all of that (`tools/class-record-fields.py`, artifact
+`inventory/class_record_fields.csv`) ends on the block start for **0 of 2,209** located classes and runs off the
+payload for **1,038**, explaining a median **47** bytes of a 91-byte middle. So the widths are settled and the
+field set is not: what would settle the 545 is the writer that produced the per-class body between these fields
+and the defaults block, and the record's own `+0x4d0` array is now known to be a streamed 9-byte record rather
+than a fixed table. Numbers: `docs/NATIVE_VM.md`, *The record's field widths are compact, and a 12-byte record is
+nine*; `docs/CLASS_DEFAULTS.md`, *The tail's widths are named*.
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.

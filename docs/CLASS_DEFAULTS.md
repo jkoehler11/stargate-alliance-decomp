@@ -464,6 +464,20 @@ counts and elements, or a token walk -- are now measured and refused on the cont
 own field widths: `UStruct::Serialize`'s body (`0x000392b0`) is where the prefix's encodings come from, and every
 candidate for the tail's 9-byte unit is a guess until that body is read.
 
+### The tail's widths are named, and the list is still short of the record
+
+Three writers give the record's field widths (`docs/NATIVE_VM.md`, *The record's field widths are compact*): a
+`TArray` count is an `FCompactIndex` in a cooked package (`FUN_000637e0`), the 12-byte-record array streams one
+object reference plus two dwords per record (`FUN_0003d900`), and the two "dword" arrays are `TArray<FName>` whose
+elements go through the archive's name method (`FUN_0003d160`). **The stride-9 unit this page measured in the
+residue is one of those streamed records** -- a one-byte reference and two dwords, the first repeating -- so the
+"fixed-size table the candidate started inside" reading is not needed to explain it.
+
+`tools/class-record-fields.py` walks the list with those widths from the prefix's end on all 2,209 located classes:
+**0** ends on the block start, **1,038** run off the payload, and the walk explains a median **47** bytes of a
+91-byte middle, leaving **42** before the block. So the widths are settled and the field *set* is not; the 545
+stay withheld for the same reason as before, with one fewer unknown in the record.
+
 ### What the record writes in front of the block, now that the prefix is measured
 
 `tools/class-prefix.py` decodes the record's opening with `UStruct::Serialize`'s own field order and scores it against
