@@ -1253,7 +1253,8 @@ the block start on **0 of 225**, so the position is the record's and not a free 
 
 **The middle pair's second value is negative on 219 of 225, and it takes four distinct values in the whole corpus** --
 -6 on 149 classes, -3 on 52, -4 on 12, -7 on 6, one per package. Every first value resolves in the package's own name
-table (225 of 225 pairs), so an element is a small non-negative value and a *signed reference*; that is the shape of a
+table on 219 of 225 pairs -- and those 219 are exactly the rows whose middle pair is negative -- so an element is a
+small non-negative value and a *signed reference*; that is the shape of a
 reference into the package's import table, and it is not an `FName` duplicate number, which is an unsigned counter.
 The reading above -- these bytes as the two `TArray<FName>`s, a compact count and two compact *name indices* per
 element -- has no term that can be negative, so it is corrected here: the tail is a value/reference pair list, and the
