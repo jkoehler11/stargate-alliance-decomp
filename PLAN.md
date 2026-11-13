@@ -1176,6 +1176,47 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the field map is the destructor's, and the record array is the third of three `TArray`s)
+
+- **The constructor cannot place a member here, and the reason is the codegen, not the layout.** `Class`'s three
+  constructors (`0x3ad20` the default, `0x3ae30` the one-argument form, `0x3af60` the full one) write the region one
+  dword at a time -- `MOV dword ptr [ESI + 0x4b8],EDI`, `... +0x4bc`, `... +0x4c0` -- because MSVC inlines the
+  zero-fill, so every dword gets its own instruction and a store map has no boundary in it. They do not even write
+  the same dwords: the default and the full constructor skip `+0x4b4`, `+0x50c` and `+0x510`, and the one-argument
+  form skips `+0x4ec`/`+0x4f0` as well because it *copies* the parent's array (`MOV EAX,[ESI+0x28];
+  MOV EDX,[EAX+0x4b0]; LEA ECX,[ESI+0x4e8]`) instead of zeroing it. A dword that no constructor writes is not a
+  member, so the plan's "read the constructor for the `TArray` in front of `+0x4d0`" is answered by that fact: a
+  constructor knows where the region is, not where its members begin.
+- **The destructor does place them.** `0x3dbd0` destroys each member by address, so its body is eight
+  `lea ecx,[esi+disp]` / `call target` pairs: `+0x4b8` -> `0x3d7a0`, `+0x4c4` -> `0x3d850`, `+0x4d0` -> `0x3da40`,
+  `+0x4dc` -> `0x1c750`, `+0x4e8` -> `0x1aa30`, `+0x4f4` -> `0x1c750`, `+0x500` -> `0x1c750`, `+0x514` -> `0x1b310`.
+  **So the array in front of the record array begins at `+0x4c4`, and `+0x4c0` is its neighbour's last dword** --
+  the `+0x4b8` array's `max` -- which corrects the previous note's "the constructor stores `+0x4c0`..`+0x4cc`
+  immediately before the record array": that range is the zero grid, and it spans the tail of one `TArray` and the
+  head of the next.
+- **The three are one template instantiated three times.** `0x3d7a0`, `0x3d850` and `0x3da40` open with the same
+  thirty bytes -- `MOV EDI,[ESI+0x4]; TEST EDI,EDI; ... PUSH 0x287; PUSH 0x4c87e8; PUSH 0x4c87cc` -- and each is
+  used by exactly **one** member in the whole image (`inventory/class_member_map.csv`), while the plain name arrays
+  at `+0x4dc`/`+0x4f4`/`+0x500` share `0x1c750` (117 members) and `+0x514`'s `0x1b310` (328) has a different body
+  with no element loop. So the record region holds **three adjacent `TArray`s of three distinct element types**,
+  not one array with a name list behind it.
+- **Corpus-wide the destructor is the field map.** `tools/class-member-map.py` walks all 1,011 functions
+  `inventory/class_constructors.csv` classifies as a constructor or a destructor and writes
+  `inventory/class_member_map.csv` (3,418 rows): 493 destructors place **765 members**, every one of them with a
+  named destructor, against **199** distinct destructors of which **146 are used by exactly one member** -- and only
+  **210 of 762** member starts are dwords a constructor of the same class also writes, so for two thirds of them the
+  constructor route has nothing to say.
+- Tool (`tools/class-member-map.py`: `--xbe`, `-o`, `--class`, `--report`, `--limit`, and a `--check` that drives a
+  lea/call boundary, a zero store against a register store, the dword a body skips, and a `(bad)` truncation) +
+  `inventory/class_member_map.csv` + `docs/NATIVE_VM.md` (*The field map is the destructor's, not the
+  constructor's*) + `docs/UNKNOWNS.md` U17 + `make class-member-map` + this note. Reads `default.xbe` with
+  `objdump`; no boot, no Ghidra, no value decoded and no name published.
+- **Next measurement, named:** the record's tail is written *after* `+0x4d0`'s array, so the member that holds it
+  sits at a higher offset, and the destructor's map leaves three candidates `UClass::Serialize` never writes --
+  `+0x4e8` (`0x1aa30`), `+0x500` (`0x1c750`) and `+0x514` (`0x1b310`). Read the element loop inside `0x1aa30` and
+  `0x1b310` past the shared template prologue: an element freed through an object-reference destructor at a
+  12-byte stride is what would make the tail's 3 x 9 bytes that member's own content.
+
 ### Execution notes (2026-11-12, the defaults stream closes from the block start and not from the pair list)
 
 - **The named next measurement was run, and it lands on the block start.** `tools/class-record-tail.py` now runs the
