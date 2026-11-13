@@ -2456,12 +2456,30 @@ def calls_report(path, table, out=None, lists=0):
     # The package each class's source is read from, by package name: an ancestor's declaration lives outside
     # the package being walked, and `class_source` opens it on first ask.
     pkg_paths = {os.path.basename(one).rsplit(".", 1)[0]: one for one in files}
+    # A package's name is spelled two ways in the inventory: `classes.csv`'s own `package` column carries the
+    # file's spelling (`GamePlay`) while `package_of_super` carries the import's (`Gameplay`) for 70 rows. The
+    # chain is keyed by (package, class), so a step into a package spelled the other way lands on a key nothing
+    # holds and the walk stops there -- which is how `SetPawnClass` and three other names came to read as
+    # declared only outside the receiver's subtree. Fold every package to the file's spelling once, in the index.
+    pkg_spelling = {k.lower(): k for k in pkg_paths}
     sourced = {}
     preproc = {"classes": 0, "gaps": 0, "names": []}   # texts with a directive line, and what it split
     # (package, class) -> (package the super is declared in, super): the chain a by-name call is resolved along.
     supers = {}
+    raw_supers = {}
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
-        supers[(r["package"], r["class"])] = (r["package_of_super"] or r["package"], r["super"])
+        raw_supers[(r["package"], r["class"])] = (r["package_of_super"] or r["package"], r["super"])
+    # The fold's own audit: which rows it renames, and how many chain targets the index could not hold at all
+    # before it -- an orphan count printed as a number is what says the walk now ends only where the tree does.
+    respelled = collections.Counter()
+    for (p, c), (ps, sup) in raw_supers.items():
+        held = pkg_spelling.get(ps.lower(), ps)
+        if held != ps:
+            respelled[(ps, held)] += 1
+        supers[(p, c)] = (held, sup)
+    orphans = {v for v in raw_supers.values() if v[1] and v not in raw_supers}
+    orphans_left = {v for v in orphans
+                    if (pkg_spelling.get(v[0].lower(), v[0]), v[1]) not in raw_supers}
     pkg_of_class = collections.defaultdict(list)
     for (p, c) in supers:
         pkg_of_class[c].append(p)
@@ -2974,6 +2992,11 @@ def calls_report(path, table, out=None, lists=0):
              ", ".join("%s %d" % kv for kv in collections.Counter(r[7] for r in above).most_common(5))))
     print("      of those, %d name a function only a *state* of that class declares (the class owns the state)"
           % sum(chain_state.values()))
+    print("      the chain's package names, folded from the file's spelling: %d row(s) over %d package(s) (%s), "
+          "and %d of %d chain target(s) had no key before the fold"
+          % (sum(respelled.values()), len(respelled),
+             ", ".join("%s->%s %d" % (a, b, n) for (a, b), n in respelled.most_common(4)),
+             len(orphans) - len(orphans_left), len(orphans)))
     print("    by the corpus alone: %d site(s) reach the one class that declares the name (%d names), top: %s"
           % (len(corpus), len(only),
              ", ".join("%s -> %s %d" % (n, only[n], c)

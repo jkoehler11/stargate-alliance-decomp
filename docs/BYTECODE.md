@@ -681,28 +681,23 @@ not about the token encoding.
     11687 scripts with an epilogue, 11608 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
-        naming a declaring class: 13433 of 13507 (99.5%)
-        on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, Engine.Pawn 246, StargateGame.BotBase 191, Editor.BrushBuilder 187, StargateGame.BotEnemy 187)
-          of those, 223 name a function only a *state* of that class declares (the class owns the state)
-        by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top: ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, SetPosImmediate -> StargateGame.UIWidget 51, GetLocalPlayerController -> Engine.LevelInfo 40, PostAIMsg -> Engine.Controller 40
-        on the receiver's chain: 2815 (655 names) -- the expression in front of the call types to a class (279 distinct, top: Pawn 274, UWindowEditControl 189, Controller 149, UWindowCheckbox 138, Weapon 111)
+        naming a declaring class: 13461 of 13507 (99.7%)
+        on the caller's chain: 8413 -- 5778 in its own class, 2635 on an ancestor (top: Engine.Actor 345, Engine.Pawn 246, StargateGame.BotBase 191, Editor.BrushBuilder 187, StargateGame.BotEnemy 187)
+          of those, 231 name a function only a *state* of that class declares (the class owns the state)
+          the chain's package names, folded from the file's spelling: 70 row(s) over 1 package(s) (Gameplay->GamePlay 70), and 12 of 12 chain target(s) had no key before the fold
+        by the corpus alone: 2234 site(s) reach the one class that declares the name (904 names), top: ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, SetPosImmediate -> StargateGame.UIWidget 51, GetLocalPlayerController -> Engine.LevelInfo 40, FindInventoryType -> Engine.Pawn 31
+        on the receiver's chain: 2814 (650 names) -- the expression in front of the call types to a class (278 distinct, top: Pawn 269, UWindowEditControl 189, Controller 143, UWindowCheckbox 138, Weapon 111)
           of those, 47 place because the receiver's type names a class in another case, top: pawn 14, playercontroller 12, GameHUD 4, inventory 3, stargateammo 3, pickup 2
-          and 11 name a function only a *state* of the receiver's chain declares
-        decided by the receiver: 74 site(s) across 30 names, top: ClientMessage 26 over 3 classes, GetPickupItemName 7 over 2 classes, Possess 3 over 15 classes, UnPossess 3 over 11 classes, GetMyPlayer 3 over 2 classes
-          an object expression with no recorded type: 5 -- 0 of them a local, 5 not
+          and 15 name a function only a *state* of the receiver's chain declares
+        decided by the receiver: 46 site(s) across 15 names, top: ClientMessage 26 over 3 classes, GetPickupItemName 7 over 2 classes, AddToTeam 1 over 2 classes, ValidIndex 1 over 2 classes, Save 1 over 5 classes
+          an object expression with no recorded type: 3 -- 0 of them a local, 3 not
           a directive line between a declaration and its body: 4 declaration(s) over 173 class text(s): InteractionMaster.AddInteraction, InteractionMaster.AddInteraction, StargatePawn.Talk, StargatePawn.Talk
-          of the receiver-typed sites, 610 had a local in front (typed from the class's own ScriptText)
+          of the receiver-typed sites, 618 had a local in front (typed from the class's own ScriptText)
           a local whose declaration the source spells in another case: 159 site(s), top: Msg 30, GUI 20, t 13, i 12, Dir 8, Image 7
-          an expression that typed to a class whose chain declares no such name: 54, of which 7 reach exactly one descendant that declares it (descendant:Pkg.Class, 2 names), top: IsUnconscious -> StargateGame.BotEnemy 4, GetAggroLevel -> StargateGame.BotEnemy 3
-            the rest stay a dispatch: 42 over several descendants (14 names, top: ClientMessage 25, Possess 3, CallToArms 3, ValidIndex 1), 5 a name only classes outside the subtree declare, 0 a name no class in the corpus declares
-            those 54 receivers by class: Object 36, BotBase 14, UnrealScriptedSequence 3, Pawn 1
-            names only outside the subtree declare: GetMoveTarget 2, GetMyPlayer 1, TakeOver 1, SetPawnClass 1
-            names no class declares: 
-          a completed value in front (a self-call, or a receiver the walk did not reach): 22
-            the token that produced that value: JumpIfNot 1250, Let 520, Jump 318, Return 133, False 108, True 72, LetBool 69, Log 54
+          an expression that typed to a class whose chain declares no such name: 36, of which 0 reach exactly one descendant that declares it (descendant:Pkg.Class, 0 names), top: 
+          a completed value in front (a self-call, or a receiver the walk did not reach): 7
           a receiver that is a call result: 822 site(s), 132 typed from the callee's declared return type (top: playercontroller 80, sound 33, sgformation 6, herdanimal 4, stargateammo 4, vector 3)
-            the rest by what the callee's own statement says: call result: the callee returns nothing 609, call result: the callee returns a value that is not a class 73, call result: the imported function's class is not in the corpus 7, call result: the callee PawnDied is declared by 8 classes, none on the caller's chain 1
-          why an expression in front names no class: call result: the callee GetInstigator is declared by 2 classes, none on the caller's chain 2, call result: the callee TeamIDLookup is declared by 5 classes, none on the caller's chain 1, call result: the callee SetSprinting is declared by 2 classes, none on the caller's chain 1, call result: the callee returns nothing 1
+          why an expression in front names no class: call result: the callee GetInstigator is declared by 2 classes, none on the caller's chain 2, call result: the callee TeamIDLookup is declared by 5 classes, none on the caller's chain 1
           a receiver that is an array element: 681 site(s) over 64 (token, class) pairs, top: ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ArrayElement/UWindowLabelControl 42, DynamicArrayElement/GUIComponent 31, DynamicArrayElement/MaplistRecord 28, DynamicArrayElement/ScriptEvent 24
           typed by the import's own owner class: 427 site(s) over 16 class(es), top: Pawn 177, Actor 57, GUI 57, LevelInfo 46, GUIListBox 37, BotBase 19
           where every declarer agrees, the owner's own class agrees in 711 site(s) and differs in 0
@@ -887,15 +882,15 @@ share 529 -> **582**, and the untyped local bucket 81 -> **28**. The check on th
 **4** of the 57 are call results: most of those 822 sites were already placed on the caller's chain, and this
 residue is nearly dry -- a fourth reading of the same packages is not where the rest of it is.
 
-**The last of the typed residue is a dispatch, and looking below the receiver settles most of it.** A receiver whose
-static type is a base can hold any subclass, so after the chain the tool looks *below* it: of the **52** sites whose
-expression typed to a class whose chain declares no such name (`Object` 36, `BotBase` 12, `UnrealScriptedSequence` 3,
-`Pawn` 1), **6 name a function exactly one descendant declares** and place as `descendant:Pkg.Class` --
-`IsUnconscious` and `GetAggroLevel`, each 3 sites, both to `StargateGame.BotEnemy`, where the first is declared inside
-`state BotUnconscious`. The other **46 stay a dispatch**: `ClientMessage` 25 -- an `Object`-typed receiver is a
-dispatch over every class in the build, not a lookup -- then `CallToArms` 3, `Possess` 2 and `ValidIndex` 1 over
-several descendants, and `GetMoveTarget` 2, `GetMyPlayer` 1, `TakeOver` 1 and `SetPawnClass` 1 naming only classes
-*outside* the receiver's subtree. **No name in that residue is missing from the corpus (0)**, which is the useful
+**The last of the typed residue is a dispatch, and looking below the receiver is no longer what settles it.** A
+receiver whose static type is a base can hold any subclass, so after the chain the tool still looks *below* it -- but
+once the chain actually crosses `GamePlay` (the case fold below) the population it was written for is gone: **36 sites**
+type to a class whose chain declares no such name, all of them `Object`-typed and 25 of them `ClientMessage`. **0 place
+on a descendant** and **0 name a function only classes outside the subtree declare**; the five that used to
+(`GetMoveTarget` 2, `GetMyPlayer`, `TakeOver`, `SetPawnClass`) were never outside the subtree, they were behind a
+chain step keyed on a package spelled `Gameplay`. What is left is the one reading no walk of these packages can
+narrow: `Outer` is the root's own `var native const object`, so an `Object`-typed receiver is a dispatch over every
+declaring class in the build. **No name in that residue is missing from the corpus (0)**, which is the useful
 negative: the gap is which object, not which build.
 
 **The 654 have names now, and most of them are not a script gap.** `--calls` counts a residue site by *why*
@@ -1049,14 +1044,31 @@ the eighteen packages declare that name in exactly `Security`, `PlayerController
 receiver of every one of those calls. For a call site the bytecode is authoritative and the extracted source is not:
 a reader who types the receiver from the source line reads no receiver where the build read `Outer`.
 
-**The 14 `BotBase` receivers split three ways, and only one of them is still open.** Seven place on the single
-descendant that declares the name (`IsUnconscious` 4 and `GetAggroLevel` 3 -> `descendant:StargateGame.BotEnemy`),
-six stay a dispatch over the classes below `BotBase` that do declare it (`Possess` 2 over 10 bots, `CallToArms` 3 over
-`BotEnemy`/`BotLite`/`BotSG`, `UnPossess` 1 over 7), and one (`SetPawnClass`) has no declarer below the receiver at
-all. The remaining four rows are names declared outside the receiver's subtree -- `GetMoveTarget` 2 and `TakeOver` 1
-on an `UnrealScriptedSequence`-typed field, `GetMyPlayer` 1 on a `Pawn` local. **None of the 54 is a parse gap:** no
-name in the residue is absent from the corpus (0 rows), so what is left is a dispatch whose size is known, and the
-only thing that would place the rest is a receiver from a running image.
+**The 14 `BotBase` receivers all resolve now, and the names that read as "outside the subtree" were a package
+spelling.** Seven place on the class's own chain (`IsUnconscious` 4, `GetAggroLevel` 3 -- both declared inside a
+state, which the class owns), six as a dispatch over `BotEnemy`/`BotLite`/`BotSG`, and `SetPawnClass` on
+`Engine.Controller`, where `ScriptedController` inherits it. The rows that read as declared only outside the
+receiver's subtree -- `GetMoveTarget` 2 and `TakeOver` 1 on an `UnrealScriptedSequence`-typed field, `GetMyPlayer` 1
+on a `Pawn` local, `SetPawnClass` 1 on a `BotBase` local -- were the same broken chain step: `UnrealScriptedSequence
+extends ScriptedSequence extends AIScript` and `BotBase extends ScriptedController`, and every one of those paths
+crosses into `GamePlay.u`. **None of it was a parse gap and none of it needed a receiver from a running image**, which
+is what the previous reading of this residue concluded.
+
+**The super chain was case-sensitive on the package, and 70 rows spell `GamePlay` as `Gameplay`.** `classes.csv`'s own
+`package` column carries the file's spelling while `package_of_super` carries the *import's*: 70 rows, every one of
+them pointing into `GamePlay.u`, say `Gameplay`. The chain index is keyed by `(package, class)`, so each of those
+steps landed on a key nothing holds and the walk stopped there -- silently, because a chain that ends early looks
+exactly like a class with nothing above it. Twelve distinct chain targets were unreachable that way, `ScriptedAction`
+alone the super of 46 classes. Folding the package to the file's spelling in the index moves **109 rows** of
+`inventory/script_calls.csv` and loses none: **92 move onto the caller's chain** (`Engine.Controller` 36,
+`GamePlay.ScriptedController` 14, `Core.Object` 7, `Engine.Actor` 6, `GamePlay.ScriptedAction` 2, ...), **28 gain a
+resolution they did not have** (18 onto a chain, 10 onto a receiver's), and 7 that had been guessed onto a descendant
+move onto the receiver's chain instead. By-name placement goes **13,433 -> 13,461 of 13,507 (99.7%)**, the caller's
+chain **8,321 -> 8,413**, the corpus-alone lookup **2,290 -> 2,234**, "decided by the receiver" **74 -> 46**, and the
+untyped-object residue **5 -> 3**. The report prints the fold's own audit next to the chain line
+(`70 row(s) over 1 package(s) (Gameplay->GamePlay 70), and 12 of 12 chain target(s) had no key before the fold`) so the
+repair is a number on every run, not a claim in a commit message. `docs/COMPILE.md` and
+`tools/compile-readiness.py` had already folded this case for ancestry; the call table was the consumer that had not.
 
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
