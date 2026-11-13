@@ -1178,6 +1178,38 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the array element's modifiers were inside its brackets)
+
+- **The residue phrase that read like a negative was a parse gap.** 35 sites said "array element: the array's type names
+  no class", and the array's declared type is `array<editconst editinline Stream>` / `array<export editinline
+  ScriptEvent>` / `array<editconst editinline direction>`: the tagged stream writes the property modifiers *inside* the
+  angle brackets, `_class_of_type` unwrapped the brackets and passed `editconst editinline Stream` on as a class name.
+  Stripping the words `var` already accepts before the unwrap (and closing a nested `>` that follows a space, which the
+  declaration regex captured one character short) **places all 35**. By-name placement **13,398 -> 13,433 of 13,507
+  (99.5%)**, the receiver's chain **2,780 -> 2,815**, "decided by the receiver" 109 -> 74, untyped-object residue
+  **40 -> 5**.
+- **The "35 struct arrays" were class arrays, so a published negative is corrected.** `StreamPlaylistManager`'s
+  `array<...StreamPlaylist>`, `ScriptEvent`'s `direction` and `ScriptEvent` are classes, so those elements are objects
+  and the earlier reading of that reason string was wrong: the population was never the build's. 154 sites now carry the
+  element class as their receiver (527 -> 681 over 50 -> 64 (token, class) pairs); 30 keep a corpus placement and gain
+  the `receiver_type` that names the class (`GUIComponent` 31, `MaplistRecord` 28, `ScriptEvent` 24, `direction` 9).
+- **A tag can name a struct, and it is named as one now.** After the strip `array<PlaylistParser>` and the class form
+  are one identifier, and `source_structs` decides: the reading answers `declared as a struct (`PlaylistParser`), not a
+  class` instead of the anonymous reason, and keeps the branch's own reason when the type is neither. No placement
+  moves; 157 -> 3 rows of `receiver_type` lose a spelling that named no class (`vector` 99, `Rotator` 41, `IpAddr` 12).
+- **What the 5 are is one shape: dispatch.** `GetInstigator` 2 sites (2 classes declare it), `TeamIDLookup` 1 (5),
+  `SetSprinting` 1 (2), and one callee declared with no return type -- chained callees whose site carries no receiver,
+  so the static text cannot choose. The named negative now stands where "40" did.
+- Tool (`_TYPE_MODIFIERS`, `_typed`, the `(?:\s*>)*` declaration regexes, the array-element reason carried from the
+  array child, 8 new `--check` assertions -- 25 in all) + `inventory/script_calls.csv` regenerated (it had also drifted
+  from the tool: 508 rows carried no `receiver_type` while a fresh run fills it) + `docs/BYTECODE.md` (the printed
+  `--calls` block, two rounds stale, regenerated; *An array element's type carries its modifiers...*) +
+  `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra round.
+- **Next measurement, named:** the 5 chained callees need the receiver a runtime image can name, so the corpus-side next
+  step is the *other* residue the report prints -- 54 sites typed to a class whose chain declares no such name, of which
+  42 stay a dispatch over several descendants -- asked as "which of the 14 names is declared by exactly one class
+  *below* each of the 54 receivers", the descendant lookup the tool already runs for 7 of them.
+
 ### Execution notes (2026-11-13, a chained callee takes the corpus lookup, and the four left are a dispatch)
 
 - **The chained call was resolved with one of the two lookups the call table already has.** A call in front of a call

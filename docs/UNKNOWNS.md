@@ -2035,6 +2035,24 @@ type. **What would settle them is not another parse of this corpus:** several cl
 callee is a virtual dispatch whose receiver the site does not carry -- a runtime question, and the residue's first
 shape of that kind.
 
+**2026-11-13, most of the residue was two words inside the array's brackets.** The reason `--calls` gave for 35 sites
+was "array element: the array's type names no class", and the pages had been reading it as "the array holds a struct"
+for two rounds. The array's element type is `array<editconst editinline Stream>`, `array<export editinline
+ScriptEvent>`, `array<editconst editinline direction>`: the tagged stream carries the property's modifiers *inside* the
+angle brackets, `_class_of_type` unwrapped the brackets, and the rest -- `editconst editinline Stream` -- was handed on
+as a class name, so a class named right there read as absent. Stripping the words `var` already accepts before the
+unwrap, and letting a nested `>` follow a space (`array<class<Info> >` was captured one character short), **places all
+35**: by-name placement **13,398 -> 13,433 of 13,507 (99.5%)**, the receiver's chain **2,780 -> 2,815**, the
+untyped-object residue **40 -> 5**. So the "35 struct arrays" were class arrays -- `StreamPlaylist`, `direction`,
+`ScriptEvent` -- and the residue that is left is a dispatch, not a declaration: **5 chained callees**, `GetInstigator`
+(2 classes declare it) 2 sites, `TeamIDLookup` (5) 1, `SetSprinting` (2) 1, and one callee with no declared return type.
+**A tag that names a struct is now named as one** rather than as an expression that names nothing (`array<PlaylistParser>`
+after the strip is one identifier, and `source_structs` decides it), which moves no placement and takes the 157 rows
+whose `receiver_type` spelled `vector`/`Rotator`/`IpAddr` down to 3 -- a class column no longer claims a class called
+`vector`. **What would settle the 5** is not another parse: each is a virtual dispatch whose receiver the site does not
+carry, the same runtime shape the chained-callee round named, so the residue now holds one kind of question and the
+next reading of it needs a runtime receiver, not a better walk of these packages.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

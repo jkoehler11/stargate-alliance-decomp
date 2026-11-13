@@ -1962,15 +1962,34 @@ def _tree(nodes, parent=None, idx=None):
             yield sub
 
 
+# A tagged type carries the declaration's modifiers *inside* the array's angle brackets:
+# `array<export editinline ScriptEvent>`, `array<editconst editinline Stream>`, and a struct member's type carries
+# them in front of the name (`export editinline Order`). They are the same words the `var` parse accepts, and reading
+# them as part of the name rejected every one of those element types: 35 array-element call sites read "the array's
+# type names no class" for a class that is named right there.
+_TYPE_MODIFIERS = ("const", "config", "globalconfig", "private", "protected", "public", "transient", "native",
+                   "editconst", "editconstarray", "editinline", "editinlinenotify", "export", "noexport", "init",
+                   "travel", "input", "duplicatetransient", "deprecated", "atomic", "immutable")
+
+
 def _class_of_type(friendly):
     """The class a property's declared type names, or "" when the type is not one."""
     if not friendly:
         return ""
+    friendly = friendly.strip()
+    while True:
+        low = friendly.lower()
+        for mod in _TYPE_MODIFIERS:
+            if low.startswith(mod + " "):
+                friendly = friendly[len(mod) + 1:].lstrip()
+                break
+        else:
+            break
     # UnrealScript spells these lowercase in its own source (`local class<LocalMessage> M;`) and the tagged
     # property stream capitalises `Class<>`; a reader that knew only one spelling read the other as a class name.
     for prefix in ("class<", "array<"):
         if friendly.lower().startswith(prefix) and friendly.endswith(">"):
-            return _class_of_type(friendly[6:-1])
+            return _class_of_type(friendly[6:-1].strip())
     if "." in friendly:
         return _class_of_type(friendly.rsplit(".", 1)[-1])
     if friendly in ("int", "float", "bool", "byte", "string", "name", "object", "pointer"):
@@ -1981,6 +2000,23 @@ def _class_of_type(friendly):
     if " " in friendly or "<" in friendly or ">" in friendly:
         return ""
     return friendly
+
+
+def _typed(cls, structs, what, fallback):
+    """(the class one declared type names, why it names none).
+
+    A tag can name a struct as readily as a class -- `array<PlaylistParser>`, `array<export editinline direction>` --
+    and after the modifiers are stripped the two are the same shape, one identifier. What separates them is the
+    corpus: `source_structs` already holds every struct's member list, so a name that is a declared struct is
+    reported as one instead of being handed on as a class no table has. `what` names the read and `fallback` is the
+    reason the branch already had for a type that is neither; an empty fallback means "nothing to say", which lets a
+    caller fall through to its next lookup exactly as before.
+    """
+    if not cls:
+        return "", fallback
+    if structs is not None and structs(cls) is not None:
+        return "", "%s: declared as a struct (`%s`), not a class" % (what, cls)
+    return cls, ""
 
 
 _SCRIPT_TEXT = None
@@ -2004,9 +2040,10 @@ def _script_text(pkg, export, index):
 _SRC_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
 _SRC_FUNC = re.compile(r"^[ \t]*(?:(?:exec|protected|private|public|simulated|static|final|latent|iterator|"
                        r"native|singular)\s+)*"
-                       r"(?:function|event)\s+(?:([\w<>\[\].]+)\s+)?(\w+)\s*\(([^)]*)\)", re.I | re.M)
-_SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+)\s+(.+?);", re.I)
-_SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+)\s+(\w+)\s*(?:=.*)?$",
+                       r"(?:function|event)\s+(?:([\w<>\[\].]+(?:\s*>)*)\s+)?(\w+)\s*\(([^)]*)\)",
+                       re.I | re.M)
+_SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+(?:\s*>)*)\s+(.+?);", re.I)
+_SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+(?:\s*>)*)\s+(\w+)\s*(?:=.*)?$",
                         re.I)
 # A struct's members are `var` lines, not `local` ones, and may carry a declaration category (`var() int X;`).
 # `struct` is matched with spaces and tabs only: `\s` would let the modifier run swallow the line break into the
@@ -2015,7 +2052,7 @@ _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+
 # `var() editconst array<Foo> List;`), and reading the first token as the type typed 23 members literally `config`.
 _SRC_VAR = re.compile(r"^\s*var(?:\s*\([^)]*\))?\s+(?:(?:const|config|globalconfig|private|protected|public|"
                       r"transient|native|editconst|editinline|editinlinenotify|export|noexport|init|travel|input|"
-                      r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+)\s+(.+?);", re.I)
+                      r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+(?:\s*>)*)\s+(.+?);", re.I)
 _SRC_STRUCT = re.compile(r"^[ \t]*struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
                          r"protected|public)[ \t]+)*(\w+)", re.I | re.M)
 # The shipped text carries preprocessor conditionals (`#ifdefXBOX ... #else ... #endif`), and the xbox build
@@ -2248,13 +2285,20 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         # An array element is the array's declared element type: `_class_of_type` unwraps `array<Pawn>` to `Pawn`.
         # The two children are the index and the array (in that order, measured), so the index names nothing and the
         # array is whichever child the declarations do type.
+        kids = []
         for child in expr["children"]:
-            cls, _why = _receiver_reading(child, export_at, import_at, prop_type, prop_type_by_name, local_types,
-                                          import_owner, owner_fixed, owner_conflict, owner_agree,
-                                          call_result, local_chain, ancestor_local, local_case, structs)
+            cls, one = _receiver_reading(child, export_at, import_at, prop_type, prop_type_by_name, local_types,
+                                         import_owner, owner_fixed, owner_conflict, owner_agree,
+                                         call_result, local_chain, ancestor_local, local_case, structs)
             if cls:
                 return cls, ""
-        return "", "array element: the array's type names no class"
+            kids.append(one)
+        # The array is the last child (index first, measured), and its reason is the one that answers the site: the
+        # index is an int and never names a class. Carrying it through is what turns a blanket "names no class" into
+        # the declaration's own words -- a class behind its inlining modifiers (placed), a declared struct (named),
+        # or an element that really is neither.
+        return "", "array element: " + (kids[-1] if kids and kids[-1]
+                                        else "the array's type names no class")
     if nm in CALL_TOKENS and call_result is not None:
         # A call leaves its result on the stack, so a call in front of a call is a receiver too:
         # `GetOwner().Foo()` dispatches on whatever `GetOwner` is *declared* to return.
@@ -2299,8 +2343,8 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         t = members[(name or "").lower()]
         if t is None:
             return "", "struct member: the struct declares it with two types"
-        cls = _class_of_type(t)
-        return (cls, "") if cls else ("", "struct member: declared, but not as a class")
+        return _typed(_class_of_type(t), structs, "struct member",
+                      "struct member: declared, but not as a class")
     if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
         return "", "not an object expression"
     value, _e = read_index(expr["operands"], 0)
@@ -2311,36 +2355,36 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         if name not in (local_types or {}):
             folded = _folded(local_types, name)
             if folded is not None:
-                cls = _class_of_type(folded)
+                cls, why = _typed(_class_of_type(folded), structs, "local", "")
                 if cls:
                     if local_case is not None:
                         local_case[name] += 1
                     return cls, ""
+                if why:
+                    return "", why
             if local_chain is not None:
                 # A function a class inherits is not in its own source, and neither are the locals its body
                 # declares, so the declaration is looked for on the caller's chain -- in the ScriptText of the
                 # ancestor that declares the same function.
                 hit, where = local_chain(name)
                 if hit is not None:
-                    cls = _class_of_type(hit)
+                    cls, why = _typed(_class_of_type(hit), structs, "local", "")
                     if cls:
                         if ancestor_local is not None:
                             ancestor_local[where] += 1
                         return cls, ""
-                    return "", "local: the declaring ancestor does not type it as a class"
+                    return "", why or "local: the declaring ancestor does not type it as a class"
             return "", "local: the class source does not declare it"
         hit = local_types[name]
         if hit is None:
             return "", "local: the class declares it with two types"
-        cls = _class_of_type(hit)
-        return (cls, "") if cls else ("", "local: declared, but not as a class")
+        return _typed(_class_of_type(hit), structs, "local", "local: declared, but not as a class")
     if value in export_at:
         name, _kind, owner = export_at[value]
         hit = prop_type.get((owner, name))
         if not hit:
             return "", "property: not in the script's declarations"
-        cls = _class_of_type(hit[1])
-        return (cls, "") if cls else ("", "property: declared, but not as a class")
+        return _typed(_class_of_type(hit[1]), structs, "property", "property: declared, but not as a class")
     if value < 0 and -value in import_at:
         name, kind = import_at[-value]
         # An import's class names the *kind* of object it is, so only a property kind can carry a variable's type:
@@ -2369,11 +2413,11 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
                         owner_agree[iowner] += 1
                 elif owner_conflict is not None:
                     owner_conflict[name] += 1
-            return (cls, "") if cls else ("", "import: the owner declares it, but not as a class")
+            return _typed(cls, structs, "import", "import: the owner declares it, but not as a class")
         if len(types) > 1:
             return "", "import: the packages that declare it disagree"
         cls = types.pop()
-        return (cls, "") if cls else ("", "import: declared, but not as a class")
+        return _typed(cls, structs, "import", "import: declared, but not as a class")
     return "", "no record for the operand"
 
 
@@ -3601,9 +3645,10 @@ def struct_check():
     No dump: every case is a synthetic `struct` block or a hand-built expression, so `tool-check-contract` can
     drive it (`make ci`) and a site the reading places is attributable to the declaration that placed it.
     """
-    fails = []
+    fails, ran = [], [0]
 
     def want(label, got, expected):
+        ran[0] += 1
         if got != expected:
             fails.append("%s: got %r, want %r" % (label, got, expected))
 
@@ -3635,12 +3680,53 @@ def struct_check():
          source_structs("struct A\n{\n\tvar config UIWidget Face;\n\tvar() editconst array<Foo> List;\n}\n"),
          {"A": {"Face": "UIWidget", "List": "array<Foo>"}})
 
+    want("a type's inlining modifiers are not its name",
+         [_class_of_type("array<export editinline ScriptEvent>"),
+          _class_of_type("array<editconst editinline Stream>"),
+          _class_of_type("export editinline Order")], ["ScriptEvent", "Stream", "Order"])
+    want("a type nested in an array with a space before its bracket",
+         _class_of_type("array<class<Info> >"), "Info")
+    want("a declaration whose type has a space before its bracket",
+         source_declarations("final function bool Init(array<class<Info> > Classes, optional bool bStrict)\n"
+                             "{\n\tlocal int i;\n}\n"),
+         {"Init": {"Classes": "array<class<Info> >", "bStrict": "bool", "i": "int"}})
+    want("a declared struct is named as a struct, not handed on as a class",
+         _typed("PlaylistParser", lambda _n: {"name": "string"}, "property", "property: no"),
+         ("", "property: declared as a struct (`PlaylistParser`), not a class"))
+    want("a type no struct block declares stays a class",
+         _typed("ScriptEvent", lambda _n: None, "property", "x"), ("ScriptEvent", ""))
+    want("no type at all keeps the branch's own reason",
+         _typed("", lambda _n: {"name": "string"}, "property", "property: declared, but not as a class"),
+         ("", "property: declared, but not as a class"))
+
+    elem = {"name": "DynamicArrayElement", "operands": b"", "children": [
+        {"name": "LocalVariable", "operands": b"\x02", "children": []},
+        {"name": "InstanceVariable", "operands": b"\x03", "children": []}]}
+    want("an array element whose type is a class behind its modifiers places",
+         _receiver_reading(elem, {2: ("i", "IntProperty", "C"), 3: ("Songs", "ArrayProperty", "C")}, {},
+                           {("C", "Songs"): ("ArrayProperty", "array<editconst editinline Stream>")},
+                           {}, {}, None, None, None, None, None, None, None, None, lambda _n: None),
+         ("Stream", ""))
+    want("an array element whose type is a struct says so",
+         _receiver_reading(elem, {2: ("i", "IntProperty", "C"), 3: ("ParserType", "ArrayProperty", "C")}, {},
+                           {("C", "ParserType"): ("ArrayProperty", "array<PlaylistParser>")},
+                           {}, {}, None, None, None, None, None, None, None, None,
+                           lambda n: {"name": "string"} if n == "PlaylistParser" else None),
+         ("", "array element: property: declared as a struct (`PlaylistParser`), not a class"))
+
     expr = {"name": "StructMember", "operands": b"\x01", "children": [{"name": "LocalVariable",
                                                                      "operands": b"\x01", "children": []}]}
 
     def read(export_at, members):
+        # The struct table is keyed by name: a fixture that answered every name would make the member's own class
+        # (`UIWidget`) look like a struct, which is exactly the distinction `_typed` now draws.
+        owners = {(o or "").lower() for _n, _k, o in export_at.values()}
+
+        def structs(name):
+            return members if members is not None and (name or "").lower() in owners else None
+
         return _receiver_reading(expr, export_at, {}, {}, {}, None, None, None, None, None, None, None, None, None,
-                                 (lambda _name: members) if members is not None else (lambda _name: None))
+                                 structs)
 
     want("a member declared as a class names it",
          read({1: ("Face", "ObjectProperty", "SquadItemStruct")}, {"face": "UIWidget"}), ("UIWidget", ""))
@@ -3661,7 +3747,9 @@ def struct_check():
     want("a member that arrives as an import names its struct through the import's own outer",
          _receiver_reading({"name": "StructMember", "operands": b"\x81", "children": []},
                            {}, {1: ("Message", "ClassProperty")}, {}, {}, None, {1: "HUDLocalizedMessage"},
-                           None, None, None, None, None, None, None, lambda _name: {"message": "class<LocalMessage>"}),
+                           None, None, None, None, None, None, None,
+                           lambda n: ({"message": "class<LocalMessage>"}
+                                      if (n or "").lower() == "hudlocalizedmessage" else None)),
          ("LocalMessage", ""))
     want("a member whose record is absent from the package",
          _receiver_reading({"name": "StructMember", "operands": b"\x09", "children": []},
@@ -3671,7 +3759,7 @@ def struct_check():
 
     for one in fails:
         print("FAIL " + one)
-    print("%d of 17 struct assertions pass" % (17 - len(fails)))
+    print("%d of %d struct assertions pass" % (ran[0] - len(fails), ran[0]))
     return 1 if fails else 0
 
 
