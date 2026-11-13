@@ -1201,6 +1201,41 @@ are limited to expected fields (checksum/timestamp) and documented.
 - **Next measurement, named:** unchanged -- the `+0x4b0`/`+0x4b4` config pair, the last field of the record with
   no store map (`--disp 0x4b0 --disp 0x4b4`).
 
+### Execution notes (2026-11-13, the pair is a class reference and a name, and the image names the first)
+
+- **The named measurement was a census of two displacements, and the pair is not a pair.**
+  `tools/member-access-census.py --disp 0x4b0 --disp 0x4b4` (`make class-config-pair`,
+  `inventory/class_config_pair_census.csv`) returns **534 sites at `+0x4b0`** (503 store, 24 load, 7 `lea`, in
+  518 functions) and **20 at `+0x4b4`** (8 load, 8 store, 4 `lea`, in 12) -- not the 9 and 6 the previous notes
+  expected to matter, because **494 of the 534 are one instruction shape**, `mov [eax+0x4b0],ecx`, one per
+  function across 493 functions spanning `0x2cb0c`..`0x32cd3c`.
+- **Two sampled bodies show why: a default install, not a member write.** `0x2ca80` and `0x317100` both run
+  `if (!g) g = f(L"Engine")`, store that at `[base+0x28]`, then lazily create the object named by the wide literal
+  `Core` (`0x4c793c`) and store *that* at `[base+0x4b0]` -- the same global (`ds:0x6c2154`) the `Class` default
+  constructor installs (`0x3ad60`..`0x3ad7c`). A displacement is not a field, and here the dominant population is
+  other objects' initialisers, one per class.
+- **`+0x4b0` is `ClassWithin`, named by the image.** `Class@9` (`0x397b0`) is `mov eax,[esi+0x4b0]; test eax,eax;
+  jne ...`, and the null path calls the assert printer with `UnClass.cpp` and the expression **`ClassWithin`**
+  (`0x4d4340`, line 1000). Every constructor installs a non-null default, the one-argument form copies the parent's
+  dword (`0x3af27` -> `0x3af33`), and the reader hands `&[esi+0x4b0]` to the archive's reference slot `+0x18`.
+- **`+0x4b4` is the config name, one dword -- and "the full constructor skips `+0x4b4`" is corrected.** `0x3af60`
+  ends `pop edi; mov [esi+0x4b4],ecx; mov eax,esi; pop esi; ret 0x34`: it installs an **argument**, which is also
+  why the dword is absent from the zero-fill grid that earlier note read. The other two writers are the reader's
+  name slot `+0x1c` (`0x3a8d0`) and, below version `0x3e`, `FName(L"System")` first dword (`0x3a8de`..`0x3a8f0`;
+  literal `0x4d0e90`, constructor `0x5bed0` in `UnName.cpp`).
+- **So the middle is a reference followed by a name, and that is why no grammar closed.** Every attempt parsed
+  those bytes as a count plus compact *name* indices; the first compact value is read by a different archive
+  method, so its width is the reference encoding. And the 8 bytes the arithmetic subtracted
+  (`docs/CLASS_DEFAULTS.md`) are two 4-byte fields, 2..10 bytes compact.
+- Tool (unchanged `tools/member-access-census.py`, whose `--artifact` mode already takes arbitrary displacements) +
+  `inventory/class_config_pair_census.csv` (554 rows) + `make class-config-pair` + `docs/NATIVE_VM.md` (*The pair
+  at +0x4b0/+0x4b4 is a class reference and a name, and the image names the first*, with the field table and the
+  two readings corrected in place) + `docs/CLASS_DEFAULTS.md` + `docs/UNKNOWNS.md` U17 (ninth) + this note. Reads
+  `default.xbe` and the committed inventories; no boot, no Ghidra round, no value decoded, no name published.
+- **Next measurement, named:** the **reference** slot's own width applied to the middle's first compact value on
+  the 549 classes that parse at `prefix_end + 42` -- not another `--disp` census, because the question is which
+  *encoding* that byte uses; `0x00038bc0` is the reference method measured on the element writer.
+
 ### Execution notes (2026-11-13, the group's middle member has no writer, and its head censuses say so)
 
 - **The measurement the last note named is the array's head, not another grammar over the same bytes.** A `TArray`

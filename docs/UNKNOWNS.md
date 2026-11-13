@@ -3059,3 +3059,22 @@ bytes (5/9/13/17/21) where the middle is 27, 20 or 23. **What would settle what 
 has never been censused: with the twelve-byte array, the compact pairs, the name array and now the 4-byte
 array eliminated, the config pair is the last field in the record without a store map. Numbers:
 `docs/NATIVE_VM.md`, *The array at +0x4c4 is initialised and destroyed, and no body fills it*.
+
+**2026-11-13 (ninth): the pair is a class reference and a name, and the image names the first itself.** The
+sixth entry left `+0x4b0`/`+0x4b4` as the last field of the record with no store map.
+`tools/member-access-census.py --disp 0x4b0 --disp 0x4b4` (`inventory/class_config_pair_census.csv`,
+`make class-config-pair`) returns 534 sites at `+0x4b0` and 20 at `+0x4b4`, and only three and five of them
+belong to a `Class`: 494 of the 534 are one instruction shape, `mov [eax+0x4b0],ecx`, one per function across
+493 functions, and the two sampled bodies (`0x2ca80`, `0x317100`) install a lazily created global rather than
+write a member of their own. The dword at `+0x4b0` is `ClassWithin`: `0x397b0` loads it, tests it for null
+and calls the assert printer with the expression string `ClassWithin` at `UnClass.cpp:1000`. The dword at
+`+0x4b4` is the config name, and it is **one** dword: the full constructor installs an argument there
+(`0x3b065`, `ret 0x34`), the reader writes it through the archive's name slot `+0x1c` (`0x3a8d0`), and below
+version `0x3e` it is `FName(L"System")` first dword (`0x3a8de`..`0x3a8f0`, `UnName.cpp`). So the middle
+between the two name arrays is a **reference followed by a name**, not a count plus two name indices -- which
+is the assumption every grammar over those bytes has made, and why none of them closed. **What would settle
+the middle now** is the reference slot's own encoding applied to the middle's first compact value: it is read
+by the archive's `+0x18` (the reference method, measured as one compact field on the element writer by
+`tools/archive-slots.py`), so a parse has to try that width where every earlier attempt tried a name index.
+Numbers: `docs/NATIVE_VM.md`, *The pair at +0x4b0/+0x4b4 is a class reference and a name, and the image names
+the first*.

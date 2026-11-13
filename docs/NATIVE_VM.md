@@ -953,7 +953,8 @@ decompiled body (under `$WORK`, never committed), the order is:
 | object flags, version < `0x3e` only | `+0x1c` | one dword, then `ObjectFlags |= 0x80004` |
 | five dwords | `+0x498`, `+0x4a0`, `+0x4a4`, `+0x4a8`, `+0x4ac` | `Ar << dword` (`0x00037110` / `0x000370e0`: archive vtable `+4`, length 4) |
 | `TArray` of 12-byte records | `+0x4d0` (data), `+0x4d4`, `+0x4d8` | `0x0003d900`: count (`0x000637e0`), then `n` x 12 bytes |
-| config name (`FName`) | `+0x4b0`, `+0x4b4` | version >= `0x3e` only, through two virtuals; `L"System"` is what the older path stores |
+| `ClassWithin` (`UClass*`) | `+0x4b0` | version >= `0x3e` only, through the archive's **reference** slot `+0x18`; asserted non-null at `UnClass.cpp:1000` (`ClassWithin`) |
+| config name (`FName`, **one** dword) | `+0x4b4` | version >= `0x3e` through the **name** slot `+0x1c`, else `FName(L"System")`'s first dword |
 | `TArray<dword>` | `+0x4dc`, `+0x4e0`, `+0x4e4` | `0x0003d160`: count, then `n` x 4 bytes |
 | `TArray<dword>`, version > `0x62` | `+0x4f4`, `+0x4f8`, `+0x4fc` | the same helper |
 | **defaults** | `+0x4e8` data, `+0x4ec` Num, `+0x4f0` Max | read by vtable **+0x98** = `0x0003bdc0`, written by **+0x94** = `0x0003a220` |
@@ -1160,7 +1161,7 @@ followed by four bytes of stack cleanup and the defaults branch itself:
     0x3a90c  MOV EAX,[EBP + 0x10]          ; save-or-load, then the defaults
 
 So the record's field list is complete from the prefix to the defaults block: one name array at `+0x4dc`, the config
-`FName` at `+0x4b0`/`+0x4b4` (8 bytes on version >= `0x3e`, nothing below it), and, on version > `0x62`, the second
+`FName` at `+0x4b0`/`+0x4b4` (`+0x4b0`, a class reference) and the config name (`+0x4b4`, one dword) -- both written on version >= `0x3e`, only the name defaulted below it, and, on version > `0x62`, the second
 name array at `+0x4f4`. Anything between the array's tail and the defaults start has to be those three fields.
 
 **They do not account for it, and the array's own end is what moves.** `tools/class-record-array.py` now measures the
@@ -1212,9 +1213,10 @@ a one-byte reference plus the two dwords, with the repeat in the first dword.
 `make ci`) takes every class whose record the array parses (`inventory/class_record_array.csv`) and restarts the
 writer's own grammar at the array's bare tail -- `[compact count][count x (compact reference, 8 raw bytes)]` --
 followed by the fields `UClass::Serialize` still writes: up to two name arrays and the config name at
-`+0x4b0`/`+0x4b4`, in the source's order and with the config name's width tried both ways (eight raw bytes, or two
-compact indices, because its two 4-byte halves go through the archive's *reference* method at `+0x18` and its *name*
-method at `+0x1c`, not through one writer):
+`+0x4b0` (a class reference) and the config name at `+0x4b4`, in the source's order and with the name's width tried both ways (eight raw bytes, or two
+compact indices) -- a reading this page has since corrected to **two fields**: a reference through the archive's
+`+0x18` and a name through `+0x1c`, not one 8-byte `FName` (see *The pair at +0x4b0/+0x4b4 is a class reference
+and a name, and the image names the first*):
 
 | measure | value |
 |---|---|
