@@ -76,7 +76,7 @@ help:
 	@echo "  class-record-walkback  walk back from the run at the record's own widths (needs the dump)"
 	@echo "  class-record-array     read the record array at the writer's position: head, tail, residue (needs the dump)"
 	@echo "  class-record-element   restart the array grammar at its own tail: element span, second parse, control"
-	@echo "  class-record-tail      the bytes after the array: a value/reference pair list, and its per-package share"
+	@echo "  class-record-tail      the bytes after the array: a count of name/reference pairs, and its per-package share"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"
 	@echo "  member-access-census  every access to a member displacement, and the stride it indexes at"
 	@echo "  class-reach   every class vs the content that instantiates it (PLAN 5.6, no dump needed)"

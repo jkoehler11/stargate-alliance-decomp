@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""What the bytes after the located record array actually are: a pair list, and it is not an `FName` array.
+"""What the bytes after the located record array actually are: a count and name/reference pairs, not `FName`s.
 
 `tools/class-record-element.py` closes the record on 291 classes by restarting the array grammar at the located
 array's tail and then walking `UClass::Serialize`'s remaining fields -- up to two name arrays and the config name --
@@ -14,6 +14,15 @@ element table):
   * whether an element's **second value is negative**. An `FName` number is an unsigned count, so a negative second
     value rules the two-`TArray<FName>` reading out for that element; the artifact carries `negatives` and
     `negative_at` so the claim is re-checkable from the CSV;
+  * the same bytes read the other way -- the leading value as the **first name's index** and the rest as a bare
+    `(index, number)` sequence -- so "count or first index" is a measurement (`fname_pairs`, `fname_exact`) rather
+    than a reading. A seven-byte tail holds three two-byte names and one byte over, so this reading cannot close
+    where the count reading does;
+  * what each pair's **first value names**, as a token rather than a string -- the package's own name (`pkg`),
+    `Core`, `System` or `other` -- so "the list is package-level content" is a column, not a reading of a name;
+  * whether each pair's **second value fits the archive's reference encoding** (0 null, negative = import
+    `-v-1`, positive = export `v-1`), and when it is negative *which import it names* (`neg_target`), with the
+    import one index earlier as the control (`neg_shift`) -- the CSV alone then answers "one object, or chance";
   * the **trailing** bytes after the last pair, which are what a name array's count cannot consume;
   * the tail's own digest, so *identical across classes* is a measured fact: the report groups the rows by package
     and prints how much of each package shares one tail, which is what separates package-level content from class
@@ -43,7 +52,8 @@ SOURCE = "class_record_element.csv"          # the array's tail and the defaults
 MAX_COUNT = 4096
 MAX_ELEMENT = 8                              # a pair of compact indices is at most 4 bytes each
 COLUMNS = ["package", "class", "exact", "tail_start", "block_start", "width", "count", "pairs", "negatives",
-           "negative_at", "trail", "names_ok", "ctl_hits", "def_exact", "earlier_exact", "hash"]
+           "negative_at", "trail", "names_ok", "ctl_hits", "fname_pairs", "fname_exact", "refs", "neg_target",
+           "neg_shift", "names_kind", "def_exact", "earlier_exact", "hash"]
 DEFAULTS_LIB = "prop-stream.py"              # the property-tag parser `class-defaults.py` already uses
 
 
@@ -117,7 +127,45 @@ def walk_pairs(buf, p, end):
     return {"count": count, "pairs": pairs, "trail": buf[off:end]}
 
 
-def measure(data, tail_start, block, nnames):
+def walk_fnames(buf, p, end):
+    """The same bytes as a bare `FName` sequence: the leading value is the first name's index, not a count.
+
+    An `FName` through the archive's name method is two compact values, so this reading consumes the tail exactly
+    only when the byte count is even and no value straddles `end`. `exact` says it did; `fnames` is how many names
+    the reading got before it ran out or overshot.
+    """
+    fnames, off = [], p
+    while off < end:
+        try:
+            idx, off = read_index(buf, off)
+            num, off = read_index(buf, off)
+        except IndexError:
+            return {"fnames": fnames, "exact": False}
+        if off > end:
+            return {"fnames": fnames, "exact": False}
+        fnames.append([idx, num])
+    return {"fnames": fnames, "exact": True}
+
+
+def resolve_ref(value, imports, nexp):
+    """`ue2pkg.class_name_of`'s encoding, applied to a tail field: 0 null, `-v-1` import, `v-1` export.
+
+    `imports` is a list of `(class name, object name)` pairs in import-table order, so a negative value answers
+    *which object* it names and not merely that it is in range. A positive value is only range-checked: the export
+    table's names are the package's own content and are not carried into the artifact.
+    """
+    if value == 0:
+        return "null"
+    if value < 0:
+        i = -value - 1
+        if imports is None or not (0 <= i < len(imports)):
+            return None
+        cls, name = imports[i]
+        return "%s.%s" % (cls, name)
+    return "exp" if 0 <= value - 1 < nexp else None
+
+
+def measure(data, tail_start, block, nnames, imports=None, nexp=0, classify=None):
     row = {"tail_start": tail_start, "block_start": block, "width": block - tail_start,
            "hash": hashlib.sha1(data[tail_start:block]).hexdigest()[:12]}
     got = walk_pairs(data, tail_start, block)
@@ -138,6 +186,22 @@ def measure(data, tail_start, block, nnames):
         if other and not other["trail"]:
             hits += 1
     row["ctl_hits"] = hits
+    fname = walk_fnames(data, tail_start, block)
+    row["fname_pairs"] = len(fname["fnames"]) if fname else ""
+    row["fname_exact"] = int(bool(fname and fname["exact"]))
+    refs, target, shift = 0, "", ""
+    for _a, b in got["pairs"]:
+        where = resolve_ref(b, imports, nexp)
+        if where is None:
+            continue
+        refs += 1
+        if b < 0 and not target:
+            target = where
+            shift = resolve_ref(b + 1, imports, nexp) or ""     # one import earlier: -(i-1)-1 = b+1
+    row["refs"] = refs
+    row["neg_target"] = target
+    row["neg_shift"] = shift
+    row["names_kind"] = ";".join(classify(a) for a, _b in got["pairs"]) if classify else ""
     return row
 
 
@@ -180,6 +244,15 @@ def sweep(args):
         pkg.read_imports()
         pkg.read_exports()
         nnames = len(pkg.names or [])
+        imports = [(pkg.name(im["class"]), pkg.name(im["name"])) for im in (pkg.imports or [])]
+        nexp = len(pkg.exports or [])
+
+        def classify(v, names=pkg.names or [], own=pkg_name):
+            """The name a first value points at, as a token: no string of the package's own content is written."""
+            if not (0 <= v < len(names)):
+                return "?"
+            text = names[v][0]
+            return "pkg" if text == own else ("Core" if text == "Core" else ("System" if text == "System" else "other"))
         cache = {}
         for cls, (start, block, exact) in sorted(by_pkg[pkg_name]):
             if exact != "1":
@@ -190,7 +263,7 @@ def sweep(args):
             if not data or block > len(data):
                 continue
             row = {"package": pkg_name, "class": cls, "exact": exact}
-            row.update(measure(data, start, block, nnames))
+            row.update(measure(data, start, block, nnames, imports, nexp, classify))
             row["def_exact"] = tag_stream_closes(ps, data, block, pkg)
             row["earlier_exact"] = tag_stream_closes(ps, data, start, pkg)
             rows.append(row)
@@ -227,6 +300,20 @@ def report(path=None):
     print("a pair's second value is negative    %d (%.1f%%), middle pair %d"
           % (len(neg), 100.0 * len(neg) / max(1, len(parsed)), len(neg_mid)))
     print("distinct negative values             %d %s" % (len(neg_vals), neg_vals.most_common(6)))
+    fname_exact = [r for r in rows if r.get("fname_exact") == "1"]
+    three = [r for r in parsed if r["count"] == "3"]
+    print("leading value as a first name index  %d of %d tails close (%d of the %d three-pair tails)"
+          % (len(fname_exact), len(rows), sum(1 for r in fname_exact if r["count"] == "3"), len(three)))
+    refs_ok = [r for r in parsed if int(r["refs"] or 0) == int(r["count"])]
+    print("every pair's second value is a ref   %d of %d parsed tails" % (len(refs_ok), len(parsed)))
+    kinds = collections.Counter(r["names_kind"] for r in parsed if r.get("names_kind"))
+    print("pair's first value names             %s" % kinds.most_common(6))
+    tgt = collections.Counter(r["neg_target"] for r in parsed if r.get("neg_target"))
+    shf = collections.Counter(r["neg_shift"] for r in parsed if r.get("neg_shift"))
+    if tgt:
+        print("the negative term names              %d of %d rows: %s"
+              % (sum(tgt.values()), len(parsed), tgt.most_common(4)))
+        print("control, that import one earlier     %d distinct %s" % (len(shf), shf.most_common(4)))
     print("first values inside the name table   %d of %d" % (len(names_ok), len(parsed)))
     print("tail widths                          %s" % widths.most_common(8))
     print("element counts                       %s" % counts.most_common(8))
@@ -266,7 +353,8 @@ def one(args):
         return 1
     start, block, exact = src[key]
     row = {"package": args.package, "class": args.cls, "exact": exact}
-    row.update(measure(data, start, block, len(pkg.names or [])))
+    imports = [(pkg.name(im["class"]), pkg.name(im["name"])) for im in (pkg.imports or [])]
+    row.update(measure(data, start, block, len(pkg.names or []), imports, len(pkg.exports or [])))
     for k in COLUMNS:
         print("%-16s %s" % (k, row.get(k, "")))
     print("%-16s %s" % ("bytes", data[start:block].hex()))
@@ -294,7 +382,27 @@ def self_check():
     assert roomy and roomy["trail"] == b"\x00", roomy
     zero = walk_pairs(bytes([0x00]), 0, 1)
     assert zero and zero["count"] == 0 and zero["pairs"] == [], zero
-    print("class-record-tail: synthetic tails pass (pairs, negative value, trail, width)")
+    # the same seven bytes as a bare FName sequence: three names and one byte over, so it cannot close
+    f = walk_fnames(body, 0, len(body))
+    assert f and not f["exact"], f
+    six = bytes([0x02, 0x01, 0x02, 0x83, 0x03, 0x00])
+    f6 = walk_fnames(six, 0, len(six))
+    assert f6 and f6["exact"] and len(f6["fnames"]) == 3, f6
+    # references: 0 is null, -v-1 is an import, v-1 is an in-range export
+    imps = [("Package", "Core"), ("Package", "Engine"), ("Class", "Object"), ("Class", "Object")]
+    assert resolve_ref(0, imps, 4) == "null"
+    assert resolve_ref(-4, imps, 4) == "Class.Object"
+    assert resolve_ref(-3, imps, 4) == "Class.Object"
+    assert resolve_ref(4, imps, 4) == "exp"
+    assert resolve_ref(9, imps, 4) is None, "an export index outside the table is not a reference"
+    assert resolve_ref(-9, imps, 4) is None, "an import index outside the table is not a reference"
+    kinds = measure(body, 0, len(body), 5, imps, 4, lambda v: ("pkg" if v == 1 else ("Core" if v == 2 else "other")))
+    assert kinds["names_kind"] == "pkg;Core;other", kinds
+    ref = measure(body, 0, len(body), 5, imps, 4)
+    assert ref["refs"] == 3, ref
+    assert ref["neg_target"] == "Class.Object" and ref["neg_shift"] == "Class.Object", ref
+    assert ref["fname_exact"] == 0, ref
+    print("class-record-tail: synthetic tails pass (pairs, negative value, trail, width, FName reading, references)")
     return 0
 
 
