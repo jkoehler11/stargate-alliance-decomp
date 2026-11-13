@@ -2002,7 +2002,8 @@ def _script_text(pkg, export, index):
 
 
 _SRC_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
-_SRC_FUNC = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|iterator|native)\s+)*"
+_SRC_FUNC = re.compile(r"^[ \t]*(?:(?:exec|protected|private|public|simulated|static|final|latent|iterator|"
+                       r"native|singular)\s+)*"
                        r"(?:function|event)\s+(?:([\w<>\[\].]+)\s+)?(\w+)\s*\(([^)]*)\)", re.I | re.M)
 _SRC_LOCAL = re.compile(r"^\s*local\s+(?:const\s+)?([\w<>\[\].]+)\s+(.+?);", re.I)
 _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+)\s+(\w+)\s*(?:=.*)?$",
@@ -2184,6 +2185,14 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
         target = export_at.get(value)
         if target and target[1] == "Class":
             return target[0], ""
+        # A class the package *imports* is a class too. `DynamicCast Pawn` in `StargateContent` names
+        # `Engine.Pawn` through the import table, and only the export table was consulted -- so every cast whose
+        # class is declared in another package read as "names no class", which is 70 of the 181 residue sites.
+        if value < 0 and -value in import_at:
+            name, kind = import_at[-value]
+            if _kind_key(kind) == "Class":
+                return name, ""
+            return "", "a cast whose import is a %s, not a class" % (kind or "object")
         return "", "a literal or cast that names no class"
     if nm not in ("InstanceVariable", "LocalVariable", "DefaultVariable"):
         return "", "not an object expression"
@@ -2261,7 +2270,7 @@ def _receiver_reading(expr, export_at, import_at, prop_type, prop_type_by_name, 
     return "", "no record for the operand"
 
 
-def calls_report(path, table, out=None):
+def calls_report(path, table, out=None, lists=0):
     """Every script-level call the corpus makes, and what each one's receiver can be read to be.
 
     A `FinalFunction` operand is an object reference, so the call is static and the target is known; a
@@ -2275,7 +2284,10 @@ def calls_report(path, table, out=None):
     expression is a variable, a cast, a `Context` or an object literal, its declared type names a class, and the
     and the call is placed on *that* class's chain. A base-typed receiver can hold any subclass, so a name the
     chain does not declare is looked for *below* it as the last step: one declaring descendant places the site
-    (`descendant:Pkg.Class`), several are a dispatch the static type cannot decide. Locals are the exception --
+    (`descendant:Pkg.Class`), several are a dispatch the static type cannot decide. `--lists N` prints
+    the residue with names -- package, class, function, call, the token in front, that token's
+    operand name and the reason -- because a residue that is only counted is a residue the next
+    session has to re-find. Locals are the exception --
     their type is not a class property, so it is not in `inventory/class_properties.csv` -- which is why they are
     counted separately below.
 
@@ -2423,6 +2435,9 @@ def calls_report(path, table, out=None):
     rows = []
     # Why a by-name site that stays unplaced still has an object expression in front of it.
     receiver_gap = collections.Counter()
+    # Every site whose receiver expression names no class, by the reason the reading gives -- a residue that is
+    # counted is not a residue that is named, and the name is what the next fix is written from (`--lists`).
+    residue = []
     gap_names = collections.Counter()
     # The receiver typed to a class whose chain declares nothing of that name: what the corpus knows *below* it.
     gap_classes = collections.Counter()
@@ -2674,6 +2689,8 @@ def calls_report(path, table, out=None):
                                 below_none[name] += 1
                     if not where and name and rtoken in OBJECT_TOKENS and not rtype:
                         receiver_gap[why or rtoken] += 1
+                        residue.append((pkg_name, owner, pkg.name(e["name"]), name, rtoken,
+                                        _operand_name(prev, export_at, import_at), why or rtoken))
                         if why.startswith("import:"):
                             gap_names[_operand_name(prev, export_at, import_at)] += 1
                             iv, _ie = read_index(prev["operands"], 0)
@@ -2790,6 +2807,12 @@ def calls_report(path, table, out=None):
                   % ", ".join("%s %d" % kv for kv in rest_c.most_common(6)))
     print("      why an expression in front names no class: %s"
           % ", ".join("%s %d" % kv for kv in receiver_gap.most_common(7)))
+    if lists and residue:
+        print("      the residue with names: %d site(s) over %d reason(s); the first %d, by reason"
+              % (len(residue), len(receiver_gap), min(lists, len(residue))))
+        for r in sorted(residue, key=lambda r: (r[6], r[0], r[1], r[2], r[3]))[:lists]:
+            print("        %-6s %-28s %-30s %-24s %-10s %-16s %s"
+                  % (r[0], r[1][:28], r[2][:30], r[3][:24], r[4], r[5][:16], r[6]))
     if array_fixed:
         print("      a receiver that is an array element: %d site(s) over %d (token, class) "
               "pairs, top: %s"
@@ -3425,7 +3448,7 @@ def main():
     ap.add_argument("--scan-lo", type=int, default=8, help="first delta --start-scan tries (default 8)")
     ap.add_argument("--scan-hi", type=int, default=40, help="last delta --start-scan tries (default 40)")
     ap.add_argument("--lists", type=int, default=0, metavar="N",
-                    help="with --start-anchor or --sizefield: name up to N rows of each residue instead of counting them")
+                    help="with --calls, --start-anchor or --sizefield: name up to N rows of each residue instead of counting them")
     ap.add_argument("--payloads", metavar="PACKAGE", help="measure the payload trailer of a package's Function exports")
     ap.add_argument("--sizefield", metavar="PATH",
                     help="what the dword 16 bytes before a script counts: the script with every "
@@ -3465,7 +3488,7 @@ def main():
         if _SHUFFLE:
             print("CONTROL RUN: each class's declared local and return types are rotated onto a neighbouring "
                   "name, so no placement below can be attributed to a declaration")
-        return calls_report(args.calls, Table(), args.out)
+        return calls_report(args.calls, Table(), args.out, args.lists)
     if args.class_refs:
         return class_refs_report(args.class_refs, Table(), args.out)
     if args.compare:

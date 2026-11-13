@@ -1178,6 +1178,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the call residue is named, and two of its reasons were reading gaps)
+
+- **Naming the residue is what found the two bugs.** `--calls --lists N` prints every site of the untyped-object
+  residue -- package, class, function, call name, the token in front, that token's operand name and the reason -- and
+  the 181 sites came out as **70 casts, 28 locals, 40 array elements, 25 struct members, 18 others**. Two of those
+  five shapes were the tool's reading, not the build's.
+- **A cast names its class through the import table.** `DynamicCast Pawn` in `StargateContent` is `Engine.Pawn`
+  through the package's import, and the cast branch consulted only the export table, so every cast of a class another
+  package declares answered "names no class" (70 sites, none of them real). **And the source writes `protected` and
+  `exec`** before a declaration, which the modifier list did not accept: `GUI.GUIController`'s
+  `protected final event PushMenu(int Index, GUIPage NewMenu, string Param1, string Param2)` was never keyed, so its
+  `local GUIPage NewMenu` read as undeclared. Reading the import (kind `Class`) and accepting the modifiers takes
+  by-name placement **13,258 -> 13,356 of 13,507 (98.9%)**, the receiver's chain **2,641 -> 2,738**, the
+  untyped-object residue **181 -> 83** (locals 28 -> 1), and moves 238 rows of `inventory/script_calls.csv`.
+- **What is left is named, not mysterious:** 40 array elements whose array holds a *struct*
+  (`TArray<ScriptDirection>`, `TArray<PlayInfo>`, `TArray<StreamPlaylist>`) -- an element of a struct array is not an
+  object, a negative; 25 struct members whose declared type is a class (`SquadMenu.PostRender`'s `FaceWidget`,
+  `GoauldConsoleHud.DrawHUD`'s `Message`); 17 call results whose callee is an import with no return type in this
+  corpus; and one local of `Engine.InteractionMaster.AddInteraction`, which the class text does declare, so the body
+  scan still stops short of it.
+- Tool (`--lists` for `--calls`, the import branch in the cast reading, the modifier list in `_SRC_FUNC`) +
+  `inventory/script_calls.csv` regenerated (18,931 rows) + `docs/BYTECODE.md` (*The residue is named, not just
+  counted...* and the run transcript) + `docs/UNKNOWNS.md` U13 + this note. Reads the packages; no boot, no Ghidra
+  round, no artifact.
+- **Next measurement, named:** the 25 struct members -- a struct's members are `var` lines inside the class
+  `ScriptText`'s own `struct` block, so their types are the same file-level parse as the local pass, and that is the
+  last of the three remaining shapes the corpus can answer.
+
 ### Execution notes (2026-11-13, the gap is a compact front and sixteen zero bytes, and the array follows)
 
 - **The named measurement was the bytes themselves, and they have one shape.** `tools/class-record-order.py
