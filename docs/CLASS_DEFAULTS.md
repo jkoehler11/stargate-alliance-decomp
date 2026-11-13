@@ -464,6 +464,24 @@ counts and elements, or a token walk -- are now measured and refused on the cont
 own field widths: `UStruct::Serialize`'s body (`0x000392b0`) is where the prefix's encodings come from, and every
 candidate for the tail's 9-byte unit is a guess until that body is read.
 
+### What the record writes in front of the block, now that the prefix is measured
+
+`tools/class-prefix.py` decodes the record's opening with `UStruct::Serialize`'s own field order and scores it against
+the package's export table on all 2,319 class payloads (`inventory/class_prefixes.csv`): a compact index at offset 0
+equals the export's `super` **2,319 / 2,319**, the field after it is a single `00` byte on **2,319 / 2,319** (a null
+object reference — an `FName` there could not be `NAME_None`, which the reader asserts), and the third field names the
+class's own `TextBuffer` export on **2,319 / 2,319**. The reference is **1 or 2 bytes, never 4**, and the prefix ends
+between offset 3 and 6. So the record's front is three references, and the fields the body writes between them —
+`FriendlyName`, the source line, the text position — are not in the cooked stream at all.
+
+The `UClass` tail's field list is not in the record either, with a control: scanning every offset for five dwords, a
+count plus 12-byte records, a config `FName` and two count-plus-4-byte arrays lands exactly on the block start for
+**191 of 2,209** located classes and **184 of 2,209** when the same walk is aimed eight bytes short — a coincidence
+rate, spread over 124 distinct offsets. The middle between the prefix and the block is 91 bytes at the median (p90
+394, max 13,660), and 15 located starts fall *inside* the prefix (offset 1), which are the locator's own false
+positives rather than a record shape.
+
+## The shipped text is not an oracle for defaults
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds

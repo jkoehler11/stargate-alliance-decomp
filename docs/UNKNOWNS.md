@@ -2713,4 +2713,19 @@ walking those runs back relocates exactly **1**. A bytecode walk over the same w
 ends exactly on a start for **5 of 1,664** control payloads at most 26 bytes long, and the epilogue `04 0b 47` in
 none -- so the record's tail is neither a tag stream nor script, and the field widths in `UStruct::Serialize`'s body
 (`0x000392b0`) are what is left. Numbers: `docs/CLASS_DEFAULTS.md`, *The bytes in front of a block start, measured*.
+`0x000392b0`) are what is left. Numbers: `docs/CLASS_DEFAULTS.md`, *The bytes in front of a block start, measured*.
+
+**2026-11-12: the prefix is measured, and the tail field list is closed with a control.** `tools/class-prefix.py`
+(`make class-prefix`, `--check` in `make ci`, artifact `inventory/class_prefixes.csv`) decodes the record's opening
+with `UStruct::Serialize`'s own order over all 2,319 class payloads: a **compact** index at offset 0 equals the
+export's `super` on 2,319/2,319 (1 byte on 1,451, 2 on 868, never 4), the field after it is one `00` byte on
+2,319/2,319 — a null object reference, since an `FName` there could not be `NAME_None` — and the third field names the
+class's own `TextBuffer` export on 2,319/2,319. The prefix is therefore three references in 3-6 bytes, and
+`FriendlyName`, the source line and the text position are not in the cooked stream, which is why the field list the
+bytecode attempt used validated on none of 3,931 functions: encoding was never the problem, the field *set* was.
+`UClass::Serialize`'s tail list is not in the record either — walking it from every offset lands exactly on the block
+start for 191 of 2,209 located classes against 184 of 2,209 for the same walk aimed 8 bytes short, i.e. chance, at 124
+distinct offsets. What remains for the 545 is the middle itself (median 91 bytes, p90 394): not the prefix, not that
+field list, not a tag stream read backwards and not bytecode. Numbers: `docs/NATIVE_VM.md`, *The class record's
+prefix*; `docs/CLASS_DEFAULTS.md`, the section above.
 
