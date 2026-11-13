@@ -173,8 +173,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       File UELib issues/patches upstream where the gap is generic.
       **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): the locator
       finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,664 (71.8%) — the previous
-      512-byte scan window excluded every base class, whose record is longer than that. 15,517 of 15,521 class-level
-      properties render to UnrealScript (99.97%) — 484 arrays (1,502 elements), 219 nested structs — and 1,313
+      512-byte scan window excluded every base class, whose record is longer than that. 15,518 of 15,521 class-level
+      properties render to UnrealScript (99.98%) — 485 arrays (1,518 elements), 219 nested structs — and 1,313
       `Begin Object` subobjects carry another 15,790 of 15,798; enum element names resolve for 771 of 1,052 byte
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
       source so one tree carries both halves. **The decompiler gaps are now counted** (`docs/DECOMPILER.md`,
@@ -183,8 +183,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       that is the format's limit, not the decompiler's — instrumenting `FormatReplication` shows every one of the 79
       classes that lose a block has **`net=0`**: not one property carries `PropertyFlag.Net`, so the class record holds
       no group to reconstruct. They declare `persistent` groups, which are compile-time-only.
-      Remaining here: 4 values (one `array<SpeechReplacement>` that does not
-      tile, three delegate tags), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
+      Remaining here: 3 values, all one `__OnXControllerEvent__Delegate` property whose tag type is
+      not a delegate type (`inventory/defaults_residue.csv`), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
       real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
       labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
@@ -1177,6 +1177,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-13, the struct array's inner field is a string array, and the last three values are one delegate property)
+
+- **`Engine.TextToSpeechAlias.Aliases` renders: 16 elements over 511 bytes, tiling exactly.** Its elements were
+  never the problem — each is a nested tag stream of its own (`MatchWords`, `ReplaceWord`, `None`) and the
+  per-element walk decodes all 16 — but `MatchWords` is an array *inside* a struct, and its inner type is in no file
+  here (`inventory/class_properties.csv` covers class-owned properties only), so the element walk started it as a
+  tagged struct and refused on its first field. `tools/defaults-emit.py` now falls back, only after that refusal, to
+  `count` plus that many FStrings and accepts it only when the elements land on the value's last byte; all 16 close.
+  Rendered **15,517 -> 15,518 of 15,521 (99.98%)**, array elements **1,502 -> 1,518**, and the only package that moves
+  is `Engine` (1,821 -> 1,822) — every other row of `inventory/class_defaults_emit.csv` reproduces byte for byte.
+- **The last three are one property, and none of them is a delegate value.** `tools/defaults-residue.py`
+  (`make defaults-residue`, `inventory/defaults_residue.csv`, synthetic `--check`) reports the shape of every value
+  the renderer refuses: type byte and size class, declared type, the first compact index's width, whether the value
+  tiles as indices, and the `count x width` layouts that divide an array. All three rows are
+  `__OnXControllerEvent__Delegate` (declared `delegate<OnXControllerEvent>`), the first property of its block, and
+  their tag types are not delegate types: `0x50` is type 0 `Invalid` with a 110-byte variable size in
+  `GUI.MenuItemOverlay`, `0xbf` is type 15 `FixedArray` with the index flag and 12 bytes in `StargateMenus.ExtrasPage`
+  and `CreditsPage`. The blocks continue cleanly *after* them (19 more properties in `MenuItemOverlay`,
+  `TitleString` in the other two) and end on the payload's last byte, so the extents are the format's. What the value
+  means is open and recorded as U18 with its two routes, not rendered by a guess.
 
 ### Execution notes (2026-11-13, the same cut chain in the class-record anchor rule: 371 anchor starts and 30 located starts)
 

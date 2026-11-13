@@ -3250,3 +3250,35 @@ text position already are. And the compact run in front of them is written by no
 in the stream those members are non-zero on a class with a source line. Statically, the front's values are in the
 artifact beside each class's own table sizes, so the naming test is a query: three to five bytes cannot be a count
 plus elements, so the candidates are one `FName` plus one or two references, or one reference plus one `FName`.
+
+## U18. What a `delegate` property's default value is
+
+**Observed.** Three class-level values do not render, and they are one property in three classes:
+`__OnXControllerEvent__Delegate` (declared `delegate<OnXControllerEvent>`), the first property of its block in
+`GUI.MenuItemOverlay`, `StargateMenus.ExtrasPage` and `StargateMenus.CreditsPage`. Each slot is a whole block's worth
+of evidence rather than a per-class one: the blocks continue cleanly after the tag and end on the payload's last
+byte (trailer 0), so the tag's extent is the format's.
+
+**Measured** (`tools/defaults-residue.py`, `make defaults-residue`, `inventory/defaults_residue.csv`):
+
+| class | type byte | decoded type | size | first index | tiles as indices |
+|---|---|---|---:|---:|---|
+| `GUI.MenuItemOverlay` | `0x50` | type 0 `Invalid`, size class 5 | 110 | 6 | 97 indices over 110 bytes |
+| `StargateMenus.ExtrasPage` | `0xbf` | type 15 `FixedArray`, index flag | 12 | 3 | 10 indices over 12 bytes |
+| `StargateMenus.CreditsPage` | `0xbf` | type 15 `FixedArray`, index flag | 12 | 3 | 10 indices over 12 bytes |
+
+**Why it is not rendered.** The tag map this reader uses (UELib's, 0-15: `Invalid` … `FixedArray`) has no delegate
+type, so a delegate's default is not written by the tag grammar — a delegate is engine-written state, which is why
+the locator's type-agreement check leaves `UDelegateProperty` unconstrained in the first place. Two further negatives,
+both from the shape rows: neither the 110-byte nor the 12-byte value is a bound function name (the 110-byte one is
+twelve repeats of a nine-byte record plus two bytes; the two 12-byte ones differ in a single byte), and the greedy
+index tiling that lands exactly on the size is also what a run of small bytes does, so it is a shape and not a read.
+
+**What would settle it.** The two routes that have worked on this build's other format questions: the read side of
+the defaults buffer (`UClass::Serialize` at `0x0003a800` is already read; its counterpart sizes the buffer from
+`GetPropertiesSize()`, so a Ghidra round on that caller would show what writes a delegate's bytes), or a live `UClass`
+default object read at the delegate property's offset on a loaded level, where the engine's own `FScriptDelegate`
+layout would show whether the value is `{Object, Name}` or a table. A third, cheaper test: a class whose delegate the
+game *does* bind — the shipped text declares `OnXControllerEvent` handlers, so a class that assigns one in script
+would serialize a non-zero value, and comparing its tag to these three would separate "unset" from "a shape this
+reader has not named".

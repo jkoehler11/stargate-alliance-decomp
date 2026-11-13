@@ -61,7 +61,7 @@ than that, so the classes with the most defaults were exactly the ones reported 
 Scanning the whole payload recovers **114 classes**, takes blocks found from 2,084 to **2,209**, fully-declared
 blocks from 1,552 to **1,666**, and classes with no block from 235 down to **110** — and the recovered set is the
 inheritance spine of the whole tree, which is why the emitted property count jumps from 13,307 to 15,491. (Those are
-the values of that change; the current ones are 1,664 and 15,517, because two blocks were later withheld for
+the values of that change; the current ones are 1,664 and 15,518, because two blocks were later withheld for
 contradicting their own property record — see "The locator scores names first and tag types second".)
 
 Where it still fails:
@@ -121,14 +121,14 @@ Where it still fails:
 * 430 classes are ambiguous — ties between blocks with equally declared names (`UWindow` alone is 45 of them),
   broken by preferring the longer block and then the smaller trailer, which is a rule of thumb, not a proof.
 
-## Emitting: 15,517 of 15,521 properties render, plus 1,313 subobjects
+## Emitting: 15,518 of 15,521 properties render, plus 1,313 subobjects
 
 `inventory/class_defaults_emit.csv`, per package, over the **fully-declared blocks only**:
 
 | package | classes | blocks | properties | rendered | | subobjects |
 |---|---:|---:|---:|---:|---:|---:|
 | `StargateContent` | 567 | 457 | 5,009 | 5,009 | 100.0% | 350 |
-| `Engine` | 367 | 195 | 1,822 | 1,821 | 99.9% | 9 |
+| `Engine` | 367 | 195 | 1,822 | 1,822 | 100.0% | 9 |
 | `StargateGame` | 306 | 195 | 1,753 | 1,753 | 100.0% | 89 |
 | `GamePlay` | 262 | 182 | 1,656 | 1,656 | 100.0% | 0 |
 | `StargateVehicles` | 142 | 124 | 1,559 | 1,559 | 100.0% | 41 |
@@ -137,7 +137,7 @@ Where it still fails:
 | `UDebugMenu` | 38 | 31 | 384 | 384 | 100.0% | 0 |
 | `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
 | others (9 packages) | 254 | 123 | 718 | 716 | 99.7% | 139 |
-| **total** | **2,319** | **1,664** | **15,521** | **15,517** | **99.97%** | **1,313** |
+| **total** | **2,319** | **1,664** | **15,521** | **15,518** | **99.98%** | **1,313** |
 
 What renders, and what each rendering was checked against:
 
@@ -148,7 +148,7 @@ What renders, and what each rendering was checked against:
 | `Object` / `Class` | 1,670 | `Class'Name'` inside the package, `Class'Package.Name'` across one |
 | `Struct(Vector/Rotator/Color/Plane)` | 919 | `(X=..,Y=..,Z=..)`, `(Pitch=..,Yaw=..,Roll=..)`, `(R=..,G=..,B=..,A=..)` |
 | `Byte` | 1,052 | an enum element name where the enum can be resolved (771 of them), the number otherwise |
-| `Array` | 484 properties, 1,502 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'`, and inline inside a struct: `Points=((InVal=0.0,OutVal=1.0),…)` |
+| `Array` | 485 properties, 1,518 elements | one line per element: `DiallingSounds(0)=Sound'Engine.DHD1'`, and inline inside a struct: `Points=((InVal=0.0,OutVal=1.0),…)` |
 | other structs | 219 properties | a nested tagged block: `(MeshName=..,FaceTextureName=..,MeshSectionIndex=5)` |
 
 Arrays and the remaining structs are decoded from **UELib's own defaults deserialiser**
@@ -181,16 +181,53 @@ turns a wrong guess into a refusal — and the field names it produces (`InVal`,
 twelve instances.
 
 Every array decode has to tile its own value region exactly — count and element widths must land on the tag's
-declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 484
-decoded and 2 refused, and it is also what caught the defects below.
+declared size — so a wrong inner type is a **refusal**, not a short element. That is what turns a guess into 485
+decoded and 1 refused, and it is also what caught the defects below.
 
-What is left over, all counted per block in the CSV: **1 array**, **0 structs** and **3** properties with a malformed
-value — 0.03% of the class-level block contents, down from 0.26% two changes ago. The array is
-`Engine.TextToSpeechAlias.Aliases` (`array<SpeechReplacement>`, 511 bytes), which still does not tile; the three are
-delegate tags typed `Invalid`/`FixedArray` in `GUI.MenuItemOverlay`, `StargateMenus.ExtrasPage` and
-`StargateMenus.CreditsPage`. A delegate's default is written by the engine rather than by the tag grammar, so the
-type-agreement check below deliberately leaves `UDelegateProperty` unconstrained and these three stay counted rather
-than explained away.
+What is left over, all counted per block in the CSV: **0 arrays**, **0 structs** and **3** properties carrying a
+value this reader does not render — 0.02% of the class-level block contents, down from 0.26% three changes ago. All
+three are the same property, `__OnXControllerEvent__Delegate`, in `GUI.MenuItemOverlay`, `StargateMenus.ExtrasPage`
+and `StargateMenus.CreditsPage`; the array has rendered since, and the section below measures what its last field is.
+A delegate's default is not written by the tag grammar, so the type-agreement check below deliberately leaves
+`UDelegateProperty` unconstrained and these three stay counted rather than explained away.
+
+### The struct array renders, and the last three values are one delegate property
+
+`Engine.TextToSpeechAlias.Aliases` was the last array that did not tile: `array<SpeechReplacement>`, 511 bytes,
+16 elements. The elements were never the problem — each one is a nested tag stream of its own (`MatchWords`,
+`ReplaceWord`, terminated by `None`) and the per-element walk that fixed `FaceInformation` decodes all 16, ending
+exactly on the region's last byte. What refused was `MatchWords`: an array *inside* a struct, whose inner type is in
+no file here (`inventory/class_properties.csv` covers class-owned properties only), so the element walk started it as
+a tagged struct and its first field refused. `tools/defaults-emit.py` now falls back — only after that refusal, so no
+block that rendered before this change can move — to a count followed by that many FStrings, and accepts it only when
+the elements land exactly on the value's last byte. All 16 close:
+
+    Aliases(0)=(MatchWords=(gg),ReplaceWord="good game")
+    Aliases(1)=(MatchWords=(rofl,rotfl,rotflmao),ReplaceWord="rolls on floor laughing!")
+
+Rendered goes **15,517 -> 15,518 of 15,521 (99.98%)**, array elements **1,502 -> 1,518**, and the only package that
+moves is `Engine` (1,821 -> 1,822); `make defaults-emit` reproduces every other row of the artifact byte for byte.
+
+**The last three values are one property.** `tools/defaults-residue.py` (`make defaults-residue`,
+`inventory/defaults_residue.csv`, whose `--check` is a synthetic self-test) reports the *shape* of every value the
+renderer refuses: the tag's type byte and size class, the type `class_properties.csv` declares, the width of the
+value's first compact index, whether the value tiles as indices, the `count x width` layouts that divide an array,
+and how many tagged struct elements fit. All three rows are `__OnXControllerEvent__Delegate`, declared
+`delegate<OnXControllerEvent>`, and it is the **first property of its block** in each class:
+
+| class | tag type | size | block | what follows the tag |
+|---|---|---:|---|---|
+| `GUI.MenuItemOverlay` | `0x50`: type 0 `Invalid`, size class 5 | 110 B | 269 B, 20 properties | 19 properties — 2 object refs, 4 structs, 10 floats, 2 bools, a `String` |
+| `StargateMenus.ExtrasPage` | `0xbf`: type 15 `FixedArray`, index flag | 12 B | 27 B, 2 properties | `TitleString` |
+| `StargateMenus.CreditsPage` | `0xbf`: type 15 `FixedArray`, index flag | 12 B | 28 B, 2 properties | `TitleString` |
+
+Two things are measured rather than assumed: the blocks continue cleanly *after* these tags and end on the payload's
+last byte (a zero trailer in all three), so the extents belong to the format and are not a locator overshoot; and the
+tag map this reader uses (UELib's, 0-15) has **no delegate type**, so the value is not written by the tag grammar at
+all — which is what `UDelegateProperty`'s exemption in the type check below already assumed. What the value *is*
+stays open: the 110-byte one is twelve repeats of a nine-byte record plus two bytes, and the two 12-byte ones differ
+in one byte, so they read as structural data rather than a bound function. `docs/UNKNOWNS.md` U18 records it with the
+routes that would settle it.
 
 ### The locator scores names first and tag types second
 
@@ -211,7 +248,8 @@ tag grammar, and a pointer carries no value in the block.
 Measured on the dump: the residue goes **11 → 4** values, clean blocks **1,666 → 1,664** (two classes are withheld
 rather than emitting a block that contradicts their own record: `StargateMenus.SelectPawnPanel`,
 `StargateMenus.SelectTeamPanel`), properties **15,530 → 15,521** (the nine impossible tags are gone) and rendered
-**15,517 (99.97%)** — the six classes named in the previous note are down to one array and three delegate tags.
+**15,517 (99.97%)** — the six classes named in the previous note are down to one array and three delegate tags (the array has
+rendered since: the section below measures it).
 
 **What was deliberately not shipped, measured: ranking type agreement *first*.** Putting `bad == 0` at the head of
 that tuple instead promotes **535 withheld classes to clean blocks** — 2,201 of 2,319, 16,764 properties (against
@@ -231,8 +269,8 @@ outer is the class being described** — a subobject the compiler expects to be 
     Emitters(0)=SpriteEmitter'SpriteEmitter0'
 
 The emitter renders those blocks recursively, using the same locator on the subobject's own export: **1,313
-subobjects carrying 15,798 properties, of which 15,790 render**, so a class's defaults are 15,517 + 15,790 =
-**31,307 rendered properties** in total. Subobjects gained the most from the array fix (15,010 → 15,802, before the
+subobjects carrying 15,798 properties, of which 15,790 render**, so a class's defaults are 15,518 + 15,790 =
+**31,308 rendered properties** in total. Subobjects gained the most from the array fix (15,010 → 15,802, before the
 type check withheld a few blocks): a particle system's own defaults are full of struct arrays. Without the declaration a reference names an object the compiler has never
 seen; that is why they are part of this pass and not a cosmetic extra.
 
@@ -725,10 +763,11 @@ whose block could not be located or does not account for itself.
   with the record; nothing here checks that the shorter block is *complete*. What would settle it: a per-class audit
   of the chosen block against the properties the class is documented to override, or the runtime reader of the
   trailing table (the route `docs/NATIVE_PROPERTIES.md` took for the tag format).
-* **The last 4 values.** `Engine.TextToSpeechAlias.Aliases` — a 511-byte `array<SpeechReplacement>` that does not
-  tile under any element width tried — and three delegate tags typed `Invalid`/`FixedArray` (`GUI.MenuItemOverlay`,
-  `StargateMenus.ExtrasPage`, `StargateMenus.CreditsPage`). Delegates are outside the type map by design, so whether
-  those three blocks are misparsed is not measured; a delegate value's real layout is what would settle it.
+* **The last 3 values, all one delegate property.** `__OnXControllerEvent__Delegate` in `GUI.MenuItemOverlay`
+  (type 0 `Invalid`, 110 bytes), `StargateMenus.ExtrasPage` and `StargateMenus.CreditsPage` (type 15 `FixedArray`,
+  12 bytes) — shapes in `inventory/defaults_residue.csv`, `make defaults-residue`. The tag map has no delegate type,
+  so what the value means is outside the tag grammar; whether these three classes even *set* the delegate is what
+  would settle it (U18). The array rendered: see "The struct array renders" above.
 * **The 545 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
   not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
   settled (see the section above for the three explanations already tested and rejected).

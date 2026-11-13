@@ -337,6 +337,32 @@ def _render_element(pkg, buf, off, inner, ctx, end, depth=0):
     return render_tagged_struct(pkg, buf, off, end, ctx, depth + 1, exact=False)
 
 
+def render_string_array(buf, count_off, end):
+    """An inner array with no declaration: `count`, then that many FStrings, tiling the region exactly.
+
+    `inventory/class_properties.csv` covers class-owned properties, so an array that is a *struct member*
+    (`SpeechReplacement.MatchWords`) has no inner type here at all. A string array is the one shape such an
+    array can be read as without one, and the tiling test is what separates a read from a guess: the count's
+    elements must end on the region's last byte, as they do in all sixteen `TextToSpeechAlias.Aliases`
+    elements (values are game data and are never printed by this function).
+    """
+    try:
+        count, off = ps.read_index(buf, count_off)
+    except IndexError:
+        return None, count_off
+    if count < 0 or count > 4096:
+        return None, count_off
+    parts = []
+    for i in range(count):
+        text, off = render_fstring(buf, off, end)
+        if text is None:
+            return None, count_off
+        parts.append((i, quote_string(text)))
+    if off != end:
+        return None, count_off
+    return parts, off
+
+
 def format_inline(text):
     """An array rendered inside a struct: `(elem,elem)` rather than the top level's `Name(i)=elem` lines."""
     if isinstance(text, list):
@@ -448,16 +474,25 @@ def render_value(pkg, entry, meta, buf, ctx=None, depth=0):
         if count < 0 or count > 4096:
             return None, "array"
         parts = []
+        tiled = True
         for i in range(count):
             text, off = render_element(pkg, buf, off, inner, ctx, end, depth)
             if text is None:
-                return None, "array"
+                tiled = False
+                break
             parts.append((i, text))
-        if off != end:
-            # The elements have to tile the value region exactly; anything else is a wrong element type, and
-            # a wrong element type that happens to stop inside the size is exactly what a guess looks like.
-            return None, "array"
-        return parts, "array"
+        # The elements have to tile the value region exactly; anything else is a wrong element type, and a
+        # wrong element type that happens to stop inside the size is exactly what a guess looks like.
+        if tiled and off == end:
+            return parts, "array"
+        # An array that is a struct member has no inner type here, so the element walk starts it as a tagged
+        # struct and the first field -- itself an array -- refuses. The string tiling below is tried only
+        # after that refusal, so no block that renders today can change, and it is exact or it is nothing.
+        if inner is None:
+            alt, _aoff = render_string_array(buf, count_off, end)
+            if alt is not None:
+                return alt, "array"
+        return None, "array"
     return None, "other"
 
 
