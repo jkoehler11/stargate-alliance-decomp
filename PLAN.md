@@ -1176,6 +1176,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the second array is a different member, and it references classes)
+
+- **The comparison the last note named is the artifact's own columns.** `tools/class-record-gap.py` now carries both
+  reference lists per class (`first_refs`, `second_refs`), their comparison (`ref_same`, `ref_same_set`,
+  `ref_shared`, `array_same`) and the class of every referenced object (`first_kinds`, `second_kinds`), swept over
+  the same 549 classes in under a second -- no boot and no Ghidra round.
+- **The answer is "two members".** On the 361 classes where the second array parses: 0 identical lists, 0 holding the
+  same values reordered, 0 identical byte spans, 333 with no reference in common, 28 sharing one to ten, and 319 with
+  the same record count -- the same grammar and the same length, with not one value in common.
+- **The contents say what kind of member it is.** The second array's references are 738 exports of class `Class` of
+  789 resolvable (93.5%) and 402 of 426 imports (94.4%), against 4.0% of the corpus's 57,749 exports; the first array
+  is 80.3% classes with 735 nulls. Both are class-reference lists, and the second is almost purely one.
+- **The reader packs neither of them twice.** `0x0003a800` calls `FUN_0003d900` once (`0x3a8a6`) and `FUN_0003d160`
+  twice (`0x3a8af`, `0x3a904`); `0x3d160`'s one- and two-byte elements cannot produce a 20-byte middle, so the second
+  array is written outside this body.
+- Tool (new columns only) + `inventory/class_record_gap.csv` (549 rows, 32 columns) + `docs/NATIVE_VM.md` (*The
+  second array is a different member, not `+0x4d0` written twice*) + `docs/UNKNOWNS.md` U17 + this note. Reads the
+  packages and one committed artifact; no boot, no Ghidra, no value decoded.
+- **Next measurement, named:** the `0x3d900` call census -- every call site and the member displacement it passes --
+  which names the offset the second array occupies without a boot.
+
 ### Execution notes (2026-11-13, the 20-byte middle is a second record array, and the config reading is dead)
 
 - **The split the last note named is measured, and it is not two fields.** `tools/class-record-gap.py` restarts

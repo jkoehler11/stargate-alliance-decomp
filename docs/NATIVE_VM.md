@@ -1593,3 +1593,47 @@ more bytes and the pairs walk cannot close; on those the last field is not the c
 second array's end is two bytes early). 7 rows have the second array ending past the defaults start, which is the
 `-105` residue `inventory/class_record_array.csv` already reports from the other direction. Both are the next
 question's, not this one's.
+
+### The second array is a different member, not `+0x4d0` written twice
+
+The test the section above named is a per-class comparison of the two arrays' reference lists, and
+`inventory/class_record_gap.csv` now carries both sides (`first_refs`, `second_refs`, `ref_same`, `ref_same_set`,
+`ref_shared`, `array_same`, and the class of every referenced object in `first_kinds` / `second_kinds`). On the 361
+classes where the second array parses:
+
+| measure | value |
+|---|---|
+| identical reference list, same order | **0** |
+| the same values in another order | **0** |
+| identical bytes over the whole array | **0** |
+| no reference in common | **333** |
+| sharing 1-10 references | 28 (1 on 10, 2 on 7, 3 on 6, 5 on 2, 4/9/10 on 1 each) |
+| the same record count as the first array | 319 |
+| its references resolving in the package's object tables | 355 of 361 |
+
+**So the middle is a second member.** A copy would be byte-identical, and the closest row in the corpus shares ten
+of its fifty-seven references. The count matching on 319 rows is not a copy either: those rows have the same element
+grammar and the same length with not one value in common, which is what two *parallel* members look like.
+
+**Both arrays reference classes, and the second one almost only classes.** Resolved through each package's own
+tables:
+
+| reference class | first array | second array | the package population |
+|---|---|---|---|
+| export of class `Class` | 413 of its 514 export refs (80.3%) | **738 of 789 (93.5%)** | 2,319 of 57,749 exports (4.0%) |
+| import of class `Class` | 80 of 84 | **402 of 426 (94.4%)** | 1,157 of 7,500 imports (15.4%) |
+| null | **735** | 233 | -- |
+| property / function / other export | 101 | 51 | 95.4% of exports are not classes |
+| outside the object tables | 40 | 8 | -- |
+
+So the array the previous section measured is a list of *class references* at fifteen times the base rate of class
+exports, and the array before it is one padded with nulls. The object tables are larger than the name tables in this
+build (Engine: 17,980 exports against 10,406 names), so "resolves inside the tables" proves little on its own -- the
+class enrichment is the part that does.
+
+**And the reader does not pack it.** `0x0003a800`'s listing calls `FUN_0003d900` -- the 12-byte-record writer --
+**once**, at `0x3a8a6`, and calls `FUN_0003d160` (count plus one- and two-byte pairs) twice, at `0x3a8af` and
+`0x3a904`. A 20-byte middle is two 12-byte records, which `0x3d160`'s element grammar cannot produce, so the second
+array is not written by this body: either the located array is not the member `+0x4d0` names, or a second member of
+the same element type sits beside it and is packed elsewhere (a version-gated or load-side path). Naming it is the
+next read, and it is a call census of `0x3d900` rather than a boot.
