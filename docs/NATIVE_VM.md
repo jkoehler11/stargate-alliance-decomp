@@ -1272,3 +1272,50 @@ third push is still on the stack when `0x3a8ab`'s `ADD ESP,0x8` leaves it there,
 argument at `0x3a8af` and never reaches the first callee at all. One expression, two callees, one of the two arguments
 passed to both -- which is why the per-call mapping in the field table is right and the pair list still has no writer
 inside `UClass::Serialize`.
+
+
+### The field map is the destructor's, not the constructor's
+
+The class-record notes above read `UClass`'s record region from `UClass::Serialize`'s callees: the record array at
+`+0x4d0` (writer `0x3d900`), the two `TArray<FName>` at `+0x4dc` and `+0x4f4`, and the defaults block behind them.
+The bytes after the record array still parse as a three-entry value/reference list that no callee in that function
+writes, so the region needed a field map -- and the constructor, which `PLAN.md` named as the route to one, cannot
+supply it.
+
+**A constructor of this build zero-fills, so it has no boundaries.** `Class`'s default constructor (`0x3ad20`) writes
+`+0x4b8`, `+0x4bc`, `+0x4c0`, ... one `MOV dword ptr [ESI + disp],EDI` per dword, and it *skips* `+0x4b4`, `+0x50c`
+and `+0x510`; the one-argument form (`0x3ae30`) skips `+0x4ec`/`+0x4f0` too, because it copies its parent's array
+(`MOV EAX,[ESI+0x28]; LEA ECX,[ESI+0x4e8]`) instead of writing it; the full constructor (`0x3af60`) writes the run
+from `+0x4b4` with no hole at all. Three constructors, three different sets of written dwords, and not one of them
+marks a member boundary: the dword a body skips is the neighbour of the one it writes, and which dwords are skipped
+differs per constructor.
+
+**A destructor destroys by address, so every member it owns is a `lea`.** `0x3dbd0` is
+`lea ecx,[esi+disp]; mov BYTE PTR [esp+0x10],n; call target` eight times, one per member, and the offsets it names
+are the field map of the whole record region:
+
+    +0x4b8 -> 0x3d7a0      +0x4d0 -> 0x3da40      +0x4e8 -> 0x1aa30      +0x500 -> 0x1c750
+    +0x4c4 -> 0x3d850      +0x4dc -> 0x1c750      +0x4f4 -> 0x1c750      +0x514 -> 0x1b310
+
+**That moves the array in front of the record array from `+0x4c0` to `+0x4c4`.** `+0x4c0` is the last dword of the
+member at `+0x4b8` and the first of nothing, so the "`+0x4c0`..`+0x4cc` member" of the earlier note is the
+constructor's own zero grid spanning one `TArray`'s tail and the next one's head. `+0x4b8`, `+0x4c4` and `+0x4d0`
+are twelve bytes each -- three `TArray`s of three *distinct* element types, which is what their three destructors
+say: `0x3d7a0`, `0x3d850` and `0x3da40` open with the same thirty bytes (`MOV EDI,[ESI+0x4]; TEST EDI,EDI;
+PUSH 0x287; PUSH 0x4c87e8; PUSH 0x4c87cc`) -- one template instantiated three times -- and each of the three serves
+exactly one member in the whole image, where the plain name arrays at `+0x4dc`/`+0x4f4`/`+0x500` share `0x1c750`
+(117 members) and `+0x514`'s `0x1b310` (328) is a different body with no element loop.
+
+**The instrument is `tools/class-member-map.py`, and the corpus says the rule is general.** It decodes every
+constructor and destructor in `inventory/class_constructors.csv` with `objdump` from the function's own first byte
+and writes one row per `this`-relative reference (`inventory/class_member_map.csv`, 3,418 rows). The slice has to be
+its own file: `--start-address` keeps decoding the section from its beginning and only prints from that address, so
+every body that sits after a jump table arrives desynced and reads as `(bad)` -- the first run of this tool reported
+59 of 60 bodies unread for exactly that reason. Of the 493 destructors, **765 members** are placed and every one of
+them carries a destructor; there are **199** distinct destructors and **146** of them are used by exactly one member.
+Only **210 of 762** member starts are dwords a constructor of the same class also writes, so for two thirds of them
+the constructor route has nothing to say: the destructor sequence is a class's field map in this build, and a
+constructor's store map is not.
+
+    python3 tools/class-member-map.py --xbe DUMP/default.xbe -o inventory
+    python3 tools/class-member-map.py --class Class --report

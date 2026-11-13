@@ -2713,6 +2713,18 @@ the field table looks. The leftover after the walk is `mixed` on 1,037 of 1,166,
 545 are not moved by adding a field in front of the block. The offset sweep lands 80 (3.6%) in the documented order
 and 618 (28.0%) with the dword group moved after the arrays, but 360 of the 618 sit in the 367 classes whose middle
 is exactly 88 bytes, so the sweep is recorded as a negative rather than as evidence for an ordering.
+**2026-11-13: the record region's field map comes from the destructor, and it moves the array in front of
+`+0x4d0` from `+0x4c0` to `+0x4c4`.** `UClass`'s three constructors zero the region one dword at a time and each
+skips a different set of dwords, so no boundary survives in a store map; `UClass`'s destructor (`0x3dbd0`) destroys
+eight members by address, at `+0x4b8`, `+0x4c4`, `+0x4d0`, `+0x4dc`, `+0x4e8`, `+0x4f4`, `+0x500` and `+0x514`, with
+destructors `0x3d7a0`, `0x3d850`, `0x3da40`, `0x1c750` (three members), `0x1aa30` and `0x1b310`. The first three are
+one `TArray` destructor template instantiated for three element types, and each serves exactly one member in the
+image. Corpus-wide the same instrument places 765 members on 493 destructors (`inventory/class_member_map.csv`).
+**What would settle the tail's owner** is now narrower and needs no new data: it is a member *after* `+0x4d0` that
+`UClass::Serialize` does not write, i.e. one of `+0x4e8` (`0x1aa30`), `+0x500` (`0x1c750`) or `+0x514` (`0x1b310`) --
+read the element loop inside `0x1aa30` and `0x1b310` past the shared template prologue, and a 12-byte element freed
+through an object-reference destructor names it.
+
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.
