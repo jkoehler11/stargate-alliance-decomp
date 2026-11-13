@@ -1029,6 +1029,35 @@ moves is **157 -> 3 rows of `receiver_type` that spelled a struct** (`vector` 99
 with a space, the two struct decisions, and the reason a branch keeps when its type names nothing at all.
 
 
+**A receiver the class text never shows: `Outer`, which is typed at the root.** The 54 sites whose receiver types
+to a class that declares no such name are listed with their names now (`--lists` prints the typed residue, the token
+in front, that token's operand and the classes below the receiver that do declare the name), and **36 of the 54 are
+one property**: the bytecode's token in front of the call is `InstanceVariable Outer`. `Outer` is `Core.Object`'s own
+`var native const object Outer`, so its declared type is the universal base and *every* declaring class in the corpus
+is below the receiver -- the descendant lookup cannot narrow it, and the callers (`Engine.CheatManager`,
+`Engine.AdminBase`, `Engine.PlaylistParserBase`) extend `Object` rather than `Actor`, so the caller's chain has
+nothing to offer either. What the set is, per name, is small and now written down: `ClientMessage` 3 declarers
+(`Pawn`, `PlayerController`, `Security`), `ConsoleCommand` 4, `PlayerCalcView` 3, `Possess` 5, `Save` 5,
+`TriggerEvent` 3, `ClientReStart` 2, `ValidIndex` 2, and the six SG1 sight toggles 2 each
+(`ActivateAstralSight`, `DeactivateAstralSight`, `ActivateScarabPussSight`, `DeactivateScarabPussSight` and their
+`StargatePlayer` overrides).
+
+**And the shipped source spells those same calls with no receiver at all, which is a fact about the text, not the
+build.** `Engine.CheatManager` calls `ClientMessage(...)` bare in its `ScriptText` and declares no `ClientMessage`;
+the eighteen packages declare that name in exactly `Security`, `PlayerController` and `Pawn`, none of which is on
+`CheatManager`'s chain -- so the text as shipped could not have compiled, while the bytecode carries `Outer` as the
+receiver of every one of those calls. For a call site the bytecode is authoritative and the extracted source is not:
+a reader who types the receiver from the source line reads no receiver where the build read `Outer`.
+
+**The 14 `BotBase` receivers split three ways, and only one of them is still open.** Seven place on the single
+descendant that declares the name (`IsUnconscious` 4 and `GetAggroLevel` 3 -> `descendant:StargateGame.BotEnemy`),
+six stay a dispatch over the classes below `BotBase` that do declare it (`Possess` 2 over 10 bots, `CallToArms` 3 over
+`BotEnemy`/`BotLite`/`BotSG`, `UnPossess` 1 over 7), and one (`SetPawnClass`) has no declarer below the receiver at
+all. The remaining four rows are names declared outside the receiver's subtree -- `GetMoveTarget` 2 and `TakeOver` 1
+on an `UnrealScriptedSequence`-typed field, `GetMyPlayer` 1 on a `Pawn` local. **None of the 54 is a parse gap:** no
+name in the residue is absent from the corpus (0 rows), so what is left is a dispatch whose size is known, and the
+only thing that would place the rest is a receiver from a running image.
+
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
 `receiver:Pkg.Class` for the receiver's chain, or `descendant:Pkg.Class` for the one class below it that declares the

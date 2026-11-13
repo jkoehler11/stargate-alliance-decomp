@@ -2053,6 +2053,21 @@ whose `receiver_type` spelled `vector`/`Rotator`/`IpAddr` down to 3 -- a class c
 carry, the same runtime shape the chained-callee round named, so the residue now holds one kind of question and the
 next reading of it needs a runtime receiver, not a better walk of these packages.
 
+**2026-11-13, the last 54 receivers are a dispatch, and 36 of them are the root's own property.** The typed residue
+(a receiver whose static type's chain declares no such name) is printed with names now: 54 sites, of which 7 place on
+the one descendant that declares the name (`IsUnconscious` 4, `GetAggroLevel` 3), 42 stay a dispatch over several
+descendants, 5 name a function only classes outside the subtree declare, and **0 name a function no class in the
+corpus declares**. **36 of the 54 are `InstanceVariable Outer`** -- `Core.Object`'s `var native const object Outer`,
+declared type the universal base -- so the descendant set is every declaring class in the corpus and the residue's
+size is each name's declarer count (`ClientMessage` 3: `Pawn`, `PlayerController`, `Security`; `ConsoleCommand` 4;
+`Possess` 5; `Save` 5; `ValidIndex` 2). The source those sites ship spells the call with no receiver and declares no
+such function (`Engine.CheatManager` calls `ClientMessage` bare and neither it nor its chain declares one), so the
+bytecode's `Outer` is the only reading, and for a call site the bytecode outranks the extracted text. **What would
+settle the 42** is a receiver from a running image -- the static type is the root, so no walk of these packages can
+narrow it -- while the five names outside the subtree (`GetMoveTarget`, `GetMyPlayer`, `TakeOver`, `SetPawnClass`)
+are a different question the corpus can still be asked: what the field or local in front is *assigned*, which types
+it far more sharply than its declaration does.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
