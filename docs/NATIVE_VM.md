@@ -1784,3 +1784,48 @@ stands. What the correction costs is a sentence: the head is zeroed whole by dwo
 register, which is what a `TArray` initialiser does, and the negative that matters is unchanged, because an
 append would still show as a non-zero count or a read of `+0x4c8`/`+0x4cc` on a `Class`, and the sweep has
 neither.
+
+### The image names twenty member displacements in its own assert expressions
+
+`tools/member-assert-names.py` (`make member-assert-names`, `inventory/member_assert_names.csv`, its `--check` in
+`make ci`) sweeps every function body for one shape: `mov r32,[base+disp32]` -> `test r32,r32` -> `jcc` ->
+`push line; push file; push expression; call 0x58a30` (the assert printer). When the pushed expression is a bare
+identifier, the site names the member the function just checked -- the same route that named `ClassWithin` at
+`+0x4b0`, generalised.
+
+| displacement | name the image prints | sites |
+|---|---|---|
+| `+0x54` | `LinearFileStillOpen` | 2 |
+| `+0x6c` | `ActorClass` | 1 |
+| `+0x70` | `Input` | 1 |
+| `+0x74` | `RenDev` | 2 |
+| `+0x88` | `FileManager` | 1 |
+| `+0x8c` | `Tracker` | 1 |
+| `+0x90` | `DemoRecDriver` | 1 |
+| `+0xa4` | `level` | 1 |
+| `+0xac` | `RenderedSound` | 7 |
+| `+0xbc` | `PTextureDetail` | 1 |
+| `+0xc0` | `Mesh` | 1 |
+| `+0x188` | `PendingFrame` | 1 |
+| `+0x264` | `Brush` | 2 |
+| `+0x348` | `kparams` | 1 |
+| `+0x3e4` | `TerrainMap` | 4 |
+| `+0x444` | `PlayerID` | 1 |
+| `+0x4b0` | `ClassWithin` | 1 |
+| `+0xea0` | `Viewport` | 3 |
+| `+0x11e0` | `CurrentRemoteInfo` | 1 |
+| `+0x20660` | `MemInit` | 1 |
+
+34 sites, 20 displacement/name pairs, 20 displacements. **Fifteen of them are displacements the destructor map does
+not place at all**, and for four of the five it does place, the map's owner is a different class (`+0x264` `Brush`
+against the map's `ParticleEmitter`/`GUIEditBox`, `+0x3e4` `TerrainMap` against `FileLog`/`SkeletalMeshInstance`) --
+which is the same lesson the `+0x4b0` census taught from the other side: an assert names the member *that function*
+checked, and one displacement has as many meanings as there are classes with a member there.
+
+Two limits, both structural. The shape test drops an expression that is not an identifier (`Index<=ArrayNum`,
+`Defaults.Num()==GetPropertiesSize()`), so a check on a local or on a length is not reported rather than filtered by
+a word list; and the base register is whatever the body loaded, which is not always `this` -- `+0x54`
+`LinearFileStillOpen` sits in a file wrapper, not in a game class. Read the row's site before reading the name.
+
+    make member-assert-names
+    python3 tools/member-assert-names.py --xbe DUMP/default.xbe --report
