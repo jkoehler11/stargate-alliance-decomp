@@ -3289,12 +3289,27 @@ ancestors declares**, so the shipped default for a delegate is "this class handl
 another, under two different tag bytes (`0x17` and `0x57`: same type nibble 7, different size class). Nothing in the
 value is delegate-specific beyond that pair: no table, no arity, no state reference.
 
-**The three above are not delegate values of that shape, and their tag offsets are the open question.** Their first
-two indices resolve to no declared function (`MenuItemOverlay` tiles ten indices over its 110 bytes, the two menu
-pages ten over 12 and differ in a single byte), the 110-byte value is eleven repeats of a nine-byte record, and the
-property's own name index recurs inside it -- a property-block shape, not a value's. Compare that with the 39: a
-value that is a delegate always is two indices and always names a declared function, so the test separates the two
-cases without a guess.
+**The three above are not delegate values of that shape, and the tag offset is only the first one's problem.**
+Their first two indices resolve to no declared function, and their widths are outside the band a decoded value
+occupies: every one of the 39 is 2, 3 or 4 bytes (the object index's width plus the name's), while these are 110 and
+12. `tools/defaults-blockstart.py` (`make defaults-blockstart`, `inventory/delegate_blockstart.csv`) then measured
+what the shape could not:
+
+* `GUI.MenuItemOverlay`'s 110 bytes tile as **twelve whole streamed record units** plus two spare bytes -- U17's
+  unit, a compact object reference plus two dwords, nine bytes at width 1, which no decoded value is long enough to
+  hold even once. The block re-read **ten record units** (90 bytes) later opens on the same property name, carries
+  the same tag byte, and reads the same 110 bytes again, so the tag is inside the record array at both starts and no
+  start within 160 bytes yields a pair. This row is a **locator** result: the class's delegate default is not
+  recoverable by re-locating its block.
+* `StargateMenus.ExtrasPage` and `CreditsPage` are a genuine tag: their one-byte-later start names nothing, so 83 is
+  the only start whose tags name declared properties. Their 12 bytes are one record unit plus three spare, so the
+  record test does not apply, and the two classes differ in exactly one of the twelve.
+
+**What would settle the two menu pages.** Not another start within the block: the tag's extent is pinned by the
+property after it (`TitleString`) and by the payload's last byte. What settles it is the reader of the *value* for
+this property class -- `UDelegateProperty`'s own serialiser rather than the slot-11 body inherited from the common
+base -- or a second package from the same build that ships the same property with a value short enough to be read
+directly.
 
 **The writer route is closed at slot 11.** `DelegateProperty`'s class table is `0x004e16a8`
 (`inventory/class_constructors.csv`) and its slot 11 is `0x00077f70` -- **byte-identical in shape** to
