@@ -1,0 +1,9 @@
+writer,target,site,function,boundary,arg,arg_kind,member,member_hex,writer_insn,pushes
+pairs,0x0003d160,0x0003a8af,Core_UnClass,1,eax,call-result,,,call 0x0003d900,eax
+pairs,0x0003d160,0x0003a904,Core_UnClass,1,ecx,member,1268,0x4f4,"lea ecx,[esi+0x4f4]",ecx | ebp
+pairs,0x0003d160,0x000500a1,FUN_00050050,1,edx,member,112,0x70,"lea edx,[edi+0x70]",edx | esi
+pairs,0x0003d160,0x00066a93,,1,edi,other,,,"mov edi,[esp+0xc]",esi | edi
+pairs,0x0003d160,0x00172fe4,FUN_00172fa0,1,eax,call-result,,,call 0x00172fe0,eax
+pairs,0x0003d160,0x0022d53f,,1,ecx,member,748,0x2ec,"lea ecx,[edi+0x2ec]",ecx | esi
+pairs,0x0003d160,0x0022d54c,,1,edx,member,760,0x2f8,"lea edx,[edi+0x2f8]",edx | esi
+record,0x0003d900,0x0003a8a6,Core_UnClass,1,eax,member,1232,0x4d0,"lea eax,[esi+0x4d0]",eax | ebp

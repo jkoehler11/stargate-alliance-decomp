@@ -1176,6 +1176,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the record writer has one call site, and the reader's second call has no member)
+
+- **The next measurement the last note named is a byte scan, not a boot.** `tools/record-writer-calls.py` finds every
+  `E8 rel32` into `FUN_0003d900` and `FUN_0003d160`, keeps a site only when a forward decode from the window behind it
+  lands exactly on the call, and decodes backwards to the register each call pushes: `LEA reg,[base+disp]` is the
+  member, a `CALL` means the callee's return value is passed on. Eight candidates in the image, eight boundary-proven;
+  `--check` drives a member argument, a call-result argument and a shifted start on synthetic bytes.
+- **The record writer has exactly one call site.** `0x3a8a6` in `Core_UnClass`, handed `+0x4d0`. So the second array
+  of the same 12-byte element grammar at the array's tail is not a second member packed by another body: nowhere else
+  in the image is that function called at all.
+- **The reader's second call is handed the archive, not a member.** At `0x3a8af` the only push is `EAX`, which holds
+  the value returned by the call at `0x3a8a6`, and `FUN_0003d900` ends `return param_1` -- its archive argument. No
+  site in the image is handed `+0x4dc`, which is the offset the earlier section gave that call; two of the seven
+  name-array sites have this one-argument chained shape.
+- **The two bodies are the same shape, and that is what makes the offsets readable.** `0x3d900` reserves `count*0xc`
+  through archive slot `+0x14`, writes the count with `FUN_000637e0`, and per element calls slot `+0x18` with the
+  reference and two dwords; `0x3d160` reserves `count*4`, writes the count the same way, and per element calls slot
+  `+0x1c`, the name method -- the reason its file elements are one and two bytes.
+- Tool (`tools/record-writer-calls.py`: `--image`, `-o`, `--report`, `--check`) + `inventory/record_writer_calls.csv`
+  (8 rows) + `docs/NATIVE_VM.md` (*Only one call site writes the record array, and the reader's second call is not a
+  member*) + `docs/UNKNOWNS.md` U17 + `make record-writer-calls` + this note. Reads the image and one committed
+  symbol map; no boot, no Ghidra round, no decompiled output in git.
+- **Next measurement, named:** what `0x3a8af` invokes with a single argument -- whether `FUN_0003d160` has a
+  one-entry signature reachable there, or the reader's field order is off by one call.
+
 ### Execution notes (2026-11-13, the second array is a different member, and it references classes)
 
 - **The comparison the last note named is the artifact's own columns.** `tools/class-record-gap.py` now carries both
