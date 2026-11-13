@@ -1098,9 +1098,9 @@ class-member-map:
 
 member-access-census:
 	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe \
-		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 -o inventory
+		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514 -o inventory
 	python3 tools/member-access-census.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe \
-		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report
+		--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514 --report
 
 class-record-tail:
 	python3 tools/class-record-tail.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory

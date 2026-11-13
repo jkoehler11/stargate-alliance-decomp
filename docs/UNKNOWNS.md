@@ -2914,3 +2914,19 @@ slots, `Controller@30`, `SparkEmitter@47`) and three at `+0x4d0` (`xEmitter@35`,
 `UClass::Serialize`, so whatever writes the 3 x 9-byte tail after that loop is in the same function
 and not in a member of the class. Numbers: `docs/NATIVE_VM.md`, *The group of three, and the one array
 no `Class` code names*.
+
+**2026-11-13 (fifth): the array writer's body is read to its end, and the members behind the array cannot be the
+tail's.** `FUN_0003d900` is **306 bytes** with two loops -- the archive's two directions of one array -- and no code
+after either of them: both exit into the same epilogue (`0x3d9d6`, `0x3da2b`) and the next body in the symbol map,
+`0x3da40`, is the record array's own destructor. So the previous "what would settle it" is answered negatively: the
+writer does not produce the `3 x 9`-byte pair list. The four members behind the array are censused over the whole
+image (`inventory/member_access_census.csv`, 217 sites over seven displacements): `+0x4e8` 105 (95 of them loads;
+the defaults buffer -- its destructor `0x1aa30` is the template's Empty path with no element loop, so it holds
+bytes), `+0x4f4` 22, `+0x500` 12 and `+0x514` 17, whose map entry `0x1b310` is a reset/constructor shape (zero
+`Num`/`Max`, `PUSH 2`, then `0x1a920`) shared by 328 members rather than a per-element destroy. A byte buffer, two
+4-byte name arrays and a 2-byte string member cannot hold a (reference, value) pair. **What would settle the tail**
+is therefore its own grammar, which needs no new data: the config name at `+0x4b4` is read as an index through
+archive `+0x18` and a number through `+0x1c`, and the tail's (compact, compact) pairs with a negative second term are
+that same two-field shape -- parse each pair as one `FName` and ask whether the leading compact value is the pair
+count or the first name's index. Numbers: `docs/NATIVE_VM.md`, *The array writer is 306 bytes, and the four members
+behind it are arrays*.

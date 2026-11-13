@@ -1176,6 +1176,34 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the record array's writer ends at its epilogue, and the four members behind it are arrays)
+
+- **The named next measurement is answered, and the answer is no.** `FUN_0003d900` read to its end is **306 bytes**
+  (`0x0003d900`..`0x0003da31`) with two loops and nothing after either of them -- both exit into the same epilogue
+  (`0x3d9d6`, `0x3da2b`) and `0x3da40`, the next body in the map, is the record array's own destructor. The two loops
+  are the archive's two directions of one array, selected on `[archive+0x10]`: one reads the compact count and grows
+  the array as it reads, the other reads the count and streams each element where it already sits. So the writer does
+  not produce the record's `3 x 9`-byte pair list, and the previous note's "one body, already partly read" is closed.
+- **The census now covers the record region's seven displacements.** `make member-access-census` passes
+  `--disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514`;
+  `inventory/member_access_census.csv` is **217 rows** (61 before): `+0x4e8` **105** (95 loads, 6 `lea`, 4 stores),
+  `+0x4f4` 22, `+0x500` 12, `+0x514` 17, beside the 17/29/15 already measured. `+0x4e8`'s readers are the T3D
+  exporter, `UExporter`, `UFactory`, the class serialiser and the three native property walkers -- a buffer every
+  property reader consults, which is what the defaults buffer is.
+- **One map entry is not a destructor.** `+0x514` is labelled `dtor` through `0x1b310` (328 members), but that body
+  zeroes `Num`/`Max`, calls `0x55ed0` with **2** and ends through `0x1a920` -- a reset/constructor shape, so the 2 is
+  an element width taken at construction. With `+0x4e8`'s `0x1aa30` being the template's Empty path and no element
+  loop, the region behind the array is a byte buffer, two 4-byte name arrays and a 2-byte string member: none can
+  hold a (reference, value) pair, so the tail's owner is not among them.
+- Tool (`make member-access-census` extended, `--disp` already repeatable) + `inventory/member_access_census.csv`
+  (217 rows) + `docs/NATIVE_VM.md` (*The array writer is 306 bytes, and the four members behind it are arrays*) +
+  `docs/UNKNOWNS.md` U17 + this note. Reads `default.xbe` with the repo's own decoder; no boot, no Ghidra, no value
+  decoded and no name published.
+- **Next measurement, named:** the tail's own grammar under the archive's compact-name convention. The config name at
+  `+0x4b4` is read as an index through archive `+0x18` and a number through `+0x1c`; the tail's (compact, compact)
+  pairs with a negative second term are that same two-field shape, so `tools/class-record-tail.py` should parse each
+  pair as one `FName` and ask whether the leading compact value is the pair count or the first name's index.
+
 ### Execution notes (2026-11-13, the group of three: `Class` names `+0x4c4` and `+0x4d0`, and never `+0x4b8`)
 
 - **One sweep per displacement, one artifact for the group.** `tools/member-access-census.py --disp` is now

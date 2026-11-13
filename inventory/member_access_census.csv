@@ -60,3 +60,159 @@ disp,site_va,function,module,function_class,function_route,form,base,index,insn,
 0x4d0,0x001cb8ab,FUN_001cb850,,,plain,lea-field,ebx,,"lea esi,[ebx+0x4d0]",2,esi,,,,92,no indexed use in 12,Class,Class=12
 0x4d0,0x001d2b8b,FUN_001d26b0,,,plain,lea-field,esi,,"lea ebx,[esi+0x4d0]",2,ebx,,,,199,no indexed use in 12,Class,Class=12
 0x4d0,0x00297544,FUN_00296720,,,plain,lea-field,esi,,"lea ecx,[esi+0x4d0]",2,ecx,,,,123,no indexed use in 12,Class,Class=12
+0x4e8,0x000348d5,FUN_00034890,,ObjectExporterT3D@30,table,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,22,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00034d0b,Core_UExporter,,,plain,field,esi,,"mov esi,[esi+0x4e8]",2,esi,,,,184,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000357fd,Core_UnClass,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,3,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000361fd,Core_UFactory,,,plain,field,esi,,"mov esi,[esi+0x4e8]",2,esi,,,,413,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003957d,Core_UnClass,,Class@23,table,lea-field,esi,,"lea edi,[esi+0x4e8]",2,edi,,,,157,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003a6b0,FUN_0003a670,,Class@10,table,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,23,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003a6b6,FUN_0003a670,,Class@10,table,lea-field,esi,,"lea edi,[esi+0x4e8]",2,edi,,,,22,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003a96d,Core_UnClass,,Class@11,table,lea-field,esi,,"lea edi,[esi+0x4e8]",2,edi,,,,270,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003ac96,Core_UnClass,,Class@11,table,field,esi,,"mov edx,[esi+0x4e8]",2,edx,,,,43,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003acf6,Core_UnClass,,Class@11,table,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,13,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003adce,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x4e8],edi",2,,,,,17,store,Class Weapon,Class=1
+0x4e8,0x0003aed7,FUN_0003ae30,,,plain,lea-field,esi,,"lea ecx,[esi+0x4e8]",2,ecx,,,,30,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003b010,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x4e8],edi",2,,,,,18,store,Class Weapon,Class=1
+0x4e8,0x0003be06,Core_UnClass,,Struct@38,table,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,465,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0003dc30,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x4e8]",2,ecx,,,,22,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0004708b,Native_2,,,plain,field,ecx,,"mov ecx,[ecx+0x4e8]",2,ecx,,,,15,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00047126,Native_18,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,42,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00047126,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,10,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00048b04,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,6,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0004bca2,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",1,ecx,,,,18,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00064d30,FUN_00064b40,,,plain,field,eax,,"mov ebx,[eax+0x4e8]",2,ebx,,,,140,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00064d46,FUN_00064b40,,,plain,field,eax,,"mov edx,[eax+0x4e8]",2,edx,,,,134,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00066e7e,FUN_00066de0,,,plain,field,eax,,"mov edi,[eax+0x4e8]",2,edi,,,,106,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0006c0db,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,3,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0006c6ee,Core_UnObjBas,,,plain,field,ebx,,"mov ecx,[ebx+0x4e8]",1,ecx,,,,28,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0006c733,Core_UnObjBas,,,plain,field,ebx,,"mov ecx,[ebx+0x4e8]",2,ecx,,,,8,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00085380,FUN_000850e0,,xEmitter@35,table,store,esi,,"mov byte [esi+0x4e8],ecx",2,,,,,183,store,Class Weapon,Class=1
+0x4e8,0x000ad155,Core_UnClass,,,plain,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,139,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000c778a,Engine_UnActor,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,64,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000db65f,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,207,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000dbb04,Core_UnClass,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,2,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000dfae0,dtor_Weapon,,,plain,lea-field,esi,,"lea ecx,[esi+0x4e8]",2,ecx,,,,10,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f1ef3,Core_UnClass,,,plain,field,esi,,"cmp edi,[esi+0x4e8]",2,edi,,,,42,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f1fc3,Core_UnClass,,,plain,field,edi,,"cmp esi,[edi+0x4e8]",2,esi,,,,102,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f2103,Core_UnClass,,,plain,field,edi,,"cmp esi,[edi+0x4e8]",1,esi,,,,42,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f21e4,Core_UnClass,,,plain,field,esi,,"cmp edi,[esi+0x4e8]",2,edi,,,,279,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f25ff,Core_UnClass,,,plain,field,esi,,"cmp ebp,[esi+0x4e8]",2,ebp,,,,415,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f2bcf,Core_UnClass,,,plain,field,esi,,"cmp ebp,[esi+0x4e8]",2,ebp,,,,422,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f3153,Core_UnClass,,,plain,field,esi,,"cmp ebx,[esi+0x4e8]",2,ebx,,,,12,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f31cf,Core_UnClass,,,plain,field,esi,,"cmp ebp,[esi+0x4e8]",2,ebp,,,,275,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f39e3,Core_UnClass,,,plain,field,edi,,"cmp esi,[edi+0x4e8]",2,esi,,,,66,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000f3af3,Core_UnClass,,,plain,field,esi,,"cmp edi,[esi+0x4e8]",2,edi,,,,88,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x000fb6c5,FUN_000fb6a0,,,plain,field,eax,,"mov eax,[eax+0x4e8]",1,eax,,,,1,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0010b49a,Engine_UnChan,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,511,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001103f6,FUN_00110120,,,plain,field,edx,,"mov eax,[edx+0x4e8]",2,eax,,,,230,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00110422,FUN_00110120,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,219,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00128238,Core_UnClass,,Actor@110,table,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,391,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001282c4,Core_UnClass,,Actor@110,table,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,353,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00134480,FUN_001343c0,,,plain,field,eax,,"mov eax,[eax+0x4e8]",2,eax,,,,100,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00147316,Core_UnClass,,GameEngine@57,table,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,460,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0014e451,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,14,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00153750,Core_UnClass,,,plain,field,ebx,,"mov eax,[ebx+0x4e8]",2,eax,,,,20,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00153eae,Core_UnClass,,,plain,field,ebx,,"mov eax,[ebx+0x4e8]",2,eax,,,,37,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00154246,Core_UnClass,,,plain,field,ebx,,"mov eax,[ebx+0x4e8]",2,eax,,,,35,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0015e09e,Core_UnClass,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,102,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0015eab5,Core_UnClass,,Level@68,table,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,338,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0015ed67,Core_UnClass,,Level@68,table,field,ebx,,"mov ecx,[ebx+0x4e8]",2,ecx,,,,145,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00163f5c,Core_UnClass,,Actor@64,table,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,41,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00166b85,Core_UnClass,,Level@63,table,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,105,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00172f52,Core_UnClass,,Mesh@40,table,field,esi,,"mov edx,[esi+0x4e8]",2,edx,,,,28,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0017399f,Core_UnClass,,,plain,field,ebx,,"mov ecx,[ebx+0x4e8]",2,ecx,,,,774,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00177a1a,Core_UnClass,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,544,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001812fc,Core_UnClass,,LiftCenter@124,table,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,333,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019a32b,Core_UnClass,,,plain,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,204,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019a677,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,206,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019a6f7,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,177,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019a703,Core_UnClass,,,plain,field,ebx,,"mov eax,[ebx+0x4e8]",2,eax,,,,175,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019a899,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,69,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0019aa37,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,704,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001afb72,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,173,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001b30ba,Core_UnClass,,Pawn@85,table,field,eax,,"mov edx,[eax+0x4e8]",2,edx,,,,146,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c6ecb,execAddSetting,,,plain,field,esi,,"mov edx,[esi+0x4e8]",1,edx,,,,909,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c7065,execAddSetting,,,plain,field,esi,,"mov edx,[esi+0x4e8]",1,edx,,,,811,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c762e,execAddSetting,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,441,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c76f1,execAddSetting,,,plain,field,ecx,,"mov eax,[ecx+0x4e8]",2,eax,,,,390,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c8465,execRemoveClass,,,plain,field,edi,,"mov eax,[edi+0x4e8]",1,eax,,,,152,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c878e,execSaveSettings,,,plain,field,eax,,"mov edi,[eax+0x4e8]",2,edi,,,,204,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001c8952,execSaveSettings,,,plain,field,esi,,"mov ecx,[esi+0x4e8]",2,ecx,,,,57,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001d1b09,Core_UnClass,,,plain,field,edi,,"mov eax,[edi+0x4e8]",1,eax,,,,276,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001d1b98,Core_UnClass,,,plain,field,edi,,"mov eax,[edi+0x4e8]",1,eax,,,,238,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001d9104,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,114,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001dd1e8,Core_UnClass,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,114,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001ea529,Core_UnClass,,,plain,field,edi,,"mov eax,[edi+0x4e8]",2,eax,,,,21,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001ee7d5,Core_UnTemplate,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,2773,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001ef19c,Core_UnTemplate,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,2005,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001ef73f,Core_UnTemplate,,,plain,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,1606,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001ef96d,Core_UnTemplate,,,plain,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,1448,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001efb08,Core_UnTemplate,,,plain,field,ecx,,"mov edx,[ecx+0x4e8]",2,edx,,,,1330,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001efc66,Core_UnTemplate,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,1234,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001efe38,Core_UnTemplate,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,1096,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001f01fb,Core_UnTemplate,,,plain,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,829,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x001f0499,Core_UnTemplate,,,plain,field,eax,,"mov ecx,[eax+0x4e8]",2,ecx,,,,641,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00201c70,Core_UnClass,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,244,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002160c1,FUN_00215f80,,,plain,field,eax,,"mov edx,[eax+0x4e8]",2,edx,,,,93,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x00216197,FUN_00215f80,,,plain,field,eax,,"mov edx,[eax+0x4e8]",2,edx,,,,29,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0029aedc,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,941,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x0029c907,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,812,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002a12f2,Core_UnClass,,,plain,field,esi,,"mov edx,[esi+0x4e8]",2,edx,,,,34,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002b9e87,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,422,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002ba31b,Core_UnClass,,,plain,field,edi,,"mov ecx,[edi+0x4e8]",2,ecx,,,,96,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002c17de,FUN_002c17a0,,,plain,field,esi,,"mov eax,[esi+0x4e8]",2,eax,,,,58,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002c26a7,FUN_002c2675,,,plain,store,esi,,"mov byte [esi+0x4e8],ebx",2,,,,,30,store,Class Weapon,Class=1
+0x4e8,0x002d3990,Core_UnClass,,,plain,field,esi,,"mov esi,[esi+0x4e8]",2,esi,,,,15,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002d4983,Core_UnClass,,,plain,field,esi,,"mov esi,[esi+0x4e8]",2,esi,,,,68,no indexed use in 12,Class Weapon,Class=1
+0x4e8,0x002d4f12,Core_UnClass,,,plain,field,esi,,"mov esi,[esi+0x4e8]",2,esi,,,,15,no indexed use in 12,Class Weapon,Class=1
+0x4f4,0x0003a8fc,Core_UnClass,,Class@11,table,lea-field,esi,,"lea ecx,[esi+0x4f4]",2,ecx,,,,302,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0003ade0,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x4f4],edi",2,,,,,14,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0003aee5,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x4f4],edi",2,,,,,26,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0003b022,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x4f4],edi",2,,,,,15,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0003dc20,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x4f4]",2,ecx,,,,25,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000dcc6d,ctor_GameReplicationInfo,,,plain,lea-field,esi,,"lea ecx,[esi+0x4f4]",2,ecx,,,,9,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000dccf9,dtor_GameReplicationInfo,,,plain,lea-field,esi,,"lea eax,[esi+0x4f4]",2,eax,,,,54,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000dfad0,dtor_Weapon,,,plain,lea-field,esi,,"lea ecx,[esi+0x4f4]",2,ecx,,,,13,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e42f7,Engine_UnAudio,,AudioSubsystem@34,table,field,esi,,"mov ebx,[esi+0x4f4]",2,ebx,,,,679,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e680f,FUN_000e6800,,BeamEmitter@18,table,field,esi,,"mov eax,[esi+0x4f4]",2,eax,,,,16,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e681f,FUN_000e6800,,BeamEmitter@18,table,store,esi,,"mov byte [esi+0x4f4],eax",2,,,,,12,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e687b,FUN_000e6850,,BeamEmitter@30,table,field,esi,,"mov eax,[esi+0x4f4]",2,eax,,,,56,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e8196,FUN_000e8060,,BeamEmitter@41,table,field,esi,,"mov ecx,[esi+0x4f4]",2,ecx,,,,555,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e8713,FUN_000e8060,,BeamEmitter@41,table,field,esi,,"mov edi,[esi+0x4f4]",2,edi,,,,291,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e873a,FUN_000e8060,,BeamEmitter@41,table,field,esi,,"mov eax,[esi+0x4f4]",2,eax,,,,278,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x000e8cc6,FUN_000e8060,,BeamEmitter@41,table,field,esi,,"mov ecx,[esi+0x4f4]",2,ecx,,,,17,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x00101d5c,FUN_00101c40,,,plain,lea-field,esi,,"lea edi,[esi+0x4f4]",2,edi,,,,87,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0010219b,FUN_00101ea0,,,plain,store,esi,ecx,"mov byte [esi+ecx+0x4f4],edx",2,,,,,23,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0015b245,FUN_0015b050,,Pawn@73,table,field,esi,,"cmp ebp,[esi+0x4f4]",2,ebp,,,,20,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0015b26d,FUN_0015b050,,Pawn@73,table,store,esi,,"mov byte [esi+0x4f4],ebp",2,,,,,6,store,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x0024af50,FUN_0024af30,,,plain,lea-field,eax,,"lea esi,[eax+0x4f4]",2,esi,,,,236,no indexed use in 12,Class GameReplicationInfo Weapon,Class=4
+0x4f4,0x002c26b9,FUN_002c2675,,,plain,store,esi,,"mov byte [esi+0x4f4],ebx",2,,,,,27,store,Class GameReplicationInfo Weapon,Class=4
+0x500,0x0003adf2,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x500],edi",2,,,,,11,store,Class,Class=4
+0x500,0x0003aef7,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x500],edi",2,,,,,23,store,Class,Class=4
+0x500,0x0003b034,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x500],edi",2,,,,,12,store,Class,Class=4
+0x500,0x0003dc10,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x500]",2,ecx,,,,28,no indexed use in 12,Class,Class=4
+0x500,0x00082aef,FUN_00082a20,,,plain,store,edi,,"mov byte [edi+0x500],eax",2,,,,,252,store,Class,Class=4
+0x500,0x000cfb5e,FUN_000cf260,,Pawn@30,table,field,ecx,,"cmp eax,[ecx+0x500]",2,eax,,,,907,no indexed use in 12,Class,Class=4
+0x500,0x000d8403,FUN_000d8110,,LevelInfo@30,table,field,esi,,"cmp edx,[esi+0x500]",2,edx,,,,50,no indexed use in 12,Class,Class=4
+0x500,0x001b302d,Core_UnClass,,Pawn@85,table,field,esi,,"mov eax,[esi+0x500]",2,eax,,,,187,no indexed use in 12,Class,Class=4
+0x500,0x001b30db,Core_UnClass,,Pawn@85,table,field,esi,,"mov eax,[esi+0x500]",2,eax,,,,136,no indexed use in 12,Class,Class=4
+0x500,0x001b3293,Core_UnClass,,Pawn@85,table,field,esi,,"mov eax,[esi+0x500]",2,eax,,,,38,no indexed use in 12,Class,Class=4
+0x500,0x001b41fb,FUN_001b3ef0,,Pawn@82,table,field,esi,,"mov eax,[esi+0x500]",2,eax,,,,71,no indexed use in 12,Class,Class=4
+0x500,0x001b87e3,FUN_001b6f90,,Pawn@86,table,field,esi,,"mov eax,[esi+0x500]",2,eax,,,,23,no indexed use in 12,Class,Class=4
+0x514,0x0003a6da,FUN_0003a670,,Class@10,table,lea-field,esi,,"lea ecx,[esi+0x514]",2,ecx,,,,11,no indexed use in 12,Class GameInfo,
+0x514,0x0003aa3a,Core_UnClass,,Class@11,table,lea-field,esi,,"lea ebx,[esi+0x514]",1,ebx,,,,209,no indexed use in 12,Class GameInfo,
+0x514,0x0003ae04,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x514],edi",2,,,,,8,store,Class GameInfo,
+0x514,0x0003af09,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x514],edi",2,,,,,20,store,Class GameInfo,
+0x514,0x0003b052,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x514],edi",2,,,,,7,store,Class GameInfo,
+0x514,0x0003dc00,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x514]",2,ecx,,,,31,no indexed use in 12,Class GameInfo,
+0x514,0x0003e30e,FUN_0003e290,,,plain,field,edi,,"mov ecx,[edi+0x514]",2,ecx,,,,50,no indexed use in 12,Class GameInfo,
+0x514,0x0003e324,FUN_0003e290,,,plain,field,edi,,"mov ecx,[edi+0x514]",2,ecx,,,,42,no indexed use in 12,Class GameInfo,
+0x514,0x00051f40,Core_UnTemplate,,LinkerLoad@10,table,field,ebx,,"mov ecx,[ebx+0x514]",1,ecx,,,,9,no indexed use in 12,Class GameInfo,
+0x514,0x00051f52,Core_UnTemplate,,LinkerLoad@10,table,store,ebx,,"mov [ebx+0x514],imm",2,,,,,1,store,Class GameInfo,
+0x514,0x0006b0da,Core_UnObj,,,plain,field,edi,,"mov eax,[edi+0x514]",2,eax,,,,670,no indexed use in 12,Class GameInfo,
+0x514,0x0006b7f3,Core_UnObj,,,plain,field,eax,,"mov eax,[eax+0x514]",2,eax,,,,159,no indexed use in 12,Class GameInfo,
+0x514,0x000dda18,dtor_GameInfo,,,plain,lea-field,esi,,"lea ecx,[esi+0x514]",2,ecx,,,,59,no indexed use in 12,Class GameInfo,
+0x514,0x0020a9c7,FUN_0020a920,,,plain,lea-field,esi,,"lea ecx,[esi+0x514]",2,ecx,,,,110,no indexed use in 12,Class GameInfo,
+0x514,0x002e15fb,FUN_002e15e0,,,plain,store,esi,,"mov byte [esi+0x514],eax",2,,,,,3,store,Class GameInfo,
+0x514,0x002e1cce,FUN_002e1b70,,,plain,store,esi,,"mov [esi+0x514],imm",2,,,,,459,store,Class GameInfo,
+0x514,0x002e8248,FUN_002e81f0,,,plain,store,esi,,"mov [esi+0x514],imm",2,,,,,3,store,Class GameInfo,

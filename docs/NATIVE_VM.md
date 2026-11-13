@@ -1450,3 +1450,49 @@ loop.
     python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
     python3 tools/member-access-census.py --xbe DUMP/default.xbe \
         --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --report
+
+### The array writer is 306 bytes, and the four members behind it are arrays
+
+`FUN_0003d900` was the named next measurement -- "the body of the writer itself, past its element loop". Read to its
+end it is **306 bytes** (`0x0003d900` to `0x0003da31`) with **two loops and no code after either of them**: both exit
+into the same epilogue (`POP EDI; MOV EAX,ESI; POP ESI; POP EBP; POP EBX; RET`, at `0x3d9d6` and `0x3da2b`), and the
+next body in the symbol map, `0x0003da40`, is the record array's own destructor. The two loops are the archive's two
+directions of one array: the branch it selects on is the flag at `[archive+0x10]` (`0x3d92a`), and the path taken when
+that flag is zero (`0x3d9dd`) reads the compact count into a temporary and streams each element where it already
+sits, while the other (`0x3d937`) grows the array as it reads. Neither path writes a second structure after the
+element loop, so the `3 x 9`-byte pair list the record's tail carries is **not** the array writer's, and the "one
+body, already partly read" reading of the previous note is closed.
+
+**The four members behind the record array are censused, and none of them is a pair list.** `make
+member-access-census` now sweeps the record region's seven displacements together (`--disp` is repeatable), and
+`inventory/member_access_census.csv` is **217 sites**:
+
+| displacement | sites | forms | stack forms | destructor | element |
+| --- | --- | --- | --- | --- | --- |
+| `+0x4b8` | 17 | 9 load, 2 `lea`, 6 store | 36 | `0x3d7a0` | 8 |
+| `+0x4c4` | 29 | 8 load, 16 `lea`, 5 store | 8 | `0x3d850` | 4 |
+| `+0x4d0` | 15 | 3 load, 7 `lea`, 5 store | 2 | `0x3da40` | 12 |
+| `+0x4e8` | 105 | 95 load, 6 `lea`, 4 store | 19 | `0x1aa30` | 1 |
+| `+0x4f4` | 22 | 8 load, 7 `lea`, 7 store | 4 | `0x1c750` | 4 |
+| `+0x500` | 12 | 7 load, 1 `lea`, 4 store | 6 | `0x1c750` | 4 |
+| `+0x514` | 17 | 5 load, 5 `lea`, 7 store | 2 | `0x1b310` | none measured |
+
+`+0x4e8` is the defaults buffer, and its 95 loads say so: it is read by the T3D exporter (`0x000348d5`), by
+`UExporter` and `UFactory` (`0x00034d0b`, `0x000361fd`), by the class serialiser itself at `0x3a96d`/`0x3ac96`/
+`0x3acf6`, and by the three native property walkers at `0x0004708b`/`0x00047126` -- the shape of a buffer every
+property reader consults, not of a per-class list. Its destructor `0x1aa30` agrees from the other side: it is the
+template's *Empty* path with **no element loop** (`PUSH 0x1; PUSH count; PUSH 0x0; CALL 0x55f00`, then one free
+through `0x5bf510`'s slot `+0x8`), so the member holds bytes and has no element to destroy.
+
+**And the one member whose map entry is not a destructor.** `+0x514` is labelled `dtor` in
+`inventory/class_member_map.csv` through `0x1b310`, which 328 members share -- but that body zeroes `Num` and `Max`,
+calls `0x55ed0` with **2** and ends by calling `0x1a920`: a reset/constructor shape, so the `2` is an element width
+taken at construction and not a per-element destroy. The displacement is also shared across classes (the census
+attributes `+0x4f4` to `GameReplicationInfo`, `Weapon`, `BeamEmitter` and `Pawn@73` as well as to seven `Class`
+slots), so neither the label nor the displacement alone types it; what survives is that the record region ends in a
+byte buffer, two 4-byte name arrays and a 2-byte string member, and that none of the four can hold a
+(reference, value) pair.
+
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe -o inventory
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe \
+        --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514 --report
