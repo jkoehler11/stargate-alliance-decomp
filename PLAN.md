@@ -1178,6 +1178,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the same cut chain in the class-record anchor rule: 371 anchor starts and 30 located starts)
+
+- **The package spelling the call table was folding is folded in the second ancestor walk too.** `class-record.py`'s
+  anchor rule asks whether a tag names "a property the class or an ancestor declares", and its ancestor walk was keyed
+  on `(package, class)` with `package_of_super` spelling `GamePlay` as `Gameplay` in the same 70 rows -- so a class
+  under `StargateGame.BotBase` never saw `ScriptedController`, `Controller` or `Actor`'s properties and its tags
+  looked undeclared. `fold_super_pkg` folds the spelling at the index, counts the repair, and the sweep prints it
+  (`the ancestor walk folded 70 package spelling(s): Gameplay->GamePlay 70`).
+- **The rule gains, and nothing it already placed moves.** Anchor starts **19,767 -> 20,138** over payloads that carry
+  one at all **1,963 -> 2,030** of 2,319; agreement with the locator **1,628 -> 1,658 of 2,209 (73.7% -> 75.1%)**;
+  `long-no-block` anchored **33 -> 34** of 60 (`26` now name no declared property, was 27) and `record-only` stays
+  `5`. The biggest movers are `StargateContent`'s bots (`ReetouBot` 28 -> 38, `JaffaBotHeavy` 9 -> 11,
+  `BotGoauld` 7 -> 10), and two payloads gain a first anchor at all (`ACTION_SquadMoveToPlayer`, `AlarmLight`).
+  **82 of 2,319 rows change and no `shape` or `block_start` does** -- the fold only widens the declared-name set, so
+  the locator's own numbers are untouched.
+- **The first-tag read moves with it, which is the check that the fold reached the right table.** `1,687 -> 1,692 of
+  the 2,209` located starts open with a property the class declares, `522 -> 517` with something else, the
+  `type-contradiction` residue `4 -> 2`, and the three "fully declared" classes drop out of the non-property list
+  entirely.
+- Tool (`fold_super_pkg`, the audit line, two `--check` cases) + the regenerated `inventory/class_records.csv` +
+  `docs/CLASS_DEFAULTS.md` (the anchor section, the residue table and the first-tag section) + this note. Reads the
+  packages; no boot, no Ghidra round.
+
 ### Execution notes (2026-11-13, the super chain was case-sensitive on the package, and 70 rows spell GamePlay as Gameplay)
 
 - **The five names the last note called "only classes outside the subtree declare" were behind a cut chain, not a
