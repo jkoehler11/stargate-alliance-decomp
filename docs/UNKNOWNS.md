@@ -3394,3 +3394,23 @@ are the tail: whether the four tails are a second table after a single tag, and 
 or a one-tag block whose name the cooked stream does not declare. The route is `class-defaults.py`'s
 `single_declared_block` against a class whose single declared property is known from its script text.
 
+**2026-11-13 (fourteenth): the record's own tail settles the four re-located starts, and leaves the 24 as a
+negative.** The thirteenth entry asked whether the four tails are a tag followed by a second table and whether the 24
+carry a bare terminator, and named the route `class-defaults.py`'s `single_declared_block` against a class whose one
+declared property is known from its script text. That route works, and it supplies the control the thirteen entries
+were missing: `Engine.SubActionCameraShake`, `SubActionFOV`, `SubActionSceneSpeed` and `SubActionTrigger` each declare
+one property and set it, so the single declared tag that tiles the payload is the block, at start **97** on all four.
+Reading forward from the record's last streamed field, every one of the 32 payloads ends in a run of units
+(`<name index> 01 00 00 00 <4 bytes>`) and a short closing run -- `02 01 02 83 03 00` on the anchors, with the block
+immediately after it -- and corpus wide a located block start sits **6 to 9** bytes past the last unit's flag dword on
+**1,180 of 2,204** rows (mode 7 with 449; 59.8% within 12), so the closing run is the record's and not the block's.
+That refutes all four re-located starts: `KBSJoint` 69, `HaakenMK2Weapon_Bot` 68 and `P90Torch` 68 are one byte before
+a unit's flag dword and `AttachedDeathGliderTurretController` 75 is inside one, and the parse accepted them by reading
+the dword as a property value (`bHidden`, `FidgetAnims`, `RunMovementAnims`, `KParams`). **What it does not settle is
+the 24**, and it settles them only as a negative: no single declared tag tiles any of their payloads anywhere, the
+same test that finds all four anchors, so the payload carries no tag the class declares -- which is compatible with an
+empty block but does not show there is no tag syntax inside the closing run. **What is still open** is therefore the
+closing run's own grammar: its count and index bytes on the payloads whose block is a known tag, joined against
+`inventory/class_record_gap.csv`'s array counts, which would say whether those six bytes are the tail of the
+version-gated `+0x4f4` name array or a field of its own.
+

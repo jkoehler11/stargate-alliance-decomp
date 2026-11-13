@@ -1,0 +1,33 @@
+package,class,payload,located_start,claimed_start,claimed_room,claimed_trailer,units,last_unit,after_len,after_hex,tiles,verdict
+Engine,SubActionCameraShake,109,8,97,91,0,73 83,83,18,02010283030068025d07065368616b650000,97:Desc:Str,block
+Engine,SubActionFOV,107,8,97,91,0,73 83,83,16,02010283030068025d0504464f560000,97:Desc:Str,block
+Engine,SubActionSceneSpeed,115,8,97,91,0,73 83,83,24,02010283030068025d0d0c5363656e652053706565640000,97:Desc:Str,block
+Engine,SubActionTrigger,111,8,97,91,0,73 83,83,20,02010283030068025d0908547269676765720000,97:Desc:Str,block
+Engine,StreamCommandlet,98,8,97,91,0,73 83,83,7,02010283030000,,no-declared-tag
+Engine,TerrainMaterial,99,8,98,92,0,73 83,83,8,0201028303010700,,no-declared-tag
+Engine,xAdminConfigBase,98,8,97,91,0,73 83,83,7,02010283030000,,no-declared-tag
+StargateContent,CTFGateTeleporter,101,45,100,96,0,68 77,77,16,030d110c8616045a01590157015c0100,,no-declared-tag
+StargateContent,GoauldShieldEffect,96,1,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,HaakenMK2WeaponAttachment,96,46,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,HaakenPunchDamage,96,1,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,KeyInventory_SGC,96,1,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,PteroBossVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,PteroLandingPoint,103,1,102,97,0,69 79,79,16,030d110c8616045a01590157015c0100,,no-declared-tag
+StargateContent,PteroVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,RepQueenEnergyWeaponAttachment,96,1,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,ReplicatorQueenBot,97,45,96,92,0,68 77,77,12,050d126101110c8663090000,,no-declared-tag
+StargateContent,ReplicatorQueenVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,ReplicatorVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,SGCVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,SGC_SecurityDoorObjective,104,1,103,98,0,69 79,79,17,040d12110c8616045a01590157015c0100,,no-declared-tag
+StargateContent,StaffCannonGunAttachment,96,46,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,SuperSoldierPunchDamage,96,1,95,90,0,69 79,79,9,040d12110c86160000,,no-declared-tag
+StargateContent,SuperSoldierVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateContent,TERWeaponAttachment,97,1,96,91,0,69 79,79,10,040d12110c864a0a0000,,no-declared-tag
+StargateContent,TokraVoicePack,108,1,107,102,0,25 69 79,79,21,040d12110c861606700173015a01590157015c0100,,no-declared-tag
+StargateGame,BotLeader,97,46,96,91,0,70 79,79,10,0402200601874f0b0000,,no-declared-tag
+StargateVehicles,AttachedAlkeshTurretController,96,46,95,90,0,68 78,78,10,04013705038369010000,,no-declared-tag
+Engine,KBSJoint,95,47,69,63,21,70 80,80,7,02010283030000,,record
+StargateContent,HaakenMK2Weapon_Bot,97,46,68,63,24,69 79,79,10,040d12110c866f090000,,record
+StargateContent,P90Torch,97,46,68,63,25,69 79,79,10,040d12110c8679180000,,record
+StargateVehicles,AttachedDeathGliderTurretController,96,46,75,70,14,68 78,78,10,04013705038365020000,,record

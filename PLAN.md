@@ -1221,6 +1221,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (thirteenth) + `make class-record-room` + this note. Reads
   the packages and three committed tables; no boot, no Ghidra round, no value decoded.
 
+### Execution notes (2026-11-13, the record's own tail: four re-located starts sit inside a unit, and the 24 stand as a negative)
+
+- **The question was what a payload carries between its record and its block, and four classes answer it from the
+  block side.** `Engine.SubActionCameraShake`, `SubActionFOV`, `SubActionSceneSpeed` and `SubActionTrigger` each
+  declare one property and set it, so the single declared tag that tiles the payload exactly is the block (the
+  `single_declared_block` test: all four at start **97**, type `Str`, the value the payload ends on). Read forward
+  from the last streamed field, all **32** payloads of the room table end in a run of units -- `<name index>
+  01 00 00 00 <4 bytes>` -- followed by a short closing run: on the anchors `02 01 02 83 03 00`, and the block begins
+  immediately after it.
+- **Corpus wide the block start sits 6 to 9 bytes past the last unit on 1,180 of 2,204 located rows** (mode 7 with
+  449, 8 with 261, 9 with 185, 6 with 169, 59.8% within 12 bytes). So the closing run belongs to the record, and its
+  length follows the class's name arrays rather than being one constant.
+- **All four re-located starts are inside a unit, so they are refuted, not relocated.** `KBSJoint` 69,
+  `HaakenMK2Weapon_Bot` 68 and `P90Torch` 68 sit one byte before a unit's flag dword, and
+  `AttachedDeathGliderTurretController` 75 sits inside a unit's four trailing bytes; the parse that accepted them
+  read that dword as a property value (`bHidden`, `FidgetAnims`, `RunMovementAnims`, `KParams`). A block cannot begin
+  inside the record, and what each leaves after the claimed tag is the closing run plus a terminator, not a second
+  table.
+- **The 24 empty verdicts stand as a negative, and the anchors are their control.** On every one of them no single
+  declared tag tiles the payload anywhere -- exactly the test that finds all four anchors -- while their record ends
+  1 to 2 bytes from the payload's end where the anchors' leaves a ten-byte tag. Recorded as `no-declared-tag`: there
+  is no tag to find, not a tag read as empty.
+- Tool (`tools/class-tail-units.py`: `--sweep`, `--report`, `--join`, `--check` driving five synthetic payloads) +
+  `inventory/class_tail_units.csv` (32 rows) + `docs/NATIVE_VM.md` (*The record's own tail ...*) + `docs/UNKNOWNS.md`
+  U18 (fourteenth) + `make class-tail-units` + this note. Reads the packages and two committed tables; no boot, no
+  Ghidra round, no property value decoded.
+- **Next measurement, named:** the closing run's own grammar -- its count and index bytes on the payloads whose block
+  is a known tag, joined against `inventory/class_record_gap.csv`'s array counts -- to say whether those six bytes are
+  the tail of the version-gated `+0x4f4` name array or a field of its own.
+
 ### Execution notes (2026-11-13, the array's head is after the sixteen zero bytes, and there its end is the block start)
 
 - **The first reading of the head was 19 to 21 bytes early, and its own margin said so.** `tools/class-record-bound.py`
