@@ -1176,6 +1176,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the reader places the list as the record's last field)
+
+- **The named next measurement was "read `0x0003a800`'s body between the second name-array call and the defaults
+  branch", and it needed no Ghidra round:** `$WORK/module-export/Core/0003a800_Core_UnClass.c` already held the
+  listing. The order is `+0x4d0` records (`0x3a8a6`), `+0x4dc` names (`0x3a8af`), the config name (`0x3a8c2`-`0x3a8d9`,
+  version >= `0x3e`, and it is **two** virtual calls: `+0x18` on `+0x4b0`, then `+0x1c` on `+0x4b4` through the object
+  the first returned), `+0x4f4`'s names (`0x3a904`, version >= `0x63`), then the defaults buffer (`0x3a96d`).
+- **So the tail is a field, not free bytes.** Nothing is written between the `+0x4f4` call and the defaults, so the
+  6-to-9-byte list is that array: a count of 3 and three two-byte elements on 219 rows, which is the shape
+  `FUN_0003d160` writes. `class_record_element.csv`'s `second_end` is therefore not a field boundary, and the
+  constant 20-byte middle is the `+0x4dc` array plus the 8-byte config name.
+- **The archive's `+0x18`/`+0x1c` pair is one `FName`, not two methods.** The config name is written by both calls on
+  adjacent members, which is why a slot read as "the object-reference method" and a slot read as "the name method"
+  disagree with a signed second element: a writer that emits an `FName` as index-then-number is what both looks like.
+- Docs: `docs/NATIVE_VM.md` (*The reader writes nothing between the last field and the defaults, so the list is a
+  field*, with the instruction table) + `docs/CLASS_DEFAULTS.md` (where the list sits) + `docs/UNKNOWNS.md` U17 +
+  this note. Doc-only: the listing is the artifact, it was already on disk, and no number in it was regenerated.
+- **Next measurement, named:** the split of the constant 20-byte middle -- the `+0x4dc` array's count and element
+  width against the 8-byte config name -- and the falsifier for the placement: a class whose `+0x4f4` array is empty
+  must carry no list. Both read from the payloads; neither needs a boot.
+
 ### Execution notes (2026-11-13, the tail's leading value is the count, and its second field is one reference)
 
 - **The named next measurement is answered, and the answer is the count.** Read as a bare `(index, number)` sequence

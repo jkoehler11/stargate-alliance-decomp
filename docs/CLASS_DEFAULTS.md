@@ -646,6 +646,14 @@ grammar but the **owner** -- the destructor places no member in the record regio
 value) pair, and the tail is identical across every class of five of the seven packages, so its writer runs once
 per package rather than once per class.
 
+**Where the list sits, from the reader's own listing.** `0x0003a800` writes nothing between the last field it reads
+(`+0x4f4`'s name array, version-gated at `0x63`, `0x3a8f6`-`0x3a904`) and the defaults buffer (`0x3a96d`), so the
+6-to-9-byte list is that array and not bytes left over before the block: the count of 3 is its element count and the
+three two-byte elements are its elements. The 20-byte middle behind it is the `+0x4dc` array plus the 8-byte config
+name, and the config name is one `FName` written by **two** virtual calls on two adjacent members (`+0x18` on
+`+0x4b0`, then `+0x1c` on `+0x4b4`). Depth: `docs/NATIVE_VM.md`, *The reader writes nothing between the last field
+and the defaults, so the list is a field*.
+
 
 ## The shipped text is not an oracle for defaults
 

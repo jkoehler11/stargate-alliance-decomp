@@ -2945,3 +2945,15 @@ one tail. **What would settle the tail's owner** is now its writer: the tail is 
 `0x3a904`, so the body between the second of those and the defaults branch is the read. Numbers:
 `docs/CLASS_DEFAULTS.md`, *The tail's leading value is a count, and each pair's second field is a reference*;
 `inventory/class_record_tail.csv`.
+
+**2026-11-13 (fourth): the list is the record's last field, and the reader says so without a boot.** `0x0003a800`'s
+listing gives the field order in the reader: `+0x4d0` records (`0x3a8a6`), `+0x4dc` names (`0x3a8af`), the config
+name written by **two** virtual calls on adjacent members (`+0x18` on `+0x4b0`, then `+0x1c` on `+0x4b4`,
+`0x3a8c2`-`0x3a8d9`, version >= `0x3e`), then `+0x4f4`'s names (`0x3a904`, version >= `0x63`), then the defaults
+buffer (`0x3a96d`: `Num=0`, `Max=GetPropertiesSize()`, `CALL 0x55ed0`). Nothing is written between the `+0x4f4`
+call and the defaults, so the 6-to-9-byte list is that array -- a count of 3 and three two-byte elements -- and not
+an unowned tail; `inventory/class_record_element.csv`'s `second_end` is not a field boundary. **What would settle
+the rest** is two reads and no new data: the split of the constant 20-byte middle between the `+0x4dc` array and the
+8-byte config name, and what the archive's `+0x18`/`+0x1c` pair actually writes, since one `FName` takes both calls
+and the element's second value is signed. Numbers: `docs/NATIVE_VM.md`, *The reader writes nothing between the last
+field and the defaults, so the list is a field*.
