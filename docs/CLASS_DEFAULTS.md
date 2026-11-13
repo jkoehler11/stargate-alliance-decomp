@@ -741,3 +741,10 @@ writer's own call (`docs/NATIVE_VM.md`, *Only one call site writes the record ar
 member under that call*) -- but its shape is not: this CSV's twelve-byte parse fits 361 classes and the writer's own
 compact-pair grammar fits 408, and neither closes the gap at its position (0 of 549). `nm_*` in
 `inventory/class_record_gap.csv` carries both readings side by side.
+
+**The middle's other candidate array has no writer.** The 4-byte-element `TArray` at `+0x4c4` -- the group's
+middle member, between the 8-byte one and the record array -- is initialised empty and destroyed empty, and all
+nine stores into its head are the three constructors' one-byte zero stores
+(`inventory/class_array_head_census.csv`, `docs/NATIVE_VM.md`, *The array at +0x4c4 is initialised and destroyed,
+and no body fills it*). So the 27-byte gap is not its stream either: the gap stays a located array plus a
+count-plus-pairs list, with one end still unexplained.

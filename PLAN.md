@@ -1176,6 +1176,40 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+
+### Execution notes (2026-11-13, the group's middle member has no writer, and its head censuses say so)
+
+- **The measurement the last note named is the array's head, not another grammar over the same bytes.** A `TArray`
+  is three dwords -- data at `+0x4c4`, count at `+0x4c8`, max at `+0x4cc` -- so a writer that fills it must write a
+  count or a max. `tools/member-access-census.py` takes `--artifact` now and the head is its own census
+  (`inventory/class_array_head_census.csv`, `make class-array-head`): **70 sites over the three dwords** -- 29 at
+  `+0x4c4` (8 load, 16 `lea`, 5 store), 30 at `+0x4c8` (20 load, 5 `lea`, 5 store), 11 at `+0x4cc` (6 load, 1
+  `lea`, 4 store) -- and **no site indexes any of the three at any stride**.
+- **On a `Class` all nine stores into the head are one-byte zero stores.** The three constructors (`0x3ad20`,
+  `0x3ae30`, `0x3af60`) each write one byte per dword -- `mov byte [esi+0x4c4],edi`, `[+0x4c8]`, `[+0x4cc]` -- and
+  nothing in the image writes a dword count or max at those displacements on a `Class`. The group's one dword store,
+  `0x001fd005 mov [ecx+0x4c4],imm`, is a scalar field of another class: the same body loads `[ecx+0x4c4]` twice and
+  never touches `+0x4c8`/`+0x4cc`.
+- **And nothing on a `Class` reads it.** The only two sites at `+0x4c4` that belong to `Class` are the region
+  initialiser `0x3a670` (slot 10) at `0x3a675` -- `lea ecx,[esi+0x4c4]; push 0x4; call 0x1b846` -- and the
+  destructor `0x3dc60` (`0x3d850`, the `~TArray` instantiation that pushes 4). The other fourteen `lea`s at the
+  displacement are `Pawn` slots 57/85/87/88/89/124, `Controller@30`, `SparkEmitter@47` or unnamed bodies, and the
+  eight loads are those classes' own members -- a displacement is not a field.
+- **Two 4-byte arrays, two different initialisers.** `+0x4c4` is emptied through `0x1b846` and `+0x4dc` through
+  `0x1b820`, both with `push 0x4`: the initialiser identifies the element *type*, not its size, so no width alone
+  names a `TArray` here (the record array's `0x1b833` is a third instantiation at `0xc`).
+- **So the candidate the last note named is eliminated, twice over.** The member is initialised empty, destroyed
+  empty and never appended, so it cannot produce the record's middle; and a stream of it spans `1 + 4n` bytes
+  (5/9/13/17/21) where the middle is 27 at the mode, 20 as twelve-byte records and 23 as the name parse's residue.
+  What the member is for stays unnamed.
+- Tool (`tools/member-access-census.py --artifact`, `--check` unchanged) + `inventory/class_array_head_census.csv`
+  (70 rows) + `docs/NATIVE_VM.md` (*The array at +0x4c4 is initialised and destroyed, and no body fills it*) +
+  `docs/CLASS_DEFAULTS.md` + `docs/UNKNOWNS.md` U17 (sixth) + `make class-array-head` + this note. Reads
+  `default.xbe` and the committed inventories; no boot, no Ghidra round, no value decoded.
+- **Next measurement, named:** the `+0x4b0`/`+0x4b4` pair -- the config `FName` the reader writes as two dwords at
+  `0x3a8c2`/`0x3a8d9` -- is the last field of the record with no store map, and the same census answers it
+  (`--disp 0x4b0 --disp 0x4b4`).
+
 ### Execution notes (2026-11-13, the archive's name slot writes one compact field, and that decides the count of 2)
 
 - **The element width was read from the archive, not from the array's bytes.** `tools/archive-slots.py` finds every
