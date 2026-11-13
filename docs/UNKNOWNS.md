@@ -2823,3 +2823,18 @@ table, so locating it in each gap splits the gap into the writer's own fields an
 Numbers: `docs/NATIVE_VM.md`, *After the last name array the body writes nothing, so the gap belongs to the array*;
 `docs/CLASS_DEFAULTS.md`, *The 20 bytes are not a field, and the writer's body is why*.
 
+**2026-11-12: the element span is measured, and it moves the array's head rather than the gap.** This entry's "what
+would settle it" named `FUN_0003d900`'s per-element loop. Read, it scales both `TArray` words by twelve and writes
+each element in three calls -- the reference through vtable `+0x18`, then two raw dwords through `0x00037110` and
+`0x000370e0` -- so a record is twelve bytes in memory and `ref + 8` on disk, and no element is 27 bytes wide.
+Restarting that grammar at the array's bare tail closes the record exactly on **291 of 386** classes (75.4%, against
+76 of 10,384 for the same grammar elsewhere in the following 40 bytes), and **all 291** are classes whose parse at
+`prefix_end + 42` is all-null records (336 of 549 are) while none of the second parses is. So the residue is not
+after the array: the `prefix_end + 42` position holds a member shaped like the array with null references, and the
+array begins at its tail. **What would settle it:** that member's own writer -- it is not in `UClass::Serialize`'s
+body, which calls `0x3d900` once, so it is a `TArray` the class's constructor fills, 19 bytes on the zone family (a
+count of 2 and eighteen zero bytes) -- plus the disk width of one `FName` through vtable `+0x1c`, which sizes the two
+name arrays that end every gap. Numbers: `docs/NATIVE_VM.md`, *The element is twelve bytes in memory and nine to
+thirteen on disk* and *The bytes at the array's own tail parse as the same array again*;
+`inventory/class_record_element.csv` (549 rows).
+

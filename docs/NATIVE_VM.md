@@ -1183,3 +1183,61 @@ defaults start on 13 classes -- so what is off is the array's element span (a co
 which ends somewhere other than where the writer's next field begins on nearly every class. The record's remaining
 gap is inside the array, not after it.
 
+### The element is twelve bytes in memory and nine to thirteen on disk
+
+The last note left the element span open, and the writer answers it without a boot. `FUN_0003d900` (306 bytes) scales
+**both** `TArray` words by twelve before its `+0x14` call -- `LEA EAX,[EAX+EAX*0x2]; SHL EAX,2` on `Num` and the same
+on `Max` -- and addresses element *i* as `base + i*12` (`LEA EDX,[EBP+EBP*0x2]; LEA EAX,[EAX+EDX*4]`). Inside one
+element it makes three archive calls over the three dwords at `+0`, `+4` and `+8`:
+
+    0x3d9a3  LEA ECX,[EAX + 0x8]
+    0x3d9a6  PUSH ECX                        ; the third dword
+    0x3d9a7  LEA EDX,[EAX + 0x4]
+    0x3d9aa  PUSH EDX                        ; the second
+    0x3d9ad  PUSH EAX                        ; the first
+    0x3d9b0  CALL dword ptr [EDX + 0x18]     ; the archive's object-reference method
+    0x3d9b3  PUSH EAX / CALL 0x00037110      ; Serialize(ptr, 4)
+    0x3d9bc  PUSH EAX / CALL 0x000370e0      ; Serialize(ptr, 4)
+
+The two trailing calls are one primitive, not a second codec: `0x00037110` and `0x000370e0` bump the archive's byte
+clock and then call `Serialize(ptr,4)` through vtable `+4`, and their bodies differ in layout and in nothing else. So
+the trailing pair are raw little-endian dwords while the first field is the archive's compact reference, and **a
+record is twelve bytes in memory and `ref + 8` on disk** -- nine bytes when the reference is one byte wide, thirteen
+at its five-byte maximum, never a fixed twelve. That also names the stride-9 unit `docs/CLASS_DEFAULTS.md` recorded:
+a one-byte reference plus the two dwords, with the repeat in the first dword.
+
+### The bytes at the array's own tail parse as the same array again, and the parse at `+42` is all-null
+
+`tools/class-record-element.py` (`make class-record-element`, `inventory/class_record_element.csv`, `--check` in
+`make ci`) takes every class whose record the array parses (`inventory/class_record_array.csv`) and restarts the
+writer's own grammar at the array's bare tail -- `[compact count][count x (compact reference, 8 raw bytes)]` --
+followed by the fields `UClass::Serialize` still writes: up to two name arrays and the config name at
+`+0x4b0`/`+0x4b4`, in the source's order and with the config name's width tried both ways (eight raw bytes, or two
+compact indices, because its two 4-byte halves go through the archive's *reference* method at `+0x18` and its *name*
+method at `+0x1c`, not through one writer):
+
+| measure | value |
+|---|---|
+| classes the array parses at `prefix_end + 42` | 549 |
+| a second array of the same grammar parses at its tail | **386** |
+| ... and one of the writer's field orders then lands on the defaults start | **291 of 386 (75.4%)** |
+| the same grammar started at each of the next 40 bytes (control) | 76 of 10,384 (0.7%) |
+| the parse at `prefix_end + 42` is all-null records | **336 of 549** |
+| the second parse is all-null records | 0 of 291 exact |
+| the second parse's references are inside the package's own tables | 372 of 386 |
+
+Every one of the 291 exact rows is a class whose parse at `prefix_end + 42` was all-null, so the two findings are one:
+on those classes that position holds a field *shaped like the array* whose references are all null, the array proper
+begins at that field's tail, and the writer's three remaining fields then close the record to the byte.
+`GamePlay.WaterZone` is the small case -- a 102-byte payload whose prefix ends at 4 and whose defaults start at 92:
+the parse at 46 is two all-null records ending at 65, the parse at 65 is two records with live references (an export
+index and an import index) ending at 85, and a three-element name array fills 85..92.
+
+**Two readings, and the writer's body rules one out.** A second array of the writer's shape needs a second writer, and
+`UClass::Serialize` has exactly one call to `FUN_0003d900` (`0x3a8a6`); its other array writers are `FUN_0003d160` on
+`+0x4dc` (`0x3a8af`) and on `+0x4f4` (`0x3a904` above the `0x63` gate), and those stride **four** bytes and write one
+`FName` per element through the archive's `+0x1c` method. So the all-null field in front of the array is a member the
+record's field list does not carry, and the array's head is one field later than the prefix walk assumed on those 336
+classes -- the reading the `first_zero` / `second_zero` columns measure. Left to measure: that member's own identity
+(19 bytes on the zone family: a compact count of 2 and eighteen zero bytes) and the exact disk width of one `FName`
+through `+0x1c`, which sizes the two name arrays and so the last bytes of every gap.
