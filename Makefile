@@ -1092,6 +1092,7 @@ class-record-element:
 
 class-member-map:
 	python3 tools/class-member-map.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory
+	python3 tools/class-member-map.py --xbe $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe --targets -o inventory
 	@python3 tools/class-member-map.py --report
 
 class-record-tail:
