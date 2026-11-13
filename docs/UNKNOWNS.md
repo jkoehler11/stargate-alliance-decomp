@@ -2883,3 +2883,18 @@ own bytes, and the record's field list is complete only if something outside `UC
 them -- which is the residual this entry now carries. Numbers: `inventory/class_record_tail.csv` (`def_exact`,
 `earlier_exact`); `docs/CLASS_DEFAULTS.md`, *The pair list is not the defaults stream's first tag*.
 
+**2026-11-13 (third): the `+0x4b8` census finds two readers that index it at eight, and neither is a
+`Class`.** `tools/member-access-census.py` sweeps all 14,973 placed bodies and takes every memory
+operand whose `disp32` is `0x4b8` at an exact instruction boundary: **17 sites in 15 functions** -- 9
+loads, 2 `lea` (the two destructors), 6 stores -- with 36 stack forms counted apart. Three loads index
+at stride 4, **two at stride 8**, four pass the value on. The stride-8 pair: `0x0010b719`
+(`Engine_UnChan`) reads element+0 as an object pointer and element+4 as an integer (`imul`), the
+(reference, value) shape the tail parser reports; `0x00358c4a` (`FUN_00358bb6`) reads the same eight
+bytes as two 16-bit fields. Neither object is one the destructor map places a member at `+0x4b8` for
+(`Class` 8-byte, `GameReplicationInfo` 4-byte), and on a `Class` the array is only destroyed and
+zero-filled -- `UClass::Serialize` has no access and nothing indexes it at any stride. So an array
+nothing reads cannot produce the identity pair list, while the width argument that made it the tail's
+candidate stands, unowned. **What would settle it:** the same census at `+0x4c4` and `+0x4d0` (which
+of the three arrays a `Class` is read through at all), and the same census with each base register's
+origin followed, so the two stride-8 objects are typed rather than assumed. Numbers:
+`docs/NATIVE_VM.md`, *Every `+0x4b8` access in the image, and the two that index it at eight*.

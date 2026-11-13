@@ -1,0 +1,18 @@
+disp,site_va,function,module,function_class,function_route,form,base,index,insn,chain,loaded_reg,stride,stride_va,stride_insn,window,note,owner_classes,member_elem_size
+0x4b8,0x000328d0,FUN_000328a0,,,plain,field,edi,,"mov ecx,[edi+0x4b8]",2,ecx,4,0x000328d6,"mov eax,[ecx+esi*4]",35,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0003291f,FUN_000328a0,,,plain,field,edi,,"mov edx,[edi+0x4b8]",2,edx,4,0x00032925,"mov eax,[edx+esi*4]",5,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0003ad86,ctor_Class,,,plain,store,esi,,"mov byte [esi+0x4b8],edi",2,,,,,29,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0003ae8f,FUN_0003ae30,,,plain,store,esi,,"mov byte [esi+0x4b8],edi",2,,,,,42,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0003afc4,FUN_0003af60,,,plain,store,esi,,"mov byte [esi+0x4b8],edi",2,,,,,31,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0003dc70,dtor_Class,,,plain,lea-field,esi,,"lea ecx,[esi+0x4b8]",2,ecx,,,,10,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x000cfda5,FUN_000cf260,,Pawn@30,table,field,eax,,"mov edi,[eax+0x4b8]",2,edi,,,,767,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x000dcd24,dtor_GameReplicationInfo,,,plain,lea-field,esi,,"lea ecx,[esi+0x4b8]",2,ecx,,,,43,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x000e685f,FUN_000e6850,,BeamEmitter@30,table,field,esi,,"mov eax,[esi+0x4b8]",2,eax,,,,62,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0010b719,Engine_UnChan,,,plain,field,eax,,"mov ecx,[eax+0x4b8]",1,ecx,8,0x0010b71f,"mov esi,[ecx+edx*8]",324,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x00114e6b,FUN_00114da0,,,plain,store,esi,,"mov byte [esi+0x4b8],edx",2,,,,,42,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x001be0a8,FUN_001bdf20,,,plain,field,ecx,,"mov eax,[ecx+0x4b8]",2,eax,,,,62,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x001be0bb,FUN_001bdf20,,,plain,field,eax,,"mov ecx,[eax+0x4b8]",2,ecx,,,,57,no indexed use in 12,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0020be09,ctor_SceneManager,,,plain,store,esi,,"mov byte [esi+0x4b8],eax",2,,,,,17,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x00308a20,Core_UnTemplate,,,plain,field,esi,,"mov eax,[esi+0x4b8]",2,eax,4,0x00308a26,"mov ecx,[eax+edi*4]",14,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x0035508e,FUN_00354f44,,,plain,store,edi,,"mov byte [edi+0x4b8],eax",2,,,,,23,store,Class GameReplicationInfo,Class=8 GameReplicationInfo=4
+0x4b8,0x00358c4a,FUN_00358bb6,,,plain,field,ecx,,"mov edx,[ecx+0x4b8]",2,edx,8,0x00358c50,"lea eax,[edx+eax*8]",27,,Class GameReplicationInfo,Class=8 GameReplicationInfo=4

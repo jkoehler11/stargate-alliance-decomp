@@ -1351,3 +1351,59 @@ uses does not identify its element type, and the width does.
 
     python3 tools/class-member-map.py --xbe DUMP/default.xbe --targets -o inventory
     python3 tools/class-member-map.py --xbe DUMP/default.xbe --targets -o inventory --class Class
+
+### Every `+0x4b8` access in the image, and the two that index it at eight
+
+The measurement the element widths left open was "what indexes the `+0x4b8` array at a stride of
+eight", with the warning that the writer "will not be reached from `UClass::Serialize`".
+`tools/member-access-census.py` (`make member-access-census`, artifact
+`inventory/member_access_census.csv`) censuses one displacement over the whole image: it sweeps every
+body `symbols/xbox_functions.csv` places -- 14,973 bodies over 2.5 MB -- from that body's own first
+byte, so a candidate is an instruction the decoder produced at an exact boundary and not a byte
+pattern that happens to contain `b8 04 00 00`, and each row records how many consecutive instruction
+ends confirm that boundary.
+
+**Seventeen sites in fifteen functions.** Nine load the member, two `lea` its address (the two
+destructors the member map already had) and six store to it; a further thirty-six hits are
+`[esp+0x4b8]`/`[ebp+0x4b8]` stack slots, counted apart rather than dropped, and none is an absolute
+address. Of the seventeen, **three loads index the value at stride 4, two at stride 8**, and four
+pass the value on without an index -- two dereference it as an object (`0x001be0a8`, `0x001be0bb`),
+one copies it into another field (`0x000e685f`), one keeps it in `edi` past the window
+(`0x000cfda5`).
+
+**The two stride-8 consumers read an element as two words, and one reads exactly the pair the tail
+parses as.** At `0x0010b719` in `Engine_UnChan` (Engine module, 2,757 bytes):
+
+    mov  ecx,[eax+0x4b8]        the array's data pointer
+    mov  esi,[ecx+edx*8]        element + 0  -> an object pointer, read at +0x38/+0x48/+0x20
+    mov  ebx,[ecx+edx*8+0x4]    element + 4  -> a count, `imul edi,ebx` four instructions later
+    lea  eax,[ecx+edx*8]        the element's own address
+
+so the element is a **reference and an integer**, which is the shape the record's tail parser reports
+as a value and a reference. The second, `0x00358c4a` in `FUN_00358bb6` (260 bytes), reads the same
+eight bytes as two 16-bit fields -- `mov dx,[eax+0x6]`, `mov ax,[eax+0x4]` -- and copies them into
+its own `+0x3fa4`/`+0x3fa6`, a different class's struct and not a pair list.
+
+**But neither of them is a `UClass`, and on a `Class` the array is never read.** The destructor map
+places a member at `+0x4b8` on exactly two classes, `Class` (8-byte elements) and
+`GameReplicationInfo` (4-byte), and the two stride-8 sites belong to neither: theirs are an unnamed
+260-byte body whose object carries `+0x1474`/`+0x2d38`/`+0x3fa4`, and an Engine body whose object is
+reached through `+0x6c`. On a `Class` the census finds only its destructor's `lea` + `0x3d7a0` call
+and its three constructors' zero-fill; `UClass::Serialize` contains no access at all, and no function
+in the image indexes a `Class`'s `+0x4b8` at any stride. The three zero-fills are the same three rows
+`inventory/class_member_map.csv` records as `store-zero` at that displacement -- an independent
+artifact agreeing -- and the census adds two stores that map does not classify, `0x00114e6b` and
+`0x0035508e`, each copying another field's value into its own object's `+0x4b8`.
+
+**So the tail is not this array's content on the evidence available, and the width argument that made
+it a candidate still holds.** The 8-byte element is measured twice, from functions that do not call
+each other: the destructor's `PUSH 0x8` and `Engine_UnChan`'s element+0/element+4 read. What is
+missing is an owner: an array nothing reads cannot be the producer of a stream the record carries,
+and there is no reader of a `Class`'s `+0x4b8` to be its consumer either. The next measurement is the
+rest of the group -- the same census at `+0x4c4` and `+0x4d0`, which says which of the three arrays a
+`Class` is actually read through, `+0x4d0` being the record array whose writer `FUN_0003d900` is
+already measured -- and then the same census with each base register's origin followed, so the two
+stride-8 objects are typed instead of assumed.
+
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe --disp 0x4b8 -o inventory
+    python3 tools/member-access-census.py --xbe DUMP/default.xbe --disp 0x4b8 --report --window-show

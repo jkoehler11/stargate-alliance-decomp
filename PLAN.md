@@ -1176,6 +1176,37 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the `+0x4b8` census has two stride-8 readers and neither is a `Class`)
+
+- **The displacement is censused over the whole image, not sampled.** `tools/member-access-census.py` sweeps all
+  14,973 bodies `symbols/xbox_functions.csv` places (2.5 MB) from each body's own first byte, and takes every memory
+  operand with `disp32 = 0x4b8` that an instruction *ends* on: **17 sites in 15 functions** -- 9 loads, 2 `lea` (the two
+  destructors the member map had) and 6 stores -- with 36 `[esp+0x4b8]`/`[ebp+0x4b8]` stack slots counted apart and no
+  absolute form. The stores needed their own decode: the shared decoder leaves a store's destination opaque, which is
+  why `Class`'s three constructor zero-fills were invisible to the first version and are now three rows agreeing with
+  `inventory/class_member_map.csv`'s `store-zero` rows at that displacement.
+- **Two loads index at eight, three at four, four index nothing.** `0x0010b719` (`Engine_UnChan`) reads element+0 as
+  an object pointer (`mov esi,[ecx+edx*8]`, later `[esi+0x38]`/`[esi+0x48]`/`[esi+0x20]`) and element+4 as an integer
+  (`mov ebx,[ecx+edx*8+0x4]`, then `imul edi,ebx`) -- the (reference, value) shape the record's tail parser reports;
+  `0x00358c4a` (`FUN_00358bb6`, 260 bytes) reads the same eight bytes as two 16-bit fields and copies them into its own
+  `+0x3fa4`/`+0x3fa6`. The stride-4 readers are `FUN_000328a0` (twice) and `Core_UnTemplate`.
+- **And neither stride-8 site is a `UClass`.** The destructor map places a member at `+0x4b8` on `Class` (8-byte) and
+  `GameReplicationInfo` (4-byte) only; the two stride-8 objects carry `+0x1474`/`+0x2d38`/`+0x3fa4` and `+0x6c`
+  respectively, and the census's six stores include two non-zero copies (`0x00114e6b`, `0x0035508e`) on objects no
+  `Class` has. On a `Class` the array is destroyed and zero-filled and never read -- `UClass::Serialize` contains no
+  `+0x4b8` access at all -- so an array nothing reads cannot be the producer of the tail's pair list.
+- **The width argument stands, unowned.** The element width is measured twice independently (the destructor's
+  `PUSH 0x8`, and `Engine_UnChan`'s element+0/element+4 read), so `+0x4b8` remains the only array of the group that
+  can hold a value and a reference; what the census removes is the assumption that something reads it.
+- Tool (`tools/member-access-census.py`: `--disp`, `--xbe`, `-o`, `--report`, `--window`, `--window-show`, and a
+  `--check` driving a stride-4 load, a stride-2 load, a store, a stack form, an absolute form, an immediate decoy and a
+  body the decoder cannot finish) + `inventory/member_access_census.csv` + `docs/NATIVE_VM.md` (*Every `+0x4b8` access
+  in the image, and the two that index it at eight*) + `docs/UNKNOWNS.md` U17 + `make member-access-census` + this
+  note. Reads `default.xbe` with the repo's own decoder; no boot, no Ghidra, no value decoded, no name published.
+- **Next measurement, named:** the same census at `+0x4c4` and `+0x4d0` -- which of the three arrays a `Class` is
+  actually read through, `+0x4d0` being the record array whose writer `FUN_0003d900` is already measured -- and then
+  the census with each base register's origin followed, so the two stride-8 objects are typed instead of assumed.
+
 ### Execution notes (2026-11-13, the element width is the one instruction a `TArray` destructor varies)
 
 - **The three arrays in the record region differ in one immediate.** `0x3d7a0` (`+0x4b8`), `0x3d850` (`+0x4c4`) and
