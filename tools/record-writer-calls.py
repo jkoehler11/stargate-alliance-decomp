@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
-"""Who calls the record writers, and which member each call is handed.
+"""Who calls the record writers, and what each call is handed.
 
 `docs/NATIVE_VM.md` reads the class record's 20-byte middle as a second array of `FUN_0003d900`'s 12-byte element
 grammar, and the reader `0x0003a800` calls that writer **once** -- so a second array of the same grammar would have to
-be packed by some other body. A call site is the witness, and its argument is the member: this tool scans the image's
-executable sections for `E8 rel32` whose target is one of the two record writers, then decodes **backwards** to the
-instruction that last wrote the register it pushes.
+be packed by some other body. A call site is the witness and its argument frame is the claim: this tool scans the
+image's executable sections for `E8 rel32` whose target is one of the two record writers, then reconstructs the
+arguments the call is handed.
 
 * `FUN_0003d900` -- 12-byte records (one object reference plus two dwords), and
 * `FUN_0003d160` -- a compact count and that many one- or two-byte pairs.
+
+**The frame is stack-accounted, not read off the pushes nearest the call.** MSVC stages an argument of the *next*
+call before it issues the current one: the push lands under the current call's own arguments, the callee pops only
+what it was handed, and the caller's `add esp` skips only those -- so the earliest push of the run is still on the
+stack when the next call executes. A window that reads only the pushes after the previous call therefore
+under-reports the frame, and `0x3a8af` (which reads as "one argument, the archive the previous call returned") is
+handed two. The arity comes from the caller's own cleanup (`add esp,imm` after the call, i.e. a cdecl callee) and
+the arguments are the topmost `arity` dwords of the window's push accounting, in argument order.
 
 The argument's writer is classified, not guessed: a `LEA reg,[base+disp]` is the member at that displacement, a
 `CALL` means the callee's return value is passed on (the reader chains the two writers), and anything else is
 reported as itself. A site counts only when a forward decode from a start offset in the window behind it lands
 exactly on the call with a chain of instruction ends behind it -- the boundary rule `tools/vcall-receiver.py`
 established, because a bare `E8 3d 09 03 00` also occurs inside displacements and immediates and a raw byte scan
-therefore over-counts.
+therefore over-counts. Pushes left on the stack at a site are reported as that site's *staged* arguments.
 
     python3 tools/record-writer-calls.py --image $SG1_DUMP/default.xbe -o inventory
     python3 tools/record-writer-calls.py --report
@@ -40,9 +48,9 @@ ARTIFACT = "record_writer_calls.csv"
 WRITERS = {0x3D900: "record", 0x3D160: "pairs"}
 WINDOW = 48                              # how far behind a call a start offset is tried
 MIN_CHAIN = 2                            # a one-instruction "chain" proves nothing
-MAX_ARGS = 3                             # pushes inspected as the call's arguments
-COLUMNS = ["writer", "target", "site", "function", "boundary", "arg", "arg_kind", "member", "member_hex",
-           "writer_insn", "pushes"]
+AFTER_LIMIT = 4                          # instructions scanned past a call for the caller's cleanup
+COLUMNS = ["writer", "target", "site", "function", "boundary", "args", "arg", "arg_kind", "member",
+           "member_hex", "writer_insn", "pushes", "staged", "staged_member"]
 
 
 def decoder():
@@ -87,17 +95,68 @@ def chain(blob, site_off, vr):
     return None
 
 
+def _esp_imm(blob, off):
+    """The immediate of the `add esp,imm` the shared decoder names but does not record.
+
+    `83 /0` carries a sign-extended imm8 and `81 /0` an imm32; both are the caller's own cleanup in this image, and
+    a stack adjust of either width is what tells the arity.
+    """
+    if off < 0 or off + 6 > len(blob):
+        return None
+    if blob[off] == 0x83:
+        return blob[off + 2]
+    if blob[off] == 0x81:
+        return struct.unpack_from("<I", blob, off + 2)[0]
+    return None
+
+
 def pushed_regs(insns):
-    """The registers pushed immediately before the call, closest first."""
-    out = []
-    for _off, insn in reversed(insns):
+    """The registers the window pushes, in push order."""
+    return [insn.text.split()[1] for _off, insn in insns if insn.text.startswith("push ")]
+
+
+def pending(insns, blob, vr):
+    """The pushes still on the stack at the call, in push order, after the window's own cleanups.
+
+    A cleanup removes its bytes off the top -- whether the caller writes the `add esp,imm` or the callee pops its own
+    arguments (then nothing follows the call and the pushes in front of it are all its arguments). Whatever survives
+    is what the call at the site is looking at.
+    """
+    out, skip = [], set()
+    for off, insn in insns:
+        if off in skip:
+            continue
         if insn.text.startswith("push "):
             out.append(insn.text.split()[1])
-            if len(out) == MAX_ARGS:
-                break
-        elif out:
-            break
+        elif insn.text == "add esp,imm":
+            drop = min(len(out), max(0, (_esp_imm(blob, off) or 0) // 4))
+            if drop:
+                out = out[:-drop]
+        elif insn.kind == "call":
+            cleaned, at = cleanup_after(blob, off + insn.length, vr)
+            if at is not None:
+                skip.add(at)
+                drop = 0 if cleaned is None else min(len(out), cleaned // 4)
+            else:
+                drop = len(out)
+            if drop:
+                out = out[:-drop]
     return out
+
+
+def cleanup_after(blob, off, vr):
+    """(bytes, offset) of the `add esp,imm` a caller uses after a call, or (None, None)."""
+    i = off
+    for _ in range(AFTER_LIMIT):
+        insn = vr.decode(blob, i)
+        if insn is None or insn.length <= 0:
+            return None, None
+        if insn.text == "add esp,imm":
+            return _esp_imm(blob, i), i
+        if insn.text.startswith("push ") or insn.kind == "call":
+            return None, None
+        i += insn.length
+    return None, None
 
 
 def call_target(off, insn, base_va):
@@ -124,16 +183,20 @@ def writer_of(insns, reg, base_va):
     return "no-writer", None, ""
 
 
-def arg_of(insns, base_va):
-    """The pushed argument that is a member load, else the first argument's classification."""
-    first = None
-    for reg in pushed_regs(insns):
+def frame(insns, blob, site_off, vr, base_va):
+    """(arguments in argument order, staged pushes left for the next call) at one call site.
+
+    An argument is (reg, kind, member, writer text). The arity is the caller's own cleanup when it has one, so a
+    push that a *later* call consumes is not counted here: it is reported as staged.
+    """
+    keep = pending(insns, blob, vr)
+    cleaned, _at = cleanup_after(blob, site_off + 5, vr)
+    arity = len(keep) if cleaned is None else min(len(keep), cleaned // 4)
+    args = []
+    for reg in reversed(keep[len(keep) - arity:]):        # cdecl pushes right to left
         kind, member, text = writer_of(insns, reg, base_va)
-        if kind == "member":
-            return reg, kind, member, text
-        if first is None and kind != "no-writer":
-            first = (reg, kind, member, text)
-    return first if first else ("", "none", None, "")
+        args.append((reg, kind, member, text))
+    return args, keep[:len(keep) - arity]
 
 
 def read_functions(path=None):
@@ -174,16 +237,31 @@ def measure(image, functions, vr):
             if not writer:
                 continue
             insns = chain(blob, off, vr)
-            arg, kind, member, text = arg_of(insns, sec.va) if insns else ("", "none", None, "")
+            args, staged_push = frame(insns, blob, off, vr, sec.va) if insns else ([], [])
+            staged = [_stage_arg(insns, reg, sec.va) for reg in staged_push]
+            chosen = next(((a[1], a[2], a[3]) for a in args if a[1] == "member"),
+                          next(((a[1], a[2], a[3]) for a in args if a[1] != "no-writer"),
+                               ("none", None, "")))
+            staged_member = next(("0x%x" % a[2] for a in staged if a[1] == "member"), "")
             rows.append({"writer": writer, "target": "0x%08x" % target, "site": "0x%08x" % site,
                          "function": owner(functions, site), "boundary": int(bool(insns)),
-                         "arg": arg, "arg_kind": kind,
-                         "member": "" if member is None else member,
-                         "member_hex": "" if member is None else "0x%x" % member,
-                         "writer_insn": text,
-                         "pushes": " | ".join(reversed(pushed_regs(insns))) if insns else ""})
+                         "args": len(args),
+                         "arg": args[0][0] if args else "",
+                         "arg_kind": chosen[0],
+                         "member": "" if chosen[1] is None else chosen[1],
+                         "member_hex": "" if chosen[1] is None else "0x%x" % chosen[1],
+                         "writer_insn": chosen[2],
+                         "pushes": " | ".join(a[0] for a in args),
+                         "staged": len(staged),
+                         "staged_member": staged_member})
     rows.sort(key=lambda r: (r["writer"], r["site"]))
     return rows
+
+
+def _stage_arg(insns, reg, base_va):
+    """A staged push, classified the same way as an in-frame argument."""
+    kind, member, text = writer_of(insns, reg, base_va)
+    return (reg, kind, member, text)
 
 
 def report(rows):
@@ -202,10 +280,14 @@ def report(rows):
             print("    arguments: %s" % collections.Counter(r["arg_kind"] for r in proven).most_common(4))
             print("    members: %s"
                   % collections.Counter(r["member_hex"] for r in proven if r["member_hex"]).most_common(8))
+            print("    arity: %s" % collections.Counter(r["args"] for r in proven).most_common(4))
         for r in proven:
-            print("    %s in %s: %s pushed, %s -> member %s (%s) [%s]"
-                  % (r["site"], r["function"] or "?", r["arg"] or "-", r["arg_kind"],
-                     r["member_hex"] or "-", r["writer_insn"] or "-", r["pushes"] or "-"))
+            print("    %s in %s: %s arg(s) [%s], %s -> member %s (%s)%s"
+                  % (r["site"], r["function"] or "?", r["args"], r["pushes"] or "-", r["arg_kind"],
+                     r["member_hex"] or "-", r["writer_insn"] or "-",
+                     ", leaves %s staged%s" % (r["staged"],
+                                                " (%s)" % r["staged_member"] if r["staged_member"] else "")
+                     if r["staged"] else ""))
 
 
 def sweep(args):
@@ -224,9 +306,9 @@ def sweep(args):
 
 
 def self_check():
-    """Synthetic bodies: one call handed a member, and one handed the previous call's result."""
+    """Synthetic bodies: a plain member argument, a chained call, and an argument staged under the previous call."""
     vr = decoder()
-    base, target = 0x1000, 0x3000
+    base = 0x1000
     body = bytearray(b"\x90" * 0x200)
     site_off = 0x120
     body[0x118:0x11e] = b"\x8d\x86\xd0\x04\x00\x00"    # lea eax,[esi+0x4d0]
@@ -234,35 +316,48 @@ def self_check():
     body[0x11f] = 0x55                                  # push ebp
     site = base + site_off
     body[site_off] = 0xE8
-    struct.pack_into("<i", body, site_off + 1, target - (site + 5))
-    found = [(s, t, o) for s, t, o in candidates(bytes(body), base) if t == target]
+    struct.pack_into("<i", body, site_off + 1, 0x3000 - (site + 5))
+    body[site_off + 5:site_off + 8] = b"\x83\xc4\x08"    # add esp,0x8
+    found = [(s, t, o) for s, t, o in candidates(bytes(body), base) if t == 0x3000]
     assert len(found) == 1 and found[0][2] == site_off, found
     insns = chain(bytes(body), site_off, vr)
     assert insns, "no chain lands on the call"
-    arg, kind, member, text = arg_of(insns, base)
-    assert kind == "member" and member == 0x4D0 and arg == "eax", (arg, kind, member, text)
-    assert "0x4d0" in text, text
-    assert pushed_regs(insns) == ["ebp", "eax"], pushed_regs(insns)
+    args, staged = frame(insns, bytes(body), site_off, vr, base)
+    assert not staged and len(args) == 2, (args, staged)
+    assert args[0][1] == "no-writer" and args[1][1] == "member" and args[1][2] == 0x4D0, args
 
-    # The same call, but the argument register is the previous call's return value.
-    stub_off = 0x100
-    body[stub_off] = 0xE8
-    struct.pack_into("<i", body, stub_off + 1, 0x3100 - (base + stub_off + 5))
-    body[0x105] = 0x50                                  # push eax (the return value)
-    body[0x106] = 0x55                                  # push ebp
-    site2_off = 0x107
-    body[site2_off] = 0xE8
-    struct.pack_into("<i", body, site2_off + 1, 0x3200 - (base + site2_off + 5))
-    insns = chain(bytes(body), site2_off, vr)
-    arg, kind, member, text = arg_of(insns, base)
-    assert kind == "call-result" and member is None, (arg, kind, member, text)
-    assert text == "call 0x00003100", text
+    # The reader's own shape: +0x4dc pushed under the call, so it belongs to the *next* call, not to this one.
+    body[0x0f0:0x0f6] = b"\x8d\x96\xdc\x04\x00\x00"    # lea edx,[esi+0x4dc]
+    body[0x0f6] = 0x52                                  # push edx
+    body[0x0f7:0x0fd] = b"\x8d\x86\xd0\x04\x00\x00"    # lea eax,[esi+0x4d0]
+    body[0x0fd] = 0x50                                  # push eax
+    body[0x0fe] = 0x55                                  # push ebp
+    first = 0x0ff
+    body[first] = 0xE8
+    struct.pack_into("<i", body, first + 1, 0x3100 - (base + first + 5))
+    body[first + 5:first + 8] = b"\x83\xc4\x08"         # add esp,0x8  -> the +0x4dc push stays
+    body[first + 8] = 0x50                              # push eax (the return value)
+    second = first + 9
+    body[second] = 0xE8
+    struct.pack_into("<i", body, second + 1, 0x3200 - (base + second + 5))
+    body[second + 5:second + 8] = b"\x83\xc4\x08"
+    insns = chain(bytes(body), first, vr)
+    args, staged = frame(insns, bytes(body), first, vr, base)
+    assert len(args) == 2 and args[1][1] == "member" and args[1][2] == 0x4D0, args
+    assert staged == ["edx"], staged
+    insns = chain(bytes(body), second, vr)
+    args, staged = frame(insns, bytes(body), second, vr, base)
+    assert len(args) == 2 and not staged, (args, staged)
+    assert args[0][1] == "call-result" and args[0][3] == "call 0x00003100", args
+    assert args[1][1] == "member" and args[1][2] == 0x4DC, args
 
     # A `E8` inside an immediate is not a call site: the same bytes one byte later have no chain behind them.
     body[0x160] = 0xE8
     shifted = chain(bytes(body), 0x161, vr)
-    assert shifted is None or arg_of(shifted, base)[1] != "member", "a shifted start must not produce a member"
-    print("self-check ok: a member argument (+0x4d0), a call-result argument, and a shifted start")
+    assert shifted is None or not frame(shifted, bytes(body), 0x161, vr, base)[0][0][1] == "member", \
+        "a shifted start must not produce a member"
+    print("self-check ok: a member argument (+0x4d0), an argument staged under the previous call (+0x4dc),"
+          " and a shifted start")
     return 0
 
 

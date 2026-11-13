@@ -1176,6 +1176,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the reader's second call is handed `+0x4dc`, staged under the previous call)
+
+- **The question the last note left is a stack question, and the stack answers it.** `0x3a8af` has one `PUSH` in
+  front of it (`PUSH EAX`, the archive `0x3d900` returned) and is handed two arguments: the reader emits
+  `LEA EDX,[ESI+0x4dc]; PUSH EDX` at `0x3a897`, *before* the `+0x4d0`/`EBP` pair, the record writer takes two
+  arguments and pops neither, and the `ADD ESP,0x8` at `0x3a8ab` skips exactly those two -- so `+0x4dc` is still on
+  the stack when `0x3d160` runs. Measured, not inferred: `tools/record-writer-calls.py` now stack-accounts a call's
+  frame instead of reading the pushes nearest it (arity from the caller's own `add esp,imm`, arguments from the
+  topmost dwords of the window's push accounting, leftovers reported per site as *staged*), and the eight sites come
+  out `record` 1 site / 2 args with `+0x4dc` staged, `pairs` 7 sites / 2 args on six.
+- **What it fixes.** The previous note's negative -- "no site in the image is handed `+0x4dc`" -- was the census's,
+  not the build's: one site is, and it is the reader's own. The 20-byte middle is therefore the `+0x4dc` name
+  array's stream (elements of one and two bytes through archive slot `+0x1c`), not a second array of twelve-byte
+  records, and the "second array of `0x3d900`'s grammar" parse is a coincidence of a 20-byte window.
+- **What it does not fix, named.** `0x172fe4` still comes out one-argument (`call 0x172fe0`'s return) while
+  `0x3a8af` now comes out two, so either that writer has a one-argument path or the staged push sits outside the
+  48-byte window -- the tool reports what the window sees and does not guess past it.
+- Tool (`tools/record-writer-calls.py`, `--check` covers the staged shape) + `inventory/record_writer_calls.csv`
+  (`args`, `staged`, `staged_member`) + `docs/NATIVE_VM.md` (the section retitled *...its reader stages the second
+  member under that call*) + `docs/CLASS_DEFAULTS.md` + this note.
+
 ### Execution notes (2026-11-13, the record writer has one call site, and the reader's second call has no member)
 
 - **The next measurement the last note named is a byte scan, not a boot.** `tools/record-writer-calls.py` finds every
