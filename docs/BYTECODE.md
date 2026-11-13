@@ -681,30 +681,31 @@ not about the token encoding.
     11687 scripts with an epilogue, 11608 walked; 18931 call sites
       static (FinalFunction): 5424, of which the target is a Function: 5424
       by name (VirtualFunction, GlobalFunction): 13507
-        naming a declaring class: 13356 of 13507 (98.9%)
+        naming a declaring class: 13433 of 13507 (99.5%)
         on the caller's chain: 8321 -- 5778 in its own class, 2543 on an ancestor (top: Engine.Actor 337, Engine.Pawn 246, StargateGame.BotBase 191, Editor.BrushBuilder 187, StargateGame.BotEnemy 187)
           of those, 223 name a function only a *state* of that class declares (the class owns the state)
         by the corpus alone: 2290 site(s) reach the one class that declares the name (914 names), top: ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, SetPosImmediate -> StargateGame.UIWidget 51, GetLocalPlayerController -> Engine.LevelInfo 40, PostAIMsg -> Engine.Controller 40
-        on the receiver's chain: 2738 (638 names) -- the expression in front of the call types to a class (271 distinct, top: Pawn 274, UWindowEditControl 189, Controller 149, UWindowCheckbox 138, Weapon 111)
-          of those, 35 place because the receiver's type names a class in another case, top: pawn 14, GameHUD 4, inventory 3, stargateammo 3, pickup 2, Direction 2
+        on the receiver's chain: 2815 (655 names) -- the expression in front of the call types to a class (279 distinct, top: Pawn 274, UWindowEditControl 189, Controller 149, UWindowCheckbox 138, Weapon 111)
+          of those, 47 place because the receiver's type names a class in another case, top: pawn 14, playercontroller 12, GameHUD 4, inventory 3, stargateammo 3, pickup 2
           and 11 name a function only a *state* of the receiver's chain declares
-        decided by the receiver: 151 site(s) across 63 names, top: ClientMessage 26 over 3 classes, SetPause 9 over 4 classes, GetPickupItemName 7 over 2 classes, issueOrder 7 over 7 classes, GetTitle 6 over 4 classes
-          an object expression with no recorded type: 83 -- 1 of them a local, 82 not
-          of the receiver-typed sites, 609 had a local in front (typed from the class's own ScriptText)
-          a local whose declaration the source spells in another case: 164 site(s), top: Msg 30, GUI 20, t 13, i 12, Dir 8, Image 7
-          an expression that typed to a class whose chain declares no such name: 53, of which 7 reach exactly one descendant that declares it (descendant:Pkg.Class, 2 names), top: IsUnconscious -> StargateGame.BotEnemy 4, GetAggroLevel -> StargateGame.BotEnemy 3
-            the rest stay a dispatch: 41 over several descendants (14 names, top: ClientMessage 25, CallToArms 3, Possess 2, ValidIndex 1), 5 a name only classes outside the subtree declare, 0 a name no class in the corpus declares
-            those 53 receivers by class: Object 36, BotBase 13, UnrealScriptedSequence 3, Pawn 1
+        decided by the receiver: 74 site(s) across 30 names, top: ClientMessage 26 over 3 classes, GetPickupItemName 7 over 2 classes, Possess 3 over 15 classes, UnPossess 3 over 11 classes, GetMyPlayer 3 over 2 classes
+          an object expression with no recorded type: 5 -- 0 of them a local, 5 not
+          a directive line between a declaration and its body: 4 declaration(s) over 173 class text(s): InteractionMaster.AddInteraction, InteractionMaster.AddInteraction, StargatePawn.Talk, StargatePawn.Talk
+          of the receiver-typed sites, 610 had a local in front (typed from the class's own ScriptText)
+          a local whose declaration the source spells in another case: 159 site(s), top: Msg 30, GUI 20, t 13, i 12, Dir 8, Image 7
+          an expression that typed to a class whose chain declares no such name: 54, of which 7 reach exactly one descendant that declares it (descendant:Pkg.Class, 2 names), top: IsUnconscious -> StargateGame.BotEnemy 4, GetAggroLevel -> StargateGame.BotEnemy 3
+            the rest stay a dispatch: 42 over several descendants (14 names, top: ClientMessage 25, Possess 3, CallToArms 3, ValidIndex 1), 5 a name only classes outside the subtree declare, 0 a name no class in the corpus declares
+            those 54 receivers by class: Object 36, BotBase 14, UnrealScriptedSequence 3, Pawn 1
             names only outside the subtree declare: GetMoveTarget 2, GetMyPlayer 1, TakeOver 1, SetPawnClass 1
             names no class declares: 
           a completed value in front (a self-call, or a receiver the walk did not reach): 22
             the token that produced that value: JumpIfNot 1250, Let 520, Jump 318, Return 133, False 108, True 72, LetBool 69, Log 54
-          a receiver that is a call result: 822 site(s), 75 typed from the callee's declared return type (top: sound 33, playercontroller 25, sgformation 6, herdanimal 4, stargateammo 4, vector 3)
-            the rest by what the callee's own statement says: call result: the callee returns nothing 542, call result: the operand names no Function of this package 131, call result: the callee returns a value that is not a class 72, call result: the callee is not declared on the caller's chain 2
-          why an expression in front names no class: array element: the array's type names no class 40, not an object expression 25, call result: the operand names no Function of this package 12, call result: the callee is not declared on the caller's chain 5, local: the class source does not declare it 1
-          a receiver that is an array element: 501 site(s) over 50 (token, class) pairs, top: ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ArrayElement/UWindowLabelControl 42, DynamicArrayElement/UIProgressBar 14, DynamicArrayElement/GameMenu 12, ArrayElement/GUIButton 10
-          typed by the import's own owner class: 423 site(s) over 15 class(es), top: Pawn 177, Actor 57, GUI 57, LevelInfo 46, GUIListBox 37, BotBase 19
-          where every declarer agrees, the owner's own class agrees in 700 site(s) and differs in 0
+          a receiver that is a call result: 822 site(s), 132 typed from the callee's declared return type (top: playercontroller 80, sound 33, sgformation 6, herdanimal 4, stargateammo 4, vector 3)
+            the rest by what the callee's own statement says: call result: the callee returns nothing 609, call result: the callee returns a value that is not a class 73, call result: the imported function's class is not in the corpus 7, call result: the callee PawnDied is declared by 8 classes, none on the caller's chain 1
+          why an expression in front names no class: call result: the callee GetInstigator is declared by 2 classes, none on the caller's chain 2, call result: the callee TeamIDLookup is declared by 5 classes, none on the caller's chain 1, call result: the callee SetSprinting is declared by 2 classes, none on the caller's chain 1, call result: the callee returns nothing 1
+          a receiver that is an array element: 681 site(s) over 64 (token, class) pairs, top: ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ArrayElement/UWindowLabelControl 42, DynamicArrayElement/GUIComponent 31, DynamicArrayElement/MaplistRecord 28, DynamicArrayElement/ScriptEvent 24
+          typed by the import's own owner class: 427 site(s) over 16 class(es), top: Pawn 177, Actor 57, GUI 57, LevelInfo 46, GUIListBox 37, BotBase 19
+          where every declarer agrees, the owner's own class agrees in 711 site(s) and differs in 0
 
 `--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name; it writes no CSV
 and exists only to measure how much of the reading the declarations decided (see "The check is a shuffle" below).
@@ -1000,8 +1001,33 @@ and it is the first residue shape in the table that a rebuild has to resolve at 
 
 **What the 40 are, and one shape of them is left to a decoder.** 35 arrays whose element type is a struct (an element
 of a struct array is not an object: a negative), 4 chained callees several classes declare, and 1 callee declared with
-no return type. `--check` drives seventeen assertions over synthetic blocks, three of them the guarded declaration: a
-body after an `#endif`, a directive inside a struct block, and the census row that names a split declaration.
+no return type. `--check` drives seventeen assertions over synthetic blocks, three of them the guarded declaration: a body after an `#endif`, a directive inside a struct block, and the census row that names a split declaration.
+
+**An array element's type carries its modifiers inside the angle brackets, and that was most of the residue.**
+`array<editconst editinline Stream>`, `array<export editinline ScriptEvent>`, `array<editconst editinline direction>`:
+the declaration puts the `var` modifiers *inside* the array's brackets, and `_class_of_type` unwrapped the brackets and
+handed the rest on as a name -- so the element type read as a class literally called `editconst editinline Stream`,
+which names nothing, and **35 array-element sites answered "the array's type names no class"** for a class that is
+spelled right there. The words `var` already accepts are now stripped from a tagged type before it is unwrapped, and a
+type with a space before its closing bracket (`array<class<Info> >`, which the declaration regex captured one character
+short, leaving `array<class<Info>` and never unwrapping it) closes properly. **All 35 place**, by-name placement goes
+**13,398 -> 13,433 of 13,507 (99.5%)**, the receiver's chain **2,780 -> 2,815**, "decided by the receiver"
+109 -> 74, and the untyped-object residue **40 -> 5**. That corrects a negative this page has published twice: the
+"35 struct arrays" were **class** arrays whose element type was behind the modifiers (`StreamPlaylistManager`'s
+`StreamPlaylist`, `ScriptEvent`'s `direction` and `ScriptEvent`), so their elements are objects and the gap was the
+reading, not the build. 154 sites carry that element class as their receiver now (527 -> 681 over 50 -> 64
+(token, class) pairs), and 30 of them keep the placement they already had while gaining the `receiver_type` that says
+which class the array holds (`GUIComponent` 31, `MaplistRecord` 28, `ScriptEvent` 24, `direction` 9).
+
+**A tag can name a struct, and the tool says so instead of saying nothing.** With the modifiers off,
+`array<PlaylistParser>` and `array<editconst editinline direction>` are the same shape -- one identifier -- and only the corpus separates them: `source_structs` already holds every declared struct, so a type that names one is reported as
+`declared as a struct (`PlaylistParser`), not a class` rather than as an expression that names nothing, and the branch's
+own reason is kept when the type is neither. Nothing places differently (no array element is left in the residue); what
+moves is **157 -> 3 rows of `receiver_type` that spelled a struct** (`vector` 99, `Rotator` 41, `IpAddr` 12,
+`KeyValuePair` 3, `coords` 1, `MindControlSlot` 1) -- a column that names classes no longer claims a class called
+`vector`. `--check` drives **25 assertions**, eight of them new: the three modified tagged types, the nested bracket
+with a space, the two struct decisions, and the reason a branch keeps when its type names nothing at all.
+
 
 `inventory/script_calls.csv` is the table: package, class, function, token, dispatch, target, target class,
 `resolved_in` (`package`, an ancestor's `Pkg.Class`, `corpus:Pkg.Class` for the one-class lookup,
