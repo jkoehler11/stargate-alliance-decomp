@@ -2784,3 +2784,24 @@ allocates the array -- `FUN_0003d900`'s caller, whose `push count; call operator
 where the count is written -- or a reading in which the body is not a `TArray` but a run terminated by a sentinel,
 as `UClass`'s defaults are. Numbers: `docs/NATIVE_VM.md`, *The walk back continues the record's own widths*;
 `docs/CLASS_DEFAULTS.md`, *The elements continue past the run*.
+
+**2026-11-12: the count question is answered from the caller, and the array is read where it sits.** The walk-back
+note asked for `FUN_0003d900`'s caller and its `push count; call operator new` pair. There is no such caller:
+`tools/call-census.py --target 0x3d900 --names` finds **one** `E8` site in the 6.2 MB image, `0x3a8a6` inside
+`UClass::Serialize` (`0x0003a800`), which passes the archive and the class object's own member at `+0x4d0` (with
+`+0x4dc` going to the `FUN_0003d160` call at `0x3a8af`, and `+0x4f4` to the one at `0x3a904` on version > `0x62`).
+`FUN_0003d900` writes that member in place through `FUN_000637e0` on its `Num` word -- a compact index whenever
+either archive flag is set -- and then one element per unit. So the count is the array's **first field**, written
+by the function that writes the elements, and the reading in which it is a field of the record *before* the body is
+dead: there is no allocation to hang it on. Measured from the bytes at the position the writer implies
+(`prefix_end + 42` = prefix + `UState`'s 22 bytes + five dwords), `tools/class-record-array.py`
+(`inventory/class_record_array.csv`, 2,204 rows) parses the array on **549** classes (24.9%) -- against **36** of
+those 549 when the dword group is moved after the array and **0** when the walk is aimed one byte late -- but only
+**3** of the 549 walk on to land exactly on the defaults start. The rest stop short by a mode of exactly **20**
+bytes (190 classes; 22 on 59, 21 on 31), the dword group's own width, so the field between the array's tail and
+the block start is 20 bytes wide and the 545 withheld blocks are still one field away. **What would settle it:**
+that 20-byte field's writer -- `UClass::Serialize`'s own body between the `+0x4f4` call and the defaults branch,
+read with `ExportAt.java` at `0x0003a800` and paired with the 190 classes whose residue is exactly 20 -- or a
+version-gated field above `+0x4f4` in the class object that the current field table does not carry. Numbers:
+`docs/NATIVE_VM.md`, *The array's count is its own first field, and its writer has one caller*;
+`docs/CLASS_DEFAULTS.md`, *The array's head is at +42 and the bytes after it are one field, not a walk*.

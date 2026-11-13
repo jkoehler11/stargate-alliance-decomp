@@ -553,6 +553,28 @@ rate, spread over 124 distinct offsets. The middle between the prefix and the bl
 394, max 13,660), and 15 located starts fall *inside* the prefix (offset 1), which are the locator's own false
 positives rather than a record shape.
 
+
+### The array's head is at +42 and the bytes after it are one field, not a walk
+
+`tools/class-record-array.py` reads the record's `+0x4d0` array where its writer puts it. `UClass::Serialize`
+(`0x0003a800`) is the array writer's only caller -- a direct-call census finds one `E8` site for `0x0003d900` in
+the whole image, `0x3a8a6` -- and `FUN_0003d900` writes the member in place, count first (`FUN_000637e0` on `Num`,
+a compact index whenever either archive flag is set), so there is no allocating caller and the count is the
+array's own first field. With the prefix, `UState`'s 22 bytes and the five dwords in front of it, the head is at
+`prefix_end + 42` on all 2,204 located classes: the array parses there on **549** (24.9%), against **36** of those
+549 when the dword group is moved after it and **0** when the walk is aimed one byte late. That is the documented
+field order confirming itself from the bytes.
+
+What it does not do is reach the block start: **3** of the 549 land exactly, and the rest stop short by a
+distribution whose mode is exactly **20** bytes -- the five-dword group's width -- on 190 classes (22 on 59, 21 on
+31). A missing name array would leave 2-3 bytes and a wrong array start would leave 42, so the 20 bytes are the
+next field after the tail, and they are what stands between the record's field list and the 545 withheld
+`defaultproperties` blocks. The stride-9 run the three preceding notes measured sits inside this array's element
+span on only 98 of 536 classes; on `AmbientCreatures.HerdAnimal` the array is 22 one-byte-referenced records
+ending at offset 246, and the run it was read from starts at 952.
+
+Numbers: `docs/NATIVE_VM.md`, *The array's count is its own first field, and its writer has one caller*;
+`inventory/class_record_array.csv`.
 ## The shipped text is not an oracle for defaults
 ## The shipped text is not an oracle for defaults
 
