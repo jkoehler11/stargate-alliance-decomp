@@ -755,6 +755,27 @@ compiler expects it — end of class — replacing any block already there, so r
 one tree with text and defaults for **1,552 of 2,319 classes (67%)**: the shape 3.6 needs, short of the classes
 whose block could not be located or does not account for itself.
 
+## A delegate's default is `{object, function}`, not a string
+
+The class-level values the renderer refuses are delegates, and a delegate is written in the tag stream as two compact
+indices rather than as text (`tools/delegate-defaults.py`, `make delegate-defaults`,
+`inventory/delegate_defaults.csv`):
+
+* the **first** is a signed object reference in the package's own convention (negative = import table, positive =
+  export table, 0 = `Class`);
+* the **second** is the **FName index** of the bound function.
+
+Of the dump's 42 class-level delegate values, **39** tile exactly as that pair, **all 39** point at the class's own
+export, and **all 39** name a function that the class or an ancestor declares -- the shipped default is always "this
+class handles its own event". The width differs per class only because the export index does: 2 bytes where the class
+is export 2, 3 bytes where it is export 107 or higher, under tag bytes `0x17` and `0x57` (same type nibble, different
+size class). The three that do not tile -- `GUI.MenuItemOverlay` and the two `StargateMenus` menu pages -- are the
+`defaults-residue` rows, and their `{first, second}` pair names no declared function, so they are a tag-offset
+question rather than a delegate layout one.
+
+The source form these values come from is the familiar one: the shipped text writes
+`OnXControllerEvent=cFriends.InternalOnXControllerEvent`, i.e. the same object-and-function pair, resolved at load.
+
 ## Not measured
 
 * **Whether the 535 promoted blocks are real.** Ranking tag-type agreement first promotes 535 withheld classes to
@@ -763,11 +784,11 @@ whose block could not be located or does not account for itself.
   with the record; nothing here checks that the shorter block is *complete*. What would settle it: a per-class audit
   of the chosen block against the properties the class is documented to override, or the runtime reader of the
   trailing table (the route `docs/NATIVE_PROPERTIES.md` took for the tag format).
-* **The last 3 values, all one delegate property.** `__OnXControllerEvent__Delegate` in `GUI.MenuItemOverlay`
-  (type 0 `Invalid`, 110 bytes), `StargateMenus.ExtrasPage` and `StargateMenus.CreditsPage` (type 15 `FixedArray`,
-  12 bytes) — shapes in `inventory/defaults_residue.csv`, `make defaults-residue`. The tag map has no delegate type,
-  so what the value means is outside the tag grammar; whether these three classes even *set* the delegate is what
-  would settle it (U18). The array rendered: see "The struct array renders" above.
+* **Whether the three residue classes set that delegate.** The value layout is measured (a delegate is an
+  object reference plus a function name, see "A delegate's default is `{object, function}`" above), but
+  `GUI.MenuItemOverlay` and the two `StargateMenus` menu pages do not tile as that pair and name no declared
+  function, so their tag offset is open. What would settle it: the block's own property sequence read from the
+  tag the *previous* property ends on, and whether it lands on a `delegate` type nibble at all.
 * **The 545 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
   not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
   settled (see the section above for the three explanations already tested and rejected).

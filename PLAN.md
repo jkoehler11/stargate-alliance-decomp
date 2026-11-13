@@ -1178,6 +1178,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, a delegate default is {object, function} -- 39 of 42 measured, 3 still residues)
+
+- **The value the tag grammar cannot describe is two compact indices, and both resolve.** `tools/delegate-defaults.py`
+  (`make delegate-defaults`, `inventory/delegate_defaults.csv`, synthetic `--check`) sweeps every class-level
+  property whose declared type is `delegate<...>` or whose name carries the `__Delegate` marker: a signed object
+  reference first (negative = import table, positive = export table), then the FName index of the bound function.
+  **42 values, 39 tile exactly as that pair, all 39 resolve the object to the class's own export and the name to a
+  function the class or an ancestor declares**, so the shipped default is always the class binding the handler to
+  itself (`GUILabelButton` -> both `InternalOnKeyEvent` and `InternalOnXControllerEvent`, `MainMenu` -> `MapKeyEvent`).
+- **The width is the object index's width, not the property's.** `SGPageBase` (export 2) and `RightLockingPanel` are
+  2-byte values under tag `0x17`; export 107 and up are 3 bytes under `0x57`. Same type nibble 7, different size
+  class -- which is why one property had three different tag bytes and looked like three different shapes. Nothing in
+  the value is delegate-specific beyond the pair: no table, no arity, no state.
+- **The three residues are a tag-offset question now, not a delegate-layout one.** `GUI.MenuItemOverlay` (110 bytes,
+  eleven repeats of a nine-byte record, its own property's name index recurring inside it) and
+  `StargateMenus.ExtrasPage`/`CreditsPage` (12 bytes, one byte apart) name no declared function at their first two
+  indices, so the 39-value test separates them from a real delegate without a guess. U18 is rewritten in place with
+  the measured reading and the discriminator.
+- **Slot 11 of a property class's vtable is not its value serialiser -- measured, so the next session does not walk
+  it again.** `DelegateProperty`'s table is `0x004e16a8` and its slot 11 (`0x00077f70`) is byte-identical in shape to
+  `StructProperty`'s (`0x00079660`): `push [esp+0xc]`, `call 0x77630`, `add esi,0x6c`, `push esi`,
+  `call [eax+0x18]`, `ret 4`. Two property classes cannot share a per-class reader, so the slot is inherited from a
+  common base. (Ghidra had no function seeded at any of the eleven table slots, so the bodies were read from the
+  image directly -- a 30-byte body does not need a decompile.)
+
 ### Execution notes (2026-11-13, the struct array's inner field is a string array, and the last three values are one delegate property)
 
 - **`Engine.TextToSpeechAlias.Aliases` renders: 16 elements over 511 bytes, tiling exactly.** Its elements were
