@@ -1176,6 +1176,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-13, the element width is the one instruction a `TArray` destructor varies)
+
+- **The three arrays in the record region differ in one immediate.** `0x3d7a0` (`+0x4b8`), `0x3d850` (`+0x4c4`) and
+  `0x3da40` (`+0x4d0`) are byte-identical except for the `PUSH imm32` that is the range destroy's first argument --
+  `8`, `4` and **`12`** -- so the "three distinct element types" of the previous note is now three measured widths.
+  The `12` is the record array's element, which `FUN_0003d900` scales by, so the width is measured twice from two
+  functions that do not call each other.
+- **Corpus-wide, of the 199 distinct member destructors 93 are that template** (302 of the 765 members the map
+  places) and **106 are bespoke**; all 93 yield a width -- 1 byte to 1,068, with 4 bytes on 25 targets, 8 on 11 and
+  12 on 7 -- so the reading is not one lucky constant. 154 free through the allocator object at `0x5bf510` (vtable
+  `+0x8`), one frees directly, and 44 free nothing: the free path is not a discriminator and the element width is.
+- **The name arrays' width is confirmed from the destructor side.** `+0x4dc`, `+0x4f4` and `+0x500` share
+  `0x1c750`, which pushes **4** -- `FName`-width elements -- which until now was only implied by `FUN_0003d160`
+  writing through the archive's `+0x1c`; the array inherited into `+0x4e8` is **1** byte per element.
+- **And the tail loses a candidate.** A 4-byte element cannot hold a value and a reference, so `+0x4c4` is out of
+  the pair list's owner, leaving `+0x4b8` (8-byte elements) as the only `TArray` of the three whose width can hold
+  one -- a narrower question than the offsets alone gave, and the next measurement.
+- Tool (`tools/class-member-map.py`: a `--targets` mode that reads the committed map, decodes each distinct
+  destructor once and writes `inventory/class_member_dtors.csv`; `--check` now drives a template body, a direct
+  free, and a body that is neither) + `inventory/class_member_dtors.csv` + `docs/NATIVE_VM.md` (*The one byte a
+  `TArray` destructor varies is its element width*) + `docs/UNKNOWNS.md` U17 + `make class-member-map` + this note.
+  Reads `default.xbe` with `objdump`; no boot, no Ghidra, no value decoded and no name published.
+- **Next measurement, named:** what indexes the `+0x4b8` array at a stride of eight -- a displacement census of
+  `0x4b8` on a `Class` object, or the writer that fills it, which will not be reached from `UClass::Serialize`.
+
 ### Execution notes (2026-11-13, the field map is the destructor's, and the record array is the third of three `TArray`s)
 
 - **The constructor cannot place a member here, and the reason is the codegen, not the layout.** `Class`'s three

@@ -223,6 +223,101 @@ def sweep(xbe, xbe_file, exe, limit=0):
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+DTOR_OUT = os.path.join(ROOT, "inventory", "class_member_dtors.csv")
+DTOR_FIELDS = ["target_va", "shape", "elem_size", "free_kind", "free_target", "uses"]
+
+
+def read_body(xbe_file, sec, exe, va, tmp, size=0x400):
+    """The instructions of one body, decoded from its own first byte."""
+    with open(xbe_file, "rb") as fh:
+        fh.seek(sec.foff + (va - sec.va))
+        with open(tmp, "wb") as out_fh:
+            out_fh.write(fh.read(size))
+    insns, _bad = objdump_body(exe, tmp, va)
+    return body(insns)
+
+
+def dtor_shape(insns):
+    """What a member's destructor says about the member: the template, its element size, and its free path.
+
+    A `TArray<T>::~TArray` in this build is one template: it asserts `Num >= 0` and `Num <= Max` (`PUSH 0x287` and
+    `PUSH 0x288` into the image's own assert), clears the range through `0x55f00`, and frees the buffer. The only
+    per-instantiation byte in the whole body is the element size it pushes as that call's first argument, so the
+    immediate is a measured element width and not an inference from the caller's stride.
+
+    The free path is the second thing the body says: a direct `CALL` on the buffer, or the same `CALL [reg+0x8]`
+    through the allocator object the image keeps at a fixed global. Both occur, and they are different kinds of
+    free, so a member's destructor is not distinguished by the free it uses.
+    """
+    txt = [a for _v, a in insns]
+    shape = "tarray" if any(a.startswith("push") and "0x287" in a for a in txt) else "other"
+    elem = ""
+    for i in range(len(txt) - 4):
+        if (re.match(r"^(push\s+0x[0-9a-f]+)$", txt[i]) and txt[i + 1].startswith("push")
+                and "edi" in txt[i + 1] and txt[i + 2].startswith("push") and "0x0" in txt[i + 2]
+                and txt[i + 3].startswith("mov") and "ecx,esi" in txt[i + 3]
+                and txt[i + 4].startswith("call")):
+            elem = int(txt[i].split()[1], 16)
+            break
+    kind, target = "", ""
+    for i, a in enumerate(txt):
+        if a.startswith("call") and "[" in a and i and re.search(r"\+0x8\]", a):
+            for b in reversed(txt[max(0, i - 4):i]):
+                m = re.search(r"ds:(0x[0-9a-f]+)", b)
+                if m:
+                    kind, target = "allocator", "0x%08x" % int(m.group(1), 16)
+                    break
+            if kind:
+                break
+        if (a.startswith("call") and i and txt[i - 1].startswith("push")
+                and re.search(r"push\s+eax$", txt[i - 1])):
+            m = CALL_RE.match(a)
+            if m:
+                kind, target = "direct", "0x%08x" % int(m.group(1), 16)
+                break
+    return shape, elem, kind, target
+
+
+def targets(xbe, xbe_file, exe, map_path=os.path.join(ROOT, "inventory", "class_member_map.csv")):
+    """One row per distinct destructor a member is passed to, with what its body says about the element."""
+    rows = [r for r in load(map_path) if r["action"] == "lea-call"]
+    uses = collections.Counter(r["target_va"] for r in rows)
+    sample = {}
+    for r in rows:
+        sample.setdefault(r["target_va"], (r["class"], r["disp"]))
+    sec = text_section(xbe)
+    tmpdir = tempfile.mkdtemp(prefix="sg1dtor-")
+    tmp = os.path.join(tmpdir, "fn.bin")
+    out = []
+    try:
+        for tgt, n in sorted(uses.items(), key=lambda kv: (-kv[1], kv[0])):
+            insns = read_body(xbe_file, sec, exe, int(tgt, 16), tmp)
+            shape, elem, kind, target = dtor_shape(insns)
+            out.append({"target_va": tgt, "shape": shape, "elem_size": elem,
+                        "free_kind": kind, "free_target": target, "uses": n})
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+    return out
+
+
+def report_targets(rows, classes=None):
+    sizes = collections.Counter(r["elem_size"] for r in rows if r["shape"] == "tarray" and r["elem_size"] != "")
+    shapes = collections.Counter(r["shape"] for r in rows)
+    frees = collections.Counter(r["free_kind"] for r in rows)
+    print("targets: %d, shapes %s, free paths %s"
+          % (len(rows), dict(shapes), dict(frees)))
+    print("element sizes over the %d template destructors: %s"
+          % (sum(sizes.values()), ", ".join("%d bytes x%d" % (k, v) for k, v in sorted(sizes.items()))))
+    print("no element size read: %d" % sum(1 for r in rows if r["shape"] == "tarray" and r["elem_size"] == ""))
+    if classes:
+        for cls in classes:
+            print("\n%s" % cls)
+            for r in rows:
+                print("  %s %s elem=%s free=%s(%s) uses=%s"
+                      % (r["target_va"], r["shape"], r["elem_size"] or "-", r["free_kind"] or "-",
+                         r["free_target"] or "-", r["uses"]))
+
+
 def write(rows, out):
     d = out if os.path.isdir(out) else os.path.dirname(out) or "."
     os.makedirs(d, exist_ok=True)
@@ -399,10 +494,65 @@ def selftest():
     if "0x50c" in zero and "0x510" in zero:
         bad.append("hole test is not exercising a hole")
 
+    # a member destructor: the template's element size is the immediate it pushes, and the free is either
+    # direct or through the allocator object -- the two forms must be told apart, not lumped
+    tarr = """
+   3d850:\t57                   \tpush   edi
+   3d851:\t8b 7e 04             \tmov    edi,DWORD PTR [esi+0x4]
+   3d854:\t85 ff                \ttest   edi,edi
+   3d856:\t68 87 02 00 00       \tpush   0x287
+   3d85b:\te8 d0 d1 01 00       \tcall   0x58a30
+   3d860:\t6a 04                \tpush   0x4
+   3d862:\t57                   \tpush   edi
+   3d863:\t6a 00                \tpush   0x0
+   3d865:\t8b ce                \tmov    ecx,esi
+   3d867:\te8 94 86 01 00       \tcall   0x55f00
+   3d86c:\t8b 06                \tmov    eax,DWORD PTR [esi]
+   3d86e:\t74 0c                \tje     0x3d87c
+   3d870:\t8b 0d 10 f5 5b 00    \tmov    ecx,DWORD PTR ds:0x5bf510
+   3d876:\t8b 11                \tmov    edx,DWORD PTR [ecx]
+   3d878:\t50                   \tpush   eax
+   3d879:\tff 52 08             \tcall   DWORD PTR [edx+0x8]
+   3d87c:\tc3                   \tret
+"""
+    insns, _b = parse_listing(tarr)
+    shape, elem, kind, target = dtor_shape(body(insns))
+    if (shape, elem, kind, target) != ("tarray", 4, "allocator", "0x005bf510"):
+        bad.append("tarray shape: %r" % ((shape, elem, kind, target),))
+
+    direct = """
+   1c750:\t8b 7e 04             \tmov    edi,DWORD PTR [esi+0x4]
+   1c753:\t68 87 02 00 00       \tpush   0x287
+   1c758:\t68 88 02 00 00       \tpush   0x288
+   1c758:\t6a 0c                \tpush   0xc
+   1c75a:\t57                   \tpush   edi
+   1c75b:\t6a 00                \tpush   0x0
+   1c75d:\t8b ce                \tmov    ecx,esi
+   1c75f:\te8 9c 83 01 00       \tcall   0x55f00
+   1c764:\t8b 06                \tmov    eax,DWORD PTR [esi]
+   1c766:\t50                   \tpush   eax
+   1c767:\te8 44 2b 01 00       \tcall   0x42bb0
+   1c76c:\tc3                   \tret
+"""
+    insns, _b = parse_listing(direct)
+    shape, elem, kind, target = dtor_shape(body(insns))
+    if (shape, elem, kind, target) != ("tarray", 12, "direct", "0x00042bb0"):
+        bad.append("direct free shape: %r" % ((shape, elem, kind, target),))
+
+    other = """
+   1b310:\t33 c0                \txor    eax,eax
+   1b312:\t89 46 04             \tmov    DWORD PTR [esi+0x4],eax
+   1b315:\tc3                   \tret
+"""
+    insns, _b = parse_listing(other)
+    if dtor_shape(body(insns))[0] != "other":
+        bad.append("a non-template body was called a tarray destructor")
+
     if bad:
         print("FAIL class-member-map: %s" % "; ".join(bad))
         return 1
-    print("ok class-member-map: dtor lea/call boundaries, ctor zero vs register stores, a hole, and (bad) truncation")
+    print("ok class-member-map: dtor lea/call boundaries, ctor zero vs register stores, a hole, (bad) truncation, "
+          "and the two member-destructor shapes (element size, allocator free vs direct free)")
     return 0
 
 
@@ -413,12 +563,31 @@ def main():
     ap.add_argument("--class", dest="cls", action="append")
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--targets", action="store_true",
+                    help="classify each distinct member destructor in the map (writes class_member_dtors.csv)")
     ap.add_argument("--objdump", default="objdump")
     ap.add_argument("--limit", type=int, default=0, help="first N CSV rows only (a smoke test)")
     args = ap.parse_args()
 
     if args.check:
         sys.exit(selftest())
+
+    if args.targets:
+        if not args.xbe:
+            ap.error("--targets needs --xbe")
+        xbe = Xbe(args.xbe)
+        rows = targets(xbe, args.xbe, args.objdump)
+        path = os.path.join(args.out if os.path.isdir(args.out) else os.path.dirname(args.out) or ".",
+                            os.path.basename(DTOR_OUT))
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=DTOR_FIELDS)
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+        print("wrote %s: %d targets" % (path, len(rows)))
+        report_targets(rows, args.cls)
+        return
 
     if args.report and not args.xbe:
         path = args.out if os.path.isfile(args.out) else os.path.join(args.out, os.path.basename(OUT))

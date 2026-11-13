@@ -2725,6 +2725,15 @@ image. Corpus-wide the same instrument places 765 members on 493 destructors (`i
 read the element loop inside `0x1aa30` and `0x1b310` past the shared template prologue, and a 12-byte element freed
 through an object-reference destructor names it.
 
+**2026-11-13 (second): every placed member's element width is measured, and it excludes one candidate for the
+tail.** The `TArray` destructor template varies in exactly one instruction -- the `PUSH imm32` range-destroy argument
+that is the element size: `Class`'s three adjacent arrays are 8 (`+0x4b8`), 4 (`+0x4c4`) and 12 (`+0x4d0`, the record
+array, matching `FUN_0003d900`'s stride), the shared `0x1c750` is 4 (`FName`), and the array inherited into `+0x4e8`
+is 1 byte per element. `inventory/class_member_dtors.csv` carries the width for all 93 template destructors of the
+199. **What would settle the tail's owner** is therefore no longer three candidates: a 4-byte element cannot hold a
+value and a reference, so `+0x4c4` is out and `+0x4b8` (8-byte elements) is the remaining `TArray` of the group that
+can. What would settle it is the code that indexes `+0x4b8` at a stride of eight, or the writer that fills it.
+
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.

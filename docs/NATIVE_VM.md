@@ -1319,3 +1319,35 @@ constructor's store map is not.
 
     python3 tools/class-member-map.py --xbe DUMP/default.xbe -o inventory
     python3 tools/class-member-map.py --class Class --report
+
+
+### The one byte a `TArray` destructor varies is its element width
+
+A `TArray<T>::~TArray` in this build is one template, and its per-instantiation byte is a single `PUSH imm32`: the
+first argument of the range destroy at `0x55f00`. `Class`'s three adjacent arrays differ in that instruction alone --
+`0x3d7a0` pushes 8, `0x3d850` pushes 4, `0x3da40` pushes 12 -- and the rest of the three bodies is byte-identical
+(`MOV EDI,[ESI+0x4]; TEST EDI,EDI; ... PUSH 0x287; PUSH 0x288; ... PUSH edi; PUSH 0x0; MOV ECX,ESI; CALL 0x55f00`),
+followed by the same free through the allocator object at `0x5bf510`'s vtable slot `+0x8`.
+
+So the `PUSH` is a measured element width, not an inference. Corpus-wide, of the **199** distinct destructors members
+are passed to, **93 are the template** (covering 302 of the 765 placed members) and **106 are bespoke**; all 93 yield
+a width -- from 1 byte (`0x1aa30`) to 1,068 -- with 4 bytes on 25 targets, 8 on 11 and 12 on 7, so the reading is not
+one constant that happens to fit.
+
+That is a second, independent reading of the record array's element: `+0x4d0`'s destructor pushes **12**, the same
+12 `FUN_0003d900` scales by, and the two members around it are 8 and 4. It also settles the two name arrays that the
+arithmetic only implied -- `+0x4dc`, `+0x4f4` and `+0x500` share `0x1c750`'s **4** (`FName`-width elements) -- and it
+says the array inherited into `+0x4e8` is **1** byte per element.
+
+**And it removes a candidate for the tail.** The pair list after the record array is a value and a *reference* per
+element, and a 4-byte element cannot hold both: `+0x4c4` is out, and of the three `TArray`s in the group only
+`+0x4b8` (8-byte elements) is left. That is a narrower question than the offsets alone gave, and it is now the named
+next measurement: what indexes the `+0x4b8` array at a stride of eight.
+
+Toward the free path the corpus is nearly uniform and the exception is worth recording: **154** of the 199 free
+through the allocator object at `0x5bf510`'s vtable `+0x8`, **one** frees its buffer with a direct `CALL`, and **44**
+have no free call at all -- they destroy their elements and leave the buffer to a base class. So the free a destructor
+uses does not identify its element type, and the width does.
+
+    python3 tools/class-member-map.py --xbe DUMP/default.xbe --targets -o inventory
+    python3 tools/class-member-map.py --xbe DUMP/default.xbe --targets -o inventory --class Class
