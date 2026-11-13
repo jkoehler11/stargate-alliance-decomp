@@ -1241,3 +1241,33 @@ record's field list does not carry, and the array's head is one field later than
 classes -- the reading the `first_zero` / `second_zero` columns measure. Left to measure: that member's own identity
 (19 bytes on the zone family: a compact count of 2 and eighteen zero bytes) and the exact disk width of one `FName`
 through `+0x1c`, which sizes the two name arrays and so the last bytes of every gap.
+
+### The tail's elements are a value and a reference, not two name indices
+
+`tools/class-record-tail.py` (`make class-record-tail`, `--check` in `make ci`) measures the bytes between the located
+array's tail and the defaults start on the **291** classes whose record closes
+(`inventory/class_record_tail.csv`). They are **6 to 9 bytes** -- 7 on 201, 9 on 64, 8 on 21, 6 on 5 -- and **225** of
+the 291 read as a compact count plus that many (compact, compact) pairs: the count is 3 on 219 (a 7-byte tail) and 2 on
+6, and the walk consumes the gap exactly on 219 of the 225. The same grammar aimed one to three bytes later lands on
+the block start on **0 of 225**, so the position is the record's and not a free scan's.
+
+**The middle pair's second value is negative on 219 of 225, and it takes four distinct values in the whole corpus** --
+-6 on 149 classes, -3 on 52, -4 on 12, -7 on 6, one per package. Every first value resolves in the package's own name
+table (225 of 225 pairs), so an element is a small non-negative value and a *signed reference*; that is the shape of a
+reference into the package's import table, and it is not an `FName` duplicate number, which is an unsigned counter.
+The reading above -- these bytes as the two `TArray<FName>`s, a compact count and two compact *name indices* per
+element -- has no term that can be negative, so it is corrected here: the tail is a value/reference pair list, and the
+signed term is why it cannot be what `FUN_0003d160` writes through `+0x1c`.
+
+**On most packages the same bytes come back for every class.** The tail's digest is identical across all 51 rows of
+`Stargateeffects`, all 6 of `StargateGame`, 123 of 149 `Sharpeffects`, 5 of 6 `Engine` and 7 of 12 `GamePlay`, and it
+varies per class on `StargateContent` (48 distinct tails over 61 classes) and `StargateVehicles` (6 over 6). A field
+that does not move between 51 classes is not holding those classes' own content, so on five of the seven packages the
+last bytes of the gap are package-level -- which is the fact a "the record's fields end here" reading has to explain.
+
+**And the writer is not the one the page names.** `UClass::Serialize` pushes three pointers at `0x3a897`
+(`this+0x4dc`, `this+0x4d0`, the archive); `FUN_0003d900`'s body reads only the archive and `this+0x4d0`, and the
+third push is still on the stack when `0x3a8ab`'s `ADD ESP,0x8` leaves it there, so `+0x4dc` is `FUN_0003d160`'s second
+argument at `0x3a8af` and never reaches the first callee at all. One expression, two callees, one of the two arguments
+passed to both -- which is why the per-call mapping in the field table is right and the pair list still has no writer
+inside `UClass::Serialize`.

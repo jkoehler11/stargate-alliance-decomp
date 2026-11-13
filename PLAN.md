@@ -1176,6 +1176,39 @@ are limited to expected fields (checksum/timestamp) and documented.
   `inventory/ai_state_bodies.csv` + `docs/systems/AI.md` (*What the bodies do*, generated table + three reads) +
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
+### Execution notes (2026-11-12, the bytes after the array are a pair list, and on five packages it is the same bytes)
+
+- **The tail reads as a value/reference pair list, and the negative term is what says so.** `tools/class-record-tail.py`
+  measures the 6-to-9-byte end of the gap on the **291** classes whose record closes
+  (`inventory/class_record_tail.csv`): 7 bytes on 201, 9 on 64, 8 on 21, 6 on 5, and **225** of the 291 parse as a
+  compact count (3 on 219, 2 on 6) plus that many (compact, compact) pairs, consuming the gap exactly on 219. The same
+  grammar aimed one to three bytes later lands on the block start on **0 of 225**, so the position is the record's.
+- **The middle pair's second value is negative on 219 of 225, and only four values occur in the corpus** -- -6 on 149
+  classes, -3 on 52, -4 on 12, -7 on 6, one per package -- while every first value resolves in the package's own name
+  table (225 of 225). An `FName` duplicate number is an unsigned counter, so an element is a *value and a signed
+  reference*, and the previous note's reading of these bytes as two `TArray<FName>`s (a count plus two name indices per
+  element) has no term that can be negative. That reading is corrected in `docs/NATIVE_VM.md`.
+- **And on five of seven packages the tail does not vary between classes**, which is the number that keeps it out of the
+  record's field list: byte-identical on 51 of 51 `Stargateeffects` rows, 6 of 6 `StargateGame`, 123 of 149
+  `Sharpeffects`, 5 of 6 `Engine` and 7 of 12 `GamePlay`, while `StargateContent` (48 distinct tails over 61 classes) and
+  `StargateVehicles` (6 over 6) vary per class. A field that does not move across 51 classes is not holding their
+  content, so the last bytes of the gap are package-level on most packages and the gap argument does not reach the 545
+  withheld blocks through them.
+- **The call site was re-read and the page's per-call mapping survives it.** `0x3a897` pushes three pointers
+  (`this+0x4dc`, `this+0x4d0`, the archive) for the `0x3a8a6` call, `FUN_0003d900`'s body reads only the archive and
+  `this+0x4d0`, and `ADD ESP,0x8` at `0x3a8ab` leaves the third push in place, so `+0x4dc` is `FUN_0003d160`'s second
+  argument at `0x3a8af`. One argument list, two callees: neither can produce the negative term.
+- Tool (`tools/class-record-tail.py`: `--class`, `--sweep`, `--report`, and a synthetic `--check` that drives pairs, a
+  negative value, a trailing byte and a truncated tail) + `inventory/class_record_tail.csv` (291 rows) +
+  `make class-record-tail` + `docs/NATIVE_VM.md` (*The tail's elements are a value and a reference*) +
+  `docs/CLASS_DEFAULTS.md` (*The bytes after the array are a pair list*) + `docs/UNKNOWNS.md` U17 + this note. Reads the
+  packages and one committed CSV; no boot, no Ghidra, no name published.
+- **Next measurement, named so the next run does not re-derive it:** parse the defaults property stream from
+  `block_start - width` on those 291 classes and ask whether it still accounts for the payload to its last byte, as the
+  stream already does from `block_start` on 543 of 551 -- a stream that also parses from the earlier position makes the
+  pair list the first tag of the defaults block, and one that parses only from `block_start` leaves a record field that
+  no callee in `UClass::Serialize` writes.
+
 ### Execution notes (2026-11-12, the element is twelve bytes in memory and nine on disk, and the parse at +42 is all-null)
 
 - **The writer fixes the element span, and it is not a disk width.** `FUN_0003d900` scales both `TArray` words by

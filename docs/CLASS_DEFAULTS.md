@@ -587,6 +587,26 @@ element span -- and not a field after it.
 Numbers: `docs/NATIVE_VM.md`, *The array's count is its own first field, and its writer has one caller*;
 `inventory/class_record_array.csv`.
 ## The shipped text is not an oracle for defaults
+### The bytes after the array are a pair list, and on five packages it is the same bytes
+
+The gap between the located array's tail and a class's defaults start is 27 bytes at the median, and the last 6 to 9 of
+them are a **pair list**: `tools/class-record-tail.py` reads 291 closing records and 225 of them as a compact count (3 on
+219, 2 on 6) plus that many (compact, compact) pairs, ending exactly on the block start on 219 with a control of **0 of
+225** when the same grammar starts one to three bytes later (`inventory/class_record_tail.csv`).
+
+The second value of the middle pair is negative on **219 of 225** and only four distinct values occur across the corpus,
+one per package (-6 on 149 classes, -3 on 52, -4 on 12, -7 on 6). An `FName` number is an unsigned duplicate counter, so
+the signed term is a reference, and the pair list is not the two `TArray<FName>`s `docs/NATIVE_VM.md` used to name here.
+
+**What it costs the gap argument.** The tail is byte-identical across all 51 `Stargateeffects` rows, all 6
+`StargateGame`, 123 of 149 `Sharpeffects`, 5 of 6 `Engine` and 7 of 12 `GamePlay` -- and it varies per class on
+`StargateContent` (48 distinct tails over 61) and `StargateVehicles` (6 over 6). So on five of the seven packages the
+record's last bytes carry package-level content rather than the class's own fields, and a grammar that closes all 291
+says nothing about the 545 withheld blocks: their start is still open, and the tail is not the byte range that decides
+it. What is left is which object writes the pair list at all -- nothing inside `UClass::Serialize` does, and the two
+callees at `0x3a8a6` / `0x3a8af` write `+0x4d0`'s records and `+0x4dc`'s names, neither of which can be the negative
+term.
+
 ## The shipped text is not an oracle for defaults
 
 `--verify` compares the renderer against the `defaultproperties` blocks the shipped script still carries. It finds
