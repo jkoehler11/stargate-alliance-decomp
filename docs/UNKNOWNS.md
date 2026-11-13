@@ -2957,3 +2957,18 @@ the rest** is two reads and no new data: the split of the constant 20-byte middl
 8-byte config name, and what the archive's `+0x18`/`+0x1c` pair actually writes, since one `FName` takes both calls
 and the element's second value is signed. Numbers: `docs/NATIVE_VM.md`, *The reader writes nothing between the last
 field and the defaults, so the list is a field*.
+
+**2026-11-13: the gap is an array, not three fields, and the empty-list test does not fire.** This entry's
+remaining question was the split of the 20 bytes in front of the list. Measured (`inventory/class_record_gap.csv`,
+549 classes): a **second array of `FUN_0003d900`'s grammar** parses at the located array's tail on 361 classes,
+20 bytes at the median (20 on 260), two records on 321 with reference widths `2+1` on 258, references inside the
+object tables on 355, and the same grammar one to eight bytes later parses 811 times but lands on the defaults
+start **once**. So the 20 bytes are count + a ten-byte and a nine-byte record, and the eight bytes the "name array
+plus config `FName`" reading assigns to the config are a record's second dword: **0 of 355** are a name index and a
+counter <= 64 (the second int32's median magnitude is 1.34e9). The falsifier -- a class whose `+0x4f4` array is
+empty carries no list -- does not fire: 7 rows carry no list field, 7 carry a single byte holding `0x02`/`0x03`, and
+the list closes the record on 219. **What would settle what U17 now asks** (which member the second array is) is a
+comparison of the two arrays' reference lists per class: identical values mean one array written twice, disjoint
+values mean two members -- both ends are already in the artifact, so it is a column, not a boot. Numbers:
+`docs/NATIVE_VM.md`, *The 20-byte middle is a second record array, and the config name is not in it*;
+`docs/CLASS_DEFAULTS.md`, *The 27-byte gap is an array and a list*.
