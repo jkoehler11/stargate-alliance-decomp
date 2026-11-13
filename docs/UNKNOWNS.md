@@ -3348,20 +3348,21 @@ is still neither the writer's fields nor an element width. **What would settle w
 read against `UStruct::Serialize`'s own tail (`0x000392b0`), which is where the prefix came from, rather than another
 element grammar.
 
-**2026-11-13 (twelfth): the array's own head is a bound, and no located start that has room for the record sits
-inside it.** The tenth entry left the array's head as the test the tiling census could not be -- the count and the
-`+0x4d0` member checked against the located start. `tools/class-record-bound.py` (`make class-record-bound`,
-`inventory/class_record_bound.csv`) reads it at the writer's position (`prefix_end + 42`) on all 2,204 located classes
-and credits a head only when every element is an object reference inside the package's tables *and* every index of both
-name arrays is inside the name table: **297** heads survive, their count is **2** on 290 of them, their second name
-array is empty on all 297, and the block start sits a median **20** bytes past the record's own end (20 on 183, 19-21 on
-202) -- the same sixteen zero dwords plus a 3-5 byte front that *The gap's last sixteen bytes are zero* measured
-forward. The control is one byte later: 435 heads decode there and **48** survive both tests. Only **two** rows put the
-start inside the bound (`Engine.KBSJoint`, `StargateContent.CTFGateTeleporter`, margin -27), and both have a located
-middle of **41**, one byte short of the 42 the writer always writes, so they refute the locator rather than the bound;
-32 located rows in all leave fewer than 42 bytes between the prefix and the block. **This settles what the entry
-asked** -- no located start sits inside a record array that has room for the record -- and it does not explain the two
-menu pages: `GUI.MenuItemOverlay`'s start is 267 bytes past its array's bare end, so its 110-byte value is not the
-array's bytes. **What would still settle the two menu pages** is unchanged: `UDelegateProperty`'s own value serialiser
-(not the slot-11 body inherited from the common base), or a second package from the same build that ships the same
-property with a value short enough to read directly.
+**2026-11-13 (twelfth, corrected the same day): the array's head sits after the sixteen zero bytes, and there
+its end is the block start.** The tenth entry left the array's head as the test the tiling census could not be -- the
+count checked against the located start, a bound a tiled value cannot give. The first attempt read it at
+`prefix_end + 42` and credited 297 heads with a uniform 20-byte margin; that margin was the front. The page's gap
+census had already measured the array 19-21 bytes later, after sixteen zero bytes and a 3-5 byte compact front, and
+`tools/class-record-bound.py --position` now joins the two readings: the compact value at `prefix + 42 + gap_len`
+equals the census's `arr_count` on **1,626 of 1,626** classes, while the value at `+42` is a front value (and equals
+the census's first front value on all 234 credited rows that have a census row -- the numbers coincided because `2` is
+the commonest small value in both). Read after the zero run, the same credit test admits **4** classes, and on all four
+the record ends exactly on the block start: `Engine.PlayerInput` (count 15, ends 217 = block), `Engine.AIMsgManager`
+(204, 1,912 = block), `Engine.AdminBase` (69, 724 = block), `Engine.XBoxPlayerInput` (5, 123 = block). **This settles
+what the entry asked, in the stronger form** -- where the head can be credited the record's end *is* the block start,
+so no located start sits inside the array and there is no residue between them -- and it corrects the first attempt's
+claim that a 20-byte gap sat between the two. What it does not explain is unchanged: the two menu pages'
+12-byte values, for which the routes remain `UDelegateProperty`'s own value serialiser (not the slot-11 body inherited
+from the common base) or a second package from the same build that ships the property with a value short enough to read
+directly. Independent of all of it: **32** located rows leave fewer than 42 bytes between prefix and block, which
+`UClass::Serialize`'s unconditional fields forbid, so those locator rows are wrong whatever the array's position is.

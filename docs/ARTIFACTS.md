@@ -29,12 +29,12 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 15 | `make class-reach` |
 | `inventory/class_record_array.csv` | 2204 | 27 | `make class-record-array` |
-| `inventory/class_record_bound.csv` | 2204 | 22 | `make class-record-bound` |
+| `inventory/class_record_bound.csv` | 2204 | 20 | `make class-record-bound` |
 | `inventory/class_record_element.csv` | 549 | 15 | `make class-record-element-fields` |
 | `inventory/class_record_element_fields.csv` | 395 | 11 | `make class-record-element-fields` |
 | `inventory/class_record_fields.csv` | 2209 | 13 | `make class-record-fields` |
-| `inventory/class_record_gap.csv` | 549 | 44 | `make class-record-gap` |
-| `inventory/class_record_gap_front.csv` | 1626 | 10 | `make class-record-order` |
+| `inventory/class_record_gap.csv` | 549 | 44 | `make class-record-bound` |
+| `inventory/class_record_gap_front.csv` | 1626 | 10 | `make class-record-bound` |
 | `inventory/class_record_middle.csv` | 2204 | 19 | `make class-record-middle` |
 | `inventory/class_record_order.csv` | 2204 | 27 | `make class-record-order` |
 | `inventory/class_record_run.csv` | 2204 | 32 | `make class-record-run` |

@@ -1,33 +1,30 @@
 #!/usr/bin/env python3
-"""Bound every located defaults block start by the class record's own array head.
+"""Find the class record's array head by the writer's own rule, and bound the defaults block start with it.
 
-`docs/CLASS_DEFAULTS.md` and U18's tenth entry were left with one test they do not have: the tiling test that read
-`GUI.MenuItemOverlay`'s 110 bytes as twelve streamed record units also tiles at each of four shifted starts (159 of
-181 blocks tile at their own start, 151-153 of 181 at a start one to four bytes in), so tiling cannot say whether a
-located block start sits inside the record array. The array's own head can, because it is a *bound* rather than a
-pattern: `UClass::Serialize` (`0x0003a800`) writes `UStruct::Serialize` (the record's measured 3-6 byte prefix) and
-then, unconditionally, `UState::Serialize`'s 22 bytes and five dwords, so its `+0x4d0` array is read at
-`prefix_end + 42` on every class; `FUN_0003d900` streams that array as a compact count and then one
-`[object reference][dword][dword]` per element, and `FUN_0003d160` streams the version-gated `TArray<FName>`
-siblings as a compact count and two compact indices per element. Nothing else is written between the last of those
-fields and the defaults block, so the end of the last name array is the **earliest byte the block can start at**.
+U18's tenth entry left one test the tiling census could not give -- the array's own head checked against the located
+block start, a bound that a tiled value cannot supply. The first attempt at it read the array at `prefix_end + 42`
+(22 `UState::Serialize` bytes plus five dwords) and found 297 heads that passed both table tests with the block start
+exactly twenty bytes past their end. That twenty is the measurement's own refutation: this page's gap census already
+says the array does **not** start at the field table's position -- it starts 19 to 21 bytes later, after sixteen zero
+bytes and a three to five byte compact front -- so the "count" at `+42` was the front's first value and the twenty-byte
+margin was that same front read back as an array. A position that has to be assumed is not a measurement.
 
-A count byte is cheap to satisfy, so the head is only credited when it validates:
+So this tool finds the head instead of assuming it, by the writer's own shape:
 
-* every element's reference is an object reference inside the package's own tables (`0`, `-nimp`..`-1`,
-  `1`..`nex`), which is the archive `+0x18` method's own contract;
-* every index of a name array is inside the package's name table, which is the `+0x1c` method's;
-* both counts are within the array bound the writer's callers imply.
+    prefix, 22 + 20 bytes, [3-5 compact values], [16 zero bytes], count, count x (reference, dword, dword), names...
 
-The bound is reported for one and for two name arrays, because the version gate (`archive version > 0x62`, and these
-packages are 130/4) says two: a start that is inside the array's *elements* is a contradiction under either reading,
-while a start inside the second name array alone is only a contradiction for this build's version.
+`--position` reports the join that settles the offset from the bytes: on every class the committed gap census covers,
+the compact value at `prefix_end + 42 + gap_len` must be that census's `arr_count`. `--sweep` then credits a head only
+where all three of the archive's contracts hold -- every element an object reference inside the package's tables,
+every index of both name arrays inside the name table -- and reports the block start against the head's end, which is
+the earliest byte the block can begin at because the body writes nothing else before the defaults branch.
 
+    python3 tools/class-record-bound.py --dump $SG1_DUMP --position
     python3 tools/class-record-bound.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-record-bound.py --report
     python3 tools/class-record-bound.py --check          # synthetic bodies, no dump, writes nothing
 
-Reads the packages and the committed prefix table; no boot, no Ghidra round, no defaults value decoded.
+Reads the packages, the committed prefix table and the committed gap census; no boot, no Ghidra round.
 """
 import argparse
 import collections
@@ -54,19 +51,20 @@ crf = _load("class-record-fields")
 ROOT = os.path.dirname(HERE)
 STATE_BYTES = crf.STATE_BYTES                  # UState::Serialize, 22 bytes at +0x80
 CLASS_DWORDS = crf.CLASS_DWORDS                # five dwords at +0x498..+0x4ac
-DOC_OFFSET = STATE_BYTES + 4 * CLASS_DWORDS    # +0x4d0: where UClass writes its own array
-MAX_COUNT = 4096                               # a class-record array larger than this is not a class tail
-MAX_NAMES = 4096                               # same bound for a name array
-MAX_REF = 5                                    # the writer's own compact-reference bound
+DOC_OFFSET = STATE_BYTES + 4 * CLASS_DWORDS    # the field table's position for +0x4d0 (not where the stream puts it)
+ZERO_RUN = 16                                  # the four zero dwords immediately in front of the count
+WINDOW = 26                                    # how far past the field table's position the count can sit
+MAX_COUNT = 4096
+MAX_NAMES = 4096
+MAX_REF = 5
 ARTIFACT = "class_record_bound.csv"
+GAP_ARTIFACT = "class_record_gap_front.csv"
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "middle",
-           "count", "elems_end", "refs_ok", "names_a", "names_a_ok", "names_b", "names_b_ok",
-           "end_k1", "end_k2", "margin_k1", "margin_k2", "inside_bare", "inside_k1", "inside_k2",
-           "ctl_count", "ctl_inside"]
+           "heads", "head_off", "count", "end", "names_a", "names_b", "margin", "inside",
+           "at42_value", "at42_count", "at42_inside", "gap_len", "gap_count", "gap_join"]
 
 
 def read_count(buf, p):
-    """A compact count at `p`, or None when it cannot be one."""
     if p < 0 or p >= len(buf):
         return None
     try:
@@ -79,7 +77,7 @@ def read_count(buf, p):
 
 
 def walk_elements(buf, p, nimp, nex):
-    """The record array as `FUN_0003d900` streams it, credited only when every reference lands in a table."""
+    """The record array as `FUN_0003d900` streams it; a reference outside both tables refuses it."""
     got = read_count(buf, p)
     if not got:
         return None
@@ -96,9 +94,9 @@ def walk_elements(buf, p, nimp, nex):
         if e - o > MAX_REF or e + 8 > len(buf):
             return None
         if not (v == 0 or (v > 0 and v <= nex) or (v < 0 and -v <= nimp)):
-            return {"count": count, "end": o, "refs_ok": 0}
+            return None
         o = e + 8
-    return {"count": count, "end": o, "refs_ok": 1}
+    return {"count": count, "end": o}
 
 
 def walk_names(buf, p, nnames):
@@ -118,58 +116,83 @@ def walk_names(buf, p, nnames):
             except IndexError:
                 return None
             if not (0 <= v < nnames):
-                return {"count": n, "end": o, "ok": 0}
+                return None
             o = e
-    return {"count": n, "end": o, "ok": 1}
+    return {"count": n, "end": o}
 
 
-def bound(data, p, block_start, nimp, nex, nnames):
-    """The record's own end at the writer's position, and whether the located start is beyond it."""
-    row = {"count": "", "elems_end": "", "refs_ok": 0, "names_a": "", "names_a_ok": 0,
-           "names_b": "", "names_b_ok": 0, "end_k1": "", "end_k2": "",
-           "margin_k1": "", "margin_k2": "", "inside_bare": "", "inside_k1": "", "inside_k2": ""}
+def head_at(data, p, nimp, nex, nnames):
+    """A whole credited head at `p`: the array and both name arrays, or None."""
     arr = walk_elements(data, p, nimp, nex)
     if not arr:
-        return row
-    row.update({"count": arr["count"], "refs_ok": arr["refs_ok"]})
-    if not arr["refs_ok"]:
-        # a reference outside both tables is not an object reference, so the count is not credited and neither the
-        # element span nor a bound exists: `elems_end` here would be the position of the first bad reference
-        return row
-    row["elems_end"] = arr["end"]
-    row["inside_bare"] = int(block_start < arr["end"])
+        return None
     a = walk_names(data, arr["end"], nnames)
-    if not a or not a["ok"]:
-        return row
-    row.update({"names_a": a["count"], "names_a_ok": a["ok"], "end_k1": a["end"],
-                "margin_k1": block_start - a["end"], "inside_k1": int(block_start < a["end"])})
+    if not a:
+        return None
     b = walk_names(data, a["end"], nnames)
-    if not b or not b["ok"]:
-        return row
-    row.update({"names_b": b["count"], "names_b_ok": b["ok"], "end_k2": b["end"],
-                "margin_k2": block_start - b["end"], "inside_k2": int(block_start < b["end"])})
-    return row
+    if not b:
+        return None
+    return {"count": arr["count"], "end": b["end"], "names_a": a["count"], "names_b": b["count"]}
+
+
+def heads(data, prefix_end, block_start, nimp, nex, nnames):
+    """Every credited head whose sixteen preceding bytes are zero, in the window past the field table's position."""
+    out = []
+    lo = prefix_end + DOC_OFFSET
+    for p in range(lo, min(lo + WINDOW, len(data))):
+        if p - ZERO_RUN < 0 or data[p - ZERO_RUN:p] != bytes(ZERO_RUN):
+            continue
+        h = head_at(data, p, nimp, nex, nnames)
+        if not h or h["end"] > block_start:
+            continue
+        h["off"] = p - prefix_end
+        h["margin"] = block_start - h["end"]
+        out.append(h)
+    return out
 
 
 def measure(data, prefix_end, block_start, nimp, nex, nnames):
-    row = {"payload": len(data), "prefix_end": prefix_end, "block_start": block_start,
-           "middle": block_start - prefix_end, "count": "", "elems_end": "", "refs_ok": 0,
-           "names_a": "", "names_a_ok": 0, "names_b": "", "names_b_ok": 0,
-           "end_k1": "", "end_k2": "", "margin_k1": "", "margin_k2": "",
-           "inside_bare": "", "inside_k1": "", "inside_k2": "", "ctl_count": "", "ctl_inside": ""}
+    row = {c: "" for c in COLUMNS}
+    row.update({"payload": len(data), "prefix_end": prefix_end, "block_start": block_start,
+                "middle": block_start - prefix_end, "heads": 0})
     if block_start <= prefix_end:
         return row
+    got = heads(data, prefix_end, block_start, nimp, nex, nnames)
+    row["heads"] = len(got)
+    if got:
+        best = got[-1]                      # the head nearest the block: the one the writer's tail leaves in front
+        row.update({"head_off": best["off"], "count": best["count"], "end": best["end"],
+                    "names_a": best["names_a"], "names_b": best["names_b"],
+                    "margin": best["margin"], "inside": 0})
+    # the control: the same test at the field table's own position, which is where the front starts
     p = prefix_end + DOC_OFFSET
-    row.update(bound(data, p, block_start, nimp, nex, nnames))
-    # control: the same grammar one byte later. A position that is the writer's must do worse than +42.
-    ctl = bound(data, p + 1, block_start, nimp, nex, nnames)
-    row["ctl_count"] = ctl["count"]
-    row["ctl_inside"] = ctl["inside_k2"]
+    if p < len(data):
+        try:
+            row["at42_value"] = crf.read_index(data, p)[0]
+        except IndexError:
+            pass
+        ctl = head_at(data, p, nimp, nex, nnames)
+        if ctl:
+            row["at42_count"] = ctl["count"]
+            row["at42_inside"] = int(ctl["end"] > block_start)
     return row
 
 
-def sweep(args):
+def gap_census():
+    out = {}
+    path = os.path.join(ROOT, "inventory", GAP_ARTIFACT)
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r["gap_len"] and r["arr_count"]:
+                out[(r["package"], r["class"])] = (int(r["gap_len"]), int(r["arr_count"]))
+    return out
+
+
+def sweep(args, join=False):
     prefixes = crf.read_prefixes()
+    gaps = gap_census()
     rows = []
     for fn in sorted(os.listdir(os.path.join(args.dump, "System"))):
         if not fn.endswith(".u"):
@@ -192,8 +215,17 @@ def sweep(args):
             data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
             row = measure(data, start, block, nimp, nex, nnames)
             row.update({"package": name, "class": key[1]})
+            if join and key in gaps:
+                gap_len, arr_count = gaps[key]
+                row["gap_len"] = gap_len
+                row["gap_count"] = arr_count
+                p = start + DOC_OFFSET + gap_len
+                try:
+                    row["gap_join"] = int(crf.read_index(data, p)[0] == arr_count)
+                except IndexError:
+                    row["gap_join"] = 0
             rows.append(row)
-    if args.out:
+    if not join and args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, ARTIFACT)
         with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -223,53 +255,37 @@ def report(rows=None):
             rows = list(csv.DictReader(fh))
     rows = [r for r in rows if int(r.get("block_start") or 0) > 0]
     n = len(rows)
-    head = [r for r in rows if r.get("count") not in ("", None)]
     print("classes with a located block start: %d" % n)
-    print("the array head decodes at the writer's position (prefix + %d): %d (%.1f%%)"
-          % (DOC_OFFSET, len(head), _pct(len(head), n)))
-    ok = [r for r in head if int(r.get("refs_ok") or 0)]
-    print("  every element reference inside the package's tables: %d (%.1f%%)" % (len(ok), _pct(len(ok), n)))
-    both = [r for r in ok if r.get("end_k2") not in ("", None)]
-    print("  both name arrays decode with every index inside the name table: %d (%.1f%%)"
-          % (len(both), _pct(len(both), n)))
-    if both:
-        print("  the count on those rows: median %d, most common %s"
-              % (statistics.median(_ints(both, "count")), collections.Counter(_ints(both, "count")).most_common(5)))
-        print("  name-array elements: first %s, second %s"
-              % (collections.Counter(_ints(both, "names_a")).most_common(4),
-                 collections.Counter(_ints(both, "names_b")).most_common(4)))
-        m2 = _ints(both, "margin_k2")
-        print("  the block start past the record's own end: median %d, most common %s"
-              % (statistics.median(m2), collections.Counter(m2).most_common(6)))
-        print("  the block start inside that end: %d (k=2), %d (k=1), %d inside the elements alone"
-              % (sum(int(r["inside_k2"]) for r in both), sum(int(r["inside_k1"]) for r in both),
-                 sum(int(r["inside_bare"]) for r in both)))
-        neg = [r for r in both if int(r["inside_k2"])]
-        for r in neg[:12]:
-            print("    inside: %s.%s payload %s start %s count %s elems_end %s end_k2 %s margin %s"
-                  % (r["package"], r["class"], r["payload"], r["block_start"], r["count"],
-                     r["elems_end"], r["end_k2"], r["margin_k2"]))
-    # the elements alone are the strongest claim: no name-array reading is needed to contradict a start there
-    bare = [r for r in ok if int(r.get("inside_bare") or 0)]
-    print("  block start inside the array's own elements, on the table-checked heads: %d" % len(bare))
-    for r in bare[:12]:
-        print("    inside: %s.%s payload %s start %s count %s elems_end %s"
-              % (r["package"], r["class"], r["payload"], r["block_start"], r["count"], r["elems_end"]))
-    ctl = [r for r in head if r.get("ctl_count") not in ("", None)]
-    print("the same grammar one byte later (prefix + %d): a head on %d, a fully validated bound on %d"
-          % (DOC_OFFSET + 1, len(ctl), sum(1 for r in ctl if r["ctl_inside"] not in ("", None))))
-    for want in (("GUI", "MenuItemOverlay"), ("StargateMenus", "ExtrasPage"), ("StargateMenus", "CreditsPage")):
-        for r in rows:
-            if (r["package"], r["class"]) == want:
-                print("  %s.%s: payload %s, middle %s, start %s, count %s, elems_end %s, end_k2 %s, margin_k2 %s"
-                      % (r["package"], r["class"], r["payload"], r["middle"], r["block_start"],
-                         r.get("count") or "-", r.get("elems_end") or "-", r.get("end_k2") or "-",
-                         r.get("margin_k2") or "-"))
+    with_head = [r for r in rows if int(r.get("heads") or 0) >= 1]
+    print("a credited head after the sixteen zero bytes: %d (%.1f%%)" % (len(with_head), _pct(len(with_head), n)))
+    print("  heads per class: %s" % collections.Counter(int(r["heads"]) for r in with_head).most_common(5))
+    print("  the head's offset past the prefix: %s"
+          % collections.Counter(_ints(with_head, "head_off")).most_common(8))
+    print("  the count on those rows: median %s, most common %s"
+          % (statistics.median(_ints(with_head, "count")) if with_head else "-",
+             collections.Counter(_ints(with_head, "count")).most_common(5)))
+    print("  name arrays: first %s, second %s"
+          % (collections.Counter(_ints(with_head, "names_a")).most_common(4),
+             collections.Counter(_ints(with_head, "names_b")).most_common(4)))
+    if with_head:
+        m = _ints(with_head, "margin")
+        print("  the block start past the head's end: median %d, most common %s"
+              % (statistics.median(m), collections.Counter(m).most_common(8)))
+        print("  the block start inside that end: %d" % sum(int(r["inside"]) for r in with_head))
+    print("the field table's own position (+%d): the value bytes there are a front value on %d, and a head that "
+          "passes both tests and fits before the block on %d"
+          % (DOC_OFFSET, sum(1 for r in rows if r["at42_value"] not in ("", None)),
+             sum(1 for r in rows if r["at42_count"] not in ("", None))))
+    joined = [r for r in rows if r["gap_join"] not in ("", None)]
+    if joined:
+        print("the join with the committed gap census: the compact value at prefix + %d + gap_len equals its "
+              "arr_count on %d of %d" % (DOC_OFFSET, sum(int(r["gap_join"]) for r in joined), len(joined)))
+    print("located rows that leave less than %d bytes between the prefix and the block: %d"
+          % (DOC_OFFSET, sum(1 for r in rows if int(r["middle"]) < DOC_OFFSET)))
     return 0
 
 
 def _enc(v):
-    """The archive's `FCompactIndex` for `v`, the spelling `crf.read_index` decodes."""
     sign = 0x80 if v < 0 else 0
     v = abs(v)
     if v < 0x40:
@@ -279,54 +295,51 @@ def _enc(v):
     return bytes([sign | 0x40 | (v & 0x3F), 0x80 | ((v >> 6) & 0x7F), v >> 13])
 
 
-def _record(count, refs, names_a, names_b, prefix=3, block_gap=8):
-    """A synthetic class payload: prefix, the 42-byte middle, the array, two name arrays, the gap, the block."""
+def _body(count, refs, names_a, names_b, front=(2, 0, 0, 4), gap=0):
+    """prefix, the 42-byte middle, the front, the sixteen zero bytes, the array, two name arrays, the block."""
     elems = b"".join(_enc(ref) + b"\x11\x22\x33\x44" + b"\x55\x66\x77\x88" for ref in refs)
-    prelude = bytes(range(1, STATE_BYTES + 1)) + b"\x01\x00\x00\x00" * CLASS_DWORDS
-    body = _enc(count) + elems
+    body = b"".join(_enc(v) for v in front) + bytes(ZERO_RUN)
+    body += _enc(count) + elems
     body += _enc(len(names_a)) + b"".join(_enc(n) + _enc(0) for n in names_a)
     body += _enc(len(names_b)) + b"".join(_enc(n) + _enc(0) for n in names_b)
-    head = bytes(prefix) + prelude
-    block = len(head) + len(body) + block_gap
-    return head + body + bytes(max(0, block_gap)), prefix, block
+    prelude = bytes(range(1, STATE_BYTES + 1)) + b"\x01\x00\x00\x00" * CLASS_DWORDS
+    head = bytes(3) + prelude
+    block = len(head) + len(body) + gap
+    return head + body + bytes(max(0, gap)), 3, block
 
 
 def selftest():
     cases = 0
-    # 1. a head whose references and name indices are all in range bounds the block exactly, and its margin is 0
-    data, start, block = _record(3, (0, 2, -1), (1, 2), (3,), block_gap=0)
+    # 1. a head behind the zero run is found, credited, and bounds the block exactly
+    data, start, block = _body(3, (0, 2, -1), (1, 2), (3,), gap=0)
     row = measure(data, start, block, 4, 8, 9)
-    assert int(row["count"]) == 3 and int(row["refs_ok"]) == 1, row
-    assert int(row["end_k2"]) == block and int(row["margin_k2"]) == 0, row
-    assert int(row["inside_k2"]) == 0 and int(row["inside_bare"]) == 0, row
+    assert int(row["heads"]) == 1 and int(row["count"]) == 3, row
+    assert int(row["head_off"]) == DOC_OFFSET + 4 + ZERO_RUN, row
+    assert int(row["margin"]) == 0 and int(row["names_a"]) == 2 and int(row["names_b"]) == 1, row
     cases += 1
-    # 2. a reference outside both tables refuses the head: no count is credited
-    data, start, block = _record(2, (0, 99), (1,), (2,), block_gap=0)
-    row = measure(data, start, block, 4, 8, 9)
-    assert row["count"] not in ("", None) and int(row["refs_ok"]) == 0, row
-    assert row["end_k2"] in ("", None) and row["margin_k2"] in ("", None), row
+    # 2. no sixteen zero bytes in front, no head: the position is the writer's rule and not a scan
+    data, start, block = _body(3, (0, 1, 2), (1,), (2,), front=(2, 0, 0, 4), gap=0)
+    holed = bytearray(data)
+    holed[start + DOC_OFFSET + 8] = 0x07
+    row = measure(bytes(holed), start, block, 4, 8, 9)
+    assert int(row["heads"]) == 0, row
     cases += 1
-    # 3. a name index past the name table refuses the name array, so the bound stays at k=1
-    data, start, block = _record(2, (0, 1), (1, 99), (2,), block_gap=0)
+    # 3. a reference outside both tables refuses the head
+    data, start, block = _body(2, (0, 99), (1,), (2,), gap=0)
     row = measure(data, start, block, 4, 8, 9)
-    assert int(row["refs_ok"]) == 1 and row["names_a_ok"] in (0, "") , row
-    assert row["end_k1"] in ("", None) and row["end_k2"] in ("", None), row
+    assert int(row["heads"]) == 0, row
     cases += 1
-    # 4. a block start inside the elements is flagged, and one inside only the second name array at k=2
-    data, start, block = _record(4, (0, 1, 2, 3), (1,), (2,), block_gap=-40)
-    row = measure(data, start, block, 4, 8, 9)
-    assert int(row["inside_bare"]) == 1, row
-    data, start, block = _record(2, (0, 1), (1,), (2,), block_gap=0)
-    row = measure(data, start, block, 4, 8, 9)
-    mid = int(row["end_k1"])
-    row = measure(data, start, mid, 4, 8, 9)
-    assert int(row["inside_k1"]) == 0 and int(row["inside_k2"]) == 1, row
+    # 4. a name index past the name table refuses it, and a head that runs past the block is not a bound
+    data, start, block = _body(2, (0, 1), (1, 99), (2,), gap=0)
+    assert int(measure(data, start, block, 4, 8, 9)["heads"]) == 0
+    data, start, block = _body(4, (0, 1, 2, 3), (1,), (2,), gap=0)
+    assert int(measure(data, start, block - 20, 4, 8, 9)["heads"]) == 0
     cases += 1
-    # 5. the count is compact and the element stride is nine: a two-byte count shifts the bound by one
-    assert len(_enc(4)) == 1 and len(_enc(64)) == 2, (_enc(4), _enc(64))
-    data, start, block = _record(64, [0] * 64, (1,), (2,), block_gap=0)
+    # 5. the field table's position is a front value, not a count: reported separately from the head
+    data, start, block = _body(2, (0, 1), (1,), (2,), front=(55, 0, 0, 4), gap=0)
     row = measure(data, start, block, 4, 8, 9)
-    assert int(row["count"]) == 64 and int(row["margin_k2"]) == 0, row
+    assert int(row["at42_value"]) == 55 and row["at42_count"] in ("", None), row
+    assert int(row["heads"]) == 1 and int(row["count"]) == 2, row
     cases += 1
     print("class-record-bound: selftest passed (%d cases)" % cases)
     return 0
@@ -336,6 +349,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dump", default=os.environ.get("SG1_DUMP", ""))
     ap.add_argument("--sweep", action="store_true")
+    ap.add_argument("--position", action="store_true", help="join the head offset with the committed gap census")
     ap.add_argument("-o", "--out", default=None)
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--check", action="store_true")
@@ -344,7 +358,7 @@ def main():
         return selftest()
     if args.report:
         return report()
-    if args.sweep:
+    if args.sweep or args.position:
         dump = args.dump
         game = "Stargate_SG-1_-_The_Alliance-2005-12-15"
         if dump and os.path.isdir(os.path.join(dump, game)):
@@ -353,7 +367,7 @@ def main():
             print("no System/ under %r -- set SG1_DUMP" % dump)
             return 2
         args.dump = dump
-        return sweep(args)
+        return sweep(args, join=True)
     ap.print_help()
     return 0
 

@@ -81,7 +81,7 @@ help:
 	@echo "  class-record-gap       split the gap after the array: a second class-reference array, then the list"
 	@echo "  class-record-order     where the middle's writers put its fields: the offset sweep and the pair's position (needs the dump)"
 	@echo "  class-record-gap-front what the 19-21 bytes in front of the array hold: a compact front and sixteen zero bytes (needs the dump)"
-	@echo "  class-record-bound    the record array's own head as a bound on the located block start (needs the dump)"
+	@echo "  class-record-bound    the array head after the sixteen zero bytes, as a bound on the block start (needs the dump)"
 	@echo "  archive-slots          the archive's vtable and one compact field per FName, measured from its slots"
 	@echo "  record-writer-calls    every call into the record and name writers, and the member each is handed"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"
@@ -1119,8 +1119,8 @@ class-scripttext-ref:
 	python3 tools/class-scripttext-ref.py --dump $(SG1_DUMP) --sweep -o inventory
 	@python3 tools/class-scripttext-ref.py --report
 
-# The array's own head as a bound on the located block start, credited by the element and name tables
-# (docs/NATIVE_VM.md, *The array's own head bounds the block start*). Reads the packages; no boot.
+# The array head the writer's rule finds (after sixteen zero bytes) as the bound on the located block start
+# (docs/NATIVE_VM.md, *The array's head sits after the sixteen zero bytes*). Reads the packages; no boot.
 class-record-bound:
 	python3 tools/class-record-bound.py --dump $(SG1_DUMP) --sweep -o inventory
 	@python3 tools/class-record-bound.py --report
