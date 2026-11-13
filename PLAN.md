@@ -1201,6 +1201,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the record's third field is a ScriptText reference, and that closes the residue question)
+
+- **The prefix's third field is an object reference, and it lands on `ScriptText` on 2,209 of 2,209.** The last note
+  left the record's 3-6 byte prefix with a third field it called `ScriptText` and no test of that claim; the writer's
+  body gives the test rather than a width. `UStruct::Serialize` (`0x000392b0`) hands `Super` and `Children` to the
+  archive's `+0x18` slot and `FriendlyName` to `+0x1c`, and `+0x18` is the **object-reference** method: positive
+  indexes the export table, negative the import table, 0 is `Class`. So the third compact field, if it is the
+  script, must resolve to an export of class `ScriptText` -- and `FriendlyName`, a name, could not resolve at all.
+- **A perfect landing, not a plurality.** `tools/class-scripttext-ref.py` (`make class-scripttext-ref`,
+  `inventory/class_scripttext_refs.csv`, `--check` in `make ci`) decodes the three compact fields of all 2,209
+  located records: **2,209** export references, **2,209** named `ScriptText`, **0** null, and `Children` a null
+  reference on **2,209**. `FriendlyName` is not in the record: the body's `FriendlyName!=NAME_None` assert is a
+  reader's precondition that the export table's own name satisfies.
+- **That is the residue question answered from the other side.** The 20/27 bytes in front of a defaults block cannot
+  be a `UStruct::Serialize` tail field, because every field that tail writes after `Children` is measurably absent
+  from the record -- no `FriendlyName`, no line, no text position, no script bytes -- and the single field that does
+  exist there is the reference the prefix already carries. The gap stays the array's, as the element and name-array
+  notes measured; U18's "read the residue against `UStruct::Serialize`'s tail" is now a closed route rather than an
+  untried one.
+- Tool (`--sweep`, `--report`, `--check` with 12 synthetic cases) + `inventory/class_scripttext_refs.csv` (2,209
+  rows) + `docs/NATIVE_VM.md` (new section) + `make class-scripttext-ref` + this note. Reads the packages; no boot,
+  no Ghidra round, no value decoded.
+
 ### Execution notes (2026-11-13, the two artifacts with no target are boot-side reads, and one was credited to its reader)
 
 - **`docs/ARTIFACTS.md` reported two artifacts as `no target runs it` against a gate that wants zero, and neither
