@@ -2748,6 +2748,19 @@ is 1 byte per element. `inventory/class_member_dtors.csv` carries the width for 
 value and a reference, so `+0x4c4` is out and `+0x4b8` (8-byte elements) is the remaining `TArray` of the group that
 can. What would settle it is the code that indexes `+0x4b8` at a stride of eight, or the writer that fills it.
 
+**2026-11-13 (fourth): the middle's field order is the writer's, and 19-21 bytes in front of its array are not
+in any writer the body names.** `UClass::Serialize`'s call order puts the `+0x4b0`/`+0x4b4` pair *after* both
+arrays, and the two slots (`0x00038bc0`, `0x00038bf0`) are one `FCompactIndex` each -- they differ only in the proxy
+map they consult (`[eax+0x24]` for an object, `[eax+0x20]` for a name), so no width can tell the two encodings apart.
+Walking that order from `prefix_end + 42` closes **0 of 2,204** located classes; walking it from `+19` closes on
+**732** (and `+20` on 518, `+21` on 232), with the array's count at 2, the reference one byte and inside the tables,
+and the config name a valid index on every one of them; controls -- pair in front, adjacent name arrays, last array
+dropped -- close on 167, 33 and 37 classes at any of 32 offsets. `tools/class-record-order.py` (`make
+class-record-order`, `inventory/class_record_order.csv`) is the instrument. **What would settle the 19** is the body
+of `UStruct::Serialize` (`0x000392b0`) after the third reference the prefix page ends at: the writers it calls
+should sum to 19-21 bytes, and one of them is likely the compact that makes the width vary. Depth:
+`docs/NATIVE_VM.md`, *The middle's field order is the writer's*.
+
 **Related, and still open:** whether the 545 withheld `defaultproperties` blocks in `docs/CLASS_DEFAULTS.md` are the
 same `SerializeExpr` stream. A tag stream would not parse package imports as property names, and that residue does;
 `UStruct::Serialize` at `0x000392b0` is the reader that would decide it.
