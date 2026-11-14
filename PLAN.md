@@ -1178,6 +1178,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the guard's 45 refusals are an empty defaults block, not an over-read)
+
+- **The next measurement the last note named is answered, and the over-read is refused.** `tools/class-group-stop.py`
+  reads the tag stream from the closing group's end on the 297 rows the guard refuses. On **234** a block runs to the
+  payload's last byte (fully declared on 224 of 241 non-empty, mean 0.929, `ActionString` first on 51), **55** open an
+  **empty** block, 6 overrun after a tag or two, 1 stops short and 1 group ends on the payload's last byte.
+- **The 45 split cleanly and the split is the guard's own verdict.** Of the 252 moved rows a block opens on **232**;
+  of the **45** refusals with no replacement, a block opens on only **9** and **36 are empty**, with the group ending
+  within a byte of the payload on **36 of 45**. Those classes set no defaults after their record, so the refusal is
+  correct and no start exists to find.
+- **The control makes it a measurement and not a base rate.** On the **1,586** rows whose group end is the located
+  block start by two witnesses (`class_record_open_tail.csv`, `overlap == 0`), the same reader opens a block to the
+  payload end on **1,586 of 1,586**, fully declared (mean 1.000, `Emitters` 185, `EnvironmentSize` 100), so an
+  unreadable stream on the refused rows is the payload's shape.
+- Tool (`tools/class-group-stop.py`: `--class`, `--sweep`, `--report`, `--check` with synthetic bodies, a group that
+  ends the payload and an end past it) + `inventory/class_group_stop.csv` (1,883 rows) + `docs/NATIVE_VM.md` (new
+  section) + `docs/UNKNOWNS.md` U18 (thirtieth) + `make class-group-stop` + this note. Reads the packages and two
+  committed geometries; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the **13** refused rows that open an empty block or nothing at the group end and do
+  not end there (6 parse nothing with 4-10 bytes after it, 7 open an empty block with 2-459 bytes left --
+  `Engine.ProceduralSound` and `Engine.SoundGroup` are the two no-survivor rows among them). Read the tag stream from
+  every offset in `[group_end, group_end + 12)` on those 13 and report which offset opens a declared block that
+  reaches the payload end -- that offset, not the group's end, is the boundary the record's grammar is missing.
+
 ### Execution notes (2026-11-13, the chooser refuses a start inside the committed group, and its end is a candidate)
 
 - **The named measurement is done: the block-start chooser now refuses a start a committed group covers, and the

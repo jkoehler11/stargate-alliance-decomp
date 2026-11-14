@@ -2789,3 +2789,43 @@ old start, and five artifacts downstream of it (`class_defaults_emit`, `class_de
 chooser is its own change. And the 45 refusals with no replacement are a measurement, not a tie: on them every
 parsed candidate lies inside a group, so the group parse is probably over-reading (`Engine.SavedMove`'s group starts
 at 347 and ends at 359 of a 360-byte payload, leaving no block), which the anchored parse would show.
+
+### The 45 refusals with no replacement are not an over-read: their payload ends with an empty block
+
+The guard's own open item was that on 45 rows every parsed start lies inside a committed closing group, which looked
+like the free group parse over-reading past the record. `tools/class-group-stop.py` reads the class's property tag
+stream from the group's end and answers it the other way round: on those rows the payload ends **inside a byte** of
+the group on 36 of 45, and the byte that is left opens an **empty** block (`empty-block-after-group`, 36 of 45).
+Nothing follows the record there, so there is no start to find and the refusal is right.
+
+- **The refused population splits by what the group's end opens.** On the **297** rows
+  `class_blockstart_guard.csv` refuses: **234** open a block that runs to the payload's last byte (`ActionString`
+  first on 51, `bObsolete` on 10, `VoiceSets` on 9, `Mesh` on 9; fully declared on **224 of 241** non-empty streams,
+  mean declared fraction **0.929**), **55** open an **empty** block (a single terminator), **6** parse a tag or two
+  and overrun, **1** block stops short of the end, and **1** group ends on the payload's last byte.
+- **The split is the guard's own verdict, not a separate reading.** Of the 252 rows the guard moved, a block opens
+  on **232**; of the **45** it refused with no replacement, a block opens on **9** and **36 are empty**, with the
+  group ending within a byte of the payload on **36 of 45**. So the 45 are the class's own shape -- a class that sets
+  no defaults -- and not a locator failure, which is the answer the last note's next measurement asked for.
+- **The control is the instrument, and it is exact.** On the **1,586** rows whose group end is the located block
+  start by two independent witnesses (`class_record_open_tail.csv`'s `overlap == 0`: the element walk and the group
+  parse both put it there), the same reader opens a block that runs to the payload end on **1,586 of 1,586**, fully
+  declared and mean **1.000**, with declared names first (`Emitters` 185, `EnvironmentSize` 100, `KeyName` 70,
+  `RosterString` 67). So the 19% that open nothing on the refused rows is the payload's shape and not the reader's
+  failure -- the one control that could have made this a tie.
+- **What follows is small and not the discriminator.** After the group end the payload carries a handful of bytes on
+  the refused rows (mode **5** on 69, **1** on 48, **8** on 39) and the same order on the control (**22** on 51,
+  **44** on 40, **9** on 39), so the group's end is not distinguished by the size of what follows it -- only by
+  whether a tag stream opens at all.
+
+`make class-group-stop` writes `inventory/class_group_stop.csv` (1,883 rows: `population` -- `refused` or `control`
+-- `guard_verdict`, `payload`, `shipped`, `group_from`/`group_len`/`group_end`, `after`, `props`, `to_end`, `first`,
+`decl`, `last`, `verdict`). It reads the packages and the two committed geometries; no boot, no Ghidra round, no
+property value decoded.
+
+**What is still open.** Thirteen refused rows are not accounted for by an empty block at the payload's end: 6 parse
+nothing at the group end with 4-10 bytes after it, 7 open an empty block with 2-459 bytes still after it (274, 296 and
+459 among them), and `StargateVehicles.HoverCraftFixedGun` opens one tag with 108 bytes left; and
+`class_defaults_per_class.csv` still carries the pre-guard start, so the 234 rows this page says have a block at the group end are still read 2-10 bytes early by every count
+downstream of that artifact. Switching the chooser, and re-running the five artifacts that read it, is the change
+those two leave.
