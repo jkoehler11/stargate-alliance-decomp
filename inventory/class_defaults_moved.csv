@@ -34,14 +34,11 @@ GamePlay,ACTION_IfRandomPct,block-lost,8,2,,0,,0.0,0.0,96,,inside-group,no-block
 GamePlay,ACTION_FreezeOnAnimEnd,block-lost,14,4,,0,,0.0,0.0,112,,before-first-group,no-block,0,,,,14,,LightColor,
 GamePlay,ACTION_ForceMoveToPoint,block-lost,10,5,,0,,0.0,0.0,137,,before-first-group,no-block,0,,,,41,,LightColor,
 GamePlay,ACTION_ChangeWeapon,block-lost,8,2,,0,,0.0,0.0,141,,inside-group,no-block,1,,,,0,,Gameplay,
+StargateContent,ZatGun_Weak,start-moved,479,4,3,0,0,0.0,0.0,85,75,inside-group,before-first-group,1,,,27,0,0,HitLoc,Subject
+StargateContent,ZatGun_JaffaCaptain,start-moved,479,4,2,0,0,0.0,0.0,85,93,inside-group,in-group-tail,1,92,1,9,0,0,HitLoc,Tweak_Weapons_ZatGunJaffaCaptain
 StargateContent,HackingPanel,block-lost,267,2,,0,,0.0,0.0,87,,inside-group,no-block,1,,,,0,,SGenericType,
-StargateContent,FORMATION_Wedge,start-moved,281,48,47,48,47,1.0,1.0,107,124,inside-group,in-group-tail,1,113,11,448,0,0,offset,offset
-StargateContent,FORMATION_SingleFileSpreadOut,start-moved,281,22,21,22,21,1.0,1.0,107,124,inside-group,in-group-tail,1,113,11,285,0,0,offset,offset
-StargateContent,FORMATION_HaakenPod,start-moved,281,8,7,8,7,1.0,1.0,107,124,inside-group,in-group-tail,1,113,11,77,0,0,offset,offset
-StargateContent,FORMATION_2Column,start-moved,281,33,32,33,32,1.0,1.0,107,124,inside-group,in-group-tail,1,113,11,241,0,0,offset,offset
 StargateContent,DecipheringTrigger,block-lost,267,2,,0,,0.0,0.0,87,,inside-group,no-block,1,,,,0,,SGenericType,
 StargateGame,ACTION_ForceBotEnemy,block-lost,9,2,,0,,0.0,0.0,201,,inside-group,no-block,1,,,,0,,Gameplay,
-StargateGame,TeamTeleporter,start-moved,331,6,5,6,5,1.0,1.0,176,183,inside-group,on-group-end,1,183,0,20,0,0,TeamIndex,DrawType
 StargateGame,ACTION_SaveGame,block-lost,8,2,,0,,0.0,0.0,138,,inside-group,no-block,1,,,,0,,Gameplay,
 StargateGame,ACTION_ReviveSG1,block-lost,7,2,,0,,0.0,0.0,147,,inside-group,no-block,1,,,,0,,Gameplay,
 StargateGame,ACTION_ResetSG1,block-lost,7,2,,0,,0.0,0.0,147,,inside-group,no-block,1,,,,0,,Gameplay,
@@ -50,7 +47,6 @@ StargateGame,ACTION_ChangeBotWeapon,block-lost,8,2,,0,,0.0,0.0,156,,inside-group
 StargateMenus,SelectPawnPanel,start-moved,122,2,1,2,1,1.0,1.0,146,148,inside-group,on-group-end,1,148,0,6,0,0,WinTop,PawnListBox
 StargateMenus,SelectTeamPanel,start-moved,123,2,1,2,1,1.0,1.0,236,238,inside-group,on-group-end,1,238,0,6,0,0,WinTop,TeamListBox
 StargateVehicles,VehicleRemoteTurret,block-lost,736,2,,0,,0.0,0.0,105,,inside-group,no-block,1,,,,1,,StargateVehicles,
-StargateVehicles,HoverCraftFixedGun,start-moved,477,12,11,12,11,1.0,1.0,275,291,inside-group,in-group-tail,1,285,6,102,0,0,SecondFireOffset,LoadOut
 StargateVehicles,StargateVehicleGunAttachment,block-lost,292,2,,0,,0.0,0.0,107,,inside-group,no-block,1,,,,1,,StargateVehicles,
 UWindow,UWindowList,block-lost,26,2,,0,,0.0,0.0,1222,,inside-group,no-block,1,,,,0,,System,
 UWindow,UWindowTabControlItem,block-lost,35,2,,0,,0.0,0.0,85,,inside-group,no-block,1,,,,0,,System,

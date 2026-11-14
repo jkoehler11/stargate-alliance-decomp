@@ -50,7 +50,7 @@ before this change):
 | `StargateMenus` | 98 | 94 | 66 |
 | `UWindow` | 78 | 33 | 12 |
 | others (9 packages) | 193 | 158 | 145 |
-| **total** | **2,319** | **1,985** | **1,663 (71.7%)** |
+| **total** | **2,319** | **1,983** | **1,664 (71.8%)** |
 
 ### The scan window was the biggest single defect
 
@@ -149,7 +149,7 @@ Where it still fails:
 `blocks` is the fully-declared count, because only those render. The renderer settles **1,898** blocks in all:
 the 1,664 above plus **234** whose parse does not account for itself, whose **491** properties are withheld;
 **311** further classes are counted as no block at all, because their chosen parse names none of the class's
-declared properties -- the same floor `tools/class-defaults.py` publishes as 1,985 blocks.
+declared properties -- the same floor `tools/class-defaults.py` publishes as 1,983 blocks.
 
 What renders, and what each rendering was checked against:
 
@@ -1061,4 +1061,42 @@ Two repairs the mode forced, both of them artifacts of the label change: `--swee
 sweep had started writing a header-only file over a 196-row artifact. It now falls back to the artifact's own starts
 (which reproduce byte for byte) and refuses to write when the population is empty. And `--gained` resolves `--dump`
 as the game directory, the same way `--sweep` does.
+
+## A group parse that begins inside another is not a field, and the cover rule was counting one
+
+The two sections above were measured before the rule this one adds. `Engine.PSBumpBSP` was the single row the
+`--reconcile` cross-tab left in its `block / no-block` arm: the renderer emits two declared properties at start 100,
+and the guard refused the start because a committed group parse at **99..108** covered it. That parse begins one
+byte inside the record's own tail run -- `class_tail_run.csv` measures `89..100`, names {1,2}, reference -3 (an
+import), config `System`, list {7,66,66}, and it ends exactly on the shipped start 100. Two parses cannot both be
+the writer's, and the one that starts inside a field is the reading that invented itself.
+
+So `tools/class-defaults.py` now asks `group_parses()` for every committed parse and keeps only the **outermost**
+ones (`outermost()`): a parse whose start lies inside another committed group's span is dropped. `guarded()` filters
+candidates and offers group ends from that set, but still triggers the trailer floor on *any* parse, because a
+byte range that reads two ways is exactly the reason the floor exists -- filtering the floor's trigger on the same
+list also lifted it on six classes whose start then moved earlier to carry one more declared name and leave bytes
+behind (`FORMATION_*`, `TeamTeleporter`, `HoverCraftFixedGun`).
+
+What moved, measured on the regenerated artifacts:
+
+* **`Engine.PSBumpBSP` is a block on both paths**: 2 properties at start 100, tiling the payload, fully declared.
+  It is no longer in `class_defaults_misses.csv` at all.
+* **The cross-tab's `renderer block / locator no-block` arm is empty** (1 -> 0), and the renderer/locator block gap
+  is **85** (87), with the two paths agreeing on the start for **1,670** classes (1,663).
+* **Three one-tag starts are withdrawn**, all at nested group ends and all `single-declared`: `ZatGun_Weak`,
+  `ZatGun_JaffaCaptain` and `StargateGame.HighlightStaticMeshActor`, whose row is now `empty-block`.
+* **Six starts move earlier by exactly one declared property and still tile the payload** (trailer 0 on all six):
+  `FORMATION_Wedge` 124 -> 107 (47 -> 48 properties), `FORMATION_SingleFileSpreadOut` (21 -> 22),
+  `FORMATION_HaakenPod` (7 -> 8), `FORMATION_2Column` (32 -> 33), `TeamTeleporter` 183 -> 176 (5 -> 6) and
+  `HoverCraftFixedGun` 291 -> 275 (11 -> 12).
+* **The totals**: blocks **1,985 -> 1,983**, fully declared **1,663 -> 1,664** (71.7% -> 71.8%), no block
+  **334 -> 336**, misses **656 -> 655** (`single-declared` 288 -> 285, `empty-block` 331 -> 334, `single-property`
+  2 -> 1), and `Engine`'s coverage row 267 -> 268 blocks. Compile readiness moves with them: **1,824 of 2,319 ready (78.7%)**, `no-defaults-block` 249 -> 250 and
+  `defaults-ambiguous` 247 -> 245, with `read` (a block whose every property the class declares) 954 -> 955.
+
+Read as history, the two sections above now say 88 where the current artifacts say **86** one-tag starts, and name
+`Engine.PSBumpBSP` as the block the guard withdraws where the current row is `StargateGame.HighlightStaticMeshActor`.
+Both are the same rule doing its job: the parses that made those starts had begun inside another group.
+
 

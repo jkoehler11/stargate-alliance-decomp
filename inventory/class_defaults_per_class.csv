@@ -370,7 +370,7 @@ Engine,PSBackBufferEffect,1,1.0,97,0
 Engine,PSEmissiveConstColor,1,1.0,100,0
 Engine,PSEmissiveShader,2,1.0,97,1
 Engine,PSSimple,2,1.0,100,1
-Engine,PSBumpBSP,0,0.0,,0
+Engine,PSBumpBSP,2,1.0,100,1
 Engine,PSBumpSpecularBSP,1,1.0,102,0
 Engine,PSDistortionMaterial,0,0.0,,0
 Engine,PSModulatedDistortionMaterial,1,1.0,98,0
@@ -1396,8 +1396,8 @@ StargateContent,AttachedMothershipTurretGunAmmo,2,1.0,96,1
 StargateContent,AttachedMothershipTurretGun,3,1.0,124,1
 StargateContent,Anubis,4,1.0,94,1
 StargateContent,ZatRayEmitter,5,1.0,92,1
-StargateContent,ZatGun_Weak,1,1.0,96,0
-StargateContent,ZatGun_JaffaCaptain,1,1.0,96,0
+StargateContent,ZatGun_Weak,0,0.0,,0
+StargateContent,ZatGun_JaffaCaptain,0,0.0,,0
 StargateContent,ZatExplosion,5,1.0,92,1
 StargateContent,WeapScarabNipper,4,1.0,96,1
 StargateContent,WeapRepDefault,15,1.0,371,1
@@ -1509,11 +1509,11 @@ StargateContent,HaakenMK2Weapon_Bot,0,0.0,,0
 StargateContent,GrenadeSand,5,1.0,93,1
 StargateContent,GoaAutoTurretMK3Pawn,2,1.0,93,1
 StargateContent,FragGrenadeExplosion,3,1.0,92,1
-StargateContent,FORMATION_Wedge,47,1.0,124,1
-StargateContent,FORMATION_SingleFileSpreadOut,21,1.0,124,1
+StargateContent,FORMATION_Wedge,48,1.0,107,1
+StargateContent,FORMATION_SingleFileSpreadOut,22,1.0,107,1
 StargateContent,FORMATION_SingleFile,10,1.0,107,1
-StargateContent,FORMATION_HaakenPod,7,1.0,124,1
-StargateContent,FORMATION_2Column,32,1.0,124,1
+StargateContent,FORMATION_HaakenPod,8,1.0,107,1
+StargateContent,FORMATION_2Column,33,1.0,107,1
 StargateContent,ForceField,16,1.0,94,1
 StargateContent,ExtreniteWeapon_Enemy,1,1.0,96,0
 StargateContent,ExplosiveStaticMeshActor,5,1.0,95,1
@@ -1764,7 +1764,7 @@ StargateGame,WaterVolumeMovable,1,1.0,97,0
 StargateGame,WarpPortalTrigger,1,1.0,254,0
 StargateGame,TriggerablePhysicsVolume,1,1.0,96,0
 StargateGame,TransportRings,9,1.0,403,1
-StargateGame,TeamTeleporter,5,1.0,183,1
+StargateGame,TeamTeleporter,6,1.0,176,1
 StargateGame,TeamStartToggleTrigger,0,0.0,,0
 StargateGame,StoryModeScoreboard,10,1.0,419,1
 StargateGame,StargateTriggeredObjective,0,0.0,,0
@@ -1815,7 +1815,7 @@ StargateGame,KarmaTowActor,7,1.0,327,1
 StargateGame,ItemMessagePlus,0,0.0,,0
 StargateGame,HOLScreenEffect,9,1.0,94,1
 StargateGame,HOLEffect,1,1.0,96,0
-StargateGame,HighlightStaticMeshActor,1,1.0,96,0
+StargateGame,HighlightStaticMeshActor,0,0.0,,0
 StargateGame,GrassImpact,2,1.0,96,1
 StargateGame,FORMATION_4_Line,5,1.0,100,1
 StargateGame,FORMATION_4_Diamond,10,1.0,100,1
@@ -2058,7 +2058,7 @@ StargateVehicles,HoverCraftPlasmaProjectile,14,1.0,262,1
 StargateVehicles,HoverCraftLaserProjectile,14,1.0,224,1
 StargateVehicles,HoverCraftFixedGunDamage,6,1.0,95,1
 StargateVehicles,HoverCraftFixedGunAmmo,7,1.0,95,1
-StargateVehicles,HoverCraftFixedGun,11,1.0,291,1
+StargateVehicles,HoverCraftFixedGun,12,1.0,275,1
 StargateVehicles,GoauldTurretEmplacementProjectile,15,1.0,113,1
 StargateVehicles,GoauldTurretEmplacementGunAmmo,8,1.0,94,1
 StargateVehicles,GoauldTurretEmplacementGun,20,1.0,159,1

@@ -18,19 +18,19 @@ Per class, four things a compiler would need:
 
 <!-- generated:compile-readiness -->
 
-**1,823 of 2,319 classes (78.6%) have every input.**
+**1,824 of 2,319 classes (78.7%) have every input.**
 
 | `defaults_state` | classes | blocks the compile loop? |
 |---|---:|---|
-| `read` — a block whose every property the class declares | 954 | no |
+| `read` — a block whose every property the class declares | 955 | no |
 | `not-applicable` — no properties anywhere in its ancestry | 869 | no |
-| `ambiguous` — block found, not every property declared | 247 | yes |
-| `none` — declares properties, no block located | 249 | yes |
+| `ambiguous` — block found, not every property declared | 245 | yes |
+| `none` — declares properties, no block located | 250 | yes |
 
 | package | classes | ready | no block | ambiguous |
 |---|---:|---:|---:|---:|
-| `StargateContent` | 567 | 92.9% | 10 | 30 |
-| `Engine` | 367 | 58.0% | 85 | 69 |
+| `StargateContent` | 567 | 92.9% | 12 | 28 |
+| `Engine` | 367 | 58.3% | 84 | 69 |
 | `StargateGame` | 306 | 74.5% | 43 | 35 |
 | `GamePlay` | 262 | 76.7% | 22 | 39 |
 | `Sharpeffects` | 158 | 98.7% | 2 | 0 |
@@ -48,7 +48,7 @@ Per class, four things a compiler would need:
 | `Fire` | 7 | 0.0% | 7 | 0 |
 | `UPreview` | 4 | 75.0% | 0 | 1 |
 
-Blockers across the tree: no-defaults-block 249, defaults-ambiguous 247.
+Blockers across the tree: no-defaults-block 250, defaults-ambiguous 245.
 
 <!-- /generated -->
 

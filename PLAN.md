@@ -1179,6 +1179,40 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, a group parse inside another group is not a field, and the cross-tab closes)
+
+- **The row the last note left open.** `Engine.PSBumpBSP` was the single `block / no-block` in `--reconcile`: the
+  renderer emits `bUseOnBSP`/`PixelShaderType` at start 100, and the guard refused it because a committed group parse
+  at **99..108** covered the start. That parse begins one byte inside the record's own tail run -- `class_tail_run.csv`
+  measures `89..100` (names {1,2}, ref -3 import, config `System`, list {7,66,66}) ending exactly on the shipped
+  start. 202 classes have a start covered by a committed group and **7** of them are covered only by parses that
+  begin inside another group; PSBumpBSP is the one of those whose renderer block names two declared properties.
+- **The rule.** `tools/class-defaults.py` gains `group_parses()` (every committed parse) and `outermost()` (drop a
+  parse whose start lies inside another's span); `guarded()` filters candidates and group-end offers on the outermost
+  set but still triggers the trailer floor on *any* parse -- filtering its trigger on the same list lifted the floor
+  on six classes whose start then moved earlier to carry one more name and leave bytes behind.
+- **What moved.** PSBumpBSP becomes a 2-property block at 100, tiling the payload, fully declared, and leaves
+  `class_defaults_misses.csv`; the cross-tab's `block / no-block` arm goes **1 -> 0**, the block gap **87 -> 85**,
+  agreeing starts **1,663 -> 1,670**; three one-tag starts at nested group ends are withdrawn (`ZatGun_Weak`,
+  `ZatGun_JaffaCaptain`, `HighlightStaticMeshActor`, now `empty-block`); six starts move earlier by exactly one
+  declared property with trailer 0 (`FORMATION_Wedge` 124 -> 107 47 -> 48, `FORMATION_SingleFileSpreadOut` 21 -> 22,
+  `FORMATION_HaakenPod` 7 -> 8, `FORMATION_2Column` 32 -> 33, `TeamTeleporter` 183 -> 176 5 -> 6,
+  `HoverCraftFixedGun` 291 -> 275 11 -> 12). Totals: blocks **1,983**, fully declared **1,664 (71.8%)**, no block
+  **336**, misses **655** (`single-declared` 285, `empty-block` 334, `single-property` 1), Engine 267 -> 268 blocks.
+- **Two more facts the run needed.** The shipped-text oracle cannot settle the one-tag question: **two** classes of
+  2,319 keep a `defaultproperties` block in `ScriptText` (`Core.Locale` 50 properties, `GUI.SGVertScrollBar` 13),
+  and neither is in the one-tag population -- so U18's "read the text" route is closed by measurement, not by
+  assumption. And `class-defaults-silent.py --gained` now reports the population at **86** rows.
+- Tool (`tools/class-defaults.py`: `group_parses`, `outermost`, `guarded`'s two lists; `tools/class-defaults-silent.py`:
+  three `--check` assertions on `outermost`/`covered`) + seven regenerated artifacts (`class_defaults_per_class`,
+  `_misses`, `_coverage`, `_moved`, `_single`, `compile_readiness*` with `docs/COMPILE.md`, `docs/STATUS.md` with the
+  README badges) + `docs/CLASS_DEFAULTS.md` (new section + the two amended totals) + `docs/UNKNOWNS.md` U18
+  (fortieth) + this note. Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the 86 remaining one-tag starts are witnessed and the only thing withholding them is
+  `MIN_PROPERTIES = 2`; the decision (1,664 -> 1,750 fully declared) is James's, and the measurement that would
+  change it does not exist in this dump -- two classes keep a shipped `defaultproperties` block and neither is in
+  the population.
+
 ### Execution notes (2026-11-14, the 88 one-tag starts are witnessed and both paths choose the same byte)
 
 - **The measurement the last note named.** `tools/class-defaults-silent.py --gained` (`make class-defaults-single`,

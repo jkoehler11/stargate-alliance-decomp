@@ -3809,3 +3809,19 @@ open, and it is a decision rather than a measurement:** publish one-property blo
 or keep `MIN_PROPERTIES = 2`; nothing in the bytes separates the 88 from the 288. `Engine.PSBumpBSP`'s two-property
 block stays open as before: the guard's trailer floor withdraws it while the renderer emits it.
 
+**Answered 2026-11-14 (fortieth): the cover rule was counting a group parse that begins inside another, and fixing
+that closes the cross-tab.** `Engine.PSBumpBSP` was the last `block / no-block` row: the renderer's two-property
+block at start 100 was refused because a committed group parse at 99..108 covered it, and that parse begins one byte
+inside the record's own tail run `89..100` (`class_tail_run.csv`: names {1,2}, reference -3, config `System`, list
+{7,66,66}, ending exactly on the start). `tools/class-defaults.py` now keeps only **outermost** parses
+(`group_parses()` + `outermost()`) for the candidate filter and the group-end offers, while the trailer floor still
+triggers on any parse. Measured: the cross-tab's `block / no-block` arm 1 -> **0**, the block gap 87 -> **85**, both
+paths agreeing on 1,670 starts (1,663), blocks **1,983**, fully declared **1,664 (71.8%)**, and three one-tag starts
+withdrawn at nested group ends (`ZatGun_Weak`, `ZatGun_JaffaCaptain`, `HighlightStaticMeshActor`) plus six starts
+moved one property earlier that still tile their payloads. **What is still open:** whether the 86 remaining one-tag
+starts should be published as blocks (1,664 -> 1,750 fully declared) -- the witness is measured (all 86 name a
+declared property, agree on type, end on the payload and sit on a group boundary), and the only thing withholding
+them is `MIN_PROPERTIES = 2`. The shipped text cannot settle it: **two** classes of 2,319 keep a `defaultproperties`
+block in `ScriptText` (`Core.Locale`, `GUI.SGVertScrollBar`) and neither is in the population.
+
+

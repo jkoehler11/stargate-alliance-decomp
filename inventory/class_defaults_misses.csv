@@ -158,7 +158,6 @@ Engine,PSLuminanceTexIndexMaterial,27,single-declared,5,1,0,PixelShaderType
 Engine,PSUseTexIndexMaterial,29,single-declared,5,1,0,PixelShaderType
 Engine,PSBackBufferEffect,30,single-declared,7,1,0,PixelShaderType
 Engine,PSEmissiveConstColor,28,single-declared,0,1,0,PixelShaderType
-Engine,PSBumpBSP,37,single-property,82,0,-1,
 Engine,PSBumpSpecularBSP,38,single-declared,0,1,0,PixelShaderType
 Engine,PSDistortionMaterial,33,empty-block,72,46,-1,
 Engine,PSModulatedDistortionMaterial,33,single-declared,0,1,0,PixelShaderType
@@ -364,8 +363,8 @@ StargateContent,CaptainStaffWeaponPickup,294,single-declared,10,1,0,InventoryTyp
 StargateContent,CaptainStaffWeaponMeleeAmmo,310,single-declared,6,1,0,HitDamage
 StargateContent,CaptainStaffWeaponAttachment,291,single-declared,3,1,0,Mesh
 StargateContent,AttachmentZatGun,291,single-declared,2,1,0,Mesh
-StargateContent,ZatGun_Weak,479,single-declared,11,1,0,AmmoName
-StargateContent,ZatGun_JaffaCaptain,479,single-declared,10,1,0,AmmoName
+StargateContent,ZatGun_Weak,479,empty-block,83,44,91,
+StargateContent,ZatGun_JaffaCaptain,479,empty-block,83,44,91,
 StargateContent,TestScreenplay,280,empty-block,80,46,85,
 StargateContent,SuperSoldierVoicePack,299,empty-block,74,46,97,
 StargateContent,StaticReplicator,270,single-declared,7,1,0,Health
@@ -482,7 +481,7 @@ StargateGame,LinkedTacticalTarget,282,single-declared,6,1,0,bCollideActors
 StargateGame,LimitationVolume,283,empty-block,108,62,-1,
 StargateGame,ItemMessagePlus,288,empty-block,78,48,92,
 StargateGame,HOLEffect,271,single-declared,6,1,0,shieldMat
-StargateGame,HighlightStaticMeshActor,269,single-declared,7,1,0,bStatic
+StargateGame,HighlightStaticMeshActor,269,empty-block,89,47,89,
 StargateGame,DustStormVolume,319,empty-block,227,111,115,
 StargateGame,DMMapList,276,empty-block,77,47,91,
 StargateGame,DirtImpact,285,single-declared,5,1,0,bNoDelete
