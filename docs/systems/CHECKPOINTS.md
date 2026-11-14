@@ -903,6 +903,62 @@ rebuild has to reproduce them from those classes' own declarations rather than f
 
 **3 store(s) to `+0x498` sit inside a mapped function and 1 outside the symbol map.** The constructor composes a mask (`and` with `0x0e0f86ec`) and the registration `or`s `0x12`; every other store writes a whole word the constructor already built, so no reader can observe a bit that the constructor does not inherit.<!-- /generated:class-flag-readers -->
 
+## How a bit can reach the class flag word, and where `0x80000` comes from (U5)
+
+`#523`/`#525` left this open: five readers test `0x80000`, no shipped class carries it, and the next
+measurement was *"the one store to `+0x498` outside the symbol map"*. The census below replaced that one
+store with **every** instruction in the code sections whose displacement is `0x498` -- and answers the
+question the other way round: the store named there is dead code, and the bit arrives at a class through the
+registration, which does not filter the flags word its caller hands it.
+
+<!-- generated:class-flag-stores -->
+**136 instructions in the code sections name the word at a `0x498` displacement, and 13 of them write it.** The scan is by displacement, so it also covers the forms a `modrm`-only pattern misses (a `[reg+index*4+0x498]` operand, a two-byte `0f` opcode, a read-modify-write `or [x+0x498],imm`); each row in `inventory/class_flag_stores.csv` carries the instruction text and the proof that an instruction starts there. 3 of the writes compose a word -- a mask over the super's own word, or an immediate `or`ed into an argument -- 1 copy a word unchanged, 2 are read-modify-writes of the same field, 7 store a constant and 0 leave the source unresolved. The displacement alone does not make a field the class flag word, so the census keeps every one of them and the table says which body installs a class table.
+
+| at | body | boundary | class table | what the write stores | introduced |
+|---|---|---|---|---|---:|
+| `0x0003965b` | `Core_UnClass` | map | - | inherit-load (super's own word) | `0xe0f86ec` |
+| `0x0003af99` | `FUN_0003af60` | map | `0x004d4870` | argument (slot 0x14) | `0x12` |
+| `0x0003c49d` | unmapped | pad | `0x004d4870` | argument (slot 0x14) | `0x12` |
+| `0x0006ce62` | `Core_UnObj` | map | - | argument (slot 0xc) | `0x0` |
+| `0x000e69e7` | unmapped | pad | - | read-modify-write | `0x0` |
+| `0x001b721f` | `FUN_001b6f90` | map | - | read-modify-write | `0x0` |
+| `0x002345b1` | `Core_UnObjBas` | map | - | immediate | `0x3` |
+| `0x002348a8` | `Core_UnObjBas` | map | - | immediate | `0x4` |
+| `0x00235e06` | `Core_UnObjBas` | map | - | immediate | `0x7` |
+| `0x0023694a` | `Core_UnObjBas` | map | - | immediate | `0xc` |
+| `0x00236adb` | `Core_UnObjBas` | map | - | immediate | `0xd` |
+| `0x00236c4f` | `Core_UnObjBas` | map | - | immediate | `0xf` |
+| `0x00236e24` | `Core_UnObjBas` | map | - | immediate | `0x10` |
+
+**The only write that filters is the constructor's inherit.** It `and`s the super's word with `0x0e0f86ec` before the store, so it can drop a bit and never add one; every bit of a class's word is either one of the two compiler bits `0x12` or a bit some caller handed the composition.
+
+**The writes that add a bit add only `0x12` and pass the caller's word through.** `0x0003af99`, `0x0003c49d` stores `argument | 0x12`: the rest of the word is not this code's choice, so a bit outside `0x0e0f86ec | 0x12` is reachable exactly when some caller carries it -- the composition does not close the bit, the shipped data does.
+
+**The composing body outside the symbol map has no reference anywhere in the image.** Its start is found by the image's own padding -- a run of `int3` immediately behind `0x0003c430`, which no function table has -- and it is a twin of the registration: the same class table `0x004d4870`, the same `+0x49c` zero, the same `or 0x12` into an argument, and a different base constructor. It has **0 direct `E8` call sites over every code section and 0 dword references over every section**, so nothing in this image can enter it: the store the open question nominated as the route for `0x80000` is dead code, not a route.
+
+| body | boundary | direct calls | dword references |
+|---|---|---:|---:|
+| `0x00039520` | map | 0 | 1 |
+| `0x0003af60` | map | 493 | 0 |
+| `0x0003c430` | pad | 0 | 0 |
+| `0x0006c8a0` | map | 52 | 0 |
+| `0x000e6940` | pad | 0 | 1 |
+| `0x001b6f90` | map | 0 | 13 |
+| `0x00231a10` | map | 0 | 1 |
+
+**What the reachable composition is handed for its flags argument.** 317 of its 545 call sites push a word this decoder resolves -- the fourth argument, which is the one the registration `or`s `0x12` into -- and the words are: `0x4` x189, `0x8` x28, `0xc` x23, `0x804` x21, `0x1` x15, `0x8000` x11, `0x40` x10, `0xd` x5, `0x9` x4, `0x5` x2, `0x29` x1, `0x80` x1, `0x2040` x1, `0x8001` x1. The set covers the bits the pinned reader cannot name (`0x8000`, `0x18000`, `0x28000`, `0x40000`, `0x80000`), so a class built by this code carries far more than the script corpus declares.
+
+**`0x80000` is set by the image itself, at `0x0003b0fc` (`FUN_0003af60`).** Those call sites pass `0x80000` as the flags word, so the class object built there carries `0x80012` -- and the class is not one of the 2,319 the packages ship, which is why the corpus reports no carrier: this build's `Core.u` carries 7 script classes and the rest of the engine's are native. The bit the five readers test is therefore live, and reachable exactly the way this census says -- by a caller's word passing through the registration.
+
+**So `0x80000` reaches a class at runtime, and the store the open question nominated is not how.** The word is the caller's: the inherit can only drop a bit, the registration only adds `0x12`, and the out-of-map store is dead code -- but 1 registration site(s) pass `0x80000` itself, so a class built at runtime carries `0x80012`. A class's flags are a property of the code that registers it, not of the loader.
+<!-- /generated:class-flag-stores -->
+
+**What this settles for the rebuild.** A class's flag word is `(caller's word | 0x12)` at registration or
+`(super's word & 0x0e0f86ec)` at construction -- nothing else writes it. So a rebuilt package's classes carry
+exactly what their own `ClassFlags` declare plus the two compiler bits, and the engine classes the image
+registers itself (which the shipped packages do not list) are where the unnamed bits live. That is also why
+the corpus could report `0x80000` with no carrier without the bit being unreachable.
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files
