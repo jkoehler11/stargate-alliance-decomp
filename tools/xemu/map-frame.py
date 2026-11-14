@@ -181,6 +181,18 @@ def verdict(portrait):
     return "hud" if portrait >= PORTRAIT_MIN else "no-hud"
 
 
+def describe(path):
+    """(portrait, prompt, verdict) for one frame -- the single-frame reading `--frame` prints.
+
+    This exists because the two callers disagreed: `--frame` passed both corners to `verdict()`, which takes the
+    portrait alone, so the single-frame path answered `TypeError` while `--check` stayed green -- the self-test
+    called `verdict(measure(...)[0])` itself and never went through the code the CLI runs. One function, driven by
+    both, is what keeps a synthetic check honest about a path a human invokes.
+    """
+    portrait, prompt = measure(path)
+    return portrait, prompt, verdict(portrait)
+
+
 # ---------------------------------------------------------------- runs and rows
 
 def run_dirs(work):
@@ -478,8 +490,7 @@ def selftest():
             if prompt_level:
                 corners["prompt"] = 255
             path = fixture(directory, name, width, height, corners)
-            portrait, prompt = measure(path)
-            got = verdict(portrait)
+            portrait, prompt, got = describe(path)
             if got != want:
                 failures.append("%s: %s (corner %.4f, prompt %.4f), expected %s"
                                 % (name, got, portrait, prompt, want))
@@ -528,8 +539,8 @@ def main():
     if args.check:
         return selftest()
     if args.frame:
-        portrait, prompt = measure(args.frame)
-        print("%s verdict=%s portrait=%.4f prompt=%.4f" % (args.frame, verdict(portrait, prompt), portrait, prompt))
+        portrait, prompt, reading = describe(args.frame)
+        print("%s verdict=%s portrait=%.4f prompt=%.4f" % (args.frame, reading, portrait, prompt))
         return 0
     if args.missing:
         rows = missing(args.work)

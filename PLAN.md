@@ -1230,6 +1230,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, a checkpoint does not give back a playable level inside three minutes, and the control says the console is not why)
+
+- **The page's open question is answered for the load side, and the answer is a stalled guest.** The one attempt on
+  record loaded an `M02A` checkpoint from `M00` and lost the guest -- a foreign-level load *and* the route the
+  shipped scripts do not use. So this booted `12 M02B` and typed both spellings at `C_M02B_Secondsymbol.sgs`, a
+  checkpoint of that same level, with a `stat fps` control first.
+- **The control is what makes the rest a load.** `stat fps` in the same console, same keystrokes, same waits: the
+  picture repaints 294 px at +30 s and 326 px at +70 s, the HUD corner reads `0.1852`, six EIP samples are six
+  distinct user-space addresses. `loadgame c_m02b_secondsymbol.sgs` changes the picture 14,184 px into a HUD-less
+  frame at +30 s, puts 3 of 6 EIP samples in the kernel (`0x80024aab`, `0x80024a97` twice), then repaints 3 px and
+  0 px; at +180 s a HUD frame appears (`0.1708`) and 5 of 6 samples are again in the kernel, and the frame repeats
+  from there. A playable level animates, so the window ends with a game loop that is not running.
+- **The input path is alive while the game loop is not.** `pad=start` moved 32,177 px into the pause menu and
+  `pad=a` another 32,177 -- so the pad reaches the guest in the same state the CPU spends in kernel idle, and the
+  negative is the loop rather than the harness.
+- **The repeated frame is a column, not an inference.** `checkpoint-load.py` keeps the SHA of every frame beside the
+  corner, so "the guest stopped" is a reading a reader can check (`repeat_of`), and the `cpu=` line `drive.py`
+  prints beside it separates "stopped" from "waiting" without another boot.
+- **A defect fell out of driving the instrument by hand.** `tools/xemu/map-frame.py --frame` answered `TypeError`
+  -- it passed both corners to `verdict()`, which takes the portrait alone -- because `--check` called
+  `verdict(measure(...)[0])` itself and never ran the code the CLI runs. Both now go through `describe()`.
+- Files: `tools/xemu/checkpoint-load.sh`, `tools/xemu/checkpoint-load.py`, `inventory/checkpoint_loads.csv`,
+  `docs/systems/CHECKPOINTS.md` (section + generated block), `tools/xemu/map-frame.py` (the `--frame` fix), the
+  Makefile target, this note, and the index/hashes pair the artifact moves.
+
 ### Execution notes (2026-11-14, the page is measured end to end: 73 of 73 rows, and the Status block is generated)
 
 - **The page has a verdict for every entry it offers.** `inventory/map_loads.csv` now holds **73 rows, 71 PASS /
