@@ -1,0 +1,157 @@
+kind,at,fn,detail,evidence
+array,0x00051b48,FUN_00051ad0,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x00051ec2,Core_UnTemplate,read 0x006c2188,"mov edx,ds:0x006c2188"
+array,0x00051f2a,Core_UnTemplate,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x0005282e,-,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x0005283e,-,read 0x006c2188,"mov eax,ds:0x006c2188"
+array,0x0005310e,-,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x0005311e,-,read 0x006c2188,"mov eax,ds:0x006c2188"
+array,0x000635a6,FUN_000635a0,read 0x006c2188,"mov ecx,ds:0x006c2188"
+array,0x00066431,Core_UnObj,read 0x006c2188,"mov eax,ds:0x006c2188"
+array,0x00066612,Core_UnObj,read 0x006c2188,"mov ecx,ds:0x006c2188"
+array,0x00069c32,Core_UnObj,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x0006c772,FUN_0006c750,read 0x006c2188,"mov ecx,ds:0x006c2188"
+array,0x0006c862,FUN_0006c750,read 0x006c2188,"mov ecx,ds:0x006c2188"
+array,0x00072272,FUN_00070cb0,read 0x006c2188,"mov ecx,ds:0x006c2188"
+array,0x00072bce,Core_UnObj,read 0x006c2188,"mov edx,ds:0x006c2188"
+array,0x00072e50,Core_UnObj,read 0x006c2188,"mov edx,ds:0x006c2188"
+array,0x00148257,FUN_00148250,address 0x006c2188,push 0x006c2188
+array,0x00413cf1,-,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x00418d51,FUN_00418d50,address 0x006c2188,"mov ecx,0x006c2188"
+array,0x0003e45f,FUN_0003e3b0,read 0x006c218c,"mov ecx,ds:0x006c218c"
+array,0x0003e4bd,FUN_0003e3b0,read 0x006c218c,"mov ecx,ds:0x006c218c"
+array,0x00051ea5,Core_UnTemplate,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x00051ee8,Core_UnTemplate,read 0x006c218c,"cmp esi,ds:0x006c218c"
+array,0x00051f07,Core_UnTemplate,read 0x006c218c,"cmp edi,ds:0x006c218c"
+array,0x00051f36,Core_UnTemplate,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x0005201c,-,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x00052067,-,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x00052805,-,read 0x006c218c,"mov ecx,ds:0x006c218c"
+array,0x00052815,-,write 0x006c218c,"mov ds:0x006c218c,ecx"
+array,0x0005298c,-,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x000529d7,-,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x000530e5,-,read 0x006c218c,"mov ecx,ds:0x006c218c"
+array,0x000530f5,-,write 0x006c218c,"mov ds:0x006c218c,ecx"
+array,0x00066421,Core_UnObj,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x0006645a,Core_UnObj,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x00066602,Core_UnObj,read 0x006c218c,"cmp esi,ds:0x006c218c"
+array,0x00069c38,Core_UnObj,write 0x006c218c,"mov ds:0x006c218c,esi"
+array,0x0006c752,FUN_0006c750,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x0006c850,FUN_0006c750,read 0x006c218c,"mov esi,ds:0x006c218c"
+array,0x0007224d,FUN_00070cb0,read 0x006c218c,"mov eax,ds:0x006c218c"
+array,0x0007234a,FUN_00070cb0,read 0x006c218c,"mov ecx,ds:0x006c218c"
+array,0x00072bc2,Core_UnObj,read 0x006c218c,"mov esi,ds:0x006c218c"
+array,0x00072e4a,Core_UnObj,read 0x006c218c,"mov esi,ds:0x006c218c"
+array,0x0005280a,-,read 0x006c2190,"mov eax,ds:0x006c2190"
+array,0x00052834,-,write 0x006c2190,"mov ds:0x006c2190,edx"
+array,0x000530ea,-,read 0x006c2190,"mov eax,ds:0x006c2190"
+array,0x00053114,-,write 0x006c2190,"mov ds:0x006c2190,edx"
+array,0x00069c3e,Core_UnObj,write 0x006c2190,"mov ds:0x006c2190,esi"
+field,0x0006c88b,FUN_0006c750,0x00c dispatch dword,call   DWORD PTR [edx+0xc] -- vtable slot called with 1 when the record's object is dropped
+field,0x0006c7a6,FUN_0006c750,0x014 first-record-object dword,"mov    ecx,DWORD PTR [ecx+eax*1+0x14] -- object pointer inside a 0x1c record"
+field,0x0006c7bd,FUN_0006c750,0x018 first-record-index dword,"mov    DWORD PTR [ecx+eax*1+0x18],0xffffffff -- index field set to -1 when the record is dropped"
+field,0x0006c7f6,FUN_0006c750,0x01c second-record-object dword,"lea    eax,[edx+edi*1+0x1c] -- object pointer inside a 0x24 record"
+field,0x0006c800,FUN_0006c750,0x024 record-object-class dword,"mov    eax,DWORD PTR [eax+0x24] -- class of the object that record names"
+field,0x0006c78c,FUN_0006c750,0x028 filter dword,"cmp    DWORD PTR [esi+0x28],edi -- compared to the caller's second argument on both walks"
+field,0x0006c7a3,FUN_0006c750,0x07c first-record-array dword,"mov    ecx,DWORD PTR [esi+0x7c] -- data pointer of the 0x1c-stride walk"
+field,0x0006c791,FUN_0006c750,0x080 first-record-count dword,"mov    eax,DWORD PTR [esi+0x80] -- count of the 0x1c-stride walk"
+field,0x0006c7f0,FUN_0006c750,0x088 second-record-array dword,"mov    edx,DWORD PTR [esi+0x88] -- data pointer of the 0x24-stride walk"
+field,0x0006c7db,FUN_0006c750,0x08c second-record-count dword,"mov    eax,DWORD PTR [esi+0x8c] -- count of the 0x24-stride walk"
+field,0x0006c803,FUN_0006c750,0x498 class-flag-byte byte,"mov    cl,BYTE PTR [eax+0x498] -- one byte of that class, tested for its sign"
+stride,0x0006c7cc,FUN_0006c750,0x1c record stride,loop step at 0x0006c7cc
+stride,0x0006c81c,FUN_0006c750,0x24 record stride,loop step at 0x0006c81c
+cast,0x000772fe,FUN_00077210,returns its argument,"1 ret; before it: mov    eax,edi"
+cast,0x00077212,FUN_00077210,argument,"1 write(s) to edi: mov    edi,DWORD PTR [esp+0xc]"
+flag,0x00039648,Core_UnClass,dword,opcode 8b 80 disp32 0x498
+flag,0x0003964e,Core_UnClass,dword,opcode 8b 8e disp32 0x498
+flag,0x0003965b,Core_UnClass,dword,opcode 89 8e disp32 0x498
+flag,0x0003aaba,Core_UnClass,dword,opcode f7 86 disp32 0x498
+flag,0x0003af99,FUN_0003af60,dword,opcode 89 8e disp32 0x498
+flag,0x0003c49d,-,dword,opcode 89 86 disp32 0x498
+flag,0x0003e90f,FUN_0003e7d0,dword,opcode 8b 88 disp32 0x498
+flag,0x0003ea48,FUN_0003e7d0,dword,opcode 8b 88 disp32 0x498
+flag,0x00046fb8,Native_0,dword,opcode f7 82 disp32 0x498
+flag,0x00047033,Native_1,dword,opcode f7 82 disp32 0x498
+flag,0x000490a1,FUN_00048e90,dword,opcode f7 80 disp32 0x498
+flag,0x00062535,FUN_00062520,dword,opcode f7 82 disp32 0x498
+flag,0x00062fd6,FUN_00062fc0,dword,opcode f7 81 disp32 0x498
+flag,0x0006301c,FUN_00062ff0,dword,opcode f7 81 disp32 0x498
+flag,0x000630e2,FUN_000630b0,dword,opcode f7 82 disp32 0x498
+flag,0x0006482c,FUN_00064770,dword,opcode f7 81 disp32 0x498
+flag,0x00067641,FUN_00067450,dword,opcode f7 80 disp32 0x498
+flag,0x0006aab0,Core_UnObj,dword,opcode 8b 81 disp32 0x498
+flag,0x0006bab8,Core_UnClass,dword,opcode 8b 81 disp32 0x498
+flag,0x0006c132,FUN_0006c100,dword,opcode 8b 87 disp32 0x498
+flag,0x0006c803,FUN_0006c750,byte,opcode 8a 88 disp32 0x498
+flag,0x0006ca8b,Core_UnObj,dword,opcode f7 87 disp32 0x498
+flag,0x0006ccdb,Core_UnObj,dword,opcode 8b 85 disp32 0x498
+flag,0x0006ce14,Core_UnObj,dword,opcode f7 87 disp32 0x498
+flag,0x0006ce27,Core_UnObj,dword,opcode 8b 87 disp32 0x498
+flag,0x0006ce52,Core_UnObj,dword,opcode 8b 85 disp32 0x498
+flag,0x0006ce62,Core_UnObj,dword,opcode 89 85 disp32 0x498
+flag,0x0006cf8e,Core_UnClass,dword,opcode 8b 85 disp32 0x498
+flag,0x00073d3a,FUN_00073cf0,dword,opcode f7 80 disp32 0x498
+flag,0x00076660,FUN_000765c0,dword,opcode f7 87 disp32 0x498
+flag,0x000786b2,-,dword,opcode f7 80 disp32 0x498
+flag,0x00078742,Core_UnProp,dword,opcode f7 80 disp32 0x498
+flag,0x000cd689,FUN_000cd640,dword,opcode 8b 88 disp32 0x498
+flag,0x000cf6e0,FUN_000cf260,dword,opcode 8b 88 disp32 0x498
+flag,0x000cfa44,FUN_000cf260,dword,opcode 8b 82 disp32 0x498
+flag,0x000d09f3,FUN_000d0990,dword,opcode 8b 81 disp32 0x498
+flag,0x000d0d73,-,dword,opcode 8b 81 disp32 0x498
+flag,0x000d11c8,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000d39f6,FUN_000d3990,dword,opcode 8b 88 disp32 0x498
+flag,0x000d3eb0,FUN_000d3e70,dword,opcode 8b 88 disp32 0x498
+flag,0x000d4072,FUN_000d4010,dword,opcode 8b 88 disp32 0x498
+flag,0x000d41a8,FUN_000d4180,dword,opcode 8b 88 disp32 0x498
+flag,0x000d5e32,-,dword,opcode 8b 81 disp32 0x498
+flag,0x000d5fe2,-,dword,opcode 8b 81 disp32 0x498
+flag,0x000d60e2,-,dword,opcode 8b 81 disp32 0x498
+flag,0x000d74e2,-,dword,opcode 8b 81 disp32 0x498
+flag,0x000d7a62,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000d7db2,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000d817b,FUN_000d8110,dword,opcode 8b 88 disp32 0x498
+flag,0x000d853a,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000d9217,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000d9365,FUN_000d92f0,dword,opcode 8b 88 disp32 0x498
+flag,0x000daf1a,-,dword,opcode 8b 88 disp32 0x498
+flag,0x000edef7,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x000edf75,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x000edff4,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x000ee073,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x000ee0f2,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x000ee171,FUN_000edd60,dword,opcode 8b 86 disp32 0x498
+flag,0x001042c8,Core_UnClass,dword,opcode 8b bf disp32 0x498
+flag,0x0010a5ef,Engine_UnChan,dword,opcode f7 81 disp32 0x498
+flag,0x0010aa0e,Engine_UnChan,dword,opcode 8b 88 disp32 0x498
+flag,0x0010ac92,Engine_UnChan,dword,opcode f7 80 disp32 0x498
+flag,0x0010ae4b,Engine_UnChan,dword,opcode f7 81 disp32 0x498
+flag,0x0010b553,Engine_UnChan,dword,opcode f7 80 disp32 0x498
+flag,0x00128381,Core_UnClass,dword,opcode 8b 88 disp32 0x498
+flag,0x001598ad,Engine_UnLevAct,dword,opcode f7 83 disp32 0x498
+flag,0x00173390,-,dword,opcode 8b 86 disp32 0x498
+flag,0x0017372e,-,dword,opcode 8b 85 disp32 0x498
+flag,0x00173839,-,dword,opcode 8b 85 disp32 0x498
+flag,0x001738d5,-,dword,opcode 8b 85 disp32 0x498
+flag,0x001738ec,-,dword,opcode 8b 8d disp32 0x498
+flag,0x00173910,-,dword,opcode 8b bd disp32 0x498
+flag,0x00174477,Core_UnClass,dword,opcode 8b 95 disp32 0x498
+flag,0x00180180,FUN_001800d0,dword,opcode 8b 88 disp32 0x498
+flag,0x001802ce,FUN_001800d0,dword,opcode 8b 88 disp32 0x498
+flag,0x001807cf,-,dword,opcode 8b 88 disp32 0x498
+flag,0x0018fe7d,FUN_0018fdc0,dword,opcode 8b 85 disp32 0x498
+flag,0x00190022,FUN_0018fef0,dword,opcode 8b 83 disp32 0x498
+flag,0x00192a08,-,dword,opcode 8b 82 disp32 0x498
+flag,0x001d8f08,Core_UnClass,dword,opcode 8b bf disp32 0x498
+flag,0x0020c3f0,-,dword,opcode f7 81 disp32 0x498
+flag,0x00212b82,execPlaySound,dword,opcode f7 80 disp32 0x498
+flag,0x00245ac1,-,byte,opcode 8a 8e disp32 0x498
+flag,0x00246286,-,byte,opcode 8a 85 disp32 0x498
+flag,0x002840a6,FUN_002840a0,byte,opcode 80 be disp32 0x498
+flag,0x0029ae5d,Core_UnClass,dword,opcode 8b b6 disp32 0x498
+flag,0x0029bb31,Core_UnClass,dword,opcode 8b 86 disp32 0x498
+flag,0x0029c05e,Core_UnClass,dword,opcode 8b b5 disp32 0x498
+flag,0x0029c92e,Core_UnClass,dword,opcode 8b 85 disp32 0x498
+flag,0x002a131d,Core_UnClass,dword,opcode 8b b1 disp32 0x498
+flag,0x002a163d,FUN_002a1460,dword,opcode 8b 83 disp32 0x498
+flag,0x002a1e90,FUN_002a1b70,dword,opcode 8b 83 disp32 0x498

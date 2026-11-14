@@ -589,6 +589,21 @@ so the second install is a teardown of the file layer, not the engine's install.
 directly (writer `0x00138680` once, serializer `0x0006f4b0` three times). Artifact `inventory/fmgr_installs.csv`.
 
 
+**The purge over the array at `0x006c2188` cannot select a different object, and its `[+0x498]` byte is a class
+flag.** `0x77210` answers its own argument on every path (one `ret`, `mov eax,edi` before it, `edi` written once from
+`[esp+0xc]`), so the per-element call in `0x6c750` can only log the literal at `0x4d43dc` -- it cannot substitute one
+element for another, and "which element does the file layer get" has no second answer. The array itself is one
+`TArray` (data `0x006c2188`, count `0x006c218c`, capacity `0x006c2190`): two push sites behind a capacity check
+(`0x0005283e`, `0x0005311e`) and one clear that zeroes count and capacity together (`0x00069c38`). Its elements are
+containers with a filter field at `+0x28`, two record tables (`+0x7c`/`+0x80` by `0x1c`, `+0x88`/`+0x8c` by `0x24`),
+an object at each `0x24` record's `+0x1c`, that object's class at `+0x24`, and one byte of the class at `+0x498`
+tested for its sign -- import and export tables with a linker root, not a file-manager slot. **What would settle what
+is left:** the class flag word at `+0x498` is named 93 times in the image and only the purge's access is byte-wide, so
+the next read is `Core_UnClass`'s serialiser and which `CLASS_*` bit sits in the top bit of that byte; the save chain
+does not depend on it, since the global is set from `main`'s frame slot at `0x169e3`, not from an element of this
+array. Artifact: `inventory/linker_purge.csv`, tool `tools/linker-purge.py`.
+
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is
