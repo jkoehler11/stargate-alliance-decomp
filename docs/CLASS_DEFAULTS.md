@@ -999,3 +999,24 @@ which blocks render, so it needs the same five downstream artifacts re-measured 
 
 The **2,209** quoted in the record-length and prefix sections above is the pre-withholding population: 196 of
 those starts are no block in both artifacts now, which is the only place the two changes meet.
+
+## Taking the guard would trade one two-property block for 88 one-tag blocks
+
+`--reconcile` answers the question the section above leaves open -- whether `tools/defaults-emit.py` should choose
+from `guarded()`'s candidates as the locator does. On this evidence it should not. The mode now classifies the rows
+where the two paths disagree about having a block at all:
+
+* **The guard would add 88 blocks, and every one is fully declared and holds exactly one property** -- 88
+  properties in all, one per block.
+* **It would remove one block: `Engine.PSBumpBSP`'s, which holds two.**
+
+So adopting the guard would move the renderer from 1,664 fully-declared blocks to **1,751**, and all 88 additions
+are the single-tag shape the locator's two-property floor refuses to call a block (`single-declared`, 288 rows of
+`class_defaults_misses.csv`): a tag at a group's end where a table tail and a block read the same bytes. The
+renderer carries no floor on the verdict -- it emits a one-tag clean block when the class accounts for it, one of
+its 1,664 -- so it would emit all 88 on the strength of a single name, and would give up the one block in the
+population that holds two.
+
+That also corrects the reading of the 87. The renderer's deficit against the locator is **not** blocks it is
+missing: it is 88 one-tag starts the guard supplies plus the one two-property block the guard's own trailer floor
+withdrew. What the renderer still lacks is a witness for a one-tag start, not a candidate set.

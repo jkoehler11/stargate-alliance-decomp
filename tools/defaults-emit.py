@@ -1108,6 +1108,7 @@ def reconcile(system_dir):
     declared_all = cd.declared_properties()
     cats = collections.Counter()
     agree_start = 0
+    gained, lost = [], []
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
@@ -1133,6 +1134,13 @@ def reconcile(system_dir):
             cats[(here, there)] += 1
             if best_u and best_g and best_u[2] == best_g[2]:
                 agree_start += 1
+            if there == "block" and here != "block":
+                # A block the locator settles and this tool does not: is it worth taking? `clean` is the same
+                # verdict `render_class` publishes, and it is a verdict about the *block*, so a guard-adopted
+                # renderer would withhold anything that is not clean exactly as it does now.
+                gained.append((best_g[0][0] == 1.0 and best_g[4] == 0, best_g[1]))
+            if here == "block" and there != "block":
+                lost.append(best_u[1])
     print("renderer / locator, per class export:")
     for (here, there), count in sorted(cats.items(), key=lambda kv: (-kv[1], kv[0])):
         print("  renderer %-16s locator %-16s %5d" % (here, there, count))
@@ -1142,6 +1150,12 @@ def reconcile(system_dir):
              sum(v for (_h, t), v in cats.items() if t == "block"),
              sum(v for (_h, t), v in cats.items() if t == "block")
              - sum(v for (h, _t), v in cats.items() if h == "block")))
+    if gained:
+        print("the guard would add %d blocks: %d of them fully declared, %d properties in all, %d in the clean ones"
+              % (len(gained), sum(1 for clean, _n in gained if clean), sum(n for _c, n in gained),
+                 sum(n for clean, n in gained if clean)))
+    if lost:
+        print("the guard would remove %d block(s): %d properties" % (len(lost), sum(lost)))
     return 0
 
 
