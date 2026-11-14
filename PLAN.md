@@ -1255,6 +1255,29 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the initialiser is main, and it installs the file manager twice)
+
+- **The frame that holds the object is the process's own.** `0x0012620` (18,359 bytes) has exactly one direct caller,
+  `0x33f2ff` in the CRT start-up and outside every mapped function, and one `ret` at `0x16cfe`; its body prints
+  `Startup time %f`, `Starting Engine`, `Launching map [%s]` and `Entering Loop`, so it is `main`. #519's worry -- that
+  the loader might see the `.data` fallback because the frame was popped -- does not apply: the frame outlives every
+  call the game makes, and `0x005c1a0c` / `0x004d2fd0` describe only the image before `main` runs.
+- **There are two installs, and the one #519 measured is the earlier.** `0x0005a9b2` (in `Core_UnMisc`, reached from
+  `main`'s call at `0x12b7d`) installs `[ebp-0x954]`, table `0x004c8db8`; `0x169e3` then installs `[ebp-0xb0]`, a second
+  frame slot zeroed at `0x12927`, and the `call 0x6c750` that follows still holds it in `ecx`. The next literal printed
+  is `Starting Engine`, so the object the engine -- and with it the save chain -- runs against is the second one, and
+  `0x6c750` stores no immediate at `[this]` in its first 32 instructions.
+- **The load path never reads the global; the save path does.** Of the instructions naming `[0x005bf514]`, none falls in
+  `0x00134d40` (the loader) or in `0x00149370` (`GameInfo.LoadSaveGame`); two of the loader's neighbours
+  (`0x001347d0`, `0x00134960`) do read it, so the load side reaches the file manager one call deeper. The writer
+  `0x00138680` reads it once and the serializer `0x0006f4b0` three times, and `main` reads it once at `0x167cd` and
+  dispatches `+0x04` -- the live object does answer a `CreateFileReader` call.
+- Tool (`tools/fmgr-installs.py`, `--xbe`/`-o`/`--write-doc`/`--check-doc`/`--check`, 24 assertions) +
+  `inventory/fmgr_installs.csv` (3 rows: the static initializer and both stores) + `make fmgr-installs` +
+  `docs/systems/CHECKPOINTS.md` (*Which object the engine phase runs with*) + `docs/UNKNOWNS.md` U5 + this note.
+- **Next measurement:** what `0x0006c750` builds in `[ebp-0xb0]` -- read its 326-byte body's `[this]`-relative writes
+  and the dispatch offsets the engine loads through afterwards, which names the class the save chain actually calls.
+
 ### Execution notes (2026-11-14, the live file manager is a table no script class owns, and it overrides 13 of the 25 slots)
 
 - **The frame local's first use names the class.** `0x128ff` is `lea ecx,[ebp-0x954]; call 0x1a3b0`, and the constructor
