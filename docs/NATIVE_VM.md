@@ -2496,3 +2496,35 @@ not confirm. The 146 that stay unanchored are the next measurement, not an unexp
     python3 tools/class-record-array-blind.py --report
 
 Reads the packages and two committed tables; no boot, no Ghidra round, no property name or value decoded.
+
+### Widening the trailer to 40 bytes buys 33 control rows and nothing on the blind ones
+
+The walk above starts at most 13 bytes behind the block start, because a closing group costs 6-11. `class-defaults.py`
+tolerates a trailer of up to 64 bytes, so the same walk is run a second time from every start in
+`[block_start - 40, block_start]` on all 2,204 rows, and both answers are carried in the artifact.
+
+| measure | 13-byte window | 40-byte window |
+|---|---:|---:|
+| the census head reproduced (control, 1,616 rows) | 1,569 (97.1%) | **1,601 (99.1%)** |
+| rows gaining the sixteen-byte front (control) | -- | 33, **all 33 carrying the census head** |
+| blind rows with the front (575) | 368 | **368, none gained** |
+| blind rows with any head | 429 | 450 |
+| the null (a start past the window's own far end) | 98 (4.4%, one byte past the block) | **14 (0.6%)** |
+
+**The 33 rows are a longer trailer, not a different record.** Their winning start sits 14 bytes back on 18 of them, 20
+on 10, 15 on 2, 19 on 2 and 21 on 1, i.e. just past the group's own 6-11, and every one of the 33 lands on the head the
+census measured. The widened null falls to 0.6% -- the extra room is not fitting noise -- so the wider window is a
+strict improvement on the control.
+
+**On the blind population it changes nothing: the count of rows with the front stays at 368.** 450 rows yield some
+head, but the 82 that are new have no sixteen-byte front, and 0 of the 207 blind rows that lack the front gain one.
+So the rows that remain unlocated are not waiting on a longer gap: the bytes between their array and their tags are not
+the explanation, and the next measurement has to read the array's own content -- a count that is not in
+`[prefix + 42, prefix + 42 + 40)`, or an element whose reference is outside the package's tables.
+
+    make class-record-array-blind
+    python3 tools/class-record-array-blind.py --report
+
+Same tool, same artifact: `wide_heads`, `wide_z16`, `wide_head`, `wide_off`, `wide_count`, `wide_head_off`,
+`wide_null` and `wide_census_matched` are the widened run's columns, so the comparison above is re-checkable from the
+CSV alone.

@@ -31,7 +31,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_properties.csv` | 11496 | 6 | `make class-defaults` |
 | `inventory/class_reach.csv` | 2319 | 15 | `make class-reach` |
 | `inventory/class_record_array.csv` | 2204 | 27 | `make class-overshoot-stream` |
-| `inventory/class_record_array_blind.csv` | 2204 | 26 | `make class-record-array-blind` |
+| `inventory/class_record_array_blind.csv` | 2204 | 34 | `make class-record-array-blind` |
 | `inventory/class_record_array_head.csv` | 2204 | 30 | `make class-record-array-head` |
 | `inventory/class_record_array_search.csv` | 2204 | 20 | `make class-record-array-blind` |
 | `inventory/class_record_bound.csv` | 2204 | 20 | `make class-overshoot-stream` |
