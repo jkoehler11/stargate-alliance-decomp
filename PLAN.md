@@ -731,6 +731,20 @@ are limited to expected fields (checksum/timestamp) and documented.
       gameplay-level measurement, and `docs/MAP_LOADS.md` names it as the open question. The list's two non-game packages are the only entries that do not load: 9 `Entry` and 71
       `MainMenu` both leave the guest on `MAIN MENU`, so 71 of the 73 entries load and
       `inventory/map_loads.csv` holds a row for all 73 (2026-11-14).
+      **A `PASS` row's frame is read, and 65 of 72 reached play** (2026-11-14, `docs/MAP_FRAMES.md`,
+      `tools/xemu/map-frame.py`, `inventory/map_frames.csv`): the open question the load page names -- whether a map
+      that loads is playable -- is answered for every row whose picture survives, by the HUD's own top-left corner
+      (portrait and name), which reads **0.140-0.986** on 65 gameplay frames against **0.000-0.027** on the 7 that
+      are not, so the threshold sits at 0.06 in an empty band 5x wide. Five of the seven are the disc's cutscenes
+      (11, 17, 19, 21, 22: letterboxed, `Press A` at 0.0192); 23 (`M10B`) is the `MISSION FAILED` screen, a live
+      mission lost while nobody played, which is the strongest evidence of play in the set; 71 is the main menu,
+      where the frame sides with the load table's `FAIL` against a stray `PASS` from a run the table was not given.
+      The bottom-right prompt box **does not** separate a cutscene from a menu (0.0192 on the cutscenes, 0.0668 on
+      the main menu, 0.1055 on the title's highlighted row, up to 0.9601 on a gameplay frame whose weapon fills
+      it), so the tool reports `hud` / `no-hud` and names the rows rather than guessing a kind. Frames are decoded
+      in pure Python rather than by ImageMagick, `--check` classifies six synthetic frames at two resolutions and
+      re-decodes a fixture through each of the five PNG row filters, and `make ci` re-renders the page from the CSV
+      with no disc and no frames. Only index 9 (`Entry`) has no picture at all: no run ever passed it.
 - [~] 7.3 **The console works and draws its input line on a stock disc; `ret` submits it, only `stat fps` is
       readable, and no `Console` instance is in the object array in any state measured**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
