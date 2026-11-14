@@ -2528,3 +2528,48 @@ the explanation, and the next measurement has to read the array's own content --
 Same tool, same artifact: `wide_heads`, `wide_z16`, `wide_head`, `wide_off`, `wide_count`, `wide_head_off`,
 `wide_null` and `wide_census_matched` are the widened run's columns, so the comparison above is re-checkable from the
 CSV alone.
+
+### The count read forward fits one byte past the tags as often as at them
+
+The previous section named the two remaining explanations for the 207 blind rows with no sixteen-byte front: a count
+outside the 40-byte window, or an element reference outside the package's tables. Both are bounds of the *backward*
+read, so the same grid is read the other way: every position in `[prefix + 42, block_start)` is read as a count, its
+elements are walked **forward** (compact reference of 1-5 bytes inside the package's tables, then two raw dwords
+each), and the walk is accepted when it ends on the tags, allowing the recording group's 0-11 bytes of slack. The
+count is then read a second time as a raw 32-bit dword, and a third pass admits references outside the package's
+tables. The same artifact carries all four answers plus the shipped backward one, on all 2,204 rows.
+
+| measure | control (1,629) | blind (575) |
+|---|---:|---:|
+| a forward head at the block start | 1,623 (99.6%) | 482 (83.8%) |
+| the group parse's head among the fits | 1,529 (93.9%) | -- |
+| mean fits per row, at the block start | 2.05 | 1.76 |
+| mean fits per row, **one byte past it (the null)** | **2.06** | **1.86** |
+| the count as a raw 4-byte dword | 44 (2.7%) | 33 (5.7%) |
+| references outside the tables admitted (loose) | 1,626 (99.8%) | 487 (84.7%) |
+
+**The null is the whole result: aimed one byte past the tags, the same walk fits as often as at them.** It answers on
+2,100 of 2,204 rows (95.3%) and its mean fits per row *exceeds* the block start's in both populations, so the forward
+read has no discriminating power at all -- the 482 blind "heads" are chance fits, not a located count. That kills both
+candidate explanations rather than confirming one: a count outside the window would still have been found by a scan
+that reads the whole gap (median 52 positions on the blind rows, 49 on the control), and an out-of-table reference is
+not the block either, because admitting those gains only 5 rows on the blind population and 1,626 of 1,629 control
+rows fit *without* admitting anything, i.e. the tables were never the constraint. On the 146 blind rows the backward
+walk finds nothing at all, the forward read answers 54 (37.0%) -- while its null answers 65 of the same 146, mean
+0.71 fits against mean 0.90 -- so even that subset is noise.
+
+**What the forward read is good for is candidates, not positions.** Where the truth is known it does contain it: the
+group parse's own head is among the fits on 1,529 of 1,629 control rows. But only 70 of those 1,629 rows have a fit
+that ends exactly on the tags at all, the picked gap is 4-7 bytes on 1,259 of the 1,623 rows that fit, and the null is
+nearly as productive where the head is known -- so the set cannot carry a location on its own.
+
+The defaults block beside it is not the doubt: read forward from `block_start` it reaches its `None` terminator on all
+2,204 rows (median 34 bytes, 4 properties) and 2,113 of them (95.9%) end exactly on the payload's last byte -- 485 of
+the 575 blind ones included, so those rows' blocks close normally and it is the record's side that is unread.
+
+    make class-record-array-blind
+    python3 tools/class-record-array-blind.py --report
+
+The forward columns are `fw_*` (compact count), `fr_*` (raw dword count) and `fl_*` (loose references), each with its
+own null (`fw_null`, `fr_null`), plus the block's own extent (`block_len`, `block_props`, `block_reason`) and the
+number of count positions scanned (`gap_scanned`) -- so every number above is one `--report` away from the CSV.

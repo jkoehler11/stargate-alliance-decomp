@@ -1178,6 +1178,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, read forward the count is not there: the null fits as often as the tags)
+
+- **Both named explanations are measured and refused, and the null is the number.** `tools/class-record-array-blind.py`
+  gains a second read of the same grid: every position in `[prefix + 42, block_start)` is taken as a count, its
+  elements are walked **forward** (compact reference of 1-5 bytes in the package's tables plus two dwords each) and
+  accepted when the walk ends on the tags within the recording group's 0-11 bytes -- so "the count is outside the
+  40-byte window" becomes a measured position instead of a bound. The forward read answers on **1,623 of 1,629 control
+  rows (99.6%)**, the group parse's head among the fits on 1,529 (93.9%), and on **482 of 575 blind rows (83.8%)**.
+  Its null -- the same walk aimed one byte past the block start -- fits on **2,100 of 2,204 rows (95.3%)**, with mean
+  fits per row **2.06 against 2.05** at the block (blind 1.86 against 1.76), so the forward read has no discriminating
+  power and the 482 heads are chance fits. Median 52 count positions are scanned per blind row (49 per control), so
+  the window was not the limit either.
+- **The other two candidates fall with it.** Reading the count as a raw 32-bit dword answers on 33 blind rows against
+  a 59.9% null; admitting element references outside the package's tables gains 5 blind rows, and 1,626 of 1,629
+  control rows fit *without* admitting any, so the tables were never the constraint. On the 146 blind rows the
+  backward walk finds nothing on, the forward read's 54 answers are matched by its null on 65 (mean 0.71 against
+  0.90). The defaults block beside the record is not the doubt: it reaches its `None` terminator on all 2,204 rows
+  (median 34 bytes, 4 properties) and closes on the payload's last byte on 2,113 (95.9%, and 485 of the 575 blind).
+- Tool (extended, not replaced: `fw_*`, `fr_*`, `fl_*`, `block_*` and `gap_scanned` columns on the same artifact; the
+  `--check` now also drives the forward read, its group offset and the count that exceeds its elements) +
+  `inventory/class_record_array_blind.csv` (2,204 rows, 21 new columns) + `docs/NATIVE_VM.md` (new subsection) +
+  `docs/UNKNOWNS.md` U18 (twenty-fifth) + this note. No boot, no Ghidra round, no property name or value decoded.
+- **Next measurement, named:** the 207 rows need a bound that is not a payload fit, and the writer side already has
+  one named: `UStruct::Serialize` (`0x000392b0`) and `UClass::Serialize` (`0x0003a800`) write the record's fields in
+  order, so reading `UStruct::Serialize` for the tail's field order and widths gives the record's extent from the
+  writer instead of from the bytes -- the same route U17 left open, and one Ghidra round on a body that is already
+  in `$WORK/module-export/` if it is there (`grep -rln '\b392b0\b' ~/sg1/work`).
+
 ### Execution notes (2026-11-13, the widened trailer buys 33 control rows and nothing on the blind ones)
 
 - **The follow-up is measured as a paired comparison on all 2,204 rows.** The same backward element walk now also runs
