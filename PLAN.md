@@ -1255,6 +1255,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the store outside the symbol map is dead code, and the bit it was meant to compose arrives through the registration)
+
+- **Every `+0x498` displacement in the image is 136 instructions, 13 of them writes, and only three touch the
+  class flag word.** `tools/class-flag-stores.py` scans by displacement rather than by `modrm`, so it also
+  reaches the forms the earlier census missed (a `[reg+index*4+0x498]` operand, a two-byte `0f` opcode, an
+  `or [x+0x498],imm`), and it resolves each written value's provenance by walking back over the register's own
+  writers: a mask over the super's word, an immediate `or`ed into an argument, a copy, or a constant.
+- **The write the previous note nominated is in a body nothing references.** `0x0003c49d` sits at `+0x6d` into
+  a body whose start (`0x0003c430`) neither the symbol map nor Ghidra's analysis has -- the start comes from the
+  image's own `int3` padding, a run of four `cc` bytes -- and that body is a twin of the registration: same
+  `Class` table `0x004d4870`, same `+0x49c` zero, same `or 0x12` into a stack argument, a different base
+  constructor (`0x0003bd30` rather than `0x0003a5f0`). It has **0 direct `E8` call sites over every code
+  section and 0 dword references over every section**, so the route the entry proposed cannot be entered.
+- **`0x80000` is set by the image itself, and the corpus was right for a different reason.** The registration
+  stores `argument | 0x12`, so the word is its caller's; of the 317 flags arguments resolved at its 493 call
+  sites one is exactly `0x80000` -- `0x0003b0fc` registers `Function` (assert `ReturnClass`, `UnClass.cpp:0x6c2`)
+  and the class object it builds carries `0x80012`. That class is not among the 2,319 the packages ship, and
+  this build's `Core.u` holds 7 script classes, so a corpus of the packages can only ever report no carrier.
+- **The flags arguments span the bits no reader names** (`0x8000` x11, `0x18000`, `0x28000`, `0x40000`,
+  `0x80000`), and 189 sites pass `0x4` and 28 `0x8`: an engine class declares far less than a game class, so a
+  word read as "unnamed bit set" is normal for the engine's own classes.
+- Tool (`tools/class-flag-stores.py`, `--xbe`/`-o`/`--report`/`--write-doc`/`--check-doc`/`--check`, 26
+  assertions) + `inventory/class_flag_stores.csv` (474 rows: 136 sites, 13 stores, 7 reach rows, 317 call rows, and the census row that carries these counts)
+  + `docs/systems/CHECKPOINTS.md` (*How a bit can reach the class flag word*) + `make class-flag-stores` + this
+  note. No boot: the image, the class-table list and the committed corpus.
+- **Next measurement:** the dead pair `0x0003c430`/`0x0003bd30` against the live pair `0x0003af60`/`0x0003a5f0`
+  -- a byte-level diff of the two bodies says what the linker kept a copy for (an unregistered variant, a
+  template instantiation), and both are already at hand with no boot.
+
 ### Execution notes (2026-11-14, the five unnamed flag bits are read by the serialiser, and one has no carrier)
 
 - **Every masked test of the word is a branch on *something's class*, never on a class being loaded.** 28

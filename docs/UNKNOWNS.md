@@ -617,14 +617,22 @@ reader (the collector at `0x00067641`, whose set edge skips the object), `0x1000
 carriers, not a `CLASS_*` spelling. Artifact `inventory/class_flag_readers.csv`; page
 `docs/systems/CHECKPOINTS.md`, *What each class-flag bit's readers do with the answer*.
 
-**Still open: `0x80000` is required by five readers and carried by no shipped class.** The two
-FindObject-shaped bodies (`0x00062fd6`, `0x0006301c`), the hash walk at `0x0006482c`, `Engine_UnChan` at
-`0x0010ac92` and `execPlaySound` at `0x00212b82` all test it, and none of the 2,319 shipped classes has it, so
-over the packages those lookups answer nothing. **What would settle it** is the one store to `+0x498` that sits
-outside the symbol map (`0x0003c49d`): the three mapped stores are the constructor's inherit, the registration's
-`or 0x12` and whole-word copies, so a bit outside `0x0e0f86ec | 0x12` can only arrive there -- decompiling the
-function that contains `0x0003c49d` answers whether a class built at runtime can carry the bit at all, and it is
-one Ghidra round.
+**Answered 2026-11-14: `0x80000` reaches a class at runtime through the registration, and the store this entry
+nominated is dead code.** `tools/class-flag-stores.py` lists every instruction in the code sections whose
+displacement is `0x498` -- 136 sites, 13 of them writes -- and resolves where each written value comes from. Only
+three of those writes touch the class flag word: the constructor's `and` with the build's inherit mask
+`0x0e0f86ec` (it can only drop a bit), the registration at `0x0003af99` (`argument | 0x12`, i.e. the caller's
+own word), and `0x0003c49d`. That last one is the store named here: its body starts at `0x0003c430`, a start no
+function table in the image has and which the image's own `int3` padding gives, and it is a twin of the
+registration -- same `Class` table `0x004d4870`, same `+0x49c` zero, same `or 0x12` -- that **nothing in the
+image references**: 0 direct `E8` call sites over every code section and 0 dword references over every section.
+So the route this entry proposed does not exist. The bit arrives another way: the registration passes its
+caller's flags word through, and of the 317 flags arguments this decoder resolves at its 493 call sites one is
+exactly `0x80000` -- the body at `0x0003b0fc`, which registers `Function` (its assert is `ReturnClass` at
+`UnClass.cpp:0x6c2`) and builds a class whose word is `0x80012`. That class is not one of the 2,319 the packages
+ship (this build's `Core.u` carries 7 script classes; the engine's are native), which is why the corpus reports
+no carrier: `0x80000` is live, and a class's flag word is the registering caller's word plus the two compiler
+bits, not something the loader composes. Artifact `inventory/class_flag_stores.csv`.
 
 
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified

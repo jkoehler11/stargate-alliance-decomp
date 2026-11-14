@@ -1,0 +1,475 @@
+kind,at,fn,detail,evidence
+site,0x00039648,Core_UnClass,"load over `mov eax,DWORD PTR [eax+0x498]`",boundary=map
+site,0x0003964e,Core_UnClass,"load over `mov ecx,DWORD PTR [esi+0x498]`",boundary=map
+site,0x0003965b,Core_UnClass,"store over `mov DWORD PTR [esi+0x498],ecx`",boundary=map
+site,0x0003a850,Core_UnClass,"address over `lea eax,[esi+0x498]`",boundary=map
+site,0x0003aaba,Core_UnClass,"reader over `test DWORD PTR [esi+0x498],0x1000000`",boundary=map
+site,0x0003af99,FUN_0003af60,"store over `mov DWORD PTR [esi+0x498],ecx`",boundary=map
+site,0x0003c49d,-,"store over `mov DWORD PTR [esi+0x498],eax`",boundary=pad
+site,0x0003cbb6,FUN_0003cb90,"reader over `test DWORD PTR [ecx+0x498],edi`",boundary=map
+site,0x0003e90f,FUN_0003e7d0,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x0003ea48,FUN_0003e7d0,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x00046fb8,Native_0,"reader over `test DWORD PTR [edx+0x498],0x10000`",boundary=map
+site,0x00047033,Native_1,"reader over `test DWORD PTR [edx+0x498],0x10000`",boundary=map
+site,0x000490a1,FUN_00048e90,"reader over `test DWORD PTR [eax+0x498],0x4000000`",boundary=map
+site,0x0004eb06,FUN_0004eae0,"reader over `test DWORD PTR [ecx+0x498],edi`",boundary=map
+site,0x00062535,FUN_00062520,"reader over `test DWORD PTR [edx+0x498],0x4000000`",boundary=map
+site,0x00062fd6,FUN_00062fc0,"reader over `test DWORD PTR [ecx+0x498],0x80000`",boundary=map
+site,0x0006301c,FUN_00062ff0,"reader over `test DWORD PTR [ecx+0x498],0x80000`",boundary=map
+site,0x000630e2,FUN_000630b0,"reader over `test DWORD PTR [edx+0x498],0x40000`",boundary=map
+site,0x0006482c,FUN_00064770,"reader over `test DWORD PTR [ecx+0x498],0x80000`",boundary=map
+site,0x00064f04,FUN_00064f00,"reader over `test BYTE PTR [esi+0x498],0x20`",boundary=map
+site,0x00067641,FUN_00067450,"reader over `test DWORD PTR [eax+0x498],0x8000`",boundary=map
+site,0x0006a293,FUN_0006a260,"reader over `test BYTE PTR [eax+0x498],0x4`",boundary=map
+site,0x0006a2dd,Core_UnObj,"reader over `test BYTE PTR [esi+0x498],0x4`",boundary=map
+site,0x0006aab0,Core_UnObj,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=map
+site,0x0006bab8,Core_UnClass,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=map
+site,0x0006c132,FUN_0006c100,"load over `mov eax,DWORD PTR [edi+0x498]`",boundary=map
+site,0x0006c803,FUN_0006c750,"load over `mov cl,BYTE PTR [eax+0x498]`",boundary=map
+site,0x0006c96b,Core_UnObj,"reader over `test BYTE PTR [edi+0x498],0x1`",boundary=map
+site,0x0006ca8b,Core_UnObj,"reader over `test DWORD PTR [edi+0x498],0x4000000`",boundary=map
+site,0x0006ccdb,Core_UnObj,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x0006cd5f,Core_UnObj,"reader over `test BYTE PTR [edi+0x498],0x8`",boundary=map
+site,0x0006ce14,Core_UnObj,"reader over `test DWORD PTR [edi+0x498],0x8000000`",boundary=map
+site,0x0006ce27,Core_UnObj,"load over `mov eax,DWORD PTR [edi+0x498]`",boundary=map
+site,0x0006ce52,Core_UnObj,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x0006ce62,Core_UnObj,"store over `mov DWORD PTR [ebp+0x498],eax`",boundary=map
+site,0x0006cf8e,Core_UnClass,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x00073d3a,FUN_00073cf0,"reader over `test DWORD PTR [eax+0x498],0x4000000`",boundary=map
+site,0x00076660,FUN_000765c0,"reader over `test DWORD PTR [edi+0x498],0x4000000`",boundary=map
+site,0x000786b2,-,"reader over `test DWORD PTR [eax+0x498],0x200000`",boundary=pad
+site,0x00078742,Core_UnProp,"reader over `test DWORD PTR [eax+0x498],0x200000`",boundary=map
+site,0x000c6add,Core_UnTemplate,"reader over `test BYTE PTR [eax+0x498],0x20`",boundary=map
+site,0x000cd689,FUN_000cd640,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000cf6e0,FUN_000cf260,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000cfa44,FUN_000cf260,"load over `mov eax,DWORD PTR [edx+0x498]`",boundary=map
+site,0x000d09f3,FUN_000d0990,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=map
+site,0x000d0d73,-,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=pad
+site,0x000d11c8,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000d39f6,FUN_000d3990,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000d3eb0,FUN_000d3e70,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000d4072,FUN_000d4010,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000d41a8,FUN_000d4180,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000d5e32,-,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=pad
+site,0x000d5fe2,-,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=pad
+site,0x000d60e2,-,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=pad
+site,0x000d74e2,-,"load over `mov eax,DWORD PTR [ecx+0x498]`",boundary=pad
+site,0x000d7a62,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000d7db2,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000d817b,FUN_000d8110,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000d853a,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000d9217,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000d9365,FUN_000d92f0,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x000daf1a,-,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=pad
+site,0x000dd78e,ctor_GameInfo,"address over `lea eax,[esi+0x498]`",boundary=map
+site,0x000dda41,dtor_GameInfo,"address over `lea ecx,[esi+0x498]`",boundary=map
+site,0x000e69db,-,"load over `movss xmm1,DWORD PTR [esi+0x498]`",boundary=pad
+site,0x000e69e7,-,"write over `movss DWORD PTR [esi+0x498],xmm1`",boundary=pad
+site,0x000e6cfd,-,"load over `movss xmm1,DWORD PTR [esi+0x498]`",boundary=pad
+site,0x000e6dc0,-,"load over `movss xmm1,DWORD PTR [esi+0x498]`",boundary=pad
+site,0x000e810e,FUN_000e8060,"load over `movss xmm1,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000edef7,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000edf75,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000edff4,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000ee073,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000ee0f2,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x000ee171,FUN_000edd60,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x001042c8,Core_UnClass,"load over `mov edi,DWORD PTR [edi+0x498]`",boundary=map
+site,0x0010a5ef,Engine_UnChan,"reader over `test DWORD PTR [ecx+0x498],0x20000`",boundary=map
+site,0x0010aa0e,Engine_UnChan,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x0010ac92,Engine_UnChan,"reader over `test DWORD PTR [eax+0x498],0x80000`",boundary=map
+site,0x0010ae4b,Engine_UnChan,"reader over `test DWORD PTR [ecx+0x498],0x20000`",boundary=map
+site,0x0010b553,Engine_UnChan,"reader over `test DWORD PTR [eax+0x498],0x10000`",boundary=map
+site,0x00128381,Core_UnClass,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x00136f91,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x0013713e,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137157,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137170,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137189,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137236,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137276,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x001372ac,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x001373b1,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x00137648,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x0013766e,Engine_UnGame,"address over `lea eax,[esp+0x498]`",boundary=map
+site,0x001376c9,Engine_UnGame,"address over `lea eax,[esp+0x498]`",boundary=map
+site,0x001376f6,Engine_UnGame,"address over `lea ecx,[esp+0x498]`",boundary=map
+site,0x0015975f,Engine_UnLevAct,"reader over `test BYTE PTR [ebx+0x498],0x1`",boundary=map
+site,0x001598ad,Engine_UnLevAct,"reader over `test DWORD PTR [ebx+0x498],0x4000000`",boundary=map
+site,0x0015cd1b,-,"address over `lea edx,[eax+0x498]`",boundary=pad
+site,0x00173390,FUN_00173360,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=pad
+site,0x0017372e,-,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=pad
+site,0x00173839,-,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=pad
+site,0x001738d5,-,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=pad
+site,0x001738ec,-,"load over `mov ecx,DWORD PTR [ebp+0x498]`",boundary=pad
+site,0x00173910,-,"load over `mov edi,DWORD PTR [ebp+0x498]`",boundary=pad
+site,0x00174477,Core_UnClass,"load over `mov edx,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x00180180,FUN_001800d0,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x001802ce,FUN_001800d0,"load over `mov ecx,DWORD PTR [eax+0x498]`",boundary=map
+site,0x0018fe7d,FUN_0018fdc0,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x00190022,FUN_0018fef0,"load over `mov eax,DWORD PTR [ebx+0x498]`",boundary=map
+site,0x00192a08,-,"load over `mov eax,DWORD PTR [edx+0x498]`",boundary=pad
+site,0x001b721f,FUN_001b6f90,write over `fsub DWORD PTR [esi+0x498]`,boundary=map
+site,0x001b7973,FUN_001b6f90,"load over `subss xmm1,DWORD PTR [esi+0x498]`",boundary=map
+site,0x001b7aaf,FUN_001b6f90,"load over `movss xmm0,DWORD PTR [esi+0x498]`",boundary=map
+site,0x001d8f08,Core_UnClass,"load over `mov edi,DWORD PTR [edi+0x498]`",boundary=map
+site,0x0020c3f0,-,"reader over `test DWORD PTR [ecx+0x498],0x400000`",boundary=pad
+site,0x00212b82,execPlaySound,"reader over `test DWORD PTR [eax+0x498],0x80000`",boundary=map
+site,0x002188a3,FUN_00218680,"reader over `test DWORD PTR [eax+0x498],ebx`",boundary=map
+site,0x002345b1,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0x3`",boundary=map
+site,0x002348a8,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0x4`",boundary=map
+site,0x00235e06,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0x7`",boundary=map
+site,0x0023694a,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0xc`",boundary=map
+site,0x00236adb,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0xd`",boundary=map
+site,0x00236c4f,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0xf`",boundary=map
+site,0x00236e24,Core_UnObjBas,"store over `mov BYTE PTR [esp+0x498],0x10`",boundary=map
+site,0x00244d26,-,"load over `movss xmm1,DWORD PTR [esi+0x498]`",boundary=pad
+site,0x00245ac1,FUN_002459e0,"load over `mov cl,BYTE PTR [esi+0x498]`",boundary=pad
+site,0x002840a6,FUN_002840a0,"reader over `cmp BYTE PTR [esi+0x498],0x1`",boundary=map
+site,0x0028fe40,dtor_VoiceChatReplicationInfo,"address over `lea ecx,[esi+0x498]`",boundary=map
+site,0x002974a4,FUN_00296720,"address over `lea ecx,[esi+0x498]`",boundary=map
+site,0x0029ae5d,Core_UnClass,"load over `mov esi,DWORD PTR [esi+0x498]`",boundary=map
+site,0x0029bb31,Core_UnClass,"load over `mov eax,DWORD PTR [esi+0x498]`",boundary=map
+site,0x0029c05e,Core_UnClass,"load over `mov esi,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x0029c92e,Core_UnClass,"load over `mov eax,DWORD PTR [ebp+0x498]`",boundary=map
+site,0x002a131d,Core_UnClass,"load over `mov esi,DWORD PTR [ecx+0x498]`",boundary=map
+site,0x002a163d,FUN_002a1460,"load over `mov eax,DWORD PTR [ebx+0x498]`",boundary=map
+site,0x002a1e90,FUN_002a1b70,"load over `mov eax,DWORD PTR [ebx+0x498]`",boundary=map
+store,0x0003965b,Core_UnClass,"writes `mov DWORD PTR [esi+0x498],ecx`; source=inherit-load imm=0xe0f86ec",boundary=map; introduced=0xe0f86ec; table=-
+store,0x0003af99,FUN_0003af60,"writes `mov DWORD PTR [esi+0x498],ecx`; source=argument imm=0x12 slot=0x14",boundary=map; introduced=0x12; table=0x004d4870
+store,0x0003c49d,-,"writes `mov DWORD PTR [esi+0x498],eax`; source=argument imm=0x12 slot=0x14",boundary=pad; introduced=0x12; table=0x004d4870
+store,0x0006ce62,Core_UnObj,"writes `mov DWORD PTR [ebp+0x498],eax`; source=argument slot=0xc",boundary=map; introduced=0x0; table=-
+store,0x000e69e7,-,"writes `movss DWORD PTR [esi+0x498],xmm1`; source=read-modify-write",boundary=pad; introduced=0x0; table=-
+store,0x001b721f,FUN_001b6f90,writes `fsub DWORD PTR [esi+0x498]`; source=read-modify-write,boundary=map; introduced=0x0; table=-
+store,0x002345b1,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0x3`; source=immediate imm=0x3",boundary=map; introduced=0x3; table=-
+store,0x002348a8,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0x4`; source=immediate imm=0x4",boundary=map; introduced=0x4; table=-
+store,0x00235e06,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0x7`; source=immediate imm=0x7",boundary=map; introduced=0x7; table=-
+store,0x0023694a,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0xc`; source=immediate imm=0xc",boundary=map; introduced=0xc; table=-
+store,0x00236adb,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0xd`; source=immediate imm=0xd",boundary=map; introduced=0xd; table=-
+store,0x00236c4f,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0xf`; source=immediate imm=0xf",boundary=map; introduced=0xf; table=-
+store,0x00236e24,Core_UnObjBas,"writes `mov BYTE PTR [esp+0x498],0x10`; source=immediate imm=0x10",boundary=map; introduced=0x10; table=-
+reach,0x00039520,Core_UnClass,"0 direct call site(s), 1 dword reference(s)",boundary=map
+reach,0x0003af60,FUN_0003af60,"493 direct call site(s), 0 dword reference(s)",boundary=map
+reach,0x0003c430,-,"0 direct call site(s), 0 dword reference(s)",boundary=pad
+reach,0x0006c8a0,Core_UnObj,"52 direct call site(s), 0 dword reference(s)",boundary=map
+reach,0x000e6940,-,"0 direct call site(s), 1 dword reference(s)",boundary=pad
+reach,0x001b6f90,FUN_001b6f90,"0 direct call site(s), 13 dword reference(s)",boundary=map
+reach,0x00231a10,Core_UnObjBas,"0 direct call site(s), 1 dword reference(s)",boundary=map
+call,0x000313f9,FUN_0003af60,flags argument 0x4,literal
+call,0x000349e6,FUN_0003af60,flags argument 0x1,literal
+call,0x00036066,FUN_0003af60,flags argument 0x1,literal
+call,0x0003b0fc,FUN_0003af60,flags argument 0x80000,literal
+call,0x0003b276,FUN_0003af60,flags argument 0x1,literal
+call,0x0003b3fc,FUN_0003af60,flags argument 0x40000,literal
+call,0x0003ed36,FUN_0003af60,flags argument 0x8,literal
+call,0x00064af6,FUN_0003af60,flags argument 0x1,literal
+call,0x00066b16,FUN_0003af60,flags argument 0x9,literal
+call,0x00066d96,FUN_0003af60,flags argument 0x9,literal
+call,0x000681f9,FUN_0003af60,flags argument 0x29,literal
+call,0x000696f9,FUN_0003af60,flags argument 0x8,literal
+call,0x000697b9,FUN_0003af60,flags argument 0x8,literal
+call,0x00069879,FUN_0003af60,flags argument 0x8,literal
+call,0x00069939,FUN_0003af60,flags argument 0x8,literal
+call,0x000699f9,FUN_0003af60,flags argument 0x8,literal
+call,0x000778d9,FUN_0003af60,flags argument 0x8001,literal
+call,0x0007c829,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007c8e9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007c9a9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007ca69,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007cb29,FUN_0003af60,flags argument 0x28000,literal
+call,0x0007cbe9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007cca9,FUN_0003af60,flags argument 0x18000,literal
+call,0x0007ce29,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007cee9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007cfa9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007d069,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007d129,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007d1e9,FUN_0003af60,flags argument 0x8000,literal
+call,0x0007f559,FUN_0003af60,flags argument 0x4,literal
+call,0x000809b9,FUN_0003af60,flags argument 0x4,literal
+call,0x00080ed9,FUN_0003af60,flags argument 0x4,literal
+call,0x000812b9,FUN_0003af60,flags argument 0x4,literal
+call,0x00084a19,FUN_0003af60,flags argument 0x4,literal
+call,0x00086949,FUN_0003af60,flags argument 0x4,literal
+call,0x0008a8a9,FUN_0003af60,flags argument 0x4,literal
+call,0x0008ca59,FUN_0003af60,flags argument 0x4,literal
+call,0x00093349,FUN_0003af60,flags argument 0x4,literal
+call,0x00093409,FUN_0003af60,flags argument 0x4,literal
+call,0x000934c9,FUN_0003af60,flags argument 0x4,literal
+call,0x00093589,FUN_0003af60,flags argument 0x4,literal
+call,0x00093649,FUN_0003af60,flags argument 0x4,literal
+call,0x000a4f49,FUN_0003af60,flags argument 0x4,literal
+call,0x000a5009,FUN_0003af60,flags argument 0x4,literal
+call,0x000a50c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000a5189,FUN_0003af60,flags argument 0x4,literal
+call,0x000bd309,FUN_0003af60,flags argument 0x4,literal
+call,0x000c05e9,FUN_0003af60,flags argument 0x8,literal
+call,0x000c4379,FUN_0003af60,flags argument 0xc,literal
+call,0x000c7d86,FUN_0003af60,flags argument 0x4,literal
+call,0x000c810c,FUN_0003af60,flags argument 0x804,literal
+call,0x000c81c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8289,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8349,FUN_0003af60,flags argument 0x4,literal
+call,0x000c840c,FUN_0003af60,flags argument 0x804,literal
+call,0x000c84c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8589,FUN_0003af60,flags argument 0xc,literal
+call,0x000c8649,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8709,FUN_0003af60,flags argument 0x4,literal
+call,0x000c87c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8889,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8949,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8a09,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8ac9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8b89,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8c49,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8d09,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8dc9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8e89,FUN_0003af60,flags argument 0x4,literal
+call,0x000c8f49,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9009,FUN_0003af60,flags argument 0x4,literal
+call,0x000c90c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9189,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9249,FUN_0003af60,flags argument 0x4,literal
+call,0x000c930c,FUN_0003af60,flags argument 0x804,literal
+call,0x000c93c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9489,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9549,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9609,FUN_0003af60,flags argument 0x4,literal
+call,0x000c96c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9789,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9849,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9909,FUN_0003af60,flags argument 0x4,literal
+call,0x000c99c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9a89,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9b4c,FUN_0003af60,flags argument 0x804,literal
+call,0x000c9c09,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9ccc,FUN_0003af60,flags argument 0x804,literal
+call,0x000c9d89,FUN_0003af60,flags argument 0xc,literal
+call,0x000c9e4c,FUN_0003af60,flags argument 0x804,literal
+call,0x000c9f09,FUN_0003af60,flags argument 0x4,literal
+call,0x000c9fcc,FUN_0003af60,flags argument 0x804,literal
+call,0x000ca08c,FUN_0003af60,flags argument 0x804,literal
+call,0x000ca14c,FUN_0003af60,flags argument 0x804,literal
+call,0x000ca20c,FUN_0003af60,flags argument 0x804,literal
+call,0x000ca2c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca38c,FUN_0003af60,flags argument 0x804,literal
+call,0x000ca449,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca509,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca5c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca689,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca749,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca809,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca8c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000ca989,FUN_0003af60,flags argument 0x4,literal
+call,0x000caa49,FUN_0003af60,flags argument 0x4,literal
+call,0x000cab09,FUN_0003af60,flags argument 0x4,literal
+call,0x000cabcc,FUN_0003af60,flags argument 0x804,literal
+call,0x000cac89,FUN_0003af60,flags argument 0x4,literal
+call,0x000cad49,FUN_0003af60,flags argument 0x4,literal
+call,0x000cae09,FUN_0003af60,flags argument 0x4,literal
+call,0x000caec9,FUN_0003af60,flags argument 0x4,literal
+call,0x000caf89,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb049,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb10c,FUN_0003af60,flags argument 0x804,literal
+call,0x000cb1cc,FUN_0003af60,flags argument 0x804,literal
+call,0x000cb28c,FUN_0003af60,flags argument 0x804,literal
+call,0x000cb349,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb40c,FUN_0003af60,flags argument 0x804,literal
+call,0x000cb4c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb589,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb649,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb709,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb7c9,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb889,FUN_0003af60,flags argument 0x4,literal
+call,0x000cb949,FUN_0003af60,flags argument 0x4,literal
+call,0x000cba09,FUN_0003af60,flags argument 0x4,literal
+call,0x000cbac9,FUN_0003af60,flags argument 0x4,literal
+call,0x000cbb89,FUN_0003af60,flags argument 0x4,literal
+call,0x000cc15c,FUN_0003af60,flags argument 0x804,literal
+call,0x000d4569,FUN_0003af60,flags argument 0x4,literal
+call,0x000d52ec,FUN_0003af60,flags argument 0x804,literal
+call,0x000db5a6,FUN_0003af60,flags argument 0x4,literal
+call,0x000dba09,FUN_0003af60,flags argument 0x4,literal
+call,0x000e2426,FUN_0003af60,flags argument 0x1,literal
+call,0x000e4dd9,FUN_0003af60,flags argument 0x40,literal
+call,0x000e5509,FUN_0003af60,flags argument 0x40,literal
+call,0x000e5809,FUN_0003af60,flags argument 0x4,literal
+call,0x000e5989,FUN_0003af60,flags argument 0x40,literal
+call,0x000f1de9,FUN_0003af60,flags argument 0x8,literal
+call,0x000f92c9,FUN_0003af60,flags argument 0x9,literal
+call,0x000fbd46,FUN_0003af60,flags argument 0x1,literal
+call,0x000fd969,FUN_0003af60,flags argument 0x5,literal
+call,0x00106a59,FUN_0003af60,flags argument 0x8,literal
+call,0x001083c6,FUN_0003af60,flags argument 0x9,literal
+call,0x00108c06,FUN_0003af60,flags argument 0x8,literal
+call,0x00108ee9,FUN_0003af60,flags argument 0x8,literal
+call,0x00109876,FUN_0003af60,flags argument 0x8,literal
+call,0x0010bbe9,FUN_0003af60,flags argument 0x8,literal
+call,0x0010d6a9,FUN_0003af60,flags argument 0xd,literal
+call,0x00113099,FUN_0003af60,flags argument 0xc,literal
+call,0x0011be49,FUN_0003af60,flags argument 0x8,literal
+call,0x0011d599,FUN_0003af60,flags argument 0xc,literal
+call,0x0011d659,FUN_0003af60,flags argument 0xc,literal
+call,0x0011e9d9,FUN_0003af60,flags argument 0xd,literal
+call,0x0011f099,FUN_0003af60,flags argument 0xc,literal
+call,0x0011f9f9,FUN_0003af60,flags argument 0x5,literal
+call,0x00121989,FUN_0003af60,flags argument 0xd,literal
+call,0x00122329,FUN_0003af60,flags argument 0x8,literal
+call,0x001223e9,FUN_0003af60,flags argument 0x8,literal
+call,0x00122599,FUN_0003af60,flags argument 0x8,literal
+call,0x00122656,FUN_0003af60,flags argument 0x8,literal
+call,0x0012c629,FUN_0003af60,flags argument 0x4,literal
+call,0x00131799,FUN_0003af60,flags argument 0x80,literal
+call,0x00136209,FUN_0003af60,flags argument 0x4,literal
+call,0x001362c9,FUN_0003af60,flags argument 0x4,literal
+call,0x00138fe9,FUN_0003af60,flags argument 0xc,literal
+call,0x0014d0d9,FUN_0003af60,flags argument 0xc,literal
+call,0x0014f856,FUN_0003af60,flags argument 0x4,literal
+call,0x0014fa59,FUN_0003af60,flags argument 0x4,literal
+call,0x00150136,FUN_0003af60,flags argument 0x8,literal
+call,0x0015c989,FUN_0003af60,flags argument 0x1,literal
+call,0x00161e0c,FUN_0003af60,flags argument 0x4000000,literal
+call,0x001684c6,FUN_0003af60,flags argument 0x8,literal
+call,0x001687d9,FUN_0003af60,flags argument 0x40,literal
+call,0x00169ad6,FUN_0003af60,flags argument 0x1,literal
+call,0x00169ca6,FUN_0003af60,flags argument 0x1,literal
+call,0x00169d66,FUN_0003af60,flags argument 0x1,literal
+call,0x0017c15c,FUN_0003af60,flags argument 0x804,literal
+call,0x00183599,FUN_0003af60,flags argument 0xd,literal
+call,0x00183986,FUN_0003af60,flags argument 0x8,literal
+call,0x0018eda9,FUN_0003af60,flags argument 0x4,literal
+call,0x001a1ddc,FUN_0003af60,flags argument 0x804,literal
+call,0x001a51d9,FUN_0003af60,flags argument 0x1,literal
+call,0x001a6919,FUN_0003af60,flags argument 0x8,literal
+call,0x001bd4f9,FUN_0003af60,flags argument 0x4,literal
+call,0x001bddc6,FUN_0003af60,flags argument 0xd,literal
+call,0x001be8d9,FUN_0003af60,flags argument 0x4,literal
+call,0x001c4706,FUN_0003af60,flags argument 0x4,literal
+call,0x001c47c9,FUN_0003af60,flags argument 0x4,literal
+call,0x001c4886,FUN_0003af60,flags argument 0x4,literal
+call,0x001c4946,FUN_0003af60,flags argument 0x4,literal
+call,0x001ced39,FUN_0003af60,flags argument 0x4,literal
+call,0x001eafb6,FUN_0003af60,flags argument 0x1,literal
+call,0x001eb186,FUN_0003af60,flags argument 0x1,literal
+call,0x00207179,FUN_0003af60,flags argument 0x4,literal
+call,0x002072f9,FUN_0003af60,flags argument 0x4,literal
+call,0x00207539,FUN_0003af60,flags argument 0x4,literal
+call,0x002075f9,FUN_0003af60,flags argument 0x4,literal
+call,0x0021c5c9,FUN_0003af60,flags argument 0x4,literal
+call,0x0021ea59,FUN_0003af60,flags argument 0x4,literal
+call,0x00221956,FUN_0003af60,flags argument 0x40,literal
+call,0x0022d8e6,FUN_0003af60,flags argument 0x40,literal
+call,0x0022d9a9,FUN_0003af60,flags argument 0x40,literal
+call,0x0022da69,FUN_0003af60,flags argument 0x8,literal
+call,0x0024b2d9,FUN_0003af60,flags argument 0x4,literal
+call,0x0024b399,FUN_0003af60,flags argument 0x4,literal
+call,0x0024b70c,FUN_0003af60,flags argument 0x2040,literal
+call,0x00263609,FUN_0003af60,flags argument 0x4,literal
+call,0x0027e366,FUN_0003af60,flags argument 0x40,literal
+call,0x0027e889,FUN_0003af60,flags argument 0x40,literal
+call,0x0027ea59,FUN_0003af60,flags argument 0x40,literal
+call,0x0028f7b9,FUN_0003af60,flags argument 0x4,literal
+call,0x0028f879,FUN_0003af60,flags argument 0x4,literal
+call,0x0028f93c,FUN_0003af60,flags argument 0x804,literal
+call,0x00290179,FUN_0003af60,flags argument 0x4,literal
+call,0x00290239,FUN_0003af60,flags argument 0x4,literal
+call,0x00293739,FUN_0003af60,flags argument 0x4,literal
+call,0x002937f6,FUN_0003af60,flags argument 0x4,literal
+call,0x002b3cf9,FUN_0003af60,flags argument 0x4,literal
+call,0x002c3be9,FUN_0003af60,flags argument 0xc,literal
+call,0x002c6a49,FUN_0003af60,flags argument 0xc,literal
+call,0x002c7b89,FUN_0003af60,flags argument 0xc,literal
+call,0x002c7c49,FUN_0003af60,flags argument 0xc,literal
+call,0x002c7d09,FUN_0003af60,flags argument 0xc,literal
+call,0x002cd619,FUN_0003af60,flags argument 0x4,literal
+call,0x002cdaa9,FUN_0003af60,flags argument 0xc,literal
+call,0x002d1519,FUN_0003af60,flags argument 0xc,literal
+call,0x002d2aa9,FUN_0003af60,flags argument 0xc,literal
+call,0x002d2b69,FUN_0003af60,flags argument 0xc,literal
+call,0x002d5829,FUN_0003af60,flags argument 0xc,literal
+call,0x002d58e9,FUN_0003af60,flags argument 0xc,literal
+call,0x002d67d9,FUN_0003af60,flags argument 0x8,literal
+call,0x002d6899,FUN_0003af60,flags argument 0x8,literal
+call,0x002d7cf9,FUN_0003af60,flags argument 0xc,literal
+call,0x002e1489,FUN_0003af60,flags argument 0x1,literal
+call,0x002e17d9,FUN_0003af60,flags argument 0x1,literal
+call,0x002ed5f9,FUN_0003af60,flags argument 0x4,literal
+call,0x002edb19,FUN_0003af60,flags argument 0x4,literal
+call,0x002edbd9,FUN_0003af60,flags argument 0x4,literal
+call,0x002edc99,FUN_0003af60,flags argument 0x4,literal
+call,0x002edd59,FUN_0003af60,flags argument 0x4,literal
+call,0x002ede19,FUN_0003af60,flags argument 0x4,literal
+call,0x002eded9,FUN_0003af60,flags argument 0x4,literal
+call,0x002edf99,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee059,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee119,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee1d9,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee299,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee359,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee419,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee4d9,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee599,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee659,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee719,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee7d9,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee899,FUN_0003af60,flags argument 0x4,literal
+call,0x002ee959,FUN_0003af60,flags argument 0x4,literal
+call,0x002eea19,FUN_0003af60,flags argument 0x4,literal
+call,0x002eead9,FUN_0003af60,flags argument 0x4,literal
+call,0x002eeb99,FUN_0003af60,flags argument 0x4,literal
+call,0x002eec59,FUN_0003af60,flags argument 0x4,literal
+call,0x002eed19,FUN_0003af60,flags argument 0x4,literal
+call,0x002eedd9,FUN_0003af60,flags argument 0x4,literal
+call,0x002eee99,FUN_0003af60,flags argument 0x4,literal
+call,0x002fe4e9,FUN_0003af60,flags argument 0x4,literal
+call,0x002fe5a9,FUN_0003af60,flags argument 0x4,literal
+call,0x002ff749,FUN_0003af60,flags argument 0x4,literal
+call,0x00303bd9,FUN_0003af60,flags argument 0x4,literal
+call,0x00303c99,FUN_0003af60,flags argument 0x4,literal
+call,0x00303d59,FUN_0003af60,flags argument 0x4,literal
+call,0x00303e19,FUN_0003af60,flags argument 0x4,literal
+call,0x003049a9,FUN_0003af60,flags argument 0x4,literal
+call,0x00304a69,FUN_0003af60,flags argument 0x4,literal
+call,0x00304b29,FUN_0003af60,flags argument 0x4,literal
+call,0x00304be9,FUN_0003af60,flags argument 0x4,literal
+call,0x00304ca9,FUN_0003af60,flags argument 0x4,literal
+call,0x00304f89,FUN_0003af60,flags argument 0x4,literal
+call,0x003075e9,FUN_0003af60,flags argument 0x8,literal
+call,0x0030b706,FUN_0003af60,flags argument 0x8,literal
+call,0x0030cae9,FUN_0003af60,flags argument 0x4,literal
+call,0x0030cba9,FUN_0003af60,flags argument 0x4,literal
+call,0x0030cc69,FUN_0003af60,flags argument 0x4,literal
+call,0x0030e209,FUN_0003af60,flags argument 0x4,literal
+call,0x0030e2c9,FUN_0003af60,flags argument 0x4,literal
+call,0x00310829,FUN_0003af60,flags argument 0x4,literal
+call,0x00312989,FUN_0003af60,flags argument 0x4,literal
+call,0x00313dd9,FUN_0003af60,flags argument 0x4,literal
+call,0x00314f29,FUN_0003af60,flags argument 0x4,literal
+call,0x00315f39,FUN_0003af60,flags argument 0x4,literal
+call,0x00315ff9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031e7b9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031e879,FUN_0003af60,flags argument 0xc,literal
+call,0x0031e939,FUN_0003af60,flags argument 0x4,literal
+call,0x0031e9f9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031eab9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031ec39,FUN_0003af60,flags argument 0x4,literal
+call,0x0031ecf9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031edb9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031ee79,FUN_0003af60,flags argument 0x4,literal
+call,0x0031ef39,FUN_0003af60,flags argument 0x4,literal
+call,0x0031eff9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031f0b9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031f179,FUN_0003af60,flags argument 0x4,literal
+call,0x0031f239,FUN_0003af60,flags argument 0x4,literal
+call,0x0031f2f9,FUN_0003af60,flags argument 0x4,literal
+call,0x0031f3b9,FUN_0003af60,flags argument 0x4,literal
+call,0x00322d49,FUN_0003af60,flags argument 0x4,literal
+call,0x00322e09,FUN_0003af60,flags argument 0x4,literal
+call,0x00324219,FUN_0003af60,flags argument 0x4,literal
+call,0x003242d9,FUN_0003af60,flags argument 0x4,literal
+call,0x003244a9,FUN_0003af60,flags argument 0x4,literal
+call,0x00324569,FUN_0003af60,flags argument 0x4,literal
+call,0x00324629,FUN_0003af60,flags argument 0x4,literal
+call,0x0032cc69,FUN_0003af60,flags argument 0xc,literal
+call,0x0032d9d9,FUN_0003af60,flags argument 0x8,literal
+census,-,-,sites=136; stores=13; calls_resolved=317; calls_total=545,no boot; image and committed corpus
