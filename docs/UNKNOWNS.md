@@ -3562,3 +3562,17 @@ the block start -- answers on 4.4%, so the anchor is the discriminator. **What i
 rows with no head at all, **41** of which die at depth 0 (no in-table reference immediately in front of the tags, so no
 element ends there), and the 61 whose head lacks the front and so stays a candidate; and the ten rows the census has a
 head for while the group does not parse. Nothing here needs a boot or a decompile.
+
+**2026-11-13 (twenty-fourth): the blind remainder is not a longer trailer -- widening the window buys 33 control rows
+and zero blind ones.** The twenty-third entry located 368 of 575 blind rows by walking the element grid back from the
+block start, starting at most 13 bytes behind it. `class-defaults.py` tolerates a 64-byte trailer, so
+`tools/class-record-array-blind.py` now runs the same walk from every start in `[block_start - 40, block_start]` and
+carries both answers in `inventory/class_record_array_blind.csv`. On the control the census head is reproduced on
+**1,601 of 1,616 (99.1%)** against 1,569 (97.1%), the 33 gained rows are all census rows (their winning start is 14-21
+bytes back, just past the group's 6-11), and the widened null -- a start past the window's own far end -- answers on
+14 of 2,204 (0.6%), so the extra room fits nothing. On the blind rows the count with the sixteen-byte front is
+**368 in both windows and 0 rows gain it**: the 82 extra heads the wider window finds carry no front, and the 207 blind
+rows that lack the front do not gain one. **What is still open**, therefore, is not the gap but the array's own
+content: the **207** blind rows whose count is not in `[prefix + 42, prefix + 42 + 40)` or whose element reference is
+outside the package's tables, of which 41 have no element boundary at all immediately in front of the tags. Nothing
+here needs a boot or a decompile.

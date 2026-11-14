@@ -23,6 +23,10 @@ and reports every `(start offset, head, count)` it finds rather than picking one
 the block start is the null: a variable-stride walk is cheap to fit, so a rule that finds a head there as often as at
 the block start has no discriminating power.
 
+The same walk is run over a widened window as well, `[block_start - 40, block_start]`, so every row carries both
+answers: a start further back is outside the closing group's 6-11 bytes, and the widened null -- a start past its own
+far end -- is the control for whether the extra room is doing work or just fitting noise.
+
 The control is the 1,399 rows the group parse resolved uniquely: the walk must reproduce that same head.
 
     python3 tools/class-record-array-blind.py --dump $SG1_DUMP --class AmbientCreatures.TransientAmbientPawn
@@ -58,6 +62,7 @@ ps = _load("ps", "prop-stream")
 DOC_OFFSET = 42          # prefix + 42: the shipped walk's position, i.e. the front
 WINDOW = 40              # how far past it a head may sit
 BACK = 13                # how far behind the block start the last element may end
+WIDE = 40                # the same window widened: three times the group's 6-11 bytes, inside the 64-byte trailer
 MAX_COUNT = 4096
 MAX_REF = 5
 DWORDS = 8               # the two raw dwords every element carries after its reference
@@ -66,7 +71,9 @@ ARTIFACT = "class_record_array_blind.csv"
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "search_cands", "known_head",
            "known_residue", "census_head", "heads", "offs", "head", "off", "count", "depth", "head_off",
            "max_depth", "counts_seen", "stream_close", "null_heads", "matched", "census_matched",
-           "heads_z16", "head_z16", "census_z16", "verdict"]
+           "heads_z16", "head_z16", "census_z16",
+           "wide_heads", "wide_z16", "wide_head", "wide_off", "wide_count", "wide_head_off", "wide_null",
+           "wide_census_matched", "verdict"]
 
 
 def in_tables(v, nimp, nex):
@@ -146,12 +153,12 @@ def walk(data, start, prefix_end, nimp, nex):
     return heads, max_depth, saw
 
 
-def scan(data, block, prefix_end, nimp, nex):
-    """Every start in [block - BACK, block] -- a closing group costs 6-11 bytes -- plus one byte past the block."""
+def scan(data, block, prefix_end, nimp, nex, back=BACK):
+    """Every start in [block - back, block] -- a closing group costs 6-11 bytes -- plus one byte past the block."""
     found = []
     max_depth = 0
     saw = set()
-    for off in range(0, BACK + 1):
+    for off in range(0, back + 1):
         s = block - off
         if s - DWORDS - MAX_REF < prefix_end + DOC_OFFSET:
             continue
@@ -169,7 +176,9 @@ def measure(data, prefix_end, block, nnames, nimp, nex, pkg):
     row = {"payload": len(data), "prefix_end": prefix_end, "block_start": block,
            "heads": 0, "offs": "", "head": "", "off": "", "count": "", "depth": "", "head_off": "",
            "max_depth": "", "counts_seen": "", "stream_close": "", "null_heads": "", "matched": "",
-           "heads_z16": "", "head_z16": "", "census_z16": "", "verdict": ""}
+           "heads_z16": "", "head_z16": "", "census_z16": "", "wide_heads": "", "wide_z16": "",
+           "wide_head": "", "wide_off": "", "wide_count": "", "wide_head_off": "", "wide_null": "",
+           "wide_census_matched": "", "verdict": ""}
     found, max_depth, counts_seen, null_heads, _ = scan(data, block, prefix_end, nimp, nex)
     row["counts_seen"] = counts_seen
     row["max_depth"] = max_depth
@@ -179,6 +188,16 @@ def measure(data, prefix_end, block, nnames, nimp, nex, pkg):
         row["stream_close"] = int(reason == "None" and block + send == len(data))
     except Exception:
         row["stream_close"] = 0
+    wide, _wd, _wc, _wn, _wnull = scan(data, block, prefix_end, nimp, nex, WIDE)
+    wide_null = len(walk(data, block + WIDE + 1, prefix_end, nimp, nex)[0])
+    row["_wide"] = wide
+    row["wide_heads"] = len(wide)
+    row["wide_z16"] = sum(z for _o, _p, _n, z in wide)
+    row["wide_null"] = wide_null
+    if wide:
+        wpick = next((f for f in wide if f[3]), wide[0])
+        row.update({"wide_head": wpick[1], "wide_off": wpick[0], "wide_count": wpick[2],
+                    "wide_head_off": wpick[1] - prefix_end - DOC_OFFSET})
     row["heads"] = len(found)
     row["heads_z16"] = sum(z for _o, _p, _n, z in found)
     if not found:
@@ -234,6 +253,8 @@ def sweep(args):
                         "census_head": "" if cens is None else cens})
             row.setdefault("census_matched", "")
             row.setdefault("census_z16", "")
+            wide = row.get("_wide") or []
+            row["wide_census_matched"] = "" if cens is None else int(any(p == cens for _o, p, _n, _z in wide))
             if cens is not None:
                 row["census_matched"] = int(any(p == cens for _o, p, _n, _z in found))
                 row["census_z16"] = int(any(p == cens and z for _o, p, _n, z in found))
@@ -301,6 +322,9 @@ def report(rows):
                                                     if int(r.get("census_matched") or 0)).most_common(8)))
             print("    sixteen-byte fronts per row: %s"
                   % collections.Counter(int(r["heads_z16"]) for r in rs).most_common(6))
+            print("    widened to %d bytes: the census head is reproduced on %d of %d (%s)"
+                  % (WIDE, sum(int(r["wide_census_matched"] or 0) for r in cens), len(cens),
+                     _share(sum(int(r["wide_census_matched"] or 0) for r in cens), len(cens))))
         if label == "blind":
             print("    head offset past prefix+%d on the unique ones: %s"
                   % (DOC_OFFSET, collections.Counter(int(r["head_off"]) for r in rs
@@ -308,9 +332,17 @@ def report(rows):
             print("    counts on the unique ones: %s"
                   % collections.Counter(int(r["count"]) for r in rs
                                         if r["verdict"] == "unique").most_common(6))
+        wide_found = [r for r in rs if int(r["wide_heads"] or 0)]
+        wide_z16 = [r for r in rs if int(r["wide_z16"] or 0)]
+        gained = [r for r in rs if int(r["wide_z16"] or 0) and not int(r["heads_z16"] or 0)]
+        print("    widened to %d bytes: a head on %d, with the front on %d, and %d rows gain the front that the "
+              "%d-byte window did not have" % (WIDE, len(wide_found), len(wide_z16), len(gained), BACK))
     nulls = [r for r in allrows if int(r["null_heads"] or 0)]
     print("  the null (a start one byte past the block) finds a head on %d of %d (%s)"
           % (len(nulls), len(allrows), _share(len(nulls), len(allrows))))
+    wide_nulls = [r for r in allrows if int(r["wide_null"] or 0)]
+    print("  the widened window's null (a start past its own far end) finds a head on %d of %d (%s)"
+          % (len(wide_nulls), len(allrows), _share(len(wide_nulls), len(allrows))))
     closes = [r for r in allrows if int(r["stream_close"] or 0)]
     print("  the defaults stream closes on the payload end at the block start on %d of %d (%s)"
           % (len(closes), len(allrows), _share(len(closes), len(allrows))))

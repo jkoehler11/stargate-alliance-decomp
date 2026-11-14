@@ -1178,6 +1178,28 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the widened trailer buys 33 control rows and nothing on the blind ones)
+
+- **The follow-up is measured as a paired comparison on all 2,204 rows.** The same backward element walk now also runs
+  from every start in `[block_start - 40, block_start]`, inside the 64-byte trailer `class-defaults.py` tolerates, and
+  the artifact carries both windows. Control: the census head is reproduced on **1,601 of 1,616 (99.1%)** against
+  **1,569 (97.1%)**, the 33 gained rows are every one of them census rows (winning start 14 bytes back on 18, 20 on
+  10, 15 on 2, 19 on 2, 21 on 1 -- just past the group's 6-11), and the widened null (a start past the window's far
+  end) answers on 14 of 2,204 (0.6%) against 98 (4.4%) one byte past the block, so the extra room is not fitting
+  noise.
+- **On the blind population it is a clean negative.** The count of rows carrying the sixteen-byte front is **368 in
+  both windows, and 0 of the 207 blind rows without the front gain one**; the 82 extra heads the wider window finds
+  have no front and stay candidates. So the unlocated rows are not waiting on a longer gap between the array and the
+  tags, and the next read has to be the array's own content, not its trailer.
+- Tool (extended, not replaced: `wide_*` columns on the same artifact) + `inventory/class_record_array_blind.csv`
+  (2,204 rows, 9 new columns) + `docs/NATIVE_VM.md` (new subsection) + `docs/UNKNOWNS.md` U18 (twenty-fourth) + this
+  note. No boot, no Ghidra round, no property name or value decoded.
+- **Next measurement, named:** the **207** blind rows without the front. 41 of them have no element boundary in front
+  of the tags at all; for the rest the count sits outside the 40-byte window or an element reference is outside the
+  package's tables. Read each of those rows' tags forward from `block_start` to the terminator, then test the element
+  grid from the first tag's own offset with the count read as a *raw dword* as well as compact, so "not in the window"
+  becomes a measured position rather than a bound.
+
 ### Execution notes (2026-11-13, the block start anchors the head without the group: 97% of the control, 64% of the blind)
 
 - **The named measurement is answered, and it works: the head is reachable from the block start alone.**
