@@ -1255,6 +1255,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the object root is registered 25 times and the per-table name is the last one written)
+
+- **25 of the 493 class registration sites pass the same constructor thunk `0x00034650`.** The thunk is
+  the guarded stub `mov ecx,[esp+4]; test ecx,ecx; je; jmp 0x00062ce0`, so every class with no native
+  constructor of its own is registered with the object root's ctor and therefore resolves to the root's
+  table `0x004dd2a8`. The literals are `Object`, `Field`, `Property`, `Factory`, `Exporter`, `Engine`,
+  `Player`, `NetDriver`, `Material`, `RenderDevice` ... and the site at `0x00064af6` registers `Object`
+  against that thunk.
+- **`inventory/xbe_class_table_names.csv` is keyed by table and keeps the last site**, so the root's row
+  reads `VertexStreamBase` (`0x001eb186`) where `Object` is the name the hierarchy implies -- the row is a
+  write-order artefact, not a measurement. Two more tables have the same shape (`0x004cfba0`:
+  `Texture`/`FractalTexture`/`WaterTexture`; `0x004cfc88`: `FireTexture`/`IceTexture`), so **30 of 493
+  sites sit on a table more than one site resolves to** and cannot name the table they are attached to.
+- **The naming tool cannot run on this desktop.** `tools/class-table-names.py` imports capstone, which is
+  not installed there, so its artifact cannot be regenerated in this environment; the new census decodes
+  with objdump and is the site half of the same rule, which is what makes the defect visible without a
+  package install.
+- Tool (`tools/class-registrations.py`, `--xbe`/`--ctor`/`-o`/`--write-doc`/`--check-doc`/`--check`) +
+  `inventory/class_registrations.csv` (493 rows: one per site, with `sites_for_table`, `sites_for_thunk`
+  and a `shared-thunk` verdict) + the generated block on `docs/systems/CLASS_REGISTRATION.md` +
+  `make class-registrations` + this note. No boot.
+- **Next measurement:** rebuild the per-table name from the site census instead of from write order --
+  among a table's sites prefer the one whose thunk is not shared, and where all of them are shared keep
+  the lowest site address and mark the row (`Object` for the root). That needs `tools/class-table-names.py`
+  ported off capstone (or run on a host that has it) and then `class-ctors` + `class-ctor-base`
+  regenerated behind it, since both carry the class name column.
+
 ### Execution notes (2026-11-14, the base call the census records is the first call, and the dead family is the top of an overload ladder)
 
 - **The census's `call_before_store` is the first call in the body, not the base call.** `0x0003bd30`
