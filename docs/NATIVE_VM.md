@@ -2038,6 +2038,52 @@ the route, nor the 63 open rows it does not answer at all.
     python3 tools/class-record-open-front.py --dump DUMP --sweep -o inventory
     python3 tools/class-record-open-front.py --report
 
+### The 1-9 bytes the element grid stops short on are the closing group, and the block start is inside it
+
+The open-front census left one population named: on the rows the walk does not close, the element grid ends **1 to 9
+bytes before** the located defaults-block start on **245** of the 515 rows that carry the gap shape. On the closing
+rows those bytes are the record's closing group -- `UClass::Serialize` (`0x0003a800`) writes a names array, one
+reference, the config name and a second names array after the record array and before the defaults branch
+(`tools/class-tail-run.py`, `inventory/class_tail_run.csv`). Anchored to the block start that grammar closes on **0**
+of the 245, which is what a start placed *inside* the group would produce.
+
+`tools/class-record-open-tail.py` (`make class-record-open-tail`, `inventory/class_record_open_tail.csv`, its
+`--check` in `make ci`) therefore stops anchoring: it parses the same four fields from the element end with **no
+required end** -- bounded, every index inside the name table, one compact 1-5 bytes -- and reports where the group
+ends as a difference from the located start (`overlap`), not as a condition on it.
+
+| population | rows walked | group parses from the element end | group ends exactly on the block start |
+|---|---|---|---|
+| closing (the control) | 1,603 | **1,603 (100%)** | **1,596 (99.6%)** |
+| open, the walk does not close | 475 | **475 (100%)** | 0 |
+| ... the 1-9-byte-short population | 245 | **245 (100%)** | 0 |
+
+On the closing rows the free parse reproduces the anchored one: its end is the located block start on 1,596 of 1,603,
+and the group lengths are the residue distribution the anchored parse already measured (7 on 618, 8 on 302, 9 on 302,
+6 on 241). So the instrument measures the object `class-tail-run.py` found, with the anchor removed. On the 245 rows
+it always ends **past** the located start -- overlap 4 (94), 3 (80), 6 (43), 5 (15), 7 (5), 10 (5), 2 (2), 9 (1) --
+never at it and never short of it, so the located start falls inside the group's names array.
+
+**Which of the two starts is the defaults block is decided by the property stream, not by the group.** The block
+start was chosen by `tools/class-defaults.py` on exactly this test -- a start whose tag stream runs to the export end
+and names properties the class declares -- so the same test scores both candidates here. On the 245 rows the located
+start's first tag is a package or class name read as a tag (`Engine`, `Core`, `Lighting`), and it is fully declared on
+**2 of 245 (0.8%)** with a mean declared fraction of 0.237; the group's end opens a declared property (`bActive`,
+`bHideHUD`) and is fully declared on **126 of the 207** rows where its stream is non-empty (60.9%), mean 0.609. The
+block begins at the group's end; the earlier start is inside the group.
+
+**The control that is not a control.** The unanchored parse is permissive on its own: the same parse at +-1..6 bytes
+around the element end succeeds at 3.07 of 12 offsets on the closing rows and 3.34 on the open ones, so *group exists*
+is not evidence at one position. What is evidence is the pair -- the end landing on a declared tag stream, and the
+anchored control closing on 99.6% of the closing population.
+
+**What is still open.** The oracle is silent on 119 of the 245 (no candidate fully declared, mostly because
+`inventory/class_properties.csv` does not carry every declared name), though their geometry is the same; and the block
+start itself is wrong on them, so any count that reads `class_defaults_per_class.csv`'s `block_start` as the record's
+boundary inherits a start 2-10 bytes inside the group on these rows. The next measurement is upstream of this tool:
+teach the block-start chooser to reject a candidate that falls inside a record's closing group -- the group's start and
+end are now committed per row -- and re-run it on the 245.
+
 ### The array's head sits after the sixteen zero bytes, and there its end is the block start
 
 The first version of this test read the `+0x4d0` array at `prefix_end + 42` -- `UStruct`'s prefix, then

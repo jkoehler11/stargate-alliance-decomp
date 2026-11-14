@@ -3619,8 +3619,21 @@ them (89.1%)**, with the same width range (19/20/21) and zero run as the populat
 same test at 24 offsets just past the head in the same payload. From that head the element walk lands within 9 bytes
 of the block start on 245 of the 515, so the open rows fail after the head, not at it.
 
+**Settled 2026-11-13 (twenty-seventh): the 1-9 bytes the element grid stops short on are the closing group, and the
+block start sits inside it.** `tools/class-record-open-tail.py` parses `UClass::Serialize`'s four closing fields from
+the element end with no required end: it closes on **245 of the 245** rows that stop 1-9 bytes short, on 475 of 475
+walked open rows, and on the closing population it ends exactly on the located block start on **1,596 of 1,603
+(99.6%)** -- so the free parse reproduces the anchored one. On the open rows the group's end lies 2-10 bytes **past**
+the located start (never at it, never short of it): the start falls inside the group's names array. The property
+stream names the block: on the 245 the located start's first tag is a package or class name read as a tag and is
+fully declared on **2 of 245 (0.8%)**, while the group's end opens a declared property and is fully declared on **126
+of 207** non-empty streams (60.9%). The unanchored parse alone is not the evidence -- it also fires at 3 of 12
+neighbouring offsets -- the pair is.
+
 **What is still open** is the front's identity -- the writer-side read (`UStruct::Serialize`, `0x000392b0`, between
 its second reference and the four zero dwords) is still the route, and the compact-versus-`FName` question is
-unchanged -- plus two numbers this census leaves: why the element grid stops 1-9 bytes short on 245 of the 515 (on the
-closing rows those bytes are the closing group, which the first hand checks put at 1-4 bytes here), and why 63 of the
-578 show no shape at `prefix + 42` at all. Nothing here needs a boot or a decompile.
+unchanged -- plus why 63 of the 578 show no shape at `prefix + 42` at all, and the block-start chooser itself: it
+picks a start inside the group on 243 of the 245, so every count that reads `class_defaults_per_class.csv`'s
+`block_start` as the record's boundary is 2-10 bytes early on those rows. Rejecting a candidate that falls inside a
+committed closing group is the next measurement, and the group's start and end are now per-row committed. Nothing here
+needs a boot or a decompile.
