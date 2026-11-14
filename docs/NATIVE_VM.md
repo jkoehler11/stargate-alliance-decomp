@@ -2733,3 +2733,59 @@ bytes are remains open, and the census is the row-by-row record of what they are
     make class-record-front
     python3 tools/class-record-front.py --dump DUMP --class AmbientCreatures.Bird
     python3 tools/class-record-front.py --report
+
+### The chooser refuses a start inside the committed group, and the group's end recovers 281 blocks
+
+`tools/class-record-open-tail.py` left the chooser itself named: on the 245 open rows the located start sits inside
+the record's closing group, 2-10 bytes before its end. `tools/class-blockstart-guard.py` makes that geometry a rule
+and re-runs the chooser over the shipped population (`class_defaults_per_class.csv`, 2,209 rows with a start, 2,190
+readable). Two changes, one rule read from both ends: a candidate start that a **committed** closing group covers is
+refused, and a committed group's **end** joins the candidate set -- the group is the record field in front of the
+block, so its end is where the record says the block's first byte is. The ranking is `class-defaults.py`'s `choose`,
+untouched, so the only thing that changed is the population of candidates.
+
+- **The guard fires on 297 of 2,190 rows (13.6%) and 252 of them move.** The refused starts are badly wrong: the
+  declared fraction of the chosen block's tags has a mean of **0.364** and is fully declared on **13 of 297**,
+  against **0.919** and **231 of 252** at the start the guard leaves. 224 of the moved rows are answered by the
+  group's own end -- often a **one-property** block, which `choose`'s two-property floor withholds and
+  `class-defaults.py`'s `single_declared_block` reads only from a free scan; anchoring that reading to the group's
+  end is what keeps it from firing at every offset. 28 are answered by another parsed block. **45 rows are refused
+  with no replacement** and keep the shipped start (`Engine` 17, `UWindow` 10, `StargateGame` 7, `GamePlay` 6,
+  `Fire` 4, `UnrealEd` 1): every parse the chooser had there is covered by a group.
+- **The population the last note named is answered whole.** On the **245** open rows whose element walk stops 1-9
+  bytes short, the guard refuses **245 of 245**; 216 move and **206 land exactly on the group's end**, which takes
+  fully-declared from **2 of 245 to 206 of 245**, and the new start's tag stream reaches the export end on 207 of
+  the 216. 206 of the 216 are answered by the group's end and 10 by another parsed block. The movement is the
+  group's own length: **+4 on 93, +3 on 80, +5 on 15, +6 on 13, +7 on 3, +2 on 2**, then eight negative rows
+  (-12 to -75, where the covering group starts before the residue does) -- and the remaining 29 refusals are the
+  no-survivor rows.
+- **The control is the geometry this tool does not read.** Joined to `class_record_open_tail.csv`'s `overlap`
+  (element walk, group parsed from the element end): the guard refuses **282 of the 481** rows whose group ends past
+  the start (58.6%) and **10 of the 1,596** rows whose group ends on it (0.6%) -- `Engine.Stream`,
+  `Engine.AvoidMarker`, `Engine.PSBumpBSP` and three `StargateContent` formation classes, whose covering parse is a
+  nearer group than the element walk's. 199 overlapping rows are not refused, because the covering group starts
+  further back than the 16-byte lookback or no parse inside it carries a committed reference.
+- **The commitment test is what makes a cover mean anything.** `free_group` only demands that every index be inside
+  the name table, and index 0 is inside it, so a zero run parses as an empty group at every offset and a start four
+  bytes into one parses as a group whose names are all 0. The archive's reference slot writes import references
+  **negative**, so the guard takes a group only when its reference is negative: **297 of 297** covering groups are,
+  and the padding windows that a bare parse accepts are refused.
+- **The population total moves from 1,655 to 1,936 fully declared of 2,190 (75.6% to 88.4%).** 62 of the gain is the
+  group-end candidate on its own, on rows the guard cleared: those starts stay put, but a one-property group-end
+  block outranks them.
+- **The chooser reproduces the shipped start on 2,188 of 2,190**, so a movement is the guard's and not a version
+  skew. The two exceptions are `Engine.Speech` (shipped 139, chooser 5) and `StargateGame.CTFFlagMesh` (96 against
+  21,801): `class_defaults_per_class.csv` is one chooser version behind on those rows.
+
+`make class-blockstart-guard` writes `inventory/class_blockstart_guard.csv` (2,209 rows: `shipped`, `chosen`,
+`reproduced`, `cands`, `guard`, `group_from`/`group_len`/`group_end`/`group_ref`/`group_hex`, `overlap`,
+`old_count`/`old_known`/`old_decl`, `survivors`, `new_start`/`delta`/`new_count`/`new_known`/`new_decl`/`new_to_end`/
+`new_origin`/`new_on_group`, `verdict`). It reads the packages and three committed tables; no boot, no Ghidra round,
+no property value decoded.
+
+**What is still open.** The guard's start is a separate artifact: `class_defaults_per_class.csv` still carries the
+old start, and five artifacts downstream of it (`class_defaults_emit`, `class_defaults_coverage`,
+`class-defaults.py --coverage`, `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`) would move with it, so switching the
+chooser is its own change. And the 45 refusals with no replacement are a measurement, not a tie: on them every
+parsed candidate lies inside a group, so the group parse is probably over-reading (`Engine.SavedMove`'s group starts
+at 347 and ends at 359 of a 360-byte payload, leaving no block), which the anchored parse would show.

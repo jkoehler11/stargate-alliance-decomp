@@ -1178,6 +1178,38 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the chooser refuses a start inside the committed group, and its end is a candidate)
+
+- **The named measurement is done: the block-start chooser now refuses a start a committed group covers, and the
+  group's end is a candidate in its own right.** `tools/class-blockstart-guard.py` re-runs `class-defaults.py`'s
+  chooser over the shipped population with those two changes and nothing else (the ranking is `choose`, untouched).
+  On the 2,190 readable rows the guard fires on **297 (13.6%)** and **252 move**; the refused starts' declared
+  fraction has a mean of **0.364** and is fully declared on **13 of 297**, against **0.919** and **231 of 252** where
+  the guard leaves the start. 224 of the moved are answered by the group's end (many one-property blocks the
+  two-property floor withholds), 28 by another parsed block, and **45 are refused with no replacement**.
+- **The population the last note named is answered whole.** All **245** open rows whose element walk stops 1-9 bytes
+  short are refused; 216 move and **206 land exactly on the group's end**, which takes fully-declared from **2 of 245
+  to 206 of 245**. Movement is the group's own length (+4 on 93, +3 on 80, +5 on 15, +6 on 13, +7 on 3).
+- **Two controls, and the reason the rule needs one.** Joined to the element-side `overlap`
+  (`class_record_open_tail.csv`) the guard refuses **282 of 481** rows whose group ends past the start (58.6%) and
+  **10 of 1,596** where it ends on it (0.6%, the false positives -- `Engine.Stream`, `Engine.AvoidMarker`,
+  `Engine.PSBumpBSP` and three `StargateContent` formations). And the group must carry a **negative reference**
+  (`free_group` alone accepts index 0, so a zero run parses as an empty group at every offset): **297 of 297**
+  covering groups do, which is what keeps padding out.
+- **The population total moves from 1,655 to 1,936 fully declared of 2,190 (75.6% to 88.4%)**; 62 of the gain is the
+  group-end candidate on rows the guard cleared. The chooser reproduces the shipped start on **2,188 of 2,190**, so
+  the movement is the guard's; `Engine.Speech` and `StargateGame.CTFFlagMesh` are one chooser version behind in
+  `class_defaults_per_class.csv`.
+- Tool (`tools/class-blockstart-guard.py`: `--class`, `--sweep`, `--report`, `--check` on synthetic bodies plus a
+  zero-window refusal) + `inventory/class_blockstart_guard.csv` (2,209 rows) + `docs/NATIVE_VM.md` (new section) +
+  `docs/UNKNOWNS.md` U18 (twenty-ninth) + `make class-blockstart-guard` + this note. Reads the packages and three
+  committed tables; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the **45** refusals with no replacement (`Engine` 17, `UWindow` 10, `StargateGame` 7,
+  `GamePlay` 6, `Fire` 4, `UnrealEd` 1) where every parsed candidate is inside a group. Parse the group there with the
+  anchored grammar (`tools/class-tail-run.py`: every index in range **and** the list ending at or before the block)
+  and report how many the free parse over-consumed -- `Engine.SavedMove`'s group starts at 347 and ends at 359 of a
+  360-byte payload, which no block can follow. The 1,596 clean rows are the control it must not move.
+
 ### Execution notes (2026-11-13, the 63 rows with no shape carry it 10 to 48 bytes later, and 21 carry it nowhere)
 
 - **The population is the residue of the open-front census.** 63 of the 578 open rows answer nothing at
