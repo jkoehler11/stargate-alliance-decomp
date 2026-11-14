@@ -1178,6 +1178,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the block start anchors the head without the group: 97% of the control, 64% of the blind)
+
+- **The named measurement is answered, and it works: the head is reachable from the block start alone.**
+  `tools/class-record-array-blind.py` walks the element grid (compact reference 1-5 bytes + two dwords) back from
+  `block_start` for every start in `[block_start - 13, block_start]` and accepts a compact count in
+  `[prefix + 42, prefix + 42 + 40)` whose decode ends where the walk is and whose value equals the elements walked --
+  no closing group parsed, no census read. Control (1,629 rows the group parse resolves): a head on 1,608 (98.7%),
+  the census head reproduced on **1,569 of 1,616 (97.1%)**, the group's head on 1,585 (97.3%), at start offsets 5-9 --
+  the group's own width, measured from the other side. Blind (575 rows the group does not reach): a head on 429
+  (74.6%), with the sixteen-zero front the gap-front census measured on **368 (64.0%)**, at offset 19-21 past
+  `prefix + 42` on 363 of those. The null (one byte past the block) answers on 98 of 2,204 (4.4%).
+- **The blind rows are short arrays.** Median count 3, mode 2 (173 rows): a two- or three-element tail does not parse
+  as names-ref-name-list, which is the same fact the group search and the census reported from their own side, now
+  with the reason attached. **146** blind rows yield nothing, 41 of them dying at depth 0 (the byte in front of the
+  tags decodes as no in-table reference), and 61 have a head without the front and stay candidates.
+- Tool (`tools/class-record-array-blind.py`: `--class`, `--sweep`, `--report`, `--check` on a synthetic record with
+  no group, the same record behind a 7-byte group, and a count that exceeds its elements) +
+  `inventory/class_record_array_blind.csv` (2,204 rows) + `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18
+  (twenty-third) + `make class-record-array-blind` + this note. Reads the packages and two committed tables; no boot,
+  no Ghidra round, no property name or value decoded.
+- **Next measurement, named:** the **146** blind rows with no head. 41 die at depth 0, so on those the tags are not
+  adjacent to the record at all: read the defaults stream at `block_start` forward to its terminator, take the first
+  tag's name index and size to bound where the record must end, and re-aim the walk from that bound instead of from
+  the block start. That needs no group and no boot, and the 1,569 reproduced control rows are the set it must keep.
+
 ### Execution notes (2026-11-13, the 110-byte residue sits in the record array, and the two menu pages are real tags)
 
 - **A decoded delegate is 2, 3 or 4 bytes, and that is the discriminator the shape test lacked.** `tools/delegate-defaults.py`

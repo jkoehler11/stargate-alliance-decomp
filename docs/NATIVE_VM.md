@@ -2439,3 +2439,60 @@ the front it tolerates is up to 18 bytes longer than the one the census measured
     make class-record-array-search
     python3 tools/class-record-array-search.py --dump DUMP --sweep -o inventory
     python3 tools/class-record-array-search.py --report
+
+### The block start anchors the head without the group: 97% of the rows that have one, 64% of the blind ones
+
+`tools/class-record-array-search.py` locates the head from the block side only through the record's closing group, and
+that is exact where the group is there -- but **575** of the 2,204 located rows have no head from it: the 565 rows the
+gap-front census is silent on and the group does not reach, plus the 10 rows the census has a head for and the group
+does not parse. `tools/class-record-array-blind.py` (`make class-record-array-blind`,
+`inventory/class_record_array_blind.csv`) needs no group, because the block start is itself an anchor: the tags of the
+class's defaults stream begin there, so the record's last element must end there -- or 6-11 bytes before it, where a
+group is present but does not parse as names-ref-name-list. The array is therefore read backwards:
+
+    block_start  <-  the last element's end
+                 <-  one element back at a time: a compact object reference (1-5 bytes, inside the package's tables)
+                     plus the two raw dwords, i.e. a stride of 9 to 13 bytes
+                 <-  a compact count in [prefix + 42, prefix + 42 + 40) whose decode ends where the walk is and whose
+                     value equals the number of elements walked
+
+It is the same element grid `tools/class-record-walkback.py` already walks over this record; what is new is the
+anchor. Every start in `[block_start - 13, block_start]` is tried, every `(start offset, head, count)` is reported
+rather than picked, and the sixteen zero bytes the gap-front census measured in front of the count are carried as a
+column of their own.
+
+| population | rows | a head | exactly one candidate | the sixteen-byte front there | exactly one such |
+|---|---:|---:|---:|---:|---:|
+| rows the group parse resolves (the control) | 1,629 | 1,608 (98.7%) | 582 | 1,591 (97.7%) | 1,591 |
+| rows it does not reach (the measurement) | 575 | 429 (74.6%) | 205 | **368 (64.0%)** | 368 |
+
+**The control reproduces both readings it is scored against.** The gap-front census's head is among the walk's heads
+on **1,569 of 1,616 (97.1%)** and the group parse's head on **1,585 of 1,629 (97.3%)**, without either being used to
+find it. Where a head is found the start offset is the group's own width -- `7` on 924 rows, `6` on 562, `5` on 442,
+`8` on 378, `9` on 371 -- and where the census head is reproduced it sits `19` (730), `20` (509) or `21` (217) bytes
+past `prefix + 42`: **1,456 of 1,569** at the front position the census measured, now recovered from the other end.
+
+**On the blind rows the same position comes out.** The **368** rows whose head carries the sixteen-byte front sit at
+`20` (167), `19` (106) and `21` (90) past `prefix + 42` -- **363 of 368** at 19-21 -- and their counts are short:
+median **3**, mode **2** on 173 rows. That is why the group is absent on this population: a two- or three-element tail
+does not parse as names-ref-name-list, and the gap-front census, which needs the record's field order to close on the
+payload, goes silent on exactly the rows where it does not.
+
+**The null is 17 times lower.** The same walk started one byte past the block start finds a head on **98 of 2,204
+(4.4%)** against 74.6% on the blind population, so the anchor is doing the work and not the stride's freedom to fit.
+
+**Negatives, stated as they are.** **146** blind rows yield no head at all, and on **41** of the 167 headless rows the
+walk dies at depth 0: the byte in front of the block start does not decode as an in-table reference, so no element
+ends there and the tags are not adjacent to the record either. **61** blind rows yield a head without the sixteen
+zero bytes in front of it; those stay candidates, because the front is what separates them, and the earliest-candidate
+rule the group search needed is not used anywhere here.
+
+**What it settles.** The blind population is not a hole in the locator: **368 of 575 (64.0%)** have their head, at the
+census's own position, from the block side alone and with no group, and 120 more have a candidate that the front does
+not confirm. The 146 that stay unanchored are the next measurement, not an unexplained remainder.
+
+    make class-record-array-blind
+    python3 tools/class-record-array-blind.py --dump DUMP --sweep -o inventory
+    python3 tools/class-record-array-blind.py --report
+
+Reads the packages and two committed tables; no boot, no Ghidra round, no property name or value decoded.

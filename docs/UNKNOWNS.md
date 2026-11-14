@@ -3545,3 +3545,20 @@ question: the 565 blind rows need an anchor that is not the group -- the class's
 inventory, or the block's tag stream read backwards to the last element -- and the 217 ambiguous control rows need the
 grid test that separates two candidates (the earliest wins here by rule, not by measurement). Nothing here needs a
 boot or a decompile.
+
+**2026-11-13 (twenty-third): the blind rows are not a hole -- the element grid walked back from the block start locates
+368 of 575.** The twenty-second entry left the 565 rows no group precedes with one anchor named and untried: the
+block's own side. `tools/class-record-array-blind.py` (`make class-record-array-blind`,
+`inventory/class_record_array_blind.csv`) walks the record's element grid -- a compact reference of 1-5 bytes inside the
+package's tables plus two raw dwords -- back from the block start, and accepts a compact count in
+`[prefix + 42, prefix + 42 + 40)` whose decode ends where the walk is and whose value is the number of elements walked.
+No group is parsed. On the **1,629** rows the group parse does resolve it reproduces the gap-front census's head on
+**1,569 of 1,616 (97.1%)** and the group's own head on **1,585 (97.3%)**, at start offsets 5-9 -- the group's width,
+measured from the far side. On the **575** rows the group does not reach it finds a head on **429 (74.6%)**, and on
+**368 (64.0%)** that head carries the sixteen zero bytes the gap-front census measured in front of the count, at
+offsets 19-21 past `prefix + 42` on 363 of them. Those rows are short arrays (median count 3), which is why the group
+was absent: a two- or three-element tail does not parse as names-ref-name-list. The null -- the same walk one byte past
+the block start -- answers on 4.4%, so the anchor is the discriminator. **What is still open** is the **146** blind
+rows with no head at all, **41** of which die at depth 0 (no in-table reference immediately in front of the tags, so no
+element ends there), and the 61 whose head lacks the front and so stays a candidate; and the ten rows the census has a
+head for while the group does not parse. Nothing here needs a boot or a decompile.
