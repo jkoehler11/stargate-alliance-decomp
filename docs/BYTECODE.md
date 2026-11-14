@@ -1237,3 +1237,27 @@ The remaining 69 are a long tail: 45 distinct function names, no offset repeated
 `bad-token` rows alone spread over 37 distinct opcodes with 1–6 rows each. That is the honest shape of the residue —
 a per-function tail, which is why the table correction that took the corpus from 3,444 to 11,602 was worth the
 session and the last 85 are not one more such correction.
+
+## A single table row cannot fix the 79 refusals (measured 2026-11-14)
+
+`inventory/opcode_refusals.csv` holds **79 rows** today (85 when the section above was written) against a corpus of
+**12,153 `Function` exports, 11,289 of which walk** (`docs/MATCHING.md`). The question the rows raise next is not
+which opcode is missing but **whether the row is wrong or the stream is already off when it gets there**.
+`tools/uscript-refusals.py --candidates DUMP/System` (`make refusal-candidates`) holds every other row fixed,
+replaces only the pattern of the opcode the walk stopped on -- twelve candidates, `bytes:1` through `bytes:8`,
+`index`, `expr`, `parms`, `labeltable` and no operand at all -- and walks every payload that stopped there again.
+
+**36 distinct stop opcodes. On 22 of them (60 refusals) several unrelated candidates recover exactly the same
+payloads**: `0x0c` `LabelTable` 15 of 16 under no operand, `bytes:5` and `bytes:6` alike; `0x03` `BadToken` 4 of 4
+under no operand; `0x49` 3 of 4 under `bytes:1`, `bytes:8` and `index` alike. A width that makes a payload walk by
+skipping bytes is not a rule, and the same recovery under patterns that disagree about the operand is the signature
+of a stream that was already desynchronised -- any shift of it lands on the epilogue. **On 13 of them (17 refusals)
+nothing recovers at all** (`0x6c`, `0x50`, `0x57`, `0x51`, `0xbf`, `0x4e`, `0x79`, `0x4d`, `0x3d`, `0x12`, `0xbe`,
+`0x73`, `0x34`), which is the same negative from the other side. Exactly **one** stop opcode has a candidate with no
+rival: `0x4a` under `bytes:8`, and it recovers one of that opcode's two payloads.
+
+So the tail is not a per-opcode one: **51 of the 79 walk again under some single-row change and none of those
+changes is a rule, and 17 walk again under no single-row change.** What would settle a row is an anchor *upstream*
+of the stop -- the token before it, read against a copy of the script a guest holds (`tools/xemu/script-ram.py`) --
+not another candidate in this table. The report prints the tie count per opcode so a future candidate is judged by
+whether it has a rival rather than by how many payloads it rescues.
