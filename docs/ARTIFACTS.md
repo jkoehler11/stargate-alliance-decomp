@@ -86,7 +86,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/field_object_owners.csv` | 779 | 5 | `make field-objects` |
 | `inventory/file_manager_vtable.csv` | 25 | 5 | `make ci` |
 | `inventory/fmgr_dispatch.csv` | 25 | 8 | `make fmgr-dispatch` |
-| `inventory/fmgr_singletons.csv` | 6 | 13 | `make fmgr-live-object` |
+| `inventory/fmgr_singletons.csv` | 6 | 14 | `make fmgr-live-object` |
 | `inventory/fork_surface.csv` | 503 | 8 | `make fork-surface` |
 | `inventory/formats.csv` | 12 | 5 | `make help` |
 | `inventory/function_flags.csv` | 12472 | 6 | `make function-flags` |

@@ -36,7 +36,7 @@ import sys
 import tempfile
 
 COLUMNS = ["global", "object", "gap", "vtable", "names", "table_text_refs", "table_other_refs",
-           "sites", "reads", "writes", "value", "source", "slot"]
+           "sites", "reads", "writes", "value", "source", "slot", "origin"]
 BLOCK_MARK = ("<!-- generated:fmgr-live-object -->", "<!-- /generated:fmgr-live-object -->")
 CSV_PATH = os.path.join("inventory", "fmgr_singletons.csv")
 SYMBOLS = os.path.join("symbols", "xbox_functions.csv")
@@ -259,6 +259,126 @@ def slot_census(insns, start, end, off):
     return out
 
 
+def call_sites(insns, target):
+    """Instructions that call `target` by relative displacement (`E8 rel32`), from the decoded sweep."""
+    pat = re.compile(r"^call\s+0x%x$" % target)
+    return [va for va, text in insns if pat.match(text)]
+
+
+def stack_delta(insns, start, read_va):
+    """How far `esp` has moved from the entry to the read: pushes and `sub esp` grow it, pops shrink it.
+
+    A body that spills an argument to `[esp+N]` *after* its own `sub esp,<frame>` is not reading the
+    same slot a leaf would: without the delta, `Core_UnMisc`'s mid-body reads answer `arg667` instead
+    of `arg2`. Returns None when a form this cannot account for (`mov esp`, `leave`, `enter`) appears.
+    """
+    delta = 0
+    for va, text in insns:
+        if va < start:
+            continue
+        if va >= read_va:
+            break
+        if text.startswith("push"):
+            delta += 4
+        elif re.match(r"^pop\s", text):
+            delta -= 4
+        elif re.match(r"^sub\s+esp,0x([0-9a-f]+)$", text):
+            delta += int(re.match(r"^sub\s+esp,0x([0-9a-f]+)$", text).group(1), 16)
+        elif re.match(r"^add\s+esp,0x([0-9a-f]+)$", text):
+            delta -= int(re.match(r"^add\s+esp,0x([0-9a-f]+)$", text).group(1), 16)
+        elif text.startswith(("mov    esp", "mov esp", "leave", "enter")):
+            return None
+    return delta
+
+
+def arg_index(insns, start, read_va, esp_off):
+    """Which argument `[esp+N]` is, or None when the slot is inside the body's own frame."""
+    delta = stack_delta(insns, start, read_va)
+    if delta is None or esp_off < delta or (esp_off - delta) % 4:
+        return None
+    argn = (esp_off - delta) // 4
+    return argn if 1 <= argn <= 24 else None
+
+
+STACK_MOVE = ("add esp", "sub esp", "pop", "mov esp", "leave")
+
+
+def argument_pushes(insns, index, need, limit=32):
+    """The pushes that build a call's arguments, oldest first, walking back from `insns[index]`.
+
+    A `lea`/`mov` that prepares a register is *not* a push but sits between two of them (the real site
+    loads `[ebp-0x954]` into `ecx` and pushes it between arguments), so the walk skips setup
+    instructions and stops only at a stack change or a branch -- a run that stops at the first non-push
+    undercounts the site and reports the argument as absent.
+    """
+    out, j = [], index - 1
+    while j >= 0 and len(out) < min(need, limit):
+        va, text = insns[j]
+        if text.startswith("push"):
+            out.append((va, text))
+        elif text.startswith(BRANCH) or text.startswith(STACK_MOVE):
+            break
+        j -= 1
+    return list(reversed(out))
+
+
+def describe_push(insns, index, text):
+    """What one `push` hands over: an immediate, a frame local, a global, or the register itself."""
+    operand = text.split(None, 1)[1].strip() if len(text.split(None, 1)) > 1 else ""
+    m = re.match(r"^0x([0-9a-f]+)$", operand)
+    if m:
+        return "0x%08x" % int(m.group(1), 16)
+    if re.match(r"^e[a-z]{2}$", operand):
+        w = writer(insns, index, operand, 0)
+        if w:
+            src = w[1]
+            f = re.match(r"^\[ebp-0x([0-9a-f]+)\]$", src)
+            if f:
+                return "[ebp-0x%s]" % f.group(1)
+            g = re.match(r"^(?:DWORD PTR )?ds:0x([0-9a-f]+)$", src)
+            if g:
+                return "[0x%08x]" % int(g.group(1), 16)
+            return src
+        return operand
+    return operand
+
+
+def argument_origin(insns, table, index, reg, detail, limit=2):
+    """Follow an `incoming` value out of its callee: argument number -> the pushes at each call site.
+
+    `detail` is `esp+<off>` from `provenance`; the read instruction is the register's last writer, so the
+    pushes between the function's entry and that read say which argument the slot is.
+    """
+    base, off = detail.split("+")
+    if base != "esp":
+        return ""
+    site = insns[index][0]
+    fn, size, start = containing(table, site)
+    if not fn:
+        return ""
+    w = writer(insns, index, reg, 0)
+    if not w:
+        return ""
+    read_va, _src = w
+    argn = arg_index(insns, start, read_va, int(off, 16))
+    if not argn:
+        return ""
+    out = []
+    where = {va: i for i, (va, _t) in enumerate(insns)}
+    for call_va in call_sites(insns, start)[:limit]:
+        i = where.get(call_va)
+        if i is None:
+            continue
+        pushes = argument_pushes(insns, i, argn)
+        if len(pushes) < argn:
+            out.append("arg%d @%#010x (only %d push(es))" % (argn, call_va, len(pushes)))
+            continue
+        p_va, p_text = pushes[-argn]
+        out.append("arg%d %s in %s @%#010x" % (argn, describe_push(insns, where[p_va], p_text),
+                                              fn, call_va))
+    return " ; ".join(out)
+
+
 # ---------------------------------------------------------------- the measurement
 
 def vtable_names(xbe, table, vtable):
@@ -326,7 +446,7 @@ def census(xbe_path, symbols=SYMBOLS):
         hits = [(i, access(text, gva)) for i, (_va, text) in enumerate(insns) if access(text, gva)]
         reads = [i for i, k in hits if k == "read"]
         writes = [i for i, k in hits if k == "write"]
-        value, source, slot = [], [], []
+        value, source, slot, origin = [], [], [], []
         for i in writes:
             site = insns[i][0]
             _mnem, parts = operands(insns[i][1])
@@ -341,6 +461,10 @@ def census(xbe_path, symbols=SYMBOLS):
                 if fn:
                     found = slot_census(insns, start, start + size, int(detail, 16))
                     slot.append("%#010x: %s" % (site, " ".join("%#010x %s" % (va, k) for va, k in found[:4])))
+            if kind == "incoming":
+                followed = argument_origin(insns, table, i, _reg, detail)
+                if followed:
+                    origin.append("%#010x %s" % (site, followed))
         ttext, tother = table_refs(xbe, sections, vt) if vt else (0, 0)
         gap = ""
         if obj in objects:
@@ -361,6 +485,7 @@ def census(xbe_path, symbols=SYMBOLS):
             "value": " ; ".join(value),
             "source": " ; ".join(source),
             "slot": " ; ".join(slot),
+            "origin": " ; ".join(origin),
         })
     return rows
 
@@ -394,12 +519,12 @@ def render(rows):
                 "is constructed in code; the per-row count says which." % text_total, ""]
     out += ["**Per global: the object it holds, its vtable, and every instruction that names it.**", ""]
     out += table(["global", "object", "gap", "vtable", "names", "table .text", "table other",
-                  "sites", "reads", "writes", "value", "source", "slot"],
+                  "sites", "reads", "writes", "value", "source", "slot", "origin"],
                  [["`%s`" % r["global"], "`%s`" % r["object"] if r["object"] else "-", r["gap"] or "-",
                    "`%s`" % r["vtable"] if r["vtable"] else "-", r["names"] or "-",
                    r["table_text_refs"], r["table_other_refs"], r["sites"] or "-", r["reads"], r["writes"],
                    ("`%s`" % r["value"]) if r["value"] else "-", "`%s`" % r["source"] if r["source"] else "-",
-                   r["slot"] or "-"]
+                   r["slot"] or "-", r["origin"] or "-"]
                   for r in rows])
     out += ["", "**The access census.** `[%s]` is named by %s read(s) and %s write(s) in the image: %s. A value "
             "whose last writer is a frame slot is followed into that slot's own references inside the containing "
@@ -408,6 +533,14 @@ def render(rows):
             % (fm["global"], fm["reads"], fm["writes"],
                "; ".join("`%s`" % s for s in fm["source"].split(" ; ")) or "never",
                fm["slot"] or "none"), ""]
+    if fm.get("origin"):
+        out += ["**The value is followed out of the callee, and it is the caller's own frame.** `origin` takes the "
+                "`incoming` source one step further: the slot `[esp+N]` the callee reads is argument `N/4` less every "
+                "push and `sub esp` made since its entry, and each `E8` site that calls the callee is decoded back to "
+                "its push run, so the argument is named by the value the caller actually hands over. `%s` -- a "
+                "pointer into a caller frame, pushed there and stored before the callee does anything else, so the "
+                "global is live from that instruction on and answers a dispatch as an object."
+                % fm["origin"], ""]
     out += ["<!-- /generated:fmgr-live-object -->"]
     return "\n".join(out)
 
@@ -496,21 +629,57 @@ def selftest():
     ret = [(0x8000, "push   0x40"), (0x8003, "call   0x3af60"), (0x8008, "mov    ds:0x5bf514,eax")]
     want("call-result provenance", provenance(ret, 2, "eax", 0)[0], "call-result")
 
+    # the argument walk: three SEH pushes, then [esp+0x28] is the seventh argument
+    callee = [(0x9000, "mov    eax,fs:0x0"), (0x9006, "push   0xffffffff"),
+              (0x9008, "push   0x3f640a"), (0x900d, "push   eax"),
+              (0x900e, "mov    eax,DWORD PTR [esp+0x28]"),
+              (0x9012, "mov    ds:0x5bf514,eax")]
+    want("argument index", arg_index(callee, 0x9000, 0x900E, 0x28), 7)
+    want("no pushes means arg N/4", arg_index(callee, 0x9000, 0x9000, 0x28), 10)
+    framed = [(0x9100, "push   0xffffffff"), (0x9102, "sub    esp,0xa5c"),
+              (0x9108, "mov    ecx,DWORD PTR [esp+0xa70]")]
+    want("an argument read after the frame is still an argument",
+         arg_index(framed, 0x9100, 0x9108, 0xA70), 4)
+    want("a slot inside the frame is not an argument",
+         arg_index(framed, 0x9100, 0x9108, 0xA60), None)
+    want("an untracked esp ends the walk",
+         arg_index([(0x9200, "leave"), (0x9201, "mov    eax,DWORD PTR [esp+0x8]")], 0x9200, 0x9201, 0x8),
+         None)
+    caller = [(0xA000, "push   0x1"), (0xA002, "push   0x2a120"), (0xA007, "lea    ecx,[ebp-0x954]"),
+              (0xA00D, "push   ecx"), (0xA00E, "push   0x5bf3fc"), (0xA013, "push   0x5bf3f0"),
+              (0xA018, "push   0x5bf3ec"), (0xA01D, "push   0x59ed68"), (0xA022, "push   0x635e90"),
+              (0xA027, "push   0x599f10"), (0xA02C, "call   0x5a990")]
+    want("the push run skips a setup instruction",
+         [t for _va, t in argument_pushes(caller, 10, 7)],
+         ["push   ecx", "push   0x5bf3fc", "push   0x5bf3f0", "push   0x5bf3ec", "push   0x59ed68",
+          "push   0x635e90", "push   0x599f10"])
+    want("a short run stops at the branch",
+         len(argument_pushes(caller, 3, 9)), 2)
+    want("the seventh argument is the frame local",
+         describe_push(caller, 3, "push   ecx"), "[ebp-0x954]")
+    want("an immediate argument", describe_push(caller, 9, "push   0x599f10"), "0x00599f10")
+    want("call sites from the decoded sweep", call_sites(caller, 0x5A990), [0xA02C])
+    want("a different callee", call_sites(caller, 0x5A994), [])
+
     rows = [
         {"global": "0x005bf510", "object": "0x005c1a08", "gap": "4", "vtable": "0x004d2eb0",
          "names": "appMallocBeforeInit", "table_text_refs": "0", "table_other_refs": "1",
-         "sites": "0x00016841", "reads": "2", "writes": "0", "value": "", "source": "", "slot": ""},
+         "sites": "0x00016841", "reads": "2", "writes": "0", "value": "", "source": "", "slot": "",
+         "origin": ""},
         {"global": "0x005bf514", "object": "0x005c1a0c", "gap": "", "vtable": "0x004d2fd0",
          "names": "FFileManagerError_CreateFileReader FFileManagerError_CreateFileWriter", "table_text_refs": "0",
          "table_other_refs": "1", "sites": "0x000167cd 0x00169e3", "reads": "1", "writes": "1",
          "value": "0x00169e3 ecx", "source": "0x00169e3 frame ebp-b0",
-         "slot": "0x00169e3: 0x0012927 write 0x00169d2 read"},
+         "slot": "0x00169e3: 0x0012927 write 0x00169d2 read",
+         "origin": "0x00012b7d arg7 [ebp-0x954] in Core_UnObjBas @0x00012b7d"},
     ]
     page = render(rows)
     want("render markers", (page.splitlines()[0], page.splitlines()[-1]), BLOCK_MARK)
     want("row count in prose", "one of 2 consecutive globals" in page, True)
     want("the write sentence", "0x00169e3 frame ebp-b0" in page and "1 write(s)" in page, True)
     want("the zero construction sentence", "No instruction in the image names any of these 2 tables" in page, True)
+    want("the origin sentence", "pointer into a caller frame" in page, True)
+    want("the origin column", "arg7 [ebp-0x954]" in page, True)
     built = [dict(r) for r in rows]
     built[0]["table_text_refs"] = "3"
     want("the built-in-code sentence", "3 instruction(s) in the image name" in render(built), True)
