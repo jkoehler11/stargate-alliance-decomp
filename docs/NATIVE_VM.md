@@ -2334,3 +2334,34 @@ payload are consistent on all 95; the located array's tail remains the only thin
 **606**, the same number on **299** and fewer on **14** (1.5%). The name test therefore separates the block start
 from its neighbours on two rows in three where it can speak at all; the other 1,237 closing parses name no property
 the inventory carries, and there the close is the only evidence.
+
+### No start inside a short trailer lands on the payload end with declared names
+
+The three rows above that stop 41-59 bytes short -- `Engine.KBSJoint`, `StargateContent.CTFGateTeleporter` and
+`StargateVehicles.HoverTankPilotBot` -- have one reading left: the block start is misplaced and the stream begins a
+few bytes further on, leaving those bytes in front of it. `tools/class-overshoot-stream.py --trailer 59` answers it by
+reading the same parse at *every* offset in `[block_start, block_start + 59]` (`inventory/class_trailer_scan.csv`,
+164 offsets over the three rows) and scoring each by whether it ends on the payload's last byte and what its tags name.
+
+| row | payload | block start | offsets read | later starts that reach the payload end | declared tags there |
+|---|---:|---:|---:|---:|---:|
+| `Engine.KBSJoint` | 95 | 47 | 48 | **3** (+39, +41, +44) | 0 / 0 / 0 |
+| `StargateContent.CTFGateTeleporter` | 101 | 45 | 56 | **0** | -- |
+| `StargateVehicles.HoverTankPilotBot` | 276 | 208 | 60 | **5** (+20, +38, +56, +57, +59) | 0 / 0 / 0 / 0 / 0 |
+
+**A close inside the trailer is rarer than at an ordinary neighbour, so nothing there behaves like a stream that
+starts a few bytes on.** Eight of the 164 later starts close (4.9%) against the **38.5%** the corpus census measured
+at `block_start + 1 .. + 4`; most offsets inside the trailer answer `empty` (25 of 48, 24 of 56, 20 of 60) or stop
+short, because 41-59 bytes of a small payload are mostly tag-shaped noise.
+
+**And the eight that do close name no declared property.** `KBSJoint` and `CTFGateTeleporter` carry no row in
+`inventory/class_properties.csv`, so the name test is silent on them; on `HoverTankPilotBot`, whose closure holds 591
+declared names and matches 1 at the block start, the closing parses resolve to `Timer`, `Engine`,
+`Tweak_Pawns_HoverTankPilot` and `InVal` -- identifiers of other objects, none of them a property the class declares
+-- while the block start names `Mesh` and `ControllerClass`, one of which is declared. On the only row whose names can
+tell two starts apart, the block start is the only start that names a declared property.
+
+So the trailer is not a misplaced boundary: those 41-59 bytes are a region the class serialises after its defaults
+block, and the block start stands on all three rows. What the region *is* is the writer's question, and
+`Core/0003a800_Core_UnClass.c` in `$WORK/module-export` is on disk -- the listing between the defaults call and the
+function's return is a grep, not a Ghidra round.
