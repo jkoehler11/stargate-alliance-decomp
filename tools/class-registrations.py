@@ -11,8 +11,12 @@ showed whichever of those 25 sites happened to be written last (`VertexStreamBas
 site at `0x00064af6` registers `Object` with the identical thunk; `tools/class-table-names.py` now resolves
 that row from the whole site list and this page's `committed name` column follows it (`Object`).
 
-Every row therefore carries both counts, so a registration that cannot name its own table is marked
-`shared-thunk` rather than being read as evidence:
+Every row therefore carries both counts, and the **size** the site registers -- the call's second
+argument, which is the second-to-last push at all 493 sites whether the outer pointer is a literal or a
+register. That argument separates classes the thunk cannot: the 25 sites sharing the object root's
+constructor push **25 distinct sizes**, so the registration does carry a per-class fact where its
+constructor does not. A registration that cannot name its own table is marked `shared-thunk` rather than
+being read as evidence:
 
     tools/class-registrations.py DUMP/default.xbe -o inventory
     tools/class-registrations.py --write-doc docs/systems/CLASS_REGISTRATION.md
@@ -34,8 +38,8 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FIELDS = ["site_va", "class_literal", "thunk_va", "thunk_target", "table_va", "table_class",
-          "sites_for_table", "sites_for_thunk", "verdict"]
+FIELDS = ["site_va", "class_literal", "object_size", "thunk_va", "thunk_target", "table_va",
+          "table_class", "sites_for_table", "sites_for_thunk", "verdict"]
 ARTIFACT = os.path.join(ROOT, "inventory/class_registrations.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-registrations -->"
@@ -159,13 +163,18 @@ def resolve_sites(img, funcs, fstarts, ctor):
         idx = next((k for k, (va, t) in enumerate(ins) if va == site and t.startswith("call")), None)
         if idx is None:
             continue
-        pushes = []
+        pushes, args = [], []
         for k in range(max(0, idx - 40), idx):
             va, t = ins[k]
             if t.startswith("push"):
+                args.append(t)
                 m = IMM.search(t)
                 if m:
                     pushes.append(int(m.group(1), 16))
+        # The call's second argument is the registered object size and it is the second-to-last push:
+        # arg1 (the outer) is the last push at every site, literal or register.
+        m = IMM.search(args[-2]) if len(args) >= 2 else None
+        size = int(m.group(1), 16) if m else None
         literal = None
         for value in reversed(pushes):
             w = img.widestr(value)
@@ -185,8 +194,8 @@ def resolve_sites(img, funcs, fstarts, ctor):
                     break
             if table:
                 break
-        out.append({"site_va": site, "class_literal": literal, "thunk_va": thunk,
-                    "thunk_target": target, "table_va": table})
+        out.append({"site_va": site, "class_literal": literal, "object_size": size,
+                    "thunk_va": thunk, "thunk_target": target, "table_va": table})
     return out
 
 
@@ -219,6 +228,7 @@ def census(xbe, ctor):
         rows.append({
             "site_va": "0x%08x" % s["site_va"],
             "class_literal": s["class_literal"] or "",
+            "object_size": str(s["object_size"]) if s["object_size"] is not None else "",
             "thunk_va": "0x%08x" % s["thunk_va"] if s["thunk_va"] is not None else "",
             "thunk_target": "0x%08x" % s["thunk_target"] if s["thunk_target"] is not None else "",
             "table_va": "0x%08x" % table if table is not None else "",
@@ -246,6 +256,19 @@ def render(rows, total=None):
         lines.append("| %s | %s | %d | %s |" % (table, v[0]["table_class"] or "-", len(v), literals))
     shared = [r for r in total if r["verdict"] == "shared-thunk"]
     unread = [r for r in total if r["verdict"] == "resolve-failed"]
+    sized = sorted((int(r["object_size"]) for r in shared if r["object_size"]))
+    lines.append("")
+    lines.append("| class literal | size | site | table |")
+    lines.append("|---|---|---|---|")
+    for r in sorted(shared, key=lambda r: int(r["object_size"] or 0)):
+        lines.append("| %s | %s | %s | %s |"
+                     % (r["class_literal"] or "?", r["object_size"] or "-", r["site_va"],
+                        r["table_va"] or "-"))
+    lines.append("")
+    lines.append("The %d sites that share a constructor thunk still register **%d distinct sizes**, %s to %s "
+                 "bytes: the thunk cannot name the class, but the second argument separates them."
+                 % (len(shared), len(set(sized)), sized[0] if sized else "-",
+                    sized[-1] if sized else "-"))
     lines.append("")
     lines.append("%d registration sites: %d resolve to a class table, %d sit on a table that more than one "
                  "site resolves to, and %d resolve to no table at all. %d sites therefore do not name the "
@@ -282,9 +305,12 @@ class Fake(Image):
     """A 0x8000-byte buffer at 0x1000 with a registration window, a thunk and a ctor."""
 
     def __init__(self):
-        body = (b"\x68" + struct.pack("<I", 0x6000)                    # push literal
-                + b"\x68" + struct.pack("<I", 0x2000)                  # push thunk
-                + b"\xe8" + struct.pack("<i", 0x4000 - (0x100a + 5)))  # call ctor
+        # push thunk; push literal; push size; push ebx (the outer); call ctor -- 16 + 5 bytes
+        body = (b"\x68" + struct.pack("<I", 0x2000)                    # push thunk
+                + b"\x68" + struct.pack("<I", 0x6000)                  # push the class literal
+                + b"\x68" + struct.pack("<I", 0x40)                    # push the object size
+                + b"\x53"                                             # push ebx (arg1, outer)
+                + b"\xe8" + struct.pack("<i", 0x4000 - (0x1000 + 16 + 5)))  # call ctor
         thunk = (b"\x8b\x4c\x24\x04\x85\xc9\x74\x03\xe9"
                  + struct.pack("<i", 0x4000 - (0x2000 + 8 + 5)))       # jmp 0x4000
         ctor = b"\x8b\xc1\xc7\x00\x00\x50\x00\x00\xc3"                 # mov eax,ecx; mov [eax],0x5000; ret
@@ -313,13 +339,17 @@ def self_check():
     got = resolve_sites(img, [(0x1000, 0x40, "FUN_reg")], [0x1000], 0x4000)
     if len(got) != 1 or got[0]["table_va"] != 0x5000 or got[0]["class_literal"] != "Reg":
         bad.append("site resolve: %r" % (got,))
+    if got[0]["object_size"] != 0x40:
+        bad.append("the size is the second-to-last push, not the last: %r" % (got[0]["object_size"],))
 
-    rows = [{"site_va": "0x00001000", "class_literal": "A", "thunk_va": "0x0000100c",
-             "thunk_target": "0x00004000", "table_va": "0x00005000", "table_class": "Root",
-             "sites_for_table": "2", "sites_for_thunk": "2", "verdict": "shared-thunk"},
-            {"site_va": "0x00002000", "class_literal": "B", "thunk_va": "0x0000100c",
-             "thunk_target": "0x00004000", "table_va": "0x00005000", "table_class": "Root",
-             "sites_for_table": "2", "sites_for_thunk": "2", "verdict": "shared-thunk"}]
+    rows = [{"site_va": "0x00001000", "class_literal": "A", "object_size": "40",
+             "thunk_va": "0x0000100c", "thunk_target": "0x00004000", "table_va": "0x00005000",
+             "table_class": "Root", "sites_for_table": "2", "sites_for_thunk": "2",
+             "verdict": "shared-thunk"},
+            {"site_va": "0x00002000", "class_literal": "B", "object_size": "44",
+             "thunk_va": "0x0000100c", "thunk_target": "0x00004000", "table_va": "0x00005000",
+             "table_class": "Root", "sites_for_table": "2", "sites_for_thunk": "2",
+             "verdict": "shared-thunk"}]
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, "a.csv")
     write_artifact(rows, path)

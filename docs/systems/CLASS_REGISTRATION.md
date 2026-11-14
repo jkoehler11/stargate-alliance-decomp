@@ -137,9 +137,44 @@ the table they are attached to.
 <!-- generated:class-registrations -->
 | table | committed name | sites | class literals the registrations push |
 |---|---|---|---|
-| 0x004dd2a8 | VertexStreamBase | 25 | Exporter (`0x000349e6`), Factory (`0x00036066`), Field (`0x0003b276`), Object (`0x00064af6`), Subsystem (`0x00066b16`), Language (`0x00066d96`), Property (`0x000778d9`), VoiceSubsystem (`0x000e2426`), Viewport (`0x000f92c9`), CameraEffect (`0x000fbd46`), Client (`0x000fd969`), Channel (`0x001083c6`), NetConnection (`0x0010d6a9`), Download (`0x0011e9d9`), RenderDevice (`0x0011f9f9`), Engine (`0x00121989`), LevelBase (`0x0015c989`), Material (`0x00169ad6`), BitmapMaterial (`0x00169ca6`), RenderedMaterial (`0x00169d66`), NetDriver (`0x00183599`), PendingLevel (`0x001a51d9`), Player (`0x001bddc6`), RenderResource (`0x001eafb6`), VertexStreamBase (`0x001eb186`) |
-| 0x004cfba0 | WaterTexture | 3 | Texture (`0x0027e889`), FractalTexture (`0x002e1489`), WaterTexture (`0x002e17d9`) |
-| 0x004cfc88 | IceTexture | 2 | FireTexture (`0x002e8468`), IceTexture (`0x002e8768`) |
+| 0x004dd2a8 | Object | 25 | Exporter (`0x000349e6`), Factory (`0x00036066`), Field (`0x0003b276`), Object (`0x00064af6`), Subsystem (`0x00066b16`), Language (`0x00066d96`), Property (`0x000778d9`), VoiceSubsystem (`0x000e2426`), Viewport (`0x000f92c9`), CameraEffect (`0x000fbd46`), Client (`0x000fd969`), Channel (`0x001083c6`), NetConnection (`0x0010d6a9`), Download (`0x0011e9d9`), RenderDevice (`0x0011f9f9`), Engine (`0x00121989`), LevelBase (`0x0015c989`), Material (`0x00169ad6`), BitmapMaterial (`0x00169ca6`), RenderedMaterial (`0x00169d66`), NetDriver (`0x00183599`), PendingLevel (`0x001a51d9`), Player (`0x001bddc6`), RenderResource (`0x001eafb6`), VertexStreamBase (`0x001eb186`) |
+| 0x004cfba0 | Texture | 3 | Texture (`0x0027e889`), FractalTexture (`0x002e1489`), WaterTexture (`0x002e17d9`) |
+| 0x004cfc88 | FractalTexture | 2 | FireTexture (`0x002e8468`), IceTexture (`0x002e8768`) |
+
+| class literal | size | site | table |
+|---|---|---|---|
+| Object | 40 | 0x00064af6 | 0x004dd2a8 |
+| Subsystem | 44 | 0x00066b16 | 0x004dd2a8 |
+| Language | 44 | 0x00066d96 | 0x004dd2a8 |
+| VoiceSubsystem | 44 | 0x000e2426 | 0x004dd2a8 |
+| RenderResource | 44 | 0x001eafb6 | 0x004dd2a8 |
+| Field | 52 | 0x0003b276 | 0x004dd2a8 |
+| VertexStreamBase | 56 | 0x001eb186 | 0x004dd2a8 |
+| CameraEffect | 60 | 0x000fbd46 | 0x004dd2a8 |
+| Material | 60 | 0x00169ad6 | 0x004dd2a8 |
+| Exporter | 64 | 0x000349e6 | 0x004dd2a8 |
+| RenderedMaterial | 64 | 0x00169d66 | 0x004dd2a8 |
+| BitmapMaterial | 88 | 0x00169ca6 | 0x004dd2a8 |
+| Channel | 100 | 0x001083c6 | 0x004dd2a8 |
+| Factory | 104 | 0x00036066 | 0x004dd2a8 |
+| Property | 108 | 0x000778d9 | 0x004dd2a8 |
+| Player | 108 | 0x001bddc6 | 0x004dd2a8 |
+| LevelBase | 148 | 0x0015c989 | 0x004dd2a8 |
+| PendingLevel | 176 | 0x001a51d9 | 0x004dd2a8 |
+| RenderDevice | 184 | 0x0011f9f9 | 0x004dd2a8 |
+| Client | 196 | 0x000fd969 | 0x004dd2a8 |
+| Texture | 204 | 0x0027e889 | 0x004cfba0 |
+| FractalTexture | 228 | 0x002e1489 | 0x004cfba0 |
+| Engine | 284 | 0x00121989 | 0x004dd2a8 |
+| IceTexture | 296 | 0x002e8768 | 0x004cfc88 |
+| Viewport | 456 | 0x000f92c9 | 0x004dd2a8 |
+| Download | 1112 | 0x0011e9d9 | 0x004dd2a8 |
+| FireTexture | 1304 | 0x002e8468 | 0x004cfc88 |
+| NetDriver | 4524 | 0x00183599 | 0x004dd2a8 |
+| WaterTexture | 4868 | 0x002e17d9 | 0x004cfba0 |
+| NetConnection | 20368 | 0x0010d6a9 | 0x004dd2a8 |
+
+The 30 sites that share a constructor thunk still register **24 distinct sizes**, 40 to 20368 bytes: the thunk cannot name the class, but the second argument separates them.
 
 493 registration sites: 493 resolve to a class table, 30 sit on a table that more than one site resolves to, and 0 resolve to no table at all. 30 sites therefore do not name the table they are attached to.
 <!-- /generated:class-registrations -->
