@@ -185,7 +185,10 @@ Two things this table still cannot say, and what would settle each:
 * **Whether a map that loads is playable.** A `PASS` row's frame is the evidence
   (`index-NN/02-mission.png`); reading the HUD, a checkpoint load or a mission's own objective state from
   it is a separate measurement, and the checkout (`StargateContent`, `docs/systems/CHECKPOINTS.md`) is where
-  the save half of it lives.
+  the save half of it lives. **The frame half is measured for 72 of the 73 rows** (`docs/MAP_FRAMES.md`,
+  `tools/xemu/map-frame.py`, `inventory/map_frames.csv`): the HUD's portrait-and-name corner is drawn on 65
+  frames and absent on 7, so every surviving frame says whether the load reached play. What is left of this
+  question is the checkpoint half, not the picture.
 * **Whether the other in-game routes reach a second-half map.** None of the 30 needs one any more: every
   campaign index loads from this page (`GetMapList` enumerates every `.unr`, no cap), so a save inside one, a
   checkpoint load and a `Travel` URL are alternatives rather than requirements -- and the console refuses
