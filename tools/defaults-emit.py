@@ -8,6 +8,7 @@ reconstructed source tree has defaults and not just functions.
     python3 tools/defaults-emit.py DUMP/System --sweep -o inventory     # coverage artifact
     python3 tools/defaults-emit.py DUMP/System --emit $WORK/defaults    # one .uc snippet per class
     python3 tools/defaults-emit.py DUMP/System --verify                  # against the shipped text blocks
+    python3 tools/defaults-emit.py DUMP/System --reconcile               # block count against class-defaults.py
     python3 tools/defaults-emit.py DUMP/System --class SGOrder --package StargateGame --show
 
 Rendering rules, all of them learned from bytes rather than assumed:
@@ -511,6 +512,24 @@ def format_float(v):
 
 # ------------------------------------------------------------------------------------------------- blocks
 
+def choose_scored(cands, decl):
+    """`cd.choose` under the named-property floor: (best, None), or (None, reason).
+
+    A candidate whose parse names none of the class's declared properties is not a block. Every one of the
+    **196** rows of that shape in `class_defaults_per_class.csv` was walked at every offset of its payload and
+    not one offset names a declared property, so what fits the bytes is the tag grammar's permissiveness plus
+    the payload-end witness, not a located block (`tools/class-defaults-silent.py`). `tools/class-defaults.py`
+    withholds the start there; the renderer has to withhold it from the same classes, or the two artifacts
+    count different blocks over the same packages.
+    """
+    best = cd.choose(cands, decl)
+    if best is None:
+        return None, "no-block"
+    if not any(n in decl for n in best[3]):
+        return None, "no-declared-name"
+    return best, None
+
+
 def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
     """Locate one export's property block, scored against the properties `cls` declares.
 
@@ -524,9 +543,9 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
     cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
-    best = cd.choose(cands, decl)
+    best, reason = choose_scored(cands, decl)
     if best is None:
-        return None, "no-block"
+        return None, reason
     _score, _count, start, _names, bad = best
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     try:
@@ -554,9 +573,9 @@ def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
     cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
-    best = cd.choose(cands, decl)
+    best, reason = choose_scored(cands, decl)
     if best is None:
-        return None, "no-block"
+        return None, reason
     _score, _count, start, _names, bad = best
     data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
     try:
@@ -699,11 +718,13 @@ def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, note
     """Render one class's block into lines; adds to `row`/`notes`.
 
     Returns (lines, status) where status is "clean" (every property name declared by the class: emit it),
-    "dirty" (a candidate block the class does not account for: withhold and count it) or "none".
+    "dirty" (a candidate block the class does not account for: withhold and count it), "no-declared-name"
+    (the chosen parse names none of the class's properties, so there is no block: withhold it the same way
+    `tools/class-defaults.py` does) or "none".
     """
-    got, _reason = block_of(pkg, cls, supers, declared_all, want_score=True)
+    got, reason = block_of(pkg, cls, supers, declared_all, want_score=True)
     if got is None:
-        return None, "none"
+        return None, reason if reason == "no-declared-name" else "none"
     props, start, clean = got
     if not clean:
         # A block whose property names the class does not all declare is a parse that fits the bytes rather
@@ -794,6 +815,8 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
                 emitted[cls] = lines
             elif status == "dirty":
                 row["blocks"] += 1
+            elif status == "no-declared-name":
+                tot["no_declared_name"] += 1
         row["blocks"] += row["clean_blocks"]
         rows.append(row)
         for k, v in row.items():
@@ -828,10 +851,12 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
     if merge_dir:
         print("merged %d blocks into %s; %d classes had no extracted source"
               % (tot["merged"], merge_dir, tot["merge_missing"]))
-    print("%d classes, %d blocks (%d clean, %d properties withheld from the rest), %d properties: "
+    print("%d classes, %d blocks (%d clean, %d withheld for naming no declared property, %d properties "
+          "withheld from the rest), %d properties: "
           "%d rendered (%.1f%%), %d array elements and %d nested structs included; %d arrays and %d structs "
           "left unrendered, %d other; %d of %d byte values named from an enum"
-          % (tot["classes"], tot["blocks"], tot["clean_blocks"], tot["dirty_properties"], tot["properties"],
+          % (tot["classes"], tot["blocks"], tot["clean_blocks"], tot["no_declared_name"], tot["dirty_properties"],
+             tot["properties"],
              tot["rendered"], 100.0 * tot["rendered"] / tot["properties"] if tot["properties"] else 0.0,
              tot["array_elements"], tot["nested_structs"],
              tot["arrays_unrendered"], tot["structs_unrendered"], tot["other"],
@@ -1008,7 +1033,7 @@ def explain(system_dir):
     """
     supers = cd.super_map()
     declared_all = cd.declared_properties()
-    clean_sizes, withheld_sizes, none_sizes = [], [], []
+    clean_sizes, withheld_sizes, none_sizes, silent_sizes = [], [], [], []
     undeclared = collections.Counter()
     bucket = collections.Counter()
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
@@ -1027,8 +1052,15 @@ def explain(system_dir):
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
             cands, _data = cd.candidates(pkg, ps, exp, kinds=cd.kinds_for_class(cls))
-            best = cd.choose(cands, decl)
+            best, reason = choose_scored(cands, decl)
             if best is None:
+                if reason == "no-declared-name":
+                    # The chosen parse names no property the class declares: the renderer withholds the block
+                    # (`choose_scored`), so this class belongs with the no-candidate residue, not with a
+                    # withheld block. Its payload size is reported separately because it is a different shape.
+                    silent_sizes.append(exp["size"])
+                    bucket["no block: the chosen parse names no declared property"] += 1
+                    continue
                 none_sizes.append(exp["size"])
                 bucket["no candidate"] += 1
                 continue
@@ -1056,9 +1088,60 @@ def explain(system_dir):
     print("outcomes: %s" % dict(bucket))
     print("emitted payloads:   %s" % describe(clean_sizes))
     print("withheld payloads:  %s" % describe(withheld_sizes))
+    print("no-block payloads:  %s" % describe(silent_sizes))
     print("no-candidate:       %s" % describe(none_sizes))
     print("most frequent unaccounted names: %s" % undeclared.most_common(12))
     print("total unaccounted name slots: %d" % sum(undeclared.values()))
+    return 0
+
+
+def reconcile(system_dir):
+    """The renderer's block count against the locator's, class by class.
+
+    `tools/class-defaults.py` chooses from `guarded()`'s candidates, which refuse a start inside the front of
+    the record and can substitute a `group-end` one; this tool locates on `cd.choose` alone. Both withhold a
+    parse that names no declared property now (`choose_scored`), so what is left of the disagreement between
+    the two artifacts is the guard's share -- and this mode measures it rather than asserting it: the
+    cross-tab of the two outcomes over every class export, plus the count whose start both paths agree on.
+    """
+    supers = cd.super_map()
+    declared_all = cd.declared_properties()
+    cats = collections.Counter()
+    agree_start = 0
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            cls = pkg.name(exp["name"])
+            decl, cur, seen = set(), cls, set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                decl |= declared_all.get(cur, set())
+                cur = supers.get(cur)
+            kinds = cd.kinds_for_class(cls)
+            cands, data = cd.candidates(pkg, ps, exp, kinds=kinds)
+            best_u, reason_u = choose_scored(cands, decl)
+            guarded, _where = cd.guarded(cands, data, pkg, decl, kinds, len(pkg.imports or []))
+            best_g = cd.choose(guarded, decl)
+            here = "block" if best_u else ("no-declared-name" if reason_u == "no-declared-name" else "no-candidate")
+            there = "no-block" if best_g is None else (
+                "block" if any(n in decl for n in best_g[3]) else "no-declared-name")
+            cats[(here, there)] += 1
+            if best_u and best_g and best_u[2] == best_g[2]:
+                agree_start += 1
+    print("renderer / locator, per class export:")
+    for (here, there), count in sorted(cats.items(), key=lambda kv: (-kv[1], kv[0])):
+        print("  renderer %-16s locator %-16s %5d" % (here, there, count))
+    print("start identical on both paths: %d" % agree_start)
+    print("blocks: renderer %d, locator %d (%+d)"
+          % (sum(v for (h, _t), v in cats.items() if h == "block"),
+             sum(v for (_h, t), v in cats.items() if t == "block"),
+             sum(v for (_h, t), v in cats.items() if t == "block")
+             - sum(v for (h, _t), v in cats.items() if h == "block")))
     return 0
 
 
@@ -1074,6 +1157,8 @@ def main():
     ap.add_argument("--check", action="store_true", help="recompute and diff against the committed CSV")
     ap.add_argument("--explain", action="store_true",
                     help="classify the classes that are not emitted, with the evidence for why")
+    ap.add_argument("--reconcile", action="store_true",
+                    help="cross-tab this tool's block per class against tools/class-defaults.py (the guard's share)")
     ap.add_argument("--class", dest="cls", help="limit --show to this class")
     ap.add_argument("--package", dest="pkg", help="the class's package (with --class)")
     ap.add_argument("--show", action="store_true", help="print one class's block (game data: explicit)")
@@ -1101,6 +1186,8 @@ def main():
         return 0
     if args.explain:
         return explain(args.path)
+    if args.reconcile:
+        return reconcile(args.path)
     if args.verify:
         verify(args.path, show=args.show)
         return 0

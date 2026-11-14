@@ -172,8 +172,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `native()`/`replication` blocks, state code + labels, latent function calls, operator precedence.
       File UELib issues/patches upstream where the gap is generic.
       **`defaultproperties` reconstruction and enum recovery are done** (`docs/CLASS_DEFAULTS.md`): the locator
-      finds a block for 2,209 of 2,319 classes and one that accounts for itself for 1,664 (71.8%) — the previous
-      512-byte scan window excluded every base class, whose record is longer than that. 15,518 of 15,521 class-level
+      finds a block for 1,985 of 2,319 classes and one that accounts for itself for 1,663 (71.7%); the renderer
+      settles 1,898 blocks and 1,664 of them are fully declared — the previous 512-byte scan window excluded every
+      base class, whose record is longer than that. 15,518 of 15,521 class-level
       properties render to UnrealScript (99.98%) — 485 arrays (1,518 elements), 219 nested structs — and 1,313
       `Begin Object` subobjects carry another 15,790 of 15,798; enum element names resolve for 771 of 1,052 byte
       values from the shipped `enum` declarations, and `make defaults-tree` merges the blocks into the extracted
@@ -1177,6 +1178,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-14, the renderer withholds the same label and settles 1,898 blocks)
+
+- **The change the last note named.** `tools/defaults-emit.py` now locates through `choose_scored()`, the same
+  named-property floor `tools/class-defaults.py` applies, on **both** of its paths: `block_of` for a class and
+  `block_for_export` for an `editinline` subobject. A withheld block is not a block, so it is not counted and its
+  properties are not counted as withheld values either; `render_class` returns the new status `no-declared-name`,
+  the sweep prints it, and `--explain` buckets the shape as `no block: the chosen parse names no declared property`.
+- **The numbers.** Blocks **2,209 -> 1,898**, `dirty_properties` **1,267 -> 491** (the 311 withheld parses held
+  776 properties), and **nothing that renders moved**: clean blocks **1,664**, properties **15,521**, rendered
+  **15,518**, subobjects 1,313 / 15,798 / 15,790, and `--verify` is still 1 matched / 1 differ / 61 shipped-only on
+  the two shipped blocks. Only the `blocks` and `dirty_properties` columns of `inventory/class_defaults_emit.csv`
+  change.
+- **The renderer is 87 blocks short of the locator, and the gap is the guard, measured not assumed.** 311 classes
+  are withheld for naming no declared property against the locator's 196. The new `--reconcile` mode cross-tabs the
+  two paths per class export: **63** renderer-withheld / locator-block, **52** withheld / no-block, **25**
+  no-candidate / block, **1** block / no-block (`Engine.PSBumpBSP`, whose declared fraction the trailer floor had
+  already withdrawn), and **234** where both settle a block at different starts -- the locator's start is the later
+  one on all 234. `class-defaults.py` chooses from `guarded()`'s candidates and the renderer does not, so the 87 is
+  the guard's share, not a label question.
+- Tool (`tools/defaults-emit.py`: `choose_scored`, `render_class`, `explain`, the sweep summary, and the new
+  `--reconcile` mode) + `inventory/class_defaults_emit.csv` + `docs/CLASS_DEFAULTS.md` (new section) +
+  `docs/UNKNOWNS.md` U18 (thirty-seventh) + this note. Reads the packages; no boot, no Ghidra round, no property
+  value printed.
+- **Next measurement, named:** give the renderer the locator's candidate set -- `cd.guarded()` before
+  `choose_scored` in `block_of`/`block_for_export` -- and re-measure, which is where the 87 lives. The row to
+  decide first is `Engine.PSBumpBSP`: it is a clean block today, and the guard refuses its whole start.
 
 ### Execution notes (2026-11-14, the label is withheld from the 196 and the block count is 1,985)
 

@@ -146,6 +146,11 @@ Where it still fails:
 | others (9 packages) | 254 | 123 | 718 | 716 | 99.7% | 139 |
 | **total** | **2,319** | **1,664** | **15,521** | **15,518** | **99.98%** | **1,313** |
 
+`blocks` is the fully-declared count, because only those render. The renderer settles **1,898** blocks in all:
+the 1,664 above plus **234** whose parse does not account for itself, whose **491** properties are withheld;
+**311** further classes are counted as no block at all, because their chosen parse names none of the class's
+declared properties -- the same floor `tools/class-defaults.py` publishes as 1,985 blocks.
+
 What renders, and what each rendering was checked against:
 
 | type | count | rendered as |
@@ -947,3 +952,50 @@ the start is withheld rather than moved -- and `coverage()` applies the same rul
 **Not aligned yet.** `tools/defaults-emit.py` locates class blocks on its own path and still counts 2,209 blocks, so
 the renderer's totals in `inventory/class_defaults_emit.csv` predate this withholding. Aligning the renderer with the
 withheld label -- and re-measuring the 15,518 rendered properties it reports -- is the next measurement.
+
+## The renderer withholds the same label, and its residue is the 87 the group guard accounts for
+
+The `Not aligned yet` paragraph above is closed by this. `tools/defaults-emit.py` locates a class block with its
+own path, so the withholding had to be made there in its own right: `choose_scored()` wraps `cd.choose` in the
+same floor -- a chosen parse that names none of the class's declared properties is not a block -- and both locate
+paths use it, `block_of` for a class and `block_for_export` for an `editinline` subobject, where the declared set
+is the subobject's class chain. A withheld block is not counted and its properties are not counted as withheld
+values, which is the reading `class-defaults.py` publishes.
+
+* **Blocks 2,209 -> 1,898**, `dirty_properties` **1,267 -> 491**: the **311** withheld parses held 776
+  properties, so nothing that renders moves -- clean blocks **1,664**, properties **15,521**, rendered
+  **15,518 (99.98%)**, subobjects 1,313 / 15,798 / 15,790, and `--verify` on the two shipped blocks is unchanged
+  (1 matched, 1 differ, 61 shipped-only). In `inventory/class_defaults_emit.csv` only the `blocks` and
+  `dirty_properties` columns change, which is the proof that this is a label and not a decode.
+* **`--explain` reports the shape as its own outcome**, `no block: the chosen parse names no declared property`:
+  **311** blocks, payloads median **106** bytes against 159 for the emitted ones and 270 of the 311 under 256
+  bytes -- the same short `record-only` payloads the locator's 196 are, and the residue the file has carried since
+  the first render.
+* **The 311 is not the locator's 196, and `--reconcile` measures why.** `class-defaults.py` chooses from
+  `guarded()`'s candidates (a start inside the front of the record refused, a `group-end` replacement taken) and
+  the renderer chooses from the raw candidate set. Per class export the two paths read:
+
+| renderer | locator | classes |
+|---|---|---:|
+| block | block | 1,897 |
+| no-declared-name | no-declared-name | 196 |
+| no-candidate | no-block | 85 |
+| no-declared-name | block | 63 |
+| no-declared-name | no-block | 52 |
+| no-candidate | block | 25 |
+| block | no-block | 1 |
+
+  Blocks **1,898** against **1,985**, so the renderer is **87 short** and every row of the gap is a class the
+  guard touches. Both paths take the **same start on 1,663** of the 2,319 classes; on the **234** where both
+  settle a block at different starts the locator's is the later one every time, so the guard moves a start
+  forward rather than either path misreading it. The one row where the guard removes a block the renderer emits
+  is **`Engine.PSBumpBSP`**, the class whose declared fraction the trailer floor already withdrew from
+  `class_defaults_per_class.csv`.
+
+Two consequences. What the renderer emits is untouched -- the same properties, arrays, structs and subobjects,
+byte for byte -- so the two artifacts now disagree about *blocks* only (1,898 against 1,985), not about what a
+block holds. And what is left is not a label question: giving the renderer `guarded()`'s candidate set changes
+which blocks render, so it needs the same five downstream artifacts re-measured on its own.
+
+The **2,209** quoted in the record-length and prefix sections above is the pre-withholding population: 196 of
+those starts are no block in both artifacts now, which is the only place the two changes meet.
