@@ -1255,6 +1255,26 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the second install points at an object nothing builds)
+
+- **The call the second slot is handed to is a purge, not a constructor.** `0x6c750` (326 bytes, `ret` at `0x6c895`)
+  makes no write through `ecx` at all: it walks the loaded-object array at `0x006c2188` with its count at `0x006c218c`,
+  looks each element up through `0x77210`, and calls `[edx+0xc]` / `0x4fe20` / `0x51670` on what it finds. The only
+  write `[ebp-0xb0]` receives in the whole 18,359-byte entry function is the zero at `0x12927`, so `0x169e3` installs a
+  pointer to an unbuilt object.
+- **The order is not a decoding artifact.** The region is reachable by fall-through: `0x1670b` and `0x16739` branch into
+  it at `0x16742`, and no branch in the function jumps over `0x169cb`..`0x169e3`. So `Starting Engine` really is the next
+  literal printed after the install, and the install is a teardown of the file layer rather than the engine's own --
+  the reading is open, the sequence is not.
+- **The instrument grew a column instead of a new tool.** `tools/fmgr-installs.py` now reports `builder stores` (the
+  `[ecx]`-relative write census of the call a frame slot was handed to) and `builder globals`, which is what separates
+  "this call builds the object" from "this call walks a global array". 28 assertions in `--check`; `--check-doc` still
+  answers from the committed CSV with no dump.
+- Files: `tools/fmgr-installs.py`, `inventory/fmgr_installs.csv` (same 3 rows, 2 new columns),
+  `docs/systems/CHECKPOINTS.md` (*That call is not a constructor*), `docs/UNKNOWNS.md` U5, this note.
+- **Next measurement:** the object array `0x006c2188` at the install -- which element `0x77210` returns for the file
+  layer and what `[+0x24]`/`[+0x498]` say about it, since neither file-manager table is what a reload leaves behind.
+
 ### Execution notes (2026-11-14, the initialiser is main, and it installs the file manager twice)
 
 - **The frame that holds the object is the process's own.** `0x0012620` (18,359 bytes) has exactly one direct caller,

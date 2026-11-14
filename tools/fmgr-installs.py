@@ -49,7 +49,8 @@ import tempfile
 
 GLOBAL = 0x005BF514
 COLUMNS = ["global", "store", "at", "fn", "fn_start", "fn_size", "rets", "callers", "kind", "value",
-           "slot", "slot_refs", "builder", "table", "phase", "reads", "dispatch"]
+           "slot", "slot_refs", "builder", "table", "builder_stores", "builder_globals", "phase",
+           "reads", "dispatch"]
 CSV_PATH = os.path.join("inventory", "fmgr_installs.csv")
 SYMBOLS = os.path.join("symbols", "xbox_functions.csv")
 DOC = os.path.join("docs", "systems", "CHECKPOINTS.md")
@@ -328,6 +329,26 @@ def dispatch_after(insns, index, end, window=10):
 
 # ---------------------------------------------------------------- the census
 
+def builder_body_scan(insns, start, end):
+    """(stores through `ecx`, the `ds:` globals the body reads) for a call that receives the slot in ecx.
+
+    A constructor writes its vtable through `[ecx]`/`[ecx+N]`; a function that only pushes `ecx` and walks
+    a global array instead is a purge wearing the same calling convention, and the difference decides
+    whether an install has an object behind it.
+    """
+    stores, globs = [], []
+    this = re.compile(r"^(?:DWORD|BYTE|WORD) PTR \[ecx(?:\+0x[0-9a-f]+)?\]$")
+    for va, text in insns:
+        if va < start or va >= end:
+            continue
+        mnem, parts = operands(text)
+        if parts and this.match(parts[0]) and not mnem.startswith(("cmp", "test", "push")):
+            stores.append("0x%08x %s" % (va, parts[0]))
+        globs.extend(DS.findall(text))
+    globs = ["0x%08x" % int(g, 16) for g in dict.fromkeys(globs)]
+    return " ".join(stores) or "none", " ".join(globs) or "none"
+
+
 def census(xbe, table, insns_by_section):
     """Rows: the image's own initializer plus every store, in the order the build performs them."""
     rows = _stores(xbe, table, insns_by_section)
@@ -363,7 +384,8 @@ def _stores(xbe, table, insns_by_section):
             "global": "0x%08x" % GLOBAL, "store": "image", "_at": -1, "at": "image",
             "fn": "-", "fn_start": "-", "fn_size": "-", "rets": "-", "callers": "-",
             "kind": "data-initializer", "value": "0x%08x" % static, "slot": "-", "slot_refs": "-",
-            "builder": "-", "table": "0x%08x" % tbl if tbl else "-", "phase": "pre-main",
+            "builder": "-", "table": "0x%08x" % tbl if tbl else "-", "builder_stores": "-",
+            "builder_globals": "-", "phase": "pre-main",
             "reads": str(sum(1 for _v, t in allins if access(t, GLOBAL) == "read")), "dispatch": "-",
         })
 
@@ -388,6 +410,7 @@ def _stores(xbe, table, insns_by_section):
         refs = " ".join("0x%08x %s" % (v, k) for v, k in slot_refs(allins, start, end, int(detail.split("-")[1], 16))) \
             if kind == "frame" else "-"
         builder, ctor = "-", "-"
+        stores, globs = "-", "-"
         if kind == "frame":
             real = int(detail.split("-")[1], 16)
             lea, call, callee = slot_receiver(allins, start, end, real)
@@ -395,9 +418,11 @@ def _stores(xbe, table, insns_by_section):
                 builder = "0x%08x -> call 0x%08x" % (lea, callee)
                 cfn = containing(table, callee)
                 cstart = cfn[0] if cfn[0] else callee
-                cbody = [(v, t) for v, t in allins if cstart <= v < cstart + (cfn[1] or 64)]
+                clen = cfn[1] or 64
+                cbody = [(v, t) for v, t in allins if cstart <= v < cstart + clen]
                 tbl = ctor_table(cbody, cstart)
                 ctor = "0x%08x" % tbl if tbl else "none"
+                stores, globs = builder_body_scan(allins, cstart, cstart + clen)
         phase = phase_after(xbe, allins, i, 1 << 32)
         reads = " ".join("%#x%s" % (v, dispatch_after(body, j, end))
                          for j, (v, t) in enumerate(body) if access(t, GLOBAL) == "read") or "-"
@@ -408,7 +433,8 @@ def _stores(xbe, table, insns_by_section):
             "rets": " ".join("0x%08x" % v for v in rets) or "-",
             "callers": " ".join("0x%08x" % v for v in callers) or "-",
             "kind": kind, "value": value, "slot": slot, "slot_refs": refs,
-            "builder": builder, "table": ctor, "phase": phase, "reads": reads, "dispatch": "-",
+            "builder": builder, "table": ctor, "builder_stores": stores, "builder_globals": globs,
+            "phase": phase, "reads": reads, "dispatch": "-",
         })
     return rows
 
@@ -424,12 +450,14 @@ def render(rows):
                  "instructions in the image that name the global."
                  % (sum(1 for r in rows if r["store"] != "image"),))
     lines.append("")
-    lines.append("| store | at | in | fn size | rets | callers | kind | value | slot | builder | table | phase | slot refs |")
-    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    lines.append("| store | at | in | fn size | rets | callers | kind | value | slot | builder | table "
+                 "| builder stores | builder globals | phase | slot refs |")
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for r in rows:
-        lines.append("| `%s` | %s | %s | %s | %s | %s | %s | `%s` | %s | %s | %s | %s | %s |" % (
+        lines.append("| `%s` | %s | %s | %s | %s | %s | %s | `%s` | %s | %s | %s | %s | %s | %s | %s |" % (
             r["store"], r["at"], r["fn"], r["fn_size"], r["rets"], r["callers"], r["kind"], r["value"],
-            r["slot"], r["builder"], r["table"], r["phase"], r["slot_refs"]))
+            r["slot"], r["builder"], r["table"], r["builder_stores"], r["builder_globals"], r["phase"],
+            r["slot_refs"]))
     lines.append("")
     lines.append("**What the columns decide.** A `frame` value means the object lives in the containing function's "
                  "own frame, so whether it can be dispatched through depends on that frame outliving the reader: the "
@@ -437,7 +465,9 @@ def render(rows):
                  "the frame alive only as long as the function does. The `callers` column says how that function is "
                  "entered -- one site outside every mapped function is the CRT's call into `main`. `table` is `none` "
                  "when the call the slot is handed to stores no immediate at `[this]`, which is the difference "
-                 "between an install and a pointer to scratch. A `-` in `rets` is a body whose decoded sweep has no "
+                 "between an install and a pointer to scratch, and `builder stores` is the `[ecx]`-relative write census of the "
+                 "call the slot was handed to: a constructor writes its table there, a function that only walks a "
+                 "global array (`builder globals`) does not. A `-` in `rets` is a body whose decoded sweep has no "
                  "`ret` at all -- it leaves through a jump, so its exit set is not this column's to state.")
     return "\n".join(lines)
 
@@ -519,6 +549,13 @@ def self_check():
     ok(DISPATCH.match("call   DWORD PTR [edx+0x4]").group(2) == "4", "dispatch regex")
     ok(names_absolute("mov    ecx,0x5bf514", g) is False, "immediate is not an absolute access")
     ok(re.match(r"^ret", "ret    4") is not None, "retn")
+    ok(builder_body_scan([(0x3000, "mov    DWORD PTR [ecx],0x4c8db8"),
+                          (0x3006, "mov    eax,ds:0x6c2188")], 0x3000, 0x3100)[0] != "none", "ctor writes this")
+    ok(builder_body_scan([(0x3000, "push   ecx"), (0x3001, "mov    eax,ds:0x6c218c")], 0x3000, 0x3100)[0] == "none",
+       "a body that only pushes ecx writes nothing")
+    ok(builder_body_scan([(0x3000, "mov    eax,ds:0x6c2188"), (0x3006, "mov    ecx,ds:0x6c218c")],
+                         0x3000, 0x3100)[1] == "0x006c2188 0x006c218c", "globals read, in order")
+    ok(builder_body_scan([(0x3000, "cmp    DWORD PTR [ecx],ebx")], 0x3000, 0x3100)[0] == "none", "cmp is not a store")
 
     class Fake:
         blob = b"Starting Engine\x00"

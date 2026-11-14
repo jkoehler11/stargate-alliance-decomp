@@ -580,10 +580,22 @@ it builds in its prologue is therefore the session's frame, and a pointer into i
 initializer (`0x005c1a0c`, table `0x004d2fd0`) describes only the state before `main` runs.
 
 It also installs **twice**. `0x0005a9b2` (in `Core_UnMisc`, reached from `main`'s call at `0x12b7d`) installs the
-`[ebp-0x954]` object of #519 -- table `0x004c8db8` -- and `0x169e3` later re-points the global at `[ebp-0xb0]`, a second
-frame slot, zeroed at `0x12927` and handed to `call 0x6c750` with `ecx` still holding it, immediately before
-`Starting Engine` is printed. `0x6c750` stores no immediate at `[this]`, so the class of the object the engine phase
-uses is still open -- but the object is not the one #519 measured, and the phase column below is what separates them.
+`[ebp-0x954]` object of #519 -- table `0x004c8db8` -- and `0x169e3` re-points the global at `[ebp-0xb0]`, a second frame
+slot, zeroed at `0x12927` and handed to `call 0x6c750` with `ecx` still holding it, with `Starting Engine` as the next
+literal printed.
+
+**That call is not a constructor, so the second slot is never built.** `0x6c750` writes nothing through `ecx` at all
+(`builder stores` is `none` on its row) and reads the object array at `0x006c2188` with its count at `0x006c218c`: it is
+a purge over the loaded objects (326 bytes, ending `ret` at `0x6c895`), not a build. The only write `[ebp-0xb0]` ever
+receives is the zero at `0x12927`, so `0x169e3` points the global at an object that does not exist -- which reads as a
+teardown of the file layer where the phase column puts it next to `Starting Engine`, not as the engine's install.
+The order is not a decoding artifact: the region is fall-through code (`0x1670b` and `0x16739` branch into it at
+`0x16742`, and no branch jumps over it), so the sequence stands and the *reading* is what stays open. What is certain is
+that the object #519 measured is not the one installed last.
+
+The next instrument for it is the object array itself: `0x77210` is the lookup the purge calls per element, and the
+class of the object a reload leaves behind is in the `[+0x24]`/`[+0x498]` fields this body tests rather than in the
+vtable of either file-manager table.
 
 What this does settle is the direction of the global: **the load path's own bodies never read it.** `0x00134d40` (the
 loader) and `0x00149370` (`GameInfo.LoadSaveGame`) name `[0x005bf514]` zero times; two functions in the loader's own
@@ -598,13 +610,13 @@ and the serializer `0x0006f4b0` three times; `main` itself reads it once, at `0x
 <!-- generated:fmgr-installs -->
 **The file-manager global has 2 store(s) in the image, and they are not the same kind of object.** The rows below are the image's own initializer and every store, in the order the build performs them, with the frame slot each value points at, the call that builds that slot, the table that call stores at `[this]`, and the literal the build prints next -- the phase the store belongs to. `at` orders them: an install inside a callee is placed at the call site that enters it, one inside the function the CRT calls at its own address. The static row's `reads` cell is the count of instructions in the image that name the global.
 
-| store | at | in | fn size | rets | callers | kind | value | slot | builder | table | phase | slot refs |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `image` | image | - | - | - | - | data-initializer | `0x005c1a0c` | - | - | 0x004d2fd0 | pre-main | - |
-| `0x0005a9b2` | 0x00012b7d call | Core_UnMisc | 3181 | - | 0x00012b7d | incoming | `eax` | - | - | - | - | - |
-| `0x000169e3` | 0x000169e3 own body | Core_UnObjBas | 18359 | 0x00016cfe | 0x0033f2ff | frame | `ecx` | ebp-b0 | 0x000169d2 -> call 0x0006c750 | none | 0x169f1 Starting Engine | 0x00012927 write 0x000169d2 read |
+| store | at | in | fn size | rets | callers | kind | value | slot | builder | table | builder stores | builder globals | phase | slot refs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `image` | image | - | - | - | - | data-initializer | `0x005c1a0c` | - | - | 0x004d2fd0 | - | - | pre-main | - |
+| `0x0005a9b2` | 0x00012b7d call | Core_UnMisc | 3181 | - | 0x00012b7d | incoming | `eax` | - | - | - | - | - | - | - |
+| `0x000169e3` | 0x000169e3 own body | Core_UnObjBas | 18359 | 0x00016cfe | 0x0033f2ff | frame | `ecx` | ebp-b0 | 0x000169d2 -> call 0x0006c750 | none | none | 0x006c218c 0x006c2188 | 0x169f1 Starting Engine | 0x00012927 write 0x000169d2 read |
 
-**What the columns decide.** A `frame` value means the object lives in the containing function's own frame, so whether it can be dispatched through depends on that frame outliving the reader: the `rets` column is the function's whole exit set, and a store that precedes every one of them leaves the frame alive only as long as the function does. The `callers` column says how that function is entered -- one site outside every mapped function is the CRT's call into `main`. `table` is `none` when the call the slot is handed to stores no immediate at `[this]`, which is the difference between an install and a pointer to scratch. A `-` in `rets` is a body whose decoded sweep has no `ret` at all -- it leaves through a jump, so its exit set is not this column's to state.
+**What the columns decide.** A `frame` value means the object lives in the containing function's own frame, so whether it can be dispatched through depends on that frame outliving the reader: the `rets` column is the function's whole exit set, and a store that precedes every one of them leaves the frame alive only as long as the function does. The `callers` column says how that function is entered -- one site outside every mapped function is the CRT's call into `main`. `table` is `none` when the call the slot is handed to stores no immediate at `[this]`, which is the difference between an install and a pointer to scratch, and `builder stores` is the `[ecx]`-relative write census of the call the slot was handed to: a constructor writes its table there, a function that only walks a global array (`builder globals`) does not. A `-` in `rets` is a body whose decoded sweep has no `ret` at all -- it leaves through a jump, so its exit set is not this column's to state.
 <!-- /generated:fmgr-installs -->
 
 

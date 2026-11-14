@@ -583,8 +583,9 @@ function of both stores is the process's own entry body -- one CRT call site at 
 `Starting Engine` / `Launching map` / `Entering Loop` literals -- so the frame outlives every game call, and the `.data`
 object `0x005c1a0c` (table `0x004d2fd0`) describes only the image before it runs. The second store (`0x169e3`,
 `[ebp-0xb0]`) comes after the `0x4c8db8` object and immediately before `Starting Engine`, so the engine phase runs with
-an object whose class is still open. The loader `0x00134d40` and `GameInfo.LoadSaveGame` `0x00149370` never read the
-global at all; the load path reaches it one call deeper (`0x001347d0`, `0x00134960`), and the save side reads it
+an object nothing builds -- `0x6c750` writes nothing through `ecx` and only walks the object array at `0x006c2188`,
+so the second install is a teardown of the file layer, not the engine's install. The loader `0x00134d40` and
+`GameInfo.LoadSaveGame` `0x00149370` never read the global at all; the load path reaches it one call deeper (`0x001347d0`, `0x00134960`), and the save side reads it
 directly (writer `0x00138680` once, serializer `0x0006f4b0` three times). Artifact `inventory/fmgr_installs.csv`.
 
 
