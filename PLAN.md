@@ -1178,6 +1178,35 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the boundary past the group is 3, 4 or 11 bytes on 7 of the 13, and absent on 6)
+
+- **The measurement the last note named is answered.** `tools/class-group-after-scan.py` reads the tag stream from
+  every offset in `[group_end, group_end + 12)` on the 13 refused rows that open nothing usable at the group's end with
+  more than a byte left after it. Offset 0 answers on **0 of 13**, and some offset on **7**: `Engine.Weapon` at
+  **k=3** (`FireSoundPitchMax` first, 34 tags all declared, 271 bytes to the payload end), the two
+  `StargateContent.ZatGun_*` rows at **k=4** (one tag, `AmmoName`) and all four FORMATION rows at **k=11**
+  (`offset` first, 47/32/21/7 tags).
+- **Six rows have no block anywhere in the window** (`Engine.Admin`, `Engine.AvoidMarker`, `Engine.ProceduralSound`,
+  `Engine.SoundGroup`, `StargateContent.DecipheringTrigger`, `StargateContent.HackingPanel`): 2-6 bytes follow the
+  group and all twelve offsets read empty, short, undeclared or unreadable, so they are the last note's empty
+  defaults block with a few bytes of record tail in front of the payload's end.
+- **The missing width is 3, 4 or 11, and it is the same 11 on all four FORMATION rows** (`00`, two two-byte compacts,
+  four zero bytes); on `Engine.Weapon` the three bytes plus the group's last are `00 00 80 3f`, a float 1.0. The
+  boundary is a class-family field plus the group's optional tail, not one constant -- and the field is not named.
+- **The pick is validated where the answer is known.** On the 1,586 rows whose group end is the located block start by
+  two witnesses, offset 0 answers on **1,586 of 1,586** and the widest reading picks it on **1,586 of 1,586** -- while
+  **1,180 of them (74.4%)** also answer at a second offset, so "some offset answers" is a 100% base rate and only the
+  widest reading discriminates.
+- Tool (`tools/class-group-after-scan.py`: `--class`, `--sweep`, `--report`, `--check` with synthetic bodies, a group
+  that ends the payload and a stream naming nothing declared) + `inventory/class_group_after_scan.csv` (1,700 rows:
+  114 (class, offset) tests on the 13, one row per control class) + `docs/NATIVE_VM.md` (new section) +
+  `docs/UNKNOWNS.md` U18 (thirty-first) + `make class-group-after-scan` + this note. Reads the packages and two
+  committed geometries; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the 7 rows have a boundary and `class_defaults_per_class.csv` still does not -- switch
+  the chooser to the guard's start (the group's end, or this offset where the group's end opens an empty block),
+  re-run the five artifacts downstream of it, and mark the 6 with no block as having no defaults. Then the one refused
+  row that opens a tag and stops short (`StargateVehicles.HoverCraftFixedGun`, 108 bytes left).
+
 ### Execution notes (2026-11-13, the guard's 45 refusals are an empty defaults block, not an over-read)
 
 - **The next measurement the last note named is answered, and the over-read is refused.** `tools/class-group-stop.py`

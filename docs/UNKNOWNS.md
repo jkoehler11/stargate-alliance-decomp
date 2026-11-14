@@ -3691,3 +3691,24 @@ start, so the 234 rows this page puts a block at the group's end are still read 
 downstream of that artifact: switching the chooser and re-running the five artifacts that read it (`class_defaults_emit`,
 `class_defaults_coverage`, `class-defaults.py --coverage`, `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`) is the change
 this leaves.
+
+**Answered 2026-11-13 (thirty-first): the 13 refused rows split 7 with a boundary 3, 4 or 11 bytes past the group and
+6 with no block at all.** `tools/class-group-after-scan.py` reads the tag stream from every offset in
+`[group_end, group_end + 12)` on those 13. Offset 0 answers on **0 of 13**; some offset answers on **7** --
+`Engine.Weapon` at **k=3** (34 tags, all declared, 271 bytes to the payload end), the two `ZatGun_*` rows at **k=4**
+(one tag, `AmmoName`) and all four FORMATION rows at **k=11** (47/32/21/7 tags, `offset` first). The six that answer
+nowhere (`Engine.Admin`, `Engine.AvoidMarker`, `Engine.ProceduralSound`, `Engine.SoundGroup`,
+`StargateContent.DecipheringTrigger`, `StargateContent.HackingPanel`) leave only 2-6 bytes after the group and read as
+empty, short, undeclared or unreadable at all twelve offsets, so they carry no defaults block at all. The missing width
+is 3 on `Weapon` (its three bytes plus the group's last are `00 00 80 3f`, a float 1.0) and the same eleven bytes on
+all four FORMATION rows, so it is a class-family field plus the group's optional tail, not one constant. The control
+makes the hit mean something: on the **1,586** rows whose group end is the located block start by two witnesses offset
+0 answers on **1,586 of 1,586** and the widest reading picks it on **1,586 of 1,586**, while **1,180 (74.4%)** of them
+also answer at a second offset -- 1,888 extra answers -- so a bare "some offset answers" is a 100% base rate.
+
+**What is still open.** `class_defaults_per_class.csv` still carries the pre-guard start, and the chooser does not yet
+read the 3, 4 and 11 byte offsets: switching it and re-running the five artifacts downstream (`class_defaults_emit`,
+`class_defaults_coverage`, `class-defaults.py --coverage`, `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`) is the change
+those seven rows and the 234 moved ones leave. `StargateVehicles.HoverCraftFixedGun` (one tag, 108 bytes left) is the
+one refused row that opens a block and stops short, and the six rows with no block should be recorded as having no
+defaults rather than refused.

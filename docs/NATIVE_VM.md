@@ -2829,3 +2829,40 @@ nothing at the group end with 4-10 bytes after it, 7 open an empty block with 2-
 `class_defaults_per_class.csv` still carries the pre-guard start, so the 234 rows this page says have a block at the group end are still read 2-10 bytes early by every count
 downstream of that artifact. Switching the chooser, and re-running the five artifacts that read it, is the change
 those two leave.
+
+### The boundary past the closing group is 3, 4 or 11 bytes on 7 of the 13, and there is none on 6
+
+`tools/class-group-after-scan.py` takes the 13 rows `class_group_stop.csv` refuses where the group's end opens nothing
+usable and more than one byte of payload still follows it, and reads the tag stream from every offset in
+`[group_end, group_end + 12)`. The pick is the answering offset that reads the **most** properties: a block read from
+inside another one is a suffix of it and strictly shorter, so the widest reading is the boundary.
+
+- **Offset 0 answers on none of the 13, and some offset in the window on 7.** `Engine.Weapon` opens at **k=3**
+  (`FireSoundPitchMax` first, 34 tags, every one declared, 271 bytes to the payload's last byte), the two
+  `StargateContent.ZatGun_*` rows at **k=4** (one tag, `AmmoName`), and all four `StargateContent` FORMATION rows at
+  **k=11** (`offset` first: 47 tags on `Wedge`, 32 on `2Column`, 21 on `SingleFileSpreadOut`, 7 on `HaakenPod`).
+- **Six answer nowhere in the window.** `Engine.Admin`, `Engine.AvoidMarker`, `Engine.ProceduralSound`,
+  `Engine.SoundGroup`, `StargateContent.DecipheringTrigger` and `StargateContent.HackingPanel` leave only **2-6 bytes**
+  after the group and read as empty, short, undeclared or unreadable at all twelve offsets, so they are the empty
+  defaults block of the previous section with a few bytes of the record's tail still in front of the payload's end.
+- **The missing width is not one constant.** 3 bytes on `Engine.Weapon`, 4 on the two ZatGuns, 11 on every FORMATION
+  row. On `Weapon` the three bytes plus the group's own last byte are `00 00 80 3f`, a float **1.0**; the FORMATION
+  gap is the same eleven bytes on all four (`00`, two two-byte compacts, four zero bytes). That reads as a field of the
+  class family plus the group's optional tail rather than as noise, but the field is not identified here.
+- **The control fixes what a hit means.** On the **1,586** rows whose group end is the located block start by two
+  witnesses, offset 0 answers on **1,586 of 1,586** and the widest reading picks it on **1,586 of 1,586**. The scan is
+  permissive: **1,180 of those (74.4%)** also answer at a second offset (622 rows have two answering offsets in all,
+  468 three, 57 four), 1,888 extra answers over those, so "an offset answers" alone is a 100% base rate and only the
+  widest reading separates a boundary from a suffix.
+
+`make class-group-after-scan` writes `inventory/class_group_after_scan.csv` (1,700 rows: the **114**
+`(class, offset)` tests on the 13, one row per control class). Columns: `population`, `payload`, `shipped`,
+`group_from`/`group_len`/`group_end`, `after`, `k`, `offset`, `props`, `length`, `to_end`, `decl`, `first`, `last`,
+`verdict` (`declared-to-end`, `undeclared`, `short-of-end`, `empty`, `no-stream`, `unreadable`, `nothing-left`,
+`past-payload`), `n_full` and `full_offsets`. It reads the packages and the two committed geometries; no boot, no Ghidra
+round, no property value decoded.
+
+**What is still open.** The 7 rows now have a boundary and `class_defaults_per_class.csv` still does not: the chooser
+takes the group's end as a candidate but not `group_end + 3/4/11`, and the six rows with no block should be marked as
+having no defaults rather than left refused. `StargateVehicles.HoverCraftFixedGun` -- one tag, 108 bytes left -- is the
+one refused row that opens a block and stops short, and it is not in this population.
