@@ -1,0 +1,34 @@
+run,kind,step,name,portrait,prompt,verdict,repeat_of,detail
+ckpt1,shot,4,00-title,0.0049,0.0668,no-hud,,first frame
+ckpt1,shot,33,01-highlight,0.0049,0.0668,no-hud,,repaint 77 px
+ckpt1,shot,36,02-mission,0.2267,0.0000,hud,,repaint 7578 px
+ckpt1,shot,42,03-gameplay,0.2161,0.0000,hud,,repaint 595 px
+ckpt1,shot,112,r1a-typed,0.2171,0.0000,hud,,repaint 27 px
+ckpt1,shot,115,r1b-30,0.0000,0.0000,no-hud,,repaint 3204 px
+ckpt1,shot,117,r1c-60,0.0000,0.0000,no-hud,r1b-30,repaint 0 px
+ckpt1,shot,119,r1d-100,0.0000,0.0000,no-hud,r1b-30,repaint 0 px
+ckpt1,shot,201,r1e-cptyped,0.0000,0.0000,no-hud,,repaint 0 px
+ckpt1,shot,204,r1f-cp50,0.0000,0.0000,no-hud,r1b-30,repaint 0 px
+ckpt1,shot,206,r1g-cp80,0.0000,0.0000,no-hud,r1b-30,repaint 0 px
+ckpt2,shot,4,00-title,0.0049,0.0668,no-hud,,first frame
+ckpt2,shot,33,01-highlight,0.0049,0.1055,no-hud,,repaint 19070 px
+ckpt2,shot,36,02-mission,0.1823,0.1028,hud,,repaint 24815 px
+ckpt2,cpu,37,,,,running,,"running; 6 samples, 6 distinct, 0 in kernel: 0x00229cf8 0x00463cb5 0x00046fee 0x002b7336 0x002374c0 0x00040690"
+ckpt2,shot,43,03-gameplay,0.1838,0.1175,hud,,repaint 455 px
+ckpt2,cpu,44,,,,running,,"running; 6 samples, 6 distinct, 0 in kernel: 0x00184e30 0x00463864 0x002ba0d8 0x002b61e7 0x00229cf8 0x003ed669"
+ckpt2,shot,66,r0a-typed,0.1882,0.1104,hud,,repaint 154 px
+ckpt2,shot,69,r0b-30,0.1852,0.1128,hud,,repaint 294 px
+ckpt2,shot,71,r0c-70,0.1874,0.1090,hud,,repaint 326 px
+ckpt2,cpu,72,,,,running,,"running; 6 samples, 6 distinct, 0 in kernel: 0x00229cf8 0x003e62e3 0x002aa730 0x0004730a 0x00463864 0x0022930d"
+ckpt2,shot,142,r1a-typed,0.1753,0.1075,hud,,repaint 13 px
+ckpt2,shot,145,r1b-30,0.0000,0.9767,no-hud,,repaint 14184 px
+ckpt2,cpu,146,,,,running,,"running; 6 samples, 5 distinct, 3 in kernel: 0x002bd4f7 0x004639e6 0x002b7f33 0x80024aab 0x80024a97 0x80024a97"
+ckpt2,shot,148,r1c-60,0.0000,0.9767,no-hud,,repaint 3 px
+ckpt2,shot,150,r1d-100,0.0000,0.9767,no-hud,r1c-60,repaint 0 px
+ckpt2,shot,232,r1e-cptyped,0.0000,0.9767,no-hud,,repaint 0 px
+ckpt2,shot,235,r1f-cp50,0.1708,0.0000,hud,,repaint 14348 px
+ckpt2,shot,237,r1g-cp80,0.1708,0.0000,hud,,repaint 0 px
+ckpt2,cpu,238,,,,running,,"running; 6 samples, 3 distinct, 5 in kernel: 0x80024a97 0x80024a97 0x004c425e 0x80024a98 0x80024a98 0x80024a98"
+ckpt2,shot,241,h0-pause,0.0049,0.0005,no-hud,,repaint 32177 px
+ckpt2,shot,244,h1-after-a,0.1708,0.0000,hud,,repaint 32177 px
+ckpt2,cpu,245,,,,running,,"running; 6 samples, 5 distinct, 2 in kernel: 0x003e61a0 0x00078340 0x00055f36 0x003ec222 0x80024a98 0x80024a98"

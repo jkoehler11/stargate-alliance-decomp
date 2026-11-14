@@ -90,6 +90,99 @@ checkpoint actually differs by.
 3. Physics state is persisted (`KarmaParamsRBFull`, inertia tensors), so a load cannot simply respawn
    rigid bodies and let them settle; the state is restored.
 
+## The load half, measured (2026-11-14)
+
+`tools/xemu/checkpoint-load.sh` boots a map, waits for a gameplay frame, and types console commands at a shipped
+checkpoint; `tools/xemu/checkpoint-load.py` reads the frames back into `inventory/checkpoint_loads.csv`. The witness
+is `map-frame.py`'s HUD corner, unchanged: 0.140-0.986 on the 65 frames that are play and 0.000-0.027 on the 7 that
+are not.
+
+Both runs boot `12` `M02B` and name `C_M02B_Secondsymbol.sgs` -- a checkpoint **of the level it was loaded in**, the
+case the one recorded attempt never covered (that one typed an `M02A` checkpoint from `M00`). Each run carries a
+**control** too: `stat fps`, in the same console, with the same keystroke count and the same waits, and a command
+that cannot touch the level.
+
+**The control keeps playing; the load does not.** After `stat fps` the picture repaints 294 px and then 326 px at
++30 s and +70 s of a 1280x960 frame, the HUD corner reads `0.1852`, and six EIP samples are six distinct user-space
+addresses. So the console, the typing and the waits are not what moves anything.
+
+`loadgame c_m02b_secondsymbol.sgs` -- the route `RestartCheckpoint` and `SavedGameList` use, via `LoadSaveGame` --
+then reads, frame by frame:
+
+| when | picture | HUD corner | EIP samples |
+|---|---|---:|---|
+| before the submit | gameplay | 0.1753 | 6 distinct, 0 in kernel |
+| +30 s | changed 14,184 px, no HUD | 0.0000 | 3 of 6 in kernel (`0x80024aab`, `0x80024a97` x2) |
+| +60 s | changed 3 px | 0.0000 | -- |
+| +100 s | unchanged (0 px) | 0.0000 | -- |
+| +180 s, after the second spelling was typed at the stalled guest | changed, HUD drawn | 0.1708 | 5 of 6 in kernel |
+| +260 s | unchanged (0 px) | 0.1708 | 5 distinct, 5 in kernel |
+
+**No resumed play in the window, and the reason is a stalled guest rather than a lost one.** The kernel idle
+addresses (`0x80024a97`, `0x80024a98` -- the pair `docs/XEMU.md` records for the BIOS prompt) turn up in five of six
+samples two minutes after the submit, and every frame after the one the HUD appears in is byte-identical to it: a
+playable level animates. The pad still reaches the guest -- `pad=start` moved 32,177 px into the pause menu and
+`pad=a` moved another 32,177 -- so the input path is alive while the game loop is not, and "the load left the guest
+in kernel idle" is the reading the two witnesses agree on.
+
+The spelling is not the difference: in `ckpt1` the same file went through `loadgame` and then through
+`checkpointload` (`CheckpointLoad` -> `LoadCheckPoint`, the route the recorded attempt used), and both rounds sit on
+one stopped picture -- the second command was typed at a guest that had already stopped, which is why that round
+reads one picture and no HUD instead of a separate verdict.
+
+What this does **not** say: that the nine files are unreadable. `docs/formats/sgs-checkpoint.md` reads all nine and
+the loader at `0x00134d40` is whole. What it says is that the shipped build does not give back a playable level from
+one inside three minutes, through either console route -- and the console is the only route this dump offers, because
+`GameInfo.SavePackage` is a stub (so no profile save is ever written beside them) and the profile index has no row
+for any of the nine.
+
+<!-- generated:checkpoint-load -->
+| run | round | frames after the submit | of those, pictures | drawing the HUD |
+|---|---|---:|---:|---:|
+| `ckpt1` | `r1` | 6 | 2 | 0 |
+| `ckpt2` | `r0` | 2 | 2 | 2 |
+| `ckpt2` | `r1` | 6 | 5 | 2 |
+
+| run | shot | corner | prompt | read | note |
+|---|---|---:|---:|---|---|
+| `ckpt1` | `00-title` | 0.0049 | 0.0668 | no-hud | first frame |
+| `ckpt1` | `01-highlight` | 0.0049 | 0.0668 | no-hud | repaint 77 px |
+| `ckpt1` | `02-mission` | 0.2267 | 0.0000 | hud | repaint 7578 px |
+| `ckpt1` | `03-gameplay` | 0.2161 | 0.0000 | hud | repaint 595 px |
+| `ckpt1` | `r1a-typed` | 0.2171 | 0.0000 | hud | repaint 27 px |
+| `ckpt1` | `r1b-30` | 0.0000 | 0.0000 | no-hud | repaint 3204 px |
+| `ckpt1` | `r1c-60` | 0.0000 | 0.0000 | no-hud | same bytes as `r1b-30` |
+| `ckpt1` | `r1d-100` | 0.0000 | 0.0000 | no-hud | same bytes as `r1b-30` |
+| `ckpt1` | `r1e-cptyped` | 0.0000 | 0.0000 | no-hud | repaint 0 px |
+| `ckpt1` | `r1f-cp50` | 0.0000 | 0.0000 | no-hud | same bytes as `r1b-30` |
+| `ckpt1` | `r1g-cp80` | 0.0000 | 0.0000 | no-hud | same bytes as `r1b-30` |
+| `ckpt2` | `00-title` | 0.0049 | 0.0668 | no-hud | first frame |
+| `ckpt2` | `01-highlight` | 0.0049 | 0.1055 | no-hud | repaint 19070 px |
+| `ckpt2` | `02-mission` | 0.1823 | 0.1028 | hud | repaint 24815 px |
+| `ckpt2` | `03-gameplay` | 0.1838 | 0.1175 | hud | repaint 455 px |
+| `ckpt2` | `r0a-typed` | 0.1882 | 0.1104 | hud | repaint 154 px |
+| `ckpt2` | `r0b-30` | 0.1852 | 0.1128 | hud | repaint 294 px |
+| `ckpt2` | `r0c-70` | 0.1874 | 0.1090 | hud | repaint 326 px |
+| `ckpt2` | `r1a-typed` | 0.1753 | 0.1075 | hud | repaint 13 px |
+| `ckpt2` | `r1b-30` | 0.0000 | 0.9767 | no-hud | repaint 14184 px |
+| `ckpt2` | `r1c-60` | 0.0000 | 0.9767 | no-hud | repaint 3 px |
+| `ckpt2` | `r1d-100` | 0.0000 | 0.9767 | no-hud | same bytes as `r1c-60` |
+| `ckpt2` | `r1e-cptyped` | 0.0000 | 0.9767 | no-hud | repaint 0 px |
+| `ckpt2` | `r1f-cp50` | 0.1708 | 0.0000 | hud | repaint 14348 px |
+| `ckpt2` | `r1g-cp80` | 0.1708 | 0.0000 | hud | repaint 0 px |
+| `ckpt2` | `h0-pause` | 0.0049 | 0.0005 | no-hud | repaint 32177 px |
+| `ckpt2` | `h1-after-a` | 0.1708 | 0.0000 | hud | repaint 32177 px |
+
+| run | step | vCPU | samples | distinct | in kernel |
+|---|---:|---|---:|---:|---:|
+| `ckpt2` | 37 | running | 6 | 6 | 0 |
+| `ckpt2` | 44 | running | 6 | 6 | 0 |
+| `ckpt2` | 72 | running | 6 | 6 | 0 |
+| `ckpt2` | 146 | running | 6 | 5 | 3 |
+| `ckpt2` | 238 | running | 6 | 3 | 5 |
+| `ckpt2` | 245 | running | 6 | 5 | 2 |
+<!-- /generated:checkpoint-load -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files
