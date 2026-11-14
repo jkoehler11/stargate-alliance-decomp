@@ -65,7 +65,7 @@ pstream = _load("prop-stream")
 
 # ---------------------------------------------------------------- the group, as an interval per start
 
-def committed(g):
+def committed(g, nimports):
     """Is this parse the writer's field, or bytes that tile as a group?
 
     `free_group` only demands that every index be inside the name table, and index 0 is inside it -- so a zero run
@@ -74,22 +74,26 @@ def committed(g):
 
     The reference is what separates them: the archive's reference slot writes import references **negative**
     (981 of 984 parses; `tools/class-record-open-tail.py` reports a negative reference on 1,604 of the located
-    rows), and a padding window's reference is 0. So the guard takes a group only when its reference is negative --
-    a committed reference -- rather than counting every parse that tiles.
+    rows), and a padding window's reference is 0. But a negative reference alone is not enough -- an
+    `FCompactIndex` is five bytes, so a parse inside a name run can carry -13,555,990,527, an index no import table
+    holds. Measured on the 2,209 located rows: of the 1,654 groups whose end **is** the shipped start (the control
+    population), 1,653 carry a magnitude inside the package's import count and one does not, with a median of 6 and
+    a largest of 42. So a committed reference is one the package's own import table can hold, and 18 rows whose
+    only covers are outside it were being refused on a parse that cannot be the writer's field.
     """
-    return g["ref"] < 0
+    return g["ref"] < 0 and -g["ref"] <= nimports
 
 
-def group_intervals(data, nnames, hi=None):
-    """Every offset where the writer's four-field group parses, as `(start, end)`.
+def group_intervals(data, nnames, nimports):
+    """Every offset where the writer's four-field group parses, as `(start, end, group)`.
 
     Built once per payload: the chooser asks the question of every candidate it considered, and a per-candidate
     scan over the same bytes would re-parse the same offsets.
     """
     out = []
     for q in range(len(data)):
-        g = otail.free_group(data, q, nnames, hi)
-        if g is not None and committed(g):
+        g = otail.free_group(data, q, nnames)
+        if g is not None and committed(g, nimports):
             out.append((q, q + g["len"], g))
     return out
 
@@ -150,7 +154,7 @@ def measure_one(pkg, exp, cls, shipped, decl, kinds):
     known = sum(1 for n in names if n in decl)
     row.update({"chosen": start, "reproduced": 1 if start == shipped else 0, "old_count": count, "old_known": known,
                 "old_decl": "%.3f" % (known / float(count)) if count else ""})
-    iv = group_intervals(data, nnames)
+    iv = group_intervals(data, nnames, len(pkg.imports or []))
     hit = covering(iv, shipped)
     row["guard"] = "inside-group" if hit else "clear"
     if hit is not None:
@@ -362,7 +366,7 @@ def self_check():
 
     data, gstart = body()
     nnames = 40
-    iv = group_intervals(data, nnames)
+    iv = group_intervals(data, nnames, 40)
     assert len(iv) >= 1, iv
     g = otail.free_group(data, gstart, nnames)
     assert g is not None and g["len"] == 7, g
@@ -374,18 +378,24 @@ def self_check():
     # four zero bytes parse as an empty group, and a zero reference is not a committed one
     zero = bytes(16) + b"\x00" * 16 + b"\x04\x11\x22"
     assert otail.free_group(zero, 16, 40) is not None
-    assert not committed(otail.free_group(zero, 16, 40))
-    assert covering(group_intervals(zero, 40), 18) is None
+    assert not committed(otail.free_group(zero, 16, 40), 40)
+    assert covering(group_intervals(zero, 40, 40), 18) is None
+    # a five-byte negative reference is an index no import table holds, so it is not a committed group
+    wide = bytes(16) + bytes.fromhex("03 00 65 40 22 FF FF FF FF 64 40 24 00") + b"\x00" * 4
+    gw = otail.free_group(wide, 16, 8192)
+    assert gw is not None and gw["ref"] < 0, gw
+    assert not committed(gw, 64)                 # the reference is 13,555,990,527 deep
+    assert covering(group_intervals(wide, 8192, 64), 18) is None
     # a start before the group is clear
     assert covering(iv, gstart - 1) is None
     # and a start beyond the lookback is not swallowed by a far group
     assert covering(iv, gstart + 40) is None
     # a name index outside the table is not a group, so nothing covers
     d2, s2 = body(group=b"\x03\x01\x02\x09\x87\x04\x00")
-    assert covering(group_intervals(d2, 8), s2 + 3) is None
+    assert covering(group_intervals(d2, 8, 40), s2 + 3) is None
     # the widest covering group wins when two nest
     d3 = bytes(32) + b"\x00" * 8 + b"\x02\x01\x02" + b"\x00" + b"\x03\x01\x02\x03\x87\x04\x00" + b"\x00" * 4
-    iv3 = group_intervals(d3, 40)
+    iv3 = group_intervals(d3, 40, 40)
     hit3 = covering(iv3, 45)
     assert hit3 is not None, iv3
     print("self-check ok: a start inside a parsed group is covered, the group's own end and any start outside it "

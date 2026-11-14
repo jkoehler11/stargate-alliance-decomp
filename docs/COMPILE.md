@@ -18,37 +18,37 @@ Per class, four things a compiler would need:
 
 <!-- generated:compile-readiness -->
 
-**1,824 of 2,319 classes (78.7%) have every input.**
+**1,823 of 2,319 classes (78.6%) have every input.**
 
 | `defaults_state` | classes | blocks the compile loop? |
 |---|---:|---|
-| `read` — a block whose every property the class declares | 955 | no |
+| `read` — a block whose every property the class declares | 954 | no |
 | `not-applicable` — no properties anywhere in its ancestry | 869 | no |
-| `ambiguous` — block found, not every property declared | 413 | yes |
-| `none` — declares properties, no block located | 82 | yes |
+| `ambiguous` — block found, not every property declared | 405 | yes |
+| `none` — declares properties, no block located | 91 | yes |
 
 | package | classes | ready | no block | ambiguous |
 |---|---:|---:|---:|---:|
-| `StargateContent` | 567 | 92.9% | 3 | 37 |
-| `Engine` | 367 | 58.3% | 47 | 106 |
-| `StargateGame` | 306 | 74.5% | 7 | 71 |
-| `GamePlay` | 262 | 76.7% | 0 | 61 |
+| `StargateContent` | 567 | 92.9% | 2 | 38 |
+| `Engine` | 367 | 58.0% | 46 | 108 |
+| `StargateGame` | 306 | 74.5% | 10 | 68 |
+| `GamePlay` | 262 | 76.7% | 5 | 56 |
 | `Sharpeffects` | 158 | 98.7% | 1 | 1 |
 | `GUI` | 148 | 91.2% | 3 | 10 |
 | `StargateVehicles` | 142 | 90.8% | 1 | 12 |
-| `StargateMenus` | 98 | 69.4% | 11 | 19 |
-| `UWindow` | 78 | 16.7% | 0 | 65 |
+| `StargateMenus` | 98 | 69.4% | 2 | 28 |
+| `UWindow` | 78 | 16.7% | 7 | 58 |
 | `Stargateeffects` | 77 | 94.8% | 1 | 3 |
 | `UDebugMenu` | 38 | 86.8% | 2 | 3 |
 | `AmbientCreatures` | 18 | 94.4% | 0 | 1 |
 | `Editor` | 16 | 87.5% | 2 | 0 |
 | `IpDrv` | 14 | 42.9% | 0 | 8 |
-| `UnrealEd` | 12 | 33.3% | 1 | 7 |
+| `UnrealEd` | 12 | 33.3% | 2 | 6 |
 | `Core` | 7 | 42.9% | 3 | 1 |
-| `Fire` | 7 | 0.0% | 0 | 7 |
+| `Fire` | 7 | 0.0% | 4 | 3 |
 | `UPreview` | 4 | 75.0% | 0 | 1 |
 
-Blockers across the tree: no-defaults-block 82, defaults-ambiguous 413.
+Blockers across the tree: no-defaults-block 91, defaults-ambiguous 405.
 
 <!-- /generated -->
 

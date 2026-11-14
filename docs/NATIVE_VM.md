@@ -2866,3 +2866,53 @@ round, no property value decoded.
 takes the group's end as a candidate but not `group_end + 3/4/11`, and the six rows with no block should be marked as
 having no defaults rather than left refused. `StargateVehicles.HoverCraftFixedGun` -- one tag, 108 bytes left -- is the
 one refused row that opens a block and stops short, and it is not in this population.
+
+### The chooser takes the group's end: 373 starts move, and one of them costs a block
+
+`tools/class-blockstart-guard.py` measured the rule that `tools/class-record-open-tail.py` found the geometry for;
+this change puts it in the chooser itself, in `tools/class-defaults.py`, which is what writes
+`inventory/class_defaults_per_class.csv` -- the artifact every count downstream of the record's end reads. Three
+things had to be measured before it could move: what a committed group is, what happens to a block that the rule
+takes away, and what the recovered starts are worth.
+
+- **A committed reference is one the package's own import table can hold.** The guard took any negative reference as
+  the writer's, and an `FCompactIndex` is five bytes wide, so a parse can carry -13,555,990,527 -- an index no table
+  holds. Measured over the 2,209 located rows: of the **1,654** groups whose end **is** the shipped start (the
+  control population, two witnesses), **1,653** carry a magnitude inside the import count and one does not, with a
+  median of **6** and a largest of **42**. Of the groups that *cover* a shipped start, on **18 rows** every cover is
+  outside the table: `Engine` holds **120** imports, so the cover at **-3,007** over `Engine.AvoidMarker` and
+  **-567,581** over `Engine.FileLog` cannot be the record's field, and those starts are no longer refused.
+- **The rule in the chooser.** A candidate start a committed group covers is refused; the group's **end** is offered
+  as a start in its own right; and when that end opens an **empty** block, every offset in `[end, end + 12)` that
+  opens a declared block reaching the payload's last byte is offered too -- the window `class-group-after-scan.py`
+  measured, which is where the block sits behind the record's tail.
+- **373 of the 2,319 starts move and 1,946 stay.** The movement is the group's own length: **+4 on 100, +3 on 83,
+  +7 on 16, +5 on 15, +8 on 15, +6 on 14, +9 on 9**, then a long tail (+19 on 6, +20 on 4, **+89 on 4**) for rows
+  where the covered start was deep inside a longer record. The declared fraction of the chosen block rises on
+  **314** of them and falls on **1**: `Engine.PSBumpBSP`, whose two-tag fully declared block at 100 a cover still
+  refuses -- the rule's whole cost, and the same row `class_record_open_tail.csv` lists as an `overlap == 0` false
+  positive. 58 more move at an unchanged fraction, 22 of them start to start.
+- **The recovered blocks are one property each, and the floor still withholds the verdict.** **316** rows now carry
+  a start at a group's end whose whole block is a single tag (0 before), so `defaults = 1` is published and
+  `fully_declared` stays 0: the floor is a verdict about the *block*, and `docs/CLASS_DEFAULTS.md` measured that
+  promoting one-tag parses turns 320 misses into "fully declared" on a single tag. `single-declared` in the misses
+  table therefore rises from 263 to **288 of 656**, and the head-line count barely moves: **1,663 fully declared of
+  2,319 (71.7%) against 1,664**, with **122 classes carrying no block at all** (110).
+- **What it costs and what it buys downstream.** `inventory/compile_readiness.csv` goes from **1,824 to 1,823**
+  classes with no blocker (`no-defaults-block` 82 -> 91, `defaults-ambiguous` 413 -> 405), and the four artifacts
+  that read the start were regenerated in the same change: `class_defaults_coverage.csv` (354 ambiguous, was 430),
+  `class_defaults_misses.csv`, `compile_readiness.csv`/`_by_package.csv` with `docs/COMPILE.md`, and
+  `docs/STATUS.md` with the README badges. `StargateVehicles.HoverCraftFixedGun` -- the row the last note left as
+  "one tag, 108 bytes left" -- now lands **16 bytes later on an 11-tag block, every name declared**.
+
+Reproduce with `python3 tools/class-defaults.py --packages DUMP/System -o $WORK/cd` (9 s for 2,319 classes) and
+`python3 tools/class-defaults.py --coverage DUMP/System -o $WORK/cd`; the reference test is
+`committed_group()` and the rule is `guarded()`. No boot, no Ghidra round, no property value decoded.
+
+**What is still open.** The 288 `single-declared` rows are now a population rather than a residue -- each has one
+declared tag tiling the payload's tail from a group's end, and the floor says that is the shape of a table tail as
+often as of a block, so deciding it needs a reader that does not exist for either (a walk of the bytes after the
+group that classifies where a tag grammar stops, or one stock `ucc` build of a `*VoicePack` class). And 58 rows move
+without their declared fraction changing: `StargateContent.HackingPanel` goes to offset 1 and `DecipheringTrigger`
+from 87 to 46, neither of which names a property the class declares -- those starts are the end-witness parse of a
+payload whose block is somewhere else entirely.
