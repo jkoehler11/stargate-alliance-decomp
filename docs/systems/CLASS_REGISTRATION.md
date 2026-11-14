@@ -350,6 +350,58 @@ distinct sizes. A genuinely independent size would have to come from outside the
 read of the class's `PropertiesSize`, or a `new` site that pushes it -- and nothing in this tree measures
 the value twice.
 
+## The 24 tables no registration reaches
+
+The site census resolves 468 of the 492 tables to a registration site, and the size join above closes on
+the other 24 as "nothing in this tree measures them". That is true of the *registration* path, not of the
+image. The same `C7 /0` store sweep `tools/class-ctors.py` runs finds a body installing every one of the
+24, and those bodies are not isolated: their callers are class constructors, which is the base-class
+shape. The 24 are the tables the registration literals never name, built by the derived classes whose
+own tables the census does name.
+
+Every store site is a row, and the verdict names the kinds of edge into the body it sits in: `ctor` /
+`dtor` (the caller is a constructor or destructor out of `inventory/class_constructors.csv`), `installer`
+(a table-installing body the shape rule could not classify), `wrapper` (a forwarder whose first call
+targets the body -- the two forms this image carries for every destructor), `code` (a call from an
+ordinary body), `unmapped` (a call from code the symbol map does not cover) and `stub` (a tail jump). The
+`proposed class` column is not this tool's measurement: it is `inventory/class_table_parents.csv`'s
+caller-rule answer for the same table, joined in so the two readings sit side by side.
+
+<!-- generated:class-orphan-tables -->
+| table | slots | proposed class | store sites | installing bodies | registration thunk | callers | verdict | named classes whose constructor calls it |
+|---|---|---|---|---|---|---|---|---|
+| `0x004c78c0` | 31 | -- | 1 | 1 | no | 17 | dtor+wrapper+stub | table:0x004d0318, AudioSubsystem, table:0x004d2400, new +3 |
+| `0x004c7958` | 46 | Material | 2 | 2 | no | 40 | ctor, dtor+wrapper+stub | table:0x004c7a10, Modifier, Combiner, MultiPassMaterial +32 |
+| `0x004c7a10` | 46 | RenderedMaterial | 1 | 1 | no | 17 | dtor+wrapper+stub | table:0x004c7ac8, ConstantMaterial, TexCoordMaterial, VertexColor +5 |
+| `0x004c7ac8` | 46 | BitmapMaterial | 1 | 1 | no | 10 | dtor+wrapper+stub | Texture, ProxyBitmapMaterial, ScriptedTexture, ShadowBitmapMaterial |
+| `0x004c7c78` | 34 | CameraEffect | 1 | 1 | no | 16 | dtor+wrapper+stub | SGScreenSniperOverlay, SGScreenMenuPause, SGScreenBlur, SGScreenDOF +6 |
+| `0x004c9348` | 30 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | table:0x004c93d0, table:0x004d03c8 |
+| `0x004c93d0` | 35 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxViewport |
+| `0x004c94b0` | 30 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxClient |
+| `0x004cfe68` | 59 | WaterTexture | 2 | 2 | no | 8 | ctor, dtor+unmapped+stub | WaveTexture, FluidTexture, WetTexture |
+| `0x004d0318` | 31 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | TcpNetDriver, TcpNetDriverXbox, DemoRecDriver |
+| `0x004d03c8` | 31 | -- | 3 | 3 | no | 15 | ctor, dtor+wrapper+stub | TcpipConnection, TcpipConnectionXbox, DemoRecConnection |
+| `0x004d1468` | 35 | -- | 4 | 2 | no | 28 | ctor, dtor+wrapper+stub, no-body | table:0x004d17a8, Struct, Const, Enum +13 |
+| `0x004d17a8` | 37 | -- | 3 | 3 | no | 36 | ctor, dtor+wrapper+stub | IntProperty, BoolProperty, FloatProperty, StrProperty +9 |
+| `0x004d2400` | 31 | -- | 1 | 1 | no | 3 | dtor+wrapper+stub | XHVVoiceSubsystem |
+| `0x004d34d8` | 32 | -- | 2 | 2 | no | 3 | dtor+wrapper+stub, no-caller | ObjectExporterT3D |
+| `0x004d3af0` | 33 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | TextBufferFactory |
+| `0x004eaea8` | 31 | -- | 1 | 1 | no | 6 | dtor+wrapper+stub | NullRenderDevice, D3DRenderDevice |
+| `0x004fa390` | 34 | -- | 2 | 2 | no | 7 | dtor+wrapper+stub, no-caller | ControlChannel, FileChannel, VoiceChannel, ActorChannel |
+| `0x004fc4f0` | 30 | -- | 3 | 3 | no | 13 | ctor, dtor+wrapper+stub | table:0x004fc588, Level, DemoPlayPendingLevel, NetPendingLevel |
+| `0x004fc588` | 30 | -- | 2 | 2 | no | 8 | ctor, dtor+wrapper+stub | DemoPlayPendingLevel, NetPendingLevel |
+| `0x004fcfe0` | 36 | -- | 1 | 1 | no | 6 | dtor+wrapper+stub | ChannelDownload, HTTPDownload |
+| `0x005040d0` | 30 | Engine | 2 | 2 | no | 5 | ctor, dtor+wrapper+stub | GameEngine |
+| `0x00517860` | 30 | -- | 1 | 1 | no | 7 | dtor+wrapper+stub | table:0x005178d8, IndexBuffer, SkinVertexBuffer |
+| `0x005178d8` | 30 | -- | 1 | 1 | no | 11 | dtor+wrapper+stub | VertexBuffer, VertexStreamVECTOR, VertexStreamCOLOR, VertexStreamUV +1 |
+
+**24 tables, 44 store sites in 42 bodies, 2 of the sites in no symbol-map body.** None of the bodies that install one of these tables is a registration thunk target, and one body stores 1 table more than once.
+
+**6 of the 24 tables carry a name from the caller rule**, the join in the `proposed class` column and not this sweep's measurement; the rest are that tool's `constrained` verdict (a caller set whose common ancestor is not one class), its name-clash case, or a table with no named caller at all.
+
+**40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 103 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 1 call from no map body at all; 2 bodies have no inbound edge.
+<!-- /generated:class-orphan-tables -->
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
@@ -371,6 +423,16 @@ the value twice.
   sites resolve through one shared thunk to Texture's constructor, while the image holds a separate body
   for each (`0x002e81b0`, `0x002e8260`); the registration's fourth argument may be the constructor of the
   nearest ancestor that has one rather than the class's own, and this measurement does not decide that.
+
+- **It does not name the 24 tables.** The caller classes are the derived set, and `tools/class-table-parents.py`
+  turns that set into a candidate name (the deepest common ancestor of the callers); this sweep only says
+  who installs them, whether a registration thunk reaches the installer, and whether it is called at all.
+  Its two readings meet in `inventory/class_orphan_tables.csv`'s `proposed` column and neither is a
+  measurement of the other.
+- **It does not read the tail-jump island.** The `stub` edges that come from code the symbol map does not
+  cover sit in one hole: `0x3f28b8` to `0x3f6d70`, 17 KB of `.text` between the 8-byte `FUN_003f28b0` and
+  `FUN_003f6d70`. The records repeat on a `0x20`-byte stride (`jmp <body>`, `mov eax, <.rdata>`, `jmp`),
+  and it is a lead rather than a registration: nothing there pushes an object size or calls the registrar.
 
 ## Regenerating
 
@@ -418,3 +480,14 @@ The size column's provenance has its own instrument, and it reads committed CSVs
 
 `--check` joins a synthetic set of the five CSVs (a copied column that agrees, one that disagrees, and a
 table no registration reaches) and writes nothing; `--check-doc` rebuilds its block. Both run in `make ci`.
+
+The 24 tables no registration reaches have their own instrument, and it is the store sweep filtered to a
+population rather than a new pass over the image:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-orphan-tables.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-orphan-tables.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a `C7 /0` store with a displacement, a SIB form that must be skipped, a
+caller of each kind, a tail jump, and a store outside every body -- and `--check-doc` rebuilds its block
+from `inventory/class_orphan_tables.csv` with no dump. Both run in `make ci`.
