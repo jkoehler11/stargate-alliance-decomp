@@ -28,6 +28,10 @@ Columns: `index,name,result,attempts,runs,detail`, one row per measured index, s
 * An index outside the **campaign** range is a row like any other -- the page offers 73 entries and 0-9,
   71, 72 are not campaign maps -- but the generated summary names those rows in their own line, so a
   table longer than its own count reads as deliberate rather than as drift.
+* The page has **two** generated blocks: the table (`DOC_MARK`) and the Status paragraph
+  (`DOC_STATUS_MARK`), because a hand-written total went stale the first time a merge added a row -- the
+  page said "63 rows over 77 boots" beside a table of 67. `--write-doc` writes both and `--check-doc`
+  compares both, so no number on that page is typed twice.
 """
 import argparse
 import csv
@@ -42,6 +46,7 @@ import tempfile
 TSV = "missions.tsv"
 COLUMNS = ["index", "name", "result", "attempts", "runs", "detail"]
 DOC_MARK = ("<!-- generated:map-loads -->", "<!-- /generated:map-loads -->")
+DOC_STATUS_MARK = ("<!-- generated:map-loads-status -->", "<!-- /generated:map-loads-status -->")
 CAMPAIGN = (10, 70)
 ATTEMPTS = re.compile(r"^(\d+) attempts?$")
 
@@ -155,25 +160,31 @@ def read_csv(path):
 
 
 def emit(rows, args, text):
-    """Write the CSV and/or the page's block; `--check-doc` compares instead of writing."""
+    """Write the CSV and/or the page's blocks; `--check-doc` compares instead of writing."""
     path = args.write_doc or args.check_doc
     if path:
-        block = doc_block(rows)
+        blocks = ((DOC_MARK, doc_block(rows)), (DOC_STATUS_MARK, status_block(rows)))
         current = open(path, encoding="utf-8").read()
-        fresh = replace_block(current, block)
+        fresh = current
+        for marks, block in blocks:
+            fresh = replace_block(fresh, marks, block)
         if args.check_doc:
             if fresh != current:
-                was = current.split(DOC_MARK[0], 1)[1].split(DOC_MARK[1], 1)[0]
-                old = was.strip().splitlines()
-                new = block.strip().splitlines()
-                print("FAIL %s: the generated block is stale (%d lines are %d)"
-                      % (path, len(old), len(new)))
-                for i in range(max(len(old), len(new))):
-                    a = old[i] if i < len(old) else "<none>"
-                    b = new[i] if i < len(new) else "<none>"
-                    if a != b:
-                        print("  line %d: have %r, computed %r" % (i + 1, a, b))
-                        break
+                print("FAIL %s: a generated block is stale" % path)
+                for marks, _ in blocks:
+                    was = current.split(marks[0], 1)[1].split(marks[1], 1)[0]
+                    new = fresh.split(marks[0], 1)[1].split(marks[1], 1)[0]
+                    if was == new:
+                        continue
+                    old, new = was.strip().splitlines(), new.strip().splitlines()
+                    print("  block %s: %d lines are %d" % (marks[0], len(old), len(new)))
+                    for i in range(max(len(old), len(new))):
+                        a = old[i] if i < len(old) else "<none>"
+                        b = new[i] if i < len(new) else "<none>"
+                        if a != b:
+                            print("  line %d: have %r, computed %r" % (i + 1, a, b))
+                            break
+                    break
                 return 1
             print("ok   map-loads-doc: %s matches its rows" % path)
         else:
@@ -223,11 +234,42 @@ def doc_block(rows, campaign=CAMPAIGN):
     return "\n".join(lines)
 
 
-def replace_block(text, block):
-    begin, end = DOC_MARK
+def status_block(rows, campaign=CAMPAIGN):
+    """The page's Status paragraph, computed from the rows.
+
+    It used to be prose, and its totals went stale on the first merge that added a row: the page said
+    "63 rows over 77 boots" beside a table that said 67. A number that can drift from the artifact it
+    describes is not a status, so the paragraph lives between its own markers and `--check-doc` holds it.
+    """
+    lo, hi = campaign
+    measured = {row[0] for row in rows}
+    passed = sum(1 for row in rows if row[2] == "PASS")
+    boots = sum(row[3] for row in rows)
+    in_range = [row for row in rows if lo <= row[0] <= hi]
+    missing = [i for i in range(lo, hi + 1) if i not in measured]
+    outside = [row for row in rows if not lo <= row[0] <= hi]
+    lines = ["",
+             "**%d rows over %d boots, %d PASS and %d FAIL.**" % (len(rows), boots, passed, len(rows) - passed),
+             ""]
+    if missing:
+        lines += ["The campaign range (%d-%d) has **%d** entr%s with no row: `%s`."
+                  % (lo, hi, len(missing), "y" if len(missing) == 1 else "ies", ranges(missing)), ""]
+    else:
+        inside_boots = sum(row[3] for row in in_range)
+        rest = ("; the other %d rows are the page's entries outside that range (%d boots)"
+                % (len(outside), sum(row[3] for row in outside))) if outside else ""
+        lines += ["All **%d** campaign entries (%d-%d) have a row, over %d of the boots%s."
+                  % (hi - lo + 1, lo, hi, inside_boots, rest), ""]
+    lines += ["\"Complete\" here means coverage, not playability: a `PASS` row is a load, and the two questions "
+              "under \"What is left\" are what a row still cannot answer.", ""]
+    return "\n".join(lines)
+
+
+def replace_block(text, marks, block):
+    begin, end = marks
     i, j = text.find(begin), text.find(end)
     if i < 0 or j <= i:
-        sys.exit("document has no %s ... %s block" % DOC_MARK)
+        sys.exit("document has no %s ... %s block" % marks)
     return text[:i + len(begin)] + block + "\n" + text[j:]
 
 
@@ -286,9 +328,25 @@ def check():
         if "Outside the campaign range: 4 `M15C` (FAIL)." not in mixed:
             print("FAIL doc_block does not account for a row outside the campaign range:\n%s" % mixed)
             return 1
+        done = "".join(status_block(want_rows, campaign=(2, 4)))
+        if ("3 rows over 7 boots, 2 PASS and 1 FAIL" not in done
+                or "All **3** campaign entries (2-4) have a row" not in done):
+            print("FAIL status_block does not carry the rows' own totals:\n%s" % done)
+            return 1
+        short = "".join(status_block(want_rows[1:], campaign=(2, 4)))
+        if "has **1** entry with no row: `2`" not in short:
+            print("FAIL status_block does not name a campaign entry with no row:\n%s" % short)
+            return 1
+        page = "head\n%s\nOLD-TABLE\n%s\nmid\n%s\nOLD-STATUS\n%s\ntail\n" % (DOC_MARK + DOC_STATUS_MARK)
+        fresh = replace_block(replace_block(page, DOC_MARK, "TABLE"), DOC_STATUS_MARK, "STATUS")
+        if ("TABLE" not in fresh or "STATUS" not in fresh or "OLD-" in fresh
+                or fresh.count("head") != 1 or fresh.count("mid") != 1 or fresh.count("tail") != 1):
+            print("FAIL replace_block does not swap both blocks in place:\n%s" % fresh)
+            return 1
         print("ok   map-loads: a PASS from a later run wins, attempts add up, an unknown index or "
-              "status is refused, and the summary line knows a complete range from a gapped one and "
-              "names a row outside it")
+              "status is refused, the summary line knows a complete range from a gapped one and "
+              "names a row outside it, the status paragraph carries the rows' own totals, and both "
+              "generated blocks swap in place")
         return 0
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -301,8 +359,8 @@ def main():
                     help="disc image, for the index -> name table (the XISO, not the dump directory)")
     ap.add_argument("-o", "--out", help="write the CSV here (default: stdout)")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no disc")
-    ap.add_argument("--write-doc", metavar="PATH", help="regenerate the page's table between its markers")
-    ap.add_argument("--check-doc", metavar="PATH", help="fail if the page's table is stale (in `make ci`)")
+    ap.add_argument("--write-doc", metavar="PATH", help="regenerate the page's generated blocks")
+    ap.add_argument("--check-doc", metavar="PATH", help="fail if the page's blocks are stale (in `make ci`)")
     ap.add_argument("--from-csv", metavar="PATH", default="inventory/map_loads.csv",
                     help="with --check-doc/--write-doc and no run directories: read this artifact instead "
                          "of a run (that is what makes the doc gate work without the disc)")

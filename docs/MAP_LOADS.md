@@ -40,9 +40,12 @@ the `A` **on** the list doing nothing. Both are non-deterministic: four of the 3
 `PASS` wins over `FAIL` when a later run contradicts an earlier one, and why `detail` keeps the failure's
 own reason (`BIOS screen`, `main menu`, `frame gate`) for the rows that never passed.
 
-The one row whose `FAIL` is the **map** is index 71. `MainMenu` is the shell's own menu package, so selecting it
-puts the guest back on `MAIN MENU`, which is exactly what the frame gate reports (`main menu`) -- a load this
-instrument cannot tell from a missed press, and it is not one: indices 70 and 72 loaded in the same sweep.
+Both rows whose `FAIL` is the **map** are the page's two non-game packages: 71 `MainMenu`, the shell's own menu
+package, and 9 `Entry`, which behaves the same way. Selecting either puts the guest back on `MAIN MENU` -- read off
+the frame, the menu with `Continue` highlighted -- which is exactly what the frame gate reports (`main menu`: 1.58%
+of the frame differing from the boot frame, where a load needs 2.5%). The gate ends the index on that verdict rather
+than retrying it, and every neighbour loaded in the same sweep: indices 70 and 72 either side of `MainMenu`, 7 and 8
+next to `Entry`.
 
 ## The runs merged here, and the ones deliberately left out
 
@@ -59,10 +62,13 @@ instrument cannot tell from a missed press, and it is not one: indices 70 and 72
 | `$WORK/mapback3` | 50-70 | the last 21, one boot each |
 | `$WORK/xemu/missions-mapall` | 71, 72 | the page's last two entries: the shell map and a CTF map |
 | `$WORK/xemu/missions-head` | 0-3 | the page's first four: two CTF and two DM maps (`DM-KelownanTrain` took two attempts) |
+| `$WORK/xemu/missions-head2` | 4-6 | the next three: `DM-Langara` on its second attempt, `DM-Subterranean` on its first, `DM-LostCity` failed twice with the opening `A` swallowed |
+| `$WORK/xemu/missions-head3` | 5 | `DM-LostCity` alone, re-booted: one attempt, a loaded map |
+| `$WORK/xemu/missions-head4` | 7-9 | the three entries up to `M00`: `DM-Tomb`, `DM-WorstCaseScenario`, `Entry` |
 
-Eleven directories, and the set is its own evidence: the ten that made the committed 63 rows regenerate them
-**byte for byte** (measured 2026-11-14, re-confirmed with this run's merge), so `missions-head` is the only
-diff, and its four rows are it. A directory listing cannot confirm that -- `$WORK` also holds `missions/`, `gtime`-era retries and
+Fourteen directories, and the set is its own evidence: the ten that made the committed 63 rows regenerate them
+**byte for byte** (measured 2026-11-14), so the four `missions-head*` directories are the only
+diff, and their ten rows are it. A directory listing cannot confirm that -- `$WORK` also holds `missions/`, `gtime`-era retries and
 the manufactured-failure directories below.
 
 Three other directories in `$WORK/xemu` carry a `missions.tsv` and are **not** merged, on purpose:
@@ -74,9 +80,9 @@ merging them would put `BIOS screen` on a row whose map loads.
 ## The table
 
 <!-- generated:map-loads -->
-**67 rows, 66 PASS / 1 FAIL, 82 boots:** all 61 campaign entries (10-70) have been loaded.
+**73 rows, 71 PASS / 2 FAIL, 91 boots:** all 61 campaign entries (10-70) have been loaded.
 
-Outside the campaign range: 0 `CTF-Abydos` (PASS), 1 `CTF-LostCity` (PASS), 2 `DM-Ha'tak` (PASS), 3 `DM-KelownanTrain` (PASS), 71 `MainMenu` (FAIL), 72 `SGCTF-AbydosVsSGC` (PASS).
+Outside the campaign range: 0 `CTF-Abydos` (PASS), 1 `CTF-LostCity` (PASS), 2 `DM-Ha'tak` (PASS), 3 `DM-KelownanTrain` (PASS), 4 `DM-Langara` (PASS), 5 `DM-LostCity` (PASS), 6 `DM-Subterranean` (PASS), 7 `DM-Tomb` (PASS), 8 `DM-WorstCaseScenario` (PASS), 9 `Entry` (FAIL), 71 `MainMenu` (FAIL), 72 `SGCTF-AbydosVsSGC` (PASS).
 
 | index | map | result | attempts | runs | detail |
 |---:|---|---|---:|---:|---|
@@ -84,6 +90,12 @@ Outside the campaign range: 0 `CTF-Abydos` (PASS), 1 `CTF-LostCity` (PASS), 2 `D
 | 1 | `CTF-LostCity` | PASS | 1 | 1 |  |
 | 2 | `DM-Ha'tak` | PASS | 1 | 1 |  |
 | 3 | `DM-KelownanTrain` | PASS | 2 | 1 |  |
+| 4 | `DM-Langara` | PASS | 2 | 1 |  |
+| 5 | `DM-LostCity` | PASS | 3 | 2 |  |
+| 6 | `DM-Subterranean` | PASS | 1 | 1 |  |
+| 7 | `DM-Tomb` | PASS | 1 | 1 |  |
+| 8 | `DM-WorstCaseScenario` | PASS | 1 | 1 |  |
+| 9 | `Entry` | FAIL | 1 | 1 | main menu |
 | 10 | `M00` | PASS | 1 | 1 |  |
 | 11 | `M02A` | PASS | 1 | 1 |  |
 | 12 | `M02B` | PASS | 3 | 3 |  |
@@ -152,8 +164,8 @@ Outside the campaign range: 0 `CTF-Abydos` (PASS), 1 `CTF-LostCity` (PASS), 2 `D
 ## What is left
 
 The campaign range is 10-70 (61 entries; 0-9 are the multiplayer maps and `Entry`, 71-72 are `MainMenu` and
-`SGCTF-AbydosVsSGC`), and **every one of the 61 has a row** (2026-11-11). The two entries outside that range
-have rows too now (2026-11-14), so the table covers all 73 of the page's entries rather than its campaign prefix. The tool's summary line no longer
+`SGCTF-AbydosVsSGC`), and **every one of the 61 has a row** (2026-11-11). The twelve entries outside that range -- 0-9, 71 and 72 -- have rows too
+(2026-11-14), so the table covers all 73 of the page's entries rather than its campaign prefix. The tool's summary line no longer
 names an unmeasured index, so the sweep is finished rather than paused, and `map-index.py --rotate N` -- which
 printed N indices a night for a nightly that walks the range without repeating (2 a night covers 61 entries in
 31 nights, and because 2 is coprime with 61 the wrap skips nothing) -- has no work left to hand out.
@@ -181,11 +193,14 @@ Two things this table still cannot say, and what would settle each:
 
 ## Status
 
-The artifact is complete: **63 rows over 77 boots, 62 PASS and 1 FAIL**. No campaign map on this disc fails to
-load -- 61 of 61, over 76 of the boots -- and the page's two non-campaign entries are measured in the same
-sweep: 72 `SGCTF-AbydosVsSGC` loads on its second boot, and 71 `MainMenu` is the one `FAIL`, by design.
-"Complete" here means coverage, not playability: a `PASS` row is a load, and the two questions above are what
-a row still cannot answer.
+<!-- generated:map-loads-status -->
+**73 rows over 91 boots, 71 PASS and 2 FAIL.**
+
+All **61** campaign entries (10-70) have a row, over 74 of the boots; the other 12 rows are the page's entries outside that range (17 boots).
+
+"Complete" here means coverage, not playability: a `PASS` row is a load, and the two questions under "What is left" are what a row still cannot answer.
+
+<!-- /generated:map-loads-status -->
 
 `make ci` gates both halves. `--check-doc` re-renders this page from the committed rows, so the table cannot
 drift from the CSV without a disc, and the tool's synthetic `--check` exercises the merge rules themselves (a

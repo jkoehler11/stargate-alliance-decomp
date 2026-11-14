@@ -3,6 +3,12 @@ index,name,result,attempts,runs,detail
 1,CTF-LostCity,PASS,1,1,
 2,DM-Ha'tak,PASS,1,1,
 3,DM-KelownanTrain,PASS,2,1,
+4,DM-Langara,PASS,2,1,
+5,DM-LostCity,PASS,3,2,
+6,DM-Subterranean,PASS,1,1,
+7,DM-Tomb,PASS,1,1,
+8,DM-WorstCaseScenario,PASS,1,1,
+9,Entry,FAIL,1,1,main menu
 10,M00,PASS,1,1,
 11,M02A,PASS,1,1,
 12,M02B,PASS,3,3,
