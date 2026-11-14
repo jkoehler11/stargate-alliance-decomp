@@ -1379,6 +1379,40 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the site census reads the same last store, and 2 of 493 rows move)
+
+- **`inventory/class_registrations.csv` keys each site to its constructor body's last store**, the rule
+  `tools/class-table-names.py` names tables with, so the page no longer carries two readings of the same
+  bytes. Every row gained `installed_at` (the store's own address), `stores` (how many class tables the
+  body stores), `bound` (`symbol`/`padding`/`window`) and `stub_va` (the `call` a guarded stub forwarded
+  through), and the read stops at the size `symbols/xbox_functions.csv` gives the body -- or at the body's
+  own `int3` pad where the map has no size.
+- **2 of the 493 rows move, and they are the texture pair.** FireTexture's site `0x002e8468` records
+  `0x004cfd78` and IceTexture's `0x002e8768` records `0x004d0228`, both read from a body that stores two
+  tables (`0x002e81f0` at `0x002e8220`, `0x002e8370` at `0x002e83be`); read at the first store both
+  recorded the base's `0x004cfc88`. Tables reached by more than one site fall **3 -> 2** and the sites on
+  them **30 -> 28**, which is the count `inventory/xbe_class_table_names.csv` has carried since #533, and
+  the distinct sizes those sites register fall 24 -> 22 for the same reason.
+- **No other row moves, including `object_size`.** That column is the site's own second-to-last push and
+  not the store read, so it is unchanged on all 493 rows -- the size and the table are two independent
+  facts the site carries.
+- **A guarded stub is followed one hop, and it is the same stub the naming census reads.**
+  `0x00075820` (TextBuffer's site target) installs no table, opens with the thunk prefix and forwards with
+  `call 0x000669e0`, which stores `0x004ddf78` at `0x00066a14`; HTTPDownload's `0x002c2650` single-stores
+  `0x0052cb00` at `0x002c2684` and needs no hop. Both are among the 2 padding-bounded rows of the 493
+  (491 symbol-bounded) and are exactly the two bodies `inventory/class_ctor_bases.csv` has no row for.
+- **The join to the constructor census closes.** Per site, `installed_at`/`stores`/`table_va` equal that
+  artifact's `function_va + store_off`/`stores`/`own_table` on **491 of 493** rows; the 2 that cannot be
+  joined are the bodies it has no row for, and both were read here instead of left as holes.
+- Tool (`tools/class-registrations.py`: the four columns, the `int3` bound, the `call` stub hop, and
+  `--check` gains a two-store body named by its last store, a pad-bounded body that must not inherit its
+  neighbour's table, and a stub followed through its `call`) + `inventory/class_registrations.csv` +
+  the block and prose on `docs/systems/CLASS_REGISTRATION.md` + this note. No boot, no Ghidra.
+- **Next measurement:** the `object_size` column against the two independent sizes. The class's own size is
+  measured separately by `tools/class-ctors.py` and by the class-record census, so joining the three on
+  the 466 named classes says whether the registration push is the size at all -- and on the object root it
+  reads 40 where the constructor census says 56.
+
 ### Execution notes (2026-11-14, the name comes from the body's last store, and a guarded stub forwards by call)
 
 - **`inventory/xbe_class_table_names.csv` now names a table from its constructor body's *last* store.**

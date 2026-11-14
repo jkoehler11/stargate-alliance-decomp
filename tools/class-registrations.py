@@ -16,7 +16,18 @@ argument, which is the second-to-last push at all 493 sites whether the outer po
 register. That argument separates classes the thunk cannot: the 25 sites sharing the object root's
 constructor push **25 distinct sizes**, so the registration does carry a per-class fact where its
 constructor does not. A registration that cannot name its own table is marked `shared-thunk` rather than
-being read as evidence:
+being read as evidence.
+
+**The table is the constructor body's *last* store, not its first.** MSVC writes a base constructor's
+vtable itself when it inlines that constructor into a derived body, so FireTexture's `0x002e81f0` stores
+`0x004cfc88` and then `0x004cfd78` and IceTexture's `0x002e8370` stores `0x004cfc88` and then
+`0x004d0228`. Read at the first store, the base's table named both texture classes and 30 of the 493
+sites landed on only three tables; read at the last store each texture site names its own table and 28
+sites land on two (25 on the object root, 3 on `Texture`), which is what
+`inventory/xbe_class_table_names.csv` has said since #533. The read is bounded by the size
+`symbols/xbox_functions.csv` gives the body -- or by the body's own `int3` padding where the map has no
+size -- and a guarded stub that installs nothing follows its own last `call` one hop (TextBuffer's
+`0x00075820` -> `0x000669e0`), exactly the rule `tools/class-table-names.py` names tables with.
 
     tools/class-registrations.py DUMP/default.xbe -o inventory
     tools/class-registrations.py --write-doc docs/systems/CLASS_REGISTRATION.md
@@ -39,12 +50,14 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIELDS = ["site_va", "class_literal", "object_size", "thunk_va", "thunk_target", "table_va",
-          "table_class", "sites_for_table", "sites_for_thunk", "verdict"]
+          "installed_at", "stores", "bound", "stub_va", "table_class", "sites_for_table",
+          "sites_for_thunk", "verdict"]
 ARTIFACT = os.path.join(ROOT, "inventory/class_registrations.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-registrations -->"
 DOC_END = "<!-- /generated:class-registrations -->"
 THUNK_PREFIX = b"\x8b\x4c\x24\x04"      # mov ecx,[esp+4]
+WINDOW = 400                                # bytes read when a body is neither sized nor padded
 IMM = re.compile(r"0x([0-9a-f]+)")
 
 
@@ -96,10 +109,36 @@ class Image:
                 return None
         return None
 
-    def installed_table(self, ctor_va):
-        b = self.read(ctor_va, 400)
+    def padding_end(self, va, cap=1200):
+        """The body's own alignment pad: the offset of the first run of two or more `int3`.
+
+        MSVC pads a function's end to a 16-byte boundary with `0xcc`, and a *run* of two is what a reader
+        can trust -- a single `0xcc` can be a jump table's filler inside a body.
+        """
+        b = self.read(va, cap)
         if not b:
             return None
+        for i in range(len(b) - 1):
+            if b[i] == 0xCC and b[i + 1] == 0xCC:
+                return i
+        return None
+
+    def body_size(self, va):
+        """(limit, how) for one body: the symbol map's size, else its own int3 pad, else the window."""
+        size = self.size_of(va) if hasattr(self, "size_of") else None
+        if size:
+            return size, "symbol"
+        pad = self.padding_end(va)
+        if pad:
+            return pad, "padding"
+        return WINDOW, "window"
+
+    def installed_tables(self, va, limit):
+        """Every `mov [reg], <known table>` in the body, in address order."""
+        b = self.read(va, limit)
+        if not b:
+            return []
+        out = []
         for i in range(len(b) - 6):
             if b[i] != 0xC7:                  # mov r/m32, imm32
                 continue
@@ -108,8 +147,42 @@ class Image:
                 continue
             imm = struct.unpack_from("<I", b, i + 2)[0]
             if imm in self.tables:
-                return imm
+                out.append((imm, va + i))
+        return out
+
+    def call_target(self, va, limit):
+        """The last direct `call` in the body: a guarded stub's real constructor."""
+        for _sa, text in reversed(self.disasm(va, limit)):
+            m = re.match(r"call\s+0x([0-9a-f]+)", text)
+            if m:
+                return int(m.group(1), 16)
         return None
+
+    def tables_of(self, va):
+        """(tables, own store, how bounded, stub followed) for one constructor body.
+
+        The body's own table is its **last** store. A body that installs none and opens with the thunk
+        prefix is a guarded stub; when it forwards with `call` rather than `jmp`, the tables are the
+        call's target's, read one hop only.
+        """
+        limit, how = self.body_size(va)
+        got = self.installed_tables(va, limit)
+        if got:
+            return got, got[-1], how, None
+        head = self.read(va, 4)
+        if head and head[:4] == THUNK_PREFIX:
+            tgt = self.call_target(va, limit)
+            if tgt:
+                limit2, _how2 = self.body_size(tgt)
+                got2 = self.installed_tables(tgt, limit2)
+                if got2:
+                    return got2, got2[-1], how, tgt
+        return [], None, how, None
+
+    def installed_table(self, ctor_va):
+        """The body's own table (its last store), or None -- one-off reads."""
+        _got, own, _how, _stub = self.tables_of(ctor_va)
+        return own[0] if own else None
 
     def disasm(self, start, size):
         key = (start, size)
@@ -174,28 +247,31 @@ def resolve_sites(img, funcs, fstarts, ctor):
         # The call's second argument is the registered object size and it is the second-to-last push:
         # arg1 (the outer) is the last push at every site, literal or register.
         m = IMM.search(args[-2]) if len(args) >= 2 else None
-        size = int(m.group(1), 16) if m else None
+        obj = int(m.group(1), 16) if m else None
         literal = None
         for value in reversed(pushes):
             w = img.widestr(value)
             if w and w != "System":
                 literal = w
                 break
-        table = thunk = target = None
+        table = thunk = target = store = bound = stub = None
+        stores = 0
         for value in reversed(pushes):
             if value in img.tables or not img.read(value, 4):
                 continue
             for cand in (img.thunk_target(value), value):
                 if not cand:
                     continue
-                got = img.installed_table(cand)
-                if got:
-                    table, thunk, target = got, value, cand
+                got, own, how, followed = img.tables_of(cand)
+                if own:
+                    table, thunk, target = own[0], value, cand
+                    store, stores, bound, stub = own[1], len(got), how, followed
                     break
             if table:
                 break
-        out.append({"site_va": site, "class_literal": literal, "object_size": size,
-                    "thunk_va": thunk, "thunk_target": target, "table_va": table})
+        out.append({"site_va": site, "class_literal": literal, "object_size": obj,
+                    "thunk_va": thunk, "thunk_target": target, "table_va": table,
+                    "installed_at": store, "stores": stores, "bound": bound, "stub": stub})
     return out
 
 
@@ -214,6 +290,8 @@ def census(xbe, ctor):
     img.text = next(s for s in xbe.sections if s.name == ".text")
     img.tb = xbe.data[img.text.foff:img.text.foff + img.text.fsize]
     funcs, fstarts = load_symbols(os.path.join(ROOT, "symbols/xbox_functions.csv"))
+    sizes = {a: s for a, s, _ in funcs}
+    img.size_of = lambda va: sizes.get(va)
     sites = resolve_sites(img, funcs, fstarts, ctor)
     per_table, per_thunk = {}, {}
     for s in sites:
@@ -232,6 +310,10 @@ def census(xbe, ctor):
             "thunk_va": "0x%08x" % s["thunk_va"] if s["thunk_va"] is not None else "",
             "thunk_target": "0x%08x" % s["thunk_target"] if s["thunk_target"] is not None else "",
             "table_va": "0x%08x" % table if table is not None else "",
+            "installed_at": "0x%08x" % s["installed_at"] if s["installed_at"] is not None else "",
+            "stores": str(s["stores"]),
+            "bound": s["bound"] or "",
+            "stub_va": "0x%08x" % s["stub"] if s["stub"] is not None else "",
             "table_class": names.get(table, "") if table is not None else "",
             "sites_for_table": str(per_table.get(table, 0)) if table is not None else "0",
             "sites_for_thunk": str(per_thunk.get(s["thunk_va"], 0)) if s["thunk_va"] is not None else "0",
@@ -269,6 +351,18 @@ def render(rows, total=None):
                  "bytes: the thunk cannot name the class, but the second argument separates them."
                  % (len(shared), len(set(sized)), sized[0] if sized else "-",
                     sized[-1] if sized else "-"))
+    how = {}
+    for r in total:
+        if r["table_va"]:
+            how[r["bound"]] = how.get(r["bound"], 0) + 1
+    stubs = [r for r in total if r["stub_va"]]
+    lines.append("")
+    lines.append("Every site is keyed to the table its constructor body stores **last**: %s. %d site(s) "
+                 "follow a guarded stub's `call` one hop (%s)."
+                 % (", ".join("%s-bounded %d" % (k, how[k]) for k in ("symbol", "padding", "window")
+                              if k in how),
+                    len(stubs),
+                    ", ".join("%s -> %s" % (r["thunk_target"], r["stub_va"]) for r in stubs) or "none"))
     lines.append("")
     lines.append("%d registration sites: %d resolve to a class table, %d sit on a table that more than one "
                  "site resolves to, and %d resolve to no table at all. %d sites therefore do not name the "
@@ -302,7 +396,7 @@ def splice_doc(path, block):
 # --------------------------------------------------------------------------- self-test
 
 class Fake(Image):
-    """A 0x8000-byte buffer at 0x1000 with a registration window, a thunk and a ctor."""
+    """A 0x8000-byte buffer at 0x1000: a registration window, a thunk, and three constructor bodies."""
 
     def __init__(self):
         # push thunk; push literal; push size; push ebx (the outer); call ctor -- 16 + 5 bytes
@@ -313,15 +407,28 @@ class Fake(Image):
                 + b"\xe8" + struct.pack("<i", 0x4000 - (0x1000 + 16 + 5)))  # call ctor
         thunk = (b"\x8b\x4c\x24\x04\x85\xc9\x74\x03\xe9"
                  + struct.pack("<i", 0x4000 - (0x2000 + 8 + 5)))       # jmp 0x4000
-        ctor = b"\x8b\xc1\xc7\x00\x00\x50\x00\x00\xc3"                 # mov eax,ecx; mov [eax],0x5000; ret
+        # the inlined base's table first, the body's own table last
+        ctor = (b"\x8b\xc1" + b"\xc7\x00" + struct.pack("<I", 0x5100)
+                + b"\xc7\x00" + struct.pack("<I", 0x5000) + b"\xc3")
+        # a body with no symbol size: its own int3 pad, and a neighbour past it that stores a table
+        short = (b"\x8b\xc1\xc3" + b"\xcc" * 13
+                 + b"\x8b\xc1" + b"\xc7\x00" + struct.pack("<I", 0x5200) + b"\xc3")
+        # a guarded stub that forwards with call rather than jmp
+        stub = (b"\x8b\x4c\x24\x04\x85\xc9\x74\x00\xe8"
+                + struct.pack("<i", 0x4600 - (0x4400 + 13)) + b"\xc3")
+        real = b"\x8b\xc1" + b"\xc7\x00" + struct.pack("<I", 0x5300) + b"\xc3"
         self.data = bytearray(b"\xcc" * 0x8000)
-        self.data[0:len(body)] = body
-        self.data[0x1000:0x1000 + len(thunk)] = thunk   # VA 0x2000
-        self.data[0x3000:0x3000 + len(ctor)] = ctor
+        self.data[0:len(body)] = body                           # VA 0x1000
+        self.data[0x1000:0x1000 + len(thunk)] = thunk            # VA 0x2000
+        self.data[0x3000:0x3000 + len(ctor)] = ctor              # VA 0x4000
+        self.data[0x3200:0x3200 + len(short)] = short            # VA 0x4200
+        self.data[0x3400:0x3400 + len(stub)] = stub              # VA 0x4400
+        self.data[0x3600:0x3600 + len(real)] = real              # VA 0x4600
         self.data[0x5000:0x5000 + 8] = "Reg".encode("utf-16-le") + b"\x00\x00"  # VA 0x6000
-        self.tables = {0x5000}
+        self.tables = {0x5000, 0x5100, 0x5200, 0x5300}
         self.text = type("S", (), {"va": 0x1000, "vsize": 0x8000, "foff": 0, "fsize": 0x8000})()
         self.tb = bytes(self.data)
+        self.size_of = lambda va: {0x4000: len(ctor), 0x4400: len(stub), 0x4600: len(real)}.get(va)
 
     def sec_of(self, va):
         return self.text if 0x1000 <= va < 0x9000 else None
@@ -335,19 +442,34 @@ def self_check():
     if img.installed_table(0x4000) != 0x5000:
         bad.append("installed table: %r" % (img.installed_table(0x4000),))
     if img.widestr(0x6000) != "Reg":
-        bad.append("wide literal: %r" % (img.widestr(0x5000),))
+        bad.append("wide literal: %r" % (img.widestr(0x6000),))
+    if img.installed_table(0x4000) != 0x5000:
+        bad.append("a two-store body is named by its last store: %r" % (img.installed_table(0x4000),))
+    stores, own, how, _stub = img.tables_of(0x4000)
+    if [t for t, _at in stores] != [0x5100, 0x5000] or own[0] != 0x5000 or how != "symbol":
+        bad.append("the base store comes first and the own store last: %r" % ((stores, own, how),))
+    if img.tables_of(0x4200)[0]:
+        bad.append("an int3 pad bounds the read, so the neighbour's store is not this body's: %r"
+                   % (img.tables_of(0x4200),))
+    _s2, own2, _h2, stub2 = img.tables_of(0x4400)
+    if own2 is None or own2[0] != 0x5300 or stub2 != 0x4600:
+        bad.append("a guarded stub forwards with call: %r" % ((own2, stub2),))
     got = resolve_sites(img, [(0x1000, 0x40, "FUN_reg")], [0x1000], 0x4000)
     if len(got) != 1 or got[0]["table_va"] != 0x5000 or got[0]["class_literal"] != "Reg":
         bad.append("site resolve: %r" % (got,))
     if got[0]["object_size"] != 0x40:
         bad.append("the size is the second-to-last push, not the last: %r" % (got[0]["object_size"],))
+    if got[0]["stores"] != 2 or got[0]["installed_at"] != 0x4000 + 2 + 6:
+        bad.append("the row records the store it read: %r" % ((got[0]["stores"], got[0]["installed_at"]),))
 
     rows = [{"site_va": "0x00001000", "class_literal": "A", "object_size": "40",
              "thunk_va": "0x0000100c", "thunk_target": "0x00004000", "table_va": "0x00005000",
+             "installed_at": "0x00004014", "stores": "2", "bound": "symbol", "stub_va": "",
              "table_class": "Root", "sites_for_table": "2", "sites_for_thunk": "2",
              "verdict": "shared-thunk"},
             {"site_va": "0x00002000", "class_literal": "B", "object_size": "44",
-             "thunk_va": "0x0000100c", "thunk_target": "0x00004000", "table_va": "0x00005000",
+             "thunk_va": "0x0000100c", "thunk_target": "0x0000400c", "table_va": "0x00005000",
+             "installed_at": "0x000069e0", "stores": "1", "bound": "padding", "stub_va": "0x000069e0",
              "table_class": "Root", "sites_for_table": "2", "sites_for_thunk": "2",
              "verdict": "shared-thunk"}]
     tmp = tempfile.mkdtemp()
@@ -358,10 +480,13 @@ def self_check():
     out = render(read_artifact(path))
     if "| 0x00005000 | Root | 2 |" not in out or "2 registration sites" not in out:
         bad.append("render: %r" % out)
+    if "symbol-bounded 1, padding-bounded 1" not in out or "1 site(s) follow a guarded stub" not in out:
+        bad.append("render does not report how the bodies were bounded: %r" % out)
     if bad:
         print("FAIL class-registrations: " + "; ".join(bad))
         return 1
-    print("ok   class-registrations: a shared thunk is visible per site, and the artifact round-trips")
+    print("ok   class-registrations: a shared thunk is visible per site, the body's last store names the "
+          "table, and the artifact round-trips")
     return 0
 
 
