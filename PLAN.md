@@ -1201,6 +1201,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the defaults stream confirms the block start on 92 of the 95 overshoot rows)
+
+- **The 40 rows the head census is silent on are answered from the block's own grammar.** `read_block` at
+  `block_start` terminates on the payload's last byte on **37 of 40** headless rows and on **55 of 55** rows that do
+  carry a head, so the block start is confirmed without the record on **92 of the 95** -- and the 36 rows the record
+  confirms are exactly the 36 on which the stream closes, so the two witnesses never disagree.
+- **A close is a 33% base rate, so the discriminating column is the names.** The same parse at `block_start + 1..4`
+  closes on 125 of the 380 later starts (32.9%) and 70 of the 95 rows have a closing neighbour. Restricted to the 44
+  rows whose class declares properties, the block start names strictly more declared tags than any closing neighbour
+  on **41**, the same number on 3 (`HaakenWeaponShield` 11v11, `Reetou` 105v105, `UWindowHSplitter` 1v1) and fewer on
+  none; 38 rows name nothing the inventory carries (29 of them `GUI.STY_*`), so there the close is the only evidence.
+- **Three rows are still open, and only they.** The stream stops 41 bytes short on `Engine.KBSJoint`, 49 on
+  `StargateContent.CTFGateTeleporter` and 59 on `StargateVehicles.HoverTankPilotBot` -- all inside the 64-byte trailer
+  `class-defaults.py` tolerates, so the start is plausible but not pinned to the last byte; `HoverTankPilotBot` is
+  also the one row confirmed by neither witness.
+- Tool (`tools/class-overshoot-stream.py`: `--sweep`, `--report`, `--check` on a closing parse, a short end, an
+  overrun, an out-of-range start and five verdict shapes) + `inventory/class_overshoot_stream.csv` (95 rows) +
+  `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (eighteenth) + `make class-overshoot-stream` + this
+  note. Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the trailer on those three rows. Parse the tag stream from each offset in
+  `[block_start, block_start + 59]` and report whether any of them lands on the payload's last byte with declared
+  names -- a start that does makes the trailer a misplaced boundary, and none makes those 41-59 bytes a field the
+  class serialises after its defaults.
+
 ### Execution notes (2026-11-13, the 95 arrays that end past the block start are not fixed by the locators head census)
 
 - **The population is bounded and shallow-and-deep at once.** `class_record_array.csv` starts its array at
