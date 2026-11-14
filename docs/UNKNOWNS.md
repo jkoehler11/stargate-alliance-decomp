@@ -536,6 +536,18 @@ which decides between a resolved path that fails inside the level and the loader
 literal at `0x004c9790` is stored at `0x00149603`, inside no committed function. Depth:
 `docs/systems/CHECKPOINTS.md`, *Where the loader looks*; `tools/save-path-compose.py --check` is dump-free.
 
+**Answered 2026-11-14: there is no base directory to read, and the object the chain asks is an error file manager.**
+The `System\` literal at `0x004c9790` is pushed from eight sites and every one is inside a mapped function (`0x00149602`
+is `execGetMapName`, `0x00149460` + 2,223 bytes -- the "inside no committed function" reading came from an address one
+byte past the push), so it is a caller-side prefix, not a directory the loader inherits. The singleton the chain asks
+(`[0x005bf514]` -> `0x005c1a0c`) carries vtable `0x004d2fd0`: 25 slots, `FFileManagerError_CreateFileReader` and
+`_CreateFileWriter` at `+0x04`/`+0x08` (log and return 0), `-1` at `+0x0c`, sixteen bodies of eight bytes or less, and
+no slot that answers a directory. The only other path-shaped slot, `+0x3c` (`0x00034240`), returns a drive-qualified
+or separator-leading argument verbatim and asks the device getter only for a path that is not rooted, so the loader's
+`\Profiles\<profile>\<name>` is passed through untouched to `LoadPackage` (`0x00073660` -> `Core_UnObj`, flags
+`0x1088`). **Still open:** whether that package loader's own reader resolves a root-relative name. Depth:
+`docs/systems/CHECKPOINTS.md`, *What the build's own path strings name*; `tools/path-literals.py --check` is dump-free.
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is

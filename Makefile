@@ -19,7 +19,7 @@ ORACLE_DIR ?=
 DOTNET   ?= dotnet
 TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 
-.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-owner class-table-residual live-class-tables live-class-tables-m00 class-scripttext-ref vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element-fields class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair member-assert-names class-record-order class-record-gap-front class-record-bound defaults-residue delegate-defaults defaults-blockstart defaults-blockstart-census class-record-room class-tail-units class-tail-run class-record-overshoot class-overshoot-stream class-record-array-head class-record-array-search class-record-array-head class-record-array-search class-record-array-blind class-record-front class-record-open-front class-record-open-tail class-record-no-shape class-blockstart-guard class-group-stop class-group-after-scan class-defaults-moved class-defaults-silent class-defaults-single matching-baseline refusal-candidates map-frames checkpoint-loads save-path-compose
+.PHONY:body-name library-bodies defaults-misses compile-readiness-doc campaign-matrix content-census dialogue-index property-types token-map game-modules package-check package-check-code package-check-pairs package-check-quick package-check-emit karma-runtime module-split gnatives-writes gnatives-stubs gnatives-name-stubs native-channels savegame-paths console-commands hud-messages hud-text interaction-setup maps-parse artifact-hashes versions class-reach rebuild rebuild-hybrid rebuild-full serialize-slots opcode-table opcode-table-check payload-tail function-flags lipsinc-index lipsinc-frames lipsinc-parse lipsinc-tracks lipsinc-keys lipsinc-groups lipsinc-sampler lipsinc-weights lipsinc-bones lipsinc-bone-owners lipsinc-runtime opcode-refusals native-reconcile native-bodies native-census native-operators native-table opcode-usage defaults-emit defaults-tree defaults-coverage defaults-per-class help pkg-verify pkg-rebuild pkg-rebuild-all pkg-layout pkg-resize verify-dump manifest inventory natives call-census formats decompile oracle-diff ghidra class-tables class-overrides class-names symbols libraries assert-residual status checkpoints fork-surface ucpp-vtables release-notes class-graph package-names nightly ci check clean ue2rt-probe sgs-profile argc-pass sgs-write module-attribution module-lists module-census body-read class-ctors class-table-parents registration-sites gnatives-records gnatives-mission map-loads vehicle-seats voice-packs voice-sets voice-descs class-records weapon-links weapon-effective native-opcodes switch-operands  vcall-field-owner class-table-residual live-class-tables live-class-tables-m00 class-scripttext-ref vcall-dispatch field-objects native-vtable ai-states ai-state-body state-exports class-tail class-prefix class-record-fields class-record-middle class-record-run class-record-walkback class-record-array class-record-element-fields class-record-element class-record-tail class-record-gap record-writer-calls archive-slots class-member-map member-access-census class-array-head class-config-pair member-assert-names class-record-order class-record-gap-front class-record-bound defaults-residue delegate-defaults defaults-blockstart defaults-blockstart-census class-record-room class-tail-units class-tail-run class-record-overshoot class-overshoot-stream class-record-array-head class-record-array-search class-record-array-head class-record-array-search class-record-array-blind class-record-front class-record-open-front class-record-open-tail class-record-no-shape class-blockstart-guard class-group-stop class-group-after-scan class-defaults-moved class-defaults-silent class-defaults-single matching-baseline refusal-candidates map-frames checkpoint-loads save-path-compose path-literals
 
 help:
 	@echo "targets:"
@@ -184,6 +184,7 @@ help:
 	@echo "  map-frames       read each PASS row's post-load frame: the HUD corner, into inventory/map_frames.csv"
 	@echo "  checkpoint-loads load a shipped .sgs inside its own level and read whether play resumes"
 	@echo "  save-path-compose which path the checkpoint loader composes, and where the shipped .sgs are"
+	@echo "  path-literals    every path-shaped literal in the image, and the slots of the file manager table"
 	@echo "  vehicle-seats    read the seat/turret wiring out of the default properties into inventory/vehicle_seats.csv"
 	@echo "  voice-packs      which pack each class under StargatePawn speaks with, into inventory/voice_packs.csv"
 	@echo "  voice-sets       how many voices each pack holds, into inventory/voice_sets.csv"
@@ -355,6 +356,7 @@ ci:
 	@$(PYTHON) tools/xemu/map-frame.py --check-doc docs/MAP_FRAMES.md
 	@$(PYTHON) tools/xemu/checkpoint-load.py --check-doc docs/systems/CHECKPOINTS.md
 	@$(PYTHON) tools/save-path-compose.py --check-doc docs/systems/CHECKPOINTS.md
+	@$(PYTHON) tools/path-literals.py --check-doc docs/systems/CHECKPOINTS.md
 	@$(PYTHON) tools/vehicle-seats.py --check-doc docs/systems/VEHICLES.md
 	@$(PYTHON) tools/ai-states.py --check-doc docs/systems/AI.md
 	@$(PYTHON) tools/ai-state-body.py --check-doc docs/systems/AI.md
@@ -375,6 +377,7 @@ ci:
 	@$(PYTHON) tools/xemu/map-loads.py --check
 	@$(PYTHON) tools/xemu/checkpoint-load.py --check
 	@$(PYTHON) tools/save-path-compose.py --check
+	@$(PYTHON) tools/path-literals.py --check
 	@$(PYTHON) tools/xemu/mem.py --selftest
 	@$(PYTHON) tools/xemu/console-state.py --selftest
 	@$(PYTHON) tools/xemu/owner.py --selftest
@@ -913,6 +916,11 @@ checkpoint-loads:
 	@test -n "$(RUNS)" || { echo "checkpoint-loads: pass RUNS='<checkpoint-load.sh outdir> ...'" >&2; exit 2; }
 	@$(PYTHON) tools/xemu/checkpoint-load.py $(addprefix --run ,$(RUNS)) -o inventory/checkpoint_loads.csv
 	@$(PYTHON) tools/xemu/checkpoint-load.py --write-doc docs/systems/CHECKPOINTS.md
+
+path-literals:
+	@$(PYTHON) tools/path-literals.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
+		-o inventory/path_literals.csv
+	@$(PYTHON) tools/path-literals.py --write-doc docs/systems/CHECKPOINTS.md
 
 save-path-compose:
 	@$(PYTHON) tools/save-path-compose.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \

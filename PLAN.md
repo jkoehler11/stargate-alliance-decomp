@@ -1255,6 +1255,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the base directory is not a directory, and the save chain's object is an error file manager)
+
+- **The address the last note sent the next read to is a byte late and not isolated.** `System\` (`0x004c9790`) is
+  pushed from **eight** sites (`0x0001d221`, `0x00027382`, `0x000c09c0`, `0x000f22e8`, `0x000f247e`, `0x00149602`,
+  `0x00149ec6`, `0x002fe75e`), and **every one of them is inside a mapped function** -- the one that was being looked
+  for is `execGetMapName` (`0x00149460`, 2,223 bytes), and the other seven are a cache commandlet, `Core_UnClass`, a
+  map-name sibling and four unnamed bodies. So the prefix is the convention callers use when a package or map has to
+  be found under `System\`, not a base directory the loader inherits.
+- **The question those eight sites were meant to answer has no answer of that shape.** `tools/path-literals.py`
+  censuses the table the save chain actually asks (`[0x005bf514]` -> `0x005c1a0c` -> `0x004d2fd0`, **25 slots**): its
+  `+0x04`/`+0x08` are `FFileManagerError_CreateFileReader`/`_CreateFileWriter` (the map's own names), `+0x0c` answers
+  `-1`, sixteen of the 25 bodies are eight bytes or shorter, and **no slot returns a directory**. The one path-shaped
+  slot besides the empty-string getter, `+0x3c` (`0x00034240`, 531 bytes), returns a `:`-qualified or separator-leading
+  argument *verbatim* (`FUN_0001b260` is only an FString ctor) and consults the device getter only for a path that is
+  not rooted. The loader's `\Profiles\...` is rooted, so nothing prepends anything.
+- **The only absolute title directory in the image is the config loader's**, `D:\System\` (`0x004d0ff8`, one site,
+  `0x00288fb` in `0x00287d0`), which rewrites a `Tweak_` name into `D:\System\<name>`; `D:\default.xbe`
+  (`0x004d1144`) sits beside it. Every relative path in the build (`..\System\LIPSincData\Controllers\`,
+  `..\Saves\`, `..\Movies\`) assumes `System\` is the working directory, which is the segment `\Profiles\` lacks.
+- **What it leaves open.** Whether `Core_UnObj`'s own reader resolves a root-relative name -- the composed path reaches
+  it unchanged (`0x00073660` -> `Core_UnObj`, flags `0x1088`), so the next read is that reader, not another boot.
+- Files: `tools/path-literals.py`, `inventory/path_literals.csv` (137 literals, 117 named, every site with its
+  containing function), `inventory/file_manager_vtable.csv` (25 slots with the literals each body names),
+  `docs/systems/CHECKPOINTS.md` (*What the build's own path strings name*), the Makefile target, and this note.
+
 ### Execution notes (2026-11-14, a checkpoint does not give back a playable level inside three minutes, and the control says the console is not why)
 
 - **The page's open question is answered for the load side, and the answer is a stalled guest.** The one attempt on
