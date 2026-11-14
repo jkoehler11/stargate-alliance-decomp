@@ -114,7 +114,53 @@ below).
 | Object | 0x00073810 | 20 | - | - | - | no-base-call |
 
 522 constructors in the image: 509 read a base class off the last call before their table store (1 of those to a body the shape rule calls a destructor), 9 install the table before any call (the base was inlined), 4 end in a body that installs no class table, and 6 of the recorded calls are not the last call and so are not the base the census implied.
+
+**A body can install more than one class table, and the last store is the body's own.** 8 of the 522 rows sit in a body that stores two or more tables (4 distinct bodies). The first store is the table of a base whose constructor the compiler inlined into the derived body; the last store is the table of the class the body builds. So a row whose `table_va` differs from its body's last store (`own` = `no`) records a base class's vtable: **4 row(s)**, and those are the rows the site census cannot name from.
+
+| body | name | stores in body order | own table | own table class | row whose table is a base |
+|---|---|---|---|---|---|
+| 0x00110120 | FUN_00110120 | 0x004d03c8 -> 0x004fb9b8 | 0x004fb9b8 | PackageMapLevel | - |
+| 0x002e81f0 | FUN_002e81f0 | 0x004cfc88 -> 0x004cfd78 | 0x004cfd78 | - | FractalTexture |
+| 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | - | FractalTexture |
+| 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | - | FractalTexture |
+
+**The registration side agrees, and its exceptions are the two texture classes.** 489 of the 493 sites record the last store of the body their thunk resolves to; 2 resolve to a body the census has no constructor row for (`TextBuffer`, `HTTPDownload`).
+
+| site | class the site names | table it records | body | table the body builds |
+|---|---|---|---|---|
+| 0x002e8468 | FireTexture | 0x004cfc88 | 0x002e81f0 | 0x004cfd78 |
+| 0x002e8768 | IceTexture | 0x004cfc88 | 0x002e8370 | 0x004d0228 |
 <!-- /generated:class-ctor-base -->
+
+## A constructor body installs two tables, and `0x004cfc88` is neither texture class's own
+
+`tools/class-ctor-base.py` also counts the class tables each body stores (`stores`, `own_table`,
+`own_table_class`, `own`). **4 of the 518 constructor bodies store two**, and in all four the first store is
+a base class's table and the last is the table of the class the body builds -- MSVC writes the base
+constructor's vtable itself when it inlines that constructor into the derived body:
+
+| body | class it builds | stores in body order | own table |
+|---|---|---|---|
+| `0x00110120` | `PackageMapLevel` | `0x004d03c8` -> `0x004fb9b8` | `0x004fb9b8` |
+| `0x002e81f0` | `FireTexture` | `0x004cfc88` -> `0x004cfd78` | `0x004cfd78` |
+| `0x002e8260` | `WaterTexture` | `0x004cfc88` -> `0x004cfe68` | `0x004cfe68` |
+| `0x002e8370` | `IceTexture` | `0x004cfc88` -> `0x004d0228` | `0x004d0228` |
+
+**The table both texture constructors store is a base's, so the derived name above is not the contradiction
+it looked like; it is the only reading the bytes allow.** The body that owns `0x004cfc88` outright is
+`0x002e81b0`, whose base call is Texture's constructor and whose single store is `0x004cfc88`; each derived
+body inherits that store through the inlined base constructor and then writes its own table over it.
+`0x002e8260` is WaterTexture's constructor -- it is the base call of WaveTexture's, FluidTexture's and
+WetTexture's constructors, and WaterTexture is the only direct subclass of `FractalTexture` left once
+`FireTexture` and `IceTexture` are placed.
+
+**489 of the 493 registration sites record the last store of the body their thunk resolves to**, so the
+registration and the store rule agree wherever a class has a table of its own (PackageMapLevel's site
+records `0x004fb9b8`, its constructor's last store). The 4 that do not split: 2 sites resolve to a body the
+constructor census has no row for (`TextBuffer`, `HTTPDownload`), and 2 record a table their own constructor
+does not build -- `FireTexture` at `0x002e8468` and `IceTexture` at `0x002e8768`, both recording
+`0x004cfc88`. The tables those two classes do build (`0x004cfd78`, `0x004d0228`) are named by no
+registration at all, which is why naming them had to be a derivation.
 
 ## Which registration names a table, and the 25 names of the object root
 
@@ -194,8 +240,8 @@ order to break a tie. Three rules, and the `name_rule` column says which one pro
 - `ancestor-derived` (1 table): the shared group names no common ancestor itself, but it has exactly one
   nearest common ancestor, and the row says the name is derived from it -- `0x004cfc88` reads
   `FractalTexture`, since `FireTexture` and `IceTexture` are both its subclasses and neither names the
-  table. The two subclasses' constructors do store the same table, which the rule does not explain; it only
-  picks the ancestor rather than one of the two.
+  table. The two subclasses' constructors do store that same table, and the section below reads why: it is
+  the base constructor's own store, inlined into both derived bodies, so neither class writes it as its own.
 
 **The address orders are refuted, and that is why the rule is a join.** The lowest site on the root's table
 is `Exporter` (`0x000349e6`) and the last is `VertexStreamBase` (`0x001eb186`); neither is the class the
@@ -235,6 +281,11 @@ own -- the bound is a guard, and the tool's `--check` keeps the case where it bi
   No such table is known in this image, but the census is a lower bound on reachability for that
   reason, and the resident `GNatives` table (`docs/NATIVE_VM.md`) is a table of addresses, which the
   dword scan does read.
+
+- **It does not say why two classes name an ancestor's constructor.** FractalTexture's and WaterTexture's
+  sites resolve through one shared thunk to Texture's constructor, while the image holds a separate body
+  for each (`0x002e81b0`, `0x002e8260`); the registration's fourth argument may be the constructor of the
+  nearest ancestor that has one rather than the class's own, and this measurement does not decide that.
 
 ## Regenerating
 

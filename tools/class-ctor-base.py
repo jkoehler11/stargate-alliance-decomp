@@ -19,7 +19,14 @@ store, resolved to the class table its own body installs. Three verdicts:
   * `no-base-call` -- the body installs its table before any call, so its base constructor was inlined
                       and there is no edge to read.
   * `not-a-base`   -- the last call goes to a body that installs no class table, so the recorded class
-                      column is not an edge.
+                    column is not an edge.
+
+A second, independent reading sits beside it: **a body can install more than one class table**, and the
+one it owns is the **last** store. MSVC writes the base constructor's vtable itself when it inlines that
+constructor into the derived body, so the first store in a derived constructor is a base class's table --
+which is why two unrelated constructors can both appear to install one table. `stores`, `own_table`,
+`own_table_class` and `own` carry that reading per row, and the rendered block joins the 493 registration
+sites to it, so a site whose class builds a different table is named instead of averaged in.
 
 Both columns are emitted, so a disagreement is visible per row instead of being averaged away, and the
 doc block renders the four tables of the UE2 object model (`0x004dd2a8`, `0x004d4418`, `0x004d4570`,
@@ -42,9 +49,10 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIELDS = ["function_va", "function_name", "class", "table_va", "object_size", "stack_args",
-          "store_off", "calls", "first_call", "first_call_class", "base_call", "base_call_class",
-          "base_call_form", "verdict", "note"]
+          "store_off", "stores", "own_table", "own_table_class", "own", "calls", "first_call",
+          "first_call_class", "base_call", "base_call_class", "base_call_form", "verdict", "note"]
 ARTIFACT = os.path.join(ROOT, "inventory/class_ctor_bases.csv")
+SITES = os.path.join(ROOT, "inventory/class_registrations.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-ctor-base -->"
 DOC_END = "<!-- /generated:class-ctor-base -->"
@@ -108,12 +116,52 @@ def installers_by_body(rows):
     return by_body
 
 
+def bodies_by_stores(rows):
+    """{function_va: [census row, ...]} for every body that installs a class table, in store order.
+
+    A body can install more than one: MSVC writes the base constructor's table itself when it inlines
+    it, so the first store in a derived constructor is the base's vtable and the *last* store is the
+    table of the class the body builds. The census keeps one row per store, so a body with two stores
+    has two rows and the order is the column that tells them apart.
+    """
+    out = {}
+    for r in rows:
+        if r.get("form") != "ctor":
+            continue
+        out.setdefault(r["function_va"], []).append(r)
+    for group in out.values():
+        group.sort(key=lambda r: int(r["store_va"], 16))
+    return out
+
+
+def site_join(out, path=None):
+    """Join every registration site to the table its constructor owns (its body's last store)."""
+    path = path or SITES
+    if not os.path.isfile(path):
+        return None
+    own = {}
+    for r in out:
+        if r.get("own") == "yes":
+            own[r["function_va"]] = r
+    sites, agree, differ, unresolved = 0, 0, [], []
+    for s in load_census(path):
+        sites += 1
+        r = own.get(s["thunk_target"])
+        if r is None:
+            unresolved.append(s)
+        elif r["own_table"].lower() == s["table_va"].lower():
+            agree += 1
+        else:
+            differ.append((s, r))
+    return sites, agree, differ, unresolved
+
+
 def resolve(target, by_body):
     """The class table the callee installs, if that body is in the census."""
     return by_body.get(target)
 
 
-def read_row(r, read, by_body):
+def read_row(r, read, by_body, stores=None):
     start = int(r["function_va"], 16)
     store = int(r["store_va"], 16)
     end_off = store - start + 6
@@ -123,6 +171,8 @@ def read_row(r, read, by_body):
     last = calls[-1] if calls else None
     first_row = resolve(first[1], by_body) if first else None
     last_row = resolve(last[1], by_body) if last else None
+    group = stores or [r]
+    own = group[-1]
     if last_row is not None:
         verdict = "base-ctor" if last_row["form"] == "ctor" else "base-installer"
     elif not calls:
@@ -146,6 +196,10 @@ def read_row(r, read, by_body):
         "object_size": r["object_size"],
         "stack_args": r["stack_args"],
         "store_off": "0x%x" % (store - start),
+        "stores": str(len(group)),
+        "own_table": own["table_va"],
+        "own_table_class": own.get("class", ""),
+        "own": "yes" if own["table_va"] == r["table_va"] else "no",
         "calls": str(len(calls)),
         "first_call": "0x%08x" % first[1] if first else "",
         "first_call_class": first_row["class"] if first_row else "",
@@ -165,14 +219,18 @@ def census(xbe, rows):
         return blob[va - text.va:va - text.va + size]
 
     by_body = installers_by_body(rows)
-    return [read_row(r, read, by_body) for r in rows if r["form"] == "ctor"]
+    groups = bodies_by_stores(rows)
+    return [read_row(r, read, by_body, groups.get(r["function_va"]))
+            for r in rows if r["form"] == "ctor"]
 
 
 def summary(out):
     picked = [r for r in out if r["verdict"].startswith("base-")]
     unread = [r for r in out if r["verdict"] not in ("base-ctor", "base-installer", "no-base-call")]
     differ = [r for r in out if r["first_call"] and r["base_call"] and r["first_call"] != r["base_call"]]
-    return picked, unread, differ
+    multi = [r for r in out if int(r.get("stores") or 1) > 1]
+    moved = [r for r in out if r.get("own") == "no"]
+    return picked, unread, differ, multi, moved
 
 
 def render(out, total=None):
@@ -187,7 +245,7 @@ def render(out, total=None):
                         r["first_call"] or "-",
                         " (%s)" % r["first_call_class"] if r["first_call_class"] else "",
                         r["base_call"] or "-", r["base_call_class"] or "-", r["verdict"]))
-    picked, unread, differ = summary(total)
+    picked, unread, differ, multi, moved = summary(total)
     lines.append("")
     lines.append("%d constructors in the image: %d read a base class off the last call before their table "
                  "store (%d of those to a body the shape rule calls a destructor), "
@@ -197,6 +255,47 @@ def render(out, total=None):
                  % (len(total), len(picked),
                     sum(1 for r in total if r["verdict"] == "base-installer"),
                     sum(1 for r in total if r["verdict"] == "no-base-call"), len(unread), len(differ)))
+    groups = {}
+    for r in multi:
+        groups.setdefault(r["function_va"], []).append(r)
+    lines.append("")
+    lines.append("**A body can install more than one class table, and the last store is the body's own.** %d of "
+                 "the %d rows sit in a body that stores two or more tables (%d distinct bodies). The first store "
+                 "is the table of a base whose constructor the compiler inlined into the derived body; the last "
+                 "store is the table of the class the body builds. So a row whose `table_va` differs from its "
+                 "body's last store (`own` = `no`) records a base class's vtable: **%d row(s)**, and those are "
+                 "the rows the site census cannot name from."
+                 % (len(multi), len(total), len(groups), len(moved)))
+    if groups:
+        lines.append("")
+        lines.append("| body | name | stores in body order | own table | own table class | row whose table is a base |")
+        lines.append("|---|---|---|---|---|---|")
+        for va in sorted(groups, key=lambda v: int(v, 16)):
+            g = sorted(groups[va], key=lambda r: int(r["store_off"], 16))
+            base_rows = [r for r in g if r.get("own") == "no"]
+            lines.append("| %s | %s | %s | %s | %s | %s |"
+                         % (va, g[0]["function_name"], " -> ".join(r["table_va"] for r in g),
+                            g[-1].get("own_table") or g[-1]["table_va"],
+                            g[-1].get("own_table_class") or "-",
+                            ", ".join((r["class"] + " ") if r["class"] else "" for r in base_rows).strip()
+                            or "-"))
+    join = site_join(total)
+    if join:
+        sites, agree, differ, unresolved = join
+        lines.append("")
+        lines.append("**The registration side agrees, and its exceptions are the two texture classes.** %d of the "
+                     "%d sites record the last store of the body their thunk resolves to; %d resolve to a body "
+                     "the census has no constructor row for%s."
+                     % (agree, sites, len(unresolved),
+                        (" (" + ", ".join("`%s`" % s["class_literal"] for s in unresolved) + ")")
+                        if unresolved else ""))
+        if differ:
+            lines.append("")
+            lines.append("| site | class the site names | table it records | body | table the body builds |")
+            lines.append("|---|---|---|---|---|")
+            for s, r in differ:
+                lines.append("| %s | %s | %s | %s | %s |" % (s["site_va"], s["class_literal"], s["table_va"],
+                                                            r["function_va"], r["own_table"]))
     return "\n".join(lines)
 
 
@@ -265,6 +364,29 @@ def self_check():
     if resolve(0x9999, by_body) is not None:
         bad.append("resolve invented a row")
 
+    # a body with two stores: the base's table first, the body's own last
+    two = [
+        {"function_va": "0x00004000", "function_name": "FUN_two", "class": "Base", "table_va": "0x004d0000",
+         "object_size": "8", "stack_args": "0", "form": "ctor", "store_va": "0x00004002",
+         "call_before_store": "", "registration_ctor": "", "evidence": ""},
+        {"function_va": "0x00004000", "function_name": "FUN_two", "class": "Child", "table_va": "0x004d0004",
+         "object_size": "8", "stack_args": "0", "form": "ctor", "store_va": "0x00004010",
+         "call_before_store": "", "registration_ctor": "", "evidence": ""},
+    ]
+    groups = bodies_by_stores(two)
+    if len(groups.get("0x00004000", [])) != 2:
+        bad.append("two-store body was not grouped: %r" % (groups,))
+    else:
+        blanks = lambda va, size: bytes(size)
+        first = read_row(two[0], blanks, by_body, groups["0x00004000"])
+        second = read_row(two[1], blanks, by_body, groups["0x00004000"])
+        if (first["own"], first["own_table"], first["stores"]) != ("no", "0x004d0004", "2"):
+            bad.append("the base store was taken as the body's own: %r" % (first,))
+        if (second["own"], second["own_table"]) != ("yes", "0x004d0004"):
+            bad.append("the last store was not the body's own: %r" % (second,))
+        if "a body can install more than one class table" not in render([first, second]).lower():
+            bad.append("render does not report the multi-store body")
+
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, "artifact.csv")
     rows = [dict(row, verdict="base-ctor", base_call="0x00002000", base_call_class="Base",
@@ -279,8 +401,8 @@ def self_check():
     if bad:
         print("FAIL class-ctor-base: " + "; ".join(bad))
         return 1
-    print("ok   class-ctor-base: the base is the last call before the store, an inlined base has none, "
-          "and the artifact round-trips")
+    print("ok   class-ctor-base: the base is the last call before the store, a body's own table is its last "
+          "store, an inlined base has none, and the artifact round-trips")
     return 0
 
 
@@ -319,10 +441,11 @@ def main():
         out = [r for r in out if r["class"] in args.classes]
     if args.report or not (args.out or args.write_doc or args.check_doc):
         print(render(out))
-    picked, unread, differ = summary(out)
-    print("base-edge %d, no-base-call %d, not-a-base %d, recorded!=last %d"
+    picked, unread, differ, multi, moved = summary(out)
+    print("base-edge %d, no-base-call %d, not-a-base %d, recorded!=last %d, multi-store rows %d, base-table "
+          "rows %d"
           % (len(picked), sum(1 for r in out if r["verdict"] == "no-base-call"), len(unread),
-             len(differ)))
+             len(differ), len(multi), len(moved)))
 
     if args.write_doc or args.check_doc:
         path = args.write_doc or args.check_doc

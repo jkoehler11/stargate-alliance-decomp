@@ -1343,6 +1343,42 @@ are limited to expected fields (checksum/timestamp) and documented.
   sites, and the distinct-size line) + `inventory/class_registrations.csv` + the block on
   `docs/systems/CLASS_REGISTRATION.md` + this note. No boot, no dump beyond the image.
 
+### Execution notes (2026-11-14, a constructor body installs two tables, and the texture table is the base's)
+
+- **4 of the 518 constructor bodies store two class tables, and the last store is the body's own.**
+  `tools/class-ctor-base.py` now carries `stores`, `own_table`, `own_table_class` and `own` per row: MSVC
+  writes the base constructor's vtable itself when it inlines that constructor into the derived body, so a
+  derived body's first store is the base's table and its last store is the table of the class it builds.
+  8 of the 522 rows sit in such a body, and 4 of them record a table that is not their body's last store.
+- **The two texture constructors do not share a table; they share a base's.** `0x002e81f0` stores
+  `0x004cfc88` then `0x004cfd78`, `0x002e8370` stores `0x004cfc88` then `0x004d0228`, and `0x002e8260`
+  stores `0x004cfc88` then `0x004cfe68`. The `0x004cfc88` store is FractalTexture's table arriving through
+  the inlined base constructor -- the body that owns it is `0x002e81b0`, base call Texture, single store --
+  which is exactly what #530's `ancestor-derived` row could only infer. Neither FireTexture nor IceTexture
+  writes `0x004cfc88` as its own table.
+- **A fourth body corroborates the rule from the registration side.** `0x00110120` (PackageMapLevel's
+  constructor) stores `0x004d03c8` then `0x004fb9b8`, and the registration at `0x00183986` records
+  `0x004fb9b8`, the last store. Across the image **489 of the 493 sites record the last store** of the body
+  their thunk resolves to; 2 resolve to a body with no constructor row (`TextBuffer`, `HTTPDownload`) and
+  the 2 that disagree are FireTexture's and IceTexture's, which record `0x004cfc88` where their own
+  constructors build `0x004cfd78` and `0x004d0228`.
+- **The three own tables are unnamed, and the hierarchy places them.** `0x4cfd78` is FireTexture's (its
+  registration literal is at `0x002e8468`) and `0x4d0228` IceTexture's (`0x002e8768`); `0x4cfe68` is the
+  table of the body Wave/Fluid/Wet call as their base (`0x002e8260`), i.e. WaterTexture's -- the only direct
+  subclass of FractalTexture left once the other two are placed.
+- **What it does not say.** Both `0x002e81b0` and `0x002e8260` are the targets of no registration thunk:
+  FractalTexture's and WaterTexture's sites share Texture's thunk `0x0027f070` (a `test ecx,ecx; je; jmp`
+  stub to `0x0027e3b0`), so for those two classes the site's constructor column names an ancestor body
+  rather than the class's own. Whether that column is the native constructor at all is not measured here.
+- Tool (`tools/class-ctor-base.py`: the four columns, the two-store block, the registration join, and a
+  synthetic two-store case in `--check`) + `inventory/class_ctor_bases.csv` (522 rows, 4 base-table rows) +
+  the block on `docs/systems/CLASS_REGISTRATION.md` + this note. No boot: the image, the symbol map and the
+  committed constructor census.
+- **Next measurement:** regenerate `inventory/xbe_class_table_names.csv` behind the new column -- name a
+  table from the row whose `own` is `yes`, so `0x4cfd78` and `0x4d0228` are FireTexture and IceTexture and
+  `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
+  `class_constructors.csv`'s first store.
+
 ### Execution notes (2026-11-14, the table name is a hierarchy join, and the site census says when it cannot be one)
 
 - **The per-table name was a write order, and both address orders are refuted.** 30 of the image's 493
