@@ -1255,6 +1255,26 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the file manager global is one of six memberless statics, and both its writers take a value from outside)
+
+- **The one store the last note left open is not the only writer, and neither one builds an object.** `[0x005bf514]`
+  is read by **194** instructions and written by **two**: `0x00169e3` (the frame dword #516 found) and `0x0005a9b2` in
+  `Core_UnMisc` (`0x0005a990`), which stores its own incoming argument (`[esp+0x28]`). The first value is a slot whose
+  only other reference inside `Core_UnObjBas` (18,359 bytes) is a zero store at `0x0012927`, so its target has no vtable
+  and cannot answer a dispatch; the second is whatever that function's caller passed.
+- **The object's identity is a row, not a singleton.** The six globals `0x005bf500`..`0x005bf514` point into one run of
+  statics (`0x005c1a08`..`0x005c1a1c`) **four bytes apart** -- one dword each, its vtable -- and the file manager's
+  neighbour at `-4` is the allocator's (its table's first slot is `appMallocBeforeInit`). They are the engine's
+  fallback implementations, which is what the `FFileManagerError` body names in the table already said.
+- **Nothing constructs them.** No instruction in the image names any of the six tables as an immediate (0 on every
+  row), so a dispatch through that table is a dispatch to a static, not to an object the build assembled. The next read
+  is therefore the callers of `0x0005a990` and the lifetime of `0x00169e3`'s frame slot -- a census, not a boot.
+- Tool (`tools/fmgr-live-object.py`, `--write-doc`/`--check-doc`, 25 assertions in `--check`) +
+  `inventory/fmgr_singletons.csv` (6 globals, every access, the vtable slot names each one carries) +
+  `docs/systems/CHECKPOINTS.md` (*Which object the file manager's global actually holds*, generated table) +
+  `make fmgr-live-object` + this note.
+
+
 ### Execution notes (2026-11-14, 120 of the 157 dispatches on the file manager land on a body that answers a constant)
 
 - **The table is asked for far more than the save path.** `tools/fmgr-dispatch.py` resolves every virtual call whose

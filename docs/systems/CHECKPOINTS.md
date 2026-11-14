@@ -497,6 +497,58 @@ the next read, and it is a store census of one local, not another boot.
 | `0x60` | `0x00018bd0` | FUN_00018bd0 | 5 | `xor    eax,eax ret    0x10` | 0 | - | - |
 <!-- /generated:fmgr-dispatch -->
 
+## Which object the file manager's global actually holds (2026-11-14)
+
+The table above is `FFileManagerError`'s, and the question both earlier censuses leave is whether the build ever runs a
+different file manager. `tools/fmgr-live-object.py` answers it from the identity of the singleton and from the
+instructions that write the pointer, not from the `.data` initializer.
+
+**The global is one of six.** `0x005bf500`..`0x005bf514` hold pointers into a single run of statics at
+`0x005c1a08`..`0x005c1a1c`, four bytes apart: each object is one dword, its vtable, so none of them carries state. The
+file manager's object is `0x005c1a0c`; the neighbour at `-4` is the allocator's, whose table's first slot is
+`appMallocBeforeInit`. A row of memberless statics is a row of *fallback* implementations, not of subsystems the engine
+built.
+
+**Nothing in the image constructs one of them.** No instruction names any of the six tables as an immediate (the
+`table .text` column is 0 on every row), so all six exist only as statics: a class whose constructor ran would store its
+own table's address in code.
+
+**The pointer is named by 194 reads and two writes, and neither writer installs a built object.** This counts accesses,
+not calls: the dispatch census above counts 157 virtual calls through the object. One write is `0x00169e3` in `Core_UnObjBas`,
+four instructions before the same function logs `Starting Engine`: it stores `lea ecx,[ebp-0xb0]`, a frame dword whose
+only other reference inside that 18,359-byte function is a zero store at `0x0012927`, so the pointer's target has no
+table and cannot answer a dispatch. The other is `0x0005a9b2` in `Core_UnMisc` (`0x0005a990`), which stores
+`[esp+0x28]` -- its own incoming argument -- so there the value is whatever that function's caller passed.
+
+**What that leaves.** The only dispatchable object in the image is the static error singleton at `0x005c1a0c`, and both
+writers hand the global a value from outside rather than constructing one, so which object is live is decided by
+`Core_UnMisc`'s callers and by how long `0x00169e3`'s frame slot survives. That is the next read -- a caller census,
+not another boot.
+
+    python3 tools/fmgr-live-object.py --xbe $DUMP/default.xbe -o inventory/fmgr_singletons.csv
+    python3 tools/fmgr-live-object.py --write-doc docs/systems/CHECKPOINTS.md
+    python3 tools/fmgr-live-object.py --check       # 25 assertions, no dump
+
+<!-- generated:fmgr-live-object -->
+**The file-manager pointer is one of 6 consecutive globals.** `0x005bf500`..`0x005bf514` hold pointers into the same run of statics, 4 bytes apart -- one dword per object, the vtable, so none of them carries state and none of them is a subsystem object the engine built. The table behind `[0x005bf514]` names `FUN_00031e70 FFileManagerError_CreateFileReader FFileManagerError_CreateFileWriter`; the global beside it at -4 names `appMallocBeforeInit FUN_000340e0 FUN_00034100`.
+
+**No instruction in the image names any of these 6 tables as an immediate** (the `table .text` column is 0 on every row), so nothing constructs one of these objects: they exist only as statics, and the dispatch census that reads this table describes the fallback implementation rather than a file layer the build assembled.
+
+**Per global: the object it holds, its vtable, and every instruction that names it.**
+
+| global | object | gap | vtable | names | table .text | table other | sites | reads | writes | value | source | slot |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `0x005bf500` | `0x005c1a14` | 4 | `0x004d2e3c` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x0001136d 0x000113a3 0x00011d80 0x00012410 0x00012420 0x00012431 | 1518 | 1 | `0x0005aa58 ecx` | `0x0005aa58 incoming` | - |
+| `0x005bf504` | `0x005c1a10` | 4 | `0x004d30e8` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x00012a36 0x000166dd 0x000181f0 0x00018330 0x00018c60 0x00018d2f | 336 | 1 | `0x0005aa65 edx` | `0x0005aa65 incoming` | - |
+| `0x005bf508` | `0x005c1a1c` | - | `0x004d2e4c` | FUN_000ea7f0 FUN_00020f00 FUN_000357a0 | 0 | 1 | 0x000121ca 0x000167c8 0x0001c012 0x0001c056 0x000275cf 0x0003bea9 | 60 | 0 | - | - | - |
+| `0x005bf50c` | `0x005c1a18` | 4 | `0x004d2e44` | FUN_00020f00 FUN_000ea7f0 FUN_000357a0 | 0 | 1 | 0x0005327f | 1 | 0 | - | - | - |
+| `0x005bf510` | `0x005c1a08` | 4 | `0x004d2eb0` | appMallocBeforeInit FUN_000340e0 FUN_00034100 | 0 | 1 | 0x00012746 0x00016d85 0x00016dca 0x00016e80 0x00016ea0 0x00016fd0 | 2445 | 2 | `0x00012746 0x59ed68 ; 0x0005aa70 ecx` | `0x00012746 immediate ; 0x0005aa70 incoming` | - |
+| `0x005bf514` | `0x005c1a0c` | 4 | `0x004d2fd0` | FUN_00031e70 FFileManagerError_CreateFileReader FFileManagerError_CreateFileWriter | 0 | 1 | 0x000121cf 0x000167cd 0x000169e3 0x0001c009 0x0001c04d 0x000284f5 | 194 | 2 | `0x000169e3 ecx ; 0x0005a9b2 eax` | `0x000169e3 frame ebp-b0 ; 0x0005a9b2 incoming` | 0x000169e3: 0x00012927 write 0x000169d2 read |
+
+**The access census.** `[0x005bf514]` is named by 194 read(s) and 2 write(s) in the image: `0x000169e3 frame ebp-b0`; `0x0005a9b2 incoming`. A value whose last writer is a frame slot is followed into that slot's own references inside the containing function -- `0x000169e3: 0x00012927 write 0x000169d2 read` -- because a slot that is never given a table cannot answer a dispatch, and then the write installs no second file manager.
+
+<!-- /generated:fmgr-live-object -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files
