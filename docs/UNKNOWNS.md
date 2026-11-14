@@ -578,6 +578,16 @@ initialiser installs. **Still open:** whether that frame object is alive when th
 initialiser's exit path rather than another table. Depth: `docs/systems/CHECKPOINTS.md`, *Which class the initialiser
 builds there*; `inventory/fmgr_live_vtable.csv` (`--live`, dump-free `--check`).
 
+**Answered 2026-11-14: the file-manager global is installed twice, both times from `main`'s frame.** The containing
+function of both stores is the process's own entry body -- one CRT call site at `0x33f2ff`, one `ret`, and the
+`Starting Engine` / `Launching map` / `Entering Loop` literals -- so the frame outlives every game call, and the `.data`
+object `0x005c1a0c` (table `0x004d2fd0`) describes only the image before it runs. The second store (`0x169e3`,
+`[ebp-0xb0]`) comes after the `0x4c8db8` object and immediately before `Starting Engine`, so the engine phase runs with
+an object whose class is still open. The loader `0x00134d40` and `GameInfo.LoadSaveGame` `0x00149370` never read the
+global at all; the load path reaches it one call deeper (`0x001347d0`, `0x00134960`), and the save side reads it
+directly (writer `0x00138680` once, serializer `0x0006f4b0` three times). Artifact `inventory/fmgr_installs.csv`.
+
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is

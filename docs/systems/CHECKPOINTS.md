@@ -571,9 +571,42 @@ rootless `\Profiles\<profile>\` path above is a statement about the *static* obj
     python3 tools/fmgr-live-object.py --live $DUMP/default.xbe --live-out inventory/fmgr_live_vtable.csv
     # -> live table 0x004c8db8 built by 0x0001a3b0, static 0x004d2fd0 -- 12 same, 13 differ
 
-**Still not measured:** whether this object is the one live when the loader runs. It lives in the initialiser's frame,
-so that depends on the initialiser not returning before the save chain; the answer is the initialiser's exit path (does
-the frame outlive `Startup`), not another table.
+**Which object the engine phase runs with, and why the frame is not the problem.** #519's open question -- is the
+frame object still live when the loader runs -- is answered by the containing function rather than by another table.
+`0x0012620` is `main`: it has one direct caller (`0x33f2ff`, in the CRT start-up and outside every mapped function) and
+one `ret` (`0x16cfe`), and its body prints `Startup time %f`, `MEMORY: %d KByte of physical memory in use`,
+`Map linearization complete`, `Starting Engine`, `Launching map [%s]`, `Entering Loop` and `Engine->Init: %f`. The frame
+it builds in its prologue is therefore the session's frame, and a pointer into it is not a dangling object; the `.data`
+initializer (`0x005c1a0c`, table `0x004d2fd0`) describes only the state before `main` runs.
+
+It also installs **twice**. `0x0005a9b2` (in `Core_UnMisc`, reached from `main`'s call at `0x12b7d`) installs the
+`[ebp-0x954]` object of #519 -- table `0x004c8db8` -- and `0x169e3` later re-points the global at `[ebp-0xb0]`, a second
+frame slot, zeroed at `0x12927` and handed to `call 0x6c750` with `ecx` still holding it, immediately before
+`Starting Engine` is printed. `0x6c750` stores no immediate at `[this]`, so the class of the object the engine phase
+uses is still open -- but the object is not the one #519 measured, and the phase column below is what separates them.
+
+What this does settle is the direction of the global: **the load path's own bodies never read it.** `0x00134d40` (the
+loader) and `0x00149370` (`GameInfo.LoadSaveGame`) name `[0x005bf514]` zero times; two functions in the loader's own
+neighbourhood (`0x001347d0`, `0x00134960`) do, so the reader is one call deeper. The writer `0x00138680` reads it once
+and the serializer `0x0006f4b0` three times; `main` itself reads it once, at `0x167cd`, and dispatches `+0x04`
+(`CreateFileReader`) through it -- the live object answers a reader call inside `main`'s own body.
+
+    python3 tools/fmgr-installs.py --xbe $DUMP/default.xbe -o inventory/fmgr_installs.csv
+    python3 tools/fmgr-installs.py --write-doc docs/systems/CHECKPOINTS.md
+    python3 tools/fmgr-installs.py --check       # 24 assertions, no dump
+
+<!-- generated:fmgr-installs -->
+**The file-manager global has 2 store(s) in the image, and they are not the same kind of object.** The rows below are the image's own initializer and every store, in the order the build performs them, with the frame slot each value points at, the call that builds that slot, the table that call stores at `[this]`, and the literal the build prints next -- the phase the store belongs to. `at` orders them: an install inside a callee is placed at the call site that enters it, one inside the function the CRT calls at its own address. The static row's `reads` cell is the count of instructions in the image that name the global.
+
+| store | at | in | fn size | rets | callers | kind | value | slot | builder | table | phase | slot refs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `image` | image | - | - | - | - | data-initializer | `0x005c1a0c` | - | - | 0x004d2fd0 | pre-main | - |
+| `0x0005a9b2` | 0x00012b7d call | Core_UnMisc | 3181 | - | 0x00012b7d | incoming | `eax` | - | - | - | - | - |
+| `0x000169e3` | 0x000169e3 own body | Core_UnObjBas | 18359 | 0x00016cfe | 0x0033f2ff | frame | `ecx` | ebp-b0 | 0x000169d2 -> call 0x0006c750 | none | 0x169f1 Starting Engine | 0x00012927 write 0x000169d2 read |
+
+**What the columns decide.** A `frame` value means the object lives in the containing function's own frame, so whether it can be dispatched through depends on that frame outliving the reader: the `rets` column is the function's whole exit set, and a store that precedes every one of them leaves the frame alive only as long as the function does. The `callers` column says how that function is entered -- one site outside every mapped function is the CRT's call into `main`. `table` is `none` when the call the slot is handed to stores no immediate at `[this]`, which is the difference between an install and a pointer to scratch. A `-` in `rets` is a body whose decoded sweep has no `ret` at all -- it leaves through a jump, so its exit set is not this column's to state.
+<!-- /generated:fmgr-installs -->
+
 
 ## Not measured
 
