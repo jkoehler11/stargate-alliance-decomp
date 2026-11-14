@@ -209,6 +209,9 @@ def selftest():
         ("jump over a byte", bytes([0x06, 0x02, 0x00, 0x47]), 2, 4),
         ("iterator pop, no operands", bytes([0x30, 0x31]), 2, 2),
         ("extended native (0x60): byte then parameter list", bytes([0x60, 0x01, 0x16]), 1, 3),
+        # The Case row: a 2-byte value and one nested token -- not a second 2-byte operand in front of it.
+        ("case 15 with a byte constant", bytes([0x0A, 0x0F, 0x00, 0x24, 0x07]), 1, 5),
+        ("the 0xffff case terminator carries no token", bytes([0x0A, 0xFF, 0xFF, 0x47]), 2, 4),
         ("high native 1, byte 0: native 256, then a parameter list", bytes([0x61, 0x00, 0x16]), 1, 3),
     ]
     for label, data, want_tokens, want_len in checks:
@@ -238,6 +241,7 @@ def selftest():
         ("an unterminated string", bytes([0x1F]) + b"ab"),
         ("a parameter list with no 0x16", bytes([0x1C, 0x05, 0x47])),
         ("a truncated int constant", bytes([0x1D, 0x01])),
+        ("a truncated case value", bytes([0x0A, 0xFF])),
     ]
     for label, data in refusals:
         try:

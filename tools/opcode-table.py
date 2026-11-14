@@ -48,7 +48,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #   str         NUL-terminated ANSI string
 #   utf16       NUL-terminated UTF-16 string (2-byte units, ends on a zero unit)
 #   labeltable  8-byte entries until a zero dword
-#   case        2-byte value; 0xffff ends the case list, otherwise one nested token
+#   case        a 2-byte value, then one nested token unless the value is 0xffff. The handler at 0x39d26
+#               advances the cursor by 2, compares those bytes with 0xffff and jumps to the no-operand case
+#               on a match, so the value is read once -- `bytes:2,case` read it twice (docs/BYTECODE.md)
 GROUPS = {
     0:  ("index",            "LocalVariable,InstanceVariable,DefaultVariable,ObjectConst,NativeParm",
          "object/name reference as a compact index"),
@@ -60,7 +62,7 @@ GROUPS = {
                              "BoolVariable,IteratorPop,IteratorNext,EndOfScript",
          "no operand bytes, no children: the handler returns the opcode"),
     6:  ("bytes:2,expr",     "Assert,Skip", "code offset then the expression"),
-    7:  ("bytes:2,case",     "Case", "value, then a nested token unless the value is 0xffff"),
+    7:  ("case",             "Case", "2-byte value, then one nested token unless the value is 0xffff"),
     8:  ("labeltable",       "LabelTable", "8-byte entries until a zero dword"),
     9:  ("expr",             "GotoLabel,EatString,DynamicArrayLength", "one nested token"),
     10: ("expr,expr",        "Let,DynamicArrayElement,LetBool,ArrayElement,LetDelegate",

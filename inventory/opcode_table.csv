@@ -9,7 +9,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x07,4,0x00039cce,JumpIfNot,"bytes:2,expr",2,map,code offset then the condition
 0x08,5,0x00039e38,Stop,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x09,6,0x00039d98,Assert,"bytes:2,expr",2,map,code offset then the expression
-0x0a,7,0x00039d26,Case,"bytes:2,case",2,map,"value, then a nested token unless the value is 0xffff"
+0x0a,7,0x00039d26,Case,case,0,map,"2-byte value, then one nested token unless the value is 0xffff"
 0x0b,5,0x00039e38,Nothing,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x0c,8,0x00039d4e,LabelTable,labeltable,0,map,8-byte entries until a zero dword
 0x0d,9,0x000399a7,GotoLabel,expr,0,map,one nested token
