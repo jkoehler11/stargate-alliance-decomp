@@ -2406,3 +2406,36 @@ that is 19-21 bytes early explains the residue (front plus group) and the oversh
 elements never crosses the block start on any of the 1,612 -- the two raw dwords are there on every element of every
 row. 592 located rows carry no gap-front row (the writer order that census needs does not close on them), so this
 says nothing about them; the join it does make is exact, 1,612 of 1,612 on both the count and the close.
+
+
+### The block side finds the head where the census can speak, and nowhere it cannot
+
+`tools/class-record-array-head.py` closes the record from the head the gap-front census supplies, and the census is
+silent on 578 of the 2,204 located rows. `tools/class-record-array-search.py` (`make class-record-array-search`,
+`inventory/class_record_array_search.csv`) finds the head without it: every `p` in `[prefix + 42, prefix + 42 + 40)`
+whose element walk is followed by a closing group that lands exactly on the block start with every name index inside
+the package's table. The census is the control.
+
+| population | rows | a candidate head | a unique one | the census head among the candidates |
+|---|---:|---:|---:|---:|
+| rows the census has a head for (control) | 1,626 | 1,616 (99.4%) | 1,399 (86.0%) | **1,612 of 1,616 (99.8%)** |
+| rows without one | 578 | **13 (2.2%)** | 13 | -- |
+
+Where the search is unambiguous it finds the census's position: the offset past `prefix + 42` is `19` on 730, `20` on
+519 and `21` on 233 -- the front the gap-front census measured, recovered here from the block side alone. It is not
+always unambiguous (2 candidates on 202 rows, 3 on 14, 4 on 1, none on 10) and those rows are reported as `ambiguous`
+rather than resolved by preference; the earliest candidate is the one recorded.
+
+**The 578 rows are not a locator failure, they are rows the group is absent on.** 521 of them carry a
+`class_tail_run.csv` row and **none of the 521 parses as names-ref-name-list**, against 984 of 1,618 on the rows that
+do have a head. The group is the search's only anchor, so a block start that no group precedes cannot be located this
+way -- which is also why the gap census is silent on exactly this population, stated from the other side.
+
+**The 13 hits are genuine and they are the exception that proves the shape.** They sit at offset 32-34 rather than
+19-21, i.e. a longer front than the census's mode, and their counts are large where the classes are (`SquadAIBasic`
+471 elements, `CTFFlag` 80, `GameObject` 59). A head further out is still a head: the search's window is 40 bytes and
+the front it tolerates is up to 18 bytes longer than the one the census measured.
+
+    make class-record-array-search
+    python3 tools/class-record-array-search.py --dump DUMP --sweep -o inventory
+    python3 tools/class-record-array-search.py --report
