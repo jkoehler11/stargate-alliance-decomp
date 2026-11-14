@@ -3597,3 +3597,20 @@ therefore neither the window nor the tables: on the 207 rows no count-plus-grid 
 so the record's extent has to come from a bound that is not a payload fit -- the writer side, `UStruct::Serialize`
 (`0x000392b0`) and `UClass::Serialize` (`0x0003a800`), which is the same route U17 left open. Nothing here needs a
 boot or a decompile.
+
+**2026-11-13 (twenty-sixth): the 3-5 byte front is not a name, a property tag or an object reference -- every reading
+it passes is a small integer's base rate.** The gap-front census left one question: which field the compact run in
+front of the sixteen zero bytes is. `tools/class-record-front.py` tests four readings on all 1,490 gap rows that carry
+a front, each against three same-length controls. Every value is a valid name index on 1,484 (99.6%) -- and on 1,484
+for the same window one byte later, so the reading has no power. Every value is a valid object reference (with `0` as
+null) on 5,457 of 5,468 (99.8%), and on 5,468 of 5,468 one byte later: the control is *better*. The one reading that
+can fail, whether the first value names a `Property` export of the class itself, answers on **1 of 1,490** against 0,
+1 and 0 for the controls, so the front is not a property tag. And **1,479 of 1,490 fronts contain no value that
+needed more than one byte**, so every value is 0-63 and cannot be a name or export index above 63 -- which is most of
+both tables -- while the only field `UStruct::Serialize` (`0x000392b0`) names between its second reference and the
+record's four zero dwords is `FriendlyName`, an `FName` of two compacts: 8 fronts are two values and the rest are three
+to five, so the front is a field wider than the one the writer puts there. **What is still open** is the front's
+identity, and the cheapest next read is static: the 578 gap rows where the walk does not close carry no front by
+construction, so reading the same window at `prefix + 42` there and comparing it with these 1,490 says whether the
+front is a record field (it should still be there) or an artefact of the walk's offset (it should not). Nothing here
+needs a boot or a decompile.
