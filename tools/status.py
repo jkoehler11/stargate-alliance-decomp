@@ -86,6 +86,11 @@ def collect():
     oracle_match = sum(1 for r in od if r["bucket"] == "matched")
     out.append(("Script", "classes agreeing with the 2006 source", oracle_match, oracle_total,
                 "inventory/oracle_diff.csv (bucket=matched / all oracle classes)"))
+    l2_rows = rows_of("inventory/matching_baseline.csv")
+    l2_match = sum(int(r["l2"]) for r in l2_rows)
+    l2_funcs = sum(int(r["functions"]) for r in l2_rows)
+    out.append(("Script", "functions whose shipped bytecode matches (L2)", l2_match, l2_funcs,
+                "inventory/matching_baseline.csv (l2 / functions)"))
     out.append(("Script", "classes compiling clean (L1)", None, None, "PLAN 3.6 has not started (inputs: docs/COMPILE.md)"))
     cd_rows = rows_of("inventory/class_defaults_coverage.csv")
     cd_total = sum(int(r["classes"]) for r in cd_rows)
@@ -132,6 +137,11 @@ def collect():
     maps = rows_of("inventory/maps.csv")
     out.append(("Content", "maps parsed", len(maps), count_manifest(".unr"),
                 "inventory/maps.csv vs manifest"))
+    campaign = [r for r in maps if re.match(r"^M[0-9]", r["map"])]
+    loads = [r for r in rows_of("inventory/map_loads.csv") if re.match(r"^M[0-9]", r["name"])]
+    out.append(("Content", "campaign entries that load (PLAN 7.2)",
+                sum(1 for r in loads if r["result"] == "PASS"), len(campaign),
+                "inventory/map_loads.csv (PASS rows, M* names) vs inventory/maps.csv (M* maps)"))
     speech = rows_of("inventory/speech_index.csv")
     out.append(("Content", "speech WAVs indexed", len(speech),
                 count_manifest(".wav", "/Speech/"), "inventory/speech_index.csv vs manifest"))

@@ -56,6 +56,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | classes reconstructed (L0) | 2,319 | 2,319 | `████████████████████████` 100.00% | 🟩 |
 | Script | shipped packages parsed | 18 | 18 | `████████████████████████` 100.00% | 🟩 |
 | Script | classes agreeing with the 2006 source | 204 | 291 | `█████████████████░░░░░░░` 70.10% | 🟨 |
+| Script | functions whose shipped bytecode matches (L2) | 11,368 | 12,153 | `██████████████████████░░` 93.54% | 🟩 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
 | Script | class defaults decoded | 1,664 | 2,319 | `█████████████████░░░░░░░` 71.76% | 🟨 |
 | Script | default properties rendered | 15,518 | 15,521 | `████████████████████████` 99.98% | 🟩 |
@@ -67,6 +68,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Native | native declarations reconciled | 683 | 685 | `████████████████████████` 99.71% | 🟩 |
 | Native | property classes measured | 15 | 15 | `████████████████████████` 100.00% | 🟩 |
 | Content | maps parsed | 73 | 73 | `████████████████████████` 100.00% | 🟩 |
+| Content | campaign entries that load (PLAN 7.2) | 61 | 61 | `████████████████████████` 100.00% | 🟩 |
 | Content | speech WAVs indexed | 1,364 | 1,364 | `████████████████████████` 100.00% | 🟩 |
 | Content | music WAVs indexed | 1,923 | 1,923 | `████████████████████████` 100.00% | 🟩 |
 | Deliverables | payload resizes that round-trip (6.1 writer) | 84 | 84 | `████████████████████████` 100.00% | 🟩 |
