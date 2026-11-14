@@ -379,6 +379,71 @@ def argument_origin(insns, table, index, reg, detail, limit=2):
     return " ; ".join(out)
 
 
+def frame_local_of(insns, table, index, reg, detail):
+    """(caller function start, "[ebp-0xNN]") for an `incoming` write whose argument is a frame local."""
+    base, off = detail.split("+")
+    if base != "esp":
+        return None, None
+    site = insns[index][0]
+    fn, size, start = containing(table, site)
+    if not fn:
+        return None, None
+    w = writer(insns, index, reg, 0)
+    if not w:
+        return None, None
+    argn = arg_index(insns, start, w[0], int(off, 16))
+    if not argn:
+        return None, None
+    where = {va: i for i, (va, _t) in enumerate(insns)}
+    for call_va in call_sites(insns, start):
+        i = where.get(call_va)
+        if i is None:
+            continue
+        pushes = argument_pushes(insns, i, argn)
+        if len(pushes) < argn:
+            continue
+        label = describe_push(insns, where[pushes[-argn][0]], pushes[-argn][1])
+        if label.startswith("[ebp-0x"):
+            caller = containing(table, call_va)[2]   # the frame local belongs to the *caller*
+            return (caller if caller else start), label
+    return None, None
+
+
+def constructed_vtable(insns, table, caller_start, slot_label, limit=64):
+    """The table a constructor stores into the frame object: first `lea` of that slot, then `mov [reg],imm`.
+
+    A placement-style constructor writes its vtable into `[this]`, so the first call that takes the slot as
+    `this` answers which class the caller built there. Returns (constructor start, table va) or (None, None).
+    """
+    where = {va: i for i, (va, _t) in enumerate(insns)}
+    lea = None
+    for va, text in insns:
+        if va < caller_start:
+            continue
+        if "lea" in text and slot_label in text:
+            lea = va
+            break
+    if lea is None:
+        return None, None
+    i = where[lea]
+    for call_va, call_text in insns[i:i + 4]:
+        if not call_text.startswith("call   0x"):
+            continue
+        target = int(call_text.split("0x")[-1], 16)
+        if not containing(table, target)[0]:
+            continue
+        start = containing(table, target)[2]
+        for va2, text2 in insns:
+            if va2 < start:
+                continue
+            if va2 >= start + limit * 8:
+                break
+            m = re.match(r"^mov\s+DWORD PTR \[(e[a-z]{2})\],0x([0-9a-f]+)$", text2)
+            if m:
+                return start, int(m.group(2), 16)
+    return None, None
+
+
 # ---------------------------------------------------------------- the measurement
 
 def vtable_names(xbe, table, vtable):
@@ -488,6 +553,58 @@ def census(xbe_path, symbols=SYMBOLS):
             "origin": " ; ".join(origin),
         })
     return rows
+
+
+def live_rows(xbe, table, insns):
+    """The table the initialiser builds in its frame, slot by slot against the static error object's table."""
+    static_obj = dword(xbe, FM_GLOBAL)
+    static_vt = dword(xbe, static_obj) if static_obj else None
+    i, reg, detail = None, None, None
+    for n, (_va, text) in enumerate(insns):
+        if access(text, FM_GLOBAL) != "write":
+            continue
+        _mnem, parts = operands(text)
+        if len(parts) < 2:
+            continue
+        kind, r, d = provenance(insns, n, parts[1], 0)
+        if kind == "incoming":
+            i, reg, detail = n, r, d
+            break
+    live_vt, ctor = None, None
+    if i is not None:
+        caller_start, slot_label = frame_local_of(insns, table, i, reg, detail)
+        if caller_start is not None:
+            ctor, live_vt = constructed_vtable(insns, table, caller_start, slot_label)
+    rows, same, differ = [], 0, 0
+    count = max(len_slots(xbe, static_vt), len_slots(xbe, live_vt))
+    for slot in range(count):
+        a = dword(xbe, static_vt + slot * 4) if static_vt and slot < len_slots(xbe, static_vt) else None
+        b = dword(xbe, live_vt + slot * 4) if live_vt and slot < len_slots(xbe, live_vt) else None
+        verdict = "same" if a == b else ("differs" if a and b else "one-sided")
+        if verdict == "same":
+            same += 1
+        else:
+            differ += 1
+        rows.append({"slot": str(slot), "dispatch": "+0x%x" % (slot * 4),
+                     "static": ("%#010x" % a) if a else "", "static_name": containing(table, a)[0] if a else "",
+                     "live": ("%#010x" % b) if b else "", "live_name": containing(table, b)[0] if b else "",
+                     "verdict": verdict})
+    return {"static_vt": static_vt, "live_vt": live_vt, "ctor": ctor, "rows": rows,
+            "same": same, "differ": differ, "caller": frame_local_of(insns, table, i, reg, detail)[0] if i is not None else None}
+
+
+def len_slots(xbe, vtable):
+    """How many slots a table has: the committed class-table row if it is one, else 25 (the error table's)."""
+    if not vtable:
+        return 0
+    with open(os.path.join("inventory", "xbe_class_tables.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                if int(r["table_va"], 16) == vtable:
+                    return int(r["slots"])
+            except (KeyError, ValueError):
+                continue
+    return 25
 
 
 # ---------------------------------------------------------------- the page
@@ -659,6 +776,16 @@ def selftest():
          describe_push(caller, 3, "push   ecx"), "[ebp-0x954]")
     want("an immediate argument", describe_push(caller, 9, "push   0x599f10"), "0x00599f10")
     want("call sites from the decoded sweep", call_sites(caller, 0x5A990), [0xA02C])
+    ctor = [(0xB000, "lea    ecx,[ebp-0x954]"), (0xB006, "call   0x1a3b0"),
+            (0xB00B, "lea    eax,[ebp-0x954]")]
+    body = [(0x1A3B0, "mov    edi,ecx"), (0x1A3B5, "mov    DWORD PTR [edi],0x4c8db8")]
+    want("a frame local is named by its lea", frame_local_of(
+        [(0xC000, "mov    eax,DWORD PTR [esp+0x28]"), (0xC004, "mov    ds:0x5bf514,eax"),
+         (0xC00A, "push   ecx"), (0xC00B, "call   0x5a990")], [(0x5A990, 64, "F")], 1, "eax", "esp+28"),
+        (None, None))
+    want("a constructor writes its table into [this]",
+         constructed_vtable(ctor + body, [(0x1A3B0, 64, "ctor")], 0xB000, "[ebp-0x954]"), (0x1A3B0, 0x4C8DB8))
+    want("no lea, no table", constructed_vtable(ctor, [], 0xB000, "[ebp-0x954]"), (None, None))
     want("a different callee", call_sites(caller, 0x5A994), [])
 
     rows = [
@@ -722,6 +849,8 @@ def main(argv=None):
     ap.add_argument("--write-doc", metavar="PAGE")
     ap.add_argument("--check-doc", metavar="PAGE")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--live", metavar="XBE", help="the vtable the initialiser builds, slot by slot")
+    ap.add_argument("--live-out", default=os.path.join("inventory", "fmgr_live_vtable.csv"))
     args = ap.parse_args(argv)
 
     if args.check:
@@ -731,6 +860,25 @@ def main(argv=None):
         if args.check_doc:
             return check_doc(args.check_doc, rows)
         write_doc(args.write_doc, rows)
+        return 0
+    if args.live:
+        xbe = load_xbe(args.live)
+        table = load_symbols(args.symbols)
+        insns = []
+        for sec in code_sections(xbe, table):
+            insns += list(instructions(xbe.read_va(sec.va, sec.vsize), sec.va))
+        insns.sort()
+        res = live_rows(xbe, table, insns)
+        if not res["live_vt"]:
+            sys.exit("no constructed vtable found for the file-manager global")
+        with open(args.live_out, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=["slot", "dispatch", "static", "static_name", "live",
+                                               "live_name", "verdict"], lineterminator="\n")
+            w.writeheader()
+            w.writerows(res["rows"])
+        print("ok   fmgr-live-object: live table %#010x built by %s, static %#010x -- %d same, %d differ -> %s"
+              % (res["live_vt"], ("%#010x" % res["ctor"]) if res["ctor"] else "?", res["static_vt"],
+                 res["same"], res["differ"], args.live_out))
         return 0
     if not args.xbe:
         ap.error("--xbe is required to measure (or --check/--check-doc/--write-doc)")

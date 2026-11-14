@@ -554,6 +554,27 @@ next read.
 
 <!-- /generated:fmgr-live-object -->
 
+**Which class the initialiser builds there.** Following the frame local one step further answers it: the first
+instruction that takes `[ebp-0x954]` as a receiver is `0x128ff` (`lea ecx` then `call 0x1a3b0`), and that constructor
+writes its table into the object at `0x1a3c2` -- `mov DWORD PTR [edi],0x4c8db8`. So the file manager the game hands
+itself is an object with table `0x4c8db8`, a table the class census does not carry (its only dword reference in the image
+is that one store, so it is a native C++ object rather than one of the 492 script class tables), and the constructor
+also builds a string `Z:\Cache` beside it at `+0x4`.
+
+Compared against the static error object's table (`0x4d2fd0`) slot by slot, `0x4c8db8` overrides **13 of 25** slots and
+keeps 12 (mostly the trivially-short ones). The two the save chain asks about are among the overrides: `+0x04`
+(`CreateFileReader`) is `0x0001d290` and `+0x08` (`CreateFileWriter`) `0x0001d6d0`, against the error manager's
+log-and-return-0 stubs -- so the earlier "asks for a reader and gets NULL" describes the fallback, not this object. The
+device-path resolver `+0x38` is also overridden (`0x0001c4f0` against the empty-string body `0x00034210`), so the
+rootless `\Profiles\<profile>\` path above is a statement about the *static* object only.
+
+    python3 tools/fmgr-live-object.py --live $DUMP/default.xbe --live-out inventory/fmgr_live_vtable.csv
+    # -> live table 0x004c8db8 built by 0x0001a3b0, static 0x004d2fd0 -- 12 same, 13 differ
+
+**Still not measured:** whether this object is the one live when the loader runs. It lives in the initialiser's frame,
+so that depends on the initialiser not returning before the save chain; the answer is the initialiser's exit path (does
+the frame outlive `Startup`), not another table.
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files

@@ -1255,6 +1255,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the live file manager is a table no script class owns, and it overrides 13 of the 25 slots)
+
+- **The frame local's first use names the class.** `0x128ff` is `lea ecx,[ebp-0x954]; call 0x1a3b0`, and the constructor
+  writes its table into the object at `0x1a3c2` -- `mov DWORD PTR [edi],0x4c8db8`. That table is **not** one of the 492
+  script class tables (`inventory/xbe_class_tables.csv` has no row for it, and the only dword reference to it anywhere in
+  the image is that one store), so the live file manager is a native C++ object, not a `UObject` the census lists. Its
+  constructor also builds a `Z:\Cache` string beside the object at `+0x4`.
+- **Slot by slot against the fallback, 13 of 25 differ.** `0x4d2fd0` (the `.data` error object's table) and `0x4c8db8`
+  agree on 12 slots and differ on 13. The save chain's two entries are overrides: `+0x04` `CreateFileReader` is
+  `0x0001d290` and `+0x08` `CreateFileWriter` `0x0001d6d0`, against the error manager's log-and-return-0 stubs. The device
+  resolver `+0x38` is overridden too (`0x0001c4f0` against the empty-string body `0x00034210`), so #515/#516's two
+  findings describe the *static* object: with this one installed, the reader exists and the device slot is not empty.
+- **A new mode reads it, and its first version was wrong in a way the numbers showed.** `--live` follows the global's
+  incoming write back to its argument, that argument back to the caller's frame local, and the local forward to the
+  constructor's `mov [this],<table>`, then diffs the two tables. The first run credited only 0 of 25 slots because
+  `frame_local_of` returned the *callee* (the function containing the store) as the caller -- the local is the caller's,
+  so the `lea` was never found; the tell was `0 same, 25 one-sided` rather than a plausible partial.
+- **What is still open, and it is not a table.** The object lives in the initialiser's frame, so whether the loader ever
+  sees it depends on that frame outliving the save chain -- the initialiser's exit path. Recorded rather than guessed.
+- Tool (`tools/fmgr-live-object.py --live`, `--live-out`, 41 assertions) + `inventory/fmgr_live_vtable.csv` (25 rows:
+  slot, dispatch offset, static and live target, verdict) + `make fmgr-live-object` now regenerates both artifacts +
+  `docs/systems/CHECKPOINTS.md` (*Which class the initialiser builds there*) + `docs/UNKNOWNS.md` U5 + this note.
+- **Next measurement:** the initialiser's exit path -- whether `Core_UnObjBas` returns before `0x00134d40` (the loader) is
+  called, which decides whether the frame object or the static fallback is in the global when a save loads.
+
 ### Execution notes (2026-11-14, the file manager's runtime value is the initialiser's own frame local, handed in as an argument)
 
 - **The caller census the last note asked for has one row, and it also fixes the tool that missed it.** `Core_UnMisc`
