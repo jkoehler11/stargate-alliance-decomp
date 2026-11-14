@@ -1178,6 +1178,28 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the label is withheld from the 196 and the block count is 1,985)
+
+- **The rule the last note named is in.** `tools/class-defaults.py`'s `all_packages()` now refuses a chosen candidate
+  whose parse names none of the class's declared properties, and `coverage()` carries the same rule so its rollup
+  agrees; the start is withheld, not moved, so only the 196's rows change.
+- **The numbers, and none of them was a verdict.** Blocks **2,181 -> 1,985**, no block **138 -> 334**, **fully
+  declared unchanged at 1,663 (71.7%)** -- all 196 parsed zero declared names -- and ambiguous **291 -> 197** (94 of
+  the 196 were an `ambiguous` row's second candidate). `class_defaults_misses.csv` reads **empty-block 135 -> 331**
+  and **incomplete 200 -> 4** (those were the published rows), explained total unchanged at 656.
+- **Downstream in the same change.** `class_defaults_per_class.csv`, `class_defaults_coverage.csv`,
+  `class_defaults_misses.csv`, `compile_readiness.csv`/`_by_package.csv` with `docs/COMPILE.md`, `docs/STATUS.md` with
+  the README badges, and `docs/CLASS_DEFAULTS.md`'s coverage table, which had drifted to the pre-group-guard
+  2,209 / 1,664 -- it now matches the artifact. Compile readiness keeps **1,823 ready (78.6%)**, blockers
+  `no-defaults-block` 105 -> **249**, `defaults-ambiguous` 405 -> **247**.
+- `--check` drives the rule on a payload whose chosen parse names no declared property and one that does.
+- Tool (`tools/class-defaults.py`'s `all_packages()` and `coverage()`) + six regenerated artifacts + the two pages +
+  `docs/UNKNOWNS.md` U18 (thirty-sixth) + this note. Reads the packages; no boot, no Ghidra round.
+- **Next measurement, named:** the one artifact that did not move -- `tools/defaults-emit.py` still locates class
+  blocks on its own path and still reports 2,209 blocks and 15,518 rendered properties. Give the renderer the same
+  withheld label (its class-level `cd.choose` results included) and re-measure `inventory/class_defaults_emit.csv`
+  and the totals this page quotes from it.
+
 ### Execution notes (2026-11-14, the 196 zero-fraction starts read names that are not properties, at every offset)
 
 - **The measurement the last note named is done.** `tools/class-defaults-silent.py` (`make class-defaults-silent`,

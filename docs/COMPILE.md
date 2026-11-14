@@ -24,31 +24,31 @@ Per class, four things a compiler would need:
 |---|---:|---|
 | `read` — a block whose every property the class declares | 954 | no |
 | `not-applicable` — no properties anywhere in its ancestry | 869 | no |
-| `ambiguous` — block found, not every property declared | 391 | yes |
-| `none` — declares properties, no block located | 105 | yes |
+| `ambiguous` — block found, not every property declared | 247 | yes |
+| `none` — declares properties, no block located | 249 | yes |
 
 | package | classes | ready | no block | ambiguous |
 |---|---:|---:|---:|---:|
-| `StargateContent` | 567 | 92.9% | 2 | 38 |
-| `Engine` | 367 | 58.0% | 52 | 102 |
-| `StargateGame` | 306 | 74.5% | 10 | 68 |
-| `GamePlay` | 262 | 76.7% | 11 | 50 |
-| `Sharpeffects` | 158 | 98.7% | 1 | 1 |
-| `GUI` | 148 | 91.2% | 3 | 10 |
-| `StargateVehicles` | 142 | 90.8% | 3 | 10 |
-| `StargateMenus` | 98 | 69.4% | 2 | 28 |
-| `UWindow` | 78 | 16.7% | 7 | 58 |
-| `Stargateeffects` | 77 | 94.8% | 1 | 3 |
-| `UDebugMenu` | 38 | 86.8% | 2 | 3 |
-| `AmbientCreatures` | 18 | 94.4% | 0 | 1 |
+| `StargateContent` | 567 | 92.9% | 10 | 30 |
+| `Engine` | 367 | 58.0% | 85 | 69 |
+| `StargateGame` | 306 | 74.5% | 43 | 35 |
+| `GamePlay` | 262 | 76.7% | 22 | 39 |
+| `Sharpeffects` | 158 | 98.7% | 2 | 0 |
+| `GUI` | 148 | 91.2% | 5 | 8 |
+| `StargateVehicles` | 142 | 90.8% | 5 | 8 |
+| `StargateMenus` | 98 | 69.4% | 3 | 27 |
+| `UWindow` | 78 | 16.7% | 44 | 21 |
+| `Stargateeffects` | 77 | 94.8% | 3 | 1 |
+| `UDebugMenu` | 38 | 86.8% | 4 | 1 |
+| `AmbientCreatures` | 18 | 94.4% | 1 | 0 |
 | `Editor` | 16 | 87.5% | 2 | 0 |
-| `IpDrv` | 14 | 42.9% | 0 | 8 |
-| `UnrealEd` | 12 | 33.3% | 2 | 6 |
-| `Core` | 7 | 42.9% | 3 | 1 |
-| `Fire` | 7 | 0.0% | 4 | 3 |
+| `IpDrv` | 14 | 42.9% | 3 | 5 |
+| `UnrealEd` | 12 | 33.3% | 6 | 2 |
+| `Core` | 7 | 42.9% | 4 | 0 |
+| `Fire` | 7 | 0.0% | 7 | 0 |
 | `UPreview` | 4 | 75.0% | 0 | 1 |
 
-Blockers across the tree: no-defaults-block 105, defaults-ambiguous 391.
+Blockers across the tree: no-defaults-block 249, defaults-ambiguous 247.
 
 <!-- /generated -->
 
