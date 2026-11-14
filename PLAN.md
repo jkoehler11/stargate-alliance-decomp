@@ -1178,6 +1178,23 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the 63 rows with no shape carry it 10 to 48 bytes later, and 21 carry it nowhere)
+
+- **The population is the residue of the open-front census.** 63 of the 578 open rows answer nothing at
+  `prefix + 42`. Scanning `prefix + 42 - 16 .. + 48` with the same shape test: **21 answer nowhere** in that window and
+  **42 answer at a distant offset** -- `k` = 11 (11 rows), 20 (7), 10 (4), 40 (4), the rest 12-48 -- from which the
+  element walk lands 0-9 bytes before the located block start on **35 of the 42** (residue median 7, within 3 on 3).
+- **The controls refuse two easier readings.** The 515 rows whose shape is at `prefix + 42` also fire at `k` = -1
+  (515), +1 (510), -2 (492), -3 (457): a front whose leading bytes are zero merges back into the sixteen-zero run, so
+  the tool compares **count positions**, not offsets. And 188 of those 515 carry some hit at `|k| > 4`, so a distant
+  shape is not by itself evidence; the landing is what gets reported.
+- **What is still open.** The 21 rows with no shape in the window at all, and why the head sits later on the 42 --
+  the writer side (`UStruct::Serialize`, `0x000392b0`) is still the route, unchanged by this census.
+- Tool (`tools/class-record-no-shape.py`: `--class`, `--sweep`, `--report`, `--check` with synthetic bodies) +
+  `inventory/class_record_no_shape.csv` (578 rows) + `docs/NATIVE_VM.md` (*The 63 rows ... 10 to 48 bytes later*) +
+  `docs/UNKNOWNS.md` U18 (twenty-eighth) + `make class-record-no-shape` + `make ci` holding the tool to its `--check` +
+  this note. Reads the packages and two committed tables; no boot, no Ghidra round.
+
 ### Execution notes (2026-11-13, the 1-9 bytes the element grid stops short on are the closing group, and the block start is inside it)
 
 - **The population is the one the last note named.** On the **245** open rows whose element walk ends 1-9 bytes before
