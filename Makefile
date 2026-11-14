@@ -84,7 +84,7 @@ help:
 	@echo "  class-record-bound    the array head after the sixteen zero bytes, as a bound on the block start (needs the dump)"
 	@echo "  class-record-room     the 32 impossible block starts, re-located by the record fields (needs the dump)"
 	@echo "  class-tail-units      the record tail's units, and whether the 32 claims start inside one (needs the dump)"
-	@echo "  class-tail-run        the run after the last unit: names, an import reference, a name, a list"
+	@echo "  class-tail-run        the run after the last unit: names, an import reference, a name, a list; where the census starts"
 	@echo "  archive-slots          the archive's vtable and one compact field per FName, measured from its slots"
 	@echo "  record-writer-calls    every call into the record and name writers, and the member each is handed"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"

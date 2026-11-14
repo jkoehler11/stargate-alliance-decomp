@@ -3428,3 +3428,16 @@ The byte that defeated every earlier reading is the reference: compact `83` is *
 position inside the record's unit stream and its `nm_*` block needs re-deriving before it is quoted.
 **What is still open** is that re-derivation: join each row's `last_unit + 8` to the census's `array_end` and, if
 it lands inside a unit, recompute the census from the group above. Nothing here needs a boot or a decompile.
+
+**2026-11-13 (sixteenth): the census's array tail is a unit body, and the counts to quote are the groups.** The
+fifteenth entry left the `nm_*` re-derivation open and named the join -- each row's `last_unit + 8` against the
+census's `array_end`. On the **545** rows both artifacts carry the tail is at the group's start on **none**: before
+the record's last unit on 402 (mode -12 on 262), past the block start on 93, inside the closing run on 49, exactly
+on the block on 1. On the 294 rows that are before the last unit and parse here, the census reads
+`nm_mid_count = 2` on all 294 with `nm_shape = open` on all 294, and its `nm_exact` closes on **0 of the 330**
+overlapping parses, so that block describes the record's unit stream and not its arrays. Re-derived at the group
+start the same rows read 3 names on 217, 4 on 69 (2 on 6, 5 on 2), a config name inside the name table on
+**294 of 294**, and an empty `+0x4f4` list on 280 (6 on 10, 4 on 4). **What is still open** in the closing run is
+nothing: its grammar is measured from both sides and `make class-tail-run` prints the join. What is outside this
+entry is the 93 rows whose located array lies inside the defaults block -- the locator's question, not the run's.
+Nothing here needs a boot or a decompile.

@@ -46,7 +46,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
 | `inventory/class_table_parents.csv` | 492 | 8 | `make class-table-parents` |
 | `inventory/class_table_slot_pairs.csv` | 492 | 7 | `make class-table-residual` |
-| `inventory/class_tail_run.csv` | 2139 | 20 | `make class-tail-run` |
+| `inventory/class_tail_run.csv` | 2139 | 23 | `make class-record-gap` |
 | `inventory/class_tail_units.csv` | 32 | 13 | `make class-tail-units` |
 | `inventory/class_tails.csv` | 2204 | 22 | `make class-tail` |
 | `inventory/class_virtual_overrides.csv` | 1145 | 14 | `make class-overrides` |
