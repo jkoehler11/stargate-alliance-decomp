@@ -49,7 +49,7 @@ Above `0x47` there is no table entry, so the walker's two range checks handle ev
 | 4 | `0x00039cce` | 07 | `bytes:2,expr` | JumpIfNot |
 | 5 | `0x00039e38` | 08 0b 16 17 25 26 27 28 2a 2d 30 31 47 | `—` | Stop, Nothing, EndFunctionParms, Self, IntZero, IntOne, True, False, NoObject, BoolVariable, IteratorPop, IteratorNext, EndOfScript |
 | 6 | `0x00039d98` | 09 18 | `bytes:2,expr` | Assert, Skip |
-| 7 | `0x00039d26` | 0a | `bytes:2,case` | Case |
+| 7 | `0x00039d26` | 0a | `case` | Case |
 | 8 | `0x00039d4e` | 0c | `labeltable` | LabelTable |
 | 9 | `0x000399a7` | 0d 0e 37 | `expr` | GotoLabel, EatString, DynamicArrayLength |
 | 10 | `0x00039b55` | 0f 10 14 1a 45 | `expr,expr` | Let, DynamicArrayElement, LetBool, ArrayElement, LetDelegate |
@@ -1261,3 +1261,45 @@ changes is a rule, and 17 walk again under no single-row change.** What would se
 of the stop -- the token before it, read against a copy of the script a guest holds (`tools/xemu/script-ram.py`) --
 not another candidate in this table. The report prints the tie count per opcode so a future candidate is judged by
 whether it has a rival rather than by how many payloads it rescues.
+
+## The Case row read its value twice, and the refusals are 1 (measured 2026-11-14)
+
+The section above is a tail because of a defect in one row, and group 7's own handler says which way the row is
+wrong. At `0x00039d26`:
+
+    39d26  push eax ; push edi ; call 0x37080          ; walk the token that follows
+    39d2d  mov ebp,[esi] ; add ebp,2 ; mov [esi],ebp    ; the cursor advances by two
+    39d3c  cmp WORD PTR [eax+ecx-2],0xffff              ; the two bytes it just passed
+    39d43  je 0x39e38                                   ; 0xffff -> group 5's no-operand handler
+    39d49  jmp 0x399a7                                  ; otherwise group 9's one-nested-token handler
+
+So `EX_Case` is **one 2-byte value, then one nested token unless the value is `0xffff`** -- which is exactly what the
+table's own note said and what its pattern did not: `bytes:2,case` read two fixed bytes *and* a 2-byte case value,
+i.e. the value twice, and so ate the first two bytes of the token behind it. On a switch whose last case is the
+`0xffff` terminator the second read landed on the bytes after it, which is where the refused walks stopped.
+
+| reading of `0x0a` | payloads walking (of 11,687 with an epilogue) |
+|---|---:|
+| `bytes:2,case` (committed until this measurement) | 11,608 |
+| `case` | **11,686** |
+| walking only under the old row | 0 |
+| walking only under the new row | 78 |
+| walking under neither | 1 |
+
+No payload walks under the old row and not the new one, so the correction is strict rather than a trade. With it
+committed, `inventory/opcode_refusals.csv` goes from **79 rows to 1** -- `StargateGame.u`'s
+`VoiceSelector.DiscardRecentlyUsedVoices`, a `0x5e` bad-token -- and `inventory/matching_baseline.csv`'s scripted
+ceiling from 11,289 to **11,367**.
+
+**The sixteen label-table rows were this defect, not a label table.** Every one of them recovers under the corrected
+row, and in each the `0x0c` is not a token the walk reaches at all: it is an operand byte read by the token in front
+of it -- in the thirteen `StargateMenus` pages a one-byte compact name index (value 12) after a `1c`
+`FinalFunction`, which is the call the page makes on the way out. The `0x0c` row is still right on its own terms,
+and now measured from its handler rather than from a note: `0x00039d4e` advances the cursor by 8, reads the entry's
+first dword and loops while it is non-zero. But nothing in this corpus exercises it -- **0 of 11,686 walking
+payloads reaches a reachable `0x0c`** -- so the shipped compiler emitted `case` chains and no label tables, and the
+8-byte entry is a rule with no population behind it in this build.
+
+That also retires the "anchor upstream of the stop" question the previous section left open: the stream was not
+desynchronised by a missing width, it was over-read by one row, and the anchor that settles it is the handler's own
+two-byte compare.

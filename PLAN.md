@@ -244,6 +244,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
+      **And the table's last defect is measured (2026-11-14)**: the `Case` row read its value twice -- `bytes:2,case`
+      takes two fixed bytes *and* a 2-byte case value -- while the group-7 handler at `0x00039d26` advances the
+      cursor by two, compares those bytes with `0xffff`, goes to the **no-operand** handler on a match and to the
+      one-nested-token handler otherwise, so the operand is the value once. As `case` alone the corpus walk goes
+      from 11,608 to **11,686 of 11,687** (+78, none lost), `inventory/opcode_refusals.csv` from 79 rows to **1**,
+      and the scripted ceiling in `inventory/matching_baseline.csv` from 11,289 to **11,367**; the 16 label-table
+      rows were the double read landing on a `0x0c` that is a compact name index in a `FinalFunction` operand, so
+      this corpus reaches no label table at all.
 - [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
       packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
       `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from
