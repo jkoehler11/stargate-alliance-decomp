@@ -30,7 +30,11 @@ decomposing the gap instead of naming its fields:
   under that call*): `FUN_0003d160` calls the archive's name slot once per element and that slot writes one compact
   index, so all three are one stream of that shape. `nm_exact` says it closes on the defaults start,
   `nm_ctl_exact` how many shifted starts do, and `nm_fits` records the arithmetic bound a name array cannot cross
-  (a count plus at most five bytes per element) so a 20-byte middle is not a name array of two whatever it parses as;
+  (a count plus at most five bytes per element) so a 20-byte middle is not a name array of two whatever it parses as.
+  **Where that start is** is a separate question and the tail artifact answers it negatively: on the overlap with
+  `inventory/class_tail_run.csv`, `array_end` sits at or before the record's last unit on most rows, so the `nm_*`
+  block measures a unit body there -- `tools/class-tail-run.py --report` prints the join, and its group columns are
+  the `+0x4dc` / `+0x4f4` counts to quote;
 * **the control** -- the same array grammar started at each of the next 8 bytes, counting the starts that parse and
   the ones whose end is exactly the defaults start. A grammar that fits the real position and the shifted ones
   about equally describes the arithmetic, not the record.
@@ -455,6 +459,16 @@ def report(rows):
                  sum(1 for r in names if r["nm_cfg_name"] == 1)))
         print("  the control at 1..%d bytes later closes on %d"
               % (WINDOW, sum(int(r["nm_ctl_exact"] or 0) for r in names)))
+        tail = os.path.join(ROOT, "inventory", "class_tail_run.csv")
+        if os.path.exists(tail):
+            at = {(r["package"], r["class"]): r for r in csv.DictReader(open(tail, newline=""))}
+            over = [r for r in names if r["array_end"] and (r["package"], r["class"]) in at
+                    and at[(r["package"], r["class"])]["last_unit"]]
+            before = [r for r in over
+                      if int(r["array_end"]) <= int(at[(r["package"], r["class"])]["last_unit"])]
+            print("  where this tool starts: `array_end` is at or before the record's last unit on %d of the %d "
+                  "rows the tail artifact also carries -- read class-tail-run.py --report before quoting these"
+                  % (len(before), len(over)))
 
     twenty = [r for r in rest if r["gap"] == 27]
     if twenty:

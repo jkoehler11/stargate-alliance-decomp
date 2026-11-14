@@ -24,6 +24,12 @@ import-side reference, biased by the import table), which no name array can expl
 separately and joins the two counts it reads to the gap census, which measured the same region from the payload's
 other side.
 
+The join has a second half, and it is the one that decides the census. `array_end` -- where `class-record-gap.py`
+starts its own parse of this region -- is not the writer's array tail: on the overlap it lands **before the
+record's last unit**, or past the block start, and never at the group's start. So the census's `nm_*` block
+measures a unit body there, and `--report` prints where each overlapping row's `array_end` sits (`gap_array_end`,
+`gap_off` and `gap_pos`) against what the group reads at the position the writer uses.
+
     python3 tools/class-tail-run.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-tail-run.py --report
     python3 tools/class-tail-run.py --check           # synthetic payloads, no dump, writes nothing
@@ -51,7 +57,8 @@ BOUND_ARTIFACT = "class_record_bound.csv"
 GAP_ARTIFACT = "class_record_gap.csv"
 COLUMNS = ["package", "class", "payload", "block_start", "last_unit", "run_len", "run_hex", "verdict",
            "names_count", "names_indices", "ref", "ref_kind", "cfg_name", "list_count", "list_indices",
-           "gap_mid_count", "gap_list_count", "gap_first_count", "mid_match", "list_match"]
+           "gap_mid_count", "gap_list_count", "gap_first_count", "gap_array_end", "gap_off", "gap_pos",
+           "mid_match", "list_match"]
 
 
 def read_index(buf, off):
@@ -130,6 +137,35 @@ def read_gap():
     return {(r["package"], r["class"]): r for r in csv.DictReader(open(path, newline=""))}
 
 
+def gap_join(g, last_unit, block):
+    """Where the gap census's `array_end` sits relative to the record whose group this is.
+
+    The census locates an array from the payload's other side and starts its `nm_*` parse at that array's tail.
+    The record's own closing group starts at `last_unit + UNIT_BODY`, so a census tail that lands before the last
+    unit -- or past the block -- is reading bytes the writer never writes an array at.
+    """
+    out = {"gap_array_end": "", "gap_off": "", "gap_pos": ""}
+    raw = (g or {}).get("array_end", "")
+    if raw == "":
+        return out
+    ae = int(raw)
+    run = last_unit + UNIT_BODY
+    if ae <= last_unit:
+        pos = "before-last-unit"
+    elif ae < run:
+        pos = "inside-last-unit"
+    elif ae == run:
+        pos = "run-start"
+    elif ae < block:
+        pos = "inside-run"
+    elif ae == block:
+        pos = "at-block"
+    else:
+        pos = "past-block"
+    out.update({"gap_array_end": ae, "gap_off": ae - last_unit, "gap_pos": pos})
+    return out
+
+
 def _indices(vals, limit=8):
     return " ".join(str(v) for v in vals[:limit]) + (" +%d" % (len(vals) - limit) if len(vals) > limit else "")
 
@@ -192,6 +228,7 @@ def sweep(args):
                    "list_indices": _indices(got["list"]["vals"]) if got else "",
                    "gap_mid_count": g.get("nm_mid_count", ""), "gap_list_count": g.get("nm_list_count", ""),
                    "gap_first_count": g.get("first_count", "")}
+            row.update(gap_join(g, last, block))
             for key, col, gap_col in (("mid_match", "names_count", "gap_mid_count"),
                                       ("list_match", "list_count", "gap_list_count")):
                 row[key] = int(row[gap_col] != "" and row[col] != "" and int(row[gap_col]) == int(row[col]))
@@ -251,6 +288,38 @@ def report(rows=None):
         print("  their gap nm_mid_count: %s"
               % ", ".join("%d:%d" % kv for kv in collections.Counter(int(r["gap_mid_count"]) for r in both_fit
                                                                     if r["gap_mid_count"] != "").most_common(8)))
+    # The join's second half: where the census starts its own parse of the same region.
+    gap = read_gap()
+    pairs = [(r, gap[(r["package"], r["class"])]) for r in rows if (r["package"], r["class"]) in gap]
+    tagged = [t for t in ((r, g, gap_join(g, int(r["last_unit"]), int(r["block_start"]))) for r, g in pairs)
+              if t[2]["gap_pos"]]
+    print("\nwhere the gap census's `array_end` sits, on the %d rows both artifacts carry:" % len(tagged))
+    for k, n in collections.Counter(t[2]["gap_pos"] for t in tagged).most_common():
+        sub = [t for t in tagged if t[2]["gap_pos"] == k]
+        print("  %-17s %4d rows, %4d parse here"
+              % (k, n, sum(1 for t in sub if t[0]["verdict"] == "names-ref-name-list")))
+    off = collections.Counter(int(t[2]["gap_off"]) for t in tagged if t[2]["gap_pos"] == "before-last-unit")
+    print("  before-last-unit offsets (array_end - last_unit): %s"
+          % ", ".join("%d:%d" % kv for kv in off.most_common(6)))
+    fitting = [t for t in tagged if t[0]["verdict"] == "names-ref-name-list"]
+    print("  the census's own nm split closes on %d of the %d that parse here"
+          % (sum(1 for t in fitting if t[1].get("nm_exact") == "1"), len(fitting)))
+    before = [t for t in fitting if t[2]["gap_pos"] == "before-last-unit"]
+    if before:
+        print("  on those %d, read where the census reads: nm_mid_count %s, nm_shape %s"
+              % (len(before),
+                 ", ".join("%s:%d" % kv for kv in
+                           collections.Counter(t[1]["nm_mid_count"] for t in before).most_common(4)),
+                 ", ".join("%s:%d" % kv for kv in
+                           collections.Counter(t[1]["nm_shape"] for t in before).most_common(4))))
+        print("  re-derived at the group start (last_unit + %d): names count %s, config name in range %d of %d, "
+              "list count %s"
+              % (UNIT_BODY,
+                 ", ".join("%s:%d" % kv for kv in
+                           collections.Counter(t[0]["names_count"] for t in before).most_common(6)),
+                 sum(1 for t in before if t[0]["cfg_name"] and int(t[0]["cfg_name"]) >= 0), len(before),
+                 ", ".join("%s:%d" % kv for kv in
+                           collections.Counter(t[0]["list_count"] for t in before).most_common(4))))
     failed = collections.Counter(r["run_hex"] for r in rows if r["verdict"] == "no-parse")
     print("\ntop runs no grammar consumes (all rows):")
     for h, n in failed.most_common(8):
@@ -287,6 +356,17 @@ def selftest():
     got = parse_group(body, 0, len(body), nnames)
     if got and got["ok"] and got["names"]["vals"] == [1, 2]:
         print("FAIL class-tail-run: a re-ordered group was accepted as the writers")
+        bad += 1
+    for mark, lu, bs, want in ((58, 70, 78, "before-last-unit"), (75, 70, 78, "inside-last-unit"),
+                               (78, 70, 78, "run-start"), (82, 70, 86, "inside-run"),
+                               (86, 70, 86, "at-block"), (99, 70, 86, "past-block")):
+        got = gap_join({"array_end": str(mark)}, lu, bs)["gap_pos"]
+        if got != want:
+            print("FAIL class-tail-run: array_end %d with unit %d and block %d answered %s, expected %s"
+                  % (mark, lu, bs, got, want))
+            bad += 1
+    if gap_join({}, 70, 78)["gap_pos"] != "" or gap_join({"array_end": ""}, 70, 78)["gap_off"] != "":
+        print("FAIL class-tail-run: a row without a census entry answered a position")
         bad += 1
     if bad:
         return 1

@@ -1201,6 +1201,27 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the census's array tail is a unit body and the record's counts are the groups)
+
+- **The join the last two notes named lands on the group's start on zero rows.** `class_record_gap.csv` locates an
+  array from the payload's other side and starts its `nm_*` parse at that tail; the record's group starts at
+  `last_unit + 8`. On the **545** rows both artifacts carry the census tail is before the record's last unit on
+  **402** (mode **-12** on 262, -13 on 34, -14 on 19, -11 on 10 -- four bytes inside the body of the unit ahead of
+  the last one), past the block start on **93**, inside the closing run on **49** and on the block on **1**.
+- **On the 294 overlapping rows that parse, the mid count is the unit stream.** `nm_mid_count = 2` on all 294 and
+  `nm_shape = open` on all 294; `nm_exact` closes on **0 of the 330**. Re-derived at `last_unit + 8` those rows read
+  **3 names on 217, 4 on 69** (2 on 6, 5 on 2), the config name in range **294 of 294**, the reference an import on
+  all 294, and an empty `+0x4f4` list on **280** (6 on 10, 4 on 4). The 93 past-block rows carry no `nm_*` at all.
+- Tool (`tools/class-tail-run.py`: `gap_array_end`/`gap_off`/`gap_pos` columns, a `--report` section and a six-case
+  position selftest in `--check`) + `inventory/class_tail_run.csv` (regenerated, 2,139 rows) + `docs/NATIVE_VM.md`
+  (new section) + `docs/UNKNOWNS.md` U18 (sixteenth) + `tools/class-record-gap.py` (docstring and `--report`
+  signpost, no change to its artifact) + `make class-tail-run` help + this note. Reads the packages and two
+  committed tables; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the 93 rows whose located array lies inside the defaults block are the locator's
+  question: re-run `class_record_array.csv`'s locate walk on those payloads with the block start taken from the
+  record side -- known on 2,139 rows -- and report whether the walk's candidate list contains the block start, which
+  would say the locator prefers a tail inside the buffer by construction.
+
 ### Execution notes (2026-11-13, the closing run is a names array, an import reference, a config name and an empty list)
 
 - **The run is the writers whole group, not one field, and the writer says so in four call sites.**

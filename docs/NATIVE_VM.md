@@ -2221,3 +2221,39 @@ value on 294 rows should be re-derived before it is quoted again.
 The run is therefore **not** the tail of the version-gated `+0x4f4` array and not a field of its own: it is the
 whole four-field group, and the part that looked like an unexplained byte is the archive's reference slot writing
 an import index negative.
+
+### The gap census's array tail is not the writers, and its mid count is a unit body
+
+`inventory/class_record_gap.csv` locates an array from the payload's other side and starts its `nm_*` parse at that
+array's tail, but the record's closing group starts at `last_unit + 8`, and those are not the same byte.
+`tools/class-tail-run.py` carries the join as three columns (`gap_array_end`, `gap_off`, `gap_pos`) and prints it,
+and on the **545** rows both artifacts carry the census's tail is never the group's start:
+
+| where `array_end` sits | rows | parse the group here |
+|---|---:|---:|
+| before the record's last unit | 402 | 294 |
+| past the block start, inside the defaults buffer | 93 | 36 |
+| inside the closing run | 49 | 0 |
+| exactly at the block start | 1 | 0 |
+| at the group start (`last_unit + 8`) | 0 | 0 |
+
+The offsets are a narrow mode, not a spread: **-12 on 262** of the 402, -13 on 34, -14 on 19, -11 on 10. Twelve
+bytes before the last unit's flag dword is four bytes inside the body of the unit ahead of it, when the units are
+eight bytes apart -- where an array tail lands if a run of unit bytes is read as the array. The 93 rows past the
+block start carry no `nm_*` at all: their located array lies inside the defaults buffer, which is the locator's own
+question rather than the run's.
+
+On the 294 rows whose census tail is before the last unit *and* whose group parses, that census reads
+`nm_mid_count = 2` on all 294 and `nm_shape = open` on all 294 -- the middle is not merely a wrong count, its split
+never closes on the block, and `nm_exact` closes on **0 of the 330** overlapping parses. Read at the position the
+writer uses, the same 294 rows give
+
+* the `+0x4dc` count **3 on 217 and 4 on 69** (2 on 6, 5 on 2);
+* the config name inside the name table on **294 of 294**, and the reference an import slot on all 294;
+* the `+0x4f4` list **empty on 280** (count 6 on 10, 4 on 4).
+
+So the census's `nm_*` block measures the record's **unit stream** wherever its located tail falls before the last
+unit -- 402 of 545 rows, 294 of the 330 that parse -- and must not be quoted as the record's arrays; the counts to
+quote are the group's columns. `make class-tail-run` regenerates the artifact and prints the join, and
+`tools/class-record-gap.py --report` says which of its own starts fall there.
+
