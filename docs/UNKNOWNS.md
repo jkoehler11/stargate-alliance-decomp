@@ -607,6 +607,25 @@ packages the gate can drop nothing else, and the save chain never depended on it
 tool `tools/class-flag-word.py`; its 109-reference census supersedes the 93 counted here (the earlier pattern
 missed the mod=10 forms whose base register is not `eax`).
 
+**Answered 2026-11-14: every masked test of the word is a branch on something's class, and the five inheritable
+bits the pinned reader cannot name are all read.** `tools/class-flag-readers.py` decodes each of the 29 masked
+tests in the image -- operand width, the `Jcc` that consumes the flags, and what each edge does (`zeroes`,
+`returns`, `calls`, `continues`) -- so the answer a bit selects is measured rather than named. `0x8000` has one
+reader (the collector at `0x00067641`, whose set edge skips the object), `0x10000` three, `0x20000` two,
+`0x40000` one (the name-hash walk at `0x000630e2`, which returns the object only when the bit is set), and
+`0x80000` five. Bit names stay with the pinned reader: where it has none, the doc reports the behaviour and the
+carriers, not a `CLASS_*` spelling. Artifact `inventory/class_flag_readers.csv`; page
+`docs/systems/CHECKPOINTS.md`, *What each class-flag bit's readers do with the answer*.
+
+**Still open: `0x80000` is required by five readers and carried by no shipped class.** The two
+FindObject-shaped bodies (`0x00062fd6`, `0x0006301c`), the hash walk at `0x0006482c`, `Engine_UnChan` at
+`0x0010ac92` and `execPlaySound` at `0x00212b82` all test it, and none of the 2,319 shipped classes has it, so
+over the packages those lookups answer nothing. **What would settle it** is the one store to `+0x498` that sits
+outside the symbol map (`0x0003c49d`): the three mapped stores are the constructor's inherit, the registration's
+`or 0x12` and whole-word copies, so a bit outside `0x0e0f86ec | 0x12` can only arrive there -- decompiling the
+function that contains `0x0003c49d` answers whether a class built at runtime can carry the bit at all, and it is
+one Ghidra round.
+
 
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
