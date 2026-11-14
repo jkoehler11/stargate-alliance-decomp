@@ -1216,6 +1216,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   `docs/MATCHING.md` baseline per package, with the L2/L3 split and the functions that have no script, is the
   artifact that would make the comparator usable before a compiler exists.
 
+### Execution notes (2026-11-14, the refusals are not a per-opcode tail)
+
+- **The measurement the previous note named.** `tools/uscript-refusals.py --candidates SYSTEM` (`make
+  refusal-candidates`) holds the table fixed and replaces only the pattern of the opcode each refusal stopped on --
+  twelve candidates, `bytes:1` through `bytes:8`, `index`, `expr`, `parms`, `labeltable` and no operand -- then
+  re-walks every payload that stopped there; 2 s, prints only.
+- **36 distinct stop opcodes, and the tie is the answer.** On 22 of them (60 refusals) several unrelated candidates
+  recover exactly the same payloads (`0x0c` 15 of 16 under no operand, `bytes:5` and `bytes:6` alike; `0x03` 4 of 4
+  under no operand; `0x49` 3 of 4 under `bytes:1`, `bytes:8` and `index`), which is a shift of an already
+  desynchronised stream rather than a rule. On 13 of them (17 refusals) nothing recovers. One stop opcode (`0x4a`,
+  `bytes:8`) has a candidate with no rival, and it recovers one of that opcode's two payloads.
+- So 51 of the 79 walk again under some single-row change and none of those changes is the row's answer. The report
+  prints the tie count per opcode, so a future candidate is judged by whether it has a rival.
+- Files: `tools/uscript-refusals.py` (`--candidates`), `docs/BYTECODE.md` (*A single table row cannot fix the 79
+  refusals*), `Makefile` (`make refusal-candidates`), this note.
+- **Next measurement, named:** read the token *before* the stop on the 16 `LabelTable` rows against a copy of the
+  script a guest holds (`tools/xemu/script-ram.py`), because no table change on `0x0c` has a rival-free candidate
+  and the label table's own extent is what a guest copy would show.
+
 ### Execution notes (2026-11-14, 3.8's scoreboard: the denominator a rebuild is scored against)
 
 - **The measurement the previous note named.** `tools/uscript-dis.py --baseline SYSTEM -o inventory` walks all 18
