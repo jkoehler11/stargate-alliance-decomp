@@ -1996,6 +1996,48 @@ the artifact carries each front's values and the class's own table sizes, so the
     python3 tools/class-record-order.py --dump DUMP --gap-sweep -o inventory
     python3 tools/class-record-order.py --gap-report
 
+### The shape at `prefix + 42` survives the walk, so the front is a record field
+
+`tools/class-record-front.py` measured what the 3-5 bytes in front of the sixteen zero dwords *can* be, and every
+reading it passed was a small integer's base rate; that left whether those bytes are a field of the record or an
+artefact of the offset the closing walk happened to choose. The population that answers it is the **578 located rows
+the walk does not close on** (`inventory/class_record_array_head.csv` with an empty `arr_count`): they carry no
+gap-census row by construction, so anything found at `prefix + 42` there cannot have come from the walk.
+
+`tools/class-record-open-front.py` (`make class-record-open-front`, `inventory/class_record_open_front.csv`, its
+`--check` in `make ci`) reads that shape -- **3-5 compact values, sixteen zero bytes, then the count** -- on every
+located row, and anchors it on the zero run's **end**. Anchoring on the start is the trap: a front whose last byte is
+`00` merges into the run, and a start-anchored search then reports a four-byte front as one byte
+(`AmbientCreatureManager`, front `02 00 00`, reads as a one-byte `02`). Candidates are the modal 19/20/21 only; when
+two pass, the **widest** is the front's real width, because the shorter pass is the front's own trailing zero.
+
+| population | rows | shape at `prefix + 42` | local base rate |
+|---|---|---|---|
+| closing, with the gap census as the control | 1,626 | **1,607 (98.8%)** | 0.000 |
+| ... of those, gap equal to the census length | 1,607 | **1,473 (91.7%)** | -- |
+| **open, the walk does not close** | 578 | **515 (89.1%)** | 0.000 |
+| all located rows | 2,204 | 2,122 (96.3%) | -- |
+
+The open population's gaps are 20 (223), 19 (151) and 21 (136), plus five at the off-modal 18 -- the same width range
+as the closing rows and the same zero run; its fronts are 78 distinct values against the closing rows 93, 52 of them
+shared (the commonest open fronts are `12 00 00 00`, `00 00 00`, `32 30 00 00`, `02 00 00`). **The base rate is the
+control that carries the claim**: the same test at 24 offsets just past the head, in the same payload, never passes
+on either population, so a sixteen-zero run ending at exactly one of three modal positions behind a parseable front is
+a property of that position and not of the payload being zero-rich.
+
+**What that settles and what it does not.** The front is a field the record writes, and the open rows fail somewhere
+after the array head. From the head this shape gives, the element walk lands past the block start on 361 of the 515
+(residue median **4** bytes, 119 within 3, 245 within 9), inside an element on 114, and on no block at all on 40 --
+block starts at or inside the head, the locator's own false positives (the closing rows carry 4 too, and those are
+excluded from the walk rather than scored). Against the shipped head, which reads the front as the count, the same
+rows miss the block start by a median of hundreds of bytes. What the shape does **not** settle is the front's
+identity, which stays open in `docs/UNKNOWNS.md` U17 with the writer-side read (`UStruct::Serialize`, `0x000392b0`) as
+the route, nor the 63 open rows it does not answer at all.
+
+    make class-record-open-front
+    python3 tools/class-record-open-front.py --dump DUMP --sweep -o inventory
+    python3 tools/class-record-open-front.py --report
+
 ### The array's head sits after the sixteen zero bytes, and there its end is the block start
 
 The first version of this test read the `+0x4d0` array at `prefix_end + 42` -- `UStruct`'s prefix, then

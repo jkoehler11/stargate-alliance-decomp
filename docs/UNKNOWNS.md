@@ -3609,8 +3609,18 @@ can fail, whether the first value names a `Property` export of the class itself,
 needed more than one byte**, so every value is 0-63 and cannot be a name or export index above 63 -- which is most of
 both tables -- while the only field `UStruct::Serialize` (`0x000392b0`) names between its second reference and the
 record's four zero dwords is `FriendlyName`, an `FName` of two compacts: 8 fronts are two values and the rest are three
-to five, so the front is a field wider than the one the writer puts there. **What is still open** is the front's
-identity, and the cheapest next read is static: the 578 gap rows where the walk does not close carry no front by
-construction, so reading the same window at `prefix + 42` there and comparing it with these 1,490 says whether the
-front is a record field (it should still be there) or an artefact of the walk's offset (it should not). Nothing here
-needs a boot or a decompile.
+to five, so the front is a field wider than the one the writer puts there.
+
+**Settled 2026-11-13 (`tools/class-record-open-front.py`): the front is a record field.** The population that decides
+it is the 578 located rows the walk does not close on, which carry no gap-census row by construction -- so nothing
+found there can be the walk's offset. The same 3-5 value + sixteen-zero-byte shape is at `prefix + 42` on **515 of
+them (89.1%)**, with the same width range (19/20/21) and zero run as the population this test reproduces the census on
+(1,607 of 1,626 closing rows, exact census length on 1,473 of 1,607), against a local base rate of **0.000** for the
+same test at 24 offsets just past the head in the same payload. From that head the element walk lands within 9 bytes
+of the block start on 245 of the 515, so the open rows fail after the head, not at it.
+
+**What is still open** is the front's identity -- the writer-side read (`UStruct::Serialize`, `0x000392b0`, between
+its second reference and the four zero dwords) is still the route, and the compact-versus-`FName` question is
+unchanged -- plus two numbers this census leaves: why the element grid stops 1-9 bytes short on 245 of the 515 (on the
+closing rows those bytes are the closing group, which the first hand checks put at 1-4 bytes here), and why 63 of the
+578 show no shape at `prefix + 42` at all. Nothing here needs a boot or a decompile.
