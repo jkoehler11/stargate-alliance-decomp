@@ -605,7 +605,7 @@ report cites file-level evidence for each claim.
       byte for byte (18/18), the placement pass reproduces every package (18/18), and a payload can now be **resized**
       and round-tripped (18/18 packages, 84 sampled resizes, `inventory/package_relayout.csv`). What is left is payload
       *generation*: a compiler producing the bytes we currently copy.
-- [~] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
+- [x] 6.2 Solve the package-check problem: regenerate `Packages.md5`-equivalent check data, or patch the check
       off in the XBE for dev builds. Document both paths in `docs/PACKAGE_CHECK.md`.
       **The records now pair with files, and the digest is a header-and-name hash.** The first 32-hex field is the
       package's own header GUID (`GUID = [%08X%08X%08X%08X]`, `0x001219d0`), so `tools/package-check-pairs.py`
@@ -636,7 +636,13 @@ report cites file-level evidence for each claim.
       and their meaning is unmeasured. `build.sh --target hybrid` now runs `write-check-data` — **18
       records for the 18 packages it places**, 17 of them the cook's and one new (`UPreview.u`), read back
       18 of 18 through `ue2pkg` — and still checks the tree against the *source's* records, so the two
-      halves stay independent. Still open: which path invokes the check at runtime (probe).
+      halves stay independent. **The runtime question is answered** (`tools/xemu/check-probe.sh`, two
+      boots): with the three `Packages.md5` readers, the `MD5` dispatcher and `Engine_UnPackageCheckInfo` armed
+      from power-on through a loaded `M00`, the readers and the dispatcher never fire and the only two stops are
+      that class's **constructor** (`0x00187350` from `0x00013ec7` in `Core_UnObjBas` `0x00012620`, `push 0x520`
+      then `call [eax]` through the operator-new slot) -- so no load path opens the file and a rebuilt package
+      needs no record to be played. The one arm left is the `MD5` console command itself, which still cannot be
+      typed (7.3's `Say` prefix).
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
@@ -1178,6 +1184,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-14, no load path opens `Packages.md5`, and the only stops are the constructor)
+
+- **The measurement 6.2's last line named.** `tools/xemu/check-probe.sh` runs the boot and arms
+  `bp-args.py` in it: the three readers that carry the `Packages.md5` string (`0x00121490`, `0x00121730`,
+  `0x00125a90`), the `MD5` exec dispatcher they sit behind (`0x00126860`) and `0x00187350`
+  `Engine_UnPackageCheckInfo`. The window covers power-on, the title, the map list's ten presses and a
+  loaded mission; `--control-self` arms the sampled EIP, so a window where the control fires and none of the
+  five does is a true negative rather than an arm that never landed.
+- **Two boots, the same two stops.** Boot 1 reached the front end and the map list (its load press was
+  swallowed, 0 px on the mission frame); boot 2 loaded `M00` (82,366 px, the frame reads O'NEILL's HUD and
+  the "Press the X button to open the door" objective card). In both, the control fired (`0x0007fbae`,
+  `0x003e6527`), `0x00187350` stopped **exactly twice**, and the three readers and the dispatcher stopped
+  **zero** times.
+- **What those two stops are.** The return address on the stack is `0x00013ec7` in both boots -- inside
+  `Core_UnObjBas` `0x00012620`, the first caller the static table lists -- and the body is a constructor: it
+  allocates `0x520` bytes (`push 0x520`; `call [eax]` through the operator-new slot at `0x005bf510`),
+  constructs through `0x0003af60` and asserts through `PackageCheckInfo.cpp` when that returns null. So boot
+  builds the records class (the class object and its default) and never opens the file.
+- **Consequence for the rebuild.** A rebuilt or re-laid-out package needs no entry in the database to be
+  played, and the check needs no patch for normal play: its readers are reachable only from the console
+  command family, which this disc still cannot type (7.3's `Say` prefix) -- the one arm left untested.
+- Tool (`tools/xemu/check-probe.sh`, which also carries the record now: two `a` taps instead of one, since a
+  swallowed press used to cost the whole boot) + `tools/xemu/bp-args.py` (a stub that dies mid-window now
+  writes the stops it has instead of raising `BrokenPipe` and losing them) + `docs/PACKAGE_CHECK.md` (new
+  section, and 6.2's last open bullet replaced by the one command left) + PLAN 6.2 closed + this note. Needs
+  a boot; reads no package and no decompile.
+- **Next measurement, named:** the `MD5` console command is the last invoker and it needs a typed command;
+  clearing the `Say` prefix (7.3) is what unblocks it, and it is the same fix the console's whole command
+  surface waits on.
 
 ### Execution notes (2026-11-14, a group parse inside another group is not a field, and the cross-tab closes)
 

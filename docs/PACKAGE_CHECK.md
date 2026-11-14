@@ -233,12 +233,40 @@ from the code that opens the file.
 
 Artifact: `inventory/package_check_code.csv` (`make package-check-code`, `--check` in `make ci`).
 
+## Which path invokes the check at runtime (measured 2026-11-14)
+
+`tools/xemu/check-probe.sh` arms `bp-args.py` on the three readers that carry the `Packages.md5` string
+(`0x00121490`, `0x00121730`, `0x00125a90`), the `MD5` exec dispatcher they sit behind (`0x00126860`) and the
+records class's own body (`0x00187350` `Engine_UnPackageCheckInfo`), and holds the window open across
+power-on, the title, the map list and a loaded mission. `--control-self` arms the address the CPU was
+executing when the stub was sampled: that arm is in the game's mapping by construction, so a window where
+the control fires and nothing else does is a true negative.
+
+| boot | window | control | `0x00187350` | three readers | `0x00126860` |
+|---|---|---|---:|---:|---:|
+| 1 | title -> map list (the load's `pad=a` was swallowed, 0 px) | `0x0007fbae` fired | 2 | 0 | 0 |
+| 2 | title -> map list -> `M00` loaded and settled (82,366 px; the frame reads O'NEILL's HUD and "Press the X button to open the door") | `0x003e6527` fired | 2 | 0 | 0 |
+
+**The two stops are a constructor, not a check.** Both boots stop at `0x00187350` from the same return
+address, `0x00013ec7`, which is inside `Core_UnObjBas` `0x00012620` -- the first caller the static table
+lists. The body allocates the class (`push 0x520`; `call [eax]` through the operator-new slot at
+`0x005bf510`), constructs through `0x0003af60`, and asserts through `PackageCheckInfo.cpp` when that returns
+null. So boot builds the records class -- twice, the class object and its default -- and never opens the file.
+
+**What this answers, and what it does not.** Nothing on the path from power-on to a loaded level reads
+`Packages.md5`, so a rebuilt or re-laid-out package needs no database entry to be played, and the check needs
+no patch for normal play; the readers remain reachable only through the `MD5` exec dispatcher, which is the
+console command family. That command still cannot be typed on this disc (PLAN 7.3's `Say` prefix), so
+invoking the check by hand is the one arm this probe cannot yet exercise. The armed bytes' read-back is not
+evidence either way -- the stub answered `OK` for every break and the bytes read back `83`/`83`/`6a`/`6a`/`6a`
+on both boots, which is this stub's documented behaviour -- so the control is what proves the arms landed.
+
 ## Not measured
 
 * **What the record frame's filler bytes mean** — the `00`, the two `01`s and the seven trailing
   zeros are identical in all 168 records, so they are reproduced verbatim and not explained. Reading
   them would mean decompiling the `0x00125a90` record builder for field widths, which buys nothing
   while no record in the corpus varies.
-* **Which** path invokes the check at runtime: the code is present and reachable from `Engine_UnGame`,
-  but whether it runs on every load, on a menu, or only on a console command needs the probe in U5 /
-  7.3 territory. The `MD5` console command is the writer, not necessarily the verifier.
+* **Invoking** the check by hand: the `MD5` console command is the only invoker left untested, and it needs
+  a typed command, which this disc's console cannot produce yet (PLAN 7.3's `Say` prefix). The load path is
+  measured above -- zero reads of the file from power-on to a loaded `M00`.
