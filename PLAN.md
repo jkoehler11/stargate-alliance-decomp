@@ -1230,6 +1230,31 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the loader composes a rootless path, and the device segment is empty)
+
+- **The question the last run left -- "do the shipped files resolve at all" -- is answered by reading the composition,
+  not by another boot.** `0x00134d40` builds its path in three joins: the device string, a profile, and the name the
+  console typed. The device goes through `FUN_001be350`, which `wcsicmp`s it against `L"defaultdevice"` and, on a match,
+  asks the file manager (the singleton at `[0x005bf514]`, vtable slot `+0x38`) for the device path before appending
+  `\`, `L"Profiles"` and another `\`.
+- **That slot answers the empty string.** `0x00034210` is 33 bytes whose whole body constructs `FString(out, "")` from
+  the literal at `0x004c85ac`. So the prefix is exactly `\Profiles\<profile>\` -- the device name contributes no
+  characters, and every other device name takes the helper's else arm and yields nothing at all.
+- **It is the module's root, not the loader's quirk.** 26 sites in the image push or store the `defaultdevice` literal:
+  the loader, the deleter beside it, the writer's region and the whole profile family at `0x001be7xx`-`0x001bfdxx`.
+- **The disc's tree is that tail one directory deeper.** Twelve save/profile files over three profile directories
+  (`DefaultProfile`, `sean`, `lbcddnyzq`), all under `System/Profiles/<profile>/`; the loader composes
+  `\Profiles\<profile>\<name>`. `DefaultProfile` appears in no wide literal at all, the only save-directory literal
+  in the build is `..\Saves\` (`0x00523374`, one reference), and the three inis say `[Core.System] SavePath=..\Save`
+  -- a directory that exists in the dump under neither spelling.
+- **What it leaves open, and the next read.** Whether the file manager's base directory is the game's `System\`, which
+  decides between "the load opens the file and fails inside the level" and "the loader takes its `FAILED` branch". Only
+  the loader's own log line carries that path and no frame does, so the cheap next read is the base directory: the
+  `System\` literal at `0x004c9790` is stored at `0x00149603`, inside no committed function.
+- Files: `tools/save-path-compose.py`, `inventory/save_path_compose.csv`, `docs/systems/CHECKPOINTS.md` (*Where the
+  loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
+  addresses, literals and prose only.
+
 ### Execution notes (2026-11-14, a checkpoint does not give back a playable level inside three minutes, and the control says the console is not why)
 
 - **The page's open question is answered for the load side, and the answer is a stalled guest.** The one attempt on

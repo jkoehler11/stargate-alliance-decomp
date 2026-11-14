@@ -523,6 +523,19 @@ looks like it starts that subsystem. The whole path is the loader `0x00134d40`, 
 profile writer `FUN_001be520`; what remains is the writer's serializer arity, not a missing reader. Depth:
 `docs/formats/sgs-checkpoint.md`, *Not a reader*.
 
+**Measured 2026-11-14: the loader composes a rootless path, and the device segment is empty.** The loader's three
+joins are the device string, a profile and the name the console typed; the device goes through `FUN_001be350`, which
+special-cases `L"defaultdevice"` and asks the file manager (singleton `[0x005bf514]`, vtable slot `+0x38`) for the
+device path before appending `\`, `L"Profiles"` and `\`. That slot, `0x00034210`, is 33 bytes whose whole body
+constructs the empty string, so the prefix is exactly `\Profiles\<profile>\` and the device name never reaches it;
+26 sites across the save/profile module push the same literal, so this is the module's root rather than the loader's
+quirk. The disc keeps all twelve save/profile files under `System/Profiles/<profile>/` -- the same tail, one `System\`
+short -- and `DefaultProfile` appears in no wide literal while the only save-directory literal is `..\Saves\` and the
+inis carry `SavePath=..\Save`, which exists nowhere in the dump. **Still open:** the file manager's base directory,
+which decides between a resolved path that fails inside the level and the loader's own `FAILED` branch; the `System\`
+literal at `0x004c9790` is stored at `0x00149603`, inside no committed function. Depth:
+`docs/systems/CHECKPOINTS.md`, *Where the loader looks*; `tools/save-path-compose.py --check` is dump-free.
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is

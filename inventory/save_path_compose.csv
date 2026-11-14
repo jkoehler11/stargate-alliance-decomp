@@ -1,0 +1,64 @@
+kind,key,value,detail
+literal,defaultdevice,0x00508cd4,"ok ""defaultdevice"""
+literal,Profiles,0x00515650,"ok ""Profiles"""
+literal,separator,0x004c8b94,"ok ""\\"""
+literal,Auto,0x004dc798,"ok ""Auto"""
+literal,TRAVEL_,0x00508f5c,"ok ""TRAVEL_"""
+literal,join,0x004d491c,"ok ""%s%s"""
+literal,empty,0x004c85ac,"ok """""
+chain,singleton,0x005c1a0c,"file manager, `[0x005bf514]` -> vtable `0x004d2fd0`, slot `+0x38`"
+chain,device_getter,0x00034210,33 bytes; constructs the empty literal at `0x004c85ac`
+chain,helper,0x001be350,device name -> `<device>\Profiles\`; compares at `0x00036d00`
+chain,join,0x001be450,"`<helper> + profile + \`, called twice from the loader `0x00134d40`"
+composed,prefix,\Profiles\,"the device segment is empty, so the device name contributes no characters"
+site,0x0013482d,push,`FUN_001347d0`
+site,0x00134dc6,push,`FUN_00134d40`
+site,0x00134e2c,push,`FUN_00134d40`
+site,0x001363d4,push,`FUN_001363a0`
+site,0x0013640d,mov,`FUN_001363a0`
+site,0x00136770,push,`FUN_00136740`
+site,0x001367ab,mov,`FUN_00136740`
+site,0x0013874b,push,no committed function spans it
+site,0x001387b1,push,no committed function spans it
+site,0x00139c40,push,`Engine_UnGame`
+site,0x001be384,push,`FUN_001be350`
+site,0x001be75c,push,`FUN_001be720`
+site,0x001be80c,push,`FUN_001be7d0`
+site,0x001beaab,push,`FUN_001bea60`
+site,0x001beae6,mov,`FUN_001bea60`
+site,0x001bec9d,push,`FUN_001bebb0`
+site,0x001befbd,push,`FUN_001bef40`
+site,0x001beff8,mov,`FUN_001bef40`
+site,0x001bf131,push,`FUN_001bf0b0`
+site,0x001bf16c,mov,`FUN_001bf0b0`
+site,0x001bf67c,push,`FUN_001bf660`
+site,0x001bf6ba,mov,`FUN_001bf660`
+site,0x001bfbce,push,`FUN_001bf7b0`
+site,0x001bfc0b,mov,`FUN_001bf7b0`
+site,0x001bfd4f,push,`FUN_001bfd00`
+site,0x001bfd8a,mov,`FUN_001bfd00`
+file,C_M02A_Drillsite.sgs,System/Profiles/DefaultProfile/C_M02A_Drillsite.sgs,44927 bytes; loader composes `\Profiles\DefaultProfile\C_M02A_Drillsite.sgs`
+file,C_M02A_Firstsymbol.sgs,System/Profiles/DefaultProfile/C_M02A_Firstsymbol.sgs,42291 bytes; loader composes `\Profiles\DefaultProfile\C_M02A_Firstsymbol.sgs`
+file,C_M02B_Secondpositioningdevice.sgs,System/Profiles/DefaultProfile/C_M02B_Secondpositioningdevice.sgs,38643 bytes; loader composes `\Profiles\DefaultProfile\C_M02B_Secondpositioningdevice.sgs`
+file,C_M02B_Secondsymbol.sgs,System/Profiles/DefaultProfile/C_M02B_Secondsymbol.sgs,39247 bytes; loader composes `\Profiles\DefaultProfile\C_M02B_Secondsymbol.sgs`
+file,C_M02C_TeopalPyramid.sgs,System/Profiles/DefaultProfile/C_M02C_TeopalPyramid.sgs,47410 bytes; loader composes `\Profiles\DefaultProfile\C_M02C_TeopalPyramid.sgs`
+file,C_M04a_VanatagePoint2.sgs,System/Profiles/DefaultProfile/C_M04a_VanatagePoint2.sgs,42256 bytes; loader composes `\Profiles\DefaultProfile\C_M04a_VanatagePoint2.sgs`
+file,C_M04b_Ruins approach.sgs,System/Profiles/DefaultProfile/C_M04b_Ruins approach.sgs,30965 bytes; loader composes `\Profiles\DefaultProfile\C_M04b_Ruins approach.sgs`
+file,C_M10B_EnteringtheDepot..sgs,System/Profiles/DefaultProfile/C_M10B_EnteringtheDepot..sgs,47813 bytes; loader composes `\Profiles\DefaultProfile\C_M10B_EnteringtheDepot..sgs`
+file,C_M12A_Mission 12 - Checkpoint 1.sgs,System/Profiles/DefaultProfile/C_M12A_Mission 12 - Checkpoint 1.sgs,57154 bytes; loader composes `\Profiles\DefaultProfile\C_M12A_Mission 12 - Checkpoint 1.sgs`
+file,DefaultProfile.sgp,System/Profiles/DefaultProfile/DefaultProfile.sgp,8902 bytes; loader composes `\Profiles\DefaultProfile\DefaultProfile.sgp`
+file,lbcddnyzq.sgp,System/Profiles/lbcddnyzq/lbcddnyzq.sgp,347 bytes; loader composes `\Profiles\lbcddnyzq\lbcddnyzq.sgp`
+file,sean.sgp,System/Profiles/sean/sean.sgp,347 bytes; loader composes `\Profiles\sean\sean.sgp`
+profile,DefaultProfile,System/Profiles/DefaultProfile,loader composes `\Profiles\DefaultProfile\`
+profile,lbcddnyzq,System/Profiles/lbcddnyzq,loader composes `\Profiles\lbcddnyzq\`
+profile,sean,System/Profiles/sean,loader composes `\Profiles\sean\`
+ini,Default.ini,..\Save,`[Core.System] SavePath` -> `Save`: not on the disc
+ini,UW.ini,../Save,`[Core.System] SavePath` -> `Save`: not on the disc
+ini,UnrealEngine2.ini,..\Save,`[Core.System] SavePath` -> `Save`: not on the disc
+dir,save,0,directories named Save/Saves: none
+word,Profiles,2,"wide literals containing it: 0x004ffef0, 0x00515650"
+word,DefaultProfile,0,wide literals containing it: none
+word,Saves,1,wide literals containing it: 0x00523374
+word,System\,4,"wide literals containing it: 0x004c9790, 0x004d0ff8, 0x004eab18, 0x004eab98"
+word,\System,4,"wide literals containing it: 0x004c8ccc, 0x004d0ff8, 0x004eab18, 0x004eab98"
+word,backslash,45,of 5920 wide literals of 4+ characters carry a `\`
