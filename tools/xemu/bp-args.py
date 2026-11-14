@@ -24,6 +24,9 @@ Two things learned from the stub, both of which read as a broken tool otherwise:
 * **A stop is not always your breakpoint.** The stub reports a `T` packet for interrupts and watchpoints too, so
   each stop's `EIP` is compared with the armed set and anything else is recorded as a `not-mine` stop instead of
   being reported as a hit.
+* **A stub that dies mid-window takes the whole record with it.** The JSON is written after the stop loop, so a
+  guest the driver killed (`BrokenPipeError` on the next `g` packet) lost every stop already read and the run
+  reported it only as an exit code. The loop now writes the record it has and names the loss.
 * **A per-hit timeout is not a window.** The pair this tool measures dispatches around a level load, not on a timer,
   so a measured body can be silent for minutes while the boot is still doing the thing under test. `--window` keeps
   the stop loop open for that whole span and reports each quiet `--timeout` inside it; without it the first 60 s of
@@ -242,7 +245,15 @@ def main():
                 continue
             print("no hit within %.0fs after %d recorded (%s)" % (wait, len(hits), exc))
             break
-        regs = gdb.registers()
+        try:
+            regs = gdb.registers()
+        except (IOError, OSError) as exc:
+            # The driver kills the guest at the end of its own sequence, and the next `g` packet then answers
+            # `BrokenPipe`: every stop read so far used to go with it, and the run reported the loss as an exit
+            # code instead of a measurement. Write what was measured and say why the loop ended.
+            print("the stub went away after %d recorded stop(s) (%s); writing what was measured"
+                  % (len(hits), exc))
+            break
         is_control = control is not None and regs["eip"] == control
         rec = {"stop_packet": stop.decode("ascii", "replace"), "regs": regs, "hit": regs["eip"] in armed,
                "control": is_control, "stack": [], "dumps": [], "strings": []}
