@@ -1,0 +1,138 @@
+literal,va,sites,at,functions
+SetFilePointer Failed %i/%i: %i %s,0x004c8528,1,0x00018efd,no committed function
+Z:\splash.raw,0x004c8650,2,0x000121da 0x00012ba8,FUN_00012110 Core_UnObjBas
+0Allocs      % 6i Current / % 6i Total,0x004c88f6,0,,
+Peak Memory % 5.3fM / % 5.3fM,0x004c8944,1,0x00019a53,FUN_000199e0
+Curr Memory % 5.3fM / % 5.3fM,0x004c8980,1,0x00019a20,FUN_000199e0
+ (Y/N): ,0x004c8adc,1,0x00019e1f,FUN_00019db0
+auto,0x004c8af0,2,0x00019df1 0x000352f8,FUN_00019db0 Core_UExporter
+h\\,0x004c8b8a,0,,
+ReadFile beyond EOF %i+%i/%i,0x004c8c5c,1,0x0001a23e,no committed function
+Z:\Animations,0x004c8c98,4,0x0001a77d 0x0001a792 0x0001a7b4 0x0001a7bf,FUN_0001a3b0
+Z:\Textures,0x004c8cb4,4,0x0001a727 0x0001a73c 0x0001a75e 0x0001a769,FUN_0001a3b0
+Z:\System,0x004c8ccc,4,0x0001a6d1 0x0001a6e6 0x0001a708 0x0001a713,FUN_0001a3b0
+Z:\Streams,0x004c8ce0,4,0x0001a67b 0x0001a690 0x0001a6b2 0x0001a6bd,FUN_0001a3b0
+Z:\StaticMeshes,0x004c8cf8,4,0x0001a625 0x0001a63a 0x0001a65c 0x0001a667,FUN_0001a3b0
+Z:\Sounds,0x004c8d18,4,0x0001a5cf 0x0001a5e4 0x0001a606 0x0001a611,FUN_0001a3b0
+Z:\Prefabs\General,0x004c8d2c,4,0x0001a579 0x0001a58e 0x0001a5b0 0x0001a5bb,FUN_0001a3b0
+Z:\Prefabs,0x004c8d54,4,0x0001a523 0x0001a538 0x0001a55a 0x0001a565,FUN_0001a3b0
+Z:\Music,0x004c8d6c,4,0x0001a4cd 0x0001a4e2 0x0001a504 0x0001a50f,FUN_0001a3b0
+Z:\Maps,0x004c8d80,4,0x0001a477 0x0001a48c 0x0001a4ae 0x0001a4b9,FUN_0001a3b0
+Z:\Help,0x004c8d90,4,0x0001a421 0x0001a436 0x0001a458 0x0001a463,FUN_0001a3b0
+Z:\Cache,0x004c8da0,4,0x0001a3cb 0x0001a3e0 0x0001a402 0x0001a40d,FUN_0001a3b0
+D:\,0x004c8e1c,86,0x0001a3ba 0x0001d2b1 0x0001d2ed 0x0001d335 0x0001d349 0x0001d44b,FUN_0001a3b0 FUN_0001d290 FUN_0001d6d0 FUN_0001ddc0
+System\,0x004c9790,8,0x0001d221 0x00027382 0x000c09c0 0x000f22e8 0x000f247e 0x00149602,FUN_0001d090 FUN_00027320 Engine_UExportCacheCommandlet Core_UnClass
+System,0x004d0e90,496,0x00026efe 0x00029f9c 0x000313d0 0x00033d70 0x000349c0 0x000356d0,FUN_00026ea0 no committed function XboxAudio_XboxAudioSubsystem XboxAudio_XHVVoiceSubsystem
+System/,0x004d0ea0,1,0x000273c3,FUN_00027320
+D:\System\,0x004d0ff8,1,0x000288fb,FUN_000287d0
+D:\default.xbe,0x004d1144,12,0x0001696f 0x00016984 0x000169ac 0x000169b7 0x00016cdd 0x00016cff,Core_UnObjBas FUN_002b31d0
+D:\splash.raw,0x004d1320,1,0x00012ba3,Core_UnObjBas
+\m_hWriteFile = %i,0x004d1b9e,0,,
+d:\,0x004d1e44,1,0x0002e24b,XboxAudio_XboxAudioSubsystem
+"Received new client/server viewport, requesting registration",0x004d2820,1,0x000329e2,no committed function
+../,0x004d3104,1,0x0003433d,FUN_00034240
+..\,0x004d310c,1,0x00034329,FUN_00034240
+Create %08x.%08X failed: Size=%i Pad=%i Align=%i NumLocked=%i BytesLocked=%i/%i,0x004d4008,1,0x00038972,Core_UnCache
+Property %s of %s struct type mismatch %s/%s,0x004d4ac0,1,0x0003c0c2,Core_UnClass
+Array bounds in %s of %s: %i/%i,0x004d4b20,1,0x0003c051,Core_UnClass
+Accessed array '%s' out of bounds (%i/%i),0x004d96c0,2,0x00047273 0x000473ba,Native_26 Native_16
+Bad name index when loading from file %i/%i,0x004da7f8,1,0x0005394f,no committed function
+Loaded Package: %s GlobalMem: %d/%d,0x004da928,1,0x00053168,no committed function
+..%s%s,0x004db374,1,0x0005aff5,Core_UnMisc
+"Hash: %i names, %i/%i hash bins",0x004db638,1,0x0005bd8e,FUN_0005bd50
+Auto,0x004dc798,5,0x0005e91b 0x0005e948 0x00134dbb 0x00138740 0x00139c2f,Core_UnName FUN_00134d40 FUN_00138680 Engine_UnGame
+Cache,0x004dca50,6,0x0005e0af 0x0005e0cf 0x0011f5f7 0x0014b27f 0x0014b568 0x0014bfc8,Core_UnName no committed function FUN_0014b0f0 FUN_0014b430
+                                                        Function      usec/tick   calls/tick,0x004de2b0,1,0x00066fe5,FUN_00066fb0
+%s (%s): Names=%i (%iK/%iK) Imports=%i (%iK) Exports=%i (%iK) Gen=%i Lazy=%i,0x004dfcb0,1,0x00072339,FUN_00070cb0
+%i Objects (%.3fM / %.3fM),0x004dfdbc,1,0x00072124,FUN_00070cb0
+SavePath,0x004e1c9c,1,0x0007e9a6,no committed function
+Memory available: Phys=%iK/%iK Pagef=%iK/%iK Virt=%iK/%iK,0x004e1f80,1,0x0007efa3,FUN_0007ef20
+..\UserLogs\,0x004e2470,2,0x000803ce 0x00080408,no committed function
+..\UserLogs,0x004e248c,1,0x000803ba,no committed function
+[SDS-KUtils.cpp] can't open .ka file!!! - put it in the \resources Directory,0x004e9d08,1,0x000b15db,FUN_000b0f20
+../%s/resources/*.ka,0x004e9f04,1,0x000b1066,FUN_000b0f20
+../resources/*.ka,0x004e9f30,1,0x000b1033,FUN_000b0f20
+..\System\LIPSincData\Controllers\,0x004eab18,4,0x000ba371 0x000ba3af 0x000ba880 0x000ba8b9,LIPSincInitGame LIPSincInitLevel
+..\System\LIPSincData\Controllers\*.lad,0x004eab98,1,0x000ba2ef,LIPSincInitGame
+../System/,0x004f8298,1,0x000ed2ed,FUN_000ed2c0
+%s\%s,0x004f9338,1,0x000faa20,Engine_UnCamera
+..\ScreenShots,0x004f93f8,1,0x000fa627,Engine_UnCamera
+Close Anomaly %i / %i,0x004fa784,1,0x00108b59,FUN_00108ac0
+"File='%s', %s=%i/%i ",0x004fa8b4,1,0x00109751,FUN_001096b0
+New actor channel received non-open packet: %i/%i/%i,0x004fade0,1,0x0010a771,Engine_UnChan
+Bunch data overflowed (%i %i+%i/%i),0x004fb738,1,0x0010f328,Engine_UnConn
+..\Benchmark\Logs\ut2004-%s.log,0x004fc9c0,1,0x0011d24f,FUN_0011ccd0
+..\Benchmark\Results\avgfps-%s.log,0x004fca20,1,0x0011d158,FUN_0011ccd0
+..\Benchmark\benchmark.log,0x004fcb08,2,0x0011cfa2 0x0011d015,FUN_0011ccd0
+%s\cache.ini,0x004fd210,3,0x0011f554 0x0014b258 0x0014b533,no committed function FUN_0014b0f0 FUN_0014b430
+%s\%s-%i.uxx,0x004fd264,1,0x0011f237,no committed function
+..\MD5\%s\,0x00506cec,1,0x00125d6c,Core_UnObjBas
+..\MD5\*.*,0x00506d04,1,0x00125cfb,Core_UnObjBas
+..\%s\,0x00506d1c,1,0x00125c54,Core_UnObjBas
+..\*.*,0x00506d7c,1,0x00125bc6,Core_UnObjBas
+Finished precaching geometry in %5.3f seconds. GlobalMem: %d/%d,0x005089a0,1,0x0013386f,FUN_00133250
+Precaching Static Mesh: %s GlobalMem: %d/%d,0x00508a20,1,0x0013364d,FUN_00133250
+Precaching: %s GlobalMem: %d/%d,0x00508a78,1,0x00133498,FUN_00133250
+defaultdevice,0x00508cd4,26,0x0013482c 0x00134dc5 0x00134e2b 0x001363d3 0x0013640c 0x0013676f,FUN_001347d0 FUN_00134d40 FUN_001363a0 FUN_00136740
+%s\Game%i.usa,0x00509a20,2,0x001371e5 0x0013c637,Engine_UnGame Core_UnClass
+http://,0x0050a7ec,2,0x00139daa 0x0013af3c,FUN_00139d50
+Bringing %s up for play (%i) appSeconds: %f...GlobalMem: %d/%d,0x0050aa80,1,0x001470b4,Core_UnClass
+Engine C++/UnrealScript class size mismatch,0x0050ac80,1,0x00145de9,Core_UnClass
+..\USerMovies\%s,0x0050df00,1,0x0015fdf4,FUN_0015ef40
+..\UserMovies,0x0050dfe4,1,0x0015fc4d,FUN_0015ef40
+..\Demos\%s,0x0050e0cc,2,0x0015f9d2 0x0015fd08,FUN_0015ef40
+..\Demos\%s.demo4,0x0050e164,1,0x0015f6a0,FUN_0015ef40
+..\Demos,0x0050e1c4,1,0x0015efd5,FUN_0015ef40
+r=%i cli=%i act=%03.1f (%i) net=%03.1f pv/c=%i rep/c=%i rpc/c=%i,0x0050eb90,1,0x001679d3,no committed function
+..\Movies\,0x00511424,2,0x0017d0de 0x0017d31a,FUN_0017ce50 no committed function
+Profiles,0x00515650,1,0x001be3bf,FUN_001be350
+New shadow texture %d x %d GlobalMem: %d/%d,0x0051aa70,1,0x0021e480,FUN_0021e478
+Creating temp shadow target %d x %d GlobalMem: %d/%d,0x0051aac8,1,0x0021e2bd,no committed function
+BoneCollisionBoxModels/BoneCollisionBoxes Number Mismatch.,0x0051ca18,2,0x0023e05f 0x0023e6c8,Engine_UnSkeletalMeshCollision
+..\Music,0x00522220,1,0x00293044,no committed function
+Software/Hardware and settings used for encoding,0x00522280,1,0x0029760f,FUN_00296720
+Track number/Position in set,0x005224c0,1,0x0029733f,FUN_00296720
+Conductor/performer refinement,0x005225ec,1,0x002971af,FUN_00296720
+Band/orchestra/accompaniment,0x00522638,1,0x0029715f,FUN_00296720
+Lead performer(s)/Soloist(s),0x00522680,1,0x0029710f,FUN_00296720
+File owner/licensee,0x005226c8,1,0x002970bf,FUN_00296720
+Original artist(s)/performer(s),0x00522738,1,0x0029701f,FUN_00296720
+Original lyricist(s)/text writer(s),0x00522788,1,0x00296fcf,FUN_00296720
+Original album/movie/show title,0x00522810,1,0x00296f2f,FUN_00296720
+Subtitle/Description refinement,0x005228f0,1,0x00296d4f,FUN_00296720
+Title/songname/content description,0x00522940,1,0x00296cff,FUN_00296720
+Lyricist/Text writer,0x00522a00,1,0x00296bbf,FUN_00296720
+Album/Movie/Show title,0x00522c6c,1,0x00296768,FUN_00296720
+..\Saves\,0x00523374,1,0x002989f9,FUN_00298980
+Creating new BLUR vertex shader...GlobalMem: %d/%d,0x00528418,1,0x002aec0e,FUN_002ae4e0
+Creating new 1P BUMPSPEC vertex shader ...GlobalMem: %d/%d,0x00528658,1,0x002ae957,FUN_002ae4e0
+%s/%s,0x0052a8f6,0,,
+[SDS - created PixelShader!! GlobalMem: %d/%d,0x0052c5e0,1,0x002c0ac8,FUN_002c0910
+GET %s HTTP/1.1,0x0052c8f0,1,0x002c20de,Core_UnTemplate
+....,0x0052e90c,1,0x002ca481,FUN_002c95a0
+%s: Socket queue %i / %i,0x005305b4,2,0x002d24f0 0x002d45f7,FUN_002d2300 FUN_002d4330
+IpDrv C++/UnrealScript class size mismatch,0x00532550,1,0x002d8b3e,IpDrv_UnSocket
+%0.0f/%0.0f,0x0053662c,1,0x002ed87a,no committed function
+/UGUIController,0x00538df6,0,,
+/UGUIListBase,0x005398b2,0,,
+[VL:XBOXLIVEINIT]: Setup Logon/Friends/Players,0x0053a348,1,0x00307e76,UUIXInteraction_InitUIX
+New Horizontal bloom target %f x %f...GlobalMem: %d/%d,0x0053b7b0,1,0x00317a77,FUN_00317800
+New vertical bloom target %f x %f...GlobalMem: %d/%d,0x0053b820,1,0x003179bd,FUN_00317800
+New select target %f x %f ...GlobalMem: %d/%d,0x0053b890,1,0x003178de,FUN_00317800
+...,0x0053eda0,1,0x0032bd9c,FUN_0032baa0
+" !)'./?""%:;]}",0x0053f620,1,0x0033007b,FUN_0033004f
+"""'.(/[{$\",0x0053f698,1,0x00330055,FUN_0033004f
+ !#%')+-/13579;=?ACEGIKMOQSUWY[]_acegikmoqsuwy{},0x005592b2,0,,
+"""&*/5",0x0055e868,0,,
+|\;,0x0055eade,0,,
+&4BP^lzbUI</#,0x0055eb58,0,,
+'3?JVam\RH=3(,0x0055eb7c,0,,
+" '/7?FNV]HA:3,%",0x0055ebd0,0,,
+\Yes,0x005bf516,0,,
+t/0,0x005c8dd6,0,,
+/13579;=,0x005c981a,0,,
+RSUV[\,0x005c99a8,0,,
+./'a,0x005c9cc8,0,,
+O[\]^_`di$,0x005c9d0a,0,,
+..y..|}~,0x005ca080,0,,
+"..[.,,,",0x005ca092,0,,

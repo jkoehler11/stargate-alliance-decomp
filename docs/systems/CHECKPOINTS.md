@@ -323,6 +323,107 @@ setter that would answer this is the one piece of the chain still unread.
 | `backslash` | 45 | of 5920 wide literals of 4+ characters carry a `\` |
 <!-- /generated:save-path -->
 
+## What the build's own path strings name (2026-11-14)
+
+The section above ends by naming one address as the next read -- the `System\\` literal at `0x004c9790`, "stored at
+`0x00149603`, inside no committed function". That address is a byte late, the isolation is not there, and the question
+it was meant to answer has no answer of that shape: the file manager the save chain asks has no base directory at all.
+
+**`0x004c9790` is pushed from eight sites, and every one is inside a mapped function** -- `0x0001d221`
+(`FUN_0001d090`), `0x00027382` (`FUN_00027320`), `0x000c09c0` (`Engine_UExportCacheCommandlet`), `0x000f22e8` and
+`0x000f247e` (`Core_UnClass`), `0x00149602` (`execGetMapName`, `0x00149460` plus 2,223 bytes), `0x00149ec6`
+(`FUN_00149d20`) and `0x002fe75e` (`FUN_002fe5f0`). It is the prefix a map or package name takes when the file has to
+be found under the game's `System\\` directory: a caller-side convention, not a directory the loader inherits.
+
+**The object the save chain asks is an error file manager.** The slot census
+(`inventory/file_manager_vtable.csv`) reads `[0x005bf514]` -> `0x005c1a0c` -> vtable `0x004d2fd0`: **25 slots**, the
+run ending at the zero dword at `+0x64`, where the class's own wide-string pool begins. Sixteen of the 25 bodies are
+eight bytes or shorter -- `ret 4`, `xor eax,eax; ret N`, `mov eax,1; ret` -- and two of the three that do work are
+named by the map itself: `FFileManagerError_CreateFileReader` (`+0x04`) and `FFileManagerError_CreateFileWriter`
+(`+0x08`), whose bodies log `Called FFileManagerError::CreateFileReader` and answer 0. Slot `+0x0c` is six bytes
+answering `-1`, and the config loader takes that negative branch: `0x0028a13` calls `[edx+0x0c]` on the same singleton
+and `0x0028a18` jumps away on it, which is why a `Tweak_` ini is never found.
+
+**No slot answers a directory, and the one path-shaped slot returns its argument unchanged.** `+0x38`
+(`0x00034210`, 33 bytes) constructs the empty string (#514). `+0x3c` (`0x00034240`, 531 bytes) tests its argument for
+`L':'` and for a leading `L'\'` or `L'/'` and, on a hit, constructs the FString as it stands through `FUN_0001b260`
+-- which is an FString constructor and nothing else. The `+0x38` getter is consulted only on the else arm, for a path
+that is *not* rooted, and there it strips a `..\\`, `../`, `.\\`, `./` prefix. The loader composes
+`\\Profiles\\<profile>\\<name>`, which starts with a separator, so it takes the verbatim arm: the composed string
+reaches the package loader (`0x00073660` -> `Core_UnObj` with flags `0x1088`) exactly as composed, and there is no
+base directory anywhere in that chain.
+
+**The one absolute directory the build hard-codes is `D:\\System\\`** (`0x004d0ff8`, one site, `0x00288fb` inside
+`0x00287d0`): a `Tweak_<name>` ini becomes `D:\\System\\<name>` with the underscores rewritten as separators (`0x5f`
+-> `0x5c`), and `D:\\default.xbe` (`0x004d1144`) sits beside it. Every *relative* path the build composes
+(`..\\System\\LIPSincData\\Controllers\\`, `..\\Saves\\`, `..\\Movies\\`) assumes the process runs with `System\\` as
+its working directory -- precisely the segment the composed `\\Profiles\\` lacks.
+
+**Two literals qualify the picture rather than contradict it.** The bare word `System` (`0x004d0e90`) is the
+FName the class table is full of and carries 496 sites, so it is vocabulary rather than a path. And `Z:\\System`
+(`0x004c8ccc`, four sites, all inside `0x0001a3b0`) belongs to the *other* file-manager class: `0x0001a3b0` is the
+constructor that installs vtable `0x004c8db8` -- the table whose `+0x04` is a 1,082-byte `CreateFileReader` rather
+than a stub. So the build does carry a real file manager; the save chain simply does not ask it.
+
+**What that settles, and the next read.** The base-directory branch of the question closes negative: nothing prepends
+`System\\`, so "the base is the game's `System\\`" is refuted and the loader's path is rootless wherever it goes. What
+remains is whether the package loader itself resolves a root-relative name; that answer lives in the reader behind
+`0x00073660`, one read away, and it is the next measurement rather than another boot.
+
+    python3 tools/path-literals.py --xbe $DUMP/default.xbe -o inventory/path_literals.csv
+    python3 tools/path-literals.py --write-doc docs/systems/CHECKPOINTS.md
+    python3 tools/path-literals.py --check       # 27 assertions, no dump
+
+<!-- generated:path-literals -->
+**The sweep.** 137 path-shaped wide literals in the image's data sections, 117 of them named by at least one instruction -- 801 sites in all, plus the 20 no instruction names.
+
+**Every literal that names a save, profile or system directory**, with the instructions that carry it (at most six addresses per literal, at most four containing functions):
+
+| literal | address | sites | at | in |
+|---|---|---|---|---|
+| `Z:\System` | `0x004c8ccc` | 4 | 0x0001a6d1 0x0001a6e6 0x0001a708 0x0001a713 | FUN_0001a3b0 |
+| `System\` | `0x004c9790` | 8 | 0x0001d221 0x00027382 0x000c09c0 0x000f22e8 0x000f247e 0x00149602 | FUN_0001d090 FUN_00027320 Engine_UExportCacheCommandlet Core_UnClass |
+| `System` | `0x004d0e90` | 496 | 0x00026efe 0x00029f9c 0x000313d0 0x00033d70 0x000349c0 0x000356d0 | FUN_00026ea0 no committed function XboxAudio_XboxAudioSubsystem XboxAudio_XHVVoiceSubsystem |
+| `System/` | `0x004d0ea0` | 1 | 0x000273c3 | FUN_00027320 |
+| `D:\System\` | `0x004d0ff8` | 1 | 0x000288fb | FUN_000287d0 |
+| `..\System\LIPSincData\Controllers\` | `0x004eab18` | 4 | 0x000ba371 0x000ba3af 0x000ba880 0x000ba8b9 | LIPSincInitGame LIPSincInitLevel |
+| `..\System\LIPSincData\Controllers\*.lad` | `0x004eab98` | 1 | 0x000ba2ef | LIPSincInitGame |
+| `../System/` | `0x004f8298` | 1 | 0x000ed2ed | FUN_000ed2c0 |
+| `defaultdevice` | `0x00508cd4` | 26 | 0x0013482c 0x00134dc5 0x00134e2b 0x001363d3 0x0013640c 0x0013676f | FUN_001347d0 FUN_00134d40 FUN_001363a0 FUN_00136740 |
+| `Profiles` | `0x00515650` | 1 | 0x001be3bf | FUN_001be350 |
+| `..\Saves\` | `0x00523374` | 1 | 0x002989f9 | FUN_00298980 |
+
+**The file-manager table the save module's singleton carries** (`[0x005bf514]` -> `0x005c1a0c` -> table `0x004d2fd0`): every slot, and the wide literals its body names.
+
+| slot | target | name | size | literals |
+|---|---|---|---|---|
+| `0x00` | `0x00031e70` | FUN_00031e70 | 3 | - |
+| `0x04` | `0x000341a0` | FFileManagerError_CreateFileReader | 24 | `Called FFileManagerError::CreateFileReader` |
+| `0x08` | `0x000341c0` | FFileManagerError_CreateFileWriter | 24 | `Called FFileManagerError::CreateFileWriter` |
+| `0x0c` | `0x000341e0` | FUN_000341e0 | 6 | - |
+| `0x10` | `0x00018bc0` | FUN_00018bc0 | 5 | - |
+| `0x14` | `0x00018b70` | FUN_00018b70 | 5 | - |
+| `0x18` | `0x000341f0` | FUN_000341f0 | 8 | - |
+| `0x1c` | `0x00167f40` | FUN_00167f40 | 5 | - |
+| `0x20` | `0x00034200` | - | - | - |
+| `0x24` | `0x00018b70` | FUN_00018b70 | 5 | - |
+| `0x28` | `0x00018bb0` | FUN_00018bb0 | 5 | - |
+| `0x2c` | `0x00018bc0` | FUN_00018bc0 | 5 | - |
+| `0x30` | `0x00034570` | FUN_00034570 | 22 | - |
+| `0x34` | `0x00018b70` | FUN_00018b70 | 5 | - |
+| `0x38` | `0x00034210` | FUN_00034210 | 33 | - |
+| `0x3c` | `0x00034240` | FUN_00034240 | 531 | `..\`, `../` |
+| `0x40` | `0x00018bb0` | FUN_00018bb0 | 5 | - |
+| `0x44` | `0x00018b60` | - | - | - |
+| `0x48` | `0x00018b70` | FUN_00018b70 | 5 | - |
+| `0x4c` | `0x002783d0` | FUN_002783d0 | 6 | - |
+| `0x50` | `0x00018b80` | - | - | - |
+| `0x54` | `0x00018b90` | FUN_00018b90 | 22 | - |
+| `0x58` | `0x00018bb0` | FUN_00018bb0 | 5 | - |
+| `0x5c` | `0x00018bc0` | FUN_00018bc0 | 5 | - |
+| `0x60` | `0x00018bd0` | FUN_00018bd0 | 5 | - |
+<!-- /generated:path-literals -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files
