@@ -1214,6 +1214,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the page's first four entries load too, and 67 of 73 rows have a verdict)
+
+- **The four rows are the merge's whole diff.** `tools/xemu/missions.sh` booted indices 0-3 into
+  `$WORK/xemu/missions-head` and every one loaded: `0 CTF-Abydos`, `1 CTF-LostCity`, `2 DM-Ha'tak` on their
+  first attempt and `3 DM-KelownanTrain` on its second (2 attempts / 1 invocation). `inventory/map_loads.csv`
+  now holds **67 of the disc's 73 entries, 66 PASS and 1 FAIL, 82 boots**, and the campaign range stays
+  complete at 61 of 61.
+- **The merge set is still the check.** Re-running `map-loads.py` over the ten directories the page already
+  lists reproduces the committed 63 rows byte for byte (only the stdout summary line differs), so the
+  eleven-directory merge's diff is exactly the four new rows -- a directory listing cannot prove that, which
+  is why the page's own run table gains `missions-head` as its eleventh row.
+- **A `PASS` is a load, and these four are the case that says so.** Two frames from the run read by vision are
+  first-person gameplay under the single-player O'Neill/P90 HUD with no score board: the CTF and DM pages load
+  through the same `QUICK SELECT MAP` path as a campaign map, and the instrument's three assertions (repaint,
+  not the BIOS screen, differs from the boot frame) cannot and do not claim a game mode.
+- **What is left on the page is indices 4-9**, the six entries between these four and `M00` at 10 -- one boot
+  each, the same instrument, measured in this run as `$WORK/xemu/missions-head2`.
+- Files: `inventory/map_loads.csv`, `docs/MAP_LOADS.md` (regenerated, plus the run-table row), this note; the
+  changed CSV and page move `make artifact-hashes` and `make inventory-index`.
+
 ### Execution notes (2026-11-14, the scoreboard carries the bytecode baseline and the campaign loads)
 
 - **Two numbers were measured and no page showed them.** `inventory/matching_baseline.csv` -- 3.8's baseline, the
