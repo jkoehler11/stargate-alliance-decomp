@@ -3671,3 +3671,23 @@ refusals with no replacement (`Engine` 17, `UWindow` 10, `StargateGame` 7, `Game
 the next measurement: on them every parsed candidate is inside a group, and the free group parse looks like it
 over-reads (`Engine.SavedMove`: group at 347, ends at 359 of a 360-byte payload, leaving no block), which the anchored
 parse -- every index in range and the list ending at or before the block -- would show.
+
+**Answered 2026-11-13 (thirtieth): the 45 refusals with no replacement are an empty defaults block, not an
+over-read.** `tools/class-group-stop.py` reads the property tag stream from the closing group's end on the 297 rows
+`class_blockstart_guard.csv` refuses and on a control: **234** of the 297 open a block that runs to the payload's last
+byte (fully declared on 224 of 241 non-empty streams, mean 0.929), **55** open an **empty** block, 6 overrun after a
+tag or two, 1 stops short and 1 group ends on the payload's last byte. Split by the guard's own verdict: of the 252
+rows it **moved**, a block opens on 232; of the **45** it refused with no replacement, a block opens on only **9** and
+**36 are empty**, and on **36 of 45 the group ends within a byte of the payload** -- those classes set no defaults
+after their record, so there is no start to find and the refusal stands. The control is the instrument: on the
+**1,586** rows whose group end is the located block start by two witnesses (`class_record_open_tail.csv`'s
+`overlap == 0`), the same reader opens a block to the payload end on **1,586 of 1,586**, fully declared (mean 1.000,
+`Emitters` first on 185), so the 19% that open nothing on the refused rows is the payload's shape and not the reader's.
+
+**What is still open.** Thirteen refused rows are not accounted for by an empty block at the payload's end: 6 parse
+nothing at the group end with 4-10 bytes after it, 7 open an empty block with 2-459 bytes still after it (274, 296 and
+459 among them), and `StargateVehicles.HoverCraftFixedGun` opens one tag with 108 bytes left. And `class_defaults_per_class.csv` still carries the pre-guard
+start, so the 234 rows this page puts a block at the group's end are still read 2-10 bytes early by every count
+downstream of that artifact: switching the chooser and re-running the five artifacts that read it (`class_defaults_emit`,
+`class_defaults_coverage`, `class-defaults.py --coverage`, `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`) is the change
+this leaves.
