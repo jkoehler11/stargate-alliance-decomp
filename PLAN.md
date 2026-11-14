@@ -1255,6 +1255,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the five unnamed flag bits are read by the serialiser, and one has no carrier)
+
+- **Every masked test of the word is a branch on *something's class*, never on a class being loaded.** 28
+  readers across 13 bits: `tools/class-flag-readers.py` decodes each one's operand width, the `Jcc` that
+  consumes the flags and what each edge does (`zeroes` / `returns` / `calls` / `continues`), so the answer a
+  bit selects is measured rather than named.
+- **The five inheritable bits the pinned reader cannot name are all read.** `0x8000` once, in the recursive
+  collector at `0x00067641` (set edge jumps past the object and past what it would have collected); `0x10000`
+  three times (`0x00046fb8`, `0x00047033` in the two native frames, `0x0010b553` in `Engine_UnChan`);
+  `0x20000` twice (`0x0010a5ef`, `0x0010ae4b`, both `Engine_UnChan`); `0x40000` once, in the name-hash walk at
+  `0x000630e2`, which `returns` the object only when the bit is set; `0x80000` five times.
+- **`0x80000` is required by five readers and set by no shipped class.** The two FindObject-shaped bodies
+  (`0x00062fd6`, `0x0006301c`), the hash walk at `0x0006482c`, `Engine_UnChan` at `0x0010ac92` and
+  `execPlaySound` at `0x00212b82` all test it; none of the 2,319 shipped classes carries it and the only two
+  writes that compose the word are the constructor's inherit and the registration's `or 0x12`, so over the
+  packages those lookups answer nothing. That is a constant, and a rebuild that wrote a word the loader can
+  compose would change it.
+- **`0x10000`/`0x20000` decide the serialiser's arm for one property element.** In the replication body at
+  `0x0010a3e0` the clear edge zero-fills the element and the set edge keeps it and `and`s out the property's
+  own mask (`& ~piVar[0x1b]`); in the two native frames the same bit selects whether the element is handed to
+  a virtual (`+0xb8` on the frame) at all.
+- Tool (`tools/class-flag-readers.py`, `--xbe`/`-o`/`--report`/`--write-doc`/`--check-doc`/`--check`, 22
+  assertions) + `inventory/class_flag_readers.csv` (65 rows: 32 bit rows with carriers and reader counts, 29
+  reader rows with the branch and both edge shapes, 4 store rows) +
+  `docs/systems/CHECKPOINTS.md` (*What each class-flag bit's readers do with the answer*) + `make
+  class-flag-readers` + this note. No boot: the image and the committed class CSV.
+- **Next measurement:** the one store to `+0x498` outside the symbol map (`0x0003c49d`) -- if it composes a word
+  from package data it is the only route by which `0x80000` can reach a class at runtime, and the decompile of
+  its containing function is one Ghidra round.
+
 ### Execution notes (2026-11-14, the class flag word is the class flags, and the purge's byte is bit 7)
 
 - **The word at `+0x498` is `UClass`'s class-flag dword, and its constructor names the inheritable subset.**
