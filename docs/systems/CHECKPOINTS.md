@@ -620,6 +620,130 @@ and the serializer `0x0006f4b0` three times; `main` itself reads it once, at `0x
 <!-- /generated:fmgr-installs -->
 
 
+## What the array at `0x006c2188` holds, and why the purge cannot pick a different element (U5)
+
+`#521` read `main`'s call at `0x169e9` into `0x6c750` and found a 326-byte body that walks an array at `0x006c2188`,
+calls `0x77210` on each element, and dispatches on the result. The question left open was *which element the file
+layer gets* -- with the suspicion that a reload could leave a different object in that slot than the one the vtable
+census found. Two measurements close it, and both are in the image alone:
+
+**The per-element call is an identity.** `0x77210` (239 bytes) takes one object and returns that same object on every
+path: one `ret`, and the instruction that writes `eax` before it is `mov eax,edi`, where `edi` is loaded once from
+`[esp+0xc]` and never rewritten. It does other work on the way -- it walks the object's `[+0x24]` chain looking for a
+cached object it resolves from the literal at `0x4c793c` (`Core`), and when the walk fails it builds a string and logs
+the literal at `0x4d43dc` (`Cast of %s to %s failed`) -- but the failure arm answers the argument too. So no element
+can be substituted by that call, and "which element does the file layer get" has no second answer to find.
+
+**The array is a container registry, and its elements are containers.** The three dwords at `0x006c2188`,
+`0x006c218c` and `0x006c2190` are one `TArray` -- data, count, capacity -- named by 48 instructions in the image, and
+the body that clears it zeroes the count and the capacity together (`0x00069c38`, `0x00069c3e`) rather than only the
+count. Two sites push into it through the capacity check (`0x0005283e` and `0x0005311e`, each preceded by a grow at
+`0x00052805`/`0x000530e5`), and both are in the same unnamed function pair that also resets the array. The purge's own
+field map says what the elements are for: a filter field at `+0x28` compared to the caller's second argument, a record
+array at `+0x7c`/`+0x80` walked by `0x1c`, a second at `+0x88`/`+0x8c` walked by `0x24`, an object pointer inside each
+`0x24` record at `+0x1c`, that object's class at `+0x24`, and one byte of the class at `+0x498` tested for its sign.
+Those are import and export tables with a linker root, i.e. the loader objects a package is loaded through -- not a
+slot that holds a file manager.
+
+**The `[+0x498]` byte is a class flag, not object data.** It is read off the *class* of an exported object, one byte
+wide (`mov cl,BYTE PTR [eax+0x498]; test cl,cl; js`), so the sign test reads bit 7 of the first byte of the class's
+flag dword. That is why the earlier reading could not find the object a reload leaves behind in either file-manager
+table: the field belongs to the class, and the object is whatever the record names.
+
+<!-- generated:linker-purge -->
+**The array at `0x006c2188` is one `TArray` -- data, count, capacity -- and 48 instructions name one of its three dwords:** 34 read(s), 6 write(s), 8 address(es) taken. Every write in this census is the array's own bookkeeping (the count at `0x00052815`/`0x000530f5`, the capacity at `0x00052834`/`0x00053114`, both zeroed together at `0x00069c38`): an element goes in through the data pointer after that capacity check, so this census sees the registry, not what is registered.
+
+| at | in | what | instruction |
+|---|---|---|---|
+| `0x00051b48` | FUN_00051ad0 | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x00051ec2` | Core_UnTemplate | read 0x006c2188 | `mov edx,ds:0x006c2188` |
+| `0x00051f2a` | Core_UnTemplate | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x0005282e` | - | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x0005283e` | - | read 0x006c2188 | `mov eax,ds:0x006c2188` |
+| `0x0005310e` | - | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x0005311e` | - | read 0x006c2188 | `mov eax,ds:0x006c2188` |
+| `0x000635a6` | FUN_000635a0 | read 0x006c2188 | `mov ecx,ds:0x006c2188` |
+| `0x00066431` | Core_UnObj | read 0x006c2188 | `mov eax,ds:0x006c2188` |
+| `0x00066612` | Core_UnObj | read 0x006c2188 | `mov ecx,ds:0x006c2188` |
+| `0x00069c32` | Core_UnObj | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x0006c772` | FUN_0006c750 | read 0x006c2188 | `mov ecx,ds:0x006c2188` |
+| `0x0006c862` | FUN_0006c750 | read 0x006c2188 | `mov ecx,ds:0x006c2188` |
+| `0x00072272` | FUN_00070cb0 | read 0x006c2188 | `mov ecx,ds:0x006c2188` |
+| `0x00072bce` | Core_UnObj | read 0x006c2188 | `mov edx,ds:0x006c2188` |
+| `0x00072e50` | Core_UnObj | read 0x006c2188 | `mov edx,ds:0x006c2188` |
+| `0x00148257` | FUN_00148250 | address 0x006c2188 | `push 0x006c2188` |
+| `0x00413cf1` | - | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x00418d51` | FUN_00418d50 | address 0x006c2188 | `mov ecx,0x006c2188` |
+| `0x0003e45f` | FUN_0003e3b0 | read 0x006c218c | `mov ecx,ds:0x006c218c` |
+| `0x0003e4bd` | FUN_0003e3b0 | read 0x006c218c | `mov ecx,ds:0x006c218c` |
+| `0x00051ea5` | Core_UnTemplate | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x00051ee8` | Core_UnTemplate | read 0x006c218c | `cmp esi,ds:0x006c218c` |
+| `0x00051f07` | Core_UnTemplate | read 0x006c218c | `cmp edi,ds:0x006c218c` |
+| `0x00051f36` | Core_UnTemplate | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x0005201c` | - | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x00052067` | - | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x00052805` | - | read 0x006c218c | `mov ecx,ds:0x006c218c` |
+| `0x00052815` | - | write 0x006c218c | `mov ds:0x006c218c,ecx` |
+| `0x0005298c` | - | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x000529d7` | - | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x000530e5` | - | read 0x006c218c | `mov ecx,ds:0x006c218c` |
+| `0x000530f5` | - | write 0x006c218c | `mov ds:0x006c218c,ecx` |
+| `0x00066421` | Core_UnObj | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x0006645a` | Core_UnObj | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x00066602` | Core_UnObj | read 0x006c218c | `cmp esi,ds:0x006c218c` |
+| `0x00069c38` | Core_UnObj | write 0x006c218c | `mov ds:0x006c218c,esi` |
+| `0x0006c752` | FUN_0006c750 | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x0006c850` | FUN_0006c750 | read 0x006c218c | `mov esi,ds:0x006c218c` |
+| `0x0007224d` | FUN_00070cb0 | read 0x006c218c | `mov eax,ds:0x006c218c` |
+| `0x0007234a` | FUN_00070cb0 | read 0x006c218c | `mov ecx,ds:0x006c218c` |
+| `0x00072bc2` | Core_UnObj | read 0x006c218c | `mov esi,ds:0x006c218c` |
+| `0x00072e4a` | Core_UnObj | read 0x006c218c | `mov esi,ds:0x006c218c` |
+| `0x0005280a` | - | read 0x006c2190 | `mov eax,ds:0x006c2190` |
+| `0x00052834` | - | write 0x006c2190 | `mov ds:0x006c2190,edx` |
+| `0x000530ea` | - | read 0x006c2190 | `mov eax,ds:0x006c2190` |
+| `0x00053114` | - | write 0x006c2190 | `mov ds:0x006c2190,edx` |
+| `0x00069c3e` | Core_UnObj | write 0x006c2190 | `mov ds:0x006c2190,esi` |
+
+**The per-element call cannot substitute an object.** `0x77210` answers its own argument on every path -- 1 ret; before it: mov    eax,edi. So the question the last reading left open (which element the file layer gets) has no second answer to find: the purge can only ever see the element it took out of the array, and the only thing that call changes is whether it logs the literal at `0x4d43dc` first.
+
+| at | in | what | evidence |
+|---|---|---|---|
+| `0x000772fe` | FUN_00077210 | returns its argument | `1 ret; before it: mov    eax,edi` |
+| `0x00077212` | FUN_00077210 | argument | `1 write(s) to edi: mov    edi,DWORD PTR [esp+0xc]` |
+
+**What the purge reads.** The elements are containers with two record arrays, not a slot that holds a file manager: the body walks `+0x7c`/`+0x80` by 0x1c and `+0x88`/`+0x8c` by 0x24, takes each export record's object at `+0x1c`, and reads one byte at `+0x498` of that object's class -- a signed byte, so the last gate is a bit in the class's flags, not data on the object.
+
+| offset | in | role | width | instruction |
+|---|---|---|---|---|
+| `0x00c` | FUN_0006c750 | dispatch | dword | `call   DWORD PTR [edx+0xc] -- vtable slot called with 1 when the record's object is dropped` |
+| `0x014` | FUN_0006c750 | first-record-object | dword | `mov    ecx,DWORD PTR [ecx+eax*1+0x14] -- object pointer inside a 0x1c record` |
+| `0x018` | FUN_0006c750 | first-record-index | dword | `mov    DWORD PTR [ecx+eax*1+0x18],0xffffffff -- index field set to -1 when the record is dropped` |
+| `0x01c` | FUN_0006c750 | second-record-object | dword | `lea    eax,[edx+edi*1+0x1c] -- object pointer inside a 0x24 record` |
+| `0x024` | FUN_0006c750 | record-object-class | dword | `mov    eax,DWORD PTR [eax+0x24] -- class of the object that record names` |
+| `0x028` | FUN_0006c750 | filter | dword | `cmp    DWORD PTR [esi+0x28],edi -- compared to the caller's second argument on both walks` |
+| `0x07c` | FUN_0006c750 | first-record-array | dword | `mov    ecx,DWORD PTR [esi+0x7c] -- data pointer of the 0x1c-stride walk` |
+| `0x080` | FUN_0006c750 | first-record-count | dword | `mov    eax,DWORD PTR [esi+0x80] -- count of the 0x1c-stride walk` |
+| `0x088` | FUN_0006c750 | second-record-array | dword | `mov    edx,DWORD PTR [esi+0x88] -- data pointer of the 0x24-stride walk` |
+| `0x08c` | FUN_0006c750 | second-record-count | dword | `mov    eax,DWORD PTR [esi+0x8c] -- count of the 0x24-stride walk` |
+| `0x498` | FUN_0006c750 | class-flag-byte | byte | `mov    cl,BYTE PTR [eax+0x498] -- one byte of that class, tested for its sign` |
+
+**`+0x498` is a class displacement the image uses 93 times, and only 4 of them are byte reads.** The purge's is one of the byte ones, so the flag it tests is the top bit of the first byte of the class's flag dword -- the same dword other bodies test whole (`test dword [class+0x498],0x...`).
+
+<!-- /generated:linker-purge -->
+
+    python3 tools/linker-purge.py --xbe $DUMP/default.xbe -o inventory/linker_purge.csv
+    python3 tools/linker-purge.py --write-doc docs/systems/CHECKPOINTS.md
+    python3 tools/linker-purge.py --check-doc docs/systems/CHECKPOINTS.md
+    python3 tools/linker-purge.py --check        # 20 assertions, synthetic instructions, no dump
+
+**What this leaves.** The `+0x498` bit is measured as a *format* (one byte of the class's flag dword, tested for its
+sign) but not yet *named*: the image names that displacement 93 times and only the purge's one is a byte read, so the
+next read is the class body that owns the flag word -- `Core_UnClass`'s serialiser -- and which `CLASS_*` bit sits in
+the top bit of that byte. That is a different question from the array, and it does not block the save chain: the purge
+is a teardown that runs before `Starting Engine`, and the file-manager global it was suspected of selecting from is
+set by the store at `0x169e3` from `main`'s own frame slot, not from an element of this array.
+
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files

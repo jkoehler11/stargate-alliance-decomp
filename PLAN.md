@@ -1255,6 +1255,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the purge's per-element call is an identity, and the array holds linkers)
+
+- **The question #521 left -- "which element does `0x77210` return for the file layer" -- has no second answer.**
+  `0x77210` is 239 bytes with one `ret` at `0x772fe`; the last write to `eax` before it is `mov eax,edi`, and `edi` is
+  loaded once, at `0x77212`, from `[esp+0xc]`. Every failure arm jumps to that same `0x772fa`, so the cast answers its
+  argument whether the walk up `[+0x24]`/`[+0x28]` finds the object it resolves from `0x4c793c` (`Core`) or logs the
+  literal at `0x4d43dc`. A call that can only log cannot substitute an element.
+- **The array is one `TArray`, not two globals.** 48 instructions name `0x006c2188`/`0x006c218c`/`0x006c2190`; the body
+  that clears it writes count and capacity (`0x00069c38`, `0x00069c3e`) and the two push sites each check capacity
+  first (`0x00052805` then `0x0005283e`, `0x000530e5` then `0x0005311e`). The capacity dword is why the count alone
+  reads as a "second global" in the earlier note.
+- **The elements are containers with import and export tables.** The purge walks `+0x7c`/`+0x80` by `0x1c` and
+  `+0x88`/`+0x8c` by `0x24`, filters each record's object on `[+0x28]` against the caller's second argument, takes the
+  object at a `0x24` record's `+0x1c`, reads its class at `+0x24`, and tests one byte at `[class+0x498]` for its sign
+  before dropping the record and calling the object's `[+0xc]` with 1. So the purge's last gate is a bit in the
+  class's flag word -- the reason neither file-manager table ever showed it.
+- **The `+0x498` displacement is image-wide 93 references and exactly one byte read.** `Core_UnClass` owns several of
+  the dword ones (`0x00039648`, `0x0003964e`, `0x0003965b`), and the purge's `0x0006c803` is the only byte one, so
+  naming the flag's meaning is a read of the class serialiser, not of this body.
+- Tool (`tools/linker-purge.py`, `--xbe`/`-o`/`--write-doc`/`--check-doc`/`--check`, 20 assertions) +
+  `inventory/linker_purge.csv` (156 rows: 48 array references, 11 fields, 2 strides, 2 cast rows, 93 flag
+  references) + `docs/systems/CHECKPOINTS.md` (*What the array at `0x006c2188` holds*) + `make linker-purge` + this
+  note. No boot: all of it is the image.
+- **Next measurement:** the class serialiser that writes `[+0x498]`, to name the flag bit -- `Core_UnClass`'s own
+  bodies around `0x00039648` are the cheap read, and `inventory/class_record*.csv` already carries the record's field
+  offsets to join against.
+
 ### Execution notes (2026-11-14, the second install points at an object nothing builds)
 
 - **The call the second slot is handed to is a purge, not a constructor.** `0x6c750` (326 bytes, `ret` at `0x6c895`)
