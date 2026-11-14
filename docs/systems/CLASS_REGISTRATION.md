@@ -91,11 +91,11 @@ survived a sweep that took the three bodies above it. `0x00062470` is classified
 `UState`'s ctor calls it first and it links the object it builds into the global list at `0x006c2104`,
 so its edge is reported as `base-installer` rather than dropped.
 
-Two names in the block below are the committed artifact's, not this page's: the object root's table
-`0x004dd2a8` is named `VertexStreamBase` from the literal at its registration site, and no class in
-`inventory/classes.csv` has `VertexStreamBase` as its super, while 366 constructors call its installer
--- a contradiction this page does not resolve. The five-argument installer beside it asserts in
-`UnObj.cpp` (`0x00073810`, `Core_UnObj`), which is the file `UObject`'s own ctor lives in.
+The object root's table is named `VertexStreamBase` in the block below, and that name is the committed
+per-table artifact's last-writer-wins row rather than the class's: 25 registrations resolve to that table
+and the one at `0x00064af6` registers `Object` with the identical constructor thunk
+(`tools/class-registrations.py`, *Which registration names a table, and the 25 names of the object root*
+below).
 
 <!-- generated:class-ctor-base -->
 | class | ctor | args | recorded call | measured base | base class | verdict |
@@ -114,6 +114,35 @@ Two names in the block below are the committed artifact's, not this page's: the 
 
 522 constructors in the image: 509 read a base class off the last call before their table store (1 of those to a body the shape rule calls a destructor), 9 install the table before any call (the base was inlined), 4 end in a body that installs no class table, and 6 of the recorded calls are not the last call and so are not the base the census implied.
 <!-- /generated:class-ctor-base -->
+
+## Which registration names a table, and the 25 names of the object root
+
+`inventory/xbe_class_table_names.csv` is keyed by **table**: it follows registration -> class literal ->
+constructor thunk -> constructor -> `mov [this], table`, and when several sites resolve to one table the
+writer keeps the last and drops the rest silently. `tools/class-registrations.py` keeps every site, and
+the difference is the object root.
+
+**25 of the image's 493 registration sites pass the same constructor thunk `0x00034650`**, which is the
+guarded stub `mov ecx,[esp+4]; test ecx,ecx; je; jmp 0x00062ce0`: a class with no native constructor of
+its own is registered with that shared default, so its registration names the *root's* table and not its
+own. The 25 literals are `Object`, `Field`, `Property`, `Struct`'s siblings and the like -- `Factory`,
+`Exporter`, `Engine`, `Player`, `NetDriver`, `Material`, `RenderDevice`, ... -- and the per-table artifact
+shows whichever site happened to be written last, `VertexStreamBase` at `0x001eb186`. The site at
+`0x00064af6` registers `Object` against the identical thunk, which is what the root of a hierarchy that
+366 constructors call should read as; the name in the committed artifact is an artefact of the write
+order, not a measurement. Two more tables carry the same shape (`0x004cfba0`: `Texture`,
+`FractalTexture`, `WaterTexture`; `0x004cfc88`: `FireTexture`, `IceTexture`), so **30 of 493 registrations
+sit on a table more than one site resolves to** and cannot name the table they are attached to.
+
+<!-- generated:class-registrations -->
+| table | committed name | sites | class literals the registrations push |
+|---|---|---|---|
+| 0x004dd2a8 | VertexStreamBase | 25 | Exporter (`0x000349e6`), Factory (`0x00036066`), Field (`0x0003b276`), Object (`0x00064af6`), Subsystem (`0x00066b16`), Language (`0x00066d96`), Property (`0x000778d9`), VoiceSubsystem (`0x000e2426`), Viewport (`0x000f92c9`), CameraEffect (`0x000fbd46`), Client (`0x000fd969`), Channel (`0x001083c6`), NetConnection (`0x0010d6a9`), Download (`0x0011e9d9`), RenderDevice (`0x0011f9f9`), Engine (`0x00121989`), LevelBase (`0x0015c989`), Material (`0x00169ad6`), BitmapMaterial (`0x00169ca6`), RenderedMaterial (`0x00169d66`), NetDriver (`0x00183599`), PendingLevel (`0x001a51d9`), Player (`0x001bddc6`), RenderResource (`0x001eafb6`), VertexStreamBase (`0x001eb186`) |
+| 0x004cfba0 | WaterTexture | 3 | Texture (`0x0027e889`), FractalTexture (`0x002e1489`), WaterTexture (`0x002e17d9`) |
+| 0x004cfc88 | IceTexture | 2 | FireTexture (`0x002e8468`), IceTexture (`0x002e8768`) |
+
+493 registration sites: 493 resolve to a class table, 30 sit on a table that more than one site resolves to, and 0 resolve to no table at all. 30 sites therefore do not name the table they are attached to.
+<!-- /generated:class-registrations -->
 
 ## What this measurement does not say
 
@@ -146,3 +175,9 @@ The base-call reading has its own tool and artifact:
 
 `--check` is a self-test over synthetic bodies plus an artifact round trip, and `--check-doc` rebuilds
 its block from the committed `inventory/class_ctor_bases.csv` with no dump; both run in `make ci`.
+
+The registration census is the same shape, and it is the capstone-free half of `tools/class-table-names.py`:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-registrations.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-registrations.py --write-doc docs/systems/CLASS_REGISTRATION.md
