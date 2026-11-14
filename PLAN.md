@@ -1178,6 +1178,34 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the 196 zero-fraction starts read names that are not properties, at every offset)
+
+- **The measurement the last note named is done.** `tools/class-defaults-silent.py` (`make class-defaults-silent`,
+  `inventory/class_defaults_silent.csv`) walks the locator's tag grammar from each of the **196** published
+  zero-fraction starts -- the `defaults = 1` rows with `declared_fraction = 0` -- and classifies every tag against the
+  package and the corpus, then walks **every** offset of each payload for a declared block.
+- **Where the grammar stops.** **120** of the 196 parses run to the payload's last byte; **76** terminate on a `None`
+  name with **1..62** bytes left (median 41), so those starts are not even end witnesses. Payloads are 90..3,679
+  bytes, median ~97 -- the `record-only` shape, not a truncated block.
+- **What the tags name, and it is the answer.** **440** tags, **374 (85.0%)** naming no property of any class:
+  **166** plain name-table entries, **127** **package** names, **68** `Function` and **13** `Class` exports. The other
+  **66** are property names of another class. **125 of 196 (63.8%)** read a package name, which can never be a
+  property tag. First tags: **88** name, **49** `Function`, **48** elsewhere, **6** `Class`, **5** `package` -- not
+  one opens on a property the class declares.
+- **No declared block anywhere in the payload.** At every offset, a `>= 2`-tag parse ending on the payload's last
+  byte opens at **0-18** offsets (median 3; 53 payloads none; a median 2% of the payload, at most 9%) and **none**
+  names a declared property (`best_declared = 0`, `n_declared = 0` on all 196). The locator missed nothing: these
+  payloads hold no block this grammar can name.
+- Tool (`tools/class-defaults-silent.py`, `--sweep`/`--report`/`--class`/`--check` with 6 assertions on synthetic
+  bodies) + `inventory/class_defaults_silent.csv` (196 rows) + `make class-defaults-silent` +
+  `docs/CLASS_DEFAULTS.md` (new section) + `docs/UNKNOWNS.md` U18 (thirty-fifth) + this note. Reads the packages; no
+  boot, no Ghidra round, no property value decoded, no start moved.
+- **Next measurement, named:** withhold `defaults = 1` from the 196 -- a named-property floor in `choose()`/
+  `guarded()` that refuses a start whose parse names no property of the class anywhere in the payload -- and re-run
+  the five artifacts that read the start (`class_defaults_emit`, `class_defaults_coverage`, the `--coverage` rollup,
+  `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`), which predicts the label 196 -> 0 and `no-block` 138 -> 334 with no
+  start moving.
+
 ### Execution notes (2026-11-13, the chooser's trailer floor is in force: 16 starts fall and none of them named a property)
 
 - **The change the last note named.** `tools/class-defaults.py`'s `guarded()` built its "a candidate must run to the

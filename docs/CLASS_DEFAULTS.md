@@ -890,3 +890,35 @@ nine stores into its head are the three constructors' dword zero-fills
 (`inventory/class_array_head_census.csv`, `docs/NATIVE_VM.md`, *The array at +0x4c4 is initialised and destroyed,
 and no body fills it*). So the 27-byte gap is not its stream either: the gap stays a located array plus a
 count-plus-pairs list, with one end still unexplained.
+
+
+## The 196 zero-fraction starts read a tag stream that names no property
+
+`inventory/class_defaults_per_class.csv` publishes a start for **2,181** classes, and **196** of those starts parse a
+block naming **none** of the class's declared properties (`declared_fraction = 0`). The bytes cannot settle those rows
+-- they are ordinary package bytes -- so `tools/class-defaults-silent.py` (`make class-defaults-silent`,
+`inventory/class_defaults_silent.csv`, 196 rows over 16 packages) walks the locator's own grammar from the published
+start and classifies every tag it reads, then walks **every** offset of the payload to ask whether a declared block
+exists anywhere in it.
+
+* **Where the grammar stops.** **120** of the 196 parses run to the payload's last byte, and **76** terminate on a
+  `None` name with **1..62** bytes left (median 41) -- on those 76 the start is not even an end witness: the parse
+  ends and the payload continues past it. Every payload here is a class export of 90..3,679 bytes (median ~97), the
+  shape this page already calls `record-only`.
+* **What the tags name.** The 196 parses read **440** tags, and **374 of them (85.0%) name no property of any class
+  at all**: **166** are plain name-table entries (a state, a variable, a label), **127** are **package** names,
+  **68** are `Function` exports and **13** `Class` exports of the same package. The remaining **66** are real
+  property names -- of *another* class. **125 of the 196 (63.8%)** read a package name somewhere in the parse, and a
+  package name can never be a property tag: a class's block names its own or an inherited property. The first tag
+  splits **88** plain name, **49** `Function`, **48** another class's property, **6** `Class`, **5** `package`.
+* **No declared block exists at any offset.** The same grammar started at every byte of every payload opens a
+  `>= 2`-tag parse that ends on the payload's last byte at **0-18** offsets (median **3**; 53 payloads have none at
+  all) -- a **median 2%** of the payload, at most 9% -- and **not one of those parses names a declared property**
+  (`n_declared = 0` and `best_declared = 0` on all 196). So the locator did not miss a block: no reading of these
+  bytes names a property of the class. The 62 rows whose parse does read a property name read one another class
+  declares (`StargateGame.StargateArmor` opens `elsewhere, package`), which a block of this class cannot set.
+* **What that means for the label.** `defaults = 1` on these 196 is the grammar's permissiveness plus an end
+  witness, not a located block -- and on 76 of them not even that. `--check` covers the four shapes that keep the
+  reading honest: a `Function` tag is not a property, an early `None` keeps its byte count, a declared block deeper in
+  the payload is counted and clears it, and a class that declares nothing is reported rather than called a false
+  start.
