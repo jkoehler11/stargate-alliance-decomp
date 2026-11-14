@@ -3457,3 +3457,21 @@ where no head closes either: none of the three witnesses (the documented array e
 group) is available there, so the test is the defaults stream -- `tools/class-defaults.py`'s tag parse from
 `block_start`, which closes on 543 of 551 -- and whether it parses on those 40 would confirm the block start without
 using the record at all. Nothing here needs a boot or a decompile.
+
+**2026-11-13 (eighteenth): the defaults stream is the witness the 40 headless rows were missing, and the block start
+holds on 92 of the 95.** The seventeenth entry left the 40 rows where the located array, the head census and the
+record's closing group are all silent, and named the test: the tag parse from `block_start`. Read there over all 95
+rows (`tools/class-overshoot-stream.py`, `inventory/class_overshoot_stream.csv`) the stream terminates on the
+payload's last byte on **37 of the 40** and on **55 of the 55** rows that do carry a head, so the block start is
+confirmed without the record on 92 rows -- and the 36 rows the record confirms are exactly the 36 on which the stream
+closes too, so the two witnesses never disagree. A close alone is a 33% base rate (125 of the 380 starts at
+`block_start + 1 .. + 4` close as well, and 70 of the 95 rows have a closing neighbour), so the column that separates
+them is the names: on the 44 rows whose class declares properties the block start names more declared tags than any
+closing neighbour on 41, the same number on 3, fewer on none. **What is still open** is the three rows that stop short
+-- `Engine.KBSJoint` 41 bytes, `StargateContent.CTFGateTeleporter` 49, `StargateVehicles.HoverTankPilotBot` 59, all
+inside the 64-byte trailer `class-defaults.py` allows -- where the block start is plausible but not pinned to the last
+byte, and `HoverTankPilotBot` is the one row no witness reaches. Settling them is the trailer's question and not
+another start: parse the tag stream from each offset in `[block_start, block_start + 59]` on those three and report
+whether any of them lands on the payload's last byte with declared names -- a start that does makes the trailer a
+misplaced boundary, and none makes those 41-59 bytes a field the class serialises after its defaults. Nothing here
+needs a boot or a decompile.

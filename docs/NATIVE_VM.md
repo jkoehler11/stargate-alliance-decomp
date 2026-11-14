@@ -2285,3 +2285,35 @@ and it ends on the block start, so the block start is confirmed from the record 
 array overshoots it. What the 95 share is the located **tail**, not the payload: neither the block start nor the
 head census moves with them.
 
+
+### The defaults stream closes on the block start, so on 92 of the 95 the located tail is the only thing in doubt
+
+The section above left **40** rows where all three witnesses of the block start are silent: the documented array end
+overshoots, no free head in the payload closes on the start, and the record-side closing group does not parse.
+The witness left is the block's own grammar. `tools/class-overshoot-stream.py` (`make class-overshoot-stream`,
+`inventory/class_overshoot_stream.csv`) re-reads all 95 overshoot rows from the dump and runs `prop-stream.read_block`
+at `block_start`: a property stream either terminates on the payload's last byte or it does not.
+
+| measure | the 40 with no head | the 55 with a head |
+|---|---:|---:|
+| the stream from `block_start` terminates on the payload's last byte | **37** (92.5%) | **55** (100%) |
+| it terminates short of it | 3 | 0 |
+
+**A close on its own is a 33% test, so it is scored against the position.** The same parse at `block_start + 1 .. + 4`
+closes on **125 of the 380** later starts (32.9%), and on **70 of the 95** rows at least one neighbour closes -- a tag
+stream can re-synchronise onto the buffer's end. What separates the block start from those neighbours is what the tags
+*name*: of the **44** rows whose class declares properties, the parse at `block_start` names strictly more declared
+names than any closing neighbour on **41**, the same number on **3** (`StargateContent.HaakenWeaponShield` 11 against
+11, `StargateContent.Reetou` 105 against 105, `UWindow.UWindowHSplitter` 1 against 1) and fewer on **none**. The other
+38 rows parse tags whose names the property inventory does not carry (29 of them `GUI.STY_*` styles), so on those the
+close is the only evidence and it is read as such.
+
+**The three rows that stop short are the only ones where the block start itself is unsupported**, and they stop by
+less than the locator's own trailer bound: `Engine.KBSJoint` leaves **41** bytes, `StargateContent.CTFGateTeleporter`
+**49** and `StargateVehicles.HoverTankPilotBot` **59** -- all inside the 64-byte trailer `class-defaults.py` already
+tolerates, so they are short of the last byte rather than refused by it. `HoverTankPilotBot` is also the one row no
+witness reaches: the record's closing group does not parse there and the stream does not reach the end.
+
+**The two witnesses never disagree.** The 36 rows whose record-side closing group parses are exactly the 36 on which
+this stream closes too; the stream speaks on 56 rows the record never reached, 37 of them the headless ones. Nothing
+here moves the located array: what the 95 share is the array's own tail, not the block start.
