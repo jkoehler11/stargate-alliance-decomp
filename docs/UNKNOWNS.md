@@ -3712,3 +3712,15 @@ read the 3, 4 and 11 byte offsets: switching it and re-running the five artifact
 those seven rows and the 234 moved ones leave. `StargateVehicles.HoverCraftFixedGun` (one tag, 108 bytes left) is the
 one refused row that opens a block and stops short, and the six rows with no block should be recorded as having no
 defaults rather than refused.
+
+**Answered 2026-11-13 (thirty-second): the chooser carries the group rule, and its recovered block is one tag.**
+`tools/class-defaults.py` now refuses a candidate start a committed closing group covers, takes the group's end as a
+start, and takes the offsets in `[end, end + 12)` when that end opens an empty block. **373 of 2,319** starts move
+(+4 on 100, +3 on 83, +7 on 16, +89 on 4), and the reference test had to be corrected first: an `FCompactIndex` is
+five bytes, so a parse can carry -13,555,990,527, and of the **1,654** control groups that end on the shipped start
+**1,653** are inside the import count (median 6, largest 42) while **18 rows' only covers are outside it** (`Engine`
+holds 120 imports). The recovered blocks are **one property each on 316 rows** (0 before), so the two-property floor
+withholds the verdict and the head-line moves from 1,664 to **1,663 fully declared**, 110 -> **122 with no block**,
+`single-declared` 263 -> 288 of 656. **What is still open.** Whether a declared tag that tiles the payload's tail from
+a group's end is a block or a table tail -- the floor says it is undecidable without a tag walk past the group or one
+stock `ucc` build -- and the 58 rows that move without their declared fraction changing (22 start to start).

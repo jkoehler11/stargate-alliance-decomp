@@ -64,6 +64,12 @@ inheritance spine of the whole tree, which is why the emitted property count jum
 the values of that change; the current ones are 1,664 and 15,518, because two blocks were later withheld for
 contradicting their own property record — see "The locator scores names first and tag types second".)
 
+Since that measurement the chooser has taken the record's closing group as a rule
+(`docs/NATIVE_VM.md`, *The chooser takes the group's end*): 373 starts move onto the record's own boundary and the
+totals are now **1,663 fully declared, 656 not (288 `single-declared`, 216 `incomplete`, 120 `empty-block`, 30
+`type-contradiction`, 2 `single-property`) and 122 with no usable block**. The reason table below was measured before
+that change; only the totals above are current.
+
 Where it still fails:
 
 * `UWindow` (12 of 78) and `Fire` (0 of 7) are the worst. `UWindow`'s classes are engine-heavy GUI types whose

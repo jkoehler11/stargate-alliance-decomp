@@ -251,6 +251,131 @@ def single_declared_block(pkg, mod, exp, declared, kinds=None):
     return None
 
 
+# ---------------------------------------------------------------- the closing group, as a rule in the chooser
+
+# `tools/class-record-open-tail.py` parses the record's closing group (names array, reference, config name, list
+# array) with no required end, and `tools/class-blockstart-guard.py` turned that into a rule: a candidate start a
+# committed group covers is refused, and the group's end joins the candidate set. The rule belongs in the chooser --
+# this file writes `inventory/class_defaults_per_class.csv`, whose `block_start` every count downstream inherits.
+#
+# Two things the guard left for measurement:
+#
+# * **A committed reference is one the package's own import table can hold.** The archive writes an import index
+#   negative, and an `FCompactIndex` is five bytes wide, so a parse can carry a reference of -13,555,990,527 -- an
+#   index no table holds. Measured on the 2,209 located rows: of the 1,654 groups whose end **is** the shipped start
+#   (the control population, two witnesses), 1,653 carry a magnitude inside the import count and one does not;
+#   the median is 6 and the largest 42. Of the groups that *cover* a shipped start, 18 rows' only covers are outside
+#   the table, which is the guard refusing them on a parse that cannot be the writer's field.
+# * **A group whose end reads as an empty block is followed by the block a few bytes later.** On the 13 refused rows
+#   the guard left with nothing, the block opens 3, 4 or 11 bytes past the group's end on 7 (`Engine.Weapon` at 3,
+#   the two `ZatGun_*` rows at 4, all four FORMATIONs at 11) and nowhere in the 12-byte window on the other 6.
+GROUP_LOOKBACK = 48          # a closing group is at most this long (`class-record-open-tail.py` MAX_GROUP)
+GROUP_TAIL = 12              # the block opens inside this many bytes past a group whose end reads as an empty block
+
+
+def _load_otail():
+    """`class-record-open-tail` loads this file, so it is loaded lazily (and only once)."""
+    if "otail" not in _AUX:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "class-record-open-tail.py")
+        spec = importlib.util.spec_from_file_location("class_record_open_tail", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _AUX["otail"] = mod
+    return _AUX["otail"]
+
+
+def committed_group(g, nimports):
+    """Is this parse the writer's field, or bytes that tile as a group?
+
+    The reference is what separates them: padding's reference is 0, and a parse inside a name run can carry any
+    five-byte compact. The archive writes an import index negative and the class declares its import -- so a
+    committed group's magnitude is one the package's import table can hold (`|ref| <= nimports`), which is the one
+    test the control population supports (1,653 of 1,654 groups whose end is the shipped start pass it).
+    """
+    return g["ref"] < 0 and -g["ref"] <= nimports
+
+
+def group_intervals(data, nnames, nimports):
+    """Every offset where the writer's four-field group parses with a committed reference, as `(start, end)`."""
+    otail = _load_otail()
+    out = []
+    for q in range(len(data)):
+        g = otail.free_group(data, q, nnames)
+        if g is not None and committed_group(g, nimports):
+            out.append((q, q + g["len"]))
+    return out
+
+
+def covered(intervals, start):
+    """Is this candidate start inside a committed group? A group that *ends* on it is not a cover."""
+    best = None
+    for q, end in intervals:
+        if q >= start:
+            break
+        if end > start and (best is None or end > best):
+            best = end
+    return best
+
+
+def guarded(cands, data, pkg, decl, kinds, nimports):
+    """The chooser's candidate set with the record's closing group as a rule, and where each start came from.
+
+    A start inside a committed group is refused -- the group is a record field, so its bytes cannot be the defaults
+    block's first byte. The group's **end** joins the set (often a one-property block the two-property floor
+    withholds), and when that end reads as an *empty* block every offset in `[end, end + GROUP_TAIL)` that opens a
+    block reaching the payload's last byte is offered as well: that is where the block sits past a record tail.
+    """
+    mod = load_prop_stream()
+    nnames = len(pkg.names or [])
+    intervals = group_intervals(data, nnames, nimports)
+    kept = [c for c in cands if covered(intervals, c[1]) is None]
+    if len(kept) != len(cands):
+        # The guard refused something: what remains has to be the block's own witness, so a candidate must run to
+        # the payload's last byte (`trailer == 0`). A start that leaves bytes behind only won before because it
+        # carried more declared names than the alternative; once the guard removes the alternative, keeping a
+        # start with no end witness would be inventing a worse one (measured: 58 rows move at an unchanged
+        # declared fraction, one loses its block).
+        kept = [c for c in kept if c[3] == 0]
+    origins = {c[1]: "candidate" for c in kept}
+    for _q, end in intervals:
+        if not (0 < end < len(data)) or end in origins:
+            continue
+        try:
+            props, stop, reason = mod.read_block(data[end:], pkg, False)
+        except Exception:
+            continue
+        if reason != "None":
+            continue
+        if len(props) == 1:
+            # A one-property block that tiles the payload's tail, named by the class: `single-declared`, anchored
+            # to the group's end instead of a scan over every offset.
+            prop = props[0]
+            if (prop["name"] in decl and end + stop == len(data)
+                    and not contradictions(props, kinds)):
+                cands.append((1, end, [prop["name"]], 0, 0))
+                origins[end] = "group-end"
+        if props:
+            continue                                   # the group's end is a block in its own right
+        for k in range(GROUP_TAIL):                    # an empty block: the record has a tail in front of the block
+            off = end + k
+            if off >= len(data) or off in origins:
+                continue
+            try:
+                tape, stop2, reason2 = mod.read_block(data[off:], pkg, False)
+            except Exception:
+                continue
+            if reason2 != "None" or not tape or off + stop2 != len(data):
+                continue
+            if any(p["name"] == "?" for p in tape) or contradictions(tape, kinds):
+                continue
+            if len(tape) == 1 and tape[0]["name"] not in decl:
+                continue
+            if all(p["name"] in decl for p in tape):
+                cands.append((len(tape), off, [p["name"] for p in tape], 0, 0))
+                origins[off] = "group-tail"
+    return [c for c in cands if covered(intervals, c[1]) is None], origins
+
+
 def check_misses(outdir):
     """The two artifacts must agree: every not-fully-declared class explained once, no invented class."""
     per_class = os.path.join(outdir, "class_defaults_per_class.csv")
@@ -402,6 +527,7 @@ def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
     """
     mod = load_prop_stream()
     rows = []
+    origins = collections.Counter()
     supers = super_map()
     declared_all = declared_properties()
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
@@ -417,15 +543,25 @@ def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
                 seen.add(cur)
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
-            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
+            cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
+            cands, where = guarded(cands, data, pkg, decl, kinds_for_class(cls), len(pkg.imports or []))
             best = choose(cands, decl)
             if best is None:
+                # No start survives the group rule: the class sets no defaults after its record. That is the
+                # honest reading of the rows the guard refused with no replacement, not a located start inside the
+                # group (`class_defaults_misses.csv` explains each one).
+                origins["no-block"] += 1
                 rows.append([pkg_name, cls, 0, 0.0, "", 0])
                 continue
             _score, count, start, names, bad = best
+            origins[where.get(start, "candidate")] += 1
             known = sum(1 for n in names if n in decl)
+            # The two-property floor is a verdict about the *block*, not only about the candidate set: a
+            # one-property parse at a group's end is where a table tail and a block look the same, and MIN_PROPERTIES
+            # measured that promoting those turns 320 misses into "fully declared" on a single tag. The start is
+            # published (`defaults = 1`), the verdict is withheld (`single-declared` in the misses table).
             rows.append([pkg_name, cls, count, round(known / float(count), 4), start,
-                         1 if known == count and bad == 0 else 0])
+                         1 if known == count and bad == 0 and count >= floor else 0])
     path = os.path.join(outdir, "class_defaults_per_class.csv")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="") as fh:
@@ -436,6 +572,7 @@ def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
     clean = sum(r[5] for r in rows)
     print("%d classes across %d packages; %d fully declared (%.1f%%)"
           % (total, len({r[0] for r in rows}), clean, 100.0 * clean / total if total else 0.0))
+    print("chosen start origin: " + ", ".join("%s %d" % (k, v) for k, v in origins.most_common()))
     print("wrote %s" % path)
     return 0
 
@@ -468,13 +605,15 @@ def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
         for exp in [e for e in pkg.exports if pkg.class_name_of(e) == "Class"]:
             classes += 1
             cls = pkg.name(exp["name"])
-            cands, _data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
+            cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
+            cands, _origins = guarded(cands, data, pkg, known_for(cls), kinds_for_class(cls), len(pkg.imports or []))
             if not cands:
                 none_found += 1
                 continue
             blocks += 1
             best = choose(cands, known_for(cls))
-            if best[0][0] == 1.0 and best[4] == 0:
+            # same verdict as `all_packages`: the two-property floor withholds "fully declared" for a one-tag block
+            if best[0][0] == 1.0 and best[4] == 0 and best[1] >= floor:
                 clean += 1
             elif len(cands) > 1:
                 ambiguous += 1
@@ -550,6 +689,7 @@ def main():
         cls = pkg.name(exp["name"])
         known = known_for(cls)
         cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=args.floor)
+        cands, origins = guarded(cands, data, pkg, known, kinds_for_class(cls), len(pkg.imports or []))
         if not cands:
             none_found += 1
             continue

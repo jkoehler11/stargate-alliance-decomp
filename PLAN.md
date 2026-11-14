@@ -1178,6 +1178,39 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the chooser takes the group's end: 373 starts move and the recovered block is one tag)
+
+- **The measurement the last note named is done.** `tools/class-defaults.py` now carries the closing-group rule:
+  a start a committed group covers is refused, the group's end is a candidate, and when that end opens an empty
+  block the offsets in `[end, end + 12)` that open a declared block to the payload's last byte are candidates too.
+  **373 of the 2,319 starts move** (+4 on 100, +3 on 83, +7 on 16, +5 on 15, +8 on 15, +6 on 14, +9 on 9, +19 on 6,
+  +20 on 4, +89 on 4), 25 appear where none was, 37 vanish, and the declared fraction rises on 314 and falls on
+  **one** (`Engine.PSBumpBSP`, the row `class_record_open_tail.csv` already lists as an `overlap == 0` false
+  positive).
+- **A committed reference is one the import table can hold, and that is what unblocks most of it.** The guard took
+  any negative reference; an `FCompactIndex` is five bytes, so a parse can carry -13,555,990,527. On the **1,654**
+  groups whose end is the shipped start (control, two witnesses) **1,653** are inside the import count (median 6,
+  largest 42), while **18 rows' only covers are outside it** -- `Engine` holds 120 imports, so `Engine.AvoidMarker`'s
+  cover at -3,007 and `Engine.FileLog`'s at -567,581 are not the record's field. 1,946 starts are untouched.
+- **The recovered blocks are one tag each, so the head-line barely moves.** **316** rows now carry a one-property
+  start at a group's end (0 before) and the two-property floor withholds "fully declared" for them -- it is a verdict
+  about the block, and `docs/CLASS_DEFAULTS.md` measured that a one-tag promotion turns 320 misses into "fully
+  declared". So 1,664 -> **1,663 fully declared of 2,319 (71.7%)**, **122 with no block** (110), and the misses table
+  splits 656 into 288 `single-declared` (263), 216 `incomplete`, 120 `empty-block`, 30 `type-contradiction` and 2
+  `single-property`. Compile readiness 1,824 -> 1,823 with no blocker.
+- **Downstream, in the same change:** `class_defaults_coverage.csv` (354 ambiguous, was 430),
+  `class_defaults_misses.csv`, `compile_readiness.csv`/`_by_package.csv` with `docs/COMPILE.md`, `docs/STATUS.md`
+  and the README badges, and `StargateVehicles.HoverCraftFixedGun` lands 16 bytes later on an 11-tag fully declared
+  block -- the row the last note left as "one tag, 108 bytes left".
+- Tool (`tools/class-defaults.py`: `committed_group`, `group_intervals`, `covered`, `guarded`; the guard tool's
+  `committed()` now takes the import count and its `--check` gained a five-byte reference case) + the four
+  regenerated artifacts + `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (thirty-second) + this note.
+  Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the reaches that move without naming a property -- `StargateContent.HackingPanel` to
+  offset 1 and `DecipheringTrigger` from 87 to 46 are the end-witness parse of payloads whose block is elsewhere, so
+  read the 58 unchanged-fraction rows and report where the declared-fraction-0 starts sit relative to the group's
+  end (inside it, on it, or past the payload's last byte) before the coverage table can claim them.
+
 ### Execution notes (2026-11-13, the boundary past the group is 3, 4 or 11 bytes on 7 of the 13, and absent on 6)
 
 - **The measurement the last note named is answered.** `tools/class-group-after-scan.py` reads the tag stream from
