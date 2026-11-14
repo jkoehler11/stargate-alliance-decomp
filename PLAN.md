@@ -1178,6 +1178,32 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the front is a record field: the shape is at prefix + 42 on the rows whose walk does not close)
+
+- **The population that decides it has no gap-census row.** `tools/class-record-open-front.py` reads the shape
+  `[3-5 compact values] [sixteen zero bytes] [the count]` at `prefix + 42` on all 2,204 located rows, anchored on the
+  zero run's *end* (a front whose last byte is `00` merges into the run, and a start-anchored search calls a
+  four-byte front one byte long). On the **578 rows the walk does not close** -- no gap-census row by construction, so
+  nothing about them can come from the offset the closing walk chose -- the shape is there on **515 (89.1%)**: gaps 20
+  (223), 19 (151), 21 (136) and five two-byte off-modal fronts. The 3-5 byte front is a field of the record, not an
+  artefact of the walk's offset.
+- **Controls travel with it.** On the 1,626 closing rows the same test answers on **1,607 (98.8%)** and reproduces the
+  gap census's own length on **1,473 of 1,607 (91.7%)**, so the instrument measures the census it is compared against;
+  the local base rate -- the same test at 24 offsets just past the head in the *same* payload -- is **0.000** on both
+  populations, so a pass at one of three modal positions is not chance. 2,122 of 2,204 rows carry the shape.
+- **The head it gives is close to the block; the shipped head is not.** From the shape's head the element walk lands
+  past the block start on 361 of the 515 (residue median **4**, 119 within 3, 245 within 9), inside an element on 114,
+  and on no block on 40 -- block starts at or inside the head, the locator's false positives, which the closing rows
+  also carry 4 of and which are excluded from the walk rather than scored. The shipped head (`prefix + 42`, the front
+  read as the count) misses by a median of hundreds of bytes, so the open rows fail **downstream of the array head**.
+- **What is still open.** The 63 open rows with no shape, and the 1-9 bytes the element grid stops short on 245 of the
+  515 -- on the closing rows those are the closing group (`UClass::Serialize`'s names, reference, config name,
+  version-gated list), 1-4 bytes in the open rows' first hand checks, which is the next grammar to read against.
+- Tool (`tools/class-record-open-front.py`: `--class`, `--sweep`, `--report`, `--check`) +
+  `inventory/class_record_open_front.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The shape at prefix + 42 survives the
+  walk*) + `docs/UNKNOWNS.md` U17 + `make class-record-open-front` + this note. Reads the packages; no boot, no
+  decompile.
+
 ### Execution notes (2026-11-13, the front in front of the zero dwords is not a name, a tag, a reference or the struct's own field)
 
 - **The front is named by what it cannot be, and every permissive reading is a base rate.** `tools/class-record-front.py`
