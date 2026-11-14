@@ -3647,3 +3647,27 @@ only 3). The control refuses the easy reading twice: the 515 rows whose shape is
 position; and 188 of those 515 carry some hit at `|k| > 4`, so distance alone is not evidence. The 21 that answer
 nowhere, and the reason the head sits later on the 42, are what stays open -- the writer side (`UStruct::Serialize`,
 `0x000392b0`) is still the route.
+
+**Answered 2026-11-13 (twenty-ninth): the chooser's start is inside the group, and refusing it recovers 281
+blocks.** `tools/class-blockstart-guard.py` makes the closing group a rule in the chooser and re-runs it: a candidate
+start that a committed group **covers** is refused, and a committed group's **end** joins the candidate set. On the
+2,190 readable rows of `class_defaults_per_class.csv` the guard fires on **297 (13.6%)** and **252 move**; the refused
+starts had a mean declared fraction of **0.364** (fully declared on 13 of 297) against **0.919** (fully on 231 of
+252) at the start the guard leaves. 224 of the moved rows are answered by the group's end -- many of them
+**one-property** blocks the two-property floor withholds -- and 28 by another parsed block; 45 rows are refused with
+no replacement. On the 245 open rows the previous entry named, the guard refuses **245 of 245**, moves 216, lands 206
+exactly on the group's end and takes fully-declared from **2 to 206**. Over the population, fully declared moves from
+**1,655 to 1,936 of 2,190 (75.6% to 88.4%)**, 62 of them from the group-end candidate alone on cleared rows. The
+controls hold: joined to `class_record_open_tail.csv`'s element-side `overlap`, the guard refuses **282 of 481** rows
+whose group ends past the start (58.6%) and **10 of 1,596** whose group ends on it (0.6%), and the commitment test --
+a group's reference must be negative, as the archive's reference slot writes imports -- holds on **297 of 297**
+covering groups, which is what keeps zero padding from covering every start. The chooser reproduces the shipped start
+on **2,188 of 2,190** (`Engine.Speech` and `StargateGame.CTFFlagMesh` are one chooser version behind), so a movement
+is the guard's.
+
+**What is still open.** The guard's start is a separate artifact: `class_defaults_per_class.csv` still carries the old
+start and five artifacts and pages downstream of it would move, so switching the chooser is its own change. The **45**
+refusals with no replacement (`Engine` 17, `UWindow` 10, `StargateGame` 7, `GamePlay` 6, `Fire` 4, `UnrealEd` 1) are
+the next measurement: on them every parsed candidate is inside a group, and the free group parse looks like it
+over-reads (`Engine.SavedMove`: group at 347, ends at 359 of a 360-byte payload, leaving no block), which the anchored
+parse -- every index in range and the list ending at or before the block -- would show.
