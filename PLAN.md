@@ -641,8 +641,11 @@ report cites file-level evidence for each claim.
       from power-on through a loaded `M00`, the readers and the dispatcher never fire and the only two stops are
       that class's **constructor** (`0x00187350` from `0x00013ec7` in `Core_UnObjBas` `0x00012620`, `push 0x520`
       then `call [eax]` through the operator-new slot) -- so no load path opens the file and a rebuilt package
-      needs no record to be played. The one arm left is the `MD5` console command itself, which still cannot be
-      typed (7.3's `Say` prefix).
+      needs no record to be played. The arm the previous note called "the `MD5` console command" is **structurally
+      unreachable**, not untested: `0x00126860` is slot 30 (`+0x78`) of `MasterMD5Commandlet`'s class table
+      (`0x00504660`, only dword ref `0x005046d8`) and has no `E8` call site, so the check runs as a commandlet and
+      this disc has no command line to launch one with (`tools/vtable-reach.py`; a console boot that typed
+      `md5 -s` stopped it zero times).
 - [~] 6.3 Ensure deterministic output (fixed timestamps, sorted names) so rebuilt packages diff cleanly between runs.
       **Not claimed yet, and the reason is structural**: every payload the writer places is *copied*, so two runs
       cannot differ — the write path is reproducible (`docs/REBUILD.md` stage 2, 100 of 100 packages across `.u`,
@@ -1184,6 +1187,32 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-14, the check's invoker is a class-table slot and the console never had the command)
+
+- **The arm 6.2's note left open, closed from the image instead of from a keyboard.** This page called
+  `0x00126860` "the `MD5` exec dispatcher". `tools/vtable-reach.py --va 0x126860` says otherwise: it has no
+  `E8` call site, and the only dword holding its address is `0x005046d8`, slot 30 (`+0x78`) of the class table
+  at `0x00504660`, whose class is `MasterMD5Commandlet` (`inventory/xbe_class_table_names.csv`). Its
+  constructor `0x00127c10` is called only from `0x0021ada0` and `0x0021b5f0`, the class-registration thunks, so
+  nothing in the image builds a commandlet to run it. The ten switch literals are a commandlet's `Parms` -- the
+  one-wide-argument `__wcsicmp` shape the body shows -- and a `Commandlet` is started from an engine command
+  line, which a disc boot never provides.
+- **One boot agrees, and its frames are not the evidence.** `tools/xemu/restart-level.sh --command "md5 -s"
+  --arm 0x126860,0x125a90` attached the keyboard before the title, loaded `M00` (mission frame 20,706 px,
+  settled 6,705 px, O'NEILL's HUD), typed the line one `sendkey` per character and submitted with `ret`: the
+  control `0x002b7112` fired, the slot and the reader `0x00125a90` stopped **zero** times, and `04-typed.png` is
+  byte-identical to `03-gameplay.png` (the stock console draws no input line, so the boot cannot separate a
+  missed keystroke from a missing command -- the slot can).
+- Consequence: 6.2 has no arm left. No load path opens `Packages.md5` and there is no console binding for its
+  commandlet, so a rebuilt or re-laid-out package needs no record to be played and the hybrid build's
+  `write-check-data` is for a reader no shipped path reaches. Files: `docs/PACKAGE_CHECK.md` (the invoker
+  section, two corrections to the dispatcher framing, `Not measured` closed), PLAN 6.2, this note. Instrument:
+  `tools/vtable-reach.py` (existing) plus the boot above; no decompile, no new tool.
+- **Next measurement, named:** 3.8's scoreboard, which needs no boot -- `tools/uscript-dis.py --compare` is
+  validated only against a package compared with itself (3,352 of 3,821 shared functions identical), so a
+  `docs/MATCHING.md` baseline per package, with the L2/L3 split and the functions that have no script, is the
+  artifact that would make the comparator usable before a compiler exists.
 
 ### Execution notes (2026-11-14, no load path opens `Packages.md5`, and the only stops are the constructor)
 
