@@ -32,7 +32,7 @@ control is what keeps the two columns from being one tautology.
 ## The baseline
 
 <!-- generated:matching-baseline -->
-**18 package(s), 12153 `Function` export(s): 11367 with a script, 673 scriptless, 1 refused, 112 operator, 0 unaligned.**
+**18 package(s), 12153 `Function` export(s): 11368 with a script, 673 scriptless, 0 refused, 112 operator, 0 unaligned.**
 
 | package | functions | scripted | scriptless | refused | operator | unaligned | L3 ceiling | control |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
@@ -46,7 +46,7 @@ control is what keeps the two columns from being one tautology.
 | `IpDrv.u` | 111 | 83 | 28 | 0 | 0 | 0 | 83 | `BufferedTCPLink.DoBufferQueueIO+1` L3 82, L2 83 |
 | `Sharpeffects.u` | 37 | 37 | 0 | 0 | 0 | 0 | 37 | `Dead.BeginState+1` L3 36, L2 37 |
 | `StargateContent.u` | 1669 | 1669 | 0 | 0 | 0 | 0 | 1669 | `ACTION_ActivateAstralSight.InitActionFor+3` L3 1668, L2 1669 |
-| `StargateGame.u` | 3197 | 3179 | 17 | 1 | 0 | 0 | 3179 | `ACTION_ActivateHelmet.InitActionFor+1` L3 3178, L2 3179 |
+| `StargateGame.u` | 3197 | 3180 | 17 | 0 | 0 | 0 | 3180 | `ACTION_ActivateHelmet.InitActionFor+1` L3 3179, L2 3180 |
 | `StargateMenus.u` | 334 | 334 | 0 | 0 | 0 | 0 | 334 | `ChapterList.GetChapter+2` L3 333, L2 334 |
 | `StargateVehicles.u` | 502 | 498 | 4 | 0 | 0 | 0 | 498 | `ACTION_CarpetBombing.InitActionFor+1` L3 497, L2 498 |
 | `Stargateeffects.u` | 57 | 57 | 0 | 0 | 0 | 0 | 57 | `AcidBurn.PostBeginPlay+2` L3 56, L2 57 |
@@ -54,7 +54,7 @@ control is what keeps the two columns from being one tautology.
 | `UPreview.u` | 13 | 13 | 0 | 0 | 0 | 0 | 13 | `UPreviewMapListClient.BeforePaint+2` L3 12, L2 13 |
 | `UWindow.u` | 731 | 731 | 0 | 0 | 0 | 0 | 731 | `UWindow.KeyEvent+2` L3 730, L2 731 |
 | `UnrealEd.u` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — |
-| **total** | **12153** | **11367** | **673** | **1** | **112** | **0** | **11367** | 16 of 18 package(s) |
+| **total** | **12153** | **11368** | **673** | **0** | **112** | **0** | **11368** | 16 of 18 package(s) |
 <!-- /generated:matching-baseline -->
 
 ## The mutation control

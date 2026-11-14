@@ -252,11 +252,17 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       and the scripted ceiling in `inventory/matching_baseline.csv` from 11,289 to **11,367**; the 16 label-table
       rows were the double read landing on a `0x0c` that is a compact name index in a `FinalFunction` operand, so
       this corpus reaches no label table at all.
+      **And the corpus's last refusal is gone (2026-11-14)**: group 24's `StructCmpEq`/`StructCmpNe`
+      reference is the **compact index**, not four fixed bytes -- the handler at `0x000491ee` reads the
+      operand once as a dword and then dereferences it as a `UStruct`, and the file's two bytes are that
+      index before the load widens it -- so the walk goes 11,686 to **11,687 of 11,687**,
+      `inventory/opcode_refusals.csv` is a header for the first time, and the scripted ceiling is
+      **11,368**.
 - [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
       packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
       `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from
-      `inventory/matching_baseline.csv`: **12,153 `Function` exports, 11,289 with a script (the ceiling a rebuild
-      can be graded on), 673 scriptless natives, 79 refused walks, 112 operator declarations, 0 unaligned, 0 other**,
+      `inventory/matching_baseline.csv`: **12,153 `Function` exports, 11,368 with a script (the ceiling a rebuild
+      can be graded on), 673 scriptless natives, 0 refused walks, 112 operator declarations, 0 unaligned, 0 other**,
       with a mutation control on 16 of 18 packages -- `Fire.u` and `UnrealEd.u` export no `Function` at all, which is
       why they cannot be controlled. Scoring a rebuild still needs `ucc` (`PLAN 3.6`); the comparator itself is
       validated two ways, a package against itself (`Engine.u` 3,354 of 3,821) and a one-bit mutation inside an
@@ -8066,6 +8072,35 @@ and a deliberate one-line script break is caught by the boot test.
 - Tool (`--start-scan`, `--start-anchor`, `--scan-lo/--scan-hi`) + `docs/BYTECODE.md` "Where the script starts,
   anchored on the shipped source" + `docs/UNKNOWNS.md` U13. Reads the image and the packages; no boot, no Ghidra, no
   artifact.
+
+### Execution notes (2026-11-14, the last refusal was the enclosing token's operand, not the stop byte)
+
+- **The measurement the previous note named.** `tools/uscript-refusals.py --context` (new, print-only) walks the
+  corpus and, for each refusal, prints the enclosing token chain the walker was inside -- `uscript-dis.parse` now
+  carries `exc.stack` and `exc.parsed` -- then re-patterns each enclosing row on its own and credits a candidate only
+  when the *whole* script walks afterwards, naming the rival when several do.
+- **One refusing payload, and the stop byte is a victim.** `StargateGame.u`
+  `VoiceSelector.DiscardRecentlyUsedVoices` (414-byte script) stops at `0x3f` on `0x5e`, two tokens inside a
+  `0x3a StructCmpEq` whose row reads four fixed operand bytes. Its handler (`0x000491e0`) reads **one dword** and
+  dereferences it as a `UStruct` (`mov edi,[ebx+0x40]`), so the file's two bytes are the compact index before the
+  load widens it -- `IpDrv.u`'s `ClientBeaconReceiver.ReceivedText` shows the same row reading `01 36 23 1a` as a
+  dword, which no loader could dereference.
+- **Group 24 is `index,expr,expr`, and nothing is lost.** 11,686 -> **11,687 of 11,687** scripted payloads walk,
+  `inventory/opcode_refusals.csv` is a header for the first time, the scripted ceiling in
+  `inventory/matching_baseline.csv` goes 11,367 -> **11,368**, and the `--sizefield` residue falls 6 rows -> 4 with
+  the two small differences (5, 6) gone -- the widened operand the new row predicts, measured from a different field
+  of the same payloads.
+- **An empty ledger has to be proved, not trusted.** `--check` answered `FAIL opcode-refusals: ... is empty`, which
+  is right for a truncated file and wrong for this one: it now accepts zero rows only when
+  `inventory/matching_baseline.csv` counts the same refusals (0 over the 18 packages) and fails naming the
+  disagreement otherwise, so the gate still compares two claims.
+- Files: `tools/uscript-dis.py` (`exc.stack`/`exc.parsed`), `tools/uscript-refusals.py` (`--context`, `check`),
+  `tools/opcode-table.py` (group 24), the four regenerated artifacts, `docs/BYTECODE.md`, `docs/MATCHING.md`, this
+  note. Rival named in the page: `bytes:2,expr,expr` also closes this payload.
+- **Next measurement, named:** the four `--sizefield` residue rows are now all nonsense dwords (261,119 and up) with
+  no widening difference behind them -- read one of them in a guest (`tools/xemu/script-ram.py --anchor-literal`) to
+  decide whether the dword is a different field or the payload's header is short, and the census behind
+  `--sizefield` has no other unexplained row.
 
 ### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
 

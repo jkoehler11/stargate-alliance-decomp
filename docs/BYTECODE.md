@@ -1303,3 +1303,45 @@ payloads reaches a reachable `0x0c`** -- so the shipped compiler emitted `case` 
 That also retires the "anchor upstream of the stop" question the previous section left open: the stream was not
 desynchronised by a missing width, it was over-read by one row, and the anchor that settles it is the handler's own
 two-byte compare.
+## The last refusal was the StructCmpEq reference, and the corpus walks whole (measured 2026-11-14)
+
+After the `Case` correction `inventory/opcode_refusals.csv` held one row, and `tools/uscript-refusals.py --context`
+says the stop opcode is not the row at fault. `StargateGame.u`'s `VoiceSelector.DiscardRecentlyUsedVoices` stops at
+script offset `0x3f` on `0x5e` -- a byte in the walker's bad-token band -- inside two enclosing tokens: `0x37
+JumpIfNot` (`bytes:2,expr`) and `0x3a StructCmpEq` (`bytes:4,expr,expr`). Group 24 is
+`StructCmpEq`/`StructCmpNe`, and its handler reads that operand **once, as a dword**:
+
+    491eb  mov eax,[esi+0xc]      ; frame->Code
+    491ee  mov ebx,[eax]          ; the operand is one dword ...
+    491f0  add eax,imm            ; ... and Code advances by four
+    491f4  mov [esi+0xc],eax
+    491f7  mov edi,[ebx+0x40]     ; and it is *dereferenced*: a UStruct, not a value
+
+A four-byte value cannot be dereferenced, and the file does not hold one: in `IpDrv.u`'s
+`ClientBeaconReceiver.ReceivedText` those four bytes are `01 36 23 1a` (`0x1a233601`). A two-byte operand in the
+file that is a four-byte slot in memory is this format's **compact index**, widened at load like every other index
+operand (`--script --hex` renders it as four `??`). So group 24 is `index,expr,expr`.
+
+| reading of group 24 | payloads walking (of 11,687 with an epilogue) |
+|---|---:|
+| `bytes:4,expr,expr` (committed until this measurement) | 11,686 |
+| `index,expr,expr` | **11,687** |
+| walking only under the old row | 0 |
+| walking only under the new row | 1 |
+
+The shipped source agrees on the shape: the body is `if( RecentlyUsed[i] == FullMatch[j] )`, a struct comparison,
+so the token carries exactly two nested expressions -- `expr,expr` with no operand refuses at `0x155`, which is what
+rules the no-operand reading out.
+
+**A second field confirms the width.** The dword at `name_end + 12` is the script's size with every index operand
+widened to four bytes (`--sizefield`), so a correct widening rule has to predict it: the residue falls from 6 rows
+(11,680 of 11,686 exact) to **4** (11,683 of 11,687), and the two rows that leave are differences of 5 and 6 bytes
+-- this row's widening -- while the four that remain are dword values of 261,119 and up, i.e. not lengths at all.
+
+With it committed the corpus has **no refusals**: `inventory/opcode_refusals.csv` is a header, 11,687 of 11,687
+scripted payloads walk end to end, and `matching_baseline.csv`'s scripted ceiling is **11,368**. The rival is worth
+naming rather than hiding: on this one token `bytes:2,expr,expr` closes the script as well as `index,expr,expr`, and
+only the handler's dereference and the size-field agreement separate them -- `--context` prints the rival.
+`--context` also reports which enclosing token a re-patterning would close the script with, so the next refusal
+starts from the enclosing chain instead of from the byte where the walk stopped.
+

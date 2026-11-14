@@ -187,7 +187,23 @@ def check():
     rows = read_csv(path)
     bad = selftest()
     if not rows:
-        print("FAIL opcode-refusals: %s is empty" % path)
+        # An empty ledger is the honest result once the corpus walks whole (docs/BYTECODE.md), so it cannot be a
+        # failure by itself -- but an empty file is also what a truncation looks like. Prove it from a second
+        # artifact: `matching_baseline.csv` counts the same refusals over the same payloads.
+        base = os.path.join(ROOT, "inventory", "matching_baseline.csv")
+        refused = None
+        if os.path.exists(base):
+            refused = 0
+            with open(base, encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    r = {(k or "").strip().lower(): v for k, v in r.items()}
+                    if (r.get("package") or "").strip().endswith(".u"):
+                        refused += int(r["refused"])
+        if refused == 0:
+            print("ok   opcode-refusals: no refusals in the corpus, and matching_baseline.csv agrees (0)")
+            return 0
+        print("FAIL opcode-refusals: %s is empty but matching_baseline.csv counts %s refused"
+              % (path, "nothing" if refused is None else refused))
         return 1
     table = {}
     tpath = os.path.join(ROOT, "inventory", "opcode_table.csv")
@@ -347,6 +363,64 @@ def summary(path):
     return 0
 
 
+PATTERNS = ["bytes:0", "bytes:1", "bytes:2", "bytes:3", "bytes:4", "index", "expr",
+            "expr,expr", "index,expr", "bytes:2,expr", "index,expr,expr", "bytes:2,expr,expr",
+            "bytes:4,expr,expr"]
+
+
+def context(path):
+    """Why a refusal refuses: the tokens it was inside, and which re-patterning of them closes the script.
+
+    The stop opcode is almost never the row at fault (docs/BYTECODE.md): a wrong width upstream leaves the walk
+    on a byte that is not an opcode at all. So each enclosing token's row is re-patterned on its own, holding the
+    rest of the table fixed, and a candidate is credited only when the *whole* script then walks. Print-only, and
+    it names the rival when more than one candidate closes the same payload.
+    """
+    dis = _dis()
+    table = dis.Table()
+    seen = 0
+    for package, pkg, e, pay, start, end in scripts(path):
+        data = pay[start:end]
+        try:
+            dis.parse(data, table)
+            continue
+        except dis.Refused as exc:
+            reason = str(exc)
+            refused = exc
+        m = OFFSET.match(reason)
+        rel = int(m.group(1), 16) if m else 0
+        stack = list(getattr(refused, "stack", []))
+        seen += 1
+        print("%s %s.%s: script %d bytes, stops at %#05x (opcode %#04x, %s)"
+              % (package, _owner(pkg, e), pkg.name(e["name"]), len(data), rel,
+                 data[rel] if rel < len(data) else 0, category(reason)))
+        print("  %d enclosing token(s):" % len(stack))
+        for pos, op, name in stack:
+            print("    %#05x %-22s row %-20s" % (pos, name or "?", table.rows[op]["pattern"]))
+        for pos, op, name in reversed(stack):
+            row = table.rows[op]
+            orig = row["pattern"]
+            wins = []
+            for pat in PATTERNS:
+                if pat == orig:
+                    continue
+                row["pattern"] = pat
+                try:
+                    nodes = dis.parse(data, table)
+                    ok = sum(x["end"] - x["offset"] for x in nodes) == len(data)
+                except dis.Refused:
+                    ok = False
+                row["pattern"] = orig
+                if ok:
+                    wins.append(pat)
+            print("    %#05x %-22s row %-20s -> %s%s"
+                  % (pos, name or "?", orig,
+                     ", ".join(wins) if wins else "no single re-patterning closes it",
+                     "  [RIVAL: %d candidates]" % len(wins) if len(wins) > 1 else ""))
+    print("%d refusing payload(s) read" % seen)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("path", nargs="?", help="a package file or a directory of them")
@@ -356,6 +430,8 @@ def main():
                     help="test whether removing the script's last bytes rescues a refusal")
     ap.add_argument("--candidates", action="store_true",
                     help="which single table row would recover the most refusals (one variable at a time)")
+    ap.add_argument("--context", action="store_true",
+                    help="per refusal: the tokens it was inside and the row re-patternings that close the script")
     ap.add_argument("--check", action="store_true", help="dump-free: validate the committed CSV")
     args = ap.parse_args()
     if args.check:
@@ -366,6 +442,8 @@ def main():
         return tail_cut(args.path)
     if args.candidates:
         return candidates(args.path)
+    if args.context:
+        return context(args.path)
     if args.summary:
         return summary(args.path)
     rows, walked = collect(args.path, args.out)

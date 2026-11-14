@@ -74,6 +74,8 @@ class Table:
 
 def parse(data, table):
     """Split data into a token tree. Raises Refused with the offset when the stream does not fit the table."""
+    path = []
+
     def token(pos, depth):
         if depth > 64:
             raise Refused("%#x: nesting deeper than 64" % pos)
@@ -86,6 +88,7 @@ def parse(data, table):
         node = {"offset": pos, "opcode": op, "name": name, "operands": b"", "children": [],
                 "native": None, "end": pos}
         q = pos + 1
+        path.append((pos, op, name))
         items = pattern.split(",") if pattern else []
         for item in items:
             if item == "expr":
@@ -164,14 +167,22 @@ def parse(data, table):
             # The token is `HighNative<n>` and its operand byte is the low half of a native index >= 256, so the
             # image's own record table names the callee (docs/BYTECODE.md).
             node["native"] = table.high_native(op, node["operands"][0])
+        path.pop()
         return node
 
     out = []
     pos = 0
-    while pos < len(data):
-        node = token(pos, 0)
-        out.append(node)
-        pos = node["end"]
+    try:
+        while pos < len(data):
+            node = token(pos, 0)
+            out.append(node)
+            pos = node["end"]
+    except Refused as exc:
+        # A refusal already names the offset; carry the tokens it was inside and the top-level tokens it had
+        # completed, so a reader can ask which row is wrong instead of guessing (`--context`).
+        exc.stack = list(path)
+        exc.parsed = list(out)
+        raise
     return out
 
 
