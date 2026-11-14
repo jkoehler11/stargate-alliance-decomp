@@ -1178,6 +1178,33 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the 1-9 bytes the element grid stops short on are the closing group, and the block start is inside it)
+
+- **The population is the one the last note named.** On the **245** open rows whose element walk ends 1-9 bytes before
+  the located block start, the record's closing group (`UClass::Serialize`'s names array, reference, config name and
+  second names array) parses from the element end on **245 of 245**, and its end lies **2-10 bytes past** the located
+  start -- never at it, never before it. Anchoring the parse to the block start closes on 0 of them, which is the
+  signature of a start placed inside the group rather than of a missing group.
+- **Controls travel with it.** The same unanchored parse runs on the closing population and ends exactly on the located
+  block start on **1,596 of 1,603 (99.6%)**, with the residue distribution the anchored tool already measured (7 on
+  618, 8 on 302, 9 on 302, 6 on 241), so the free parse measures the same object. The parse alone is permissive --
+  3.07 of 12 neighbour offsets also parse on the closing rows, 3.34 on the open ones -- which is why the deciding test
+  is the property stream, not the group.
+- **The property stream names the block.** Scored the way `tools/class-defaults.py` chose the start (a tag stream that
+  runs to the export end and names properties the class declares), the located start is fully declared on **2 of 245
+  (0.8%)** -- its first tag is a package or class name (`Engine`, `Core`, `Lighting`) read as a tag -- while the
+  group's end opens a declared property (`bActive`, `bHideHUD`) and is fully declared on **126 of 207** non-empty
+  streams (60.9%).
+- **What it changes.** `class_defaults_per_class.csv`'s `block_start` is 2-10 bytes inside the group on 243 of the 245,
+  so every count that reads it as the record's boundary inherits that. The next measurement is upstream: reject a
+  candidate start that falls inside a committed closing group and re-run the chooser on the 245. The oracle is also
+  silent on 119 rows where `inventory/class_properties.csv` does not carry every declared name; their geometry is the
+  same.
+- Tool (`tools/class-record-open-tail.py`: `--class`, `--sweep`, `--report`, `--check` with synthetic bodies) +
+  `inventory/class_record_open_tail.csv` (2,204 rows) + `docs/NATIVE_VM.md` (*The 1-9 bytes ... is inside it*) +
+  `docs/UNKNOWNS.md` U18 (twenty-seventh) + `make class-record-open-tail` + `make ci` holding the tool to its
+  `--check` + this note. Reads the packages and three committed tables; no boot, no Ghidra round, no value decoded.
+
 ### Execution notes (2026-11-13, the front is a record field: the shape is at prefix + 42 on the rows whose walk does not close)
 
 - **The population that decides it has no gap-census row.** `tools/class-record-open-front.py` reads the shape
