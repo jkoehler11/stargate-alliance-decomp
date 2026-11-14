@@ -1379,6 +1379,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the object size has one source and three of its columns are copies)
+
+- **The four `object_size` columns are one read.** Joined on the table, the registration census (the site's
+  second-to-last push, the argument position), `inventory/xbe_class_table_names.csv` (its chosen site's last
+  immediate push), `inventory/class_constructors.csv` and `inventory/class_ctor_bases.csv` carry the same
+  value: 468 of 468 tables that have a site, 986 of 986 constructor rows and 504 of 504 base-call rows.
+  468 tables have a site and register **200 distinct sizes, 40 to 348,696 bytes**.
+- **The constructor-side columns are copies, not measurements.** `tools/class-ctors.py` and
+  `tools/class-ctor-base.py` both take `object_size` off the table row (`trow["object_size"]`), so neither can
+  disagree with the naming census whatever the image says.
+- **So the proposed three-way size join cannot be made, and the 40-vs-56 was an attribution artifact.** Each
+  site's push is its own class's size -- the 25 sites sharing the object root's constructor thunk register 25
+  distinct sizes -- and the old 56 on the root was `VertexStreamBase`'s site (`0x001eb186`), which the
+  first-store rule had attached to the root's table.
+- **The record census carries no object size.** `inventory/class_records.csv`'s `record_bytes` is the class
+  *script* record's length: 333 of the 468 sized classes have one, it runs 8 to 13,665 bytes, and it is
+  smaller than the object on 266 of those 333. **24 of the 492 tables have no size at all**, because no
+  registration site resolves to them.
+- **A real second measurement would have to come from outside these artifacts** -- a runtime read of the
+  class's `PropertiesSize`, or a `new` site that pushes it. Until one exists the registration's second
+  argument is the only size datum in the tree, and it is only as good as the site-to-table attribution.
+- Tool (`tools/class-size-sources.py`: the four columns joined per table with a verdict, `-o`/`--write-doc`/
+  `--check-doc`/`--check` over committed CSVs only) + `inventory/class_size_sources.csv` (492 rows) + the
+  section and block on `docs/systems/CLASS_REGISTRATION.md` + `make class-size-sources` + this note. No dump,
+  no boot.
+- **Next measurement:** the 24 tables no registration reaches. They are absent from the site census rather
+  than unread -- 468 of 492 tables are named -- so the read is whether any body the symbol map holds stores
+  one of them (`mov [reg], <table>`) without being reached by a registration thunk, which is the same store
+  sweep `tools/class-ctors.py` runs, filtered to those 24 addresses.
+
 ### Execution notes (2026-11-14, the site census reads the same last store, and 2 of 493 rows move)
 
 - **`inventory/class_registrations.csv` keys each site to its constructor body's last store**, the rule
