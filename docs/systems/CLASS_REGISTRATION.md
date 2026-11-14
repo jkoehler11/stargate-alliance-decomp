@@ -316,6 +316,40 @@ HTTPDownload's body single-stores `0x0052cb00` at `0x002c2684`; no hop is needed
 rows; the 2 that cannot be joined are exactly the two bodies that artifact has no row for, and both were
 read here instead rather than left as holes.
 
+## The object size has one source, and three of the columns are copies of it
+
+`object_size` reads like four measurements -- the registration census, the naming census, the constructor
+census and the base-call census all carry a column of that name -- and the plan proposed joining them as an
+independent check on the registration's second argument. Joined on the table, they are **one read**: the
+site's second-to-last push, the argument position. `inventory/xbe_class_table_names.csv` reaches the same
+value from its chosen site's last immediate push on all 468 tables that have a site, and
+`tools/class-ctors.py` and `tools/class-ctor-base.py` copy the column off the table row
+(`trow["object_size"]`) rather than measuring it, so their 986 and 504 rows agree by construction.
+`inventory/class_records.csv` carries the class **script** record's byte length and no object size at all;
+it is smaller than the object on 266 of the 333 classes that have both.
+
+<!-- generated:class-size-sources -->
+| source | what the value is | rows that carry it | equals the site's push |
+|---|---|---|---|
+| `inventory/class_registrations.csv` | the site's second-to-last push (the argument position) | 468 sites | -- this is the read |
+| `inventory/xbe_class_table_names.csv` | its chosen site's last immediate push | 468 tables | 468 of 468 |
+| `inventory/class_constructors.csv` | copied from the table row | 986 rows | 986 of 986 |
+| `inventory/class_ctor_bases.csv` | copied from the constructor row | 504 rows | 504 of 504 |
+| `inventory/class_records.csv` | the class **script** record's byte length | 333 of 468 classes | not an object size (smaller than it on 266 of 333) |
+
+**The object size has one source, and three of those columns are copies of it.** 468 of the 492 tables have a registration site; their sizes are **200 distinct values, 40 to 348696 bytes**, and the naming census carries the same value on all of them. The 2 constructor-side artifacts copy the column rather than measuring it, so a disagreement between two of the four columns can only come from the site-to-table attribution upstream -- which is what the object root's 40 against the old reader's 56 was.
+
+24 of the 492 tables have **no size at all** -- no registration site resolves to them, so nothing in this tree measures them.
+<!-- /generated:class-size-sources -->
+
+**What a disagreement between two of the columns can mean, then, is an attribution defect upstream, not a
+second measurement.** The object root's 40 against the old reader's 56 was exactly that: the first-store
+rule attached `VertexStreamBase`'s site (`0x001eb186`, which pushes 56) to the root's table. Each site's
+push is its own class's size, which is why the 25 sites sharing the root's constructor thunk register 25
+distinct sizes. A genuinely independent size would have to come from outside these artifacts -- a runtime
+read of the class's `PropertiesSize`, or a `new` site that pushes it -- and nothing in this tree measures
+the value twice.
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
@@ -376,3 +410,11 @@ The registration census is the same shape, and it is the capstone-free half of `
 `--check` is a synthetic image -- a two-store body named by its last store, an `int3`-bounded body that must
 not inherit its neighbour's table, and a guarded stub followed through its `call` -- and `--check-doc`
 rebuilds the block above from the committed artifact; both run in `make ci`.
+
+The size column's provenance has its own instrument, and it reads committed CSVs only -- no dump, no image:
+
+    python3 tools/class-size-sources.py -o inventory
+    python3 tools/class-size-sources.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` joins a synthetic set of the five CSVs (a copied column that agrees, one that disagrees, and a
+table no registration reaches) and writes nothing; `--check-doc` rebuilds its block. Both run in `make ci`.
