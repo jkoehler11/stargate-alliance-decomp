@@ -1224,6 +1224,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   same bytes; re-read the array walk's element widths (`inventory/class_record_element_fields.csv`) over
   `[block_start, array_end]` against the 454 rows that land correctly, and name the field the walk over-consumes.
 
+### Execution notes (2026-11-13, the block side recovers the census head on 1,612 of 1,616, and nothing where the group is absent)
+
+- **The locator the last note named is measured, and it works from the other end only where the closing group is
+  there.** `tools/class-record-array-search.py` accepts a head `p` in `[prefix + 42, prefix + 42 + 40)` when the
+  element walk from `p` is followed by `class-tail-run.parse_group` landing exactly on the block start with in-range
+  names: on the **1,626** rows the gap-front census has a head for, a candidate on **1,616 (99.4%)**, unique on
+  **1,399 (86.0%)**, and the census head among the candidates on **1,612 (99.8%)**, at offsets 19/20/21 -- the front,
+  recovered without the census.
+- **On the 578 rows the census is silent on, the search answers 13 (2.2%), and 0 of the 521 that carry a
+  `class_tail_run.csv` row parse as names-ref-name-list** (984 of 1,618 on the control). So the absence is the group's,
+  not the search's: where no closing group precedes the block start the record's field order does not reach that
+  block. The 13 hits sit at offset 32-34 (a longer front), which the 40-byte window admits.
+- Tool (`tools/class-record-array-search.py`: `--class`, `--sweep`, `--report`, `--check` on a synthetic record, a
+  broken group and out-of-table references) + `inventory/class_record_array_search.csv` (2,204 rows) +
+  `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18 (twenty-second) + `make class-record-array-search` +
+  this note. Reads the packages and two committed tables; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the **565** blind rows whose block no closing group precedes. The anchor has to come
+  from the block's own side: read the tag stream at `block_start` backwards to the first byte, then test each offset
+  in `[prefix + 42, prefix + 42 + 40)` as a compact count whose element walk ends where the tags begin. That needs no
+  group, and the 1,399 unique control rows are the set it must reproduce.
+
 ### Execution notes (2026-11-13, the located array's tail is its head: the record closes on 1,612 of 1,612)
 
 - **The named measurement is answered, and the answer is that no element field over-consumes.** The array is read at

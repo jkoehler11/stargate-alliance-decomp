@@ -3527,3 +3527,21 @@ value: the count the shipped walk reads equals the front's first value on 413 of
 of them, which is why it looked right). **What is still open** is the 592 located rows with no gap-front row, and
 that is a locator question, not a grammar one: the same closure can be tested from the block side by walking back
 through the group to a count. Nothing here needs a boot or a decompile.
+
+
+**2026-11-13 (twenty-second): the head cannot be located from the block side where the closing group is absent, and
+that is exactly the 578 rows the census is silent on.** The twenty-first entry named the test: try each start in
+`[prefix + 42, prefix + 42 + 40)`, walk the element grid, and accept the head whose walk `class-tail-run`'s closing
+group lands on the block start from (`tools/class-record-array-search.py`, `make class-record-array-search`,
+`inventory/class_record_array_search.csv`). On the **1,626** control rows the census supplies, there is a candidate on
+1,616 (99.4%), it is unique on 1,399 (86.0%), and **the census head is among the candidates on 1,612 of 1,616
+(99.8%)** -- so the block side reproduces the measured position from a different direction, at offsets 19 (730), 20
+(519) and 21 (233). On the **578** rows without a census head there is a candidate on **13 (2.2%)**. **The reason is
+the anchor, not the search:** 521 of those 578 carry a `class_tail_run.csv` row and none of the 521 parses as
+names-ref-name-list (984 of 1,618 on the control population), so no closing group precedes the block start there and
+the record's field order does not reach that block at all. The 13 that do resolve sit at offset 32-34, a longer front
+(`SquadAIBasic` 471 elements, `CTFFlag` 80, `GameObject` 59). **What is still open** is the other half of the same
+question: the 565 blind rows need an anchor that is not the group -- the class's own element count from the property
+inventory, or the block's tag stream read backwards to the last element -- and the 217 ambiguous control rows need the
+grid test that separates two candidates (the earliest wins here by rule, not by measurement). Nothing here needs a
+boot or a decompile.
