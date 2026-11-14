@@ -2949,10 +2949,11 @@ both starts against the payload's committed groups, and reads the 58 rows the la
   payload's last byte once the guard refused something; the code builds that list as `kept` -- which only labels the
   `origins` map -- and returns a filter over the *unfiltered* `cands`. Measured: **1,972** classes had a candidate
   refused, **16** of them publish a start with a nonzero trailer, **93 of the 2,197** chosen starts leave bytes behind
-  overall, and **13 of the 22** moved starts do (trailers 12 to 61). So the rule as shipped is "refuse a covered start
-  and offer the group's end", without the floor its comment describes.
+  overall, and **13 of the 22** moved starts do (trailers 12 to 61). The rule as merged was therefore "refuse a
+  covered start and offer the group's end"; the next section puts the floor in force.
 
-`make class-defaults-moved` writes `inventory/class_defaults_moved.csv` (58 rows: `kind` -- `start-moved`,
+`make class-defaults-moved` writes `inventory/class_defaults_moved.csv` (58 rows before the floor below, 61
+rows after: `kind` -- `start-moved`,
 `block-lost`, `block-gained` -- both block counts, `known_before`/`known_after`, both fractions, both starts,
 `before_where`/`after_where` (`inside-group`, `on-group-end`, `in-group-tail`, `past-group-tail`,
 `before-first-group`, `no-group`, `no-block`), `before_covered`, `group_end`, `gap`, `to_end`, `trailer_before`/
@@ -2961,4 +2962,36 @@ decoded.
 
 **What is still open.** Whether the 212 zero-fraction rows keep `defaults = 1`: the geometry here says the start is a
 name-table entry in three cases in four, and the floor that would settle it is the trailer-0 witness the chooser
-computes and drops -- applying it touches **16 of the 1,972** refused rows and is the change this leaves.
+computes and drops -- applying it touches **16 of the 1,972** refused rows, which the next section does.
+
+### The witness floor the chooser computed is in force: 16 starts fall, every one of them naming nothing
+
+`guarded()`'s trailer-0 floor -- "once the guard refused something, a candidate must run to the payload's last byte" --
+is now applied to the list the function returns. It had been built as `kept` and dropped: the return re-filtered the
+*unfiltered* `cands`, so the floor bound only the `origins` labels, and the previous section measured the exposure at
+**16 of the 1,972** refused classes.
+
+- **What it withdraws.** Exactly those 16. Chosen starts go **2,197 -> 2,181**, classes with no block **122 -> 138**,
+  and published blocks that name no declared property at all **212 -> 196**. The head-line does not move: **1,663 fully
+  declared of 2,319 (71.7%)**, because all 16 were fraction-0 parses -- one more measurement of the same shape the last
+  section described (a parse that tiles a payload from a name index, not a block).
+- **The misses table moves 16 rows, not one verdict.** 656 splits into **288** `single-declared` (unchanged), **200**
+  `incomplete` (216), **135** `empty-block` (120), 30 `type-contradiction`, 2 `single-property` and 1
+  `trailer-over-64`: the 16 leave `incomplete` for the no-block reasons.
+- **The unchanged-fraction population grows 58 -> 61** (`inventory/class_defaults_moved.csv`, regenerated): block
+  losses **36 -> 52** and start moves **22 -> 9**. The nine that survive are the ones whose new candidate really ends on
+  the payload -- **5** in the 12-byte window past a group's end, **3** exactly on one, **1** in front of the first
+  group -- so the floor removes only starts with no end witness, and none of the 61's new starts leaves a byte behind.
+  The corpus keeps **77 of 2,181** chosen starts with a nonzero trailer, all on classes the guard did not refuse: the
+  floor is conditional by design, as its comment says.
+- **Downstream, in the same change.** `class_defaults_coverage.csv` (291 ambiguous, was 354),
+  `class_defaults_misses.csv`, `compile_readiness.csv`/`_by_package.csv` with `docs/COMPILE.md` -- 1,823 ready for the
+  compile loop with `no-defaults-block` 91 -> 105 and `defaults-ambiguous` 405 -> 391 -- `docs/CLASS_DEFAULTS.md`'s
+  totals line, and `docs/STATUS.md` with the README badges.
+
+`make defaults-per-class` and `make defaults-misses` regenerate the two artifacts; the rule is `guarded()` and the
+exposure is `python3 tools/class-defaults-moved.py --report`. No boot, no Ghidra round, no property value decoded.
+
+**What is still open.** The **196** zero-fraction blocks. The moves here say the start is a name-table entry in three
+cases in four, and no byte test settles those: what would is a reader -- a walk of the tag grammar past the group over
+those payloads, or one stock `ucc` build of a class whose block is a single declared tag.

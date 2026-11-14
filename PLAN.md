@@ -1178,6 +1178,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the chooser's trailer floor is in force: 16 starts fall and none of them named a property)
+
+- **The change the last note named.** `tools/class-defaults.py`'s `guarded()` built its "a candidate must run to the
+  payload's last byte once the guard refused something" floor into `kept` and then returned a fresh cover filter over
+  the *unfiltered* `cands`, so the floor bound only the `origins` labels. It is now applied to the returned list.
+- **It withdraws exactly the 16 the last note counted.** Chosen starts **2,197 -> 2,181**, classes with no block
+  **122 -> 138**, published blocks naming no declared property **212 -> 196**, and the head-line unchanged at **1,663
+  fully declared of 2,319 (71.7%)** -- every one of the 16 was a fraction-0 parse, so no verdict moved. The misses
+  table splits 656 into 288 `single-declared` (unchanged), **200** `incomplete` (216), **135** `empty-block` (120), 30
+  `type-contradiction`, 2 `single-property`, 1 `trailer-over-64`.
+- **The unchanged-fraction rows grow 58 -> 61**: block losses 36 -> **52**, start moves 22 -> **9**, and the nine that
+  survive are the ones whose candidate really ends on the payload (5 in the 12-byte window past a group's end, 3 on the
+  end, 1 in front of the first group). None of the 61's new starts leaves a byte behind; **77 of 2,181** chosen starts
+  still carry a nonzero trailer, all on classes the guard did not refuse -- the floor is conditional by design.
+- **Downstream in the same change.** `class_defaults_coverage.csv` (291 ambiguous, was 354), `class_defaults_misses.csv`,
+  `compile_readiness.csv`/`_by_package.csv` with `docs/COMPILE.md` (1,823 ready; `no-defaults-block` 91 -> 105,
+  `defaults-ambiguous` 405 -> 391), `docs/CLASS_DEFAULTS.md`'s totals line, and `docs/STATUS.md` with the README badges.
+- Tool (`tools/class-defaults.py`'s `guarded()` and its comment) + the five regenerated artifacts +
+  `inventory/class_defaults_moved.csv` re-swept (61 rows) + `docs/NATIVE_VM.md` (new section) + `docs/UNKNOWNS.md` U18
+  (thirty-fourth) + this note. Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the **196** zero-fraction blocks. Run the tag-stream walk `class-group-after-scan.py`
+  does for 13 rows over those 196 payloads and report where the grammar stops, before `defaults = 1` is withheld from
+  them -- a byte test cannot settle them, the names already say they are not blocks.
+
 ### Execution notes (2026-11-13, the 58 unchanged-fraction moves are the group's own bytes, and 14 replacements sit in front of the group)
 
 - **The measurement the last note named is answered.** `tools/class-defaults-moved.py` recomputes the pre-rule choice

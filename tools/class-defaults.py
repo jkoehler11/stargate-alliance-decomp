@@ -329,13 +329,13 @@ def guarded(cands, data, pkg, decl, kinds, nimports):
     nnames = len(pkg.names or [])
     intervals = group_intervals(data, nnames, nimports)
     kept = [c for c in cands if covered(intervals, c[1]) is None]
-    if len(kept) != len(cands):
-        # The guard refused something: what remains has to be the block's own witness, so a candidate must run to
-        # the payload's last byte (`trailer == 0`). A start that leaves bytes behind only won before because it
-        # carried more declared names than the alternative; once the guard removes the alternative, keeping a
-        # start with no end witness would be inventing a worse one (measured: 58 rows move at an unchanged
-        # declared fraction, one loses its block).
-        kept = [c for c in kept if c[3] == 0]
+    # The guard refused something: what remains has to be the block's own witness, so a candidate must run to the
+    # payload's last byte (`trailer == 0`). A start that leaves bytes behind only won before because it carried more
+    # declared names than the alternative; once the guard removes the alternative, keeping a start with no end witness
+    # would be inventing a worse one. The floor is applied to the list this function returns, at the bottom -- filtering
+    # `kept` here left it computed and dropped, and `tools/class-defaults-moved.py` measured 16 of the 1,972 refused
+    # classes publishing a start with a nonzero trailer because of it.
+    refused = len(kept) != len(cands)
     origins = {c[1]: "candidate" for c in kept}
     for _q, end in intervals:
         if not (0 < end < len(data)) or end in origins:
@@ -373,7 +373,10 @@ def guarded(cands, data, pkg, decl, kinds, nimports):
             if all(p["name"] in decl for p in tape):
                 cands.append((len(tape), off, [p["name"] for p in tape], 0, 0))
                 origins[off] = "group-tail"
-    return [c for c in cands if covered(intervals, c[1]) is None], origins
+    out = [c for c in cands if covered(intervals, c[1]) is None]
+    if refused:
+        out = [c for c in out if c[3] == 0]
+    return out, origins
 
 
 def check_misses(outdir):

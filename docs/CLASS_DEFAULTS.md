@@ -66,9 +66,10 @@ contradicting their own property record — see "The locator scores names first 
 
 Since that measurement the chooser has taken the record's closing group as a rule
 (`docs/NATIVE_VM.md`, *The chooser takes the group's end*): 373 starts move onto the record's own boundary and the
-totals are now **1,663 fully declared, 656 not (288 `single-declared`, 216 `incomplete`, 120 `empty-block`, 30
-`type-contradiction`, 2 `single-property`) and 122 with no usable block**. The reason table below was measured before
-that change; only the totals above are current.
+totals are now **1,663 fully declared, 656 not (288 `single-declared`, 200 `incomplete`, 135 `empty-block`, 30
+`type-contradiction`, 2 `single-property`, 1 `trailer-over-64`) and 138 with no usable block** -- the last move is the
+witness floor `docs/NATIVE_VM.md`, *The witness floor the chooser computed is in force*, which withdrew 16 starts that
+left bytes behind. The reason table below was measured before both changes; only the totals above are current.
 
 Where it still fails:
 

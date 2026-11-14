@@ -3736,3 +3736,13 @@ and **3** exactly on one. The "past the payload's last byte" option the previous
 declared property, so `defaults = 1` on them is not evidence of a block. **What is still open.** Whether those 212 keep
 `defaults = 1`; the settling floor is the trailer-0 witness `guarded()` computes into `kept` and then discards -- **16
 of the 1,972** refused rows publish a nonzero-trailer start because of it.
+
+**Answered 2026-11-13 (thirty-fourth): the chooser's trailer floor is in force, and it withdraws 16 starts that named
+nothing.** `guarded()` now applies its "a candidate must run to the payload's last byte once the guard refused
+something" floor to the list it returns; it had been built as `kept` and dropped, with the return re-filtering the
+unfiltered `cands`. Chosen starts **2,197 -> 2,181**, classes with no block **122 -> 138**, published blocks naming no
+declared property **212 -> 196**, fully declared unchanged at **1,663** (all 16 were fraction-0 parses); coverage
+ambiguous 354 -> **291**, compile readiness 1,823 with `no-defaults-block` 91 -> **105**. The unchanged-fraction
+population grows 58 -> **61** (block losses 36 -> 52, start moves 22 -> 9) and none of the 61's new starts leaves a byte
+behind. **What is still open.** The **196** zero-fraction blocks: no byte test settles them, it needs a tag-grammar walk
+past the group over those payloads or one stock `ucc` build of a class whose block is a single declared tag.
