@@ -283,12 +283,18 @@ def render(out, total=None):
     if join:
         sites, agree, differ, unresolved = join
         lines.append("")
-        lines.append("**The registration side agrees, and its exceptions are the two texture classes.** %d of the "
-                     "%d sites record the last store of the body their thunk resolves to; %d resolve to a body "
-                     "the census has no constructor row for%s."
-                     % (agree, sites, len(unresolved),
-                        (" (" + ", ".join("`%s`" % s["class_literal"] for s in unresolved) + ")")
-                        if unresolved else ""))
+        tail = ((" (" + ", ".join("`%s`" % s["class_literal"] for s in unresolved) + ")")
+                if unresolved else "")
+        if differ:
+            lines.append("**%d of the %d sites record a table the store order moves.** %d agree with the body's "
+                         "last store, %d cannot be joined because the census has no constructor row for the body "
+                         "their thunk resolves to%s, and the rows below are the disagreement."
+                         % (len(differ), sites, agree, len(unresolved), tail))
+        else:
+            lines.append("**The registration side agrees on every site it can join.** %d of the %d sites record "
+                         "the last store of the body their thunk resolves to; %d cannot be joined because the "
+                         "census has no constructor row for the body their thunk resolves to%s."
+                         % (agree, sites, len(unresolved), tail))
         if differ:
             lines.append("")
             lines.append("| site | class the site names | table it records | body | table the body builds |")

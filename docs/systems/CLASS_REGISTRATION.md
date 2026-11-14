@@ -124,12 +124,7 @@ below).
 | 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | - | FractalTexture |
 | 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | IceTexture | FractalTexture |
 
-**The registration side agrees, and its exceptions are the two texture classes.** 489 of the 493 sites record the last store of the body their thunk resolves to; 2 resolve to a body the census has no constructor row for (`TextBuffer`, `HTTPDownload`).
-
-| site | class the site names | table it records | body | table the body builds |
-|---|---|---|---|---|
-| 0x002e8468 | FireTexture | 0x004cfc88 | 0x002e81f0 | 0x004cfd78 |
-| 0x002e8768 | IceTexture | 0x004cfc88 | 0x002e8370 | 0x004d0228 |
+**The registration side agrees on every site it can join.** 491 of the 493 sites record the last store of the body their thunk resolves to; 2 cannot be joined because the census has no constructor row for the body their thunk resolves to (`TextBuffer`, `HTTPDownload`).
 <!-- /generated:class-ctor-base -->
 
 ## A constructor body installs two tables, and `0x004cfc88` is neither texture class's own
@@ -154,13 +149,16 @@ body inherits that store through the inlined base constructor and then writes it
 WetTexture's constructors, and WaterTexture is the only direct subclass of `FractalTexture` left once
 `FireTexture` and `IceTexture` are placed.
 
-**489 of the 493 registration sites record the last store of the body their thunk resolves to**, so the
-registration and the store rule agree wherever a class has a table of its own (PackageMapLevel's site
-records `0x004fb9b8`, its constructor's last store). The 4 that do not split: 2 sites resolve to a body the
-constructor census has no row for (`TextBuffer`, `HTTPDownload`), and 2 record a table their own constructor
-does not build -- `FireTexture` at `0x002e8468` and `IceTexture` at `0x002e8768`, both recording
-`0x004cfc88`. The tables those two classes do build (`0x004cfd78`, `0x004d0228`) are named by no
-registration at all, which is why naming them had to be a derivation.
+**489 of the 493 registration sites recorded the last store of the body their thunk resolves to** when
+this artifact was measured, so the registration and the store rule agree wherever a class has a table of its
+own (PackageMapLevel's site records `0x004fb9b8`, its constructor's last store). The 4 that did not split:
+2 sites resolve to a body the constructor census has no row for (`TextBuffer`, `HTTPDownload`), and 2
+recorded a table their own constructor does not build -- `FireTexture` at `0x002e8468` and `IceTexture` at
+`0x002e8768`, both recording the base's `0x004cfc88` because the site census still read each body's *first*
+store. `tools/class-registrations.py` reads the last store now (the section below), so those two sites
+record `0x004cfd78` and `0x004d0228`, and every site whose body this artifact has a row for joins it --
+**491 of 493**, since the 2 that do not are the bodies it has no row for. The earlier claim that the two
+tables were named by no registration at all was that reader's defect, not the image's.
 
 ## Which registration names a table, and the 25 names of the object root
 
@@ -175,17 +173,16 @@ its own is registered with that shared default, so its registration names the *r
 own. The 25 literals are `Object`, `Field`, `Property`, `Struct`'s siblings and the like -- `Factory`,
 `Exporter`, `Engine`, `Player`, `NetDriver`, `Material`, `RenderDevice`, ... -- and the per-table artifact
 showed whichever site happened to be written last, `VertexStreamBase` at `0x001eb186` -- a literal no
-package in the dump declares, chosen because its site sorts after `0x00064af6`. Two more tables carry the
-same shape (`0x004cfba0`: `Texture`, `FractalTexture`, `WaterTexture`; `0x004cfc88`: `FireTexture`,
-`IceTexture`), so **30 of 493 registrations sit on a table more than one site resolves to** and cannot name
-the table they are attached to.
+package in the dump declares, chosen because its site sorts after `0x00064af6`. One other table carries
+the same shape (`0x004cfba0`: `Texture`, `FractalTexture`, `WaterTexture`), so **28 of 493 registrations sit
+on a table more than one site resolves to** and cannot name the table they are attached to. The two texture
+sites that used to join them name their own tables now, which is the second reading described below.
 
 <!-- generated:class-registrations -->
 | table | committed name | sites | class literals the registrations push |
 |---|---|---|---|
 | 0x004dd2a8 | Object | 25 | Exporter (`0x000349e6`), Factory (`0x00036066`), Field (`0x0003b276`), Object (`0x00064af6`), Subsystem (`0x00066b16`), Language (`0x00066d96`), Property (`0x000778d9`), VoiceSubsystem (`0x000e2426`), Viewport (`0x000f92c9`), CameraEffect (`0x000fbd46`), Client (`0x000fd969`), Channel (`0x001083c6`), NetConnection (`0x0010d6a9`), Download (`0x0011e9d9`), RenderDevice (`0x0011f9f9`), Engine (`0x00121989`), LevelBase (`0x0015c989`), Material (`0x00169ad6`), BitmapMaterial (`0x00169ca6`), RenderedMaterial (`0x00169d66`), NetDriver (`0x00183599`), PendingLevel (`0x001a51d9`), Player (`0x001bddc6`), RenderResource (`0x001eafb6`), VertexStreamBase (`0x001eb186`) |
 | 0x004cfba0 | Texture | 3 | Texture (`0x0027e889`), FractalTexture (`0x002e1489`), WaterTexture (`0x002e17d9`) |
-| 0x004cfc88 | FractalTexture | 2 | FireTexture (`0x002e8468`), IceTexture (`0x002e8768`) |
 
 | class literal | size | site | table |
 |---|---|---|---|
@@ -212,17 +209,17 @@ the table they are attached to.
 | Texture | 204 | 0x0027e889 | 0x004cfba0 |
 | FractalTexture | 228 | 0x002e1489 | 0x004cfba0 |
 | Engine | 284 | 0x00121989 | 0x004dd2a8 |
-| IceTexture | 296 | 0x002e8768 | 0x004cfc88 |
 | Viewport | 456 | 0x000f92c9 | 0x004dd2a8 |
 | Download | 1112 | 0x0011e9d9 | 0x004dd2a8 |
-| FireTexture | 1304 | 0x002e8468 | 0x004cfc88 |
 | NetDriver | 4524 | 0x00183599 | 0x004dd2a8 |
 | WaterTexture | 4868 | 0x002e17d9 | 0x004cfba0 |
 | NetConnection | 20368 | 0x0010d6a9 | 0x004dd2a8 |
 
-The 30 sites that share a constructor thunk still register **24 distinct sizes**, 40 to 20368 bytes: the thunk cannot name the class, but the second argument separates them.
+The 28 sites that share a constructor thunk still register **22 distinct sizes**, 40 to 20368 bytes: the thunk cannot name the class, but the second argument separates them.
 
-493 registration sites: 493 resolve to a class table, 30 sit on a table that more than one site resolves to, and 0 resolve to no table at all. 30 sites therefore do not name the table they are attached to.
+Every site is keyed to the table its constructor body stores **last**: symbol-bounded 491, padding-bounded 2. 1 site(s) follow a guarded stub's `call` one hop (0x00075820 -> 0x000669e0).
+
+493 registration sites: 493 resolve to a class table, 28 sit on a table that more than one site resolves to, and 0 resolve to no table at all. 28 sites therefore do not name the table they are attached to.
 <!-- /generated:class-registrations -->
 
 ## The table name is a hierarchy join, and the site census says when it cannot be one
@@ -290,6 +287,35 @@ from the window's `0x0007588d` store to the real one at `0x00066a14`.
 492 tables: 468 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names), 0 unresolved, 24 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
 <!-- /generated:class-table-names -->
 
+## The site census reads the body's last store, and 2 of 493 rows move
+
+`tools/class-registrations.py` keys each site to the table its constructor body stores **last** -- the rule
+`tools/class-table-names.py` names tables with -- so this page no longer carries two readings of the same
+bytes. Each row gained `installed_at` (the store's own address), `stores` (how many class tables the body
+stores), `bound` (`symbol`, `padding` or `window`) and `stub_va` (the `call` a guarded stub forwarded
+through), so the store a row was read from is on the row.
+
+**2 of the 493 rows move, and they are the texture pair.** FireTexture's site `0x002e8468` records
+`0x004cfd78` and IceTexture's `0x002e8768` records `0x004d0228`, each read from a body that stores two
+tables (`0x002e81f0` at `0x002e8220`, `0x002e8370` at `0x002e83be`); read at the first store both recorded
+the base's `0x004cfc88`. No other row moves: the `object_size` column is unchanged on all 493, because it
+is the site's own second-to-last push and not the store read. Tables with more than one site fall from
+**3 to 2** and the sites on them from **30 to 28**, which is the count
+`inventory/xbe_class_table_names.csv` has carried since #533; the distinct sizes those sites register fall
+from 24 to 22 for the same reason.
+
+**The read is bounded by the body, and 2 rows are the bound.** 491 of the 493 reads stop at the size
+`symbols/xbox_functions.csv` gives the body and 2 at the body's own `int3` padding -- `TextBuffer`'s
+`0x00075820` and `HTTPDownload`'s `0x002c2650`, the same two bodies the constructor census has no row for.
+TextBuffer's is a guarded stub that installs nothing and forwards with `call`, and the census follows it one
+hop: `0x00075820` -> `0x000669e0`, which stores `0x004ddf78` at `0x00066a14` (the row's `stub_va`).
+HTTPDownload's body single-stores `0x0052cb00` at `0x002c2684`; no hop is needed there.
+
+**The join to the constructor census closes.** Per site, `installed_at`, `stores` and `table_va` equal
+`inventory/class_ctor_bases.csv`'s `function_va + store_off`, `stores` and `own_table` on **491 of 493**
+rows; the 2 that cannot be joined are exactly the two bodies that artifact has no row for, and both were
+read here instead rather than left as holes.
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
@@ -304,11 +330,9 @@ from the window's `0x0007588d` store to the real one at `0x00066a14`.
   reason, and the resident `GNatives` table (`docs/NATIVE_VM.md`) is a table of addresses, which the
   dword scan does read.
 
-- **It does not regenerate the site census behind the same rule.** `tools/class-registrations.py` still
-  keys each of the 493 sites to the first store it reads, so its block above puts FireTexture's and
-  IceTexture's sites on `0x004cfc88` and counts 30 sites on shared tables, where the naming census now
-  reads 2. Reading the last store there is the next measurement; until then this page carries both reads,
-  and the naming block is the one that measures the store order.
+- **It does not produce the site census.** `tools/class-registrations.py` reads the same last store
+  (`make class-registrations`), and the two artifacts agree on all 493 rows, but each tool owns its own
+  block on this page and `make ci` holds it to its own artifact.
 - **It does not say why two classes name an ancestor's constructor.** FractalTexture's and WaterTexture's
   sites resolve through one shared thunk to Texture's constructor, while the image holds a separate body
   for each (`0x002e81b0`, `0x002e8260`); the registration's fourth argument may be the constructor of the
@@ -348,3 +372,7 @@ The registration census is the same shape, and it is the capstone-free half of `
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-registrations.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
     python3 tools/class-registrations.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a two-store body named by its last store, an `int3`-bounded body that must
+not inherit its neighbour's table, and a guarded stub followed through its `call` -- and `--check-doc`
+rebuilds the block above from the committed artifact; both run in `make ci`.
