@@ -1224,6 +1224,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   same bytes; re-read the array walk's element widths (`inventory/class_record_element_fields.csv`) over
   `[block_start, array_end]` against the 454 rows that land correctly, and name the field the walk over-consumes.
 
+### Execution notes (2026-11-13, the located array's tail is its head: the record closes on 1,612 of 1,612)
+
+- **The named measurement is answered, and the answer is that no element field over-consumes.** The array is read at
+  `prefix + 42 + gap_len` (the gap-front census's position) and the closing group is parsed from the array's own end
+  (`class-tail-run.parse_group`, imported): the count equals the census's `arr_count` on **1,612 of 1,612** located
+  rows that carry a head, the block start is past the array's end on **1,612** (never inside or on an element), and
+  end plus names-ref-name-list lands exactly on the block start on **1,612**, every name index in range on 1,612.
+  Residue is the group's own 6-9 bytes (median 7; 7 on 619, 8 on 302, 9 on 301, 6 on 244), the reference is negative
+  on 1,604, and the version-gated list is empty on 1,286.
+- **The 95 overshoot rows are not a class of row.** 89 carry a head; at it all 89 close with residues 6-11, the corpus
+  distribution. What they shared was the shipped walk's head: at `prefix + 42` the block start falls inside an element
+  on 74 of 97 (dword2 on 66, offsets 0-3 within it; dword1 on 8) and on a boundary on 19 -- no field repeats, which is
+  a shifted grid, not a field. The count read there equals the front's first value on **413 of 413** rows and the real
+  count on 256, which is the coincidence that kept the wrong position plausible.
+- Tool (`tools/class-record-array-head.py`: `--class`, `--sweep`, `--report`, `--check` on a synthetic record plus
+  three refusals) + `inventory/class_record_array_head.csv` (2,204 rows) + `docs/NATIVE_VM.md` (new section) +
+  `docs/UNKNOWNS.md` U18 (twenty-first) + `make class-record-array-head` + this note. Reads the packages and two
+  committed tables; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the **592** located rows with no gap-front row. The closure now has a test that reads
+  from the block side: try each start in `[block_start - 12, block_start)` as the closing group's first byte,
+  parse the group forward, and walk the element grid back to a compact count whose value equals the number of elements
+  walked. That locates the head without the census, and the 1,612 rows are the
+  control it must reproduce.
+
 ### Execution notes (2026-11-13, the same parse over 2,204 located starts makes the close a non-refutation)
 
 - **The defaults stream closes on 2,113 of 2,204 located block starts (95.9%).** `--corpus` reads every row of

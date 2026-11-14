@@ -2365,3 +2365,44 @@ So the trailer is not a misplaced boundary: those 41-59 bytes are a region the c
 block, and the block start stands on all three rows. What the region *is* is the writer's question, and
 `Core/0003a800_Core_UnClass.c` in `$WORK/module-export` is on disk -- the listing between the defaults call and the
 function's return is a grep, not a Ghidra round.
+
+
+### The array's tail was its head: at the writer's head the record closes on the block start on 1,612 of 1,612
+
+`inventory/class_record_array.csv` starts its walk at `prefix_end + 42`, and the two numbers that reading left on the
+books were a median **27**-byte residue to the block start and **95** rows ending *past* it. Both are one thing:
+`prefix + 42` holds the front's first value, not the array's count. `tools/class-record-array-head.py`
+(`make class-record-array-head`, `inventory/class_record_array_head.csv`) reads the array where the gap-front census
+put the count -- `prefix + 42 + gap_len` -- and closes the record with the four fields `UClass::Serialize` writes
+after it, using `class-tail-run.parse_group` rather than a second guess at the grammar:
+
+| measure | rows |
+|---|---:|
+| located rows | 2,204 |
+| ... carrying a gap-front row, i.e. a head | 1,612 |
+| the count at that head equals the census's `arr_count` | **1,612** |
+| the block start past the array's end (never inside or on an element) | **1,612** |
+| the array's end plus names-ref-name-list lands exactly on the block start | **1,612** |
+| ... and every name index in the group is inside the package's name table | **1,612** |
+
+The residue the head leaves is the closing group's own length: median **7** bytes, `7` on 619, `8` on 302, `9` on 301,
+`6` on 244 -- 1,466 of 1,612 inside 6-9, the run the unit table measured. Its fields read like the writer's: the
+reference is negative on **1,604** of 1,612, the names array holds 2-5 indices, and the version-gated list is empty on
+1,286. So the record's field order closes to the byte from the head onward, and no residue is left behind the array.
+
+**The 95 overshoot rows are not a class of row.** 89 of them carry a head, and at it all 89 close on the block start
+with a residue of 6-11 (mode 9 on 36, 6 on 34) -- the corpus distribution, not a tail. What the shipped walk reports
+past the block start is its own misalignment: on the overshoot rows the block start falls inside an element on 74
+(dword2 on 66, at offsets 0-3 within the dword; dword1 on 8) and on an element boundary on 19. No element field
+repeats at that boundary, which is what a whole-grid shift looks like and what a field over-consumption never does.
+
+**The count the shipped walk reads is the front's first value on 413 of 413 rows** where both exist, and it happens to
+*equal* the array's real count on 256 of them -- the coincidence that made the reading look right: both are small
+integers and the front's first value is often the same one. A count that is right on 62% of the rows and a position
+that is 19-21 bytes early explains the residue (front plus group) and the overshoots (the shifted grid) at once.
+
+**The element is unchanged, and it is measured here rather than assumed.** The reference is wider than one byte on
+1,502 rows (4,445 references), the first element is 10 bytes on 233 rows and 9 on 1,379, and the walk over the
+elements never crosses the block start on any of the 1,612 -- the two raw dwords are there on every element of every
+row. 592 located rows carry no gap-front row (the writer order that census needs does not close on them), so this
+says nothing about them; the join it does make is exact, 1,612 of 1,612 on both the count and the close.

@@ -3509,3 +3509,21 @@ start is not misplaced on any of the three and the trailer is a region serialise
 would settle what the region is** is the writer's own body -- `Core/0003a800_Core_UnClass.c` in
 `$WORK/module-export`, read between the defaults call and the function's return for the next archive write -- or a
 second class whose trailer is byte-identical (a shared constant field). Nothing here needs a boot or a decompile.
+
+
+**2026-11-13 (twenty-first): the located array's tail is its head, and at the writer's head the record closes on the
+block start on 1,612 of 1,612 rows.** The seventeenth to nineteenth entries left one question: what the 95 overshoot
+rows share, since the block start and the payload are consistent on all of them. The answer is the walk's head.
+`tools/class-record-array-head.py` (`make class-record-array-head`, `inventory/class_record_array_head.csv`) reads
+the array at `prefix + 42 + gap_len` -- the position the gap-front census measured the count at -- and then parses
+`UClass::Serialize`'s closing group from the array's own end. On the **1,612** located rows that carry a gap-front
+row: the count equals that census's `arr_count` on **1,612**, the block start is past the array's end on **1,612**
+(never inside or on an element), and the array's end plus names-ref-name-list lands exactly on the block start on
+**1,612**, with every name index in range on 1,612. The residue is the group's own 6-9 bytes (median 7), and the
+reference is negative on 1,604 of them. The 95 overshoot rows are inside that: 89 carry a head and all 89 close. **The
+field the walk over-consumed is therefore not a field of an element** -- it is the 19-21 bytes in front of the
+count: the compact front and the sixteen zero dwords, read as a count plus elements. The control that says so is the
+value: the count the shipped walk reads equals the front's first value on 413 of 413 rows (and the real count on 256
+of them, which is why it looked right). **What is still open** is the 592 located rows with no gap-front row, and
+that is a locator question, not a grammar one: the same closure can be tested from the block side by walking back
+through the group to a count. Nothing here needs a boot or a decompile.
