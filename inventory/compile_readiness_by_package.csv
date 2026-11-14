@@ -2,13 +2,13 @@ package,classes,ready,no_source,no_defaults_block,defaults_ambiguous,super_not_i
 AmbientCreatures,18,17,0,1,0,0
 Core,7,3,0,4,0,0
 Editor,16,14,0,2,0,0
-Engine,367,213,0,85,69,0
+Engine,367,214,0,84,69,0
 Fire,7,0,0,7,0,0
 GUI,148,135,0,5,8,0
 GamePlay,262,201,0,22,39,0
 IpDrv,14,6,0,3,5,0
 Sharpeffects,158,156,0,2,0,0
-StargateContent,567,527,0,10,30,0
+StargateContent,567,527,0,12,28,0
 StargateGame,306,228,0,43,35,0
 StargateMenus,98,68,0,3,27,0
 StargateVehicles,142,129,0,5,8,0

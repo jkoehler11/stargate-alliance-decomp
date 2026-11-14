@@ -295,7 +295,20 @@ def committed_group(g, nimports):
     return g["ref"] < 0 and -g["ref"] <= nimports
 
 
-def group_intervals(data, nnames, nimports):
+def outermost(found):
+    """Drop a group parse that begins inside another: its four fields are the enclosing group's bytes.
+
+    Both parses cannot be the writer's, and the one that starts inside a field is the reading that invented
+    itself -- `Engine.PSBumpBSP` is what it costs. Its record's tail run is `89..100` (`class_tail_run.csv`: names
+    {1,2}, ref -3, cfg `System`, list {7,66,66}, ending exactly on the shipped start), and a second parse beginning
+    at 99 read nine of those same bytes plus the block's own as names/ref/cfg/list, covering the start at 100 and
+    making the guard refuse a block its own record's tail had just ended on. Keeping the outermost parse leaves the
+    run and drops both the one-byte-offset twin and the nested one.
+    """
+    return [(q, e) for q, e in found if not any(q0 < q < e0 for q0, e0 in found)]
+
+
+def group_parses(data, nnames, nimports):
     """Every offset where the writer's four-field group parses with a committed reference, as `(start, end)`."""
     otail = _load_otail()
     out = []
@@ -304,6 +317,11 @@ def group_intervals(data, nnames, nimports):
         if g is not None and committed_group(g, nimports):
             out.append((q, q + g["len"]))
     return out
+
+
+def group_intervals(data, nnames, nimports):
+    """The writer's groups: `group_parses`, minus the parses that begin inside another one."""
+    return outermost(group_parses(data, nnames, nimports))
 
 
 def covered(intervals, start):
@@ -327,7 +345,8 @@ def guarded(cands, data, pkg, decl, kinds, nimports):
     """
     mod = load_prop_stream()
     nnames = len(pkg.names or [])
-    intervals = group_intervals(data, nnames, nimports)
+    parses = group_parses(data, nnames, nimports)
+    intervals = outermost(parses)
     kept = [c for c in cands if covered(intervals, c[1]) is None]
     # The guard refused something: what remains has to be the block's own witness, so a candidate must run to the
     # payload's last byte (`trailer == 0`). A start that leaves bytes behind only won before because it carried more
@@ -335,7 +354,11 @@ def guarded(cands, data, pkg, decl, kinds, nimports):
     # would be inventing a worse one. The floor is applied to the list this function returns, at the bottom -- filtering
     # `kept` here left it computed and dropped, and `tools/class-defaults-moved.py` measured 16 of the 1,972 refused
     # classes publishing a start with a nonzero trailer because of it.
-    refused = len(kept) != len(cands)
+    # The floor still triggers on a parse that begins inside another: it is not a boundary, but it is a sign that
+    # these bytes read two ways, and the floor is what keeps a start with no end witness out of the set. Filtering
+    # on it too is what withdrew the group-end candidate list and lifted the floor on six classes whose chosen start
+    # then moved earlier to carry one more declared name and leave bytes behind.
+    refused = any(covered(parses, c[1]) is not None for c in cands)
     origins = {c[1]: "candidate" for c in kept}
     for _q, end in intervals:
         if not (0 < end < len(data)) or end in origins:

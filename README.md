@@ -57,7 +57,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | shipped packages parsed | 18 | 18 | `████████████████████████` 100.00% | 🟩 |
 | Script | classes agreeing with the 2006 source | 204 | 291 | `█████████████████░░░░░░░` 70.10% | 🟨 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
-| Script | class defaults decoded | 1,663 | 2,319 | `█████████████████░░░░░░░` 71.71% | 🟨 |
+| Script | class defaults decoded | 1,664 | 2,319 | `█████████████████░░░░░░░` 71.76% | 🟨 |
 | Script | default properties rendered | 15,518 | 15,521 | `████████████████████████` 99.98% | 🟩 |
 | Script | subobject defaults rendered | 15,790 | 15,798 | `████████████████████████` 99.95% | 🟩 |
 | Content | classes the shipped content reaches | 1,145 | 2,319 | `████████████░░░░░░░░░░░░` 49.37% | 🟧 |

@@ -557,6 +557,11 @@ def self_check():
     # a tag naming another class's property is `elsewhere`, not a property of this class
     rec = walk(b"\x07\x01\x09" + b"\x05\x01\x07" + b"\x00", pkg, 0, {"N3"}, props_any, vocab)
     assert rec["first_kind"] == "elsewhere" and rec["declared"] == 0, rec
+    # a group parse that begins inside another is not a field of its own: both cannot be the writer's, and the
+    # enclosing one is the run whose end the shipped start sits on (`Engine.PSBumpBSP`)
+    assert cdef.outermost([(89, 100), (90, 100), (99, 108)]) == [(89, 100)], cdef.outermost(
+        [(89, 100), (90, 100), (99, 108)])
+    assert cdef.covered([(89, 100)], 100) is None and cdef.covered([(89, 100)], 99) == 100
     # a class that declares nothing is never called a false start
     rec = walk(body, pkg, 4, set(), props_any, vocab)
     assert rec["verdict"] == "declares-nothing", rec

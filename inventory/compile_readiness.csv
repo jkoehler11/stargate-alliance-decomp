@@ -227,7 +227,7 @@ Engine,PSBlendedDistortionMaterial,0,0,1,6,1,0,ambiguous,defaults-ambiguous
 Engine,PSBloomSelectMaterial,0,0,3,18,3,1,read,
 Engine,PSBlurMaterial,0,0,9,24,9,1,read,
 Engine,PSBump,0,0,10,25,9,1,read,
-Engine,PSBumpBSP,0,0,0,10,0,0,none,no-defaults-block
+Engine,PSBumpBSP,0,0,0,10,2,1,read,
 Engine,PSBumpSpecular,0,0,1,11,2,1,read,
 Engine,PSBumpSpecularBSP,0,0,0,1,1,0,ambiguous,defaults-ambiguous
 Engine,PSDepthOfFieldMaterial,1,0,9,24,4,1,read,
@@ -1108,11 +1108,11 @@ StargateContent,ExtreniteWeaponProjectileAlt,4,0,1,1,13,1,read,
 StargateContent,ExtreniteWeaponProjectileAlt_Enemy,0,0,0,0,0,0,not-applicable,
 StargateContent,ExtreniteWeaponProjectile_Enemy,0,0,0,0,0,0,not-applicable,
 StargateContent,ExtreniteWeapon_Enemy,0,0,0,9,1,0,ambiguous,defaults-ambiguous
-StargateContent,FORMATION_2Column,0,0,0,0,32,1,not-applicable,
-StargateContent,FORMATION_HaakenPod,0,0,0,0,7,1,not-applicable,
+StargateContent,FORMATION_2Column,0,0,0,0,33,1,not-applicable,
+StargateContent,FORMATION_HaakenPod,0,0,0,0,8,1,not-applicable,
 StargateContent,FORMATION_SingleFile,0,0,0,0,10,1,not-applicable,
-StargateContent,FORMATION_SingleFileSpreadOut,0,0,0,0,21,1,not-applicable,
-StargateContent,FORMATION_Wedge,0,0,0,0,47,1,not-applicable,
+StargateContent,FORMATION_SingleFileSpreadOut,0,0,0,0,22,1,not-applicable,
+StargateContent,FORMATION_Wedge,0,0,0,0,48,1,not-applicable,
 StargateContent,FemaleDoctor,0,0,0,0,6,1,not-applicable,
 StargateContent,ForceField,5,0,3,3,16,1,read,
 StargateContent,FragGrenade,1,0,0,24,6,1,read,
@@ -1556,8 +1556,8 @@ StargateContent,ZatGunAmmo,0,0,0,0,8,1,not-applicable,
 StargateContent,ZatGunAmmo_JaffaCaptain,0,0,0,0,1,0,not-applicable,
 StargateContent,ZatGunAmmo_Weak,0,0,0,0,1,0,not-applicable,
 StargateContent,ZatGunPickup,0,0,0,3,3,1,read,
-StargateContent,ZatGun_JaffaCaptain,0,0,0,3,1,0,ambiguous,defaults-ambiguous
-StargateContent,ZatGun_Weak,0,0,0,3,1,0,ambiguous,defaults-ambiguous
+StargateContent,ZatGun_JaffaCaptain,0,0,0,3,0,0,none,no-defaults-block
+StargateContent,ZatGun_Weak,0,0,0,3,0,0,none,no-defaults-block
 StargateContent,ZatMeleeAmmo,0,0,0,0,6,1,not-applicable,
 StargateContent,ZatPulse,5,0,1,1,14,1,read,
 StargateContent,ZatPulse_JaffaCaptain,0,0,0,1,0,0,none,no-defaults-block
@@ -1681,7 +1681,7 @@ StargateGame,HelpJacksonWaypoint,0,0,0,12,5,1,read,
 StargateGame,HelpSGBotWaypoint,0,0,0,12,5,1,read,
 StargateGame,HelponeillWaypoint,0,0,0,12,5,1,read,
 StargateGame,HelptealcWaypoint,0,0,0,12,5,1,read,
-StargateGame,HighlightStaticMeshActor,0,0,0,0,1,0,not-applicable,
+StargateGame,HighlightStaticMeshActor,0,0,0,0,0,0,not-applicable,
 StargateGame,HitEffectManager,7,0,9,9,18,1,read,
 StargateGame,HoldSpot,1,0,0,15,0,0,none,no-defaults-block
 StargateGame,IceSurface,0,0,0,0,0,0,not-applicable,
@@ -1835,7 +1835,7 @@ StargateGame,TeamSayMessagePlus,2,0,0,0,2,1,not-applicable,
 StargateGame,TeamScoreboard,1,0,0,31,0,0,none,no-defaults-block
 StargateGame,TeamScriptedSequence,5,0,3,18,1,0,ambiguous,defaults-ambiguous
 StargateGame,TeamStartToggleTrigger,1,0,2,2,0,0,none,no-defaults-block
-StargateGame,TeamTeleporter,4,0,3,3,5,1,read,
+StargateGame,TeamTeleporter,4,0,3,3,6,1,read,
 StargateGame,TextTrigger,3,0,7,7,6,1,read,
 StargateGame,TimeMessage,3,0,2,2,16,1,read,
 StargateGame,TransportRingMesh,1,0,2,2,8,1,read,
@@ -2032,7 +2032,7 @@ StargateVehicles,GoauldTurretEmplacementGunAmmo,0,0,0,0,8,1,not-applicable,
 StargateVehicles,GoauldTurretEmplacementGunDamage,0,0,0,0,6,1,not-applicable,
 StargateVehicles,GoauldTurretEmplacementProjectile,1,0,0,0,15,1,not-applicable,
 StargateVehicles,HoverCraft,6,0,2,48,55,1,read,
-StargateVehicles,HoverCraftFixedGun,4,0,1,1,11,1,read,
+StargateVehicles,HoverCraftFixedGun,4,0,1,1,12,1,read,
 StargateVehicles,HoverCraftFixedGunAmmo,3,0,0,0,7,1,not-applicable,
 StargateVehicles,HoverCraftFixedGunDamage,0,0,0,0,6,1,not-applicable,
 StargateVehicles,HoverCraftLaserProjectile,2,0,1,1,14,1,read,
