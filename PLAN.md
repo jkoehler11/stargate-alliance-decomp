@@ -1201,6 +1201,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the 95 arrays that end past the block start are not fixed by the locators head census)
+
+- **The population is bounded and shallow-and-deep at once.** `class_record_array.csv` starts its array at
+  `prefix_end + 42`, and on **95 of 549** rows (17.3%) that array ends past the block start: mode **105-109** bytes,
+  deepest **281**, median **30.4%** of the payload. `class_record_gap.csv` starts its own parse from that end, which
+  is why 135 of its 549 rows carry no `nm_*` at all (all 95 of these among them) -- the gap the last note measured
+  from the other side.
+- **The head census does not separate them, so the hypothesis is refused.** A free head closes exactly on the block
+  start on **55 of 95** (57.9%) against **316 of 454** (69.6%) on the rows that land at or before it: the overshoot
+  rows carry one *less* often, so a head is a property of the payload (371 of 549 rows) and not a signature of the
+  mislocated ones. Where it exists it is at `prefix + 61` (32) or `+62` (14), count 2 on 33, two name tails on 35,
+  references in range on 50 of 55.
+- **The record side confirms the block on 36 of them.** 93 of the 95 carry a `class_tail_run.csv` row; on the 36
+  that parse, the closing run is **6 bytes on 31** and ends on the block start -- the block is confirmed from the
+  record exactly where the located array overshoots it, so what the 95 share is the located tail, not the payload.
+- Tool (`tools/class-record-overshoot.py`: `--sweep`, `--report`, `--check` on three synthetic rows and two
+  refusals) + `inventory/class_record_overshoot.csv` (95 rows) + `docs/NATIVE_VM.md` (new section) +
+  `docs/UNKNOWNS.md` U18 (seventeenth) + `make class-record-overshoot` + this note. Reads two committed artifacts;
+  no dump, no boot, no Ghidra round.
+- **Next measurement, named:** the **40** overshoot rows with no free head are where all three witnesses of the
+  block start are silent. The one left is the defaults stream: run `tools/class-defaults.py`'s tag parse from
+  `block_start` on those 40 (it closes on 543 of 551 overall) -- a parse that lands on the payload's end confirms
+  the block start without the record, which would make the located tail the only thing in doubt on all 95.
+
 ### Execution notes (2026-11-13, the census's array tail is a unit body and the record's counts are the groups)
 
 - **The join the last two notes named lands on the group's start on zero rows.** `class_record_gap.csv` locates an
