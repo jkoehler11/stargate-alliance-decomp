@@ -58,10 +58,11 @@ instrument cannot tell from a missed press, and it is not one: indices 70 and 72
 | `$WORK/mapback2` | 44, 46-49 | the resume at 44 |
 | `$WORK/mapback3` | 50-70 | the last 21, one boot each |
 | `$WORK/xemu/missions-mapall` | 71, 72 | the page's last two entries: the shell map and a CTF map |
+| `$WORK/xemu/missions-head` | 0-3 | the page's first four: two CTF and two DM maps (`DM-KelownanTrain` took two attempts) |
 
-Ten directories, and the set is its own evidence: the nine that made the campaign rows regenerate the
-committed 61 rows **byte for byte** (measured 2026-11-14), so `missions-mapall` is the only diff, and those two
-rows are it. A directory listing cannot confirm that -- `$WORK` also holds `missions/`, `gtime`-era retries and
+Eleven directories, and the set is its own evidence: the ten that made the committed 63 rows regenerate them
+**byte for byte** (measured 2026-11-14, re-confirmed with this run's merge), so `missions-head` is the only
+diff, and its four rows are it. A directory listing cannot confirm that -- `$WORK` also holds `missions/`, `gtime`-era retries and
 the manufactured-failure directories below.
 
 Three other directories in `$WORK/xemu` carry a `missions.tsv` and are **not** merged, on purpose:
@@ -73,12 +74,16 @@ merging them would put `BIOS screen` on a row whose map loads.
 ## The table
 
 <!-- generated:map-loads -->
-**63 rows, 62 PASS / 1 FAIL, 77 boots:** all 61 campaign entries (10-70) have been loaded.
+**67 rows, 66 PASS / 1 FAIL, 82 boots:** all 61 campaign entries (10-70) have been loaded.
 
-Outside the campaign range: 71 `MainMenu` (FAIL), 72 `SGCTF-AbydosVsSGC` (PASS).
+Outside the campaign range: 0 `CTF-Abydos` (PASS), 1 `CTF-LostCity` (PASS), 2 `DM-Ha'tak` (PASS), 3 `DM-KelownanTrain` (PASS), 71 `MainMenu` (FAIL), 72 `SGCTF-AbydosVsSGC` (PASS).
 
 | index | map | result | attempts | runs | detail |
 |---:|---|---|---:|---:|---|
+| 0 | `CTF-Abydos` | PASS | 1 | 1 |  |
+| 1 | `CTF-LostCity` | PASS | 1 | 1 |  |
+| 2 | `DM-Ha'tak` | PASS | 1 | 1 |  |
+| 3 | `DM-KelownanTrain` | PASS | 2 | 1 |  |
 | 10 | `M00` | PASS | 1 | 1 |  |
 | 11 | `M02A` | PASS | 1 | 1 |  |
 | 12 | `M02B` | PASS | 3 | 3 |  |
