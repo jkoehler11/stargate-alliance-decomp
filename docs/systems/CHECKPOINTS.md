@@ -736,12 +736,111 @@ table: the field belongs to the class, and the object is whatever the record nam
     python3 tools/linker-purge.py --check-doc docs/systems/CHECKPOINTS.md
     python3 tools/linker-purge.py --check        # 20 assertions, synthetic instructions, no dump
 
-**What this leaves.** The `+0x498` bit is measured as a *format* (one byte of the class's flag dword, tested for its
-sign) but not yet *named*: the image names that displacement 93 times and only the purge's one is a byte read, so the
-next read is the class body that owns the flag word -- `Core_UnClass`'s serialiser -- and which `CLASS_*` bit sits in
-the top bit of that byte. That is a different question from the array, and it does not block the save chain: the purge
-is a teardown that runs before `Starting Engine`, and the file-manager global it was suspected of selecting from is
-set by the store at `0x169e3` from `main`'s own frame slot, not from an element of this array.
+**What this leaves.** The `+0x498` bit was measured as a *format* (one byte of the class's flag dword, tested
+for its sign) and not yet *named*; the next section names it -- the word is `UClass`'s class flags, the gate's
+bit is `0x80`, and the dword's top bit is not reachable from that byte. That is a different question from the
+array, and it does not block the save chain: the purge is a teardown that runs before `Starting Engine`, and the
+file-manager global it was suspected of selecting from is set by the store at `0x169e3` from `main`'s own frame
+slot, not from an element of this array.
+
+
+## What the class flag word at `+0x498` holds
+
+The purge's last gate reads one byte off a class, so the question `#522` left open is what that word is and which
+bit its sign test sees. It is `UClass`'s class-flag dword: the class constructor inherits a masked subset of its
+super's word into it, the registration overload sets the two compiler bits on every script class built from the
+registration's data, and the rest of the image only ever reads single bits out of it. The mask is this build's own
+constant, and the shipped packages let it be *tested* rather than assumed -- a bit the constructor inherits is
+almost never lost between a class and its super, while the bits it leaves out are lost by the hundred.
+
+<!-- generated:class-flag-word -->
+**The word at `+0x498` is `UClass`'s class-flag dword, and the constructor names the bits it inherits: `0x0e0f86ec`.** `Core_UnClass` (`0x00039520`) reads the super's word through `[this+0x28]`, `and`s it with that immediate and `or`s it into its own -- so a class starts with every inheritable bit its parent had, and with none of the others. `FUN_0003af60`, the registration overload every script class is built from, then `or`s `0x12` (bits 1 and 4) into the same word; both of those are *outside* the mask, which is what a compiler/loader pair of bits looks like.
+
+| at | in | what | instruction |
+|---|---|---|---|
+| `0x00039641` | Core_UnClass | inherit mask 0x0e0f86ec | `mov eax,[esi+0x28]; mov eax,[eax+0x498]; and eax,0x0e0f86ec; or ecx,eax; mov [esi+0x498],ecx` |
+| `0x0003af96` | FUN_0003af60 | registration sets 0x12 | `or ecx,0x12; mov [esi+0x498],ecx` |
+| `0x0006c803` | FUN_0006c750 | purge byte gates 0x80 | `mov cl,[eax+0x498]; test cl,cl; js -- byte 0 of the dword, sign bit` |
+
+**The shipped packages agree with the mask, and the disagreement is per bit.** Across 2319 classes and 2318 class/super pairs, the bits the constructor leaves out are dropped between a class and its super by the hundred (`0x1` 827 times, `0x800` 160 times, `0x100` 101 times), while the in-mask bits are dropped only on 28 class(es): `0x200` 25, `0x4` 1, `0x2000000` 1, `0x4000000` 1. `0x200` is the value the reader itself spells twice, `NoUserCreate` and `Placeable`, which is why it is the one that moves most.
+
+**The purge's byte is `0x80`, not the dword's top bit.** A byte load at `+0x498` addresses the least-significant byte of the word, and `test cl,cl; js` tests that byte's sign, so the only bit the gate can see is bit 7 -- `0x80`. `0x80000000` is not reachable from this instruction at all, whatever the earlier reading assumed about "the top bit of the first byte".
+
+| bit | name | in the inherit mask | classes | added by a class | dropped by a class | exemplar |
+|---:|---|---:|---:|---:|---:|---|
+| 0x01 | Abstract |  | 121 | 46 | 827 | `Actor` |
+| 0x02 | Compiled |  | 2316 | 1 | 3 | `ACTION_ActivateAstralSight` |
+| 0x04 | Config | yes | 1575 | 52 | 1 | `AIController` |
+| 0x08 | Transient | yes | 42 | 15 | 0 | `BufferedTCPLink` |
+| 0x10 | Parsed |  | 2316 | 1 | 3 | `ACTION_ActivateAstralSight` |
+| 0x20 | Localized | yes | 1049 | 71 | 0 | `ACTION_ActivateAstralSight` |
+| 0x40 | SafeReplace | yes | 13 | 2 | 0 | `BackBufferTexture` |
+| **`0x80`** | RuntimeStatic | yes | 1 | 1 | 0 | `UPreviewMapListClient` |
+| 0x100 | NoExport |  | 45 | 5 | 101 | `BackBufferTexture` |
+| 0x200 | NoUserCreate/Placeable | yes | 607 | 90 | 25 | `AIScript` |
+| 0x400 | PerObjectConfig | yes | 3 | 3 | 0 | `MaplistRecord` |
+| 0x800 | NativeReplication |  | 21 | 8 | 160 | `Actor` |
+| 0x1000 | EditInlineNew |  | 707 | 44 | 3 | `ACTION_ActivateAstralSight` |
+| 0x2000 | CollapseCategories |  | 355 | 23 | 1 | `ACTION_ActivateAstralSight` |
+| 0x4000 | ExportStructs |  | 8 | 8 | 24 | `AmbientSound` |
+| 0x8000 | unnamed | yes | 1 | 1 | 0 | `UPreviewMapListClient` |
+| 0x10000 | unnamed | yes | 3 | 3 | 0 | `UPreviewMapListClient` |
+| 0x20000 | unnamed | yes | 2 | 2 | 0 | `UPreviewMapListClient` |
+| 0x40000 | unnamed | yes | 2 | 2 | 0 | `UPreviewMapListClient` |
+| 0x80000 | unnamed | yes | 0 | 0 | 0 |  |
+| 0x100000 | unnamed |  | 1 | 1 | 0 | `UPreviewRootWindow` |
+| 0x200000 | Instanced |  | 237 | 2 | 0 | `ChapterList` |
+| 0x400000 | HideDropDown |  | 2 | 2 | 1 | `GameInfo` |
+| 0x800000 | CacheExempt |  | 5 | 5 | 2 | `CrosshairPack` |
+| 0x1000000 | ParseConfig |  | 1 | 1 | 1 | `UPreviewSkinnedDialogClientWindow` |
+| 0x2000000 | Cacheable | yes | 218 | 8 | 1 | `APC` |
+| 0x4000000 | Exported | yes | 591 | 28 | 1 | `AIController` |
+| 0x8000000 | unnamed | yes | 13 | 3 | 0 | `AIMSG_Cloak` |
+| 0x10000000 | Intrinsic |  | 1 | 1 | 0 | `UPreviewSkinnedButton` |
+| 0x20000000 | NativeOnly |  | 0 | 0 | 0 |  |
+| 0x40000000 | PerObjectLocalized |  | 3 | 3 | 1 | `UPreviewRootWindow` |
+| 0x80000000 | HasCrossLevelRefs |  | 3 | 2 | 0 | `UPreviewMapListClient` |
+
+**The image names the displacement 109 times: 84 sit inside a mapped function and 84 of those are instruction boundaries; 25 are outside the symbol map.** 11 are byte-wide, and 31 carry one immediate -- the readers. A reader's immediate is the clearest evidence for what a bit means: `Core_UnTemplate` tests `0x20` (a localised template), `Core_UnObj` tests `0x4` and `0x8`, `Engine_UnLevAct` tests `0x1`.
+
+| mask | name | at | in |
+|---:|---|---|---|
+| `0x1` | Abstract | `0x0006c96b` | Core_UnObj |
+| `0x1` | Abstract | `0x0015975f` | Engine_UnLevAct |
+| `0x1` | Abstract | `0x002840a6` | FUN_002840a0 |
+| `0x4` | Config | `0x0006a2dd` | Core_UnObj |
+| `0x4` | Config | `0x0006a293` | FUN_0006a260 |
+| `0x8` | Transient | `0x0006cd5f` | Core_UnObj |
+| `0x20` | Localized | `0x000c6add` | Core_UnTemplate |
+| `0x20` | Localized | `0x00064f04` | FUN_00064f00 |
+| `0x8000` | unnamed | `0x00067641` | FUN_00067450 |
+| `0x10000` | unnamed | `0x0010b553` | Engine_UnChan |
+| `0x10000` | unnamed | `0x00046fb8` | Native_0 |
+| `0x10000` | unnamed | `0x00047033` | Native_1 |
+| `0x20000` | unnamed | `0x0010a5ef`, `0x0010ae4b` | Engine_UnChan |
+| `0x40000` | unnamed | `0x000630e2` | FUN_000630b0 |
+| `0x80000` | unnamed | `0x0010ac92` | Engine_UnChan |
+| `0x80000` | unnamed | `0x00062fd6` | FUN_00062fc0 |
+| `0x80000` | unnamed | `0x0006301c` | FUN_00062ff0 |
+| `0x80000` | unnamed | `0x0006482c` | FUN_00064770 |
+| `0x80000` | unnamed | `0x00212b82` | execPlaySound |
+| `0x200000` | Instanced | `0x00078742` | Core_UnProp |
+| `0x1000000` | ParseConfig | `0x0003aaba` | Core_UnClass |
+| `0x4000000` | Exported | `0x0006ca8b` | Core_UnObj |
+| `0x4000000` | Exported | `0x001598ad` | Engine_UnLevAct |
+| `0x4000000` | Exported | `0x000490a1` | FUN_00048e90 |
+| `0x4000000` | Exported | `0x00062535` | FUN_00062520 |
+| `0x4000000` | Exported | `0x00073d3a` | FUN_00073cf0 |
+| `0x4000000` | Exported | `0x00076660` | FUN_000765c0 |
+| `0x8000000` | unnamed | `0x0006ce14` | Core_UnObj |
+
+<!-- /generated:class-flag-word -->
+
+**What this leaves.** The gate's bit is `0x80` and exactly one shipped class carries it, so over the 18 packages
+the purge's last test can select only that class's objects -- which is consistent with a teardown that has nothing
+per-package to do here. Whether that class is loaded when the purge runs is a runtime question, and the two bits
+the mask and the readers cannot name (`0x8000`, `0x10000`..`0x80000`) are the lowest-cost next read: the registration
+data of a class that carries one of them names it from the package side.
 
 
 ## Not measured

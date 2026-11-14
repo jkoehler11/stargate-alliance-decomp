@@ -1255,6 +1255,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the class flag word is the class flags, and the purge's byte is bit 7)
+
+- **The word at `+0x498` is `UClass`'s class-flag dword, and its constructor names the inheritable subset.**
+  `Core_UnClass` at `0x00039520` loads the super through `[this+0x28]`, reads `[super+0x498]`, `and`s it with the
+  immediate `0x0e0f86ec`, `or`s the result into `[this+0x498]` and stores it back. That mask is the build's own
+  `CLASS_Inherit` constant; no other site in the image names more than one bit at a time.
+- **The registration sets exactly the two compiler bits, and neither is inherited.** `FUN_0003af60` ends
+  `or ecx,0x12; mov [esi+0x498],ecx` -- `0x2|0x10`, both outside the mask, which is the shape of a pair the
+  compiler or loader owns rather than of anything a class declares.
+- **The purge's gate is bit 7 (`0x80`), not the dword's top bit.** A byte load at `+0x498` addresses the
+  least-significant byte and `test cl,cl; js` tests its sign, so `0x80000000` is unreachable from `0x0006c803`;
+  #522 left the top bit open and the operand width settles it the other way.
+- **The corpus tests the mask instead of assuming it.** Across 2,318 class/super pairs the out-of-mask bits are
+  dropped by the hundred (`0x1` 827 times, `0x800` 160, `0x100` 101) while the in-mask bits drop on 28 pairs in
+  total (`0x200` 25, `0x4` / `0x2000000` / `0x4000000` one each) -- and `0x200` is the value the reader itself
+  spells twice, `NoUserCreate` and `Placeable`. Exactly one shipped class carries the gate's bit
+  (`UPreview.UPreviewMapListClient`), so over the 18 packages the purge's last test can select that class and
+  nothing else.
+- Tool (`tools/class-flag-word.py`, `--xbe`/`-o`/`--write-doc`/`--check-doc`/`--check`, 25 assertions) +
+  `inventory/class_flag_word.csv` (145 rows: 3 defining sites, a corpus row, 32 bit rows and 109 displacement
+  references, 84 of them proven instruction boundaries and 25 outside the symbol map) +
+  `docs/systems/CHECKPOINTS.md` (*What the class flag word at `+0x498` holds*) + `make class-flag-word` + this
+  note. No boot: the image and the committed class CSV.
+- **Next measurement:** the bits the mask inherits and no reader names (`0x8000`, `0x10000`..`0x80000`). The
+  classes that carry them are three UPreview windows, so the cheap read is `Engine_UnChan`, whose bodies test
+  `0x10000`/`0x20000`/`0x80000` and would name them from the replication side.
+
 ### Execution notes (2026-11-14, the purge's per-element call is an identity, and the array holds linkers)
 
 - **The question #521 left -- "which element does `0x77210` return for the file layer" -- has no second answer.**
