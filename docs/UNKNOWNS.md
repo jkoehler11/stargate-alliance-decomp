@@ -2778,7 +2778,7 @@ default** (`0x02344b00`, outer a `Package`), and a 400 s `--trace` across `Tab`,
 boot) is not reproducible at the title. **What would settle it:** the same trace on a level boot, bound to the console the
 HUD's `+0x398` names once it is non-null.
 
-## U16## U16 -- why `QUICK SELECT MAP` stops at `M15B`
+## U16. Why `QUICK SELECT MAP` seemed to stop at `M15B` -- closed: it holds 73, and every campaign entry loads
 
 **Answered: there was no truncation.** The list holds **73** entries -- every `.unr` on the disc -- and the "first 31
 campaign maps and nothing after them" reading came from a fifth page that held a single item (`docs/XEMU.md`,
@@ -2820,8 +2820,10 @@ bound**; at the call's return (breakpoint `0x2fe809`) it hands back **73** names
 them (`0x000f8ab0`) and appends every one -- the controller's array at `this+0x27c` reads `count=73 max=76` after the
 page opens (breakpoint `0x2fe8e0`). There is no cap to patch, and no map needs a save or a `Travel` call to reach.
 
-This matters because those 30 maps are currently unreachable: the console refuses `open` (#147), so the only routes are
-`Continue` (a save that starts inside one of those maps) and checkpoint loads.
+**And the load half is closed (2026-11-14).** Those 30 maps were not unreachable, only untried: `tools/xemu/missions.sh`
+presses the d-pad once per index and selects, and indices 41-70 all loaded (`inventory/map_loads.csv`, 61 of 61
+campaign entries; `docs/MAP_LOADS.md`), as do the page's last two entries. So the console's refusal of `open` (#147)
+costs nothing here: the list is the route, and it needs no save, no checkpoint and no `Travel` call.
 
 ## U17 -- which compiler can write, and read, version 130 / licensee 4
 

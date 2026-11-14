@@ -1064,6 +1064,12 @@ reachable from this page by paging, and none of them needs a save, a checkpoint 
 
 ## Where `QUICK SELECT MAP` gets its entries, and four routes that do not reach the rest (2026-11-04)
 
+**Corrected 2026-11-14.** This section was written while the list was believed to hold 41 entries. It holds 73,
+and none of the four routes below is *needed*: `tools/xemu/missions.sh` presses the pad once per index and
+selects, and indices 41-70 all loaded (`inventory/map_loads.csv`, `docs/MAP_LOADS.md`). The measurements stand
+as measurements of what was tried; the table's last row -- "30 campaign maps are not offered" -- is the
+scrolled page, not the list.
+
 The list is **not** built from `System/tweak/Misc/ChapterList.ini`. The class chain is:
 
     QuickLoadMapTempPage          (StargateMenus, TitleString="Quick Select Map")
@@ -1072,8 +1078,8 @@ The list is **not** built from `System/tweak/Misc/ChapterList.ini`. The class ch
           -> MapFileList         (config Tweak_Misc_ChapterList, but it zeroes Chapters and ignores the config)
              Controller.GetMapList("", List)      <-- GUI/GUIController.uc:430, `native`
 
-`GetMapList` is a **native** function, so the 41 entries are whatever the engine enumerates and the cap or filter behind
-it lives in the XBE, not in UnrealScript and not in any ini. That is why the ini is a dead end: `ChapterList.ini` has 37
+`GetMapList` is a **native** function, so the 73 entries are whatever the engine enumerates and any cap or filter
+behind it would live in the XBE, not in UnrealScript and not in any ini. That is why the ini is a dead end: `ChapterList.ini` has 37
 chapters with display titles ("Mission 1 Replicator Attack") and file ids (`M02AX.unr`), and none of those strings appear
 in the list at all.
 

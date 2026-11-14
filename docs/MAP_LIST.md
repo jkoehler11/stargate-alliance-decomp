@@ -19,7 +19,10 @@ Two measured highlight positions are the check -- a `pad=down` count a frame in 
 
 Both agree, so the "first 41 names and nothing after them" reading was a scrolled page table, not a cap:
 40 presses land on `M15B` because `M15B` *is* the 41st name, not because the list ends there. The 30 campaign
-maps after it sit at indices **41-70**, reachable by more presses (not yet tested -- no run has gone past 40).
+maps after it sit at indices **41-70**, and **every one of them loads**: the sweep ran to the end of the page on
+2026-11-14 and `inventory/map_loads.csv` holds a row for all 61 campaign entries (`docs/MAP_LOADS.md`). The
+last two entries are measured with the same instrument -- 72 `SGCTF-AbydosVsSGC` loads, and 71 `MainMenu`
+returns to the main menu, because it is the shell's own menu package.
 
     python3 tools/map-list-order.py                    # the table below, from $SG1_DUMP/Maps
     python3 tools/map-list-order.py --check            # both anchors and the 73-name count, exit 1 on a mismatch

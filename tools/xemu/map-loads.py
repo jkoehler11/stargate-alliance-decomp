@@ -25,6 +25,9 @@ Columns: `index,name,result,attempts,runs,detail`, one row per measured index, s
   so a single flaky boot does not look like a single-boot map.
 * An index outside the disc's table, or a status that is not PASS/FAIL, is an error rather than a row:
   the merge would otherwise record a page that does not exist.
+* An index outside the **campaign** range is a row like any other -- the page offers 73 entries and 0-9,
+  71, 72 are not campaign maps -- but the generated summary names those rows in their own line, so a
+  table longer than its own count reads as deliberate rather than as drift.
 """
 import argparse
 import csv
@@ -206,6 +209,12 @@ def doc_block(rows, campaign=CAMPAIGN):
     lines = ["", summary, ""]
     if missing:
         lines += ["Not measured: `%s`." % ranges(missing), ""]
+    outside = [row for row in rows if not lo <= row[0] <= hi]
+    if outside:
+        # A row outside the campaign range still belongs to the list, so the summary has to say so: without
+        # it a page whose table ends at index 72 under a line that accounts for 61 rows reads as drift.
+        lines += ["Outside the campaign range: %s."
+                  % ", ".join("%d `%s` (%s)" % (row[0], row[1], row[2]) for row in outside), ""]
     lines += ["| index | map | result | attempts | runs | detail |",
               "|---:|---|---|---:|---:|---|"]
     for index, name, result, attempts, runs, detail in rows:
@@ -273,8 +282,13 @@ def check():
         if "2 of the 3 campaign entries (2-4) have been loaded; 1 still unmeasured" not in gapped:
             print("FAIL doc_block does not name the unmeasured index:\n%s" % gapped)
             return 1
+        mixed = "".join(doc_block(want_rows, campaign=(2, 3)))
+        if "Outside the campaign range: 4 `M15C` (FAIL)." not in mixed:
+            print("FAIL doc_block does not account for a row outside the campaign range:\n%s" % mixed)
+            return 1
         print("ok   map-loads: a PASS from a later run wins, attempts add up, an unknown index or "
-              "status is refused, and the summary line knows a complete range from a gapped one")
+              "status is refused, and the summary line knows a complete range from a gapped one and "
+              "names a row outside it")
         return 0
     finally:
         shutil.rmtree(root, ignore_errors=True)

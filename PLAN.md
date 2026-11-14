@@ -701,7 +701,7 @@ are limited to expected fields (checksum/timestamp) and documented.
       reading was. `tools/xemu/drive.py` runs a *sequence* (`--step`), measures the noise floor (`noise=`), crops the
       assertion (`--crop`, `--fuzz`) and samples `EIP` in the same run (`cpu=`) — `docs/XEMU.md`. **Input is solved** (QMP `sendkey` over an attached
       guest keyboard) and the map list is navigable **by page**: `home`/`end`/`pgup`/`pgdn` move the highlight
-      (measured, `docs/XEMU.md`), and the list is 41 entries with the campaign maps inside it. **The single step and the load are measured** (2026-11-03,
+      (measured, `docs/XEMU.md`), and the list is 73 entries with the campaign maps inside it. **The single step and the load are measured** (2026-11-03,
       `docs/XEMU.md`): `tools/xemu/vpad.py` puts a uinput pad on port 1 and `--step=pad=` presses it — `pad=down` moves
       the list one entry and `pad=a` **loads the highlighted map** (in-game HUD, no assert dialog). **7.2's printed criterion is met for `M00`** (2026-11-03): `Continue` (a
       profile-carrying EEPROM, `drive.py --eeprom`) opens the list, ten d-pad presses highlight `M00`, and `pad=a` loads
@@ -721,8 +721,14 @@ are limited to expected fields (checksum/timestamp) and documented.
       `docs/MAP_LIST.md`): `GetMapList` has no cap, the file layer hands it 73 names, and the controller's array
       reads `count=73` -- so the "41 names" was a scrolled page table, not the list. The order is the disc's own
       sort, and the two measured highlights pin it: 10 presses reach `M00` (index 10) and 40 reach `M15B`
-      (index 40). The 30 campaign maps past `M15B` are at indices 41-70, which more presses reach; what is still
-      untested is whether they *load* -- no run has gone past 40.
+      (index 40). The 30 campaign maps past `M15B` are at indices 41-70, and **all of them load** (2026-11-14): the
+      sweep ran to the end of the page, `inventory/map_loads.csv` holds a row for every campaign index (61 of 61,
+      61 PASS over 76 boots) plus the list's last two entries, and only the flakiest needed a second boot. The page
+      is therefore measured end to end, and 7.2's printed criterion -- "load each mission" -- is met for every map
+      the list offers that is a mission: 72 `SGCTF-AbydosVsSGC` loads, and 71 `MainMenu` returns to the main menu
+      because it is the shell's own menu package, which the frame gate records as `FAIL / main menu` rather than
+      as a pass. What a row still cannot say is whether a map is *playable* (a `PASS` is a load); that is a
+      gameplay-level measurement, and `docs/MAP_LOADS.md` names it as the open question.
 - [~] 7.3 **The console works and draws its input line on a stock disc; `ret` submits it, only `stat fps` is
       readable, and no `Console` instance is in the object array in any state measured**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
