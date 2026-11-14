@@ -14695,11 +14695,13 @@
 0x004cf760 Vtbl_DeathGliderBot                          1792 class table
 0x004cf978 Vtbl_AlkeshBomberBot                         1868 class table
 0x004cfba0 Vtbl_Texture                                  204 class table
-0x004cfc88 Vtbl_FractalTexture                          1304 class table
+0x004cfc88 Vtbl_FractalTexture                           228 class table
+0x004cfd78 Vtbl_FireTexture                             1304 class table
 0x004cff58 Vtbl_WaveTexture                             4872 class table
 0x004d0041 FUN_004d0041                                    5 
 0x004d0048 Vtbl_FluidTexture                            4868 class table
 0x004d0138 Vtbl_WetTexture                              4880 class table
+0x004d0228 Vtbl_IceTexture                               296 class table
 0x004d0480 Vtbl_TcpipConnection                        20404 class table
 0x004d0530 Vtbl_TcpNetDriver                            4564 class table
 0x004d05e0 Vtbl_TcpipConnectionXbox                    20424 class table

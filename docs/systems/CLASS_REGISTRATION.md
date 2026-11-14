@@ -120,9 +120,9 @@ below).
 | body | name | stores in body order | own table | own table class | row whose table is a base |
 |---|---|---|---|---|---|
 | 0x00110120 | FUN_00110120 | 0x004d03c8 -> 0x004fb9b8 | 0x004fb9b8 | PackageMapLevel | - |
-| 0x002e81f0 | FUN_002e81f0 | 0x004cfc88 -> 0x004cfd78 | 0x004cfd78 | - | FractalTexture |
+| 0x002e81f0 | FUN_002e81f0 | 0x004cfc88 -> 0x004cfd78 | 0x004cfd78 | FireTexture | FractalTexture |
 | 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | - | FractalTexture |
-| 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | - | FractalTexture |
+| 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | IceTexture | FractalTexture |
 
 **The registration side agrees, and its exceptions are the two texture classes.** 489 of the 493 sites record the last store of the body their thunk resolves to; 2 resolve to a body the census has no constructor row for (`TextBuffer`, `HTTPDownload`).
 
@@ -237,11 +237,17 @@ order to break a tie. Three rules, and the `name_rule` column says which one pro
   `inventory/classes.csv` knows, exactly one is an ancestor-or-self of every other in the group, and that is
   the class whose constructor the rest reuse. This names `0x004dd2a8` `Object` (the only class in the dump
   with no super) and `0x004cfba0` `Texture`.
-- `ancestor-derived` (1 table): the shared group names no common ancestor itself, but it has exactly one
-  nearest common ancestor, and the row says the name is derived from it -- `0x004cfc88` reads
-  `FractalTexture`, since `FireTexture` and `IceTexture` are both its subclasses and neither names the
-  table. The two subclasses' constructors do store that same table, and the section below reads why: it is
-  the base constructor's own store, inlined into both derived bodies, so neither class writes it as its own.
+- `ancestor-derived` (0 tables now, 1 before): the shared group names no common ancestor itself, but it has
+  exactly one nearest common ancestor, and the row says the name is derived from it. It named `0x004cfc88`
+  `FractalTexture` while the reader still took each constructor's **first** store; with the body's own
+  store read, both texture sites name their own tables and this row is carried by the rule below, from
+  stronger evidence.
+- `base-store-ancestor` (1 table): no registration names the table at all, but two or more registered
+  classes store it *first* in their own constructor bodies, and the nearest common ancestor of those
+  owners is the class whose constructor they inlined. `0x004cfc88` keeps `FractalTexture` this way:
+  FireTexture and IceTexture both write it before their own tables, and FractalTexture is the one class
+  between them and `Texture`. One owner is not evidence -- a class's nearest ancestor is itself -- so a
+  single owner leaves the table unnamed.
 
 **The address orders are refuted, and that is why the rule is a join.** The lowest site on the root's table
 is `Exporter` (`0x000349e6`) and the last is `VertexStreamBase` (`0x001eb186`); neither is the class the
@@ -252,20 +258,36 @@ size is the chosen site's push, not a second measurement; the runtime read agree
 names -- `inventory/live_class_tables.csv` carries **454 objects of class `Texture`** on `0x004cfba0`
 (`docs/UNKNOWNS.md` U8).
 
-**The 400-byte window is bounded now, and the bound changes no row.** The earlier reader took the first
-`mov [reg], <table>` in a flat 400-byte read from the constructor, which on a short body reaches the next
-function's store; it now stops at the size `symbols/xbox_functions.csv` gives the body. Reading every one of
-the 493 registration targets both ways agrees on **493 of 493**, because every target has a store of its
-own -- the bound is a guard, and the tool's `--check` keeps the case where it bites.
+**The table a constructor installs is its last store, and three rows move because of it.** The earlier
+reader took the first `mov [reg], <table>` in the body, and MSVC writes a base constructor's vtable itself
+when it inlines that constructor into a derived body: `0x002e81f0` (FireTexture's) stores `0x004cfc88` and
+then `0x004cfd78`, and `0x002e8370` (IceTexture's) stores `0x004cfc88` and then `0x004d0228`. Reading the
+last store names `0x004cfd78` **FireTexture** (`0x002e8468`) and `0x004d0228` **IceTexture**
+(`0x002e8768`), each from a constructor thunk no other site uses, and leaves `0x004cfc88` to the base-store
+rule above -- the same name, from the store order instead of a nearest common ancestor. The artifact gains
+two names (466 -> 468) and loses two `no-registration` rows (26 -> 24); the multi-site tally falls from 3
+tables to 2.
+
+**The read is bounded by the body, and here the bound moves a row.** A flat 400-byte read reaches past a
+short constructor's own `ret` into the next function, whose store is then attributed to the wrong body. The
+read stops at the size `symbols/xbox_functions.csv` gives the body and, where the map has no size, at the
+body's own `int3` padding: 465 of the 467 rows a site resolves are symbol-bounded and 2 are padding-bounded,
+and one of those is the row that changes. TextBuffer's target `0x00075820` is a 19-byte guarded stub, and
+its flat window reads two stores that belong to the body after it. **A guarded stub can forward with `call`
+rather than `jmp`**: `0x00075820` is `mov ecx,[esp+4]; test ecx,ecx; je; push L""; call 0x000669e0; ret`,
+and `0x000669e0` -- which `tools/class-ctors.py` also classifies as the constructor, by shape -- installs
+`0x004ddf78` at `0x00066a14`. The read follows that one call and no further, which moves TextBuffer's site
+from the window's `0x0007588d` store to the real one at `0x00066a14`.
 
 <!-- generated:class-table-names -->
 | table | name | rule | sites | literals |
 |---|---|---|---|---|
 | 0x004dd2a8 | Object | hierarchy-ancestor | 25 | Exporter, Factory, Field, Object, Subsystem, Language, Property, VoiceSubsystem, Viewport, CameraEffect, Client, Channel, NetConnection, Download, RenderDevice, Engine, LevelBase, Material, BitmapMaterial, RenderedMaterial, NetDriver, PendingLevel, Player, RenderResource, VertexStreamBase |
 | 0x004cfba0 | Texture | hierarchy-ancestor | 3 | Texture, FractalTexture, WaterTexture |
-| 0x004cfc88 | FractalTexture | ancestor-derived | 2 | FireTexture, IceTexture |
 
-492 tables: 466 named (463 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 1 derived from a nearest common ancestor), 0 unresolved, 26 with no registration. 3 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
+**A table is named from its constructor body's last store.** 3 table(s) are named from a body that installs two class tables -- the first store there is a base class's table, written by the base constructor the compiler inlined -- and 2 row(s) are read without a symbol size, bounded at the body's own `int3` padding: `0x004ddf78` (TextBuffer), `0x0052cb00` (HTTPDownload).
+
+492 tables: 468 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names), 0 unresolved, 24 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
 <!-- /generated:class-table-names -->
 
 ## What this measurement does not say
@@ -282,6 +304,11 @@ own -- the bound is a guard, and the tool's `--check` keeps the case where it bi
   reason, and the resident `GNatives` table (`docs/NATIVE_VM.md`) is a table of addresses, which the
   dword scan does read.
 
+- **It does not regenerate the site census behind the same rule.** `tools/class-registrations.py` still
+  keys each of the 493 sites to the first store it reads, so its block above puts FireTexture's and
+  IceTexture's sites on `0x004cfc88` and counts 30 sites on shared tables, where the naming census now
+  reads 2. Reading the last store there is the next measurement; until then this page carries both reads,
+  and the naming block is the one that measures the store order.
 - **It does not say why two classes name an ancestor's constructor.** FractalTexture's and WaterTexture's
   sites resolve through one shared thunk to Texture's constructor, while the image holds a separate body
   for each (`0x002e81b0`, `0x002e8260`); the registration's fourth argument may be the constructor of the
@@ -304,6 +331,17 @@ The base-call reading has its own tool and artifact:
 
 `--check` is a self-test over synthetic bodies plus an artifact round trip, and `--check-doc` rebuilds
 its block from the committed `inventory/class_ctor_bases.csv` with no dump; both run in `make ci`.
+
+The naming census reads those bodies and writes the artifact named in the heading above:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-table-names.py \
+        "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-table-names.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- an unshared thunk winning over a shared one, a shared group falling back
+to its ancestor, a two-store body whose last store is its own, a guarded stub followed through its call, an
+`int3`-bounded body that must not inherit its neighbour's store -- and `--check-doc` rebuilds the block from
+the committed artifact; both run in `make ci`.
 
 The registration census is the same shape, and it is the capstone-free half of `tools/class-table-names.py`:
 

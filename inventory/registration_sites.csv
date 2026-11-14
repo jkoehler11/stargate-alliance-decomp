@@ -386,13 +386,13 @@ site_va,class,outer,class_table,evidence,literals
 0x002d67d9,CompressCommandlet,System,CompressCommandlet,class table agrees,new|System|CompressCommandlet
 0x002d6899,DecompressCommandlet,System,DecompressCommandlet,class table agrees,new|System|DecompressCommandlet
 0x002d7cf9,UdpLink,System,UdpLink,class table agrees,new|System|UdpLink
-0x002e1489,FractalTexture,System,,class name in the site's pushes,new|System|FractalTexture
+0x002e1489,FractalTexture,System,FractalTexture,class table agrees,new|System|FractalTexture
 0x002e17d9,WaterTexture,System,,class name in the site's pushes,new|System|WaterTexture
-0x002e8468,FireTexture,System,FractalTexture,"class table names the group's nearest common ancestor, not this literal",new|System|FireTexture
+0x002e8468,FireTexture,System,FireTexture,class table agrees,new|System|FireTexture
 0x002e8528,WaveTexture,System,WaveTexture,class table agrees,new|System|WaveTexture
 0x002e85e8,FluidTexture,System,FluidTexture,class table agrees,new|System|FluidTexture
 0x002e86a8,WetTexture,System,WetTexture,class table agrees,new|System|WetTexture
-0x002e8768,IceTexture,System,,class name in the site's pushes,new|System|IceTexture
+0x002e8768,IceTexture,System,IceTexture,class table agrees,new|System|IceTexture
 0x002ec8f5,PropertyManagerBase,System,PropertyManagerBase,class table agrees,new|System|PropertyManagerBase
 0x002ec9a5,StatsManager,System,StatsManager,class table agrees,new|System|StatsManager
 0x002ed5f9,GUIStyles,System,GUIStyles,class table agrees,new|System|GUIStyles
