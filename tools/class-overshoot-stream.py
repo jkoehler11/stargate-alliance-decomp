@@ -21,8 +21,15 @@ So this tool is a witness, not a locator: it re-reads each overshoot row from th
   (`group_verdict`), so a row confirmed by both the block stream and the record is separable from one confirmed
   by neither.
 
+`--trailer` (the nineteenth entry's open question) is the same parse read at *every* offset in
+`[block_start, block_start + N]` on the rows that stop short of the payload: if a later start lands exactly on the
+payload's last byte and names the class's declared properties, the trailer is a misplaced boundary; if none does,
+those bytes are a field the class serialises after its defaults.
+
     python3 tools/class-overshoot-stream.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-overshoot-stream.py --report
+    python3 tools/class-overshoot-stream.py --dump $SG1_DUMP --trailer -o inventory
+    python3 tools/class-overshoot-stream.py --report-trailer
     python3 tools/class-overshoot-stream.py --check          # synthetic payloads, no dump, writes nothing
 
 Reads the packages; no boot, no Ghidra round, no property value decoded.
@@ -47,6 +54,9 @@ CORPUS_COLUMNS = ["package", "class", "payload", "block_start", "array_end", "ov
 COLUMNS = ["package", "class", "payload", "block_start", "array_end", "overshoot", "heads", "group_verdict",
            "declared", "reason", "props", "end", "trailer", "known", "unknown", "ctl_closes", "ctl_known",
            "ctl_max_known", "verdict"]
+TRAILER_ARTIFACT = "class_trailer_scan.csv"
+TRAILER_COLUMNS = ["package", "class", "payload", "block_start", "offset", "rel", "declared", "verdict", "props",
+                   "end", "trailer", "known", "unknown"]
 
 
 def load_prop_stream():
@@ -251,6 +261,128 @@ def sweep_corpus(args):
     return rows
 
 
+def scan_offsets(data, pkg, mod, base, decl, window):
+    """The parse at every offset in [base, base + window], as trailer rows."""
+    out = []
+    window = min(int(window), len(data) - base - 1)
+    for rel in range(0, max(0, window) + 1):
+        start = base + rel
+        got = parse_at(data, pkg, mod, start)
+        row = {"payload": len(data), "block_start": base, "offset": start, "rel": rel, "declared": len(decl),
+               "verdict": "unparsed", "props": "", "end": "", "trailer": "", "known": "", "unknown": ""}
+        if got is not None:
+            reason, props, end = got
+            row.update({"verdict": verdict(reason, props, end, len(data), start), "props": len(props),
+                        "end": end, "trailer": len(data) - (start + end),
+                        "known": sum(1 for p in props if p["name"] in decl),
+                        "unknown": sum(1 for p in props if p["name"] not in decl)})
+        out.append(row)
+    return out
+
+
+def scan_trailer(args):
+    """Read the tag stream at every offset in [block_start, block_start + window] on the rows that stop short."""
+    declared = declared_closure()
+    mod = load_prop_stream()
+    only = set(x.strip() for x in args.only.split(",")) if args.only else None
+    source = []
+    for r in read_artifact():
+        if only is not None:
+            if "%s.%s" % (r["package"], r["class"]) not in only:
+                continue
+        else:
+            if r["verdict"] != "ends-short":
+                continue
+            if not (0 < int(r["trailer"]) <= args.trailer):
+                continue
+        source.append(r)
+    if not source:
+        print("FAIL class-overshoot-stream: no row to scan -- run --sweep first, or name one with --only")
+        return 1
+    by_pkg = collections.defaultdict(list)
+    for r in source:
+        by_pkg[r["package"]].append(r)
+    rows, missing = [], 0
+    for name, rs in sorted(by_pkg.items()):
+        path = os.path.join(args.dump, "System", name + ".u")
+        if not os.path.isfile(path):
+            missing += len(rs)
+            continue
+        pkg = Package(path)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        by_class = {}
+        for e in pkg.exports:
+            if pkg.class_name_of(e) == "Class":
+                by_class.setdefault(pkg.name(e["name"]), e)
+        for r in rs:
+            exp = by_class.get(r["class"])
+            if exp is None:
+                missing += 1
+                continue
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            base = int(r["block_start"])
+            decl = declared.get(r["class"], set())
+            for row in scan_offsets(data, pkg, mod, base, decl, args.trailer):
+                row["package"], row["class"] = name, r["class"]
+                rows.append(row)
+    rows.sort(key=lambda r: (r["package"], r["class"], int(r["rel"])))
+    if args.out:
+        outdir = args.out if os.path.isabs(args.out) else os.path.join(ROOT, args.out)
+        os.makedirs(outdir, exist_ok=True)
+        path = os.path.join(outdir, TRAILER_ARTIFACT)
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=TRAILER_COLUMNS)
+            w.writeheader()
+            for row in rows:
+                w.writerow({c: row.get(c, "") for c in TRAILER_COLUMNS})
+        print("wrote %s: %d offsets over %d row(s)" % (path, len(rows), len(source)))
+    if missing:
+        print("  %d row(s) without an export in the dump" % missing)
+    return report_trailer(rows)
+
+
+def report_trailer(rows=None):
+    """Which offsets inside a row's trailer land on the payload's last byte, and what they name."""
+    if rows is None:
+        path = os.path.join(ROOT, "inventory", TRAILER_ARTIFACT)
+        if not os.path.isfile(path):
+            print("FAIL class-overshoot-stream: no trailer rows -- run --trailer -o inventory first")
+            return 1
+        rows = list(csv.DictReader(open(path, newline="", encoding="utf-8")))
+    if not rows:
+        print("FAIL class-overshoot-stream: the trailer artifact is empty")
+        return 1
+    by_row = collections.OrderedDict()
+    for r in rows:
+        by_row.setdefault((r["package"], r["class"]), []).append(r)
+    print("%d row(s) that stop short, read at every offset in [block_start, block_start + %d]"
+          % (len(by_row), max(int(r["rel"]) for r in rows)))
+    some_close = 0
+    for (pkg, cls), rs in by_row.items():
+        rs.sort(key=lambda r: int(r["rel"]))
+        head = rs[0]
+        closes = [r for r in rs if r["verdict"] == "closes"]
+        counts = collections.Counter(r["verdict"] for r in rs)
+        print("  %s.%s payload %s block_start %s, %s offsets: block start %s (trailer %s, %s declared tags)"
+              % (pkg, cls, head["payload"], head["block_start"], len(rs), head["verdict"], head["trailer"],
+                 head["known"]))
+        print("    verdicts: %s" % ", ".join("%s:%d" % kv for kv in counts.most_common()))
+        if closes:
+            some_close += 1
+            best = max(int(r["known"]) for r in closes)
+            print("    offsets landing on the payload's last byte: %s; declared tags at those: %s (best %d against "
+                  "the block start's %s)" % (", ".join("+%s" % r["rel"] for r in closes),
+                                             "/".join(str(r["known"]) for r in closes), best, head["known"]))
+        else:
+            print("    no offset in the window lands on the payload's last byte")
+    print("  %d of %d row(s) have a later offset that closes; %d name no declared property at all, so the name "
+          "test is silent there" % (some_close, len(by_row),
+                                    sum(1 for rs in by_row.values() if int(rs[0]["declared"]) == 0)))
+    return 0
+
+
 def report_corpus(rows=None):
     if rows is None:
         path = os.path.join(ROOT, "inventory", CORPUS_ARTIFACT)
@@ -434,10 +566,24 @@ def selftest():
         if verdict(*args) != want:
             print("FAIL class-overshoot-stream: verdict answered %s, expected %s" % (verdict(*args), want))
             bad += 1
+    # the trailer scan reads every offset in the window and names the one that closes
+    body = bytes([0xEE, 0xEE, 0x1, 0xAA, 0xBB, 0x1, 0x07, 0x07, 0x0])
+    scan = scan_offsets(body, pkg, mod, 0, declared, 2)
+    if [r["verdict"] for r in scan] != ["overrun", "overrun", "closes"]:
+        print("FAIL class-overshoot-stream: the trailer scan answered %s" % [r["verdict"] for r in scan])
+        bad += 1
+    elif scan[2]["rel"] != 2 or scan[2]["known"] != 2 or scan[2]["trailer"] != 0:
+        print("FAIL class-overshoot-stream: the closing offset answered %s" % (scan[2],))
+        bad += 1
+    # a window that runs past the payload stops at the last start
+    tail = scan_offsets(body, pkg, mod, 7, declared, 40)
+    if len(tail) != 2 or tail[0]["offset"] != 7 or any(r["offset"] >= len(body) for r in tail):
+        print("FAIL class-overshoot-stream: a clamped window answered %d offsets" % len(tail))
+        bad += 1
     if bad:
         return 1
-    print("ok   class-overshoot-stream: a closing parse, a short end, an overrun, an out-of-range start "
-          "and five verdict shapes")
+    print("ok   class-overshoot-stream: a closing parse, a short end, an overrun, an out-of-range start, "
+          "a two-offset trailer scan, a clamped window and five verdict shapes")
     return 0
 
 
@@ -449,6 +595,10 @@ def main():
     ap.add_argument("-o", "--out", default=None)
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--report-corpus", action="store_true")
+    ap.add_argument("--trailer", type=int, default=None,
+                    help="scan [block_start, block_start + N] on the rows that stop short (default 64)")
+    ap.add_argument("--only", default=None, help="package.Class,... to scan instead of every short row")
+    ap.add_argument("--report-trailer", action="store_true")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
@@ -467,6 +617,15 @@ def main():
         return report_corpus(sweep_corpus(args))
     if args.report_corpus:
         return report_corpus()
+    if args.report_trailer:
+        return report_trailer()
+    if args.trailer is not None or args.only:
+        if args.trailer is None:
+            args.trailer = 64
+        if not args.dump:
+            print("FAIL class-overshoot-stream: --trailer needs --dump")
+            return 1
+        return scan_trailer(args)
     ap.print_help()
     return 0
 

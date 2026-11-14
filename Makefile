@@ -86,7 +86,7 @@ help:
 	@echo "  class-tail-units      the record tail's units, and whether the 32 claims start inside one (needs the dump)"
 	@echo "  class-tail-run        the run after the last unit: names, an import reference, a name, a list; where the census starts"
 	@echo "  class-record-overshoot  the arrays that end past the block start, against the locator head census"
-	@echo "  class-overshoot-stream  the defaults stream read from the block start, on the rows the head census is silent on"
+	@echo "  class-overshoot-stream  the defaults stream read from the block start, on the rows the head census is silent on, and at every offset inside a short row's trailer"
 	@echo "  archive-slots          the archive's vtable and one compact field per FName, measured from its slots"
 	@echo "  record-writer-calls    every call into the record and name writers, and the member each is handed"
 	@echo "  class-member-map       where a class's members begin, read from its destructor's lea/call chain"
@@ -1149,12 +1149,15 @@ class-record-overshoot:
 
 # The defaults stream read from the located block start: the one witness left on the rows whose array
 # overshoots it and whose head census is silent (`docs/NATIVE_VM.md`, *The defaults stream closes on the
-# block start*). Needs the dump; `--check` is synthetic and needs nothing.
+# block start*). The third mode reads the same stream at every offset inside a short row's trailer, which is
+# how the three rows that stop 41-59 bytes short were settled. Needs the dump; `--check` is synthetic.
 class-overshoot-stream:
 	python3 tools/class-overshoot-stream.py --dump $(SG1_DUMP) --sweep -o inventory
 	python3 tools/class-overshoot-stream.py --dump $(SG1_DUMP) --corpus -o inventory
+	python3 tools/class-overshoot-stream.py --dump $(SG1_DUMP) --trailer 59 -o inventory
 	@python3 tools/class-overshoot-stream.py --report
 	@python3 tools/class-overshoot-stream.py --report-corpus
+	@python3 tools/class-overshoot-stream.py --report-trailer
 
 class-tail:
 	python3 tools/class-tail.py $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System --sweep -o inventory

@@ -3492,3 +3492,20 @@ located array, not the start: what the 95 share is the array's own tail. **What 
 is still the trailer read named in the eighteenth entry -- the tag parse from each offset in
 `[block_start, block_start + 59]`, looking for a start that lands on the payload's last byte with declared names.
 Nothing here needs a boot or a decompile.
+
+**2026-11-13 (twentieth): the trailer read finds no later start that names a declared property, so the short rows'
+41-59 bytes are a field after the defaults and not a misplaced block start.** The eighteenth and nineteenth entries
+named the test and this is it: `tools/class-overshoot-stream.py --trailer 59` reads the same property parse at every
+offset in `[block_start, block_start + 59]` on the three rows that stop short
+(`inventory/class_trailer_scan.csv`, 164 offsets). Later starts reach the payload's last byte on **3 of 48**
+offsets on `Engine.KBSJoint` (+39, +41, +44), **0 of 56** on `StargateContent.CTFGateTeleporter` and **5 of 60** on
+`StargateVehicles.HoverTankPilotBot` (+20, +38, +56, +57, +59) -- 8 of 164 (4.9%) against the 38.5% the corpus
+measured at `block_start + 1..4`, so a close is *rarer* inside the trailer than at an ordinary neighbour. **Every one
+of the eight names zero declared properties**: two of the three rows carry no row in `inventory/class_properties.csv`
+so the name test is silent there, and on `HoverTankPilotBot` (591 declared names in the closure, 1 matched at the
+block start) the closing parses resolve to `Timer`, `Engine`, `Tweak_Pawns_HoverTankPilot` and `InVal`, none a
+declared property, while the block start names `Mesh` and `ControllerClass`, one of which is declared. So the block
+start is not misplaced on any of the three and the trailer is a region serialised after the defaults block. **What
+would settle what the region is** is the writer's own body -- `Core/0003a800_Core_UnClass.c` in
+`$WORK/module-export`, read between the defaults call and the function's return for the next archive write -- or a
+second class whose trailer is byte-identical (a shared constant field). Nothing here needs a boot or a decompile.

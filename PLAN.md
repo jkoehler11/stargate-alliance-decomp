@@ -1201,6 +1201,29 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, no start inside a short trailer lands on the payload end with declared names)
+
+- **The three short rows are read at every offset in `[block_start, block_start + 59]` and no later start explains the
+  trailer.** `--trailer 59` over `inventory/class_trailer_scan.csv` (164 offsets): later starts reach the payload's
+  last byte on 3 of 48 offsets on `Engine.KBSJoint`, 0 of 56 on `StargateContent.CTFGateTeleporter` and 5 of 60 on
+  `StargateVehicles.HoverTankPilotBot` -- 8 of 164 (4.9%) against 38.5% at `block_start + 1..4` -- and **all eight
+  name zero declared properties**. Two of the three rows are not in `class_properties.csv`, so the name test is silent
+  there; on `HoverTankPilotBot` the closers resolve to `Timer`, `Engine`, `Tweak_Pawns_HoverTankPilot`, `InVal` (none
+  declared) while the block start names `Mesh` and `ControllerClass` (one declared). So the trailer is not a misplaced
+  boundary: the 41-59 bytes are a region serialised after the defaults, and the block start stands on all three.
+- **The close-rate control is what makes it a negative and not a tie.** A closing parse inside the trailer is rarer
+  than at an ordinary neighbour (4.9% against 38.5%), so the trailer does not read like a stream that begins a few
+  bytes late -- the two closes that exist are tag-shaped noise, which is also why most offsets answer `empty`
+  (25 of 48, 24 of 56, 20 of 60).
+- Tool (`tools/class-overshoot-stream.py`: new `--trailer N`, `--only`, `--report-trailer`; `--check` now also drives
+  a two-offset scan and a clamped window) + `inventory/class_trailer_scan.csv` (164 offsets) + `docs/NATIVE_VM.md`
+  (new section) + `docs/UNKNOWNS.md` U18 (twentieth) + `make class-overshoot-stream` (now three modes) + this note.
+  Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the located array's own tail on the 95 overshoot rows. On 36 of them the record's
+  closing group parses and ends on the block start while the located array still runs past it, so two walks claim the
+  same bytes; re-read the array walk's element widths (`inventory/class_record_element_fields.csv`) over
+  `[block_start, array_end]` against the 454 rows that land correctly, and name the field the walk over-consumes.
+
 ### Execution notes (2026-11-13, the same parse over 2,204 located starts makes the close a non-refutation)
 
 - **The defaults stream closes on 2,113 of 2,204 located block starts (95.9%).** `--corpus` reads every row of
