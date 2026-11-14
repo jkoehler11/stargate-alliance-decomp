@@ -3475,3 +3475,20 @@ another start: parse the tag stream from each offset in `[block_start, block_sta
 whether any of them lands on the payload's last byte with declared names -- a start that does makes the trailer a
 misplaced boundary, and none makes those 41-59 bytes a field the class serialises after its defaults. Nothing here
 needs a boot or a decompile.
+
+**2026-11-13 (nineteenth): the same parse on every located start says the close is the norm, so the witness is a
+non-refutation and the names are the discriminator.** The eighteenth entry read the defaults stream from the block
+start on the 95 overshoot rows and found 92 closing on the payload's last byte. Measured against the whole corpus
+(`tools/class-overshoot-stream.py --corpus`, `inventory/class_blockstart_stream.csv`, the 2,204 rows of
+`inventory/class_record_bound.csv`) that rate is ordinary: **2,113 of 2,204 (95.9%)** close, and the 91 that stop short
+leave a trailer of 1-64 bytes (mode 1 on 22, 43 on 6, 41 on 5, with 44 of them in 33-64). The 95 split 451 of 454
+(99.3%) where the array lands at or before the block against 92 of 95 (96.8%) past it, so the block start is
+consistent with the payload everywhere and the witness confirms nothing on its own. What it does settle is that the
+three short rows are not outliers: 41, 49 and 59 bytes sit inside a 44-row bucket of the corpus. The position
+control is on the same order -- 3,394 of 8,816 later starts close (38.5%) -- and the name column is what separates
+them: among the 919 rows whose class declares properties and whose neighbour closes, the block start names more
+declared tags on 606, the same on 299 and fewer on 14 (1.5%). **What is still open** is unchanged and is the
+located array, not the start: what the 95 share is the array's own tail. **What would settle the three short rows**
+is still the trailer read named in the eighteenth entry -- the tag parse from each offset in
+`[block_start, block_start + 59]`, looking for a start that lands on the payload's last byte with declared names.
+Nothing here needs a boot or a decompile.

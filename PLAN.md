@@ -1201,6 +1201,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool + `inventory/delegate_blockstart.csv` + `docs/CLASS_DEFAULTS.md` (new section) + U18 + this note. Reads the
   packages; no boot, no Ghidra round.
 
+### Execution notes (2026-11-13, the same parse over 2,204 located starts makes the close a non-refutation)
+
+- **The defaults stream closes on 2,113 of 2,204 located block starts (95.9%).** `--corpus` reads every row of
+  `class_record_bound.csv` through the same parse: 91 stop short, leaving a trailer of 1-64 bytes (mode `1` on 22,
+  `43` on 6, `41` on 5; 44 of the 91 in 33-64). So the 92 of 95 the last note measured is the corpus rate (451 of 454
+  = 99.3% on the rows whose array lands at or before the block against 92 of 95 = 96.8% past it), and the three short
+  rows are inside an ordinary bucket rather than outliers.
+- **The position control is the same order and the name column is what separates.** 3,394 of the 8,816 later starts
+  close (38.5%); among the 919 rows whose class declares properties and whose neighbour closes, the block start names
+  more declared tags on 606, the same on 299, fewer on **14** (1.5%). 1,237 closing parses name no property the
+  inventory carries, so on those the close is the only evidence.
+- Tool (`tools/class-overshoot-stream.py`: new `--corpus` and `--report-corpus`, the same `--check`) +
+  `inventory/class_blockstart_stream.csv` (2,204 rows) + `docs/NATIVE_VM.md` (the section's corpus census) +
+  `docs/UNKNOWNS.md` U18 (nineteenth) + `make class-overshoot-stream` (now both modes) + this note. Reads the
+  packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** the three short rows' trailer -- the tag parse from each offset in
+  `[block_start, block_start + 59]` on `Engine.KBSJoint`, `StargateContent.CTFGateTeleporter` and
+  `StargateVehicles.HoverTankPilotBot`, looking for a start that lands on the payload's last byte with declared names.
+  The corpus says the trailer itself is ordinary; what is not measured is whether a later start explains it.
+
 ### Execution notes (2026-11-13, the defaults stream confirms the block start on 92 of the 95 overshoot rows)
 
 - **The 40 rows the head census is silent on are answered from the block's own grammar.** `read_block` at

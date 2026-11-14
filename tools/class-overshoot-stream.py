@@ -40,6 +40,10 @@ from ue2pkg import Package  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCE = "class_record_overshoot.csv"
 ARTIFACT = "class_overshoot_stream.csv"
+CORPUS_SOURCE = "class_record_bound.csv"     # every located block start in the corpus
+CORPUS_ARTIFACT = "class_blockstart_stream.csv"
+CORPUS_COLUMNS = ["package", "class", "payload", "block_start", "array_end", "overshoot", "heads", "declared",
+                  "reason", "props", "end", "trailer", "known", "unknown", "ctl_closes", "ctl_max_known", "verdict"]
 COLUMNS = ["package", "class", "payload", "block_start", "array_end", "overshoot", "heads", "group_verdict",
            "declared", "reason", "props", "end", "trailer", "known", "unknown", "ctl_closes", "ctl_known",
            "ctl_max_known", "verdict"]
@@ -184,6 +188,115 @@ def sweep(args):
     if missing:
         print("  %d row(s) without an export in the dump" % missing)
     return rows
+
+
+def sweep_corpus(args):
+    """The same parse over every located block start, so the 95 overshoot rows can be read against the corpus."""
+    declared = declared_closure()
+    mod = load_prop_stream()
+    ends = {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "class_record_array.csv"), newline="",
+                                 encoding="utf-8")):
+        ends[(r["package"], r["class"])] = r.get("array_end", "")
+    source = [r for r in csv.DictReader(open(os.path.join(ROOT, "inventory", CORPUS_SOURCE), newline="",
+                                            encoding="utf-8")) if r.get("block_start")]
+    by_pkg = collections.defaultdict(list)
+    for r in source:
+        by_pkg[r["package"]].append(r)
+    rows, missing = [], 0
+    for name, rs in sorted(by_pkg.items()):
+        path = os.path.join(args.dump, "System", name + ".u")
+        if not os.path.isfile(path):
+            missing += len(rs)
+            continue
+        pkg = Package(path)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        by_class = {}
+        for e in pkg.exports:
+            if pkg.class_name_of(e) == "Class":
+                by_class.setdefault(pkg.name(e["name"]), e)
+        for r in rs:
+            exp = by_class.get(r["class"])
+            if exp is None:
+                missing += 1
+                continue
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            start = int(r["block_start"])
+            if start <= 0 or start >= len(data):
+                missing += 1
+                continue
+            array_end = ends.get((name, r["class"]), "")
+            row = {"package": name, "class": r["class"], "payload": len(data), "block_start": start,
+                   "array_end": array_end,
+                   "overshoot": (int(array_end) - start) if array_end not in ("", None) else "",
+                   "heads": r.get("heads", ""), "declared": len(declared.get(r["class"], ()))}
+            row.update(measure(data, pkg, mod, start, declared.get(r["class"], set())))
+            row["payload_matches"] = int(str(len(data)) == str(r.get("payload", "")))
+            rows.append(row)
+    rows.sort(key=lambda r: (r["verdict"], r["package"], r["class"]))
+    if args.out:
+        outdir = args.out if os.path.isabs(args.out) else os.path.join(ROOT, args.out)
+        os.makedirs(outdir, exist_ok=True)
+        path = os.path.join(outdir, CORPUS_ARTIFACT)
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=CORPUS_COLUMNS)
+            w.writeheader()
+            for row in rows:
+                w.writerow({c: row.get(c, "") for c in CORPUS_COLUMNS})
+        print("wrote %s: %d rows" % (path, len(rows)))
+    if missing:
+        print("  %d row(s) without an export in the dump" % missing)
+    return rows
+
+
+def report_corpus(rows=None):
+    if rows is None:
+        path = os.path.join(ROOT, "inventory", CORPUS_ARTIFACT)
+        if not os.path.isfile(path):
+            print("FAIL class-overshoot-stream: no corpus rows -- run --corpus -o inventory first")
+            return 1
+        rows = list(csv.DictReader(open(path, newline="", encoding="utf-8")))
+    if not rows:
+        print("FAIL class-overshoot-stream: the corpus artifact is empty")
+        return 1
+    closes = [r for r in rows if r["verdict"] == "closes"]
+    print("%d located block starts re-read from the dump: the defaults stream terminates on the payload's last "
+          "byte on %d (%.1f%%)" % (len(rows), len(closes), 100.0 * len(closes) / len(rows)))
+    print("  verdicts: %s" % ", ".join("%s:%d" % kv for kv in
+                                       collections.Counter(r["verdict"] for r in rows).most_common()))
+    short = [r for r in rows if r["verdict"] in ("ends-short", "ends-past")]
+    if short:
+        buckets = collections.Counter()
+        for r in short:
+            t = int(r["trailer"])
+            buckets["1-8" if 1 <= t <= 8 else "9-16" if t <= 16 else "17-32" if t <= 32 else "33-64" if t <= 64
+                    else ">64" if t > 64 else "<0"] += 1
+        print("  where it stops short (%d rows), the trailer in bytes: %s; mode %s"
+              % (len(short), ", ".join("%s:%d" % kv for kv in buckets.most_common()),
+                 collections.Counter(int(r["trailer"]) for r in short if 0 < int(r["trailer"]) <= 64).most_common(4)))
+    past = [r for r in rows if r.get("overshoot") not in ("", None)]
+    for label, group in (("the array ends at or before the block", [r for r in past if int(r["overshoot"]) <= 0]),
+                         ("the array ends past the block", [r for r in past if int(r["overshoot"]) > 0])):
+        got = [r for r in group if r["verdict"] == "closes"]
+        print("  %s (%d rows): the stream closes on %d (%.1f%%)"
+              % (label, len(group), len(got), 100.0 * len(got) / max(1, len(group))))
+    later = sum(int(r["ctl_closes"]) for r in rows if r["ctl_closes"] != "")
+    print("  control, the same parse at block_start + 1..4: %d of the %d later starts close (%.1f%%)"
+          % (later, 4 * len(rows), 100.0 * later / max(1, 4 * len(rows))))
+    informative = [r for r in rows if int(r["declared"] or 0) > 0 and r["ctl_max_known"] != ""]
+    if informative:
+        print("  of the %d rows whose class declares properties and whose neighbour closes, the block start names "
+              "more declared tags on %d, the same on %d, fewer on %d"
+              % (len(informative),
+                 sum(1 for r in informative if int(r["known"]) > int(r["ctl_max_known"])),
+                 sum(1 for r in informative if int(r["known"]) == int(r["ctl_max_known"])),
+                 sum(1 for r in informative if int(r["known"]) < int(r["ctl_max_known"]))))
+    known = [r for r in closes if int(r["known"]) > 0]
+    print("  the closing parses name a declared property on %d of %d; %d name none at all"
+          % (len(known), len(closes), sum(1 for r in closes if int(r["known"]) == 0)))
+    return 0
 
 
 def report(rows=None):
@@ -332,8 +445,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dump", default=os.environ.get("SG1_DUMP", ""))
     ap.add_argument("--sweep", action="store_true")
+    ap.add_argument("--corpus", action="store_true")
     ap.add_argument("-o", "--out", default=None)
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--report-corpus", action="store_true")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
@@ -345,6 +460,13 @@ def main():
         return report(sweep(args))
     if args.report:
         return report()
+    if args.corpus:
+        if not args.dump:
+            print("FAIL class-overshoot-stream: --corpus needs --dump")
+            return 1
+        return report_corpus(sweep_corpus(args))
+    if args.report_corpus:
+        return report_corpus()
     ap.print_help()
     return 0
 

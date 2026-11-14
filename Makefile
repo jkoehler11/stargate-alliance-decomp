@@ -1152,7 +1152,9 @@ class-record-overshoot:
 # block start*). Needs the dump; `--check` is synthetic and needs nothing.
 class-overshoot-stream:
 	python3 tools/class-overshoot-stream.py --dump $(SG1_DUMP) --sweep -o inventory
+	python3 tools/class-overshoot-stream.py --dump $(SG1_DUMP) --corpus -o inventory
 	@python3 tools/class-overshoot-stream.py --report
+	@python3 tools/class-overshoot-stream.py --report-corpus
 
 class-tail:
 	python3 tools/class-tail.py $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System --sweep -o inventory
