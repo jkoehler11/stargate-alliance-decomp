@@ -1379,6 +1379,47 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the 24 unregistered tables have installers, and the installers are bases)
+
+- **The store sweep finds a body installing every one of the 24.** Sweeping `.text` for `C7 /0` stores of
+  the 24 table addresses gives **44 store sites in 42 bodies**; 2 of the sites sit in no symbol-map body
+  (one body at `0x0038d04`..`0x0038d7f` stores `0x004d1468` three times and only its last store is inside a
+  mapped body). So the 24 are absent from the *site census*, not unread: nothing about them is
+  unreachable, and the previous note's "no size at all" is a statement about the registration path only.
+- **No installer is a registration thunk target, and that is measured against the census.** Every store
+  body was checked against `inventory/class_registrations.csv`'s `thunk_target`, `thunk_va` and `stub_va`:
+  0 of them carry one. The chain a registration builds (site -> thunk -> body -> store) therefore cannot
+  reach these tables from either end.
+- **The callers are class constructors: the 24 are bases.** Of the 290 inbound edges to the 42 bodies, 81
+  are calls from a class constructor and 88 from a class destructor (both read from
+  `inventory/class_constructors.csv`'s `form`), 12 from installers the shape rule could not classify, 23
+  from a forwarder wrapper, and 86 are tail jumps of which 84 come from code the symbol map does not
+  cover. **103 named classes call an installer body from their own constructor** -- the base-constructor
+  shape -- 13 of the 24 tables have at least one such caller, and 2 installers have no inbound edge at all
+  (`0x00034bc0` installing `0x004d34d8`, `0x00108010` installing `0x004fa390`).
+- **A forwarder is a body whose first call targets the installer, and it must not be counted as ordinary
+  code.** The first pass classified those as `code` and read "24 bodies called from ordinary code"; the
+  shapes are the destructor pair (`call <body>`, `call [reg+8]`, `ret 4`) and (`call <body>`, `ret`), and
+  an `E9` edge had been counted as a caller too. Measuring the kind per edge is what separates a base
+  class from dead code.
+- **The tail jumps are one unmapped island, and it is a lead.** The `jmp` edges land from
+  `0x3f27f3`..`0x3f3d83`, inside a hole in `symbols/xbox_functions.csv` between the 8-byte `FUN_003f28b0`
+  and `FUN_003f6d70` (`0x3f28b8`..`0x3f6d70`, 17 KB). Records repeat on a `0x20`-byte stride
+  (`jmp <installer>`, `mov eax,<.rdata>`, `jmp`). It is not a registration -- nothing there pushes an
+  object size or calls the registrar -- so it does not name the 24, and reading it is the next task.
+- **The caller rule already names 6 of the 24.** `inventory/class_table_parents.csv` proposes `Material`,
+  `RenderedMaterial`, `BitmapMaterial`, `CameraEffect`, `WaterTexture` and `Engine`; 17 are its
+  `constrained` verdict, 1 a name clash and 1 has no named caller. The artifact joins that column in
+  beside the store evidence and labels it a join, not a second measurement.
+- Tool (`tools/class-orphan-tables.py`: the store sweep filtered to the 24, the thunk check, per-edge
+  caller kinds and a verdict, `-o`/`--report`/`--write-doc`/`--check-doc`/`--check` over committed CSVs and
+  a synthetic image) + `inventory/class_orphan_tables.csv` (44 rows) + the section and the two bullets on
+  `docs/systems/CLASS_REGISTRATION.md` + `make class-orphan-tables` + this note.
+- **Next measurement:** the unmapped island. `0x3f28b8`..`0x3f6d70` holds 84 tail jumps into these
+  installers on a `0x20`-byte stride, so read one stride's records and ask whether the `mov eax,<.rdata>`
+  operand is a `UClass` object (a `.rdata` dword that a class table's own registration also carries) --
+  that would make the island a class-indexed constructor dispatch rather than a linker artifact.
+
 ### Execution notes (2026-11-14, the object size has one source and three of its columns are copies)
 
 - **The four `object_size` columns are one read.** Joined on the table, the registration census (the site's
