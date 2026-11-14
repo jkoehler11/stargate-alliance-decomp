@@ -1255,6 +1255,41 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the second class-ctor copy is a different inlining of the same source, and 3,779 bodies have no inbound edge)
+
+- **The nominated pair is not a twin of the live pair; it is the same source compiled with `UState`'s ctor
+  inlined.** `0x0003c430` installs Class's table `0x004d4870` and ORs `0x12` exactly like the registration
+  ctor, but its base call is `0x0003bd30`, which installs **Struct's** table (`0x004d4418`,
+  `inventory/class_table_parents.csv`) -- not State's. The block each body clears separates the readings:
+  the copy, the State copy at `0x0003c3d0` and the live State ctor `0x0003a5f0` all clear `+0x80..+0x94`
+  (six stores), `0x0003c3d0` installs the State table itself, and the live Class ctor clears no such block.
+  A Class ctor that clears its State base's block with the State table install dropped is the State ctor
+  inlined into it, and then its base call can only go to the class below State.
+- **Nothing reaches it, and its base's two callers are inside the same set.** `0x0003c430` has no `E8`, `E9`
+  or dword edge from anywhere in any section; `0x0003bd30` has exactly two, at `0x0003c3f2` and `0x0003c45c`
+  -- the State copy and the Class copy. The reference graph is closed under the family, so this is not a
+  copy the linker kept *for* a reference. Whether it survived as an unswept body or lost a COMDAT pick is
+  not decidable from the image; that nothing can call it is.
+- **The census behind that reads reachability as a fixpoint.** `tools/native-unreachable.py` counts an edge
+  as a relative `E8` call, a relative `E9` jump, or a dword in any section equal to the start; the
+  population is the 14,973 map bodies plus the 4,534 starts found by the image's `int3`-padding rule, and a
+  body whose every inbound edge comes from an unreachable body dies too (only 438 of the 3,779 are dead by
+  that step alone). **3,779 bodies are unreachable -- 3,106 the map names, 673 padding-only, 799 carrying a
+  real name -- in 433 runs.** The largest run (362 bodies, `0x49f360-0x4aa5d8`) has only 114 4-byte-aligned
+  starts, so the artifact keeps `start` and `aligned` per row instead of calling a run dead code: a body the
+  map names at an odd address may be a definition Ghidra invented over data, and this measurement does not
+  separate that from dead code (`docs/systems/CLASS_REGISTRATION.md`, *What this measurement does not say*).
+- Tool (`tools/native-unreachable.py`, `--xbe`/`-o`/`--report`/`--trace`/`--write-doc`/`--check-doc`/
+  `--check`, 15 assertions) + `inventory/native_unreachable.csv` (4,218 rows: the census, 433 runs, 5 family
+  bodies and 3,779 body rows) + `docs/systems/CLASS_REGISTRATION.md` (generated block, `--check-doc` in
+  `make ci`) + `make native-unreachable` + this note. No boot: the image, the symbol map and the committed
+  class tables.
+- **Next measurement:** the family rows name the class each body *installs*, not the class it *builds*.
+  Reading which registration literal builds the dead family's Struct ctor (`0x0003bd30`) against the live
+  one (`0x00062470`, shared by several ctors) would say whether the dead family is a whole duplicate object
+  layer or one more-inlined overload -- `tools/class-ctors.py --stores-out` already holds the 1,036-store
+  census, so that read is a join, not a boot.
+
 ### Execution notes (2026-11-14, the store outside the symbol map is dead code, and the bit it was meant to compose arrives through the registration)
 
 - **Every `+0x498` displacement in the image is 136 instructions, 13 of them writes, and only three touch the
@@ -1280,9 +1315,10 @@ are limited to expected fields (checksum/timestamp) and documented.
   assertions) + `inventory/class_flag_stores.csv` (474 rows: 136 sites, 13 stores, 7 reach rows, 317 call rows, and the census row that carries these counts)
   + `docs/systems/CHECKPOINTS.md` (*How a bit can reach the class flag word*) + `make class-flag-stores` + this
   note. No boot: the image, the class-table list and the committed corpus.
-- **Next measurement:** the dead pair `0x0003c430`/`0x0003bd30` against the live pair `0x0003af60`/`0x0003a5f0`
-  -- a byte-level diff of the two bodies says what the linker kept a copy for (an unregistered variant, a
-  template instantiation), and both are already at hand with no boot.
+- **Answered (the note above):** the dead pair `0x0003c430`/`0x0003bd30` against the live pair
+  `0x0003af60`/`0x0003a5f0` -- the copy is the same source with `UState`'s ctor inlined into it, its base
+  call hoisted to the Struct ctor and the State table install dropped, and no byte of the image points at
+  either body (`docs/systems/CLASS_REGISTRATION.md`).
 
 ### Execution notes (2026-11-14, the five unnamed flag bits are read by the serialiser, and one has no carrier)
 
