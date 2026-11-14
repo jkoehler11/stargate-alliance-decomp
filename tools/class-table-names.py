@@ -22,12 +22,21 @@ the earlier version got wrong, both measured:
     each. Keeping the last site written named the object root `VertexStreamBase` -- a literal no
     package in the dump declares -- because `0x001eb186` sorts after `0x00064af6`. Nor does the
     *lowest* site help: that would have named the same table `Exporter` (`0x000349e6`).
-  * **The read is bounded by the body, and in this image the bound fires nowhere.** A flat 400-byte read
-    walks past a short constructor's own `ret` into the next function, which may store its own table, and
-    the store is then attributed to the wrong body. The read now stops at the size
-    `symbols/xbox_functions.csv` gives the function; reading all 493 registration targets both ways agrees
-    on 493 of 493, because every target has a store of its own. The bound is a guard, not a correction,
-    and `--check` keeps a case where it bites.
+  * **The table a body installs is its *last* store, not its first.** MSVC writes the base constructor's
+    vtable itself when it inlines that constructor into a derived body, so a derived constructor stores
+    the base's table first and its own last: FireTexture's `0x002e81f0` stores `0x004cfc88` and then
+    `0x004cfd78`, IceTexture's `0x002e8370` stores `0x004cfc88` and then `0x004d0228`. Reading the first
+    store gave both classes to FractalTexture's table and left `0x004cfd78`/`0x004d0228` with no
+    registration at all.
+  * **The read is bounded by the body, and here the bound does move rows.** A flat 400-byte read walks past
+    a short constructor's own `ret` into the next function, which may store its own table, and the store is
+    then attributed to the wrong body. The read stops at the size `symbols/xbox_functions.csv` gives the
+    function, and at the body's own `int3` padding where the map has no size -- TextBuffer's target
+    `0x00075820` is a 19-byte stub whose flat window reads the two stores of the body after it.
+  * **A guarded stub can forward with `call`, and then the call's target is the constructor.** `0x00075820`
+    is `mov ecx,[esp+4]; test ecx,ecx; je; push L""; call 0x000669e0; ret`, and `0x000669e0` installs
+    TextBuffer's table. A body that opens with the thunk prefix, installs no table of its own, and ends in
+    a direct call is followed one hop -- never more.
 
 So the name comes from one of two joins, in this order, and the `name_rule` column says which:
 
@@ -40,6 +49,11 @@ So the name comes from one of two joins, in this order, and the `name_rule` colu
   * `ancestor-derived` -- no literal in the group is a common ancestor, but the group has one nearest
                           common ancestor (`FireTexture`/`IceTexture` -> `FractalTexture`). The table
                           is named for the ancestor, and the row says the name is derived.
+  * `base-store-ancestor` -- no registration names the table at all, but two or more registered
+                          classes store it *first* in their own constructor bodies, and their nearest
+                          common ancestor is the class whose constructor they inlined. One owner is
+                          not evidence (a class's nearest ancestor is itself), so a single owner
+                          leaves the table unnamed.
   * `unresolved`       -- no common ancestor either; the row keeps an empty class and lists its
                           candidates, rather than silently taking one.
   * `no-registration`  -- no site resolves to this table at all.
@@ -66,7 +80,8 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIELDS = ["table_va", "class", "object_size", "registration_va", "constructor_thunk_va",
-          "constructor_va", "installed_at", "evidence", "sites", "name_rule", "site_literals"]
+          "constructor_va", "installed_at", "stores", "bound", "evidence", "sites", "name_rule",
+          "site_literals"]
 ARTIFACT = os.path.join(ROOT, "inventory/xbe_class_table_names.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-table-names -->"
@@ -127,16 +142,37 @@ class Image:
                 return None
         return None
 
-    def installed_table(self, ctor_va, limit=None):
-        """The first `mov [reg], <known table>` inside the body -- bounded by its own size.
+    def padding_end(self, va, cap=1200):
+        """The body's own alignment pad: the offset of the first run of two or more `int3`.
 
-        Returns (table, store_va, bounded) or None. `bounded` says whether the read stopped at the
-        function's end (a size from the symbol map) or at the flat window.
+        MSVC pads a function's end to a 16-byte boundary with `0xcc`, and a *run* of two is the mark a
+        reader can trust -- a single `0xcc` can be a jump table's filler inside a body. None when the
+        body runs to the cap with no pad.
         """
-        n = limit if limit else WINDOW
-        b = self.read(ctor_va, n)
+        b = self.read(va, cap)
         if not b:
             return None
+        for i in range(len(b) - 1):
+            if b[i] == 0xCC and b[i + 1] == 0xCC:
+                return i
+        return None
+
+    def body_size(self, va):
+        """(limit, how) for one body: the symbol map's size, else its own int3 pad, else the window."""
+        size = self.size_of(va)
+        if size:
+            return size, "symbol"
+        pad = self.padding_end(va)
+        if pad:
+            return pad, "padding"
+        return WINDOW, "window"
+
+    def installed_tables(self, va, limit):
+        """Every `mov [reg], <known table>` in the body, in address order."""
+        b = self.read(va, limit)
+        if not b:
+            return []
+        out = []
         for i in range(len(b) - 6):
             if b[i] != 0xC7:                  # mov r/m32, imm32
                 continue
@@ -145,8 +181,45 @@ class Image:
                 continue
             imm = struct.unpack_from("<I", b, i + 2)[0]
             if imm in self.tables:
-                return imm, ctor_va + i, bool(limit)
+                out.append((imm, va + i))
+        return out
+
+    def call_target(self, va, limit):
+        """The last direct `call` in the body, as a target: a guarded stub's real constructor."""
+        for _sa, text in reversed(self.disasm(va, limit)):
+            m = re.match(r"call\s+0x([0-9a-f]+)", text)
+            if m:
+                return int(m.group(1), 16)
         return None
+
+    def tables_of(self, va):
+        """(tables, own store, how the read was bounded, stub followed) for one constructor body.
+
+        The body's own table is its **last** store. A body that installs none and opens with the thunk
+        prefix is a guarded stub; when it forwards with `call` rather than `jmp`, the tables are the
+        call's target's, read one hop only.
+        """
+        limit, how = self.body_size(va)
+        got = self.installed_tables(va, limit)
+        if got:
+            return got, got[-1], how, None
+        head = self.read(va, 4)
+        if head and head[:4] == THUNK_PREFIX:
+            tgt = self.call_target(va, limit)
+            if tgt:
+                limit2, _how2 = self.body_size(tgt)
+                got2 = self.installed_tables(tgt, limit2)
+                if got2:
+                    return got2, got2[-1], how, tgt
+        return [], None, how, None
+
+    def installed_table(self, ctor_va, limit=None):
+        """(table, store_va, bounded) for the body's own table, or None -- kept for one-off reads."""
+        limit, how = (limit, "symbol") if limit else self.body_size(ctor_va)
+        got = self.installed_tables(ctor_va, limit)
+        if not got:
+            return None
+        return got[-1][0], got[-1][1], how
 
     def disasm(self, start, size):
         key = (start, size)
@@ -277,23 +350,25 @@ def resolve_sites(img, funcs, fstarts, ctor):
         obj = None
         if pushes:
             obj = pushes[-1] if pushes[-1] else (pushes[-2] if len(pushes) > 1 else None)
-        table = thunk = target = store = bounded = None
+        table = thunk = target = store = None
+        how, stores, stub, got = "", 0, None, []
         for value in reversed(pushes):
             if value in img.tables or not img.read(value, 4):
                 continue
             for cand in (img.thunk_target(value), value):
                 if not cand:
                     continue
-                got = img.installed_table(cand, img.size_of(cand))
-                if got:
-                    table, thunk, target = got[0], value, cand
-                    store, bounded = got[1], got[2]
+                got, own, bnd, followed = img.tables_of(cand)
+                if own:
+                    table, thunk, target = own[0], value, cand
+                    store, how, stores, stub = own[1], bnd, len(got), followed
                     break
             if table:
                 break
         out.append({"site_va": site, "class_literal": literal, "object_size": obj,
                     "thunk_va": thunk, "thunk_target": target, "table_va": table,
-                    "installed_at": store, "bounded": bounded})
+                    "installed_at": store, "bound": how, "stores": stores, "stub": stub,
+                    "table_stores": got})
     return out
 
 
@@ -314,6 +389,37 @@ def choose_name(sites, per_thunk, hierarchy):
     return "", "unresolved", sites[0]
 
 
+def base_store_names(sites, chosen, hierarchy):
+    """Tables no registration names, but that a registered class's body stores before its own.
+
+    A derived constructor that inlines its base's constructor stores the base's table first and its
+    own last, so the first store names an ancestor of the class the site registered. One owner is not
+    evidence -- the ancestor of a class is the class itself -- so a name is claimed only when two or
+    more owners share one nearest common ancestor that none of them is (FireTexture and IceTexture,
+    both subclasses of FractalTexture, which is why `0x004cfc88` keeps its name).
+    """
+    group_of = {}
+    for s in sites:
+        own = s["table_va"]
+        if not own or not s.get("table_stores"):
+            continue
+        owner = chosen.get(own, ("", "", None))[0]
+        if not owner:
+            continue
+        for t, at in s["table_stores"]:
+            if t != own:
+                group_of.setdefault(t, []).append((owner, s, at))
+    out = {}
+    for t, group in group_of.items():
+        if t in chosen:
+            continue
+        owners = sorted({o for o, _s, _a in group})
+        derived = nearest_common(hierarchy, owners)
+        if derived and derived not in owners:
+            out[t] = (derived, owners, group[0][1], group[0][2])
+    return out
+
+
 def census(xbe, ctor):
     tables = load_tables(TABLES)
     hierarchy = load_hierarchy(CLASSES)
@@ -332,19 +438,21 @@ def census(xbe, ctor):
             per_table.setdefault(s["table_va"], []).append(s)
         if s["thunk_va"] is not None:
             per_thunk[s["thunk_va"]] = per_thunk.get(s["thunk_va"], 0) + 1
+    chosen = {t: choose_name(g, per_thunk, hierarchy) for t, g in per_table.items()}
+    base = base_store_names(sites, chosen, hierarchy)
 
     rows = []
     for table in sorted(tables):
         group = per_table.get(table, [])
         row = {"table_va": "0x%08x" % table, "class": "", "object_size": "", "registration_va": "",
-               "constructor_thunk_va": "", "constructor_va": "", "installed_at": "",
-               "evidence": "no registration names this table", "sites": "0",
+               "constructor_thunk_va": "", "constructor_va": "", "installed_at": "", "stores": "",
+               "bound": "", "evidence": "no registration names this table", "sites": "0",
                "name_rule": "no-registration", "site_literals": ""}
         if group:
-            name, rule, site = choose_name(group, per_thunk, hierarchy)
+            name, rule, site = chosen[table]
             row.update({
                 "class": name or "",
-                "object_size": "" if site["object_size"] is None else site["object_size"],
+                "object_size": "" if site["object_size"] is None else str(site["object_size"]),
                 "registration_va": "0x%08x" % site["site_va"],
                 "constructor_thunk_va": ("0x%08x" % site["thunk_va"]
                                          if site["thunk_va"] is not None else ""),
@@ -352,11 +460,33 @@ def census(xbe, ctor):
                                    if site["thunk_target"] is not None else ""),
                 "installed_at": ("0x%08x" % site["installed_at"]
                                  if site["installed_at"] is not None else ""),
+                "stores": str(site["stores"]),
+                "bound": site["bound"],
                 "evidence": evidence(rule, site, len(group), name),
                 "sites": str(len(group)),
                 "name_rule": rule,
                 "site_literals": ", ".join(s["class_literal"] or "?" for s in
                                            sorted(group, key=lambda s: s["site_va"])),
+            })
+        elif table in base:
+            name, owners, site, at = base[table]
+            # the derived name is a class the registration does know: its own site carries the size
+            home = next((x for x in sites if x["class_literal"] == name), site)
+            row.update({
+                "class": name,
+                "object_size": "" if home["object_size"] is None else str(home["object_size"]),
+                "registration_va": "0x%08x" % home["site_va"],
+                "constructor_va": ("0x%08x" % site["thunk_target"]
+                                   if site["thunk_target"] is not None else ""),
+                "installed_at": "0x%08x" % at,
+                "stores": str(len(site.get("table_stores") or [])),
+                "bound": site["bound"],
+                "evidence": ("no registration names this table; %d classes (%s) store it before their "
+                             "own table, and %s is their nearest common ancestor"
+                             % (len(owners), ", ".join(owners), name)),
+                "sites": "0",
+                "name_rule": "base-store-ancestor",
+                "site_literals": ", ".join(owners),
             })
         rows.append(row)
     return rows
@@ -391,15 +521,26 @@ def render(rows):
     for r in rows:
         rules[r["name_rule"]] = rules.get(r["name_rule"], 0) + 1
     named = sum(1 for r in rows if r["class"])
+    two = [r for r in rows if r.get("stores") not in ("", "0", "1", None)]
+    padded = [r for r in rows if r.get("bound") == "padding"]
+    lines.append("")
+    lines.append("**A table is named from its constructor body's last store.** %d table(s) are named from "
+                 "a body that installs two class tables -- the first store there is a base class's table, "
+                 "written by the base constructor the compiler inlined -- and %d row(s) are read without a "
+                 "symbol size, bounded at the body's own `int3` padding: %s."
+                 % (len(two), len(padded),
+                    ", ".join("`%s` (%s)" % (r["table_va"], r["site_literals"]) for r in
+                              sorted(padded, key=lambda r: r["table_va"])) or "none"))
     lines.append("")
     lines.append("%d tables: %d named (%d by an unshared constructor thunk, %d by the hierarchy a "
-                 "shared thunk forces, %d derived from a nearest common ancestor), %d unresolved, "
-                 "%d with no registration. %d tables are reached by more than one registration site, "
-                 "so a write-order rule would name them by whichever site happened to be written "
-                 "last."
+                 "shared thunk forces, %d derived from a nearest common ancestor, %d from a base store "
+                 "no registration names), %d unresolved, %d with no registration. %d tables are "
+                 "reached by more than one registration site, so a write-order rule would name them by "
+                 "whichever site happened to be written last."
                  % (len(rows), named, rules.get("unshared-thunk", 0),
                     rules.get("hierarchy-ancestor", 0), rules.get("ancestor-derived", 0),
-                    rules.get("unresolved", 0), rules.get("no-registration", 0), len(multi)))
+                    rules.get("base-store-ancestor", 0), rules.get("unresolved", 0),
+                    rules.get("no-registration", 0), len(multi)))
     return "\n".join(lines)
 
 
@@ -447,22 +588,35 @@ class Fake(Image):
             # mov ecx,[esp+4]; test ecx,ecx; je +3; jmp target  -- 13 bytes
             return (b"\x8b\x4c\x24\x04\x85\xc9\x74\x03\xe9" + struct.pack("<i", target - (va + 13)))
         thunk = thunk_to(0x4000, 0x2000) + b"\xcc\xcc\xcc" + thunk_to(0x4100, 0x2010)
+        # a guarded stub that forwards with `call` instead of `jmp` (TextBuffer's shape at 0x00075820)
+        stub = (b"\x8b\x4c\x24\x04\x85\xc9\x74\x0a\xe8"
+                + struct.pack("<i", 0x4500 - (0x2200 + 13)) + b"\xc3")
         root = b"\x8b\xc1\xc7\x00\x00\x50\x00\x00\xc3"  # mov eax,ecx; mov [eax],0x5000; ret
         short = b"\x8b\xc1\xc3"                         # mov eax,ecx; ret  -- stores nothing
         later = b"\x8b\xc1\xc7\x00\x00\x50\x00\x00\xc3"  # a neighbour body that stores 0x5000
+        two = (b"\x8b\xc1"                              # mov eax,ecx
+               b"\xc7\x00\x00\x51\x00\x00"              # mov [eax],0x5100  -- the base's table
+               b"\xc7\x00\x08\x51\x00\x00"              # mov [eax],0x5108  -- its own
+               b"\xc3")
+        padded = b"\x8b\xc1\xc7\x00\x00\x50\x00\x00\xc3"      # 9 bytes, no symbol size
+        neighbour = b"\x8b\xc1\xc7\x00\x10\x51\x00\x00\xc3"   # 0x4520: stores 0x5110
         self.data = bytearray(b"\xcc" * 0x8000)
         self.data[0:len(body)] = body
         self.data[0x1000:0x1000 + len(thunk)] = thunk       # VA 0x2000
+        self.data[0x1200:0x1200 + len(stub)] = stub         # VA 0x2200
         self.data[0x3000:0x3000 + len(root)] = root         # VA 0x4000
         self.data[0x3100:0x3100 + len(short)] = short       # VA 0x4100
         self.data[0x3120:0x3120 + len(later)] = later       # VA 0x4120
+        self.data[0x3400:0x3400 + len(two)] = two           # VA 0x4400
+        self.data[0x3500:0x3500 + len(padded)] = padded     # VA 0x4500
+        self.data[0x3520:0x3520 + len(neighbour)] = neighbour  # VA 0x4520
         self.data[0x5000:0x5000 + 6] = "Root".encode("utf-16-le") + b"\x00\x00"
         self.data[0x5008:0x5008 + 6] = "Leaf".encode("utf-16-le") + b"\x00\x00"
         self.data[0x5010:0x5010 + 6] = "Own".encode("utf-16-le") + b"\x00\x00"
-        self.tables = {0x5000}
+        self.tables = {0x5000, 0x5100, 0x5108, 0x5110}
         self.text = type("S", (), {"va": 0x1000, "vsize": 0x8000, "foff": 0, "fsize": 0x8000})()
         self.tb = bytes(self.data)
-        self.size_of = lambda va: {0x4000: 9, 0x4100: 3}.get(va)
+        self.size_of = lambda va: {0x4000: 9, 0x4100: 3, 0x4400: len(two)}.get(va)
 
     def sec_of(self, va):
         return self.text if 0x1000 <= va < 0x9000 else None
@@ -480,6 +634,15 @@ def self_check():
         bad.append("bounded install: %r" % (got,))
     if img.installed_table(0x4100, 3) is not None:
         bad.append("the short ctor inherited its neighbour store")
+    got, own, how, stub = img.tables_of(0x4400)
+    if (len(got), own[0], how, stub) != (2, 0x5108, "symbol", None):
+        bad.append("the body's own table is not its last store: %r" % ((got, own, how, stub),))
+    got, own, how, stub = img.tables_of(0x4500)
+    if ([g[0] for g in got], how) != ([0x5000], "padding"):
+        bad.append("the int3 bound did not cut the body: %r" % ((got, how),))
+    got, own, how, stub = img.tables_of(0x2200)
+    if ([g[0] for g in got], stub) != ([0x5000], 0x4500):
+        bad.append("the guarded stub was not followed through its call: %r" % ((got, stub),))
     hier = {"Root": "", "Leaf": "Root", "Other": "Root"}
     shared = [{"site_va": 0x10, "class_literal": "Root", "object_size": 8, "thunk_va": 0x2000,
                "thunk_target": 0x4000, "table_va": 0x5000, "installed_at": 0x4002},
@@ -506,9 +669,23 @@ def self_check():
     if (name, rule) != ("", "unresolved"):
         bad.append("unresolved: %r %r" % (name, rule))
 
+    # a table no registration names, stored first by two derived bodies: the nearest common ancestor
+    deep = {"Root": "", "Fractal": "Root", "Fire": "Fractal", "Ice": "Fractal"}
+    fire = {"site_va": 0x10, "class_literal": "Fire", "table_va": 0x5000, "thunk_target": 0x4000,
+            "bound": "symbol", "table_stores": [(0x5010, 0x4002), (0x5000, 0x4008)]}
+    ice = {"site_va": 0x20, "class_literal": "Ice", "table_va": 0x5008, "thunk_target": 0x4100,
+           "bound": "symbol", "table_stores": [(0x5010, 0x4102), (0x5008, 0x4108)]}
+    picked = {0x5000: ("Fire", "unshared-thunk", fire), 0x5008: ("Ice", "unshared-thunk", ice)}
+    got = base_store_names([fire, ice], picked, deep)
+    if got.get(0x5010, ("",))[0] != "Fractal":
+        bad.append("base-store ancestor: %r" % (got,))
+    if base_store_names([fire], picked, deep):
+        bad.append("one owner was enough to name a base store")
+
     rows = [{"table_va": "0x00005000", "class": "Root", "object_size": "8",
              "registration_va": "0x00000010", "constructor_thunk_va": "0x00002000",
              "constructor_va": "0x00004000", "installed_at": "0x00004002",
+             "stores": "2", "bound": "symbol",
              "evidence": "x", "sites": "2", "name_rule": "hierarchy-ancestor",
              "site_literals": "Root, Leaf"}]
     tmp = tempfile.mkdtemp()
@@ -525,7 +702,8 @@ def self_check():
         print("FAIL class-table-names: " + "; ".join(bad))
         return 1
     print("ok   class-table-names: an unshared thunk wins, a shared one falls back to the hierarchy, "
-          "and a short body does not inherit its neighbour store")
+          "a body's own table is its last store, a guarded stub is followed through its call, and a "
+          "short body does not inherit its neighbour store")
     return 0
 
 

@@ -1379,6 +1379,44 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the name comes from the body's last store, and a guarded stub forwards by call)
+
+- **`inventory/xbe_class_table_names.csv` now names a table from its constructor body's *last* store.**
+  MSVC writes a base constructor's vtable itself when it inlines that constructor into a derived body, so
+  FireTexture's `0x002e81f0` stores `0x004cfc88` and then `0x004cfd78`, and IceTexture's `0x002e8370` stores
+  `0x004cfc88` and then `0x004d0228`; read at the first store, the base's table named both derived classes.
+  Read at the last store, `0x004cfd78` is **FireTexture** (`0x002e8468`) and `0x004d0228` is **IceTexture**
+  (`0x002e8768`), each from a constructor thunk no other registration site uses. 468 tables are named where
+  the earlier artifact named 466, 24 rows carry no registration where it had 26, and the multi-site tally
+  falls from 3 tables to 2.
+- **A table no registration names gets the same hierarchy join over the classes that store it first.**
+  `0x004cfc88` loses both texture sites to their own tables and would have gone unnamed, yet `0x002e81b0`
+  -- a body no registration targets -- installs it alone. The rule that keeps the name is the store order:
+  FireTexture and IceTexture both write `0x004cfc88` before their own table, their nearest common ancestor
+  in `inventory/classes.csv` is `FractalTexture`, and one owner is not evidence (a class's nearest ancestor
+  is itself), so the name is claimed only from two. `base-store-ancestor` is a new `name_rule` and
+  `ancestor-derived` now names no row.
+- **The store read is bounded by the symbol size, and by the body's own `int3` padding where the map has no
+  size -- and that second bound is what moves a row.** 465 of the 467 rows a site resolves are
+  symbol-bounded, 2 are padding-bounded, and TextBuffer's target `0x00075820` is one of them: a 19-byte
+  guarded stub whose flat 400-byte window reads the two stores of the body after it.
+- **A guarded stub forwards with `call` as well as `jmp`, and TextBuffer's does.** `0x00075820` is
+  `mov ecx,[esp+4]; test ecx,ecx; je; push L""; call 0x000669e0; ret`; `0x000669e0` installs `0x004ddf78`
+  at `0x00066a14`, and `tools/class-ctors.py` classifies that body as the constructor by shape for the same
+  reason (its own log line reads `0x00075820 is not a constructor by shape`). The reader follows the last
+  direct call of a body that opens with the thunk prefix and installs nothing itself, one hop only, which
+  moves TextBuffer's site from the window's `0x0007588d` to the real store at `0x00066a14`.
+- Tool (`tools/class-table-names.py`: `stores` and `bound` columns, the `int3` and stub paths, and the
+  `base-store-ancestor` rule; `--check` gains a two-store body, a padding-bounded body, a `call` stub and a
+  single-owner base store) + `inventory/xbe_class_table_names.csv` (492 rows) + the regenerated
+  `inventory/class_constructors.csv`, `inventory/class_ctor_bases.csv` and `inventory/registration_sites.csv`
+  + the page's rule and bound prose + this note. No boot, no Ghidra.
+- **Next measurement:** the same rule in the site census. `tools/class-registrations.py` still keys each of
+  the 493 sites to the first store, so its generated block puts the two texture sites on `0x004cfc88` and
+  counts 30 sites on shared tables where the naming census now reads 2. Regenerating it behind the body's
+  last store (`table_va`, `sites_for_table` and `object_size` columns) is what closes the disagreement on
+  the page, and it needs no new data.
+
 ### Execution notes (2026-11-14, the table name is a hierarchy join, and the site census says when it cannot be one)
 
 - **The per-table name was a write order, and both address orders are refuted.** 30 of the image's 493
