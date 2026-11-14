@@ -183,6 +183,146 @@ for any of the nine.
 | `ckpt2` | 245 | running | 6 | 5 | 2 |
 <!-- /generated:checkpoint-load -->
 
+## Where the loader looks (2026-11-14)
+
+The open question this page left was whether the nine shipped files resolve at all: a console command types a bare
+name, so the path has to be built by the loader. It is built, and the build is readable in `0x00134d40` with no boot.
+`tools/save-path-compose.py` (`make save-path-compose`, `inventory/save_path_compose.csv`) reads the same chain back at
+every address it quotes and holds this page to it.
+
+**The path is three joins.** `FUN_0001b260(L"defaultdevice")` makes the device segment (sites `0x00134dc5` and
+`0x00134e2b`), `FUN_001be450(out, <device>, <profile>)` joins the device to a profile, and `FUN_00036c90(buf, L"%s%s",
+<prefix>, name)` appends the name the console typed. The profile is the literal `L"Auto"` (`0x004dc798`) when the name
+starts with `TRAVEL_` (`wcsnicmp` at `0x00134dab`), otherwise the `FString` at `+0x4c` of the object at `+0xf4c` --
+the active profile.
+
+**The device segment contributes no characters.** `FUN_001be350` compares its argument against the literal at
+`0x00508cd4` (`wcsicmp` `FUN_00036d00`, site `0x001be389`) and, on a match, asks the file manager -- the singleton at
+`[0x005bf514]`, its vtable's slot `+0x38` -- for the device path, then appends `\`, `L"Profiles"` (`0x00515650`) and
+another `\`. That slot is `0x00034210`: **33 bytes, whose whole body constructs the empty string from the literal at
+`0x004c85ac`** and returns its argument. Every other device name takes the helper's else arm and yields an empty
+prefix outright. So the prefix the loader composes is `\Profiles\<profile>\` -- rootless, and the device name itself
+never reaches the string.
+
+**That is the whole save module's root, not the loader's quirk.** The table below lists all **26** sites in the image
+that push or store the `defaultdevice` literal: the loader, the deleter beside it, the writer's region, and the whole
+profile family at `0x001be7xx`-`0x001bfdxx` (`FUN_001be720`, `FUN_001be520` and their neighbours). One getter that
+answers `""` therefore puts every save and profile path in the build one segment short of the disc's tree.
+
+**The disc's tree is the same tail, one directory deeper.** All twelve save/profile files sit under
+`System/Profiles/<profile>/` -- `DefaultProfile`, `sean` and `lbcddnyzq` -- and the loader composes
+`\Profiles\<profile>\<name>`: identical in the profile and the file name, one `System\` short. Neither the image nor
+the ini supplies that segment. `DefaultProfile` appears in **no** wide literal at all, `Profiles` in two (one of them
+the helper's own), the only save-directory literal in the build is `..\Saves\` (`0x00523374`, one reference), and the
+three shipped inis say `[Core.System] SavePath=..\Save` -- a directory that exists in the dump under neither spelling.
+
+**What that does and does not settle.** If the file manager's base directory is the game's `System\` directory, the
+composed path lands on the shipped file exactly and the load gets far enough to fail inside the level -- which is what
+a guest that ends on the kernel's `Please insert an Xbox disc...` prompt rather than in a menu looks like. If the base
+is the device root, no file has ever existed at the composed path and the loader takes its own `FAILED` branch
+(`0x00508d88`) without touching a level. The two are distinguishable only by the path the loader logs
+(`[VL:LOADGAME]: Loading save game: %s`, `0x00508f10`), which no frame carries. The cheap next read is the base
+directory itself: the `System\` literal at `0x004c9790` is stored at `0x00149603`, inside no committed function -- the
+setter that would answer this is the one piece of the chain still unread.
+
+<!-- generated:save-path -->
+**The chain, read out of the image.** `0x001be350` is the helper the loader calls with the device name; the device it asks for is the file manager's, and that getter answers the empty string.
+
+| step | address | what it is |
+|---|---|---|
+| singleton | `0x005c1a0c` | file manager, `[0x005bf514]` -> vtable `0x004d2fd0`, slot `+0x38` |
+| device_getter | `0x00034210` | 33 bytes; constructs the empty literal at `0x004c85ac` |
+| helper | `0x001be350` | device name -> `<device>\Profiles\`; compares at `0x00036d00` |
+| join | `0x001be450` | `<helper> + profile + \`, called twice from the loader `0x00134d40` |
+
+**The literals the composition is made of**, each read back at its address:
+
+| literal | address | read back |
+|---|---|---|
+| `defaultdevice` | `0x00508cd4` | ok "defaultdevice" |
+| `Profiles` | `0x00515650` | ok "Profiles" |
+| `separator` | `0x004c8b94` | ok "\\" |
+| `Auto` | `0x004dc798` | ok "Auto" |
+| `TRAVEL_` | `0x00508f5c` | ok "TRAVEL_" |
+| `join` | `0x004d491c` | ok "%s%s" |
+| `empty` | `0x004c85ac` | ok "" |
+
+**The device name**, at every site that pushes or stores it:
+
+| site | kind | where |
+|---|---|---|
+| `0x0013482d` | push | `FUN_001347d0` |
+| `0x00134dc6` | push | `FUN_00134d40` |
+| `0x00134e2c` | push | `FUN_00134d40` |
+| `0x001363d4` | push | `FUN_001363a0` |
+| `0x0013640d` | mov | `FUN_001363a0` |
+| `0x00136770` | push | `FUN_00136740` |
+| `0x001367ab` | mov | `FUN_00136740` |
+| `0x0013874b` | push | no committed function spans it |
+| `0x001387b1` | push | no committed function spans it |
+| `0x00139c40` | push | `Engine_UnGame` |
+| `0x001be384` | push | `FUN_001be350` |
+| `0x001be75c` | push | `FUN_001be720` |
+| `0x001be80c` | push | `FUN_001be7d0` |
+| `0x001beaab` | push | `FUN_001bea60` |
+| `0x001beae6` | mov | `FUN_001bea60` |
+| `0x001bec9d` | push | `FUN_001bebb0` |
+| `0x001befbd` | push | `FUN_001bef40` |
+| `0x001beff8` | mov | `FUN_001bef40` |
+| `0x001bf131` | push | `FUN_001bf0b0` |
+| `0x001bf16c` | mov | `FUN_001bf0b0` |
+| `0x001bf67c` | push | `FUN_001bf660` |
+| `0x001bf6ba` | mov | `FUN_001bf660` |
+| `0x001bfbce` | push | `FUN_001bf7b0` |
+| `0x001bfc0b` | mov | `FUN_001bf7b0` |
+| `0x001bfd4f` | push | `FUN_001bfd00` |
+| `0x001bfd8a` | mov | `FUN_001bfd00` |
+
+**What the loader composes against what the disc holds** (`\Profiles\<profile>\<name>`):
+
+| file | on the disc | bytes | loader composes |
+|---|---|---|---|
+| `C_M02A_Drillsite.sgs` | `System/Profiles/DefaultProfile/C_M02A_Drillsite.sgs` | 44927 | `\Profiles\DefaultProfile\C_M02A_Drillsite.sgs` |
+| `C_M02A_Firstsymbol.sgs` | `System/Profiles/DefaultProfile/C_M02A_Firstsymbol.sgs` | 42291 | `\Profiles\DefaultProfile\C_M02A_Firstsymbol.sgs` |
+| `C_M02B_Secondpositioningdevice.sgs` | `System/Profiles/DefaultProfile/C_M02B_Secondpositioningdevice.sgs` | 38643 | `\Profiles\DefaultProfile\C_M02B_Secondpositioningdevice.sgs` |
+| `C_M02B_Secondsymbol.sgs` | `System/Profiles/DefaultProfile/C_M02B_Secondsymbol.sgs` | 39247 | `\Profiles\DefaultProfile\C_M02B_Secondsymbol.sgs` |
+| `C_M02C_TeopalPyramid.sgs` | `System/Profiles/DefaultProfile/C_M02C_TeopalPyramid.sgs` | 47410 | `\Profiles\DefaultProfile\C_M02C_TeopalPyramid.sgs` |
+| `C_M04a_VanatagePoint2.sgs` | `System/Profiles/DefaultProfile/C_M04a_VanatagePoint2.sgs` | 42256 | `\Profiles\DefaultProfile\C_M04a_VanatagePoint2.sgs` |
+| `C_M04b_Ruins approach.sgs` | `System/Profiles/DefaultProfile/C_M04b_Ruins approach.sgs` | 30965 | `\Profiles\DefaultProfile\C_M04b_Ruins approach.sgs` |
+| `C_M10B_EnteringtheDepot..sgs` | `System/Profiles/DefaultProfile/C_M10B_EnteringtheDepot..sgs` | 47813 | `\Profiles\DefaultProfile\C_M10B_EnteringtheDepot..sgs` |
+| `C_M12A_Mission 12 - Checkpoint 1.sgs` | `System/Profiles/DefaultProfile/C_M12A_Mission 12 - Checkpoint 1.sgs` | 57154 | `\Profiles\DefaultProfile\C_M12A_Mission 12 - Checkpoint 1.sgs` |
+| `DefaultProfile.sgp` | `System/Profiles/DefaultProfile/DefaultProfile.sgp` | 8902 | `\Profiles\DefaultProfile\DefaultProfile.sgp` |
+| `lbcddnyzq.sgp` | `System/Profiles/lbcddnyzq/lbcddnyzq.sgp` | 347 | `\Profiles\lbcddnyzq\lbcddnyzq.sgp` |
+| `sean.sgp` | `System/Profiles/sean/sean.sgp` | 347 | `\Profiles\sean\sean.sgp` |
+
+**The profiles the disc carries** -- the loader's middle segment:
+
+| profile | on the disc | loader composes |
+|---|---|---|
+| `DefaultProfile` | `System/Profiles/DefaultProfile` | `\Profiles\DefaultProfile\` |
+| `lbcddnyzq` | `System/Profiles/lbcddnyzq` | `\Profiles\lbcddnyzq\` |
+| `sean` | `System/Profiles/sean` | `\Profiles\sean\` |
+
+**Save-directory vocabulary.** The ini's configured save directory, the directories that exist, and how often each word appears in the image's wide strings:
+
+| ini | SavePath | resolves to |
+|---|---|---|
+| `Default.ini` | `..\Save` | `[Core.System] SavePath` -> `Save`: not on the disc |
+| `UW.ini` | `../Save` | `[Core.System] SavePath` -> `Save`: not on the disc |
+| `UnrealEngine2.ini` | `..\Save` | `[Core.System] SavePath` -> `Save`: not on the disc |
+| question | count | detail |
+|---|---|---|
+| save | 0 | directories named Save/Saves: none |
+| word | wide literals | where |
+|---|---|---|
+| `Profiles` | 2 | wide literals containing it: 0x004ffef0, 0x00515650 |
+| `DefaultProfile` | 0 | wide literals containing it: none |
+| `Saves` | 1 | wide literals containing it: 0x00523374 |
+| `System\` | 4 | wide literals containing it: 0x004c9790, 0x004d0ff8, 0x004eab18, 0x004eab98 |
+| `\System` | 4 | wide literals containing it: 0x004c8ccc, 0x004d0ff8, 0x004eab18, 0x004eab98 |
+| `backslash` | 45 | of 5920 wide literals of 4+ characters carry a `\` |
+<!-- /generated:save-path -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files
