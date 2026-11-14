@@ -3724,3 +3724,15 @@ withholds the verdict and the head-line moves from 1,664 to **1,663 fully declar
 `single-declared` 263 -> 288 of 656. **What is still open.** Whether a declared tag that tiles the payload's tail from
 a group's end is a block or a table tail -- the floor says it is undecidable without a tag walk past the group or one
 stock `ucc` build -- and the 58 rows that move without their declared fraction changing (22 start to start).
+
+**Answered 2026-11-13 (thirty-third): the 58 moves are the group's own bytes, and 14 of their replacements sit in front
+of the group.** `tools/class-defaults-moved.py` recomputes the pre-rule choice and places both starts against the
+committed groups: all **58** pre-rule starts sat inside a committed group, so the refusal is the only cause -- **22** to
+a different start and **36** to no block, all 36 at fraction 0. The new starts are **36** with none, **14 before the
+payload's first group** (naming nothing the class declares; on **11 of the 14** the first tag is a package name such as
+`Core` or `Gameplay`, a name-table entry that cannot be a property tag), **5** in the 12-byte window past a group's end
+and **3** exactly on one. The "past the payload's last byte" option the previous entry named is empty by construction:
+`candidates()` drops any start whose parse overshoots the payload. **212** of the 1,663 published blocks still name no
+declared property, so `defaults = 1` on them is not evidence of a block. **What is still open.** Whether those 212 keep
+`defaults = 1`; the settling floor is the trailer-0 witness `guarded()` computes into `kept` and then discards -- **16
+of the 1,972** refused rows publish a nonzero-trailer start because of it.
