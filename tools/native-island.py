@@ -60,7 +60,7 @@ DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:native-island -->"
 DOC_END = "<!-- /generated:native-island -->"
 FIELDS = ["stub_va", "size", "kind", "target", "operand", "operand_kind", "store_va", "store_name",
-          "callers", "installer", "partial", "dword_refs", "slot", "ref_va"]
+          "callers", "installer", "partial", "dword_refs", "slot", "ref_va", "census"]
 
 MAGIC = 0x19930520          # MSVC C++ EH `FuncInfo` header: magicNumber
 HANDLER_WRAPPER = 0x3E559E  # the frame handler every `eh-handler` stub jumps to
@@ -329,7 +329,7 @@ def harvest(xbe, dat, text, text_va, funcs, installers, tables, slots):
                "operand": "0x%08x" % operand if isinstance(operand, int) else "",
                "operand_kind": "", "store_va": "", "store_name": "", "callers": "",
                "installer": "", "partial": "yes" if partial else "no", "dword_refs": "",
-               "slot": "", "ref_va": ""}
+               "slot": "", "ref_va": "", "census": ""}
         if isinstance(operand, int):
             sec = xbe.section_for(operand)
             raw = xbe.read_va(operand, 4) if sec else b""
@@ -376,7 +376,12 @@ def harvest(xbe, dat, text, text_va, funcs, installers, tables, slots):
             row["dword_refs"] = "%d:%s" % (n_ref, ",".join(sorted(secs)) or "-")
         rows.append(row)
     meta = {"lo": lo, "hi": hi, "inside": inside, "outside": outside,
-            "tail_total": len(to_inst), "tail_mapped": mapped_tail, "tail_unmapped": len(unmapped)}
+            "tail_total": len(to_inst), "tail_mapped": mapped_tail, "tail_unmapped": len(unmapped),
+            "stubs": len(rows)}
+    # The census row carries the run-level counts, so a `--write-doc` from the committed CSV renders the
+    # same page the measurement did. Without it the block would lose every count that is not a stub row.
+    rows.append({"stub_va": "census", "size": str(len(rows)), "kind": "census", "census": ";".join(
+        "%s=%s" % (k, ("0x%08x" % v) if k in ("lo", "hi") else v) for k, v in sorted(meta.items()))})
     return rows, meta
 
 
@@ -402,8 +407,22 @@ def write_artifact(rows, path):
 META = None
 
 
+def census_of(rows):
+    """The run-level counts, read from the artifact's own `census` row."""
+    for r in rows:
+        if r.get("kind") == "census" and r.get("census"):
+            out = {}
+            for pair in r["census"].split(";"):
+                if "=" in pair:
+                    k, v = pair.split("=", 1)
+                    out[k] = int(v, 16) if v.startswith("0x") else int(v)
+            return out
+    return {}
+
+
 def render(rows, meta=None):
-    meta = meta if meta is not None else (META or {})
+    meta = census_of(rows) or (meta or META or {})
+    rows = [r for r in rows if r.get("kind") != "census"]
     n = len(rows)
     kinds = {}
     for r in rows:
@@ -431,6 +450,7 @@ def render(rows, meta=None):
                      % (meta["tail_total"], meta["tail_mapped"], meta["tail_unmapped"]))
         lines.append("| ...of the unmapped ones, in this gap / in other gaps | %d / %d |"
                      % (meta["inside"], meta["outside"]))
+        lines.append("| stub rows in the artifact | %d (this census row is not one) |" % meta["stubs"])
     lines += ["| stubs in the hole | %d |" % n,
               "| stub sizes | %d..%d bytes, median %d |" % (
                   pads[0] if pads else 0, pads[-1] if pads else 0, median),
@@ -527,6 +547,15 @@ def self_check():
     assert island_bounds(funcs, starts, [0x1000]) == (0, 0, 0, 0)
     assert mapped(funcs, starts, 0x1004) == (0x1000, 8, "a")
     assert mapped(funcs, starts, 0x1100) is None
+    # the census row round-trips and is not counted as a stub
+    blank = {k: "" for k in FIELDS}
+    fake = [dict(blank, kind="eh-handler", size="10", stub_va="0x1000", operand_kind="funcinfo"),
+            dict(blank, kind="census", size="1", stub_va="census",
+                 census="hi=0x2000;inside=2;lo=0x1008;outside=1;stubs=1;tail_mapped=1;"
+                        "tail_total=3;tail_unmapped=2")]
+    cen = census_of(fake)
+    assert (cen["lo"], cen["hi"], cen["stubs"]) == (0x1008, 0x2000, 1), cen
+    assert "| stubs in the hole | 1 |" in render(fake), render(fake)[:400]
     print("ok   native-island: 16 assertions (three shapes, terminator split, pad run, undecoded row, "
           "store join, call join, map gap)")
     return 0
@@ -579,7 +608,7 @@ def main():
         if args.out:
             path = os.path.join(args.out, "native_island.csv")
             write_artifact(rows, path)
-            print("%s: %d rows" % (path, len(rows)))
+            print("%s: %d rows (1 census + %d stubs)" % (path, len(rows), len(rows) - 1))
     print(render(rows, META))
     if args.write_doc or args.check_doc:
         path = args.write_doc or args.check_doc
