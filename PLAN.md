@@ -1178,6 +1178,39 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the 58 unchanged-fraction moves are the group's own bytes, and 14 replacements sit in front of the group)
+
+- **The measurement the last note named is answered.** `tools/class-defaults-moved.py` recomputes the pre-rule choice
+  (the same chooser without `guarded()`), places both starts against the payload's committed groups, and reproduces
+  the merged artifact's own diff exactly: **58** rows change at an unchanged declared fraction -- **22** to a different
+  start and **36** to no block -- against **289** rising and one falling (`Engine.PSBumpBSP`). All 58 pre-rule starts
+  sat **inside a committed group**, so the refusal is the only cause and none moved for another reason; all 36 losses
+  were fraction-0 parses, so the rule's one real cost is still the row whose fraction fell.
+- **Where the replacements sit.** 36 leave no start; **14 land before the payload's first group** and name nothing the
+  class declares (`StargateContent.HackingPanel` at **1**, `DecipheringTrigger` at **46** from 87, `GamePlay.ACTION_*`
+  at 66, `VehicleRemoteTurret` at 46); **5** land in the 12-byte window past a group's end (the four FORMATION rows at
+  a gap of 11, `HoverCraftFixedGun` at 6) and **3** exactly on one (`TeamTeleporter`, both `Select*Panel`), each losing
+  one tag while every remaining name stays declared. On **11 of the 14** silent moves the first tag is one of the
+  build's own **package** names -- a name-table entry that cannot be a property of any class.
+- **The third option the last note named cannot happen.** `candidates()` already drops a start whose parse ends past
+  the payload's last byte, so "past the payload's last byte" is empty by construction; the shape that exists instead
+  is a start ahead of the record's closing group, i.e. in the record's own front.
+- **What the coverage table can claim.** **212** of the 1,663 published blocks are `defaults = 1` with
+  `declared_fraction = 0`, and the rule removed **36 of the 248** such starts that existed before it: it prunes this
+  shape and leaves most of it. A zero-fraction start is an end witness, not a located block.
+- **The chooser's own floor is computed and dropped.** `guarded()` builds the "runs to the payload's last byte" list as
+  `kept` and returns a filter over the unfiltered `cands`, so the floor its comment describes is not in force: **1,972**
+  classes had a candidate refused, **16** of them publish a nonzero-trailer start, **93 of 2,197** chosen starts leave
+  bytes behind, and **13 of the 22** moved starts do.
+- Tool (`tools/class-defaults-moved.py`, `--sweep`/`--report`/`--class`/`--check`, 12 placements and 7 choices in
+  `--check`) + `inventory/class_defaults_moved.csv` (58 rows) + `make class-defaults-moved` + `docs/NATIVE_VM.md`
+  (new section) + `docs/UNKNOWNS.md` U18 (thirty-third) + this note. Reads the packages; no boot, no Ghidra round, no
+  property value decoded.
+- **Next measurement, named:** whether the 212 zero-fraction rows keep `defaults = 1` -- apply the trailer-0 floor the
+  chooser computes and drops and re-run the five artifacts that read the start (`class_defaults_emit`,
+  `class_defaults_coverage`, `class-defaults.py --coverage`, `docs/CLASS_DEFAULTS.md`, `docs/STATUS.md`), which moves
+  16 of the 1,972 refused rows and turns the 14 front starts here into `no-block`.
+
 ### Execution notes (2026-11-13, the chooser takes the group's end: 373 starts move and the recovered block is one tag)
 
 - **The measurement the last note named is done.** `tools/class-defaults.py` now carries the closing-group rule:
