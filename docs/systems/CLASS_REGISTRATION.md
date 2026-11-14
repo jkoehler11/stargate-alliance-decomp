@@ -428,12 +428,16 @@ twice over, so this section states both readings and the measurement that settle
   that also holds the `FuncInfo` records, and none of them lands in any of the 492 class tables. A hit
   inside the `FuncInfo` pool is not a pointer table, so this does not claim the thunks are dispatched;
   the base-constructor shape stays the only reachable evidence for the 24.
-- **Most of the 84 unmapped tail jumps are not here.** 23 of them are in this hole and 61 sit in other
-  gaps of the map, so "one unmapped island" never explained the whole population.
+- **Most of the unmapped tail jumps are not here.** The block above splits them between this hole and
+  the map's other gaps, so "one unmapped island" never explained the whole population.
 
 <!-- generated:native-island -->
 | measure | value |
 |---|---|
+| hole (the symbol-map gap holding the most unmapped installer tail jumps) | `0x003f28b8`..`0x003f6d70` |
+| installer tail jumps, all sites | 85 (1 inside a mapped body, 84 not) |
+| ...of the unmapped ones, in this gap / in other gaps | 23 / 61 |
+| stub rows in the artifact | 1589 (this census row is not one) |
 | stubs in the hole | 1589 |
 | stub sizes | 1..29 bytes, median 8 |
 | `eh-handler` (`mov imm` + `jmp`) | 325 |
@@ -480,10 +484,12 @@ Stubs a store names (the body each handler/thunk belongs to):
 | `0x003f2cf2` | eh-handler | `0x003e559e` | `0x00576f38` | `0x0001d6d5` | `FUN_0001d6d0` |
 <!-- /generated:native-island -->
 
-What the census cannot say: 1,064 stubs are `other` and 220 contain bytes the bounded opcode subset
-could not read (`partial`), so the shape counts are a floor on each kind rather than a partition of the
-hole. `make native-island` regenerates the artifact; `--check` is a synthetic self-test (16 assertions,
-no dump) and `--check-doc` rebuilds the block from `inventory/native_island.csv`.
+What the census cannot say: the `other` and `partial` rows are the stubs the bounded opcode subset
+either read outside the three shapes or could not read whole, so the shape counts are a floor on each
+kind rather than a partition of the hole. `make native-island` regenerates the artifact; `--check` is a
+synthetic self-test (18 assertions, no dump) and `--check-doc` rebuilds the block from
+`inventory/native_island.csv` -- including the hole's bounds and the tail-jump split, which travel in the
+artifact's own `census` row so a page rendered from the CSV cannot disagree with the measurement.
 
 ## What this measurement does not say
 

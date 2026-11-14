@@ -1404,7 +1404,7 @@ are limited to expected fields (checksum/timestamp) and documented.
   stays the only reachable evidence for the 24.
 - Tool (`tools/native-island.py`: an instruction walk cut at terminators, three stub shapes, the
   `FuncInfo` magic check, the store join and the call join, `-o`/`--report`/`--write-doc`/`--check-doc`/
-  `--check` over a synthetic image) + `inventory/native_island.csv` (1,589 rows) + the section and the
+  `--check` over a synthetic image) + `inventory/native_island.csv` (1,589 stub rows plus a `census` row carrying the run-level counts) + the section and the
   corrected bullet on `docs/systems/CLASS_REGISTRATION.md` + `make native-island` + this note. No boot:
   the image, the symbol map and the committed artifacts.
 - **Next measurement:** the 61 unmapped tail jumps in the other map gaps. `island_bounds` already
