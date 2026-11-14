@@ -843,6 +843,66 @@ the mask and the readers cannot name (`0x8000`, `0x10000`..`0x80000`) are the lo
 data of a class that carries one of them names it from the package side.
 
 
+## What each class-flag bit's readers do with the answer (U5)
+
+The word at `+0x498` is `UClass`'s class flags and its inherit mask is `0x0e0f86ec`, but five of the bits the
+mask passes down have no name in the pinned reader's table. The readers cannot supply a name; they do say what
+the answer is *used for*, which is the part a rebuilt package has to reproduce. `tools/class-flag-readers.py`
+decodes every masked test of `[x+0x498]` in the image, the branch that consumes the flags, and what each edge of
+that branch does -- so each bit gets the answers its readers take.
+
+* **`0x8000` is the object walk's skip bit.** Its one reader is the recursive collector at `0x00067641`
+  inside `0x00067450`: the set edge jumps past the object *and* past everything it would have collected, the
+  clear edge re-enters the collector. One shipped class carries it (`UPreviewMapListClient`), so over the 18
+  packages the walk skips that class's objects and no others.
+* **`0x10000` and `0x20000` are read on a property element's class**, in the two native frames
+  (`0x00046fb8`, `0x00047033`) and in `Engine_UnChan` (`0x0010b553`, `0x0010a5ef`, `0x0010ae4b`). The edges
+  differ in whether the element is handed to a virtual (`+0x94`/`+0xa4` on the property, `+0xb8` on the frame)
+  or passed over, and in the replication body at `0x0010a3e0` the difference is literal: the clear edge
+  zero-fills the element, the set edge keeps it and `and`s out the property's own mask (`& ~piVar[0x1b]`).
+* **`0x40000` is a resolver's answer bit.** The name-hash walk at `0x000630b0` returns the object it found only
+  when the bit is set (`0x000630e2`: set edge `returns`, clear edge `zeroes`), so a class without it is
+  invisible to that lookup even while its name is in the table.
+* **`0x80000` is required by five readers and set by no shipped class.** The two FindObject-shaped bodies
+  (`0x00062fd6` needs it and answers 0 otherwise, `0x0006301c` accepts only a hit that carries it), the hash
+  walk at `0x0006482c`, `Engine_UnChan` at `0x0010ac92` and `execPlaySound` at `0x00212b82` all test it, and
+  none of the 2,319 shipped classes has it -- the constructor's inherit is the only composer of a mask and the
+  registration adds `0x12`, so over the shipped corpus those five lookups answer "nothing" every time. That is
+  a constant, not a behaviour, and it is the cheapest thing for a rebuild to get wrong: a file written with a
+  word the loader can compose would make them answer differently.
+* **`0x8000000` is the one unnamed bit the packages answer for.** Its single reader is `Core_UnObj` at
+  `0x0006ce14`, and its 13 carriers are the AI message classes and the `MOVE_ORDER_*` family -- all scripted
+  subclasses of `AIMessage`/`MoveOrder`, which is what a modifier the *script* compiler owns looks like rather
+  than a serializer flag.
+
+**What this buys.** A rebuilt class's word is not cosmetic: it selects which arm of the package serialiser and
+the channel's replication loop runs, whether the object walk sees the object, and whether four resolvers answer
+at all. The bits that matter are carried by three UPreview windows and thirteen AI/move-order classes, so the
+rebuild has to reproduce them from those classes' own declarations rather than from a default.
+
+<!-- generated:class-flag-readers -->
+**13 of the 32 bits are read somewhere in the image; 18 are carried by a shipped class and read nowhere, and 1 is read and carried by no class.** Every masked test of `[x+0x498]` in the code sections is in `inventory/class_flag_readers.csv` -- one row per site with the operand width, the branch that consumes the flags and what each edge does (`zeroes` = it clears `eax`, `returns` = it leaves the function, `calls` = it calls out); this table aggregates them per bit. The `set`/`clear` columns say which edge the bit's value selects, so a reader whose set edge `zeroes` is a reader that needs the bit **clear**.
+
+| bit | name in the reader | in mask | classes carrying | readers | set edge | clear edge |
+|---:|---|---:|---:|---:|---|---|
+| `0x1` | Abstract |  | 121 class(es), e.g. Actor | 3 | continues 2, returns 1 | branches 1, calls 2 |
+| `0x4` | Config | yes | 1575 class(es), e.g. AIController | 2 | branches 1, continues 1 | branches 2 |
+| `0x8` | Transient | yes | 42 class(es), e.g. BufferedTCPLink | 1 | continues 1 | continues 1 |
+| `0x20` | Localized | yes | 1049 class(es), e.g. ACTION_ActivateAstralSight | 2 | branches 1, calls 1 | branches 1, returns 1 |
+| `0x8000` | unnamed | yes | 1 class(es), e.g. UPreviewMapListClient | 1 | branches 1 | branches 1 |
+| `0x10000` | unnamed | yes | 3 class(es), e.g. UPreviewMapListClient | 3 | branches 3 | branches 1, calls 2 |
+| `0x20000` | unnamed | yes | 2 class(es), e.g. UPreviewMapListClient | 2 | continues 2 | calls 1, continues 1 |
+| `0x40000` | unnamed | yes | 2 class(es), e.g. UPreviewMapListClient | 1 | returns 1 | zeroes 1 |
+| `0x80000` | unnamed | yes | 0 class(es) | 5 | branches 2, calls 1, returns 2 | branches 1, calls 2, zeroes 2 |
+| `0x200000` | Instanced |  | 237 class(es), e.g. ChapterList | 1 | calls 1 | calls 1 |
+| `0x1000000` | ParseConfig |  | 1 class(es), e.g. UPreviewSkinnedDialogClientWindow | 1 | continues 1 | branches 1 |
+| `0x4000000` | Exported | yes | 591 class(es), e.g. AIController | 6 | branches 4, calls 1, continues 1 | branches 2, continues 1, returns 3 |
+| `0x8000000` | unnamed | yes | 13 class(es), e.g. AIMSG_Cloak | 1 | calls 1 | branches 1 |
+
+**A bit the image reads and no packaged class carries has a constant answer.** `0x80000` has 5 reader(s) and no carrier among the 2319 shipped classes: the constructor copies the super's word under a mask and the registration adds `0x12`, so a bit outside both can only arrive with a class the packages do not hold, and every shipped object reads as clear.
+
+**3 store(s) to `+0x498` sit inside a mapped function and 1 outside the symbol map.** The constructor composes a mask (`and` with `0x0e0f86ec`) and the registration `or`s `0x12`; every other store writes a whole word the constructor already built, so no reader can observe a bit that the constructor does not inherit.<!-- /generated:class-flag-readers -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files

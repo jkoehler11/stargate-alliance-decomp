@@ -1,0 +1,66 @@
+kind,bit,at,fn,detail,evidence
+bit,0x00000001,0x00000001,Abstract,3 reader(s) in 3 function(s),"not inherited; 121 class(es), e.g. Actor"
+bit,0x00000002,0x00000002,Compiled,0 reader(s) in 0 function(s),"not inherited; 2316 class(es), e.g. ACTION_ActivateAstralSight"
+bit,0x00000004,0x00000004,Config,2 reader(s) in 2 function(s),"in the inherit mask; 1575 class(es), e.g. AIController"
+bit,0x00000008,0x00000008,Transient,1 reader(s) in 1 function(s),"in the inherit mask; 42 class(es), e.g. BufferedTCPLink"
+bit,0x00000010,0x00000010,Parsed,0 reader(s) in 0 function(s),"not inherited; 2316 class(es), e.g. ACTION_ActivateAstralSight"
+bit,0x00000020,0x00000020,Localized,2 reader(s) in 2 function(s),"in the inherit mask; 1049 class(es), e.g. ACTION_ActivateAstralSight"
+bit,0x00000040,0x00000040,SafeReplace,0 reader(s) in 0 function(s),"in the inherit mask; 13 class(es), e.g. BackBufferTexture"
+bit,0x00000080,0x00000080,RuntimeStatic,0 reader(s) in 0 function(s),"in the inherit mask; 1 class(es), e.g. UPreviewMapListClient"
+bit,0x00000100,0x00000100,NoExport,0 reader(s) in 0 function(s),"not inherited; 45 class(es), e.g. BackBufferTexture"
+bit,0x00000200,0x00000200,NoUserCreate/Placeable,0 reader(s) in 0 function(s),"in the inherit mask; 607 class(es), e.g. AIScript"
+bit,0x00000400,0x00000400,PerObjectConfig,0 reader(s) in 0 function(s),"in the inherit mask; 3 class(es), e.g. MaplistRecord"
+bit,0x00000800,0x00000800,NativeReplication,0 reader(s) in 0 function(s),"not inherited; 21 class(es), e.g. Actor"
+bit,0x00001000,0x00001000,EditInlineNew,0 reader(s) in 0 function(s),"not inherited; 707 class(es), e.g. ACTION_ActivateAstralSight"
+bit,0x00002000,0x00002000,CollapseCategories,0 reader(s) in 0 function(s),"not inherited; 355 class(es), e.g. ACTION_ActivateAstralSight"
+bit,0x00004000,0x00004000,ExportStructs,0 reader(s) in 0 function(s),"not inherited; 8 class(es), e.g. AmbientSound"
+bit,0x00008000,0x00008000,unnamed,1 reader(s) in 1 function(s),"in the inherit mask; 1 class(es), e.g. UPreviewMapListClient"
+bit,0x00010000,0x00010000,unnamed,3 reader(s) in 3 function(s),"in the inherit mask; 3 class(es), e.g. UPreviewMapListClient"
+bit,0x00020000,0x00020000,unnamed,2 reader(s) in 1 function(s),"in the inherit mask; 2 class(es), e.g. UPreviewMapListClient"
+bit,0x00040000,0x00040000,unnamed,1 reader(s) in 1 function(s),"in the inherit mask; 2 class(es), e.g. UPreviewMapListClient"
+bit,0x00080000,0x00080000,unnamed,5 reader(s) in 5 function(s),in the inherit mask; 0 class(es)
+bit,0x00100000,0x00100000,unnamed,0 reader(s) in 0 function(s),"not inherited; 1 class(es), e.g. UPreviewRootWindow"
+bit,0x00200000,0x00200000,Instanced,1 reader(s) in 1 function(s),"not inherited; 237 class(es), e.g. ChapterList"
+bit,0x00400000,0x00400000,HideDropDown,0 reader(s) in 0 function(s),"not inherited; 2 class(es), e.g. GameInfo"
+bit,0x00800000,0x00800000,CacheExempt,0 reader(s) in 0 function(s),"not inherited; 5 class(es), e.g. CrosshairPack"
+bit,0x01000000,0x01000000,ParseConfig,1 reader(s) in 1 function(s),"not inherited; 1 class(es), e.g. UPreviewSkinnedDialogClientWindow"
+bit,0x02000000,0x02000000,Cacheable,0 reader(s) in 0 function(s),"in the inherit mask; 218 class(es), e.g. APC"
+bit,0x04000000,0x04000000,Exported,6 reader(s) in 6 function(s),"in the inherit mask; 591 class(es), e.g. AIController"
+bit,0x08000000,0x08000000,unnamed,1 reader(s) in 1 function(s),"in the inherit mask; 13 class(es), e.g. AIMSG_Cloak"
+bit,0x10000000,0x10000000,Intrinsic,0 reader(s) in 0 function(s),"not inherited; 1 class(es), e.g. UPreviewSkinnedButton"
+bit,0x20000000,0x20000000,NativeOnly,0 reader(s) in 0 function(s),not inherited; 0 class(es)
+bit,0x40000000,0x40000000,PerObjectLocalized,0 reader(s) in 0 function(s),"not inherited; 3 class(es), e.g. UPreviewRootWindow"
+bit,0x80000000,0x80000000,HasCrossLevelRefs,0 reader(s) in 0 function(s),"not inherited; 3 class(es), e.g. UPreviewMapListClient"
+reader,0x01000000,0x0003aaba,Core_UnClass,dword test 0x1000000 -> je 0x0003ab93; taken_on=clear taken=branches else=continues,aligned; requires ?
+reader,0x00010000,0x00046fb8,Native_0,dword test 0x10000 -> je 0x00046fe0; taken_on=clear taken=calls else=branches,aligned; requires ?
+reader,0x00010000,0x00047033,Native_1,dword test 0x10000 -> je 0x0004705b; taken_on=clear taken=calls else=branches,aligned; requires ?
+reader,0x04000000,0x000490a1,FUN_00048e90,dword test 0x4000000 -> je 0x000490b7; taken_on=clear taken=continues else=calls,aligned; requires ?
+reader,0x04000000,0x00062535,FUN_00062520,dword test 0x4000000 -> je 0x00062566; taken_on=clear taken=returns else=branches,aligned; requires ?
+reader,0x00080000,0x00062fd6,FUN_00062fc0,dword test 0x80000 -> jne 0x00062fe4; taken_on=set taken=returns else=zeroes,aligned; requires set
+reader,0x00080000,0x0006301c,FUN_00062ff0,dword test 0x80000 -> je 0x00063030; taken_on=clear taken=calls else=returns,aligned; requires ?
+reader,0x00040000,0x000630e2,FUN_000630b0,dword test 0x40000 -> jne 0x000630f0; taken_on=set taken=returns else=zeroes,aligned; requires set
+reader,0x00080000,0x0006482c,FUN_00064770,dword test 0x80000 -> je 0x0006480c; taken_on=clear taken=zeroes else=branches,aligned; requires set
+reader,0x00000020,0x00064f04,FUN_00064f00,byte test 0x20 -> je 0x00064fc7; taken_on=clear taken=returns else=branches,aligned; requires ?
+reader,0x00008000,0x00067641,FUN_00067450,dword test 0x8000 -> jne 0x000676e7; taken_on=set taken=branches else=branches,aligned; requires ?
+reader,0x00000004,0x0006a293,FUN_0006a260,byte test 0x4 -> jne 0x0006a2ce; taken_on=set taken=continues else=branches,aligned; requires ?
+reader,0x00000004,0x0006a2dd,Core_UnObj,byte test 0x4 -> je 0x0006a736; taken_on=clear taken=branches else=branches,aligned; requires ?
+reader,0x00000001,0x0006c96b,Core_UnObj,byte test 0x1 -> je 0x0006c9b4; taken_on=clear taken=branches else=continues,aligned; requires ?
+reader,0x04000000,0x0006ca8b,Core_UnObj,dword test 0x4000000 -> jne 0x0006cace; taken_on=set taken=branches else=branches,aligned; requires ?
+reader,0x00000008,0x0006cd5f,Core_UnObj,byte test 0x8 -> je 0x0006cd71; taken_on=clear taken=continues else=continues,aligned; requires ?
+reader,0x08000000,0x0006ce14,Core_UnObj,dword test 0x8000000 -> je 0x0006ce27; taken_on=clear taken=branches else=calls,aligned; requires ?
+reader,0x04000000,0x00073d3a,FUN_00073cf0,dword test 0x4000000 -> je 0x00073dbc; taken_on=clear taken=returns else=branches,aligned; requires ?
+reader,0x04000000,0x00076660,FUN_000765c0,dword test 0x4000000 -> je 0x000766e5; taken_on=clear taken=returns else=continues,aligned; requires ?
+reader,0x00200000,0x00078742,Core_UnProp,dword test 0x200000 -> je 0x00078755; taken_on=clear taken=calls else=calls,aligned; requires ?
+reader,0x00000020,0x000c6add,Core_UnTemplate,byte test 0x20 -> je 0x000c6aed; taken_on=clear taken=branches else=calls,aligned; requires ?
+reader,0x00020000,0x0010a5ef,Engine_UnChan,dword test 0x20000 -> jne 0x0010a62a; taken_on=set taken=continues else=continues,aligned; requires ?
+reader,0x00080000,0x0010ac92,Engine_UnChan,dword test 0x80000 -> je 0x0010b072; taken_on=clear taken=calls else=calls,aligned; requires ?
+reader,0x00020000,0x0010ae4b,Engine_UnChan,dword test 0x20000 -> jne 0x0010ae64; taken_on=set taken=continues else=calls,aligned; requires ?
+reader,0x00010000,0x0010b553,Engine_UnChan,dword test 0x10000 -> jne 0x0010b567; taken_on=set taken=branches else=branches,aligned; requires ?
+reader,0x00000001,0x0015975f,Engine_UnLevAct,byte test 0x1 -> je 0x0015979d; taken_on=clear taken=calls else=continues,aligned; requires ?
+reader,0x04000000,0x001598ad,Engine_UnLevAct,dword test 0x4000000 -> jne 0x001598d2; taken_on=set taken=branches else=branches,aligned; requires ?
+reader,0x00080000,0x00212b82,execPlaySound,dword test 0x80000 -> jne 0x00212b90; taken_on=set taken=branches else=branches,aligned; requires ?
+reader,0x00000001,0x002840a6,FUN_002840a0,byte test 0x1 -> jne 0x00284166; taken_on=set taken=returns else=calls,aligned; requires ?
+store,-,0x0003965b,Core_UnClass,"dword mov [esi+0x498],ecx",aligned
+store,-,0x0003af99,FUN_0003af60,"dword mov [esi+0x498],ecx",aligned
+store,-,0x0003c49d,-,"dword mov [esi+0x498],eax",unmapped
+store,-,0x0006ce62,Core_UnObj,"dword mov [ebp+0x498],eax",aligned
