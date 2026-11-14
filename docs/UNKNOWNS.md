@@ -548,6 +548,15 @@ or separator-leading argument verbatim and asks the device getter only for a pat
 `0x1088`). **Still open:** whether that package loader's own reader resolves a root-relative name. Depth:
 `docs/systems/CHECKPOINTS.md`, *What the build's own path strings name*; `tools/path-literals.py --check` is dump-free.
 
+**Sharper again 2026-11-14: 157 virtual calls reach that object and 120 of them land on a body that answers a constant.**
+`tools/fmgr-dispatch.py` resolves every `call [reg+disp]` whose receiver is `ds:0x5bf514`: 17 of the 25 slots are
+called, `+0x04` (`FFileManagerError_CreateFileReader`) has 20 sites and `+0x08` 10, and one of the twenty is
+`0x0013499b` in `FUN_00134960`, so the save module asks for a reader and gets NULL. The resolver `+0x3c` has exactly
+one caller (`0x002931dd`, `FUN_00293100`) and it is not the save chain. **Now open:** which object the global holds at
+runtime -- its `.data` initializer is `0x005c1a0c` (the error table), and the only write to it in `.text` (`0x00169e3`)
+stores a frame-local address from `0x00169d2` in the function that logs `Starting Engine`. Depth:
+`docs/systems/CHECKPOINTS.md`, *What the file-manager table is asked for*.
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is
