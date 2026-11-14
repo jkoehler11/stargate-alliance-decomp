@@ -1255,6 +1255,48 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the base call the census records is the first call, and the dead family is the top of an overload ladder)
+
+- **The census's `call_before_store` is the first call in the body, not the base call.** `0x0003bd30`
+  (six arguments, installs `Struct`'s table `0x004d4418`) first calls `0x0003b440`, which is
+  `Core_UnClass` -- the factory that allocates 0x520 bytes and calls the *registration* `UClass` ctor
+  with the literals `Class` and `System`, so it is an allocation, not a base. The last call before the
+  store is `0x00073810` (`Core_UnObj`, five arguments), which installs the object-root table
+  `0x004dd2a8`. Two classes of row are affected: 6 of 522 record a call that is not the last one, and 4
+  of those end in a body that installs no class table at all.
+- **The dead family is a complete ladder of the highest-argument overloads, not a duplicate layer and
+  not the live bodies recompiled.** Measured by the last call before each table store:
+  `0x00073810` (5 args) -> `0x0003bd30` (6) -> `0x0003c3d0` (6) -> `0x0003c430` (15). The live chain for
+  the same four tables is `0x00062ce0` (0 args, 366 of the 522 constructors call it) or `0x00062470`
+  (4) -> `0x0003d560`/`0x0003a1b0` (0/4) -> `0x0003a5f0` (5) -> `0x0003af60` (13). `ret n` is the
+  function's own parameter list, so the 15-argument `0x0003c430` and the 13-argument `0x0003af60` are
+  two overloads, not one body compiled twice -- which corrects the previous note's "a second compilation
+  of the same source constructors". Every one of the four tables keeps its live installer, so the class
+  hierarchy appears once; what is dead is the argument-taking overload set, and it is dead from the top
+  (`0x0003c430` has no caller in any section).
+- **No registration literal builds it.** The registration chain names `0x0003d560` as `Struct`'s ctor,
+  and `0x0003bd30`'s only two callers (`0x0003c3f2`, `0x0003c45c`) are inside the family. The family's
+  object-root ctor is not exclusively its own: `0x00073810` also has a call site at `0x00038cfb`, in no
+  mapped function, which is why the root survived the sweep that took the three bodies above it.
+- **`0x00062470` is a constructor the shape rule calls a destructor** -- it installs its table before
+  any call and does not return `this` -- yet `UState`'s ctor calls it first and it links the object into
+  the global list at `0x006c2104`. Its edge is reported as `base-installer` rather than dropped, and the
+  shape rule is left alone (it is what names 466 tables).
+- **The object root's committed name is not resolved here.** `0x004dd2a8` is `VertexStreamBase` from
+  the literal at its registration site (`0x001eb186`), and no class in `inventory/classes.csv` has
+  `VertexStreamBase` as its super, while 366 constructors call its installer; the five-argument
+  installer beside it asserts in `UnObj.cpp`. One of the two is wrong, and this measurement does not
+  say which.
+- Tool (`tools/class-ctor-base.py`, `--xbe`/`-o`/`--class`/`--report`/`--write-doc`/`--check-doc`/
+  `--check`) + `inventory/class_ctor_bases.csv` (522 rows) + the generated block on
+  `docs/systems/CLASS_REGISTRATION.md` + `make class-ctor-base` + this note. No boot: the image, the
+  symbol map and the committed constructor census.
+- **Next measurement:** the naming contradiction, and it is a join. `inventory/xbe_class_table_names.csv`
+  carries `registration_va`/`constructor_thunk_va` per table; read the registration record at
+  `0x001eb186` and its neighbours in the class-registration table beside the `Core_UnObj` factories, and
+  ask whether the literal at a site belongs to the record the thunk belongs to -- `tools/class-table-names.py`
+  writes that column, so the read is its own pairing rule against the same bytes, no boot and no Ghidra.
+
 ### Execution notes (2026-11-14, the second class-ctor copy is a different inlining of the same source, and 3,779 bodies have no inbound edge)
 
 - **The nominated pair is not a twin of the live pair; it is the same source compiled with `UState`'s ctor
