@@ -80,7 +80,9 @@ GROUPS = {
     21: ("bytes:12",         "VectorConst", "three float32"),
     22: ("bytes:1",          "ByteConst,IntConstByte", "one byte"),
     23: ("expr,bytes:2",     "Iterator", "expression then the code offset"),
-    24: ("bytes:4,expr,expr", "StructCmpEq,StructCmpNe", "reference then two nested tokens"),
+    24: ("index,expr,expr", "StructCmpEq,StructCmpNe",
+         "the struct reference is a compact index (widened to a four-byte slot in memory, where the exec body "
+         "dereferences it) then two nested tokens"),
     25: ("utf16",            "UnicodeStringConst", "NUL-terminated UTF-16 string"),
     26: ("bytes:1,expr",     "PrimitiveCast", "cast type byte then the expression"),
     27: ("expr,expr,expr",   "DynamicArrayInsert,DynamicArrayRemove", "three nested tokens"),

@@ -1,2 +1,1 @@
 package,class,function,payload_bytes,script_bytes,offset,rel_offset,opcode,opcode_name,category,reason
-StargateGame.u,VoiceSelector,DiscardRecentlyUsedVoices,448,414,90,63,0x5e,,bad-token,opcode 0x5e is the walker's bad-token case

@@ -49,8 +49,8 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x2f,23,0x00039ce4,Iterator,"expr,bytes:2",2,map,expression then the code offset
 0x30,5,0x00039e38,IteratorPop,,0,map,"no operand bytes, no children: the handler returns the opcode"
 0x31,5,0x00039e38,IteratorNext,,0,map,"no operand bytes, no children: the handler returns the opcode"
-0x32,24,0x00039dc1,StructCmpEq,"bytes:4,expr,expr",4,map,reference then two nested tokens
-0x33,24,0x00039dc1,StructCmpNe,"bytes:4,expr,expr",4,map,reference then two nested tokens
+0x32,24,0x00039dc1,StructCmpEq,"index,expr,expr",0,map,"the struct reference is a compact index (widened to a four-byte slot in memory, where the exec body dereferences it) then two nested tokens"
+0x33,24,0x00039dc1,StructCmpNe,"index,expr,expr",0,map,"the struct reference is a compact index (widened to a four-byte slot in memory, where the exec body dereferences it) then two nested tokens"
 0x34,25,0x00039be0,UnicodeStringConst,utf16,0,map,NUL-terminated UTF-16 string
 0x35,30,0x00039e1f,RangeConst,bad-token,0,map,"UELib maps RangeConst only for BuildGeneration.UE2; rejected here, so this build is not that generation"
 0x36,13,0x00039de1,StructMember,"index,expr",0,map,an index then the expression
