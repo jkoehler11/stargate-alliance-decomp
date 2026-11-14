@@ -1020,3 +1020,45 @@ population that holds two.
 That also corrects the reading of the 87. The renderer's deficit against the locator is **not** blocks it is
 missing: it is 88 one-tag starts the guard supplies plus the one two-property block the guard's own trailer floor
 withdrew. What the renderer still lacks is a witness for a one-tag start, not a candidate set.
+
+## A one-tag start has the witness, and it is the same byte the locator already publishes
+
+The section above leaves one question open -- what a one-tag start would have to show to be a block rather than a
+table tail -- and `tools/class-defaults-silent.py --gained` (`make class-defaults-single`,
+`inventory/class_defaults_single.csv`, 376 rows) measures it on both populations at once: the **88** starts
+`guarded()` would add, and the **288** one-tag starts the locator already publishes (`single-declared` in
+`class_defaults_misses.csv`) as the control.
+
+* **Every one of the 88 is one declared tag and nothing else.** One property, **0 bytes** after the terminating
+  `None` name, and a wire type the class's own property record allows -- 0 contradictions on 88 of 88.
+* **The start is a group boundary on its left.** One or two committed groups end exactly on the start (two on 45
+  rows, one on 43) and none covers it, so its first byte cannot be a byte inside the record's closing group.
+* **No alternative reading of the same bytes exists.** No later offset of any of the 88 payloads opens a `>= 2`-tag
+  parse of declared names that ends on the payload's last byte (`alt2 = 0` on all 88), and no second tag can follow
+  the terminator because the terminator is the payload's last byte.
+* **The control reads identically.** 287 of the 288 published one-tag starts are the same shape -- 0 type
+  contradictions, 0 bytes left, 0 two-tag alternatives, a group end on 287. The 288th,
+  `Engine.PlaylistParserBase`, reads two tags from its published start and has no group end there, so it is not a
+  one-tag start at all.
+* **And the two paths name the same byte on all 88.** Every class the guard adds is also a `single-declared` row,
+  and the guard's start equals the published start on **88 of 88**.
+
+So the 87-block gap is not a candidate-set question. The locator published these starts all along; the renderer does
+not see them because it does not choose from `guarded()`, and the bytes satisfy every witness this project has for a
+block: a declared name, an agreeing type, a group boundary on the left, the payload's last byte on the right, and no
+second reading anywhere in the payload. What separates them from the 1,664 published blocks is the **verdict rule**
+(`MIN_PROPERTIES = 2`), not a byte test -- a one-tag start is withheld because promoting one tag was measured to turn
+320 misses into "fully declared", which is a head-line policy rather than evidence that these bytes are a table tail.
+
+The one thing the walk cannot settle is whether a one-property block is **complete** for its class: no byte test can,
+and *The shipped text is not an oracle for defaults* above is why the answer does not come from the class text
+either. So taking the witness is a decision, not a measurement: it would move the renderer from 1,664 fully-declared
+blocks to **1,751** and the locator's head-line with it. That decision is U18's next question; this page records the
+evidence, not the verdict.
+
+Two repairs the mode forced, both of them artifacts of the label change: `--sweep` selected its population from
+`class_defaults_per_class.csv`, and since the label was withheld those 196 starts are `no block` there -- so the
+sweep had started writing a header-only file over a 196-row artifact. It now falls back to the artifact's own starts
+(which reproduce byte for byte) and refuses to write when the population is empty. And `--gained` resolves `--dump`
+as the game directory, the same way `--sweep` does.
+

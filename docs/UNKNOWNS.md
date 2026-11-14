@@ -3795,3 +3795,17 @@ such floor, so it would publish all 88 on one name each. **What is still open.**
 those 88 starts -- what the single tag names and whether a second follows -- since that is the witness that would
 make a one-tag start emittable; and `Engine.PSBumpBSP`'s two-property block, which the guard's trailer floor
 withdraws while the renderer emits it.
+
+**Answered 2026-11-14 (thirty-ninth): a one-tag start is witnessed on 88 of 88, so what withholds the 88 is the
+verdict rule and not the bytes.** `tools/class-defaults-silent.py --gained` walks the tag grammar from the 88 starts
+`guarded()` would add and from the 288 one-tag starts the locator already publishes, into
+`inventory/class_defaults_single.csv`. On all 88 the block is one property tag naming a declared property whose type
+the property record allows, with **0 bytes** after the terminating `None` (so no second tag can follow), one or two
+committed groups ending exactly on the start and none covering it, and **no** later offset of the payload opening a
+`>= 2`-tag parse of declared names that ends on the last byte. The control reads the same way (287 of 288; the odd
+one, `Engine.PlaylistParserBase`, is a two-tag block with no group end, so it is not a one-tag start), and the two
+paths choose the same start on **88 of 88** -- the locator has published these blocks all along. **What is still
+open, and it is a decision rather than a measurement:** publish one-property blocks (1,664 -> 1,751 fully declared)
+or keep `MIN_PROPERTIES = 2`; nothing in the bytes separates the 88 from the 288. `Engine.PSBumpBSP`'s two-property
+block stays open as before: the guard's trailer floor withdraws it while the renderer emits it.
+

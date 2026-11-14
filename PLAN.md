@@ -1179,6 +1179,36 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the 88 one-tag starts are witnessed and both paths choose the same byte)
+
+- **The measurement the last note named.** `tools/class-defaults-silent.py --gained` (`make class-defaults-single`,
+  `inventory/class_defaults_single.csv`, 376 rows) walks the tag grammar from the **88** starts `guarded()` would add
+  and, as its control population, from the **288** one-tag starts the locator already publishes (`single-declared` in
+  `class_defaults_misses.csv`, start from `class_defaults_per_class.csv`).
+- **What the 88 show.** One property, 0 bytes after the terminating `None`, a declared name with a wire type the
+  property record allows (0 contradictions) on 88 of 88; one or two committed groups end exactly on the start (45
+  rows two, 43 one) and none covers it; no later offset of any payload opens a two-tag parse of declared names that
+  ends on the payload's last byte (`alt2 = 0` on all 88). 7 packages -- Engine 35, StargateContent 27,
+  StargateMenus 9, StargateVehicles 8, StargateGame 7, GamePlay 1, UDebugMenu 1 -- payloads 97..636 bytes (median
+  107), and the classes declare a median 187 properties (min 6, max 732).
+- **What made it a decision rather than a finding.** All 88 classes also carry a published `single-declared` row and
+  the two paths choose the **same start on 88 of 88**, so the locator published these blocks all along and the
+  renderer does not see them only because it does not choose from `guarded()`. The control reads identically (287 of
+  288; the 288th, `Engine.PlaylistParserBase`, is two tags with no group end, so it is not a one-tag start). The only
+  thing between these 88 and the 1,664 published blocks is `MIN_PROPERTIES = 2` -- a verdict rule, not a byte test.
+- **Two repairs the mode forced.** `--sweep` selected its population from `class_defaults_per_class.csv`, and since
+  the label was withheld those 196 starts are `no block` there, so the sweep had begun writing a header-only file
+  over a 196-row artifact: it now falls back to the artifact's own starts (which reproduce byte for byte) and refuses
+  to write when the population is empty. And `--gained` resolves `--dump` as the game directory, like `--sweep`.
+- Tool (`tools/class-defaults-silent.py`: `--gained`, `--report-gained`, `single_walk`, the population fallback, five
+  more assertions in `--check` including a synthetic committed group) + `inventory/class_defaults_single.csv` (376
+  rows) + `make class-defaults-single` + `docs/CLASS_DEFAULTS.md` (new section) + `docs/UNKNOWNS.md` U18
+  (thirty-ninth) + this note. Reads the packages; no boot, no Ghidra round, no property value decoded.
+- **Next measurement, named:** whether a one-property block is *complete* for its class -- the only question left,
+  and one the bytes cannot answer: for the 88, read the class's shipped `defaultproperties` text
+  (`tools/pkg-script-text.py`) and count the properties it names. That is the oracle `--verify` already reads (1
+  matched / 1 differ / 61 shipped-only), and it is the last evidence that could move the 88 either way.
+
 ### Execution notes (2026-11-14, the guard would add 88 one-tag blocks and take the one two-property block)
 
 - **The decision the last note left open, measured rather than taken.** `--reconcile` now classifies the rows where
