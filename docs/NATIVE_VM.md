@@ -2292,7 +2292,9 @@ The section above left **40** rows where all three witnesses of the block start 
 overshoots, no free head in the payload closes on the start, and the record-side closing group does not parse.
 The witness left is the block's own grammar. `tools/class-overshoot-stream.py` (`make class-overshoot-stream`,
 `inventory/class_overshoot_stream.csv`) re-reads all 95 overshoot rows from the dump and runs `prop-stream.read_block`
-at `block_start`: a property stream either terminates on the payload's last byte or it does not.
+at `block_start`: a property stream either terminates on the payload's last byte or it does not. The corpus
+census below puts a number on how strong that is: a close is what **95.9%** of the located starts do, so on these rows
+the close is a non-refutation and the name column is the discriminator.
 
 | measure | the 40 with no head | the 55 with a head |
 |---|---:|---:|
@@ -2317,3 +2319,18 @@ witness reaches: the record's closing group does not parse there and the stream 
 **The two witnesses never disagree.** The 36 rows whose record-side closing group parses are exactly the 36 on which
 this stream closes too; the stream speaks on 56 rows the record never reached, 37 of them the headless ones. Nothing
 here moves the located array: what the 95 share is the array's own tail, not the block start.
+
+**The same parse over all 2,204 located block starts: a close is the norm, not a confirmation.** `--corpus` re-reads
+every row of `inventory/class_record_bound.csv` (`inventory/class_blockstart_stream.csv`, 2,204 rows): the stream
+closes on the payload's last byte on **2,113 (95.9%)**, and the **91** that stop short leave a trailer of 1-64 bytes
+(mode **1** on 22, **43** on 6, **41** on 5; 44 of the 91 sit in 33-64). So 92 of the 95 overshoot rows closing is the
+corpus rate rather than a confirmation of its own -- the split is 451 of 454 (99.3%) for the rows whose array lands at
+or before the block against 92 of 95 (96.8%) past it. What the corpus does not do is single the three short rows out:
+trailers of 41, 49 and 59 bytes fall inside that 44-row bucket, so they are ordinary too. The block start and the
+payload are consistent on all 95; the located array's tail remains the only thing they share.
+
+**The position control is the same order corpus-wide.** 3,394 of the 8,816 later starts close (38.5%), and among the
+919 rows whose class declares properties and whose neighbour closes, the block start names more declared tags on
+**606**, the same number on **299** and fewer on **14** (1.5%). The name test therefore separates the block start
+from its neighbours on two rows in three where it can speak at all; the other 1,237 closing parses name no property
+the inventory carries, and there the close is the only evidence.
