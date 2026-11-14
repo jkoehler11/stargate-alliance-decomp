@@ -597,11 +597,15 @@ element for another, and "which element does the file layer get" has no second a
 (`0x0005283e`, `0x0005311e`) and one clear that zeroes count and capacity together (`0x00069c38`). Its elements are
 containers with a filter field at `+0x28`, two record tables (`+0x7c`/`+0x80` by `0x1c`, `+0x88`/`+0x8c` by `0x24`),
 an object at each `0x24` record's `+0x1c`, that object's class at `+0x24`, and one byte of the class at `+0x498`
-tested for its sign -- import and export tables with a linker root, not a file-manager slot. **What would settle what
-is left:** the class flag word at `+0x498` is named 93 times in the image and only the purge's access is byte-wide, so
-the next read is `Core_UnClass`'s serialiser and which `CLASS_*` bit sits in the top bit of that byte; the save chain
-does not depend on it, since the global is set from `main`'s frame slot at `0x169e3`, not from an element of this
-array. Artifact: `inventory/linker_purge.csv`, tool `tools/linker-purge.py`.
+tested for its sign -- import and export tables with a linker root, not a file-manager slot. **Answered 2026-11-14: the byte is bit 7 of `UClass`'s class-flag dword, and the dword's top bit is not
+reachable from it.** The word is the class flags: `Core_UnClass`'s constructor (`0x00039641`) inherits
+`super->[+0x498] & 0x0e0f86ec` into `this->[+0x498]`, the registration overload `FUN_0003af60` `or`s the two
+compiler bits `0x12` (both outside that mask) into it, and the purge's `mov cl,[eax+0x498]; test cl,cl; js`
+therefore gates `0x80`. One shipped class carries that bit -- `UPreview.UPreviewMapListClient` -- so over the 18
+packages the gate can drop nothing else, and the save chain never depended on it: the global is set from
+`main`'s frame slot at `0x169e3`, not from an element of this array. Artifact `inventory/class_flag_word.csv`,
+tool `tools/class-flag-word.py`; its 109-reference census supersedes the 93 counted here (the earlier pattern
+missed the mod=10 forms whose base register is not `eax`).
 
 
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified

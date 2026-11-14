@@ -1,0 +1,146 @@
+kind,at,fn,detail,evidence
+site,0x00039641,Core_UnClass,inherit mask 0x0e0f86ec,"mov eax,[esi+0x28]; mov eax,[eax+0x498]; and eax,0x0e0f86ec; or ecx,eax; mov [esi+0x498],ecx"
+site,0x0003af96,FUN_0003af60,registration sets 0x12,"or ecx,0x12; mov [esi+0x498],ecx"
+site,0x0006c803,FUN_0006c750,purge byte gates 0x80,"mov cl,[eax+0x498]; test cl,cl; js -- byte 0 of the dword, sign bit"
+corpus,-,-,"2319 classes, 2318 class/super pairs",inventory/classes.csv class_flags joined to super
+bit,0x00000001,Abstract,"121 classes, +46, -827",not inherited; e.g. Actor
+bit,0x00000002,Compiled,"2316 classes, +1, -3",not inherited; e.g. ACTION_ActivateAstralSight
+bit,0x00000004,Config,"1575 classes, +52, -1",in the inherit mask; e.g. AIController
+bit,0x00000008,Transient,"42 classes, +15, -0",in the inherit mask; e.g. BufferedTCPLink
+bit,0x00000010,Parsed,"2316 classes, +1, -3",not inherited; e.g. ACTION_ActivateAstralSight
+bit,0x00000020,Localized,"1049 classes, +71, -0",in the inherit mask; e.g. ACTION_ActivateAstralSight
+bit,0x00000040,SafeReplace,"13 classes, +2, -0",in the inherit mask; e.g. BackBufferTexture
+bit,0x00000080,RuntimeStatic,"1 classes, +1, -0",in the inherit mask; e.g. UPreviewMapListClient
+bit,0x00000100,NoExport,"45 classes, +5, -101",not inherited; e.g. BackBufferTexture
+bit,0x00000200,NoUserCreate/Placeable,"607 classes, +90, -25",in the inherit mask; e.g. AIScript
+bit,0x00000400,PerObjectConfig,"3 classes, +3, -0",in the inherit mask; e.g. MaplistRecord
+bit,0x00000800,NativeReplication,"21 classes, +8, -160",not inherited; e.g. Actor
+bit,0x00001000,EditInlineNew,"707 classes, +44, -3",not inherited; e.g. ACTION_ActivateAstralSight
+bit,0x00002000,CollapseCategories,"355 classes, +23, -1",not inherited; e.g. ACTION_ActivateAstralSight
+bit,0x00004000,ExportStructs,"8 classes, +8, -24",not inherited; e.g. AmbientSound
+bit,0x00008000,unnamed,"1 classes, +1, -0",in the inherit mask; e.g. UPreviewMapListClient
+bit,0x00010000,unnamed,"3 classes, +3, -0",in the inherit mask; e.g. UPreviewMapListClient
+bit,0x00020000,unnamed,"2 classes, +2, -0",in the inherit mask; e.g. UPreviewMapListClient
+bit,0x00040000,unnamed,"2 classes, +2, -0",in the inherit mask; e.g. UPreviewMapListClient
+bit,0x00080000,unnamed,"0 classes, +0, -0",in the inherit mask; no class carries it
+bit,0x00100000,unnamed,"1 classes, +1, -0",not inherited; e.g. UPreviewRootWindow
+bit,0x00200000,Instanced,"237 classes, +2, -0",not inherited; e.g. ChapterList
+bit,0x00400000,HideDropDown,"2 classes, +2, -1",not inherited; e.g. GameInfo
+bit,0x00800000,CacheExempt,"5 classes, +5, -2",not inherited; e.g. CrosshairPack
+bit,0x01000000,ParseConfig,"1 classes, +1, -1",not inherited; e.g. UPreviewSkinnedDialogClientWindow
+bit,0x02000000,Cacheable,"218 classes, +8, -1",in the inherit mask; e.g. APC
+bit,0x04000000,Exported,"591 classes, +28, -1",in the inherit mask; e.g. AIController
+bit,0x08000000,unnamed,"13 classes, +3, -0",in the inherit mask; e.g. AIMSG_Cloak
+bit,0x10000000,Intrinsic,"1 classes, +1, -0",not inherited; e.g. UPreviewSkinnedButton
+bit,0x20000000,NativeOnly,"0 classes, +0, -0",not inherited; no class carries it
+bit,0x40000000,PerObjectLocalized,"3 classes, +3, -1",not inherited; e.g. UPreviewRootWindow
+bit,0x80000000,HasCrossLevelRefs,"3 classes, +2, -0",not inherited; e.g. UPreviewMapListClient
+access,0x00039648,Core_UnClass,"dword mov eax,[eax+0x498]",aligned
+access,0x0003964e,Core_UnClass,"dword mov ecx,[esi+0x498]",aligned
+access,0x0003965b,Core_UnClass,"dword mov [esi+0x498],ecx",aligned
+access,0x0003a850,Core_UnClass,"address lea eax,[esi+0x498]",aligned
+access,0x0003aaba,Core_UnClass,"dword test [esi+0x498],0x1000000",aligned
+access,0x0003af99,FUN_0003af60,"dword mov [esi+0x498],ecx",aligned
+access,0x0003c49d,-,"dword mov [esi+0x498],eax",unmapped
+access,0x0003cbb6,FUN_0003cb90,"dword test [ecx+0x498],edi",aligned
+access,0x0003e90f,FUN_0003e7d0,"dword mov ecx,[eax+0x498]",aligned
+access,0x0003ea48,FUN_0003e7d0,"dword mov ecx,[eax+0x498]",aligned
+access,0x00046fb8,Native_0,"dword test [edx+0x498],0x10000",aligned
+access,0x00047033,Native_1,"dword test [edx+0x498],0x10000",aligned
+access,0x000490a1,FUN_00048e90,"dword test [eax+0x498],0x4000000",aligned
+access,0x0004eb06,FUN_0004eae0,"dword test [ecx+0x498],edi",aligned
+access,0x00062535,FUN_00062520,"dword test [edx+0x498],0x4000000",aligned
+access,0x00062fd6,FUN_00062fc0,"dword test [ecx+0x498],0x80000",aligned
+access,0x0006301c,FUN_00062ff0,"dword test [ecx+0x498],0x80000",aligned
+access,0x000630e2,FUN_000630b0,"dword test [edx+0x498],0x40000",aligned
+access,0x0006482c,FUN_00064770,"dword test [ecx+0x498],0x80000",aligned
+access,0x00064f04,FUN_00064f00,"byte test [esi+0x498],0x20",aligned
+access,0x00067641,FUN_00067450,"dword test [eax+0x498],0x8000",aligned
+access,0x0006a293,FUN_0006a260,"byte test [eax+0x498],0x4",aligned
+access,0x0006a2dd,Core_UnObj,"byte test [esi+0x498],0x4",aligned
+access,0x0006aab0,Core_UnObj,"dword mov eax,[ecx+0x498]",aligned
+access,0x0006bab8,Core_UnClass,"dword mov eax,[ecx+0x498]",aligned
+access,0x0006c132,FUN_0006c100,"dword mov eax,[edi+0x498]",aligned
+access,0x0006c803,FUN_0006c750,"byte mov ecx8,[eax+0x498]",aligned
+access,0x0006c96b,Core_UnObj,"byte test [edi+0x498],0x1",aligned
+access,0x0006ca8b,Core_UnObj,"dword test [edi+0x498],0x4000000",aligned
+access,0x0006ccdb,Core_UnObj,"dword mov eax,[ebp+0x498]",aligned
+access,0x0006cd5f,Core_UnObj,"byte test [edi+0x498],0x8",aligned
+access,0x0006ce14,Core_UnObj,"dword test [edi+0x498],0x8000000",aligned
+access,0x0006ce27,Core_UnObj,"dword mov eax,[edi+0x498]",aligned
+access,0x0006ce52,Core_UnObj,"dword mov eax,[ebp+0x498]",aligned
+access,0x0006ce62,Core_UnObj,"dword mov [ebp+0x498],eax",aligned
+access,0x0006cf8e,Core_UnClass,"dword mov eax,[ebp+0x498]",aligned
+access,0x00073d3a,FUN_00073cf0,"dword test [eax+0x498],0x4000000",aligned
+access,0x00076660,FUN_000765c0,"dword test [edi+0x498],0x4000000",aligned
+access,0x000786b2,-,"dword test [eax+0x498],0x200000",unmapped
+access,0x00078742,Core_UnProp,"dword test [eax+0x498],0x200000",aligned
+access,0x000c6add,Core_UnTemplate,"byte test [eax+0x498],0x20",aligned
+access,0x000cd689,FUN_000cd640,"dword mov ecx,[eax+0x498]",aligned
+access,0x000cf6e0,FUN_000cf260,"dword mov ecx,[eax+0x498]",aligned
+access,0x000cfa44,FUN_000cf260,"dword mov eax,[edx+0x498]",aligned
+access,0x000d09f3,FUN_000d0990,"dword mov eax,[ecx+0x498]",aligned
+access,0x000d0d73,-,"dword mov eax,[ecx+0x498]",unmapped
+access,0x000d11c8,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000d39f6,FUN_000d3990,"dword mov ecx,[eax+0x498]",aligned
+access,0x000d3eb0,FUN_000d3e70,"dword mov ecx,[eax+0x498]",aligned
+access,0x000d4072,FUN_000d4010,"dword mov ecx,[eax+0x498]",aligned
+access,0x000d41a8,FUN_000d4180,"dword mov ecx,[eax+0x498]",aligned
+access,0x000d5e32,-,"dword mov eax,[ecx+0x498]",unmapped
+access,0x000d5fe2,-,"dword mov eax,[ecx+0x498]",unmapped
+access,0x000d60e2,-,"dword mov eax,[ecx+0x498]",unmapped
+access,0x000d74e2,-,"dword mov eax,[ecx+0x498]",unmapped
+access,0x000d7a62,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000d7db2,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000d817b,FUN_000d8110,"dword mov ecx,[eax+0x498]",aligned
+access,0x000d853a,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000d9217,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000d9365,FUN_000d92f0,"dword mov ecx,[eax+0x498]",aligned
+access,0x000daf1a,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x000dd78e,ctor_GameInfo,"address lea eax,[esi+0x498]",aligned
+access,0x000dda41,dtor_GameInfo,"address lea ecx,[esi+0x498]",aligned
+access,0x000edef7,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x000edf75,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x000edff4,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x000ee073,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x000ee0f2,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x000ee171,FUN_000edd60,"dword mov eax,[esi+0x498]",aligned
+access,0x001042c8,Core_UnClass,"dword mov edi,[edi+0x498]",aligned
+access,0x0010a5ef,Engine_UnChan,"dword test [ecx+0x498],0x20000",aligned
+access,0x0010aa0e,Engine_UnChan,"dword mov ecx,[eax+0x498]",aligned
+access,0x0010ac92,Engine_UnChan,"dword test [eax+0x498],0x80000",aligned
+access,0x0010ae4b,Engine_UnChan,"dword test [ecx+0x498],0x20000",aligned
+access,0x0010b553,Engine_UnChan,"dword test [eax+0x498],0x10000",aligned
+access,0x00128381,Core_UnClass,"dword mov ecx,[eax+0x498]",aligned
+access,0x0015975f,Engine_UnLevAct,"byte test [ebx+0x498],0x1",aligned
+access,0x001598ad,Engine_UnLevAct,"dword test [ebx+0x498],0x4000000",aligned
+access,0x0015cd1b,-,"address lea edx,[eax+0x498]",unmapped
+access,0x00173390,-,"dword mov eax,[esi+0x498]",unmapped
+access,0x0017372e,-,"dword mov eax,[ebp+0x498]",unmapped
+access,0x00173839,-,"dword mov eax,[ebp+0x498]",unmapped
+access,0x001738d5,-,"dword mov eax,[ebp+0x498]",unmapped
+access,0x001738ec,-,"dword mov ecx,[ebp+0x498]",unmapped
+access,0x00173910,-,"dword mov edi,[ebp+0x498]",unmapped
+access,0x00174477,Core_UnClass,"dword mov edx,[ebp+0x498]",aligned
+access,0x00180180,FUN_001800d0,"dword mov ecx,[eax+0x498]",aligned
+access,0x001802ce,FUN_001800d0,"dword mov ecx,[eax+0x498]",aligned
+access,0x001807cf,-,"dword mov ecx,[eax+0x498]",unmapped
+access,0x0018fe7d,FUN_0018fdc0,"dword mov eax,[ebp+0x498]",aligned
+access,0x00190022,FUN_0018fef0,"dword mov eax,[ebx+0x498]",aligned
+access,0x00192a08,-,"dword mov eax,[edx+0x498]",unmapped
+access,0x001d8f08,Core_UnClass,"dword mov edi,[edi+0x498]",aligned
+access,0x0020c3f0,-,"dword test [ecx+0x498],0x400000",unmapped
+access,0x00212b82,execPlaySound,"dword test [eax+0x498],0x80000",aligned
+access,0x002188a3,FUN_00218680,"dword test [eax+0x498],ebx",aligned
+access,0x00245ac1,-,"byte mov ecx8,[esi+0x498]",unmapped
+access,0x00246286,-,"byte mov eax8,[ebp+0x498]",unmapped
+access,0x002840a6,FUN_002840a0,"byte cmp [esi+0x498],0x1",aligned
+access,0x0028fe40,dtor_VoiceChatReplicationInfo,"address lea ecx,[esi+0x498]",aligned
+access,0x002974a4,FUN_00296720,"address lea ecx,[esi+0x498]",aligned
+access,0x0029ae5d,Core_UnClass,"dword mov esi,[esi+0x498]",aligned
+access,0x0029bb31,Core_UnClass,"dword mov eax,[esi+0x498]",aligned
+access,0x0029c05e,Core_UnClass,"dword mov esi,[ebp+0x498]",aligned
+access,0x0029c92e,Core_UnClass,"dword mov eax,[ebp+0x498]",aligned
+access,0x002a131d,Core_UnClass,"dword mov esi,[ecx+0x498]",aligned
+access,0x002a163d,FUN_002a1460,"dword mov eax,[ebx+0x498]",aligned
+access,0x002a1e90,FUN_002a1b70,"dword mov eax,[ebx+0x498]",aligned
