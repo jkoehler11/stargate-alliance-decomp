@@ -931,6 +931,9 @@ fmgr-dispatch:
 fmgr-live-object:
 	@$(PYTHON) tools/fmgr-live-object.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
 		-o inventory/fmgr_singletons.csv
+	@$(PYTHON) tools/fmgr-live-object.py --live "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
+		--live-out inventory/fmgr_live_vtable.csv
+	@echo "wrote inventory/fmgr_live_vtable.csv"
 	@$(PYTHON) tools/fmgr-live-object.py --write-doc docs/systems/CHECKPOINTS.md
 
 path-literals:

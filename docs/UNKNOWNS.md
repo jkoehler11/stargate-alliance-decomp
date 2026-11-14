@@ -565,9 +565,18 @@ neighbours -- `0x5bf510` from arg3 `0x0059ed68`, `0x5bf500` from arg4 `0x005bf3e
 so the initialiser installs a set of pointers, and only the file manager's comes from the frame. That slot is never
 written inside `Core_UnObjBas` (all eight references are `lea`), so the object is built through calls that take its
 address, and the `.data` initializer (the error table) describes the state *before* that call. **Still open:** which
-class the frame object is -- the first `lea ecx` that receives it (`0x128ff`) and the table the call behind it stores
-through it. Depth: `docs/systems/CHECKPOINTS.md`, *Which object the file manager's global actually holds*;
-`tools/fmgr-live-object.py --check` and `tools/call-census.py --check` are dump-free.
+class the frame object is -- answered in the note below.
+
+**Answered 2026-11-14: the initialiser builds a file manager with a vtable no script class owns.** The first receiver of
+the frame local is `0x128ff` (`lea ecx`, `call 0x1a3b0`), and that constructor stores its table at `0x1a3c2`:
+`0x4c8db8`. The table is not in `inventory/xbe_class_tables.csv` -- its only dword reference in the whole image is that
+store -- and against the static error object's `0x4d2fd0` it overrides **13 of 25** slots, including `+0x04`
+(`CreateFileReader`, `0x0001d290`), `+0x08` (`CreateFileWriter`, `0x0001d6d0`) and the device resolver `+0x38`
+(`0x0001c4f0`), and its constructor builds a `Z:\Cache` string beside the object at `+0x4`. So the "asks for a reader
+and gets NULL" and the "device path is the empty string" findings describe the `.data` fallback, not the object the
+initialiser installs. **Still open:** whether that frame object is alive when the loader runs, which is the
+initialiser's exit path rather than another table. Depth: `docs/systems/CHECKPOINTS.md`, *Which class the initialiser
+builds there*; `inventory/fmgr_live_vtable.csv` (`--live`, dump-free `--check`).
 
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
