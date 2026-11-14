@@ -3632,8 +3632,18 @@ neighbouring offsets -- the pair is.
 
 **What is still open** is the front's identity -- the writer-side read (`UStruct::Serialize`, `0x000392b0`, between
 its second reference and the four zero dwords) is still the route, and the compact-versus-`FName` question is
-unchanged -- plus why 63 of the 578 show no shape at `prefix + 42` at all, and the block-start chooser itself: it
+unchanged -- plus the block-start chooser itself: it
 picks a start inside the group on 243 of the 245, so every count that reads `class_defaults_per_class.csv`'s
 `block_start` as the record's boundary is 2-10 bytes early on those rows. Rejecting a candidate that falls inside a
 committed closing group is the next measurement, and the group's start and end are now per-row committed. Nothing here
 needs a boot or a decompile.
+
+**Answered 2026-11-13 (twenty-eighth): 42 of those 63 are not shapeless, their head sits 10-48 bytes later.**
+`tools/class-record-no-shape.py` scans `prefix + 42 - 16 .. + 48` with the same shape test: 21 of the 63 answer nowhere
+in that window, and 42 answer at a distant offset (`k` = 11 on 11 rows, 20 on 7, 10 and 40 on 4 each, the rest 12-48),
+from which the element walk lands 0-9 bytes before the located block start on 35 of them (residue median 7, within 3 on
+only 3). The control refuses the easy reading twice: the 515 rows whose shape is at `prefix + 42` also fire at
+`k` = -1/+1/-2/-3 (515/510/492/457), the front's leading zeros merging into the run, so rows are compared by count
+position; and 188 of those 515 carry some hit at `|k| > 4`, so distance alone is not evidence. The 21 that answer
+nowhere, and the reason the head sits later on the 42, are what stays open -- the writer side (`UStruct::Serialize`,
+`0x000392b0`) is still the route.

@@ -2084,6 +2084,34 @@ boundary inherits a start 2-10 bytes inside the group on these rows. The next me
 teach the block-start chooser to reject a candidate that falls inside a record's closing group -- the group's start and
 end are now committed per row -- and re-run it on the 245.
 
+### The 63 rows that answer nothing at `prefix + 42` carry the shape 10 to 48 bytes later
+
+The open-front census answered 515 of the 578 open rows and left 63 with no shape at `prefix + 42` at all. Two
+explanations survive it -- the record's prefix is a different width on those rows, or there is no record array there
+to find -- and a window scan separates them without a boot. `tools/class-record-no-shape.py`
+(`make class-record-no-shape`, `inventory/class_record_no_shape.csv`, `--check` in `make ci`) runs the same test at
+every offset in `prefix + 42 - 16 .. + 48` and reports each surviving head with the element walk from it.
+
+| population | rows | no shape anywhere in the window | shape at a distant offset | walk from it lands 0-9 bytes before the block |
+|---|---|---|---|---|
+| open, no shape at `prefix + 42` | 63 | **21 (33.3%)** | **42** | **35 of the 42** |
+| control: open, shape at `prefix + 42` | 515 | 0 | 188 | -- |
+
+The 42 answer at `k` = 11 (11 rows), 20 (7), 10 (4), 40 (4), 19 (2), 30 (2), 29 (2), 21 (2), 12 (2), 48 (1) -- tens of
+bytes, not the one-to-three the controls show -- and from that head the element walk lands past the located block start
+on 38 (residue median **7**, within 9 bytes on 35, within 3 on only 3). So those rows are not shapeless: their array
+head sits later in the record than the field table's position, and the shape is the same shape.
+
+**The control that refuses the easy reading.** The nearest hits on the 515 control rows are at `k` = -1 (515 rows),
++1 (510), -2 (492), -3 (457): a front whose leading bytes are zero merges backwards into the sixteen-zero run, so the
+same shape reports two or three bytes early and the rows have to be compared by **count position**, not by offset. And
+188 of the 515 control rows carry some hit at `|k| > 4`, so a distant shape on its own is not evidence for the 63 --
+what is reported is the walk's landing, not the offset.
+
+**What is still open.** The 21 rows with no shape anywhere in the 65-offset window (a different record shape, or a
+payload that is not a class record), and the 42 with a late head, where the offset itself is the answer but the writer
+side that would say why the prefix is wider -- `UStruct::Serialize`, `0x000392b0` -- is still unread.
+
 ### The array's head sits after the sixteen zero bytes, and there its end is the block start
 
 The first version of this test read the `+0x4d0` array at `prefix_end + 42` -- `UStruct`'s prefix, then
