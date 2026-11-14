@@ -7,8 +7,9 @@ dropped without a word. This tool keeps every site, and the difference is not ac
 493 registration sites pass the same constructor thunk `0x00034650`**, whose guarded `jmp` lands on the
 object root's ctor `0x00062ce0`. A class with no native constructor of its own is registered with that
 shared default, so its registration names the *root's* table and not its own -- and the per-table artifact
-shows whichever of those 25 sites happened to be written last (`VertexStreamBase`, `0x001eb186`) where the
-site at `0x00064af6` registers `Object` with the identical thunk.
+showed whichever of those 25 sites happened to be written last (`VertexStreamBase`, `0x001eb186`) where the
+site at `0x00064af6` registers `Object` with the identical thunk; `tools/class-table-names.py` now resolves
+that row from the whole site list and this page's `committed name` column follows it (`Object`).
 
 Every row therefore carries both counts, so a registration that cannot name its own table is marked
 `shared-thunk` rather than being read as evidence:

@@ -146,13 +146,13 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x00024520,dtor_DeathGliderBot,DeathGliderBot,0x004cf760,1792,dtor,0,no,,0x0002453d,0x00024570,class table installed before any call; the body does not return this
 0x00024650,ctor_AlkeshBomberBot,AlkeshBomberBot,0x004cf978,1868,ctor,0,yes,0x00062ce0,0x00024658,0x00024650,class table installed after a call into the base constructor; the body returns this
 0x000245f0,dtor_AlkeshBomberBot,AlkeshBomberBot,0x004cf978,1868,dtor,0,no,,0x0002460d,0x00024650,class table installed before any call; the body does not return this
-0x0027e3b0,ctor_WaterTexture,WaterTexture,0x004cfba0,4868,ctor,0,yes,0x00169980,0x0027e3d5,0x0027e3b0,class table installed after a call into the base constructor; the body returns this
-0x00025550,dtor_WaterTexture,WaterTexture,0x004cfba0,4868,dtor,0,no,,0x0002556d,0x0027e3b0,class table installed before any call; the body does not return this
-0x002e81b0,FUN_002e81b0,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e81c1,0x002e8370,class table installed after a call into the base constructor; the body returns this
-0x002e81f0,FUN_002e81f0,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8201,0x002e8370,class table installed after a call into the base constructor; the body returns this
-0x002e8260,FUN_002e8260,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8274,0x002e8370,class table installed after a call into the base constructor; the body returns this
-0x002e8370,ctor_IceTexture,IceTexture,0x004cfc88,296,ctor,0,yes,0x0027e3b0,0x002e8381,0x002e8370,class table installed after a call into the base constructor; the body returns this
-0x00025660,dtor_IceTexture,IceTexture,0x004cfc88,296,dtor,0,no,,0x0002567d,0x002e8370,class table installed before any call; the body does not return this
+0x0027e3b0,ctor_WaterTexture,Texture,0x004cfba0,204,ctor,0,yes,0x00169980,0x0027e3d5,0x0027e3b0,class table installed after a call into the base constructor; the body returns this
+0x00025550,dtor_WaterTexture,Texture,0x004cfba0,204,dtor,0,no,,0x0002556d,0x0027e3b0,class table installed before any call; the body does not return this
+0x002e81b0,FUN_002e81b0,FractalTexture,0x004cfc88,1304,ctor,0,yes,0x0027e3b0,0x002e81c1,0x002e81f0,class table installed after a call into the base constructor; the body returns this
+0x002e81f0,FUN_002e81f0,FractalTexture,0x004cfc88,1304,ctor,0,yes,0x0027e3b0,0x002e8201,0x002e81f0,class table installed after a call into the base constructor; the body returns this
+0x002e8260,FUN_002e8260,FractalTexture,0x004cfc88,1304,ctor,0,yes,0x0027e3b0,0x002e8274,0x002e81f0,class table installed after a call into the base constructor; the body returns this
+0x002e8370,ctor_IceTexture,FractalTexture,0x004cfc88,1304,ctor,0,yes,0x0027e3b0,0x002e8381,0x002e81f0,class table installed after a call into the base constructor; the body returns this
+0x00025660,dtor_IceTexture,FractalTexture,0x004cfc88,1304,dtor,0,no,,0x0002567d,0x002e81f0,class table installed before any call; the body does not return this
 0x002e81f0,FUN_002e81f0,,0x004cfd78,,ctor,0,yes,0x0027e3b0,0x002e8220,,class table installed after a call into the base constructor; the body returns this
 0x00025710,FUN_00025710,,0x004cfd78,,dtor,0,no,,0x0002572d,,class table installed before any call; the body does not return this
 0x002e8260,FUN_002e8260,,0x004cfe68,,ctor,0,yes,0x0027e3b0,0x002e82a0,,class table installed after a call into the base constructor; the body returns this
@@ -260,11 +260,11 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x000533b0,FUN_000533b0,LinkerLoadGame,0x004daaa0,1304,ctor,12,yes,0x00052870,0x000533c9,0x00076220,class table installed after a call into the base constructor; the body returns this
 0x00076220,ctor_LinkerLoadGame,LinkerLoadGame,0x004daaa0,1304,ctor,0,yes,0x00076070,0x00076228,0x00076220,class table installed after a call into the base constructor; the body returns this
 0x00053c10,dtor_LinkerLoadGame,LinkerLoadGame,0x004daaa0,1304,dtor,0,no,,0x00053c2d,0x00076220,class table installed before any call; the body does not return this
-0x00062ce0,ctor_VertexStreamBase,VertexStreamBase,0x004dd2a8,56,ctor,0,yes,,0x00062ce2,0x00062ce0,class table installed after a call into the base constructor; the body returns this
-0x00063a60,Core_UnObj,VertexStreamBase,0x004dd2a8,56,ctor,4,yes,,0x00063a6a,0x00062ce0,class table installed after a call into the base constructor; the body returns this
-0x00073810,Core_UnObj,VertexStreamBase,0x004dd2a8,56,ctor,20,yes,,0x0007382c,0x00062ce0,class table installed after a call into the base constructor; the body returns this
-0x00062470,FUN_00062470,VertexStreamBase,0x004dd2a8,56,dtor,16,no,,0x0006248e,0x00062ce0,class table installed before any call; the body does not return this
-0x00063ee0,Core_UnObj,VertexStreamBase,0x004dd2a8,56,dtor,0,no,,0x00063ee8,0x00062ce0,class table installed before any call; the body does not return this
+0x00062ce0,ctor_VertexStreamBase,Object,0x004dd2a8,40,ctor,0,yes,,0x00062ce2,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00063a60,Core_UnObj,Object,0x004dd2a8,40,ctor,4,yes,,0x00063a6a,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00073810,Core_UnObj,Object,0x004dd2a8,40,ctor,20,yes,,0x0007382c,0x00062ce0,class table installed after a call into the base constructor; the body returns this
+0x00062470,FUN_00062470,Object,0x004dd2a8,40,dtor,16,no,,0x0006248e,0x00062ce0,class table installed before any call; the body does not return this
+0x00063ee0,Core_UnObj,Object,0x004dd2a8,40,dtor,0,no,,0x00063ee8,0x00062ce0,class table installed before any call; the body does not return this
 0x000669e0,FUN_000669e0,TextBuffer,0x004ddf78,64,ctor,4,yes,,0x00066a14,0x00075820,class table installed after a call into the base constructor; the body returns this
 0x00075870,dtor_TextBuffer,TextBuffer,0x004ddf78,64,dtor,0,no,,0x0007588d,0x00075820,class table installed before any call; the body does not return this
 0x00066b60,ctor_Commandlet,Commandlet,0x004de008,476,ctor,0,yes,,0x00066b85,0x00066b60,class table installed after a call into the base constructor; the body returns this

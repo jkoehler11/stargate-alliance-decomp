@@ -148,8 +148,9 @@ fixed dword. It is a **default constructor**, not a class constructor, so the ar
 was going to link through names no class at all. 24 sites reach it as a shared default and `Download`'s
 site pushes it behind a second candidate that ties; `Object`, `Engine`, `Player`, `NetDriver`, `LevelBase`,
 `RenderDevice` and nineteen more are described identically by it. And the dword it stores is not an
-identity either: table `0x004dd2a8` (named `VertexStreamBase`) is carried by **51 classes / 550 objects**
-in the loaded level, so object memory pairs it with classes that are not its name.
+identity either: table `0x004dd2a8` (named `Object` since the hierarchy join, `VertexStreamBase` before it)
+is carried by **51 classes / 550 objects** in the loaded level, so object memory pairs it with classes that
+are not its name.
 
 **The other two resolve to the registration site that follows them, and one earlier sentence here was
 wrong.** `Texture` (`0x0027e889`) and `FractalTexture` (`0x002e1489`) push `0x0027f070` -> `0x0027e3b0`,

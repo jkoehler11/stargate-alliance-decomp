@@ -408,8 +408,10 @@ constructor. This reads the sites themselves: every `E8 rel32` in the executable
 is the constructor, then the `68 imm32` pushes in the 96 bytes before it (`tools/registration-sites.py`,
 `inventory/registration_sites.csv`, `make registration-sites`).
 
-- **493 sites, 466 of them reproduce the class table's name exactly, 0 disagree.** The class table is
-  the check on this scan, not its input -- a disagreement would mean either the table's store or the
+- **493 sites, 465 of them reproduce the class table's name exactly, 0 disagree.** The class table is
+  the check on this scan, not its input -- and the 466th is the row the artifact names for its group's
+  nearest common ancestor (`FractalTexture` for the site that pushes `FireTexture`), which the scan reports
+  separately. A disagreement would mean either the table's store or the
   literal walk is misread, so the tool exits nonzero when one appears.
 - **26 sites are unnamed there and named here**: `Exporter`, `Factory`, `Field`, `Object`, `Subsystem`, `Language`, `Property`, `VoiceSubsystem`, `Viewport`, `CameraEffect`, `Client`, `Channel`, `Download`, `RenderDevice`, `Engine`, `LevelBase`, `Material`, `BitmapMaterial`, `RenderedMaterial`, `NetDriver`, `PendingLevel`, `Player`, `RenderResource`, `Texture`, `FractalTexture`, `FireTexture`. Every one is an engine base class, which is
   why the class table could not see it -- their registration is not a generated `ucpp` stub but the

@@ -13,9 +13,11 @@ or ASCII literal. Three names come out of that window on a normal site -- `"new"
 and the rest are reported rather than guessed.
 
 The class-table artifact is the check, not the input: `inventory/xbe_class_table_names.csv` already
-names 466 sites, and the scan must reproduce every one of them or it says so and exits nonzero. What it
-adds is the residue -- the sites that table leaves unnamed, because its evidence is a store inside the
-constructor rather than the literal at the call.
+names 466 sites, and the scan must reproduce every one of them or it says so and exits nonzero -- except a
+site whose row is marked `ancestor-derived`, where the artifact names the table for the group's nearest
+common ancestor rather than for the literal this site pushes (one site, `0x002e8468`, which pushes
+`FireTexture` for `FractalTexture`'s table). What it adds is the residue -- the sites that table leaves
+unnamed, because its evidence is a store inside the constructor rather than the literal at the call.
 
 Usage:
     registration-sites.py DUMP/default.xbe -o inventory/registration_sites.csv
@@ -124,13 +126,16 @@ def run(xbe_path, out):
     sites.sort()
 
     classes = {r["class"] for r in csv.DictReader(open("inventory/classes.csv", newline=""))}
-    table = {}
+    table, derived = {}, set()
     if os.path.exists("inventory/xbe_class_table_names.csv"):
         for r in csv.DictReader(open("inventory/xbe_class_table_names.csv", newline="")):
             if r.get("registration_va"):
-                table[int(r["registration_va"], 16)] = r["class"]
+                site_va = int(r["registration_va"], 16)
+                table[site_va] = r["class"]
+                if r.get("name_rule") == "ancestor-derived":
+                    derived.add(site_va)
 
-    rows, named_from_table, missed, unknown = [], 0, [], []
+    rows, named_from_table, derived_ok, missed, unknown = [], 0, 0, [], []
     for site in sites:
         names = literals_before(image, site)
         cls, outer, how = pick(names, classes)
@@ -139,6 +144,9 @@ def run(xbe_path, out):
             if any(t == expected for _, _, t in names):
                 named_from_table += 1
                 how = "class table agrees"
+            elif site in derived:
+                derived_ok += 1
+                how = "class table names the group's nearest common ancestor, not this literal"
             else:
                 missed.append((site, expected, [t for _, _, t in names]))
         elif cls:
@@ -154,7 +162,8 @@ def run(xbe_path, out):
         w.writerows(rows)
     print(f"{len(sites)} call sites of 0x{CTOR:08x} -> {out}")
     print(f"  {named_from_table} confirmed against inventory/xbe_class_table_names.csv")
-    print(f"  {len(table)} sites carry a class there, {len(missed)} disagree with the literal")
+    print(f"  {len(table)} sites carry a class there, {derived_ok} name their group's nearest common "
+          f"ancestor, {len(missed)} disagree with the literal")
     for site, expected, found in missed:
         print(f"    CONFLICT 0x{site:08x} table={expected} literals={found}")
     print(f"  {len(unknown)} sites the class table leaves unnamed, "

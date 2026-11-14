@@ -14694,8 +14694,8 @@
 0x004cf548 Vtbl_TeltakBot                               1812 class table
 0x004cf760 Vtbl_DeathGliderBot                          1792 class table
 0x004cf978 Vtbl_AlkeshBomberBot                         1868 class table
-0x004cfba0 Vtbl_WaterTexture                            4868 class table
-0x004cfc88 Vtbl_IceTexture                               296 class table
+0x004cfba0 Vtbl_Texture                                  204 class table
+0x004cfc88 Vtbl_FractalTexture                          1304 class table
 0x004cff58 Vtbl_WaveTexture                             4872 class table
 0x004d0041 FUN_004d0041                                    5 
 0x004d0048 Vtbl_FluidTexture                            4868 class table
@@ -14727,7 +14727,7 @@
 0x004da8a8 Vtbl_LinkerSave                               284 class table
 0x004da9c8 Vtbl_LinkerSaveGame                           284 class table
 0x004daaa0 Vtbl_LinkerLoadGame                          1304 class table
-0x004dd2a8 Vtbl_VertexStreamBase                          56 class table
+0x004dd2a8 Vtbl_Object                                    40 class table
 0x004ddf78 Vtbl_TextBuffer                                64 class table
 0x004de008 Vtbl_Commandlet                               476 class table
 0x004de088 Vtbl_Package                                   56 class table

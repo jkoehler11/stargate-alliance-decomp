@@ -11,7 +11,7 @@ site_va,class,outer,class_table,evidence,literals
 0x0003b3fc,State,System,State,class table agrees,new|System|State
 0x0003b4b8,Class,System,Class,class table agrees,new|System|Class
 0x0003ed36,PackageMap,System,PackageMap,class table agrees,new|System|PackageMap
-0x00064af6,Object,System,,class name in the site's pushes,new|System|Object
+0x00064af6,Object,System,Object,class table agrees,new|System|Object
 0x00066b16,Subsystem,System,,class name in the site's pushes,new|System|Subsystem
 0x00066d96,Language,System,,the site's only identifier literal (not in classes.csv),new|System|Language
 0x00067d45,TextBuffer,System,TextBuffer,class table agrees,new|System|TextBuffer
@@ -296,7 +296,7 @@ site_va,class,outer,class_table,evidence,literals
 0x001ce185,ProjectorPrimitive,System,ProjectorPrimitive,class table agrees,new|System|ProjectorPrimitive
 0x001ced39,Projector,System,Projector,class table agrees,new|System|Projector
 0x001eafb6,RenderResource,System,,the site's only identifier literal (not in classes.csv),new|System|RenderResource
-0x001eb186,VertexStreamBase,System,VertexStreamBase,class table agrees,new|System|VertexStreamBase
+0x001eb186,VertexStreamBase,System,,the site's only identifier literal (not in classes.csv),new|System|VertexStreamBase
 0x001ebdc5,IndexBuffer,System,IndexBuffer,class table agrees,new|System|IndexBuffer
 0x001ebea5,VertexStreamVECTOR,System,VertexStreamVECTOR,class table agrees,new|System|VertexStreamVECTOR
 0x001ebf55,VertexStreamCOLOR,System,VertexStreamCOLOR,class table agrees,new|System|VertexStreamCOLOR
@@ -353,7 +353,7 @@ site_va,class,outer,class_table,evidence,literals
 0x00271b15,TerrainMaterial,System,TerrainMaterial,class table agrees,new|System|TerrainMaterial
 0x00274248,TerrainInfo,System,TerrainInfo,class table agrees,new|System|TerrainInfo
 0x0027e366,Palette,System,Palette,class table agrees,new|System|Palette
-0x0027e889,Texture,System,,class name in the site's pushes,new|System|Texture
+0x0027e889,Texture,System,Texture,class table agrees,new|System|Texture
 0x0027ea59,Cubemap,System,Cubemap,class table agrees,new|System|Cubemap
 0x00283bd8,TrailEmitter,System,TrailEmitter,class table agrees,new|System|TrailEmitter
 0x0028d848,VertMeshInstance,System,VertMeshInstance,class table agrees,new|System|VertMeshInstance
@@ -387,12 +387,12 @@ site_va,class,outer,class_table,evidence,literals
 0x002d6899,DecompressCommandlet,System,DecompressCommandlet,class table agrees,new|System|DecompressCommandlet
 0x002d7cf9,UdpLink,System,UdpLink,class table agrees,new|System|UdpLink
 0x002e1489,FractalTexture,System,,class name in the site's pushes,new|System|FractalTexture
-0x002e17d9,WaterTexture,System,WaterTexture,class table agrees,new|System|WaterTexture
-0x002e8468,FireTexture,System,,class name in the site's pushes,new|System|FireTexture
+0x002e17d9,WaterTexture,System,,class name in the site's pushes,new|System|WaterTexture
+0x002e8468,FireTexture,System,FractalTexture,"class table names the group's nearest common ancestor, not this literal",new|System|FireTexture
 0x002e8528,WaveTexture,System,WaveTexture,class table agrees,new|System|WaveTexture
 0x002e85e8,FluidTexture,System,FluidTexture,class table agrees,new|System|FluidTexture
 0x002e86a8,WetTexture,System,WetTexture,class table agrees,new|System|WetTexture
-0x002e8768,IceTexture,System,IceTexture,class table agrees,new|System|IceTexture
+0x002e8768,IceTexture,System,,class name in the site's pushes,new|System|IceTexture
 0x002ec8f5,PropertyManagerBase,System,PropertyManagerBase,class table agrees,new|System|PropertyManagerBase
 0x002ec9a5,StatsManager,System,StatsManager,class table agrees,new|System|StatsManager
 0x002ed5f9,GUIStyles,System,GUIStyles,class table agrees,new|System|GUIStyles

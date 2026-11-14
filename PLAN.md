@@ -1324,6 +1324,47 @@ are limited to expected fields (checksum/timestamp) and documented.
   ask whether the literal at a site belongs to the record the thunk belongs to -- `tools/class-table-names.py`
   writes that column, so the read is its own pairing rule against the same bytes, no boot and no Ghidra.
 
+### Execution notes (2026-11-14, the table name is a hierarchy join, and the site census says when it cannot be one)
+
+- **The per-table name was a write order, and both address orders are refuted.** 30 of the image's 493
+  registration sites resolve to only three tables, so `inventory/xbe_class_table_names.csv` named them by
+  whichever site was written last. `tools/class-table-names.py` now names a table from its whole site list:
+  the site whose thunk no other site uses owns the table (463 of 466 named rows), and where every site
+  shares a thunk the name is a join against `inventory/classes.csv` -- `Object` for the root (the only class
+  in the dump with no super), `Texture` for `0x004cfba0` (454 objects of that class carry it in
+  `inventory/live_class_tables.csv`, so the runtime read agrees), and `FractalTexture` for `0x004cfc88` by
+  derivation, since `FireTexture` and `IceTexture` are both its subclasses and neither names the table.
+  Lowest site would have said `Exporter` (`0x000349e6`) and last-written said `VertexStreamBase`
+  (`0x001eb186`), a literal no package declares; three of the 492 rows change class, and no row is left
+  unresolved.
+- **The name reaches 384 constructor rows, and that is the point.** `inventory/class_constructors.csv` moves
+  on 12 rows (three tables' ctors and dtors) and `inventory/class_ctor_bases.csv` on 384, because every
+  constructor whose base is the object root now reports its base as `Object` rather than as a name that
+  belonged to one of the 25 sites sharing the root's thunk. `inventory/registration_sites.csv` moves on 6
+  rows, and `tools/registration-sites.py` learned the one exception: a row whose `name_rule` is
+  `ancestor-derived` cannot be reproduced from the site's own literal, so it is reported rather than
+  counted as a disagreement (**465 of 466 confirmed, 1 derived, 0 disagree**).
+- **The 400-byte constructor window is bounded, and the bound fires nowhere in this image.** Reading each
+  registration target's table store from a flat 400-byte window and from the function's own size agrees on
+  **493 of 493**, so the earlier reader's overrun was a latent defect rather than a live error; the guard
+  stays and `--check` keeps a synthetic case where it bites. The `object_size` column follows the site the
+  rule chose and moves on the same three rows (4868 -> 204, 296 -> 1304, 56 -> 40); it is that site's push,
+  not a second measurement, and reconciling it against the constructor census is the next read.
+- **The tool no longer needs capstone.** `tools/class-table-names.py` decoded with capstone, which the
+  desktop does not have, so its artifact could not be regenerated there; it now decodes with objdump like
+  `tools/class-registrations.py`, and its `--check` is a synthetic image (an unshared thunk winning over a
+  shared one, a shared group falling back to its ancestor, a derived ancestor, and a short body that must
+  not inherit its neighbour's store).
+- Tool (`tools/class-table-names.py`, `--write-doc`/`--check-doc`/`--check`) + `inventory/xbe_class_table_names.csv`
+  (492 rows, with `sites`, `name_rule` and `site_literals`) + the generated block and the rule section on
+  `docs/systems/CLASS_REGISTRATION.md` + regenerated `class_constructors`, `class_ctor_bases` and
+  `registration_sites` + `make class-names` + this note. No boot: the image, the committed census and the
+  parsed hierarchy.
+- **Next measurement:** the `object_size` column, which is the chosen site's push. The class's own size is
+  measured independently by `tools/class-ctors.py` and by the record census, so joining the three on the 466
+  named classes says whether the registration push is the size at all -- and on the root it reads 40 where
+  the constructor census says 56.
+
 ### Execution notes (2026-11-14, the second class-ctor copy is a different inlining of the same source, and 3,779 bodies have no inbound edge)
 
 - **The nominated pair is not a twin of the live pair; it is the same source compiled with `UState`'s ctor

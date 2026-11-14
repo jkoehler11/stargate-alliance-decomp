@@ -91,26 +91,27 @@ survived a sweep that took the three bodies above it. `0x00062470` is classified
 `UState`'s ctor calls it first and it links the object it builds into the global list at `0x006c2104`,
 so its edge is reported as `base-installer` rather than dropped.
 
-The object root's table is named `VertexStreamBase` in the block below, and that name is the committed
-per-table artifact's last-writer-wins row rather than the class's: 25 registrations resolve to that table
-and the one at `0x00064af6` registers `Object` with the identical constructor thunk
+The object root's table `0x004dd2a8` is named `Object` in the block below, and that name is a join against
+the parsed hierarchy rather than a write order: 25 registrations resolve to that table through one shared
+constructor thunk, so `tools/class-table-names.py` takes the literal that is an ancestor-or-self of every
+other literal in the group, and exactly one of the 25 is the root of `inventory/classes.csv`
 (`tools/class-registrations.py`, *Which registration names a table, and the 25 names of the object root*
 below).
 
 <!-- generated:class-ctor-base -->
 | class | ctor | args | recorded call | measured base | base class | verdict |
 |---|---|---|---|---|---|---|
-| Struct | 0x0003a1b0 | 4 | 0x00062ce0 (VertexStreamBase) | 0x00062ce0 | VertexStreamBase | base-ctor |
-| Struct | 0x0003bd30 | 24 | 0x0003b440 | 0x00073810 | VertexStreamBase | base-ctor |
-| Struct | 0x0003d560 | 0 | 0x00062ce0 (VertexStreamBase) | 0x00062ce0 | VertexStreamBase | base-ctor |
-| State | 0x0003a5f0 | 20 | 0x00062470 (VertexStreamBase) | 0x00062470 | VertexStreamBase | base-installer |
-| State | 0x0003d6a0 | 0 | 0x00062ce0 (VertexStreamBase) | 0x00062ce0 | VertexStreamBase | base-ctor |
-| Class | 0x0003ad20 | 0 | 0x00062ce0 (VertexStreamBase) | 0x00062ce0 | VertexStreamBase | base-ctor |
+| Struct | 0x0003a1b0 | 4 | 0x00062ce0 (Object) | 0x00062ce0 | Object | base-ctor |
+| Struct | 0x0003bd30 | 24 | 0x0003b440 | 0x00073810 | Object | base-ctor |
+| Struct | 0x0003d560 | 0 | 0x00062ce0 (Object) | 0x00062ce0 | Object | base-ctor |
+| State | 0x0003a5f0 | 20 | 0x00062470 (Object) | 0x00062470 | Object | base-installer |
+| State | 0x0003d6a0 | 0 | 0x00062ce0 (Object) | 0x00062ce0 | Object | base-ctor |
+| Class | 0x0003ad20 | 0 | 0x00062ce0 (Object) | 0x00062ce0 | Object | base-ctor |
 | Class | 0x0003ae30 | 4 | 0x0003a1b0 (Struct) | 0x0003a1b0 | Struct | base-ctor |
 | Class | 0x0003af60 | 52 | 0x0003a5f0 (State) | 0x0003a5f0 | State | base-ctor |
-| VertexStreamBase | 0x00062ce0 | 0 | - | - | - | no-base-call |
-| VertexStreamBase | 0x00063a60 | 4 | - | - | - | no-base-call |
-| VertexStreamBase | 0x00073810 | 20 | - | - | - | no-base-call |
+| Object | 0x00062ce0 | 0 | - | - | - | no-base-call |
+| Object | 0x00063a60 | 4 | - | - | - | no-base-call |
+| Object | 0x00073810 | 20 | - | - | - | no-base-call |
 
 522 constructors in the image: 509 read a base class off the last call before their table store (1 of those to a body the shape rule calls a destructor), 9 install the table before any call (the base was inlined), 4 end in a body that installs no class table, and 6 of the recorded calls are not the last call and so are not the base the census implied.
 <!-- /generated:class-ctor-base -->
@@ -127,12 +128,11 @@ guarded stub `mov ecx,[esp+4]; test ecx,ecx; je; jmp 0x00062ce0`: a class with n
 its own is registered with that shared default, so its registration names the *root's* table and not its
 own. The 25 literals are `Object`, `Field`, `Property`, `Struct`'s siblings and the like -- `Factory`,
 `Exporter`, `Engine`, `Player`, `NetDriver`, `Material`, `RenderDevice`, ... -- and the per-table artifact
-shows whichever site happened to be written last, `VertexStreamBase` at `0x001eb186`. The site at
-`0x00064af6` registers `Object` against the identical thunk, which is what the root of a hierarchy that
-366 constructors call should read as; the name in the committed artifact is an artefact of the write
-order, not a measurement. Two more tables carry the same shape (`0x004cfba0`: `Texture`,
-`FractalTexture`, `WaterTexture`; `0x004cfc88`: `FireTexture`, `IceTexture`), so **30 of 493 registrations
-sit on a table more than one site resolves to** and cannot name the table they are attached to.
+showed whichever site happened to be written last, `VertexStreamBase` at `0x001eb186` -- a literal no
+package in the dump declares, chosen because its site sorts after `0x00064af6`. Two more tables carry the
+same shape (`0x004cfba0`: `Texture`, `FractalTexture`, `WaterTexture`; `0x004cfc88`: `FireTexture`,
+`IceTexture`), so **30 of 493 registrations sit on a table more than one site resolves to** and cannot name
+the table they are attached to.
 
 <!-- generated:class-registrations -->
 | table | committed name | sites | class literals the registrations push |
@@ -143,6 +143,49 @@ sit on a table more than one site resolves to** and cannot name the table they a
 
 493 registration sites: 493 resolve to a class table, 30 sit on a table that more than one site resolves to, and 0 resolve to no table at all. 30 sites therefore do not name the table they are attached to.
 <!-- /generated:class-registrations -->
+
+## The table name is a hierarchy join, and the site census says when it cannot be one
+
+`tools/class-table-names.py` now names a table from its **whole** site list, and it never reads an address
+order to break a tie. Three rules, and the `name_rule` column says which one produced each row:
+
+- `unshared-thunk` (463 of the 466 named tables): exactly one site on the table uses a constructor thunk no
+  other site uses. That thunk's constructor installs the table for this class and no other, so the literal
+  at that site is the class.
+- `hierarchy-ancestor` (2 tables): every site shares a thunk, so no site owns the table. Among the literals
+  `inventory/classes.csv` knows, exactly one is an ancestor-or-self of every other in the group, and that is
+  the class whose constructor the rest reuse. This names `0x004dd2a8` `Object` (the only class in the dump
+  with no super) and `0x004cfba0` `Texture`.
+- `ancestor-derived` (1 table): the shared group names no common ancestor itself, but it has exactly one
+  nearest common ancestor, and the row says the name is derived from it -- `0x004cfc88` reads
+  `FractalTexture`, since `FireTexture` and `IceTexture` are both its subclasses and neither names the
+  table. The two subclasses' constructors do store the same table, which the rule does not explain; it only
+  picks the ancestor rather than one of the two.
+
+**The address orders are refuted, and that is why the rule is a join.** The lowest site on the root's table
+is `Exporter` (`0x000349e6`) and the last is `VertexStreamBase` (`0x001eb186`); neither is the class the
+hierarchy puts there, and `VertexStreamBase` is not a class in `inventory/classes.csv` at all. Exactly three
+of the 492 rows change class, and the `object_size` column follows the site the rule chose, so it moves on
+the same three (4868 -> 204 on `0x004cfba0`, 296 -> 1304 on `0x004cfc88`, 56 -> 40 on `0x004dd2a8`). That
+size is the chosen site's push, not a second measurement; the runtime read agrees with one of the three
+names -- `inventory/live_class_tables.csv` carries **454 objects of class `Texture`** on `0x004cfba0`
+(`docs/UNKNOWNS.md` U8).
+
+**The 400-byte window is bounded now, and the bound changes no row.** The earlier reader took the first
+`mov [reg], <table>` in a flat 400-byte read from the constructor, which on a short body reaches the next
+function's store; it now stops at the size `symbols/xbox_functions.csv` gives the body. Reading every one of
+the 493 registration targets both ways agrees on **493 of 493**, because every target has a store of its
+own -- the bound is a guard, and the tool's `--check` keeps the case where it bites.
+
+<!-- generated:class-table-names -->
+| table | name | rule | sites | literals |
+|---|---|---|---|---|
+| 0x004dd2a8 | Object | hierarchy-ancestor | 25 | Exporter, Factory, Field, Object, Subsystem, Language, Property, VoiceSubsystem, Viewport, CameraEffect, Client, Channel, NetConnection, Download, RenderDevice, Engine, LevelBase, Material, BitmapMaterial, RenderedMaterial, NetDriver, PendingLevel, Player, RenderResource, VertexStreamBase |
+| 0x004cfba0 | Texture | hierarchy-ancestor | 3 | Texture, FractalTexture, WaterTexture |
+| 0x004cfc88 | FractalTexture | ancestor-derived | 2 | FireTexture, IceTexture |
+
+492 tables: 466 named (463 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 1 derived from a nearest common ancestor), 0 unresolved, 26 with no registration. 3 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
+<!-- /generated:class-table-names -->
 
 ## What this measurement does not say
 
