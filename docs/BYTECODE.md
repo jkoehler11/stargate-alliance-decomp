@@ -520,6 +520,38 @@ width, so no row needs a second rule:
   `--anchor-literal` prints that read-back for whichever copy it places; `--residue --anchor-literal` retries every
   row the prefix could not place and prints each row's literal population and candidate-start count.
 
+### The field is exact in all 11,687, and the last four rows were a decode that stopped one value short (2026-11-14)
+
+The group-24 correction (the `StructCmpEq`/`StructCmpNe` operand above) left `--sizefield` four residue rows, and all
+four dwords were **multiples of 65,536** -- 262,144 (`0x40000`), 3,932,160 (`0x3c0000`), 7,798,784 (`0x770000`) and
+11,665,408 (`0xb20000`). That is what this field looks like when it is read **two bytes late**: the low u16 of the
+read is zero and the high u16 is the size, which those four are -- 4, 60, 119 and 178.
+
+The cause was not the format. `locate()`, the one six-value front read that `--baseline`, `--compare` and `--script`
+use, requires the export's own name as the **sixth** value; these four payloads carry that name index as the fifth
+*and* the sixth. `--sizefield` had kept a second copy of the decode (a loop of up to eight values stopping on the
+**first** match), so on these four it stopped one value short, and both the field offset and the script start came out
+two bytes early. The disassembly half had the right start, which is why the four walked while their field did not
+match.
+
+`locate()` now returns `(status, body, start, end, name_end, front)`, and `--sizefield` and `_payload_scripts` (the
+`--diverge` row source) read the header through it instead of decoding it themselves. Read at the correct name end,
+every one of the four is the prediction exactly:
+
+| package | class.function | script | field at the correct name end | prediction |
+|---|---|---:|---:|---:|
+| `Engine.u` | `StreamPlaylistManager.InitializeParsers` | 126 | 178 | 178 |
+| `StargateGame.u` | `StargatePlayer.EnableShadows` | 92 | 119 | 119 |
+| `StargateVehicles.u` | `SemektetMortarGun.CalcPathPoint` | 48 | 60 | 60 |
+| `UDebugMenu.u` | `UGraphParticlePage.Initialized` | 682 | 1,024 | 1,024 |
+
+So the identity `dword@name_end+12 == len(script) + sum(4 - width)` holds on **11,687 of 11,687 payloads (100.00%)**
+-- the counts above (43 rows, then 30 unaligned copies, then 13 complete) are the state before the group-24 row and
+before this decode fix -- `inventory/matching_baseline.csv` regenerates **byte-identical** (the locator's own answers
+never moved), and the report prints how many payloads carry the duplicated front name, so the shape is visible rather
+than inferred. The lesson is the one the earlier refactor wrote down: **a second copy of a locator is a defect waiting
+for the one payload shape it does not share**, and this copy survived the refactor that removed the first two.
+
 ## The shipped scripts, as disassembled
 
 With the start at `name_end + 16` the disassembler runs on real functions rather than on hex literals:

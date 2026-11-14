@@ -3244,7 +3244,7 @@ EPILOGUE = bytes([0x04, 0x0B, 0x47])
 
 
 def locate(export, data):
-    """Where a function's script sits in its payload: `(status, body, start, end)`.
+    """Where a function's script sits in its payload: `(status, body, start, end, name_end, front)`.
 
     One answer for both halves of the tool. The header is six archive-compact values ending on the export's own
     name, the script starts at `name_end + 16`, and the epilogue sits 7 bytes before the payload's end (9 for a Net
@@ -3252,32 +3252,39 @@ def locate(export, data):
     facts: `scriptless` is a native with no epilogue at all (the bulk of them), `unaligned` is a header that does
     not end on the export's name, `short` is a payload too small to hold a header, and `empty` is an epilogue with
     no room for a script in front of it.
+
+    `name_end` and the six `front` values are returned for the readers that ask about the header itself
+    (`--sizefield`, which reads the dword at `name_end + 12`). A caller that decodes the front for itself is how
+    `--sizefield` came to read that field two bytes early: four payloads carry the export's name as their **fifth
+    and sixth** front value, so a loop that stops at the first match stops one value short of the name end that
+    this six-value read requires. One locator, read by every caller.
     """
     pay = data[export["offset"]:export["offset"] + export["size"]]
     n = len(pay)
-    off, last = 0, None
+    off, last, front = 0, None, []
     for _ in range(6):
         try:
             last, off = read_index(pay, off)
         except IndexError:
-            return "short", b"", 0, 0
+            return "short", b"", 0, 0, 0, front
+        front.append(last)
     if last != export["name"]:
-        return "unaligned", b"", 0, 0
+        return "unaligned", b"", 0, 0, off, front
     if n >= 10 and pay[n - 10:n - 7] == EPILOGUE:
         end = n - 7
     elif n >= 12 and pay[n - 12:n - 9] == EPILOGUE:
         end = n - 9
     else:
-        return "scriptless", b"", 0, 0
+        return "scriptless", b"", 0, 0, off, front
     start = off + 16
     if start >= end:
-        return "empty", b"", start, end
-    return "ok", pay[start:end], start, end
+        return "empty", b"", start, end, off, front
+    return "ok", pay[start:end], start, end, off, front
 
 
 def parsed(export, data, table):
     """A function's top-level token nodes and the bytes they cover, or None when the payload does not walk."""
-    status, body, _start, _end = locate(export, data)
+    status, body, _start, _end, _name_end, _front = locate(export, data)
     if status != "ok":
         return None
     try:
@@ -3415,7 +3422,7 @@ def operator_decl(pkg, export):
 
 def grade(pkg, export, table):
     """One function's script, in the categories the scoreboard counts: scripted, refused, or why there is none."""
-    status, body, _start, _end = locate(export, pkg.data)
+    status, body, _start, _end, _name_end, _front = locate(export, pkg.data)
     if status != "ok":
         return "operator" if status == "unaligned" and operator_decl(pkg, export) else status
     try:
@@ -3619,8 +3626,7 @@ def sizefield_report(path, rows=0, residue_csv=None):
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
     table = Table()
-    epilogue = bytes([0x04, 0x0B, 0x47])
-    total = walked = exact = stored = 0
+    total = walked = exact = stored = duplicated = 0
     sign = collections.Counter()
     height = collections.Counter()
     per_pkg = []
@@ -3635,29 +3641,15 @@ def sizefield_report(path, rows=0, residue_csv=None):
             if pkg.class_name_of(e) != "Function":
                 continue
             pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
-            n = len(pay)
-            off, last, aligned = 0, None, False
-            for _ in range(8):
-                try:
-                    last, off = read_index(pay, off)
-                except IndexError:
-                    break
-                if last == e["name"]:
-                    aligned = True
-                    break
-            if not aligned:
+            status, body, start, end, name_end, front = locate(e, pkg.data)
+            if status not in ("ok", "empty"):
                 continue
-            if n >= 10 and pay[n - 10:n - 7] == epilogue:
-                end = n - 7
-            elif n >= 12 and pay[n - 12:n - 9] == epilogue:
-                end = n - 9
-            else:
-                continue
-            start = off + 16
-            if start > end:
-                continue
-            body = pay[start:end]
-            want = struct.unpack_from("<I", pay, off + 12)[0]
+            if len(front) == 6 and front[4] == front[5]:
+                # The export's name as both the fifth and sixth front value: the name end is the second one, and a
+                # loop that stops on the first match reads the size field two bytes early. Four payloads in this
+                # corpus are that shape, and each one's dword is exact once the second value is the name end.
+                duplicated += 1
+            want = struct.unpack_from("<I", pay, name_end + 12)[0]
             total += 1
             n_pkg += 1
             if want == len(body):
@@ -3711,6 +3703,8 @@ def sizefield_report(path, rows=0, residue_csv=None):
                 writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
                                  ";".join("%d:%d" % kv for kv in sorted(row[8].items()))])
         print("  residue rows written to %s" % residue_csv)
+    print("  the front's sixth value repeats the export name, so the name end is the second one: %d payload(s)"
+          % duplicated)
     print("  residue by sign: %s; by the difference (dword - widened length): %s"
           % (dict(sign.most_common()), dict(sorted(height.items()))))
     if rows and residue:
@@ -3730,33 +3724,15 @@ def _payload_scripts(one):
     pkg.read_names()
     pkg.read_imports()
     pkg.read_exports()
-    epilogue = bytes([0x04, 0x0B, 0x47])
     for e in pkg.exports:
         if pkg.class_name_of(e) != "Function":
             continue
         pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
-        n = len(pay)
-        off, last, aligned = 0, None, False
-        for _ in range(8):
-            try:
-                last, off = read_index(pay, off)
-            except IndexError:
-                break
-            if last == e["name"]:
-                aligned = True
-                break
-        if not aligned:
+        status, body, start, end, name_end, _front = locate(e, pkg.data)
+        if status not in ("ok", "empty"):
             continue
-        if n >= 10 and pay[n - 10:n - 7] == epilogue:
-            end = n - 7
-        elif n >= 12 and pay[n - 12:n - 9] == epilogue:
-            end = n - 9
-        else:
-            continue
-        start = off + 16
-        if start > end:
-            continue
-        yield (pkg, e, pay[start:end], struct.unpack_from("<I", pay, off + 12)[0], pay[off:off + 44])
+        yield (pkg, e, body, struct.unpack_from("<I", pay, name_end + 12)[0],
+               pay[name_end:name_end + 44])
 
 
 def _index_width(data, start, end):
