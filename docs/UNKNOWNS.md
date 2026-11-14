@@ -3770,3 +3770,17 @@ declared names), ambiguous **291 -> 197**; `class_defaults_misses.csv` explains 
 to `no-defaults-block` 249 / `defaults-ambiguous` 247. **What is still open.** `tools/defaults-emit.py` still locates
 class blocks with its own path and still reports 2,209 blocks and 15,518 rendered properties, so the renderer is the
 one artifact that has not moved with the label.
+
+**Answered 2026-11-14 (thirty-seventh): the renderer withholds the same label, and its residue is the 87 the group
+guard accounts for.** `tools/defaults-emit.py` now locates through `choose_scored()`, the same named-property
+floor, on both of its paths (`block_of` for a class, `block_for_export` for an `editinline` subobject), and
+`--explain` reports the shape as `no block: the chosen parse names no declared property`. Blocks
+**2,209 -> 1,898**, `dirty_properties` **1,267 -> 491** (the 311 withheld parses held 776), and nothing that
+renders moves: clean blocks **1,664**, properties **15,521**, rendered **15,518**, subobjects 1,313 / 15,798 /
+15,790. The renderer is still **87 blocks short** of `class-defaults.py` (1,898 against 1,985), and the new
+`--reconcile` mode shows every row of the gap is a class the guard touches -- **63** renderer-withheld /
+locator-block, **25** no-candidate / block, **52** withheld / no-block, **1** block / no-block
+(`Engine.PSBumpBSP`) -- with the same start on both paths for **1,663** of the 2,319 classes and the locator's
+start the later one on all **234** that disagree. **What is still open.** Whether the renderer should choose from
+`guarded()`'s candidates as the locator does: that is the 87, and it changes which blocks render rather than what
+one holds.
