@@ -26,6 +26,11 @@ HUD frames run from 0.0000 to 0.9601 there (index 37's weapon fills that corner)
 a dark HUD corner plus a bright thing in the bottom-right, so the instrument answers "did the load reach play"
 and refuses the second question rather than guessing it.
 
+The **map file is the control**, and it does not discriminate: every map in the list carries `PlayerStart`
+actors (`inventory/map_actors.csv`), median 4, and the five cutscene maps and the `MISSION FAILED` one carry 4
+apiece exactly like the gameplay maps. So the actor census cannot tell a cutscene from a firefight, and the frame
+is the only witness either table has. The column is carried so the join is visible rather than asserted.
+
 What the verdict means, and what it does not:
 
 * `hud` is **the player was in control at the moment of the frame** -- the load reached interactive gameplay, not
@@ -62,7 +67,7 @@ import sys
 import tempfile
 import zlib
 
-COLUMNS = ["index", "name", "verdict", "corner", "prompt", "run"]
+COLUMNS = ["index", "name", "verdict", "corner", "prompt", "player_starts", "run"]
 TABLE_MARK = ("<!-- generated:map-frames -->", "<!-- /generated:map-frames -->")
 STATUS_MARK = ("<!-- generated:map-frames-status -->", "<!-- /generated:map-frames-status -->")
 TSV = "missions.tsv"
@@ -259,6 +264,20 @@ def names():
     return {index: name for index, (name, _result) in load_table().items()}
 
 
+def player_starts():
+    """{map name: PlayerStart count} from the committed actor census -- the static control on the frame."""
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(root, "inventory", "map_actors.csv")
+    if not os.path.exists(path):
+        return {}
+    out = {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            if row["class"] == "PlayerStart":
+                out[row["map"]] = int(row["count"])
+    return out
+
+
 # ---------------------------------------------------------------- rendering
 
 def build(work):
@@ -268,7 +287,8 @@ def build(work):
     for index, (frame, run) in sorted(frames_by_index(work).items()):
         portrait, prompt = measure(frame)
         rows.append({"index": index, "name": known.get(index, ""), "verdict": verdict(portrait),
-                     "corner": "%.4f" % portrait, "prompt": "%.4f" % prompt, "run": run})
+                     "corner": "%.4f" % portrait, "prompt": "%.4f" % prompt,
+                     "player_starts": str(player_starts().get(known.get(index, ""), "")), "run": run})
     return rows
 
 
@@ -289,12 +309,12 @@ def read_csv(path):
 
 def render_table(rows):
     known = names()
-    out = ["| index | map | verdict | top-left corner | bottom-right | run |",
-           "|---:|---|---|---:|---:|---|"]
+    out = ["| index | map | verdict | top-left corner | bottom-right | `PlayerStart` | run |",
+           "|---:|---|---|---:|---:|---:|---|"]
     for row in rows:
-        out.append("| %s | `%s` | %s | %s | %s | `%s` |" % (
+        out.append("| %s | `%s` | %s | %s | %s | %s | `%s` |" % (
             row["index"], known.get(int(row["index"]), row["name"]), row["verdict"],
-            row["corner"], row["prompt"], row["run"]))
+            row["corner"], row["prompt"], row.get("player_starts", ""), row["run"]))
     return "\n".join(out)
 
 
@@ -325,6 +345,15 @@ def render_status(rows):
                          % (len(ahead), ", ".join("index %s (`%s`, the load table says %s)"
                                                   % (r["index"], load_table()[int(r["index"])][0],
                                                      load_table()[int(r["index"])][1]) for r in ahead)))
+        counts = [int(r["player_starts"]) for r in rows if r.get("player_starts")]
+        if counts:
+            counts.sort()
+            bad = [r for r in rows if r["verdict"] != "hud" and int(r.get("player_starts") or 0) > 0]
+            lines.append("")
+            lines.append("The map file is the control and it does not discriminate: the %d maps carry %d to %d "
+                         "`PlayerStart` actors (median %d), and **%d of the %d `no-hud` maps carry one too**, so the "
+                         "actor census cannot tell a cutscene from a firefight."
+                         % (len(counts), counts[0], counts[-1], counts[len(counts) // 2], len(bad), nohud))
         if nohud:
             lines.append("")
             lines.append("The `no-hud` rows are %s." % "; ".join(

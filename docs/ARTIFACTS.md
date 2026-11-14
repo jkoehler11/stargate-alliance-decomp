@@ -119,7 +119,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/live_class_tables_m00.csv` | 376 | 3 | `make live-class-tables-m00` |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
 | `inventory/map_export_classes.csv` | 6658 | 3 | `make map-actors` |
-| `inventory/map_frames.csv` | 72 | 6 | `make help` |
+| `inventory/map_frames.csv` | 72 | 7 | `make help` |
 | `inventory/map_loads.csv` | 73 | 6 | `make map-loads` |
 | `inventory/map_parse.csv` | 0 | 3 | `make maps-parse` |
 | `inventory/map_property_coverage.csv` | 73 | 3 | `make map-census` |
