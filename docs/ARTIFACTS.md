@@ -63,7 +63,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_record_tail.csv` | 291 | 22 | `make class-record-tail` |
 | `inventory/class_record_walkback.csv` | 2204 | 31 | `make class-record-walkback` |
 | `inventory/class_records.csv` | 2319 | 20 | `make class-records` |
-| `inventory/class_registrations.csv` | 493 | 9 | `make class-registrations` |
+| `inventory/class_registrations.csv` | 493 | 10 | `make class-registrations` |
 | `inventory/class_scripttext_refs.csv` | 2209 | 8 | `make class-scripttext-ref` |
 | `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
 | `inventory/class_table_parents.csv` | 492 | 8 | `make class-table-parents` |

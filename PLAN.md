@@ -1324,6 +1324,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   ask whether the literal at a site belongs to the record the thunk belongs to -- `tools/class-table-names.py`
   writes that column, so the read is its own pairing rule against the same bytes, no boot and no Ghidra.
 
+### Execution notes (2026-11-14, the registration's second argument is the object size, and it separates the 30 sites a thunk cannot)
+
+- **The size the build registers is the call's second argument, and it is the second-to-last push.** At all
+  493 sites the last push is the outer pointer and the size is the `push imm32` immediately before it, 40
+  (0x28) to 348,696 bytes. The earlier reader took the last *immediate* push, which is the same value only
+  while the outer arrives in a register; the census now reads the argument position instead of assuming the
+  operands are immediates, and `--check` asserts the second-to-last push on a synthetic site.
+- **A shared thunk does not mean a shared size.** The 30 sites that resolve to a table more than one site
+  names register **24 distinct sizes, 40 to 20,368 bytes** (`Exporter` 64, `Engine` 284, `NetDriver` 4,524,
+  `NetConnection` 20,368), while `FireTexture` 1304 and `IceTexture` 296 both land on `FractalTexture`'s
+  table. So the second argument carries the per-class fact the constructor thunk cannot, which is why those
+  25 rows can still be read as classes even where the table cannot be named.
+- **The sizes agree with the names #530 corrected.** `Object` 40 (0x28), `Texture` 204, `FractalTexture`
+  1304 -- each is the size its own registration site pushes, and the 25 root-thunk sizes (40 to 456) are the
+  sizes of the 25 classes whose constructor the registration shares with the object root.
+- Tool (`tools/class-registrations.py`: `object_size` column, a generated per-size table of the 30 shared
+  sites, and the distinct-size line) + `inventory/class_registrations.csv` + the block on
+  `docs/systems/CLASS_REGISTRATION.md` + this note. No boot, no dump beyond the image.
+
 ### Execution notes (2026-11-14, the table name is a hierarchy join, and the site census says when it cannot be one)
 
 - **The per-table name was a write order, and both address orders are refuted.** 30 of the image's 493
