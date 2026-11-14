@@ -24,18 +24,18 @@ Per class, four things a compiler would need:
 |---|---:|---|
 | `read` — a block whose every property the class declares | 954 | no |
 | `not-applicable` — no properties anywhere in its ancestry | 869 | no |
-| `ambiguous` — block found, not every property declared | 405 | yes |
-| `none` — declares properties, no block located | 91 | yes |
+| `ambiguous` — block found, not every property declared | 391 | yes |
+| `none` — declares properties, no block located | 105 | yes |
 
 | package | classes | ready | no block | ambiguous |
 |---|---:|---:|---:|---:|
 | `StargateContent` | 567 | 92.9% | 2 | 38 |
-| `Engine` | 367 | 58.0% | 46 | 108 |
+| `Engine` | 367 | 58.0% | 52 | 102 |
 | `StargateGame` | 306 | 74.5% | 10 | 68 |
-| `GamePlay` | 262 | 76.7% | 5 | 56 |
+| `GamePlay` | 262 | 76.7% | 11 | 50 |
 | `Sharpeffects` | 158 | 98.7% | 1 | 1 |
 | `GUI` | 148 | 91.2% | 3 | 10 |
-| `StargateVehicles` | 142 | 90.8% | 1 | 12 |
+| `StargateVehicles` | 142 | 90.8% | 3 | 10 |
 | `StargateMenus` | 98 | 69.4% | 2 | 28 |
 | `UWindow` | 78 | 16.7% | 7 | 58 |
 | `Stargateeffects` | 77 | 94.8% | 1 | 3 |
@@ -48,7 +48,7 @@ Per class, four things a compiler would need:
 | `Fire` | 7 | 0.0% | 4 | 3 |
 | `UPreview` | 4 | 75.0% | 0 | 1 |
 
-Blockers across the tree: no-defaults-block 91, defaults-ambiguous 405.
+Blockers across the tree: no-defaults-block 105, defaults-ambiguous 391.
 
 <!-- /generated -->
 

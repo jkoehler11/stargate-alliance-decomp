@@ -74,13 +74,13 @@ Engine,StreamPlaylist,1,1.0,267,0
 Engine,SurfaceInfo,5,1.0,824,1
 Engine,USoundEmitter,1,1.0,132,0
 Engine,PlayerInput,7,1.0,217,1
-Engine,xAdminGroupList,2,0.0,86,0
+Engine,xAdminGroupList,0,0.0,,0
 Engine,PlayerStats,1,1.0,94,0
 Engine,AIController,6,1.0,412,1
 Engine,PlayInfo,2,0.0,122,0
 Engine,GameProfile,18,1.0,484,1
 Engine,AccessControl,17,1.0,1182,1
-Engine,GameRules,2,0.0,205,0
+Engine,GameRules,0,0.0,,0
 Engine,VoiceChatReplicationInfo,22,1.0,375,1
 Engine,direction,0,0.0,,0
 Engine,Emitter,7,1.0,153,1
@@ -104,7 +104,7 @@ Engine,IMusicActor,4,1.0,361,1
 Engine,Condition,2,0.0,77,0
 Engine,TestInfo,8,1.0,422,1
 Engine,MatSubAction,1,1.0,96,0
-Engine,xAdminUser,2,0.0,288,0
+Engine,xAdminUser,0,0.0,,0
 Engine,Volume,3,1.0,132,1
 Engine,Powerups,0,0.0,,0
 Engine,TexModifier,2,1.0,98,1
@@ -169,7 +169,7 @@ Engine,PlayerChatManager,1,1.0,100,0
 Engine,MatAction,3,1.0,96,1
 Engine,PlayerStatCache,2,0.0,109,0
 Engine,KConstraint,12,1.0,96,1
-Engine,ConstantColor,2,0.0,75,0
+Engine,ConstantColor,0,0.0,,0
 Engine,WarpZoneInfo,4,0.0,416,0
 Engine,SceneReplicationInfo,1,1.0,112,0
 Engine,TestObj,0,0.0,,0
@@ -205,7 +205,7 @@ Engine,MatActionWaitForEvent,1,1.0,95,0
 Engine,SubActionOrientation,1,1.0,95,0
 Engine,SVehicle,12,1.0,386,1
 Engine,Interactions,2,0.0,76,0
-Engine,Security,2,0.0,89,0
+Engine,Security,0,0.0,,0
 Engine,MatObject,0,0.0,,0
 Engine,PSBumpSpecular,2,1.0,101,1
 Engine,PSBump,9,1.0,99,1
@@ -218,7 +218,7 @@ Engine,Light,14,1.0,94,1
 Engine,KActor,15,1.0,193,1
 Engine,xPickUpBase,9,1.0,232,1
 Engine,ScriptObject,0,0.0,,0
-Engine,VolumeTimer,2,0.0,68,0
+Engine,VolumeTimer,0,0.0,,0
 Engine,VotingReplicationInfoBase,4,0.0,110,0
 Engine,XBoxPlayerInput,14,1.0,123,1
 Engine,ZoneTrigger,0,0.0,,0
@@ -767,7 +767,7 @@ GamePlay,ACTION_TriggerMatinee,2,1.0,121,1
 GamePlay,ACTION_ThrowWeapon,1,1.0,174,0
 GamePlay,TimedTrigger,3,1.0,93,1
 GamePlay,ACTION_TeleportSpecificPawn,0,0.0,,0
-GamePlay,ACTION_StopShooting,2,0.0,66,0
+GamePlay,ACTION_StopShooting,0,0.0,,0
 GamePlay,ACTION_StopAnimation,2,1.0,102,1
 GamePlay,ACTION_Sprint,2,1.0,147,1
 GamePlay,ACTION_SpecialMove,2,1.0,120,1
@@ -779,7 +779,7 @@ GamePlay,ACTION_SetStance,2,1.0,111,1
 GamePlay,ACTION_SetPhysics,1,1.0,111,0
 GamePlay,ACTION_SetIMusicState,1,1.0,139,0
 GamePlay,ACTION_SetIMusic,1,1.0,167,0
-GamePlay,ACTION_SetHidden,2,0.0,66,0
+GamePlay,ACTION_SetHidden,0,0.0,,0
 GamePlay,TriggeredPlayerStart,1,1.0,99,0
 GamePlay,ACTION_SetGodMode,1,1.0,129,0
 GamePlay,TriggeredScript,6,1.0,448,1
@@ -795,12 +795,12 @@ GamePlay,ACTION_LeaveSequence,1,1.0,93,0
 GamePlay,ACTION_Killinstigator,2,1.0,129,1
 GamePlay,ACTION_KillActor,2,1.0,174,1
 GamePlay,ACTION_KeepCurrentRotation,1,1.0,102,0
-GamePlay,ACTION_IfRandomPct,2,0.0,66,0
+GamePlay,ACTION_IfRandomPct,0,0.0,,0
 GamePlay,ACTION_IfCondition,1,1.0,120,0
 GamePlay,ACTION_GotoAction,1,1.0,111,0
-GamePlay,ACTION_FreezeOnAnimEnd,4,0.0,112,0
+GamePlay,ACTION_FreezeOnAnimEnd,0,0.0,,0
 GamePlay,ACTION_Freeze,1,1.0,165,0
-GamePlay,ACTION_ForceMoveToPoint,5,0.0,137,0
+GamePlay,ACTION_ForceMoveToPoint,0,0.0,,0
 GamePlay,ACTION_FinishRotation,1,1.0,111,0
 GamePlay,WaterZone,1,1.0,98,0
 GamePlay,ACTION_FadeView,3,1.0,246,1
@@ -814,7 +814,7 @@ GamePlay,ACTION_Crouch,2,1.0,147,1
 GamePlay,WaterVolume,12,1.0,93,1
 GamePlay,ACTION_CounterAdd,1,1.0,122,0
 GamePlay,ACTION_ConsoleCommand,1,1.0,102,0
-GamePlay,ACTION_ChangeWeapon,2,0.0,66,0
+GamePlay,ACTION_ChangeWeapon,0,0.0,,0
 GamePlay,ACTION_ChangeTeam,2,1.0,102,1
 GamePlay,ACTION_ChangeScript,2,1.0,111,1
 GamePlay,VisibleTeleporter,1,1.0,98,0
@@ -1503,7 +1503,7 @@ StargateContent,JaffaKreeStaffWeapon,2,1.0,96,1
 StargateContent,InteractionHands,18,1.0,232,1
 StargateContent,HealthPickup,11,1.0,141,1
 StargateContent,HackingPawn,17,1.0,277,1
-StargateContent,HackingPanel,2,0.0,1,0
+StargateContent,HackingPanel,0,0.0,,0
 StargateContent,HaakenWeaponProjectileFull_Bot,2,0.0,0,0
 StargateContent,HaakenMK2Weapon_Bot,2,0.0,46,0
 StargateContent,GrenadeSand,5,1.0,93,1
@@ -1532,7 +1532,7 @@ StargateContent,Dir_CreateTimer,2,1.0,105,1
 StargateContent,Dir_CreateIntVar,2,1.0,105,1
 StargateContent,DGPlasmaAmmo,4,1.0,95,1
 StargateContent,DemoSGTeamCarterRoster,3,1.0,107,1
-StargateContent,DecipheringTrigger,2,0.0,46,0
+StargateContent,DecipheringTrigger,0,0.0,,0
 StargateContent,DecipheringPawn,21,1.0,300,1
 StargateContent,CTFGate,4,1.0,121,1
 StargateContent,CTFDialHomeDevice,2,1.0,114,1
@@ -1998,7 +1998,7 @@ StargateVehicles,APCM60Gun,18,1.0,306,1
 StargateVehicles,SemektetMortarGunProjectile,14,1.0,276,1
 StargateVehicles,AirborneTurretController,0,0.0,,0
 StargateVehicles,HummveeTurretRear,21,1.0,96,1
-StargateVehicles,VehicleRemoteTurret,2,0.0,46,0
+StargateVehicles,VehicleRemoteTurret,0,0.0,,0
 StargateVehicles,SemektetAttachment,7,1.0,105,1
 StargateVehicles,AlkeshCannon,18,1.0,203,1
 StargateVehicles,HummveeInteriorSeat,1,1.0,93,0
@@ -2081,7 +2081,7 @@ StargateVehicles,APCM60GunDamage,8,1.0,95,1
 StargateVehicles,AlkeshCannonProjectile,12,1.0,149,1
 StargateVehicles,AlkeshCannonAmmo,8,1.0,94,1
 StargateVehicles,TempleTurretEmplacement,25,1.0,96,1
-StargateVehicles,StargateVehicleGunAttachment,2,0.0,47,0
+StargateVehicles,StargateVehicleGunAttachment,0,0.0,,0
 StargateVehicles,SQUAD_Teltak_Single,4,1.0,95,1
 StargateVehicles,SQUAD_HoverTank_Single,3,1.0,95,1
 StargateVehicles,SQUAD_HoverTankPilots,3,1.0,95,1
