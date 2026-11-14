@@ -70,6 +70,7 @@ MIN_LEN = 3
 MAX_LEN = 120
 
 IMM = re.compile(r"\$0x([0-9a-f]+)")
+HEX = re.compile(r"0x([0-9a-f]+)")
 OBJDUMP_LINE = re.compile(r"^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2} )+\s*(.*)$")
 
 
@@ -147,8 +148,18 @@ def instructions(blob, base_va):
 
 
 def immediates(text):
-    """The immediate operand values of one AT&T-syntax instruction, in order."""
-    return [int(v, 16) for v in IMM.findall(text)]
+    """Immediate operand values only.
+
+    A `$`-marked operand is an immediate. Otherwise the operand text has its displacements removed first -- the intel
+    form spells one `[ebx+0x28]`, the AT&T form `0x4c9790(%eax)` -- so an address the instruction *reads* is never
+    mistaken for one it names.
+    """
+    found = IMM.findall(text)
+    if found:
+        return [int(v, 16) for v in found]
+    bare = re.sub(r"\[[^\]]*\]", "", text)
+    bare = re.sub(r"0x[0-9a-f]+\([^)]*\)", "", bare)
+    return [int(v, 16) for v in HEX.findall(bare)]
 
 
 # ---------------------------------------------------------------- what a site is inside

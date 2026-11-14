@@ -424,6 +424,79 @@ remains is whether the package loader itself resolves a root-relative name; that
 | `0x60` | `0x00018bd0` | FUN_00018bd0 | 5 | - |
 <!-- /generated:path-literals -->
 
+## What the file-manager table is asked for (2026-11-14)
+
+The census above answers what the table *says*. This one answers what the image *asks it for*: `tools/fmgr-dispatch.py`
+walks every `call DWORD PTR [reg+disp]` in the image and keeps the sites whose receiver is that object -- one link
+back for `mov edx,[ecx]` immediately followed by the call, two for the `mov ecx,ds:0x5bf514; mov edx,[ecx]` pair --
+and stops a walk at any call, jump or return between the two ends rather than guessing through it.
+
+**157 sites reach the object, and they spread over 17 of the 25 slots.** Eight slots are called from nowhere at all
+(`+0x20`, `+0x24`, `+0x40`, `+0x44`, `+0x50`, `+0x58`, `+0x5c`, `+0x60`). The busiest are `+0x0c` (28 sites, a body
+that answers `-1`), `+0x30` (28, the only 22-byte body that does work), `+0x04` (**20 sites, the `CreateFileReader`
+stub**) and `+0x10` (19, a body answering 0).
+
+**120 of the 157 sites land on a body that answers a constant.** Summed over the slots whose whole body is one of
+`ret N`, `xor eax,eax; ret N`, `or eax,-1; ret 4` or `mov eax,1; ret`: the reader (20) and writer (10) stubs that log
+and answer 0, `+0x0c` (28) answering `-1`, `+0x10` (19) answering 0, `+0x28` (15), `+0x1c` (8), `+0x14` (7), `+0x18`
+(4), `+0x34` (4), `+0x2c` (2) and one each at `+0x00`, `+0x48` and `+0x4c`. The 37 that reach real code are `+0x30`
+(28), `+0x54` (5), `+0x38` (3, the device getter) and `+0x3c` (1).
+
+**The save module is one of the 20.** `0x0013499b`, inside `FUN_00134960` of the `0x00134xxx` save/profile family,
+dispatches slot `+0x04` -- the body that logs `Called FFileManagerError::CreateFileReader` and answers 0. So the
+module does ask for a reader, and what it gets back is NULL whenever this object is the live one.
+
+**The resolver slot is called exactly once, and not by the save chain.** `+0x3c` (`0x00034240`) has one site,
+`0x002931dd` in `FUN_00293100`; the loader's composed path never passes through it -- it goes to `Core_UnObj`
+(`0x00073660`), whose own sites are `+0x10` and `+0x1c`. So #515's statement that a root-relative path is returned
+verbatim by that slot is true of the slot and irrelevant to this chain: nothing normalises the loader's path.
+
+**Which object is live is the question this leaves.** The `.data` initializer at `[0x005bf514]` is `0x005c1a0c`, an
+object whose first dword is the error table. The only store into that global in the whole `.text` is at `0x00169e3`
+-- four instructions before the same function logs `Starting Engine` (`0x004d1124`, pushed at `0x00169f1`) -- and it
+writes `ecx`, which came from `lea ecx,[ebp-0xb0]` at `0x00169d2`. That is an address in the calling function's own
+frame, not a heap object, so what the build installs there is decided by that local's constructor; no instruction in
+the image stores the error table's address as an immediate. Which file manager the engine actually holds is therefore
+the next read, and it is a store census of one local, not another boot.
+
+    python3 tools/fmgr-dispatch.py --xbe $DUMP/default.xbe -o inventory/fmgr_dispatch.csv
+    python3 tools/fmgr-dispatch.py --write-doc docs/systems/CHECKPOINTS.md
+    python3 tools/fmgr-dispatch.py --check       # 16 assertions, no dump
+
+<!-- generated:fmgr-dispatch -->
+**The dispatch census.** 157 virtual calls reach the file-manager object through its own vtable (`ds:0x005bf514`), spread over 17 of the table's 25 slots. The busiest are `+0x0c` (28 sites), `+0x30` (28 sites), `+0x04` (20 sites), `+0x10` (19 sites).
+
+**Per slot: what the entry answers, and how many sites call it.**
+
+| slot | target | name | size | answers | sites | at | in |
+|---|---|---|---|---|---|---|---|
+| `0x00` | `0x00031e70` | FUN_00031e70 | 3 | `ret    0x4` | 1 | 0x0005aa87 | Core_UnMisc |
+| `0x04` | `0x000341a0` | FFileManagerError_CreateFileReader | 24 | `logs "Called FFileManagerError::CreateFileReader"` | 20 | 0x000121df 0x000167e1 0x0001c01b 0x00051ff5 0x00052965 0x0005967f | FUN_00012110 Core_UnObjBas no committed function FUN_00059650 |
+| `0x08` | `0x000341c0` | FFileManagerError_CreateFileWriter | 24 | `logs "Called FFileManagerError::CreateFileWriter"` | 10 | 0x00053298 0x00057106 0x0005a49d 0x0005a938 0x00072ac6 0x0008070e | FUN_00053190 no committed function FUN_0005a020 FUN_00070cb0 |
+| `0x0c` | `0x000341e0` | FUN_000341e0 | 6 | `or     eax,0xffffffff ret    0x4` | 28 | 0x00028a13 0x0002e2db 0x0004e099 0x000572a6 0x0005a113 0x0005a38a | FUN_000287d0 XboxAudio_XboxAudioSubsystem FUN_0004de60 FUN_00057270 |
+| `0x10` | `0x00018bc0` | FUN_00018bc0 | 5 | `xor    eax,eax ret    0xc` | 19 | 0x00029eae 0x0005abce 0x0006f36f 0x0006f45e 0x0007095f 0x00070a4f | no committed function Core_UnMisc Core_UnObj Core_UnObjBas |
+| `0x14` | `0x00018b70` | FUN_00018b70 | 5 | `xor    eax,eax ret    0x4` | 7 | 0x0003529d 0x000352ed 0x00035555 0x000355c2 0x000c0d55 0x000ee343 | Core_UExporter Engine_UExportCacheCommandlet FUN_000ee2c0 FUN_00295570 |
+| `0x18` | `0x000341f0` | FUN_000341f0 | 8 | `mov    eax,0x1 ret    0x1c` | 4 | 0x0011d28d 0x0011f38f 0x002d6615 0x002d6ab6 | FUN_0011ccd0 no committed function FUN_002d64a0 FUN_002d68e0 |
+| `0x1c` | `0x00167f40` | FUN_00167f40 | 5 | `xor    eax,eax ret    0x14` | 8 | 0x0006f446 0x00070a35 0x00080232 0x000806eb 0x0011f352 0x0011f4bf | Core_UnObj Core_UnObjBas FUN_000801e0 no committed function |
+| `0x20` | `0x00034200` | - | - | `xor    eax,eax xor    edx,edx ret    0x4` | 0 | - | - |
+| `0x24` | `0x00018b70` | FUN_00018b70 | 5 | `xor    eax,eax ret    0x4` | 0 | - | - |
+| `0x28` | `0x00018bb0` | FUN_00018bb0 | 5 | `xor    eax,eax ret    0x8` | 15 | 0x000803bf 0x000fa64e 0x0011eab7 0x00138a5c 0x0015efda 0x0015fc5a | no committed function Engine_UnCamera FUN_00138680 FUN_0015ef40 |
+| `0x2c` | `0x00018bc0` | FUN_00018bc0 | 5 | `xor    eax,eax ret    0xc` | 2 | 0x001be975 0x002932a5 | FUN_001be920 FUN_00293220 |
+| `0x30` | `0x00034570` | FUN_00034570 | 22 | `push   ecx mov    eax,DWORD PTR [esp+0x8] xor    ecx,ecx` | 28 | 0x0005a6ed 0x00068c23 0x00068fe4 0x0007f32d 0x0007f34b 0x000b1268 | FUN_0005a020 FUN_00068b20 FUN_0007ef20 FUN_000b0f20 |
+| `0x34` | `0x00018b70` | FUN_00018b70 | 5 | `xor    eax,eax ret    0x4` | 4 | 0x0029304d 0x002930b6 0x002933de 0x00293401 | no committed function FUN_00293300 |
+| `0x38` | `0x00034210` | FUN_00034210 | 33 | `push   ecx push   esi mov    esi,DWORD PTR [esp+0xc]` | 3 | 0x001be3a7 0x00293039 0x00293061 | FUN_001be350 no committed function |
+| `0x3c` | `0x00034240` | FUN_00034240 | 531 | `push   0xffffffff push   0x3f4bb9 mov    eax,fs:0x0` | 1 | 0x002931dd | FUN_00293100 |
+| `0x40` | `0x00018bb0` | FUN_00018bb0 | 5 | `xor    eax,eax ret    0x8` | 0 | - | - |
+| `0x44` | `0x00018b60` | - | - | `jmp    0x7e800` | 0 | - | - |
+| `0x48` | `0x00018b70` | FUN_00018b70 | 5 | `xor    eax,eax ret    0x4` | 1 | 0x00294810 | FUN_00294760 |
+| `0x4c` | `0x002783d0` | FUN_002783d0 | 6 | `mov    eax,0x1 ret` | 1 | 0x0029270c | no committed function |
+| `0x50` | `0x00018b80` | - | - | `xor    eax,eax ret    0x1c` | 0 | - | - |
+| `0x54` | `0x00018b90` | FUN_00018b90 | 22 | `mov    edx,DWORD PTR [esp+0x4] mov    eax,DWORD PTR [ecx] push   edx` | 5 | 0x001be306 0x001be318 0x001bea11 0x001bf889 0x001bfaf2 | no committed function FUN_001be9c0 FUN_001bf7b0 |
+| `0x58` | `0x00018bb0` | FUN_00018bb0 | 5 | `xor    eax,eax ret    0x8` | 0 | - | - |
+| `0x5c` | `0x00018bc0` | FUN_00018bc0 | 5 | `xor    eax,eax ret    0xc` | 0 | - | - |
+| `0x60` | `0x00018bd0` | FUN_00018bd0 | 5 | `xor    eax,eax ret    0x10` | 0 | - | - |
+<!-- /generated:fmgr-dispatch -->
+
 ## Not measured
 
 * Which of the nine files is which mission — the committed schema aggregates across files

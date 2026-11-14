@@ -1255,6 +1255,26 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, 120 of the 157 dispatches on the file manager land on a body that answers a constant)
+
+- **The table is asked for far more than the save path.** `tools/fmgr-dispatch.py` resolves every virtual call whose
+  receiver is `ds:0x5bf514` (one link for `mov edx,[ecx]`, two for the global load behind it, and a call/jump/return
+  between the ends drops the site rather than guessing through it): **157 sites, 17 of the 25 slots**, eight slots
+  called from nowhere.
+- **The reader and the writer are the two busiest path-shaped entries.** `+0x04` (`FFileManagerError_CreateFileReader`)
+  has **20** sites and `+0x08` (`_CreateFileWriter`) **10**; both bodies log a line and answer 0. One of the twenty is
+  `0x0013499b` in `FUN_00134960` -- the save/profile family -- so the module asks for a reader and gets NULL while this
+  object is live. Summed over every constant-answering body, **120 of the 157** sites land on one.
+- **`+0x3c`, the resolver #515 measured, has exactly one caller and it is not the save chain.** `0x002931dd` in
+  `FUN_00293100`. The loader's path reaches `Core_UnObj` instead, whose sites are `+0x10` and `+0x1c`, so nothing
+  normalises the composed path -- the "returns a rooted path verbatim" finding stands but does not apply here.
+- **The live object is now the open question, and it is one store.** The `.data` initializer is `0x005c1a0c` (error
+  table first dword); the only write to the global in `.text` is `0x00169e3`, in the function that logs
+  `Starting Engine` four instructions later, and it stores an address that came from `lea ecx,[ebp-0xb0]`
+  (`0x00169d2`) -- a frame local. No instruction anywhere stores the error table's address as an immediate.
+- Files: `tools/fmgr-dispatch.py`, `inventory/fmgr_dispatch.csv` (25 slots, sites, and what each body answers),
+  `docs/systems/CHECKPOINTS.md` (*What the file-manager table is asked for*), the Makefile target, and this note.
+
 ### Execution notes (2026-11-14, the base directory is not a directory, and the save chain's object is an error file manager)
 
 - **The address the last note sent the next read to is a byte late and not isolated.** `System\` (`0x004c9790`) is
