@@ -2257,3 +2257,31 @@ unit -- 402 of 545 rows, 294 of the 330 that parse -- and must not be quoted as 
 quote are the group's columns. `make class-tail-run` regenerates the artifact and prints the join, and
 `tools/class-record-gap.py --report` says which of its own starts fall there.
 
+### The 95 rows whose located array ends past the block start, and the head census that does not separate them
+
+`inventory/class_record_array.csv` locates the record array from the prefix: `array_end` is the bare array started
+at `prefix_end + 42`, and on **95 of the 549** rows that carry both ends the array ends **past** the block start --
+the walk swallowed the buffer, and `class_record_gap.csv` starts its own parse from there: **135 of its 549 rows
+carry no `nm_*` at all**, and all 95 of these are among them. `tools/class-record-overshoot.py` (`make class-record-overshoot`,
+`inventory/class_record_overshoot.csv`) joins those rows to the locator's head census and to the record side.
+
+| measure | overshoot rows | the 454 that land at or before the block |
+|---|---:|---:|
+| rows | 95 (17.3% of 549) | 454 |
+| a free head closes exactly on the block start | **55** (57.9%) | **316** (69.6%) |
+| no head closes there | 40 | 138 |
+
+The overshoot is not shallow: mode **105-109** bytes, deepest 281, median **30.4%** of the payload. But the head
+census -- every offset in `[prefix_end, block_start)` whose array-plus-tail walk lands on the block start -- does
+**not** single these rows out. They carry a head *less* often than the rows that land correctly, so "another head
+in the payload fixes them" is refused: a head is a property of the payload (371 of 549 located rows have one), not
+a discriminator of the overshoot. Where the overshoot rows do have one it sits at `prefix + 61` on 32 and `+62` on
+14, its array count is 2 on 33, its tail 2 names on 35, and its references resolve inside the tables on 50 of 55 --
+the same shape as the head the correctly-landing rows use.
+
+**The record side has a say on 36 of them.** 93 of the 95 carry a `class_tail_run.csv` row and 36 parse the
+closing group there; on those the run is **6 bytes on 31** (the length of the four `Engine.SubAction*` anchors)
+and it ends on the block start, so the block start is confirmed from the record on exactly the rows the located
+array overshoots it. What the 95 share is the located **tail**, not the payload: neither the block start nor the
+head census moves with them.
+

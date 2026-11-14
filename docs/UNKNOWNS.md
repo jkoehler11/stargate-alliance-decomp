@@ -3441,3 +3441,19 @@ start the same rows read 3 names on 217, 4 on 69 (2 on 6, 5 on 2), a config name
 nothing: its grammar is measured from both sides and `make class-tail-run` prints the join. What is outside this
 entry is the 93 rows whose located array lies inside the defaults block -- the locator's question, not the run's.
 Nothing here needs a boot or a decompile.
+
+**2026-11-13 (seventeenth): the 95 overshoots are not fixed by another head, so the head census is no discriminator.**
+The sixteenth entry named the rows whose located array lies inside the defaults buffer, and proposed reading the
+locator's candidate list on them. Measured (`tools/class-record-overshoot.py`, `inventory/class_record_overshoot.csv`):
+**95 of the 549** located rows end past the block start (17.3%; mode 105-109 bytes, deepest 281, median 30.4% of
+the payload), and a free head closes exactly on the block start on **55** of them against **316 of 454** (69.6%) on
+the rows that land correctly. The overshoot rows carry a head *less* often than the control, so the candidate list is
+a property of the payload rather than a discriminator, and "the locator should prefer another head" is refused.
+Where a head exists on an overshoot row it is at `prefix + 61` (32 rows) or `+62` (14), count 2 on 33, two name tails
+on 35, references in range on 50 of 55 -- the same shape as on the correct rows. The record side carries 93 of the
+95 and parses the closing group on 36, and there the 6-byte run ends on the block start, so the block is confirmed
+from the record exactly where the located array overshoots it. **What is still open** is what to do on the 40 rows
+where no head closes either: none of the three witnesses (the documented array end, a free head, the record's
+group) is available there, so the test is the defaults stream -- `tools/class-defaults.py`'s tag parse from
+`block_start`, which closes on 543 of 551 -- and whether it parses on those 40 would confirm the block start without
+using the record at all. Nothing here needs a boot or a decompile.
