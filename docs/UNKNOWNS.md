@@ -3746,3 +3746,17 @@ ambiguous 354 -> **291**, compile readiness 1,823 with `no-defaults-block` 91 ->
 population grows 58 -> **61** (block losses 36 -> 52, start moves 22 -> 9) and none of the 61's new starts leaves a byte
 behind. **What is still open.** The **196** zero-fraction blocks: no byte test settles them, it needs a tag-grammar walk
 past the group over those payloads or one stock `ucc` build of a class whose block is a single declared tag.
+
+**Answered 2026-11-14 (thirty-fifth): the 196 read names that are not properties, and no offset of their payloads
+names one.** `tools/class-defaults-silent.py` (`make class-defaults-silent`, `inventory/class_defaults_silent.csv`)
+walks the locator's grammar from each of the 196 published zero-fraction starts and classifies every tag against the
+corpus. **120** of the 196 parses run to the payload's last byte and **76** stop on a `None` name with **1..62** bytes
+left (median 41). Of the **440** tags read, **374 (85.0%)** name no property of any class -- **166** plain names,
+**127** package names, **68** `Function` and **13** `Class` exports -- and **125 of the 196 (63.8%)** read a package
+name, which cannot be a property tag at all; the remaining **66** tags are property names of *another* class. Walking
+every offset of every payload, a `>= 2`-tag parse to the payload's end opens at **0-18** offsets (median 3, a median
+2% of the payload) and **none** of those parses names a declared property: `best_declared = 0` on all 196, so the
+locator missed no block and there is no reading of these bytes that names one. **What is still open.** The label
+itself: `defaults = 1` still stands on all 196 while the names support none of them, and withholding it is a rule in
+`choose()`/`guarded()` (a parse that names no property of the class anywhere in the payload is not a start) plus the
+five downstream artifacts.
