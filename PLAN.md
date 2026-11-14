@@ -1178,6 +1178,30 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-13, the front in front of the zero dwords is not a name, a tag, a reference or the struct's own field)
+
+- **The front is named by what it cannot be, and every permissive reading is a base rate.** `tools/class-record-front.py`
+  reads the 3-5 byte front on the **1,490** gap rows that carry one (3 bytes on 730, 4 on 516, 5 on 227) and scores four
+  readings against three same-length controls. Every value a valid name index: **1,484 (99.6%)**, against 1,484 for the
+  same window one byte later -- no power. Every value a valid object reference with `0` as null: 5,457 of 5,468 (99.8%)
+  against **5,468 of 5,468** one byte later (non-zero only: 2,221 of 2,232 inside the tables). The one reading that can
+  fail -- the first value naming a `Property` export of the class itself -- answers on **1 of 1,490 (0.1%)** against 0, 1
+  and 0 for the controls, so the front is not a tag.
+- **And it is too wide, and too small, to be the field the writer names there.** `UStruct::Serialize` (`0x000392b0`)
+  writes the `FName` at `+0x44` through the archive's name slot (`+0x1c`, `0x38bf0`) and then the four dwords at
+  `+0x5c`/`+0x58`/`+0x54`/`+0x4c`; nothing else in the chain writes between them. **1,479 of 1,490 fronts (99.3%) contain
+  no value that needed more than one byte**, so every value is 0-63 and cannot be a name or export index above 63, while
+  an `FName` is two compacts: 8 fronts are two values and the other 1,482 are three to five, so the front is a field
+  wider than `FriendlyName`.
+- Tool (`tools/class-record-front.py`: `--sweep`, `--report`, `--class`, synthetic `--check` with a declared-name hit, a
+  two-byte value and two refusals) + `inventory/class_record_front.csv` (1,626 rows, 20 columns) + `docs/NATIVE_VM.md`
+  (*The front names nothing*) + `docs/UNKNOWNS.md` U18 (twenty-sixth) + `make class-record-front` + this note. Reads the
+  packages and the committed gap census; no boot, no Ghidra round, no value decoded.
+- **Next measurement, named:** the **578** gap-less rows. The walk does not close on them, so they carry no front by
+  construction; reading the same 3-5 byte window at `prefix + 42` there and comparing it row for row with the 1,490 says
+  whether the front is a field of the record (it should survive on the rows the walk fails) or a property of the offset
+  the walk chose (it should not). No boot, no decompile, one artifact join.
+
 ### Execution notes (2026-11-13, read forward the count is not there: the null fits as often as the tags)
 
 - **Both named explanations are measured and refused, and the null is the number.** `tools/class-record-array-blind.py`

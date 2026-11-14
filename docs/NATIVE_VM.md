@@ -2573,3 +2573,47 @@ the 575 blind ones included, so those rows' blocks close normally and it is the 
 The forward columns are `fw_*` (compact count), `fr_*` (raw dword count) and `fl_*` (loose references), each with its
 own null (`fw_null`, `fr_null`), plus the block's own extent (`block_len`, `block_props`, `block_reason`) and the
 number of count positions scanned (`gap_scanned`) -- so every number above is one `--report` away from the CSV.
+
+### The front names nothing: each reading it passes is a small integer's base rate
+
+The forward walk of the writer's order closes on 1,626 of the 2,204 located class payloads, and on **1,482** of them
+the step it takes goes over a gap of 19 to 21 bytes: a front of 3-5 bytes, then a run of sixteen zero bytes, then the
+array's count. The zeros are the four dwords `UStruct::Serialize` writes (`0x370e0` at `+0x5c`, two `0x37110` at
+`+0x58` and `+0x54`, the script count at `+0x4c`); on the cooked classes all four are zero, which is why no payload
+distinguishes them from padding. The front is the remaining content, and no body in the chain (`0x38dc0`, `0x392b0`,
+`0x394c0`, `0x3a800`) writes one there -- the only field `UStruct::Serialize` names between its second reference and
+those dwords is `FriendlyName` at `+0x44`, an `FName` of two compacts written through the archive's name slot
+(`+0x1c`, `0x00038bf0`).
+
+`tools/class-record-front.py` (`make class-record-front`, `inventory/class_record_front.csv`, its `--check` in
+`make ci`) identifies the front by what it can be. Four readings are taken on every gap row and each one is also run
+on three same-length windows a field would not be found in -- one byte later inside the same gap, one window earlier,
+and the bytes immediately before the defaults block:
+
+| reading | front | one byte later | one window earlier | before the block |
+|---|---:|---:|---:|---:|
+| every value a valid name index | 1,484 of 1,490 (99.6%) | 1,484 (99.6%) | 1,254 (84.2%) | 309 (20.7%) |
+| the first value names a property the class declares | **1 (0.1%)** | 1 (0.1%) | 0 | 0 |
+| every value a valid object reference (`0` as null) | 5,457 of 5,468 (99.8%) | 5,468 (100.0%) | 4,731 (86.5%) | 5,148 (94.1%) |
+| of those, the non-zero ones inside the tables | 2,221 of 2,232 (99.5%) | -- | -- | -- |
+
+**The name and reference readings are base rates, and the one reading with discriminating power refuses the front.**
+A compact value below the name count, the export count and the import count passes all three of the first tests at
+once, and this image's tables are large enough that a value under 64 always does; the same window shifted by one byte
+scores identically on the name reading and *better* on the reference one. The property-tag reading, which asks the package whether the first value names a `Property`
+export of the class itself, answers on **1 of 1,490** against 0, 1 and 0 for the controls, so the front is not a tag.
+
+**It also cannot be the field the writer names there.** 1,479 of the 1,490 fronts (99.3%) contain no value that needed
+more than one byte, so every value is 0-63 -- while an `FName` written in a package with thousands of names, or an
+object reference into a table of hundreds, mostly is not. The largest value anywhere in this census is 1,863, on one
+row where `0xc0 0x06` decodes to -384. And the front's own width is wrong for an `FName`: an `FName` is two compacts
+and **8** of 1,490 fronts are two values (the rest are 3 (730), 4 (516), 5 (227), 1 (2), and 6 rows carry a 15-byte
+run), so the front is one field too wide for the only one the body puts there.
+
+So the front is not a name, not a property tag, not an object reference, and not `FriendlyName`; and because a
+multi-byte compact is absent from 99.3% of fronts it cannot be an index above 63 into either table. What the 3-5
+bytes are remains open, and the census is the row-by-row record of what they are not.
+
+    make class-record-front
+    python3 tools/class-record-front.py --dump DUMP --class AmbientCreatures.Bird
+    python3 tools/class-record-front.py --report
