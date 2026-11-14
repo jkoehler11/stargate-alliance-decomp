@@ -1255,6 +1255,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   loader looks*, generated block), the Makefile target, and this note. No boot, no game data, no decompiled output --
   addresses, literals and prose only.
 
+### Execution notes (2026-11-14, the file manager's runtime value is the initialiser's own frame local, handed in as an argument)
+
+- **The caller census the last note asked for has one row, and it also fixes the tool that missed it.** `Core_UnMisc`
+  (`0x0005a990`) has exactly **one** caller: `0x00012b7d` in `Core_UnObjBas`. The earlier "zero callers" was a
+  spelling: `call-census.py` compared the `--target` argument's *text* against the export's `0x0005a990` column, so
+  `--target 0x5a990` printed `0 call sites` while the row sat in `calls.tsv`. Addresses are parsed and normalised now,
+  and `--check` drives three spellings plus a name (9 assertions, no dump).
+- **The value the global receives is argument 7, and argument 7 is a frame local of the caller.** Three SEH pushes
+  precede `mov eax,[esp+0x28]` at `0x5a99e`, so the slot is the seventh argument, and the site pushes `1`, `0x2a120`,
+  `[ebp-0x954]`, `0x5bf3fc`, `0x5bf3f0`, `0x5bf3ec`, `0x59ed68`, `0x635e90`, `0x599f10` (last pushed is arg1). The
+  store at `0x5a9b2` therefore installs a pointer into `Core_UnObjBas`'s own frame.
+- **The same call re-points three neighbours, so this is an installation and not one stray store.** `0x5bf510` gets
+  arg3 (`0x0059ed68`) at `0x5aa70`, `0x5bf500` arg4 (`0x005bf3ec`) at `0x5aa58` and `0x5bf504` arg5 (`0x005bf3f0`) at
+  `0x5aa65` -- all inside `Core_UnMisc` and all attributed to the same single `E8` site. Only the file manager's value
+  comes from the frame; the rest are immediates.
+- **The caller never writes that slot.** `[ebp-0x954]` is named at eight sites in `Core_UnObjBas` and every one is a
+  `lea` (seven `lea ecx`, one `lea eax`), so the object is built through calls that take its address as `this`. The
+  consequence for the save chain: the object the loader asks for a reader is whatever the initialiser built there, and
+  the `.data` initializer (`0x005c1a0c`, the error table) describes the state before this call -- the "120 of 157
+  dispatches answer a constant" census describes the fallback, not the live object.
+- **A new column carries the chain.** `tools/fmgr-live-object.py`'s `origin` follows an `incoming` source out of the
+  callee: the `[esp+N]` slot is argument `N/4` less every push and `sub esp` since the entry (without the frame delta
+  the mid-body writes answer `arg667`), and each `E8` site is decoded back through its pushes to the value handed over.
+  38 assertions in `--check`.
+- Tool (`tools/call-census.py`, `tools/fmgr-live-object.py`) + `inventory/fmgr_singletons.csv` (6 rows, new `origin`
+  column) + `docs/systems/CHECKPOINTS.md` (*Which object the file manager's global actually holds*, generated table and
+  sentence, plus the corrected "what the two writers mean" paragraph) + `docs/UNKNOWNS.md` U5 + this note.
+- **Next measurement:** which class the `[ebp-0x954]` object is -- the first `lea ecx` that receives it (`0x128ff`) and
+  the table the call behind it stores through it, which names the builder and whether it is the console file manager.
+
 ### Execution notes (2026-11-14, the file manager global is one of six memberless statics, and both its writers take a value from outside)
 
 - **The one store the last note left open is not the only writer, and neither one builds an object.** `[0x005bf514]`

@@ -557,6 +557,18 @@ runtime -- its `.data` initializer is `0x005c1a0c` (the error table), and the on
 stores a frame-local address from `0x00169d2` in the function that logs `Starting Engine`. Depth:
 `docs/systems/CHECKPOINTS.md`, *What the file-manager table is asked for*.
 
+**Answered 2026-11-14: the live value is a frame local of the initialiser, handed in as an argument.** `Core_UnMisc`
+(`0x0005a990`) has exactly one caller, `0x00012b7d` in `Core_UnObjBas` (`tools/call-census.py --target 0x0005a990`), and
+the value it stores into `[0x005bf514]` is that call's **seventh** argument: three SEH pushes precede
+`mov eax,[esp+0x28]` at `0x5a99e`, and the site pushes `[ebp-0x954]` there (`0x12b4c`). The same call re-points three
+neighbours -- `0x5bf510` from arg3 `0x0059ed68`, `0x5bf500` from arg4 `0x005bf3ec`, `0x5bf504` from arg5 `0x005bf3f0` --
+so the initialiser installs a set of pointers, and only the file manager's comes from the frame. That slot is never
+written inside `Core_UnObjBas` (all eight references are `lea`), so the object is built through calls that take its
+address, and the `.data` initializer (the error table) describes the state *before* that call. **Still open:** which
+class the frame object is -- the first `lea ecx` that receives it (`0x128ff`) and the table the call behind it stores
+through it. Depth: `docs/systems/CHECKPOINTS.md`, *Which object the file manager's global actually holds*;
+`tools/fmgr-live-object.py --check` and `tools/call-census.py --check` are dump-free.
+
 ## U6. Two shared helpers named from their own strings; the third is still `FUN_*`, and the four game bodies are identified
 
 **Observed.** In the 43 functions of the `stargategame`/`stargatevehicles` modules, `FUN_00058a30` is

@@ -513,17 +513,20 @@ built.
 `table .text` column is 0 on every row), so all six exist only as statics: a class whose constructor ran would store its
 own table's address in code.
 
-**The pointer is named by 194 reads and two writes, and neither writer installs a built object.** This counts accesses,
+**The pointer is named by 194 reads and two writes, and only the first of them installs nothing.** This counts accesses,
 not calls: the dispatch census above counts 157 virtual calls through the object. One write is `0x00169e3` in `Core_UnObjBas`,
 four instructions before the same function logs `Starting Engine`: it stores `lea ecx,[ebp-0xb0]`, a frame dword whose
 only other reference inside that 18,359-byte function is a zero store at `0x0012927`, so the pointer's target has no
 table and cannot answer a dispatch. The other is `0x0005a9b2` in `Core_UnMisc` (`0x0005a990`), which stores
 `[esp+0x28]` -- its own incoming argument -- so there the value is whatever that function's caller passed.
 
-**What that leaves.** The only dispatchable object in the image is the static error singleton at `0x005c1a0c`, and both
-writers hand the global a value from outside rather than constructing one, so which object is live is decided by
-`Core_UnMisc`'s callers and by how long `0x00169e3`'s frame slot survives. That is the next read -- a caller census,
-not another boot.
+**What the two writers mean, corrected by the caller census below.** `0x00169e3`'s value is a frame dword whose only
+other reference inside its function is a zero store, so it installs no built object. `0x0005a9b2`'s value comes from
+`Core_UnMisc`'s caller, and there is exactly one: `0x00012b7d` in `Core_UnObjBas`. The argument is the caller's own
+local -- `[ebp-0x954]`, pushed at `0x12b4c` -- and the same call re-points three of the neighbouring globals from its
+other arguments, so the initialiser installs a *set* of pointers and the file manager's is the one that lives on the
+stack. The `origin` column in the generated table follows that step row by row. Which class the frame object is, is the
+next read.
 
     python3 tools/fmgr-live-object.py --xbe $DUMP/default.xbe -o inventory/fmgr_singletons.csv
     python3 tools/fmgr-live-object.py --write-doc docs/systems/CHECKPOINTS.md
@@ -536,16 +539,18 @@ not another boot.
 
 **Per global: the object it holds, its vtable, and every instruction that names it.**
 
-| global | object | gap | vtable | names | table .text | table other | sites | reads | writes | value | source | slot |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `0x005bf500` | `0x005c1a14` | 4 | `0x004d2e3c` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x0001136d 0x000113a3 0x00011d80 0x00012410 0x00012420 0x00012431 | 1518 | 1 | `0x0005aa58 ecx` | `0x0005aa58 incoming` | - |
-| `0x005bf504` | `0x005c1a10` | 4 | `0x004d30e8` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x00012a36 0x000166dd 0x000181f0 0x00018330 0x00018c60 0x00018d2f | 336 | 1 | `0x0005aa65 edx` | `0x0005aa65 incoming` | - |
-| `0x005bf508` | `0x005c1a1c` | - | `0x004d2e4c` | FUN_000ea7f0 FUN_00020f00 FUN_000357a0 | 0 | 1 | 0x000121ca 0x000167c8 0x0001c012 0x0001c056 0x000275cf 0x0003bea9 | 60 | 0 | - | - | - |
-| `0x005bf50c` | `0x005c1a18` | 4 | `0x004d2e44` | FUN_00020f00 FUN_000ea7f0 FUN_000357a0 | 0 | 1 | 0x0005327f | 1 | 0 | - | - | - |
-| `0x005bf510` | `0x005c1a08` | 4 | `0x004d2eb0` | appMallocBeforeInit FUN_000340e0 FUN_00034100 | 0 | 1 | 0x00012746 0x00016d85 0x00016dca 0x00016e80 0x00016ea0 0x00016fd0 | 2445 | 2 | `0x00012746 0x59ed68 ; 0x0005aa70 ecx` | `0x00012746 immediate ; 0x0005aa70 incoming` | - |
-| `0x005bf514` | `0x005c1a0c` | 4 | `0x004d2fd0` | FUN_00031e70 FFileManagerError_CreateFileReader FFileManagerError_CreateFileWriter | 0 | 1 | 0x000121cf 0x000167cd 0x000169e3 0x0001c009 0x0001c04d 0x000284f5 | 194 | 2 | `0x000169e3 ecx ; 0x0005a9b2 eax` | `0x000169e3 frame ebp-b0 ; 0x0005a9b2 incoming` | 0x000169e3: 0x00012927 write 0x000169d2 read |
+| global | object | gap | vtable | names | table .text | table other | sites | reads | writes | value | source | slot | origin |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `0x005bf500` | `0x005c1a14` | 4 | `0x004d2e3c` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x0001136d 0x000113a3 0x00011d80 0x00012410 0x00012420 0x00012431 | 1518 | 1 | `0x0005aa58 ecx` | `0x0005aa58 incoming` | - | 0x0005aa58 arg4 0x005bf3ec in Core_UnMisc @0x00012b7d |
+| `0x005bf504` | `0x005c1a10` | 4 | `0x004d30e8` | FUN_000ea7f0 FUN_00020f00 | 0 | 1 | 0x00012a36 0x000166dd 0x000181f0 0x00018330 0x00018c60 0x00018d2f | 336 | 1 | `0x0005aa65 edx` | `0x0005aa65 incoming` | - | 0x0005aa65 arg5 0x005bf3f0 in Core_UnMisc @0x00012b7d |
+| `0x005bf508` | `0x005c1a1c` | - | `0x004d2e4c` | FUN_000ea7f0 FUN_00020f00 FUN_000357a0 | 0 | 1 | 0x000121ca 0x000167c8 0x0001c012 0x0001c056 0x000275cf 0x0003bea9 | 60 | 0 | - | - | - | - |
+| `0x005bf50c` | `0x005c1a18` | 4 | `0x004d2e44` | FUN_00020f00 FUN_000ea7f0 FUN_000357a0 | 0 | 1 | 0x0005327f | 1 | 0 | - | - | - | - |
+| `0x005bf510` | `0x005c1a08` | 4 | `0x004d2eb0` | appMallocBeforeInit FUN_000340e0 FUN_00034100 | 0 | 1 | 0x00012746 0x00016d85 0x00016dca 0x00016e80 0x00016ea0 0x00016fd0 | 2445 | 2 | `0x00012746 0x59ed68 ; 0x0005aa70 ecx` | `0x00012746 immediate ; 0x0005aa70 incoming` | - | 0x0005aa70 arg3 0x0059ed68 in Core_UnMisc @0x00012b7d |
+| `0x005bf514` | `0x005c1a0c` | 4 | `0x004d2fd0` | FUN_00031e70 FFileManagerError_CreateFileReader FFileManagerError_CreateFileWriter | 0 | 1 | 0x000121cf 0x000167cd 0x000169e3 0x0001c009 0x0001c04d 0x000284f5 | 194 | 2 | `0x000169e3 ecx ; 0x0005a9b2 eax` | `0x000169e3 frame ebp-b0 ; 0x0005a9b2 incoming` | 0x000169e3: 0x00012927 write 0x000169d2 read | 0x0005a9b2 arg7 [ebp-0x954] in Core_UnMisc @0x00012b7d |
 
 **The access census.** `[0x005bf514]` is named by 194 read(s) and 2 write(s) in the image: `0x000169e3 frame ebp-b0`; `0x0005a9b2 incoming`. A value whose last writer is a frame slot is followed into that slot's own references inside the containing function -- `0x000169e3: 0x00012927 write 0x000169d2 read` -- because a slot that is never given a table cannot answer a dispatch, and then the write installs no second file manager.
+
+**The value is followed out of the callee, and it is the caller's own frame.** `origin` takes the `incoming` source one step further: the slot `[esp+N]` the callee reads is argument `N/4` less every push and `sub esp` made since its entry, and each `E8` site that calls the callee is decoded back to its push run, so the argument is named by the value the caller actually hands over. `0x0005a9b2 arg7 [ebp-0x954] in Core_UnMisc @0x00012b7d` -- a pointer into a caller frame, pushed there and stored before the callee does anything else, so the global is live from that instruction on and answers a dispatch as an object.
 
 <!-- /generated:fmgr-live-object -->
 
