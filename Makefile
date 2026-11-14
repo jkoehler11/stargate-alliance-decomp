@@ -458,8 +458,8 @@ class-tables:
 	@$(PYTHON) tools/class-tables.py \
 		"$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
 
-# Which class owns each table, and every class's object size, from the class registrations
-# (docs/NATIVE_CLASSES.md). Needs capstone: pip install capstone.
+# Which class owns each table, and every class's object size, from the whole registration-site census
+# (docs/systems/CLASS_REGISTRATION.md). Decodes with objdump; needs no python package.
 class-names:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/class-table-names.py \

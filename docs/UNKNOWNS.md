@@ -909,8 +909,10 @@ partly-unnamed child sets. It cannot name the other 23: they have no callers. Th
 measured too, and it answers the question this section was waiting for: **25 of the 27 unnamed sites
 push one shared pointer** (`0x00034650` -> thunk `0x00062ce0`), and the decompile of that body shows why --
 `MOV EAX,ECX; MOV [EAX],0x004dd2a8; RET`, a nine-byte **default constructor** that stores one fixed dword
-and names no class. That dword is the table the map calls `VertexStreamBase` (`0x004dd2a8`), and the
-loaded level carries it on **51 classes / 550 objects**, so it is not an identity either. The other two
+and names no class. That dword is the table the per-table artifact used to call `VertexStreamBase` (`0x004dd2a8`) -- a
+write-order artefact corrected to `Object` by the hierarchy join in `tools/class-table-names.py`
+(`docs/systems/CLASS_REGISTRATION.md`, *The table name is a hierarchy join*) -- and the loaded level carries
+it on **51 classes / 550 objects**, so it is not an identity either. The other two
 sites push the *neighbouring* `WaterTexture` constructor (`Texture`, `FractalTexture`) and the last
 (`FireTexture`) one that installs `IceTexture`'s table, so **no one of the 27 pushes a constructor that
 installs its own class's table**: the literal path cannot name any of the 26, measured rather than

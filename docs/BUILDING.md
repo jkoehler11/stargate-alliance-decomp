@@ -76,7 +76,7 @@ Each row is one `make` target. "Needs" is what has to exist first; "produces" is
 | 5 | `make ghidra SG1_DUMP=… GHIDRA_HOME=…` | dump, Ghidra, JDK 25 | `symbols/xbox_functions.csv`, `inventory/xbe_block_seeds.csv`, `build/ghidra/` |
 | 6 | `make natives SG1_DUMP=…` | a `$WORK/gnatives/runtime.bin` dump from the emulator | `inventory/gnatives_slots.csv`, `symbols/xbe_dispatch.csv` |
 | 7 | `make class-tables SG1_DUMP=…` | image only | `inventory/xbe_class_tables.csv`, `…_slots.csv` |
-| 8 | `make class-names SG1_DUMP=…` | step 7, `capstone` | `inventory/xbe_class_table_names.csv` |
+| 8 | `make class-names SG1_DUMP=…` | step 7, `objdump` | `inventory/xbe_class_table_names.csv` |
 | 9 | `make libraries SG1_DUMP=…` | image only | `inventory/xbe_libraries.csv` |
 | 10 | `make symbols SG1_DUMP=…` | step 5, `as` | `symbols/xbox.map` (+ `xbox.sym.s`, `.o` not committed) |
 | 11 | `make assert-residual SG1_DUMP=…` | steps 5, `build/ghidra/asserts.tsv` | `inventory/xbe_assert_residual.csv` |

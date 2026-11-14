@@ -210,7 +210,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/weapon_links.csv` | 315 | 8 | `make help` |
 | `inventory/xbe_assert_residual.csv` | 6 | 9 | `make assert-residual` |
 | `inventory/xbe_block_seeds.csv` | 26 | 4 | `make ci` |
-| `inventory/xbe_class_table_names.csv` | 492 | 8 | `make ci` |
+| `inventory/xbe_class_table_names.csv` | 492 | 11 | `make ci` |
 | `inventory/xbe_class_table_slots.csv` | 159 | 6 | `make class-overrides` |
 | `inventory/xbe_class_tables.csv` | 492 | 8 | `make ci` |
 | `inventory/xbe_functions_by_module.csv` | 16 | 5 | `make ci` |
