@@ -60,3 +60,5 @@ index,name,result,attempts,runs,detail
 68,M21B,PASS,1,1,
 69,M21C,PASS,1,1,
 70,M21D,PASS,1,1,
+71,MainMenu,FAIL,1,1,main menu
+72,SGCTF-AbydosVsSGC,PASS,2,1,

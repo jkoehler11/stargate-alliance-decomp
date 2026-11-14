@@ -40,6 +40,10 @@ the `A` **on** the list doing nothing. Both are non-deterministic: four of the 3
 `PASS` wins over `FAIL` when a later run contradicts an earlier one, and why `detail` keeps the failure's
 own reason (`BIOS screen`, `main menu`, `frame gate`) for the rows that never passed.
 
+The one row whose `FAIL` is the **map** is index 71. `MainMenu` is the shell's own menu package, so selecting it
+puts the guest back on `MAIN MENU`, which is exactly what the frame gate reports (`main menu`) -- a load this
+instrument cannot tell from a missed press, and it is not one: indices 70 and 72 loaded in the same sweep.
+
 ## The runs merged here, and the ones deliberately left out
 
 | run directory | range | note |
@@ -53,10 +57,12 @@ own reason (`BIOS screen`, `main menu`, `frame gate`) for the rows that never pa
 | `$WORK/mapback` | 41-45 | the back-half sweep, stopped at a run's budget |
 | `$WORK/mapback2` | 44, 46-49 | the resume at 44 |
 | `$WORK/mapback3` | 50-70 | the last 21, one boot each |
+| `$WORK/xemu/missions-mapall` | 71, 72 | the page's last two entries: the shell map and a CTF map |
 
-Nine directories, and the set is its own evidence: the first eight regenerate the committed 40 rows **byte for
-byte**, and adding `mapback3` is then the only diff. A directory listing cannot confirm that -- `$WORK` also
-holds `missions/`, `gtime`-era retries and the manufactured-failure directories below.
+Ten directories, and the set is its own evidence: the nine that made the campaign rows regenerate the
+committed 61 rows **byte for byte** (measured 2026-11-14), so `missions-mapall` is the only diff, and those two
+rows are it. A directory listing cannot confirm that -- `$WORK` also holds `missions/`, `gtime`-era retries and
+the manufactured-failure directories below.
 
 Three other directories in `$WORK/xemu` carry a `missions.tsv` and are **not** merged, on purpose:
 `missions-neg` (index 10 with `--boot=25`, a manufactured failure that proves the loop retries),
@@ -67,7 +73,9 @@ merging them would put `BIOS screen` on a row whose map loads.
 ## The table
 
 <!-- generated:map-loads -->
-**61 rows, 61 PASS / 0 FAIL, 74 boots:** all 61 campaign entries (10-70) have been loaded.
+**63 rows, 62 PASS / 1 FAIL, 77 boots:** all 61 campaign entries (10-70) have been loaded.
+
+Outside the campaign range: 71 `MainMenu` (FAIL), 72 `SGCTF-AbydosVsSGC` (PASS).
 
 | index | map | result | attempts | runs | detail |
 |---:|---|---|---:|---:|---|
@@ -132,12 +140,15 @@ merging them would put `BIOS screen` on a row whose map loads.
 | 68 | `M21B` | PASS | 1 | 1 |  |
 | 69 | `M21C` | PASS | 1 | 1 |  |
 | 70 | `M21D` | PASS | 1 | 1 |  |
+| 71 | `MainMenu` | FAIL | 1 | 1 | main menu |
+| 72 | `SGCTF-AbydosVsSGC` | PASS | 2 | 1 |  |
 <!-- /generated:map-loads -->
 
 ## What is left
 
 The campaign range is 10-70 (61 entries; 0-9 are the multiplayer maps and `Entry`, 71-72 are `MainMenu` and
-`SGCTF-AbydosVsSGC`), and **every one of the 61 has a row** (2026-11-11). The tool's summary line no longer
+`SGCTF-AbydosVsSGC`), and **every one of the 61 has a row** (2026-11-11). The two entries outside that range
+have rows too now (2026-11-14), so the table covers all 73 of the page's entries rather than its campaign prefix. The tool's summary line no longer
 names an unmeasured index, so the sweep is finished rather than paused, and `map-index.py --rotate N` -- which
 printed N indices a night for a nightly that walks the range without repeating (2 a night covers 61 entries in
 31 nights, and because 2 is coprime with 61 the wrap skips nothing) -- has no work left to hand out.
@@ -158,15 +169,18 @@ Two things this table still cannot say, and what would settle each:
   (`index-NN/02-mission.png`); reading the HUD, a checkpoint load or a mission's own objective state from
   it is a separate measurement, and the checkout (`StargateContent`, `docs/systems/CHECKPOINTS.md`) is where
   the save half of it lives.
-* **Which of the 30 second-half maps a player can reach without the list.** They are reachable through this
-  page (`GetMapList` enumerates every `.unr`, no cap), but a save inside one, a checkpoint load, and a
-  `Travel` URL are the only in-game routes, and the console refuses `open` (`docs/XEMU.md`, U16).
+* **Whether the other in-game routes reach a second-half map.** None of the 30 needs one any more: every
+  campaign index loads from this page (`GetMapList` enumerates every `.unr`, no cap), so a save inside one, a
+  checkpoint load and a `Travel` URL are alternatives rather than requirements -- and the console refuses
+  `open` (`docs/XEMU.md`, U16), which is the route that would have made them necessary.
 
 ## Status
 
-The artifact is complete: **61 rows over 74 boots, 61 PASS and 0 FAIL** -- no campaign map on this disc fails
-to load. "Complete" here means coverage, not playability: a `PASS` row is a load, and the two questions above
-are what a row still cannot answer.
+The artifact is complete: **63 rows over 77 boots, 62 PASS and 1 FAIL**. No campaign map on this disc fails to
+load -- 61 of 61, over 76 of the boots -- and the page's two non-campaign entries are measured in the same
+sweep: 72 `SGCTF-AbydosVsSGC` loads on its second boot, and 71 `MainMenu` is the one `FAIL`, by design.
+"Complete" here means coverage, not playability: a `PASS` row is a load, and the two questions above are what
+a row still cannot answer.
 
 `make ci` gates both halves. `--check-doc` re-renders this page from the committed rows, so the table cannot
 drift from the CSV without a disc, and the tool's synthetic `--check` exercises the merge rules themselves (a
