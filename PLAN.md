@@ -1179,6 +1179,26 @@ are limited to expected fields (checksum/timestamp) and documented.
 
 
 
+### Execution notes (2026-11-14, the guard would add 88 one-tag blocks and take the one two-property block)
+
+- **The decision the last note left open, measured rather than taken.** `--reconcile` now classifies the rows where
+  the renderer and the locator disagree about having a block: of the **88** blocks `guarded()` would add, **88 are
+  fully declared and every one holds exactly one property** (88 properties in all), and the **1** it would remove is
+  `Engine.PSBumpBSP`'s, which holds **two**. Adopting the guard would take the renderer from 1,664 fully-declared
+  blocks to **1,751** and give up the only addition-side block with more than one property.
+- **Why that is the answer.** Every added block is the shape the locator's two-property floor exists to refuse -- a
+  tag at a group's end where a table tail and a one-tag block read the same bytes (`single-declared`, 288 rows of
+  `class_defaults_misses.csv`). The renderer has no floor on the verdict, so it would publish all 88 as defaults on
+  one name each. The 87-block deficit is therefore not blocks the renderer is missing: it is 88 one-tag starts the
+  guard supplies plus one two-property block the guard's trailer floor withdrew.
+- Tool (`tools/defaults-emit.py`'s `--reconcile`, which now reports what the guard would add and remove) +
+  `docs/CLASS_DEFAULTS.md` (new section) + `docs/UNKNOWNS.md` U18 (thirty-eighth) + this note. Reads the packages;
+  no boot, no Ghidra round, no artifact regenerated, no property value printed.
+- **Next measurement, named:** a tag walk past the group end for the 88 one-tag starts -- the grammar walk
+  `tools/class-defaults-silent.py` ran over the 196 -- reporting what each single tag names and whether a second
+  tag follows it. That is the witness a one-tag start needs, and it is the only thing that would make the 88
+  emittable.
+
 ### Execution notes (2026-11-14, the renderer withholds the same label and settles 1,898 blocks)
 
 - **The change the last note named.** `tools/defaults-emit.py` now locates through `choose_scored()`, the same

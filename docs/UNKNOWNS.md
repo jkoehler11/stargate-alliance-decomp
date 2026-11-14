@@ -3784,3 +3784,14 @@ locator-block, **25** no-candidate / block, **52** withheld / no-block, **1** bl
 start the later one on all **234** that disagree. **What is still open.** Whether the renderer should choose from
 `guarded()`'s candidates as the locator does: that is the 87, and it changes which blocks render rather than what
 one holds.
+
+**Answered 2026-11-14 (thirty-eighth): the renderer should not take the guard, because the guard adds 88 one-tag
+blocks.** `tools/defaults-emit.py --reconcile` now classifies the rows where the two locate paths disagree about
+having a block: the **88** blocks `guarded()` would add are **all fully declared and all one property each** (88
+properties in all), and the **1** it would remove is `Engine.PSBumpBSP`'s two-property block. Adopting the guard
+would take the renderer from **1,664** fully-declared blocks to **1,751**, every addition being the single-tag
+shape the locator's two-property floor refuses a verdict on (`single-declared`, 288 rows). The renderer carries no
+such floor, so it would publish all 88 on one name each. **What is still open.** A tag walk past the group end for
+those 88 starts -- what the single tag names and whether a second follows -- since that is the witness that would
+make a one-tag start emittable; and `Engine.PSBumpBSP`'s two-property block, which the guard's trailer floor
+withdraws while the renderer emits it.
