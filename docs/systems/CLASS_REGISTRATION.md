@@ -402,6 +402,89 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 **40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 103 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 1 call from no map body at all; 2 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
+## The hole between `FUN_003f28b0` and `FUN_003f6d70` is a thunk pool
+
+The `stub` edges above come from code the symbol map does not cover, and the map has one large hole
+around them (`0x3f28b8`..`0x3f6d70`, 17 KB of `.text`). Reading that hole by stride reads it wrongly
+twice over, so this section states both readings and the measurement that settles them.
+
+- **The `.rdata` operand is a `FuncInfo`, not a `UClass`.** Each `mov eax, <imm32>` stub in the hole
+  jumps to `0x003e559e`, a wrapper that pushes that immediate as an argument (with three zeroed slots)
+  and calls `0x003eb0d0`. The immediate names a `.rdata` record whose first dword is `0x19930520`, the
+  MSVC C++ exception `FuncInfo` header -- on every such stub. That is `__ehhandler$F`, the handler a
+  function with a `try`/`catch` frame registers, so the hole is a compiler artefact and not a
+  class-indexed constructor dispatch: no record there is a class table and no operand is a class.
+- **The records do not repeat on a `0x20` stride.** They run 1..29 bytes (median 8) and are cut at their
+  own terminators. `mov eax,<FuncInfo>` and `jmp` are two *separate* stubs wherever a forwarder ends
+  with no `int3` between them, which is how one stride looked like `jmp, mov, jmp` -- a stride rule
+  cannot see a boundary that has no padding behind it.
+- **The hole is reached from the bodies it serves.** The store join finds a `c7 /0` frame-slot store or
+  a `68` push of each stub's own address: 325 stubs are stored, 315 of them inside a body the symbol
+  map already names (`dtor_MatSubAction`, `dtor_ScriptedAction`, `dtor_XboxClient` are three). No
+  `E8`/`E9` in `.text` targets a stub in the hole, so the handlers are entered through their frame
+  slot, which is what an `__ehhandler` is for.
+- **The installer thunks in the hole are not vtable slots.** 22 stubs hold a jump into 13 of the 24
+  installers. Each has exactly one dword hit in `.rdata`, all 22 inside the span `0x576d0c`..`0x579b38`
+  that also holds the `FuncInfo` records, and none of them lands in any of the 492 class tables. A hit
+  inside the `FuncInfo` pool is not a pointer table, so this does not claim the thunks are dispatched;
+  the base-constructor shape stays the only reachable evidence for the 24.
+- **Most of the 84 unmapped tail jumps are not here.** 23 of them are in this hole and 61 sit in other
+  gaps of the map, so "one unmapped island" never explained the whole population.
+
+<!-- generated:native-island -->
+| measure | value |
+|---|---|
+| stubs in the hole | 1589 |
+| stub sizes | 1..29 bytes, median 8 |
+| `eh-handler` (`mov imm` + `jmp`) | 325 |
+| ...whose immediate is a `FuncInfo` (first dword `0x19930520`) | 325 |
+| bare `jmp` tail jumps | 0 |
+| ...holding a jump or call into the 24 orphan installers | 22 over 13 installers |
+| `mov reg,[ebp+d]` + `jmp` forwarders | 200 |
+| other / undecoded | 1064 / 0 |
+| stubs with bytes the subset could not read | 220 |
+| stubs whose address a body stores | 325 (315 in a named body) |
+| stubs an `E8` calls | 0 |
+
+
+The references run `0x00576d0c`..`0x00579b38`, 22 of them inside that 11824-byte span.
+Installer-thunk reachability: 22 stubs, 22 with a dword reference outside `.text` (.rdata); 0 of those references land in a class-table slot.
+
+Installer tail jumps, per installer: `0x0002c8a0` x5, `0x00017050` x3, `0x0001cb70` x2, `0x00025ff0` x2, `0x00031830` x2, `0x0001cd10` x1, `0x0001cc10` x1, `0x00017f70` x1, `0x000172a0` x1, `0x000257d0` x1, `0x00025f30` x1, `0x000321f0` x1
+
+The `FuncInfo` immediates run `0x00576210`..`0x0057c358` and every record read is `.rdata`.
+
+Stubs a store names (the body each handler/thunk belongs to):
+
+| stub | kind | target | operand | stored by | body |
+|---|---|---|---|---|---|
+| `0x003f28b8` | eh-handler | `0x003e559e` | `0x00576210` | `0x0001a922` | `Core_UnTemplate+22` |
+| `0x003f28f7` | eh-handler | `0x003e559e` | `0x005763c0` | `0x0001adf2` | `FUN_0001adf0` |
+| `0x003f2918` | eh-handler | `0x003e559e` | `0x0057642c` | `0x0001b312` | `FUN_0001b310+1` |
+| `0x003f2943` | eh-handler | `0x003e559e` | `0x005764b0` | `0x0001b572` | `dtor_MatSubAction` |
+| `0x003f2958` | eh-handler | `0x003e559e` | `0x005764d4` | `0x0001b622` | `dtor_SubActionCameraEffect` |
+| `0x003f2983` | eh-handler | `0x003e559e` | `0x00576548` | `0x0001b812` | `dtor_ScriptedAction` |
+| `0x003f2998` | eh-handler | `0x003e559e` | `0x0057656c` | `0x0001b8f2` | `dtor_ACTION_TriggerEvent+1` |
+| `0x003f29b8` | eh-handler | `0x003e559e` | `0x005765b4` | `0x0001ba92` | `dtor_ACTION_WaitForEvent` |
+| `0x003f29d8` | eh-handler | `0x003e559e` | `0x005765d8` | `0x0001bb62` | `dtor_SubActionDepthOfField` |
+| `0x003f29f8` | eh-handler | `0x003e559e` | `0x005765fc` | `0x0001bc35` | `FUN_0001bc30` |
+| `0x003f2a68` | eh-handler | `0x003e559e` | `0x00576c78` | `0x0001ca62` | `FUN_0001ca60` |
+| `0x003f2a8b` | eh-handler | `0x003e559e` | `0x00576c9c` | `0x0001cab2` | `FUN_0001cab0+5` |
+| `0x003f2ab3` | eh-handler | `0x003e559e` | `0x00576cec` | `0x0001cb72` | `FUN_0001cb70` |
+| `0x003f2ae4` | eh-handler | `0x003e559e` | `0x00576d20` | `0x0001cc12` | `FUN_0001cc10` |
+| `0x003f2b23` | eh-handler | `0x003e559e` | `0x00576d70` | `0x0001cd12` | `FUN_0001cd10` |
+| `0x003f2b38` | eh-handler | `0x003e559e` | `0x00576db8` | `0x0001cda2` | `dtor_XboxClient` |
+| `0x003f2b58` | eh-handler | `0x003e559e` | `0x00576ddc` | `0x0001ce52` | `dtor_XboxViewport` |
+| `0x003f2bc1` | eh-handler | `0x003e559e` | `0x00576e38` | `0x0001d092` | `FUN_0001d090` |
+| `0x003f2c5a` | eh-handler | `0x003e559e` | `0x00576ebc` | `0x0001d295` | `FUN_0001d290` |
+| `0x003f2cf2` | eh-handler | `0x003e559e` | `0x00576f38` | `0x0001d6d5` | `FUN_0001d6d0` |
+<!-- /generated:native-island -->
+
+What the census cannot say: 1,064 stubs are `other` and 220 contain bytes the bounded opcode subset
+could not read (`partial`), so the shape counts are a floor on each kind rather than a partition of the
+hole. `make native-island` regenerates the artifact; `--check` is a synthetic self-test (16 assertions,
+no dump) and `--check-doc` rebuilds the block from `inventory/native_island.csv`.
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
@@ -429,10 +512,10 @@ caller-rule answer for the same table, joined in so the two readings sit side by
   who installs them, whether a registration thunk reaches the installer, and whether it is called at all.
   Its two readings meet in `inventory/class_orphan_tables.csv`'s `proposed` column and neither is a
   measurement of the other.
-- **It does not read the tail-jump island.** The `stub` edges that come from code the symbol map does not
-  cover sit in one hole: `0x3f28b8` to `0x3f6d70`, 17 KB of `.text` between the 8-byte `FUN_003f28b0` and
-  `FUN_003f6d70`. The records repeat on a `0x20`-byte stride (`jmp <body>`, `mov eax, <.rdata>`, `jmp`),
-  and it is a lead rather than a registration: nothing there pushes an object size or calls the registrar.
+- **It does not read the hole the tail jumps come from.** Those `stub` edges sit in a 17 KB gap between
+  the 8-byte `FUN_003f28b0` and `FUN_003f6d70`; `tools/native-island.py` reads it, and the section
+  above says what it is. It is not a registration and not a dispatch table: its `mov eax, <.rdata>`
+  stubs are the compiler's C++ exception handlers.
 
 ## Regenerating
 

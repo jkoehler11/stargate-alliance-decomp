@@ -1379,6 +1379,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the hole between FUN_003f28b0 and FUN_003f6d70 is a thunk pool)
+
+- **The `.rdata` operand is a `FuncInfo`, and the magic is measured.** Every `mov eax,<imm32>` stub in
+  the hole jumps to `0x003e559e`, a wrapper that pushes the immediate as an argument and calls
+  `0x003eb0d0`; the immediate names a `.rdata` record whose first dword is `0x19930520` (the MSVC C++
+  `FuncInfo` header) on **325 of 325** such stubs. So the hole is the compiler's `__ehhandler$F` pool,
+  not a class-indexed constructor dispatch: nothing in it is a `UClass` and no record is a class table.
+- **The stride reading was two reads of the same bytes.** The stubs run 1..29 bytes (median 8) and are
+  cut at their terminators, not on a `0x20` boundary: `mov eax,<FuncInfo>` and `jmp` are *separate*
+  stubs where a forwarder ends with no `int3` between them, which is how one record came to read as
+  `jmp, mov, jmp`.
+- **The 84 unmapped installer tail jumps are not one island.** 23 are in this hole and 61 sit in other
+  gaps of the symbol map, so "one hole explains the 84" is wrong on the population before it is wrong
+  on the shape. 22 stubs in the hole hold a jump into 13 of the 24 installers.
+- **The hole is reached: 325 stubs are stored by the body they guard.** The store join finds a `c7 /0`
+  frame-slot store or a `68` push of the stub's own address for 325 stubs, 315 of them inside a named
+  body (`dtor_MatSubAction`, `dtor_ScriptedAction`, `dtor_XboxClient` among them), and no `E8`/`E9` in
+  `.text` targets a stub in the hole -- the handlers are entered through their frame slot.
+- **The 22 installer thunks are not vtable slots.** Each has exactly one dword hit in `.rdata`, all 22
+  inside `0x576d0c`..`0x579b38`, the span that also holds the `FuncInfo` records, and none lands in any
+  of the 492 class tables. A hit in the `FuncInfo` pool is not a pointer table, so this does not claim
+  they are dispatched; the base-constructor shape (103 classes calling an installer from their own ctor)
+  stays the only reachable evidence for the 24.
+- Tool (`tools/native-island.py`: an instruction walk cut at terminators, three stub shapes, the
+  `FuncInfo` magic check, the store join and the call join, `-o`/`--report`/`--write-doc`/`--check-doc`/
+  `--check` over a synthetic image) + `inventory/native_island.csv` (1,589 rows) + the section and the
+  corrected bullet on `docs/systems/CLASS_REGISTRATION.md` + `make native-island` + this note. No boot:
+  the image, the symbol map and the committed artifacts.
+- **Next measurement:** the 61 unmapped tail jumps in the other map gaps. `island_bounds` already
+  counts them; the next instrument lists the gaps and asks whether any of their jumps is *called*
+  (the hole's are not), which is the population that can still be a real caller of the 24.
+
 ### Execution notes (2026-11-14, the 24 unregistered tables have installers, and the installers are bases)
 
 - **The store sweep finds a body installing every one of the 24.** Sweeping `.text` for `C7 /0` stores of
