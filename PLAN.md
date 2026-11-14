@@ -244,13 +244,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       are disassembled end
       to end, and per-function match grades (L0 present / L1 compiles / L2 opcode-sequence ≥98% / L3 byte-exact) need
       the comparator's compiler.
-- [ ] 3.8 **The comparator exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
-      packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and it is
-      validated the only way it can be without a build: a package against itself gives 3,352 of 3,821 shared functions
-      identical (the rest have no script), and a one-byte mutation inside an operand moves L3 to 3,351 while L2 stays
-      at 3,352. Chase L2→L3 on the small packages first (`Core`, `Fire`,
-      `UnrealEd`, `IpDrv`, `AmbientCreatures`),
-      then `Engine`, then the Stargate packages. Track a running scoreboard in `docs/MATCHING.md`.
+- [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
+      packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
+      `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from
+      `inventory/matching_baseline.csv`: **12,153 `Function` exports, 11,289 with a script (the ceiling a rebuild
+      can be graded on), 673 scriptless natives, 79 refused walks, 112 operator declarations, 0 unaligned, 0 other**,
+      with a mutation control on 16 of 18 packages -- `Fire.u` and `UnrealEd.u` export no `Function` at all, which is
+      why they cannot be controlled. Scoring a rebuild still needs `ucc` (`PLAN 3.6`); the comparator itself is
+      validated two ways, a package against itself (`Engine.u` 3,354 of 3,821) and a one-bit mutation inside an
+      operand, which moves L3 by exactly one and leaves L2 alone.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
@@ -1213,6 +1215,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   validated only against a package compared with itself (3,352 of 3,821 shared functions identical), so a
   `docs/MATCHING.md` baseline per package, with the L2/L3 split and the functions that have no script, is the
   artifact that would make the comparator usable before a compiler exists.
+
+### Execution notes (2026-11-14, 3.8's scoreboard: the denominator a rebuild is scored against)
+
+- **The measurement the previous note named.** `tools/uscript-dis.py --baseline SYSTEM -o inventory` walks all 18
+  packages in **2 s** and writes `inventory/matching_baseline.csv`; `--write-doc` renders the page's block and
+  `--check-doc` (in `make ci`) holds the page to that artifact with no dump. Columns: `functions` (the
+  comparator's index), `scripted` (**the ceiling**: a rebuild can be graded on nothing else), `scriptless`,
+  `refused`, `operator`, `unaligned`, `other`, the self-comparison `L3`, and a mutation control.
+- **The script's start was open-coded in two functions.** Six compact values ending on the export's own name,
+  `name_end + 16`, the epilogue 7 or 9 bytes before the payload's end (9 for a Net function) lived in both
+  `top_level` and `script_of`; it is one `locate()` now, returning a *status* -- which is what lets the scoreboard
+  keep the negatives apart instead of collapsing them into "not disassembled". `--compare Engine.u Engine.u` still
+  answers 3,354 of 3,821 and a one-byte mutation still moves L3 to 3,353 with L2 at 3,354, so the refactor is
+  behaviour-preserving on the package that validated the comparator.
+- **112 payloads that read as a header defeat are the operator declarations.** All 112 carry
+  `Operator|PreOperator` (`0x1000|0x2000`) in the `FunctionFlags` dword at `payload_end-4`, 107 are already rows of
+  `inventory/native_tokens.csv`, and an operator payload writes its `PreOperator`/`Operator`/`PostOperator` names in
+  front of the header -- which is exactly why the five-value model cannot place it. They are a column of their own
+  now, not a defect; the flag test runs only on a payload the header already refused, because a payload that walks
+  is a script whatever its flags say.
+- **Two packages on this item's own list have nothing to match.** `Fire.u` and `UnrealEd.u` export 110 and 143
+  objects and not one `Function`, so "chase L2→L3 on `Core`, `Fire`, `UnrealEd`, `IpDrv`, `AmbientCreatures`" had
+  two empty entries; the `control` column is how that surfaced.
+- **The rest of the baseline is negatives with names.** `Core.u`'s 19 of 214 is 91 natives plus 104 operators, and
+  the 79 refused payloads are `inventory/opcode_refusals.csv`'s rows, 24 of them `StargateMenus.u` and 21
+  `Engine.u`. Files: `tools/uscript-dis.py`, `inventory/matching_baseline.csv`, `docs/MATCHING.md`, `Makefile`
+  (`make matching-baseline`), `tools/ci.py` (`matching-doc`), PLAN 3.8.
+- **Next measurement, named:** cross-tabulate `inventory/opcode_refusals.csv`'s `opcode` column against the
+  package the row sits in, so the next walker table row is chosen by the refusal rows it would recover rather than
+  by opcode frequency -- a join over two committed artifacts, no boot and no dump.
 
 ### Execution notes (2026-11-14, no load path opens `Packages.md5`, and the only stops are the constructor)
 

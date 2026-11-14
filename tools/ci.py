@@ -346,6 +346,18 @@ def check_compile_doc():
         ok(name, out[-1].replace("ok   compile-readiness: ", "") if out else "")
 
 
+def check_matching_doc():
+    """docs/MATCHING.md's scoreboard is generated from inventory/matching_baseline.csv."""
+    name = "matching-doc"
+    r = subprocess.run([sys.executable, repo("tools", "uscript-dis.py"), "--check-doc", "docs/MATCHING.md"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   matching-baseline: ", "") if out else "")
+
+
 def check_body_name_doc():
     """docs/NAMING.md's tables are generated from inventory/body_names.csv."""
     name = "body-name-doc"
@@ -491,6 +503,7 @@ def main():
     check_compile_doc()
     check_library_doc()
     check_body_name_doc()
+    check_matching_doc()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
