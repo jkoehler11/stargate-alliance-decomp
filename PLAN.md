@@ -728,7 +728,9 @@ are limited to expected fields (checksum/timestamp) and documented.
       the list offers that is a mission: 72 `SGCTF-AbydosVsSGC` loads, and 71 `MainMenu` returns to the main menu
       because it is the shell's own menu package, which the frame gate records as `FAIL / main menu` rather than
       as a pass. What a row still cannot say is whether a map is *playable* (a `PASS` is a load); that is a
-      gameplay-level measurement, and `docs/MAP_LOADS.md` names it as the open question.
+      gameplay-level measurement, and `docs/MAP_LOADS.md` names it as the open question. The list's two non-game packages are the only entries that do not load: 9 `Entry` and 71
+      `MainMenu` both leave the guest on `MAIN MENU`, so 71 of the 73 entries load and
+      `inventory/map_loads.csv` holds a row for all 73 (2026-11-14).
 - [~] 7.3 **The console works and draws its input line on a stock disc; `ret` submits it, only `stat fps` is
       readable, and no `Console` instance is in the object array in any state measured**
       (2026-11-03, corrected 2026-11-06, `docs/XEMU.md`, U15): `Tab` opens it and `stat fps`
@@ -1213,6 +1215,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make ai-state-body` + `make ci` holding the page to the artifact + this note.
 
 
+
+### Execution notes (2026-11-14, the page is measured end to end: 73 of 73 rows, and the Status block is generated)
+
+- **The page has a verdict for every entry it offers.** `inventory/map_loads.csv` now holds **73 rows, 71 PASS /
+  2 FAIL, over 91 boots**, up from 67 rows: the six entries between the last run's four and `M00` at 10 all landed,
+  `4 DM-Langara` on a second attempt, `6 DM-Subterranean`, `7 DM-Tomb` and `8 DM-WorstCaseScenario` on their first,
+  and `5 DM-LostCity` on a solo re-boot. The campaign range stays complete at 61 of 61.
+- **The two `FAIL`s are the page's two non-game packages, and both are the map.** 9 `Entry` joins 71 `MainMenu`:
+  selecting either leaves the guest on `MAIN MENU` (read off `02-mission.png`, the menu with `Continue`
+  highlighted), the frame gate records `main menu` at 1.58% of the frame differing from the boot frame against
+  the 2.5% a load needs, and `missions.sh` ends that index on the verdict instead of retrying it. Every neighbour
+  loaded: 7 and 8 beside `Entry`, 70 and 72 either side of `MainMenu`.
+- **A swallowed press is not a map, and one invocation is not enough to tell them apart.** `5 DM-LostCity` failed
+  twice in the 4-6 sweep as `frame gate` and passed on its first attempt alone in `$WORK/xemu/missions-head3`, which
+  is the reason the retry has to be a second invocation rather than another attempt inside the same one; its row is
+  the only one in the table that carries two runs (`PASS`, 3 attempts, 2 runs). The frame from that boot is
+  first-person gameplay on O'Neill's P90 HUD in an Abydos-style temple, so the row is a load and not a repaint.
+- **The page's Status paragraph is now a generated block.** It said "63 rows over 77 boots" beside a table of 67:
+  a number typed twice drifts from the artifact it describes, so the paragraph lives between
+  `<!-- generated:map-loads-status -->` markers, `--write-doc` writes it with the table and `--check-doc` compares
+  both blocks -- the page can no longer carry a total the CSV does not. `--check` gained the assertion that a
+  complete range and a gapped one render differently, and the doc's own run table gains the three new directories
+  (`missions-head2` 4-6, `missions-head3` 5 alone, `missions-head4` 7-9).
+- Files: `tools/xemu/map-loads.py`, `inventory/map_loads.csv`, `docs/MAP_LOADS.md` (regenerated table + generated
+  status + the run table and shell-row prose), this note, and the index/hashes pair the two artifacts move.
 
 ### Execution notes (2026-11-14, the page's first four entries load too, and 67 of 73 rows have a verdict)
 
