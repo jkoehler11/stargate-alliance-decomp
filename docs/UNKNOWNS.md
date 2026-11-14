@@ -3760,3 +3760,13 @@ locator missed no block and there is no reading of these bytes that names one. *
 itself: `defaults = 1` still stands on all 196 while the names support none of them, and withholding it is a rule in
 `choose()`/`guarded()` (a parse that names no property of the class anywhere in the payload is not a start) plus the
 five downstream artifacts.
+
+**Answered 2026-11-14 (thirty-sixth): the label is withheld from the 196, and the block count is 1,985.**
+`tools/class-defaults.py` refuses a chosen start whose parse names none of the class's declared properties
+(`all_packages()`, and the same rule in `coverage()`), withholding the start rather than moving it. Blocks
+**2,181 -> 1,985**, classes with no block **138 -> 334**, fully declared unchanged at **1,663** (all 196 parsed zero
+declared names), ambiguous **291 -> 197**; `class_defaults_misses.csv` explains the 196 as `empty-block`
+(135 -> **331**) with `incomplete` falling 200 -> **4**, and compile readiness keeps **1,823** while its blockers move
+to `no-defaults-block` 249 / `defaults-ambiguous` 247. **What is still open.** `tools/defaults-emit.py` still locates
+class blocks with its own path and still reports 2,209 blocks and 15,518 rendered properties, so the renderer is the
+one artifact that has not moved with the label.

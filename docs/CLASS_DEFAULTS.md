@@ -40,17 +40,17 @@ before this change):
 
 | | classes | blocks found | every property declared |
 |---|---:|---:|---:|
-| `StargateContent` | 567 | 557 | **457** |
-| `Engine` | 367 | 310 | 195 |
-| `StargateGame` | 306 | 293 | 195 |
-| `GamePlay` | 262 | 261 | 182 |
-| `Sharpeffects` | 158 | 157 | **156** |
-| `GUI` | 148 | 144 | 132 |
-| `StargateVehicles` | 142 | 141 | 124 |
-| `StargateMenus` | 98 | 86 | 66 |
-| `UWindow` | 78 | 78 | 12 |
-| others (9 packages) | 193 | 182 | 145 |
-| **total** | **2,319** | **2,209** | **1,664 (71.8%)** |
+| `StargateContent` | 567 | 521 | **457** |
+| `Engine` | 367 | 267 | 194 |
+| `StargateGame` | 306 | 242 | 195 |
+| `GamePlay` | 262 | 236 | 182 |
+| `Sharpeffects` | 158 | 156 | **156** |
+| `GUI` | 148 | 142 | 132 |
+| `StargateVehicles` | 142 | 136 | 124 |
+| `StargateMenus` | 98 | 94 | 66 |
+| `UWindow` | 78 | 33 | 12 |
+| others (9 packages) | 193 | 158 | 145 |
+| **total** | **2,319** | **1,985** | **1,663 (71.7%)** |
 
 ### The scan window was the biggest single defect
 
@@ -922,3 +922,28 @@ exists anywhere in it.
   reading honest: a `Function` tag is not a property, an early `None` keeps its byte count, a declared block deeper in
   the payload is counted and clears it, and a class that declares nothing is reported rather than called a false
   start.
+
+
+## The label is withheld from the 196, and the block count is 1,985
+
+The measurement above says the 196 published zero-fraction starts read a tag stream naming no property of the class,
+at any offset of the payload. `tools/class-defaults.py` now withholds the label on exactly that shape: in
+`all_packages()` a chosen candidate whose parse names **none** of the class's declared properties is not a block --
+the start is withheld rather than moved -- and `coverage()` applies the same rule so its rollup agrees with
+`class_defaults_per_class.csv`.
+
+* **Blocks 2,181 -> 1,985**, classes with no block **138 -> 334**, and **fully declared unchanged at 1,663 (71.7%)**:
+  all 196 parsed zero declared names, so no verdict could move. Ambiguous falls **291 -> 197**, because 94 of the 196
+  were also the second candidate of an `ambiguous` row.
+* **`class_defaults_misses.csv` explains them with `empty-block` (135 -> 331)**, which is `diagnose()`'s reading of a
+  payload that parses a valid empty block and carries no two declared properties anywhere in it; `incomplete` falls
+  **200 -> 4**, since those rows were the published ones. The explained total stays 656.
+* **Compile readiness keeps 1,823 ready (78.6%)** and its blockers change shape: `no-defaults-block` 105 -> **249**,
+  `defaults-ambiguous` 405 -> **247**. `docs/COMPILE.md`, `compile_readiness.csv` and the per-package table are
+  regenerated in the same change, and the coverage table above now matches its artifact -- it had still carried the
+  pre-group-guard 2,209 / 1,664.
+* **The rule is driven by `--check`**: a payload whose chosen parse names no declared property claims no start.
+
+**Not aligned yet.** `tools/defaults-emit.py` locates class blocks on its own path and still counts 2,209 blocks, so
+the renderer's totals in `inventory/class_defaults_emit.csv` predate this withholding. Aligning the renderer with the
+withheld label -- and re-measuring the 15,518 rendered properties it reports -- is the next measurement.

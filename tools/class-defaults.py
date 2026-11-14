@@ -557,8 +557,17 @@ def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
                 rows.append([pkg_name, cls, 0, 0.0, "", 0])
                 continue
             _score, count, start, names, bad = best
-            origins[where.get(start, "candidate")] += 1
             known = sum(1 for n in names if n in decl)
+            if known == 0:
+                # A start whose parse names none of the class's properties is not a block, whatever its bytes look
+                # like: on all 196 rows of this shape no offset of the payload names a declared property, so the
+                # parse is the grammar's permissiveness plus the payload-end witness, not a located block
+                # (`tools/class-defaults-silent.py`, `docs/CLASS_DEFAULTS.md`). The start is withheld, not moved,
+                # and `--misses` explains the row with `diagnose()`'s `no-declared-property`.
+                origins["no-declared-name"] += 1
+                rows.append([pkg_name, cls, 0, 0.0, "", 0])
+                continue
+            origins[where.get(start, "candidate")] += 1
             # The two-property floor is a verdict about the *block*, not only about the candidate set: a
             # one-property parse at a group's end is where a table tail and a block look the same, and MIN_PROPERTIES
             # measured that promoting those turns 320 misses into "fully declared" on a single tag. The start is
@@ -613,8 +622,13 @@ def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
             if not cands:
                 none_found += 1
                 continue
-            blocks += 1
             best = choose(cands, known_for(cls))
+            if not any(n in known_for(cls) for n in best[3]):
+                # The same withholding `all_packages` applies: a start that names none of the class's properties is
+                # not a block, so it counts as no block here rather than as an ambiguous one.
+                none_found += 1
+                continue
+            blocks += 1
             # same verdict as `all_packages`: the two-property floor withholds "fully declared" for a one-tag block
             if best[0][0] == 1.0 and best[4] == 0 and best[1] >= floor:
                 clean += 1
