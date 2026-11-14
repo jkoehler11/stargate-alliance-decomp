@@ -2089,6 +2089,18 @@ the runtime question above, unchanged and now the only one. A lesson worth carry
 ends early and a class with nothing above it look identical from the outside, so a walk that folds case for *class*
 names has to fold it for *package* names too, and should print how many steps it repaired.
 
+**2026-11-14: the header's fourth word is exact in every payload, and the last four residue rows were a reader
+defect.** `--sizefield` left four rows, all of them dwords that are multiples of 65,536 (262,144 / 3,932,160 /
+7,798,784 / 11,665,408), which is a dword read two bytes late: the low u16 zero and the high u16 the size (4, 60, 119
+and 178). The four payloads carry the export's name index as both the fifth and the sixth front value, and
+`--sizefield` was still decoding the front for itself -- a loop that stopped on the first match -- while `locate()`,
+which the disassembly half uses, reads six values and therefore already had the right name end. Reading the header
+through `locate()` (which now returns `name_end` and the six front values) makes all four exact, so
+`dword@name_end+12 == len(script) + sum(4 - width)` holds on **11,687 of 11,687 payloads** and the residue is empty;
+`inventory/matching_baseline.csv` regenerates byte-identical. Nothing about where a script lives is open now: the start
+is `name_end + 16`, the dword at `name_end + 12` is the script's size in memory, and the walk and the field check each
+other on every payload the corpus has.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has

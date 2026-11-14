@@ -258,6 +258,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       index before the load widens it -- so the walk goes 11,686 to **11,687 of 11,687**,
       `inventory/opcode_refusals.csv` is a header for the first time, and the scripted ceiling is
       **11,368**.
+      **And the header's last residue is gone too (2026-11-14)**: the four `--sizefield` rows were that reader's own
+      decode, not the format -- `--sizefield` kept a second copy of the locator and stopped on the first of the two
+      front names these four payloads carry -- so read through `locate()` the identity holds on **11,687 of 11,687**
+      payloads (100.00%), the residue is empty, and nothing in the header is left to find.
 - [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
       packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
       `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from
@@ -8101,6 +8105,34 @@ and a deliberate one-line script break is caught by the boot test.
   no widening difference behind them -- read one of them in a guest (`tools/xemu/script-ram.py --anchor-literal`) to
   decide whether the dword is a different field or the payload's header is short, and the census behind
   `--sizefield` has no other unexplained row.
+
+### Execution notes (2026-11-14, the header's last four rows were a second copy of the locator)
+
+- **The measurement the last note named, without the boot it named.** The four `--sizefield` residue rows are
+  `StreamPlaylistManager.InitializeParsers`, `StargatePlayer.EnableShadows`, `SemektetMortarGun.CalcPathPoint` and
+  `UGraphParticlePage.Initialized`, and their dwords are **262,144 / 3,932,160 / 7,798,784 / 11,665,408** -- every one
+  of them a multiple of 65,536 (`0x40000`, `0x3c0000`, `0x770000`, `0xb20000`). Four rows of 11,687 landing on that
+  shape by chance is one in 65,536 each, so the dword is not a different field: it is **this field read two bytes
+  late**, the low half of the read zero and the high half the size (4, 60, 119 and 178).
+- **The cause is a second copy of the locator.** `locate()` -- the six-value front read that `--baseline`,
+  `--compare` and `--script` all use -- requires the export's own name as the **sixth** value, and these four payloads
+  carry it as the fifth *and* the sixth. `--sizefield` had kept its own copy of that decode (a loop of up to eight
+  values that stops on the **first** match), so on these four it stopped one value short: `name_end + 12` landed on the
+  last two bytes of the size dword plus two zero bytes, and its script start was two bytes early. That is also why the
+  four walked anyway -- the disassembly half was already using the right start.
+- **Fixed at the locator, not at the reader.** `locate()` now returns `(status, body, start, end, name_end, front)`
+  and both `--sizefield` and `_payload_scripts` (the `--diverge` row source) read the header through it; the report
+  prints how many payloads carry the duplicated front name. At the correct name end all four dwords are the prediction
+  exactly -- 178, 119, 60 and 1,024 against 178, 119, 60 and 1,024 -- so
+  `dword == len(script) + sum(4 - width)` holds on **11,687 of 11,687 payloads (100.00%)**, the residue falls 4 -> 0,
+  and `inventory/matching_baseline.csv` regenerates **byte-identical** (the locator's own answers never moved: 11,687
+  walked, 11,368 scripted, 0 refused).
+- Files: `tools/uscript-dis.py` (the two extra returns, `--sizefield` and `_payload_scripts` through the locator, the
+  duplicated-front line), `docs/BYTECODE.md` (dated section), `docs/UNKNOWNS.md` U13, PLAN 3.7, this note. No artifact
+  changed, so no index/hashes round; `make ci`'s `matching-doc` check reads the regenerated baseline.
+- **Next measurement, named:** PLAN 7.2's one untested half -- indices 41-70 of `QUICK SELECT MAP`, the 30 campaign
+  maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
+  once per index, so it is a sweep of the existing instrument.
 
 ### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
 
