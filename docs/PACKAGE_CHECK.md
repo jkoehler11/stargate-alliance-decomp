@@ -72,11 +72,11 @@ The digest is not a hash of any shipped file under any framing tried, so the ear
 "regenerating the check is out of reach" — was about the whole file. The code says it never hashed
 the whole file.
 
-## The code: one console command, ten switches
+## The code: one commandlet, ten switches
 
-The strings are still in the image, and the dispatcher is `0x00126860` (`MD5 Database Management`,
-`0x0050700c`). It takes one wide argument and `__wcsicmp`s it against ten inline literals, each of
-which calls one routine:
+`0x00126860` carries `MD5 Database Management` (`0x0050700c`), and it is **not** a console command: it
+is slot 30 of `MasterMD5Commandlet`'s class table (the invoker section below has the read). It takes
+one wide argument and `__wcsicmp`s it against ten inline literals, each of which calls one routine:
 
 | switch | literal VA | routine | prints / does |
 |---|---|---|---|
@@ -254,12 +254,53 @@ lists. The body allocates the class (`push 0x520`; `call [eax]` through the oper
 null. So boot builds the records class -- twice, the class object and its default -- and never opens the file.
 
 **What this answers, and what it does not.** Nothing on the path from power-on to a loaded level reads
-`Packages.md5`, so a rebuilt or re-laid-out package needs no database entry to be played, and the check needs
-no patch for normal play; the readers remain reachable only through the `MD5` exec dispatcher, which is the
-console command family. That command still cannot be typed on this disc (PLAN 7.3's `Say` prefix), so
-invoking the check by hand is the one arm this probe cannot yet exercise. The armed bytes' read-back is not
-evidence either way -- the stub answered `OK` for every break and the bytes read back `83`/`83`/`6a`/`6a`/`6a`
-on both boots, which is this stub's documented behaviour -- so the control is what proves the arms landed.
+`Packages.md5`, so a rebuilt or re-laid-out package needs no database entry to be played, and the check
+needs no patch for normal play. The readers are reachable only through `0x00126860`, which is a
+*commandlet* entry point rather than a console command (next section), so there is no typed arm to try
+as well as no load path. The armed bytes' read-back is not evidence either way -- the stub answered
+`OK` for every break and the bytes read back `83`/`83`/`6a`/`6a`/`6a` on both boots, which is this
+stub's documented behaviour -- so the control is what proves the arms landed.
+
+## The invoker is a class-table slot, and the console never had the command (measured 2026-11-14)
+
+The earlier version of this page called `0x00126860` "the `MD5` exec dispatcher" and left 6.2's last arm open on
+it: type `MD5` on the console and the check runs. It is not a console command. The only dword in the image that
+holds its address is `0x005046d8`, which is slot 30 (`+0x78`) of the class table at `0x00504660` -- the table
+`inventory/xbe_class_table_names.csv` names `MasterMD5Commandlet` -- and the address has no `E8` call site
+anywhere:
+
+    $ python3 tools/vtable-reach.py DUMP/default.xbe --va 0x126860
+    0x00126860
+      call  none (no E8 rel32 targets this address)
+      ref   0x005046d8  .rdata
+      slot  MasterMD5Commandlet table 0x00504660 slot 30 of 31 -> dispatch offset +0x78
+      vcall 110 candidate site(s) for +0x78 (offset only, class not implied)
+
+So the ten `-a -c -s ...` literals are not console switches but the **`Parms` argument of a commandlet entry
+point**, which is exactly the shape the body shows: one wide argument `__wcsicmp`ed against ten literals. A UE2
+`Commandlet` is started by the engine launcher from its own command line (`ucc <name> -a`), and this build is
+started from a disc by the Xbox dashboard -- nothing hands it one. The family around it is the same machinery
+(`ServerCommandlet`, `UModUnpackCommandlet`, `ExportCacheCommandlet`, `CompressCommandlet`,
+`DecompressCommandlet`), and `StreamCommandlet extends Commandlet` is declared in `Engine`'s own script text, so
+the classes ship without a way to name them on this platform.
+
+**What the vcall column does and does not say.** There are 110 `call [reg+0x78]` sites in the image and none of
+them implies a class, so the invoker is "whichever code holds a `MasterMD5Commandlet`" and that question is not
+answered here. What *is* answered is the one this page needed: the address is a virtual member, so no console
+name binds to it -- a console command is resolved by name against the class's exec table, not through slot 30.
+
+**One console boot agrees, and its frames are not the evidence.**
+`tools/xemu/restart-level.sh --command "md5 -s" --arm 0x126860,0x125a90` booted the disc, attached the USB
+keyboard before the title, loaded `M00` (the mission frame moved 20,706 px and the settled frame 6,705 px, and
+reads O'NEILL's HUD), opened the console, typed the line one `sendkey` per character and submitted it with
+`ret`. The control arm fired (`0x002b7112`), so the window is not an arm that never landed; the dispatcher slot
+and the reader `0x00125a90` stopped **zero** times; and `04-typed.png` is byte-identical to `03-gameplay.png`,
+which is this disc's documented behaviour (the stock `Engine.Console` draws no input line). That boot therefore
+cannot separate "the keys never reached the console" from "there is no such command" -- the slot is what
+decides it.
+
+**Consequence for 6.2.** No load path opens `Packages.md5`, and there is no console binding to type either, so
+both arms are closed: a rebuilt package needs no record to be played and nothing in the build can add one.
 
 ## Not measured
 
@@ -267,6 +308,8 @@ on both boots, which is this stub's documented behaviour -- so the control is wh
   zeros are identical in all 168 records, so they are reproduced verbatim and not explained. Reading
   them would mean decompiling the `0x00125a90` record builder for field widths, which buys nothing
   while no record in the corpus varies.
-* **Invoking** the check by hand: the `MD5` console command is the only invoker left untested, and it needs
-  a typed command, which this disc's console cannot produce yet (PLAN 7.3's `Say` prefix). The load path is
-  measured above -- zero reads of the file from power-on to a loaded `M00`.
+* ~~**Invoking** the check by hand~~ -- **closed, as unreachable rather than untested**: `0x00126860`
+  is slot 30 of `MasterMD5Commandlet`'s class table and has no `E8` call site, so the check runs as a
+  commandlet and this disc has no command line to launch one with. The load path is measured above
+  (zero reads of the file from power-on to a loaded `M00`), and the console boot above stopped
+  the slot zero times.
