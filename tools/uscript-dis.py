@@ -4,13 +4,15 @@
 `inventory/opcode_table.csv` (from `tools/opcode-table.py`) says, per opcode, which operand stream the engine's
 script walker consumes: fixed bytes, nested expressions, a parameter list ending in `0x16`, a NUL-terminated string,
 a label table, and so on. This tool applies that table to a byte string and prints the token tree. It is the
-"disassembler" half of 3.7; the comparator half needs a compiler (`PLAN 3.6`).
+"disassembler" half of 3.7. The comparator half (`--compare`, PLAN 3.8) is built and its scoreboard is
+`docs/MATCHING.md` (`--baseline`); what is still missing is the oracle, a compiler (`PLAN 3.6`).
 
     python3 tools/uscript-dis.py --hex 040b47
     python3 tools/uscript-dis.py --file script.bin
     python3 tools/uscript-dis.py --selftest            # dump-free; what `make ci` runs
     python3 tools/uscript-dis.py --payloads DUMP/.../System/Engine.u
     python3 tools/uscript-dis.py --sizefield DUMP/.../System
+    python3 tools/uscript-dis.py --baseline DUMP/.../System -o inventory
 
 `--payloads` is the measurement behind `docs/UNKNOWNS.md` U13: it reports where a `Function` export's payload
 stops looking like a header (the `FunctionFlags` dword at `payload_end-4`), where the script's own epilogue
@@ -3223,37 +3225,58 @@ def switches_report(path, table, out=None):
     return 0
 
 
-def top_level(pkg, export, table):
-    """A function's top-level token list and the bytes it was parsed from, or None when it does not disassemble."""
-    epilogue = bytes([0x04, 0x0B, 0x47])
-    pay = pkg.data[export["offset"]:export["offset"] + export["size"]]
+EPILOGUE = bytes([0x04, 0x0B, 0x47])
+
+
+def locate(export, data):
+    """Where a function's script sits in its payload: `(status, body, start, end)`.
+
+    One answer for both halves of the tool. The header is six archive-compact values ending on the export's own
+    name, the script starts at `name_end + 16`, and the epilogue sits 7 bytes before the payload's end (9 for a Net
+    function, whose `RepOffset` comes first). The `status` keeps the negatives apart, because they are different
+    facts: `scriptless` is a native with no epilogue at all (the bulk of them), `unaligned` is a header that does
+    not end on the export's name, `short` is a payload too small to hold a header, and `empty` is an epilogue with
+    no room for a script in front of it.
+    """
+    pay = data[export["offset"]:export["offset"] + export["size"]]
     n = len(pay)
-    off, last, ok = 0, None, True
+    off, last = 0, None
     for _ in range(6):
         try:
             last, off = read_index(pay, off)
         except IndexError:
-            ok = False
-            break
-    if not ok or last != export["name"]:
-        return None
-    if n >= 10 and pay[n - 10:n - 7] == epilogue:
+            return "short", b"", 0, 0
+    if last != export["name"]:
+        return "unaligned", b"", 0, 0
+    if n >= 10 and pay[n - 10:n - 7] == EPILOGUE:
         end = n - 7
-    elif n >= 12 and pay[n - 12:n - 9] == epilogue:
+    elif n >= 12 and pay[n - 12:n - 9] == EPILOGUE:
         end = n - 9
     else:
-        return None
+        return "scriptless", b"", 0, 0
     start = off + 16
     if start >= end:
+        return "empty", b"", start, end
+    return "ok", pay[start:end], start, end
+
+
+def parsed(export, data, table):
+    """A function's top-level token nodes and the bytes they cover, or None when the payload does not walk."""
+    status, body, _start, _end = locate(export, data)
+    if status != "ok":
         return None
-    data = pay[start:end]
     try:
-        nodes = parse(data, table)
+        nodes = parse(body, table)
     except Refused:
         return None
-    if sum(x["end"] - x["offset"] for x in nodes) != len(data):
+    if sum(x["end"] - x["offset"] for x in nodes) != len(body):
         return None
-    return nodes, data
+    return nodes, body
+
+
+def top_level(pkg, export, table):
+    """A function's top-level token list and the bytes it was parsed from, or None when it does not disassemble."""
+    return parsed(export, pkg.data, table)
 
 
 def flatten(nodes):
@@ -3280,34 +3303,26 @@ def compare_tokens(a, b):
 
 def script_of(pkg, export, table):
     """One function's token stream, or None when the payload does not disassemble."""
-    epilogue = bytes([0x04, 0x0B, 0x47])
-    pay = pkg.data[export["offset"]:export["offset"] + export["size"]]
-    n = len(pay)
-    off, last, ok = 0, None, True
-    for _ in range(6):
-        try:
-            last, off = read_index(pay, off)
-        except IndexError:
-            ok = False
-            break
-    if not ok or last != export["name"]:
-        return None
-    if n >= 10 and pay[n - 10:n - 7] == epilogue:
-        end = n - 7
-    elif n >= 12 and pay[n - 12:n - 9] == epilogue:
-        end = n - 9
-    else:
-        return None
-    start = off + 16
-    if start >= end:
-        return None
-    try:
-        nodes = parse(pay[start:end], table)
-    except Refused:
-        return None
-    if sum(x["end"] - x["offset"] for x in nodes) != end - start:
-        return None
-    return flatten(nodes)
+    got = parsed(export, pkg.data, table)
+    return None if got is None else flatten(got[0])
+
+
+def function_index(path):
+    """Every `Function` export a package owns, keyed by `(owner, name)` -- the comparator's unit of comparison."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
+
+    pkg = Package(path)
+    pkg.read_names()
+    pkg.read_imports()
+    pkg.read_exports()
+    out = {}
+    for e in pkg.exports:
+        if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
+            continue
+        owner = pkg.name(pkg.exports[e["outer"] - 1]["name"])
+        out[(owner, pkg.name(e["name"]))] = e
+    return pkg, out
 
 
 def compare_report(path_a, path_b, table, out=None):
@@ -3317,24 +3332,8 @@ def compare_report(path_a, path_b, table, out=None):
     validated now, and pointed at a recompiled package the day one exists. Comparing a package with itself is the
     integration test that it is wired correctly.
     """
-    sys.path.insert(0, os.path.join(ROOT, "tools"))
-    from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
-
-    def index_of(path):
-        pkg = Package(path)
-        pkg.read_names()
-        pkg.read_imports()
-        pkg.read_exports()
-        out = {}
-        for e in pkg.exports:
-            if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
-                continue
-            owner = pkg.name(pkg.exports[e["outer"] - 1]["name"])
-            out[(owner, pkg.name(e["name"]))] = e
-        return pkg, out
-
-    pkg_a, funcs_a = index_of(path_a)
-    pkg_b, funcs_b = index_of(path_b)
+    pkg_a, funcs_a = function_index(path_a)
+    pkg_b, funcs_b = function_index(path_b)
     shared = sorted(set(funcs_a) & set(funcs_b))
     rows = []
     only_a = sorted(set(funcs_a) - set(funcs_b))
@@ -3368,6 +3367,219 @@ def compare_report(path_a, path_b, table, out=None):
             for row in rows:
                 w.writerow(row)
         print("wrote %s/script_match.csv (%d rows)" % (out, len(rows)))
+    return 0
+
+
+DOC_MARK = ("<!-- generated:matching-baseline -->", "<!-- /generated:matching-baseline -->")
+BASELINE_CSV = os.path.join(ROOT, "inventory", "matching_baseline.csv")
+COLUMNS = ("package", "functions", "scripted", "scriptless", "refused", "operator", "unaligned", "other",
+           "l3", "l2", "control_l3", "control_l2", "control_site")
+# `EFunctionFlags` bits an operator declaration carries: it is serialised with its `PreOperator`, `Operator` and
+# `PostOperator` names in front of the header, which is why the header model cannot place its payload.
+OPERATOR_FLAGS = 0x1000 | 0x2000
+
+
+class _Bytes:
+    """A package whose bytes are a mutation of the original's; the control run below reads only `.data`."""
+
+    def __init__(self, data):
+        self.data = data
+
+
+def operator_decl(pkg, export):
+    """An operator declaration, read from its own tail: `Operator|PreOperator` in the `FunctionFlags` dword.
+
+    The test is applied only to a payload the header refused. A payload that walks is a script whatever its flags
+    say, so this explains a negative instead of reclassifying a positive.
+    """
+    pay = pkg.data[export["offset"]:export["offset"] + export["size"]]
+    if len(pay) < 4:
+        return False
+    return (struct.unpack_from("<I", pay, len(pay) - 4)[0] & OPERATOR_FLAGS) == OPERATOR_FLAGS
+
+
+def grade(pkg, export, table):
+    """One function's script, in the categories the scoreboard counts: scripted, refused, or why there is none."""
+    status, body, _start, _end = locate(export, pkg.data)
+    if status != "ok":
+        return "operator" if status == "unaligned" and operator_decl(pkg, export) else status
+    try:
+        nodes = parse(body, table)
+    except Refused:
+        return "refused"
+    if sum(x["end"] - x["offset"] for x in nodes) != len(body):
+        return "refused"
+    return "scripted"
+
+
+def operand_sites(nodes):
+    """Byte positions of a script that no token starts at -- an operand byte, so flipping it keeps the opcodes.
+
+    A node's span covers its children, so the naive `offset + 1` lands on a nested opcode for any token that
+    carries an expression (`Return` is followed by its operand's own token). Collect every token start first and
+    keep only the positions in between.
+    """
+    starts, spans = set(), []
+
+    def walk(ns):
+        for n in ns:
+            starts.add(n["offset"])
+            spans.append((n["offset"], n["end"]))
+            walk(n["children"])
+
+    walk(nodes)
+    return sorted({p for a, b in spans for p in range(a + 1, b) if p not in starts})
+
+
+def mutation_control(pkg, funcs, table, per_function=4):
+    """Flip one bit in one operand of one function's script: L3 must lose that function and L2 must not move.
+
+    The control is what turns the scoreboard's two columns into two claims on *this* package's bytes instead of
+    one tautology. A package where no candidate site survives is reported as a blank, not as a pass.
+    """
+    for key in sorted(funcs):
+        got = parsed(funcs[key], pkg.data, table)
+        if got is None:
+            continue
+        nodes, _body = got
+        base = funcs[key]["offset"] + locate(funcs[key], pkg.data)[2]
+        sites = operand_sites(nodes)
+        for pos in sites[:per_function]:
+            mut = bytearray(pkg.data)
+            mut[base + pos] ^= 0x01
+            after = script_of(_Bytes(bytes(mut)), funcs[key], table)
+            if after is None:
+                continue
+            c = compare_tokens(flatten(nodes), after)
+            if c["opcodes"] and not c["bytes"]:
+                return "%s.%s+%d" % (key[0], key[1], pos)
+    return ""
+
+
+def baseline_rows(path, table):
+    """One row per package: the denominator, the ceiling, the negatives, and the mutation control."""
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    rows = []
+    for one in files:
+        pkg, funcs = function_index(one)
+        keys = sorted(funcs)
+        counts = collections.Counter(grade(pkg, funcs[k], table) for k in keys)
+        l3 = l2 = 0
+        for key in keys:
+            tokens = script_of(pkg, funcs[key], table)
+            if tokens is None:
+                continue
+            c = compare_tokens(tokens, tokens)
+            l3 += 1 if c["bytes"] else 0
+            l2 += 1 if c["opcodes"] else 0
+        site = mutation_control(pkg, funcs, table)
+        other = counts["short"] + counts["empty"]
+        named = sum(counts[k] for k in ("scripted", "scriptless", "refused", "operator", "unaligned")) + other
+        if named != len(keys):
+            sys.exit("FAIL %s: a grade outside the scoreboard's categories" % os.path.basename(one))
+        rows.append((os.path.basename(one), len(keys), counts["scripted"], counts["scriptless"],
+                     counts["refused"], counts["operator"], counts["unaligned"], other, l3, l2,
+                     l3 - 1 if site else "", l2 if site else "", site))
+    return rows
+
+
+def doc_block(rows):
+    """The page's table, from rows in the artifact's own column order (strings, as `csv` reads them)."""
+
+    def n(i):
+        return sum(int(r[i]) for r in rows if r[i] != "")
+
+    def cells(r):
+        return "| `%s` | %s | %s | %s | %s | %s | %s | %s | %s |" % (
+            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[8],
+            ("`%s` L3 %s, L2 %s" % (r[12], r[10], r[11])) if r[12] else "—")
+
+    lines = ["",
+             "**%d package(s), %s `Function` export(s): %s with a script, %s scriptless, %s refused, "
+             "%s operator, %s unaligned%s.**"
+             % (len(rows), n(1), n(2), n(3), n(4), n(5), n(6), (", %s other" % n(7)) if n(7) else ""),
+             "",
+             "| package | functions | scripted | scriptless | refused | operator | unaligned | L3 ceiling | control |",
+             "|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+    for r in rows:
+        lines.append(cells(r))
+    lines.append("| **total** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | %d of %d package(s) |"
+                 % (n(1), n(2), n(3), n(4), n(5), n(6), n(8),
+                    sum(1 for r in rows if r[12]), len(rows)))
+    return "\n".join(lines)
+
+
+def replace_block(text, block):
+    begin, end = DOC_MARK
+    i, j = text.find(begin), text.find(end)
+    if i < 0 or j <= i:
+        sys.exit("document has no %s ... %s block" % DOC_MARK)
+    return text[: i + len(begin)] + block + "\n" + text[j:]
+
+
+def emit_doc(rows, write_doc=None, check_doc=None):
+    path = write_doc or check_doc
+    block = doc_block(rows)
+    with open(path, encoding="utf-8") as fh:
+        current = fh.read()
+    fresh = replace_block(current, block)
+    if check_doc:
+        if fresh != current:
+            print("FAIL %s: the generated block is stale" % path)
+            return 1
+        print("ok   matching-baseline: %s matches its rows" % path)
+    else:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(fresh)
+        print("ok   matching-baseline: wrote %s" % path)
+    return 0
+
+
+def read_baseline(path):
+    if not os.path.exists(path):
+        sys.exit("matching-baseline: %s does not exist" % path)
+    rows = [(r["package"], r["functions"], r["scripted"], r["scriptless"], r["refused"], r["operator"],
+             r["unaligned"], r["other"], r["l3"], r["l2"], r["control_l3"], r["control_l2"], r["control_site"])
+            for r in csv.DictReader(open(path))]
+    if not rows:
+        sys.exit("matching-baseline: %s holds no rows" % path)
+    return rows
+
+
+def baseline_report(path, table, out=None, write_doc=None, check_doc=None, from_csv=BASELINE_CSV):
+    """PLAN 3.8's scoreboard: per package, what a rebuild must match and what the comparator can grade today.
+
+    Three facts stay in three columns. `functions` is the denominator -- every `Function` export the package owns.
+    `scripted` is the ceiling -- the most a rebuild could ever be graded on, because a payload the walker does not
+    read cannot be compared. The negatives split the rest: `scriptless` natives, `refused` walks and `unaligned`
+    headers. `l3`/`l2` are a package compared with itself, so they equal `scripted` by construction: they are the
+    column labels a rebuild fills in, not a match rate, and the mutation control (one bit flipped inside one
+    operand: L3 loses exactly that function, L2 does not move) is what makes them two claims rather than one.
+    """
+    if not path:
+        return emit_doc(read_baseline(from_csv), write_doc, check_doc)
+    rows = baseline_rows(path, table)
+    print("%-20s %6s %9s %10s %8s %8s %9s %5s %6s  %s"
+          % ("package", "fns", "scripted", "scriptless", "refused", "operator", "unaligned", "other", "L3",
+             "control"))
+    for r in rows:
+        print("%-20s %6s %9s %10s %8s %8s %9s %5s %6s  %s"
+              % (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[12] or "-"))
+    total = [sum(int(r[i]) for r in rows) for i in (1, 2, 3, 4, 5, 6, 7, 8)]
+    print("%-20s %6d %9d %10d %8d %8d %9d %5d %6d  %d/%d controlled"
+          % (("total",) + tuple(total) + (sum(1 for r in rows if r[12]), len(rows))))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        dest = os.path.join(out, "matching_baseline.csv")
+        with open(dest, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(COLUMNS)
+            for r in rows:
+                w.writerow(r)
+        print("wrote %s (%d package(s))" % (dest, len(rows)))
+    if write_doc or check_doc:
+        return emit_doc(rows, write_doc, check_doc)
     return 0
 
 
@@ -3819,6 +4031,12 @@ def main():
                          "`drive.py --step=brk=` searches a RAM dump for (docs/XEMU.md)")
     ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
                     help="compare two packages function by function: bytes, opcode sequence, or neither")
+    ap.add_argument("--baseline", metavar="PACKAGE_OR_SYSTEM", help="PLAN 3.8's scoreboard: per package, how many "
+                    "functions a rebuild must match and how many the comparator can grade (docs/MATCHING.md)")
+    ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
+    ap.add_argument("--check-doc", metavar="PATH", help="fail if docs/MATCHING.md's block is stale (in `make ci`)")
+    ap.add_argument("--from-csv", metavar="PATH", default=BASELINE_CSV,
+                    help="with --write-doc/--check-doc and no --baseline: read this artifact instead")
     ap.add_argument("--native-calls", metavar="PATH",
                     help="what the opcodes above 0x5f call: each index read against the caller's native chain")
     ap.add_argument("--calls", metavar="PATH",
@@ -3893,6 +4111,8 @@ def main():
         return class_refs_report(args.class_refs, Table(), args.out)
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
+    if args.baseline or args.write_doc or args.check_doc:
+        return baseline_report(args.baseline, Table(), args.out, args.write_doc, args.check_doc, args.from_csv)
     if args.sizefield:
         return sizefield_report(args.sizefield, args.lists, args.residue_csv)
     if args.diverge:
