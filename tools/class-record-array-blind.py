@@ -29,6 +29,16 @@ far end -- is the control for whether the extra room is doing work or just fitti
 
 The control is the 1,399 rows the group parse resolved uniquely: the walk must reproduce that same head.
 
+**The forward read answers where the backward walk is bounded.** On the 207 blind rows whose head carries no
+sixteen-byte front, the reason a head is missing is either that the count sits outside the 40-byte window or that an
+element reference is outside the package's tables -- both are bounds of the backward read, not measurements. So the
+same grid is walked forward: every position in `[prefix + 42, block_start)` is read as a count, the elements are
+walked *forward* from it (compact reference then two dwords each), and the walk is accepted when it ends on the tags
+(within the group's 6-11 bytes). That turns "not in the window" into a count position. The count is read twice, as a
+compact index and as a raw 32-bit dword (`fr_*`), and a third pass admits references outside the package's tables
+(`fl_*`), each against its own null (the same walk aimed one byte past the block start). The shipped backward answer
+is kept in the same artifact so the two reads are compared row by row.
+
     python3 tools/class-record-array-blind.py --dump $SG1_DUMP --class AmbientCreatures.TransientAmbientPawn
     python3 tools/class-record-array-blind.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-record-array-blind.py --report
@@ -68,12 +78,17 @@ MAX_REF = 5
 DWORDS = 8               # the two raw dwords every element carries after its reference
 SEARCH_ARTIFACT = "class_record_array_search.csv"
 ARTIFACT = "class_record_array_blind.csv"
+GAPMAX = 11              # the record's closing group costs 6-11 bytes: an element walk may end this far short
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "search_cands", "known_head",
            "known_residue", "census_head", "heads", "offs", "head", "off", "count", "depth", "head_off",
            "max_depth", "counts_seen", "stream_close", "null_heads", "matched", "census_matched",
            "heads_z16", "head_z16", "census_z16",
            "wide_heads", "wide_z16", "wide_head", "wide_off", "wide_count", "wide_head_off", "wide_null",
-           "wide_census_matched", "verdict"]
+           "wide_census_matched", "verdict",
+           "block_len", "block_props", "block_reason", "gap_scanned",
+           "fw_heads", "fw_fits", "fw_tight", "fw_head", "fw_off", "fw_count", "fw_gap", "fw_null", "fw_offs",
+           "fr_heads", "fr_tight", "fr_head", "fr_off", "fr_count", "fr_null", "fr_offs",
+           "fl_heads", "fl_head", "fl_off", "fw_census_matched", "fw_matched"]
 
 
 def in_tables(v, nimp, nex):
@@ -172,6 +187,51 @@ def scan(data, block, prefix_end, nimp, nex, back=BACK):
     return found, max_depth, len(saw), len(null_heads), null_depth
 
 
+def _fwd_elements(data, cur, n, nimp, nex, loose):
+    """Walk `n` elements forward from `cur`; returns the end offset, or None if a reference will not decode."""
+    for _ in range(n):
+        if cur >= len(data):
+            return None
+        try:
+            v, e = crf.read_index(data, cur)
+        except IndexError:
+            return None
+        if not 1 <= e - cur <= MAX_REF:
+            return None
+        if not loose and not in_tables(v, nimp, nex):
+            return None
+        cur = e + DWORDS
+    return cur
+
+
+def forward_scan(data, prefix_end, block, nimp, nex, raw=False, loose=False, target=None):
+    """Every count position in [prefix + 42, block) whose element walk ends on `target` (default: the block start)."""
+    tgt = block if target is None else target
+    lo = prefix_end + DOC_OFFSET
+    out, fits = [], 0
+    for p in range(lo, block):
+        if raw:
+            if p + 4 > len(data):
+                continue
+            n, clen = int.from_bytes(data[p:p + 4], "little"), 4
+        else:
+            try:
+                n, e = crf.read_index(data, p)
+            except IndexError:
+                continue
+            clen = e - p
+        if not 1 <= n <= MAX_COUNT:
+            continue
+        end = _fwd_elements(data, p + clen, n, nimp, nex, loose)
+        if end is None:
+            continue
+        gap = tgt - end
+        if 0 <= gap <= GAPMAX:
+            fits += 1
+            out.append((p, n, gap))
+    return out, fits
+
+
 def measure(data, prefix_end, block, nnames, nimp, nex, pkg):
     row = {"payload": len(data), "prefix_end": prefix_end, "block_start": block,
            "heads": 0, "offs": "", "head": "", "off": "", "count": "", "depth": "", "head_off": "",
@@ -185,9 +245,37 @@ def measure(data, prefix_end, block, nnames, nimp, nex, pkg):
     row["null_heads"] = null_heads
     try:
         _props, send, reason = ps.read_block(data[block:], pkg, False)
+        row["block_len"] = send
+        row["block_props"] = len(_props)
+        row["block_reason"] = reason
         row["stream_close"] = int(reason == "None" and block + send == len(data))
     except Exception:
         row["stream_close"] = 0
+        row["block_len"] = ""
+        row["block_props"] = ""
+        row["block_reason"] = "error"
+    lo = prefix_end + DOC_OFFSET
+    row["gap_scanned"] = max(0, block - lo)
+    fw, row["fw_fits"] = forward_scan(data, prefix_end, block, nimp, nex)
+    row["fw_null"] = len(forward_scan(data, prefix_end, block, nimp, nex, target=block + 1)[0])
+    row["fw_heads"] = len(fw)
+    row["fw_offs"] = " ".join(str(p) for p, _n, _g in fw)
+    if fw:
+        best = min(fw, key=lambda f: f[2])          # the walk that ends closest to the tags: a count that fits short
+        row.update({"fw_head": best[0], "fw_off": best[0] - lo, "fw_count": best[1], "fw_gap": best[2],
+                    "fw_tight": sum(1 for _p, _n, g in fw if g == 0)})
+    fr, _ = forward_scan(data, prefix_end, block, nimp, nex, raw=True)
+    row["fr_heads"] = len(fr)
+    row["fr_null"] = len(forward_scan(data, prefix_end, block, nimp, nex, raw=True, target=block + 1)[0])
+    row["fr_offs"] = " ".join(str(p) for p, _n, _g in fr)
+    if fr:
+        best = min(fr, key=lambda f: f[2])
+        row.update({"fr_head": best[0], "fr_off": best[0] - lo, "fr_count": best[1],
+                    "fr_tight": sum(1 for _p, _n, g in fr if g == 0)})
+    fl, _ = forward_scan(data, prefix_end, block, nimp, nex, loose=True)
+    row["fl_heads"] = len(fl)
+    if fl:
+        row.update({"fl_head": fl[0][0], "fl_off": fl[0][0] - lo})
     wide, _wd, _wc, _wn, _wnull = scan(data, block, prefix_end, nimp, nex, WIDE)
     wide_null = len(walk(data, block + WIDE + 1, prefix_end, nimp, nex)[0])
     row["_wide"] = wide
@@ -258,8 +346,10 @@ def sweep(args):
             if cens is not None:
                 row["census_matched"] = int(any(p == cens for _o, p, _n, _z in found))
                 row["census_z16"] = int(any(p == cens and z for _o, p, _n, z in found))
+                row["fw_census_matched"] = int(str(cens) in row["fw_offs"].split())
             if head is not None:
                 row["matched"] = int(any(p == head for _o, p, _n, _z in found))
+                row["fw_matched"] = int(str(head) in row["fw_offs"].split())
                 if row["verdict"] == "no-head":
                     row["verdict"] = "no-head"
                 elif row["matched"]:
@@ -305,6 +395,43 @@ def report(rows):
                   % collections.Counter(o for r in found for o in r["offs"].split()).most_common(8))
             print("    walk depth at the head: median %s; heads per row: %s"
                   % (_median([int(r["depth"]) for r in found]), collections.Counter(int(r["heads"]) for r in found).most_common(5)))
+        fwn = [r for r in rs if int(r["fw_heads"] or 0)]
+        print("    forward scan (a count in [prefix+%d, block) whose element walk ends on the block start, gap 0-%d): "
+              "a head on %d of %d (%s); fits per row %s"
+              % (DOC_OFFSET, GAPMAX, len(fwn), len(rs), _share(len(fwn), len(rs)),
+                 collections.Counter(int(r["fw_heads"] or 0) for r in rs).most_common(6)))
+        if fwn:
+            print("      count position past prefix+%d: %s"
+                  % (DOC_OFFSET, collections.Counter(int(r["fw_off"]) for r in fwn).most_common(10)))
+            print("      fits that end exactly on the block start: %s"
+                  % collections.Counter(int(r.get("fw_tight") or 0) for r in rs).most_common(6))
+            print("      counts read there: %s; gap to the block start: %s"
+                  % (collections.Counter(int(r["fw_count"]) for r in fwn).most_common(6),
+                     collections.Counter(int(r["fw_gap"]) for r in fwn).most_common(4)))
+            print("      count positions scanned per row: median %s"
+                  % _median([int(r["gap_scanned"] or 0) for r in rs]))
+        print("      fits per row: mean %.2f at the block start against mean %.2f one byte past it (the null)"
+              % (sum(int(r["fw_heads"] or 0) for r in rs) / float(len(rs)),
+                 sum(int(r["fw_null"] or 0) for r in rs) / float(len(rs))))
+        frn = [r for r in rs if int(r.get("fr_tight") or 0)]
+        fln = [r for r in rs if int(r["fl_heads"] or 0)]
+        print("      raw 4-byte count on %d of %d; references outside the package tables admitted (loose) on %d"
+              % (len(frn), len(rs), len(fln)))
+        if label == "control":
+            print("      the forward head is the group parse's head on %d of %d (%s)"
+                  % (sum(int(r["fw_matched"] or 0) for r in rs), len(rs),
+                     _share(sum(int(r["fw_matched"] or 0) for r in rs), len(rs))))
+        if label == "blind":
+            nos = [r for r in rs if not int(r["heads"] or 0)]
+            gained = [r for r in nos if int(r["fw_heads"] or 0)]
+            print("      of the %d blind rows the backward walk finds nothing on, the forward scan answers %d (%s); "
+                  "the same rows' null fits on %d, mean fits %.2f against mean null %.2f"
+                  % (len(nos), len(gained), _share(len(gained), len(nos)),
+                     sum(1 for r in nos if int(r["fw_null"] or 0)),
+                     sum(int(r["fw_heads"] or 0) for r in nos) / float(len(nos) or 1),
+                     sum(int(r["fw_null"] or 0) for r in nos) / float(len(nos) or 1)))
+            print("      blocks that close on the payload end: %d of %d"
+                  % (sum(int(r["stream_close"] or 0) for r in rs), len(rs)))
         if label == "control":
             print("    the group parse's head is reproduced on %d of %d (%s)"
                   % (sum(int(r["matched"] or 0) for r in rs), len(rs),
@@ -343,6 +470,16 @@ def report(rows):
     wide_nulls = [r for r in allrows if int(r["wide_null"] or 0)]
     print("  the widened window's null (a start past its own far end) finds a head on %d of %d (%s)"
           % (len(wide_nulls), len(allrows), _share(len(wide_nulls), len(allrows))))
+    fnull = [r for r in allrows if int(r["fw_null"] or 0)]
+    print("  the forward scan's null (the same walk aimed one byte past the block) fits on %d of %d (%s)"
+          % (len(fnull), len(allrows), _share(len(fnull), len(allrows))))
+    frnull = [r for r in allrows if int(r["fr_null"] or 0)]
+    print("  the raw-count forward scan's null fits on %d of %d (%s)"
+          % (len(frnull), len(allrows), _share(len(frnull), len(allrows))))
+    blocks = [r for r in allrows if r.get("block_len") not in ("", None)]
+    print("  the defaults block reads to a terminator on %d of %d; median block %s bytes, %s properties"
+          % (len(blocks), len(allrows), _median([int(r["block_len"]) for r in blocks]),
+             _median([int(r["block_props"]) for r in blocks])))
     closes = [r for r in allrows if int(r["stream_close"] or 0)]
     print("  the defaults stream closes on the payload end at the block start on %d of %d (%s)"
           % (len(closes), len(allrows), _share(len(closes), len(allrows))))
@@ -411,6 +548,9 @@ def self_check():
     assert int(row["off"] or 0) in range(0, BACK + 1), row
     assert row["verdict"] == "unique", row
     assert row["matched"] == "", row
+    # the same head read forward: the count's own position is in the scanned gap, and its walk ends on the block
+    assert str(head) in row["fw_offs"].split(), row
+    assert int(row["fw_tight"] or 0) >= 1, row      # the true head is one that ends exactly on the tags
 
     # a group of 7 bytes between the array and the tags: the walk must start 7 bytes back
     group = compact(2) + compact(1) + compact(2) + compact(3) + compact(7) + compact(0)
@@ -418,6 +558,9 @@ def self_check():
     row2, found2 = measure(payload2, len(prefix), len(payload2), 64, 64, 4096, None)
     assert any(p == head and n == 3 for _o, p, n, _z in found2), found2
     assert any(o == len(group) and p == head for o, p, _n, _z in found2), found2
+    # a group costs bytes, so the same head fits only if a gap up to the group's width is admitted
+    assert str(head) in row2["fw_offs"].split(), row2
+    assert int(row2["fw_gap"] or 0) <= GAPMAX, row2
 
     # nothing to find: the count says 4 and only three elements are there
     payload3 = prefix + prelude + bytes(30) + compact(4) + elems

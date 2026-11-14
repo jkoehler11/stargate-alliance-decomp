@@ -3576,3 +3576,24 @@ rows that lack the front do not gain one. **What is still open**, therefore, is 
 content: the **207** blind rows whose count is not in `[prefix + 42, prefix + 42 + 40)` or whose element reference is
 outside the package's tables, of which 41 have no element boundary at all immediately in front of the tags. Nothing
 here needs a boot or a decompile.
+
+**2026-11-13 (twenty-fifth): the missing count is not outside the window, and out-of-table references are not the
+block -- read forward, the walk fits one byte past the tags as often as at them.** The twenty-fourth entry named two
+explanations for the 207 blind rows with no sixteen-byte front, both of them bounds of the backward read: the count is
+outside `[prefix + 42, prefix + 42 + 40)`, or an element reference is outside the package's tables.
+`tools/class-record-array-blind.py` now also reads each row forward: every position in `[prefix + 42, block_start)` is
+taken as a count, its elements are walked forward (compact reference of 1-5 bytes inside the tables plus two dwords),
+and the walk is accepted when it ends on the tags within the group's 0-11 bytes; the count is read again as a raw
+dword, and a third pass admits references outside the tables. The forward read answers on **1,623 of 1,629 control
+rows (99.6%)** with the group parse's head among the fits on 1,529, and on **482 of 575 blind rows (83.8%)** -- but its
+null, the same walk aimed one byte past the block start, fits on **2,100 of 2,204 rows (95.3%)** with mean fits per row
+2.06 against 2.05 at the block (1.86 against 1.76 blind), so the 482 are chance fits and the read locates nothing. On
+the 146 rows the backward walk finds nothing at all, the forward read's 54 answers are matched by its null on 65 (mean
+0.71 against 0.90). Admitting out-of-table references gains 5 blind rows and 1,626 of 1,629 control rows fit without
+admitting any, so the tables were never the constraint; the raw-dword count answers on 33 blind rows against a 59.9%
+null. The defaults block is not in doubt either: it reaches its `None` terminator on all 2,204 rows (median 34 bytes,
+4 properties) and closes on the payload's last byte on 2,113 (485 of the 575 blind ones). **What is still open** is
+therefore neither the window nor the tables: on the 207 rows no count-plus-grid exists at *any* position in the gap,
+so the record's extent has to come from a bound that is not a payload fit -- the writer side, `UStruct::Serialize`
+(`0x000392b0`) and `UClass::Serialize` (`0x0003a800`), which is the same route U17 left open. Nothing here needs a
+boot or a decompile.
