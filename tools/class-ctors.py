@@ -310,6 +310,65 @@ def apply_stale(stale, overrides_path, functions_path):
     return renamed, fixed, len(added)
 
 
+def multi_store_report(root):
+    """Every body that installs more than one class table: the store order and what each step is.
+
+    CSVs and the symbol map only, so this answers with no dump. The class map cites the parent-then-own
+    shape for `0x004cfc88` (`name_rule base-store-ancestor`: "2 classes (FireTexture, IceTexture) store
+    it before their own table"), and that is what those two bodies do -- but they are not the whole
+    population: four more bodies install three to eight tables, one of them `BoolProperty` four times.
+    So an installer body is not always one class's constructor, which is why `stale_names` exempts every
+    multi-store body instead of asserting the parent relation for it.
+
+    `mark` is the relation of each store to the one before it: `parent` (`classes.csv` says the later
+    table's class extends the earlier one's), `repeat` (the same table again), `unnamed` (either table
+    has no class in the map) or `other`.
+    """
+    tables = {}
+    with open(os.path.join(root, "inventory/xbe_class_table_names.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            tables[int(r["table_va"], 16)] = (r.get("class") or "").strip()
+    sup = {}
+    with open(os.path.join(root, "inventory/classes.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            sup[r["class"]] = (r.get("super") or "").strip()
+    functions = {}
+    with open(os.path.join(root, "symbols/xbox_functions.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                functions[int(r["address"], 16)] = r["name"]
+            except ValueError:
+                continue
+    by_fn = {}
+    with open(os.path.join(root, "inventory/class_constructors.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            by_fn.setdefault(int(r["function_va"], 16), []).append(
+                (int(r["store_va"], 16), int(r["table_va"], 16)))
+    out = []
+    for fn, stores in sorted(by_fn.items()):
+        seq = [table for _va, table in sorted(stores)]
+        distinct = []
+        for table in seq:
+            if table not in distinct:
+                distinct.append(table)
+        if len(distinct) < 2:
+            continue
+        marks = []
+        for i in range(1, len(seq)):
+            a, b = tables.get(seq[i - 1], ""), tables.get(seq[i], "")
+            if not a or not b:
+                marks.append("unnamed")
+            elif a == b:
+                marks.append("repeat")
+            elif sup.get(b) == a:
+                marks.append("parent")
+            else:
+                marks.append("other")
+        out.append({"function_va": fn, "name": functions.get(fn, ""), "stores": len(stores),
+                    "tables": seq, "marks": marks})
+    return out
+
+
 def installer_names_join(root):
     """The symbol map's class names against the table each body installs -- CSVs only, no image.
 
@@ -474,6 +533,23 @@ def self_check():
 def main():
     if "--check" in sys.argv[1:]:
         return self_check()
+    if "--multi-store" in sys.argv[1:]:
+        rows = multi_store_report(ROOT)
+        tables = {}
+        with open(os.path.join(ROOT, "inventory/xbe_class_table_names.csv"), newline="") as fh:
+            for r in csv.DictReader(fh):
+                tables[int(r["table_va"], 16)] = (r.get("class") or "").strip()
+        print("%d bodies install more than one class table" % len(rows))
+        for row in rows:
+            seq = " ".join("%s(%s)" % (tables.get(t) or "?" + hex(t),
+                                       row["marks"][i - 1] if i else "first")
+                           for i, t in enumerate(row["tables"]))
+            print("  %#010x %-22s %d stores, %d tables: %s"
+                  % (row["function_va"], row["name"] or "-", row["stores"],
+                     len({t for t in row["tables"]}), seq))
+        parents = sum(1 for row in rows if row["marks"] and set(row["marks"]) == {"parent"})
+        print("  %d of them store a parent's table before their own and nothing else" % parents)
+        return 0
 
     ap = argparse.ArgumentParser()
     ap.add_argument("xbe", nargs="?", help="DUMP/default.xbe")
