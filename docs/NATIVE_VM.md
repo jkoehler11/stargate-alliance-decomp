@@ -504,6 +504,27 @@ string or a prologue.
 The two save-path natives U5 is waiting on are now locatable with no boot: `intAGameInfoexecSavePackage` is
 `0x00298bb0` and `intAGameInfoexecLoadSaveGame` is `0x00149370`.
 
+#### The two body tables, joined: 768 bodies, and the 13 records the text never declares (measured 2026-11-15)
+
+`inventory/native_bodies.csv` (`tools/native-mark.py`) and `inventory/native_targets.csv` name the same bodies from
+two directions -- the first iterates the shipped **declarations**, the second the image's **records** -- and nothing
+had ever compared them. `native-mark.py --check` does now, dump-free:
+
+| measurement | value |
+|---|---|
+| distinct body addresses the marker table names | **768**, and all 768 are registration-table bodies |
+| their spread inside the registration table's | 768 of 883, **0 foreign** |
+| registered names with no marker row | **115**: 13 stated by `natives.csv`, 102 stated by nothing |
+
+The 13 are one family, all `Core.Object` and all the compiler's per-signature operator records: `AddAdd_Int`,
+`AddAdd_PreInt`, `AddAdd_Byte`, `AddAdd_PreByte`, `SubtractSubtract_Int` / `_PreInt` / `_Byte` / `_PreByte`,
+`Subtract_PreInt`, `Subtract_PreFloat`, `Subtract_PreVector`, `Complement_PreInt`, `Not_PreBool`. The text declares
+the operators themselves (`++`, `--`, `-`, `~`), not these expansions, so nothing gives them a marker; the other 102
+are records no declaration names at all (`Object`'s `LocalVariable`/`InstanceVariable` twins and the `_StrStr` string
+operators). So `natives.csv`'s **797 rows are records, not declarations** -- 784 the text declares and 13 it does
+not -- and a table written from declarations will always be 13 short of it. That is the same distinction
+`inventory/native_tokens.csv` draws when it files those rows under basis `operator-expansion`.
+
 **A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
 image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one
 character, so every index after the first pair drifts: **all 769** non-empty addresses in

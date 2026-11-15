@@ -9752,6 +9752,28 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the two body tables agree on all 768 bodies, and 13 records have no declaration to mark)
+
+- **Nothing had ever compared the marker table with the registration table, and the join is clean in the direction
+  that matters.** `inventory/native_bodies.csv` (`tools/native-mark.py`) is written from the shipped *declarations*
+  and `inventory/native_targets.csv` (`tools/native-table.py`) from the image's *records*; `native-mark.py --check`
+  now reads the second (dump-free) and requires every `body_va` the first names to be one of its bodies: **768
+  distinct body addresses, all 768 registration-table bodies (of 883), 0 foreign.**
+- **The difference the other way is a split, not a hole: 115 registered names have no marker row, 13 stated by
+  `natives.csv` and 102 stated by nothing.** The 13 are one family, all `Core.Object`, all the compiler's
+  per-signature operator records -- `AddAdd_Int`, `AddAdd_PreInt`, `AddAdd_Byte`, `AddAdd_PreByte`,
+  `SubtractSubtract_Int`/`_PreInt`/`_Byte`/`_PreByte`, `Subtract_PreInt`/`_PreFloat`/`_PreVector`,
+  `Complement_PreInt`, `Not_PreBool`. The text declares `++`/`--`/`-`/`~` and never these expansions, so nothing can
+  mark them; the other 102 are the `Object` twins (`LocalVariable`, `InstanceVariable`, `_StrStr` operators) no
+  declaration names. So `natives.csv`'s 797 rows are **records**: 784 the text declares, 13 it does not -- which is
+  the same basis `inventory/native_tokens.csv` already uses (`operator-expansion`), now measured from the other side.
+- Tool (`tools/native-mark.py`: `bodies_join` and its two-way report in `--check`, the docstring paragraph) +
+  `docs/NATIVE_VM.md` (*The two body tables, joined*). No artifact regenerates: the check reads three committed
+  tables and writes nothing, so `make ci`'s `native-mark` row is the gate. No boot.
+- **Next measurement:** the 102 unstated `Object` records are the class's per-signature twins; the read that would
+  type them is `docs/NATIVE_CLASSES.md`'s operator table against `native_tokens.csv`'s `operator-expansion` rows,
+  which carries both halves already.
+
 ### Execution notes (2026-11-15, the channel table cannot see whether a row is a declaration, and one of its fifteen is not)
 
 - **The join asked which channel carries a row and never whether the row is a native.** `tools/native-channels.py`
