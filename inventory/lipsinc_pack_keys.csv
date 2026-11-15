@@ -1,0 +1,10 @@
+kind,pack,size,keys,distinct_keys,group,trailer,first_key,first_key_off,trailer_off,gap_min,gap_med,gap_max,wav_hits,voice_pack,voice_hits,content_hits,residue_runs,residue_words,residue_expr
+pack,System/LIPSincData/Controllers/grey.lad,40650,3,3,AlkeshBomber,"BN-Head,undefined",m15_03_e_grey,0x3668,0x9ea7,2889,7114,11339,3,,0,0,345,4,0
+pack,System/LIPSincData/Controllers/sg1_crew_carter.lad,1301681,608,608,AlkeshBomber,"BN-Head,undefined",ca_firing_ge_s_02,0xaea8,0x13dc8e,403,1165,19642,202,Carter.uax,406,351,7324,275,4
+pack,System/LIPSincData/Controllers/sg1_crew_jackson.lad,1068447,485,485,AlkeshBomber,"BN-Head,undefined",ja_movforord_ge_s_02,0xa14c,0x104d7c,333,1270,14913,228,Jackson.uax,251,224,6581,220,3
+pack,System/LIPSincData/Controllers/sg1_crew_oneill.lad,1832579,786,786,AlkeshBomber,"BN-Head,undefined",on_movforord_ge_s_04,0xd36b,0x1bf660,387,1359,18367,493,Oneill.uax,293,268,11393,365,2
+pack,System/LIPSincData/Controllers/sg1_crew_tealc.lad,650509,344,344,AlkeshBomber,"BN-Head,undefined",te_friendfire_ge_s_02,0xb8e0,0x9ecea,387,1257,12861,79,Tealc.uax,257,240,3624,189,4
+pack,System/LIPSincData/JAnderson.lad,34140,3,2,AlkeshBomber,"BN-Head,undefined",Beware,0x3668,0x8539,7580,7692,7804,0,,0,0,395,5,0
+pack,System/LIPSincData/sg1_crew_carter.lad,27378,2,2,AlkeshBomber,"BN-Head,undefined",Beware,0x3668,0x6acf,7596,7596,7596,0,SG1_sounds.uax,1,1,349,3,0
+pack,System/LIPSincData/sg1_crew_jackson.lad,13963,0,0,,"BN-Head,undefined",,,0x3668,,,,0,,0,0,243,0,0
+census,,,2231,2228,AlkeshBomber,"BN-Head,undefined",,,,,,,1005,,,1084,30254,1061,13
