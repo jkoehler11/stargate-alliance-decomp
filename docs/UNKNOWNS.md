@@ -3,7 +3,7 @@
 Things this project does not know yet, with the evidence that raised the question and what would
 settle it. A guess does not belong here either — only a gap that is being tracked.
 
-## U1. 523 of the 797 `native()` declarations serialise no index
+## U1. 523 of the 797 `native()` declarations serialise no index — answered: they are bound by name
 
 **Observed.** `inventory/natives.csv` records 797 native functions across 18 packages. 274 carry an
 explicit index, all 274 distinct (`inventory/native_names.csv`), and 273 of those indices have one
@@ -16,25 +16,20 @@ from the serialised `UFunction` (`src/Core/Classes/UFunction.cs`, `NativeToken =
 in `Deserialize`), and it reads the right value for the 274 indexed declarations in the same
 packages, so the offset is correct for build 130/4. The zeros are what the build shipped.
 
-**Why it matters.** A declaration with no index claims no dispatch slot, so once the runtime table is
-read (U7) those 523 still cannot be named from it — they are reached some other way, or not through
-it at all.
-
-**Hypotheses, none confirmed.**
-
-1. They are declared `native` without a number and the compiler resolved their call sites to a
-   per-function C++ pointer (`EX_FinalFunction` with the `UFunction` reference) instead of a
-   `GNatives` index.
-2. They are the script-to-C++ (`ucpp`) classes: Perception compiled hot script classes to C++, and
-   the declaration survives as an interface with no VM entry (the project already expects this for
-   `Pawn` and `ShadowProjector`, PLAN risk 4).
-3. This build writes 0 into the index field for declarations that did not say `native(N)`, and the
-   real binding is by name at engine start.
-
-**What would settle it.** Disassemble a script function that calls one of them (`Actor.KWake` is a
-good target: `Engine.Actor` has dozens of callers) and read the emitted opcode and operand — an
-index opcode settles hypothesis 3, a function reference points at 1 or 2. Cross-check with 4.7
-(the `.ucpp` bodies) if a C++ implementation exists for the same class.
+**Which of the three hypotheses the evidence chose.** The candidates were: (1) a direct `UFunction`
+reference (`EX_FinalFunction`) instead of a `GNatives` index, (2) the script-to-C++ `ucpp` classes,
+whose declaration survives with no VM entry, and (3) a zero index field with the real binding done
+by name at engine start. **The third is what the build does, and both others are false for these
+rows.** `UFunction::Func`'s filler (`0x0003a030`, `Core\Src\UnClass.cpp`) has an explicit branch for
+`FUNC_Native` with `iNative == 0`: it formats `"int%sexec%s"` from the class's C++ name and the
+function's own name, looks that up, and stores the first dword of the result as `Func`. An
+index-less `native()` therefore claims no slot because it is bound *by name*, which is also why no
+reading of `GNatives` will ever name one of them. (1) and (2) are answered by the same read: the
+binding is one class-load-time fill of `Func`, the field an indexed declaration's slot also writes, so
+there is no separate per-function pointer for a call site to carry; and **508 of the 523** names match
+an `int<prefix><Class>exec<Function>` literal in the image (883 of them in one 440.8 KB span), so the
+C++ side exists rather than having been compiled away into an interface. The only declarations with no
+C++ side at all are in the two editor packages, and those are unbound rather than `ucpp`.
 
 **Cross-checked 2026-10-26 against the other half.** `tools/native-reconcile.py` (`inventory/native_reconcile.csv`,
 `docs/NATIVE_CLASSES.md`) compares these records with the `native()` declarations in the shipped script: 256
@@ -60,6 +55,20 @@ declarations have a name, including **508 of the 523** without an index; all 15 
 in the Xbox image. The twelve misses that carry an index are `Core.Object` string operators spelled `_StrStr` in script
 and `_StringString` in the pool, so they need no name. The 114 pool names no declaration matches are all `UObject`:
 `Iterator`, `HighNative0`..`HighNative15`, and those twins. Depth: `docs/NATIVE_VM.md`, *What the two `%s` hold*.
+
+**The residual is a named population, not a gap in the binding (measured 2026-11-15 from the committed
+channel census).** The 523 split by channel into **467 `stub+record` + 41 `record-only` + 15 `unbound`**,
+and that split coincides exactly with the names: **all 508** rows a stub or a record carries have a
+binder name and **all 15** without either have none, so the two measurements are one population read
+two ways. The 15 are **13 `Editor.BrushBuilder`, 1 `Editor.MaterialFactory.ConsoleCommand` and 1
+`UPreview.UPreviewSkinnedButton.SetRenderInfo`**, and the record check makes that 14 declarations: the
+`UPreview` row reads `0x00020002` (`Defined;Public`) in its own payload, i.e. a script function with a
+body, not a native. So **523 = 508 bound by name + 14 unbound editor declarations + 1 artifact row**,
+and every unbound one sits in a package `Default.ini`'s `EditPackages` loads and the shipped game never
+does. The pool's 114 names that match no declaration are all `Core.Object` (`Iterator`,
+`HighNative0`..`HighNative15` and their twins), not editor code -- so the editor natives are absent
+from the image rather than hidden in it. Depth: `docs/NATIVE_VM.md` (*The name side: 467 stubs that
+push `-1`*, *The 55 without a stub*).
 
 **Status.** Answered. The index question is settled (the 523 claim no slot), the binding route is the binder at
 `0x0003a030`, and the shipped prototype resolves every game-side declaration because the names it looks up are in the
