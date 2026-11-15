@@ -605,8 +605,32 @@ other 38 rows.
       sequence, so its start needs no name; `TeamScriptedSequence` is a pure sequence, so 8,716 actions hang on a
       start the package does not carry -- an AI order or a native call, which a T3D read cannot decide and a runtime
       trace would. What the fires land on is mostly *props*: `Mover` 1,603, `IntelligentSpawner` 903, `Emitter` 815,
-      `MovementMarker` 722, `ScriptedTrigger` 646. What is left inside 5.2 is the per-element order within an
-      `Actions` array and the sleeve of starts no name describes.
+      `MovementMarker` 722, `ScriptedTrigger` 646.
+
+      **The order is the array's, and the starts are in the classes -- 5.2's two open halves close together**
+      (2026-11-15, `docs/MAP_ACTION_ORDER.md`, `inventory/action_order.csv`, `tools/action-order.py`,
+      `make action-order`). The walk is not inferred from bytes: every class ships its own source, and
+      `ScriptedSequence.SetActions` reads `Actions[C.ActionNum]` while `ScriptedTriggerController.InitializeFor`
+      starts that counter at 0 and `ScriptedAction.ProceedToNextAction` adds one -- **the array is the schedule,
+      index 0 first**, and five classes override the increment (`ACTION_GotoAction` an absolute `ActionNumber`,
+      `ACTION_EndSection` a loop back to the section start, `ACTION_IfCondition`/`IfProximity`/`IfRandomPct` a
+      `ProceedToSectionEnd` skip), with `ACTION_LeaveSequence.GetScript` answering None to end a run outright.
+      Measured over the 2,437 scripted arrays (16,907 slots, 21 of them `None`, so the 16,886 wired actions are
+      reproduced exactly, and the 257 scene-manager camera arrays are counted apart at 1,472 elements):
+      **16,694 slots are reached by the straight run**, 37 arrays cannot finish, 260 slots hit a `LeaveSequence`,
+      512 are gotos of which 510 target inside their own array, 2 outside and **377 state no target at all** so
+      they take the class default 0 and jump back to the first element (the loop the class's own comment warns
+      about), and 5 arrays leave a section unclosed. The gate is a class table too: `ScriptedTrigger.ValidAction`
+      reads the element's own `bValidForTrigger`, which `ScriptedAction` states true and **21** classes state
+      false; only **2** wired elements land on a refusing class. The "sleeve of starts no name describes" is
+      answered by the hierarchy rather than by a trace: `TeamScriptedSequence` extends
+      `UnrealScriptedSequence` extends `ScriptedSequence`, so its 8,716 wired actions are ordered by the same
+      walk, and its start is a `TakeOver(Pawn)` -- what placed data provides is the AI's *selection*
+      (`priority`, `TeamGoalType`, `bRoamingScript`, and a same-tag `NextScript` chain built in `BeginPlay`), a
+      tag being a lookup key and not an event name. A `ScriptedTrigger` needs no name at all: its own
+      `PostBeginPlay` spawns its controller and the run starts with the level. What is left inside 5.2 is the
+      simulation half -- `ACTION_IfCondition`/`IfProximity` decide a path at run time, so which branch a given
+      play takes is not in the package.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
