@@ -318,7 +318,9 @@ def multi_store_report(root):
     it before their own table"), and that is what those two bodies do -- but they are not the whole
     population: four more bodies install three to eight tables, one of them `BoolProperty` four times.
     So an installer body is not always one class's constructor, which is why `stale_names` exempts every
-    multi-store body instead of asserting the parent relation for it.
+    multi-store body instead of asserting the parent relation for it. The decompile that named the two
+    property factories is in docs/NATIVE_CLASS_TREE.md (*The bodies that store more than one table are
+    three kinds of body*); `verdict` below is the part of it these CSVs can answer.
 
     `mark` is the relation of each store to the one before it: `parent` (`classes.csv` says the later
     table's class extends the earlier one's), `repeat` (the same table again), `unnamed` (either table
@@ -343,10 +345,12 @@ def multi_store_report(root):
     with open(os.path.join(root, "inventory/class_constructors.csv"), newline="") as fh:
         for r in csv.DictReader(fh):
             by_fn.setdefault(int(r["function_va"], 16), []).append(
-                (int(r["store_va"], 16), int(r["table_va"], 16)))
+                (int(r["store_va"], 16), int(r["table_va"], 16), r.get("form") or ""))
     out = []
     for fn, stores in sorted(by_fn.items()):
-        seq = [table for _va, table in sorted(stores)]
+        stores = sorted(stores)
+        seq = [table for _va, table, _form in stores]
+        forms = [form for _va, _table, form in stores]
         distinct = []
         for table in seq:
             if table not in distinct:
@@ -364,8 +368,18 @@ def multi_store_report(root):
                 marks.append("parent")
             else:
                 marks.append("other")
+        # The census's own `form` column answers a second question about the same body: `ctor`/`dtor`
+        # is a body that returns `this`, so a table it stores can be its own class's; `unclassified`
+        # is a body that does not, and then the store's receiver is an object the body built. That is
+        # the line between an installer and a body whose stores are some other object's tables.
+        if all(form in ("ctor", "dtor") for form in forms):
+            verdict = "installer"
+        elif all(form == "unclassified" for form in forms):
+            verdict = "not-an-installer"
+        else:
+            verdict = "mixed"
         out.append({"function_va": fn, "name": functions.get(fn, ""), "stores": len(stores),
-                    "tables": seq, "marks": marks})
+                    "tables": seq, "marks": marks, "forms": forms, "verdict": verdict})
     return out
 
 
@@ -549,6 +563,24 @@ def main():
                      len({t for t in row["tables"]}), seq))
         parents = sum(1 for row in rows if row["marks"] and set(row["marks"]) == {"parent"})
         print("  %d of them store a parent's table before their own and nothing else" % parents)
+        # The unnamed case is the same shape with the own table not yet named: the body is
+        # constructor-shaped and repeats the one named table before a different one. Counting only
+        # the named pairs under-counted the shape by one (`0x002e8260`, whose own table is the
+        # unnamed `0x004cfe68`; the decompile shows the two stores are its base's table and its own).
+        unnamed_parent = [row for row in rows
+                          if row["marks"] == ["unnamed"] and row["verdict"] == "installer"
+                          and tables.get(row["tables"][0])]
+        print("  %d more is constructor-shaped and stores the named table then an unnamed one: %s"
+              % (len(unnamed_parent),
+                 ", ".join("%#010x" % row["function_va"] for row in unnamed_parent) or "-"))
+        factories = [row for row in rows if row["verdict"] == "not-an-installer"]
+        print("  %d are not installers at all -- every store's row is `unclassified`, so the table "
+              "goes into an object the body built: %s"
+              % (len(factories), ", ".join("%#010x" % row["function_va"] for row in factories) or "-"))
+        # A `ctor` form describes the *body*, not the store: `0x00110120` returns `this` and still
+        # writes `0x004fb9b8` into a PackageMapLevel it builds 881 bytes in (measured by decompile,
+        # docs/NATIVE_CLASS_TREE.md), so "installer-shaped" here means the body installs its own
+        # table, never that every table it stores is its own.
         return 0
 
     ap = argparse.ArgumentParser()

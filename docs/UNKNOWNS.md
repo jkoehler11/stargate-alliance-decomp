@@ -1228,6 +1228,17 @@ level, one boot -- or an engine-side class list, since two routes were measured 
 bodies resolves any string, and the registration's size argument cannot key the join because every size in the artifacts
 originates at a registration site (`class_size_sources.csv`'s 24 `no-registration` rows are these tables).
 
+**2026-11-15, four of the six multi-store bodies install no table of their own.** A decompile of the whole population
+(`docs/NATIVE_CLASS_TREE.md`) splits it three ways: two constructors with parent-then-own (`0x002e81f0`, `0x002e8370`),
+**one more of the same shape whose own table is unnamed** (`0x002e8260`, second store `0x4cfe68` -- the `WaterTexture`
+proposal now has a structural route beside the ancestor vote), and **three that are not installers**: `0x0024af30`
+(8 stores) and `0x0014e0e0` (4 sites, one inside an `EInputKey` loop) are native static constructors that build
+`UProperty` objects and write each object's class table, and `0x00110120` stores its own table plus two base sub-tables
+and then a `PackageMapLevel`'s for a child it builds. So the receiver of a store decides whose class it is, not the body:
+a store into `[esi]` after a `call` is an object the body made. **What would settle the names here:** the caller of the
+two property bodies -- the static-constructor slot of the class they populate -- and, for `0x0024af30`, a property-set
+join against the engine's `UStaticMeshInstance`-style classes, since no literal in the body names its class.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
