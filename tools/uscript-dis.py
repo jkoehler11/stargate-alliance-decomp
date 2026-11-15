@@ -3666,6 +3666,185 @@ def cast_control(pkg, funcs, table, installed, expr_bytes=(0x01, 0x00, 0x0B, 0x0
     return None
 
 
+OPCODE_CSV = os.path.join(ROOT, "inventory", "opcode_compare.csv")
+OPCODE_COLUMNS = ("package", "function", "offset", "from", "to", "tokens", "l3", "l2", "similarity", "moved",
+                  "refused")
+
+
+def opcode_partners(table):
+    """Opcode pairs the table gives the same operand shape: `{op: partner}` -- the swap a rebuild could make.
+
+    Two rows with one `pattern` differ only in what they do, so swapping one for the other keeps the stream's length
+    and every following token's offset. That is the mutation that can test **L2**: the scoreboard's other control
+    flips an operand bit, which the opcode sequence cannot see by construction, so L2 has never had a mutation that
+    could fail it.
+    """
+    groups = collections.defaultdict(list)
+    for op, row in sorted(table.rows.items()):
+        if row.get("source") == "map" and row.get("pattern"):
+            groups[row["pattern"]].append(op)
+    out = {}
+    for ops in groups.values():
+        for i, op in enumerate(ops):
+            if len(ops) > 1:
+                out[op] = ops[(i + 1) % len(ops)]
+    return out
+
+
+def opcode_sites(nodes):
+    """Every token's own byte offset and opcode, in stream order (the node's span already covers its children)."""
+    out = []
+
+    def walk(ns):
+        for n in ns:
+            out.append((n["offset"], n["opcode"]))
+            walk(n["children"])
+
+    walk(nodes)
+    return out
+
+
+def opcode_control(pkg, funcs, table, partners):
+    """Swap one token's opcode for one the table gives the same operand shape, and grade the result.
+
+    L2 must lose the function and L3 must lose it too, the token count must not move, and the similarity ratio must be
+    exactly `(n-1)/n` -- one token of n, which is what makes the ratio a measurement rather than a number. A swap the
+    walker refuses is not a pass: it is the honest "this stream does not fit the new opcode" answer, counted apart and
+    only reported when no site in the package survives.
+    """
+    fallback = None
+    for key in sorted(funcs):
+        got = parsed(funcs[key], pkg.data, table)
+        if got is None:
+            continue
+        nodes, _body = got
+        flat = flatten(nodes)
+        base = funcs[key]["offset"] + locate(funcs[key], pkg.data)[2]
+        for off, op in opcode_sites(nodes):
+            to = partners.get(op)
+            if to is None or to == op:
+                continue
+            mut = bytearray(pkg.data)
+            mut[base + off] = to
+            after = script_of(_Bytes(bytes(mut)), funcs[key], table)
+            if after is None:
+                if fallback is None:
+                    fallback = (key, off, "%#04x" % op, "%#04x" % to, len(flat), "", "", "", "", "refused")
+                continue
+            c = compare_tokens(flat, after)
+            moved = sum(1 for x, y in zip(flat, after) if x != y)
+            if c["bytes"] or c["opcodes"] or moved != 1 or len(flat) != len(after):
+                continue
+            return (key, off, "%#04x" % op, "%#04x" % to, len(flat), int(c["bytes"]), int(c["opcodes"]),
+                    round(c["similarity"], 6), moved, "")
+    return fallback
+
+
+def opcode_control_report(path, table, out=None):
+    """The comparator's L2 column, measured on the shipped packages: an opcode swap must cost L2 and L3, one token.
+
+    The operand control that already exists says L3 is sensitive and L2 is not -- but a column with no mutation that
+    can fail it is a label, not a claim. This is the other mutation: same operand shape, different opcode, so the tree
+    parses to the same number of tokens and only one of them moved.
+    """
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    partners = opcode_partners(table)
+    rows = []
+    for one in files:
+        name = os.path.basename(one)
+        pkg, funcs = function_index(one)
+        got = opcode_control(pkg, funcs, table, partners)
+        if got is None:
+            print("  %-22s no site: no function holds an opcode with a same-shape partner" % name)
+            continue
+        row = (name,) + (got[0],) + got[1:]
+        rows.append(row)
+        print("  %-22s %s+%d %s -> %s: %s token(s), L3 %s, L2 %s, similarity %s, %s"
+              % (name, got[0], got[1], got[2], got[3], got[4], got[5], got[6], got[7], got[9] or "moved 1"))
+    refused = sum(1 for r in rows if r[10] == "refused")
+    print("%d package(s) controlled, %d of them by a refused swap; %d package(s) with no site"
+          % (len(rows) - refused, refused, len(files) - len(rows)))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        dest = os.path.join(out, "opcode_compare.csv")
+        with open(dest, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(OPCODE_COLUMNS)
+            for r in rows:
+                w.writerow(r)
+            w.writerow(("census", "", "", "", "", "", "", "", "", "%d/%d" % (len(rows) - refused, len(files)), ""))
+        print("wrote %s (%d package row(s) + census)" % (dest, len(rows)))
+    return 0
+
+
+def opcode_check(path=OPCODE_CSV):
+    """`inventory/opcode_compare.csv` against its own claims -- no dump, writes nothing.
+
+    Every controlled package must read L3 0, L2 0 and exactly one token moved, and its similarity must be
+    `(n-1)/n` to six places: that is the assertion that the ratio counts the one token the swap moved and nothing
+    else. A refused row must be the whole row's answer (it carries no numbers), and the census must agree with the
+    rows beside it.
+    """
+    fails = []
+    if not os.path.exists(path):
+        print("FAIL opcode-compare: %s does not exist" % path)
+        return 1
+    with open(path, newline="") as fh:
+        head = next(csv.reader(fh))
+        fh.seek(0)
+        rows = list(csv.DictReader(fh))
+    if tuple(head) != OPCODE_COLUMNS:
+        fails.append("%s: header %s" % (path, head))
+    packages = [r for r in rows if r["package"] != "census"]
+    census = [r for r in rows if r["package"] == "census"]
+    if len(census) != 1:
+        fails.append("%s: %d census row(s), wanted 1" % (path, len(census)))
+    if not packages:
+        fails.append("%s: no package row" % path)
+    for r in packages:
+        where = "%s %s" % (r["package"], r["function"])
+        if r["refused"]:
+            if any(r[c] for c in ("tokens", "l3", "l2", "similarity", "moved")):
+                fails.append("%s: a refused swap carries numbers" % where)
+            continue
+        if (r["l3"], r["l2"], r["moved"]) != ("0", "0", "1"):
+            fails.append("%s: swap graded L3 %s, L2 %s, %s token(s) moved" % (where, r["l3"], r["l2"], r["moved"]))
+        if r["from"] == r["to"]:
+            fails.append("%s: the opcode did not move" % where)
+        n = int(r["tokens"])
+        if n < 2:
+            fails.append("%s: %d token(s)" % (where, n))
+        elif abs(float(r["similarity"]) - (n - 1) / n) > 1e-6:
+            fails.append("%s: similarity %s is not (%d-1)/%d" % (where, r["similarity"], n, n))
+    if census:
+        controlled = len([r for r in packages if not r["refused"]])
+        want = census[0]["moved"] or ""
+        if want and not want.startswith("%d/" % controlled):
+            fails.append("%s: census says %s, the rows say %d" % (path, want, controlled))
+    for f in fails:
+        print("FAIL opcode-compare: %s" % f)
+    if not fails:
+        print("ok   opcode-compare: %d package row(s), %d controlled, similarity is (n-1)/n on every one"
+              % (len(packages), len([r for r in packages if not r["refused"]]))
+              + _same_function_as_operand_control(packages))
+    return 1 if fails else 0
+
+
+def _same_function_as_operand_control(packages):
+    """How many opcode swaps landed on the function the *operand* control flipped a bit in, read from its artifact.
+
+    Reported, not asserted: both controls take the first function with a candidate site, so agreement is a property
+    of this build and not of the method -- and when they agree the pair is one body graded two ways, which is the
+    cheapest 2x2 the scoreboard has.
+    """
+    if not os.path.exists(BASELINE_CSV):
+        return ""
+    sites = {r["package"]: r["control_site"].rsplit("+", 1)[0] for r in csv.DictReader(open(BASELINE_CSV))}
+    same = [r for r in packages if not r["refused"] and sites.get(r["package"], "\0") == r["function"]]
+    return "; %d of %d land on the operand control's own function" % (len(same), len(packages))
+
+
 def cast_installed(path=os.path.join(ROOT, "inventory", "cast_operands.csv")):
     """The slots an installer fills, from the cast census (`tools/cast-dispatch.py`)."""
     if not os.path.exists(path):
@@ -4409,6 +4588,10 @@ def main():
     ap.add_argument("--cast-control", metavar="PACKAGE_OR_SYSTEM",
                     help="the comparator's cast axis, measured on the shipped bytes: moving a conversion's slot "
                          "costs L3 and keeps L2, moving what it converts costs both (inventory/cast_compare.csv)")
+    ap.add_argument("--opcode-control", metavar="PACKAGE_OR_SYSTEM",
+                    help="the comparator's L2 column, measured on the shipped bytes: swapping one opcode for a "
+                         "same-shape opcode costs L2 and L3 and moves exactly one token "
+                         "(inventory/opcode_compare.csv)")
     ap.add_argument("--baseline", metavar="PACKAGE_OR_SYSTEM", help="PLAN 3.8's scoreboard: per package, how many "
                     "functions a rebuild must match and how many the comparator can grade (docs/MATCHING.md)")
     ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
@@ -4458,7 +4641,7 @@ def main():
 
     if args.check:
         rc = struct_check()
-        return rc or cast_check() or key_check()
+        return rc or cast_check() or key_check() or opcode_check()
     if args.header:
         return header_report(args.header)
     if args.start:
@@ -4494,6 +4677,8 @@ def main():
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.cast_control:
         return cast_control_report(args.cast_control, Table(), args.out)
+    if args.opcode_control:
+        return opcode_control_report(args.opcode_control, Table(), args.out)
     if args.baseline or args.write_doc or args.check_doc:
         return baseline_report(args.baseline, Table(), args.out, args.write_doc, args.check_doc, args.from_csv)
     if args.sizefield:

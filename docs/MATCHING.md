@@ -98,6 +98,35 @@ re-run. **16 of 18 packages are controlled**: `Fire.u` and `UnrealEd.u` hold no 
 143 exports, none of them a function), so neither column has anything to grade there. That is also a correction to
 this PLAN item's own text, which lists both among the small packages to chase first.
 
+## The opcode control, which is what makes L2 a claim
+
+The operand control says L3 is sensitive and L2 is not — but the mutation it makes is one the opcode sequence cannot
+see **by construction**, so L2 had no mutation that could ever fail it. A column like that is a label. The other
+mutation is an **opcode swap**: take a token whose opcode the table gives a same-shape partner (two rows with one
+`pattern` differ only in what they do, so the stream keeps its length and every following token's offset), write the
+partner over the opcode byte, re-read the payload and re-grade. `tools/uscript-dis.py --opcode-control SYSTEM
+-o inventory` walks the packages in that order and stops at the first site that parses:
+
+| what the swap must move | expected | measured |
+|---|---|---|
+| L3 | the function is no longer byte-identical | **0 on all 16** |
+| L2 | the opcode sequence no longer matches | **0 on all 16** |
+| token count | unchanged — the operand shape is the same | **unchanged on all 16** (5 to 230 tokens) |
+| similarity | exactly `(n-1)/n`, one token of n | **exactly `(n-1)/n` on all 16**, to six places |
+
+**16 of 18 packages are controlled, and none of the 16 by a refused swap**; `Fire.u` and `UnrealEd.u` hold no
+`Function` export at all, so neither has a site — the same two the baseline table leaves blank. Five distinct pairs
+carried the 16 rows, and every one is a swap a rebuild could really make: `JumpIfNot` → `Assert` (`0x07` → `0x09`,
+7 packages), `Let` → `DynamicArrayElement` (`0x0f` → `0x10`, 5), `Return` → `GotoLabel` (`0x04` → `0x0d`, 2),
+`LetDelegate` → `Let` (`0x45` → `0x0f`) and `Context` → `0x12`.
+
+And **the two controls land on the same function in all 16 packages** — both take the first body with a candidate
+site, and in this build that body has both an operand byte and a same-shape opcode. So the scoreboard's two columns
+are now bracketed on one body, graded two ways: flip a bit of an operand there and L3 falls while L2 holds; swap its
+opcode and both fall, with the ratio landing on `(n-1)/n`. `--check` reports that agreement rather than asserting it
+(it is a property of this build, not of the method) and *does* assert the four numbers above on every row of
+`inventory/opcode_compare.csv`.
+
 ## The cast axis
 
 A `PrimitiveCast` (`0x39`) is the opcode a rebuild can get wrong without changing the shape of the code: its row in
@@ -147,6 +176,7 @@ only to a payload the header refused; a payload that walks is a script whatever 
 
     make matching-baseline SG1_DUMP=~/nfs/sg1-dump
     python3 tools/uscript-dis.py --pairs ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System
+    python3 tools/uscript-dis.py --opcode-control ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System -o inventory
     python3 tools/uscript-dis.py --check-doc docs/MATCHING.md     # in `make ci`; reads the artifact only
 
 `inventory/matching_baseline.csv` is the artifact and the table above is generated from it (`--write-doc`);
