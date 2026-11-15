@@ -9780,6 +9780,37 @@ and a deliberate one-line script break is caught by the boot test.
   token tree, the pair encoding means two builds must agree on slot *and* nested expression, and
   `docs/MATCHING.md`'s baseline has no cast column at all.
 
+### Execution notes (2026-11-15, a cast is graded on its slot and on its expression, and the corpus has 10,529)
+
+- **The comparator had no cast column, and a cast is the one token whose two halves grade differently.** `0x39`'s
+  row in the opcode table is `bytes:1,expr`: the conversion's slot is a byte *operand* and the value it converts is
+  a child. So L2 (the opcode sequence) must be blind to a wrong conversion and must see a wrong expression -- and
+  until now the scoreboard could not say either. `--compare` now reads both (`cast_sites`, `compare_casts`), and
+  `script_match.csv` carries `casts`, `cast_slots_identical`, `cast_exprs_identical` and `first_cast_diff` per
+  function.
+- **Measured on the shipped bytes, because no rebuild exists: 16 of 18 packages controlled.** `--cast-control`
+  moves one conversion's slot to another slot an installer fills (33 of the 40 in range), re-reads the payload and
+  re-grades it. Every one of the 16 reads **L3 0, L2 1 and exactly one token moved -- the cast's own**: a mutation
+  that shifted a length instead of a slot would move the tokens behind it, so the single-token requirement is what
+  makes the control evidence rather than a coincidence. The other half is the expression: changing the first byte
+  of the converted expression costs L2 as well in 15 of the 16, and stops the walk in the sixteenth
+  (`Stargateeffects.u`, `AcidBurn.Timer+10`). `Fire.u` and `UnrealEd.u` hold no `Function` export, so there is
+  nothing to control there -- the same two the baseline table leaves blank.
+- **The census joins the shipped cast census instead of restating it.** Counting with `_payload_trees` -- the same
+  generator `tools/cast-dispatch.py` walks with -- gives **10,529 cast tokens in 2,618 of 11,687 walkable
+  payloads**, and 10,529 is exactly the sum `inventory/cast_operands.csv` already records, so the two artifacts are
+  one measurement read twice and `--check` fails if they part. (The earlier count of 10,389 came from walking
+  `function_index`'s exports with `parsed()` instead; the 140-token gap is that population, not a reader bug, which
+  is why the census is taken through the generator the cast census uses.)
+- Tool (`tools/uscript-dis.py`: `cast_sites`, `compare_casts`, `flat_index`, `--cast-control` /
+  `cast_control_report`, and `cast_selftest` + `cast_check` wired into the dump-free `--check`) +
+  `inventory/cast_compare.csv` (16 package rows + a census row) + `docs/MATCHING.md` (*The cast axis*) + this note.
+  No boot: the packages and the committed census.
+- **Next measurement:** every `--compare` run recorded so far is a package against itself, so the comparator has
+  never been asked what it does with a function one package *inherits* rather than declares. Two packages that share
+  a class hierarchy (`Core.Object`'s functions against `Engine.Actor`'s) answer it without a compiler: the index is
+  keyed by `(owner, name)`, so an inherited function must land in `only_a` and the report has to say so.
+
 ### Execution notes (2026-11-15, the cast index is one bytecode operand, and nine conversions are never emitted)
 
 - **The previous note's guess was wrong in its method and right in its question.** It said "the call site of

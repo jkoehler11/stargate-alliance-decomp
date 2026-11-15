@@ -3362,30 +3362,41 @@ def compare_report(path_a, path_b, table, out=None):
     only_b = sorted(set(funcs_b) - set(funcs_a))
     skipped = 0
     for key in shared:
-        ta = script_of(pkg_a, funcs_a[key], table)
-        tb = script_of(pkg_b, funcs_b[key], table)
-        if ta is None or tb is None:
+        ga = parsed(funcs_a[key], pkg_a.data, table)
+        gb = parsed(funcs_b[key], pkg_b.data, table)
+        if ga is None or gb is None:
             skipped += 1
             continue
+        ta, tb = flatten(ga[0]), flatten(gb[0])
         c = compare_tokens(ta, tb)
-        rows.append((key[0], key[1], c["tokens"][0], c["bytes"], c["opcodes"], round(c["similarity"], 4)))
+        cc = compare_casts(ga[0], gb[0])
+        rows.append((key[0], key[1], c["tokens"][0], c["bytes"], c["opcodes"], round(c["similarity"], 4),
+                     cc["casts"][0], cc["slots"], cc["exprs"], cc["first"]))
     byte_identical = sum(1 for r in rows if r[3])
     opcode_identical = sum(1 for r in rows if r[4])
     mean = sum(r[5] for r in rows) / len(rows) if rows else 0.0
+    casted = sum(1 for r in rows if r[6])
+    cast_slots = sum(1 for r in rows if r[6] and r[7])
+    cast_exprs = sum(1 for r in rows if r[6] and r[8])
     print("%s vs %s" % (os.path.basename(path_a), os.path.basename(path_b)))
     print("  %d functions in both, %d only in the first, %d only in the second, %d not disassembled"
           % (len(shared), len(only_a), len(only_b), skipped))
     print("  byte-identical (L3): %d; opcode-identical (L2): %d; mean opcode similarity: %.2f%%"
           % (byte_identical, opcode_identical, 100.0 * mean))
+    print("  casts: %d function(s) hold one in the first package; %d agree on every slot, %d on every nested "
+          "expression" % (casted, cast_slots, cast_exprs))
     diff = sorted([r for r in rows if not r[4]], key=lambda r: r[5])
     for r in diff[:5]:
         print("  differs: %s.%s  %d vs %d tokens, %.0f%% of the opcode sequence"
               % (r[0], r[1], r[2], r[2], 100.0 * r[5]))
+    for r in [r for r in rows if r[6] and not (r[7] and r[8])][:5]:
+        print("  cast differs: %s.%s  %s" % (r[0], r[1], r[9]))
     if out:
         os.makedirs(out, exist_ok=True)
         with open(os.path.join(out, "script_match.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["class", "function", "tokens", "bytes_identical", "opcodes_identical", "similarity"])
+            w.writerow(["class", "function", "tokens", "bytes_identical", "opcodes_identical", "similarity",
+                        "casts", "cast_slots_identical", "cast_exprs_identical", "first_cast_diff"])
             for row in rows:
                 w.writerow(row)
         print("wrote %s/script_match.csv (%d rows)" % (out, len(rows)))
@@ -3476,6 +3487,274 @@ def mutation_control(pkg, funcs, table, per_function=4):
             if c["opcodes"] and not c["bytes"]:
                 return "%s.%s+%d" % (key[0], key[1], pos)
     return ""
+
+
+CAST_OPCODE = 0x39
+CAST_CSV = os.path.join(ROOT, "inventory", "cast_compare.csv")
+CAST_COLUMNS = ("package", "function", "offset", "slot", "to_slot", "tokens", "l3", "l2", "moved",
+                "expr_l3", "expr_l2", "expr_offset", "payloads_with_cast", "walked", "seen")
+
+
+def cast_sites(nodes):
+    """Every `PrimitiveCast` in a token tree, in stream order: `(offset, slot, expression offset, tokens)`.
+
+    `0x39`'s row in the opcode table is `bytes:1,expr`: the conversion's slot is a byte *operand* and the value it
+    converts is a child. That is the asymmetry a rebuild has to be graded on -- a wrong conversion moves an operand
+    (L3 only), a wrong expression moves opcodes (L2 as well) -- and it is also why `execPrimitiveCast` reads its
+    index out of the bytecode stream rather than from a table of its own (`docs/NATIVE_VM.md`).
+    """
+    out = []
+    for n in nodes:
+        if n["opcode"] == CAST_OPCODE and n["operands"]:
+            child = n["children"][0]["offset"] if n["children"] else -1
+            out.append((n["offset"], n["operands"][0], child, flatten(n["children"])))
+        out.extend(cast_sites(n["children"]))
+    return out
+
+
+def compare_casts(a, b):
+    """How two functions' conversions differ: the slot sequence, the nested expressions, and where they first part."""
+    ca, cb = cast_sites(a), cast_sites(b)
+    first = ""
+    for i, (x, y) in enumerate(zip(ca, cb)):
+        if x[1] != y[1]:
+            first = "site %d slot %d->%d" % (i, x[1], y[1])
+            break
+        if x[3] != y[3]:
+            first = "site %d expression" % i
+            break
+    if not first and len(ca) != len(cb):
+        first = "count %d->%d" % (len(ca), len(cb))
+    return {"casts": (len(ca), len(cb)),
+            "slots": [x[1] for x in ca] == [y[1] for y in cb],
+            "exprs": [x[3] for x in ca] == [y[3] for y in cb],
+            "first": first}
+
+
+def flat_index(nodes, offsets):
+    """The `flatten()` position of every node whose offset is in `offsets` (`flatten` rebuilds tuples, not nodes)."""
+    out, count = {}, [0]
+
+    def walk(ns):
+        for n in ns:
+            if n["offset"] in offsets:
+                out[n["offset"]] = count[0]
+            count[0] += 1
+            walk(n["children"])
+
+    walk(nodes)
+    return out
+
+
+def _other_slot(slot, installed):
+    """A filled slot to move a conversion to: the low bit flipped, else the next candidate an installer fills."""
+    for step in (0x01, 0x02, 0x03):
+        if (slot ^ step) in installed:
+            return slot ^ step
+    return None
+
+
+def cast_control(pkg, funcs, table, installed, expr_bytes=(0x01, 0x00, 0x0B, 0x0F)):
+    """Move one conversion's slot, then the expression it converts, and grade each on this package's own bytes.
+
+    The slot is an operand: a rebuild that picks the wrong conversion must cost L3 and leave the opcode sequence
+    alone, and the token that moved must be the cast's own -- a mutation that shifted a length instead would move
+    the tokens behind it too, which is why the diff is required to be exactly one index. The expression is
+    structure: changing its first byte must cost L2 as well, or stop the walk, which is the other honest answer.
+    """
+    for key in sorted(funcs):
+        got = parsed(funcs[key], pkg.data, table)
+        if got is None:
+            continue
+        nodes, _body = got
+        sites = cast_sites(nodes)
+        if not sites:
+            continue
+        base = funcs[key]["offset"] + locate(funcs[key], pkg.data)[2]
+        flat = flatten(nodes)
+        index = flat_index(nodes, {o for o, _s, _c, _e in sites})
+        for off, slot, child, _expr in sites:
+            to = _other_slot(slot, installed)
+            if to is None:
+                continue
+            mut = bytearray(pkg.data)
+            mut[base + off + 1] = to                      # the slot byte, one past the opcode
+            after = parsed(funcs[key], bytes(mut), table)
+            if after is None:
+                continue
+            flat2 = flatten(after[0])
+            c = compare_tokens(flat, flat2)
+            moved = [i for i, (x, y) in enumerate(zip(flat, flat2)) if x != y]
+            if not c["opcodes"] or c["bytes"] or len(flat) != len(flat2):
+                continue
+            if len(moved) != 1 or moved[0] != index[off] or flat[moved[0]][0] != CAST_OPCODE:
+                continue
+            e_l3 = e_l2 = ""
+            for cand in expr_bytes:
+                if child < 0 or cand == pkg.data[base + child]:
+                    continue
+                mut2 = bytearray(pkg.data)
+                mut2[base + child] = cand
+                after2 = parsed(funcs[key], bytes(mut2), table)
+                if after2 is None:
+                    continue
+                c2 = compare_tokens(flat, flatten(after2[0]))
+                e_l3, e_l2 = int(c2["bytes"]), int(c2["opcodes"])
+                break
+            else:
+                e_l3 = e_l2 = "refused"
+            return ("%s.%s" % (key[0], key[1]), off, slot, to, len(flat), int(c["bytes"]), int(c["opcodes"]),
+                    len(moved), e_l3, e_l2, child)
+    return None
+
+
+def cast_installed(path=os.path.join(ROOT, "inventory", "cast_operands.csv")):
+    """The slots an installer fills, from the cast census (`tools/cast-dispatch.py`)."""
+    if not os.path.exists(path):
+        sys.exit("cast-control: %s does not exist" % path)
+    return {int(r["slot"]) for r in csv.DictReader(open(path))
+            if r.get("installed", "1") == "1" and r["slot"].strip().isdigit()}
+
+
+def cast_control_report(path, table, out=None):
+    """The comparator's cast axis, measured on the shipped packages rather than on a rebuild that does not exist.
+
+    Two gradings per package, on the first function that holds a `PrimitiveCast`: moving the conversion's slot
+    (must cost L3, must keep L2, must move exactly one token -- the cast's own) and moving the first byte of the
+    expression it converts (must cost L2 as well, or stop the walk). One `census` row carries the totals, so the
+    page and `--check` read one row rather than two hand-typed numbers.
+    """
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    installed = cast_installed()
+    rows = []
+    payloads_with = tokens_total = walked_total = seen_total = 0
+    for one in files:
+        name = os.path.basename(one)
+        stats = {"seen": 0, "walked": 0}
+        p_tok = p_pay = 0
+        for nodes in _payload_trees(one, table, stats):
+            here = set()
+            for _off, slot, _child, _expr in cast_sites(nodes):
+                p_tok += 1
+                here.add(slot)
+            p_pay += 1 if here else 0
+        tokens_total += p_tok
+        payloads_with += p_pay
+        walked_total += stats["walked"]
+        seen_total += stats["seen"]
+        pkg, funcs = function_index(one)
+        got = cast_control(pkg, funcs, table, installed)
+        if got is None:
+            print("  %-22s %5d walkable of %5d seen, %5d cast token(s) in %5d payload(s); no site survived"
+                  % (name, stats["walked"], stats["seen"], p_tok, p_pay))
+            continue
+        rows.append((name,) + got + (p_pay, stats["walked"], stats["seen"]))
+        print("  %-22s %5d walkable of %5d seen, %5d cast token(s) in %5d payload(s); %s+%d slot %d->%d: "
+              "L3 %d, L2 %d, %d token moved; expression L3 %s, L2 %s"
+              % (name, stats["walked"], stats["seen"], p_tok, p_pay, got[0], got[1], got[2], got[3], got[5],
+                 got[6], got[7], got[8], got[9]))
+    print("%d package(s) controlled; %d cast token(s) in %d of %d walkable payload(s)"
+          % (len(rows), tokens_total, payloads_with, walked_total))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        dest = os.path.join(out, "cast_compare.csv")
+        with open(dest, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(CAST_COLUMNS)
+            for r in rows:
+                w.writerow(r)
+            w.writerow(("census", "", "", "", "", tokens_total, "", "", "", "", "", "", payloads_with,
+                        walked_total, seen_total))
+        print("wrote %s (%d package row(s) + census)" % (dest, len(rows)))
+    return 0
+
+
+def cast_selftest():
+    """Synthetic token trees: a cast found under a parent, a slot that moved, an expression that moved."""
+    def node(op, operands=b"", children=(), offset=0):
+        return {"offset": offset, "opcode": op, "name": "?", "operands": operands, "children": list(children),
+                "native": None, "end": offset + 2}
+
+    fails = []
+    const = node(0x1F, b"\x00\x00\x00\x00", offset=2)
+    top = [node(0x0B, b"\x00", [node(CAST_OPCODE, b"\x3a", [const], offset=1)], offset=0)]
+    sites = cast_sites(top)
+    if len(sites) != 1 or sites[0][1] != 0x3A or sites[0][2] != 2:
+        fails.append("cast under a parent: %r" % (sites,))
+    moved = [node(0x0B, b"\x00", [node(CAST_OPCODE, b"\x3b", [const], offset=1)], offset=0)]
+    c = compare_casts(top, moved)
+    if c["casts"] != (1, 1) or c["slots"] or not c["exprs"] or c["first"] != "site 0 slot 58->59":
+        fails.append("a moved slot: %r" % (c,))
+    swapped = [node(0x0B, b"\x00", [node(CAST_OPCODE, b"\x3a", [node(0x20, b"\x00\x00\x00\x00", offset=2)],
+                                    offset=1)], offset=0)]
+    c = compare_casts(top, swapped)
+    if not c["slots"] or c["exprs"] or c["first"] != "site 0 expression":
+        fails.append("a moved expression: %r" % (c,))
+    c = compare_casts(top, [])
+    if c["casts"] != (1, 0) or c["first"] != "count 1->0":
+        fails.append("a lost cast: %r" % (c,))
+    idx = flat_index(top, {1})
+    if idx != {1: 1}:
+        fails.append("flat index of the cast: %r" % (idx,))
+    for one in fails:
+        print("FAIL cast-selftest: " + one)
+    print("ok   cast-selftest: %d case(s)" % (5 - len(fails)))
+    return 1 if fails else 0
+
+
+def cast_check(path=CAST_CSV):
+    """`inventory/cast_compare.csv` against its own claims and against the cast census -- no dump, writes nothing.
+
+    The second half is what keeps the first from being self-referential: every package row must read L3 lost, L2
+    kept and exactly one token moved, and the census row's token count must be the sum the cast census
+    (`inventory/cast_operands.csv`) already records for the slots the installers fill.
+    """
+    fails = []
+    if cast_selftest():
+        fails.append("the synthetic cases above")
+    if not os.path.exists(path):
+        print("FAIL cast-compare: %s does not exist" % path)
+        return 1
+    with open(path, newline="") as fh:
+        head = next(csv.reader(fh))
+        fh.seek(0)
+        rows = list(csv.DictReader(fh))
+    if tuple(head) != CAST_COLUMNS:
+        fails.append("%s: header %s" % (path, head))
+    packages = [r for r in rows if r["package"] != "census"]
+    census = [r for r in rows if r["package"] == "census"]
+    if len(census) != 1:
+        fails.append("%s: %d census row(s), wanted 1" % (path, len(census)))
+    if not packages:
+        fails.append("%s: no package row" % path)
+    installed = cast_installed()
+    for r in packages:
+        where = "%s %s" % (r["package"], r["function"])
+        if (r["l3"], r["l2"], r["moved"]) != ("0", "1", "1"):
+            fails.append("%s: slot mutation graded L3 %s, L2 %s, %s token(s) moved"
+                         % (where, r["l3"], r["l2"], r["moved"]))
+        if r["slot"] == r["to_slot"]:
+            fails.append("%s: the slot did not move" % where)
+        elif not r["to_slot"].isdigit() or int(r["to_slot"]) not in installed:
+            fails.append("%s: moved the slot to %s, which no installer fills" % (where, r["to_slot"]))
+        if r["expr_l2"] != "refused" and (r["expr_l3"], r["expr_l2"]) != ("0", "0"):
+            fails.append("%s: expression mutation graded L3 %s, L2 %s" % (where, r["expr_l3"], r["expr_l2"]))
+    if census:
+        want = sum(int(r["tokens"]) for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "cast_operands.csv")))
+                   if r["tokens"].strip().isdigit())
+        if int(census[0]["tokens"]) != want:
+            fails.append("census: %s cast token(s) walked, the cast census records %d" % (census[0]["tokens"], want))
+        if int(census[0]["payloads_with_cast"]) > int(census[0]["walked"]):
+            fails.append("census: more payloads carry a cast than walk")
+        if int(census[0]["walked"]) > int(census[0]["seen"]):
+            fails.append("census: more payloads walk than were seen")
+    for one in fails:
+        print("FAIL cast-compare: " + one)
+    if fails:
+        return 1
+    print("ok   cast-compare: %d package row(s) on %s, census %s token(s)" % (len(packages), path, census[0]["tokens"]))
+    return 0
 
 
 def baseline_rows(path, table):
@@ -4022,6 +4301,9 @@ def main():
                          "`drive.py --step=brk=` searches a RAM dump for (docs/XEMU.md)")
     ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
                     help="compare two packages function by function: bytes, opcode sequence, or neither")
+    ap.add_argument("--cast-control", metavar="PACKAGE_OR_SYSTEM",
+                    help="the comparator's cast axis, measured on the shipped bytes: moving a conversion's slot "
+                         "costs L3 and keeps L2, moving what it converts costs both (inventory/cast_compare.csv)")
     ap.add_argument("--baseline", metavar="PACKAGE_OR_SYSTEM", help="PLAN 3.8's scoreboard: per package, how many "
                     "functions a rebuild must match and how many the comparator can grade (docs/MATCHING.md)")
     ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
@@ -4070,7 +4352,8 @@ def main():
         ap.error("--shuffle is a control on --calls: give it a package or a System directory")
 
     if args.check:
-        return struct_check()
+        rc = struct_check()
+        return rc or cast_check()
     if args.header:
         return header_report(args.header)
     if args.start:
@@ -4102,6 +4385,8 @@ def main():
         return class_refs_report(args.class_refs, Table(), args.out)
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
+    if args.cast_control:
+        return cast_control_report(args.cast_control, Table(), args.out)
     if args.baseline or args.write_doc or args.check_doc:
         return baseline_report(args.baseline, Table(), args.out, args.write_doc, args.check_doc, args.from_csv)
     if args.sizefield:

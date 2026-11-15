@@ -66,6 +66,29 @@ re-run. **16 of 18 packages are controlled**: `Fire.u` and `UnrealEd.u` hold no 
 143 exports, none of them a function), so neither column has anything to grade there. That is also a correction to
 this PLAN item's own text, which lists both among the small packages to chase first.
 
+## The cast axis
+
+A `PrimitiveCast` (`0x39`) is the opcode a rebuild can get wrong without changing the shape of the code: its row in
+the opcode table is `bytes:1,expr`, so the conversion's slot is a byte **operand** and the value it converts is a
+child. `--compare` reads both and grades them apart -- the CSV it writes carries `casts`, `cast_slots_identical`,
+`cast_exprs_identical` and `first_cast_diff` per function, so a rebuild that picks the wrong conversion (an L3 loss
+with the opcode sequence intact) is not scored as a structural difference, and one that converts the wrong value
+(an L2 loss) is.
+
+The axis is validated on the shipped bytes, because a rebuild does not exist yet: `tools/uscript-dis.py
+--cast-control` moves one conversion's slot, re-reads the payload and re-grades it, then does the same to the first
+byte of the expression it converts. In **16 of the 18 packages** the slot mutation costs L3, keeps L2 and moves
+**exactly one token -- the cast's own**, so a mutation that shifted a length instead of a slot could not pass; the
+expression mutation costs L2 as well in 15 of the 16 and stops the walk in the sixteenth
+(`Stargateeffects.u`, `AcidBurn.Timer+10`), which is the other honest answer. `Fire.u` and `UnrealEd.u` hold no
+`Function` export at all, so there is nothing to control there -- the same two the baseline table leaves blank.
+
+The census is the denominator a rebuild's cast column needs: **10,529 cast tokens in 2,618 of 11,687 walkable
+payloads**, and the token total is not a new claim -- it is the sum `inventory/cast_operands.csv` already records,
+counted by the same walker generator, and `--check` fails when the two disagree. Per package the count is in
+`inventory/cast_compare.csv`, one control row each; the rarity end of it is `ByteToBool` (slot 59) with one token in
+the whole build (`docs/NATIVE_VM.md`, *The cast index is one bytecode operand*).
+
 ## The 112 operator declarations
 
 Before the scoreboard, 112 payloads read as a header-model defect: their payload does not start with the five-value
