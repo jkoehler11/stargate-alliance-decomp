@@ -213,11 +213,12 @@ The table's residual — 2 records with no declaration, 9 declarations with no r
 right needs the C++ side". The C++ side is already committed: `tools/native-binder.py` extracts the build's own
 `int<prefix><Class>exec<Function>` literals (`inventory/native_binder_names.csv`), which is exactly the name the
 engine's binder looks up for a native. So the same run now writes `inventory/native_residual.csv`
-(`package, class, function, direction, native_token, binder, verdict`), and every row gets one of three:
+(`package, class, function, direction, native_token, binder, verdict`), and every row gets one of four:
 
 | verdict | rows | what the image says |
 |---|---:|---|
-| `text-missing` | **2** | the record **is right** and the class's shipped text declares nothing of that name — both are `UPreview`'s, whose text is editor-side and never ships a body |
+| `record-not-native` | **2** | both are `UPreview`'s and the record's own flag word carries no `Native` (`0x00020002` = `Defined;Public`), so there is no native record to explain: the artifact's row is wrong, not the text (measured 2026-11-15, *The two editor residual rows are the artifact's*, below) |
+| `text-missing` | **0** | the record **is right** and the class's shipped text declares nothing of that name — the two rows that read this way before 2026-11-15 were `UPreview`'s, and their records are not native |
 | `declaration-unbound` | **7** | no record and no binder name: the `native function` declaration has no counterpart in the build at all |
 | `binder-only` | **2** | `Core.Object.Divide` and `Core.Object.Round` are declared *and* bound in the image, so the **record** table is what is missing |
 
@@ -227,11 +228,12 @@ the thirteen `text-missing` rows were `native event` declarations all along — 
 `GUIController.GetMenuFont`, `GUIController.GetStyle`, `GUIFont.GetFont`, `MasterServerUplink.LogStatLine` — so the
 match reads **683 of 685** records (99.7%), not 672. The two that remain are the editor package's
 (`UPreviewMapListClient.Created`, whose text is a script `function` with a body, and
-`UPreviewSkinnedButton.SetRenderInfo`, which spells no declaration). The seven unbound declarations are
+`UPreviewSkinnedButton.SetRenderInfo`, which spells no declaration) — and their records are not native at all,
+so they are the artifact's rows rather than gaps in the editor's text. The seven unbound declarations are
 `Weapon.GetErrorVec`, `Weapon.GetFireStart`, `ScoreBoard.SortPRIArrayFast`, `StargateWeapon.DrawReticule`,
 `StargateWeapon.updateLeadLag`, `HitEffectManager.Update` and `HitEffectManager.SetupFade`, and nothing in the build
-binds them. The residual is therefore not "twelve unanswered questions" but four kinds of row, each decided: 2 editor
-text gaps, 2 record gaps, 7 unbound declarations.
+binds them. The residual is therefore not "twelve unanswered questions" but four kinds of row, each decided: 2
+artifact rows (their records are not native), 2 record gaps, 7 unbound declarations.
 
 **A return type is where the event form hides its name.** `native event int Main( string Parms )` and
 `native final event Font GetFont( int XRes )` put the return type immediately after `event`, so the obvious
@@ -281,12 +283,13 @@ payload's end (`end-4`, or `end-6` when a `RepOffset` follows a `Net` function) 
 239 / `0x00022401`, `Core.Object.Round` 257 / `0x00022401`. **795 of the 797 records carry `Native`**; the two
 that do not are the two disagreements.
 
-**Two committed artifacts inherit the row.** `inventory/native_tokens.csv` (274 token-carrying records, 166
-`text-index` + 107 `operator-expansion`) has exactly **one** row it leaves `unresolved`, and it is `Created`'s
-token 2; `native_residual.csv` carries both as `record-unbound`. The fix belongs in the residual's input, not in
-the editor's text: `native-reconcile.py` should take this tool's `read_record` as the authority for whether a row
-is a record at all, which drops the residual to 10 rows and closes the last unresolved token. Until then the join
-is the gate -- a future `natives.csv` row that disagrees with its own record fails `make ci`.
+**Two committed artifacts inherited the row, and both now ask the record first (measured 2026-11-15, same run).**
+`inventory/native_tokens.csv` (274 token-carrying records) left exactly **one** row `unresolved`, `Created`'s token
+2, and `inventory/native_residual.csv` carried both rows as `record-unbound`. `native-reconcile.py` now shares this
+tool's `read_record`: a row whose record carries no `Native` bit gets its own verdict, `record-not-native`, so the
+residual reads **2 `record-not-native` + 7 `declaration-unbound` + 2 `binder-only`** and the token table reads 166
+`text-index` + 107 `operator-expansion` + 1 `record-not-native` with **0 unresolved**. The join stays the gate -- a
+future `natives.csv` row that disagrees with its own record fails `make ci`.
 
 ## Every body, marked (PLAN 3.9)
 

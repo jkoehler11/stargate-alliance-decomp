@@ -14,6 +14,11 @@ Three things complicate the comparison, and each is handled explicitly rather th
   preoperator bool ! ( bool A )`), which a function-shaped regex misses entirely;
 * the compiler *synthesises* a function per operator signature (`Add_IntInt`, `AddEqual_VectorVector`,
   `AddAdd_PreInt`, …), so those records have no declaration to match. They are counted apart, not as mismatches.
+* a record can be **not native at all**. `UPreview`'s two rows read as "the record is right and the editor's text
+  is missing", but both `Function` payloads carry `0x00020002` (`Defined;Public`) -- no `Native` bit -- and the
+  classes' text declares exactly what they hold. The record's own flag word (`read_record`, shared with
+  `tools/native-record-check.py`) is the first thing the residual asks, so such a row reads `record-not-native`
+  instead of blaming the text.
 * a native can be declared as an **event** (`native event ClientTravel( string URL, … )`), a third form that sits
   between `native` and the name and that a `native … function` pattern cannot see. Events are counted in their own
   column and matched like a function, because the declaration names its own record; leaving them out made eleven
@@ -78,7 +83,7 @@ RESIDUAL_COLS = ["package", "class", "function", "direction", "native_token", "b
 DECL_FORMS = ("function", "event")
 
 
-def residual_rows(pkg_name, cls, decls, records, binder):
+def residual_rows(pkg_name, cls, decls, records, binder, not_native=()):
     """[(function, direction, token, binder, verdict)] for the rows where the two halves do not meet.
 
     `record-only` is a native record the class's text never declares; `declaration-only` is a `native function`
@@ -92,8 +97,11 @@ def residual_rows(pkg_name, cls, decls, records, binder):
         if nr_lower(name) in declared or is_operator_record(name):
             continue
         have = binder.get((cls.lower(), name.lower()))
-        out.append((name, "record-only", (records[name].get("native_token") or "0").strip() or "0",
-                    have or "", "text-missing" if have else "record-unbound"))
+        token = (records[name].get("native_token") or "0").strip() or "0"
+        if (cls.lower(), nr_lower(name)) in not_native:
+            out.append((name, "record-only", token, have or "", "record-not-native"))
+            continue
+        out.append((name, "record-only", token, have or "", "text-missing" if have else "record-unbound"))
     for low, name in sorted(declared.items()):
         if low in {k.lower() for k in records}:
             continue
@@ -132,10 +140,11 @@ TOKEN_COLS = ["package", "class", "function", "native_token", "basis"]
 # `operator` statement becoming several typed records; `unindexed-declaration` would be the compiler assigning an
 # index to a declaration that spelled none (U3's hypothesis, 0 of 274 on this build); the last two are the failures
 # and are meant to be read, not counted quietly.
-TOKEN_BASIS = ("text-index", "operator-expansion", "unindexed-declaration", "index-mismatch", "unresolved")
+TOKEN_BASIS = ("text-index", "operator-expansion", "unindexed-declaration", "index-mismatch", "unresolved",
+               "record-not-native")
 
 
-def token_basis(decls, records):
+def token_basis(decls, records, not_native=()):
     """[(function, token, basis)] for every record of one class that carries a token, sorted by name.
 
     A record is checked against the class's own declarations first: the same name spelling the same index is
@@ -165,6 +174,8 @@ def token_basis(decls, records):
             basis = "unindexed-declaration"
         elif is_operator_record(name):
             basis = "operator-expansion"
+        elif low in not_native:
+            basis = "record-not-native"
         else:
             basis = "unresolved"
         out.append((name, token, basis))
@@ -198,6 +209,14 @@ def selftest():
     cases += 1
     # The operator statement's own index is parsed, so an operator record spelled out by hand still reads as text.
     assert any(k == "operator" and i == "150" for _n, i, k in declarations(text)), "operator index lost"
+    # A record whose own flag word carries no `Native` is the artifact's error, not the text's.
+    got = {name: basis for name, _t, basis in token_basis(declarations(text), recs, not_native={"mystery"})}
+    assert got["Mystery"] == "record-not-native" and got["Drifted"] == "index-mismatch", got
+    cases += 1
+    verdicts = {name: v for name, _d, _t, _b, v in
+                residual_rows("P", "Object", declarations(text), recs, {}, {("object", "mystery")})}
+    assert verdicts["Mystery"] == "record-not-native" and verdicts["Zero"] == "record-unbound", verdicts
+    cases += 1
     cases += 1
     # The name rule is what distinguishes a synthesised signature from an unexplained record.
     for name, expect in (("Add_IntInt", True), ("Concat_StrStr", True), ("EqualEqual_ObjectObject", True),
@@ -266,6 +285,14 @@ def load_script_text():
     return mod
 
 
+def load_record_reader():
+    spec = importlib.util.spec_from_file_location("native_record_check",
+                                                  os.path.join(HERE, "native-record-check.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def strip_comments(text):
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     return re.sub(r"//[^\n]*", "", text)
@@ -318,6 +345,7 @@ COLS = ["package", "class", "class_is_native", "text_functions", "text_indexed",
 
 def run(system_dir, outdir, only=None, walk=False):
     pst = load_script_text()
+    record = load_record_reader()
     known = csv_natives()
     binder = load_binder()
     rows = []
@@ -329,6 +357,20 @@ def run(system_dir, outdir, only=None, walk=False):
         pkg.read_imports()
         pkg.read_exports()
         pkg_name = fname[:-2]
+        # The record's own flag word, per (class, function). A `Function` payload whose `FunctionFlags` carry no
+        # `Native` bit is a script function with a body, whatever `inventory/natives.csv` says about it.
+        exports = {e["index"]: e for e in pkg.exports}
+        not_native = set()
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Function":
+                continue
+            owner = exports.get(exp["outer"] - 1) if exp["outer"] > 0 else None
+            if owner is None:
+                continue
+            _tok, flags = record.read_record(pkg.data[exp["offset"]:exp["offset"] + exp["size"]])
+            if flags is None or flags & 0x400:
+                continue
+            not_native.add((pkg.name(owner["name"]).lower(), pkg.name(exp["name"]).lower()))
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
@@ -366,10 +408,12 @@ def run(system_dir, outdir, only=None, walk=False):
                     token_mismatch.append((name, index, token))
             if not names and not records and not operators:
                 continue
-            for name, token, basis in token_basis(decls, records_all):
+            cls_not_native = {f for c, f in not_native if c == cls.lower()}
+            for name, token, basis in token_basis(decls, records_all, cls_not_native):
                 token_rows.append({"package": pkg_name, "class": cls, "function": name,
                                    "native_token": token, "basis": basis})
-            for name, direction, token, bind, verdict in residual_rows(pkg_name, cls, decls, records, binder):
+            for name, direction, token, bind, verdict in residual_rows(pkg_name, cls, decls, records, binder,
+                                                                       not_native):
                 residual.append({"package": pkg_name, "class": cls, "function": name,
                                  "direction": direction, "native_token": token, "binder": bind,
                                  "verdict": verdict})
