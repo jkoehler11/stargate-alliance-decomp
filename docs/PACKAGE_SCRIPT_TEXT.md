@@ -59,7 +59,7 @@ writes to `$WORK`; nothing here prints or commits source.
 | classes with text | **2,319 of 2,319** |
 | source bytes recovered | 6,113,909 |
 | classes whose first line is `class X extends Y` | 2,319 |
-| `native` function declarations found | 707 (6 inside a block comment, so 701 live) |
+| `native` function declarations found | 707 (26 disabled — 6 in a `/* */`, 20 in a `//` — so **681 live**) |
 | `native` declarations recorded in `inventory/classes.csv` | 797 |
 
 The text is the real thing: `SGOrder`'s first line is `class SGOrder extends Order editinlinenew native;`,
@@ -85,13 +85,26 @@ agree. `inventory/native_declarations.csv` holds the rows.
 
 ### Where counting is incomplete, and why
 
-Eight of eighteen packages match `classes.csv` exactly; five do not, and the shortfall is `Core` (101 found
-vs 203 recorded). The cause is visible in Core's own source: it declares native **operators** — `native(208)
-static final operator(20) float + ( float A, float B )` — which the counter does not treat as functions.
-`StargateContent`'s three found against zero recorded was the mirror case, and it is **closed below**: the
-three are inside a block comment in `StargateContent.SuperSoldier`, so no record could carry them. Both counts
-are recorded in `inventory/script_text_natives.csv` rather than smoothed over; the six-class table above is the
-part that is validated.
+This table is a comparison of two *different* things — declarations in the text against function records in
+the class — so a difference between them is not an error to explain away. `Core` (101 found vs 203 recorded) is
+the largest: its source declares native **operators** — `native(208) static final operator(20) float + ( float
+A, float B )` — and the counter does not treat those as functions. `StargateContent`'s three found against zero
+recorded is the mirror case, and it is **closed below**: the three are inside a block comment in
+`StargateContent.SuperSoldier`, so no record could carry them.
+
+**The whole-buffer number is not the live one, and the difference is 26 declarations.** 6 of the 707 sit in a
+`/* ... */` and 20 in a `//` run, so the text declares **681** native functions. The line-comment half is the
+larger one and it lands in packages this table calls a *surplus*: `Engine` is 16 disabled declarations (which is
+why 451 found against 444 recorded is not 7 extra functions) and `GUI` 4. So a per-class attribution has to
+start from the live count and from the record side, not from this table.
+
+**The record side closes it per record, not per count.** `inventory/native_reconcile.csv` matches the two by
+name: `Core`'s 203 records are 97 matched declarations plus 106 records that its 86 live `operator` statements
+expand into, and 2 declarations (`Core.Object`'s `Divide` and `Round`) have no record at all; `Engine`'s 444 are
+438 matched plus 6 operator records with 3 declarations left over. Corpus-wide that is 797 records = 683 matched
++ 112 operator-expanded + 2 with no declaration, against 692 live declarations (681 functions + 11 events) = 683
+matched + 9 with no record. Quoting either count alone cannot say that, which is why both stay in
+`inventory/script_text_natives.csv` rather than being smoothed over.
 
 
 ## Extracting the whole tree, and what it is not
@@ -149,6 +162,8 @@ the live remainder declares.
 | `function` declarations inside a block comment | **208** |
 | `var` declarations inside a block comment | **51** |
 | `native function` declarations inside a block comment | **6** |
+| `native function` declarations inside a `//` run | **20** |
+| native declarations left live | **681** of 707 |
 | `defaultproperties` blocks inside a block comment | **2** |
 | `defaultproperties` blocks outside every comment | **0** |
 | bytes of text / of it inside a block comment | **5881021** / **278024** |
@@ -221,6 +236,8 @@ The 39 body-in-comment classes, `payload` being the class export's serial size:
 
 
 **6 of the `native function` declarations a whole-buffer count credits are inside a block comment**, and they sit in `Core.Locale`, `StargateContent.SuperSoldier` -- classes whose live part declares none of them, so the source-side native total is 701 against the 707 such a count reports. `StargateContent`'s 3-against-0 in `inventory/script_text_natives.csv` is one of those classes and not a package the inventory mis-attributes.
+
+**The other comment form disables more of them: 20 `native function` declarations sit inside a `//` run**, in 9 classes of which 2 carry no block at all (`Engine.Pawn`, `Engine.Controller`, `Engine.PlayerController`, `Engine.GameInfo`, `Engine.PlayerStats`, `Engine.AIMsgManager`, `Engine.KConeLimit`, `GUI.GUIController`, `GUI.UIXInteraction`). A block-only count is what called this corpus 701 live; with both forms subtracted the source declares **681** live native functions, so any per-class attribution that starts from the whole-buffer number inherits the 26 disabled ones.
 
 Census: 2319 classes read, 252 with a block comment.
 <!-- /generated:class-text-comments -->
