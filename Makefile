@@ -148,6 +148,7 @@ help:
 	@echo "  event-wiring        which event names a map's actors fire and which its sequences wait on"
 	@echo "  event-targets       which actor an event name lands on, and whether that arms its sequence"
 	@echo "  action-order        the order inside an Actions array, and the five classes that move it"
+	@echo "  action-paths        the paths an Actions array allows, and what each branch reads"
 	@echo "  campaign-matrix  missions x maps x speech x music x chapters (dump-free: reads committed CSVs)"
 	@echo "  content-census   which game classes are placed in a map (needs the dump and WORK/UnrealScript)"
 	@echo "  dialogue-index   speech lines per mission, from the Speech/ WAV names (needs the dump)"
@@ -815,6 +816,10 @@ event-wiring:
 action-order:
 	@$(PYTHON) tools/action-order.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" --sweep -o inventory
 	@$(PYTHON) tools/action-order.py --write-doc docs/MAP_ACTION_ORDER.md
+
+action-paths:
+	@$(PYTHON) tools/action-paths.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" --sweep -o inventory
+	@$(PYTHON) tools/action-paths.py --write-doc docs/MAP_ACTION_PATHS.md
 
 event-targets:
 	@$(PYTHON) tools/event-targets.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" --sweep -o inventory

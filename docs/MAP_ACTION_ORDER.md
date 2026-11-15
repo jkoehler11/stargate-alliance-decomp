@@ -122,7 +122,9 @@ an upper bound on what runs where a goto jumps forward, and a lower bound where 
 
 * **A schedule.** `reach` is the order and the cuts, not a trace: `ACTION_IfCondition` and `ACTION_IfProximity`
   decide at run time, so which side of a section a given play takes is not in the package. What is in the package
-  is the set of paths the classes allow.
+  is the set of paths the classes allow, and `docs/MAP_ACTION_PATHS.md` measures that set: 16,888 of the 16,907
+  wired slots are on some path, 649 of them only on a branch's fall-through, and every branch's operand is a
+  property the placement carries.
 * **That a refused element is dead content.** A trigger that stops at a refused class may be stopped on purpose --
   the warning is a diagnostic, not a crash. The count says how often the build would take that branch, not whether
   the branch is a bug.
