@@ -294,6 +294,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `(n-1)/n` to six places on every row** (`inventory/opcode_compare.csv`, 5 distinct pairs, 5 to 230 tokens), and
       the two controls land on **the same function in all 16** -- one body graded two ways. `--check` asserts the
       four numbers per row and reports the agreement instead of asserting it.
+      **And the control's reach is measured, and it was 60.55% of the build (2026-11-15)**: the swap above reached
+      the 16 packages whose first working site it found, which says nothing about how much of the opcode population the
+      rule can mutate at all -- and a body the control cannot reach is graded by a column nothing has made fail on it.
+      `--opcode-pairs SYSTEM -o inventory` widens the pairing rule to every row whose pattern the walker can read and
+      grades **every pair**, one row per opcode in `inventory/opcode_pairs.csv` with a verdict. Two populations were
+      invisible to the shipped rule (`source == "map"` plus a truthiness test on `pattern`): **the empty pattern is a
+      shape** -- the 13 operand-free opcodes carry 128,171 tokens, `0x16` `EndFunctionParms` alone 68,548 -- and the
+      **151 `record`/`record-high` rows** above `0x6f` carry 49,100 more. Measured: **174 of 221 opcodes grade, and
+      458,860 of the corpus's 484,332 tokens (94.74%) sit under a graded swap**, against 293,276 (60.55%) under the
+      rule the package control still uses -- whose artifact is byte-identical before and after, which is the proof
+      that widening a *second* rule did not move the first one's numbers. The 47 rows that keep no grade are the
+      answer the previous note asked for, and it is a negative twice over: **nothing used lacks a same-shape partner**
+      -- the four the note named (`ArrayElement`, `LetBool`, `DynamicArrayElement`, `Let`) are one five-member
+      `expr,expr` group and all grade -- and the nine that are alone in their structural class are alone by
+      construction (`Jump` a code offset, `StringConst`/`UnicodeStringConst` NUL-terminated strings, `Case`,
+      `LabelTable`, `Iterator`, `New`, `DebugInfo`, `DelegateFunction`), six of them written by the corpus (13,785
+      tokens) and three never written. **`EndOfScript` is the only row that pairs and cannot be graded, and it is
+      refused on all 11,687 scripts**: it is what ends the walk and `0x08` `Stop` is not, so every swap runs off the
+      end. `--check` holds the artifact to the walk's own claims (L3 0, L2 0, similarity `(n-1)/n`, one token moved),
+      to the table's shape groups, and to `opcode_usage.csv`'s total -- the rows' `tokens` sum to that file's
+      484,332, which is the independent claim that this census saw the whole corpus and not a subset of it.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

@@ -127,6 +127,78 @@ opcode and both fall, with the ratio landing on `(n-1)/n`. `--check` reports tha
 (it is a property of this build, not of the method) and *does* assert the four numbers above on every row of
 `inventory/opcode_compare.csv`.
 
+## What the opcode control can reach
+
+The swap above proves L2 is sensitive, on 16 packages and one body each. It does not say **how much of the build the
+swap can reach**, and that is the question a rebuild's grade rests on: a body the control cannot mutate is graded by
+a column nobody has ever made fail on it. The control's rule is `opcode_partners` -- two rows with one `pattern` --
+and it read that rule off the **map** rows only, with a truthiness test on `pattern`:
+
+    if row.get("source") == "map" and row.get("pattern"):    # the rule the package control shipped with
+
+Two things are invisible to that test, and both are large. **The empty pattern is a shape**: `EndFunctionParms`
+(`0x16`), `Nothing` (`0x0b`), `EndOfScript` (`0x47`), `True`/`False`/`IntZero`/`NoObject`/`BoolVariable` take no
+operand at all, and those 13 rows carry **128,171** tokens -- `EndFunctionParms` alone is 68,548, one per argument
+list. And **the `record` rows are opcodes too**: `0x70..0xff` and the `HighNative` band are named from the image's
+own `GNatives` records with pattern `parms`, 151 rows carrying **49,100** tokens. Under the shipped rule the control
+reached **293,276 of the corpus's 484,332 opcode tokens (60.55%)**.
+
+`tools/uscript-dis.py --opcode-pairs SYSTEM -o inventory` widens the rule to every row whose pattern the walker can
+read and grades **every pair**, not the first one a package offers. The swap is the same mutation; what changes is
+that a row now exists for each of the 221 opcodes the table describes, with a verdict:
+
+- `graded` -- the walk kept its token count, exactly one token moved, L3 and L2 both fell, similarity `(n-1)/n`;
+- `refused` -- the stream no longer fits the new opcode (one row: `EndOfScript`);
+- `extends` -- the walk is a different length, which is what a terminator swapped for a non-terminator does;
+- `unused` -- the corpus never writes that opcode, so it can be neither graded nor missed;
+- `unpaired` -- no row in the table has this operand shape, so **this build cannot swap it at all**.
+
+That last verdict is the answer to the question the previous note left open, and the answer is a negative: the four
+opcodes it named as having "no same-shape partner" -- `ArrayElement`, `LetBool`, `DynamicArrayElement` and the `Let`
+beside them -- all sit in one five-member `expr,expr` group and all grade. Nothing in this build is unswappable for
+want of a *partner* except the patterns that have one member: `Jump` (`bytes:2`), `Case`, `Iterator`, `New`,
+`StringConst`, `UnicodeStringConst`, `DelegateFunction`, `LabelTable` and `DebugInfo`. Six of those nine are written
+by the corpus (13,785 tokens), and each is alone in its structural class by construction -- a code offset, a
+NUL-terminated string, a case table -- so no length-preserving partner exists to be named. **`EndOfScript` is the
+other negative, and it is the interesting one**: it pairs with `Stop` (both operand-free), and every one of the
+11,687 attempts refuses, because `0x47` is what ends the walk and `0x08` is not.
+
+<!-- generated:opcode-pairs -->
+**The L2 control reaches 458860 of the build's 484332 opcode tokens (94.74%): 174 of its 221 row(s) grade, and 47 do not.**
+**182 of these rows are outside the rule `--opcode-control` shipped with** -- that rule pairs a `map` row with a non-empty pattern, so the operand-free opcodes (`0x16` `EndFunctionParms` alone is 68,548 tokens) and the `record` natives above `0x6f` were invisible to it, and it reached only 293276 of the 484332 tokens (60.55%). The shape is the same measurement in both cases; only the rule's reach differed.
+
+| operand shape | opcodes | with a partner | graded | tokens | under a graded swap |
+|---|---:|---:|---:|---:|---:|
+| `index` | 7 | 7 | 7 | 133715 | 133715 |
+| (operand-free) | 13 | 13 | 11 | 128171 | 116484 |
+| `parms` | 144 | 144 | 121 | 44811 | 44811 |
+| `expr,bytes:3,expr` | 2 | 2 | 2 | 31622 | 31622 |
+| `expr,expr` | 5 | 5 | 5 | 29782 | 29782 |
+| `bytes:2,expr` | 3 | 3 | 3 | 22421 | 22421 |
+| `expr` | 4 | 4 | 3 | 21156 | 21156 |
+| `index,parms` | 3 | 3 | 3 | 19349 | 19349 |
+| `bytes:1,expr` | 2 | 2 | 2 | 10729 | 10729 |
+| `index,expr` | 3 | 3 | 3 | 9466 | 9466 |
+| `bytes:1` | 2 | 2 | 2 | 7669 | 7669 |
+| `bytes:4` | 2 | 2 | 2 | 6546 | 6546 |
+| `bytes:2` | 1 | 0 | 0 | 6315 | 0 |
+| `str` | 1 | 0 | 0 | 5830 | 0 |
+| `bytes:1,parms` | 16 | 16 | 4 | 4289 | 4289 |
+| `case` | 1 | 0 | 0 | 1044 | 0 |
+| `bytes:12` | 2 | 2 | 2 | 599 | 599 |
+| `expr,bytes:2` | 1 | 0 | 0 | 358 | 0 |
+| `expr,expr,expr` | 2 | 2 | 2 | 216 | 216 |
+| `expr,expr,expr,expr` | 1 | 0 | 0 | 139 | 0 |
+| `index,index,expr` | 1 | 0 | 0 | 99 | 0 |
+| `index,expr,expr` | 2 | 2 | 2 | 6 | 6 |
+| `bytes:13` | 1 | 0 | 0 | 0 | 0 |
+| `labeltable` | 1 | 0 | 0 | 0 | 0 |
+| `utf16` | 1 | 0 | 0 | 0 | 0 |
+| **total** | **221** | **212** | **174** | **484332** | **458860** |
+
+The rows that keep no grade, in the order of their population: `0x06 Jump` (unpaired), `0x0a Case` (unpaired), `0x11 New` (unpaired), `0x1f StringConst` (unpaired), `0x2f Iterator` (unpaired), `0x43 DelegateFunction` (unpaired), `0x47 EndOfScript` (refused) -- and 40 more the corpus never writes, so they can be neither graded nor missed.
+<!-- /generated:opcode-pairs -->
+
 ## The cast axis
 
 A `PrimitiveCast` (`0x39`) is the opcode a rebuild can get wrong without changing the shape of the code: its row in
@@ -177,6 +249,7 @@ only to a payload the header refused; a payload that walks is a script whatever 
     make matching-baseline SG1_DUMP=~/nfs/sg1-dump
     python3 tools/uscript-dis.py --pairs ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System
     python3 tools/uscript-dis.py --opcode-control ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System -o inventory
+    python3 tools/uscript-dis.py --opcode-pairs ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System -o inventory
     python3 tools/uscript-dis.py --check-doc docs/MATCHING.md     # in `make ci`; reads the artifact only
 
 `inventory/matching_baseline.csv` is the artifact and the table above is generated from it (`--write-doc`);
