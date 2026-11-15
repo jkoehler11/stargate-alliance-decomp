@@ -603,6 +603,49 @@ regenerates it. Two numbers the tool also states and the table does not: **466**
 `GNatives` slots and **66** for the 33, because every thunk stores the same entry twice, once on the
 first-registration path and once on the already-filled path.
 
+##### The two installers are sibling setters, and their conflict record is one dword each (measured 2026-11-15)
+
+The 266 thunks above do not open-code the install: they inline one of **two sibling setters** that sit next to each
+other in `.text`, one per table, and the pair is the cleanest statement of what a registration is.
+
+`0x0046c60`, the `GNatives` setter (`int reg(int index, int *body)`):
+
+```
+mov eax, ds:0x635560 / test eax,eax / jne filled        ; first-use fill flag
+mov ecx,0x1000 / mov eax,0x404a0 / mov edi,0x6313e8 / rep stosd
+mov ds:0x635560, 1
+filled: mov eax,[esp+4] / cmp eax,0xffffffff / je done  ; index -1 means "nothing to install"
+test eax,eax / jl conflict
+cmp eax,0x1000 / ja conflict                            ; the table's own bound
+cmp [eax*4+0x6313e8], 0x404a0 / je store                ; still the stub -> free
+conflict: mov ds:0x6353e8, eax                          ; record the rejected index
+store:    mov ecx,[esp+8] / mov edx,[ecx] / mov [eax*4+0x6313e8], edx
+done:  xor al,al / ret
+```
+
+`0x0046cc0` is the same body for the 255-entry conversion table -- `0xff` entries, flag `0x635564`, bound `0xff`,
+diagnostic `0x6353ec` -- and that is the whole difference between them.
+
+* **`0x6353e8` and `0x6353ec` are one dword each, not tables.** Every write either setter makes to them is a single
+  index (`mov ds:<dword>,eax`), no `rep stosd` fill initialises either address, and nothing indexes them: they hold
+  the last index that was refused, which is a debug record of a double registration or an out-of-range opcode. That
+  is the read `gnatives-writes.py` calls the "slot annotation" -- its `slot_literal` column is right about the value
+  and its name for the address is the thing to fix.
+* **The conflict path is what the thunks inline.** A thunk stores its entry twice because it carries the setter's two
+  paths: the plain store when the slot still holds `0x404a0` (so 233 `GNatives` and 33 conversion stores land) and the
+  `0x6353e8`/`0x6353ec` write when it does not. The 466/66 store counts in the section above are that duplication, not
+  two tables of stores.
+* **The conversion table has exactly one dispatch site.** In `.text` the address `0x630fe0` is an operand four times:
+  the setter's fill (`0x0046cd5`), the setter's busy test (`cmp [eax*4+0x630fe0],0x404a0` at `0x0046cfd`), the
+  setter's store (`0x0046d15`), and **`jmp dword [reg*4+0x630fe0]` at `0x0040bf8`** -- the only place the table is
+  read as a table. So the conversions are dispatched through one jump whose index arrives from the VM, inside a
+  28-byte function the symbol map names `Native_57`; that name is the map's, not a claim about which declaration it
+  serves.
+
+So the three channels are now each a measured mechanism rather than a count: **opcodes** through `GNatives` set by
+`0x0046c60`'s thunks, **conversion operators** through the 255-entry table set by `0x0046cc0`'s and read by one
+`jmp [reg*4+0x630fe0]`, and **declared natives** through `UFunction::Func` with no table at all.
+
 **A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
 image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one
 character, so every index after the first pair drifts: **all 769** non-empty addresses in
