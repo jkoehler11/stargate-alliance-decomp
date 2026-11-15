@@ -286,6 +286,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       package a rebuild rebuilds, and a class relocated between packages shows up as only-in-one rather than as a
       match. `--pairs SYSTEM` prints the census, and `--check` drives `export_path` on a synthetic tree of two classes
       with a same-named state, asserting that the *old* key collides on it.
+      **And L2 has a control that can fail it now (2026-11-15)**: the mutation the scoreboard had flips an operand
+      bit, which the opcode sequence cannot see *by construction*, so nothing had ever tested that `--compare` grades
+      opcodes at all. `--opcode-control SYSTEM` swaps one token's opcode for a same-shape partner (`0x07` `JumpIfNot`
+      -> `0x09` `Assert`, `0x0f` `Let` -> `0x10` `DynamicArrayElement`, ...), so the stream keeps its length and only
+      one token moves: **16 of 18 packages controlled, L3 0, L2 0, token count unchanged, similarity exactly
+      `(n-1)/n` to six places on every row** (`inventory/opcode_compare.csv`, 5 distinct pairs, 5 to 230 tokens), and
+      the two controls land on **the same function in all 16** -- one body graded two ways. `--check` asserts the
+      four numbers per row and reports the agreement instead of asserting it.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
