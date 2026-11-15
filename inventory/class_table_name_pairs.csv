@@ -1,0 +1,26 @@
+table_va,class,basis,support,family,candidates,site_va,site_size,children,verdict
+0x004c78c0,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,AudioSubsystem|new|Input,open
+0x004c7958,Material,child-super,3 child table(s) declare super Material,,Material:3;Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,0x00169ad6,60,Modifier|Combiner|MultiPassMaterial,paired
+0x004c7a10,RenderedMaterial,child-super,7 child table(s) declare super RenderedMaterial,,RenderedMaterial:7,0x00169d66,64,ConstantMaterial|TexCoordMaterial|VertexColor|Shader|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|TerrainMaterial,paired
+0x004c7ac8,BitmapMaterial,child-super,3 child table(s) declare super BitmapMaterial,,BitmapMaterial:3,0x00169ca6,88,Texture|ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial,paired
+0x004c7c78,CameraEffect,child-super,10 child table(s) declare super CameraEffect,,CameraEffect:10;Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,0x000fbd46,60,SGScreenSniperOverlay|SGScreenMenuPause|SGScreenBlur|SGScreenDOF|SGScreenMotionBlur|SGScreenRadialBlur|SGScreenEmissiveWithBloom|SGScreenEmissive|CameraOverlay|MotionBlur,paired
+0x004c9348,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,,open
+0x004c93d0,,,,,,,,XboxViewport,open
+0x004c94b0,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,XboxClient,open
+0x004cfe68,WaterTexture,child-super,3 child table(s) declare super WaterTexture,Texture,WaterTexture:3;WaterTexture:parent,0x002e17d9,4868,WaveTexture|FluidTexture|WetTexture,paired
+0x004d0318,,,,,,,,TcpNetDriver|TcpNetDriverXbox|DemoRecDriver,open
+0x004d03c8,,,,,,,,TcpipConnection|TcpipConnectionXbox|DemoRecConnection,open
+0x004d1468,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,Struct|Const|Enum,open
+0x004d17a8,,family,every named child contains Property,Property,Property:family,0x000778d9,108,IntProperty|BoolProperty|FloatProperty|StrProperty|ArrayProperty|ObjectProperty|ByteProperty|PointerProperty|NameProperty|FixedArrayProperty|MapProperty|StructProperty|DelegateProperty,hint
+0x004d2400,,,,,,,,XHVVoiceSubsystem,open
+0x004d34d8,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,ObjectExporterT3D,open
+0x004d3af0,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,TextBufferFactory,open
+0x004eaea8,,family,every named child contains RenderDevice,RenderDevice,RenderDevice:family,0x0011f9f9,184,NullRenderDevice|D3DRenderDevice,hint
+0x004fa390,,family,every named child contains Channel,Channel,Channel:family;Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,0x001083c6,100,ControlChannel|FileChannel|VoiceChannel|ActorChannel,hint
+0x004fc4f0,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,Level,open
+0x004fc588,,family,every named child contains PendingLevel,PendingLevel,PendingLevel:family,0x001a51d9,176,DemoPlayPendingLevel|NetPendingLevel,hint
+0x004fcfe0,,family,every named child contains Download,Download,Download:family;Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,0x0011e9d9,1112,ChannelDownload|HTTPDownload,hint
+0x005040d0,Engine,child-super,1 child table(s) declare super Engine,,Engine:1,0x00121989,284,GameEngine,paired
+0x00517860,,,,,Subsystem:parent;CameraEffect:parent;Material:parent;Player:parent,,,IndexBuffer|SkinVertexBuffer,open
+0x005178d8,,,,,,,,VertexBuffer|VertexStreamVECTOR|VertexStreamCOLOR|VertexStreamUV|VertexStreamPosNormTex,open
+census,,candidates=25 tables=24 paired=6 hint=5 open=13,child-super 85/85 parent-super 29/29 family 10/16,,,,,,census

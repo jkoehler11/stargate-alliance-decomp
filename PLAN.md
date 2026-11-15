@@ -1379,6 +1379,39 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the unpaired literals are paired as far as the tree goes)
+
+- **The 25 registration literals that never reach a table now have a read.** They push the shared default
+  constructor `0x00034650` (the object root's), so the 24 tables their classes own are addresses in
+  `inventory/xbe_class_table_names.csv`; `tools/class-table-name-pair.py` pairs literal to position from
+  the tree, with both rules measured on the 467 tables that are already named first: `child-super` (a named
+  child's script `super`) is **85 of 85** with no counter-example, and `parent-super` (the one candidate
+  whose own super is the measured parent's name) **29 of 29** while leaving a single candidate on only 29
+  of 389 parented tables.
+- **Six tables get a name: `Material` `0x4c7958`, `RenderedMaterial` `0x4c7a10`, `BitmapMaterial`
+  `0x4c7ac8`, `CameraEffect` `0x4c7c78`, `WaterTexture` `0x4cfe68`, `Engine` `0x5040d0`.** Five of the six
+  are the ancestor's *child* rather than the ancestor, which is exactly what the family rule gets wrong:
+  every child of `0x4c7a10` contains `Material`, and the child-super vote puts the table one level below it
+  at `RenderedMaterial`. The sixth, `0x4cfe68`, also settles the `WaterTexture` clash that
+  `class_table_parents.csv` has with the class map: it puts `WaterTexture` under `FractalTexture`
+  (`0x4cfc88`), where the script says it belongs, and leaves `0x4cfba0` as `Texture`.
+- **Five carry only a family anchor** (`Property`, `RenderDevice`, `Channel`, `PendingLevel`, `Download`)
+  and **thirteen are open**; three of those are open structurally -- one or five children, none with a
+  declared super and no candidate above them.
+- **Two routes do not exist, and both were measured rather than assumed.** The installer body names
+  nothing: all 26 bodies `class_table_parents.csv` leaves unnamed were disassembled and every absolute
+  operand resolved in a data section holds **0 strings**, as a 79-131-byte `mov [ecx],<table>; call
+  <base>; ret` should. The registration's size cannot key the join either: `class_size_sources.csv`'s
+  24 `no-registration` rows are these same tables, so every size in the artifacts originates at a
+  registration site and the pairing would be circular.
+- Tool (`tools/class-table-name-pair.py`: the two rules with their measured precision, the rejected family
+  rule, the fixpoint that lets a new label answer its children, the tie rule, and an 8-assertion `--check`
+  over in-memory fixtures with no dump) + `inventory/class_table_name_pairs.csv` (24 rows plus a census) +
+  the section on `docs/NATIVE_CLASS_TREE.md` + `make class-name-pair` + `docs/UNKNOWNS.md` U8.
+- **Next measurement:** the remaining thirteen need a name the image does not carry -- `class-tables-live`
+  reads a loaded `UClass`'s name field and needs one boot (U8's runtime route), or an engine-side class
+  list for `Engine`'s native classes, which the shipped `.u` files do not declare.
+
 ### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)
 
 - **The caller rule is constrained by the script tree, not by the image.** 0 of the 63 caller tables the

@@ -1200,6 +1200,21 @@ the engine's native-only classes, so the verdict was a gap in the script tree, n
 left is the name: the 17 sit inside the 26 tables no registration literal pairs with, so the remaining read is the 27
 registration sites whose literal the link cannot pair, matched against position rather than guessed.
 
+**2026-11-15, the 25 unpaired literals are paired as far as the tree goes: six names, five hints, thirteen open.**
+`tools/class-table-name-pair.py` is the "pair literal to position" read this entry ended on, and its two rules are
+measured on the 467 tables the registration *does* name before either is applied to the 24: **`child-super` 85 of 85**
+(a named child's script `super` names the parent table) and **`parent-super` 29 of 29** (the one candidate whose own
+super is the measured parent's name -- precise, but it leaves one candidate on only 29 of 389 parented tables). The
+family rule -- every named child contains the candidate -- is **10 of 16 and rejected as a namer**: it answers the
+family *ancestor* (`Info` for `ZoneInfo`, `Material` for `RenderedMaterial`), which is why five of the six pairings are
+the ancestor's child. Named: `Material`, `RenderedMaterial`, `BitmapMaterial`, `CameraEffect`, `WaterTexture` (which
+also settles `class_table_parents.csv`'s `WaterTexture`/`Texture` clash, one table below `0x4cfba0`) and `Engine`.
+Hints only: `Property` (13 of 13 children are `*Property`), `RenderDevice`, `Channel`, `PendingLevel`, `Download`.
+**What would settle the other thirteen:** a runtime `UClass` name read -- `tools/xemu/class-tables-live.py` on a loaded
+level, one boot -- or an engine-side class list, since two routes were measured out this run: 0 of the 26 installer
+bodies resolves any string, and the registration's size argument cannot key the join because every size in the artifacts
+originates at a registration site (`class_size_sources.csv`'s 24 `no-registration` rows are these tables).
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
