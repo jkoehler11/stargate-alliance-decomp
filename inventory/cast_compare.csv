@@ -3,7 +3,7 @@ AmbientCreatures.u,AmbientCreatureManager.InSpawnRange,16,63,62,16,0,1,1,0,0,18,
 Core.u,HelloWorldCommandlet.Main,92,83,82,42,0,1,1,0,0,94,2,19,19
 Editor.u,ConeBuilder.Build,21,63,62,188,0,1,1,0,0,23,16,23,23
 Engine.u,AIController.AdjustView,105,63,62,194,0,1,1,0,0,107,696,3396,3396
-GUI.u,ConsoleVisible.KeyEvent,4,58,59,419,0,1,1,0,0,6,138,719,719
+GUI.u,ControllerButton.OnMyDraw,14,58,59,156,0,1,1,0,0,16,138,719,719
 GamePlay.u,ACTION_ChangeScript.GetScript,87,86,87,49,0,1,1,0,0,89,82,382,382
 IpDrv.u,ClientBeaconReceiver.ReceivedText,62,74,75,126,0,1,1,0,0,64,16,83,83
 Sharpeffects.u,SE_AdvExplosiveMeshActor.CheckExplode,372,68,69,224,0,1,1,0,0,374,11,40,40
@@ -14,5 +14,5 @@ StargateVehicles.u,ACTION_MoveToLandingPoint.InitActionFor,80,86,87,104,0,1,1,0,
 Stargateeffects.u,AcidBurn.Timer,10,58,59,138,0,1,1,refused,refused,12,12,58,58
 UDebugMenu.u,UDebugBlueLookAndFeel.Button_DrawSmallButton,137,63,62,78,0,1,1,0,0,139,93,157,157
 UPreview.u,UPreviewMapListClient.BeforePaint,13,63,62,44,0,1,1,0,0,15,8,13,13
-UWindow.u,UWindow.KeyEvent,52,58,59,246,0,1,1,0,0,54,179,731,731
+UWindow.u,UWindowBase.NewRegion,6,68,69,25,0,1,1,0,0,8,179,731,731
 census,,,,,10529,,,,,,,2618,11687,11687

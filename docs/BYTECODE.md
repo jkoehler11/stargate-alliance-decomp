@@ -1184,13 +1184,15 @@ function, whether a rebuild is the same bytes (**L3**), the same opcode sequence
 
     $ python3 tools/uscript-dis.py --compare DUMP/System/Engine.u DUMP/System/Engine.u
     Engine.u vs Engine.u
-      3821 functions in both, 0 only in the first, 0 only in the second, 469 not disassembled
-      byte-identical (L3): 3352; opcode-identical (L2): 3352; mean opcode similarity: 100.00%
+      3842 functions in both, 0 only in the first, 0 only in the second, 446 not disassembled
+      byte-identical (L3): 3396; opcode-identical (L2): 3396; mean opcode similarity: 100.00%
 
-Comparing a package with itself is the wiring test: 3,352 of the 3,821 shared functions compare identical and the 469
-that do not are the ones with no script to compare (the natives and the refusals). A one-byte mutation inside an
-operand is then caught as what it is — **byte-identical 3,351, opcode-identical 3,352**, i.e. the opcode sequence still
-matches while the bytes do not, which is exactly the distinction the three tiers exist for.
+Comparing a package with itself is the wiring test: 3,396 of the 3,842 shared functions compare identical and the 446
+that do not are the ones with no script to compare (the natives and the operator declarations). A one-byte mutation
+inside an operand is then caught as what it is — **byte-identical 3,395, opcode-identical 3,396**, i.e. the opcode
+sequence still matches while the bytes do not, which is exactly the distinction the three tiers exist for. (The
+example read 3,821 / 469 / 3,352 until the index learned to key a state-declared function by its class path —
+`docs/MATCHING.md`, *What a function is keyed by*.)
 
 **What this leaves of 3.8** is the oracle side: to score a rebuild, something has to produce one, and that is `ucc`.
 The comparator is now the part that does not wait.
@@ -1339,7 +1341,8 @@ session and the last 85 are not one more such correction.
 ## A single table row cannot fix the 79 refusals (measured 2026-11-14)
 
 `inventory/opcode_refusals.csv` holds **79 rows** today (85 when the section above was written) against a corpus of
-**12,153 `Function` exports, 11,289 of which walk** (`docs/MATCHING.md`). The question the rows raise next is not
+**12,153 `Function` exports, 11,289 of which walk** (`docs/MATCHING.md`; 12,472 and 11,687 after the index learned
+the class path and this tail closed — *What a function is keyed by*). The question the rows raise next is not
 which opcode is missing but **whether the row is wrong or the stream is already off when it gets there**.
 `tools/uscript-refusals.py --candidates DUMP/System` (`make refusal-candidates`) holds every other row fixed,
 replaces only the pattern of the opcode the walk stopped on -- twelve candidates, `bytes:1` through `bytes:8`,

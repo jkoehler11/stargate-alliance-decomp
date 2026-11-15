@@ -3329,8 +3329,26 @@ def script_of(pkg, export, table):
     return None if got is None else flatten(got[0])
 
 
+def export_path(pkg, e):
+    """A function export's name qualified by every outer above it, class first: `Class.Function`, `Class.State.Function`.
+
+    The immediate outer of a function a *state* declares is the state, not the class, so a key built from it alone is
+    two things at once. Inside one package, two classes that both have a `Dead` state write one `Dead.BeginState` slot
+    and the second export overwrites the first; between two packages, a state name that means a different class in
+    each (`Dead`, `Flying`, `NormalFire`) reads as one shared function. Walking to the outermost export separates
+    them, and the state stays in the key because `Actor.Dying.BeginState` and `Actor.BeginState` are different bodies.
+    """
+    parts, cur, guard = [], e, 0
+    while cur["outer"] > 0 and guard < 16:
+        parts.append(pkg.name(cur["name"]))
+        cur = pkg.exports[cur["outer"] - 1]
+        guard += 1
+    parts.append(pkg.name(cur["name"]))
+    return ".".join(reversed(parts))
+
+
 def function_index(path):
-    """Every `Function` export a package owns, keyed by `(owner, name)` -- the comparator's unit of comparison."""
+    """Every `Function` export a package owns, keyed by `export_path` -- the comparator's unit of comparison."""
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
 
@@ -3342,9 +3360,45 @@ def function_index(path):
     for e in pkg.exports:
         if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
             continue
-        owner = pkg.name(pkg.exports[e["outer"] - 1]["name"])
-        out[(owner, pkg.name(e["name"]))] = e
+        out[export_path(pkg, e)] = e
     return pkg, out
+
+
+def pairs_report(path):
+    """What two packages declare in common, over every pair in a directory -- the comparator's cross-package face.
+
+    `--compare` answers this for one pair; a rebuild is graded package by package, so the question that matters is
+    whether the unit of comparison survives being read across packages at all. It does not, and the point of the
+    census is to show how much the old key invented: the qualified path finds the classes two packages genuinely
+    declare twice, while the immediate-outer key also counts every state whose *name* recurs, in a different class,
+    in the other package. Both are counted here in one walk so the two answers are comparable.
+    """
+    files = [os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")] \
+        if os.path.isdir(path) else [path]
+    qual, naive = {}, {}
+    for one in files:
+        pkg, funcs = function_index(one)
+        qual[os.path.basename(one)] = set(funcs)
+        naive[os.path.basename(one)] = {"%s.%s" % (pkg.name(pkg.exports[e["outer"] - 1]["name"]),
+                                                  pkg.name(e["name"]))
+                                        for e in pkg.exports
+                                        if pkg.class_name_of(e) == "Function" and e["outer"] > 0}
+    names = sorted(qual)
+    pairs = q_shared = n_shared = q_pairs = n_pairs = 0
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            pairs += 1
+            qs, ns = qual[a] & qual[b], naive[a] & naive[b]
+            q_shared += len(qs)
+            n_shared += len(ns)
+            q_pairs += 1 if qs else 0
+            n_pairs += 1 if ns else 0
+            if qs or ns:
+                print("%-24s %-24s qualified %3d  naive %3d  %s"
+                      % (a, b, len(qs), len(ns), ", ".join(sorted(qs)) or "-"))
+    print("%d pair(s) of %d: the qualified path shares %d function(s) in %d pair(s); the immediate outer shares %d "
+          "in %d" % (pairs, len(names), q_shared, q_pairs, n_shared, n_pairs))
+    return 0
 
 
 def compare_report(path_a, path_b, table, out=None):
@@ -3370,7 +3424,8 @@ def compare_report(path_a, path_b, table, out=None):
         ta, tb = flatten(ga[0]), flatten(gb[0])
         c = compare_tokens(ta, tb)
         cc = compare_casts(ga[0], gb[0])
-        rows.append((key[0], key[1], c["tokens"][0], c["bytes"], c["opcodes"], round(c["similarity"], 4),
+        owner, _dot, name = key.rpartition(".")
+        rows.append((owner, name, c["tokens"][0], c["bytes"], c["opcodes"], round(c["similarity"], 4),
                      cc["casts"][0], cc["slots"], cc["exprs"], cc["first"]))
     byte_identical = sum(1 for r in rows if r[3])
     opcode_identical = sum(1 for r in rows if r[4])
@@ -3381,6 +3436,9 @@ def compare_report(path_a, path_b, table, out=None):
     print("%s vs %s" % (os.path.basename(path_a), os.path.basename(path_b)))
     print("  %d functions in both, %d only in the first, %d only in the second, %d not disassembled"
           % (len(shared), len(only_a), len(only_b), skipped))
+    if not shared:
+        print("  nothing is declared under the same class path in both packages -- the index holds declarations, so a "
+              "function one package inherits from another is not comparable here")
     print("  byte-identical (L3): %d; opcode-identical (L2): %d; mean opcode similarity: %.2f%%"
           % (byte_identical, opcode_identical, 100.0 * mean))
     print("  casts: %d function(s) hold one in the first package; %d agree on every slot, %d on every nested "
@@ -3485,7 +3543,7 @@ def mutation_control(pkg, funcs, table, per_function=4):
                 continue
             c = compare_tokens(flatten(nodes), after)
             if c["opcodes"] and not c["bytes"]:
-                return "%s.%s+%d" % (key[0], key[1], pos)
+                return "%s+%d" % (key, pos)
     return ""
 
 
@@ -3603,7 +3661,7 @@ def cast_control(pkg, funcs, table, installed, expr_bytes=(0x01, 0x00, 0x0B, 0x0
                 break
             else:
                 e_l3 = e_l2 = "refused"
-            return ("%s.%s" % (key[0], key[1]), off, slot, to, len(flat), int(c["bytes"]), int(c["opcodes"]),
+            return (key, off, slot, to, len(flat), int(c["bytes"]), int(c["opcodes"]),
                     len(moved), e_l3, e_l2, child)
     return None
 
@@ -4160,6 +4218,51 @@ def diverge_report(path, rows=0):
     return 0
 
 
+class _StubPackage:
+    """Just enough of a package for `export_path`: a name table and an export table that carries outers."""
+
+    def __init__(self, names, exports):
+        self._names = names
+        self.exports = exports
+
+    def name(self, i):
+        return self._names[i]
+
+
+def key_check():
+    """`export_path` separates two classes' same-named states, which a key built from the immediate outer cannot.
+
+    The synthetic tree is two classes that both declare a `Dead` state with a `BeginState` in it -- the shape this
+    build's `Engine.u` has 365 of -- plus a function the class declares directly, so the state is in the key only
+    where the export sits inside one. The final assertion is that the *old* key collides on the same tree: a test
+    the previous shape would also pass proves nothing.
+    """
+    fails = []
+    exports = [{"name": 0, "outer": 0},          # 1 the package itself
+               {"name": 1, "outer": 0},          # 2 class Actor
+               {"name": 2, "outer": 2},          # 3 state Actor.Dead
+               {"name": 3, "outer": 3},          # 4 function Actor.Dead.BeginState
+               {"name": 4, "outer": 0},          # 5 class Pawn
+               {"name": 5, "outer": 5},          # 6 state Pawn.Dead
+               {"name": 6, "outer": 6},          # 7 function Pawn.Dead.BeginState
+               {"name": 7, "outer": 2}]          # 8 function Actor.BeginState
+    names = ["Package", "Actor", "Dead", "BeginState", "Pawn", "Dead", "BeginState", "BeginState"]
+    stub = _StubPackage(names, exports)
+    want = {4: "Actor.Dead.BeginState", 7: "Pawn.Dead.BeginState", 8: "Actor.BeginState"}
+    for index, expected in want.items():
+        got = export_path(stub, exports[index - 1])
+        if got != expected:
+            fails.append("export %d: path %r, wanted %r" % (index, got, expected))
+    old = {(names[exports[i - 1]["outer"] - 1], names[exports[i - 1]["name"]]) for i in (4, 7)}
+    if len(old) != 1:
+        fails.append("the synthetic tree does not reproduce the collision this test exists for")
+    for f in fails:
+        print("FAIL export-path: %s" % f)
+    if not fails:
+        print("ok   export-path: two classes' `Dead.BeginState` are two keys, and a class function keeps its class")
+    return 1 if fails else 0
+
+
 def struct_check():
     """A control on the struct and declaration readings: the parse, the directive strip, the ways a member
     names nothing, the one that names a class.
@@ -4301,6 +4404,8 @@ def main():
                          "`drive.py --step=brk=` searches a RAM dump for (docs/XEMU.md)")
     ap.add_argument("--compare", nargs=2, metavar=("PACKAGE_A", "PACKAGE_B"),
                     help="compare two packages function by function: bytes, opcode sequence, or neither")
+    ap.add_argument("--pairs", metavar="PATH",
+                    help="what every pair of packages in a System directory declares in common, under both keys")
     ap.add_argument("--cast-control", metavar="PACKAGE_OR_SYSTEM",
                     help="the comparator's cast axis, measured on the shipped bytes: moving a conversion's slot "
                          "costs L3 and keeps L2, moving what it converts costs both (inventory/cast_compare.csv)")
@@ -4353,7 +4458,7 @@ def main():
 
     if args.check:
         rc = struct_check()
-        return rc or cast_check()
+        return rc or cast_check() or key_check()
     if args.header:
         return header_report(args.header)
     if args.start:
@@ -4383,6 +4488,8 @@ def main():
         return calls_report(args.calls, Table(), args.out, args.lists)
     if args.class_refs:
         return class_refs_report(args.class_refs, Table(), args.out)
+    if args.pairs:
+        return pairs_report(args.pairs)
     if args.compare:
         return compare_report(args.compare[0], args.compare[1], Table(), args.out)
     if args.cast_control:
