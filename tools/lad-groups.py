@@ -21,7 +21,9 @@ a tolerance) or be its exact negation -- a near miss is `other`, and no pair is 
 **The values split the table at slot 19.** Slots 0-18 are *never negative* in any of the 208 file x slot
 rows (they run 0 to 1.34 -- `1.00788`, `1.18165`, `1.33783` at their widest), which is a weight; slots
 19-25 are signed, -9.45942 to +9.45942, which is an offset or an angle. Nineteen weight slots is also the
-channel count of the four `Controllers/` packs; the coincidence is recorded, not explained.
+channel count of the four 19-channel `Controllers/` packs and not of the other four files, which carry 21
+and split at 19 all the same -- so the split is a schema constant, not a per-file alignment (`--dir`'s `channels`
+column measures it).
 
 `160.0` / `220.0`, the two `f32` fields in the track header, are measured here too: `--headers` re-scans
 every `u32 2` marker with the *relaxed* test (a length-prefixed name pair, a `u32 1`, two `f32`, any count
@@ -37,6 +39,13 @@ per-track data -- a duration, a sample rate or a range would vary with the clip.
     tools/lad-groups.py --check                              # dump-free, validates the committed CSV
 
 It measures redundancy and ranges; it does not claim what a value means.
+
+**Two more columns are read against the split.** `channels` is the file's channel count, repeated on every
+row so the 19/7 split can be read against the count it was said to follow -- and it does not follow it: half
+the corpus's files carry **21** channels and split at slot 19 all the same, so the split is a schema constant
+rather than a per-file alignment with the channel table. `f32_exact` counts the keys whose `f64` survives a
+round trip through `f32` -- the width the pose block stores -- and it separates a stored sample from a value
+only a double can hold, which no count in this file did before.
 """
 import argparse
 import collections
@@ -52,7 +61,8 @@ CSV = "lipsinc_groups.csv"
 SLOTS = 26
 WEIGHT_SLOTS = 19                     # 0..18 carry weights, 19..25 signed values; measured, see below
 COLUMNS = ["path", "slot", "tracks", "using", "keys", "empty", "min_keys", "max_keys",
-           "time_min", "time_max", "value_min", "value_max", "equal_to", "negation_of"]
+           "time_min", "time_max", "value_min", "value_max", "equal_to", "negation_of",
+           "channels", "f32_exact"]
 EXACT = 1e-12
 
 
@@ -61,6 +71,20 @@ def _mod(name, filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def f32_exact(v):
+    """Is this `f64` an `f32` widened -- a value that went through single precision?
+
+    The pose block stores `f32` (`lad-frames.py` reads its records as `<7f`) and a key stores `f64`, so a
+    key that survives a round trip through `f32` is a number of the same width as the format's other
+    numeric structure, and one that does not carries precision only a double has. The test is exact
+    equality, not a tolerance: a value that merely looks like a `f32` is not one.
+    """
+    try:
+        return struct.unpack("<f", struct.pack("<f", v))[0] == v
+    except (OverflowError, struct.error):
+        return False
 
 
 def relations(groups):
@@ -94,13 +118,14 @@ def measure(path):
     d = open(path, "rb").read()
     rows = lt.measure(path)
     slot = [{"tracks": 0, "using": 0, "keys": 0, "empty": 0, "min_keys": None, "max_keys": None,
-             "time_min": None, "time_max": None, "value_min": None, "value_max": None}
+             "time_min": None, "time_max": None, "value_min": None, "value_max": None,
+             "f32_exact": 0}
             for _ in range(SLOTS)]
     pairs = collections.defaultdict(collections.Counter)
     tracks, refused = 0, []
     for rec in rows["_tracks"]:
         try:
-            groups, _ = lk.key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
+            groups, _names, _stop = lk.key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
         except ValueError as exc:
             refused.append("%s: %s" % (rec["full"], exc))
             continue
@@ -117,13 +142,15 @@ def measure(path):
             s["max_keys"] = len(g) if s["max_keys"] is None else max(s["max_keys"], len(g))
             times = [t for t, _ in g]
             vals = [v for _, v in g]
+            s["f32_exact"] += sum(1 for v in vals if f32_exact(v))
             s["time_min"] = min(times) if s["time_min"] is None else min(s["time_min"], min(times))
             s["time_max"] = max(times) if s["time_max"] is None else max(s["time_max"], max(times))
             s["value_min"] = min(vals) if s["value_min"] is None else min(s["value_min"], min(vals))
             s["value_max"] = max(vals) if s["value_max"] is None else max(s["value_max"], max(vals))
         for (a, b), kind in relations(groups).items():
             pairs[(a, b)][kind] += 1
-    return {"path": path, "slots": slot, "pairs": pairs, "tracks": tracks, "refused": refused}
+    return {"path": path, "slots": slot, "pairs": pairs, "tracks": tracks, "refused": refused,
+            "channels": rows["channels"]}
 
 
 def deterministic(pairs):
@@ -319,11 +346,20 @@ def check():
             if keys and float(r["value_min"]) > float(r["value_max"]):
                 bad.append("%s slot %s: value %s..%s" % (p, r["slot"], r["value_min"], r["value_max"]))
             # the split that says a value means something: slots 0-18 never carry a negative value
+            if int(r["f32_exact"]) > keys:
+                bad.append("%s slot %s: %s f32-exact of %d keys" % (p, r["slot"], r["f32_exact"], keys))
+            if keys and float(r["value_min"]) > float(r["value_max"]):
+                bad.append("%s slot %s: value range empty" % (p, r["slot"]))
             if keys and int(r["slot"]) < WEIGHT_SLOTS and float(r["value_min"]) < 0:
                 bad.append("%s slot %s: a weight slot carries %s" % (p, r["slot"], r["value_min"]))
             if keys and int(r["slot"]) >= WEIGHT_SLOTS:
                 wide[int(r["slot"])] = max(wide.get(int(r["slot"]), 0.0),
                                            abs(float(r["value_min"])), abs(float(r["value_max"])))
+        if len(set(r["channels"] for r in rs)) != 1:
+            bad.append("%s: rows disagree about the channel count" % p)
+        if set(r["channels"] for r in rs) - {"19", "21"}:
+            bad.append("%s: channel count %r is not one the corpus carries"
+                       % (p, sorted(set(r["channels"] for r in rs))))
         total = sum(int(r["keys"]) for r in rs)
         if p in keys_csv and total != keys_csv[p]:
             bad.append("%s: %d keys in the slot table, %d in lipsinc_keys.csv" % (p, total, keys_csv[p]))
@@ -360,7 +396,7 @@ def print_track(path, want):
     for rec in lt.measure(path)["_tracks"]:
         if rec["full"] != want:
             continue
-        groups, _ = lk.key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
+        groups, _names, _stop = lk.key_block(d, rec["keys_offset"], rec["keys_offset"] + rec["block"])
         print("%s: 26 slots, %d keys" % (rec["full"], sum(len(g) for g in groups)))
         for i, g in enumerate(groups):
             if not g:
@@ -467,6 +503,7 @@ def main():
                 "keys": s["keys"], "empty": s["empty"],
                 "min_keys": "" if s["min_keys"] is None else s["min_keys"],
                 "max_keys": "" if s["max_keys"] is None else s["max_keys"],
+                "channels": m["channels"], "f32_exact": s["f32_exact"],
                 "time_min": "" if s["time_min"] is None else s["time_min"],
                 "time_max": "" if s["time_max"] is None else s["time_max"],
                 "value_min": "" if s["value_min"] is None else "%.6g" % s["value_min"],

@@ -122,7 +122,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/lipsinc_bones.csv` | 160 | 22 | `make lipsinc-bones` |
 | `inventory/lipsinc_files.csv` | 18 | 5 | `make lipsinc-index` |
 | `inventory/lipsinc_frames.csv` | 8 | 16 | `make lipsinc-frames` |
-| `inventory/lipsinc_groups.csv` | 208 | 14 | `make lipsinc-groups` |
+| `inventory/lipsinc_groups.csv` | 208 | 16 | `make lipsinc-groups` |
 | `inventory/lipsinc_keys.csv` | 2231 | 13 | `make lipsinc-keys` |
 | `inventory/lipsinc_lad.csv` | 8 | 9 | `make lipsinc-index` |
 | `inventory/lipsinc_parse.csv` | 8 | 18 | `make lipsinc-parse` |
