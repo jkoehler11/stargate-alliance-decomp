@@ -738,3 +738,46 @@ body that also installs a mapped class's table, and that names the *owner* of a 
 -- but the slot bodies carry no mapped function, so nothing in the table itself says what its virtuals
 do. Naming the 184 with no install neighbour and no shared body needs a signature or an asserting
 caller, which is where U8 already stands, now with the static routes enumerated and closed.
+
+## The 17 constrained tables are one call below a named layer (2026-11-14)
+
+`inventory/class_table_parents.csv` names a table from the classes that call the function installing it,
+and 17 of its rows come back `constrained`: those callers share no ancestor *in* the tree the rule
+climbs, `inventory/classes.csv`. That tree is the packages' script declarations -- **0 of the 63 caller
+tables those 17 rows name has a class row in it** -- because the callers are the engine's native-only
+classes (`Channel`, `Property`, `NetDriver`, `VertexBuffer`, `AudioSubsystem`, `Level`, ...), which the
+shipped `.u` files do not declare. The verdict is a gap in the tree, not an ambiguity in the image.
+
+**The image carries the relation one level down.** A destructor installs its own table at `[this]` and
+then calls its base destructor, so the first call in that body whose target stores a class table is the
+parent's constructor. Following the null-check thunk in between (`mov ecx,[esp+4]; test ecx,ecx; je; jmp`,
+whose symbol-map size stops nine bytes short of the `jmp`) gives a parent for **490 of the 492 tables**:
+`Object` has none, and `GameInfo`'s installer is the other miss. Tool, artifact:
+`tools/class-table-parent-edge.py`, `inventory/class_table_parent_edges.csv`.
+
+- **It reproduces the tree it does not read.** 345 of the 490 edges are on tables whose class *and* whose
+  parent both carry a script declaration, and the parent is `classes.csv`'s `super` in **345 of 345** --
+  no edge contradicts the tree. 88 point at a table the registration does not name, 57 are on a class the
+  script tree does not declare, and 2 have no edge.
+- **The constructor is the wrong body for this read.** Preferring a constructor's first table-storing call
+  names the *grand*parent on 13 tables (`StargateVehicle` -> `Vehicle`, where the script says `SVehicle`),
+  so the destructor is read first and the constructor only when the destructor yields nothing -- the same
+  skipped level the constructor tree already reports elsewhere.
+- **Every one of the 17 gets a parent.** Nine are direct children of `Object`; the other eight sit under
+  five tables: `0x4c78c0` (3: the net-driver, voice and render-device bases), `0x4c9348` (2: the viewport
+  and client bases), `0x4d1468`, `0x4fc4f0` and `0x517860` (the vertex-buffer family). None is a root, so
+  the caller rule had the structure right and only the names missing.
+- **The children confirm it 48 of 63 times, and the 15 exceptions are one table deeper.** Of the 63 named
+  caller tables the 17 rows list, 48 have their own parent edge back to the table. The 15 that do not are
+  both rows that split into a two-level chain: `0x4d1468` parents `Const`, `Enum` and `Struct` while the
+  13 property classes hang off `0x4d17a8`, whose own parent is `0x4d1468`; and `Level` hangs off
+  `0x4fc4f0` while the two pending-level classes hang off `0x4fc588`, whose parent is `0x4fc4f0`.
+- **Slot 1..n is measured out, so the join the plan proposed is not the instrument.** In
+  `inventory/xbe_class_table_slots.csv`, 31 of the 159 slot columns hold one value on all 492 tables
+  (`0x00062650`, `0x00062660`, `0x00062670` at 0-2, `0x00046d20` at 5, ...), slot 3 holds **492 distinct**
+  values, and the rest hold two to 90. Every pair of tables therefore shares a prefix that stops at slot 3
+  at the latest: the one column that differs on every table is the one a slot-to-slot join cannot use.
+
+**What is left is a name, not a position.** The 17 sit inside the 26 tables the registration cannot name
+(U8) and now carry a parent and a child set, so the next instrument is the 27 registration sites whose
+literal the table link cannot pair: pairing literal to position replaces guessing a name.

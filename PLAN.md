@@ -1379,6 +1379,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)
+
+- **The caller rule is constrained by the script tree, not by the image.** 0 of the 63 caller tables the
+  17 `constrained` rows of `inventory/class_table_parents.csv` name has a class row in
+  `inventory/classes.csv`: they are the engine's native-only classes (`Channel`, `Property`, `NetDriver`,
+  `VertexBuffer`, `AudioSubsystem`, `Level`, ...), which the shipped `.u` files do not declare, so the
+  ancestor intersection the rule climbs is empty rather than ambiguous.
+- **The parent is in the destructor's first call.** A destructor installs its own table and then calls
+  its base destructor, so the first call in that body whose target stores a class table is the parent's
+  constructor; following the null-check thunk in between (nine bytes longer than its symbol-map size)
+  gives a parent for **490 of the 492 tables** -- `Object` has none and `GameInfo`'s installer is the
+  other miss -- and the parent equals `classes.csv`'s `super` on **345 of 345** tables where both sides
+  are declared, with no edge contradicting the tree. A *constructor's* first table-storing call names the
+  grandparent on 13 tables (`StargateVehicle` -> `Vehicle`, script `SVehicle`), so the destructor body is
+  the one read.
+- **All 17 get a parent, and the children confirm 48 of 63.** Nine hang directly off `Object`; the other
+  eight are under `0x4c78c0` (3), `0x4c9348` (2), `0x4d1468`, `0x4fc4f0` and `0x517860`. The 15 callers
+  that point elsewhere are two rows that each split into a two-level chain: `0x4d1468` parents
+  `Const`/`Enum`/`Struct` under `0x4d17a8` (the 13 property classes), and `0x4fc4f0` parents `Level` under
+  `0x4fc588` (the two pending-level classes).
+- **Slot 1..n cannot separate the tables.** `inventory/xbe_class_table_slots.csv` has 159 slot columns:
+  31 hold one value on all 492 tables, slot 3 holds 492 distinct values, and every pair's shared prefix
+  stops at slot 3 at the latest -- so the slot join the previous note proposed is measured out and the
+  parent edge is the instrument that answers.
+- Tool (`tools/class-table-parent-edge.py`: the destructor-first installer walk, thunk following, the
+  `C7 /0` store read, the four verdicts, and an 11-assertion `--check` over synthetic bodies with no
+  dump) + `inventory/class_table_parent_edges.csv` (492 rows plus a census row) + the section on
+  `docs/NATIVE_CLASS_TREE.md` + `make class-table-parent-edge` + this note. No boot.
+- **Next measurement:** name the 17 from the 27 registration sites whose literal the table link cannot
+  pair (U8). Each now has a parent and a child set, so the pairing is a match against position instead of
+  a guess.
+
 ### Execution notes (2026-11-14, every hole in the symbol map is a compiler exception pool)
 
 - **1,906 `eh-handler` stubs, 1,896 naming a `FuncInfo`.** Reading all 14 gaps (not only the 17 KB hole)
