@@ -973,7 +973,7 @@ it wrote, so four symbols still carried the classes the pre-#533 map gave their 
 `ctor_WaterTexture`, `0x00025550` `dtor_WaterTexture`, `0x00062ce0` `ctor_VertexStreamBase`, `0x00025660`
 `dtor_IceTexture`). Renamed from the one table each body installs, every named row agrees. The guard
 matters: `0x002e8370` installs two tables (its parent's then its own) and keeps its derived name, which is
-why `--fix-stale` corrects only single-store symbols. `class-ctors.py --check` now fails on a stale row of
+why `--fix-stale` corrects only single-store symbols -- and `class-ctors.py --multi-store` shows that exemption is wider than the shape behind it: 6 bodies install more than one class table, only 2 are parent-then-own (the texture pair), and the rest are inlined property constructions (`0x0024af30` stores `BoolProperty` four times in a straight line). `class-ctors.py --check` now fails on a stale row of
 that shape, so a later class-map correction cannot leave this artifact grading the old names again.
 
 **The class object's constructor field is not carried, and that is the last literal-free route closed

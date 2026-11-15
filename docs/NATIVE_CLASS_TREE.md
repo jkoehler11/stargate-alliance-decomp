@@ -977,6 +977,18 @@ base-store-ancestor`, "2 classes (FireTexture, IceTexture) store it before their
 `--fix-stale` renames only a **single-store** symbol whose table the map names otherwise, and `--check`
 reports the two-store bodies instead of failing on them (`0x002e81f0` `ctor_FireTexture` is the second).
 
+**The guard's exemption is wider than the shape that justified it.** `class-ctors.py --multi-store`
+(CSVs and the symbol map only, no dump) lists **6** bodies that install more than one class table, and the
+parent-then-own shape covers **2** of them: `0x002e81f0` `ctor_FireTexture` and `0x002e8370`
+`ctor_IceTexture`, exactly the pair the class map cites for `0x004cfc88`. The other four are not one
+class's constructor at all -- `0x0024af30` (809 bytes) stores `BoolProperty`'s table four times at
++151/+206/+261/+316, 55 bytes apart in a straight line, then `ObjectProperty`, `BoolProperty`,
+`ArrayProperty` and `StructProperty`; `0x0014e0e0` `Core_UnClass` (917 bytes) mixes `NameProperty`,
+`StrProperty` and `StructProperty` the same way; `0x00110120` stores `PackageMapLevel` 822 bytes after an
+unnamed table; and `0x002e8260` stores `0x004cfe68` -- the `WaterTexture` proposal -- immediately after
+`0x004cfc88`. So the exemption is a measurement ("this body is not one class's installer"), not an
+inference from the base-store shape, and the report is where the difference is visible.
+
 **Corrected, the edge reproduces the map whole: 468 of 468 named tables `agrees`, 0 `adjacent`, 0
 `differs`** (the generated block in *The installer's callers* above). The residual the previous note
 called "a rule reading one level low" was this symbol column; the caller rule never had to answer at all.

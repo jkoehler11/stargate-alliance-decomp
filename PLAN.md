@@ -1379,6 +1379,29 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the multi-store exemption is wider than the shape behind it)
+
+- **The guard #547 added exempts every installer body that stores two tables, on the strength of the
+  class map's `base-store-ancestor` rule for `0x004cfc88` ("2 classes (FireTexture, IceTexture) store it
+  before their own table").** That shape is right for those two bodies and not for the rest of the
+  population: `class-ctors.py --multi-store` (CSVs plus the symbol map, no dump) lists **6** bodies that
+  install more than one class table, and only **2** store a parent's table before their own and nothing
+  else -- `0x002e81f0` `ctor_FireTexture` and `0x002e8370` `ctor_IceTexture`, the pair the map cites.
+- **The other four are not one class's constructor.** `0x0024af30` (809 bytes) stores `BoolProperty`'s
+  table **four times** at +151/+206/+261/+316 -- 55 bytes apart, straight line -- then `ObjectProperty`,
+  `BoolProperty`, `ArrayProperty` and `StructProperty`; `0x0014e0e0` `Core_UnClass` (917 bytes) mixes
+  `NameProperty`, `StrProperty` (twice) and `StructProperty`; `0x00110120` stores `PackageMapLevel` 822
+  bytes after an unnamed table; and `0x002e8260` stores `0x004cfe68` (the `WaterTexture` proposal)
+  immediately after `0x004cfc88`. So the exemption is a measurement, not an inference -- which is how
+  `stale_names` should state it, and now does.
+- Tool (`tools/class-ctors.py`: `multi_store_report`, `--multi-store`) + the section it belongs to on
+  `docs/NATIVE_CLASS_TREE.md` + one sentence in `docs/UNKNOWNS.md` U8 + this note. No artifact, no boot:
+  the report is a read of three committed CSVs and the shape census they were built from.
+- **Next measurement:** the four property-cluster bodies are the interesting residue -- an 809-byte body
+  that inlines four `BoolProperty` constructions says the build's property registration is inlined, not
+  called, and a decompile of `0x0024af30` is the read that would name the function (`UClass::InitProperties`
+  is the obvious candidate, unproven). That is a Ghidra round, not a join.
+
 ### Execution notes (2026-11-15, the three rows the parents rule could not reproduce were three constructor symbols)
 
 - **The 2 `adjacent` rows and the 1 `differs` row in `inventory/class_table_parents.csv` were not the
