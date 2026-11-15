@@ -1560,6 +1560,48 @@ are limited to expected fields (checksum/timestamp) and documented.
   reads a loaded `UClass`'s name field and needs one boot (U8's runtime route), or an engine-side class
   list for `Engine`'s native classes, which the shipped `.u` files do not declare.
 
+### Execution notes (2026-11-15, the bodies that store several tables are property factories, not installers)
+
+- **The four bodies `--multi-store` could not place are read, and three of them are not class installers at
+  all.** One Ghidra round over all six (`tools/ghidra/ghidra_scripts/DumpBody.java`) gives: two property
+  factories, one constructor that also builds a child object, and one constructor whose own table is the
+  unnamed one. The decompiled bodies stay under `$WORK/propcluster/`; the page carries the table.
+- **`0x0024af30` is 248 instructions that build eight properties and install nothing of its own.** `this`
+  arrives in ECX, the class to hang them on is read at `[this+0x24]`, and every store is `call <factory>`
+  returning the new object in `ESI`, `mov [ESI],<property class table>`, `mov [ESI+0x6c],<offset>`. The
+  four `BoolProperty` stores are `UseSimpleLineCollision` (`0x13c`), `UseSimpleBoxCollision` (`0x140`),
+  `UseVertexColor` (`0x144`) and `UseSimpleKarmaCollision` (`0x148`), 55 bytes apart because the
+  construction is inlined. The rest build a nested struct class `StaticMeshMaterial` (0x80 bytes,
+  `PropertiesSize` `0xc` at `+0x40`, linked by the virtual call at `+0x90`) holding `Material`
+  (`ObjectProperty`, offset 0) and `EnableCollision` (`BoolProperty`, offset 4), an `ArrayProperty`
+  `Materials` at `0x114` whose inner is named `StructProperty0`, and the tail writes the class defaults
+  `[this+0x13c]=0`, `[this+0x140]=1`, `[this+0x144]=0`, `[this+0x148]=1` -- the offsets the properties were
+  given. So the eight class-table stores the census counted in this body are eight objects'
+  class tables, not eight tables the body owns.
+- **`0x0014e0e0` is the same shape with a loop in it.** Struct class `Alias` (0x80) with a `NameProperty`
+  `Alias` and a `StrProperty` `Command`, a `StructProperty` `Aliases` at `0x2c`, then one property per
+  `EInputKey` entry, named from `[entry+0x12]`, in a loop from `0x2ac` to `0xea0`: **four store sites,
+  hundreds of objects at run time**, so a multi-store count counts sites, never tables. Its symbol
+  `Core_UnClass` is an inlined `UnClass.h` assert (`Defaults.Num()==GetPropertiesSize()`, line `0x235`),
+  not the body's unit.
+- **`0x00110120` stores its own table and then another object's.** `0x4d03c8` goes into `[this]` with the
+  two tables under it in `.rdata` (`0x4d03bc`, `0x4d03b8`) into `[this+0x28]`/`[this+0x2c]` -- one class
+  with two base sub-objects -- and 881 bytes in it builds a `PackageMapLevel` (`call 0x6c8a0`,
+  `mov [esi],0x004fb9b8`, `mov [esi+0x70],this`) and stores that object's table.
+- **The parent-then-own count was three, not two.** `0x002e8260` calls the base constructor, stores
+  `FractalTexture`'s table and then `0x4cfe68`, exactly like `ctor_FireTexture`/`ctor_IceTexture`; the
+  census had called it `unnamed` only because `0x4cfe68` has no class in the map. That gives the
+  `WaterTexture` proposal (the ancestor-vote route above) a second, structural route: the body is the
+  constructor `ctor_WaveTexture`, `ctor_FluidTexture` and `ctor_WetTexture` all call as their base, and it
+  installs a table of its own.
+- Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and factory lines;
+  `tools/ghidra/ghidra_scripts/DumpBody.java`) + the section on `docs/NATIVE_CLASS_TREE.md` +
+  `docs/UNKNOWNS.md` U8 + this note. No artifact changed and no boot: the read is the image and the
+  committed constructor census.
+- **Next measurement:** the two factories' caller names the class they populate -- the caller's slot is the
+  static-constructor edge -- so a `call-census` pass on `0x0024af30` and `0x0014e0e0` either names them or
+  shows they are reached through a table like every other static constructor.
+
 ### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)
 
 - **The caller rule is constrained by the script tree, not by the image.** 0 of the 63 caller tables the

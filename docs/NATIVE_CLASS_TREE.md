@@ -981,7 +981,7 @@ reports the two-store bodies instead of failing on them (`0x002e81f0` `ctor_Fire
 (CSVs and the symbol map only, no dump) lists **6** bodies that install more than one class table, and the
 parent-then-own shape covers **2** of them: `0x002e81f0` `ctor_FireTexture` and `0x002e8370`
 `ctor_IceTexture`, exactly the pair the class map cites for `0x004cfc88`. The other four are not one
-class's constructor at all -- `0x0024af30` (809 bytes) stores `BoolProperty`'s table four times at
+class's constructor at all (the decompile below says what each of them is) -- `0x0024af30` (809 bytes) stores `BoolProperty`'s table four times at
 +151/+206/+261/+316, 55 bytes apart in a straight line, then `ObjectProperty`, `BoolProperty`,
 `ArrayProperty` and `StructProperty`; `0x0014e0e0` `Core_UnClass` (917 bytes) mixes `NameProperty`,
 `StrProperty` and `StructProperty` the same way; `0x00110120` stores `PackageMapLevel` 822 bytes after an
@@ -1006,3 +1006,76 @@ synthetic case; `tools/class-table-parents.py`: `--write-doc` / `--check-doc`) +
 regenerated artifacts (including `inventory/function_modules.csv`, whose positional `run` column
 re-indexes past a renamed row) + this page + `docs/UNKNOWNS.md` U8 + the `class-ctor-base` target, which
 passed `--xbe` and a file to a tool that takes the path positionally and a directory.
+
+## The bodies that store more than one table are three kinds of body (2026-11-15)
+
+`--multi-store` reads three CSVs, so all it can say about a body is "this is not one class's
+constructor". One Ghidra round reads the same six bodies from the image, and the four it could not place
+are **two property factories, one constructor that also builds a child object, and one constructor whose
+own table is the unnamed one** -- three kinds of body that a store count cannot separate.
+
+| body | shape | stores | what each store is |
+|---|---|---|---|
+| `0x002e81f0` `ctor_FireTexture` | parent-then-own | 2 | `FractalTexture`, then its own |
+| `0x002e8370` `ctor_IceTexture` | parent-then-own | 2 | `FractalTexture`, then its own |
+| `0x002e8260` | parent-then-own | 2 | `FractalTexture`, then `0x4cfe68` -- its own |
+| `0x0024af30` | property factory | 8 | one table per property it creates |
+| `0x0014e0e0` `Core_UnClass` | property factory | 4 sites | one per property, one site inside a loop |
+| `0x00110120` | constructor + child | 2 (+2 sub-tables) | its own, then `PackageMapLevel`'s |
+
+**`0x0024af30` is 248 instructions that build eight properties and install no table of its own.** It
+arrives with `this` in ECX, hangs everything on the class at `[this+0x24]`, and every one of the eight
+stores is the same three steps: `call <factory>` returning the new object in `ESI`,
+`mov [ESI],<property class table>`, `mov [ESI+0x6c],<offset in the owner>`. The four `BoolProperty`
+stores are `UseSimpleLineCollision` (offset `0x13c`), `UseSimpleBoxCollision` (`0x140`), `UseVertexColor`
+(`0x144`) and `UseSimpleKarmaCollision` (`0x148`), 55 bytes apart because the construction is inlined, not
+because a table run is that long. The rest build a nested struct class `StaticMeshMaterial` (0x80 bytes,
+`PropertiesSize` `0xc` written at `+0x40` and linked by the virtual call at `+0x90`) holding an
+`ObjectProperty` `Material` at offset 0 and a `BoolProperty` `EnableCollision` at offset 4, an
+`ArrayProperty` `Materials` at `0x114` whose inner is literally named `StructProperty0` and points back at
+that struct. The tail is the object's defaults: `[this+0x13c]=0`, `[this+0x140]=1`, `[this+0x144]=0`,
+`[this+0x148]=1` -- the offsets the properties were given, written into the class-default object, which is
+what a native static constructor does.
+
+**`0x0014e0e0` has the same shape with a loop in it.** It builds a struct class `Alias` (0x80) with a
+`NameProperty` `Alias` and a `StrProperty` `Command`, a `StructProperty` `Aliases` of that type at `0x2c`,
+then walks the `EInputKey` name table and creates **one property per key**, named from the entry at
+`[entry+0x12]`, in a loop from `0x2ac` to `0xea0`. Four store sites, hundreds of objects at run time: a
+multi-store count is a count of *sites*, never of tables a body owns. Its symbol `Core_UnClass` came from
+an inlined `UnClass.h` assert (`Defaults.Num()==GetPropertiesSize()`, line `0x235`), not from the body
+being in `UnClass.cpp`.
+
+**`0x00110120` is a constructor that also builds a sub-object.** It writes `0x4d03c8` into `[this]` and
+the two tables immediately below it in `.rdata` (`0x4d03bc`, `0x4d03b8`) into `[this+0x28]` and
+`[this+0x2c]` -- one class with two base sub-objects, which a table census reads as three tables -- and
+881 bytes in it constructs a `PackageMapLevel` (`call 0x6c8a0`, then `mov [esi],0x004fb9b8` and
+`mov [esi+0x70],this`) and stores *that* object's table.
+
+**`0x002e8260` is the shape the exemption was looking for and missed.** It calls the base constructor,
+stores `FractalTexture`'s table, and then stores `0x4cfe68` -- parent-then-own exactly like
+`ctor_FireTexture` and `ctor_IceTexture`, which the census had called `unnamed` only because the map has
+no class for `0x4cfe68`. That is a second, structural route to the `WaterTexture` proposal the tree
+section above reaches by ancestor votes: the body is the constructor `ctor_WaveTexture`,
+`ctor_FluidTexture` and `ctor_WetTexture` all call as their base, and it installs a table of its own.
+
+`--multi-store` now prints this as three lines instead of one: **2** parent-then-own with both tables
+named, **1** more constructor-shaped with an unnamed own table, **2** that are not installers at all. What
+it cannot print from CSVs is the receiver, so `0x00110120` still reads as constructor-shaped: the census's
+`form` column describes the body, not the store.
+
+**The silence this read started from is a tool gap, and it is closed.** Ghidra's analysis has no function
+at `0x0024af30`, so `ExportAt.java` and `ExportLiterals.java` both wrote nothing for that address -- no
+file and no error, which reads like a body that does not exist rather than a function never made. The new
+`tools/ghidra/ghidra_scripts/DumpBody.java` takes the address from the symbol map, disassembles it,
+creates the function, and prints the full listing with literals resolved plus the decompiled body; all six
+bodies above were read with it.
+
+**What is not settled.** That the framework above is the engine's own needs the callers of the six bodies,
+not another body read, and the class name for `0x24af30` is `StaticMeshInstance` only by its property set
+-- no literal in the image names it. Both are in `docs/UNKNOWNS.md` U8 with the read that would settle
+them.
+
+Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and factory lines;
+`tools/ghidra/ghidra_scripts/DumpBody.java`) + this page + `docs/UNKNOWNS.md` U8 + the PLAN note. No
+artifact changed: the measurement is the image plus the committed census, and the decompiled bodies stay
+under `$WORK/propcluster/`.
