@@ -9752,6 +9752,34 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, U1 was stale rather than open, and its residual is 14 editor declarations)
+
+- **The ledger entry carried three hypotheses and a "what would settle it" two measurements after it was
+  answered.** `docs/UNKNOWNS.md` U1 still opened with "Hypotheses, none confirmed" and pointed at
+  disassembling a caller of `Actor.KWake`, while the binder at `0x0003a030` had already settled it: an
+  index-less `FUNC_Native` is looked up as `int<class>exec<function>` and the result stored into `Func`,
+  the same field an indexed declaration's slot writes. The entry is rewritten in place -- the hypothesis
+  block becomes *which of the three the evidence chose*, and says why the other two are false.
+- **The residual is a named population, and the two artifacts that describe it coincide row for row.** The
+  523 index-less rows split by channel into **467 `stub+record` + 41 `record-only` + 15 `unbound`**, and
+  every one of the 508 a stub or record carries has an `int<prefix><Class>exec<Function>` binder name
+  while every one of the 15 without either has none -- so "508 of 523 named" and "15 unbound" are one
+  population read two ways, not two counts that happen to agree.
+- **The 15 are 13 `Editor.BrushBuilder`, 1 `Editor.MaterialFactory.ConsoleCommand` and 1
+  `UPreview.UPreviewSkinnedButton.SetRenderInfo`, and the record check makes that 14 declarations**: the
+  `UPreview` row's own payload reads `0x00020002` (`Defined;Public`), a script function with a body, so
+  it is not a native at all. Every unbound row is in a package `Default.ini`'s `EditPackages` loads and
+  the shipped game never does, and the pool's 114 unmatched names are all `Core.Object` (`Iterator`,
+  `HighNative0`..`HighNative15`, their twins) -- so the editor natives are absent from the image rather
+  than hidden in it.
+- Files: `docs/UNKNOWNS.md` U1 (title, the hypotheses block, the residual paragraph) + this note. No tool,
+  no artifact, no boot: all figures are read from `inventory/natives.csv`, `inventory/native_channels.csv`,
+  `inventory/native_binder_names.csv` and `inventory/native_record_check.csv`.
+- **Next measurement:** the recompiler side of the cast fact -- whether `tools/uscript-dis.py --compare`
+  scores a `PrimitiveCast` correctly now that the slot is known to be an operand byte. `--compare` reads a
+  token tree, the pair encoding means two builds must agree on slot *and* nested expression, and
+  `docs/MATCHING.md`'s baseline has no cast column at all.
+
 ### Execution notes (2026-11-15, the cast index is one bytecode operand, and nine conversions are never emitted)
 
 - **The previous note's guess was wrong in its method and right in its question.** It said "the call site of
