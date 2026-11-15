@@ -144,6 +144,15 @@ What survives for a rebuild is narrower and still actionable: read indices from 
 runtime packages' **text** is incomplete (2 records with no declaration, 9 declarations with no record — the
 reconciliation table above), not because the text omits indices it should have spelled.
 
+**Measured 2026-11-15, no boot: the record is not native and the class text is right.** `natives.csv`'s flag
+column and its token were the only claimants. `tools/native-record-check.py` joins all 797 rows to their record's
+own tail and reproduces the artifact on **795**, with the two exceptions being `UPreview`'s: both records read
+`0x00020002` = `Defined;Public` (token 0), i.e. a script function with a body, which is what the class texts
+declare. 795 of 797 records carry `Native`; these two do not. So the residual rows and `native_tokens.csv`'s one
+`unresolved` row (`Created`'s token 2) describe a record the image does not hold, and the 9.7 KB
+`UPreviewMapListClient` text is complete, not missing a native declaration. Depth: `docs/NATIVE_CLASSES.md`,
+*The two editor residual rows are the artifact's*.
+
 ## U4. The `.lad` payload layout is not established
 
 **Observed.** All 8 files share a header (`u32 2`, `u32 2`, `u8` channel count, then that many

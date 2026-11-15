@@ -241,6 +241,53 @@ and `--selftest` pins `event int Main` and `simulated final event Font GetFont`.
 
 
 
+## The two editor residual rows are the artifact's, not the records (measured 2026-11-15)
+
+`inventory/native_residual.csv` ends with `UPreview`'s two rows, verdict `record-unbound`: "the record is right and
+the class's shipped text declares nothing of that name". That verdict was never tested against the record itself.
+`inventory/natives.csv` is the record half -- one row per native over 92 classes, carrying a `native_token` and a
+`function_flags` name list -- and `tools/native-reconcile.py` compares *that artifact* with the class text, so a row
+the artifact states wrongly is checked against text it does not appear in and reads as a gap in the text.
+`tools/native-record-check.py` (`make native-record-check`, `--check` in `make ci`) joins all **797** rows back to
+the `Function` payload each names:
+
+| verdict | rows | what it means |
+|---|---:|---|
+| `agree` | **795** | the artifact's token and its whole flag word equal the record's |
+| `flags-differ` | 1 | same token, different flag word |
+| `both-differ` | 1 | different token and different flag word |
+
+The two rows that disagree are the residual's two, and **neither record is native at all**:
+
+| row | artifact | record |
+|---|---|---|
+| `UPreviewMapListClient.Created` | token 2, `0x0f169c1c` | token **0**, `0x00020002` |
+| `UPreviewSkinnedButton.SetRenderInfo` | token 0, `0x33000405` | token 0, `0x00020002` |
+
+`0x00020002` is `Defined;Public` -- a script function with a body -- and every one of the package's records that
+carries those two names reads it: `Created` twice (export 59 under `UPreviewMapListClient`, export 78 under
+`UPreviewRootWindow`) and `SetRenderInfo` (export 69). Both classes' text says the same thing: `function
+Created()` with `Super.Created();` in it, and `function SetRenderInfo(int Mode, texture T, Color C, int s)`. So
+the residual's last two rows describe a record the image does not hold; the row is the artifact's.
+`Created`'s artifact word is also the only one of the 797 that carries `Public` **and** `Private`
+(`0x20000|0x40000`), a combination no record in the 18 packages has -- the tell that the column is not a read of
+this record.
+
+**The reader is not a new convention: the artifact itself is the control.** The tail is
+`<0b 47><token u16><pad u8><FunctionFlags u32>` -- the same dword `tools/function-flags.py` reads from the
+payload's end (`end-4`, or `end-6` when a `RepOffset` follows a `Net` function) -- and reading it reproduces
+`natives.csv` on 795 of 797 rows, both columns, byte for byte. Anchors on the agreeing side:
+`Engine.Actor.Trace` 277 / `0x00020401`, `Engine.Actor.SetPhysics` 3970 / `0x00020401`, `Core.Object.Divide`
+239 / `0x00022401`, `Core.Object.Round` 257 / `0x00022401`. **795 of the 797 records carry `Native`**; the two
+that do not are the two disagreements.
+
+**Two committed artifacts inherit the row.** `inventory/native_tokens.csv` (274 token-carrying records, 166
+`text-index` + 107 `operator-expansion`) has exactly **one** row it leaves `unresolved`, and it is `Created`'s
+token 2; `native_residual.csv` carries both as `record-unbound`. The fix belongs in the residual's input, not in
+the editor's text: `native-reconcile.py` should take this tool's `read_record` as the authority for whether a row
+is a record at all, which drops the residual to 10 rows and closes the last unresolved token. Until then the join
+is the gate -- a future `natives.csv` row that disagrees with its own record fails `make ci`.
+
 ## Every body, marked (PLAN 3.9)
 
 The declarations are reconciled above; this is the other half — a reader opening `Pawn.uc` should not have to
