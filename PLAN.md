@@ -9448,6 +9448,36 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the scriptless payloads are the natives, by their own flag word)
+
+- **The one population `docs/BYTECODE.md` still described instead of measured is closed.** The page's payload-tail
+  section ended "756 carry it at neither position -- the native/scriptless functions, which is why `natives.csv`'s
+  797 joinable are almost exactly that set": a join against a name list, on a population defined by the absence of
+  the `04 0b 47` epilogue. `tools/function-no-script.py` asks each payload instead, because every `UFunction` payload
+  ends in the same seven-byte tail whatever its script did -- so a scriptless payload still carries its own
+  `FunctionFlags` at `payload_end-4`.
+- **Every one of the 756 is a native, and the payload says so itself.** `FUNC_Native` (`0x400`) is set in **751 of
+  the 756**; **672** are the functions `inventory/native_bodies.csv` binds to a body; and the **84** with no body row
+  are the operator natives the source never spells as functions -- `Core.Object`'s `Subtract_PreVector`,
+  `Multiply_VectorFloat`, `EqualEqual_StrStr` and 74 siblings (**77 in `Core`, 6 in `Engine`, 1 in `StargateGame`**).
+  The cross-check is the same word: **83** of the 756 also carry `Operator` (`0x1000`), so the operator bit and the
+  body-less population name the same set to within one row -- the split is the operators, not a hole in the body map.
+- **The five exceptions are the interesting rows, and they are bodied natives whose flags omit the bit**, all in
+  `Engine.u` (444 scriptless payloads there, 439 with the flag). So the flag is the weaker claim on that package and
+  the body row is what names it; both are reported per package rather than summed into one number.
+- **The flag vocabulary is the artifact's, not a new one.** The tool names bits exactly as `inventory/natives.csv`
+  already spells them (`0x1 Final`, `0x400 Native`, `0x800 Event`, `0x1000 Operator`, `0x2000 Static`,
+  `0x20000 Public`, `0x40000 Private`, `0x100000 Delegate`, ...), and any bit it cannot name is printed as
+  `0x...:unknown` rather than dropped -- which is how five payloads turn out to end in a word (`0x066d0002`,
+  `0x00aa0002`, ...) that is not a flag word at all: they are the shortest payloads in the corpus and the read is
+  reported, not silently believed.
+- Tool (`tools/function-no-script.py`: `--sweep`, `--report`, `--write-doc`, `--check-doc`, and a `--check` whose
+  synthetic payloads carry an epilogue at 7 and at 9 bytes from the end and an unknown bit) +
+  `inventory/function_no_script.csv` (39 rows: 16 package rows, the 20 flag words, a census row) +
+  `docs/BYTECODE.md` (*The payload's tail*, generated block) + `make function-no-script` + ci's
+  `function-no-script-doc`. Reads the packages; no bytecode, no value, no boot.
+
+
 ### Execution notes (2026-10-28, the payload's tail is confirmed by content; the header width is not a fixed count)
 
 - **The field order written down from `UFunction::Serialize` now has a content check.** `tools/uscript-dis.py
