@@ -590,6 +590,23 @@ other 38 rows.
       property reader landing on an object name), and the tag arm itself. Names compare case-insensitively in
       UnrealScript, so the join folds case. What is left inside 5.2 is the per-element order within an `Actions`
       array, and whether a name fired outside placed data reaches an armed waiter.
+
+      **The second hop is measured: 1,374 of the 16,886 wired actions (8.1%) sit in a sequence whose own `Tag` a
+      placed actor fires** (2026-11-15, `docs/MAP_EVENT_TARGETS.md`, `inventory/event_targets.csv`,
+      `tools/event-targets.py`, `make event-targets`). An event name is not a pointer -- `TriggerEvent(name)`
+      addresses actors by `Tag` -- so this walk resolves every fire site through the tag space and multiplies it by
+      the arrays the same map carries: 5,953 fire sites land **7,047 times on 66 classes** (a tag is not unique;
+      2,205 of them address more than one actor) and 2,694 sequences over 8 classes wire 16,886 actions, which is
+      the same pair of totals `docs/MAP_ACTION_WIRING.md` reports from a walk that reads the blocks for another
+      reason, and that is the control. **The armed minority is a class story, not a percentage**:
+      `ScriptedTrigger` carries 1,073 arrays and 7,065 wired actions with 1,330 armed, `TeamScriptedSequence` 1,141
+      arrays and 8,716 wired with **0** armed, `TriggeredScript` 738 with 26; 15,481 wired actions sit in a sequence
+      whose tag nothing fires and 31 in one that carries no tag. A `ScriptedTrigger` is a contact volume as well as a
+      sequence, so its start needs no name; `TeamScriptedSequence` is a pure sequence, so 8,716 actions hang on a
+      start the package does not carry -- an AI order or a native call, which a T3D read cannot decide and a runtime
+      trace would. What the fires land on is mostly *props*: `Mover` 1,603, `IntelligentSpawner` 903, `Emitter` 815,
+      `MovementMarker` 722, `ScriptedTrigger` 646. What is left inside 5.2 is the per-element order within an
+      `Actions` array and the sleeve of starts no name describes.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
