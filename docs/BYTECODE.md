@@ -779,38 +779,63 @@ counts them as ungraded rows, and that is correct — a swap that cannot be made
 **The name join is one spelling rule, not nine disagreements.** Over the 135 slots that carry both a record and a
 declaration, 126 spell the native identically and nine differ the same way: the C++ name writes the argument types
 out (`intUObjectexecConcat_StringString`) where `Object.uc` abbreviates them (`Concat_StrStr`). Those are the same
-nine names the native-call section above reports for the 120 *used* direct opcodes, which is the check that the
+nine names the native-call section above reports for the 121 *used* direct opcodes, which is the check that the
 wider population did not find a new kind of difference.
 
 ## The name column is the image's own, not a token list that stops at `0x47`
 
 The table's names came from UELib's UE2 token map, which is a list of *expression* tokens and ends at `0x47`. The
-operators and natives above it had a shape and no name, so **126 of the 184 opcodes the shipped corpus uses** printed
-as `op77`, `op61`, `opaf` -- and those 126 are exactly the 48,422 native-call tokens, every one of them anonymous in
+operators and natives above it had a shape and no name, so **125 of the 181 opcodes the shipped corpus uses** printed
+as `op77`, `op61`, `opaf` -- and those 125 are exactly the 49,100 native-call tokens, every one of them anonymous in
 the disassembly. No external list is needed there: the token *is* the `GNatives` index, and the image already carries
 `intUObjectexec<Function>` for every slot it populates (`inventory/gnatives_records.csv`).
 `tools/opcode-table.py` joins that record into the CSV's `name`, `source` (`record` / `record-high`) and `note`
 columns, and `--check` refuses a row whose name disagrees with the record table.
 
-| band | opcodes | what names it | corpus tokens |
+<!-- generated:opcode-band-bands -->
+| band | opcodes used | what names it | corpus sites |
 |---|---:|---|---:|
-| `0x70..0xff` | 120 used | the token *is* the slot: `0x77` is slot 119 `intUObjectexecNotEqual_ObjectObject` | 44,174 |
-| `0x60..0x6f` | 6 used of 16 | `HighNative<n>`; with operand byte `b` the native is `(op-0x60)*256 + b`, so `0x61 0x16` is 278 `Actor.Spawn` | 4,248 |
-| `0x48..0x5f` | 0 | **nothing**: the image has no `GNatives` record at any of those 24 slots | 0 |
+| `0x70..0xff` | 121 of 144 | the token *is* the slot: `0x77` is slot 119 `intUObjectexecNotEqual_ObjectObject` | 44,811 |
+| `0x60..0x6f` | 4 of 16 | `HighNative<n>`; with operand byte `b` the native is `(op-0x60)*256 + b`, so `0x61 0x16` is 278 `Actor.Spawn` | 4,289 |
+| `0x48..0x5f` | 0 of 24 | **nothing**: the image has no `GNatives` record at any of those 24 slots | 0 |
 
-That third row is a third independent confirmation that the walker's bad-token band is not an opcode band: it rejects
-`0x48..0x5f` and the image has no slot there either.
+That third row is a third independent confirmation that the walker's bad-token band is not an opcode band: it rejects `0x48..0x5f` and the image has no slot there either.
 
 Two checks say the join is the naming rather than a plausible one, and both are by content:
 
-* **Direct band** -- 111 of the 120 spell the function the shipped script declares at that exact index
-  (`inventory/natives.csv`), and the nine that do not differ only in spelling: `Concat_StringString` in C++ where
-  `Object.uc` declares `Concat_StrStr` (the nine are `Concat`, `Less`, `Greater`, `LessEqual`, `GreaterEqual`,
-  `EqualEqual`, `NotEqual`, `ComplementEqual`, `At`). Those rows carry the declaration in their `note`.
-* **High band** -- 84 distinct natives, **83 identical** to a declaration, one differing the same way
-  (`ConcatEqual_StringString`), and **4,246 of 4,248 tokens** resolve. `python3 tools/uscript-dis.py --highnative
-  DUMP/System` prints that comparison; it is `inventory/native_opcodes.csv`'s row set cut by band, so the two
-  artifacts corroborate each other rather than duplicating a measurement.
+* **Direct band** -- 126 of the 135 slots that carry both a record and a declaration spell the function identically, and the 9 that do not differ only in spelling: `Concat_StringString` in C++ where `Object.uc` declares `Concat_StrStr` (the nine are `Concat`, `Less`, `Greater`, `LessEqual`, `GreaterEqual`, `EqualEqual`, `NotEqual`, `ComplementEqual`, `At`). Those rows carry the declaration in their `note`.
+* **High band** -- 84 distinct natives, **135 of the 138 declared** spell it identically and 3 differ only by that same rule (`intUObjectexecConcatEqual_StringString`, `intUObjectexecAtEqual_StringString`, `intUObjectexecSubtractEqual_StringString`); `python3 tools/uscript-dis.py --highnative DUMP/System` prints the same comparison, and `inventory/opcode_band_high.csv` is the artifact that holds it, so the two corroborate each other rather than duplicating a measurement.
+
+### The extended band is measured index by index, not token by token
+
+`(opcode - 0x60) * 256 + operand` is an **index**, so the second band's census is keyed on the native and its population is every index above 255 that any of the three sources reaches -- the 84 the corpus calls and the 65 it does not. That wider population is what makes the next table a control: a join keyed only on the called tokens could not tell whether the image agrees or has nothing to say.
+
+| extended indices | runtime + declaration | runtime only | declaration only | neither |
+|---:|---:|---:|---:|---:|
+| 149 | 138 | 11 | 0 | 0 |
+
+**All 84 indices a token calls carry the runtime value and a declaration, 138 of them with a `.data` record name as well, 0 are neither, and the 11 one-sided rows are all on the runtime side** -- so the operand byte is not a guess about the high half of the numbering. At every called index the record the *runtime* value points at spells the same `intUObjectexec<F>` the call site itself resolved (84 of 84), and the declarations agree to within the one spelling rule above.
+
+**65 populated slots take no token at all** -- 54 of them declared, the rest the runtime's own -- and no index is declared without being populated, so nothing the shipped text declares is missing from the image: the mirror of the direct band's nine, from the other side.
+
+**The image names 1 of the 11 one-sided slots and the shipped text declares none of them** (`intUObjectexecResetConfig` at 543), so a rebuild compiled from these packages cannot emit those tokens; the other 10 carry a runtime value whose record name the `.data` table leaves empty. Put together, they are the control on the join in both directions -- a key that matched on the wrong field would have put some of them on the *declaration* side, and 0 rows are.
+
+| index | token | `.data` record | `native()` |
+|---:|---|---|---|
+| 302 | `0x61 0x2e` | - | 0 |
+| 333 | `0x61 0x4d` | - | 0 |
+| 384 | `0x61 0x80` | - | 0 |
+| 385 | `0x61 0x81` | - | 0 |
+| 501 | `0x61 0xf5` | - | 0 |
+| 503 | `0x61 0xf7` | - | 0 |
+| 509 | `0x61 0xfd` | - | 0 |
+| 511 | `0x61 0xff` | - | 0 |
+| 528 | `0x62 0x10` | - | 0 |
+| 543 | `0x62 0x1f` | intUObjectexecResetConfig | 0 |
+| 561 | `0x62 0x31` | - | 0 |
+
+2,786 of the 4,289 high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` column, which answers a different question from `body_name`: a call site names the body it dispatches on whether or not the receiver's class declares that native, and reading the two columns as one would turn a narrower lookup into a disagreement.
+<!-- /generated:opcode-band-bands -->
 
 What the disassembler therefore prints is the operator's own name -- `AndAnd_BoolBool`, `Multiply_FloatFloat` -- and
 for a `HighNative` token the callee its operand byte names:

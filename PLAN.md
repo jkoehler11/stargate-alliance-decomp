@@ -350,6 +350,22 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       reports for the 120 used opcodes, and the band carries **44,811 of the corpus's 484,332 opcode tokens (9.25%)**
       over 121 used rows. `--check` drives the four verdicts, the spelling rule, a hole run, the artifact round trip
       and the page markers on a synthetic inventory.
+      **And the extended band is now measured index by index (2026-11-15)**: the two-byte arithmetic had only ever
+      been confirmed in aggregate -- 84 natives against the declarations the script ships -- so "the operand byte
+      names the high half of the numbering" was an inference from a total. `inventory/opcode_band_high.csv` (same
+      tool, keyed on the *native*, because `(opcode - 0x60) * 256 + operand` **is** an index) joins every index above
+      255 that any of the three sources reaches: **149 rows, 138 with the runtime value and a declaration (all 138
+      also named by the `.data` record), 11 runtime-only, 0 declaration-only, 0 neither**, and **all 84 indices the
+      corpus calls are among them**, with the record the runtime value points at spelling the same
+      `intUObjectexec<F>` the call site itself resolved on **84 of 84** -- the arithmetic is confirmed per index, not
+      by a total. The population the direct band cannot have is the control: **65 populated slots take no token at
+      all** (54 declared), the declaration set is a subset of the populated one, and the 11 one-sided rows are the
+      mirror of the nine -- **the image names `intUObjectexecResetConfig` at 543, which the shipped text never
+      declares, so a rebuild compiled from these packages cannot emit `0x62 0x1f`**, and the other ten carry a
+      runtime value the `.data` record table leaves unnamed. The page's band table is now *rendered* (`make
+      opcode-band`, no dump) from both censuses, so the pre-regeneration figures it still carried -- 120 used rows,
+      44,174 direct tokens, "6 used of 16" and 4,248 high tokens -- cannot come back; `--check-doc` fails on either
+      CSV being stale, and `--check` drives both bands' four verdicts, both artifacts and both markers.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

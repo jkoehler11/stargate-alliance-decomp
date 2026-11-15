@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The direct opcode band, slot by slot: `0x70..0xff` against every source that can name one.
+"""The opcode bands: `0x70..0xff` slot by slot, `0x60..0x6f` index by index.
 
 Above `0x6f` the token *is* the `GNatives` index (docs/BYTECODE.md, "The opcodes above `0x5f` carry the native
 index itself"), so the band `0x70..0xff` covers natives 112..255 and nothing else can hide in it. Three committed
@@ -23,6 +23,24 @@ whether any payload writes the token at all.
 
 No dump is needed: every input is committed, so this is a join over artifacts and `--check-doc` rebuilds the page
 from the CSV alone.
+
+The extended band is the other half of the same picture and needs its own key: a token in `0x60..0x6f` carries one
+operand byte, and the native it calls is `(opcode - 0x60) * 256 + operand` -- an **index**, not the opcode. So
+`census_high()` keys its rows on the native and its population is every index above 255 that any of the three
+sources reaches (`inventory/opcode_band_high.csv`), which includes the populated slots no token calls; the direct
+band cannot report those at all, because for it the slot *is* the token.
+
+    python3 tools/opcode-band.py -o inventory          # writes both CSVs
+    python3 tools/opcode-band.py --report              # the same read, printed
+    python3 tools/opcode-band.py --write-doc docs/BYTECODE.md
+    python3 tools/opcode-band.py --check-doc docs/BYTECODE.md
+    python3 tools/opcode-band.py --check               # synthetic inventory, no dump, writes nothing
+
+Why the second band matters (measured 2026-11-15): the two-byte arithmetic was only ever confirmed in aggregate --
+the band's 84 natives were compared with the declarations the script ships -- so "the operand byte is the high
+half of the numbering" was an inference from a total rather than a per-index join. It holds on every one of them:
+the `.data` record the *runtime* `GNatives` value points at spells the same `intUObjectexec<F>` the call site
+resolved on all 84, and the populated slots the corpus never calls are the population that join would have missed.
 
 Why it exists (measured 2026-11-15): the L2 control's reach left 47 opcode rows ungraded, and nine of them are the
 only band rows whose shape no payload has ever tested. This census says what those nine are. The three naming
@@ -60,6 +78,21 @@ ROW = ["opcode", "index", "name", "pattern", "registered", "record_name", "decla
 CENSUS = ["both", "registered_only", "declared_only", "neither", "used", "corpus_tokens", "name_exact",
           "name_spelling", "name_differ", "runs"]
 COLUMNS = ROW + CENSUS
+
+# The extended band: a token there carries one operand byte, and `(op - 0x60) * 256 + operand` is the native it
+# calls, so its rows are keyed on the index and its population is every index a source reaches above 255.
+HIGH_BASE = 0x60
+HIGH_OUT = "opcode_band_high.csv"
+BANDS_START = "<!-- generated:opcode-band-bands -->"
+BANDS_END = "<!-- /generated:opcode-band-bands -->"
+NATIVE_OPCODES = os.path.join("inventory", "native_opcodes.csv")
+HIGH_ROW = ["index", "token", "opcode", "operand", "pattern", "slot_name", "record_name", "declared",
+            "declarers", "sites", "resolved", "callee", "callee_match", "name_match", "verdict"]
+HIGH_CENSUS = ["both", "both_named", "registered_only", "declared_only", "neither", "used",
+               "opcodes_used", "unused", "unused_declared", "populated", "declared_total",
+               "unnamed", "name_exact", "name_spelling", "name_differ", "callee_exact",
+               "callee_spelling", "callee_differ", "sites_total", "resolved_total", "runs"]
+HIGH_COLUMNS = HIGH_ROW + HIGH_CENSUS
 
 # The C++ name spells the argument types out (`StringString`); the script's operator declaration abbreviates them
 # (`StrStr`). That is one spelling rule, not a disagreement per row -- measured on nine of the 135 slots.
@@ -240,65 +273,84 @@ def render(rows, census):
     return "\n".join(out)
 
 
-def splice(path, block):
+def splice(path, block, start=None, end=None):
+    start = start or DOC_START
+    end = end or DOC_END
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
-    if DOC_START not in text or DOC_END not in text:
+    if start not in text or end not in text:
         return None
-    head, rest = text.split(DOC_START, 1)
-    _old, tail = rest.split(DOC_END, 1)
-    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+    head, rest = text.split(start, 1)
+    _old, tail = rest.split(end, 1)
+    return head + start + "\n" + block + "\n" + end + tail
 
 
-def write_doc(path, rows, census):
-    new = splice(path, render(rows, census))
-    if new is None:
-        print("FAIL opcode-band: markers not found in %s" % path)
-        return 1
+def blocks(rows, census, hrows, hcensus):
+    """Every generated block this tool owns, as `(start marker, end marker, text)`."""
+    return [(DOC_START, DOC_END, render(rows, census)),
+            (BANDS_START, BANDS_END, render_bands(rows, census, hrows, hcensus))]
+
+
+def write_doc(path, rows, census, hrows, hcensus):
+    # Read first, write last: `open(path, "w")` before the splice truncates the page it is about to read.
+    with open(path, encoding="utf-8") as fh:
+        new = fh.read()
+    for start, end, block in blocks(rows, census, hrows, hcensus):
+        if start not in new or end not in new:
+            print("FAIL opcode-band: markers not found in %s" % path)
+            return 1
+        head, rest = new.split(start, 1)
+        _old, tail = rest.split(end, 1)
+        new = head + start + "\n" + block + "\n" + end + tail
     with open(path, "w", encoding="utf-8", newline="") as fh:
         fh.write(new)
     print("wrote %s" % path)
     return 0
 
 
-def artifact_diff(path, rows, census):
+def artifact_diff(path, rows, census, columns):
     """The committed artifact against this run's join, so a stale CSV cannot agree with a stale page."""
     if not os.path.exists(path):
         return "%s is missing" % path
     with open(path, newline="", encoding="utf-8") as fh:
         back = list(csv.DictReader(fh))
-    want = [{c: r.get(c, "") for c in COLUMNS} for r in rows]
-    want.append({c: census.get(c, "") for c in COLUMNS})
+    want = [{c: r.get(c, "") for c in columns} for r in rows]
+    want.append({c: census.get(c, "") for c in columns})
     if len(back) != len(want):
         return "%s has %d rows, the join gives %d" % (path, len(back), len(want))
     for got, exp in zip(back, want):
-        for c in COLUMNS:
+        for c in columns:
             a, b = (got.get(c) or ""), ("" if exp.get(c) is None else str(exp.get(c)))
             if a != b:
-                return "%s row %s column %s is %r, the join gives %r" % (path, got.get("opcode"), c, a, b)
+                return "%s row %s column %s is %r, the join gives %r" % (path, got.get(columns[0]), c, a, b)
     return ""
 
 
-def check_doc(path, rows, census, artifact=None):
-    bad = artifact_diff(artifact, rows, census) if artifact else ""
-    if bad:
-        print("FAIL opcode-band: " + bad)
-        return 1
-    got = splice(path, render(rows, census))
-    if got is None:
-        print("FAIL opcode-band: markers not found in %s" % path)
-        return 1
+def check_doc(path, rows, census, hrows, hcensus, artifacts=()):
+    for p, rws, cns, cols in artifacts:
+        bad = artifact_diff(p, rws, cns, cols)
+        if bad:
+            print("FAIL opcode-band: " + bad)
+            return 1
     with open(path, encoding="utf-8", newline="") as fh:
         have = fh.read()
-    if got != have:
-        print("FAIL opcode-band: %s is stale" % path)
-        return 1
-    print("ok   opcode-band: %s rows, %s neither, artifact and block reproduce"
-          % (census["index"], census["neither"]))
+    for start, end, block in blocks(rows, census, hrows, hcensus):
+        if start not in have or end not in have:
+            print("FAIL opcode-band: markers not found in %s" % path)
+            return 1
+        head, rest = have.split(start, 1)
+        _old, tail = rest.split(end, 1)
+        have = head + start + "\n" + block + "\n" + end + tail
+    with open(path, encoding="utf-8", newline="") as fh:
+        if fh.read() != have:
+            print("FAIL opcode-band: %s is stale" % path)
+            return 1
+    print("ok   opcode-band: %s direct slots and %s extended indices reproduce, blocks and artifacts agree"
+          % (census["index"], hcensus["index"]))
     return 0
 
 
-def report(rows, census):
+def report(rows, census, hrows, hcensus):
     print("band 0x%02x..0x%02x: %s slots, %s both, %s runtime only, %s declaration only, %s neither"
           % (BAND[0], BAND[1] - 1, census["index"], census["both"], census["registered_only"],
              census["declared_only"], census["neither"]))
@@ -310,11 +362,233 @@ def report(rows, census):
         if r["verdict"] != "both":
             print("  %s %-3s %-10s registered=%s declared=%s tokens=%s"
                   % (r["opcode"], r["index"], r["verdict"], r["registered"], r["declared"], r["tokens"]))
+    print("extended band: %s indices above 255, %s called, %s populated, %s declared"
+          % (hcensus["index"], hcensus["used"], hcensus["populated"], hcensus["declared_total"]))
+    print("extended verdicts: %s both, %s runtime only, %s declaration only, %s neither"
+          % (hcensus["both"], hcensus["registered_only"], hcensus["declared_only"], hcensus["neither"]))
+    print("extended callee: %s exact, %s spelling, %s differ over %s called indices"
+          % (hcensus["callee_exact"], hcensus["callee_spelling"], hcensus["callee_differ"], hcensus["used"]))
+    print("extended sites: %s over %s rows, and %s name a declaration on the caller chain"
+          % (hcensus["sites_total"], hcensus["used"], hcensus["resolved_total"]))
+    for r in hrows:
+        if r["verdict"] != "both" or not int(r["sites"]):
+            print("  %-9s %-5s %-10s slot=%s record=%s declared=%s sites=%s"
+                  % (r["token"], r["index"], r["verdict"], r["slot_name"] or "-",
+                     r["record_name"] or "-", r["declared"], r["sites"]))
     return 0
 
 
+def load_high_inputs(base):
+    """The two inputs only the extended band reads: the runtime slot's own name, and the per-token census."""
+    slot_names = {}
+    for r in read(os.path.join(base, SLOTS), ["index", "name"]):
+        if r["index"].strip():
+            slot_names[int(r["index"])] = r["name"].strip()
+    tokens = {}
+    for r in read(os.path.join(base, NATIVE_OPCODES),
+                  ["opcode", "operand", "index", "sites", "resolved", "body_name"]):
+        if not r["opcode"].strip().startswith("0x"):
+            continue
+        idx = int(r["index"])
+        if idx <= 255:
+            continue
+        if idx in tokens:
+            raise SystemExit("opcode-band: %s names index %d twice" % (NATIVE_OPCODES, idx))
+        tokens[idx] = r
+    return slot_names, tokens
+
+
+def callee_match(record_name, callee):
+    """The `.data` record's spelling at the index against the body the call site itself resolved."""
+    if not record_name or not callee:
+        return ""
+    if record_name == callee:
+        return "exact"
+    return "spelling" if unspell(record_name) == unspell(callee) else "differ"
+
+
+def census_high(table, slots, records, natives, slot_names, tokens):
+    """The extended band keyed on the native, over every index above 255 a source reaches.
+
+    The population is the union of the three sources, not just the called indices: a populated slot no token writes is
+    what a key built from the corpus alone cannot see, and it is the control on the join.
+    """
+    population = sorted(i for i in (set(slots) | set(natives) | set(tokens)) if i > 255)
+    rows = []
+    for idx in population:
+        t = tokens.get(idx) or {}
+        op = HIGH_BASE + (idx >> 8)
+        decl = natives.get(idx) or []
+        names = sorted({r["function"] for r in decl if r["function"].strip()})
+        reg = idx in slots
+        rec = records.get(idx, "")
+        rows.append({
+            "index": idx,
+            "token": "0x%02x 0x%02x" % (op, idx & 0xFF),
+            "opcode": "0x%02x" % op,
+            "operand": "0x%02x" % (idx & 0xFF),
+            "pattern": (table.get(op) or {}).get("pattern", ""),
+            "slot_name": slot_names.get(idx, ""),
+            "record_name": rec,
+            "declared": len(names),
+            "declarers": ";".join(sorted({"%s.%s.%s" % (r["package"], r["class"], r["function"]) for r in decl})),
+            "sites": t.get("sites", "0") or "0",
+            "resolved": t.get("resolved", "0") or "0",
+            "callee": t.get("body_name", ""),
+            "callee_match": callee_match(rec, t.get("body_name", "")),
+            "name_match": match(rec, names),
+            "verdict": ("both" if reg and names else "registered" if reg else "declared" if names else "neither"),
+        })
+    census = {c: "" for c in HIGH_COLUMNS}
+    populated = [r for r in rows if r["verdict"] in ("both", "registered")]
+    unused = [r for r in rows if not int(r["sites"])]
+    for key, val in {
+        "token": "census", "index": len(rows),
+        "both": sum(1 for r in rows if r["verdict"] == "both"),
+        "both_named": sum(1 for r in rows if r["verdict"] == "both" and r["record_name"]),
+        "registered_only": sum(1 for r in rows if r["verdict"] == "registered"),
+        "declared_only": sum(1 for r in rows if r["verdict"] == "declared"),
+        "neither": sum(1 for r in rows if r["verdict"] == "neither"),
+        "used": sum(1 for r in rows if int(r["sites"])),
+        "opcodes_used": len({r["opcode"] for r in rows if int(r["sites"])}),
+        "unused": len(unused),
+        "unused_declared": sum(1 for r in unused if r["declared"]),
+        "populated": len(populated),
+        "declared_total": sum(1 for r in rows if r["declared"]),
+        "unnamed": sum(1 for r in populated if not r["record_name"]),
+        "name_exact": sum(1 for r in rows if r["name_match"] == "exact"),
+        "name_spelling": sum(1 for r in rows if r["name_match"] == "spelling"),
+        "name_differ": sum(1 for r in rows if r["name_match"] == "differ"),
+        "callee_exact": sum(1 for r in rows if r["callee_match"] == "exact"),
+        "callee_spelling": sum(1 for r in rows if r["callee_match"] == "spelling"),
+        "callee_differ": sum(1 for r in rows if r["callee_match"] == "differ"),
+        "sites_total": sum(int(r["sites"]) for r in rows),
+        "resolved_total": sum(int(r["resolved"]) for r in rows),
+        "runs": ";".join(high_runs(rows)),
+    }.items():
+        census[key] = val
+    return rows, census
+
+
+def high_runs(rows):
+    """Contiguous runs of the one-sided indices, as `a..b` strings, for the page's prose."""
+    runs, cur = [], []
+    for r in rows:
+        if r["verdict"] == "both":
+            continue
+        idx = r["index"]
+        if cur and idx != cur[-1] + 1:
+            runs.append(cur)
+            cur = []
+        cur.append(idx)
+    if cur:
+        runs.append(cur)
+    return ["%d..%d" % (r[0], r[-1]) if len(r) > 1 else "%d" % r[0] for r in runs]
+
+
+def write_high(rows, census, out_dir):
+    path = os.path.join(out_dir, HIGH_OUT)
+    os.makedirs(out_dir, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=HIGH_COLUMNS, lineterminator="\n")
+        w.writeheader()
+        for r in rows:
+            w.writerow({c: r.get(c, "") for c in HIGH_COLUMNS})
+        w.writerow({c: census.get(c, "") for c in HIGH_COLUMNS})
+    return path
+
+
+def render_bands(rows, census, hrows, hcensus):
+    """The band summary and the extended band's own census, rebuilt from the two row sets alone."""
+    spelling = [r["record_name"].split("exec", 1)[1] for r in rows if r["name_match"] == "spelling"]
+    shorter = [s.split("_", 1)[0] for s in spelling]
+    high_spelling = [r["record_name"] for r in hrows if r["name_match"] == "spelling"]
+    onesided = [r for r in hrows if r["verdict"] != "both"]
+    named_only = [r for r in onesided if r["record_name"]]
+    bare = [r for r in onesided if not r["record_name"]]
+    unused = [r for r in hrows if not int(r["sites"])]
+    out = [
+        "| band | opcodes used | what names it | corpus sites |",
+        "|---|---:|---|---:|",
+        ("| `0x70..0xff` | %s of 144 | the token *is* the slot: `0x77` is slot 119 "
+         "`intUObjectexecNotEqual_ObjectObject` | %s |"
+         % (census["used"], "{:,}".format(int(census["tokens"])))),
+        ("| `0x60..0x6f` | %s of 16 | `HighNative<n>`; with operand byte `b` the native is `(op-0x60)*256 + b`, so "
+         "`0x61 0x16` is 278 `Actor.Spawn` | %s |"
+         % (hcensus["opcodes_used"], "{:,}".format(int(hcensus["sites_total"])))),
+        "| `0x48..0x5f` | 0 of 24 | **nothing**: the image has no `GNatives` record at any of those 24 slots | 0 |",
+        "",
+        "That third row is a third independent confirmation that the walker's bad-token band is not an opcode band: it "
+        "rejects `0x48..0x5f` and the image has no slot there either.",
+        "",
+        "Two checks say the join is the naming rather than a plausible one, and both are by content:",
+        "",
+        ("* **Direct band** -- %s of the %s slots that carry both a record and a declaration spell the function "
+         "identically, and the %s that do not differ only in spelling: `Concat_StringString` in C++ where `Object.uc` "
+         "declares `Concat_StrStr` (the %s are %s). Those rows carry the declaration in their `note`."
+         % (census["name_exact"], census["both"], census["name_spelling"],
+            {9: "nine"}.get(int(census["name_spelling"]), census["name_spelling"]),
+            ", ".join("`%s`" % s for s in shorter))),
+        ("* **High band** -- %s distinct natives, **%s of the %s declared** spell it identically and %s differ only by "
+         "that same rule (%s); `python3 tools/uscript-dis.py --highnative DUMP/System` prints the same comparison, and "
+         "`inventory/opcode_band_high.csv` is the artifact that holds it, so the two corroborate each other rather "
+         "than duplicating a measurement."
+         % (hcensus["used"], hcensus["name_exact"], hcensus["both"], hcensus["name_spelling"],
+            ", ".join("`%s`" % s for s in high_spelling))),
+        "",
+        "### The extended band is measured index by index, not token by token",
+        "",
+        ("`(opcode - 0x60) * 256 + operand` is an **index**, so the second band's census is keyed on the native and its "
+         "population is every index above 255 that any of the three sources reaches -- the %s the corpus calls and the "
+         "%s it does not. That wider population is what makes the next table a control: a join keyed only on the "
+         "called tokens could not tell whether the image agrees or has nothing to say."
+         % (hcensus["used"], len(unused))),
+        "",
+        "| extended indices | runtime + declaration | runtime only | declaration only | neither |",
+        "|---:|---:|---:|---:|---:|",
+        "| %s | %s | %s | %s | %s |" % (hcensus["index"], hcensus["both"], hcensus["registered_only"],
+                                        hcensus["declared_only"], hcensus["neither"]),
+        "",
+        ("**All %s indices a token calls carry the runtime value and a declaration, %s of them with a `.data` record "
+         "name as well, %s are neither, and the %s one-sided rows are all on the runtime side** -- so the operand "
+         "byte is not a guess about the high half of the numbering. At every called index the record the *runtime* value points at spells "
+         "the same `intUObjectexec<F>` the call site itself resolved (%s of %s), and the declarations agree to within "
+         "the one spelling rule above."
+         % (hcensus["used"], hcensus["both_named"], hcensus["neither"], len(onesided),
+            hcensus["callee_exact"], hcensus["used"])),
+        "",
+        ("**%s populated slots take no token at all** -- %s of them declared, the rest the runtime's own -- and no "
+         "index is declared without being populated, so nothing the shipped text declares is missing from the image: "
+         "the mirror of the direct band's nine, from the other side."
+         % (len(unused), hcensus["unused_declared"])),
+        "",
+        ("**The image names %s of the %s one-sided slots and the shipped text declares none of them** (%s), so a "
+         "rebuild compiled from these packages cannot emit those tokens; the other %s carry a runtime value whose "
+         "record name the `.data` table leaves empty. Put together, they are the control on the join in both "
+         "directions -- a key that matched on the wrong field would have put some of them on the *declaration* side, "
+         "and %s rows are."
+         % (len(named_only), len(onesided),
+            ", ".join("`%s` at %s" % (r["record_name"], r["index"]) for r in named_only) or "none", len(bare),
+            hcensus["declared_only"])),
+        "",
+        "| index | token | `.data` record | `native()` |",
+        "|---:|---|---|---|",
+    ]
+    for r in onesided:
+        out.append("| %s | `%s` | %s | %s |" % (r["index"], r["token"], r["record_name"] or "-", r["declared"]))
+    out += [
+        "",
+        ("%s of the %s high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` "
+         "column, which answers a different question from `body_name`: a call site names the body it dispatches on "
+         "whether or not the receiver's class declares that native, and reading the two columns as one would turn a "
+         "narrower lookup into a disagreement."
+         % ("{:,}".format(int(hcensus["resolved_total"])), "{:,}".format(int(hcensus["sites_total"])))),
+    ]
+    return "\n".join(out)
+
+
 def check():
-    """Synthetic inventory, no dump: the four verdicts, the spelling rule, the census and the splice."""
+    """Synthetic inventory, no dump: both bands' verdicts, the spelling rule, the censuses and the two splices."""
     tmp = tempfile.mkdtemp(prefix="opcode-band-")
     try:
         inv = os.path.join(tmp, "inventory")
@@ -325,17 +599,26 @@ def check():
             w.writerow(["opcode", "group", "handler", "name", "pattern", "fixed_bytes", "source", "note"])
             for op in range(*BAND):
                 w.writerow(["0x%02x" % op, "21", "", named.get(op, ""), "parms", "", "range", ""])
+            for op in range(0x60, 0x70):
+                w.writerow(["0x%02x" % op, "22", "", "", "bytes:1,parms", "1", "range", ""])
         with open(os.path.join(inv, "gnatives_slots.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["index", "address", "name", "evidence", "declarers"])
             for op in (0x70, 0x71, 0x74):
                 w.writerow([op, "0x00046f%02x" % op, "", "slot-only", ""])
+            w.writerow([256, "0x0020c830", "execFoo", "declared", "Engine:Actor:Foo"])
+            w.writerow([257, "0x00043670", "execBar_StringString", "declared", "Core:Object:Bar"])
+            w.writerow([300, "0x0020cc10", "", "slot-only", ""])
+            w.writerow([302, "0x0020cd00", "", "slot-only", ""])
         with open(os.path.join(inv, "gnatives_records.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["slot", "live_address", "name", "store_site", "record_va", "record_name", "source"])
             w.writerow([0x70, "0x00046f70", "", "yes", "0x005c1a58", "intUObjectexecConcat_StringString", "store"])
             w.writerow([0x71, "0x00046f71", "", "yes", "0x005c1a60", "intUObjectexecSomewhereElse", "store"])
             w.writerow([0x74, "0x00046f74", "", "yes", "0x005c1a68", "intUObjectexecZzz", "store"])
+            w.writerow([256, "0x0020c830", "", "yes", "0x005c2a00", "intUObjectexecFoo", "store"])
+            w.writerow([257, "0x00043670", "", "yes", "0x005c2a08", "intUObjectexecBar_StringString", "store"])
+            w.writerow([300, "0x0020cc10", "", "yes", "0x005c2a10", "", "store"])
         with open(os.path.join(inv, "natives.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["package", "class", "function", "native_token", "parameter_count", "function_flags"])
@@ -343,13 +626,26 @@ def check():
             w.writerow(["Core.u", "Object", "Less_StrStr", 0x73, "2", ""])
             w.writerow(["Core.u", "Object", "Yyy", 0x74, "2", ""])
             w.writerow(["Core.u", "Object", "NoIndexAtAll", "", "0", ""])
+            w.writerow(["Engine.u", "Actor", "Foo", 256, "1", ""])
+            w.writerow(["Core.u", "Object", "Bar_StrStr", 257, "2", ""])
+            w.writerow(["Core.u", "Object", "Qqq", 301, "0", ""])
+        with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "body_name", "body_match",
+                        "native", "declared_in", "declared_params", "args"])
+            w.writerow(["0x61", "0x00", 256, 3, 2, 1, "intUObjectexecFoo", 1, "Foo", "Actor", "1", "1:3/3"])
+            w.writerow(["0x61", "0x01", 257, 5, 4, 1, "intUObjectexecBar_StringString", 1, "Bar_StrStr", "Object",
+                        "2", "2:5/5"])
         with open(os.path.join(inv, "opcode_usage.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "name", "tokens", "payloads", "scripts_walked", "scripts_with_epilogue"])
             w.writerow(["0x70", "Concat_StringString", 7, 3, 1, 1])
             w.writerow(["0x71", "", 0, 0, 0, 0])
+            w.writerow(["0x61", "HighNative1", 8, 3, 1, 1])
         bad = []
-        out, census = census_rows(*load_inputs(tmp))
+        inputs = load_inputs(tmp)
+        out, census = census_rows(*inputs)
+        hout, hcensus = census_high(*inputs[:4], *load_high_inputs(tmp))
         got = {r["opcode"]: (r["verdict"], r["name_match"]) for r in out}
         want = {"0x70": ("both", "spelling"), "0x71": ("registered", ""), "0x72": ("neither", ""),
                 "0x73": ("declared", ""), "0x74": ("both", "differ")}
@@ -359,41 +655,71 @@ def check():
             bad.append("census %r" % {k: census[k] for k in ("both", "registered_only", "declared_only",
                                                              "neither")})
         if (census["runs"], census["tokens"], census["used"], census["corpus_tokens"]) != ("0x72;0x75..0xff",
-                                                                                         7, 1, 7):
+                                                                                         7, 1, 15):
             bad.append("census %r" % {k: census[k] for k in ("runs", "tokens", "used", "corpus_tokens")})
         if (census["name_exact"], census["name_spelling"], census["name_differ"]) != (0, 1, 1):
             bad.append("name census %r" % {k: census[k] for k in ("name_exact", "name_spelling", "name_differ")})
+        hgot = {r["index"]: (r["verdict"], r["name_match"], r["callee_match"], r["sites"]) for r in hout}
+        hwant = {256: ("both", "exact", "exact", "3"), 257: ("both", "spelling", "exact", "5"),
+                 300: ("registered", "", "", "0"), 301: ("declared", "", "", "0"),
+                 302: ("registered", "", "", "0")}
+        if hgot != hwant:
+            bad.append("extended verdicts %r" % hgot)
+        if (hcensus["both"], hcensus["registered_only"], hcensus["declared_only"],
+                hcensus["neither"]) != (2, 2, 1, 0):
+            bad.append("extended census %r" % {k: hcensus[k] for k in ("both", "registered_only",
+                                                                      "declared_only", "neither")})
+        if (hcensus["used"], hcensus["unused"], hcensus["populated"], hcensus["declared_total"]) != (2, 3, 4, 3):
+            bad.append("extended census %r" % {k: hcensus[k] for k in ("used", "unused", "populated",
+                                                                      "declared_total")})
+        if hcensus["unused_declared"] != 1:
+            bad.append("extended unused_declared %r" % hcensus["unused_declared"])
+        if (hcensus["callee_exact"], hcensus["callee_spelling"], hcensus["callee_differ"],
+                hcensus["sites_total"], hcensus["resolved_total"]) != (2, 0, 0, 8, 6):
+            bad.append("extended callee %r" % {k: hcensus[k] for k in ("callee_exact", "callee_spelling",
+                                                                      "callee_differ", "sites", "resolved")})
+        if hcensus["opcodes_used"] != 1:
+            bad.append("extended opcodes_used %r" % hcensus["opcodes_used"])
+        if (hcensus["both_named"], hcensus["index"]) != (2, 5):
+            bad.append("extended both_named %r" % hcensus["both_named"])
+        if (hcensus["index"], hcensus["unnamed"], hcensus["runs"]) != (5, 2, "300..302"):
+            bad.append("extended rows %r" % {k: hcensus[k] for k in ("index", "unnamed", "runs")})
         path = write(out, census, tmp)
+        hpath = write_high(hout, hcensus, tmp)
         back = list(csv.DictReader(open(path, newline="")))
         if len(back) != len(out) + 1 or back[-1]["opcode"] != "census" or back[-1]["neither"] != "140":
             bad.append("artifact round trip has %d rows" % len(back))
+        hback = list(csv.DictReader(open(hpath, newline="")))
+        if len(hback) != len(hout) + 1 or hback[-1]["token"] != "census" or hback[-1]["used"] != "2":
+            bad.append("extended artifact round trip has %d rows" % len(hback))
         doc = os.path.join(tmp, "page.md")
         with open(doc, "w", encoding="utf-8") as fh:
-            fh.write("# page\n\n%s\nold\n%s\n" % (DOC_START, DOC_END))
+            fh.write("# page\n\n%s\nold\n%s\n\n%s\nold\n%s\n" % (DOC_START, DOC_END, BANDS_START, BANDS_END))
+        arts = ((path, out, census, COLUMNS), (hpath, hout, hcensus, HIGH_COLUMNS))
         quiet = io.StringIO()
         with contextlib.redirect_stdout(quiet):
-            stale = check_doc(doc, out, census, path)
-            write_doc(doc, out, census)
-            fresh = check_doc(doc, out, census, path)
-            with open(path, "a", newline="") as fh:      # a stale row must fail even when the page matches
+            stale = check_doc(doc, out, census, hout, hcensus, arts)
+            write_doc(doc, out, census, hout, hcensus)
+            fresh = check_doc(doc, out, census, hout, hcensus, arts)
+            with open(hpath, "a", newline="") as fh:      # a stale row in the *second* artifact must fail too
                 fh.write(",\n")
-            corrupt = check_doc(doc, out, census, path)
+            corrupt = check_doc(doc, out, census, hout, hcensus, arts)
         if stale == 0:
             bad.append("check-doc accepted a stale block")
         if fresh != 0:
-            bad.append("check-doc refused after write-doc")
+            bad.append("fresh check-doc refused after write-doc")
         if corrupt == 0:
-            bad.append("check-doc accepted a stale artifact row")
+            bad.append("check-doc accepted a stale extended artifact row")
         with open(doc, "w", encoding="utf-8") as fh:
-            fh.write("# page with no markers\n")
+            fh.write("# page\n\n%s\nold\n%s\n" % (DOC_START, DOC_END))
         with contextlib.redirect_stdout(io.StringIO()):
-            no_markers = check_doc(doc, out, census, None)
+            no_markers = check_doc(doc, out, census, hout, hcensus, ())
         if no_markers == 0:
-            bad.append("check-doc accepted a page with no markers")
+            bad.append("check-doc accepted a page missing the band markers")
         if bad:
             print("FAIL opcode-band: " + "; ".join(bad))
             return 1
-        print("ok   opcode-band: 4 verdicts, the spelling rule, %d hole run(s), artifact and markers"
+        print("ok   opcode-band: 4 verdicts per band, the spelling rule, %d hole run(s), both artifacts and markers"
               % len(census["runs"].split(";")))
         return 0
     finally:
@@ -402,22 +728,28 @@ def check():
 
 def main():
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    ap.add_argument("-o", "--out", help="write the artifact under this directory (adds opcode_band.csv)")
+    ap.add_argument("-o", "--out", help="write the artifacts under this directory (both CSVs)")
     ap.add_argument("--report", action="store_true", help="print the census instead of writing")
-    ap.add_argument("--write-doc", help="splice the generated block into this page")
-    ap.add_argument("--check-doc", help="fail when this page's block is stale")
+    ap.add_argument("--write-doc", help="splice the generated blocks into this page")
+    ap.add_argument("--check-doc", help="fail when this page's blocks or either artifact is stale")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; no dump, writes nothing")
     args = ap.parse_args()
     if args.check:
         return check()
-    rows, census = census_rows(*load_inputs(ROOT))
+    inputs = load_inputs(ROOT)
+    rows, census = census_rows(*inputs)
+    hrows, hcensus = census_high(*inputs[:4], *load_high_inputs(ROOT))
+    out = args.out or os.path.join(ROOT, "inventory")
     if args.write_doc:
-        return write_doc(args.write_doc, rows, census)
+        return write_doc(args.write_doc, rows, census, hrows, hcensus)
     if args.check_doc:
-        return check_doc(args.check_doc, rows, census, os.path.join(ROOT, "inventory", OUT))
+        return check_doc(args.check_doc, rows, census, hrows, hcensus,
+                         [(os.path.join(out, OUT), rows, census, COLUMNS),
+                          (os.path.join(out, HIGH_OUT), hrows, hcensus, HIGH_COLUMNS)])
     if args.report:
-        return report(rows, census)
-    print("wrote %s" % write(rows, census, args.out or ROOT))
+        return report(rows, census, hrows, hcensus)
+    print("wrote %s" % write(rows, census, out))
+    print("wrote %s" % write_high(hrows, hcensus, out))
     return 0
 
 
