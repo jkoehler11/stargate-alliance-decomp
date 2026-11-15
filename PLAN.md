@@ -647,7 +647,11 @@ other 38 rows.
       none at all (always skip). Of the 210 `ACTION_IfCondition` conditions that resolve, **105 state
       `bEnabled=True`, none states false, and 105 state nothing** -- and `TriggeredCondition` is a plain
       `var() bool bEnabled` whose `Trigger` is what flips it later. So the first pass through every branch is
-      decided by the package; what is left of 5.2 is the runtime after a trigger fires and `FRand()`'s draw.
+      decided by the package. The fire side is joined too, by `event-targets`' own reader: of the 210 resolved
+      conditions, **199 name a `TriggeredCondition` whose tag a placed property in the same map fires** and 11
+      name one nothing fires, so a condition's placed value is the only value it will ever have in 11 cases and
+      can invert in the other 199. What is left of 5.2 is `FRand()`'s draw and whether the firing placement is
+      itself reached.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
