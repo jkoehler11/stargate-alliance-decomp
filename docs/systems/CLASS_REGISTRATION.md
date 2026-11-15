@@ -523,7 +523,87 @@ artifact's own `census` row so a page rendered from the CSV cannot disagree with
   above says what it is. It is not a registration and not a dispatch table: its `mov eax, <.rdata>`
   stubs are the compiler's C++ exception handlers.
 
+## The other 61 tail jumps sit in exception descriptors, not in a call
+
+The hole above holds 23 of the 84 unmapped installer tail jumps; the other 61 sit in 13 further gaps of
+`symbols/xbox_functions.csv`, and they were the population that could still have turned out to be a real
+caller of the 24 unregistered tables. Reading them answers it the other way.
+
+- **Every one of the 61 is the same 8-byte forwarder.** The instruction walk decodes all 61 sites inside a
+  stub of the shape `mov reg,[ebp+d]; jmp <installer>`, 8 bytes each, naming 18 of the 24 installers. The
+  14 gaps hold 8,460 stubs in all (the hole's 1,589 among them), so the forwarders are a small minority of
+  what fills them -- the rest is the `__ehhandler` pool and pad the bounded walk cannot decode.
+- **No branch reaches any of the 14 gaps.** The `E8`/`E9` edges entering a gap from outside it total 0,
+  and no `E8` in `.text` targets any of the 61 stubs. The 11 `jmp` edges whose site is inside the same gap
+  are short hops between fragments of one gap, not entries. Neither a `c7 /0` store nor a `68` push names
+  a stub -- the channel that reaches an `__ehhandler` through its frame slot.
+- **The one channel that does name them is a `.rdata` dword, and it is not a table.** All 61 stubs carry a
+  dword reference (75 refs), and not one of them is a class-table slot: the check spans all 724 class
+  tables in the image, the 492 mapped and the 232 unmapped, and returns 0. Each ref sits in an exception
+  descriptor -- 74 of the 75 behind the `0xffffffff` unwind-map terminator and 39 of the 75 immediately in
+  front of a `0x19930520` `FuncInfo` header (102 and 55 of the 103 refs the whole 84-site population
+  carries).
+- **So the population that could still be a real caller of the 24 is empty.** A forwarder whose only
+  reference is an exception descriptor is compiler plumbing for a `try`/`catch` frame, not a dispatch
+  entry, and the base-constructor shape (103 classes calling an installer from their own constructor)
+  stays the only reachable evidence for the 24 tables.
+
+The table below is rendered from the artifact's own `census` row, so a page rebuilt from
+`inventory/native_island_gaps.csv` carries the same numbers as the measurement that wrote it.
+
+<!-- generated:native-island-gaps -->
+| measure | value |
+|---|---|
+| installer tail jumps, unmapped | 84 |
+| ...in the island hole `0x003f28b8`..`0x003f6d70` / in the other gaps | 23 / 61 |
+| map gaps holding them | 14 (13 besides the hole) |
+| bytes of `.text` those gaps cover | 93441 |
+| stubs decoded in them | 8460 |
+| the 61 sites' stub shape | 61 of 61 are a forwarder, all 8 bytes |
+| `E8`/`E9` edges entering a gap from outside it | 0 (`E8` 0) |
+| `jmp` edges whose site is inside the same gap | 11 |
+| the 61 stubs an `E8` calls / a store or push names | 0 / 0 |
+| the 61 stubs a dword outside `.text` names | 61 (75 refs) |
+| ...of those refs, in a class-table slot (492 mapped + 232 unmapped tables) | 0 of 103 |
+| ...whose next dword is a `FuncInfo` header `0x19930520` | 39 of 75 (55 of the 103 refs all 84 carry) |
+| ...whose previous dword is the `0xffffffff` unwind terminator | 74 of 75 (102 of 103) |
+| installers the 84 tail jumps name | 24 of the 24 (the 61 name 18) |
+
+| gap | bytes | stubs | stub shapes | sites | edges in from outside | edges inside |
+|---|---|---|---|---|---|---|
+| `0x003f28b8`..`0x003f6d70` (hole) | 17592 | 1589 | eh-handler:325,forward:200,other:1064 | 23 | 0 | 4 |
+| `0x003fc208`..`0x00400340` | 16696 | 1551 | eh-handler:293,forward:165,other:1093 | 23 | 0 | 0 |
+| `0x004012a8`..`0x00403020` | 7544 | 700 | eh-handler:200,forward:91,other:409 | 9 | 0 | 0 |
+| `0x00400a08`..`0x004012a0` | 2200 | 194 | eh-handler:53,forward:29,other:112 | 6 | 0 | 0 |
+| `0x00406338`..`0x00409100` | 11720 | 1078 | eh-handler:189,forward:173,other:716 | 5 | 0 | 0 |
+| `0x003f27e7`..`0x003f28b0` | 201 | 12 | eh-handler:7,forward:5 | 3 | 0 | 0 |
+| `0x003f6d78`..`0x003f71a0` | 1064 | 86 | eh-handler:33,forward:27,other:26 | 3 | 0 | 0 |
+| `0x003f7d78`..`0x003fa140` | 9160 | 787 | eh-handler:176,forward:95,other:516 | 2 | 0 | 0 |
+| `0x00400348`..`0x00400a00` | 1720 | 152 | eh-handler:56,forward:20,other:76 | 2 | 0 | 0 |
+| `0x00403028`..`0x004042e0` | 4792 | 419 | eh-handler:106,forward:52,other:261 | 2 | 0 | 7 |
+| `0x00409108`..`0x0040ab70` | 6760 | 608 | eh-handler:167,forward:67,other:374 | 2 | 0 | 0 |
+| `0x0040ab78`..`0x0040c2c0` | 5960 | 549 | eh-handler:182,forward:41,other:326 | 2 | 0 | 0 |
+| `0x003f71a8`..`0x003f7d70` | 3016 | 252 | eh-handler:81,forward:52,other:119 | 1 | 0 | 0 |
+| `0x00404f98`..`0x00406330` | 5016 | 483 | eh-handler:38,forward:189,other:256 | 1 | 0 | 0 |
+
+All 61 sites outside the hole sit in stubs, 61 of which the walker decodes as a forwarder, and `E8`/`E9` edges entering the gaps from outside total 0. Across the whole 84-site population the only channel that names a stub is a `.rdata` dword (103 refs), and none of them is a class-table slot, mapped or unmapped: they sit in exception descriptors -- the word in front of one is the unwind terminator on 102 of the 103 refs, and 55 stand immediately in front of a `FuncInfo` header. So the 84 are compiler exception plumbing rather than dispatch entries, no branch reaches any of them, and the 24 installers keep their 103 constructor callers as the only reachable evidence.
+<!-- /generated:native-island-gaps -->
+
+What this does not say: a descriptor names *where* a stub's address is stored, not what the unwinder does
+with it. Whether the Xbox exception dispatcher can call one of these forwarders is a question about the
+runtime rather than about the image, and nothing here measures it -- the claim is that no branch reaches
+them, no store names them, and no class table holds them. `--check` is a synthetic self-test (18
+assertions, no dump, writes nothing) and `--check-doc` rebuilds the block from the committed artifact.
+
+
 ## Regenerating
+
+The other gaps of the symbol map have their own tool, reading the same image and the same map:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/native-island-gaps.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/native-island-gaps.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
 
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/native-unreachable.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory

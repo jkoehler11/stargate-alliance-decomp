@@ -1379,6 +1379,42 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, the other 61 installer tail jumps are exception descriptors)
+
+- **The 61 are one 8-byte forwarder each.** With the hole read, the other 61 unmapped installer tail jumps
+  sit in 13 further gaps of `symbols/xbox_functions.csv` (14 gaps with the hole, 93,441 bytes of `.text`,
+  8,460 stubs decoded in them), and every one is a `mov reg,[ebp+d]; jmp <installer>` stub of 8 bytes,
+  naming 18 of the 24 installers.
+- **No branch reaches any of them.** `E8`/`E9` edges entering a gap from outside it total **0** across all
+  14 gaps, no `E8` in `.text` targets any of the 61 stubs, and neither a `c7 /0` store nor a `68` push
+  names one. The 11 `jmp` edges whose site is inside a gap are short hops between fragments of that gap,
+  not entries -- the same distinction that split the island note's 2,255 "sites" down to 84.
+- **The one channel that names them is a `.rdata` dword, and it is not a table.** All 61 stubs carry a
+  dword reference (75 refs) and **none** is a class-table slot: the check now spans all 724 table spans in
+  the image, the 492 mapped *and* the 232 unmapped, where the first version consulted only the mapped ones.
+  Each ref sits in an exception descriptor -- 74 of the 75 behind the `0xffffffff` unwind-map terminator and
+  39 of the 75 immediately in front of a `0x19930520` `FuncInfo` header (102 and 55 of the 103 refs the
+  whole 84-site population carries). A descriptor word is not a vtable slot, so the 84 are compiler
+  exception plumbing and the population that could still be a real caller of the 24 is empty; the 103
+  constructor callers stay the only reachable evidence.
+- **A shadowed accumulator is how an artifact ships 24 rows beside an "84 sites" label.** The harvest
+  totalled the two populations with `for tag, rows in ...` and rebound the very list it was about to
+  return, so the run wrote 24 rows (14 gaps + 9 hole sites + census) and printed
+  `24 rows (14 gaps + 84 sites + 1 census)` -- two halves of one line that disagree. `harvest()` now
+  asserts `len(rows) == gaps + sites + 1`, so the tally is a gate rather than a caption.
+- Tool (`tools/native-island-gaps.py`: gap bounds from the symbol map, the instruction walk and the three
+  stub shapes from `tools/native-island.py`, the four reach channels, table spans mapped and unmapped,
+  `-o`/`--report`/`--write-doc`/`--check-doc`, and `--check` as a synthetic self-test of 18 assertions with
+  no dump) + `inventory/native_island_gaps.csv` (14 gap rows + 84 site rows + a `census` row carrying every
+  run-level count) + the section on `docs/systems/CLASS_REGISTRATION.md` + `make native-island-gaps` + this
+  note. No boot: the image, the symbol map and the committed table artifacts.
+- **Next measurement:** the 17 `constrained` rows of `inventory/class_table_parents.csv`. Their tables are
+  installed by constructors whose classes share no single ancestor, so the caller rule cannot name them;
+  the next instrument joins the table's own `slot0` (`inventory/xbe_class_table_slots.csv`) against
+  `inventory/class_constructors.csv` and asks whether slot 0 is the constructor the site census already
+  names for a registered table of the same size -- a join of three committed artifacts, no boot and no new
+  data.
+
 ### Execution notes (2026-11-14, the hole between FUN_003f28b0 and FUN_003f6d70 is a thunk pool)
 
 - **The `.rdata` operand is a `FuncInfo`, and the magic is measured.** Every `mov eax,<imm32>` stub in
