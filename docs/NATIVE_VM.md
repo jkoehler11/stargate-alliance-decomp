@@ -646,6 +646,56 @@ So the three channels are now each a measured mechanism rather than a count: **o
 `0x0046c60`'s thunks, **conversion operators** through the 255-entry table set by `0x0046cc0`'s and read by one
 `jmp [reg*4+0x630fe0]`, and **declared natives** through `UFunction::Func` with no table at all.
 
+##### The cast index is one bytecode operand, and 24 of the 33 conversions are ever emitted (measured 2026-11-15)
+
+The section above ended with a question it could not answer from the table: the conversion table is read by one
+`jmp [reg*4+0x630fe0]`, so **what supplies the index**? `tools/cast-dispatch.py` answers it from the dispatcher's
+nine instructions and then tests the answer against every shipped script.
+
+* **The index is a byte in the bytecode stream.** `GNatives[57]` is `0x00040be0`, 28 bytes, and the whole selection
+  reads:
+
+  ```
+  mov  eax,[esp+4]            ; the FFrame argument
+  mov  ecx,[eax+0xc]          ; the frame's code cursor
+  movzx edx,byte [ecx]        ; ONE byte, the operand the compiler emitted after the opcode
+  inc  ecx / mov [eax+0xc],ecx ; the cursor steps past it
+  mov  ecx,[eax+0x8]          ; the frame field the conversion bodies receive in ecx
+  mov  [esp+4],eax            ; the frame becomes the first argument
+  jmp  dword [edx*4+0x630fe0] ; dispatch on the byte
+  ```
+
+  So the conversion is **not** a compile-time selection and the VM reads no second dword: the operand byte is the
+  slot, the cursor is advanced before the jump, and the body is entered as a tail call with its own argument list
+  rewritten. The earlier note's "the call site of `Native_57` is one `E8` away" was a guess, and the byte scan
+  answers **zero** `E8 rel32` sites in every executable section -- the handler is reached through its `GNatives`
+  slot, which is why a direct-call search finds nothing to read.
+* **The corpus emits exactly the installed slots.** `PrimitiveCast` (`0x39`, operand `bytes:1`) carries **10,529**
+  operand bytes over **24** distinct values in the 11,687 payloads that disassemble end to end, and **every one of
+  them is inside the installed 57-90 range** -- 0 strays, and **0 at slot 70**, the one slot no installer fills. The
+  operand population and the fill population are the same numbering, which is what makes a bytecode offset name a
+  conversion at all. The commonest are `IntToFloat` 63 (4,006 tokens), `ByteToInt` 58 (2,814) and `ObjectToString`
+  86 (612); the rarest is `ByteToBool` 59, with **one** token in the whole build.
+* **Nine installed conversions are never emitted**: `BoolToFloat` 66, `FloatToBool` 69, `ObjectToBool` 71,
+  `NameToBool` 72, `StringToByte` 73, `StringToVector` 77, `StringToRotator` 78, `VectorToBool` 79 and
+  `RotatorToBool` 81. They are installable and reachable -- the table has them, so a bytecode could name them -- and
+  this build's scripts simply never do, so a recompiler needs 24 of the 33 bodies and the other nine only for
+  completeness.
+* **Each cast body is itself a handler, which is why there are 33 of them.** `ByteToInt` (slot 58, `0x00040c00`)
+  takes the frame's cursor again, reads the **next** byte, makes a temp of the *source* width (`mov byte [esp+3],0`
+  here; `BoolToByte` at slot 64 makes a dword instead, and stores one byte back), calls `[GNatives+byte*4]` on the
+  nested expression to fill that temp, then writes the converted value through the `ecx` the dispatcher handed it.
+  So `0x39 <slot>` is followed by a whole expression whose own leading opcode drives the same table: the slot names
+  the *pair*, the nested token names the *source*, and one cast body per pair is the natural encoding.
+
+`inventory/cast_operands.csv` is one row per slot in the range -- the conversion's name, the body its installer
+stores, that thunk's store site, whether an installer fills it at all, and how many tokens and payloads emit it --
+with slot 70 present as the uninstalled row, because "no installer" and "never emitted" are two different facts and
+the second is only interesting because of the first. `make cast-dispatch` regenerates it. Its `--check` is
+dump-free and joins the artifact against `inventory/opcode_usage.csv`: the operand rows must add up to that table's
+`PrimitiveCast` token total (**10,529**), so a parser change that moves the count fails `make ci` instead of the
+next document, and a token on an uninstalled slot fails it too.
+
 **A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
 image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one
 character, so every index after the first pair drifts: **all 769** non-empty addresses in

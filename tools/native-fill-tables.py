@@ -22,7 +22,8 @@ Two things were unknown and both are structural:
 
 Measured: **two** tables are filled this way. `GNatives` (`0x006313e8`, 4096 entries) takes **233** entries and the
 second table at **`0x00630fe0`** (255 entries, the same stub fill) takes **33** -- and those 33 are exactly the
-conversion records, at slots 59-84. **40 of the array's entries are installed into neither**, so "no slot and no
+conversion records, at slots 57-90 (slot 70 the one the setter leaves a stub). **40 of the array's entries are
+installed into neither**, so "no slot and no
 table" is a measured property of a named set, not a residue.
 
     python3 tools/native-fill-tables.py --xbe DUMP/default.xbe -o inventory   # the artifact
