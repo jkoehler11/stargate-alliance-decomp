@@ -619,3 +619,61 @@ its own frame, and the sampler's two object stores are the pose array and the `r
 (`DAT_007b5dfc`). So a key's `f64` was written only by whatever produced the `.lad`, and the runtime is
 `double` end to end -- which is why the interpolator's result can hold digits a single-precision store
 cannot: it computes in x87 `float10` and the caller stores `(double)`.
+
+## The packs carry a clip directory, and no pack names its writer (measured 2026-11-15)
+
+The last open question on this format was *which tool built the packs*: the `.map` side has a writer in
+the image (`0x000b55f0`), so the read was whether the shipped artifacts name the exporter. They do not,
+but separating the payload's name strings out of the float data found the structure that was missing --
+each pack carries a **key directory**.
+
+Before a clip's curve data sits a record `dword 2`, `u8 len`, a cue name and its NUL, `u8 len`,
+`<group>.<cue name>` and its NUL. Requiring the two length prefixes to agree with their own strings is
+what separates a key from a float that happens to spell a word: a tag whose prefix disagrees is data,
+not a name. The 8-byte header (`u32 2, u32 2, u8 channels`) and the channel table come before the
+first key, and the trailer (`BN-Head`, `undefined`) ends every pack.
+
+`tools/lipsinc-pack-keys.py` (`make lipsinc-pack-keys`) reads all eight packs and joins their keys
+against the shipped speech and sound content:
+
+<!-- generated:lipsinc-pack-keys -->
+| pack | keys | speech `.wav` of the same name | voice package (keys it holds) | `StargateContent.u` | first key at | key spacing (min/median/max) |
+|---|---|---|---|---|---|---|
+| `Controllers/grey.lad` | 3 | 3 | none (0) | 0 | 0x3668 | 2889 / 7114 / 11339 |
+| `Controllers/sg1_crew_carter.lad` | 608 | 202 | `Carter.uax` (406) | 351 | 0xaea8 | 403 / 1165 / 19642 |
+| `Controllers/sg1_crew_jackson.lad` | 485 | 228 | `Jackson.uax` (251) | 224 | 0xa14c | 333 / 1270 / 14913 |
+| `Controllers/sg1_crew_oneill.lad` | 786 | 493 | `Oneill.uax` (293) | 268 | 0xd36b | 387 / 1359 / 18367 |
+| `Controllers/sg1_crew_tealc.lad` | 344 | 79 | `Tealc.uax` (257) | 240 | 0xb8e0 | 387 / 1257 / 12861 |
+| `JAnderson.lad` | 3 | 0 | none (0) | 0 | 0x3668 | 7580 / 7692 / 7804 |
+| `sg1_crew_carter.lad` | 2 | 0 | `SG1_sounds.uax` (1) | 1 | 0x3668 | 7596 / 7596 / 7596 |
+| `sg1_crew_jackson.lad` | 0 | 0 | none (0) | 0 | - | - / - / - |
+
+**2231 keys in 8 packs (2228 distinct), every one in the `AlkeshBomber` group, and the same trailer `BN-Head,undefined` ends all 8.** 1005 of them are a shipped speech file's own name, 1084 occur verbatim in a shipped package (a voice `.uax`, or `StargateContent.u`), and the rest of each file's ASCII is float data: 30254 runs that are neither a channel name nor a key, 1061 of them word-shaped, and only 13 of those are expression names (`tealc_frowning`, `carter_happy`) -- the rest are letters that happen to print inside a float.
+
+**No pack names its writer.** The header is `u32 2, u32 2, u8 channels` and then the channel table -- no version field, no date, no tool string -- and the `.map` siblings are CRLF ini text whose `;` header names the mapping file itself. So the exporter is identified by this directory's shape, not by a stamp inside it.
+<!-- /generated:lipsinc-pack-keys -->
+
+**The keys are the character's voice names, not the pack's.** Carter's controller answers to 608 cue
+names, 406 of which are objects of `Carter.uax` and 351 of which appear in `StargateContent.u`; Jackson,
+O'Neill and Teal'c show the same split against their own voice package. Most are also a shipped
+`Speech/**/*.wav` basename -- 1,005 of the 2,231 keys name a file in `Speech/` -- so the directory was
+written over content that shipped beside it, by an offline exporter. The two root packs
+(`System/LIPSincData/*.lad`, 2-3 keys) hold the same trailer and almost none of those names: they are
+generic-pose packs, not cue directories.
+
+**The group prefix is a writer constant, not a package reference.** All 2,231 long names carry the same
+prefix, and `Sounds/AlkeshBomber.uax` holds 11 names, none of which is a cue. So the runtime cannot be
+resolving the prefix to a package: it is five letters the exporter emitted, and it is the cheapest
+fingerprint of that exporter there is.
+
+**No pack names its writer.** There is no version field, date or tool string anywhere in the eight
+files -- the residue after channel names, keys and the trailer is float data, plus 13 expression names
+(`tealc_frowning`, `carter_happy`) that are not keys. The `.map` siblings are CRLF ini text whose `;`
+header names the mapping file itself. The exporter is therefore identified by its output shape (the
+`dword 2` + double length-prefixed name record, the constant group prefix, the shared trailer), not by
+a stamp inside its files -- which is the honest answer to "which tool built the packs" until something
+outside the packs names it.
+
+**Still open:** whether the runtime walks this directory. `LIPSincReadControllerFile` (`0x000b7260`)
+indexes a pose array at a 32-byte stride and the sampler reads keys by time (`docs/formats/lipsinc-runtime.md`),
+so a name lookup would live in the `.lad` reader above it -- a body this page has not disassembled.

@@ -1678,6 +1678,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   the `.map` side, so the read is whether the same file layout is reproducible by the studio's own exporter, or
   whether any shipped artifact (a `.lad` with a build stamp, a `.map` header) names the tool that wrote them.
 
+### Execution notes (2026-11-15, the packs carry a clip directory, and no pack names its writer)
+
+- **Which tool built the packs: nothing in them says, and the read found the structure that was missing.** The
+  `.lad` payload's ASCII is not only float noise -- before a clip's data sits a key record (`dword 2`, `u8 len`, a cue
+  name and its NUL, `u8 len`, `<group>.<cue name>` and its NUL) -- so requiring both length prefixes to agree with
+  their own strings separates a key from a float that spells a word. **2,231 keys in 8 packs (2,228 distinct)**:
+  3 / 608 / 485 / 786 / 344 in the five `Controllers/` packs, 3 / 2 / 0 in the three root ones, the trailer
+  (`BN-Head`, `undefined`) identical in all eight.
+- **The keys are the character's voice names.** Read against the shipped content, 1,005 of the 2,231 keys are a
+  `Speech/**/*.wav` basename and 1,084 occur verbatim in a shipped package -- Carter's pack has 406 keys that are
+  objects of `Carter.uax` and 351 in `StargateContent.u`, Jackson's 251 / 224, O'Neill's 293 / 268, Teal'c's
+  257 / 240 -- so each controller pack answers to its own character's cues and the root packs answer to almost none.
+- **The group prefix is a writer constant, not a package.** All 2,231 long names carry `AlkeshBomber`, and
+  `Sounds/AlkeshBomber.uax` holds 11 names, none of them a cue: the runtime cannot be resolving that prefix to a
+  package, so it is five letters the exporter emitted and the cheapest fingerprint of the exporter there is.
+- **No pack names its writer, and that is the negative the question asked for.** There is no version field, date or
+  tool string in the eight files; the residue after channel names, keys and the trailer is float data plus 13
+  expression names (`tealc_frowning`, `carter_happy`); and the `.map` siblings are CRLF ini text whose `;` header
+  names the mapping file, not the tool. So the exporter is identified by its output shape, and the remaining route
+  to a name is the `.lad` reader body above `LIPSincReadControllerFile` (`0x000b7260`), which this run did not read.
+- Tool (`tools/lipsinc-pack-keys.py`: the length-prefix agreement test, the header/channel-table skip, the
+  length-prefix artefact in the residue scan, the package join, and a `--check` over a synthetic pack with a decoy
+  tag) + `inventory/lipsinc_pack_keys.csv` (8 pack rows + 1 census row) + the generated block and the section on
+  `docs/formats/lipsinc-lad.md` + the `lipsinc-pack-keys` target and its `ci` gate + `docs/UNKNOWNS.md` U4 + this
+  note. No boot: the shipped files only.
+- **Next measurement:** the `.lad` reader's name lookup -- disassemble the caller of `LIPSincReadControllerFile`
+  (`0x000b7260`) that passes the pack path and see whether it scans this directory (an ordinary Ghidra round, no
+  boot); on the class-table side the 18 unnamed tables still need `tools/xemu/class-tables-live.py` on a level with
+  the renderer and net-driver packages loaded, i.e. a boot.
+
 ### Execution notes (2026-11-15, half a track's values are the pose block's width, and the 19/7 split is not the channel table)
 
 - **The value's width is measured, and it is the first property of a value that is not a range.** `tools/lad-groups.py`

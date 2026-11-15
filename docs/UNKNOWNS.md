@@ -443,6 +443,23 @@ pack's producer, not by the game; the runtime is `double` end to end, which is w
 only a `double` holds (x87 `float10` computed, `(double)` stored). What is still open is only *which* tool made the
 packs.
 
+**Measured 2026-11-15, the packs answer it negatively and carry a directory instead.** No `.lad` names its
+writer: the header is `u32 2, u32 2, u8 channels` and then the channel table, with no version field, no date and no
+tool string anywhere in the file, and the `.map` siblings are CRLF ini text whose `;` header names the mapping file
+itself. What separating the payload's names out of the float data did find is a **key directory**: before a clip's
+data sits `dword 2`, `u8 len`, a cue name and its NUL, `u8 len`, `<group>.<cue name>` and its NUL. `tools/lipsinc-pack-keys.py`
+counts them (`make lipsinc-pack-keys`, `inventory/lipsinc_pack_keys.csv`): **2,231 keys in 8 packs (2,228 distinct)**,
+3/608/485/786/344 in the five `Controllers/` packs and 3/2/0 in the root ones, all with the same trailer (`BN-Head`,
+`undefined`). The join says where they came from: 1,005 keys are a shipped `Speech/**/*.wav` basename, and 1,084 occur
+verbatim in a shipped package -- Carter's pack has 406 keys that are objects of `Carter.uax` and 351 in
+`StargateContent.u`, and Jackson/O'Neill/Teal'c split the same way against their own voice package. So the directory
+was written over the shipped voice content by an offline exporter, and its fingerprint is a shape, not a stamp: the
+`dword 2` + double length-prefixed name record, the constant group prefix (all 2,231 long names are `AlkeshBomber.*`,
+and `Sounds/AlkeshBomber.uax` holds 11 names none of which is a cue, so the prefix resolves to no package), and the
+shared trailer. What is still open is whether the runtime walks it: `LIPSincReadControllerFile` (`0x000b7260`) indexes
+poses and the sampler reads keys by time, so a name lookup would live in the `.lad` reader above that body -- one
+disassembly away, with no external data needed.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
