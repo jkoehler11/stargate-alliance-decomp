@@ -55,8 +55,8 @@ mis-parse that starts a few bytes late loses properties rather than inventing th
 "ends at the end" and not "parses".
 
 Measured prefix lengths across the corpus: **15 bytes** (49,820 exports), **0** (41,097), **12** (24,096), then
-16 and 17 in small numbers. That distribution is per class, and it is what a T3D writer needs in order to sit
-on top of this.
+16 and 17 in small numbers. That distribution is what a T3D writer needs in order to sit on top of this — but it
+is *not* per class, and the next section measures why.
 
 ## What this unblocks
 
@@ -67,10 +67,35 @@ on top of this.
   so class defaults live in the class's own serialised data after its fields, which is a separate problem and
   still open.
 
+## The prefix is not a per-class constant
+
+`inventory/actor_prefix_census.csv` (`make map-census`, `tools/map-census.py`) asks the question this page used to
+leave open — whether the offset in front of a class's property block is the same on every instance — and answers it
+on the whole corpus: **194,190 exports, 121,394 with a located block, 389 classes — 94 never locate one, 176 have
+one prefix on every instance and 119 have more than one**. The 119 are not a tail: they hold **80,064 of the
+121,394 blocks (66%)**, and the largest class in the dump is among them — `StaticMeshActor` locates at prefix 15 on
+23,490 of its 32,193 instances, at 12 or 10 or a fourth offset on the rest.
+
+**The export flags do not separate them.** 279 of the 295 classes that locate a block carry a single `flags` value
+across every instance, so the question cannot be asked of them at all; of the 16 that carry more than one, 13 map
+each value to exactly one prefix and 3 put one value at two prefixes. "Varies with the object's flags" is not what
+this is.
+
+**The start is ambiguous inside the 64-byte window, and the locator's tie-break decides it.** Every property
+boundary is itself a valid start — a suffix of the property list also ends at the export's end — so over four maps
+(4,358 exports that locate a block) **4,354 admit more than one valid start**, median 9, up to 32. `find_block`
+takes the earliest parse that reaches the export end, which is the right choice for reading properties, but the
+leading native bytes can also parse as a tag on some instances: three `M02A` `StaticMeshActor` exports whose
+located prefixes are 10, 12 and 15 share their first ten bytes byte for byte (`82 82 ff ff ff ff ff ff ff ff`) and
+differ only in where the parse begins. So a class's modal prefix is **not** an offset a T3D writer may assume; a
+writer locates per object, exactly as this reader does.
+
+**What would settle the last of it** is a class whose native prefix the code fixes: require the start whose first
+property name is the one the class's own field table puts first, and see whether it reproduces the modal prefix on
+every instance. That is a reader-side read, not another corpus pass.
+
 ## Not measured
 
 * Property *values* at corpus scale. The reader decodes them on demand (`--values`) and they are game content,
   so nothing here aggregates or stores them.
-* Whether every class's prefix length is stable, or varies with the object's flags. The distribution is
-  concentrated but not proven constant.
 * Class defaults (see above).
