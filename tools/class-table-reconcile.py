@@ -21,7 +21,7 @@ are all of class `C` and whose literal named `S`:
                   installs, so the literal is on the wrong table (`0x004cfba0`, `WaterTexture`/`Texture`).
     unrelated     neither is an ancestor of the other: the literal and the objects name two families.
     shared        more than one class carries the table (reported, never scored: the table is inherited).
-    static-unnamed  the literal names no class for this table (26 rows); the read may name it.
+    static-unnamed  the literal names no class for this table (24 rows); the read may name it.
     unknown-class one of the two names has no row in `inventory/classes.csv`, so ancestry cannot be
                   tested -- `System` is a native class with no script row, `new` is not a class at all.
 
@@ -31,6 +31,13 @@ The artifact keeps the literal's row even where this tool calls it wrong: it is 
     python3 tools/class-table-reconcile.py                      # defaults to the three committed CSVs
     python3 tools/class-table-reconcile.py --all                # every table, not only disagreements
     python3 tools/class-table-reconcile.py --check              # synthetic case, no dump, writes nothing
+    python3 tools/class-table-reconcile.py --write-doc docs/NATIVE_CLASS_TREE.md   # render the tally
+    python3 tools/class-table-reconcile.py --check-doc docs/NATIVE_CLASS_TREE.md   # ... and fail if it moved
+
+Both committed reads are scored, because they are two boots rather than two arguments: the title read
+(`inventory/live_class_tables.csv`) and the loaded-level read (`inventory/live_class_tables_m00.csv`). The
+page quotes both tallies in prose, so the block that carries them is generated and `make ci` gates it; the
+check reads CSVs only, and writes nothing.
 """
 import argparse
 import csv
@@ -40,6 +47,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 LIVE = os.path.join(REPO, "inventory", "live_class_tables.csv")
+LIVE_M00 = os.path.join(REPO, "inventory", "live_class_tables_m00.csv")
 STATIC = os.path.join(REPO, "inventory", "xbe_class_table_names.csv")
 CLASSES = os.path.join(REPO, "inventory", "classes.csv")
 
@@ -151,6 +159,43 @@ def table_lookups():
     return read_live(LIVE), read_static(STATIC), read_supers(CLASSES)
 
 
+DOC = "docs/NATIVE_CLASS_TREE.md"
+DOC_START = "<!-- generated:class-table-reconcile -->"
+DOC_END = "<!-- /generated:class-table-reconcile -->"
+DOC_VERDICTS = ("agree", "installer", "shared", "inverted", "unrelated", "static-unnamed",
+                "unknown-class")
+
+
+def render(reads, static, supers):
+    """One row per read and verdict, from the committed CSVs -- the tallies the page quotes."""
+    lines = ["| the read | tables | rows | " + " | ".join("`%s`" % v for v in DOC_VERDICTS) + " |",
+             "|---|---|---|" + "---|" * len(DOC_VERDICTS)]
+    totals = {}
+    for label, path in reads:
+        if not os.path.exists(path):
+            continue
+        rows = reconcile(read_live(path), static, supers)
+        counts = summarise(rows, log=lambda *a: None)
+        for v in counts:
+            totals[v] = totals.get(v, 0) + counts[v]
+        lines.append("| %s | %d | %d | %s |" % (
+            label, len(rows), sum(len(e) for _, _, _, e, _ in rows),
+            " | ".join(str(counts.get(v, 0)) for v in DOC_VERDICTS)))
+    lines.append("| **both** | — | — | %s |" % " | ".join(
+        "**%d**" % totals.get(v, 0) for v in DOC_VERDICTS))
+    return "\n".join(lines)
+
+
+def splice(path, block):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    if text.count(DOC_START) != 1 or text.count(DOC_END) != 1:
+        raise SystemExit("%s: expected one %s / %s pair" % (path, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _old, tail = rest.split(DOC_END, 1)
+    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+
+
 def check():
     """A synthetic world: one table per verdict, no dump and no file written."""
     supers = {"Base": "Object", "Child": "Base", "Grandchild": "Child", "Other": "Object"}
@@ -182,7 +227,25 @@ def check():
         print("check FAILED: counts %r" % (counts,))
         return 1
     report(rows, show_all=False, log=lambda *a: None)
-    print("check ok: %d verdict(s) over %d table(s)" % (len(counts), len(rows)))
+    want_blocks = ("| the read | tables | rows |", "`inverted`", "| **both** |")
+    import tempfile
+    live_path = os.path.join(tempfile.mkdtemp(prefix="reconcile-"), "synthetic-live.csv")
+    try:
+        with open(live_path, "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["table_va", "class", "objects"])
+            for table, entries in live.items():
+                for name, objects in entries:
+                    w.writerow(["0x%08x" % table, name, objects])
+        block = render((("synthetic", live_path),), static, supers)
+    finally:
+        if os.path.exists(live_path):
+            os.remove(live_path)
+            os.rmdir(os.path.dirname(live_path))
+    for want in want_blocks:
+        assert want in block, block
+    assert "| synthetic | 6 | 7 |" in block, block
+    print("check ok: %d verdict(s) over %d table(s), and the block renders" % (len(counts), len(rows)))
     return 0
 
 
@@ -193,9 +256,34 @@ def main():
     ap.add_argument("--classes", default=None, help="the script tree (%s)" % os.path.relpath(CLASSES, REPO))
     ap.add_argument("--all", action="store_true", help="print the agreeing tables too")
     ap.add_argument("--check", action="store_true", help="synthetic self-test: no dump, writes nothing")
+    ap.add_argument("--write-doc", nargs="?", const=DOC, default=None,
+                    help="render the two-read tally into this page (%s)" % DOC)
+    ap.add_argument("--check-doc", nargs="?", const=DOC, default=None,
+                    help="recompute the tally and fail if the page disagrees")
     args = ap.parse_args()
     if args.check:
         return check()
+    if args.write_doc or args.check_doc:
+        page = args.write_doc or args.check_doc
+        static = read_static(args.static or STATIC)
+        supers = read_supers(args.classes or CLASSES)
+        block = render((("the title read (`inventory/live_class_tables.csv`)", LIVE),
+                        ("the loaded level `M00` (`inventory/live_class_tables_m00.csv`)", LIVE_M00)),
+                       static, supers)
+        new = splice(page, block)          # whole read, then a write on the write path only
+        if args.check_doc:
+            with open(page, encoding="utf-8") as fh:
+                if fh.read() != new:
+                    print("FAIL class-table-reconcile: %s is stale -- the tally below does not "
+                          "reproduce from the committed CSVs:" % page)
+                    print(block)
+                    return 1
+            print("class-table-reconcile: %s reproduces" % page)
+            return 0
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write(new)
+        print("class-table-reconcile: wrote %s" % page)
+        return 0
     if args.live or args.static or args.classes:
         live = read_live(args.live or LIVE)
         static = read_static(args.static or STATIC)

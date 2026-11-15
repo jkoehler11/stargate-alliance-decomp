@@ -1379,6 +1379,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the live read has no inverted row left, and both booted tallies are generated)
+
+- **The paired contradiction is now visible in the second instrument as an absence.** `tools/class-table-reconcile.py`
+  scores the two booted reads against the literal artifact, and the row it used to call **inverted** --
+  `0x004cfba0`, whose objects are all of class `Texture` while the map said `WaterTexture` -- is an **agree** now
+  that the class map carries the names the tree and the live read both give. Title read: **140 agree / 12
+  installer / 26 shared / 0 inverted / 1 unknown-class** (was 139 / 12 / 26 / 1 / 1); M00: **143 / 13 / 32 / 0 /
+  1** (was 142 / 13 / 32 / 1 / 1). The counts moved by exactly the one table that was re-named, which is what a
+  retired contradiction looks like in this artifact.
+- **Both tallies are generated now, in one block.** `--write-doc` renders
+  `<!-- generated:class-table-reconcile -->` over *both* committed reads (the title boot and `M00`) from
+  `inventory/live_class_tables.csv`, `inventory/live_class_tables_m00.csv`, the class map and `classes.csv`;
+  `--check-doc` recomputes it with no dump and writes nothing, `make class-table-reconcile` regenerates it and
+  `make ci` gates it. The page's prose no longer restates those numbers -- it points at the block -- because the
+  two hand-typed sentences had already drifted from `139/1` to `140/0` in the same commit that fixed the map.
+- **The prose that the inversion produced is retired with it**: the bullet claiming `foreign-child: WaterTexture
+  (5)` "in the table above" was stale twice over (that group is empty since the same correction), and the M00
+  paragraph's "the one inverted row is this one again" now reads as the `agree` that it is.
+- Tool (`tools/class-table-reconcile.py`: `--write-doc`, `--check-doc`, the block in its `--check`, both reads
+  scored) + `docs/NATIVE_CLASS_TREE.md` (the block and three corrected passages) + the `class-table-reconcile`
+  target and its `ci` gate + this note. No boot: four committed CSVs.
+- **Next measurement:** the same shape applies to `inventory/class_table_parents.csv`'s 2 `adjacent` rows -- they
+  are a rule reading one level low, not a stale column -- and the live read is the instrument that settles them.
+
 ### Execution notes (2026-11-15, the class-tree page's counts are generated and its one contradiction was the artifact)
 
 - **The follow-up #544 named is this note: `docs/NATIVE_CLASS_TREE.md` quoted a revision of the class map
