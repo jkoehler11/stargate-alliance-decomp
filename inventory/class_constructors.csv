@@ -1,14 +1,14 @@
 function_va,function_name,class,table_va,object_size,form,stack_args,returns_this,call_before_store,store_va,registration_ctor,evidence
 0x00017050,FUN_00017050,,0x004c78c0,,dtor,0,no,,0x0001706d,,class table installed before any call; the body does not return this
-0x00169980,FUN_00169980,,0x004c7958,,ctor,0,yes,0x00062ce0,0x00169988,,class table installed after a call into the base constructor; the body returns this
-0x00017140,FUN_00017140,,0x004c7958,,dtor,0,no,,0x0001715d,,class table installed before any call; the body does not return this
-0x00017220,FUN_00017220,,0x004c7a10,,dtor,0,no,,0x0001723d,,class table installed before any call; the body does not return this
-0x000172a0,FUN_000172a0,,0x004c7ac8,,dtor,0,no,,0x000172bd,,class table installed before any call; the body does not return this
+0x00169980,FUN_00169980,Material,0x004c7958,,ctor,0,yes,0x00062ce0,0x00169988,,class table installed after a call into the base constructor; the body returns this
+0x00017140,FUN_00017140,Material,0x004c7958,,dtor,0,no,,0x0001715d,,class table installed before any call; the body does not return this
+0x00017220,FUN_00017220,RenderedMaterial,0x004c7a10,,dtor,0,no,,0x0001723d,,class table installed before any call; the body does not return this
+0x000172a0,FUN_000172a0,BitmapMaterial,0x004c7ac8,,dtor,0,no,,0x000172bd,,class table installed before any call; the body does not return this
 0x00017400,ctor_Order,Order,0x004c7b88,40,ctor,0,yes,0x00062ce0,0x00017408,0x00017400,class table installed after a call into the base constructor; the body returns this
 0x000173b0,dtor_Order,Order,0x004c7b88,40,dtor,0,no,,0x000173cd,0x00017400,class table installed before any call; the body does not return this
 0x00017e30,ctor_MatObject,MatObject,0x004c7c00,40,ctor,0,yes,0x00062ce0,0x00017e38,0x00017e30,class table installed after a call into the base constructor; the body returns this
 0x00017de0,dtor_MatObject,MatObject,0x004c7c00,40,dtor,0,no,,0x00017dfd,0x00017e30,class table installed before any call; the body does not return this
-0x00017f70,FUN_00017f70,,0x004c7c78,,dtor,0,no,,0x00017f8d,,class table installed before any call; the body does not return this
+0x00017f70,FUN_00017f70,CameraEffect,0x004c7c78,,dtor,0,no,,0x00017f8d,,class table installed before any call; the body does not return this
 0x00018410,ctor_SGScreenSniperOverlay,SGScreenSniperOverlay,0x004c7d98,84,ctor,0,yes,0x00062ce0,0x00018418,0x00018410,class table installed after a call into the base constructor; the body returns this
 0x000183c0,dtor_SGScreenSniperOverlay,SGScreenSniperOverlay,0x004c7d98,84,dtor,0,no,,0x000183dd,0x00018410,class table installed before any call; the body does not return this
 0x000184e0,ctor_SGScreenMenuPause,SGScreenMenuPause,0x004c7e18,84,ctor,0,yes,0x00062ce0,0x000184e8,0x000184e0,class table installed after a call into the base constructor; the body returns this
@@ -155,8 +155,8 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x00025660,dtor_FractalTexture,FractalTexture,0x004cfc88,228,dtor,0,no,,0x0002567d,0x002e81f0,class table installed before any call; the body does not return this
 0x002e81f0,ctor_FireTexture,FireTexture,0x004cfd78,1304,ctor,0,yes,0x0027e3b0,0x002e8220,0x002e81f0,class table installed after a call into the base constructor; the body returns this
 0x00025710,dtor_FireTexture,FireTexture,0x004cfd78,1304,dtor,0,no,,0x0002572d,0x002e81f0,class table installed before any call; the body does not return this
-0x002e8260,FUN_002e8260,,0x004cfe68,,ctor,0,yes,0x0027e3b0,0x002e82a0,,class table installed after a call into the base constructor; the body returns this
-0x000257d0,FUN_000257d0,,0x004cfe68,,dtor,0,no,,0x000257ed,,class table installed before any call; the body does not return this
+0x002e8260,FUN_002e8260,WaterTexture,0x004cfe68,,ctor,0,yes,0x0027e3b0,0x002e82a0,,class table installed after a call into the base constructor; the body returns this
+0x000257d0,FUN_000257d0,WaterTexture,0x004cfe68,,dtor,0,no,,0x000257ed,,class table installed before any call; the body does not return this
 0x002e8310,ctor_WaveTexture,WaveTexture,0x004cff58,4872,ctor,0,yes,0x002e8260,0x002e8318,0x002e8310,class table installed after a call into the base constructor; the body returns this
 0x00025880,dtor_WaveTexture,WaveTexture,0x004cff58,4872,dtor,0,no,,0x0002589d,0x002e8310,class table installed before any call; the body does not return this
 0x002e8330,ctor_FluidTexture,FluidTexture,0x004d0048,4868,ctor,0,yes,0x002e8260,0x002e8338,0x002e8330,class table installed after a call into the base constructor; the body returns this
@@ -570,8 +570,8 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x0011f6c0,FUN_0011f6c0,,0x004fcfe0,,dtor,0,no,,0x0011f6dd,,class table installed before any call; the body does not return this
 0x0011f750,ctor_ChannelDownload,ChannelDownload,0x004fd070,1116,ctor,0,yes,0x00062ce0,0x0011f763,0x0011f750,class table installed after a call into the base constructor; the body returns this
 0x0011f7a0,dtor_ChannelDownload,ChannelDownload,0x004fd070,1116,dtor,0,no,,0x0011f7bd,0x0011f750,class table installed before any call; the body does not return this
-0x001212e0,FUN_001212e0,,0x005040d0,,ctor,0,yes,0x00062ce0,0x00121300,,class table installed after a call into the base constructor; the body returns this
-0x00127230,FUN_00127230,,0x005040d0,,dtor,0,no,,0x0012724d,,class table installed before any call; the body does not return this
+0x001212e0,FUN_001212e0,Engine,0x005040d0,,ctor,0,yes,0x00062ce0,0x00121300,,class table installed after a call into the base constructor; the body returns this
+0x00127230,FUN_00127230,Engine,0x005040d0,,dtor,0,no,,0x0012724d,,class table installed before any call; the body does not return this
 0x00127ad0,ctor_ServerCommandlet,ServerCommandlet,0x00504560,476,ctor,0,yes,0x00066b60,0x00127ad8,0x00127ad0,class table installed after a call into the base constructor; the body returns this
 0x00127b20,dtor_ServerCommandlet,ServerCommandlet,0x00504560,476,dtor,0,no,,0x00127b3d,0x00127ad0,class table installed before any call; the body does not return this
 0x00127b70,ctor_UModUnpackCommandlet,UModUnpackCommandlet,0x005045e0,476,ctor,0,yes,0x00066b60,0x00127b78,0x00127b70,class table installed after a call into the base constructor; the body returns this
