@@ -1180,6 +1180,26 @@ and **0** with a three-slot layout prefix once bodies under 16 bytes are masked 
 the one-byte `ret` stub 327 class tables hold at slots 19/20 -- so a native vtable carries no mapped class's virtual
 function and the naming problem is not a lost hierarchy.
 
+**2026-11-14, the slot route is measured out and the 17 have a position.** `inventory/xbe_class_table_slots.csv` holds
+159 slot columns; 31 of them carry one value on all 492 tables (`0x00062650`, `0x00062660`, `0x00062670` at slots 0-2,
+`0x00046d20` at slot 5), slot 3 carries **492 distinct** values, and the rest two to 90. Every pair of tables therefore
+shares a prefix that stops at slot 3 at the latest, so joining slot 0 -- or slots 1..n -- against a constructor census
+cannot name a table: the one column that differs on every table is the one no other table can match.
+
+**The position is measurable even where the name is not, and it is one call below a named layer.**
+`tools/class-table-parent-edge.py` reads each installer's destructor: it installs its own table and then calls its base
+destructor, so the first call whose target stores a class table is the parent's constructor (the null-check thunk in
+between is nine bytes longer than its symbol-map size, which is why a reader that trusts the size misses it). The edge
+exists for **490 of the 492 tables** and reproduces `classes.csv`'s `super` on **345 of 345** tables where both sides are
+declared, with no contradiction; a *constructor's* first table-storing call names the grandparent on 13 tables
+(`StargateVehicle` -> `Vehicle`, script `SVehicle`), so the destructor body is the one read. All **17** `constrained` rows
+of `inventory/class_table_parents.csv` get a parent -- nine directly under `Object`, the other eight under `0x4c78c0`,
+`0x4c9348`, `0x4d1468`, `0x4fc4f0` and `0x517860` -- and **48 of their 63** named callers point back at them. Those 17
+rows claimed no common ancestor in `classes.csv` because **0 of the 63** caller tables has a class row there: they are
+the engine's native-only classes, so the verdict was a gap in the script tree, not an ambiguity in the image. What is
+left is the name: the 17 sit inside the 26 tables no registration literal pairs with, so the remaining read is the 27
+registration sites whose literal the link cannot pair, matched against position rather than guessed.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
