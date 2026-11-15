@@ -1,0 +1,6 @@
+kind,site,function,slot,source,parts,pattern,evidence
+glob,0x000ba2f9,LIPSincInitGame,[edx+0x30],literal,1,..\System\LIPSincData\Controllers\*.lad,pushes the literal at 0x004eab98
+glob,0x000ba93a,LIPSincInitLevel,[edx+0x30],concat,2,..\System\LIPSincData\Controllers\*.lad,FString at [esp+0x4c]: copied from another FString at 0x000ba8f0; filled from literal 0x004eab18 at 0x000ba8b9; appended 0x004eae2c at 0x000ba90c
+literal,0x004eab98,,,,1,..\System\LIPSincData\Controllers\*.lad,LIPSincInitGame at 0x000ba2f0
+literal,0x004eae2c,,,,1,*.lad,LIPSincInitLevel at 0x000ba908
+census,,,,,2,"2 find site(s), 1 distinct pattern(s)",shallowest pattern is 4 components; 2 literals name a .lad

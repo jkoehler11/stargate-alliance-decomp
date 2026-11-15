@@ -462,11 +462,14 @@ shared trailer. **Answered 2026-11-15: the runtime does not walk it, and the bod
 converts with `__wtol`/`__wtof`), `LIPSincReadAnimFile` (`0x000b8340`) its `.LTF` twin, and neither has a single
 `E8` site, `E9` tail call or dword reference in the image -- the `.map` writer `0x000b55f0` likewise
 (`inventory/lipsinc_formats.csv`). What is reached is a glob: `LIPSincInitGame` (`0x000ba290`) pushes the literal
-`..\System\LIPSincData\Controllers\*.lad` and `LIPSincInitLevel` (`0x000ba750`) a bare `*.lad`, each expanded
-through `FUN_000192a0` and handed to `LIPSincLoadDBFromDisk`. The five `Controllers/` packs are therefore the loaded
-set (2,226 of the 2,231 keys) and the three root packs (5 keys) are reachable only through the second glob. What
-remains is not the lookup but the export side: nothing in the image writes a pack, so the cue names are read as data
-and their producer is still outside the binary.
+`..\System\LIPSincData\Controllers\*.lad` and `LIPSincInitLevel` (`0x000ba750`) builds the same string from a
+`..\System\LIPSincData\Controllers\` prefix plus a bare `*.lad`, each handed to the file manager's find loop
+(`call [[0x005bf514]+0x30]`) and then to `LIPSincLoadDBFromDisk`. The five `Controllers/` packs are therefore the
+loaded set (2,226 of the 2,231 keys), and the three root packs (5 keys) are **not** reachable at all: the body the
+last note named as the expander (`FUN_000192a0`) is `FString::operator+=(const TCHAR*)`, the append that builds the
+second pattern, and the image holds no literal naming a `.lad` at the `LIPSincData` root
+(`inventory/lipsinc_globs.csv`, `make lipsinc-globs`). What remains is not the lookup but the export side: nothing in
+the image writes a pack, so the cue names are read as data and their producer is still outside the binary.
 
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
