@@ -267,6 +267,19 @@ def check_function_no_script_doc():
         ok(name, out[-1].replace("ok   function-no-script: ", "") if out else "")
 
 
+def check_native_opcodes_census():
+    """The native-call census must agree with the opcode census, opcode by opcode."""
+    name = "native-opcodes-census"
+    r = subprocess.run([sys.executable, repo("tools", "native-opcodes-census.py")],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fails = [line for line in out if line.startswith("FAIL")]
+        fail(name, "%s%s" % (out[0] + "; " if out else "", "; ".join(fails[:3]) or "exit %d" % r.returncode))
+    else:
+        ok(name, out[-1].replace("ok   native-opcodes-census: ", "") if out else "")
+
+
 def check_opcode_band_doc():
     """docs/BYTECODE.md's direct-band block must match the committed artifact."""
     name = "opcode-band-doc"
@@ -584,6 +597,7 @@ def main():
     check_function_flags()
     check_function_no_script_doc()
     check_opcode_band_doc()
+    check_native_opcodes_census()
     check_map_script_doc()
     check_action_wiring_doc()
     check_class_text_comments_doc()
