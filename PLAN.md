@@ -1708,6 +1708,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   boot); on the class-table side the 18 unnamed tables still need `tools/xemu/class-tables-live.py` on a level with
   the renderer and net-driver packages loaded, i.e. a boot.
 
+### Execution notes (2026-11-15, the two text readers cannot be entered and the pack path is a literal glob)
+
+- **The route named last time is measured closed, and it was the wrong body.** `LIPSincReadControllerFile`
+  (`0x000b7260`) is not a `.lad` reader: its strings are `[LIPSinc]: Attempt to import an obsolete .LBP file!` and
+  `Parsed %s`, and its body tokenises with `Core_UnTemplate(..., L" ")` and converts with `__wtol`/`__wtof` -- the
+  middleware's obsolete text `.LBP` importer. `LIPSincReadAnimFile` (`0x000b8340`) is its `.LTF` twin behind a
+  version gate. Both were already written up as text parsers on `docs/formats/lipsinc-runtime.md`; what the last
+  note's pointer cost was treating one of them as the reader to disassemble next.
+- **Neither can be entered from anywhere in the shipped image**: 0 `E8` call sites, 0 `E9` tail calls and 0 dword
+  references apiece, and the `.map` writer `0x000b55f0` is in the same state (`inventory/lipsinc_formats.csv`). So
+  the three authoring-side bodies are linked in and unreachable, and no key list can be resolved by them: the cue
+  names arrive as data.
+- **The directory question is a glob, not a walk.** `LIPSincInitGame` (`0x000ba290`, called from `Engine_UnGame` at
+  `0x0013917c`) pushes the literal `..\System\LIPSincData\Controllers\*.lad`, expands it through `FUN_000192a0`
+  and hands the list to `LIPSincLoadDBFromDisk` (`0x000ba49d`); `LIPSincInitLevel` (`0x000ba750`, a single site at
+  `0x0015e237` in a body the symbol map does not bound) expands a bare `*.lad` and calls the same loader. The five
+  `Controllers/` packs -- 2,226 of the 2,231 keys -- are what startup names; the three root packs carry 5 keys
+  between them and are reachable only through the second glob.
+- **Instrument:** a `lipsinc-formats` topic on `tools/image-strings.py` -- one needle set per format token plus a
+  `reach` verdict computed three ways (`E8` sites, `E9` sites, dword refs) and the enclosing body of each site, with
+  `?` where the symbol map bounds nothing -- + `inventory/lipsinc_formats.csv` + the `lipsinc-formats` target and
+  its `ci` gate + the section on `docs/formats/lipsinc-lad.md` and the paragraph on `lipsinc-runtime.md` + U4 + this
+  note. No boot and no Ghidra round: the image and the committed inventories only.
+- **Residual:** which path `LIPSincInitLevel`'s bare `*.lad` is expanded against -- it decides whether the three root
+  packs are ever opened. Its argument is built at `0x000baa57` and the strings cannot say.
+- **Measured in passing, not touched here:** regenerating a topic artifact from the *unmodified* tool moves rows --
+  `lipsinc_runtime.csv` 2 rows, `package_check_code.csv` 1 row gains a string, `karma_runtime.csv` 8 rows -> 42 -- so
+  those three committed artifacts are stale against their own generator and want one commit of their own.
+
 ### Execution notes (2026-11-15, half a track's values are the pose block's width, and the 19/7 split is not the channel table)
 
 - **The value's width is measured, and it is the first property of a value that is not a range.** `tools/lad-groups.py`

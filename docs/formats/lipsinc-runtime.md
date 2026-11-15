@@ -104,7 +104,11 @@ Both functions the format notes pointed at read **text**, not the container:
   failed!` and `Attempt to import an obsolete .LBP file!`, and fills a pose array with a 32-byte stride.
 
 So the `.lad` binary is read by the controller object above (LTF/LBP are the middleware's authoring formats), and
-an earlier note's "the reader is the only witness left" was pointing at the wrong two functions.
+an earlier note's "the reader is the only witness left" was pointing at the wrong two functions. Nothing in the
+image can enter either of them: **0 `E8` call sites, 0 `E9` tail calls and 0 dword references** for `0x000b7260`
+and `0x000b8340`, and the same for the `.map` writer at `0x000b55f0` (`inventory/lipsinc_formats.csv`). The two
+loaders that *are* reached -- `LIPSincInitGame` and `LIPSincInitLevel` -- are the ones with the file globs, which is
+what makes LTF/LBP authoring-side rather than a second branch of the load path.
 
 ## What is left
 

@@ -44,6 +44,19 @@ TOPICS = {
         "callers": False,
         "name_rule": "lipsinc",
     },
+    # Which body reads which LIPSinc file, and whether anything in the image can enter it at all. The four
+    # authoring-side carriers (the `.LBP` importer, the `.LTF` track reader, the `.map` writer and the level scan)
+    # are told apart from the one game-side loader by their own literals; `reach` is what separates "present" from
+    # "reachable" -- see docs/formats/lipsinc-lad.md.
+    "lipsinc-formats": {
+        "artifact": "lipsinc_formats.csv",
+        "needles": ("obsolete .LBP", "LTF format", "[PhonemeToSpeechTargetMapping]", "*.lad", "Prefix: "),
+        "strip": "",
+        "columns": ["address", "size", "name", "evidence", "reach", "calls", "jumps", "refs", "sites"],
+        "callers": False,
+        "name_rule": None,
+        "reach": True,
+    },
     "package-check": {
         "artifact": "package_check_code.csv",
         "needles": ("Packages.md5", "PackageCheckInfo", "CheckInfo"),
@@ -198,6 +211,46 @@ class Image:
         return out
 
 
+    def reach(self, targets):
+        """{target: {"calls": [(site, owner)], "jumps": [site], "refs": [va]}} -- every way an address is entered.
+
+        Three scans, because each one alone answers "nothing reaches it" for a body that is reached:
+
+        * a direct call is `E8 rel32`, a **tail call is `E9 rel32`** -- counting only `E8` calls a jump-called body
+          unreachable, and the LIPSinc readers sit next to exactly that shape;
+        * a **dword** reference is how a vtable or a function-pointer table names a body, so a virtual is invisible
+          to both call scans until its slot is read;
+        * a site's owner may be `None`. A site in a region the symbol map does not bound is still a site, and
+          dropping it is how `callers_of` prints "no caller" for a function that has one (measured on
+          `LIPSincInitLevel`, whose single site `0x0015e237` belongs to no mapped body). Report the site and say
+          the owner is unknown rather than losing the evidence.
+
+        Targets are compared as integers; a 32-bit store anywhere in a file-backed section counts as a reference.
+        """
+        out = {t: {"calls": [], "jumps": [], "refs": []} for t in targets}
+        data = self.data
+        for off in range(len(data) - 5):
+            op = data[off]
+            if op != 0xE8 and op != 0xE9:
+                continue
+            rel = struct.unpack_from("<i", data, off + 1)[0]
+            va = self.va_of(off)
+            if va is None:
+                continue
+            target = va + 5 + rel
+            if target not in out:
+                continue
+            if op == 0xE8:
+                out[target]["calls"].append((va, self.owner(va)))
+            else:
+                out[target]["jumps"].append(va)
+        for off in range(len(data) - 4):
+            value = struct.unpack_from("<I", data, off)[0]
+            if value in out:
+                out[value]["refs"].append(self.va_of(off))
+        return out
+
+
 def propose_lipsinc(texts):
     """A name only where the module names itself; otherwise empty rather than a guess."""
     joined = " ".join(texts)
@@ -227,6 +280,7 @@ def build(topic_name, xbe_path):
     hits = image.pushers(strings)
     wanted = sorted(hits)
     first = image.callers_of(wanted) if topic.get("callers") else {}
+    reached = image.reach(wanted) if topic.get("reach") else {}
     second = {}
     if topic.get("depth2"):
         deeper = image.callers_of(sorted({c for ts in first.values() for c in ts}))
@@ -240,6 +294,9 @@ def build(topic_name, xbe_path):
     for f in wanted:
         size, name = image.funcs[f]
         texts = sorted(strings[t] for t in hits[f])
+        # A literal that carries CRLF (`[PhonemeToSpeechTargetMapping]\r\nNumSpeechTargets=%d\r\n`) must not put a
+        # newline inside a CSV field: one row per line is what `--check` and a diff can read.
+        texts = [t.replace("\r", " ").replace("\n", " ") for t in texts]
         row = {"address": "0x%08x" % f, "size": size, "name": name,
                "evidence": " | ".join(t.replace(topic["strip"], "", 1) if topic["strip"] else t for t in texts)}
         if topic["name_rule"] == "lipsinc":
@@ -255,6 +312,16 @@ def build(topic_name, xbe_path):
                 row["depth2"] = " ".join("0x%08x" % g for g in sorted(second.get(f, set()))[:6])
                 chain = callers + sorted(second.get(f, set()))
                 row["game_reaches"] = "true" if any(image.funcs[c][1].startswith("Engine_UnGame") for c in chain) else "false"
+        if topic.get("reach"):
+            r = reached[f]
+            row["calls"] = len(r["calls"])
+            row["jumps"] = len(r["jumps"])
+            row["refs"] = len(r["refs"])
+            # The verdict names the weakest way in, and a site whose owner the map cannot bound keeps its address
+            # with `?` for the owner -- the site is the evidence, the name is a convenience.
+            row["reach"] = "call" if r["calls"] else ("jump" if r["jumps"] else ("ref" if r["refs"] else "none"))
+            row["sites"] = " ".join("0x%08x@%s" % (site, "?" if own is None else "0x%08x" % own)
+                                    for site, own in r["calls"][:6])
         rows.append(row)
     return [ {c: r.get(c, "") for c in topic["columns"]} for r in rows ]
 
@@ -281,6 +348,10 @@ def check(topic_name, path):
         name = r.get("proposed_name", "")
         if name and not name.startswith("LIPSinc"):
             problems.append("%s: proposed name %r" % (r["address"], name))
+        if topic.get("reach") and r.get("reach") not in ("call", "jump", "ref", "none"):
+            problems.append("%s: %s has no reach verdict %r" % (topic_name, r["address"], r.get("reach")))
+        if topic.get("reach") and r.get("reach") == "none" and (r.get("sites") or "").strip():
+            problems.append("%s: %s is unreachable but names a site" % (topic_name, r["address"]))
     if problems:
         print("FAIL image-strings: " + "; ".join(problems[:5]))
         return 1
