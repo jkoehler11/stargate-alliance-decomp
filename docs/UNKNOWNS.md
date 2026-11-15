@@ -947,23 +947,34 @@ game loads, and the 26 sit inside the 303 tables no loaded class instantiates. S
 for is measured and cannot settle them; what is left is the other route it already named -- a decompile of
 `0x00062ce0` to see what the shared argument at `0x00034650` is.
 
-**The installer's callers are the third edge, and they name five (2026-11-10).** A class table is
-installed by a function (`inventory/class_constructors.csv` `function_va`), and every subclass's
+**The installer's callers are the third edge, and they name six (2026-11-10, counts 2026-11-15).** A class
+table is installed by a function (`inventory/class_constructors.csv` `function_va`), and every subclass's
 constructor and destructor calls its parent's first, so the *callers* of an installer are the classes
 one level below it. `tools/class-table-parents.py` (`inventory/class_table_parents.csv`, 492 rows,
 1,978 caller sites) reads that edge from one `E8` pass plus `symbols/xbox_functions.csv`: it
-reproduces **466 of 466** committed names (`agrees`, 0 adjacent, 0 differs), names **five** unnamed
+reproduces **468 of 468** committed names (`agrees`, 0 adjacent, 0 differs), names **six** unnamed
 tables -- `0x004c7958` `Material`, `0x004c7a10` `RenderedMaterial`, `0x004c7ac8` `BitmapMaterial`,
-`0x004c7c78` `CameraEffect`, `0x005040d0` `Engine` -- and **clashes on two** (`0x004cfe68` ->
-`WaterTexture`, `0x004d0228` -> `IceTexture`, each a name the registration gives another table; both
-are the texture-family inversion the live read already settled in `0x004cfba0`'s favour). The other
+`0x004c7c78` `CameraEffect`, `0x004cfe68` `WaterTexture`, `0x005040d0` `Engine` -- and has **no
+`name-clash` row**: the two it used to report (`0x004cfe68` -> `WaterTexture`, `0x004d0228` ->
+`IceTexture`) were the artifact grading a stale `class_committed` column, not the registration, and the
+texture-family inversion they pointed at was settled in `0x004cfba0`'s favour by the live read. The other
 **seventeen are constrained and not named**, for a measured reason: their installers' callers are
 native engine classes (`Struct`, `IntProperty`, `TcpNetDriver`, `ActorChannel`, `VertexBuffer`, ...)
 with no row in `inventory/classes.csv`, so there is no super to read; the caller set is kept in the
-artifact as the constraint. Two (`0x004c9348`, `0x004cfd78`) have no named caller at all. What would
+artifact as the constraint. One (`0x004c9348`) has no named caller at all. What would
 settle the seventeen is not another literal: it is the class objects' own **`ClassConstructor`**
 field read at runtime (the registration builds one `UClass` per class even when no instance exists),
 or an engine-side `Classes.csv` for `Core`/`IpDrv`/`Engine` natives.
+
+**The edge's three misses were the symbols it reads, not the rule (2026-11-15).** Between #533 and this
+note the same artifact read 464 `agrees` / 2 `adjacent` / 1 `differs`, and the misses were `own-installer`
+rows: `tools/class-ctors.py --apply` names a `FUN_*` installer `ctor_X`/`dtor_X` and never revisits a name
+it wrote, so four symbols still carried the classes the pre-#533 map gave their tables (`0x0027e3b0`
+`ctor_WaterTexture`, `0x00025550` `dtor_WaterTexture`, `0x00062ce0` `ctor_VertexStreamBase`, `0x00025660`
+`dtor_IceTexture`). Renamed from the one table each body installs, every named row agrees. The guard
+matters: `0x002e8370` installs two tables (its parent's then its own) and keeps its derived name, which is
+why `--fix-stale` corrects only single-store symbols. `class-ctors.py --check` now fails on a stale row of
+that shape, so a later class-map correction cannot leave this artifact grading the old names again.
 
 **The class object's constructor field is not carried, and that is the last literal-free route closed
 (2026-11-10).** `tools/xemu/class-ctor-field.py` walks the object array in a booted **M00**

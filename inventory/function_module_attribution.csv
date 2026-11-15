@@ -425,19 +425,19 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00025370,Core_UnTemplate,150,Core,Core,assert,,0,,,
 0x00025410,Core_UnTemplate,150,Core,Core,assert,,0,,,
 0x000254b0,Core_UnTemplate,150,Core,Core,assert,,0,,,
-0x00025550,dtor_WaterTexture,95,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
+0x00025550,dtor_Texture,95,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x000255b0,FUN_000255b0,7,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x000255c0,FUN_000255c0,37,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x000255f0,FUN_000255f0,12,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x00025600,FUN_00025600,18,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x00025620,FUN_00025620,33,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
-0x00025660,dtor_IceTexture,79,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
-0x00025710,FUN_00025710,95,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
+0x00025660,dtor_FractalTexture,79,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
+0x00025710,dtor_FireTexture,95,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x000257d0,FUN_000257d0,79,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x00025880,dtor_WaveTexture,79,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x00025930,dtor_FluidTexture,79,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x000259e0,dtor_WetTexture,79,(other named),Core,propagated,locality,1,2.00,1.000,0x000254b0
-0x00025a90,FUN_00025a90,79,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
+0x00025a90,dtor_IceTexture,79,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000254b0
 0x00025d50,FUN_00025d50,110,(unnamed),(unnamed),none,,,,,
 0x00025dc0,FUN_00025dc0,110,(unnamed),(unnamed),none,,,,,
 0x00025e30,FUN_00025e30,110,(unnamed),(unnamed),none,,,,,
@@ -1485,7 +1485,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00062bb0,FUN_00062bb0,15,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00062b30
 0x00062bc0,FUN_00062bc0,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00062b30
 0x00062cd0,FUN_00062cd0,6,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00062cf0
-0x00062ce0,ctor_VertexStreamBase,9,(other named),Core,propagated,locality,1,2.00,1.000,0x00062cf0
+0x00062ce0,ctor_Object,9,(other named),Core,propagated,locality,1,2.00,1.000,0x00062cf0
 0x00062cf0,Core_UnObj,160,Core,Core,assert,,0,,,
 0x00062d90,FUN_00062d90,144,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00062cf0
 0x00062e20,FUN_00062e20,103,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00062ef0
@@ -6674,7 +6674,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0027ddf0,Engine_UnTex,595,Engine,Engine,assert,,0,,,
 0x0027e060,Engine_UnTex,619,Engine,Engine,assert,,0,,,
 0x0027e2f0,Engine_UnTex,180,Engine,Engine,assert,,0,,,
-0x0027e3b0,ctor_WaterTexture,231,(other named),Engine,propagated,locality,1,2.00,1.000,0x0027e2f0
+0x0027e3b0,ctor_Texture,231,(other named),Engine,propagated,locality,1,2.00,1.000,0x0027e2f0
 0x0027e4a0,Engine_UnTex,410,Engine,Engine,assert,,0,,,
 0x0027e640,FUN_0027e640,338,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0027e4a0
 0x0027e7a0,ctor_Cubemap,105,(other named),Engine,propagated,locality,1,2.00,1.000,0x0027e810
@@ -7580,7 +7580,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002e7e70,FUN_002e7e70,264,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
 0x002e80f0,FUN_002e80f0,188,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
 0x002e81b0,FUN_002e81b0,58,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
-0x002e81f0,FUN_002e81f0,99,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
+0x002e81f0,ctor_FireTexture,99,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
 0x002e8260,FUN_002e8260,167,(unnamed),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
 0x002e8310,ctor_WaveTexture,18,(other named),Fire,propagated,locality,1,2.00,1.000,0x002e83f0
 0x002e8330,ctor_FluidTexture,18,(other named),Fire,propagated,locality,1,2.00,1.000,0x002e83f0

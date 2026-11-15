@@ -1379,6 +1379,44 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the three rows the parents rule could not reproduce were three constructor symbols)
+
+- **The 2 `adjacent` rows and the 1 `differs` row in `inventory/class_table_parents.csv` were not the
+  caller rule answering one level low: all three were `own-installer` rows, and the symbol was stale.**
+  `tools/class-ctors.py --apply` names a `FUN_*` installer `ctor_X`/`dtor_X` and never revisits a name it
+  wrote, so after #533 re-named five class tables four symbols still carried the old classes:
+  `0x0027e3b0` `ctor_WaterTexture` and `0x00025550` `dtor_WaterTexture` store `0x004cfba0` (`Texture`),
+  `0x00062ce0` `ctor_VertexStreamBase` stores `0x004dd2a8` (`Object`), and `0x00025660` `dtor_IceTexture`
+  stores `0x004cfc88` (`FractalTexture`).
+- **The measurement is a join of two committed CSVs over every class-carrying symbol: 923 agree, 4 stale,
+  1 installs two tables, 86 name no class.** The two-store rows `0x002e8370` `ctor_IceTexture`
+  (`FractalTexture` then `IceTexture`) and `0x002e81f0` `ctor_FireTexture` are correctly left alone — a
+  constructor installs its parent's table before its own, which is the class map's own
+  `base-store-ancestor` rule — so `--fix-stale` corrects only single-store symbols and `--check` reports
+  the two-store ones instead of failing on them.
+- **Corrected, the installer-name edge reproduces the map whole: 468 of 468 named tables `agrees`, 0
+  `adjacent`, 0 `differs`** (was 464 / 2 / 1). The 24 unnamed keep their split: 6 `unnamed->proposed`
+  (`Material`, `RenderedMaterial`, `BitmapMaterial`, `CameraEffect`, `WaterTexture`, `Engine`), 17
+  `constrained`, 1 `no-caller`.
+- **The gate sits in the tool that wrote the names, and the page's counts are generated.**
+  `class-ctors.py --check` runs `installer_names_join` over the three committed CSVs (it reported all four
+  on the pre-fix tree), and `make class-ctors` now passes `--fix-stale`, which corrects
+  `symbols/xbox_functions.csv` and the `symbols/xbe_overrides.csv` row a future import would re-apply.
+  `class-table-parents.py --write-doc` renders `<!-- generated:class-table-parents -->`, `--check-doc`
+  recomputes it with no dump, and `make ci` gates it, because the page had typed the same tally twice and
+  both copies had drifted.
+- Tool (`tools/class-ctors.py`, `tools/class-table-parents.py`) + the four renames and the artifacts they
+  cascade into (`class_constructors`, `class_ctor_bases`, `function_modules`,
+  `function_module_attribution`, `module_export_census`, `xbe_functions_by_module`, `symbols/xbox.map`,
+  `xbox.sym.s`) + `inventory/class_table_parents.csv` + `docs/NATIVE_CLASS_TREE.md` and
+  `docs/UNKNOWNS.md` U8 + the `class-ctor-base` target, which passed `--xbe` and a file to a tool that
+  takes the path positionally and a directory (two errors in one recipe). `inventory/function_modules.csv`
+  re-indexes its positional `run` column past a renamed row, which is why that diff is large and
+  mechanical.
+- **Next measurement:** U8's 24 unnamed tables still need a name rather than another join — the live
+  `UClass` name read (`tools/xemu/class-tables-live.py`) into a mission that loads the renderer and
+  net-driver packages, or an engine-side class list. The static edges are now all whole.
+
 ### Execution notes (2026-11-15, the live read has no inverted row left, and both booted tallies are generated)
 
 - **The paired contradiction is now visible in the second instrument as an absence.** `tools/class-table-reconcile.py`

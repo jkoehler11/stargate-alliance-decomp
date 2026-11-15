@@ -71,12 +71,12 @@ function_va,function_name,class,table_va,object_size,stack_args,store_off,stores
 0x000244a0,ctor_TeltakBot,TeltakBot,0x004cf548,1812,0,0x8,1,0x004cf548,TeltakBot,yes,1,0x00062ce0,Object,0x00062ce0,Object,ctor,base-ctor,
 0x00024570,ctor_DeathGliderBot,DeathGliderBot,0x004cf760,1792,0,0x8,1,0x004cf760,DeathGliderBot,yes,1,0x00062ce0,Object,0x00062ce0,Object,ctor,base-ctor,
 0x00024650,ctor_AlkeshBomberBot,AlkeshBomberBot,0x004cf978,1868,0,0x8,1,0x004cf978,AlkeshBomberBot,yes,1,0x00062ce0,Object,0x00062ce0,Object,ctor,base-ctor,
-0x0027e3b0,ctor_WaterTexture,Texture,0x004cfba0,204,0,0x25,1,0x004cfba0,Texture,yes,1,0x00169980,,0x00169980,,ctor,base-ctor,
+0x0027e3b0,ctor_Texture,Texture,0x004cfba0,204,0,0x25,1,0x004cfba0,Texture,yes,1,0x00169980,,0x00169980,,ctor,base-ctor,
 0x002e81b0,FUN_002e81b0,FractalTexture,0x004cfc88,228,0,0x11,1,0x004cfc88,FractalTexture,yes,1,0x0027e3b0,Texture,0x0027e3b0,Texture,ctor,base-ctor,
-0x002e81f0,FUN_002e81f0,FractalTexture,0x004cfc88,228,0,0x11,2,0x004cfd78,FireTexture,no,1,0x0027e3b0,Texture,0x0027e3b0,Texture,ctor,base-ctor,
+0x002e81f0,ctor_FireTexture,FractalTexture,0x004cfc88,228,0,0x11,2,0x004cfd78,FireTexture,no,1,0x0027e3b0,Texture,0x0027e3b0,Texture,ctor,base-ctor,
 0x002e8260,FUN_002e8260,FractalTexture,0x004cfc88,228,0,0x14,2,0x004cfe68,,no,1,0x0027e3b0,Texture,0x0027e3b0,Texture,ctor,base-ctor,
 0x002e8370,ctor_IceTexture,FractalTexture,0x004cfc88,228,0,0x11,2,0x004d0228,IceTexture,no,1,0x0027e3b0,Texture,0x0027e3b0,Texture,ctor,base-ctor,
-0x002e81f0,FUN_002e81f0,FireTexture,0x004cfd78,1304,0,0x30,2,0x004cfd78,FireTexture,yes,2,0x0027e3b0,Texture,0x002e1a80,,,not-a-base,1 later call(s) before the store; the last one installs no class table
+0x002e81f0,ctor_FireTexture,FireTexture,0x004cfd78,1304,0,0x30,2,0x004cfd78,FireTexture,yes,2,0x0027e3b0,Texture,0x002e1a80,,,not-a-base,1 later call(s) before the store; the last one installs no class table
 0x002e8260,FUN_002e8260,,0x004cfe68,,0,0x40,2,0x004cfe68,,yes,2,0x0027e3b0,Texture,0x002e1a80,,,not-a-base,1 later call(s) before the store; the last one installs no class table
 0x002e8310,ctor_WaveTexture,WaveTexture,0x004cff58,4872,0,0x8,1,0x004cff58,WaveTexture,yes,1,0x002e8260,FractalTexture,0x002e8260,FractalTexture,ctor,base-ctor,
 0x002e8330,ctor_FluidTexture,FluidTexture,0x004d0048,4868,0,0x8,1,0x004d0048,FluidTexture,yes,1,0x002e8260,FractalTexture,0x002e8260,FractalTexture,ctor,base-ctor,
@@ -135,7 +135,7 @@ function_va,function_name,class,table_va,object_size,stack_args,store_off,stores
 0x00076200,ctor_LinkerSaveGame,LinkerSaveGame,0x004da9c8,284,0,0x8,1,0x004da9c8,LinkerSaveGame,yes,1,0x00076130,LinkerSave,0x00076130,LinkerSave,ctor,base-ctor,
 0x000533b0,FUN_000533b0,LinkerLoadGame,0x004daaa0,1304,12,0x19,1,0x004daaa0,LinkerLoadGame,yes,1,0x00052870,LinkerLoad,0x00052870,LinkerLoad,ctor,base-ctor,
 0x00076220,ctor_LinkerLoadGame,LinkerLoadGame,0x004daaa0,1304,0,0x8,1,0x004daaa0,LinkerLoadGame,yes,1,0x00076070,LinkerLoad,0x00076070,LinkerLoad,ctor,base-ctor,
-0x00062ce0,ctor_VertexStreamBase,Object,0x004dd2a8,40,0,0x2,1,0x004dd2a8,Object,yes,0,,,,,,no-base-call,table installed before any call
+0x00062ce0,ctor_Object,Object,0x004dd2a8,40,0,0x2,1,0x004dd2a8,Object,yes,0,,,,,,no-base-call,table installed before any call
 0x00063a60,Core_UnObj,Object,0x004dd2a8,40,4,0xa,1,0x004dd2a8,Object,yes,0,,,,,,no-base-call,table installed before any call
 0x00073810,Core_UnObj,Object,0x004dd2a8,40,20,0x1c,1,0x004dd2a8,Object,yes,0,,,,,,no-base-call,table installed before any call
 0x000669e0,FUN_000669e0,TextBuffer,0x004ddf78,64,4,0x34,1,0x004ddf78,TextBuffer,yes,0,,,,,,no-base-call,table installed before any call
