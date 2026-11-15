@@ -266,12 +266,13 @@ rather than as an open question:
   window attaches the neighbour's name to the table that thunk installs. It is now the only one of the
   25 unnamed sites that pushes a constructor installing *some* class's table, and the class it names is
   its neighbour's.
-* **the residual is one row in a third instrument, not a name question.** `inventory/class_table_parents.csv`
-  still reads `0x004cfba0` as `adjacent -> WaterTexture` and `0x004cfc88` as `adjacent -> IceTexture`
-  (its installer-caller rule puts each name one level below the map's), and `0x004dd2a8` as
-  `differs -> VertexStreamBase`. Two adjacent rows and one differ against 464 agrees is what that edge
-  is worth on the texture neighbourhood; the live read is the instrument that settles a name, and this
-  page does not re-name an artifact entry from the weaker one.
+* **the residual was one row in a third instrument, and it is closed.** `inventory/class_table_parents.csv`
+  read `0x004cfba0` as `adjacent -> WaterTexture` and `0x004cfc88` as `adjacent -> IceTexture` and
+  `0x004dd2a8` as `differs -> VertexStreamBase` for one run -- not because that edge disagreed with the
+  tree, but because the `ctor_`/`dtor_` symbols it reads its names from still carried the names the
+  pre-#533 map gave those three tables. With the symbols corrected (see *Three rows the rule could not
+  reproduce were three constructor symbols*) all three rows `agrees`, so the two instruments now
+  reproduce the same names instead of the page having to choose.
 
 ### The read that would settle it is now a tool, and this run could not take it
 
@@ -350,12 +351,29 @@ named caller. `tools/class-table-parents.py` (`make class-table-parents`,
 section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.csv` for the supers,
 1,978 caller sites in all.
 
-* **The installer-name edge reproduces the whole map: 466 of 466 named tables `agrees`, 0 adjacent,
-  0 differs.** (Measured against the class map of the day. Regenerated against the map #533 renamed, the
-  artifact reads 464 `agrees` / 2 `adjacent` / 1 `differs` -- see *The parents artifact was grading a
-  stale column* below.) Every named table's installer is itself a `ctor_X`/`dtor_X` symbol, so the same edge
-  that `class-tree-edges.py` inverts is what the registration artifact encodes -- and a rule that
-  cannot reproduce a name it already knows is not evidence for one it does not.
+<!-- generated:class-table-parents -->
+| measurement | value |
+|---|---|
+| tables | 492 |
+| named in `inventory/xbe_class_table_names.csv` | 468 |
+| unnamed | 24 |
+| `agrees` -- the installer's symbol names the committed class | **468** |
+| `adjacent` -- the symbol names a parent or child | 0 |
+| `differs` -- the symbol names an unrelated class | 0 |
+| `unnamed->proposed` | 6 |
+| `constrained` -- the callers share no named ancestor | 17 |
+| `name-clash` -- the proposal is another table's name | 0 |
+| `no-caller` -- no `E8` site reaches the installer | 1 |
+<!-- /generated:class-table-parents -->
+
+* **The installer-name edge reproduces the whole map: all 468 named tables `agrees`, 0 `adjacent`,
+  0 `differs`.** The counts are the block above, rendered from `inventory/class_table_parents.csv`;
+  they read 464 / 2 / 1 for one run because three `ctor_`/`dtor_` symbols still carried the names the
+  pre-#533 map gave their tables, which is the section *Three rows the rule could not reproduce were
+  three constructor symbols* below. Every named table's installer is itself a `ctor_X`/`dtor_X`
+  symbol, so the same edge that `class-tree-edges.py` inverts is what the registration artifact
+  encodes -- and a rule that cannot reproduce a name it already knows is not evidence for one it does
+  not.
 * **Six unnamed tables the callers name** (`unnamed->proposed`): `0x004c7958` `Material`
   (35 of 37 callers), `0x004c7a10` `RenderedMaterial` (7/10), `0x004c7ac8` `BitmapMaterial` (3/5),
   `0x004c7c78` `CameraEffect` (10/11), `0x004cfe68` `WaterTexture` (3/6, the three texture subclasses),
@@ -364,13 +382,14 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
   RenderedMaterial : Material` -- which the registration never said, and each of the six names has
   a registration site whose literal is that class (`Engine` at `0x00121989`, `Material`, ...) whose
   constructor pointer is the shared default and so installs no table of its own.
-* **Two proposals clashed with a name the registration already gives another table, and the clash was a
-  stale `class_committed` column, not the image** (regenerated below): `0x004cfe68` -> `WaterTexture` where
+* **Two proposals read as `name-clash` for one run, and the clash was a stale `class_committed`
+  column, not the image** (regenerated below): `0x004cfe68` -> `WaterTexture` where
   the artifact had `0x004cfba0` `WaterTexture` (the map says `Texture`), and `0x004d0228` -> `IceTexture`
   where it had `0x004cfc88` `IceTexture` (the map says `FractalTexture`). The live read already
-  says `0x004cfba0` carries **613 objects, every one of class `Texture`**, so the clash corroborates
-  the inversion this page recorded above rather than contradicting it. Both rows keep the verdict
-  `name-clash:<other table>`: the artifact reports, it does not re-name.
+  says `0x004cfba0` carries **613 objects, every one of class `Texture`**, so the clash corroborated
+  the inversion this page records above rather than contradicting it. The column has been rebuilt
+  against the map since, and both rows are `unnamed->proposed` now: the artifact reports, it does not
+  re-name.
 * **Seventeen tables are constrained, not named.** Their installers are called by named classes whose
   own rows are absent from `inventory/classes.csv` -- `Struct`/`Const`/`Enum` (16 callers,
   `0x004d1468`), the fifteen property classes (13, `0x004d17a8`), `TcpNetDriver`/`TcpNetDriverXbox`/
@@ -406,8 +425,8 @@ Neither is a base-class-table problem any more: the tables are located, sized an
 (`docs/NATIVE_VM.md`); this page adds only which of them the tree can name.
 
 The installer's-callers edge above is the third instrument on these 24 tables and the strongest one
-for the engine base classes: it reproduces every name it can check (464 `agrees`, with two `adjacent`
-and one `differs` on the texture neighbourhood), names six more, and records the seventeen it cannot
+for the engine base classes: it reproduces every name it can check (468 `agrees`, no `adjacent`, no
+`differs`), names six more, and records the seventeen it cannot
 name as a constraint instead of a guess.
 
 ## The class object's constructor field is not carried (2026-11-10)
@@ -419,9 +438,9 @@ installs. In a booted **M00** the object array holds **1,059** objects carrying 
 `inventory/class_constructors.csv`, so the read reproduces **0 of the 466** names the literal already has and
 cannot name the nineteen. The negative is about the field: the build keeps the constructor in the
 registration code, not in the `UClass` instance. So this page's status stands as written -- the constructor
-tree (376/392) and the installer's callers (464 agrees of the names it can check, six named, seventeen
-constrained) are the two edges that work, and the engine's own base classes need an engine-side
-`classes.csv` or a registration breakpoint.
+tree (376/392) and the installer's callers (468 agrees -- every name it can check -- six named,
+seventeen constrained) are the two edges that work, and the engine's own base classes need an
+engine-side `classes.csv` or a registration breakpoint.
 `docs/UNKNOWNS.md` U8.
 
 ## The two residuals, from the registration's arguments and from the slots (2026-11-11)
@@ -914,11 +933,9 @@ graded the new map against them: **five rows, one revision stale** -- `0x4cfba0`
 `name-clash:<other table>` verdicts this page recorded were that column rather than a measurement of the
 image, and so was the reading that the installer-name rule reproduces the map whole.
 
-Regenerated, the verdicts are **464 `agrees`, 2 `adjacent`, 1 `differs`, 6 `unnamed->proposed`, 17
-`constrained`, 2 `no-caller`**, and all three disagreements sit on a table #533 renamed: the caller rule
-answers the *ancestor* there (`WaterTexture` for `0x4cfba0`, `IceTexture` for `0x4cfc88`,
-`VertexStreamBase` for `0x4dd2a8`), which is the skipped level this page already records. The class map
-wins those three, and the pairing section above decides `0x4cfba0`/`0x4cfe68` independently.
+Regenerated against the re-named map, the verdicts were **464 `agrees`, 2 `adjacent`, 1 `differs`, 6
+`unnamed->proposed`, 17 `constrained`, 2 `no-caller`**, with all three disagreements on a table #533
+re-named. That is the second stale copy in the same chain, and the next section is what it was.
 
 **The six proposals are the same six tables the tree pairs, with no extra row and no disagreement**:
 `Material` (`0x4c7958`), `RenderedMaterial` (`0x4c7a10`), `BitmapMaterial` (`0x4c7ac8`), `CameraEffect`
@@ -929,3 +946,51 @@ name the same six, which is the corroboration the pairing needed and a check on 
 **The gate that would have caught it is in `--check` now.** `committed_names_join` reads the committed
 artifact against the class map it copies, all 492 rows, and fails naming every stale row; on the pre-fix
 file it reports 5. It is a CSV join, so the tool keeps its no-dump, no-write `--check` contract.
+
+## Three rows the rule could not reproduce were three constructor symbols (2026-11-15)
+
+The 2 `adjacent` rows and the 1 `differs` row above were not a disagreement between the installer-callers
+edge and the class map, and not the caller rule answering one level low: **all three were `own-installer`
+rows, and the symbol they read was stale.** `tools/class-table-parents.py` names a table from its
+installer's `ctor_X`/`dtor_X` symbol when that installer is already named -- and those names are the ones
+`tools/class-ctors.py --apply` wrote, from the class map of the day. `--apply` names a `FUN_*` row and
+never revisits a name it wrote, so when #533 re-named five tables the symbols kept the old classes:
+
+| function | symbol | installs | map now says |
+|---|---|---|---|
+| `0x0027e3b0` | `ctor_WaterTexture` | `0x004cfba0` | `Texture` |
+| `0x00025550` | `dtor_WaterTexture` | `0x004cfba0` | `Texture` |
+| `0x00062ce0` | `ctor_VertexStreamBase` | `0x004dd2a8` | `Object` |
+| `0x00025660` | `dtor_IceTexture` | `0x004cfc88` | `FractalTexture` |
+
+**The measurement is a join of two committed CSVs** (`inventory/class_constructors.csv`'s
+`function_va` -> `table_va`, and `inventory/xbe_class_table_names.csv`'s `table_va` -> `class`), run over
+every symbol that carries a class name: **923 agree** with the one table their body installs, **4 are
+stale**, **1 installs two tables**, **86 installers name no class**. The four are the three tables above
+plus `dtor_WaterTexture`, which is the same table as `ctor_WaterTexture`.
+
+**One row is correctly left alone, and it is the reason the rule needs a guard.**
+`0x002e8370` `ctor_IceTexture` stores `0x004cfc88` **and** `0x004d0228`: a constructor installs its
+parent's table before its own, so a two-store body names the *derived* class and the extra store is not
+evidence against it. The class map already says as much -- `0x004cfc88`'s row is `name_rule
+base-store-ancestor`, "2 classes (FireTexture, IceTexture) store it before their own table". So
+`--fix-stale` renames only a **single-store** symbol whose table the map names otherwise, and `--check`
+reports the two-store bodies instead of failing on them (`0x002e81f0` `ctor_FireTexture` is the second).
+
+**Corrected, the edge reproduces the map whole: 468 of 468 named tables `agrees`, 0 `adjacent`, 0
+`differs`** (the generated block in *The installer's callers* above). The residual the previous note
+called "a rule reading one level low" was this symbol column; the caller rule never had to answer at all.
+
+**The gate is permanent and sits in the tool that wrote the names.** `class-ctors.py --check` now runs
+`installer_names_join` over the three committed CSVs and fails naming each stale row (it reported these
+four on the pre-fix tree), and `--fix-stale` -- in `make class-ctors` now -- corrects both
+`symbols/xbox_functions.csv` and the `symbols/xbe_overrides.csv` row a future import would re-apply.
+The verdict counts on this page are generated too: `tools/class-table-parents.py --write-doc` renders
+the generated `class-table-parents` block from the committed artifact, `--check-doc` recomputes it with no
+dump, and `make ci` gates it, because two hand-typed copies of the same tally had already drifted.
+
+Tool (`tools/class-ctors.py`: `stale_names`, `apply_stale`, `--fix-stale`, the `--check` join and its
+synthetic case; `tools/class-table-parents.py`: `--write-doc` / `--check-doc`) + the four renames and the
+regenerated artifacts (including `inventory/function_modules.csv`, whose positional `run` column
+re-indexes past a renamed row) + this page + `docs/UNKNOWNS.md` U8 + the `class-ctor-base` target, which
+passed `--xbe` and a file to a tool that takes the path positionally and a directory.

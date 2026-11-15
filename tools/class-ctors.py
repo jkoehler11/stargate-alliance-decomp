@@ -24,12 +24,24 @@ flags, so a disagreement is visible instead of being averaged away.
 
     python3 tools/class-ctors.py DUMP/default.xbe -o inventory        # the artifact
     python3 tools/class-ctors.py DUMP/default.xbe --apply             # + name them (needs a clean tree)
+    python3 tools/class-ctors.py DUMP/default.xbe --apply --fix-stale  # + correct names a later map retired
 
 `--apply` writes `ctor_<Class>` / `dtor_<Class>` into `symbols/xbe_overrides.csv` (with the evidence)
 and into `symbols/xbox_functions.csv`, which is what `make symbols` reads. A function that already
 carries a non-`FUN_*` name is never renamed: an assert-derived name is better evidence than a shape
 rule. A class with more than one constructor gets only the registration-reached one named; the others
 are recorded in the artifact, not numbered into the symbol map (`docs/CONVENTIONS.md`).
+
+**`--fix-stale` is the one exception, and it exists because that rule has a blind spot.** A name this
+tool applied is never revisited, so when `inventory/xbe_class_table_names.csv` re-names a table behind a
+better rule the symbol keeps the old class -- measured 2026-11-15: after #533 named `0x4cfba0`
+`Texture`, `0x4cfc88` `FractalTexture` and `0x4dd2a8` `Object`, four `ctor_`/`dtor_` symbols still
+carried `WaterTexture`, `IceTexture` and `VertexStreamBase`, and `tools/class-table-parents.py` -- which
+names a table from its installer's symbol -- reported them as 2 `adjacent` and 1 `differs` against 464
+`agrees`. `--fix-stale` renames only a symbol whose body installs **one** table and whose symbol class
+disagrees with the class that table carries; a body that installs two tables is a base store or a
+destructor unwind and keeps its derived name. `--check` fails on any stale single-store row, so the
+correction cannot silently expire.
 
 The dump is never committed; the artifact and the docs are.
 """
@@ -195,6 +207,144 @@ def naming_plan(rows, functions):
     return kept, skipped, unplaced
 
 
+# --------------------------------------------------------------------------- stale names
+
+
+def symbol_class(name):
+    """`ctor_Foo` / `dtor_Foo` -> Foo; anything else -> ''."""
+    for prefix in ("ctor_", "dtor_"):
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return ""
+
+
+def stale_names(rows, tables, functions):
+    """(stale, multi) -- class symbols that disagree with the one table their body installs.
+
+    `naming_plan` only ever names a `FUN_*` row, so a name this tool applied is never revisited: when
+    `inventory/xbe_class_table_names.csv` re-names a table behind a better rule, the symbol keeps the
+    old class and every tool that reads installer names inherits the error. Measured 2026-11-15, four
+    such rows, after #533 re-named five tables.
+
+    A body that installs more than one table is not stale: the extra store is a base store (a ctor that
+    installs its parent's table before its own) or a destructor unwind, so its symbol names the derived
+    class and the map itself records the table as `base-store-ancestor`. Those are returned separately so
+    `--check` can report them without failing.
+    """
+    stores = {}
+    for r in rows:
+        stores.setdefault(int(r["function_va"], 16), set()).add(int(r["table_va"], 16))
+    stale, multi = [], []
+    for fn, tabs in sorted(stores.items()):
+        current = functions.get(fn, "")
+        cls = symbol_class(current)
+        if not cls:
+            continue
+        mapped = sorted({(tables.get(t) or {}).get("class") or "" for t in tabs})
+        if len(tabs) > 1:
+            multi.append((fn, current, sorted(tabs), mapped))
+            continue
+        if mapped and mapped[0] == cls:
+            continue
+        if len(mapped) == 1 and mapped[0]:
+            prefix = "ctor_" if current.startswith("ctor_") else "dtor_"
+            evidence = CTOR_EVIDENCE if prefix == "ctor_" else DTOR_EVIDENCE
+            stale.append((fn, current, prefix + mapped[0], evidence))
+    return stale, multi
+
+
+def apply_stale(stale, overrides_path, functions_path):
+    """Rename stale class symbols in the function map and correct their override rows in place.
+
+    The override row is what a future Ghidra import re-applies, so a rename that only touched
+    `symbols/xbox_functions.csv` would be reverted (or duplicated) by the next import.
+    """
+    want = {}
+    for addr, old, new, evidence in stale:
+        want["0x%08x" % addr] = (old, new, evidence)
+
+    with open(functions_path, newline="", encoding="utf-8") as fh:
+        text = fh.read()
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines()
+    header = lines[0].split(",")
+    addr_col, name_col = header.index("address"), header.index("name")
+    renamed, out = 0, [lines[0]]
+    for line in lines[1:]:
+        parts = line.split(",")
+        if len(parts) > name_col and parts[addr_col] in want and parts[name_col] == want[parts[addr_col]][0]:
+            parts[name_col] = want[parts[addr_col]][1]
+            renamed += 1
+        out.append(",".join(parts))
+    with open(functions_path, "w", newline="", encoding="utf-8") as fh:
+        fh.write(nl.join(out) + nl)
+
+    with open(overrides_path, newline="", encoding="utf-8") as fh:
+        text = fh.read()
+    nl = "\r\n" if "\r\n" in text else "\n"
+    olines = [l for l in text.splitlines() if l.strip()]
+    oheader = next(csv.reader([olines[0]]))
+    fixed, seen, out = 0, set(), [olines[0]]
+    for line in olines[1:]:
+        row = dict(zip(oheader, next(csv.reader([line]))))
+        addr = row.get("address", "")
+        seen.add(addr)
+        if addr in want and row.get("name") == want[addr][0]:
+            row["name"] = want[addr][1]
+            row["evidence"] = want[addr][2]
+            fixed += 1
+            out.append(",".join(_quote(row[k]) for k in oheader))
+        else:
+            out.append(line)
+    added = []
+    for addr, (old, new, evidence) in sorted(want.items()):
+        if addr in seen:
+            continue
+        row = dict.fromkeys(oheader, "")
+        row.update({"address": addr, "name": new, "evidence": evidence})
+        added.append(",".join(_quote(row[k]) for k in oheader))
+    if added:
+        out = [out[0]] + sorted(out[1:] + added, key=lambda l: int(next(csv.reader([l]))[0], 16))
+    with open(overrides_path, "w", newline="", encoding="utf-8") as fh:
+        fh.write(nl.join(out) + nl)
+    return renamed, fixed, len(added)
+
+
+def installer_names_join(root):
+    """The symbol map's class names against the table each body installs -- CSVs only, no image.
+
+    The gate for the blind spot above: `naming_plan` cannot re-examine a name it did not add, so a
+    symbol named from an older class map outlives the class map's correction and the tools that read
+    installer names (here `tools/class-table-parents.py`) grade a stale column. Fails naming each row.
+    """
+    tables, rows, functions = {}, [], {}
+    with open(os.path.join(root, "inventory/xbe_class_table_names.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            tables[int(r["table_va"], 16)] = r
+    with open(os.path.join(root, "inventory/class_constructors.csv"), newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    with open(os.path.join(root, "symbols/xbox_functions.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                functions[int(r["address"], 16)] = r["name"]
+            except ValueError:
+                continue
+    stale, multi = stale_names(rows, tables, functions)
+    stores = {}
+    for r in rows:
+        stores.setdefault(int(r["function_va"], 16), set()).add(int(r["table_va"], 16))
+    classed = sum(1 for fn, tabs in stores.items()
+                  if symbol_class(functions.get(fn, "")) and len(tabs) == 1)
+    print("  %-14s %-34s %s" % ("installer-names", "%d single-store class symbols" % classed,
+                                "ok" if not stale else "FAIL %d stale" % len(stale)))
+    for addr, old, new, _ev in stale[:5]:
+        print("      0x%08x %-24s stores a table the map names %s" % (addr, old, new.split("_", 1)[1]))
+    for addr, name, tabs, mapped in multi:
+        print("      0x%08x %-24s installs %d tables (%s): left alone"
+              % (addr, name, len(tabs), ",".join(m or "?" for m in mapped)))
+    return stale
+
+
 # --------------------------------------------------------------------------- writers
 
 
@@ -297,10 +447,24 @@ def self_check():
     hits = stores_to_tables(text, 0x4000, {0x12345678: {}})
     if hits != [(0x4004, 0x12345678, "reg")]:
         bad.append("store scan: %r" % (hits,))
+    # a class symbol whose single store installs a table the map names otherwise is stale; a body
+    # with two stores is a base store and must be left alone; a table with no map name is no claim.
+    synth_tables = {0x1000: {"class": "Texture"}, 0x2000: {"class": "WaterTexture"}, 0x3000: {}}
+    synth_rows = [{"function_va": "0x00000010", "table_va": "0x00001000"},
+                  {"function_va": "0x00000020", "table_va": "0x00002000"},
+                  {"function_va": "0x00000020", "table_va": "0x00001000"},
+                  {"function_va": "0x00000030", "table_va": "0x00003000"}]
+    synth_fns = {0x10: "ctor_WaterTexture", 0x20: "ctor_IceTexture", 0x30: "ctor_Texture"}
+    stale, multi = stale_names(synth_rows, synth_tables, synth_fns)
+    if [s[2] for s in stale] != ["ctor_Texture"] or [m[0] for m in multi] != [0x20]:
+        bad.append("stale plan: %r / %r" % (stale, multi))
+    if installer_names_join(ROOT):
+        bad.append("installer-names: stale rows in symbols/xbox_functions.csv")
     if bad:
         print("FAIL class-ctors: " + "; ".join(bad))
         return 1
-    print("ok   class-ctors: constructor/destructor shapes split, and a table store is found at its VA")
+    print("ok   class-ctors: constructor/destructor shapes split, a table store is found at its VA, "
+          "and no class symbol names a table another class owns")
     return 0
 
 
@@ -320,6 +484,8 @@ def main():
                     help="write every measured store as TSV, mapped or not (for SeedStores.java)")
     ap.add_argument("--apply", action="store_true",
                     help="fold the names into symbols/xbe_overrides.csv and symbols/xbox_functions.csv")
+    ap.add_argument("--fix-stale", action="store_true",
+                    help="with --apply: also correct a class symbol whose store's table the map re-named")
     args = ap.parse_args()
     if not args.xbe:
         ap.error("the image is required unless --check is given")
@@ -385,6 +551,7 @@ def main():
               % (args.stores_out, len(hits), len(orphans)))
 
     kept, skipped, unplaced = naming_plan(rows, functions)
+    stale, multi = stale_names(rows, tables, functions)
     path = write_census(rows, args.out)
 
     by_form = {f: sum(1 for r in rows if r["form"] == f) for f in ("ctor", "dtor", "unclassified")}
@@ -403,6 +570,20 @@ def main():
              by_form["dtor"], by_form["unclassified"], len(orphans)))
     print("named=%d skipped=%d multi-ctor/dtor classes=%d"
           % (len(kept), len(skipped), len(unplaced)))
+    agree = 0
+    _stores = {}
+    for r in rows:
+        _stores.setdefault(r["function_va"], set()).add(int(r["table_va"], 16))
+    for fn, tabs in _stores.items():
+        cls = symbol_class(functions.get(int(fn, 16), ""))
+        if cls and len(tabs) == 1 and tables.get(next(iter(tabs)), {}).get("class") == cls:
+            agree += 1
+    print("class symbols: %d agree with the table their body installs, %d stale, %d install two tables"
+          % (agree, len(stale), len(multi)))
+    for addr, old, new, _ev in stale:
+        print("  stale %#010x %-24s -> %s" % (addr, old, new))
+    for addr, name, tabs, mapped in multi:
+        print("  two stores %#010x %-22s %s" % (addr, name, ",".join(m or "?" for m in mapped)))
     for addr, name, why in skipped[:5]:
         print("  skip %#010x %s (%s)" % (addr, name, why))
     for cls, what, addrs in unplaced[:6]:
@@ -413,6 +594,13 @@ def main():
                                                os.path.join(ROOT, "symbols/xbox_functions.csv"))
         print("applied: %d rows renamed in symbols/xbox_functions.csv, %d override rows added, "
               "%d lagging override(s) re-applied" % (renamed, added, resynced))
+        if args.fix_stale:
+            clash = {name for name, _ev, _row in kept.values()}
+            todo = [s for s in stale if s[2] not in clash]
+            r2, f2, a2 = apply_stale(todo, os.path.join(ROOT, "symbols/xbe_overrides.csv"),
+                                     os.path.join(ROOT, "symbols/xbox_functions.csv"))
+            print("fix-stale: %d renamed, %d override row(s) corrected, %d added, %d left on a clash"
+                  % (r2, f2, a2, len(stale) - len(todo)))
         with open(os.path.join(ROOT, "symbols/xbox_functions.csv"), newline="",
                   encoding="utf-8") as fh:
             after = {row["address"]: row["name"] for row in csv.DictReader(fh)}

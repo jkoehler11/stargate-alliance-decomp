@@ -22,6 +22,8 @@ is the committed name's parent or child -- the one level a generated stub skips)
 
     tools/class-table-parents.py DUMP/default.xbe --csv inventory/class_table_parents.csv
     tools/class-table-parents.py DUMP/default.xbe          # summary + the unnamed tables
+    tools/class-table-parents.py --write-doc               # render the page's count block (no dump)
+    tools/class-table-parents.py --check-doc               # recompute it and fail if the page is stale
     tools/class-table-parents.py --check                   # synthetic self-test, no dump, no write
 
 Addresses and class names only, the same shape as `inventory/xbe_class_table_names.csv`; no package
@@ -271,6 +273,18 @@ def self_test():
     stale = committed_names_join(ROOT)
     if stale:
         bad.append(("committed-names", stale[:1], "no stale rows"))
+    # the generated block is the page's counts: a row that moves the tally must move it here
+    block = render([
+        {"table_va": "0x1000", "class_committed": "A", "proposed_class": "A", "basis": "own-installer",
+         "named_callers": "", "callers": "1", "support": "1", "verdict": "agrees"},
+        {"table_va": "0x2000", "class_committed": "B", "proposed_class": "C", "basis": "own-installer",
+         "named_callers": "", "callers": "2", "support": "1", "verdict": "adjacent"},
+        {"table_va": "0x3000", "class_committed": "", "proposed_class": "", "basis": "no-named-call",
+         "named_callers": "", "callers": "0", "support": "0", "verdict": "no-caller"},
+    ])
+    if "| `agrees` -- the installer's symbol names the committed class | **1** |" not in block \
+            or "| `0x2000` | B | C | `own-installer` | `adjacent` |" not in block:
+        bad.append(("render", block, "one agree, one adjacent row"))
     if bad:
         print("%d self-test(s) failed" % len(bad))
         return 1
@@ -308,14 +322,83 @@ def committed_names_join(root):
     return differ
 
 
+DOC = "docs/NATIVE_CLASS_TREE.md"
+DOC_START = "<!-- generated:class-table-parents -->"
+DOC_END = "<!-- /generated:class-table-parents -->"
+
+
+def render(rows):
+    """The verdict counts this page quotes, and every named row the rule does not reproduce."""
+    count = collections.Counter(r["verdict"].split(":")[0] for r in rows)
+    named = [r for r in rows if r["class_committed"]]
+    lines = ["| measurement | value |",
+             "|---|---|",
+             "| tables | %d |" % len(rows),
+             "| named in `inventory/xbe_class_table_names.csv` | %d |" % len(named),
+             "| unnamed | %d |" % (len(rows) - len(named)),
+             "| `agrees` -- the installer's symbol names the committed class | **%d** |" % count.get("agrees", 0),
+             "| `adjacent` -- the symbol names a parent or child | %d |" % count.get("adjacent", 0),
+             "| `differs` -- the symbol names an unrelated class | %d |" % count.get("differs", 0),
+             "| `unnamed->proposed` | %d |" % count.get("unnamed->proposed", 0),
+             "| `constrained` -- the callers share no named ancestor | %d |" % count.get("constrained", 0),
+             "| `name-clash` -- the proposal is another table's name | %d |" % count.get("name-clash", 0),
+             "| `no-caller` -- no `E8` site reaches the installer | %d |" % count.get("no-caller", 0)]
+    odd = [r for r in named if r["verdict"] != "agrees"]
+    if odd:
+        lines += ["",
+                  "| table | committed | the rule's answer | basis | verdict |",
+                  "|---|---|---|---|---|"]
+        for r in odd:
+            lines.append("| `%s` | %s | %s | `%s` | `%s` |"
+                         % (r["table_va"], r["class_committed"], r["proposed_class"] or "-",
+                            r["basis"], r["verdict"]))
+    return "\n".join(lines)
+
+
+def splice(page, block):
+    """The page with its generated block replaced; read whole, so the check never writes."""
+    with open(page) as fh:
+        text = fh.read()
+    if text.count(DOC_START) != 1 or text.count(DOC_END) != 1:
+        raise SystemExit("%s: expected one %s / %s pair" % (page, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _old, tail = rest.split(DOC_END, 1)
+    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+
+
+def read_csv(path):
+    with open(path, newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("xbe", nargs="?", help="DUMP/default.xbe")
     ap.add_argument("--csv", help="write one row per class table")
     ap.add_argument("--check", action="store_true", help="synthetic self-test, no dump")
+    ap.add_argument("--write-doc", nargs="?", const=DOC, default=None,
+                    help="render the generated verdict block into this page (%s)" % DOC)
+    ap.add_argument("--check-doc", nargs="?", const=DOC, default=None,
+                    help="recompute the block from the committed artifact and fail if the page disagrees")
     args = ap.parse_args()
     if args.check:
         return self_test()
+    if args.write_doc or args.check_doc:
+        page = args.write_doc or args.check_doc
+        path = args.csv or os.path.join(ROOT, "inventory/class_table_parents.csv")
+        rows = read_csv(path)
+        new = splice(page, render(rows))          # whole read, then write
+        if args.check_doc:
+            with open(page) as fh:
+                if fh.read() != new:
+                    print("FAIL class-table-parents: %s is stale against %s" % (page, path))
+                    return 1
+            print("class-table-parents: %s reproduces (%d rows)" % (page, len(rows)))
+            return 0
+        with open(page, "w") as fh:
+            fh.write(new)
+        print("class-table-parents: wrote %s" % page)
+        return 0
     if not args.xbe:
         ap.error("default.xbe is required unless --check")
     summarise(run(args.xbe, args.csv))

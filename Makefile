@@ -398,6 +398,7 @@ ci:
 	@$(PYTHON) tools/voice-descs.py --check-doc docs/systems/AUDIO.md
 	@$(PYTHON) tools/weapon-links.py --check-doc docs/systems/WEAPONS.md
 	@$(PYTHON) tools/class-tree-edges.py --check-doc docs/NATIVE_CLASS_TREE.md
+	@$(PYTHON) tools/class-table-parents.py --check-doc docs/NATIVE_CLASS_TREE.md
 	@$(PYTHON) tools/class-table-reconcile.py --check-doc docs/NATIVE_CLASS_TREE.md
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
@@ -1021,8 +1022,8 @@ native-island-gaps:
 	@$(PYTHON) tools/native-island-gaps.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
 class-ctor-base:
-	@$(PYTHON) tools/class-ctor-base.py --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
-		-o inventory/class_ctor_bases.csv
+	@$(PYTHON) tools/class-ctor-base.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
+		-o inventory
 	@$(PYTHON) tools/class-ctor-base.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
 native-unreachable:
@@ -1087,7 +1088,7 @@ body-read:
 
 class-ctors:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
-	@$(PYTHON) tools/class-ctors.py "$(GAME_DIR)/default.xbe" -o inventory --apply
+	@$(PYTHON) tools/class-ctors.py "$(GAME_DIR)/default.xbe" -o inventory --apply --fix-stale
 	@$(PYTHON) tools/native-summary.py --symbols symbols/xbox_functions.csv --overrides symbols/xbe_overrides.csv -o inventory/
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/class_constructors.csv and the names it earned"
