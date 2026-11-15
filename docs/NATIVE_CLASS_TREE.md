@@ -296,13 +296,15 @@ them with **179 class tables / 312 rows**, now `inventory/live_class_tables.csv`
   property of texture classes with no instance in the packages the title loads, not a hole in the walk. So the
   pair's second half is *not* named by this read, and the reading that makes both instruments agree is still the
   tree's: `0x004cfba0` = `Texture`, `0x004cfe68` = `WaterTexture`.
-* `tools/class-table-reconcile.py` scores the whole read against the literal artifact: **139 agree**, **12 name an
-  ancestor of the object's class** (the literal names the installer, the read names the instance --
-  `Triggers`/`SGC_SecurityReader`), **26 tables are carried by more than one class**, **one is inverted** (this
-  row) and **one is not a class at all** (`0x004e1ce8`: the literal read `new`, the objects say `System`).
-* The artifact keeps its row: it is `registration-sites.py`'s output and its `--check` reproduces it. This page and
-  `inventory/live_class_tables.csv` are the tiebreaker, and `foreign-child: WaterTexture (5)` in the table above is
-  an artifact error rather than a tree disagreement.
+* `tools/class-table-reconcile.py` scores the whole read against the literal artifact. Its tally is the block at the
+  end of this section, generated from the committed CSVs: the verdicts worth naming are **12 tables whose literal
+  names an ancestor of the object's class** (the literal names the installer, the read names the instance --
+  `Triggers`/`SGC_SecurityReader`), **26 carried by more than one class**, and **one that is not a class at all**
+  (`0x004e1ce8`: the literal read `new`, the objects say `System`).
+* **There is no inverted row any more.** The class map now carries the pair this page derived, so `0x004cfba0`
+  agrees with its objects instead of contradicting them — the `foreign-child` conflict it used to produce is gone
+  from the tree's table above as well. That is what a retired contradiction looks like in this artifact: the count
+  moves from `agree 139 / inverted 1` to `agree 140 / inverted 0`, and the row disappears from the report.
 
     python3 tools/xemu/class-tables-live.py --port 12641 --xbe $SG1_DUMP/default.xbe \
         --csv inventory/live_class_tables.csv --table 0x004cfba0 --table 0x004cfe68
@@ -312,9 +314,9 @@ them with **179 class tables / 312 rows**, now `inventory/live_class_tables.csv`
 
 A second boot, this time **in M00** (`Continue` -> `QUICK SELECT MAP` -> ten `down` -> `A`, `--gdb=12391 --linger=1800`),
 reads **48,646 objects / 48,631 headers (15 unreadable) / 346 pages** and pairs them with **189 tables / 376 rows**
-(`inventory/live_class_tables_m00.csv`). `class-table-reconcile.py --live` scores that read **agree 142, installer 13,
-shared 32, inverted 1, unknown-class 1**, and the one inverted row is this one again: **`0x004cfba0` carries 613 objects,
-every one of class `Texture`** (up from 454 at the title).
+(`inventory/live_class_tables_m00.csv`). `class-table-reconcile.py --live inventory/live_class_tables_m00.csv`
+scores that read in the same block, and its one-time inverted row is now an **agree**: **`0x004cfba0` carries 613
+objects, every one of class `Texture`** (up from 454 at the title), which is the name the class map carries too.
 
 * `0x004cfe68` **still carries no object** at a loaded level, and neither does `IceTexture`'s `0x004cfc88`, so the
   texture family's second half is named by the constructor tree alone and this read can never confirm it: the classes
@@ -325,6 +327,17 @@ every one of class `Texture`** (up from 454 at the title).
   `AIController`/`GoaAutoTurretMK2Controller`, `Projector`/`DynamicProjector`, `GUIScrollTextBox`/`SGScrollTextBox`,
   `InventorySpot`, `MaterialSwitch`, `SubActionCameraEffect`, `SubActionTrigger`, `SubActionFade`) and every one of
   them agrees with the literal artifact, so a loaded level adds coverage without moving a verdict.
+
+Both boots scored by `tools/class-table-reconcile.py` (`--write-doc` renders this block, `--check-doc` gates it in
+`make ci`; the check reads the two committed CSVs and writes nothing):
+
+<!-- generated:class-table-reconcile -->
+| the read | tables | rows | `agree` | `installer` | `shared` | `inverted` | `unrelated` | `static-unnamed` | `unknown-class` |
+|---|---|---|---|---|---|---|---|---|---|
+| the title read (`inventory/live_class_tables.csv`) | 179 | 312 | 140 | 12 | 26 | 0 | 0 | 0 | 1 |
+| the loaded level `M00` (`inventory/live_class_tables_m00.csv`) | 189 | 376 | 143 | 13 | 32 | 0 | 0 | 0 | 1 |
+| **both** | — | — | **283** | **25** | **58** | **0** | **0** | **0** | **2** |
+<!-- /generated:class-table-reconcile -->
 
 ## The installer's callers: five more names, two clashes, and the reason the rest stay open
 
