@@ -9752,6 +9752,38 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the cast index is one bytecode operand, and nine conversions are never emitted)
+
+- **The previous note's guess was wrong in its method and right in its question.** It said "the call site of
+  `Native_57` is one `E8` away"; an `E8 rel32` scan of every executable section finds **zero** sites. The handler is
+  reached through its `GNatives` slot (57), which is a table call -- a direct-call search has nothing to read, and
+  the answer was inside the 28-byte body all along.
+- **The index comes out of the bytecode stream, one byte after the opcode.** `0x00040be0`: `mov eax,[esp+4]` (frame),
+  `mov ecx,[eax+0xc]` (code cursor), `movzx edx,byte [ecx]`, `inc ecx` + store back to `+0xc`, `mov ecx,[eax+0x8]`,
+  `mov [esp+4],eax`, `jmp dword [edx*4+0x630fe0]`. So the operand the compiler emitted after `0x39` *is* the slot,
+  the cursor steps past it before the jump, and the conversion body is entered as a tail call with its argument list
+  rewritten. No compile-time table, no second dword read.
+- **The corpus agrees, in both directions.** 11,687 payloads walk end to end; `PrimitiveCast` carries **10,529**
+  operand bytes over **24** distinct values, all inside the installed 57-90 range, **0 strays and 0 at slot 70** (the
+  slot no installer fills). Commonest `IntToFloat` 63 (4,006), `ByteToInt` 58 (2,814), `ObjectToString` 86 (612);
+  rarest `ByteToBool` 59 with one token in the whole build.
+- **Nine of the 33 installed conversions are never emitted**: `BoolToFloat`, `FloatToBool`, `ObjectToBool`,
+  `NameToBool`, `StringToByte`, `StringToVector`, `StringToRotator`, `VectorToBool`, `RotatorToBool`. A recompiler
+  needs 24 bodies for this build's content and the other nine only for completeness.
+- **The cast bodies are handlers, not leaf converters** -- which is why there are 33 rather than one cast with two
+  type operands. `ByteToInt` (slot 58, `0x00040c00`) reads the *next* byte, makes a temp of the source width
+  (`mov byte [esp+3],0`; `BoolToByte` makes a dword and stores one byte back), calls `[GNatives+byte*4]` on the
+  nested expression to fill it, then writes through the `ecx` the dispatcher handed it.
+- Tool (`tools/cast-dispatch.py`: the nine-instruction decoder as byte assertions, the corpus operand census on
+  `uscript-dis`'s own table, slot rows for the whole range, `--check` joining `opcode_usage.csv`'s `PrimitiveCast`
+  total) + `inventory/cast_operands.csv` (34 rows) + `docs/NATIVE_VM.md` (*The cast index is one bytecode operand*)
+  + `make cast-dispatch` + this note. Also the stale extent in `tools/native-fill-tables.py`'s docstring (it said
+  "slots 59-84"; the artifact has always said 57-90). No boot: the image's code and the committed packages.
+- **Next measurement:** the recompiler side of the same fact -- whether `tools/uscript-dis.py --compare` scores a
+  cast correctly now that the slot is known to be an operand byte. The comparator reads a token tree; the pair
+  encoding means two builds of the same source must agree on slot *and* nested expression, and no run has yet
+  checked a cast-bearing function end to end (`docs/MATCHING.md`'s baseline has no cast column).
+
 ### Execution notes (2026-11-15, the installers are two sibling setters, and one jmp reads the second table)
 
 - **The two tables are not filled by 266 separate bodies; they are filled by two sibling setters that the thunks
