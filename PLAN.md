@@ -543,6 +543,26 @@ other 38 rows.
       population the map census does not replace; what is placed is 82 classes, which that page now says. The count is
       checked against a second reader over the same exports: the per-map `ACTION_*` totals agree with
       `inventory/map_export_classes.csv` on **73 of 73** maps, so the walk is naming actors and not templates.
+
+      **The wiring is read: 16,886 of 18,510 placed actions are named by a sequence's `Actions` array** (2026-11-15,
+      `docs/MAP_ACTION_WIRING.md`, `inventory/action_wiring.csv`, `tools/action-wiring.py`, `make action-wiring`).
+      The array that orders a sequence is a property value and it decodes as a **count followed by that many compact
+      object indices**, 1-based into the same map package -- `ScriptedTrigger41` in `M00` reads `04 65 13 64 13 63 13
+      62 13`, four elements whose indices are consecutive because the block was placed as one. So the join needs no
+      name resolution and no second package: across 73 maps, **2,694 arrays on 8 classes** hold **18,379 references**,
+      **16,886** of them landing on a placed action, **1,472** on a `MatAction` (the scene manager's own `Actions`
+      array -- camera moves, so the property name is two properties), **21** on `None` (an empty slot in an order),
+      and **0** dangling, **0** on a placed non-action. **1,624 actions are named by no array, in 49 of the 73 maps**,
+      so a placement is not a run and the 18,283 is an upper bound made exact. The family comes from
+      `inventory/classes.csv`'s `super` chain, not the spelling: **`Action_PLAYANIM` is placed 227 times** and the
+      `ACTION_` prefix that the carrier census counts by cannot see it, so the hierarchy's total is **18,510 over 83
+      classes** against the prefix's 18,283 -- the same walk agrees with `inventory/map_script.csv` on **73 of 73**
+      maps' prefixed subset, which is the control. The other control is a scan in the opposite direction: **30
+      property values that are not `Actions` name a placed action, and all 30 are mis-parsed blocks** (`Vector`,
+      `CollisionRadius`, `StaticMeshActor299`), so nothing else in a map package points at one. Still open, and now
+      narrow: the order *within* an array, and whether the sequence that names an action is itself activated -- the
+      outer edge of the flow graph, which is event names (`ACTION_WaitForEvent` carries `ExternalEvent`) and not
+      another index.
       Two of the 73 (`CTF-LostCity`, `DM-LostCity`) place no `ACTION_*` actor at all. So a T3D dump can still
       give the sequences' `Actions` arrays -- which action runs when, a property read -- but there is no script
       behind it, and `docs/systems/OBJECTIVES.md`, `docs/MUSIC.md` and `docs/MAP_EXPORTS.md` said level script

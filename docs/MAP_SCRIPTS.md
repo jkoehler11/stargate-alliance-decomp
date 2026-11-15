@@ -152,11 +152,13 @@ is therefore **placed actors** -- `ACTION_*` scripted actions driven by sequence
 here are that claim's evidence. [`docs/systems/AUDIO.md`](systems/AUDIO.md)'s cue question changes shape rather
 than closing: an unused cue is not "one no level script names", it is one no placed actor's properties name.
 
-**Not measured.** Two things, both deliberately outside this walk:
+**Measured since** (`docs/MAP_ACTION_WIRING.md`, `inventory/action_wiring.csv`, `tools/action-wiring.py`): the
+`Actions` array that orders a sequence is a property value, and it decodes as 1-based export indices into the same
+map package -- so *which sequence runs which action* is a join inside one package, and *whether a placement runs at
+all* is answered per action. Of the **18,510** actions the maps place (by class hierarchy: `Action_PLAYANIM` is
+placed 227 times and the `ACTION_` prefix cannot see it), **16,886** are named by some sequence's array and
+**1,624** are named by none.
 
-* **Which sequence runs which action.** The `Actions` array that orders a sequence is a property value, so it
-  belongs to the actor-property reader (`docs/ACTOR_PROPERTIES.md`, `docs/T3D.md`); this page counts the carriers,
-  not their wiring. A map's flow graph is a T3D-level read.
-* **Whether a placed action is reachable.** A placement is not a trigger: an `ACTION_*` that no sequence
-  references never runs, and nothing here distinguishes the two. The count is an upper bound on the logic a map
-  can execute.
+**Still not measured.** Two things, both outside that read: the order *within* an array, and whether the sequence
+that names an action is itself activated -- so the wiring is the inner edge of a map's flow graph, not the whole
+graph.

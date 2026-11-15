@@ -101,13 +101,14 @@ report (`docs/CUT_CONTENT.md`): M01 and M05 keep music but no level.
 2. **The fork's `GameObjective` family can be deprioritised**: 22 functions and 10 classes that no shipped
    map instantiates. Porting it before the engine's `MissionObjective` would be working on the wrong class.
 3. **`MissionObjective` is the compatibility surface.** 261 placed actors mean the rebuild must reproduce
-   the engine class's behaviour exactly, including whatever the level scripts set on it.
+   the engine class's behaviour exactly, including whatever the placed actions set on it.
 
 ## Not measured
 
 * What any `ACTION_*` does. 22 classes with properties named after their editor fields is structure; the
   behaviour is in the script bodies under `$WORK`.
-* Which actions a given mission uses, and in what order — the sequence actors' `Actions` arrays, i.e. the
-  actor-property read of the 5.2 dump. It is not a level script: no map carries one (`docs/MAP_SCRIPTS.md`).
+* The order *within* a sequence, and whether a sequence is activated at all. Which actions a mission uses is
+  measured (`docs/MAP_ACTION_WIRING.md`: 16,886 of the 18,510 placed actions are named by a sequence's `Actions`
+  array, 1,624 by none), and it is not a level script: no map carries one (`docs/MAP_SCRIPTS.md`).
 * The 7 missing chapters: whether their levels were cut, or renamed before ship (`chapters.csv` records
   what the chapter table names, not what the designers intended).
