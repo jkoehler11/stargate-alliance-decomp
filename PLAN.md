@@ -514,7 +514,8 @@ other 38 rows.
       object references **resolve to names**, not to `ref:<index>`: across all 73 maps **1,178,138 of 1,178,141
       properties** carry a `Class'Package.Name'` value and only **3** fall back to an index
       (`inventory/t3d_coverage.csv`, `make t3d`), so the 2026-10 reading is stale. Still open: arrays/structs are
-      emitted by size, and the `Level` export's script sequence is separate from the actors' properties and unread.
+      emitted by size and the `Level` export's script sequence is unread -- except that there is no script to read
+      (next note): no map exports one.
       **Class-level half done without T3D** (`docs/MAP_EXPORTS.md`, `inventory/map_export_classes.csv`): all 73 maps
       parse as packages, and level actors are exports, so the actor-class census is a histogram — 6,478 (map, class,
       count) rows, 389 distinct classes, cross-validated against UELib's `map_actors.csv` (identical class vocabulary,
@@ -529,6 +530,24 @@ other 38 rows.
       `Level`/`Location`/`Rotation` baseline the checkpoint analysis found, arrived at independently. The block is
       located (class prefixes of 0/12/15/16/17 bytes) rather than assumed. **Remaining**: writing T3D text, property
       values at scale, and class defaults.
+      **There is no level script: 0 of 73 maps export one** (2026-11-15, `docs/MAP_SCRIPTS.md`,
+      `inventory/map_script.csv`, `tools/map-script.py`, `make map-script`). The item's third half was "the
+      `Level` export's script sequence", and a compiled script is exports whatever its text looks like: across
+      the 73 maps' **194,190 exports**, **none** is a `Function`, `State`, `ScriptStruct`, `Const` or `Enum` and
+      **not one** carries a `TextBuffer`, so there is no script text and no script objects to dump. All 73 maps
+      do carry a `Level` export and **0** of those give it a child export, so the absence is the build's and not
+      a truncated table. What carries a level's logic instead is placed data: **18,283 `ACTION_*` actors over 82
+      classes** over four packages (`GamePlay` 45, `StargateGame` 21, `StargateContent` 13, `StargateVehicles` 3;
+      `ACTION_WaitForEvent` 2,722, `ACTION_TriggerEvent` 2,658, `ACTION_WaitForTimer` 2,216), **2,450**
+      scripted-sequence and **1,768** trigger actors. OBJECTIVES' 22-class table counts the class tree, a
+      population the map census does not replace; what is placed is 82 classes, which that page now says. The count is
+      checked against a second reader over the same exports: the per-map `ACTION_*` totals agree with
+      `inventory/map_export_classes.csv` on **73 of 73** maps, so the walk is naming actors and not templates.
+      Two of the 73 (`CTF-LostCity`, `DM-LostCity`) place no `ACTION_*` actor at all. So a T3D dump can still
+      give the sequences' `Actions` arrays -- which action runs when, a property read -- but there is no script
+      behind it, and `docs/systems/OBJECTIVES.md`, `docs/MUSIC.md` and `docs/MAP_EXPORTS.md` said level script
+      where the measurement says placed actors; all three are corrected. **What is open** is that wiring: which
+      sequence references which action, and whether a placed action is reachable at all.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an

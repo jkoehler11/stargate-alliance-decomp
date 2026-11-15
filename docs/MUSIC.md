@@ -64,6 +64,7 @@ M08 or M09 — the same fragmentation the chapter list shows in `docs/CONTENT_CE
 ## Not claimed
 
 - What the `c`/`n`/`cn`/`nc` variants control (guess above, unmeasured).
-- Whether any cue is unused by the shipped maps: that needs the maps' level scripts (5.2's T3D dump).
+- Whether any cue is unused by the shipped maps: that needs the placed actors' properties (5.2's T3D dump),
+  since no map carries a level script to name a cue (`docs/MAP_SCRIPTS.md`).
 - SFX: the 3,287 WAVs are speech and music only; sound effects live inside the `.uax` packages and are
   not extracted yet (PLAN 5.1).

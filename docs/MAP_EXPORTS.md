@@ -56,7 +56,8 @@ the goal for mission structure; this just means the class-level census no longer
 
 ## Not measured
 
-* Actor properties, and therefore anything the level script does.
+* Actor properties, and therefore anything the level's placed logic does -- there is no level script: 0 of the
+  73 maps hold a `Function`, `State` or `TextBuffer` export (`docs/MAP_SCRIPTS.md`).
 * Why `M21A`'s class indices fail to resolve. It is one map out of 73 and the failure is concentrated, so it
   looks like a local table anomaly rather than a reader bug — but that is a hypothesis, not a finding.
 * The 133 classes whose totals differ between the two readers, beyond the pattern that this one is lower.
