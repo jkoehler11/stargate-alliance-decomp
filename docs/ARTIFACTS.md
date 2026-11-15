@@ -151,7 +151,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_channels.csv` | 523 | 12 | `make native-channels` |
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_island.csv` | 1590 | 15 | `make ci` |
-| `inventory/native_island_gaps.csv` | 99 | 24 | `make ci` |
+| `inventory/native_island_gaps.csv` | 99 | 26 | `make ci` |
 | `inventory/native_names.csv` | 273 | 4 | `make gnatives-mission` |
 | `inventory/native_opcodes.csv` | 206 | 12 | `make help` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |

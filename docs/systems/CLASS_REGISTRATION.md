@@ -487,7 +487,7 @@ Stubs a store names (the body each handler/thunk belongs to):
 What the census cannot say: the `other` and `partial` rows are the stubs the bounded opcode subset
 either read outside the three shapes or could not read whole, so the shape counts are a floor on each
 kind rather than a partition of the hole. `make native-island` regenerates the artifact; `--check` is a
-synthetic self-test (18 assertions, no dump) and `--check-doc` rebuilds the block from
+synthetic self-test (19 assertions, no dump) and `--check-doc` rebuilds the block from
 `inventory/native_island.csv` -- including the hole's bounds and the tail-jump split, which travel in the
 artifact's own `census` row so a page rendered from the CSV cannot disagree with the measurement.
 
@@ -543,6 +543,11 @@ caller of the 24 unregistered tables. Reading them answers it the other way.
   descriptor -- 74 of the 75 behind the `0xffffffff` unwind-map terminator and 39 of the 75 immediately in
   front of a `0x19930520` `FuncInfo` header (102 and 55 of the 103 refs the whole 84-site population
   carries).
+- **The whole map is like this, not just this hole.** 1,906 `eh-handler` stubs sit in the 14 gaps and
+  1,896 of them name a `0x19930520` record. The 10 that do not share the `mov imm32; jmp` shape but their
+  operand is a `.data` address, and all ten are in one gap (`0x0040ab78`..`0x0040c2c0`): the shape rule
+  alone would count them as handlers, which is why the claim is the magic, not the shape. The symbol map's
+  holes are therefore the compiler's exception pools through and through, not the 17 KB one alone.
 - **So the population that could still be a real caller of the 24 is empty.** A forwarder whose only
   reference is an exception descriptor is compiler plumbing for a `try`/`catch` frame, not a dispatch
   entry, and the base-constructor shape (103 classes calling an installer from their own constructor)
@@ -562,6 +567,7 @@ The table below is rendered from the artifact's own `census` row, so a page rebu
 | the 61 sites' stub shape | 61 of 61 are a forwarder, all 8 bytes |
 | `E8`/`E9` edges entering a gap from outside it | 0 (`E8` 0) |
 | `jmp` edges whose site is inside the same gap | 11 |
+| `eh-handler` stubs in the 14 gaps / naming a `FuncInfo` | 1906 / 1896 |
 | the 61 stubs an `E8` calls / a store or push names | 0 / 0 |
 | the 61 stubs a dword outside `.text` names | 61 (75 refs) |
 | ...of those refs, in a class-table slot (492 mapped + 232 unmapped tables) | 0 of 103 |
@@ -569,22 +575,22 @@ The table below is rendered from the artifact's own `census` row, so a page rebu
 | ...whose previous dword is the `0xffffffff` unwind terminator | 74 of 75 (102 of 103) |
 | installers the 84 tail jumps name | 24 of the 24 (the 61 name 18) |
 
-| gap | bytes | stubs | stub shapes | sites | edges in from outside | edges inside |
-|---|---|---|---|---|---|---|
-| `0x003f28b8`..`0x003f6d70` (hole) | 17592 | 1589 | eh-handler:325,forward:200,other:1064 | 23 | 0 | 4 |
-| `0x003fc208`..`0x00400340` | 16696 | 1551 | eh-handler:293,forward:165,other:1093 | 23 | 0 | 0 |
-| `0x004012a8`..`0x00403020` | 7544 | 700 | eh-handler:200,forward:91,other:409 | 9 | 0 | 0 |
-| `0x00400a08`..`0x004012a0` | 2200 | 194 | eh-handler:53,forward:29,other:112 | 6 | 0 | 0 |
-| `0x00406338`..`0x00409100` | 11720 | 1078 | eh-handler:189,forward:173,other:716 | 5 | 0 | 0 |
-| `0x003f27e7`..`0x003f28b0` | 201 | 12 | eh-handler:7,forward:5 | 3 | 0 | 0 |
-| `0x003f6d78`..`0x003f71a0` | 1064 | 86 | eh-handler:33,forward:27,other:26 | 3 | 0 | 0 |
-| `0x003f7d78`..`0x003fa140` | 9160 | 787 | eh-handler:176,forward:95,other:516 | 2 | 0 | 0 |
-| `0x00400348`..`0x00400a00` | 1720 | 152 | eh-handler:56,forward:20,other:76 | 2 | 0 | 0 |
-| `0x00403028`..`0x004042e0` | 4792 | 419 | eh-handler:106,forward:52,other:261 | 2 | 0 | 7 |
-| `0x00409108`..`0x0040ab70` | 6760 | 608 | eh-handler:167,forward:67,other:374 | 2 | 0 | 0 |
-| `0x0040ab78`..`0x0040c2c0` | 5960 | 549 | eh-handler:182,forward:41,other:326 | 2 | 0 | 0 |
-| `0x003f71a8`..`0x003f7d70` | 3016 | 252 | eh-handler:81,forward:52,other:119 | 1 | 0 | 0 |
-| `0x00404f98`..`0x00406330` | 5016 | 483 | eh-handler:38,forward:189,other:256 | 1 | 0 | 0 |
+| gap | bytes | stubs | stub shapes | sites | edges in from outside | edges inside | eh-handler / `FuncInfo` |
+|---|---|---|---|---|---|---|---|
+| `0x003f28b8`..`0x003f6d70` (hole) | 17592 | 1589 | eh-handler:325,forward:200,other:1064 | 23 | 0 | 4 | 325 / 325 |
+| `0x003fc208`..`0x00400340` | 16696 | 1551 | eh-handler:293,forward:165,other:1093 | 23 | 0 | 0 | 293 / 293 |
+| `0x004012a8`..`0x00403020` | 7544 | 700 | eh-handler:200,forward:91,other:409 | 9 | 0 | 0 | 200 / 200 |
+| `0x00400a08`..`0x004012a0` | 2200 | 194 | eh-handler:53,forward:29,other:112 | 6 | 0 | 0 | 53 / 53 |
+| `0x00406338`..`0x00409100` | 11720 | 1078 | eh-handler:189,forward:173,other:716 | 5 | 0 | 0 | 189 / 189 |
+| `0x003f27e7`..`0x003f28b0` | 201 | 12 | eh-handler:7,forward:5 | 3 | 0 | 0 | 7 / 7 |
+| `0x003f6d78`..`0x003f71a0` | 1064 | 86 | eh-handler:33,forward:27,other:26 | 3 | 0 | 0 | 33 / 33 |
+| `0x003f7d78`..`0x003fa140` | 9160 | 787 | eh-handler:176,forward:95,other:516 | 2 | 0 | 0 | 176 / 176 |
+| `0x00400348`..`0x00400a00` | 1720 | 152 | eh-handler:56,forward:20,other:76 | 2 | 0 | 0 | 56 / 56 |
+| `0x00403028`..`0x004042e0` | 4792 | 419 | eh-handler:106,forward:52,other:261 | 2 | 0 | 7 | 106 / 106 |
+| `0x00409108`..`0x0040ab70` | 6760 | 608 | eh-handler:167,forward:67,other:374 | 2 | 0 | 0 | 167 / 167 |
+| `0x0040ab78`..`0x0040c2c0` | 5960 | 549 | eh-handler:182,forward:41,other:326 | 2 | 0 | 0 | 182 / 172 |
+| `0x003f71a8`..`0x003f7d70` | 3016 | 252 | eh-handler:81,forward:52,other:119 | 1 | 0 | 0 | 81 / 81 |
+| `0x00404f98`..`0x00406330` | 5016 | 483 | eh-handler:38,forward:189,other:256 | 1 | 0 | 0 | 38 / 38 |
 
 All 61 sites outside the hole sit in stubs, 61 of which the walker decodes as a forwarder, and `E8`/`E9` edges entering the gaps from outside total 0. Across the whole 84-site population the only channel that names a stub is a `.rdata` dword (103 refs), and none of them is a class-table slot, mapped or unmapped: they sit in exception descriptors -- the word in front of one is the unwind terminator on 102 of the 103 refs, and 55 stand immediately in front of a `FuncInfo` header. So the 84 are compiler exception plumbing rather than dispatch entries, no branch reaches any of them, and the 24 installers keep their 103 constructor callers as the only reachable evidence.
 <!-- /generated:native-island-gaps -->
