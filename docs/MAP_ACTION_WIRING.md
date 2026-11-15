@@ -137,9 +137,11 @@ turned into the wired/orphan count.
 * **Which end of the order runs first.** The array is ordered, and the order is in the CSV only as a count per
   array. A per-element order is a T3D-level read (`docs/T3D.md` writes the array by size), not a census.
 * **Whether a wired action is reachable in play.** Being named by a sequence is not being run: the *sequence* must
-  be activated, by a trigger, a `TriggerEvent`, or an AI order. This page measures the inner edge of the graph.
-  The outer edge is named events: `ACTION_WaitForEvent` carries an `ExternalEvent` name, so the next read is a join
-  between the names the waiters wait on and the names the `TriggerEvent` actions fire.
+  be activated, by a trigger, a `TriggerEvent`, or an AI order. This page measures the inner edge of the graph;
+  the outer edge is named events and is now measured in `docs/MAP_EVENT_WIRING.md`, which joins the `ExternalEvent`
+  names a map's sequences wait on to the names its placed actors fire. What that page does not answer is a
+  schedule -- it is the map's static name space, so a wait that nothing arms is still a wait the runtime could
+  satisfy from a mechanism the package does not carry.
 * **What the unwired actions are for.** An action no array names is either dead content, or reached by a mechanism
   outside `Actions` -- and the scan above says no property in the package points at one, so the first reading is
   the one the data supports.
