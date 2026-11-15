@@ -28,6 +28,16 @@ functions, or any `int<prefix><Class>exec<Function>` literal for them: `Editor` 
 packages with 0 of their declarations bound by name, and neither is in the Xbox build's runtime packages
 (`Default.ini` lists them under `EditPackages` only). Nothing to register, so nothing registers.
 
+**A row `natives.csv` states and the image does not hold is not a declaration.** The join above asks which channel
+carries a declaration; it cannot see whether the row is a native at all. `inventory/native_record_check.csv`
+(`tools/native-record-check.py`) re-reads every `natives.csv` row's own `Function` payload, so its `record_native`
+column is joined here too and each row carries `declaration` = `native` when the payload's flag word has the
+`Native` bit and `not-native` when it does not. Measured: **522 of the 523 rows are natives the image holds and one
+is not** -- `UPreview.UPreviewSkinnedButton.SetRenderInfo`, whose payload reads `0x00020002` (`Defined;Public`, a
+script function with a body). So the "nothing carries them" half is **14 real declarations** (`Editor`'s 13
+`BrushBuilder` + 1 `MaterialFactory`, in a package the build never loads) **plus one row the image does not hold**,
+and `UPreview`'s real residue is 0 -- the same artifact `native_record_check.csv` names from the other side.
+
 **A binder column that invented a literal.** `tools/native-reconcile.py`'s `load_binder` filled an empty binder
 with `"int%s%s" % (prefix_expected, function)` -- a name the image does not carry -- and then read its own
 fabrication as evidence that the image binds the function. That is how two `UPreview` records came to be listed as
@@ -47,10 +57,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 COLUMNS = ["package", "class", "function", "binder", "binder_va", "stub", "record_va", "record_body",
-           "channel", "class_store_slots", "class_stub_slots", "in_image"]
+           "record_native", "channel", "declaration", "class_store_slots", "class_stub_slots", "in_image"]
 # What a declaration's registration amounts to. `stub-only` would be a body pushed with no record to name it by,
 # and is reported rather than folded into `unbound`, because it is a different defect.
 CHANNELS = ("stub+record", "record-only", "stub-only", "unbound")
+# Whether the image holds a native `Function` for the row at all (`native_record_check.csv`'s `record_native`).
+# A row the artifact states and the payload refuses is a different residue from a declaration nothing registers.
+DECLARATIONS = ("native", "not-native", "unknown")
 
 
 def read_csv(name, columns=None):
@@ -100,6 +113,19 @@ def channel(stub, record):
     return "unbound"
 
 
+def declaration(record_native):
+    """Whether the image holds a native `Function` for the row, from `native_record_check.csv`.
+
+    `record_native` is `1`/`0` from the payload's own flag word; a row that file does not carry is `unknown`
+    rather than `native`, so a join that silently lost a row cannot read as the good case.
+    """
+    if record_native == "1":
+        return "native"
+    if record_native == "0":
+        return "not-native"
+    return "unknown"
+
+
 def tables():
     """Every committed table this join needs, read once."""
     natives = read_csv("natives.csv", ["package", "class", "function", "native_token"])
@@ -109,7 +135,9 @@ def tables():
             if r.get("name")}
     record = {r["name"]: r for r in read_csv("native_targets.csv", ["name", "record_va", "body"])}
     slots = read_csv("gnatives_records.csv", ["slot", "record_name", "source"])
-    return natives, binder, stub, record, slots
+    held = {(r["package"], r["class"], r["function"]): r["record_native"] for r in read_csv(
+        "native_record_check.csv", ["package", "class", "function", "record_native"])}
+    return natives, binder, stub, record, slots, held
 
 
 def class_counts(slots):
@@ -142,16 +170,18 @@ def bounded(text, word):
     return re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(word), text) is not None
 
 
-def rows_for(natives, binder, stub, record, slots, text=None):
+def rows_for(natives, binder, stub, record, slots, text=None, held=None):
     """One row per index-less declaration, in `natives.csv` order."""
     cc = class_counts(slots)
     sc = stub_counts(stub, read_csv("gnatives_stubs.csv", ["name"]))
+    held = held or {}
     rows = []
     for d in indexless(natives):
         b = binder.get((d["class"], d["function"]), {})
         name = (b.get("binder") or "").strip()
         s = stub.get(name, {}) if name else {}
         rec = record.get(name, {}) if name else {}
+        held_native = held.get((d["package"], d["class"], d["function"]), "")
         # The image is the authority for "this name exists"; a CSV row with no binder is no binder.
         if text is None:
             in_image = "-"
@@ -161,7 +191,9 @@ def rows_for(natives, binder, stub, record, slots, text=None):
                      "binder": name, "binder_va": b.get("binder_va", "") if name else "",
                      "stub": s.get("stub", ""), "record_va": rec.get("record_va", ""),
                      "record_body": rec.get("body", ""),
+                     "record_native": held_native,
                      "channel": channel(bool(s), bool(rec)),
+                     "declaration": declaration(held_native),
                      "class_store_slots": cc.get(d["class"], [0, 0])[0],
                      "class_stub_slots": sc.get(d["class"], 0),
                      "in_image": in_image})
@@ -171,10 +203,10 @@ def rows_for(natives, binder, stub, record, slots, text=None):
 def run(xbe_path, out_dir):
     if not os.path.isdir(out_dir):
         raise SystemExit("native-channels: no such directory %s" % out_dir)
-    natives, binder, stub, record, slots = tables()
+    natives, binder, stub, record, slots, held = tables()
     nb = binder_module()
     text = nb.wide_text(open(xbe_path, "rb").read())
-    rows = rows_for(natives, binder, stub, record, slots, text)
+    rows = rows_for(natives, binder, stub, record, slots, text, held)
 
     path = os.path.join(out_dir, "native_channels.csv")
     with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -210,6 +242,16 @@ def run(xbe_path, out_dir):
             ", ".join("%s %d" % (p, sum(1 for r in binder.values()
                                         if r["package"] == p and (r.get("binder") or "").strip()))
                       for p in pkgs)))
+        print("  unbound declarations the image holds: %d of %d (%s)" % (
+            sum(1 for r in unbound if r["declaration"] == "native"), len(unbound),
+            ", ".join("%s %d" % kv for kv in collections.Counter(r["declaration"] for r in unbound).most_common())))
+        for r in unbound:
+            if r["declaration"] != "native":
+                print("    %-12s %s.%s -- the image holds no native Function (record_native %r)"
+                      % (r["declaration"], r["class"], r["function"], r["record_native"]))
+    # The whole population, per declaration: a row the artifact states and the payload refuses is not a native.
+    print("  declarations: %s" % ", ".join("%s %d" % (d, sum(1 for r in rows if r["declaration"] == d))
+                                           for d in DECLARATIONS if any(r["declaration"] == d for r in rows)))
     print("  the image carries the binder literal for %d of %d named rows"
           % (sum(1 for r in rows if r["in_image"] == "yes"), sum(1 for r in rows if r["binder"])))
     return 0
@@ -239,9 +281,14 @@ def check():
     assert bounded("\x00BrushBuilder\x00", "BrushBuilder") is True
     assert bounded("intUObjectexecGetEnum", "Object") is False
     assert bounded("intUPreviewSkinnedButtonexecSetRenderInfo", "UPreviewSkinnedButton") is False
+    # The declaration axis: the payload's own bit, and a row the join did not carry is not the good case.
+    assert declaration("1") == "native" and declaration("0") == "not-native"
+    assert declaration("") == "unknown" and declaration("yes") == "unknown"
     # And the join itself, on two declarations that differ only in which channel carries them.
     natives = [{"package": "Core", "class": "Object", "function": "GetEnum", "native_token": "0"},
                {"package": "Editor", "class": "BrushBuilder", "function": "EndBrush", "native_token": ""},
+               {"package": "UPreview", "class": "UPreviewSkinnedButton", "function": "SetRenderInfo",
+                "native_token": "0"},
                {"package": "Engine", "class": "Actor", "function": "Touch", "native_token": "7"}]
     binder = {("Object", "GetEnum"): {"class": "Object", "function": "GetEnum",
                                       "binder": "intUObjectexecGetEnum", "binder_va": "0x4d5700"},
@@ -249,12 +296,20 @@ def check():
                                              "binder": "", "binder_va": ""}}
     stub = {"intUObjectexecGetEnum": {"stub": "0x413db0", "name": "intUObjectexecGetEnum"}}
     record = {"intUObjectexecGetEnum": {"name": "intUObjectexecGetEnum", "record_va": "0x5c2380",
-                                       "body": "0x4dcf0"}}
-    rows = rows_for(natives, binder, stub, record, slots, text="\x00intUObjectexecGetEnum\x00")
-    assert len(rows) == 2, "only the index-less declarations are rows (Actor.Touch has an index)"
+                                        "body": "0x4dcf0"}}
+    held = {("Core", "Object", "GetEnum"): "1", ("Editor", "BrushBuilder", "EndBrush"): "1",
+            ("UPreview", "UPreviewSkinnedButton", "SetRenderInfo"): "0"}
+    rows = rows_for(natives, binder, stub, record, slots, text="\x00intUObjectexecGetEnum\x00", held=held)
+    assert len(rows) == 3, "only the index-less declarations are rows (Actor.Touch has an index)"
     assert rows[0]["channel"] == "stub+record" and rows[0]["in_image"] == "yes", rows[0]
     assert rows[1]["channel"] == "unbound" and rows[1]["binder"] == "" and rows[1]["in_image"] == "no", rows[1]
-    print("ok native-channels: %d channels, class slot split, pool rule, 2-of-3 rows" % len(CHANNELS))
+    # An unbound row and a row the image does not hold are the same channel and different declarations: that
+    # split is the whole finding, so it is asserted rather than left to the writer.
+    assert rows[1]["declaration"] == "native", rows[1]
+    assert rows[2]["channel"] == "unbound" and rows[2]["declaration"] == "not-native", rows[2]
+    assert rows[2]["record_native"] == "0" and rows[2]["binder"] == "", rows[2]
+    print("ok native-channels: %d channels, %d declarations, class slot split, pool rule, 3-of-4 rows"
+          % (len(CHANNELS), len(DECLARATIONS)))
     return 0
 
 

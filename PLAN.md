@@ -9752,6 +9752,30 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the channel table cannot see whether a row is a declaration, and one of its fifteen is not)
+
+- **The join asked which channel carries a row and never whether the row is a native.** `tools/native-channels.py`
+  answers, per index-less `natives.csv` row, whether a `-1` stub, a `{name, body}` record or nothing carries it --
+  and `inventory/natives.csv` already states that every row is `native`. So `UPreview`'s single index-less entry sat
+  in the unbound population on the artifact's word. It now joins `inventory/native_record_check.csv`'s
+  `record_native` column and writes a `declaration` verdict: **522 of the 523 rows are natives the image holds,
+  1 is not**, and the one is `UPreview.UPreviewSkinnedButton.SetRenderInfo`, whose payload reads `0x00020002`
+  (`Defined;Public`, a script function with a body).
+- **The unbound half is 14 declarations plus one artifact row, not 15 declarations.** `Editor`'s 13 `BrushBuilder` +
+  1 `MaterialFactory` are real index-less natives in a package no runtime list loads (`Default.ini`'s
+  `EditPackages` only), so nothing registers them; `UPreview`'s real residue is **0**. That is #573/#574's row
+  reached from the channel side instead of the residual side, and the page's table said `neither` while its own CSV
+  said `unbound` -- the table now uses the artifact's word and splits the 15 into the two populations.
+- Tool (`tools/native-channels.py`: the `declaration` axis and `record_native` column, 5 new `--check` assertions
+  including a `not-native` row that shares the `unbound` channel with a native one) +
+  `inventory/native_channels.csv` regenerated (523 rows, 14 columns) + `docs/NATIVE_VM.md` (*The 55 without a stub*,
+  its table and the binder-name paragraph) + `docs/UNKNOWNS.md` U1 + this note. No boot: the committed artifacts
+  and the image's names.
+- **Next measurement:** the two body artifacts are computed separately and already agree where they overlap --
+  `native_bodies.csv`'s **768** distinct `body_va` are all among `native_targets.csv`'s **883** distinct `body`, and
+  **115** targets' bodies have no body row. Which records those 115 are (a `declared` split, not a gap) is the next
+  read, and it needs no dump beyond the two committed artifacts.
+
 ### Execution notes (2026-11-15, the residual asks the record first, and the token table has no unresolved row)
 
 - **`native-reconcile.py` now takes the record's own flag word as the first authority.** It shares

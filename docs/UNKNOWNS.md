@@ -837,6 +837,15 @@ index-less declarations has a `-1` stub; no stub for the rest is the class's nor
 a binder literal have it in the image. The same run removed a fabrication in `tools/native-reconcile.py` that had
 listed `UPreview`'s two records as `text-missing` against a literal it invented; they read `record-unbound` now.
 
+**Corrected 2026-11-15, no boot: the 15 are 14, and the fifteenth is not a declaration.** `native_channels.csv`'s
+join asked which channel carries a row and never whether the row is a native at all, so `UPreview`'s single
+index-less entry sat in the unbound population on the strength of `natives.csv`. The tool now joins
+`inventory/native_record_check.csv`'s `record_native` column (the row's own `Function` flag word) and writes a
+`declaration` verdict: **522 of the 523 rows are natives the image holds, 1 is not** --
+`UPreview.UPreviewSkinnedButton.SetRenderInfo`, payload `0x00020002` (`Defined;Public`). So the unbound half is
+**14 `Editor` declarations** (13 `BrushBuilder` + 1 `MaterialFactory`, in a package no runtime list loads) plus that
+one artifact row, `UPreview`'s real residue is 0, and the 523-row population is 522 declarations.
+
 **The slots no package declares are token bodies, and their registration was never in doubt (2026-11-10).** Slots 66,
 67 and 68 are the only store-written `GNatives` entries below the native band, and every store site's setter spells its
 index at `0x006353e8` (231 of the 233 as an immediate, the other two through a register), so the question this entry used to ask

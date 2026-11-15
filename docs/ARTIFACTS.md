@@ -165,7 +165,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_binder_names.csv` | 797 | 8 | `make native-binder` |
 | `inventory/native_bodies.csv` | 789 | 13 | `make native-bodies` |
 | `inventory/native_census.csv` | 883 | 13 | `make native-census` |
-| `inventory/native_channels.csv` | 523 | 12 | `make native-channels` |
+| `inventory/native_channels.csv` | 523 | 14 | `make native-channels` |
 | `inventory/native_count_closure.csv` | 31 | 17 | `make ci` |
 | `inventory/native_declarations.csv` | 11 | 4 | `make package-census` |
 | `inventory/native_island.csv` | 1590 | 15 | `make ci` |
@@ -174,7 +174,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_opcodes.csv` | 206 | 12 | `make help` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |
 | `inventory/native_reconcile.csv` | 96 | 13 | `make native-reconcile` |
-| `inventory/native_record_check.csv` | 797 | 10 | `make ci` |
+| `inventory/native_record_check.csv` | 797 | 10 | `make native-channels` |
 | `inventory/native_residual.csv` | 11 | 7 | `make native-reconcile` |
 | `inventory/native_targets.csv` | 1104 | 14 | `make native-table` |
 | `inventory/native_tokens.csv` | 274 | 5 | `make native-reconcile` |
