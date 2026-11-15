@@ -1,0 +1,57 @@
+body_va,body_name,insn_va,mnemonic,operands,mem_operand,kind,target
+0x000b2230,Engine_LIPSincSupport,0x000b223c,mov,"ecx, DWORD PTR [edi+0x14]",DWORD PTR [edi+0x14],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2247,mov,"edx, DWORD PTR [edi+0x10]",DWORD PTR [edi+0x10],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b224c,fld,QWORD PTR [esp+0x10],QWORD PTR [esp+0x10],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2251,mov,"esi, DWORD PTR [edx+0x4]",DWORD PTR [edx+0x4],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2254,mov,"DWORD PTR [esp+0x8], esi",DWORD PTR [esp+0x8],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2258,fild,DWORD PTR [esp+0x8],DWORD PTR [esp+0x8],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2262,fld,QWORD PTR [edx+0x8],QWORD PTR [edx+0x8],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2272,fild,DWORD PTR [eax+edx*1-0xc],DWORD PTR [eax+edx*1-0xc],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b227a,fld,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2287,fld,QWORD PTR [eax-0x8],QWORD PTR [eax-0x8],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2298,fld,QWORD PTR [edx+0x8],QWORD PTR [edx+0x8],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b22a5,mov,"DWORD PTR [esp+0x8], esi",DWORD PTR [esp+0x8],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22b0,fild,DWORD PTR [esp+0x8],DWORD PTR [esp+0x8],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22b4,mov,"esi, DWORD PTR [edx]",DWORD PTR [edx],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b22b6,fld,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22ba,mov,"DWORD PTR [esp+0xc], esi",DWORD PTR [esp+0xc],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22c4,fld,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22c8,fild,DWORD PTR [esp+0xc],DWORD PTR [esp+0xc],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22d8,mov,"DWORD PTR [esp+0x8], esi",DWORD PTR [esp+0x8],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b22e4,fld,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2309,mov,"eax, DWORD PTR [edi+0x14]",DWORD PTR [edi+0x14],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2313,mov,"ecx, DWORD PTR [edi+0x10]",DWORD PTR [edi+0x10],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b231c,mov,"eax, DWORD PTR [esi+0x4]",DWORD PTR [esi+0x4],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b231f,mov,"ecx, DWORD PTR [esi+0x14]",DWORD PTR [esi+0x14],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2324,mov,"DWORD PTR [esp+0xc], eax",DWORD PTR [esp+0xc],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2328,mov,"DWORD PTR [esp+0x8], ecx",DWORD PTR [esp+0x8],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2345,fild,DWORD PTR [esp+0xc],DWORD PTR [esp+0xc],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2349,fld,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b234f,fild,DWORD PTR [esp+0x8],DWORD PTR [esp+0x8],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b235d,fld,QWORD PTR [esi+0x8],QWORD PTR [esi+0x8],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2360,fld,QWORD PTR [esi+0x8],QWORD PTR [esi+0x8],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b2373,fld,QWORD PTR [esi+0x18],QWORD PTR [esi+0x18],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b237c,fstp,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],write,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2384,fsub,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b2230,Engine_LIPSincSupport,0x000b2388,fadd,QWORD PTR [esi+0x18],QWORD PTR [esi+0x18],read,object
+0x000b2230,Engine_LIPSincSupport,0x000b239b,fadd,QWORD PTR [esp+0x14],QWORD PTR [esp+0x14],read,stack
+0x000b24f0,FUN_000b24f0,0x000b250b,mov,"eax, DWORD PTR [edi+0x1c]",DWORD PTR [edi+0x1c],read,object
+0x000b24f0,FUN_000b24f0,0x000b2514,mov,"DWORD PTR [esp+0x10], eax",DWORD PTR [esp+0x10],write,stack
+0x000b24f0,FUN_000b24f0,0x000b2518,fild,DWORD PTR [esp+0x10],DWORD PTR [esp+0x10],read,stack
+0x000b24f0,FUN_000b24f0,0x000b251e,fld,QWORD PTR [ebp+0x8],QWORD PTR [ebp+0x8],read,stack
+0x000b24f0,FUN_000b24f0,0x000b2521,mov,"DWORD PTR [esp+0x14], ecx",DWORD PTR [esp+0x14],write,stack
+0x000b24f0,FUN_000b24f0,0x000b252b,fld,QWORD PTR [ebp+0x8],QWORD PTR [ebp+0x8],read,stack
+0x000b24f0,FUN_000b24f0,0x000b253a,mov,"eax, DWORD PTR [edi+0x34]",DWORD PTR [edi+0x34],read,object
+0x000b24f0,FUN_000b24f0,0x000b2545,mov,"eax, DWORD PTR [ebp+0x10]",DWORD PTR [ebp+0x10],read,stack
+0x000b24f0,FUN_000b24f0,0x000b2548,fld,QWORD PTR [ebp+0x8],QWORD PTR [ebp+0x8],read,stack
+0x000b24f0,FUN_000b24f0,0x000b254b,mov,"ecx, DWORD PTR [eax]",DWORD PTR [eax],read,object
+0x000b24f0,FUN_000b24f0,0x000b2551,mov,"ecx, DWORD PTR [edi+0x30]",DWORD PTR [edi+0x30],read,object
+0x000b24f0,FUN_000b24f0,0x000b2559,fstp,QWORD PTR [esp],QWORD PTR [esp],write,stack
+0x000b24f0,FUN_000b24f0,0x000b255c,mov,"DWORD PTR [esp+0x18], edx",DWORD PTR [esp+0x18],write,stack
+0x000b24f0,FUN_000b24f0,0x000b2565,mov,"eax, DWORD PTR [esp+0x10]",DWORD PTR [esp+0x10],read,stack
+0x000b24f0,FUN_000b24f0,0x000b2569,fstp,QWORD PTR [eax],QWORD PTR [eax],write,object
+0x000b24f0,FUN_000b24f0,0x000b256b,mov,"eax, DWORD PTR [edi+0x34]",DWORD PTR [edi+0x34],read,object
+0x000b24f0,FUN_000b24f0,0x000b2576,mov,"ecx, DWORD PTR [esp+0x14]",DWORD PTR [esp+0x14],read,stack
+0x000b24f0,FUN_000b24f0,0x000b259c,add,"DWORD PTR [eax+edx*4], ecx",DWORD PTR [eax+edx*4],read-write,object
+0x000b24f0,FUN_000b24f0,0x000b25aa,fld,QWORD PTR [ebp+0x8],QWORD PTR [ebp+0x8],read,stack
+0x000b24f0,FUN_000b24f0,0x000b25b6,fstp,QWORD PTR [esp],QWORD PTR [esp],write,stack

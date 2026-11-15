@@ -433,6 +433,16 @@ the sampler's snap at `2^-51` is one candidate producer of the wider half and is
 same artifact's `channels` column also retires the 19/7 split's best explanation -- the four files with a
 **21**-channel table split at 19 too, so 19 is the schema's weight count and not the corpus's channel count.
 
+**Measured 2026-11-15, the runtime can be ruled out as the writer of the wider half.** `tools/lipsinc-sampler-ops.py`
+classifies every instruction that names memory in the two sampler bodies, bounded by their symbol sizes:
+`0x000b2230` (the curve evaluator) names memory 36 times, all 29 reads of a key pair plus 7 spills to its own frame --
+it never stores into a key -- and `0x000b24f0` (`ValuesAtTime`, named by its own literal, `m_nValues` at `+0x34`) has
+exactly one object store of an `f64`: `fstp QWORD PTR [eax]` at `0x000b2569`, filling a caller-owned array at an
+8-byte stride (`*(double *)(*param_3 + 8 + i * 8)`), beside one `rdtsc` counter. So a key's `f64` was written by the
+pack's producer, not by the game; the runtime is `double` end to end, which is why the interpolator can return a value
+only a `double` holds (x87 `float10` computed, `(double)` stored). What is still open is only *which* tool made the
+packs.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side
