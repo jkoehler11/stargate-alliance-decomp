@@ -174,7 +174,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_island.csv` | 1590 | 15 | `make ci` |
 | `inventory/native_island_gaps.csv` | 99 | 26 | `make ci` |
 | `inventory/native_names.csv` | 273 | 4 | `make gnatives-mission` |
-| `inventory/native_opcodes.csv` | 205 | 14 | `make help` |
+| `inventory/native_opcodes.csv` | 205 | 17 | `make help` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |
 | `inventory/native_reconcile.csv` | 96 | 13 | `make native-reconcile` |
 | `inventory/native_record_check.csv` | 797 | 10 | `make native-channels` |

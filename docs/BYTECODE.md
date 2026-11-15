@@ -694,7 +694,7 @@ the token *is* the native's index -- the number `GNatives` is indexed by, with n
 
 over the same 11,687 scripts that walk clean writes `inventory/native_opcodes.csv` (205 rows:
 `opcode,operand,index,sites,resolved,off_chain,param_fit,body_name,body_match,native,declared_in,declared_by,
-declared_params,args`), where
+declared_params,args,off_chain_receiver,off_chain_resolved,off_chain_untyped`), where
 the index is the opcode itself below `0x100` and two bytes at or above it (`0x60 + (n >> 8)`, then the low byte), and
 `body_name` is what the image's own `GNatives` record spells for the slot's body. `resolved` counts the sites whose
 index a declaration on **the owning class's** super chain carries and `off_chain` the rest, while `declared_by` lists
@@ -733,6 +733,24 @@ caller inherits it.
   the index still names the native and `declared_by` names that class; the caller's chain was missing the declaring
   class, not the corpus the declaration. The earlier reading of that 6,406 as "extended calls into engine classes the
   script half never declares" was the lookup's own blind spot.
+* **The 890 are typed by their receiver, and 855 of them land (2026-11-15).** `Canvas.DrawText` inside
+  `Actor.DisplayDebug` is not a call into a class nobody declares: the receiver is a *parameter*, and the parameter's
+  declaration states the class. The emitter evaluates the object before the call token, so the expression in front of
+  the token is the receiver -- `receiver_type()` reads it through a `Context`/`ClassContext`, an array element or a
+  cast, types a variable from its declaration (a local or parameter from the class's own `ScriptText`, a property from
+  `inventory/class_properties.csv`) and asks **that** class's chain for the index. Measured over the same 11,687
+  scripts: **855 of the 890 sites (96.1%) place, across 40 of the 42 indices** -- 465 `Canvas.DrawText` **370 of 370**,
+  464 `Canvas.StrLen` **123 of 123**, `PlayInfo.AddSetting` 704 30 of 30, `Actor.AllActors` 304 42 of 51,
+  `Actor.DynamicActors` 313 41 of 45, `Actor.Spawn` 278 49 of 54. **The case fold is part of the rule**: 117 of those
+  placements are typed from a declaration the source spells `canvas`, and a chain walk that keeps the source's
+  spelling answers nothing for them (the same defect `--calls` fixed for by-name sites).
+* **The residue is named, and it is small.** 16 further sites have a receiver typed to a class whose own chain does not
+  declare the index -- fifteen of them typed `Object`, a base *above* the declaring class -- and **19 name no class at
+  all**: a call-result receiver (`VirtualFunction` 5, `FinalFunction` 5), a `StructMember` 5, and two variables whose
+  declarations (`Game`, `Level`) are neither a local nor a property record. One index, 539, is called with nothing in
+  front of it at all (2 sites). So the off-chain column's 890 is 855 calls whose receiver type declares the native,
+  16 whose receiver type does not, and 19 the expression in front cannot type -- the third group is what the call
+  census's own call-result and struct-member reads would cover next, not a gap in the corpus.
 
 **What it rules out.** Both readings this page carried -- an operator token whose operand stream is not a parameter
 list, and two numbering schemes meeting at 96 -- are wrong. The stream is a parameter list, and the build has one
