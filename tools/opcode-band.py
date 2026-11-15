@@ -88,12 +88,13 @@ BANDS_END = "<!-- /generated:opcode-band-bands -->"
 NATIVE_OPCODES = os.path.join("inventory", "native_opcodes.csv")
 SYMBOLS = os.path.join("symbols", "xbox_functions.csv")
 HIGH_ROW = ["index", "token", "opcode", "operand", "pattern", "slot_name", "body", "symbol",
-            "symbol_size", "record_name", "declared", "declarers", "sites", "resolved", "callee",
+            "symbol_size", "record_name", "declared", "declarers", "sites", "resolved", "off_chain", "callee",
             "callee_match", "name_match", "verdict"]
 HIGH_CENSUS = ["both", "both_named", "registered_only", "declared_only", "neither", "used",
                "opcodes_used", "unused", "unused_declared", "populated", "declared_total",
                "unnamed", "name_exact", "name_spelling", "name_differ", "callee_exact",
-               "callee_spelling", "callee_differ", "sites_total", "resolved_total",
+               "callee_spelling", "callee_differ", "sites_total", "resolved_total", "off_chain_total",
+               "off_chain_single",
                "symbols_mapped", "symbols_missing", "symbol_bytes", "symbol_min", "symbol_max",
                "unnamed_symbols", "runs"]
 HIGH_COLUMNS = HIGH_ROW + HIGH_CENSUS
@@ -402,7 +403,7 @@ def load_high_inputs(base):
             symbols[r["address"].strip().lower()] = r
     tokens = {}
     for r in read(os.path.join(base, NATIVE_OPCODES),
-                  ["opcode", "operand", "index", "sites", "resolved", "body_name"]):
+                  ["opcode", "operand", "index", "sites", "resolved", "off_chain", "body_name"]):
         if not r["opcode"].strip().startswith("0x"):
             continue
         idx = int(r["index"])
@@ -454,6 +455,7 @@ def census_high(table, slots, records, natives, slot_names, bodies, tokens, symb
             "declarers": ";".join(sorted({"%s.%s.%s" % (r["package"], r["class"], r["function"]) for r in decl})),
             "sites": t.get("sites", "0") or "0",
             "resolved": t.get("resolved", "0") or "0",
+            "off_chain": t.get("off_chain", "0") or "0",
             "callee": t.get("body_name", ""),
             "callee_match": callee_match(rec, t.get("body_name", "")),
             "name_match": match(rec, names),
@@ -484,6 +486,9 @@ def census_high(table, slots, records, natives, slot_names, bodies, tokens, symb
         "callee_differ": sum(1 for r in rows if r["callee_match"] == "differ"),
         "sites_total": sum(int(r["sites"]) for r in rows),
         "resolved_total": sum(int(r["resolved"]) for r in rows),
+        "off_chain_total": sum(int(r["off_chain"]) for r in rows),
+        "off_chain_single": sum(int(r["off_chain"]) for r in rows
+                                 if len(natives.get(r["index"], [])) == 1),
         "symbols_mapped": sum(1 for r in rows if r["symbol"]),
         "symbols_missing": sum(1 for r in rows if not r["symbol"]),
         "symbol_bytes": sum(int(r["symbol_size"]) for r in rows if r["symbol_size"]),
@@ -619,11 +624,15 @@ def render_bands(rows, census, hrows, hcensus):
     ]
     out += [
         "",
-        ("%s of the %s high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` "
-         "column, which answers a different question from `body_name`: a call site names the body it dispatches on "
-         "whether or not the receiver's class declares that native, and reading the two columns as one would turn a "
-         "narrower lookup into a disagreement."
-         % ("{:,}".format(int(hcensus["resolved_total"])), "{:,}".format(int(hcensus["sites_total"])))),
+        ("%s of the %s high-band sites name a declaration on **their own class's chain** -- the artifact's `resolved` "
+         "column -- and the other %s write an index whose declaration sits in a class the caller does not inherit: %s "
+         "of those sites write an index only one class declares, so the index still names the native even where the "
+         "receiver's class is not the caller's. The column answers a different question from `body_name`: a call site "
+         "names the body it "
+         "dispatches on whether or not the caller's class declares that native, and reading the two columns as one "
+         "would turn a narrower lookup into a disagreement."
+         % ("{:,}".format(int(hcensus["resolved_total"])), "{:,}".format(int(hcensus["sites_total"])),
+            "{:,}".format(int(hcensus["off_chain_total"])), "{:,}".format(int(hcensus["off_chain_single"])))),
     ]
     return "\n".join(out)
 
@@ -680,11 +689,11 @@ def check():
             w.writerow(["0x0020cd00", "Native_302", 1778, ""])
         with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "body_name", "body_match",
-                        "native", "declared_in", "declared_params", "args"])
-            w.writerow(["0x61", "0x00", 256, 3, 2, 1, "intUObjectexecFoo", 1, "Foo", "Actor", "1", "1:3/3"])
-            w.writerow(["0x61", "0x01", 257, 5, 4, 1, "intUObjectexecBar_StringString", 1, "Bar_StrStr", "Object",
-                        "2", "2:5/5"])
+            w.writerow(["opcode", "operand", "index", "sites", "resolved", "off_chain", "param_fit", "body_name",
+                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args"])
+            w.writerow(["0x61", "0x00", 256, 3, 2, 1, 1, "intUObjectexecFoo", 1, "Foo", "Actor", "Actor", "1", "1:3/3"])
+            w.writerow(["0x61", "0x01", 257, 5, 4, 1, 1, "intUObjectexecBar_StringString", 1, "Bar_StrStr", "Object",
+                        "Object", "2", "2:5/5"])
         with open(os.path.join(inv, "opcode_usage.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "name", "tokens", "payloads", "scripts_walked", "scripts_with_epilogue"])
@@ -723,6 +732,9 @@ def check():
                                                                       "declared_total")})
         if hcensus["unused_declared"] != 1:
             bad.append("extended unused_declared %r" % hcensus["unused_declared"])
+        if (hcensus["off_chain_total"], hcensus["off_chain_single"], hcensus["sites_total"] - hcensus["resolved_total"]) \
+                != (2, 2, 2):
+            bad.append("extended off-chain %r" % {k: hcensus[k] for k in ("off_chain_total", "off_chain_single")})
         if (hcensus["callee_exact"], hcensus["callee_spelling"], hcensus["callee_differ"],
                 hcensus["sites_total"], hcensus["resolved_total"]) != (2, 0, 0, 8, 6):
             bad.append("extended callee %r" % {k: hcensus[k] for k in ("callee_exact", "callee_spelling",

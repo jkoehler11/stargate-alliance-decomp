@@ -174,7 +174,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_island.csv` | 1590 | 15 | `make ci` |
 | `inventory/native_island_gaps.csv` | 99 | 26 | `make ci` |
 | `inventory/native_names.csv` | 273 | 4 | `make gnatives-mission` |
-| `inventory/native_opcodes.csv` | 205 | 12 | `make help` |
+| `inventory/native_opcodes.csv` | 205 | 14 | `make help` |
 | `inventory/native_operators.csv` | 97 | 10 | `make native-operators` |
 | `inventory/native_reconcile.csv` | 96 | 13 | `make native-reconcile` |
 | `inventory/native_record_check.csv` | 797 | 10 | `make native-channels` |
@@ -188,7 +188,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_vtable_shared.csv` | 232 | 8 | `make native-vtable` |
 | `inventory/natives.csv` | 797 | 6 | `make help` |
 | `inventory/opcode_band.csv` | 145 | 22 | `make opcode-band` |
-| `inventory/opcode_band_high.csv` | 150 | 45 | `make opcode-band` |
+| `inventory/opcode_band_high.csv` | 150 | 48 | `make opcode-band` |
 | `inventory/opcode_compare.csv` | 17 | 11 | `make script-calls` |
 | `inventory/opcode_pairs.csv` | 222 | 14 | `make opcode-pairs` |
 | `inventory/opcode_refusals.csv` | 0 | 11 | `make opcode-refusals` |

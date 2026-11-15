@@ -372,6 +372,19 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `Native_<n>` label is `tools/native-names.py`'s fallback for a slot with no record name (11 rows carry it), so
       it is not evidence of identity; the byte count is, and it is the one column in the census that does not come
       out of the `GNatives` join -- which is why `census_high()` reads the map.
+      **And the `resolved` column's 1,503 misses were the lookup, not the corpus (2026-11-15)**: the column read the
+      caller's class from a `Function`'s immediate `Outer`, which is a `State` on **2,137 of the corpus's 12,472
+      `Function` exports**, and a state's name is not in the super map -- so a chain walked from it is the state's own
+      name and resolves nothing. Reading the nearest enclosing export whose own class is `Class` instead resolves
+      **48,210 of the 49,100 sites** (44,811 of 44,811 direct, 3,399 of 4,289 high; the immediate-Outer rule answered
+      42,694 / 39,908 / 2,786) and the direct band's 4,903 misses were **all** state-owned. The 890 that remain are
+      real calls into a class the caller does not inherit -- 42 indices, every one declared by exactly one class
+      image-wide (`Canvas.DrawText` 465 = 370 sites, `Canvas.StrLen` 464 = 123, `Actor.Spawn` 278 = 54) -- so the
+      index still names the native and the artifact gains `declared_by` for it. The same defect was already fixed for
+      by-name calls, which moved 869 sites onto the state's owner; this is the native-call census catching up.
+      `--check` drives the owner walk on a synthetic export list two states deep (and on one with no enclosing class),
+      and `native_opcodes.csv`'s `off_chain` column plus the band census's `off_chain_total`/`off_chain_single` are
+      what the page quotes.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

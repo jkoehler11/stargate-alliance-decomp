@@ -693,9 +693,13 @@ the token *is* the native's index -- the number `GNatives` is indexed by, with n
     python3 tools/uscript-dis.py --native-calls DUMP/System -o inventory
 
 over the same 11,687 scripts that walk clean writes `inventory/native_opcodes.csv` (205 rows:
-`opcode,operand,index,sites,resolved,param_fit,body_name,body_match,native,declared_in,declared_params,args`), where
+`opcode,operand,index,sites,resolved,off_chain,param_fit,body_name,body_match,native,declared_in,declared_by,
+declared_params,args`), where
 the index is the opcode itself below `0x100` and two bytes at or above it (`0x60 + (n >> 8)`, then the low byte), and
-`body_name` is what the image's own `GNatives` record spells for the slot's body.
+`body_name` is what the image's own `GNatives` record spells for the slot's body. `resolved` counts the sites whose
+index a declaration on **the owning class's** super chain carries and `off_chain` the rest, while `declared_by` lists
+every class whose text declares the index at all -- the column that answers "who declares this" whether or not the
+caller inherits it.
 
 * **49,100 native-call tokens**: 44,811 in the direct form over **121 opcodes**, and **4,289 in the extended form**,
   every extended site naming an index of 256 or more -- exactly where the one-byte form cannot reach (it spans
@@ -703,9 +707,9 @@ the index is the opcode itself below `0x100` and two bytes at or above it (`0x60
 * **The token is the index, and the image says so twice.** For the body at the token's own `GNatives` slot, the
   image's `.data` record (`{slot, intUObjectexec<Function>}`) already carries the name: **112 of the 121 direct opcodes
   spell `exec<Function>` for the declaration at that exact index, 39,388 sites**, and the other nine differ only in
-  spelling (`execConcat_StringString` where the script declares `Concat_StrStr`). Under this rule **42,694 of the
-  49,100 sites name a `native()` declaration on the caller's own super chain**, against **5,928** under the
-  `op - 0x70` reading this tool shipped with first.
+  spelling (`execConcat_StringString` where the script declares `Concat_StrStr`). Under this rule **48,210 of the
+  49,100 sites name a `native()` declaration on the owning class's super chain**, against **6,953** under the
+  `op - 0x70` reading this tool shipped with first and **6,351** under `op - 0x60`.
 * **Arity agrees once the index is the token.** `0xe7` is slot 231 = `Object.Log` and 1,087 of its 1,207 sites pass
   **one** argument; `0x77` is slot 119 = `Object.NotEqual_ObjectObject`, 5,406 sites, every one with two; `0xe1` slot
   225 `Object.VSize` 373/373 with one; `0xc3` slot 195 `Object.FRand` 324/324 with none. The earlier reading had the
@@ -716,11 +720,19 @@ the index is the opcode itself below `0x100` and two bytes at or above it (`0x60
 * **`0xfe` is `Name` equality, not rotator.** Slot 254 = `Object.EqualEqual_NameName`, 414/414 with two arguments --
   the construct is `Tag == 'Foo'`, which is why it outnumbers every other comparison in the shipped script (the
   earlier reading called it `EqualEqual_RotatorRotator`, slot 142, by the same offset).
-* **What does not resolve is the classes, not the numbering.** 6,406 sites (13.05%) name no declaration on the
-  caller's chain: 1,503 are extended calls into engine classes the script half never declares
-  (`intUCanvasexecDrawText` 370, `intUCanvasexecStrLen` 123, `intUCanvasexecDrawActor` 8 -- Canvas draws through its
-  own natives), and the rest are callers whose class the super map does not carry. The body is still named by the image's record, so the index holds; the declaration is
-  what is missing.
+* **What does not resolve is 890 sites, and every one is a call into another class's natives.** **48,210 of the
+  49,100 sites (98.2%) name a `native()` declaration on the super chain of the class that owns the caller** -- and
+  "owns" is the correction. A `Function`'s Outer is a `State` on **2,137 of this corpus's 12,472 `Function` exports**,
+  a state's name is not in the super map, and a chain walked from it is the state's own name: reading the immediate
+  Outer as the caller's class answered nothing for **5,516 sites** (all **4,903** direct-band misses and 613
+  high-band ones). Reading the nearest enclosing export whose own class is `Class` instead resolves 48,210 and leaves
+  the direct band at **44,811 of 44,811**. The 890 that remain are real calls into a class the caller does not
+  inherit: `intUCanvasexecDrawText` at index 465 (**370 sites**, called from `Actor.DisplayDebug` and the classes that
+  override it), `intUCanvasexecStrLen` 464 (123), `intAActorexecSpawn` 278 (54 of its 465),
+  `intUPlayInfoexecAddSetting` 704 (30). All **42** of their indices are declared by exactly one class image-wide, so
+  the index still names the native and `declared_by` names that class; the caller's chain was missing the declaring
+  class, not the corpus the declaration. The earlier reading of that 6,406 as "extended calls into engine classes the
+  script half never declares" was the lookup's own blind spot.
 
 **What it rules out.** Both readings this page carried -- an operator token whose operand stream is not a parameter
 list, and two numbering schemes meeting at 96 -- are wrong. The stream is a parameter list, and the build has one
@@ -836,7 +848,7 @@ Two checks say the join is the naming rather than a plausible one, and both are 
 
 **None of the 11 is a hole in the image.** Every slot's body is a decoded function in `symbols/xbox_functions.csv` -- 149 of 149 mapped, 25 to 4,728 bytes, 59,995 in total -- so they are implemented and only the shipped text lacks them (the largest is 1,778 bytes). The map's `Native_<n>` label is `tools/native-names.py`'s fallback for a slot with no record name and 11 rows carry it, so it is not evidence of identity; the byte count is, and it is the one column here that does not come from the `GNatives` join.
 
-2,786 of the 4,289 high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` column, which answers a different question from `body_name`: a call site names the body it dispatches on whether or not the receiver's class declares that native, and reading the two columns as one would turn a narrower lookup into a disagreement.
+3,399 of the 4,289 high-band sites name a declaration on **their own class's chain** -- the artifact's `resolved` column -- and the other 890 write an index whose declaration sits in a class the caller does not inherit: 890 of those sites write an index only one class declares, so the index still names the native even where the receiver's class is not the caller's. The column answers a different question from `body_name`: a call site names the body it dispatches on whether or not the caller's class declares that native, and reading the two columns as one would turn a narrower lookup into a disagreement.
 <!-- /generated:opcode-band-bands -->
 
 What the disassembler therefore prints is the operator's own name -- `AndAnd_BoolBool`, `Multiply_FloatFloat` -- and
