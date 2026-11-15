@@ -1106,6 +1106,23 @@ installs (the unnamed `0x4cfe68`), `0x0014e0e0`'s is its property set, and `0x00
 constructor it is, which its own store names. `inventory/class_ctor_receivers.csv` is that table, and it
 leaves a blank instead of copying a guess into a column a later join would trust.
 
+**Neither factory has a registration in its caller chain, and that is measured, not assumed (2026-11-15).**
+Every caller's own symbol span is searched for a registration site (`site_va` in
+`inventory/class_registrations.csv`), and the search is **negative for both bodies**: `0x0014e0e0`'s single
+caller `UEngine::Init`, and `0x00110120`'s three callers `FUN_0011d460` (66 bytes), `FUN_002d2890` (407) and
+`FUN_002d55f0` (434) -- and negative one hop further up as well, at `Engine_UnDemoRec`, `FUN_002d2bb0`,
+`FUN_002d2cd0` and `FUN_002d5c70`. So no caller slot holds a class for either body: the blank `receiver`
+column is an answer rather than an unread cell, and `inventory/class_ctor_receivers.csv`'s census carries the
+count (`caller-regs=0`) so the negative is in the artifact and not only in this sentence.
+
+**The first version of that join found eight registrations and every one of them was the units.** It read
+`symbols/xbox_functions.csv`'s `size` column as hex, which turns a 66-byte wrapper into a 0x66 = 102-byte one
+and a 407-byte body into 0x407 = 1031, so three small wrappers' spans overlapped the registration bodies that
+*neighbour* them: `TcpipConnection`/`TcpNetDriver`, `TcpipConnectionXbox`/`TcpNetDriverXbox`, `DemoRecDriver`,
+`Download`, `ChannelDownload`, `RenderDevice` -- "eight registrations in three modules behind a 66-byte
+wrapper", which reads like a finding and is an arithmetic error. The column is decimal; the join now answers
+none, and `--check` pins the other half of the rule (a site outside the caller's span is not counted).
+
 Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and factory lines, and
 `--receivers`; `tools/ghidra/ghidra_scripts/DumpBody.java`) + `inventory/class_ctor_receivers.csv` (6
 bodies + census) + this page + `docs/UNKNOWNS.md` U8 + the PLAN note. No boot: the image, the symbol map

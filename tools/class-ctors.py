@@ -500,6 +500,13 @@ ROUTES = {
 }
 
 
+def classes_in(fn, regs):
+    """The class literals whose registration site sits inside the function span `fn`."""
+    if not fn:
+        return set()
+    return {cls for sva, cls in regs if cls and fn[0] <= sva < fn[0] + fn[1]}
+
+
 def receiver_report(root, image_path):
     """Which class each multi-store body belongs to, by the route that reaches it.
 
@@ -555,12 +562,21 @@ def receiver_report(root, image_path):
                 continue
 
     pushes = push_immediates(text, sec.va)
+    regs = []
+    with open(os.path.join(root, "inventory/class_registrations.csv"), newline="",
+              encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                regs.append((int(r["site_va"], 16), (r.get("class_literal") or "").strip()))
+            except ValueError:
+                continue
     rows = []
     for row in multi_store_report(root):
         va = row["function_va"]
         calls = rel_call_sites(text, sec.va, va)
         pushed = [site for site, imm in pushes if imm == va]
         route, site, receiver, table_va, size, callers = "", "", "", "", "", ""
+        caller_regs = ""
         evidence = ""
         if pushed:
             at = pushed[0]
@@ -598,6 +614,13 @@ def receiver_report(root, image_path):
             callers = ", ".join(sorted({f[2] if f else "0x%08x" % c
                                         for f, c in zip(fn, calls)}))
             named = {f[2] if f else "" for f in fn}
+            # A direct caller can itself be a registration body, and then the classes it registers
+            # are the ones this body is shared between -- not the one it belongs to. Measured on
+            # 0x00110120, whose three callers carry eight registrations in three modules.
+            classes = set()
+            for f in fn:
+                classes.update(classes_in(f, regs))
+            caller_regs = ", ".join(sorted(classes))
             if len(calls) >= 2 and all(n.startswith("ctor_") for n in named):
                 route = "base-call"
             else:
@@ -611,12 +634,12 @@ def receiver_report(root, image_path):
         rows.append({"function_va": "0x%08x" % va, "function_name": row["name"],
                      "stores": row["stores"], "route": route, "site_va": site,
                      "receiver": receiver, "table_va": table_va, "pushed_size": size,
-                     "callers": callers, "evidence": evidence,
-                     "verdict": row["verdict"]})
+                     "callers": callers, "caller_registrations": caller_regs,
+                     "evidence": evidence, "verdict": row["verdict"]})
     named = sum(1 for r in rows if r["receiver"])
     census = {"function_va": "census", "function_name": "", "stores": len(rows),
-              "route": "bodies=%d named=%d %s" % (
-                  len(rows), named,
+              "route": "bodies=%d named=%d caller-regs=%d %s" % (
+                  len(rows), named, sum(1 for r in rows if r["caller_registrations"]),
                   " ".join("%s:%d" % (k, sum(1 for r in rows if r["route"] == k))
                            for k in ROUTES if any(r["route"] == k for r in rows))),
               "site_va": "", "receiver": "", "table_va": "", "pushed_size": "",
@@ -629,7 +652,7 @@ def receiver_report(root, image_path):
 def write_receivers(rows, outdir):
     path = os.path.join(outdir, "class_ctor_receivers.csv")
     cols = ("function_va", "function_name", "stores", "verdict", "route", "site_va", "receiver",
-            "table_va", "pushed_size", "callers", "evidence")
+            "table_va", "pushed_size", "callers", "caller_registrations", "evidence")
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, lineterminator="\n")
@@ -767,6 +790,13 @@ def self_check():
     if class_literal([(0x4FF1, 0x4C7008), (0x5015, 0x51DDCA)], 0x5000, -0x100, 0x100,
                      synth.get, {"new"}) != (0x4FF1, "new"):
         bad.append("class literal: a name the map does not carry counts")
+    # a caller that is itself a registration body names the classes it *registers*, not the one the
+    # body belongs to: a site outside the span must not be counted.
+    regs = [(0x6004, "TcpNetDriver"), (0x6008, "TcpipConnection"), (0x7000, "Download")]
+    if classes_in((0x6000, 0x20, "FUN_006000"), regs) != {"TcpNetDriver", "TcpipConnection"}:
+        bad.append("caller registrations: %r" % (classes_in((0x6000, 0x20, "x"), regs),))
+    if classes_in(None, regs) != set():
+        bad.append("caller registrations: no function must answer no classes")
     if bad:
         print("FAIL class-ctors: " + "; ".join(bad))
         return 1
