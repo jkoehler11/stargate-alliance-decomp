@@ -584,3 +584,38 @@ covering its own domain, 0 adjacent key pairs decrease and 2 share a tick (slot 
 what the per-curve extents above mean in practice -- each curve stops where its keys stop and the runtime repeats
 its last value for the rest of the clip.
 
+## The sampler writes one `f64` per channel and never a key (measured 2026-11-15)
+
+U4's last open question was who wrote the wider half of the values: 48.5% of the keys survive an `f32`
+round trip and the rest carry digits only a `double` holds, so the runtime and the pack's producer are
+the two candidates. The runtime side is two bodies. `0x000b2230` is the curve evaluator: it takes a time
+in `ST0`, reads the key pair it brackets (times at `+4` and `+0x14` of a 16-byte record, the value at
+`+8`, tangents at `+0x18`), and returns the interpolated value, with the studio's own assert
+(`time == (DOUBLE)(m_akKeys(( m_akKeys.Num() - 1 )).Time())`, `LIPSincSupport.cpp:0x161`) naming the array
+it reads. One of its two callers is `0x000b24f0` (the other is `0x000b4710`), and its own literal names it:
+`"[LIPSinc]: ValuesAtTime, m_nEndTime = %i, time = %f"`. It evaluates once per channel into a
+caller-owned array -- `*(double *)(*param_3 + 8 + i * 8)` for `i < m_nValues` (`+0x34`) -- so the pose the
+runtime holds is one `double` per channel.
+
+`tools/lipsinc-sampler-ops.py` (`make lipsinc-sampler-ops`) disassembles both spans, bounded by the size
+`symbols/xbox_functions.csv` gives each body, and classifies every instruction that names memory:
+
+<!-- generated:lipsinc-sampler-ops -->
+| body | insns naming memory | reads | writes | read-writes |
+|---|---|---|---|---|
+| `0x000b2230` Engine_LIPSincSupport | 36 | 29 | 7 | 0 |
+| `0x000b24f0` FUN_000b24f0 | 20 | 13 | 6 | 1 |
+
+**Of the 14 store(s) in the pair, 2 write into an object and 12 only into the body's own frame.** The object stores are:
+
+| body | insn | instruction | operand written |
+|---|---|---|---|
+| `0x000b24f0` | `0x000b2569` | `fstp QWORD PTR [eax]` | `QWORD PTR [eax]` |
+| `0x000b24f0` | `0x000b259c` | `add DWORD PTR [eax+edx*4], ecx` | `DWORD PTR [eax+edx*4]` |
+<!-- /generated:lipsinc-sampler-ops -->
+
+**No runtime path in the pair stores a value back into a key.** The evaluator's stores are all spills to
+its own frame, and the sampler's two object stores are the pose array and the `rdtsc` profiler counter
+(`DAT_007b5dfc`). So a key's `f64` was written only by whatever produced the `.lad`, and the runtime is
+`double` end to end -- which is why the interpolator's result can hold digits a single-precision store
+cannot: it computes in x87 `float10` and the caller stores `(double)`.

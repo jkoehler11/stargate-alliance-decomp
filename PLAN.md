@@ -1658,6 +1658,26 @@ are limited to expected fields (checksum/timestamp) and documented.
   `tools/xemu/class-tables-live.py` on a level with the renderer and net-driver packages loaded (U8's
   runtime route), or an engine-side class list.
 
+### Execution notes (2026-11-15, the sampler writes one f64 per channel and never a key)
+
+- **The runtime is ruled out as the writer of the keys' wider half.** `tools/lipsinc-sampler-ops.py` disassembles the
+  two bodies that evaluate a curve -- bounded by the sizes `symbols/xbox_functions.csv` gives them, because a flat
+  window walks into the neighbour -- and classifies every instruction that names memory. `0x000b2230` names memory 36
+  times: 29 reads of a key pair and 7 spills to its own frame, no store into a key. `0x000b24f0` is `ValuesAtTime`
+  (its own literal: `"[LIPSinc]: ValuesAtTime, m_nEndTime = %i, time = %f"`) and has exactly one object store of an
+  `f64`, `fstp QWORD PTR [eax]` at `0x000b2569`, filling a caller-owned array at an 8-byte stride for `m_nValues`
+  (`+0x34`) channels, plus the `rdtsc` profiler counter. So a key's `f64` came from the pack's producer, and the
+  runtime is `double` end to end -- which is why the interpolator's result can hold digits a single-precision store
+  cannot (x87 `float10` computed, `(double)` stored).
+- Tool (`tools/lipsinc-sampler-ops.py`: the operand split, the read/write/read-write classification with the
+  `lock`/`rep` prefixes, the stack-vs-object split for a store, and a 7-assertion `--check` over a synthetic listing)
+  + `inventory/lipsinc_sampler_ops.csv` (56 rows, two bodies) + the generated block and the section on
+  `docs/formats/lipsinc-lad.md` + the `lipsinc-sampler-ops` target and its `ci` gate + `docs/UNKNOWNS.md` U4 + this
+  note. No boot: the image and the committed symbol map.
+- **Next measurement:** the remaining question is which tool built the packs -- the `.lad` writer is `0x000b55f0` for
+  the `.map` side, so the read is whether the same file layout is reproducible by the studio's own exporter, or
+  whether any shipped artifact (a `.lad` with a build stamp, a `.map` header) names the tool that wrote them.
+
 ### Execution notes (2026-11-15, half a track's values are the pose block's width, and the 19/7 split is not the channel table)
 
 - **The value's width is measured, and it is the first property of a value that is not a range.** `tools/lad-groups.py`
