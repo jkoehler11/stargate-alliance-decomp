@@ -279,6 +279,18 @@ def check_map_script_doc():
         ok(name, out[-1].replace("ok   map-script: ", "") if out else "")
 
 
+def check_action_wiring_doc():
+    """docs/MAP_ACTION_WIRING.md's block must match the committed artifact."""
+    name = "action-wiring-doc"
+    r = subprocess.run([sys.executable, repo("tools", "action-wiring.py"), "--check-doc",
+                        "docs/MAP_ACTION_WIRING.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   action-wiring: ", "") if out else "")
+
+
 def check_lipsinc_index():
     """The committed LIPSinc index must be consistent with itself (target indices, record size, trailer names)."""
     name = "lipsinc-index"
@@ -536,6 +548,7 @@ def main():
     check_function_flags()
     check_function_no_script_doc()
     check_map_script_doc()
+    check_action_wiring_doc()
     check_lipsinc_index()
     check_addresses_in_image()
     print()
