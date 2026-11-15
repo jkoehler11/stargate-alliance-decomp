@@ -1,0 +1,6 @@
+address,size,name,evidence,reach,calls,jumps,refs,sites
+0x000b55f0,1482,FUN_000b55f0,[PhonemeToSpeechTargetMapping]  NumSpeechTargets=%d  ,none,0,0,0,
+0x000b7260,4290,LIPSincReadControllerFile,[LIPSinc]: Attempt to import an obsolete .LBP file!,none,0,0,0,
+0x000b8340,4977,LIPSincReadAnimFile,[LIPSinc]: ERROR: %s is a more recent LTF format.  This version can only read version %f and lower LTF files.,none,0,0,0,
+0x000ba290,563,LIPSincInitGame,..\System\LIPSincData\Controllers\*.lad,call,1,1,0,0x0013917c@0x00139030
+0x000ba750,1860,LIPSincInitLevel,*.lad | [LIPSinc]: Prefix: %s,call,1,0,0,0x0015e237@?

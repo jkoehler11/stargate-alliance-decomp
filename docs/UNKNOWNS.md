@@ -456,9 +456,17 @@ verbatim in a shipped package -- Carter's pack has 406 keys that are objects of 
 was written over the shipped voice content by an offline exporter, and its fingerprint is a shape, not a stamp: the
 `dword 2` + double length-prefixed name record, the constant group prefix (all 2,231 long names are `AlkeshBomber.*`,
 and `Sounds/AlkeshBomber.uax` holds 11 names none of which is a cue, so the prefix resolves to no package), and the
-shared trailer. What is still open is whether the runtime walks it: `LIPSincReadControllerFile` (`0x000b7260`) indexes
-poses and the sampler reads keys by time, so a name lookup would live in the `.lad` reader above that body -- one
-disassembly away, with no external data needed.
+shared trailer. **Answered 2026-11-15: the runtime does not walk it, and the body the question pointed at is not a
+`.lad` reader.** `LIPSincReadControllerFile` (`0x000b7260`) is the obsolete text `.LBP` importer (its strings are
+`Attempt to import an obsolete .LBP file!` and `Parsed %s`; its body tokenises with `Core_UnTemplate(..., L" ")` and
+converts with `__wtol`/`__wtof`), `LIPSincReadAnimFile` (`0x000b8340`) its `.LTF` twin, and neither has a single
+`E8` site, `E9` tail call or dword reference in the image -- the `.map` writer `0x000b55f0` likewise
+(`inventory/lipsinc_formats.csv`). What is reached is a glob: `LIPSincInitGame` (`0x000ba290`) pushes the literal
+`..\System\LIPSincData\Controllers\*.lad` and `LIPSincInitLevel` (`0x000ba750`) a bare `*.lad`, each expanded
+through `FUN_000192a0` and handed to `LIPSincLoadDBFromDisk`. The five `Controllers/` packs are therefore the loaded
+set (2,226 of the 2,231 keys) and the three root packs (5 keys) are reachable only through the second glob. What
+remains is not the lookup but the export side: nothing in the image writes a pack, so the cue names are read as data
+and their producer is still outside the binary.
 
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 

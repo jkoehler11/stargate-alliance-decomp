@@ -674,6 +674,23 @@ header names the mapping file itself. The exporter is therefore identified by it
 a stamp inside its files -- which is the honest answer to "which tool built the packs" until something
 outside the packs names it.
 
-**Still open:** whether the runtime walks this directory. `LIPSincReadControllerFile` (`0x000b7260`)
-indexes a pose array at a 32-byte stride and the sampler reads keys by time (`docs/formats/lipsinc-runtime.md`),
-so a name lookup would live in the `.lad` reader above it -- a body this page has not disassembled.
+**Measured 2026-11-15: the runtime does not walk this directory, and the body it was pointing at cannot be
+entered.** `LIPSincReadControllerFile` (`0x000b7260`) is not a `.lad` reader -- its own strings are
+`[LIPSinc]: Attempt to import an obsolete .LBP file!` and `Parsed %s`, and its body splits lines with
+`Core_UnTemplate(..., L" ")` and converts fields with `__wtol`/`__wtof`, so it is the middleware's obsolete text
+`.LBP` importer; `LIPSincReadAnimFile` (`0x000b8340`) is its `.LTF` twin behind a version gate. Neither can be
+reached from anywhere in the shipped image -- **0 `E8` call sites, 0 `E9` tail calls, 0 dword references apiece**,
+the same for the `.map` writer (`0x000b55f0`) -- so all three authoring-side bodies are linked in and unreachable
+(`inventory/lipsinc_formats.csv`, `make lipsinc-formats`).
+
+What *is* reached are the two loaders, and they answer the directory question as a glob rather than a walk:
+`LIPSincInitGame` (`0x000ba290`, called from `Engine_UnGame` at `0x0013917c`) pushes the **literal**
+`..\System\LIPSincData\Controllers\*.lad`, expands it through `FUN_000192a0` and hands the list to
+`LIPSincLoadDBFromDisk` (`0x000ba49d`); `LIPSincInitLevel` (`0x000ba750`, one site at `0x0015e237`, in a body the
+symbol map does not bound) expands a bare `*.lad` and calls the same loader. So the five `Controllers/` packs --
+**2,226 of the 2,231 keys** -- are the ones startup names, and the three packs at the `LIPSincData` root (5 keys
+between them) are only reachable through the second glob. There is no per-cue directory lookup to find: the cue
+names arrive as data, in the record the file itself carries.
+
+**Residual:** which path `LIPSincInitLevel`'s bare `*.lad` is expanded against -- it decides whether the three root
+packs are ever opened. Its argument is built at `0x000baa57` and the strings cannot say.
