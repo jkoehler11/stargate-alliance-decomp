@@ -519,11 +519,44 @@ had ever compared them. `native-mark.py --check` does now, dump-free:
 The 13 are one family, all `Core.Object` and all the compiler's per-signature operator records: `AddAdd_Int`,
 `AddAdd_PreInt`, `AddAdd_Byte`, `AddAdd_PreByte`, `SubtractSubtract_Int` / `_PreInt` / `_Byte` / `_PreByte`,
 `Subtract_PreInt`, `Subtract_PreFloat`, `Subtract_PreVector`, `Complement_PreInt`, `Not_PreBool`. The text declares
-the operators themselves (`++`, `--`, `-`, `~`), not these expansions, so nothing gives them a marker; the other 102
-are records no declaration names at all (`Object`'s `LocalVariable`/`InstanceVariable` twins and the `_StrStr` string
-operators). So `natives.csv`'s **797 rows are records, not declarations** -- 784 the text declares and 13 it does
-not -- and a table written from declarations will always be 13 short of it. That is the same distinction
+the operators themselves (`++`, `--`, `-`, `~`), not these expansions, so nothing gives them a marker. So
+`natives.csv`'s **797 rows are records, not declarations** -- 784 the text declares and 13 it does not -- and a
+table written from declarations will always be 13 short of it. That is the same distinction
 `inventory/native_tokens.csv` draws when it files those rows under basis `operator-expansion`.
+
+##### The other 102 are `Core.Object`'s exec handlers, and the dispatch table states 69 of them (measured 2026-11-15)
+
+The 102 records no declaration names are **not** operator twins: they are the class's own C++ handlers, and
+`native-mark.py` now types each one from the committed tables instead of counting it. `python3
+tools/native-mark.py --unstated` prints the listing; `--check` asserts the split.
+
+| verdict | rows | what states the row |
+|---|---:|---|
+| `stated` | 13 | `inventory/natives.csv` -- the compiler's per-signature operator records |
+| `gnatives-slot` | **69** | `inventory/gnatives_records.csv`: the slot's `live_address` **is** the record's own `body` pointer, 69 of 69 |
+| `cast` | **33** | nothing but the row's own name -- every one is `XToY` |
+| `untyped` | 0 | no committed table, printed by `--check` rather than absorbed |
+
+* **All 115 sit in one registration block.** Block 11 at `0x005c1a58` is `Core.Object`'s own: **306 records, all
+  `Object`**, spanning `0x005c1a58`-`0x005c23e0`. The 102 carry **no script token at all** (`token` empty and
+  `declared=0` in every row), which is why no script can name them and why a declaration-side table cannot see them.
+* **The 69 are the VM's dispatch slots.** Slots **0..111** of `GNatives`, and the slot's live value equals the
+  registration record's own body pointer on 69 of 69 -- the exec table and the registration block name the same code
+  from two directions, which is the agreement that makes the verdict evidence rather than a name match. **64** of the
+  69 carry an `inventory/opcode_table.csv` name, and those names are the opcodes themselves: `LocalVariable` `0x00`,
+  `InstanceVariable` `0x01`, `DefaultVariable` `0x02`, on through `Jump`, `Switch`, `VirtualFunction`,
+  `EndFunctionParms`. A body is reached by `GNatives[opcode]`, not by a `UFunction`, so no UnrealScript declaration is
+  missing.
+* **The 33 are the primitive conversions**, `BoolToByte` through `VectorToString`. They take no `GNatives` slot and
+  no `opcode_table.csv` name, and their own names are the whole classification -- the check counts a row that is
+  neither stated nor slotted nor `XToY` as `untyped` and prints it, so a future row cannot hide in this family.
+* **The operator table cannot type them, and that was the guess.** **0** of the 102 appear in
+  `inventory/native_tokens.csv` at all, so the read the previous note proposed -- its `operator-expansion` rows
+  against the operator table -- had no rows to join. The dispatch table is where they are stated, and it was already
+  committed.
+* **A slot that disagrees fails the gate.** `bodies_join` now returns a `slot-mismatch` verdict and `--check` answers
+  `FAIL native-mark` when a `GNatives` slot's live value is not the record's body -- the one way this join can be
+  wrong is a dispatch table pointing somewhere other than the registration block says.
 
 **A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
 image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one

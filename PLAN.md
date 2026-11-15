@@ -9752,6 +9752,32 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the 102 unstated records are exec handlers, and the dispatch table states 69)
+
+- **The last note's proposed read was a dead end, and one join answered it instead.** It named the operator table
+  against `inventory/native_tokens.csv`'s `operator-expansion` rows as the way to type the 102 registered names
+  nothing declares. Measured: **0 of the 102 are rows of that table at all**, so there was nothing to join. What does
+  state them is `inventory/gnatives_records.csv`, which was already committed.
+- **All 115 unmapped names sit in one registration block, and the 102 carry no token.** Block 11 at `0x005c1a58` is
+  `Core.Object`'s: 306 records, all `Object`, `0x005c1a58`-`0x005c23e0`, and every one of the 102 has an empty
+  `token` and `declared=0` -- a record no script can name, which is why a declaration-side table is short of them by
+  construction rather than by defect.
+- **The split is 13 `stated` + 69 `gnatives-slot` + 33 `cast` + 0 `untyped`.** The 69 are `GNatives` slots **0..111**
+  whose live value **is** the registration record's `body` pointer (**69 of 69**, the agreement that makes it
+  evidence), and 64 of them carry an `inventory/opcode_table.csv` name -- `LocalVariable` `0x00`, `InstanceVariable`
+  `0x01`, `Jump`, `Switch`, `VirtualFunction`. The 33 are the primitive conversions (`BoolToByte` … `VectorToString`):
+  no slot, no opcode name, and their naming rule is the whole classification.
+- Tool (`tools/native-mark.py`: `bodies_join` types every unstated name into one of the four verdicts and fails on a
+  slot that disagrees, `--unstated` prints the 115 rows, the selftest drives the join on synthetic CSVs in a temp dir
+  including a deliberate mismatch) + `docs/NATIVE_VM.md` (*The other 102 are `Core.Object`'s exec handlers*) + this
+  note. No artifact regenerates: the check reads four committed tables and writes nothing, so `make ci`'s
+  `native-mark` row is the gate. No boot.
+- **Next measurement:** the 33 conversions are stored nowhere `GNatives` can be asked about, so the question they
+  leave is which table does hold them -- a `dword` scan for their 33 body addresses (`tools/vtable-reach.py`, or the
+  `xrefs` path) should find a run of 33 pointers in `.rdata` if UE2 keeps a cast table the way it keeps `GNatives`,
+  and the five slot-installed handlers `opcode_table.csv` names nowhere are the control that says the opcode table's
+  own coverage is complete.
+
 ### Execution notes (2026-11-15, the two body tables agree on all 768 bodies, and 13 records have no declaration to mark)
 
 - **Nothing had ever compared the marker table with the registration table, and the join is clean in the direction

@@ -42,6 +42,17 @@ per-signature operator records: `AddAdd_Int`, `Subtract_PreInt`, `Not_PreBool`, 
 The text declares `++`/`--`/`-`/`~`, never those expansions, so a table built from declarations is 13 short of
 `natives.csv`'s 797 rows by construction: those rows are **records**, and this table's keys are declarations.
 
+**The 102 are `Core.Object`'s exec handlers, and the dispatch table states 69 of them.** A name nothing declares is
+not a gap when the image installs it: every `Object` record is one row of the class's registration block, and
+**69** of the 102 are entries of `inventory/gnatives_records.csv` -- the slot is filled by a store and its
+`live_address` equals that record's own `body` pointer (69 of 69 agree), which is why the VM reaches
+`LocalVariable`, `Jump`, `Switch` and their kin without a script naming them. The other **33** take no slot and no
+`inventory/opcode_table.csv` name, and every one of them is a primitive conversion by its own name
+(`BoolToByte`, `StringToVector`, …). So the unstated side is *typed* rather than counted: `stated` (13),
+`gnatives-slot` (69, with the body agreement policed) and `cast` (33). Zero of the 102 appear in
+`inventory/native_tokens.csv` at all, so the operator table cannot type them — that was the guess and it is
+measured wrong.
+
 A `native event` is a third declaration form, and it was invisible to every counting pass: `native-reconcile` (and
 this tool before it) looked only for `native … function`, so the eleven `native event` declarations in the shipped
 text — `ClientTravel`, `ClientHearSound`, `UpdateVehicle`, `GetFont`, `LogStatLine` and their kin — read as
@@ -67,8 +78,13 @@ NATIVES = os.path.join(ROOT, "inventory", "natives.csv")
 BINDERS = os.path.join(ROOT, "inventory", "native_binder_names.csv")
 TARGETS = os.path.join(ROOT, "inventory", "native_targets.csv")
 OPERATORS = os.path.join(ROOT, "inventory", "native_operators.csv")
+GNATIVES = os.path.join(ROOT, "inventory", "gnatives_records.csv")
+OPCODES = os.path.join(ROOT, "inventory", "opcode_table.csv")
 MODULES = os.path.join(ROOT, "inventory", "function_modules.csv")
 OUT = os.path.join(ROOT, "inventory", "native_bodies.csv")
+
+# The primitive conversion family's whole naming rule: one type name, `To`, another (`BoolToByte` … `VectorToString`).
+CAST = re.compile(r"^[A-Z][A-Za-z0-9]*To[A-Z][A-Za-z0-9]*$")
 
 COLS = ["package", "class", "kind", "function", "record", "native_token", "params", "binder", "binder_va",
         "body_va", "module", "src_native", "marker"]
@@ -539,34 +555,131 @@ def selftest():
     assert render(orow) == "// native - see src/Native/Core/Object.cpp  token 150 record Less_IntInt " \
                            "binder intUObjectexecLess_IntInt body 0x00041234", render(orow)
     cases += 1
+    # The unstated side is typed, and only the slot verdict can disagree: a slot whose live value is not the
+    # record's own body is a mismatch, a name that is neither stated nor slotted nor `XToY` is untyped (printed,
+    # not absorbed). Synthetic CSVs in a temp dir: a `--check` must not write into the tree.
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="native-mark-selftest-")
+    try:
+        def put(name, cols, data):
+            path = os.path.join(tmp, name)
+            with open(path, "w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=cols)
+                w.writeheader()
+                for row in data:
+                    w.writerow(row)
+            return path
+
+        tpath = put("targets.csv", ["class", "function", "body"], [
+            {"class": "Actor", "function": "Kick", "body": "0x3000"},
+            {"class": "Object", "function": "Jump", "body": "0x2000"},
+            {"class": "Object", "function": "Switch", "body": "0x2100"},
+            {"class": "Object", "function": "BoolToByte", "body": "0x2200"},
+            {"class": "Object", "function": "WeirdThing", "body": "0x2300"},
+        ])
+        npath = put("natives.csv", ["class", "function"], [{"class": "Actor", "function": "Kick"}])
+        gpath = put("gnatives.csv", ["slot", "live_address", "record_name"], [
+            {"slot": "4", "live_address": "0x2000", "record_name": "intUObjectexecJump"},
+            {"slot": "9", "live_address": "0x9999", "record_name": "intUObjectexecSwitch"},
+        ])
+        opath = put("opcodes.csv", ["name"], [{"name": "Jump"}])
+        j = bodies_join([{"body_va": "0x1000"}], tpath, npath, gpath, opath)
+        assert j["kinds"]["stated"] == 1 and j["kinds"]["gnatives-slot"] == 1, j["kinds"]
+        assert j["kinds"]["slot-mismatch"] == 1 and j["kinds"]["cast"] == 1, j["kinds"]
+        assert j["kinds"]["untyped"] == 1, j["kinds"]
+        assert j["mismatched"] == [("Object", "Switch")], j["mismatched"]
+        assert j["untyped"] == [("Object", "WeirdThing")], j["untyped"]
+        assert j["with_opcode"] == 1 and j["slots"] == [4], (j["with_opcode"], j["slots"])
+        assert unstated(j, tpath)[1].split()[0] == "Object" and unstated(j, tpath)[1].split()[1] == "BoolToByte" \
+            and unstated(j, tpath)[1].split()[2] == "cast", unstated(j, tpath)[:3]
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+    cases += 1
     print("ok   native-mark: %d cases (spans with a wrap, a comment and the six hard operator symbols, statement "
-          "offsets, function and operator marker text, idempotency, a stale marker, the render rule)" % cases)
+          "offsets, function and operator marker text, idempotency, a stale marker, the render rule, the "
+          "two-table join and its four verdicts)" % cases)
     return 0
 
 
-def bodies_join(rows, targets_path=None, natives_path=None):
+def _rd(path):
+    """A committed CSV as dict rows; a missing file is an empty table, not an exception."""
+    if not os.path.isfile(path):
+        return []
+    with open(path, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def bodies_join(rows, targets_path=None, natives_path=None, gnatives_path=None, opcodes_path=None):
     """The two body artifacts, joined: does every body this table names come from the registration table, and
-    which of the registration table's bodies this table has no row for.
+    which of the registration table's bodies this table has no row for -- and *what states each of those*.
 
     `native_bodies.csv` is written from *declarations* and `native_targets.csv` from *records*, so the two are not
-    supposed to be equal -- but nothing compared them, and a body this table names that the registration table does
-    not hold would be a marker pointing at an address the image never registered.
+    supposed to be equal -- but a body this table names that the registration table does not hold would be a marker
+    pointing at an address the image never registered.
+
+    The other direction is typed rather than counted, because "102 stated by nothing" is what a guess looks like:
+    each unstated name is asked of the committed artifacts in order -- `natives.csv` states it (`stated`),
+    a `GNatives` slot installs it and the slot's live value is that record's own body pointer (`gnatives-slot`,
+    the one verdict that can *disagree* and then fails), or its own name is the primitive conversion family's
+    (`cast`, `XToY`). A row fitting none of those is `untyped` and is printed, not absorbed.
     """
     targets_path = targets_path or TARGETS
     natives_path = natives_path or NATIVES
+    gnatives_path = gnatives_path or GNATIVES
+    opcodes_path = opcodes_path or OPCODES
     bodies = {(r["body_va"] or "").lower() for r in rows if r["body_va"]}
-    trows = list(csv.DictReader(open(targets_path, newline="", encoding="utf-8")))
-    tbodies = {(r["body"] or "").lower() for r in trows if r["body"]}
-    declared = {(r["class"].lower(), r["function"].lower())
-                for r in csv.DictReader(open(natives_path, newline="", encoding="utf-8"))}
+    trows = _rd(targets_path)
+    tbodies = {(r.get("body") or "").lower() for r in trows if r.get("body")}
+    declared = {(r["class"].lower(), r["function"].lower()) for r in _rd(natives_path)}
     missing = {}
     for r in trows:
-        if r["body"] and r["body"].lower() not in bodies:
-            missing.setdefault((r["class"], r["function"]), r["body"].lower())
+        if r.get("body") and r["body"].lower() not in bodies:
+            missing.setdefault((r["class"], r["function"]), r)
     stated = sorted(n for n in missing if (n[0].lower(), n[1].lower()) in declared)
+    # The dispatch table, keyed by the name the record ends in: `intUObjectexecJump` is the slot's record for
+    # `Jump`. The `exec` split is what keeps this from rebuilding a prefix the binder literal already carries.
+    slot_by_fn = {}
+    for r in _rd(gnatives_path):
+        nm = r.get("record_name") or ""
+        if "exec" in nm:
+            slot_by_fn.setdefault(nm.split("exec", 1)[1], r)
+    opnames = {(r.get("name") or "") for r in _rd(opcodes_path)}
+    typed = {}
+    for n in missing:
+        if n in stated:
+            typed[n] = "stated"
+            continue
+        slot = slot_by_fn.get(n[1])
+        if slot:
+            same = (slot.get("live_address") or "").lower() == (missing[n]["body"] or "").lower()
+            typed[n] = "gnatives-slot" if same else "slot-mismatch"
+        elif CAST.match(n[1]):
+            typed[n] = "cast"
+        else:
+            typed[n] = "untyped"
+    kinds = collections.Counter(typed.values())
     return {"bodies": len(bodies), "targets": len(tbodies), "foreign": sorted(bodies - tbodies),
-            "missing": len(missing), "missing_stated": stated,
-            "missing_unstated": len(missing) - len(stated)}
+            "missing": len(missing), "missing_stated": stated, "missing_unstated": len(missing) - len(stated),
+            "typed": typed, "kinds": kinds,
+            "mismatched": sorted(n for n, v in typed.items() if v == "slot-mismatch"),
+            "untyped": sorted(n for n, v in typed.items() if v == "untyped"),
+            "with_opcode": sum(1 for n, v in typed.items() if v == "gnatives-slot" and n[1] in opnames),
+            "slots": sorted(int(slot_by_fn[n[1]]["slot"]) for n, v in typed.items()
+                            if v == "gnatives-slot" and n[1] in slot_by_fn)}
+
+
+def unstated(report, targets_path=None):
+    """One line per registered name this table has no marker row for: the verdict that states it, and the body.
+
+    The listing is the report `--check` summarises, so the run-level counts and the rows come from one read.
+    """
+    rows = {(r.get("class"), r.get("function")): r for r in _rd(targets_path or TARGETS)}
+    lines = []
+    for n in sorted(report["typed"]):
+        body = (rows.get(n) or {}).get("body") or "-"
+        lines.append("%-8s %-26s %-14s %s" % (n[0], n[1], report["typed"][n], body))
+    return lines
 
 
 def check(path=None):
@@ -615,9 +728,24 @@ def check(path=None):
             print("FAIL native-mark: %d body address(es) are not in native_targets.csv: %s"
                   % (len(j["foreign"]), ", ".join(j["foreign"][:6])))
             return 1
+        # A slot whose live value is not the record's own body pointer is the one verdict that can be wrong, and
+        # it means the dispatch table and the registration block disagree about where a handler starts.
+        if j["mismatched"]:
+            print("FAIL native-mark: %d unstated name(s) are GNatives slots holding a different body: %s"
+                  % (len(j["mismatched"]), ", ".join("%s.%s" % n for n in j["mismatched"][:6])))
+            return 1
+        k = j["kinds"]
         print("ok   native-mark: %d body addresses, all of them registration-table bodies (of %d); "
-              "%d registered name(s) have no row here, %d stated by natives.csv and %d not"
-              % (j["bodies"], j["targets"], j["missing"], len(j["missing_stated"]), j["missing_unstated"]))
+              "%d registered name(s) have no row here: %d stated by natives.csv, %d installed as GNatives slots "
+              "(%d of them with an opcode name, body == slot value on %d of %d, slots %d..%d), %d the XToY cast "
+              "family, %d untyped"
+              % (j["bodies"], j["targets"], j["missing"], k["stated"], k["gnatives-slot"], j["with_opcode"],
+                 k["gnatives-slot"], k["gnatives-slot"],
+                 (j["slots"][0] if j["slots"] else 0), (j["slots"][-1] if j["slots"] else 0),
+                 k["cast"], k["untyped"]))
+        if j["untyped"]:
+            print("note native-mark: %d unstated name(s) no committed table states: %s"
+                  % (len(j["untyped"]), ", ".join("%s.%s" % n for n in j["untyped"][:8])))
     print("ok   native-mark: %d rows in %s (%s), every marker the render of its own row"
           % (len(rows), os.path.relpath(path, ROOT),
              ", ".join("%s %d" % kv for kv in sorted(kinds.items()))))
@@ -631,12 +759,22 @@ def main():
     ap.add_argument("--tree", help="also write the marked script tree here (a $WORK path, never the repo)")
     ap.add_argument("--walk", action="store_true", help="one line per declaration")
     ap.add_argument("--check", action="store_true", help="validate the committed table; no dump")
+    ap.add_argument("--unstated", action="store_true",
+                    help="one line per registered name with no marker row, with the verdict that states it")
     ap.add_argument("--selftest", action="store_true", help="the parser and the marker pass on fixtures; no dump")
     args = ap.parse_args()
     if args.selftest:
         return selftest()
     if args.check:
         return check()
+    if args.unstated:
+        rows = _rd(OUT)
+        j = bodies_join(rows)
+        for line in unstated(j):
+            print(line)
+        print("%d registered name(s) have no marker row: %s"
+              % (j["missing"], ", ".join("%s %d" % kv for kv in sorted(j["kinds"].items()))))
+        return 0
     if not args.path:
         ap.error("a System directory is required unless --check or --selftest is given")
     run(args.path, args.out, tree=args.tree, walk=args.walk)
