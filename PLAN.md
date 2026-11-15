@@ -652,6 +652,28 @@ other 38 rows.
       name one nothing fires, so a condition's placed value is the only value it will ever have in 11 cases and
       can invert in the other 199. What is left of 5.2 is `FRand()`'s draw and whether the firing placement is
       itself reached.
+      **The last edge is read, and it is a closure, not a count: 7,790 of the 16,886 wired actions sit in a
+      sequence that starts and at a slot some path reaches, and `ScriptedTrigger`'s own `PostBeginPlay` is where
+      1,073 of those sequences start** (2026-11-15, `docs/MAP_ACTION_REACH.md`, `inventory/action_reach.csv`,
+      `tools/action-reach.py`, `make action-reach`). The firing placement is placed data, so the three readings
+      already committed decide it -- named by an array (`MAP_ACTION_WIRING`), on a path (`MAP_ACTION_PATHS`), in a
+      sequence that starts (`MAP_EVENT_TARGETS`) -- and the third edge feeds back into the first, so the answer is
+      the fixed point that grows from the sequences whose own class starts them: `ScriptedTrigger` spawns its
+      controller in `PostBeginPlay` and `TriggeredScript` starts from `Touch`, both read out of the class's shipped
+      text (2 of the 6 holder classes; 1,266 sequences). Across the 73 maps **7,790 of 16,886 wired actions** are
+      in a started sequence and on a reached slot (46.1%), **1,374** of them in a sequence a fire arms, and
+      **9,096** lie behind no start or off the paths; **1,171 sequences never start** (`TeamScriptedSequence` 1,141,
+      `UnrealScriptedSequence` 25, `ScriptedSpawner` 4, `ScriptedSequence` 1) and hold 9,096 wired actions between
+      them. The closure takes **one pass**: **0** sequences enter it through a fire, because every sequence a
+      placed fire arms was already in it by class -- so a fired name flips a `TriggeredCondition` and ends a wait,
+      but starts no sequence of its own. The fire population is classified the same way: of 5,953 fire sites over
+      5,584 carriers, **2,313 carriers are reached** (a started sequence names them, on a path), **344 are wired
+      but unreached**, and **2,927 are named by no array at all** (a `Trigger` 547, `SubActionTrigger` 431, a
+      `Mover` 308, `SGUseTrigger` 219 -- the engine starts those). Two controls from committed artifacts: the
+      holder population `event-targets` counted (2,694 arrays, 497 tagged and fired) and its wired totals (16,886 /
+      1,374) are reproduced exactly, and the 239 holders that page counts and this one does not are the two
+      scene-manager classes' camera arrays (234 + 5), which wire no action. What is left of 5.2 is `FRand()`'s
+      draw, which is a runtime value and not a property: every other edge of the graph is placed data.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
@@ -1509,6 +1531,24 @@ are limited to expected fields (checksum/timestamp) and documented.
   table from the row whose `own` is `yes`, so `0x4cfd78` and `0x4d0228` are FireTexture and IceTexture and
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
+
+### Execution notes (2026-11-15, the firing placement is reached by a closure, and no fire starts a sequence)
+
+- **Task.** `[x] 5.2`'s last open measurement: "whether the firing placement is itself reached".
+- **Shipped.** `tools/action-reach.py` + `inventory/action_reach.csv` (156 rows: 73 maps, 41 fire-carrier classes,
+  6 sequence classes, a census row) + `docs/MAP_ACTION_REACH.md` + `make action-reach` + a corrected closing
+  sentence in `tools/action-paths.py`/`docs/MAP_ACTION_PATHS.md` + the paragraph above. No boot: the dump's 73
+  maps parse in ~62 s on the agent host and the tool needs no guest.
+- **Measurement.** 7,790 of 16,886 wired actions in a started sequence and on a reached slot; 1,374 in a sequence
+  a fire arms; 1,171 sequences never start; the closure takes one pass and no fire adds a sequence. Carriers:
+  2,313 reached / 344 dead / 2,927 outside over 5,584.
+- **Controls.** The holder population (2,694 arrays / 497 armed) and the wired totals (16,886 / 1,374) reproduce
+  `inventory/event_targets.csv`'s census exactly; 2,437 arrays / 16,907 elements reproduce `action_paths.csv`. The
+  one population difference is named and counted rather than absorbed: 239 armed holders are the two
+  scene-manager classes' camera arrays, which `event-targets` counts (its holder test is "carries an `Actions`
+  array") and this walk excludes (its holders are the scripted family).
+- **Next measurement:** `FRand()`'s draw, the only value in 5.2 that is not placed data -- and it is a runtime
+  draw, so the honest next step is to say so in `docs/MAP_ACTION_PATHS.md` rather than to measure it statically.
 
 ### Execution notes (2026-11-15, the multi-store exemption is wider than the shape behind it)
 

@@ -643,7 +643,8 @@ def render(rows):
                "tag another placement in the same map fires (`event-targets`' reader, the same join "
                "`docs/MAP_EVENT_WIRING.md` uses), and %s name one nothing in the map fires -- a condition that "
                "keeps its placed value for the whole play. Whether the firing placement is itself reached is "
-               "still a runtime question." % (c["flipped"], num(c, "flipped") + num(c, "unfired"),
+               "`docs/MAP_ACTION_REACH.md`'s question, and it is answered there as a closure over the "
+               "three readings rather than left to a runtime trace." % (c["flipped"], num(c, "flipped") + num(c, "unfired"),
                                               c["unfired"]))
     out.append("* **That a resolved tag is the actor the engine finds.** `ForEach C.AllActors(class, T, tag)` "
                "takes the first match in actor iteration order, and a tag is not unique; the tool counts a "
