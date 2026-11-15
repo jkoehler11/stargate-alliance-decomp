@@ -1546,6 +1546,33 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the two native counts close per package by an identity, and no package fails it)
+
+- **Task.** The previous note said the record side "closes it per record, not per count" and quoted the numbers by
+  hand. That is the shape this project does not keep: a page that asserts an identity the tree cannot rebuild.
+- **Two identities, checked per package.** `tools/native-count-closure.py` reads only committed artifacts
+  (`native_reconcile.csv`, `native_residual.csv`, `classes.csv`, `script_text_natives.csv` and the comment
+  census) and checks `records = matched + operator-expanded + record-only` and
+  `declarations = matched + no-record + operator statements` on all 18 packages. Both hold on **18 of 18**, and a
+  package that stops closing renders as `OFF records +n` in the table rather than being averaged into a total.
+- **The numbers it renders.** 707 whole-buffer declarations = 6 in a `/* */` + 20 in a `//` + 681 live functions;
+  11 live events and 92 live `operator` statements; 683 matched by name; 112 records the operators expand into; 9
+  declarations with no record; 2 records no declaration explains (`UPreview`'s `Created` and `SetRenderInfo`); and
+  797 records. `Core` is the widest case in both directions at once -- 203 records = 97 matched + 106 expanded,
+  with `Divide` and `Round` left over -- which is why "101 against 203" could never be an operator count.
+- **The leftover rows have names, and they disagree in kind.** 7 of the 9 declarations are `declaration-unbound`
+  (no record and no image binder: `Engine.Weapon`'s two, `Engine.ScoreBoard.SortPRIArrayFast`,
+  `StargateGame`'s four) and 2 are `binder-only` (the image binds them, the record does not carry them:
+  `Core.Object`'s `Divide`, `Round`). The 2 record-only rows are the opposite: `UPreview`'s class text declares no
+  native at all, so that package's record and its own text disagree and the image is the third witness.
+- **Instrument.** `inventory/native_count_closure.csv` (9 package rows + 13 census rows), a generated block on
+  `docs/PACKAGE_SCRIPT_TEXT.md` behind `<!-- generated:native-count-closure -->`, `make native-count-closure`,
+  the `native-count-closure-doc` stage in `tools/ci.py`, and `--check` with a synthetic pair of packages of which
+  one must read `OFF` (a self-test that only checked a closing package could not tell the identity from a sum).
+- **Next measurement:** the 2 `record-unbound` rows in `UPreview` -- the class text has no `native` declaration at
+  all, so the question is whether the package's own function records are an artifact of the build's exporter or
+  the class text is the stale half; the image's `int<prefix><Class>exec<Function>` pool answers it without a dump.
+
 ### Execution notes (2026-11-15, the disabled native declarations are 26 and not 6, so the source declares 681 live)
 
 - **Task.** The previous note closed `StargateContent`'s mirror case by counting `native function` declarations

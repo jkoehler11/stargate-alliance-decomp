@@ -303,6 +303,18 @@ def check_class_text_comments_doc():
         ok(name, out[-1].replace("ok   class-text-comments: ", "") if out else "")
 
 
+def check_native_count_closure_doc():
+    """docs/PACKAGE_SCRIPT_TEXT.md's per-package closure block must match the committed artifact."""
+    name = "native-count-closure-doc"
+    r = subprocess.run([sys.executable, repo("tools", "native-count-closure.py"), "--check-doc",
+                        "docs/PACKAGE_SCRIPT_TEXT.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   native-count-closure: ", "") if out else "")
+
+
 def check_lipsinc_index():
     """The committed LIPSinc index must be consistent with itself (target indices, record size, trailer names)."""
     name = "lipsinc-index"
@@ -562,6 +574,7 @@ def main():
     check_map_script_doc()
     check_action_wiring_doc()
     check_class_text_comments_doc()
+    check_native_count_closure_doc()
     check_lipsinc_index()
     check_addresses_in_image()
     print()

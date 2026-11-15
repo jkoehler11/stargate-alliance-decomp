@@ -1,0 +1,32 @@
+kind,package,classes,whole,disabled_block,disabled_line,live_functions,live_events,live_operators,matched,operator_records,record_only,declaration_only,records,verdict,count,note
+package,AmbientCreatures,18,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,Core,7,101,3,0,98,1,86,97,106,0,2,203,closes,1,
+package,Editor,16,14,0,0,14,0,0,14,0,0,0,14,closes,1,
+package,Engine,367,451,0,16,435,6,6,438,6,0,3,444,closes,1,
+package,Fire,7,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,GUI,148,82,0,4,78,3,0,81,0,0,0,81,closes,1,
+package,GamePlay,262,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,IpDrv,14,31,0,0,31,1,0,32,0,0,0,32,closes,1,
+package,Sharpeffects,158,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,StargateContent,567,3,3,0,0,0,0,0,0,0,0,0,closes,1,
+package,StargateGame,306,21,0,0,21,0,0,17,0,0,4,17,closes,1,
+package,StargateMenus,98,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,StargateVehicles,142,4,0,0,4,0,0,4,0,0,0,4,closes,1,
+package,Stargateeffects,77,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,UDebugMenu,38,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,UPreview,4,0,0,0,0,0,0,0,0,2,0,2,closes,1,
+package,UWindow,78,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+package,UnrealEd,12,0,0,0,0,0,0,0,0,0,0,0,closes,1,
+census,,,,,,,,,,,,,,packages,18,packages read
+census,,,,,,,,,,,,,,whole,707,`native function` declarations in the whole buffer
+census,,,,,,,,,,,,,,disabled_block,6,"of those, inside a `/* ... */`"
+census,,,,,,,,,,,,,,disabled_line,20,"of those, inside a `//` run"
+census,,,,,,,,,,,,,,live_functions,681,live `native function` declarations
+census,,,,,,,,,,,,,,live_events,11,live `native event` declarations
+census,,,,,,,,,,,,,,live_operators,92,live `operator` statements
+census,,,,,,,,,,,,,,matched,683,"declarations that name a record, matched by name"
+census,,,,,,,,,,,,,,operator_records,112,records one live `operator` statement expands into
+census,,,,,,,,,,,,,,declaration_only,9,declarations with no record
+census,,,,,,,,,,,,,,record_only,2,records no declaration explains
+census,,,,,,,,,,,,,,records,797,native function records in `inventory/classes.csv`
+census,,,,,,,,,,,,,,packages_closing,18,packages whose two sides close exactly

@@ -107,6 +107,44 @@ matched + 9 with no record. Quoting either count alone cannot say that, which is
 `inventory/script_text_natives.csv` rather than being smoothed over.
 
 
+### The two counts, closed per package
+
+`tools/native-count-closure.py` reads the artifacts above (`inventory/native_reconcile.csv`,
+`inventory/classes.csv`, `inventory/native_residual.csv`, this page's comment census) and checks two identities
+per package: `records = matched + operator-expanded + record-only`, and
+`declarations = matched + no-record + operator statements`. It needs no dump, so it is a per-commit gate rather
+than a nightly stage.
+
+<!-- generated:native-count-closure -->
+**The two counts close per record, not by arithmetic: 18 packages of 18.** A package records more natives than its text declares when a live `operator` statement expands into several typed records, and fewer when a declaration has no record -- so `records = matched + operator-expanded + record-only` and `declarations = matched + no-record + operator statements` are the two identities, and both hold on every package here.
+
+| measure | value |
+|---|---:|
+| `native function` declarations in the whole buffer | **707** |
+| ... inside a `/* ... */` / inside a `//` run | **6** / **20** |
+| live declarations (functions + events + operators) | **681** + **11** + **92** |
+| declarations that name a record | **683** |
+| records those `operator` statements expand into | **112** |
+| declarations with no record | **9** |
+| records no declaration explains | **2** |
+| native function records | **797** |
+
+| package | whole | `/* */` | `//` | live fn | events | operators | matched | expanded records | no record | no declaration | records |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `Core` | 101 | 3 | 0 | 98 | 1 | 86 | 97 | 106 | 2 | 0 | 203 |
+| `Editor` | 14 | 0 | 0 | 14 | 0 | 0 | 14 | 0 | 0 | 0 | 14 |
+| `Engine` | 451 | 0 | 16 | 435 | 6 | 6 | 438 | 6 | 3 | 0 | 444 |
+| `GUI` | 82 | 0 | 4 | 78 | 3 | 0 | 81 | 0 | 0 | 0 | 81 |
+| `IpDrv` | 31 | 0 | 0 | 31 | 1 | 0 | 32 | 0 | 0 | 0 | 32 |
+| `StargateContent` | 3 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `StargateGame` | 21 | 0 | 0 | 21 | 0 | 0 | 17 | 0 | 4 | 0 | 17 |
+| `StargateVehicles` | 4 | 0 | 0 | 4 | 0 | 0 | 4 | 0 | 0 | 0 | 4 |
+| `UPreview` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 2 |
+
+**Every package closes both identities** -- `inventory/native_count_closure.csv` carries the per-package row and its verdict, so a package that stops closing fails this block rather than being averaged into a total.
+<!-- /generated:native-count-closure -->
+
+
 ## Extracting the whole tree, and what it is not
 
 `python3 tools/pkg-script-text.py DUMP/System --tree --write $WORK/source-tree` writes one `.uc` per class.
