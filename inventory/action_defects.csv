@@ -1,0 +1,205 @@
+kind,map,name,holder,slot,detail,count,note
+defect,M00,ACTION_WaitForEvent,TeamScriptedSequence,16,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,1,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,7,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_PlaySound,TriggeredScript,8,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,9,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_PlaySound,TriggeredScript,10,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,11,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_PlaySound,TriggeredScript,12,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_PlaySound,TriggeredScript,13,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,14,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,15,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,16,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,17,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,18,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForEvent,TriggeredScript,19,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_WaitForTimer,TriggeredScript,20,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,21,slot_unreached,,"wired, on no path"
+defect,M04a,ACTION_TriggerEvent,TriggeredScript,22,slot_unreached,,"wired, on no path"
+defect,M07A,ACTION_IfCondition,ScriptedTrigger,6,skip_off_array,,the section never closes
+defect,M07A,ACTION_IfCondition,ScriptedTrigger,1,skip_off_array,,the section never closes
+defect,M07B,ACTION_IfCondition,ScriptedTrigger,2,skip_off_array,,the section never closes
+defect,M07B,ACTION_IfCondition,ScriptedTrigger,6,skip_off_array,,the section never closes
+defect,M07B,ACTION_StopShooting,TeamScriptedSequence,17,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_SetAlertness,TeamScriptedSequence,18,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_WaitForEvent,TeamScriptedSequence,19,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_StopShooting,TeamScriptedSequence,16,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_SetAlertness,TeamScriptedSequence,17,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_WaitForEvent,TeamScriptedSequence,18,slot_unreached,,"wired, on no path"
+defect,M07B,ACTION_IfCondition,ScriptedTrigger,7,skip_off_array,,the section never closes
+defect,M07D,ACTION_IfCondition,ScriptedTrigger,10,operand_unset,,TriggeredConditionTag
+defect,M07D,ACTION_IfCondition,ScriptedTrigger,14,operand_unset,,TriggeredConditionTag
+defect,M07D,ACTION_IfCondition,ScriptedTrigger,19,operand_unset,,TriggeredConditionTag
+defect,M10A,ACTION_IfCondition,TeamScriptedSequence,1,unfired_condition,,placed bEnabled=True
+defect,M10A,ACTION_IfCondition,TeamScriptedSequence,9,unfired_condition,,placed bEnabled=True
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,7,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_IfCondition,ScriptedTrigger,8,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_TriggerEvent,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_EndSection,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,13,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_IfCondition,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_TriggerEvent,ScriptedTrigger,15,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,16,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_EndSection,ScriptedTrigger,17,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,18,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,19,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,20,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,21,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,22,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,23,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,24,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_WaitForEvent,ScriptedTrigger,25,slot_unreached,,"wired, on no path"
+defect,M10A,ACTION_GotoAction,ScriptedTrigger,26,slot_unreached,,"wired, on no path"
+defect,M12C,ACTION_TriggerEvent,TriggeredScript,1,slot_unreached,,"wired, on no path"
+defect,M12C,ACTION_WaitForTimer,TriggeredScript,2,slot_unreached,,"wired, on no path"
+defect,M12C,ACTION_TriggerEvent,TriggeredScript,3,slot_unreached,,"wired, on no path"
+defect,M12F,ACTION_IfCondition,ScriptedTrigger,5,unfired_condition,,placed bEnabled=None
+defect,M13A,ACTION_LeaveSequence,TeamScriptedSequence,8,slot_unreached,,"wired, on no path"
+defect,M13D,ACTION_LeaveSequence,TeamScriptedSequence,3,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,7,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,8,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_TriggerEvent,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_SetBotScript,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_SetBotScript,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_SetBotScript,ScriptedTrigger,13,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_WaitForTimer,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,15,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,16,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,17,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_WaitForTimer,ScriptedTrigger,18,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,19,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,20,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_Talk,ScriptedTrigger,21,slot_unreached,,"wired, on no path"
+defect,M14A,ACTION_TriggerEvent,ScriptedTrigger,22,slot_unreached,,"wired, on no path"
+defect,M15A,ACTION_LeaveSequence,TeamScriptedSequence,18,slot_unreached,,"wired, on no path"
+defect,M15A,ACTION_LeaveSequence,TeamScriptedSequence,18,slot_unreached,,"wired, on no path"
+defect,M15A,ACTION_LeaveSequence,TeamScriptedSequence,15,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_WaitForTimer,ScriptedTrigger,8,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_IfCondition,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_LeaveSequence,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_TriggerEvent,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_WaitForTimer,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_DisplaySGText,ScriptedTrigger,13,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_WaitForTimer,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_TriggerEvent,ScriptedTrigger,15,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_LeaveSequence,ScriptedTrigger,16,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_EndSection,ScriptedTrigger,17,slot_unreached,,"wired, on no path"
+defect,M16A,ACTION_GotoAction,ScriptedTrigger,18,slot_unreached,,"wired, on no path"
+defect,M16C,ACTION_GotoAction,ScriptedTrigger,3,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,TeamScriptedSequence,14,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_MoveToPoint,TeamScriptedSequence,15,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,TeamScriptedSequence,16,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_TriggerEvent,TeamScriptedSequence,17,slot_unreached,,"wired, on no path"
+defect,M17A,Action_PLAYANIM,TeamScriptedSequence,18,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,TeamScriptedSequence,19,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_MoveToPoint,TeamScriptedSequence,20,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_WaitForTimer,TeamScriptedSequence,21,slot_unreached,,"wired, on no path"
+defect,M17A,ACTION_SetAlertness,TeamScriptedSequence,22,slot_unreached,,"wired, on no path"
+defect,M17B,ACTION_WaitForTimer,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
+defect,M17D,ACTION_WaitForTimer,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M17D,ACTION_Talk,ScriptedTrigger,15,slot_unreached,,"wired, on no path"
+defect,M17D,ACTION_Talk,ScriptedTrigger,16,slot_unreached,,"wired, on no path"
+defect,M17D,ACTION_TriggerEvent,ScriptedTrigger,17,slot_unreached,,"wired, on no path"
+defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
+defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,13,slot_unreached,,"wired, on no path"
+defect,M18B,ACTION_SaveGame,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
+defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
+defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
+defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
+defect,M21D,ACTION_IfCondition,ScriptedTrigger,7,unfired_condition,,placed bEnabled=True
+defect,M21D,ACTION_IfCondition,ScriptedTrigger,7,unfired_condition,,placed bEnabled=True
+defect,M21D,ACTION_IfCondition,ScriptedTrigger,7,unfired_condition,,placed bEnabled=True
+defect,M21D,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
+class,,ACTION_IfCondition,,,condition,,TriggeredConditionTag
+class,,ACTION_IfProximity,,,proximity,,ProximityActorTag
+class,,ACTION_IfRandomPct,,,random,,Probability
+map,CTF-Abydos,,,,,,
+map,CTF-LostCity,,,,,,
+map,DM-Ha'tak,,,,,,
+map,DM-KelownanTrain,,,,,,branches=1
+map,DM-Langara,,,,,,
+map,DM-LostCity,,,,,,
+map,DM-Subterranean,,,,,,
+map,DM-Tomb,,,,,,
+map,DM-WorstCaseScenario,,,,,,
+map,Entry,,,,,,
+map,M00,,,,,,slot_unreached=1
+map,M02A,,,,,,branches=2
+map,M02B,,,,,,branches=1
+map,M02C,,,,,,
+map,M02D,,,,,,
+map,M04B,,,,,,branches=1;random_drawn=1
+map,M04a,,,,,,branches=4;random_drawn=1;slot_unreached=17
+map,M07A,,,,,,branches=11;skip_off_array=2
+map,M07B,,,,,,branches=16;random_drawn=5;skip_off_array=3;slot_unreached=6
+map,M07C,,,,,,branches=2
+map,M07D,,,,,,branches=26;operand_unset=3
+map,M07E,,,,,,branches=4
+map,M10A,,,,,,branches=14;slot_unreached=20;unfired_condition=2
+map,M10B,,,,,,branches=2
+map,M10C,,,,,,
+map,M10D,,,,,,
+map,M12A,,,,,,
+map,M12B,,,,,,branches=5
+map,M12C,,,,,,branches=9;slot_unreached=3
+map,M12D,,,,,,branches=4
+map,M12E,,,,,,branches=3
+map,M12F,,,,,,branches=1;unfired_condition=1
+map,M13A,,,,,,branches=3;random_drawn=3;slot_unreached=1
+map,M13B,,,,,,
+map,M13C,,,,,,branches=3;random_drawn=3
+map,M13D,,,,,,branches=1;slot_unreached=1
+map,M14A,,,,,,branches=5;slot_unreached=16
+map,M14B,,,,,,
+map,M14C,,,,,,
+map,M15A,,,,,,branches=8;random_drawn=7;slot_unreached=3
+map,M15B,,,,,,branches=4;random_drawn=3
+map,M15C,,,,,,branches=1;random_drawn=1
+map,M15D,,,,,,branches=3;random_drawn=1
+map,M15E,,,,,,branches=3;random_drawn=3
+map,M15F,,,,,,branches=1;random_drawn=1
+map,M16A,,,,,,branches=1;slot_unreached=11
+map,M16B,,,,,,
+map,M16C,,,,,,branches=1;slot_unreached=1
+map,M16D,,,,,,
+map,M16E,,,,,,
+map,M16F,,,,,,branches=2
+map,M16G,,,,,,
+map,M17A,,,,,,branches=4;slot_unreached=11
+map,M17B,,,,,,branches=5;slot_unreached=1
+map,M17D,,,,,,branches=1;slot_unreached=4
+map,M18A,,,,,,
+map,M18B,,,,,,branches=1;slot_unreached=5
+map,M18D,,,,,,
+map,M19A,,,,,,branches=2
+map,M19B,,,,,,branches=20
+map,M19C,,,,,,branches=3
+map,M19D,,,,,,branches=3
+map,M19E,,,,,,
+map,M20A,,,,,,branches=1
+map,M20B,,,,,,branches=7;random_drawn=7
+map,M20C,,,,,,branches=1
+map,M20D,,,,,,
+map,M21A,,,,,,branches=12
+map,M21B,,,,,,branches=29;unfired_condition=4
+map,M21C,,,,,,branches=1
+map,M21D,,,,,,branches=25;unfired_condition=4
+map,MainMenu,,,,,,
+map,SGCTF-AbydosVsSGC,,,,,,
+census,corpus,skip_off_array,,,,5,
+census,corpus,operand_unset,,,,3,
+census,corpus,unfired_condition,,,,11,
+census,corpus,random_decided,,,,0,
+census,corpus,slot_unreached,,,,101,
+census,corpus,random_drawn,,,,36,
+census,corpus,branches,,,,257,
+census,corpus,maps,,,,73,
