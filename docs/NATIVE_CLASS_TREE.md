@@ -1070,12 +1070,43 @@ file and no error, which reads like a body that does not exist rather than a fun
 creates the function, and prints the full listing with literals resolved plus the decompiled body; all six
 bodies above were read with it.
 
-**What is not settled.** That the framework above is the engine's own needs the callers of the six bodies,
-not another body read, and the class name for `0x24af30` is `StaticMeshInstance` only by its property set
--- no literal in the image names it. Both are in `docs/UNKNOWNS.md` U8 with the read that would settle
-them.
+**The callers name one factory, and the other is not a registration's body at all (2026-11-15).**
+`tools/vtable-reach.py` on `0x0024af30` answers **no** `E8` site and **no** dword reference, and a byte-wise
+scan of `.text` finds the only reference to it in the image: `PUSH 0x24af30` at `0x0024b6d1`, 65 bytes into
+`Engine_UnStaticMesh` (`0x0024b690`). That body registers the class the same call literal names -- it asserts
+`ReturnClass` at `Engine/Src/UnStaticMesh.cpp:0xf`, and its `ReturnClass` call at `0x0024b70c` pushes
+`PUSH 0x1a0` (416, the object size `inventory/xbe_class_table_names.csv` carries for `0x0051dd28`),
+`PUSH 0x51ddca` (`L"StaticMesh"`), and `PUSH 0x24af30` beside the destructor thunk `0x24f730` that the
+registration census already follows. So the class whose property list `0x0024af30` builds is **`StaticMesh`**,
+not `StaticMeshInstance`: the property set could only suggest a name, the pushed literal states it.
 
-Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and factory lines;
-`tools/ghidra/ghidra_scripts/DumpBody.java`) + this page + `docs/UNKNOWNS.md` U8 + the PLAN note. No
-artifact changed: the measurement is the image plus the committed census, and the decompiled bodies stay
-under `$WORK/propcluster/`.
+**`0x0014e0e0` has one caller and it is `UEngine::Init`.** The census finds a single `E8` site, `0x0013970e`
+in `Engine_UnGame` (`0x00139030`, the 3,348-byte engine initialiser), and no row of
+`inventory/class_registrations.csv` names the body -- so no caller slot answers for it. It fetches the class
+object itself (cached in the global at `0x007ab62c`, written at `0x0014e177`) and hangs the property set on
+it, and that set -- `Alias` (a struct class of `NameProperty` `Alias` + `StrProperty` `Command`), `Aliases`
+at `0x2c`, one `RawKeys` element per `EInputKey` from `0x2ac` to `0xea0` -- is the engine `Input` class's
+property list. So one factory is named by the registration that pushes it and the other only by the
+properties it creates.
+
+| body | route | receiver | evidence |
+|---|---|---|---|
+| `0x0024af30` | `registration-arg` | `StaticMesh` | pushed at `0x0024b6d1` beside `PUSH 0x1a0` and `L"StaticMesh"` |
+| `0x002e81f0` `ctor_FireTexture` | `registration-thunk` | `FireTexture` | registration thunk `0x00018120` forwards here |
+| `0x002e8370` `ctor_IceTexture` | `registration-thunk` | `IceTexture` | registration thunk `0x00018160` forwards here |
+| `0x002e8260` | `base-call` | -- | base of `ctor_WaveTexture`, `ctor_FluidTexture`, `ctor_WetTexture` |
+| `0x0014e0e0` `Core_UnClass` | `direct-call` | -- | one caller, `UEngine::Init` |
+| `0x00110120` | `direct-call` | -- | three callers, none of them a registration |
+
+**Three of the six are named and three are not, and the split is the finding.** A route names a class only
+where a registration carries the body: as an argument of its `ReturnClass` call (one body), or as the
+`thunk_target` the census already follows (two). The other three are reached by ordinary calls from bodies
+that are not registrations, so their class is not in the call graph at all -- `0x002e8260`'s is the table it
+installs (the unnamed `0x4cfe68`), `0x0014e0e0`'s is its property set, and `0x00110120`'s is the class whose
+constructor it is, which its own store names. `inventory/class_ctor_receivers.csv` is that table, and it
+leaves a blank instead of copying a guess into a column a later join would trust.
+
+Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and factory lines, and
+`--receivers`; `tools/ghidra/ghidra_scripts/DumpBody.java`) + `inventory/class_ctor_receivers.csv` (6
+bodies + census) + this page + `docs/UNKNOWNS.md` U8 + the PLAN note. No boot: the image, the symbol map
+and the committed registration census, and the decompiled bodies stay under `$WORK/propcluster/`.

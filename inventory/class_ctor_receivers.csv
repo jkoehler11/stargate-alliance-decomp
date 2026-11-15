@@ -1,0 +1,8 @@
+function_va,function_name,stores,verdict,route,site_va,receiver,table_va,pushed_size,callers,evidence
+0x00110120,FUN_00110120,2,installer,direct-call,0x0011d46f,,,,"FUN_0011d460, FUN_002d2890, FUN_002d55f0","call sites 0x0011d46f, 0x002d28b9, 0x002d561a"
+0x0014e0e0,Core_UnClass,4,not-an-installer,direct-call,0x0013970e,,,,Engine_UnGame,call site 0x0013970e
+0x0024af30,FUN_0024af30,8,not-an-installer,registration-arg,0x0024b6d1,StaticMesh,0x0051dd28,416,,"pushed at 0x0024b6d1 in Engine_UnStaticMesh; the same call pushes the class's object size 416 and L""StaticMesh"""
+0x002e81f0,ctor_FireTexture,2,installer,registration-thunk,0x00018120,FireTexture,0x004cfd78,,,"registration for FireTexture passes the thunk at 0x00018120, which forwards here"
+0x002e8260,FUN_002e8260,2,installer,base-call,0x002e8313,,,,"ctor_FluidTexture, ctor_WaveTexture, ctor_WetTexture","call sites 0x002e8313, 0x002e8333, 0x002e8353"
+0x002e8370,ctor_IceTexture,2,installer,registration-thunk,0x00018160,IceTexture,0x004d0228,,,"registration for IceTexture passes the thunk at 0x00018160, which forwards here"
+census,,6,,bodies=6 named=3 registration-arg:1 registration-thunk:2 base-call:1 direct-call:2,,,,,,a route names a class only where a registration carries the body

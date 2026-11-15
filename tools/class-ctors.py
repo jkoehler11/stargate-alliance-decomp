@@ -25,6 +25,7 @@ flags, so a disagreement is visible instead of being averaged away.
     python3 tools/class-ctors.py DUMP/default.xbe -o inventory        # the artifact
     python3 tools/class-ctors.py DUMP/default.xbe --apply             # + name them (needs a clean tree)
     python3 tools/class-ctors.py DUMP/default.xbe --apply --fix-stale  # + correct names a later map retired
+    python3 tools/class-ctors.py DUMP/default.xbe --receivers         # which class each multi-store body is
 
 `--apply` writes `ctor_<Class>` / `dtor_<Class>` into `symbols/xbe_overrides.csv` (with the evidence)
 and into `symbols/xbox_functions.csv`, which is what `make symbols` reads. A function that already
@@ -418,6 +419,226 @@ def installer_names_join(root):
     return stale
 
 
+# --------------------------------------------------------------------------- receivers
+
+
+def push_immediates(text, text_va):
+    """(site, imm32) for every `push imm32` in a code blob.
+
+    A push's immediate is **not** 4-aligned: the opcode is one byte, so the dword sits at `site+1`
+    and a dword scan of `.text` reports every one of these sites at alignment 2.
+    """
+    out = []
+    i, n = 0, len(text) - 4
+    while i < n:
+        if text[i] == 0x68:                                    # PUSH imm32
+            out.append((text_va + i, struct.unpack_from("<I", text, i + 1)[0]))
+        i += 1
+    return out
+
+
+def class_literal(pushes, site, lo, hi, resolve, names):
+    """The nearest push in `[site+lo, site+hi)` whose immediate resolves to a class name.
+
+    Proximity alone is not the rule: the StaticMesh registration pushes `L"new"` 32 bytes before its
+    constructor argument and `L"StaticMesh"` 21 bytes after it, so a nearest-string rule answers
+    `new`. Only the resolver decides, and it answers "" for anything that is not a UTF-16 literal.
+    """
+    best = None
+    for va, imm in pushes:
+        if not (site + lo <= va < site + hi):
+            continue
+        name = resolve(imm)
+        if name in names and (best is None or abs(va - site) < abs(best[0] - site)):
+            best = (va, name)
+    return best
+
+
+def utf16_string(xbe, va, cap=64):
+    """The UTF-16LE printable string at `va`, or "" -- this image's name literals are exactly that."""
+    try:
+        raw = xbe.read_va(va, cap * 2)
+    except Exception:
+        return ""
+    out = []
+    for i in range(0, len(raw) - 1, 2):
+        c = struct.unpack_from("<H", raw, i)[0]
+        if c == 0:
+            break
+        if c < 0x20 or c > 0x7E:
+            return ""
+        out.append(chr(c))
+    return "".join(out)
+
+
+def enclosing(order, va):
+    """(start, size, name) of the symbol-map function holding `va`, or None."""
+    i = bisect.bisect_right([f[0] for f in order], va) - 1
+    if i >= 0 and order[i][0] <= va < order[i][0] + order[i][1]:
+        return order[i]
+    return None
+
+
+def rel_call_sites(text, text_va, target):
+    """Sites of `E8 rel32` whose target is `target` (a direct call is never a dword reference)."""
+    out, pos = [], text.find(b"\xe8")
+    while pos != -1:
+        if pos + 5 <= len(text):
+            rel = struct.unpack_from("<i", text, pos + 1)[0]
+            if (text_va + pos + 5 + rel) & 0xFFFFFFFF == target:
+                out.append(text_va + pos)
+        pos = text.find(b"\xe8", pos + 1)
+    return out
+
+
+ROUTES = {
+    "registration-arg": "a StaticClass body pushes the pointer into its ReturnClass call",
+    "registration-thunk": "the registration passes a thunk that forwards to this body",
+    "base-call": "every caller is a ctor_*, so this is a base constructor",
+    "direct-call": "ordinary calls from named bodies, no registration in the chain",
+    "none": "nothing in .text or .rdata refers to it",
+}
+
+
+def receiver_report(root, image_path):
+    """Which class each multi-store body belongs to, by the route that reaches it.
+
+    Six bodies install more than one class table and three of them are not installers at all
+    (docs/NATIVE_CLASS_TREE.md). `--multi-store` can say *that*, and the question it cannot answer is
+    *whose class is such a body* -- a body that installs no table of its own has no class in its
+    stores. The answer is the route that reaches it, and only two of the four name a class:
+
+      * `registration-arg` -- a `StaticClass` body pushes the pointer as an argument of its
+        `ReturnClass` call, beside `PUSH <object size>` and `PUSH <L"Class">`. Measured for
+        `0x0024af30`, which is `StaticMesh`'s (0x0051dd28, 416 = the pushed `0x1a0`).
+      * `registration-thunk` -- the registration passes a null-check thunk that forwards to the body
+        (`inventory/class_registrations.csv`'s `thunk_target`), which is how `ctor_FireTexture` and
+        `ctor_IceTexture` are reached.
+      * `base-call` -- every caller is a `ctor_*`, so the body is a base constructor and its class is
+        the one its callers' tables climb from, not its own.
+      * `direct-call` -- ordinary calls from named bodies; the caller is an init routine, so the
+        caller's slot is not the class.
+    """
+    sys.path.insert(0, os.path.join(root, "tools"))
+    from xbe import Xbe
+
+    xbe = Xbe(image_path)
+    sec = next(s for s in xbe.sections if s.name == ".text")
+    text = xbe.data[sec.foff:sec.foff + sec.fsize]
+
+    tables = {}
+    with open(os.path.join(root, "inventory/xbe_class_table_names.csv"), newline="",
+              encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            tables[int(r["table_va"], 16)] = r
+    names = {(r.get("class") or "").strip() for r in tables.values()} - {""}
+    by_name = {}
+    for tva, r in sorted(tables.items()):
+        by_name.setdefault((r.get("class") or "").strip(), []).append((tva, r))
+
+    order = []
+    with open(os.path.join(root, "symbols/xbox_functions.csv"), newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                order.append((int(r["address"], 16), int(r["size"]), r["name"]))
+            except ValueError:
+                continue
+    order.sort()
+
+    thunks = {}
+    with open(os.path.join(root, "inventory/class_registrations.csv"), newline="",
+              encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                thunks[int(r["thunk_target"], 16)] = r
+            except (KeyError, ValueError):
+                continue
+
+    pushes = push_immediates(text, sec.va)
+    rows = []
+    for row in multi_store_report(root):
+        va = row["function_va"]
+        calls = rel_call_sites(text, sec.va, va)
+        pushed = [site for site, imm in pushes if imm == va]
+        route, site, receiver, table_va, size, callers = "", "", "", "", "", ""
+        evidence = ""
+        if pushed:
+            at = pushed[0]
+            route, site = "registration-arg", "0x%08x" % at
+            fn = enclosing(order, at)
+            lo, hi = (fn[0] - at, fn[0] + fn[1] - at) if fn else (-0x100, 0x60)
+            lit = class_literal(pushes, at, lo, hi, lambda v: utf16_string(xbe, v), names)
+            if lit:
+                receiver = lit[1]
+                tn = by_name.get(receiver) or []
+                if tn:
+                    table_va = "0x%08x" % tn[0][0]
+                    want = (tn[0][1].get("object_size") or "").strip()
+                    hit = [imm for pva, imm in pushes
+                           if at + lo <= pva < at + hi and want and str(imm) == want]
+                    size = str(hit[0]) if hit else ""
+                evidence = ("pushed at 0x%08x%s; the same call pushes %s%s"
+                            % (at, " in %s" % fn[2] if fn else "",
+                               "the class's object size %s" % size if size else "no measured size",
+                               " and L\"%s\"" % receiver if receiver else ""))
+            else:
+                evidence = "pushed at 0x%08x, but no class literal in the same body" % at
+        elif va in thunks:
+            t = thunks[va]
+            receiver = (t.get("class_literal") or t.get("table_class") or "").strip()
+            route, table_va = "registration-thunk", (t.get("table_va") or "").strip()
+            try:
+                site = "0x%08x" % int(t["thunk_va"], 16)
+            except (KeyError, ValueError):
+                site = ""
+            evidence = "registration for %s passes the thunk at %s, which forwards here" % (
+                receiver or "?", site or "?")
+        elif calls:
+            fn = [enclosing(order, c) for c in calls]
+            callers = ", ".join(sorted({f[2] if f else "0x%08x" % c
+                                        for f, c in zip(fn, calls)}))
+            named = {f[2] if f else "" for f in fn}
+            if len(calls) >= 2 and all(n.startswith("ctor_") for n in named):
+                route = "base-call"
+            else:
+                route = "direct-call"
+            site = "0x%08x" % calls[0]
+            evidence = "call site%s %s" % ("s" if len(calls) > 1 else "",
+                                           ", ".join("0x%08x" % c for c in calls))
+        else:
+            route = "none"
+            evidence = "no push, no E8 and no dword reference in the image"
+        rows.append({"function_va": "0x%08x" % va, "function_name": row["name"],
+                     "stores": row["stores"], "route": route, "site_va": site,
+                     "receiver": receiver, "table_va": table_va, "pushed_size": size,
+                     "callers": callers, "evidence": evidence,
+                     "verdict": row["verdict"]})
+    named = sum(1 for r in rows if r["receiver"])
+    census = {"function_va": "census", "function_name": "", "stores": len(rows),
+              "route": "bodies=%d named=%d %s" % (
+                  len(rows), named,
+                  " ".join("%s:%d" % (k, sum(1 for r in rows if r["route"] == k))
+                           for k in ROUTES if any(r["route"] == k for r in rows))),
+              "site_va": "", "receiver": "", "table_va": "", "pushed_size": "",
+              "callers": "", "verdict": "",
+              "evidence": "a route names a class only where a registration carries the body"}
+    rows.append(census)
+    return rows
+
+
+def write_receivers(rows, outdir):
+    path = os.path.join(outdir, "class_ctor_receivers.csv")
+    cols = ("function_va", "function_name", "stores", "verdict", "route", "site_va", "receiver",
+            "table_va", "pushed_size", "callers", "evidence")
+    os.makedirs(outdir, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols, lineterminator="\n")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in cols})
+    return path
+
+
 # --------------------------------------------------------------------------- writers
 
 
@@ -533,10 +754,24 @@ def self_check():
         bad.append("stale plan: %r / %r" % (stale, multi))
     if installer_names_join(ROOT):
         bad.append("installer-names: stale rows in symbols/xbox_functions.csv")
+    # a push's immediate is unaligned, and the nearest pushed string is not the class: the real
+    # registration pushes L"new" 15 bytes before the pointer and L"StaticMesh" 21 bytes after it.
+    blob = b"\x68\x30\xaf\x24\x00\x68\xca\xdd\x51\x00"
+    if push_immediates(blob, 0x5000) != [(0x5000, 0x24AF30), (0x5005, 0x51DDCA)]:
+        bad.append("push scan: %r" % (push_immediates(blob, 0x5000),))
+    synth = {0x4C7008: "new", 0x51DDCA: "StaticMesh", 0x24AF30: "", 0x51DD28: ""}
+    lit = class_literal([(0x4FF1, 0x4C7008), (0x5000, 0x24AF30), (0x5015, 0x51DDCA)], 0x5000,
+                        -0x100, 0x100, synth.get, {"StaticMesh"})
+    if lit != (0x5015, "StaticMesh"):
+        bad.append("class literal: %r" % (lit,))
+    if class_literal([(0x4FF1, 0x4C7008), (0x5015, 0x51DDCA)], 0x5000, -0x100, 0x100,
+                     synth.get, {"new"}) != (0x4FF1, "new"):
+        bad.append("class literal: a name the map does not carry counts")
     if bad:
         print("FAIL class-ctors: " + "; ".join(bad))
         return 1
     print("ok   class-ctors: constructor/destructor shapes split, a table store is found at its VA, "
+          "a push's unaligned immediate and its nearest class literal are found, "
           "and no class symbol names a table another class owns")
     return 0
 
@@ -594,9 +829,22 @@ def main():
                     help="fold the names into symbols/xbe_overrides.csv and symbols/xbox_functions.csv")
     ap.add_argument("--fix-stale", action="store_true",
                     help="with --apply: also correct a class symbol whose store's table the map re-named")
+    ap.add_argument("--receivers", action="store_true",
+                    help="write inventory/class_ctor_receivers.csv: the route to each multi-store body")
     args = ap.parse_args()
     if not args.xbe:
         ap.error("the image is required unless --check is given")
+    if args.receivers:
+        rows = receiver_report(ROOT, args.xbe)
+        path = write_receivers(rows, args.out)
+        body = [r for r in rows if r["function_va"] != "census"]
+        print("%s: %d bodies, %d named by the route that reaches them"
+              % (path, len(body), sum(1 for r in body if r["receiver"])))
+        for r in body:
+            print("  %s %-22s %-19s %-9s %s"
+                  % (r["function_va"], r["function_name"] or "-", r["route"],
+                     r["receiver"] or "-", r["site_va"] or "-"))
+        return 0
 
     xbe = load_image(args.xbe)
     text = next(s for s in xbe.sections if s.name == ".text")

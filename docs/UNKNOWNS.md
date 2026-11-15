@@ -1239,6 +1239,20 @@ a store into `[esi]` after a `call` is an object the body made. **What would set
 two property bodies -- the static-constructor slot of the class they populate -- and, for `0x0024af30`, a property-set
 join against the engine's `UStaticMeshInstance`-style classes, since no literal in the body names its class.
 
+**2026-11-15, the callers name one factory and show the other is not a registration's.** The read this entry
+ended on is done, and it splits the two bodies. `0x0024af30` has **no** `E8` site and **no** dword reference
+(`tools/vtable-reach.py`); the one reference to it in the image is `PUSH 0x24af30` at `0x0024b6d1` inside
+`Engine_UnStaticMesh`, the `StaticClass` body that pushes `0x1a0` (416), `L"StaticMesh"` and the destructor
+thunk `0x24f730` into one `ReturnClass` call and asserts at `Engine/Src/UnStaticMesh.cpp:0xf`. So its class is
+**`StaticMesh`**, stated by the image rather than inferred from a property set -- the earlier
+`StaticMeshInstance` guess is retired. `0x0014e0e0`'s only caller is `0x0013970e` in `UEngine::Init`, and no
+registration names it, so no caller slot answers for it; its property set (`Alias`, `Aliases`, one `RawKeys`
+element per `EInputKey`) is the engine `Input` class's, and `inventory/class_ctor_receivers.csv` leaves its
+receiver blank rather than filling it from that reading. **What is still open:** `0x00110120` (three callers,
+none a registration) and `0x002e8260` (base of three named ctors, own table `0x4cfe68` unnamed) have no route
+that names a class; the first is settled by reading its three callers' bodies, the second only by naming
+`0x4cfe68`.
+
 ## U9. Phase 4.2's signature libraries cannot be carried by this repository
 
 **Observed.** 12,347 of 14,280 functions are still `FUN_*`. 4.2 asks for MSVC 7.1 / Xbox SDK signature
