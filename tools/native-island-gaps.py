@@ -55,7 +55,7 @@ DOC_START = "<!-- generated:native-island-gaps -->"
 DOC_END = "<!-- /generated:native-island-gaps -->"
 FIELDS = ["row", "gap_lo", "gap_hi", "gap_size", "stubs", "kinds", "sites", "entered", "entered_calls",
           "inside", "site_va", "stub_va", "stub_size", "stub_kind", "target", "table", "calls", "stores",
-          "dwords", "sections", "slot", "eh_magic", "eh_term", "census"]
+          "dwords", "sections", "slot", "eh_magic", "eh_term", "eh_stubs", "eh_finfo", "census"]
 
 
 def _load(name):
@@ -135,6 +135,20 @@ def dword_refs(dat, xbe, va, spans):
     return n, ",".join(sorted(secs)) or "-", slot, magic, term
 
 
+
+def eh_pool(xbe, stubs):
+    """(eh-handler stubs, how many of them name a `FuncInfo`) in one gap's walk."""
+    eh = [st for st in stubs if st[2] == "eh-handler"]
+    ok = 0
+    for st in eh:
+        operand = st[4]
+        sec = xbe.section_for(operand) if isinstance(operand, int) else None
+        raw = xbe.read_va(operand, 4) if sec else b""
+        if len(raw) >= 4 and struct.unpack("<I", raw[:4])[0] == 0x19930520:
+            ok += 1
+    return len(eh), ok
+
+
 # --------------------------------------------------------------------------- the measurement
 def harvest(xbe, dat, text, tva, funcs, installers, tables, spans):
     """One row per gap and per site, plus a census row carrying every run-level count."""
@@ -160,12 +174,16 @@ def harvest(xbe, dat, text, tva, funcs, installers, tables, spans):
     rows, gap_rows = [], []
     total_stubs = total_entered = total_entered_calls = total_inside = total_bytes = 0
     total_refs = total_slot = total_magic = total_term = 0
+    total_eh = total_eh_finfo = 0
     for (lo, hi), sites in sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         stubs = walked[(lo, hi)]
         kinds = {}
         for st in stubs:
             kinds[st[2]] = kinds.get(st[2], 0) + 1
         entered_calls, entered, inside = edges_into(text, tva, lo, hi)
+        eh_n, eh_ok = eh_pool(xbe, stubs)
+        total_eh += eh_n
+        total_eh_finfo += eh_ok
         total_stubs += len(stubs)
         total_entered += entered
         total_entered_calls += entered_calls
@@ -176,6 +194,7 @@ def harvest(xbe, dat, text, tva, funcs, installers, tables, spans):
                          "kinds": ",".join("%s:%d" % (k, kinds[k]) for k in sorted(kinds)),
                          "sites": str(len(sites)), "entered": str(entered),
                          "entered_calls": str(entered_calls), "inside": str(inside),
+                         "eh_stubs": str(eh_n), "eh_finfo": str(eh_ok),
                          "census": "" if (lo, hi) != hole_range else "hole"})
         for site in sites:
             st = stub_of(stubs, site)
@@ -211,6 +230,7 @@ def harvest(xbe, dat, text, tva, funcs, installers, tables, spans):
             "entered_calls": total_entered_calls, "inside": total_inside,
             "called": len(called), "stored": len(stored), "dword_refs": len(dref),
             "refs": total_refs, "slot_hits": total_slot, "eh_magic": total_magic,
+            "eh_stubs": total_eh, "eh_finfo": total_eh_finfo,
             "eh_term": total_term, "tables": len(spans),
             "mapped": sum(1 for s in spans if s[2] == "mapped"),
             "unmapped": sum(1 for s in spans if s[2] == "unmapped"),
@@ -282,6 +302,8 @@ def render(rows):
             "| `E8`/`E9` edges entering a gap from outside it | %d (`E8` %d) |"
             % (meta["entered"], meta["entered_calls"]),
             "| `jmp` edges whose site is inside the same gap | %d |" % meta["inside"],
+            "| `eh-handler` stubs in the 14 gaps / naming a `FuncInfo` | %d / %d |"
+            % (meta["eh_stubs"], meta["eh_finfo"]),
             "| the 61 stubs an `E8` calls / a store or push names | %d / %d |"
             % (meta["called"], meta["stored"]),
             "| the 61 stubs a dword outside `.text` names | %d (%d refs) |"
@@ -296,12 +318,14 @@ def render(rows):
             % (meta["installers"], meta["other_installers"]),
         ]
     if gaps:
-        lines += ["", "| gap | bytes | stubs | stub shapes | sites | edges in from outside | edges inside |",
-                  "|---|---|---|---|---|---|---|"]
+        lines += ["", "| gap | bytes | stubs | stub shapes | sites | edges in from outside | edges inside "
+                  "| eh-handler / `FuncInfo` |",
+                  "|---|---|---|---|---|---|---|---|"]
         for r in gaps:
-            lines.append("| `%s`..`%s`%s | %s | %s | %s | %s | %s | %s |" % (
+            lines.append("| `%s`..`%s`%s | %s | %s | %s | %s | %s | %s | %s / %s |" % (
                 r["gap_lo"], r["gap_hi"], " (hole)" if r.get("census") else "", r["gap_size"],
-                r["stubs"], r["kinds"], r["sites"], r["entered"], r["inside"]))
+                r["stubs"], r["kinds"], r["sites"], r["entered"], r["inside"],
+                r["eh_stubs"], r["eh_finfo"]))
     if meta:
         lines += ["",
                   "All %d sites outside the hole sit in stubs, %d of which the walker decodes as a "
@@ -393,12 +417,14 @@ def self_check():
     # the census row round-trips and the render reads it, not the measurement
     blank = {k: "" for k in FIELDS}
     fake = [dict(blank, row="gap", gap_lo="0x1010", gap_hi="0x1200", gap_size="496", stubs="1",
-                 kinds="forward:1", sites="1", entered="0", entered_calls="0", inside="0"),
+                 kinds="forward:1", sites="1", entered="0", entered_calls="0", inside="0",
+                 eh_stubs="0", eh_finfo="0"),
             dict(blank, row="site", gap_lo="0x1010", gap_hi="0x1200", site_va="0x1113",
                  stub_va="0x1110", stub_size="8", stub_kind="forward", target="0x2000", calls="0",
                  stores="0", dwords="0"),
             dict(blank, row="census", census="bytes=496;called=0;dword_refs=0;eh_magic=0;eh_term=0;"
-                 "entered=0;entered_calls=0;fwd=1;fwd_bytes=8;fwd_size=1;gaps=1;hole_eh_magic=0;hole_eh_term=0;"
+                 "eh_finfo=0;eh_stubs=0;entered=0;entered_calls=0;fwd=1;fwd_bytes=8;fwd_size=1;gaps=1;"
+                 "hole_eh_magic=0;hole_eh_term=0;"
                  "hole_hi=0x1200;hole_lo=0x1010;hole_refs=0;hole_sites=0;inside=0;installers=1;"
                  "mapped=1;other_eh_magic=0;other_eh_term=0;other_gaps=1;other_installers=1;other_refs=0;other_sites=1;"
                  "refs=0;sites=1;slot_hits=0;stored=0;stubs=1;tables=1;unmapped=0")]
@@ -408,9 +434,10 @@ def self_check():
     assert "| `E8`/`E9` edges entering a gap from outside it | 0 (`E8` 0) |" in page, page
     assert "| the 61 stubs a dword outside `.text` names | 0 (0 refs) |" in page, page
     assert "| ...of those refs, in a class-table slot (1 mapped + 0 unmapped tables) | 0 of 0 |" in page, page
-    assert "| `0x1010`..`0x1200` | 496 | 1 | forward:1 | 1 | 0 | 0 |" in page, page
+    assert "| `0x1010`..`0x1200` | 496 | 1 | forward:1 | 1 | 0 | 0 | 0 / 0 |" in page, page
+    assert "| `eh-handler` stubs in the 14 gaps / naming a `FuncInfo` | 0 / 0 |" in page, page
     assert splice_doc(os.path.join(ROOT, "Makefile"), "x") is None  # no markers: refused, not echoed
-    print("ok   native-island-gaps: 18 assertions (gap bounds, forwarder stub, four reach channels, "
+    print("ok   native-island-gaps: 19 assertions (gap bounds, forwarder stub, four reach channels, "
           "table spans mapped and unmapped, exception descriptor, census round trip, marker refusal)")
 
 

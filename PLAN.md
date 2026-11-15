@@ -1379,6 +1379,25 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-14, every hole in the symbol map is a compiler exception pool)
+
+- **1,906 `eh-handler` stubs, 1,896 naming a `FuncInfo`.** Reading all 14 gaps (not only the 17 KB hole)
+  by the walk's own `eh-handler` shape and then its operand gives 1,906 stubs across the 93,441 bytes of
+  `.text` the map does not cover, 1,896 of whose operand's first dword is `0x19930520`. So the hole read in
+  the previous note is not special: the map's gaps are the compiler's exception pools through and through.
+- **The 10 that do not name a record are a shape false positive, and all ten are in one gap.** They are
+  10-byte `mov imm32; jmp` stubs in `0x0040ab78`..`0x0040c2c0` whose operand is a `.data` address rather
+  than a `.rdata` record, and they jump to `Core_UnTemplate`. The shape rule counts them as handlers; the
+  magic check is what separates them, which is why the census reports both numbers instead of the shape.
+- Tool (the same `tools/native-island-gaps.py`, which now carries `eh_stubs`/`eh_finfo` per gap row and in
+  its `census` row, plus the two columns in the rendered gap table) + `inventory/native_island_gaps.csv` +
+  the bullet on `docs/systems/CLASS_REGISTRATION.md` + this note. No boot.
+- **Next measurement:** the 17 `constrained` rows of `inventory/class_table_parents.csv`, whose tables are
+  installed by constructors with no single common ancestor; the join to try is the table's own `slot0`
+  (`inventory/xbe_class_table_slots.csv`) against `inventory/class_constructors.csv`, noting that slot 0 is
+  `0x00062650` on all 492 mapped tables *and* all 24 orphans, so that column cannot separate them and the
+  instrument has to look at slot 1..n instead.
+
 ### Execution notes (2026-11-14, the other 61 installer tail jumps are exception descriptors)
 
 - **The 61 are one 8-byte forwarder each.** With the hole read, the other 61 unmapped installer tail jumps
