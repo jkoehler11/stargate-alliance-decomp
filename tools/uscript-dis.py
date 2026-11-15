@@ -299,6 +299,23 @@ def selftest():
         print("FAIL uscript-dis: has_body read %r for a native/real pair"
               % ([(m.group(2), has_body(pair, m.end())) for m in match],))
         return 1
+    # A Function's Outer is a `State` as often as a `Class`, and a state's name is not in the super map, so the walk
+    # to the nearest enclosing Class is what keeps such a native-call site countable (5,554 of 49,100 sites sit in one).
+    exports = [{"outer": 0},     # 1 Class Bird
+               {"outer": 0},     # 2 State Flying
+               {"outer": 1},     # 3 State Gliding
+               {"outer": 3}]     # 4 Function Wander, inside Gliding inside Flying
+    kinds = {1: "Class", 2: "State", 3: "State", 4: "Function"}
+    names = {1: "Bird", 2: "Flying", 3: "Gliding", 4: "Wander"}
+    for args, want in [((exports, kinds, names, 4), "Bird"),        # two states deep reaches the class
+                       ((exports, kinds, names, 3), "Bird"),        # a state's owner is its class
+                       ((exports, kinds, names, 1), "Bird"),        # a class owns itself
+                       (([{"outer": 0}, {"outer": 0}], {1: "State", 2: "Function"}, {1: "Orphan", 2: "F"}, 2), ""),
+                       (([{"outer": 9}, {"outer": 9}], {1: "Class", 2: "Function"}, {1: "Loop", 2: "F"}, 2), "")]:
+        got = owner_class(*args)
+        if got != want:
+            print("FAIL uscript-dis: owner_class from export %d answered %r, expected %r" % (args[3], got, want))
+            return 1
     print("ok   uscript-dis: %d rows, %d streams split, %d refusals honoured, shuffle rotates %d types,"
           " state spans blanked" % (len(table.rows), len(checks), len(refusals), len(pool)))
     return 0
@@ -1802,8 +1819,28 @@ OBJECT_TOKENS = {"InstanceVariable", "LocalVariable", "DefaultVariable", "Object
                  "FinalFunction", "VirtualFunction", "GlobalFunction"}
 
 
+def owner_class(exports, kinds, names, outer, limit=8):
+    """The nearest enclosing export whose own class is `Class`.
+
+    A `Function`'s Outer is a class as often as a `State` (2,137 of this corpus's 12,472 `Function` exports sit inside
+    one), and a state's name is not a class: a chain walked from it is the state's own name, which resolves nothing.
+    `exports` is the package's export list, 1-based like the archive's own object indices; `kinds` and `names` map one
+    of those indices to that export's class name and its own Object name.
+    """
+    seen, cur, hops = set(), outer, 0
+    while cur and cur not in seen and hops <= limit:
+        if kinds.get(cur) == "Class":
+            return names.get(cur, "")
+        if not 0 < cur <= len(exports):
+            return ""
+        seen.add(cur)
+        cur = exports[cur - 1].get("outer")
+        hops += 1
+    return ""
+
+
 def native_calls_report(path, table, out=None):
-    """What the opcodes above 0x5f call: the token is the native index, read against the caller's chain.
+    """What the opcodes above 0x5f call: the token is the native index, read against the owning class's super chain.
 
     The opcode table stops naming at `0x5f` and carries `0x60..0x6f` as "one byte then parms" and everything above
     it as "parms" -- the operand shape of a native call without saying which native. `GNatives` holds the bodies:
@@ -1827,6 +1864,11 @@ def native_calls_report(path, table, out=None):
     if os.path.exists(records):
         for r in csv.DictReader(open(records)):
             bodies[int(r["slot"])] = r["record_name"] or ""
+
+    declaring = collections.defaultdict(set)          # index -> every class whose text declares it
+    for name, m in declared.items():
+        for ix in m:
+            declaring[ix].add(name)
 
     def chain_of(cls):
         names, seen = [], set()
@@ -1858,8 +1900,8 @@ def native_calls_report(path, table, out=None):
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
     epilogue = bytes([0x04, 0x0B, 0x47])
-    # sites, resolved, param-fit, (class, fn, params), argument-count histogram
-    rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter()])
+    # sites, resolved, param-fit, (class, fn, params), argument-count histogram, off-chain sites
+    rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter(), 0])
     scores = {"A": [0, 0, 0, 0], "B": [0, 0, 0, 0], "C": [0, 0, 0, 0]}   # sites, resolved, fit, body
     walked = seen_payloads = 0
     for one in files:
@@ -1867,12 +1909,14 @@ def native_calls_report(path, table, out=None):
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
-        for e in pkg.exports:
-            if pkg.class_name_of(e) != "Function":
+        names = {i + 1: pkg.name(x["name"]) for i, x in enumerate(pkg.exports)}
+        kinds = {i + 1: pkg.class_name_of(x) for i, x in enumerate(pkg.exports)}
+        for i, e in enumerate(pkg.exports):
+            if kinds[i + 1] != "Function":
                 continue
-            # A Function export's class is its Outer export, named through that object's own Name.
-            outer_ix = e.get("outer")
-            cls = pkg.name(pkg.exports[outer_ix - 1]["name"]) if outer_ix else ""
+            # The caller is the class that owns the function, not the function's immediate Outer: a `State` is an
+            # export too, and a chain walked from a state's name resolves nothing (it is not in the super map).
+            cls = owner_class(pkg.exports, kinds, names, e.get("outer"))
             pay = pkg.data[e["offset"]:e["offset"] + e["size"]]
             n = len(pay)
             off, last, ok = 0, None, True
@@ -1935,6 +1979,8 @@ def native_calls_report(path, table, out=None):
                     if hit[2] == args:
                         cell[2] += 1
                     cell[3] = hit
+                else:
+                    cell[5] += 1
     print("%d payload(s) with an epilogue, %d walk clean" % (seen_payloads, walked))
     for rule, label in (("A", "op-0x70"), ("B", "op-0x60"), ("C", "the token itself")):
         sites, resolved, fit, named = scores[rule]
@@ -1944,24 +1990,30 @@ def native_calls_report(path, table, out=None):
     print("%-6s %-7s %6s %7s %8s %8s  %-22s %-22s %s"
           % ("op", "operand", "index", "sites", "resolved", "params", "body (GNatives record)", "native",
              "args (top 3)"))
-    for (op, operand, index), (sites, resolved, fit, hit, hist) in \
+    for (op, operand, index), (sites, resolved, fit, hit, hist, _off) in \
             sorted(rows.items(), key=lambda kv: -kv[1][0])[:40]:
         record = bodies.get(index, "")
         print("0x%02x   %-7s %6d %7d %8d %8d  %-22s %-22s %s"
               % (op, "-" if operand is None else "0x%02x" % operand, index, sites, resolved, fit,
                  (record + (" *" if body_names(index, hit) else "")) if record else "-",
                  ("%s.%s" % (hit[0], hit[1])) if hit else "-", arg_hist(hist)))
+    off = sum(v[5] for v in rows.values())
+    off_single = sum(v[5] for k, v in rows.items() if len(declaring.get(k[2], ())) == 1)
+    print("%d site(s) name no declaration on their own class's chain; %d of them write an index the image declares "
+          "for exactly one class (%d distinct index(es))"
+          % (off, off_single, len({k[2] for k, v in rows.items() if v[5]})))
     if out:
         os.makedirs(out, exist_ok=True)
         name = os.path.join(out, "native_opcodes.csv")
         with open(name, "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "body_name", "body_match",
-                        "native", "declared_in", "declared_params", "args"])
-            for (op, operand, index), (sites, resolved, fit, hit, hist) in sorted(rows.items()):
+            w.writerow(["opcode", "operand", "index", "sites", "resolved", "off_chain", "param_fit", "body_name",
+                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args"])
+            for (op, operand, index), (sites, resolved, fit, hit, hist, offn) in sorted(rows.items()):
                 w.writerow(["0x%02x" % op, "" if operand is None else "0x%02x" % operand, index, sites, resolved,
-                            fit, bodies.get(index, ""), int(body_names(index, hit)),
-                            hit[1] if hit else "", hit[0] if hit else "", hit[2] if hit else "",
+                            offn, fit, bodies.get(index, ""), int(body_names(index, hit)),
+                            hit[1] if hit else "", hit[0] if hit else "",
+                            ";".join(sorted(declaring.get(index, ()))), hit[2] if hit else "",
                             arg_hist(hist)])
         print("wrote %s (%d row(s), %d sites)" % (name, len(rows), sum(v[0] for v in rows.values())))
     return 0
