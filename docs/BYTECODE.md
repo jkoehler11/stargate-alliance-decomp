@@ -733,24 +733,36 @@ caller inherits it.
   the index still names the native and `declared_by` names that class; the caller's chain was missing the declaring
   class, not the corpus the declaration. The earlier reading of that 6,406 as "extended calls into engine classes the
   script half never declares" was the lookup's own blind spot.
-* **The 890 are typed by their receiver, and 855 of them land (2026-11-15).** `Canvas.DrawText` inside
+* **The 890 are typed by their receiver, and 874 of them land (2026-11-15).** `Canvas.DrawText` inside
   `Actor.DisplayDebug` is not a call into a class nobody declares: the receiver is a *parameter*, and the parameter's
   declaration states the class. The emitter evaluates the object before the call token, so the expression in front of
   the token is the receiver -- `receiver_type()` reads it through a `Context`/`ClassContext`, an array element or a
   cast, types a variable from its declaration (a local or parameter from the class's own `ScriptText`, a property from
-  `inventory/class_properties.csv`) and asks **that** class's chain for the index. Measured over the same 11,687
-  scripts: **855 of the 890 sites (96.1%) place, across 40 of the 42 indices** -- 465 `Canvas.DrawText` **370 of 370**,
-  464 `Canvas.StrLen` **123 of 123**, `PlayInfo.AddSetting` 704 30 of 30, `Actor.AllActors` 304 42 of 51,
-  `Actor.DynamicActors` 313 41 of 45, `Actor.Spawn` 278 49 of 54. **The case fold is part of the rule**: 117 of those
+  `inventory/class_properties.csv`, and an imported property from the class its own `OuterIndex` names -- the
+  declaration the compiler resolved against, the same rule `--calls` applies), reads a **call result** from the
+  callee's *declared return type* and a **struct member** from the `var` line in its struct's block, and asks **that**
+  class's chain for the index. Measured over the same 11,687 scripts: **874 of the 890 sites (98.2%) place, across 41
+  of the 42 indices** -- 465 `Canvas.DrawText` **370 of 370**, 464 `Canvas.StrLen` **123 of 123**,
+  `PlayInfo.AddSetting` 704 30 of 30, `Actor.AllActors` 304 42 of 51, `Actor.DynamicActors` 313 42 of 45,
+  `Actor.Spawn` 278 53 of 54, `Actor.Destroy` 279 27 of 28. **The case fold is part of the rule**: 117 of those
   placements are typed from a declaration the source spells `canvas`, and a chain walk that keeps the source's
   spelling answers nothing for them (the same defect `--calls` fixed for by-name sites).
-* **The residue is named, and it is small.** 16 further sites have a receiver typed to a class whose own chain does not
-  declare the index -- fifteen of them typed `Object`, a base *above* the declaring class -- and **19 name no class at
-  all**: a call-result receiver (`VirtualFunction` 5, `FinalFunction` 5), a `StructMember` 5, and two variables whose
-  declarations (`Game`, `Level`) are neither a local nor a property record. One index, 539, is called with nothing in
-  front of it at all (2 sites). So the off-chain column's 890 is 855 calls whose receiver type declares the native,
-  16 whose receiver type does not, and 19 the expression in front cannot type -- the third group is what the call
-  census's own call-result and struct-member reads would cover next, not a gap in the corpus.
+* **The residue is 16 sites, and every one is a base class above the declarer.** Fifteen of them have a receiver typed
+  `Object` -- a base *above* the declaring class, so the chain is the wrong question and the site is a dispatch, not a
+  gap -- and the sixteenth is typed to a class whose chain likewise lacks the native. **The 19 sites that typed to
+  nothing are typed now, each from a statement of the shipped text rather than from a vote**: five `StructMember`
+  receivers are the `UIWidget` fields of `SquadItemStruct` (`NameOverlayWidget`, `FaceWidget`, `ConcFireWidget`,
+  `TakeCoverWidget`, `DeathTimerWidget`) in `SquadMenu.Destroyed`, whose declared class is the `var` line inside the
+  struct's block; five `FinalFunction` receivers are `PlayerOwner`/`GetPlayerOwner`, declared to return
+  `playercontroller`; five `VirtualFunction` receivers are `GetSoundSource` (one declaring class, `ScriptedController`,
+  returns `actor`) and `GetInstigator` (two declarers, `Engine.Vehicle` and `GamePlay.ScriptedController`, which agree
+  on `pawn` -- agreement is the rule, not a majority); and four are the variables `Game` and `Level`, typed to
+  `GameInfo` and `LevelInfo`. The same owner read *corrected* 28 receiver readings from `Actor` to `PlayerController`
+  without moving a placement, so the histogram is more specific and no row lost a site. Index 539's two sites, which
+  an earlier reading called "called with nothing in front of it", are `GetPlayerOwner()` results: the expression is a
+  `Context` whose function token was the thing that typed to nothing. Controls: the site totals do not move
+  (44,811 + 4,289 = 49,100, `resolved` still 48,210), and each of the seven rows the read touched gained placements
+  -- 264 7->11, 278 49->53, 279 22->27, 310 3->5, 313 41->42, 539 0->2, 3970 3->4 -- with none losing one.
 
 **What it rules out.** Both readings this page carried -- an operator token whose operand stream is not a parameter
 list, and two numbering schemes meeting at 96 -- are wrong. The stream is a parameter list, and the build has one
@@ -868,7 +880,7 @@ Two checks say the join is the naming rather than a plausible one, and both are 
 
 3,399 of the 4,289 high-band sites name a declaration on **their own class's chain** -- the artifact's `resolved` column -- and the other 890 write an index whose declaration sits in a class the caller does not inherit: 890 of those sites write an index only one class declares, so the index still names the native even where the receiver's class is not the caller's. The column answers a different question from `body_name`: a call site names the body it dispatches on whether or not the caller's class declares that native, and reading the two columns as one would turn a narrower lookup into a disagreement.
 
-**The receiver is what resolves them (measured 2026-11-15): 855 of those 890 sites name their index on the chain of the receiver expression's own class, across 40 of the 42 indices that write an off-chain site -- and 16 more have a receiver typed to a class whose own chain does not declare the index, while 19 name no expression that types to a class at all (a call result, a struct member, or a type their class never declares).** The receiver is the expression in front of the call token, which `uscript-dis.py` types from the class's own `ScriptText`; `native_opcodes.csv`'s `off_chain_receiver`, `off_chain_resolved` and `off_chain_untyped` carry the three counts per index, and this table's `receiver`/`receiver_placed`/`receiver_untyped` columns are that read joined onto the band. Their residue, not a gap in the corpus: the `off_chain` column was a lookup that asked the caller's ancestry a question about the receiver.
+**The receiver is what resolves them (measured 2026-11-15): 874 of those 890 sites name their index on the chain of the receiver expression's own class, across 41 of the 42 indices that write an off-chain site -- 16 more have a receiver typed to a class whose own chain does not declare the index, and no site is left with an expression that types to nothing.** The receiver is the expression in front of the call token, which `uscript-dis.py` types from the class's own `ScriptText`; `native_opcodes.csv`'s `off_chain_receiver`, `off_chain_resolved` and `off_chain_untyped` carry the three counts per index, and this table's `receiver`/`receiver_placed`/`receiver_untyped` columns are that read joined onto the band. Their residue, not a gap in the corpus: the `off_chain` column was a lookup that asked the caller's ancestry a question about the receiver.
 <!-- /generated:opcode-band-bands -->
 
 What the disassembler therefore prints is the operator's own name -- `AndAnd_BoolBool`, `Multiply_FloatFloat` -- and

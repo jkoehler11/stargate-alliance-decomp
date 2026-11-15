@@ -634,6 +634,12 @@ def render_bands(rows, census, hrows, hcensus):
             "{:,}".format(int(hcensus["symbol_max"])), "{:,}".format(int(hcensus["symbol_bytes"])),
             "{:,}".format(biggest), hcensus["unnamed_symbols"])),
     ]
+    untyped_n = int(hcensus["off_chain_untyped"])
+    # The clause is rendered, not typed in: a run whose residue is closed must not still be describing what it
+    # could not type, and `--check-doc` rebuilds this sentence from the committed CSVs either way.
+    untyped_clause = (("%s name no expression that types to a class at all (a call result, a struct member, or a "
+                       "type their class never declares)" % "{:,}".format(untyped_n)) if untyped_n
+                      else "no site is left with an expression that types to nothing")
     out += [
         "",
         ("%s of the %s high-band sites name a declaration on **their own class's chain** -- the artifact's `resolved` "
@@ -648,17 +654,16 @@ def render_bands(rows, census, hrows, hcensus):
         (""),
         ("**The receiver is what resolves them (measured 2026-11-15): %s of those %s sites name their index on the "
          "chain of the receiver expression's own class, across %s of the %s indices that write an off-chain site -- "
-         "and %s more have a receiver typed to a class whose own chain does not declare the index, while %s name no "
-         "expression that types to a class at all (a call result, a struct member, or a type their class never "
-         "declares).** The receiver is the expression in front of the call token, which `uscript-dis.py` types from "
-         "the class's own `ScriptText`; `native_opcodes.csv`'s `off_chain_receiver`, `off_chain_resolved` and "
-         "`off_chain_untyped` carry the three counts per index, and this table's `receiver`/`receiver_placed`/"
-         "`receiver_untyped` columns are that read joined onto the band. Their residue, not a gap in the corpus: the "
-         "`off_chain` column was a lookup that asked the caller's ancestry a question about the receiver."
+         "%s more have a receiver typed to a class whose own chain does not declare the index, and %s.** The "
+         "receiver is the expression in front of the call token, which `uscript-dis.py` types from the class's own "
+         "`ScriptText`; `native_opcodes.csv`'s `off_chain_receiver`, `off_chain_resolved` and `off_chain_untyped` "
+         "carry the three counts per index, and this table's `receiver`/`receiver_placed`/`receiver_untyped` columns "
+         "are that read joined onto the band. Their residue, not a gap in the corpus: the `off_chain` column was a "
+         "lookup that asked the caller's ancestry a question about the receiver."
          % ("{:,}".format(int(hcensus["off_chain_placed"])), "{:,}".format(int(hcensus["off_chain_total"])),
             "{:,}".format(int(hcensus["off_chain_indices"])), "{:,}".format(int(hcensus["off_chain_rows"])),
             "{:,}".format(int(hcensus["off_chain_typed"]) - int(hcensus["off_chain_placed"])),
-            "{:,}".format(int(hcensus["off_chain_untyped"])))),
+            untyped_clause)),
     ]
     return "\n".join(out)
 
