@@ -1602,6 +1602,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   static-constructor edge -- so a `call-census` pass on `0x0024af30` and `0x0014e0e0` either names them or
   shows they are reached through a table like every other static constructor.
 
+### Execution notes (2026-11-15, the callers name one factory and the other is not a registration's)
+
+- **The two property bodies are separated by their callers, not by another body read.** A call census
+  (`tools/vtable-reach.py`, then a byte-wise dword scan and a `push imm32` scan) finds **no** `E8` site and
+  **no** dword reference for `0x0024af30`: the only reference to it in the image is `PUSH 0x24af30` at
+  `0x0024b6d1`, 65 bytes into `Engine_UnStaticMesh` (`0x0024b690`), whose `ReturnClass` call at `0x0024b70c`
+  pushes `0x1a0` (416 = the object size of `0x0051dd28`), `L"StaticMesh"` and the destructor thunk
+  `0x24f730`. So `0x0024af30` builds the property list of **`StaticMesh`** -- the image states the name, and
+  the property-set guess (`StaticMeshInstance`) is retired.
+- **`0x0014e0e0` is not a registration's body at all.** One caller, `0x0013970e` in `Engine_UnGame`
+  (`UEngine::Init`), and no row of `class_registrations.csv`: it fetches its class object itself (cached in
+  the global at `0x007ab62c`) and hangs `Alias`/`Aliases`/one `RawKeys` per `EInputKey` on it -- the engine
+  `Input` class's property set. A caller slot cannot name it, so the artifact does not.
+- **A route names a class only where a registration carries the body: 3 of 6.** `tools/class-ctors.py
+  --receivers` writes `inventory/class_ctor_receivers.csv` (6 bodies + a census: `registration-arg` 1,
+  `registration-thunk` 2, `base-call` 1, `direct-call` 2), naming `StaticMesh`, `FireTexture` and
+  `IceTexture` and leaving the other three blank instead of guessing.
+- Tool (`tools/class-ctors.py`: `--receivers`, `push_immediates`, `class_literal`, and two synthetic
+  `--check` cases -- an unaligned push immediate, and a nearer `L"new"` that must not win the class literal)
+  + `inventory/class_ctor_receivers.csv` + the section on `docs/NATIVE_CLASS_TREE.md` + `docs/UNKNOWNS.md` U8
+  + this note. No boot: the image, the symbol map and the committed registration census.
+- **Next measurement:** `0x00110120`'s three callers (`FUN_0011d460`, `FUN_002d2890`, `FUN_002d55f0`) are the
+  only route left to a name for it, and one of them is likely the level loader that builds the
+  `PackageMapLevel` -- read those bodies, not this one again.
+
 ### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)
 
 - **The caller rule is constrained by the script tree, not by the image.** 0 of the 63 caller tables the
