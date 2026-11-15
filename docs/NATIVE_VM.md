@@ -294,23 +294,36 @@ table at the main menu. Those natives are the ones resolved by name later, the p
 from the other side. The 123 indexed stubs and these 467 share **no** body: the two halves of the stub file are
 registration by slot and registration by name.
 
-The 56 index-less declarations with no `-1` stub are **41 `Object`**, 13 `BrushBuilder` (the editor-only brush
-class), 1 `MaterialFactory` and 1 `UPreviewSkinnedButton`. The tool prints that composition rather than folding the
-remainder into the total.
+The 55 index-less declarations with no `-1` stub are **41 `Object`**, 13 `BrushBuilder` (the editor-only brush
+class), 1 `MaterialFactory` and 1 `UPreviewSkinnedButton` -- except the last is not a declaration: the image holds
+no native `Function` for it (below). The tool prints that composition rather than folding the remainder into the
+total.
 
-### The 56 without a stub: three channels, and two packages the build never loads
+### The 55 without a stub: three channels, and two packages the build never loads
 
 That remainder is measured too (`tools/native-channels.py`, `make native-channels`, `inventory/native_channels.csv`,
 `--check` in `make ci`): one row per index-less declaration, joining the `-1` stub, the `{name, body}` record and the
-class's store-registered slots, and asking the image itself whether the binder literal exists. All 523 resolve, and
-none of them is missing from the registration file:
+class's store-registered slots, asking the image itself whether the binder literal exists, and asking the row's own
+`Function` payload whether it is a native at all. All 523 resolve, and none of them is missing from the registration
+file:
 
 | Channel | Declarations | What carries them |
 |---|---|---|
 | stub + record (a `-1` stub) | **467** | the stub, each with its own `{name, body}` record |
 | record only | **41**, all `Object` | the `{name, body}` record; no stub |
-| neither | **15** | nothing: `Editor` (13 `BrushBuilder` + 1 `MaterialFactory`) and `UPreview` (1) |
+| unbound (neither stub nor record) | **14** | nothing: `Editor` (13 `BrushBuilder` + 1 `MaterialFactory`), in a package the build never loads |
+| a row the image holds no native `Function` for | **1** | nothing to carry: `UPreview.UPreviewSkinnedButton.SetRenderInfo` (`record_native` 0, payload `0x00020002`) |
 | rows whose binder literal the image carries | **508 of 508** named rows | the name is in the pool for every declaration that has one |
+
+**The channel join could not see whether a row is a declaration, so it now asks the payload.** `declaration` is the
+flag word of the row's own `Function` payload, joined from `inventory/native_record_check.csv`
+(`tools/native-record-check.py`): **522 of the 523 rows are natives the image holds and 1 is not**, and the one is
+`UPreviewSkinnedButton.SetRenderInfo` -- the row whose `Function` reads `0x00020002` (`Defined;Public`, a script
+function with a body) and whose package's text is complete. So the "nothing carries them" half is **14 real
+declarations in `Editor`** plus one artifact row, `UPreview`'s real residue is **0**, and the two counts a reader of
+`docs/NATIVE_CLASSES.md` sees (2 `record-not-native`, 0 residual tokens) and the ones a reader of this table sees
+name the same row from the two sides. The `unbound` spelling in the table is the artifact's own (`channel`
+`unbound`), so a reader of the CSV and a reader of this page read one word.
 
 The 41 are not a hole, and `Object` is why. All **230** of its live `GNatives` slots are **store-registered**
 (`mov [slot], reg`), **0** of its 160 indexed natives has an indexed stub, and exactly **one** of its 42 index-less
@@ -442,7 +455,8 @@ make, including all 17 `StargateGame` and all 4 `StargateVehicles` natives, and 
 The 15 index-less names it cannot resolve are `Editor.BrushBuilder` (13), `Editor.MaterialFactory` (1) and
 `UPreview.UPreviewSkinnedButton` (1): packages that ship as script in the dump but whose C++ side is not in the Xbox
 image, so no name was ever baked in. That is a fact about the image rather than about the packages, and it is why an
-editor class binds to nothing at load.
+editor class binds to nothing at load. (14 of those 15 are declarations; the `UPreview` row is not one -- the image
+holds no native `Function` for it, *The 55 without a stub* below.)
 
 The pool also carries 114 names no declaration in the 18 packages matches, all of them `UObject`: `Iterator`,
 `HighNative0`..`HighNative15` (16, the VM's own boundary entries) and the operators under the engine's own spelling. The
