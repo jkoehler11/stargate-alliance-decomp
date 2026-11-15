@@ -1379,6 +1379,41 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the class-tree page's counts are generated and its one contradiction was the artifact)
+
+- **The follow-up #544 named is this note: `docs/NATIVE_CLASS_TREE.md` quoted a revision of the class map
+  that no longer existed** -- 466 of 492 named and 26 unnamed in fourteen places, against **468 / 24** in
+  `inventory/xbe_class_table_names.csv` after the six pairings. Every current-state count on the page is
+  corrected, and they are now **generated** rather than typed: `tools/class-tree-edges.py --write-doc`
+  renders a `<!-- generated:class-tree -->` block from the four committed inventories (tables, named,
+  unnamed, agree / conflict / no-subclass, conflicts by cause, and what the tree can say about each unnamed
+  table), `--check-doc` recomputes it with no image and no boot, `make class-tree-edges` regenerates it and
+  `make ci` gates it.
+- **Measured from the CSVs alone: 492 tables, 468 named, 24 unnamed, 391 with a measured child set, 376
+  agree / 15 conflict / 77 no subclass in the image.** The conflicts' composition is the finding: 10 native
+  C++ classes with no `classes.csv` row, 4 edges that skipped a level, 1 native child -- and the
+  `foreign-child` group is **empty**. Its single member was `WaterTexture`, and that was the map's own
+  inversion rather than the tree's reading, so the page now records the pair as settled (`0x004cfba0` =
+  `Texture`, `0x004cfe68` = `WaterTexture`, paired from the exact child set) instead of open, with the live
+  read's 454/613 objects of class `Texture` as the deciding evidence.
+- **`--xbe --all-sites` is new and it replaces a claim that did not add up.** Of all **493** registration
+  sites the pushed constructor installs the site's own class table in **464**, another table in **27** and
+  has no constructor pointer in **2**. The unnamed set is **25** sites: 24 push the shared nine-byte default
+  `0x00034650`, and the 25th is `WaterTexture`'s, which pushes the constructor that installs its
+  neighbour's table -- the mixed-window caveat as one row. The page's previous "459 own / 26 other of all
+  493" and "27 unnamed sites" were measured before the map named six tables.
+- **What #542's seventeen constrained tables look like now**: 20 unnamed tables the tree cannot constrain
+  (11 with no measured child at all, 9 whose children's super is a native base with no script row), 3 with
+  a partly-named child set, 1 named exactly. `inventory/class_table_parents.csv` still reads `0x004cfba0`
+  `adjacent -> WaterTexture` and `0x004cfc88` `adjacent -> IceTexture` (2 adjacent, 1 differs, 464 agrees),
+  which is the residual a live `UClass` name read or an engine-side class list would close.
+- Tool (`tools/class-tree-edges.py`: `--all-sites`, `--write-doc`, `--check-doc`, and the block in its
+  `--check`) + `docs/NATIVE_CLASS_TREE.md` (counts corrected, block added, the contradiction retired) +
+  `docs/UNKNOWNS.md` U8 (468/24, and where the 24 stand) + the `class-tree-edges` target and its `ci` gate +
+  this note. No boot: four committed CSVs and one dump read for the site join.
+- **Next measurement:** U8's 24 need a name, not another join -- `tools/xemu/class-tables-live.py` into a
+  mission that loads the renderer and net-driver packages, or an engine-side class list.
+
 ### Execution notes (2026-11-15, the parents artifact was grading a stale name column)
 
 - **`inventory/class_table_parents.csv` was one revision stale and its verdicts graded the class map

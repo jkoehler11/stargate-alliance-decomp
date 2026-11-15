@@ -21,6 +21,12 @@ this instrument: it is reported as unconstrained, not guessed.
     python3 tools/class-tree-edges.py                 # summary + the unnamed tables
     python3 tools/class-tree-edges.py --csv out.csv   # one row per table
     python3 tools/class-tree-edges.py --check         # synthetic self-test, no dump, no tree write
+    python3 tools/class-tree-edges.py --write-doc docs/NATIVE_CLASS_TREE.md   # render the count block
+    python3 tools/class-tree-edges.py --check-doc docs/NATIVE_CLASS_TREE.md   # ... and fail if it moved
+
+The page quotes these counts in prose, so they are generated rather than typed: `make ci` runs
+`--check-doc`, and every row of the block is recomputed from the four committed inventories -- no image,
+no dump, no write on the check path.
 """
 import argparse
 import collections
@@ -120,7 +126,7 @@ def analyse(tables, names, classes, ctors):
 
 
 
-def site_thunks(xbe_path, root):
+def site_thunks(xbe_path, root, every_site=False):
     """Name a table from the constructor a registration site pushes, when that pointer is a thunk.
 
     A site `E8`s the class constructor and pushes its arguments in the 96 bytes before, one of them a
@@ -159,7 +165,7 @@ def site_thunks(xbe_path, root):
     sites = []
     with open(os.path.join(root, "inventory/registration_sites.csv"), newline="") as f:
         for row in csv.DictReader(f):
-            if not row["class_table"]:
+            if every_site or not row["class_table"]:
                 sites.append((int(row["site_va"], 16), row["class"]))
 
     def jmp_target(va):
@@ -171,26 +177,50 @@ def site_thunks(xbe_path, root):
                 return va + i + 5 + struct.unpack_from("<i", b, i + 1)[0]
         return None
 
-    found = []
+    found, blank = [], 0
     for site, cls in sites:
         b = read(site - 96, 96)
         if not b:
+            blank += 1
             continue
+        hit = None
         for i in range(len(b) - 4):
             if b[i] != 0x68:
                 continue
             v = struct.unpack_from("<I", b, i + 1)[0]
             for target in (v, jmp_target(v)):
                 if target in installer:
-                    found.append({"site_va": hex(site), "class": cls,
-                                  "pushed": hex(v), "constructor": hex(target),
-                                  "table_va": hex(installer[target]),
-                                  "table_class": names.get(installer[target], "")})
+                    hit = {"site_va": hex(site), "class": cls,
+                           "pushed": hex(v), "constructor": hex(target),
+                           "table_va": hex(installer[target]),
+                           "table_class": names.get(installer[target], "")}
                     break
-            else:
-                continue
-            break
-    return found
+            if hit:
+                break
+        if hit:
+            found.append(hit)
+        else:
+            blank += 1
+    return found, blank
+
+
+def site_verdicts(rows, blank):
+    """Split the push-window join into own-table / other-table / no-constructor.
+
+    A row whose pushed constructor installs the site's *own* class table is what makes the
+    literal path evidence; a row that lands on a neighbouring registration (a mixed window, or a
+    shared default constructor that installs one fixed table) is the caveat the page carries.
+    """
+    own, other, absent = [], [], []
+    for row in rows:
+        cls, tcls = row["class"], row["table_class"]
+        if cls and tcls and cls == tcls:
+            own.append(row)
+        elif tcls:
+            other.append(row)
+        else:
+            absent.append(row)
+    return own, other, absent + [None] * blank
 
 
 def ancestors(classes):
@@ -288,6 +318,65 @@ def decompose(tables, names, classes, ctors):
     return out
 
 
+DOC = "docs/NATIVE_CLASS_TREE.md"
+DOC_START = "<!-- generated:class-tree -->"
+DOC_END = "<!-- /generated:class-tree -->"
+
+
+def render(out, agree, conflict, blank, causes):
+    """The counts this page quotes, as one block built from the committed inventories."""
+    named = [r for r in out if r["class"]]
+    unnamed = [r for r in out if not r["class"]]
+    tally = collections.Counter(r["verdict"].split(":")[0] for r in unnamed)
+    lines = ["| measurement | value |",
+             "|---|---|",
+             "| tables | %d |" % len(out),
+             "| named by the registration literal | %d |" % len(named),
+             "| unnamed | %d |" % len(unnamed),
+             "| named tables with a measured child set | %d |" % (agree + conflict),
+             "| … whose child set equals the class's direct subclasses in `classes.csv` | **%d** |" % agree,
+             "| … that disagree | **%d** |" % conflict,
+             "| … whose class has no subclass in the image (a leaf) | %d |" % blank,
+             "",
+             "| conflict cause | tables |",
+             "|---|---|"]
+    for cause in ("no-script-row", "descendant-edge", "native-child", "foreign-child",
+                  "missing-only"):
+        lines.append("| `%s` | %d |" % (cause, causes.get(cause, 0)))
+    lines += ["",
+              "| the unnamed tables, by what the tree can say | tables |",
+              "|---|---|",
+              "| named exactly by their child set | %d |" % tally.get("candidate", 0),
+              "| ambiguous (two classes match) | %d |" % tally.get("ambiguous", 0),
+              "| partly named child set | %d |" % tally.get("unnamed-children", 0),
+              "| unconstrained (no class's subclass set matches) | %d |" % tally.get("unconstrained", 0)]
+    return "\n".join(lines)
+
+
+def splice(path, block):
+    """The page with its generated block replaced; read whole, so the check never writes."""
+    with open(path) as fh:
+        text = fh.read()
+    if text.count(DOC_START) != 1 or text.count(DOC_END) != 1:
+        raise SystemExit("%s: expected one %s / %s pair" % (path, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _old, tail = rest.split(DOC_END, 1)
+    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+
+
+def doc_diff(page, new):
+    """First differing line pair, so a stale block names itself."""
+    with open(page) as fh:
+        old_lines = fh.read().splitlines()
+    new_lines = new.splitlines()
+    for i, (a, b) in enumerate(zip(old_lines, new_lines)):
+        if a != b:
+            return "line %d: page %r, recomputed %r" % (i + 1, a, b)
+    if len(old_lines) != len(new_lines):
+        return "the page has %d lines, the recomputation %d" % (len(old_lines), len(new_lines))
+    return ""
+
+
 def check():
     """Synthetic: three tables, three classes, one shared base -- asserts the direction."""
     ctors = [
@@ -320,7 +409,11 @@ def check():
     causes = {r["class"]: r["cause"] for r in decompose(tables2, names2, classes2, ctors2)}
     assert causes == {"Base": "descendant-edge", "Leaf": "foreign-child",
                       "Odd": "native-child"}, causes
-    print("class-tree-edges: check ok (direction, candidate, and three conflict causes)")
+    block = render(out, _a, _c, _b, collections.Counter(
+        r["cause"] for r in decompose(tables2, names2, classes2, ctors2)))
+    assert "| tables | 3 |" in block and "| unnamed | 1 |" in block, block
+    assert "| `descendant-edge` | 1 |" in block, block
+    print("class-tree-edges: check ok (direction, candidate, three conflict causes, the block)")
     return 0
 
 
@@ -333,11 +426,35 @@ def main():
     ap.add_argument("--conflicts", action="store_true",
                     help="with the summary, say why each conflicting table's child set disagrees")
     ap.add_argument("--xbe", help="also link the unnamed registration sites through their pushed thunk")
+    ap.add_argument("--write-doc", nargs="?", const=DOC, default=None,
+                    help="render the generated count block into this page (%s)" % DOC)
+    ap.add_argument("--check-doc", nargs="?", const=DOC, default=None,
+                    help="recompute the block and fail if the page disagrees")
+    ap.add_argument("--all-sites", action="store_true",
+                    help="with --xbe, run the join over every registration site, not only the unnamed ones")
     args = ap.parse_args()
     if args.check:
         return check()
     tables, names, classes, ctors = load(args.root)
     out, agree, conflict, blank = analyse(tables, names, classes, ctors)
+    if args.write_doc or args.check_doc:
+        page = args.write_doc or args.check_doc
+        causes = collections.Counter(r["cause"] for r in decompose(tables, names, classes, ctors))
+        new = splice(page, render(out, agree, conflict, blank, causes))  # whole read, then write
+        if args.check_doc:
+            with open(page) as fh:
+                same = fh.read() == new
+            if not same:
+                bad = doc_diff(page, new)
+                print("FAIL class-tree-edges: %s is stale -- %s" % (page, bad))
+                return 1
+            print("class-tree-edges: %s reproduces (%d tables, %d unnamed)"
+                  % (page, len(out), len(out) - len([r for r in out if r["class"]])))
+            return 0
+        with open(page, "w") as fh:
+            fh.write(new)
+        print("class-tree-edges: wrote %s" % page)
+        return 0
     unnamed = [r for r in out if not r["class"]]
     print("tables %d, named %d, unnamed %d" % (len(out), len(out) - len(unnamed), len(unnamed)))
     print("named over a measured child set: %d agree, %d conflict, %d no subclass in the image"
@@ -366,14 +483,19 @@ def main():
         print("  %s %-34s children=%-2d %s" % (r["table_va"], r["verdict"], r["child_count"],
                                                r["children"][:70]))
     if args.xbe:
-        linked = site_thunks(args.xbe, args.root)
-        sites_seen = {r["site_va"] for r in linked}
-        print("registration sites with no table in the class map: %d" % len(sites_seen))
-        print("of those, %d link through a pushed constructor" % len(linked))
+        linked, blank = site_thunks(args.xbe, args.root, args.all_sites)
+        own, other, missing = site_verdicts(linked, blank)
+        where = "every registration site" if args.all_sites else \
+            "registration sites with no table in the class map"
+        print("%s: %d" % (where, len(linked) + blank))
+        print("  the pushed constructor installs the site's own class table: %d" % len(own))
+        print("  it installs another table (a shared default or a mixed window): %d" % len(other))
+        print("  no constructor in the 96-byte window: %d" % len(missing))
         for row in linked:
-            print("  %s %-22s push %s -> %s table %s %s" % (
+            print("  %s %-22s push %s -> %s table %s %s%s" % (
                 row["site_va"], row["class"], row["pushed"], row["constructor"],
-                row["table_va"], row["table_class"]))
+                row["table_va"], row["table_class"],
+                "" if row["class"] == row["table_class"] else "  <- not this site's class"))
     if args.csv:
         with open(args.csv, "w", newline="") as f:
             w = csv.DictWriter(f, FIELDS)
