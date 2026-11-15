@@ -738,10 +738,17 @@ two, and neither agrees:
 
 `Locale`'s class export stores no defaults block at all. `SGVertScrollBar` stores two of the thirteen its text
 lists; `RenderWeight` matches exactly (50.0) and `WinWidth` does not — the text says `0.02`, the package stores
-`20.0`, and the bytes there are an exact float either way (`00 00 a0 41`). Three explanations fit and none is
-measured: the embedded text is a later revision than the compiled defaults, the packaging dropped assignments it
-considered redundant, or the two are in different units. What follows does not depend on which: **the packages
-are the authority for a rebuild**, and the shipped text cannot validate this renderer. The renderer's evidence is
+`20.0`, and the bytes there are an exact float either way (`00 00 a0 41`). Three explanations fit: the embedded
+text is a later revision than the compiled defaults, the packaging dropped assignments it considered redundant,
+or the two are in different units. **The first is the measured one** (2026-11-15, `tools/class-text-comments.py`,
+`docs/PACKAGE_SCRIPT_TEXT.md` *The text carries a commented-out revision of some classes*): both blocks sit inside
+a `/* ... */`, and both classes are two of the **39** classes whose live text is the declaration alone — the
+commented copy is a *different variant* of the class (`GUI.SGVertScrollBar`'s is declared `native` with a
+`cpptext` block, which the live declaration is not), so the package compiled a class whose defaults the text does
+not describe. `--verify` prints the status per row now (`in-comment=yes` on both), and `Locale`'s "no block in
+the package" is what a class that declares no property must have. `WinWidth` is therefore not a renderer defect.
+What follows does not depend on which: **the packages are the authority for a rebuild**, and the shipped text
+cannot validate this renderer. The renderer's evidence is
 therefore structural — every value comes from the same tag/decoder the map T3D pass uses, which is checked against
 73 maps — plus the property-name agreement the coverage table already measures.
 

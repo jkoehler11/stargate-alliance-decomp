@@ -125,6 +125,117 @@ enthusiasm of the previous section: `ScriptText` is the class declaration and it
 * PR #45's claim that the exact text behind the shipped bytecode is available stands, but "exact" now means
   "for the script body" — the values that shape that bytecode's constants are elsewhere.
 
+### The text carries a commented-out revision of some classes
+
+The counts above count the whole buffer, and part of the buffer is commented out. Measured over the packages
+rather than over the extracted tree (`tools/class-text-comments.py`, `make class-text-comments`,
+`inventory/class_text_comments.csv`): **252 of the 2,319 classes** carry a `/* ... */` block, and in **39** of
+them the remainder outside every comment is the class declaration alone. Those 39 are classes whose body --
+natives, vars, functions, and in two cases a `defaultproperties` block -- sits *inside* the comment, which is
+what a disabled revision of a class looks like in this build's own source. The other 213 carry a live body
+beside the comment, so a block comment is not the finding by itself; what separates the two populations is what
+the live remainder declares.
+
+<!-- generated:class-text-comments -->
+**252 of 2319 classes ship a commented-out block, and 39 of them have nothing live but the declaration.** The other 213 carry a live body beside the comment, so a block comment is not itself the finding -- what separates the two is what the live remainder declares.
+
+| measure | value |
+|---|---|
+| classes with a `ScriptText` | **2319** |
+| carrying a `/* ... */` block | **252** |
+| live part declares no `function` and no `var` | **39** |
+| live part declares a body | **213** |
+| `function` declarations inside a block comment | **208** |
+| `var` declarations inside a block comment | **51** |
+| `native function` declarations inside a block comment | **6** |
+| `defaultproperties` blocks inside a block comment | **2** |
+| `defaultproperties` blocks outside every comment | **0** |
+| bytes of text / of it inside a block comment | **5881021** / **278024** |
+
+**The class record agrees, and the base rate is why that alone proves nothing.** All **39** body-in-comment classes are `functions=0, properties=0` in `inventory/classes.csv`, and **0** of the 213 classes that keep a live body are -- but **953 of the corpus's 2319** classes record `0/0` anyway, so a record cannot name one. The text can, and the pair of rates is the control: inside the comment population the split is 39 of 39 against 0 of 213.
+
+Per package (`classes` / `with a comment` / `body in the comment`):
+
+| package | classes | with a block comment | body in the comment |
+|---|---:|---:|---:|
+| `AmbientCreatures` | 18 | 2 | 0 |
+| `Core` | 7 | 3 | 2 |
+| `Engine` | 367 | 85 | 10 |
+| `GUI` | 148 | 40 | 21 |
+| `GamePlay` | 262 | 8 | 2 |
+| `IpDrv` | 14 | 1 | 0 |
+| `StargateContent` | 567 | 26 | 1 |
+| `StargateGame` | 306 | 62 | 2 |
+| `StargateMenus` | 98 | 4 | 1 |
+| `StargateVehicles` | 142 | 10 | 0 |
+| `Stargateeffects` | 77 | 1 | 0 |
+| `UDebugMenu` | 38 | 3 | 0 |
+| `UWindow` | 78 | 7 | 0 |
+
+The 39 body-in-comment classes, `payload` being the class export's serial size:
+
+| class | payload | text bytes | commented | `defaultproperties` in the comment |
+|---|---:|---:|---:|---:|
+| `Core.Time` | 91 | 3123 | 1701 | - |
+| `Core.Locale` | 91 | 6355 | 6024 | 1 |
+| `Engine.WaterSceneManager` | 99 | 390 | 267 | - |
+| `Engine.xMaterialTrigger` | 94 | 2814 | 2759 | - |
+| `Engine.PSLuminanceTexIndexMaterial` | 101 | 529 | 390 | - |
+| `Engine.PSBumpBSP` | 109 | 537 | 365 | - |
+| `Engine.PSBumpSpecularBSP` | 107 | 974 | 274 | - |
+| `Engine.PSModulatedDistortionMaterial` | 103 | 423 | 340 | - |
+| `Engine.PSAdditiveDistortion` | 103 | 409 | 335 | - |
+| `Engine.PSSubtractiveDistortion` | 103 | 419 | 342 | - |
+| `Engine.PSVDM` | 125 | 825 | 311 | - |
+| `Engine.PSReplicatorVision` | 128 | 746 | 267 | - |
+| `GUI.STY_OnScreenKeyboardButton` | 300 | 302 | 248 | - |
+| `GUI.STY_Sui20pt_C8C8C87F` | 256 | 345 | 273 | - |
+| `GUI.SGVertScrollBar` | 106 | 808 | 594 | 1 |
+| `GUI.STY_CharacterButton` | 131 | 296 | 248 | - |
+| `GUI.fntXboxSymbols` | 244 | 273 | 215 | - |
+| `GUI.STY_Sui28pt_C8C8C8FF` | 221 | 347 | 275 | - |
+| `GUI.STY_Sui24pt_C8C8C8FF` | 265 | 347 | 275 | - |
+| `GUI.STY_Sui18pt_FFFFFFFF` | 234 | 339 | 267 | - |
+| `GUI.STY_Sui18pt_FF9C00FF` | 265 | 339 | 267 | - |
+| `GUI.STY_Sui18pt_C8C8C8FF` | 226 | 345 | 273 | - |
+| `GUI.STY_Sui12pt_C8C8C8FF` | 226 | 345 | 273 | - |
+| `GUI.STY_ScrollBox` | 195 | 267 | 224 | - |
+| `GUI.STY_OnScreenKeyboardButtonPressed` | 147 | 375 | 248 | - |
+| `GUI.STY_MessageBoxButton` | 255 | 297 | 249 | - |
+| `GUI.STY_MessageBox` | 301 | 259 | 196 | - |
+| `GUI.STY_ListBoxHeader` | 157 | 281 | 225 | - |
+| `GUI.STY_ImageStyle_13816BFF` | 268 | 353 | 275 | - |
+| `GUI.STY_ImageListItem` | 144 | 293 | 225 | - |
+| `GUI.STY_ImageListCursor` | 127 | 290 | 220 | - |
+| `GUI.STY_GroupingBox` | 186 | 286 | 223 | - |
+| `GUI.STY_ArrowScrollPanel` | 140 | 313 | 240 | - |
+| `GamePlay.BumpSpecularShader` | 105 | 368 | 316 | - |
+| `GamePlay.BumpShader` | 103 | 352 | 316 | - |
+| `StargateContent.CaptainStaffWeaponAttachment` | 100 | 206 | 134 | - |
+| `StargateGame.GoauldConsoleFillVessel` | 118 | 411 | 75 | - |
+| `StargateGame.SGScreenComboFlash` | 97 | 487 | 398 | - |
+| `StargateMenus.XBoxLiveServerSelect` | 128 | 522 | 459 | - |
+
+**Every `defaultproperties` block the build ships as text is in that population** -- `Core.Locale`, `GUI.SGVertScrollBar` -- so the text cannot serve as an oracle for this build's compiled defaults: the block it carries belongs to a revision of the class that the package did not compile. `tools/defaults-emit.py --verify` now prints the same status per block.
+
+Census: 2319 classes read, 252 with a block comment.
+<!-- /generated:class-text-comments -->
+
+Three consequences, each measured rather than argued:
+
+* **A declaration count over the whole buffer counts disabled declarations.** 208 `function` and 51 `var`
+  declarations, and 6 `native function` declarations, sit inside a block comment, so a per-class count that
+  scans the whole text is an upper bound on what the class compiles.
+* **The tree row above counts mentions.** Of the 16 classes whose text contains the word `defaultproperties`,
+  only **2** carry a block, and both are commented out -- the rest are prose in a comment (`Engine.Actor`'s
+  clipboard help text, a `// defaultproperties` banner in eight classes, and two classes whose disabled
+  revision keeps a commented block: `StargateContent.P90Torch`, `StargateGame.Constructions`).
+* **The two blocks are not this build's defaults.** `Core.Locale` (50 properties) and `GUI.SGVertScrollBar`
+  (13) are both in the 39, so `tools/defaults-emit.py --verify` has been comparing the renderer against a
+  revision the package did not compile. That closes the three candidate explanations `docs/CLASS_DEFAULTS.md`
+  left open for the `WinWidth` mismatch (`0.02` in the text, `20.0` in the package): the text is a different
+  revision, and the instrument now prints the comment status of each block it verifies.
+
 ### Where the function count drifts
 
 1,789 of 2,319 classes match the inventory's function count exactly; the rest differ by one or two in either

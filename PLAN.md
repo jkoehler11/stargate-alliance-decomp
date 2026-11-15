@@ -1546,6 +1546,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the two blocks the text ships as defaults are commented out, and 39 classes keep their whole body that way)
+
+- **Task.** `[~] 3.5`'s last value question: `docs/CLASS_DEFAULTS.md` (*The shipped text is not an oracle for
+  defaults*) compared the renderer against the two `defaultproperties` blocks the build ships as text and left
+  three explanations for the one disagreement (`WinWidth` `0.02` in the text, `20.0` in the package), none
+  measured.
+- **The status of the block was never read, and it is the answer.** Both blocks sit inside a `/* ... */`:
+  `Core.Locale`'s `defaultproperties` is the tail of a 6,024-byte comment that holds the class's natives, vars
+  and functions, and `GUI.SGVertScrollBar`'s is the tail of a 594-byte comment holding a *different variant* of
+  the class -- one declared `native` with a `cpptext` block, which the live declaration is not. So the package
+  compiled a class the text does not describe, and `WinWidth` is not a renderer defect.
+- **The population behind it is 39 classes, and the class record separates it.** `tools/class-text-comments.py`
+  (`make class-text-comments`, `inventory/class_text_comments.csv`, `--check` in `make ci`) reads every class's
+  `ScriptText`, splits it at its block comments, and reduces both halves to sizes and declaration heights:
+  **252 of 2,319** classes carry a block, and **39** of those have a live part that declares no `function` and
+  no `var`. All **39** are `functions=0, properties=0` in `inventory/classes.csv` and **0** of the other **213**
+  are -- the control that makes the split a measurement: `0/0` is the corpus's base rate on **953** classes, so
+  the record alone cannot name one, and the live-body control is what shows the text is doing the work.
+- **What a whole-buffer count includes.** **208** `function`, **51** `var` and **6** `native function`
+  declarations sit inside a block comment, and **2** `defaultproperties` blocks -- both of them -- so
+  `docs/PACKAGE_SCRIPT_TEXT.md`'s "the text is the class declaration and its functions" now says which part of
+  the buffer is disabled, and its `--tree` row (15 files containing the word) is corrected to 16 classes
+  mentioning it, 2 carrying a block.
+- **The instrument that made the claim prints it now.** `tools/defaults-emit.py --verify` reports
+  `in-comment=yes/no` per row and `2 inside a block comment` in its summary, so the next session cannot read
+  the oracle as an oracle again.
+- **Next measurement:** the 213 live-body classes' comments are revision *text*, not sizes -- 208 disabled
+  function bodies against 11,687 live ones -- so the question they can answer is what the fork's toolchain
+  disabled, which is a diff of a commented body against the class's live exports (a per-class shape, no boot).
+
 ### Execution notes (2026-11-15, the undecided branches are a list, and every random branch is a real draw)
 
 - **Task.** `[x] 5.2`'s remaining caveat: the branch placements the counts named but never listed, and `FRand()`.

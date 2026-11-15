@@ -902,7 +902,14 @@ def write_block(path, lines):
 # ------------------------------------------------------------------------------------------------- verify
 
 def shipped_blocks(pkg):
-    """class -> {property[: (index)]: value text} from the defaults block the shipped script still carries."""
+    """class -> ({property[: (index)]: value text}, inside_a_block_comment) from the shipped script.
+
+    The second half matters: a `/* ... */` block that holds a class's body leaves the whole buffer looking
+    like source, and both blocks this build ships are inside one (`docs/PACKAGE_SCRIPT_TEXT.md`, *The text
+    carries a commented-out revision of some classes*). A block that is commented out was not compiled, so
+    it is a revision of the class and not this build's defaults -- which is why the status is printed beside
+    every row rather than assumed.
+    """
     out = {}
     for exp in pkg.exports:
         if pkg.class_name_of(exp) != "Class":
@@ -910,9 +917,12 @@ def shipped_blocks(pkg):
         text = pst.script_text(pkg, exp)
         if not text:
             continue
-        m = re.search(r"defaultproperties[ \t]*\r?\n[ \t]*\{", text)
+        m = re.search(r"_?defaultproperties[ \t]*\r?\n[ \t]*\{", text)
         if not m:
             continue
+        # the comment state at the block's own offset: last `/*` after last `*/` means it is inside one
+        head = text[:m.start()]
+        in_comment = head.rfind("/*") > head.rfind("*/")
         rest = text[m.end():]
         end = re.search(r"\r?\n\}", rest)
         body = rest[:end.start()] if end else rest
@@ -924,7 +934,7 @@ def shipped_blocks(pkg):
             key, val = line.split("=", 1)
             props[key.strip().replace(" ", "")] = val.strip()
         if props:
-            out[pkg.name(exp["name"])] = props
+            out[pkg.name(exp["name"])] = (props, in_comment)
     return out
 
 
@@ -962,7 +972,7 @@ def verify(system_dir, show=False):
         declared_all = cd.declared_properties()
         props_meta = property_meta()
         enums, _conflicts = global_enums(system_dir)
-        for cls, want in sorted(shipped.items()):
+        for cls, (want, in_comment) in sorted(shipped.items()):
             got, reason = block_of(pkg, cls, supers, declared_all)
             emitted = {}
             if got is not None:
@@ -993,14 +1003,16 @@ def verify(system_dir, show=False):
                         detail.append((key, val, emitted[key]))
                 else:
                     only += 1
-            rows.append((fname[:-2], cls, len(want), len(emitted), match, differ, only))
-            print("%-12s %-20s shipped %3d  emitted %3d  match %3d  differ %d  shipped-only %3d"
-                  % (fname[:-2], cls, len(want), len(emitted), match, differ, only))
+            rows.append((fname[:-2], cls, len(want), len(emitted), match, differ, only, in_comment))
+            print("%-12s %-20s shipped %3d  emitted %3d  match %3d  differ %d  shipped-only %3d  in-comment=%s"
+                  % (fname[:-2], cls, len(want), len(emitted), match, differ, only,
+                     "yes" if in_comment else "no"))
             if show:
                 for key, a, b in detail:
                     print("      %-24s shipped=%r emitted=%r" % (key, a, b))
-    print("verified %d shipped blocks: %d matched, %d differ, %d shipped-only"
-          % (len(rows), sum(r[4] for r in rows), sum(r[5] for r in rows), sum(r[6] for r in rows)))
+    print("verified %d shipped blocks: %d matched, %d differ, %d shipped-only, %d inside a block comment"
+          % (len(rows), sum(r[4] for r in rows), sum(r[5] for r in rows), sum(r[6] for r in rows),
+             sum(1 for r in rows if r[7])))
     return rows
 
 
