@@ -272,4 +272,4 @@ Engine,WarpZoneInfo,Warp,314,text-index
 GUI,GUIComponent,AllInnerObjects,901,text-index
 GUI,GUIPage,Sleep,332,text-index
 GUI,GUI,AllObjectProperties,900,text-index
-UPreview,UPreviewMapListClient,Created,2,unresolved
+UPreview,UPreviewMapListClient,Created,2,record-not-native

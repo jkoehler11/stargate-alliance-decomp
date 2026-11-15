@@ -149,7 +149,8 @@ column and its token were the only claimants. `tools/native-record-check.py` joi
 own tail and reproduces the artifact on **795**, with the two exceptions being `UPreview`'s: both records read
 `0x00020002` = `Defined;Public` (token 0), i.e. a script function with a body, which is what the class texts
 declare. 795 of 797 records carry `Native`; these two do not. So the residual rows and `native_tokens.csv`'s one
-`unresolved` row (`Created`'s token 2) describe a record the image does not hold, and the 9.7 KB
+`unresolved` row (`Created`'s token 2) describe a record the image does not hold -- `native-reconcile.py` now asks
+the record first and both read `record-not-native`, closing that token row -- and the 9.7 KB
 `UPreviewMapListClient` text is complete, not missing a native declaration. Depth: `docs/NATIVE_CLASSES.md`,
 *The two editor residual rows are the artifact's*.
 

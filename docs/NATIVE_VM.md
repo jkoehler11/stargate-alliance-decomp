@@ -332,7 +332,10 @@ with `"int%s%s" % (prefix_expected, function)` -- a literal the image does not c
 read its own fabrication as evidence. That is why `inventory/native_residual.csv` listed `UPreview`'s two records as
 `text-missing` (`intUCreated`, `intUSetRenderInfo`); with the fill removed they read `record-unbound`, which is what
 the tool's own self-test already said they must ("a record with no binder must not read as text-missing"),
-and what `native_channels.csv` measures per declaration.
+and what `native_channels.csv` measures per declaration. **They read `record-not-native` now (measured 2026-11-15):**
+both `Function` payloads carry `0x00020002` = `Defined;Public` and no `Native` bit, so the row was the artifact's
+`inventory/natives.csv` entry and never a record the image holds -- `tools/native-reconcile.py` asks the record's own
+flag word first (`tools/native-record-check.py` joins all 797 rows to it and reproduces the artifact on 795).
 
 ## Correction: the table committed before 2026-10-23 was the CRT's initialiser array
 

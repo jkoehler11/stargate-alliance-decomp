@@ -9752,6 +9752,20 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the residual asks the record first, and the token table has no unresolved row)
+
+- **`native-reconcile.py` now takes the record's own flag word as the first authority.** It shares
+  `native-record-check.py`'s `read_record`, so a `record-only` row whose `Function` payload carries no `Native` bit
+  reads `record-not-native` instead of `record-unbound`, and a token nothing else explains gets the same basis. On
+  the dump: `inventory/native_residual.csv` is **11 rows = 2 `record-not-native` + 7 `declaration-unbound` +
+  2 `binder-only`**, and `inventory/native_tokens.csv` is 274 rows = 166 `text-index` + 107 `operator-expansion` +
+  1 `record-not-native` with **0 `unresolved`** -- the row U1/U3 kept open is closed, and it is `UPreview`'s, whose
+  two payloads read `0x00020002` (`Defined;Public`). The class-and-text counts are unchanged (96 classes, 685
+  function records, matched 683), because this decides what a row *is*, not what the text matches.
+- **The docs' residual table had drifted from its own artifact** -- it still listed 2 `text-missing` where the CSV
+  said `record-unbound`; the table now carries the four verdicts the tool writes, so a reader of
+  `docs/NATIVE_CLASSES.md` and a reader of the CSV see one set of names.
+
 ### Execution notes (2026-11-15, the two editor residual rows are the artifact's, and 795 of 797 records are the control)
 
 - **`UPreview`'s two `record-unbound` rows are not records at all.** `tools/native-record-check.py`
