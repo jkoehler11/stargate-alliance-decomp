@@ -840,16 +840,17 @@ immediate in `.text`. So the fork dispatches `ProcessEvent` as a virtual at a fi
 `docs/NATIVE_VM.md`, `tools/class-tables.py`, `inventory/xbe_class_tables.csv`.
 
 **Two families closed 2026-10-24, two residuals open.** The tables are named from the build's own
-class registrations (`docs/NATIVE_CLASSES.md`, `inventory/xbe_class_table_names.csv`): 468 of 492.
+class registrations (`docs/NATIVE_CLASSES.md`, `inventory/xbe_class_table_names.csv`): 474 of 492.
 Slots 19 and 20 hold `0x00020f00` — one `ret` — in 327 tables and real bodies in 165, and the 165 are
 the actor-side engine hierarchy (`Actor`, `Pawn`, `Controller`, `Info`, `NavigationPoint`, …): the
 split is which classes override those virtuals, not which are abstract.
 
 Still open: **which virtuals slots 19 and 20 are** (the override reads `[this+0x2dc] & 1`, then
-`[this+0xa4]` and `[+0xf4]`; nothing in the property track calls them), and **the 24 tables whose
+`[this+0xa4]` and `[+0xf4]`; nothing in the property track calls them), and **the 18 tables whose
 registration cannot be followed** — their constructors install the table but the registration pushes
-neither a literal nor a thunk the tool can follow. Six of the 24 are paired from the constructor tree
-and five more by a family hint (`inventory/class_table_name_pairs.csv`), so 13 are the live question;
+neither a literal nor a thunk the tool can follow. Six of the original 24 are named from the constructor
+tree (`name_rule` `tree-paired`) and five more carry a family hint
+(`inventory/class_table_name_pairs.csv`), so 13 are the live question;
 `docs/NATIVE_CLASS_TREE.md` carries the current counts, generated from the committed inventories. What would settle the first: a call site that
 dispatches `+0x4c`/`+0x50` through a known object.
 
@@ -1236,6 +1237,19 @@ Hints only: `Property` (13 of 13 children are `*Property`), `RenderDevice`, `Cha
 level, one boot -- or an engine-side class list, since two routes were measured out this run: 0 of the 26 installer
 bodies resolves any string, and the registration's size argument cannot key the join because every size in the artifacts
 originates at a registration site (`class_size_sources.csv`'s 24 `no-registration` rows are these tables).
+
+**2026-11-15, the six tree pairings are applied, and a second round is measured wrong.** The six names the
+child-super rule paired -- `Material`, `RenderedMaterial`, `BitmapMaterial`, `CameraEffect`, `WaterTexture`,
+`Engine` -- are now `name_rule` `tree-paired` rows of `inventory/xbe_class_table_names.csv`, filled by
+`tools/class-table-names.py` from `inventory/class_table_name_pairs.csv` only where the literal path left the row
+empty, so the map reads **474 of 492 named, 18 unnamed**. The installer's-callers instrument closes on all 474
+(464 `agrees` + 6 `unnamed->proposed` becomes 474 `agrees` + 0 proposed). **The pairing cannot be extended by
+letting these names vote:** iterating the two tools to a fixpoint names `0x4c78c0` `Subsystem` on a single
+`Engine` vote and then hands `Engine` to `0x004d0318`, `0x004d2400` and `0x004eaea8`, whose children are the net
+drivers, the voice subsystem and the render devices, while `parent-super`'s control falls from 29 of 29 to 30 of
+36 -- so the pair tool blanks its own output before any rule reads the map (`unnamed_by_image`) and the pairs
+CSV re-renders unchanged. What would settle the other thirteen is unchanged: a runtime `UClass` name read
+(`tools/xemu/class-tables-live.py`, one boot) or an engine-side class list.
 
 **2026-11-15, four of the six multi-store bodies install no table of their own.** A decompile of the whole population
 (`docs/NATIVE_CLASS_TREE.md`) splits it three ways: two constructors with parent-then-own (`0x002e81f0`, `0x002e8370`),

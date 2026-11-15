@@ -14627,8 +14627,12 @@
 0x004c68ca FUN_004c68ca                                   91 
 0x004c6925 FUN_004c6925                                  199 
 0x004c6a33 FUN_004c6a33                                   51 
+0x004c7958 Vtbl_Material                                   0 class table
+0x004c7a10 Vtbl_RenderedMaterial                           0 class table
+0x004c7ac8 Vtbl_BitmapMaterial                             0 class table
 0x004c7b88 Vtbl_Order                                     40 class table
 0x004c7c00 Vtbl_MatObject                                 40 class table
+0x004c7c78 Vtbl_CameraEffect                               0 class table
 0x004c7d98 Vtbl_SGScreenSniperOverlay                     84 class table
 0x004c7e18 Vtbl_SGScreenMenuPause                         84 class table
 0x004c7e98 Vtbl_SGScreenBlur                              72 class table
@@ -14697,6 +14701,7 @@
 0x004cfba0 Vtbl_Texture                                  204 class table
 0x004cfc88 Vtbl_FractalTexture                           228 class table
 0x004cfd78 Vtbl_FireTexture                             1304 class table
+0x004cfe68 Vtbl_WaterTexture                               0 class table
 0x004cff58 Vtbl_WaveTexture                             4872 class table
 0x004d0041 FUN_004d0041                                    5 
 0x004d0048 Vtbl_FluidTexture                            4868 class table
@@ -14874,6 +14879,7 @@
 0x004fcc18 Vtbl_DemoRecConnection                      20368 class table
 0x004fccc8 Vtbl_DemoRecDriver                           4684 class table
 0x004fd070 Vtbl_ChannelDownload                         1116 class table
+0x005040d0 Vtbl_Engine                                     0 class table
 0x00504560 Vtbl_ServerCommandlet                         476 class table
 0x005045e0 Vtbl_UModUnpackCommandlet                     476 class table
 0x00504660 Vtbl_MasterMD5Commandlet                      492 class table

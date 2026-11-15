@@ -1627,6 +1627,37 @@ are limited to expected fields (checksum/timestamp) and documented.
   only route left to a name for it, and one of them is likely the level loader that builds the
   `PackageMapLevel` -- read those bodies, not this one again.
 
+### Execution notes (2026-11-15, the six tree pairings are applied, and a second round is measured wrong)
+
+- **The six pairings are in the map, and the map is still regenerable.** `tools/class-table-names.py`
+  reads `inventory/class_table_name_pairs.csv` and fills a row only where `class` is empty --
+  `Material` `0x4c7958`, `RenderedMaterial` `0x4c7a10`, `BitmapMaterial` `0x4c7ac8`, `CameraEffect`
+  `0x4c7c78`, `WaterTexture` `0x4cfe68`, `Engine` `0x5040d0` -- with `name_rule` `tree-paired` and the
+  child-super vote in `evidence`. **474 named of 492, 18 unnamed** (was 468 / 24), and `make class-names`
+  from the image reproduces the artifact byte for byte: the pairs file is a committed input, not a hand
+  edit, so the next regeneration cannot lose the names.
+- **The installer's-callers instrument closes on all 474.** `inventory/class_table_parents.csv` moves from
+  464 `agrees` + 6 `unnamed->proposed` to **474 agrees, 0 proposed**; the 2 `adjacent` and 1 `differs` it
+  already had are untouched rows. Two rules with no shared input now agree on every name either can check.
+- **One level is the limit, and the second round was measured rather than assumed.** Iterating the two
+  tools to a fixpoint with the derived names allowed to vote names `0x4c78c0` `Subsystem` on a single
+  `Engine` vote, then hands `Engine` to `0x004d0318`, `0x004d2400` and `0x004eaea8` -- the net-driver,
+  voice-subsystem and render-device tables -- and `parent-super`'s control falls from 29 of 29 to **30 of
+  36**. So `tools/class-table-name-pair.py` blanks its own output (`unnamed_by_image`) before any rule
+  reads the map: the population stays the 24 tables and its CSV re-renders unchanged.
+- **`0x004c7958` joins the `descendant-edge` group, and it is the skipped-level shape.** Its 32 extra
+  children are the `PS*` family and the material bases, whose edge skips `RenderedMaterial` because that
+  constructor is inlined. 16 conflicts: 10 `no-script-row`, 5 `descendant-edge`, 1 `native-child`.
+- Tool (`tools/class-table-names.py`: `tree-paired`, `paired_names`, `apply_pairs`, 3 new `--check`
+  assertions; `tools/class-table-name-pair.py`: `unnamed_by_image`, 3 new assertions) + 6 rows of
+  `inventory/xbe_class_table_names.csv` + the artifacts that read it (`class_constructors`,
+  `class_ctor_bases`, `class_size_sources`, `class_table_parents`, `symbols/xbox.map`) + the generated
+  blocks on `docs/NATIVE_CLASS_TREE.md` and `docs/systems/CLASS_REGISTRATION.md`, `docs/STATUS.md` and the
+  README badges + `docs/UNKNOWNS.md` U8 + this note. No boot: the image and the committed inventories.
+- **Next measurement:** the 18 that remain need a name the stores do not carry --
+  `tools/xemu/class-tables-live.py` on a level with the renderer and net-driver packages loaded (U8's
+  runtime route), or an engine-side class list.
+
 ### Execution notes (2026-11-15, half a track's values are the pose block's width, and the 19/7 split is not the channel table)
 
 - **The value's width is measured, and it is the first property of a value that is not a range.** `tools/lad-groups.py`

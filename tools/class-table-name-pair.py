@@ -59,11 +59,13 @@ def read_csv(path):
 
 def load(root=ROOT):
     """The four committed artifacts, as tables keyed by integer VA."""
-    names = {}
+    names, pinned = {}, set()
     for row in read_csv(os.path.join(root, "inventory/xbe_class_table_names.csv")):
         key = va(row["table_va"])
         if key is not None:
             names[key] = row["class"]
+            if row.get("name_rule") == "tree-paired":
+                pinned.add(key)
     parent, children = {}, collections.defaultdict(list)
     for row in read_csv(os.path.join(root, "inventory/class_table_parent_edges.csv")):
         key = va(row["table_va"])
@@ -81,13 +83,29 @@ def load(root=ROOT):
     for row in read_csv(os.path.join(root, "inventory/class_registrations.csv")):
         if row["verdict"] == "shared-thunk":
             sites.setdefault(row["class_literal"], []).append(row)
-    return names, parent, children, supers, sites
+    return names, parent, children, supers, sites, pinned
 
 
 def candidates(names, sites):
     """The site literals no table carries yet: the names still to pair."""
     taken = {name for name in names.values() if name}
     return {literal: rows for literal, rows in sites.items() if literal not in taken}
+
+
+def unnamed_by_image(names, pinned=()):
+    """The map's names with this tool's own answers blanked: a derived name is not evidence for itself.
+
+    Once the six pairings are applied, the map names their tables `tree-paired`, and reading those names
+    back would make the next run answer `paired=0` -- the artifact the names rest on could not be
+    regenerated -- while letting them vote would make the tool grade its own arithmetic. Measured
+    2026-11-15: unblanked, the second round named `0x004c78c0` `Subsystem` (a real one-level cascade,
+    wrong: it is `Engine`'s parent), and the third gave `0x004d0318`, `0x004d2400` and `0x004eaea8` the
+    name `Engine`, with `parent-super` falling to **30 of 36** from 29 of 29. Blanking keeps the
+    population at the 24 tables and the artifact reproducible, and the one-level limit is now enforced
+    rather than hoped for.
+    """
+    pinned = set(pinned)
+    return {table: ("" if table in pinned else name) for table, name in names.items()}
 
 
 def child_super(table, names, children, supers):
@@ -164,7 +182,8 @@ def family_precision(names, children):
 
 
 def run(root=ROOT):
-    names, parent, children, supers, sites = load(root)
+    names, parent, children, supers, sites, pinned = load(root)
+    names = unnamed_by_image(names, pinned)
     pool = candidates(names, sites)
     labels = {table: name for table, name in names.items() if name}
     basis = {}
@@ -319,6 +338,13 @@ def check():
     votes = collections.Counter({"CameraEffect": 2, "Field": 2})
     top = votes.most_common()
     want("an equal top vote does not pair", not (top and (len(top) == 1 or top[0][1] > top[1][1])))
+    # the map's own answers are blanked before any rule reads it; a name from a store is kept
+    tables = {0x20: ("Material", "tree-paired"), 0x30: ("Field", "unshared-thunk"), 0x40: ("", "")}
+    blanked = unnamed_by_image({t: n for t, (n, _r) in tables.items()}, {0x20})
+    want("a tree-paired table is unnamed to the rules", blanked[0x20] == "")
+    want("an image-named table keeps its name", blanked[0x30] == "Field")
+    want("a tree-paired literal stays in the pool",
+         set(candidates(blanked, {"Material": [], "Field": []})) == {"Material"})
     print("check: %s" % ("pass" if ok else "fail"))
     return 0 if ok else 1
 

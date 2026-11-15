@@ -1,11 +1,11 @@
 table_va,class,site_va,site_size,naming_size,site_agrees_naming,ctor_rows,ctor_agrees,base_rows,base_agrees,record_bytes,verdict
 0x004c78c0,,,,,,0,,0,,,no-registration
-0x004c7958,,,,,,0,,0,,,no-registration
-0x004c7a10,,,,,,0,,0,,,no-registration
-0x004c7ac8,,,,,,0,,0,,,no-registration
+0x004c7958,Material,,,,,0,,0,,109,no-registration
+0x004c7a10,RenderedMaterial,,,,,0,,0,,88,no-registration
+0x004c7ac8,BitmapMaterial,,,,,0,,0,,93,no-registration
 0x004c7b88,Order,0x00290d65,40,40,yes,2,yesyes,1,yes,,one-read
 0x004c7c00,MatObject,0x00204465,40,40,yes,2,yesyes,1,yes,,one-read
-0x004c7c78,,,,,,0,,0,,,no-registration
+0x004c7c78,CameraEffect,,,,,0,,0,,94,no-registration
 0x004c7d98,SGScreenSniperOverlay,0x00317de5,84,84,yes,2,yesyes,1,yes,94,one-read
 0x004c7e18,SGScreenMenuPause,0x00317c15,84,84,yes,2,yesyes,1,yes,92,one-read
 0x004c7e98,SGScreenBlur,0x003173f5,72,72,yes,2,yesyes,1,yes,91,one-read
@@ -77,7 +77,7 @@ table_va,class,site_va,site_size,naming_size,site_agrees_naming,ctor_rows,ctor_a
 0x004cfba0,Texture,0x0027e889,204,204,yes,2,yesyes,1,yes,95,one-read
 0x004cfc88,FractalTexture,0x002e1489,228,228,yes,5,yesyesyesyesyes,4,yesyesyesyes,84,one-read
 0x004cfd78,FireTexture,0x002e8468,1304,1304,yes,2,yesyes,1,yes,82,one-read
-0x004cfe68,,,,,,0,,0,,,no-registration
+0x004cfe68,WaterTexture,,,,,0,,0,,81,no-registration
 0x004cff58,WaveTexture,0x002e8528,4872,4872,yes,2,yesyes,1,yes,85,one-read
 0x004d0048,FluidTexture,0x002e85e8,4868,4868,yes,2,yesyes,1,yes,84,one-read
 0x004d0138,WetTexture,0x002e86a8,4880,4880,yes,2,yesyes,1,yes,86,one-read
@@ -264,7 +264,7 @@ table_va,class,site_va,site_size,naming_size,site_agrees_naming,ctor_rows,ctor_a
 0x004fccc8,DemoRecDriver,0x0011d659,4684,4684,yes,2,yesyes,1,yes,,one-read
 0x004fcfe0,,,,,,0,,0,,,no-registration
 0x004fd070,ChannelDownload,0x0011f099,1116,1116,yes,2,yesyes,1,yes,,one-read
-0x005040d0,,,,,,0,,0,,,no-registration
+0x005040d0,Engine,,,,,0,,0,,95,no-registration
 0x00504560,ServerCommandlet,0x00122329,476,476,yes,2,yesyes,1,yes,,one-read
 0x005045e0,UModUnpackCommandlet,0x001223e9,476,476,yes,2,yesyes,1,yes,,one-read
 0x00504660,MasterMD5Commandlet,0x00122599,492,492,yes,2,yesyes,1,yes,,one-read

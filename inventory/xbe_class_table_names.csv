@@ -1,11 +1,11 @@
 table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,installed_at,stores,bound,evidence,sites,name_rule,site_literals
 0x004c78c0,,,,,,,,,no registration names this table,0,no-registration,
-0x004c7958,,,,,,,,,no registration names this table,0,no-registration,
-0x004c7a10,,,,,,,,,no registration names this table,0,no-registration,
-0x004c7ac8,,,,,,,,,no registration names this table,0,no-registration,
+0x004c7958,Material,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 3 child table(s) declare super Material, so the table is Material's",0,tree-paired,Material
+0x004c7a10,RenderedMaterial,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 7 child table(s) declare super RenderedMaterial, so the table is RenderedMaterial's",0,tree-paired,RenderedMaterial
+0x004c7ac8,BitmapMaterial,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 3 child table(s) declare super BitmapMaterial, so the table is BitmapMaterial's",0,tree-paired,BitmapMaterial
 0x004c7b88,Order,40,0x00290d65,0x00290da0,0x00017400,0x00017408,1,symbol,"class literal at 0x00290d65, whose constructor thunk no other registration site uses",1,unshared-thunk,Order
 0x004c7c00,MatObject,40,0x00204465,0x0020b1b0,0x00017e30,0x00017e38,1,symbol,"class literal at 0x00204465, whose constructor thunk no other registration site uses",1,unshared-thunk,MatObject
-0x004c7c78,,,,,,,,,no registration names this table,0,no-registration,
+0x004c7c78,CameraEffect,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 10 child table(s) declare super CameraEffect, so the table is CameraEffect's",0,tree-paired,CameraEffect
 0x004c7d98,SGScreenSniperOverlay,84,0x00317de5,0x00019380,0x00018410,0x00018418,1,symbol,"class literal at 0x00317de5, whose constructor thunk no other registration site uses",1,unshared-thunk,SGScreenSniperOverlay
 0x004c7e18,SGScreenMenuPause,84,0x00317c15,0x00019390,0x000184e0,0x000184e8,1,symbol,"class literal at 0x00317c15, whose constructor thunk no other registration site uses",1,unshared-thunk,SGScreenMenuPause
 0x004c7e98,SGScreenBlur,72,0x003173f5,0x000193a0,0x000185b0,0x000185b8,1,symbol,"class literal at 0x003173f5, whose constructor thunk no other registration site uses",1,unshared-thunk,SGScreenBlur
@@ -77,7 +77,7 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004cfba0,Texture,204,0x0027e889,0x0027f070,0x0027e3b0,0x0027e3d5,1,symbol,"3 sites share one constructor thunk; this literal is the common ancestor of the group, so the table is the class whose constructor the others reuse",3,hierarchy-ancestor,"Texture, FractalTexture, WaterTexture"
 0x004cfc88,FractalTexture,228,0x002e1489,,0x002e81f0,0x002e8201,2,symbol,"no registration names this table; 2 classes (FireTexture, IceTexture) store it before their own table, and FractalTexture is their nearest common ancestor",0,base-store-ancestor,"FireTexture, IceTexture"
 0x004cfd78,FireTexture,1304,0x002e8468,0x00018120,0x002e81f0,0x002e8220,2,symbol,"class literal at 0x002e8468, whose constructor thunk no other registration site uses",1,unshared-thunk,FireTexture
-0x004cfe68,,,,,,,,,no registration names this table,0,no-registration,
+0x004cfe68,WaterTexture,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 3 child table(s) declare super WaterTexture, so the table is WaterTexture's",0,tree-paired,WaterTexture
 0x004cff58,WaveTexture,4872,0x002e8528,0x00018130,0x002e8310,0x002e8318,1,symbol,"class literal at 0x002e8528, whose constructor thunk no other registration site uses",1,unshared-thunk,WaveTexture
 0x004d0048,FluidTexture,4868,0x002e85e8,0x00018140,0x002e8330,0x002e8338,1,symbol,"class literal at 0x002e85e8, whose constructor thunk no other registration site uses",1,unshared-thunk,FluidTexture
 0x004d0138,WetTexture,4880,0x002e86a8,0x00018150,0x002e8350,0x002e8366,1,symbol,"class literal at 0x002e86a8, whose constructor thunk no other registration site uses",1,unshared-thunk,WetTexture
@@ -264,7 +264,7 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004fccc8,DemoRecDriver,4684,0x0011d659,0x0011e690,0x0011d4b0,0x0011d4d4,1,symbol,"class literal at 0x0011d659, whose constructor thunk no other registration site uses",1,unshared-thunk,DemoRecDriver
 0x004fcfe0,,,,,,,,,no registration names this table,0,no-registration,
 0x004fd070,ChannelDownload,1116,0x0011f099,0x0011f7f0,0x0011f750,0x0011f763,1,symbol,"class literal at 0x0011f099, whose constructor thunk no other registration site uses",1,unshared-thunk,ChannelDownload
-0x005040d0,,,,,,,,,no registration names this table,0,no-registration,
+0x005040d0,Engine,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 1 child table(s) declare super Engine, so the table is Engine's",0,tree-paired,Engine
 0x00504560,ServerCommandlet,476,0x00122329,0x00127e60,0x00127ad0,0x00127ad8,1,symbol,"class literal at 0x00122329, whose constructor thunk no other registration site uses",1,unshared-thunk,ServerCommandlet
 0x005045e0,UModUnpackCommandlet,476,0x001223e9,0x00127e70,0x00127b70,0x00127b78,1,symbol,"class literal at 0x001223e9, whose constructor thunk no other registration site uses",1,unshared-thunk,UModUnpackCommandlet
 0x00504660,MasterMD5Commandlet,492,0x00122599,0x00127e80,0x00127c10,0x00127c1a,1,symbol,"class literal at 0x00122599, whose constructor thunk no other registration site uses",1,unshared-thunk,MasterMD5Commandlet

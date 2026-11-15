@@ -1,11 +1,11 @@
 table_va,class_committed,proposed_class,basis,named_callers,callers,support,verdict
 0x4c78c0,,,parent-of-callers,AudioSubsystem|Input|new,8,3,constrained
-0x4c7958,,Material,lca,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial|PSBloomSelectMaterial|PSBlurMaterial|PSBump|PSBumpBSP|PSBumpSpecular|PSBumpSpecularBSP|PSDepthOfFieldMaterial|PSDistortionBaseMaterial|PSDistortionMaterial|PSEmissiveConstColor|PSEmissiveShader|PSLuminanceTexIndexMaterial|PSModulatedDistortionMaterial|PSMotionBlurMaterial|PSRefractionMaterial|PSReplicatorVision|PSShieldMaterial|PSSimple|PSSubtractiveDistortion|PSUseTexIndexMaterial|PSVDM|PSWater|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|ScriptedTexture|ShadowBitmapMaterial|TerrainMaterial|Texture,37,35,unnamed->proposed
-0x4c7a10,,RenderedMaterial,lca,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial|TexCoordMaterial|VertexColor,10,7,unnamed->proposed
-0x4c7ac8,,BitmapMaterial,lca,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,5,3,unnamed->proposed
+0x4c7958,Material,Material,lca,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial|PSBloomSelectMaterial|PSBlurMaterial|PSBump|PSBumpBSP|PSBumpSpecular|PSBumpSpecularBSP|PSDepthOfFieldMaterial|PSDistortionBaseMaterial|PSDistortionMaterial|PSEmissiveConstColor|PSEmissiveShader|PSLuminanceTexIndexMaterial|PSModulatedDistortionMaterial|PSMotionBlurMaterial|PSRefractionMaterial|PSReplicatorVision|PSShieldMaterial|PSSimple|PSSubtractiveDistortion|PSUseTexIndexMaterial|PSVDM|PSWater|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|ScriptedTexture|ShadowBitmapMaterial|TerrainMaterial|Texture,37,35,agrees
+0x4c7a10,RenderedMaterial,RenderedMaterial,lca,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial|TexCoordMaterial|VertexColor,10,7,agrees
+0x4c7ac8,BitmapMaterial,BitmapMaterial,lca,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,5,3,agrees
 0x4c7b88,Order,Order,own-installer,SGOrder,2,2,agrees
 0x4c7c00,MatObject,MatObject,own-installer,MatAction|MatSubAction,3,2,agrees
-0x4c7c78,,CameraEffect,lca,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom|SGScreenMenuPause|SGScreenMotionBlur|SGScreenRadialBlur|SGScreenSniperOverlay,11,10,unnamed->proposed
+0x4c7c78,CameraEffect,CameraEffect,lca,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom|SGScreenMenuPause|SGScreenMotionBlur|SGScreenRadialBlur|SGScreenSniperOverlay,11,10,agrees
 0x4c7d98,SGScreenSniperOverlay,SGScreenSniperOverlay,own-installer,,0,2,agrees
 0x4c7e18,SGScreenMenuPause,SGScreenMenuPause,own-installer,,0,2,agrees
 0x4c7e98,SGScreenBlur,SGScreenBlur,own-installer,,0,2,agrees
@@ -77,7 +77,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4cfba0,Texture,Texture,own-installer,BackBufferTexture|Cubemap|FireTexture|FractalTexture|IceTexture|MovieTexture|TextureEditable,14,2,agrees
 0x4cfc88,FractalTexture,FractalTexture,lca,FireTexture|FluidTexture|IceTexture|WaveTexture|WetTexture,6,5,agrees
 0x4cfd78,FireTexture,FireTexture,own-installer,,0,2,agrees
-0x4cfe68,,WaterTexture,lca,FluidTexture|WaveTexture|WetTexture,6,3,unnamed->proposed
+0x4cfe68,WaterTexture,WaterTexture,lca,FluidTexture|WaveTexture|WetTexture,6,3,agrees
 0x4cff58,WaveTexture,WaveTexture,own-installer,,0,2,agrees
 0x4d0048,FluidTexture,FluidTexture,own-installer,,0,2,agrees
 0x4d0138,WetTexture,WetTexture,own-installer,,0,2,agrees
@@ -264,7 +264,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4fccc8,DemoRecDriver,DemoRecDriver,own-installer,,1,2,agrees
 0x4fcfe0,,,parent-of-callers,ChannelDownload|HTTPDownload,3,2,constrained
 0x4fd070,ChannelDownload,ChannelDownload,own-installer,,1,2,agrees
-0x5040d0,,Engine,lca,GameEngine,3,1,unnamed->proposed
+0x5040d0,Engine,Engine,lca,GameEngine,3,1,agrees
 0x504560,ServerCommandlet,ServerCommandlet,own-installer,,1,2,agrees
 0x5045e0,UModUnpackCommandlet,UModUnpackCommandlet,own-installer,,1,2,agrees
 0x504660,MasterMD5Commandlet,MasterMD5Commandlet,own-installer,,3,2,agrees

@@ -56,6 +56,10 @@ So the name comes from one of two joins, in this order, and the `name_rule` colu
                           leaves the table unnamed.
   * `unresolved`       -- no common ancestor either; the row keeps an empty class and lists its
                           candidates, rather than silently taking one.
+  * `tree-paired`      -- no site resolves to this table at all, and the class-to-table pairing
+                          measured in `inventory/class_table_name_pairs.csv` does: the row's `paired`
+                          verdict names the class those children's script supers describe. The name is
+                          the tree's, not a store's, and the row says so.
   * `no-registration`  -- no site resolves to this table at all.
 
     tools/class-table-names.py DUMP/default.xbe -o inventory
@@ -89,6 +93,7 @@ DOC_END = "<!-- /generated:class-table-names -->"
 TABLES = os.path.join(ROOT, "inventory/xbe_class_tables.csv")
 CLASSES = os.path.join(ROOT, "inventory/classes.csv")
 SYMBOLS = os.path.join(ROOT, "symbols/xbox_functions.csv")
+PAIRS = os.path.join(ROOT, "inventory/class_table_name_pairs.csv")
 THUNK_PREFIX = b"\x8b\x4c\x24\x04"          # mov ecx,[esp+4] -- a constructor thunk's first bytes
 WINDOW = 400                                # bytes read when a body is not in the symbol map
 IMM = re.compile(r"0x([0-9a-f]+)")
@@ -420,6 +425,46 @@ def base_store_names(sites, chosen, hierarchy):
     return out
 
 
+def paired_names(path=PAIRS):
+    """{table_va: (name, basis)} for the tables `class-table-name-pair.py` paired from the tree."""
+    out = {}
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh):
+            if row.get("verdict") != "paired" or not row.get("class"):
+                continue
+            key = int(row["table_va"], 16) if row.get("table_va") else None
+            if key is not None:
+                out[key] = (row["class"], row.get("support", ""))
+    return out
+
+
+def apply_pairs(rows, pairs=None):
+    """Name the tables no store reaches from the tree pairing, and only those.
+
+    A name the image states is never overwritten: the join fills a row only where `class` is empty, so
+    the six rows this adds are the ones that read `no-registration` before. The evidence names the
+    child-super vote, because that is the measurement, not the row.
+    """
+    pairs = paired_names() if pairs is None else pairs
+    for row in rows:
+        if row["class"]:
+            continue
+        pair = pairs.get(int(row["table_va"], 16))
+        if not pair:
+            continue
+        name, basis = pair
+        row.update({
+            "class": name,
+            "name_rule": "tree-paired",
+            "evidence": ("no registration names this table: its class's site pushes the shared default "
+                         "constructor, and %s, so the table is %s's" % (basis or "the tree pairs it", name)),
+            "site_literals": name,
+        })
+    return rows
+
+
 def census(xbe, ctor):
     tables = load_tables(TABLES)
     hierarchy = load_hierarchy(CLASSES)
@@ -489,7 +534,7 @@ def census(xbe, ctor):
                 "site_literals": ", ".join(owners),
             })
         rows.append(row)
-    return rows
+    return apply_pairs(rows)
 
 
 def evidence(rule, site, group, name):
@@ -534,13 +579,13 @@ def render(rows):
     lines.append("")
     lines.append("%d tables: %d named (%d by an unshared constructor thunk, %d by the hierarchy a "
                  "shared thunk forces, %d derived from a nearest common ancestor, %d from a base store "
-                 "no registration names), %d unresolved, %d with no registration. %d tables are "
-                 "reached by more than one registration site, so a write-order rule would name them by "
-                 "whichever site happened to be written last."
+                 "no registration names, %d from the tree the child supers describe), %d unresolved, "
+                 "%d with no registration. %d tables are reached by more than one registration site, "
+                 "so a write-order rule would name them by whichever site happened to be written last."
                  % (len(rows), named, rules.get("unshared-thunk", 0),
                     rules.get("hierarchy-ancestor", 0), rules.get("ancestor-derived", 0),
-                    rules.get("base-store-ancestor", 0), rules.get("unresolved", 0),
-                    rules.get("no-registration", 0), len(multi)))
+                    rules.get("base-store-ancestor", 0), rules.get("tree-paired", 0),
+                    rules.get("unresolved", 0), rules.get("no-registration", 0), len(multi)))
     return "\n".join(lines)
 
 
@@ -681,6 +726,20 @@ def self_check():
         bad.append("base-store ancestor: %r" % (got,))
     if base_store_names([fire], picked, deep):
         bad.append("one owner was enough to name a base store")
+
+    # the tree pairing names only an empty row, and the row says where the name came from
+    rows = [{"table_va": "0x00005000", "class": "", "sites": "0", "name_rule": "no-registration",
+             "site_literals": "", "evidence": "no registration names this table"},
+            {"table_va": "0x00006000", "class": "Image", "sites": "1", "name_rule": "unshared-thunk",
+             "site_literals": "Image", "evidence": "x"}]
+    apply_pairs(rows, {0x5000: ("Tree", "3 child table(s) declare super Tree"),
+                       0x6000: ("Other", "3 child table(s) declare super Other")})
+    if (rows[0]["class"], rows[0]["name_rule"]) != ("Tree", "tree-paired"):
+        bad.append("the tree did not name an empty row: %r" % (rows[0],))
+    if "3 child table(s) declare super Tree" not in rows[0]["evidence"]:
+        bad.append("the tree row's evidence does not carry the vote: %r" % (rows[0]["evidence"],))
+    if rows[1]["class"] != "Image":
+        bad.append("the tree overwrote a name the image states: %r" % (rows[1],))
 
     rows = [{"table_va": "0x00005000", "class": "Root", "object_size": "8",
              "registration_va": "0x00000010", "constructor_thunk_va": "0x00002000",

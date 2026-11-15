@@ -1,19 +1,20 @@
 # The class tree measured from the constructors
 
-`inventory/xbe_class_table_names.csv` names **468 of the 492** per-class tables in `.rdata` from the
-class literal a registration site pushes (`tools/class-table-names.py`). The 24 it leaves unnamed are
-the engine's own base classes — `Object`, `Engine`, `Player`, `Texture`, `RenderDevice`, … — whose
-registration is not a generated `ucpp` stub, so there is no stub body for a table store to sit in
-(`docs/UNKNOWNS.md` U8). Six of those 24 are paired by a child-super rule calibrated on the names the
-literal does carry, five more by a family hint, and 13 stay open
-(`inventory/class_table_name_pairs.csv`, the 2026-11-15 note in `PLAN.md`).
+`inventory/xbe_class_table_names.csv` names **474 of the 492** per-class tables in `.rdata`: from the
+class literal a registration site pushes (`tools/class-table-names.py`), and — where no site reaches the
+table — from the constructor tree, with `name_rule` `tree-paired`. The 18 it leaves unnamed are the
+engine's own base classes — `Player`, `RenderDevice`, `Channel`, `Download`, … — whose registration is
+not a generated `ucpp` stub, so there is no stub body for a table store to sit in (`docs/UNKNOWNS.md`
+U8). Of the 24 tables the literal path cannot reach, six are paired by a child-super rule calibrated on
+the names the literal does carry and **applied to the map**, five carry a family hint, and the last 13
+stay open (`inventory/class_table_name_pairs.csv`, the 2026-11-15 notes in `PLAN.md`).
 
 This page is the second instrument: the subclass relation the constructors themselves encode, and what
 it can and cannot name. `tools/class-tree-edges.py`; it reads `inventory/class_constructors.csv`,
 `inventory/xbe_class_table_names.csv`, `inventory/xbe_class_tables.csv` and `inventory/classes.csv`,
 so it needs no image and no boot for the tree half.
 
-    python3 tools/class-tree-edges.py                 # summary and the 24 unnamed tables
+    python3 tools/class-tree-edges.py                 # summary and the 18 unnamed tables
     python3 tools/class-tree-edges.py --xbe DUMP/.../default.xbe   # + the registration-site join
     python3 tools/class-tree-edges.py --xbe DUMP/.../default.xbe --all-sites   # ... over all 493 sites
     python3 tools/class-tree-edges.py --check         # synthetic self-test, no dump, writes nothing
@@ -102,55 +103,57 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named by the registration literal | 468 |
-| unnamed | 24 |
-| named tables with a measured child set | 391 |
-| … whose child set equals the class's direct subclasses in `classes.csv` | **376** |
-| … that disagree | **15** |
-| … whose class has no subclass in the image (a leaf) | 77 |
+| named by the registration literal | 474 |
+| unnamed | 18 |
+| named tables with a measured child set | 394 |
+| … whose child set equals the class's direct subclasses in `classes.csv` | **378** |
+| … that disagree | **16** |
+| … whose class has no subclass in the image (a leaf) | 80 |
 
 | conflict cause | tables |
 |---|---|
 | `no-script-row` | 10 |
-| `descendant-edge` | 4 |
+| `descendant-edge` | 5 |
 | `native-child` | 1 |
 | `foreign-child` | 0 |
 | `missing-only` | 0 |
 
 | the unnamed tables, by what the tree can say | tables |
 |---|---|
-| named exactly by their child set | 1 |
+| named exactly by their child set | 0 |
 | ambiguous (two classes match) | 0 |
 | partly named child set | 3 |
-| unconstrained (no class's subclass set matches) | 20 |
+| unconstrained (no class's subclass set matches) | 15 |
 <!-- /generated:class-tree -->
 
 The claim this instrument is worth is the ratio of the two bold rows: the constructor call edges
-reproduce the script subclass set exactly for all but 15 of the classes that have a measurable child
-set in the image. The 15 are listed by the same run against the CSVs and decomposed in the next
+reproduce the script subclass set exactly for all but 16 of the classes that have a measurable child
+set in the image. The 16 are listed by the same run against the CSVs and decomposed in the next
 section (`--conflicts`), and **the composition is the finding**: 10 are native C++ classes with no row
-in `classes.csv` at all, so there is nothing to compare them against; 4 are an edge that skipped a
+in `classes.csv` at all, so there is nothing to compare them against; 5 are an edge that skipped a
 level; 1 is a native child. None of them is evidence against a name any more — the one that was
 (`WaterTexture`) was this page's own inversion of a pair, and the class map has since been corrected.
+The fifth skipped level is `Material`, and it appeared with its name rather than before it: naming
+`0x004c7958` is what put its 32 measured children into the comparison (`--conflicts` says every extra
+child is a descendant, which is how `RenderedMaterial`'s inlined constructor looks).
 
-## What it names among the 24, and why it is not all of them
+## What it names among the 18, and why it is not all of them
 
-**One of the 24 is named by the exact-set rule**: `0x004cfe68`, whose three measured children are
-exactly `WaterTexture`'s script subclasses (`FluidTexture`, `WaveTexture`, `WetTexture`) and whose
-name no other table now carries. `inventory/class_table_name_pairs.csv` pairs it on that basis; the
-class map's own row stays empty because the literal path has nothing to follow, which is the whole
-distinction this page draws. The other 23 fall into two measured groups:
+**The six the tree paired are in the map now**, so what is left to explain is the 18 that are still
+addresses. The nearest the tree comes to a seventh is `0x004c78c0`, and reaching it needs the six to be
+read back as evidence — the round the dated section below measures and rejects. The 18 fall into two
+measured groups:
 
-* **20 are unconstrained**: their measured child set matches no class's direct subclass set. For
-  eleven of them the tree measures no child at all — `0x004c78c0` (31 slots, and no class constructor
-  calls its installer), `0x004c7a10`, `0x004c7ac8`, `0x004c7c78`, `0x004d2400`, `0x004d34d8`,
-  `0x004eaea8`, `0x004fa390`, `0x004fcfe0`, `0x00517860`, `0x005178d8` — and a table nothing calls is
-  invisible to a relation whose only evidence is who calls it. The other nine *are* called, by classes whose own super is
+* **15 are unconstrained**: their measured child set matches no class's direct subclass set. For
+  eight of them the tree measures no child at all — `0x004c78c0` (31 slots, and no class constructor
+  calls its installer), `0x004d2400`, `0x004d34d8`, `0x004eaea8`, `0x004fa390`, `0x004fcfe0`,
+  `0x00517860`, `0x005178d8` — and a table nothing calls is invisible to a relation whose only evidence
+  is who calls it. The others *are* called, by classes whose own super is
   a native base with no row in `classes.csv`, so the set is right and there is no class to match it to:
-  `0x004c7958` (32 callers, the material side), `0x004c93d0` (`XboxViewport`), `0x004c94b0`
+  `0x004c93d0` (`XboxViewport`), `0x004c94b0`
   (`XboxClient`), `0x004d0318` (the three drivers), `0x004d03c8` (the three connections), `0x004d17a8`
-  (six property classes), `0x004d3af0` (`TextBufferFactory`), `0x004fc588` (`DemoPlayPendingLevel`)
-  and `0x005040d0` (`GameEngine`). This is the difference between the two instruments on this page:
+  (six property classes), `0x004d3af0` (`TextBufferFactory`) and `0x004fc588`
+  (`DemoPlayPendingLevel`) -- seven tables. This is the difference between the two instruments on this page:
   the tree needs *both* edges to name a table, and the installer's-callers rule below needs only the
   second.
 * **3 have a measured child set that is only partly named**: `0x004c9348` (children `0x004c93d0`,
@@ -166,8 +169,8 @@ distinction this page draws. The other 23 fall into two measured groups:
   `DemoPlayPendingLevel` — `LevelBase`; `0x004c9348`'s include the table whose only child is
   `XboxViewport` (`0x004c93d0`, `Viewport`) and the one whose children are the three net connections
   (`0x004d03c8`, `NetConnection`) — `Player`. **This is the tree naming a table, not the registration
-  literal**: the constructor edge is independent evidence for three of the 24, and it agrees with the
-  name `registration-sites.py` asserted for each of them.
+  literal**: the constructor edge is independent evidence for three of the original 24, and it agrees
+  with the name `registration-sites.py` asserted for each of them.
 
 ## The registration-site join, and the shared constructor it finds
 
@@ -202,16 +205,16 @@ the site's own class table in 464 and a different one in 27, so a name the map c
 coincidence of windows — and where the two differ, the difference is a rule the map already records in
 its `name_rule` column (`hierarchy-ancestor`, `base-store-ancestor`, `unshared-thunk`).
 
-## The 15 conflicts, decomposed
+## The 16 conflicts, decomposed
 
-`--conflicts` names the 15 tables whose measured child set is not the script's direct subclass set
-and says which way each one differs. The 15 are three groups, and as of the corrected class map none
+`--conflicts` names the 16 tables whose measured child set is not the script's direct subclass set
+and says which way each one differs. The 16 are three groups, and as of the corrected class map none
 of them is evidence against a name:
 
 | cause | tables | what it is |
 |---|---|---|
-| `no-script-row` | 10 | the table's own class has no row in `inventory/classes.csv` — a native C++ class (`AudioSubsystem`, `Struct`, `State`, `PackageMap`, `PackageMapLevel`, `Linker`, `LinkerLoad`, `LinkerSave`, `Primitive`, `LodMesh`), so there is no script super to compare against and its child set is measured-only. 94 of the 468 names are in this group; the ones with no measured child land in the block's `no subclass in the image` row. |
-| `descendant-edge` | 4 | every extra child is a descendant, so the edge skipped a level: `Vehicle` (7), `PlayerController` (1), `Texture` (2), `Object` (308). |
+| `no-script-row` | 10 | the table's own class has no row in `inventory/classes.csv` — a native C++ class (`AudioSubsystem`, `Struct`, `State`, `PackageMap`, `PackageMapLevel`, `Linker`, `LinkerLoad`, `LinkerSave`, `Primitive`, `LodMesh`), so there is no script super to compare against and its child set is measured-only. 94 of the names are in this group; the ones with no measured child land in the block's `no subclass in the image` row. |
+| `descendant-edge` | 5 | every extra child is a descendant, so the edge skipped a level: `Vehicle` (7), `PlayerController` (1), `Texture` (3), `Object` (309), `Material` (32). |
 | `native-child` | 1 | every extra child is a native class with no script row: `Commandlet` (6). |
 
 `Object` is the extreme case and the reason the cause is named rather than counted as an error: 308
@@ -355,12 +358,12 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named in `inventory/xbe_class_table_names.csv` | 468 |
-| unnamed | 24 |
-| `agrees` -- the installer's symbol names the committed class | **468** |
+| named in `inventory/xbe_class_table_names.csv` | 474 |
+| unnamed | 18 |
+| `agrees` -- the installer's symbol names the committed class | **474** |
 | `adjacent` -- the symbol names a parent or child | 0 |
 | `differs` -- the symbol names an unrelated class | 0 |
-| `unnamed->proposed` | 6 |
+| `unnamed->proposed` | 0 |
 | `constrained` -- the callers share no named ancestor | 17 |
 | `name-clash` -- the proposal is another table's name | 0 |
 | `no-caller` -- no `E8` site reaches the installer | 1 |
@@ -1127,3 +1130,51 @@ Tool (`tools/class-ctors.py`: the `verdict` column, the unnamed-parent and facto
 `--receivers`; `tools/ghidra/ghidra_scripts/DumpBody.java`) + `inventory/class_ctor_receivers.csv` (6
 bodies + census) + this page + `docs/UNKNOWNS.md` U8 + the PLAN note. No boot: the image, the symbol map
 and the committed registration census, and the decompiled bodies stay under `$WORK/propcluster/`.
+
+## Six of the 24 are named by the tree, and one level is as far as it goes (2026-11-15)
+
+**The pairing is applied, not only measured.** `tools/class-table-names.py` reads
+`inventory/class_table_name_pairs.csv` and fills a row only where its `class` is empty, so the six
+tables the child-super rule pairs carry a name and say where it came from: `0x4c7958` `Material`,
+`0x4c7a10` `RenderedMaterial`, `0x4c7ac8` `BitmapMaterial`, `0x4c7c78` `CameraEffect`, `0x4cfe68`
+`WaterTexture` and `0x5040d0` `Engine`, all with `name_rule` `tree-paired` and the vote that produced
+them in `evidence`. The map reads **474 named of 492**, 18 unnamed, and every count on this page is
+regenerated from it — `make class-names` from the image reproduces the artifact byte for byte, because
+the pairs file is a committed input rather than a hand edit.
+
+**The second instrument closes on all 474.** `inventory/class_table_parents.csv` — the installer's
+*callers*, which shares no input with the child supers — moves from 464 `agrees` and 6
+`unnamed->proposed` to **474 `agrees`, 0 proposed**, with the 2 `adjacent` and 1 `differs` it already
+had untouched. Six of six on the rows that were open is a check on both rules at once.
+
+**A second round is measured wrong, so the pairing is one level deep by construction.** The pair tool's
+fixpoint lets a fresh label answer its children inside one run, which makes letting the six applied
+names vote in the *next* run the obvious step. Iterating the two tools to a fixpoint (three rounds, each
+a 3-second regeneration) answers: round two names `0x4c78c0` `Subsystem` on the single `Engine` vote, and
+round three hands `Engine` to `0x004d0318`, `0x004d2400` and `0x004eaea8` — whose measured children are
+the three net drivers, the voice subsystem and the render devices (`NetDriver`, `XHVVoiceSubsystem`,
+`RenderDevice` territory), so at least three of the seven are wrong. The rule's own control degrades
+with it: `parent-super` falls from **29 of 29 to 30 of 36**. So
+`tools/class-table-name-pair.py` blanks its own output (`unnamed_by_image`) before any rule reads the
+map — a name this tool derived is not evidence for the next one — which keeps the population at the 24
+tables and re-renders the pairs CSV unchanged.
+
+**`Material` is the one name of the six that added a conflict, and the cause is the skipped level.**
+Naming `0x4c7958` is what put its **32 extra children** into the comparison, all of them descendants
+(`PSAdditiveDistortion`, `PSBloomSelectMaterial`, and `RenderedMaterial`'s inlined base chain), which is
+the `descendant-edge` cause this page already documents for `Vehicle`, `Texture` and `Object` — the 16
+conflicts are 10 `no-script-row`, 5 `descendant-edge` and 1 `native-child`. The installer's-callers rule
+agrees with the name all the same, so the row stands and the conflict is recorded as the tree's own
+inlining artefact rather than as a doubt about the name.
+
+Tool (`tools/class-table-names.py`: the `tree-paired` rule, `paired_names`, `apply_pairs` and three
+`--check` assertions over a synthetic pair; `tools/class-table-name-pair.py`: `unnamed_by_image` and
+three assertions, plus the cascade note in its docstring) + six rows of
+`inventory/xbe_class_table_names.csv` + the artifacts that read it (`class_constructors`,
+`class_ctor_bases`, `class_size_sources`, `class_table_parents`, `symbols/xbox.map`) + the generated
+blocks above and on `docs/systems/CLASS_REGISTRATION.md`, `docs/STATUS.md` and the README badges +
+`docs/UNKNOWNS.md` U8. No boot: the image and the committed inventories.
+
+**Next measurement:** the 18 that remain need a name the stores do not carry —
+`tools/xemu/class-tables-live.py` on a level with the renderer and net-driver packages loaded (one
+boot; U8's runtime route), or an engine-side class list.

@@ -121,7 +121,7 @@ below).
 |---|---|---|---|---|---|
 | 0x00110120 | FUN_00110120 | 0x004d03c8 -> 0x004fb9b8 | 0x004fb9b8 | PackageMapLevel | - |
 | 0x002e81f0 | ctor_FireTexture | 0x004cfc88 -> 0x004cfd78 | 0x004cfd78 | FireTexture | FractalTexture |
-| 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | - | FractalTexture |
+| 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | WaterTexture | FractalTexture |
 | 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | IceTexture | FractalTexture |
 
 **The registration side agrees on every site it can join.** 491 of the 493 sites record the last store of the body their thunk resolves to; 2 cannot be joined because the census has no constructor row for the body their thunk resolves to (`TextBuffer`, `HTTPDownload`).
@@ -284,7 +284,7 @@ from the window's `0x0007588d` store to the real one at `0x00066a14`.
 
 **A table is named from its constructor body's last store.** 3 table(s) are named from a body that installs two class tables -- the first store there is a base class's table, written by the base constructor the compiler inlined -- and 2 row(s) are read without a symbol size, bounded at the body's own `int3` padding: `0x004ddf78` (TextBuffer), `0x0052cb00` (HTTPDownload).
 
-492 tables: 468 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names), 0 unresolved, 24 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
+492 tables: 474 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names, 6 from the tree the child supers describe), 0 unresolved, 18 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
 <!-- /generated:class-table-names -->
 
 ## The site census reads the body's last store, and 2 of 493 rows move
