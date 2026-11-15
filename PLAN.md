@@ -9752,6 +9752,23 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the two editor residual rows are the artifact's, and 795 of 797 records are the control)
+
+- **`UPreview`'s two `record-unbound` rows are not records at all.** `tools/native-record-check.py`
+  (`make native-record-check`, `--check` in `make ci`, artifact `inventory/native_record_check.csv`) joins every
+  `inventory/natives.csv` row to the `Function` payload it names -- `<0b 47><token u16><pad><FunctionFlags u32>`,
+  the same dword `function-flags.py` reads from the payload's end -- and answers **795 agree / 2 disagree**, where
+  the reader is validated by the artifact it reads (795 of 797 rows reproduce byte for byte, both columns).
+  `UPreviewMapListClient.Created` (artifact token 2, `0x0f169c1c`) and `UPreviewSkinnedButton.SetRenderInfo`
+  (`0x33000405`) both read `0x00020002` = `Defined;Public` in the package, and **795 of 797 records carry
+  `Native`** while these two do not -- so the residual's `record-unbound` verdict on them is the artifact's error,
+  not an editor text gap, and the class texts say exactly what the records say. `Created`'s artifact word is also
+  the only one of 797 with `Public` **and** `Private` set.
+- **The cascade is named, not done.** `inventory/native_residual.csv` (12 rows) and `inventory/native_tokens.csv`
+  (274 rows, one `unresolved` -- `Created`) both inherit the row; have `native-reconcile.py` take the record word
+  as the authority for "is this row a record at all" and the residual falls to 10 rows and the token table closes.
+  That is a second diff, because it moves `docs/NATIVE_VM.md`'s channel table and this file's two counts.
+
 ### Execution notes (2026-11-15, the scriptless payloads are the natives, by their own flag word)
 
 - **The one population `docs/BYTECODE.md` still described instead of measured is closed.** The page's payload-tail
