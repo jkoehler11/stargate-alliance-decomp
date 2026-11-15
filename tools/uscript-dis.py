@@ -1839,7 +1839,7 @@ def owner_class(exports, kinds, names, outer, limit=8):
     return ""
 
 
-def receiver_type(expr, self_class, var_name, decl_type, class_ref, depth=0):
+def receiver_type(expr, self_class, var_name, decl_type, class_ref, depth=0, call_result=None, structs=None):
     """(the class a receiver expression's declared type names, why it names none).
 
     A native-call token carries the native's index, not its receiver: the emitter evaluates the object *before* the
@@ -1851,18 +1851,49 @@ def receiver_type(expr, self_class, var_name, decl_type, class_ref, depth=0):
     `var_name(index)` names the record an operand points at, `decl_type(name, outer)` answers a variable's declared
     type and `class_ref(index)` the class a literal or cast names. The three are callables so a synthetic expression
     can be driven without a package (`selftest`).
+
+    Two shapes are the by-name call census's, not this walk's invention, and they arrive as two more callables:
+    a call in front of a call is typed by the callee's *declared return type* (`call_result`, the read
+    `source_returns` supplies) and a struct member by the `var` line inside its struct's block (`structs`,
+    `source_structs`). Both are statements of the class text, which is why neither needs the image.
     """
     nm = expr["name"]
     if depth > 4:
         return "", "receiver nested deeper than 4"
     if nm in ("Context", "ClassContext") and expr["children"]:
-        return receiver_type(expr["children"][-1], self_class, var_name, decl_type, class_ref, depth + 1)
+        return receiver_type(expr["children"][-1], self_class, var_name, decl_type, class_ref, depth + 1,
+                             call_result, structs)
     if nm in ("ArrayElement", "DynamicArrayElement") and expr["children"]:
         for child in expr["children"]:
-            got, _why = receiver_type(child, self_class, var_name, decl_type, class_ref, depth + 1)
+            got, _why = receiver_type(child, self_class, var_name, decl_type, class_ref, depth + 1,
+                                      call_result, structs)
             if got:
                 return got, ""
         return "", "an array element whose array names no class"
+    if nm in CALL_TOKENS and call_result is not None:
+        # A call leaves its result on the stack, so `PlayerOwner().PlaySound(...)` dispatches on the class
+        # `PlayerOwner` is declared to return -- a statement of the caller's or the callee's own text.
+        return call_result(expr)
+    if nm == "StructMember" and structs is not None:
+        # A struct member's record names the member and its Outer names the struct (`FaceWidget` in
+        # `SquadItemStruct`); the declared class is a `var` line in the struct's block, not a record field.
+        value, _e = read_index(expr["operands"], 0)
+        name, outer = var_name(value)
+        if not name:
+            return "", "a struct member whose operand names no record"
+        members = structs(outer)
+        if members is None:
+            return "", "a struct member of a struct no class text declares (%s)" % (outer or "?")
+        low = name.lower()
+        if low not in members:
+            return "", "a struct member its struct does not declare (%s)" % name
+        t = members[low]
+        if t is None:
+            return "", "a struct member its struct declares with two types (%s)" % name
+        cls = _class_of_type(t)
+        if not cls:
+            return "", "a struct member declared, but not as a class (%s)" % name
+        return cls, ""
     if nm == "Self":
         return self_class, ""
     if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
@@ -1918,8 +1949,43 @@ def receiver_check():
                      lambda n, o: "", lambda v: ("Actor", "") if v == 7 else ("", "nr"))[0] != "Actor":
         print("FAIL uscript-dis: a cast's receiver was not read from its operand")
         return 1
+    # The two chained shapes: a call result (the callee's declared return type) and a struct member (the struct's
+    # `var` line). Each carries its own refusal, because a reader that answered a class for either of them by
+    # accident would place a site the text does not state.
+    if receiver_type(node("FinalFunction", operands=bytes([0x07])), "Actor", lambda v: ("", ""),
+                     lambda n, o: "", lambda v: ("", "nr"),
+                     call_result=lambda e: ("Pawn", ""))[0] != "Pawn":
+        print("FAIL uscript-dis: a call-result receiver was not read from the callee's return type")
+        return 1
+    if receiver_type(node("VirtualFunction", operands=bytes([0x07])), "Actor", lambda v: ("", ""),
+                     lambda n, o: "", lambda v: ("", "nr"),
+                     call_result=lambda e: ("", "a call result the class does not declare"))[1] != \
+            "a call result the class does not declare":
+        print("FAIL uscript-dis: an untyped call result did not carry its reason")
+        return 1
+    member = node("StructMember", operands=bytes([0x07]))
+    structs = lambda owner: ({"facewidget": "UIWidget"} if (owner or "").lower() == "squaditemstruct"
+                             else ({"other": None} if (owner or "").lower() == "ambiguousstruct" else None))
+    if receiver_type(member, "SquadMenu", lambda v: ("FaceWidget", "SquadItemStruct") if v == 7 else ("", ""),
+                     lambda n, o: "", lambda v: ("", "nr"), structs=structs)[0] != "UIWidget":
+        print("FAIL uscript-dis: a struct member's receiver was not read from the struct block")
+        return 1
+    refusals = [("a struct no class text declares", lambda v: ("FaceWidget", "NopeStruct"),
+                 "a struct member of a struct no class text declares (NopeStruct)"),
+                ("a member the struct does not declare", lambda v: ("Missing", "SquadItemStruct"),
+                 "a struct member its struct does not declare (Missing)"),
+                ("a member declared with two types", lambda v: ("Other", "AmbiguousStruct"),
+                 "a struct member its struct declares with two types (Other)"),
+                ("an operand that names no record", lambda v: ("", ""),
+                 "a struct member whose operand names no record")]
+    for label, namer, want in refusals:
+        got = receiver_type(member, "SquadMenu", namer, lambda a, b: "", lambda v: ("", "nr"),
+                            structs=structs)[1]
+        if got != want:
+            print("FAIL uscript-dis: %s read %r, expected %r" % (label, got, want))
+            return 1
     print("ok   uscript-dis: the receiver read answers %d shape(s), and names a reason when it cannot"
-          % len(cases))
+          % (len(cases) + 6))
     return 0
 
 
@@ -1934,8 +2000,10 @@ def native_calls_report(path, table, out=None):
     and the token needs no arithmetic at all.
     """
     from ue2pkg import Package                                # noqa: PLC0415 - only for a real package
-    supers = {r["class"]: r["super"]
-              for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv")))}
+    supers, pkg_of = {}, {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "classes.csv"))):
+        supers[r["class"]] = r["super"]
+        pkg_of[r["class"]] = r["package"]
     declared = collections.defaultdict(dict)
     for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "natives.csv"))):
         token = int(r["native_token"] or 0)
@@ -1996,6 +2064,16 @@ def native_calls_report(path, table, out=None):
     files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
              if os.path.isdir(path) else [path])
     epilogue = bytes([0x04, 0x0B, 0x47])
+    # A callee's return type and a struct's member list are statements of a class's own text, and the class that
+    # states them may sit in another package -- so both reads are cached across the loop and the other package is
+    # opened on first ask, once (the by-name call census's `class_source`).
+    pkg_paths = {os.path.splitext(os.path.basename(f))[0]: f for f in files}
+    sourced = {}
+    struct_index, struct_built = {}, [False]
+    # Every class text's function declarations, by name: `{name: {(package, class): declared return type}}`. A
+    # by-name call result whose name is on no class of the caller's chain is still stated by the classes that
+    # declare it, and when they agree on the return type the result's class is a fact of the corpus.
+    returns_index = {}
     # sites, resolved, param-fit, (class, fn, params), argument-count histogram, off-chain sites
     rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter(), 0])
     # The off-chain sites' receiver, by index: the expression in front of the call token names the object's type,
@@ -2023,6 +2101,72 @@ def native_calls_report(path, table, out=None):
         for k, x in enumerate(pkg.exports, 1):
             if kinds[k] == "Class":
                 class_export.setdefault(names[k], (k, x))
+        pkg_name = os.path.splitext(os.path.basename(one))[0]
+        # An import's own OuterIndex names the class (or struct) the imported object belongs to, which is the
+        # declaration a call-result or struct-member read has to ask -- the export table cannot say it.
+        import_owner = {}
+        for i, x in enumerate(pkg.imports, 1):
+            o = x.get("package") or 0
+            k = -((1 << 32) - o) if o >= (1 << 31) else 0
+            if k < 0 and -k <= len(pkg.imports):
+                import_owner[i] = pkg.name(pkg.imports[-k - 1]["name"])
+
+        def class_source(one_pkg, cls_name):
+            """(locals by function, return types by function) for one class, from its own ScriptText."""
+            key = (one_pkg, cls_name)
+            if key not in sourced:
+                text = None
+                if one_pkg == pkg_name:
+                    hit = class_export.get(cls_name)          # the package being walked is already open
+                    text = _script_text(pkg, hit[1], hit[0] - 1) if hit else None
+                else:
+                    other = pkg_paths.get(one_pkg)
+                    if other:
+                        pkg2 = Package(other)
+                        pkg2.read_names()
+                        pkg2.read_imports()
+                        pkg2.read_exports()
+                        for k, x in enumerate(pkg2.exports, 1):
+                            if pkg2.class_name_of(x) == "Class" and pkg2.name(x["name"]) == cls_name:
+                                text = _script_text(pkg2, x, k - 1)
+                                break
+                sourced[key] = (source_declarations(text), source_returns(text))
+            return sourced[key]
+
+        def build_structs():
+            """{struct: {member: declared type}} over every package's class texts, once."""
+            if struct_built[0]:
+                return
+            struct_built[0] = True
+            for pname in sorted(pkg_paths):
+                if pname == pkg_name:
+                    pobj, cexp = pkg, class_export
+                else:
+                    pobj = Package(pkg_paths[pname])
+                    pobj.read_names()
+                    pobj.read_imports()
+                    pobj.read_exports()
+                    cexp = {}
+                    for k, x in enumerate(pobj.exports, 1):
+                        if pobj.class_name_of(x) == "Class":
+                            cexp.setdefault(pobj.name(x["name"]), (k, x))
+                for cname, (k, x) in cexp.items():
+                    text = _script_text(pobj, x, k - 1)
+                    for sname, members in source_structs(text).items():
+                        sink = struct_index.setdefault(sname.lower(), {})
+                        for mname, t in members.items():
+                            low = mname.lower()
+                            if low not in sink:
+                                sink[low] = t
+                            elif sink[low] != t:
+                                sink[low] = None
+                    for fname, ret in source_returns(text).items():
+                        returns_index.setdefault(fname.lower(), {})[(pname, cname)] = ret
+
+        def structs_for(name):
+            """{member: declared type} for one struct name, or None when no class text declares it."""
+            build_structs()
+            return struct_index.get((name or "").lower())
         for i, e in enumerate(pkg.exports):
             if kinds[i + 1] != "Function":
                 continue
@@ -2074,12 +2218,85 @@ def native_calls_report(path, table, out=None):
                 return cache["hit"]
 
             def var_name(value):
-                """(name, the class its record's Outer names) for a variable operand."""
+                """(name, the class or struct its record's Outer names) for a variable operand."""
                 if 0 < value <= len(export_at):
                     return export_at[value][0], export_at[value][2]
                 if value < 0 and -value in import_at:
-                    return import_at[-value][0], ""
+                    return import_at[-value][0], import_owner.get(-value, "")
                 return "", ""
+
+            def call_result(expr):
+                """The class a call's declared return type names: the receiver a chained call dispatches on.
+
+                A `FinalFunction` names its Function export, so the callee's class is that export's outer (a
+                `State`'s function belongs to the class that owns the state) and its text states the return type; an
+                import names a function in another package, whose owner the import's own OuterIndex gives. A
+                `VirtualFunction`/`GlobalFunction` names a name, resolved on the caller's chain the way a self-call
+                is. The class of the declared return type is the answer -- what the callee does with its own
+                receiver is the by-name census's question, not this one.
+                """
+                value, _e = read_index(expr["operands"], 0)
+                callee = None
+                if expr["name"] == "FinalFunction":
+                    if 0 < value <= len(pkg.exports):
+                        x = pkg.exports[value - 1]
+                        if pkg.class_name_of(x) == "Function" and x.get("outer"):
+                            outer = pkg.exports[x["outer"] - 1]
+                            cname = pkg.name(outer["name"])
+                            if pkg.class_name_of(outer) == "State" and outer.get("outer"):
+                                cname = pkg.name(pkg.exports[outer["outer"] - 1]["name"])
+                            callee = (pkg_name, cname, pkg.name(x["name"]))
+                    elif value < 0 and -value in import_at:
+                        iname, ikind = import_at[-value]
+                        if _kind_key(ikind) != "Function":
+                            return "", ("a call result whose import is a %s, not a function"
+                                        % (ikind or "object"))
+                        iowner = import_owner.get(-value) or ""
+                        if iowner:
+                            callee = (pkg_of.get(iowner, ""), iowner, iname)
+                    if callee is None:
+                        return "", "a call result whose operand names no function"
+                else:
+                    name = pkg.name(value) if 0 <= value < len(pkg.names) else ""
+                    for anc in chain_of(cls):
+                        rets = class_source(pkg_of.get(anc, ""), anc)[1]
+                        got = _folded(rets, name)
+                        if got is not None or name in rets:
+                            callee = (pkg_of.get(anc, ""), anc, name)
+                            break
+                    if callee is None:
+                        # Not on the caller's chain: the classes that declare the name still state its return
+                        # type, and one answer for all of them is the type -- `GetInstigator` is declared by two
+                        # classes and both return `pawn`, which is one class and not a guess.
+                        build_structs()                       # the corpus pass, if this site is the first to need it
+                        holders = returns_index.get((name or "").lower()) or {}
+                        kinds = {ret for ret in holders.values()}
+                        if len(kinds) == 1:
+                            ret = next(iter(kinds))
+                            if ret:
+                                answer = _class_of_type(ret)
+                                if answer:
+                                    return answer, ""
+                            return "", ("a call result (%s) whose declarers agree on a value that is not a class"
+                                        % (name or "?"))
+                        if not holders:
+                            return "", ("a call result (%s) no class in the corpus declares" % (name or "?"))
+                        return "", ("a call result (%s) declared by %d classes with %d return type(s)"
+                                    % (name or "?", len(holders), len(kinds)))
+                rets = class_source(callee[0], callee[1])[1]
+                ret = _folded(rets, callee[2])
+                if callee[2] not in rets and ret is None:
+                    low = {k.lower(): v for k, v in rets.items()}
+                    if callee[2].lower() not in low:
+                        return "", ("a call result whose callee %s the class %s declares no return type for"
+                                    % (callee[2], callee[1] or "?"))
+                    ret = low[callee[2].lower()]
+                if ret is None:
+                    return "", "a call result whose callee is declared twice with different types"
+                if not ret:
+                    return "", "a call result whose callee returns nothing"
+                answer = _class_of_type(ret)
+                return (answer, "") if answer else ("", "a call result of a value that is not a class")
 
             def decl_type(name, outer):
                 """A variable's declared class: a local from the class text, else a property of its own class."""
@@ -2161,7 +2378,8 @@ def native_calls_report(path, table, out=None):
                     # caller's ancestry.
                     recv, why = ("", "no expression in front of the call")
                     if i:
-                        recv, why = receiver_type(lst[i - 1], cls, var_name, decl_type, class_ref)
+                        recv, why = receiver_type(lst[i - 1], cls, var_name, decl_type, class_ref,
+                                                  call_result=call_result, structs=structs_for)
                     if recv:
                         receivers[index][recv] += 1
                         if lookup(recv, index):

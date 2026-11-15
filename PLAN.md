@@ -419,6 +419,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       off-chain rows disagree with each other (one placed, one untyped), and `--check-doc` rebuilds the paragraph from
       the committed CSVs. Controls: the band's own totals do not move -- 144 direct slots and 149 extended indices
       reproduce, 135/9 and 138/11 verdicts unchanged -- so the diff is the five keys, three columns and the sentence.
+      **And the last 19 untyped receivers type, so the residue is a dispatch and not a typing gap (2026-11-15)**: the
+      by-name call census already read two shapes this walk did not -- a call in front of a call, typed from the
+      callee's `function <Type> Name()` line, and a `StructMember`, typed from the `var` line inside its struct's
+      block -- so `receiver_type()` now takes both as callables and `--native-calls` renders them from
+      `source_returns`/`source_structs` exactly as `--calls` does. **874 of the 890 sites (98.2%) place, across 41 of
+      the 42 indices, with 16 typed-but-unplaced (fifteen `Object`, a base above the declarer) and 0 untyped**, and
+      each of the seven rows the read touched gained placements (264 7->11, 278 49->53, 279 22->27, 310 3->5, 313
+      41->42, 539 0->2, 3970 3->4). Two smaller reads came with it, both the rule `--calls` already applies: a
+      variable's **import owner** (`OuterIndex`) is the declaration the compiler resolved against, which types the
+      four `Game`/`Level` receivers to `GameInfo`/`LevelInfo` and *corrects* 28 readings from `Actor` to
+      `PlayerController` without moving a placement; and a `VirtualFunction` result whose name is on no class of the
+      caller's chain is answered by the corpus when **every** class that declares it agrees on the return type
+      (`GetInstigator`: `Engine.Vehicle` and `GamePlay.ScriptedController`, both `pawn`) -- agreement, not a majority,
+      and a disagreement stays a named residue with both counts. The earlier "index 539 is called with nothing in
+      front of it" was wrong: its two sites are `GetPlayerOwner()` results inside a `Context`. `receiver_check` drives
+      a call result, a struct member and the struct's four refusals on synthetic expressions; `native-opcodes-census
+      --check` still closes every row (histogram + untyped = `off_chain`); and `opcode-band`'s rendered sentence gains
+      a clause for the closed case ("no site is left with an expression that types to nothing") instead of quoting a
+      zero inside the old parenthetical -- a run whose residue closes must not go on describing it.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
