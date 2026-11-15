@@ -366,6 +366,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       opcode-band`, no dump) from both censuses, so the pre-regeneration figures it still carried -- 120 used rows,
       44,174 direct tokens, "6 used of 16" and 4,248 high tokens -- cannot come back; `--check-doc` fails on either
       CSV being stale, and `--check` drives both bands' four verdicts, both artifacts and both markers.
+      **What the eleven are is measured now, not inferred (2026-11-15)**: none of them is a hole in the image -- every
+      one of the 149 high-slot bodies is a decoded function in `symbols/xbox_functions.csv` (149 of 149, **25 to 4,728
+      bytes, 59,995 in total**), and the eleven are among them, the largest at 1,778 bytes (`Native_503`). The map's
+      `Native_<n>` label is `tools/native-names.py`'s fallback for a slot with no record name (11 rows carry it), so
+      it is not evidence of identity; the byte count is, and it is the one column in the census that does not come
+      out of the `GNatives` join -- which is why `census_high()` reads the map.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

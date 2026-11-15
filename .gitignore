@@ -37,3 +37,7 @@ __pycache__/
 # Derived trees live under $WORK (default ~/sg1/work), outside the repo.
 *.uc
 /src/UnrealScript/
+
+# build/measurement logs (a run redirects make ci here)
+ci.log
+*.ci.log
