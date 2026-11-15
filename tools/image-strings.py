@@ -176,14 +176,42 @@ class Image:
                     start = i + 1
         return found
 
-    def pushers(self, targets):
-        """{function: {string va}} -- `push imm32` is how a log/format string reaches a call site."""
+    def string_spans(self, strings):
+        """[(start, end, wide, text)] -- the byte range each found literal occupies.
+
+        `strings` is keyed by the walk-back's idea of a literal's first character, and that walk can carry a unit or
+        two of whatever precedes the literal: this image's wide pool sits behind runs of tiny floats whose high word
+        is 0x0023, which decode as `#` and are printable. So a literal's reported start can be one character early,
+        and a `push` of the literal's real first character then matches no key at all.
+        """
+        spans = []
+        for va, text in strings.items():
+            for wide in (True, False):
+                if self.string_at(va, wide) == text:
+                    break
+            spans.append((va, va + len(text) * (2 if wide else 1), wide, text))
+        return spans
+
+    def resolve_push(self, target, spans):
+        """(start, wide) of the literal a pushed address falls inside, or None.
+
+        Matching by containment rather than equality is what keeps a literal whose push names an interior address:
+        the push is still the code's own reference, and the nearest literal start at or below it is the literal.
+        """
+        best = None
+        for start, end, wide, _text in spans:
+            if start <= target < end and (best is None or start > best[0]):
+                best = (start, wide)
+        return best
+
+    def pushers(self, spans):
+        """{function: {pushed address}} -- `push imm32` is how a log/format string reaches a call site."""
         hits = {}
         for off in range(len(self.data) - 5):
             if self.data[off] != 0x68:
                 continue
             target = struct.unpack_from("<I", self.data, off + 1)[0]
-            if target not in targets:
+            if self.resolve_push(target, spans) is None:
                 continue
             va = self.va_of(off)
             if va is None:
@@ -277,7 +305,8 @@ def build(topic_name, xbe_path):
     topic = TOPICS[topic_name]
     image = Image(xbe_path)
     strings = image.needles(topic["needles"])
-    hits = image.pushers(strings)
+    spans = image.string_spans(strings)
+    hits = image.pushers(spans)
     wanted = sorted(hits)
     first = image.callers_of(wanted) if topic.get("callers") else {}
     reached = image.reach(wanted) if topic.get("reach") else {}
@@ -293,7 +322,9 @@ def build(topic_name, xbe_path):
     rows = []
     for f in wanted:
         size, name = image.funcs[f]
-        texts = sorted(strings[t] for t in hits[f])
+        # Read each literal at the address the code pushes, through the encoding that address belongs to: a push of
+        # an interior character must not gain the prefix the walk-back added to the key.
+        texts = sorted(image.string_at(t, image.resolve_push(t, spans)[1]) for t in hits[f])
         # A literal that carries CRLF (`[PhonemeToSpeechTargetMapping]\r\nNumSpeechTargets=%d\r\n`) must not put a
         # newline inside a CSV field: one row per line is what `--check` and a diff can read.
         texts = [t.replace("\r", " ").replace("\n", " ") for t in texts]
