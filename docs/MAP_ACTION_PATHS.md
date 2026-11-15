@@ -46,6 +46,7 @@ so the path walk is that measurement plus branch edges rather than a second opin
 | slots the straight count includes but no path from index 0 returns to (a backward goto) | **6** |
 | slots a branch edge reaches that the straight run does not | **200** |
 | placed `TriggeredCondition` actors across the maps | **211** |
+| `ACTION_IfCondition` slots whose condition actor's tag a placed property in the same map fires / fires nowhere | **199 / 11** |
 | branch slots whose operand is stated | **257** (3 unset) |
 | branch slots whose operand resolves in their own map | **246** (11 do not) |
 | `ACTION_IfCondition` slots whose placed actor states `bEnabled` true / false / nothing | **105 / 0 / 105** |
@@ -83,7 +84,7 @@ so the path walk is that measurement plus branch edges rather than a second opin
 
 ## What this does not claim
 
-* **Which pass a play takes.** The operand is placed data, but `FRand()` is not, and a trigger that fires a `TriggeredCondition` mid-play changes the next pass through that branch. This page is the first pass and the set of paths; the runtime is not measured here.
+* **Which pass a play takes.** The operand is placed data, but `FRand()` is not, and a trigger that fires a `TriggeredCondition` mid-play changes the next pass through that branch. The fire side is measured as far as a name can be: 199 of the 210 resolved conditions name an actor whose tag another placement in the same map fires (`event-targets`' reader, the same join `docs/MAP_EVENT_WIRING.md` uses), and 11 name one nothing in the map fires -- a condition that keeps its placed value for the whole play. Whether the firing placement is itself reached is still a runtime question.
 * **That a resolved tag is the actor the engine finds.** `ForEach C.AllActors(class, T, tag)` takes the first match in actor iteration order, and a tag is not unique; the tool counts a shared tag as resolved because the class's own comment says it will use the first one found.
 * **That an unset operand is a bug.** A condition with no tag, or a probability at zero, is a branch that always skips -- a legal way to write a block out of a sequence, and only the author knows whether it was meant.
 

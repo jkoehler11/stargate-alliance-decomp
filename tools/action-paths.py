@@ -59,7 +59,8 @@ DOC_END = "<!-- /generated:action-paths -->"
 
 FIELDS = ["kind", "name", "package", "role", "arrays", "elements", "branches", "if_cond", "if_prox", "if_rand",
           "matched", "unmatched", "empty_body", "cond_slots", "always", "reach", "straight", "beyond", "orphan",
-          "op_set", "op_unset", "op_resolved", "op_missing", "enabled", "disabled", "unstated", "note"]
+          "op_set", "op_unset", "op_resolved", "op_missing", "enabled", "disabled", "unstated", "flipped",
+          "unfired", "note"]
 
 # the property each conditional reads, and the class it names when that property is a tag of its own
 OPERANDS = (("TriggeredConditionTag", "condition", "TriggeredCondition"),
@@ -77,6 +78,7 @@ def _load(name, filename):
 
 
 ao = _load("action_order", "action-order.py")
+et = _load("event_targets", "event-targets.py")
 ps = ao.ps
 aw = ao.aw
 
@@ -120,7 +122,7 @@ def read_exports(pkg):
         _count, start, _props = found
         props, _end, _reason = ps.read_block(data[start:], pkg, True)
         rec = dict(actions=None, target=None, tag=None, benabled=None, cond_tag=None, probability=None,
-                   prox_tag=None, actor_tags=None, radius=None)
+                   prox_tag=None, actor_tags=None, radius=None, fires=[])
         for p in props:
             name, typ = p["name"], p["type"]
             raw = data[start + p["value_offset"]:start + p["value_offset"] + p.get("size", 0)]
@@ -142,6 +144,9 @@ def read_exports(pkg):
                 rec["probability"] = p.get("value")
             elif name == "Radius" and typ == "Float":
                 rec["radius"] = p.get("value")
+            elif typ == "Name" and isinstance(p.get("value"), str) and et.is_fire(name):
+                # any name-typed property whose spelling says event: this is `event-targets`' own reader
+                rec["fires"].append(p["value"])
         out[i + 1] = rec
     return out
 
@@ -305,8 +310,10 @@ def measure(entries, exports, rules, branch_of, cond_tags, placed_tags, gated=fr
     row = dict(kind="map", name="", package="", role="", arrays=0, elements=0, branches=0, if_cond=0,
                if_prox=0, if_rand=0, matched=0, unmatched=0, empty_body=0, cond_slots=0, always=0, reach=0,
                straight=0, beyond=0, orphan=0, op_set=0, op_unset=0, op_resolved=0, op_missing=0, enabled=0,
-               disabled=0, unstated=0, note="")
+               disabled=0, unstated=0, flipped=0, unfired=0, note="")
     per_holder = collections.defaultdict(collections.Counter)
+
+    fired = {name.lower() for rec in exports.values() for name in rec.get("fires") or []}
 
     def bump(key, n=1):
         row[key] += n
@@ -353,6 +360,11 @@ def measure(entries, exports, rules, branch_of, cond_tags, placed_tags, gated=fr
                     # the placement states no `bEnabled`, and the class's own defaults block does not parse to a
                     # value either: counted, not guessed
                     bump("unstated")
+                actor_tag = ((exports.get(actor) or {}).get("tag") or "").lower()
+                if actor_tag and actor_tag in fired:
+                    bump("flipped")
+                else:
+                    bump("unfired")
         is_gated = holder in gated
         seen = reachable(refs, arr_classes, rules, is_gated, values, targets)
         reach, cond, matched, unmatched, empty = paths_of(refs, arr_classes, rules, is_gated, values, targets)
@@ -452,7 +464,8 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
         r.update({k: per_holder[cls].get(k, 0) for k in
                   ("arrays", "elements", "branches", "if_cond", "if_prox", "if_rand", "matched", "unmatched",
                    "empty_body", "cond_slots", "always", "reach", "straight", "beyond", "orphan", "op_set",
-                   "op_unset", "op_resolved", "op_missing", "enabled", "disabled", "unstated")})
+                   "op_unset", "op_resolved", "op_missing", "enabled", "disabled", "unstated", "flipped",
+                   "unfired")})
         rows.append(r)
     for cls in sorted(branch_of):
         info = branch_of[cls]
@@ -462,7 +475,7 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
     row = dict(kind="census", name="corpus", package="", role="")
     keys = ("arrays", "elements", "branches", "if_cond", "if_prox", "if_rand", "matched", "unmatched",
             "empty_body", "cond_slots", "always", "reach", "straight", "beyond", "orphan", "op_set", "op_unset",
-            "op_resolved", "op_missing", "enabled", "disabled", "unstated")
+            "op_resolved", "op_missing", "enabled", "disabled", "unstated", "flipped", "unfired")
     maps = [r for r in rows if r["kind"] == "map"]
     for key in keys:
         row[key] = sum(int(r.get(key, 0) or 0) for r in maps)
@@ -547,6 +560,8 @@ def render(rows):
                "**%s** |" % c["orphan"])
     out.append("| slots a branch edge reaches that the straight run does not | **%s** |" % c["beyond"])
     out.append("| placed `TriggeredCondition` actors across the maps | **%s** |" % vals.get("cond_actors", "?"))
+    out.append("| `ACTION_IfCondition` slots whose condition actor's tag a placed property in the same map fires "
+               "/ fires nowhere | **%s / %s** |" % (c["flipped"], c["unfired"]))
     out.append("| branch slots whose operand is stated | **%s** (%s unset) |" % (c["op_set"], c["op_unset"]))
     out.append("| branch slots whose operand resolves in their own map | **%s** (%s do not) |"
                % (c["op_resolved"], c["op_missing"]))
@@ -623,8 +638,13 @@ def render(rows):
     out.append("## What this does not claim")
     out.append("")
     out.append("* **Which pass a play takes.** The operand is placed data, but `FRand()` is not, and a trigger "
-               "that fires a `TriggeredCondition` mid-play changes the next pass through that branch. This page "
-               "is the first pass and the set of paths; the runtime is not measured here.")
+               "that fires a `TriggeredCondition` mid-play changes the next pass through that branch. The fire "
+               "side is measured as far as a name can be: %s of the %s resolved conditions name an actor whose "
+               "tag another placement in the same map fires (`event-targets`' reader, the same join "
+               "`docs/MAP_EVENT_WIRING.md` uses), and %s name one nothing in the map fires -- a condition that "
+               "keeps its placed value for the whole play. Whether the firing placement is itself reached is "
+               "still a runtime question." % (c["flipped"], num(c, "flipped") + num(c, "unfired"),
+                                              c["unfired"]))
     out.append("* **That a resolved tag is the actor the engine finds.** `ForEach C.AllActors(class, T, tag)` "
                "takes the first match in actor iteration order, and a tag is not unique; the tool counts a "
                "shared tag as resolved because the class's own comment says it will use the first one found.")
