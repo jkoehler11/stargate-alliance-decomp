@@ -133,7 +133,7 @@ help:
 	@echo "  opcode-refusals the 85 scripts the bytecode walker still refuses, one row each (needs the packages)"
 	@echo "  matching-baseline per package, the functions a rebuild must match and the ones the comparator can grade"
 	@echo "  opcode-pairs  every opcode swap the table permits, what it does to the walk, and the L2 control reach"
-	@echo "  opcode-band   the direct band 0x70..0xff slot by slot: runtime value, record and declaration (no dump)"
+	@echo "  opcode-band   both bands: 0x70..0xff slot by slot, 0x60..0x6f index by index: runtime value, record, declaration (no dump)"
 	@echo "  native-opcodes-check  the native-call census against the opcode census: two counts of the same tokens (no dump)"
 	@echo "  refusal-candidates which single table row would recover the most refused scripts (one variable at a time)"
 	@echo "  lipsinc-sampler  what the runtime answers where a curve has no keys: hold, not extrapolation (needs the dump)"
@@ -749,7 +749,7 @@ opcode-pairs:
 opcode-band:
 	@$(PYTHON) tools/opcode-band.py -o inventory
 	@$(PYTHON) tools/opcode-band.py --write-doc docs/BYTECODE.md
-	@echo "wrote inventory/opcode_band.csv, docs/BYTECODE.md"
+	@echo "wrote inventory/opcode_band.csv, inventory/opcode_band_high.csv, docs/BYTECODE.md"
 
 # The native-call census and the opcode census count the same tokens through two passes of one walker, so they must
 # agree opcode by opcode; a census written from an older table cannot agree with a usage file from a newer one.
