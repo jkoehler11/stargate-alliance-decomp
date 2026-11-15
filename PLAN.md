@@ -9752,6 +9752,29 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the installers are two sibling setters, and one jmp reads the second table)
+
+- **The two tables are not filled by 266 separate bodies; they are filled by two sibling setters that the thunks
+  inline.** `0x0046c60` is `int reg(int index, int *body)` for `GNatives`: first use fills 4096 entries with
+  `0x404a0` and sets `0x635560`; `index == -1` returns; an index `< 0` or `> 0x1000`, or one whose slot no longer
+  holds the stub, is **recorded** into `0x6353e8` instead of being installed; then `GNatives[index] = *body`. Its
+  twin `0x0046cc0` is the same body with bound `0xff`, flag `0x635564` and diagnostic `0x6353ec`.
+- **That explains the doubled store counts without a second table of stores.** Each thunk carries both paths of its
+  setter, which is why 233 `GNatives` slots produce 466 store instructions and 33 conversion slots produce 66: the
+  same entry is stored on the free-slot path and the conflict path writes the diagnostic dword.
+- **`0x6353e8`/`0x6353ec` are one dword each, not the "second 4096-entry table" `gnatives-writes.py` calls the
+  mirror.** No `rep stosd` fill names either address and every write to them is a single index -- so the column that
+  reads them is right about the *value* (it is the slot number the thunk installs) and the address's name in that
+  tool's docstring is the correction owed next time it is touched.
+- **The conversion table is dispatched from exactly one site**: `jmp dword [reg*4+0x630fe0]` at `0x0040bf8`, in a
+  28-byte function the symbol map names `Native_57`. The address is an operand four times in `.text` and the other
+  three are the setter's fill, its busy test and its store.
+- Doc only (`docs/NATIVE_VM.md`, *The two installers are sibling setters*) + this note: the numbers are address-level
+  reads of the two windows and of the fill/thunk scan #578 shipped, so there is no artifact to regenerate and no boot.
+- **Next measurement:** what supplies the index at that jump -- the call site of `Native_57` is one `E8` away, and its
+  stack or register argument says whether the VM reads the conversion selection out of the bytecode stream (a byte
+  after the opcode) or out of the operand the compiler emitted.
+
 ### Execution notes (2026-11-15, the 33 conversions fill a second table, and the fillers read one array)
 
 - **The previous note's question is answered, and the guess it made was half right.** It proposed a dword scan for the
