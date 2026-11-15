@@ -1379,6 +1379,34 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the parents artifact was grading a stale name column)
+
+- **`inventory/class_table_parents.csv` was one revision stale and its verdicts graded the class map
+  against the names it was generated with.** The artifact copies `class_committed` out of
+  `inventory/xbe_class_table_names.csv` and nothing compared the two afterwards, so the five tables #533
+  re-named (`0x4cfba0` `Texture`, `0x4cfc88` `FractalTexture`, `0x4cfd78` `FireTexture`, `0x4d0228`
+  `IceTexture`, `0x4dd2a8` `Object`) still read their old names here -- and **both `name-clash` verdicts
+  the page recorded were that column, not the image**.
+- **Regenerated, the disagreements are all on tables a better rule renamed.** 464 `agrees`, 2 `adjacent`,
+  1 `differs`, 6 `unnamed->proposed`, 17 `constrained`, 2 `no-caller`. The caller rule answers the
+  *ancestor* at the three (`WaterTexture` for `0x4cfba0`, `IceTexture` for `0x4cfc88`, `VertexStreamBase`
+  for `0x4dd2a8`), which is the skipped level the page already documents, so the class map wins them.
+- **The six `unnamed->proposed` rows are exactly the six tables the tree pairs, with no extra row**:
+  `Material`, `RenderedMaterial`, `BitmapMaterial`, `CameraEffect`, `WaterTexture` (`0x4cfe68`), `Engine`.
+  Two instruments with no shared input -- the installers' callers' nearest common ancestor and the child
+  tables' script supers -- agree 6 of 6, which is a check on both.
+- **The gate is permanent, not a re-run.** `tools/class-table-parents.py --check` gains
+  `committed_names_join`: it reads the committed artifact against the class map it copies, all 492 rows,
+  and fails naming each stale row (proved on the pre-fix file: 5 stale). Pure CSV, so the no-dump,
+  no-write `--check` contract holds -- this is the "suspect the check before the tool" failure with the
+  cause fixed in the check.
+- Tool (`tools/class-table-parents.py`: the join and its 1 new assertion) +
+  `inventory/class_table_parents.csv` (regenerated, 5 rows) + the section and two corrected bullets on
+  `docs/NATIVE_CLASS_TREE.md` + this note.
+- **Next measurement:** the page still says "the 26 unnamed tables" in fourteen places from before #533;
+  the class map and the regenerated artifact both say 24, and a sweep of that page's counts is the one
+  follow-up this PR does not take.
+
 ### Execution notes (2026-11-15, the unpaired literals are paired as far as the tree goes)
 
 - **The 25 registration literals that never reach a table now have a read.** They push the shared default

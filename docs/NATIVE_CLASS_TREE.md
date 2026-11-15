@@ -284,7 +284,9 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 1,978 caller sites in all.
 
 * **The installer-name edge reproduces the whole map: 466 of 466 named tables `agrees`, 0 adjacent,
-  0 differs.** Every named table's installer is itself a `ctor_X`/`dtor_X` symbol, so the same edge
+  0 differs.** (Measured against the class map of the day. Regenerated against the map #533 renamed, the
+  artifact reads 464 `agrees` / 2 `adjacent` / 1 `differs` -- see *The parents artifact was grading a
+  stale column* below.) Every named table's installer is itself a `ctor_X`/`dtor_X` symbol, so the same edge
   that `class-tree-edges.py` inverts is what the registration artifact encodes -- and a rule that
   cannot reproduce a name it already knows is not evidence for one it does not.
 * **Five unnamed tables the callers name** (`unnamed->proposed`): `0x004c7958` `Material`
@@ -294,9 +296,10 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
   RenderedMaterial : Material` -- which the registration never said, and each of the five names has
   a registration site whose literal is that class (`Engine` at `0x00121989`, `Material`, ...) whose
   constructor pointer is the shared default and so installs no table of its own.
-* **Two proposals clash with a name the registration already gives another table, and that is the
-  finding**: `0x004cfe68` -> `WaterTexture` where `0x004cfba0` is committed `WaterTexture`, and
-  `0x004d0228` -> `IceTexture` where `0x004cfc88` is committed `IceTexture`. The live read already
+* **Two proposals clashed with a name the registration already gives another table, and the clash was a
+  stale `class_committed` column, not the image** (regenerated below): `0x004cfe68` -> `WaterTexture` where
+  the artifact had `0x004cfba0` `WaterTexture` (the map says `Texture`), and `0x004d0228` -> `IceTexture`
+  where it had `0x004cfc88` `IceTexture` (the map says `FractalTexture`). The live read already
   says `0x004cfba0` carries **613 objects, every one of class `Texture`**, so the clash corroborates
   the inversion this page recorded above rather than contradicting it. Both rows keep the verdict
   `name-clash:<other table>`: the artifact reports, it does not re-name.
@@ -817,9 +820,9 @@ family anchor and the site the name came from, so a later read can disagree with
 page.
 
 **Two routes the image does not offer, both measured this run.** (1) The installer body cannot name its
-own table: all 26 bodies `class_table_parents.csv` leaves unnamed (the 24 plus two the class map names by
-another route) were disassembled and every absolute operand that lands in a data section resolved to a
-string -- **0 carry a string at all**, which is what a 79-131-byte `mov [ecx],<table>; call <base>; ret`
+own table: all 26 bodies the artifact left unnamed before it was regenerated below (the 24 tables plus the
+two #533 had already renamed) were disassembled and every absolute operand that lands in a data section
+resolved to a string -- **0 carry a string at all**, which is what a 79-131-byte `mov [ecx],<table>; call <base>; ret`
 should do. (2) The registration's size argument cannot be the key: `inventory/class_size_sources.csv`'s
 own 24 `no-registration` rows are exactly these tables, so every size in the project's artifacts originates
 at a registration site and the join would be circular.
@@ -827,3 +830,30 @@ at a registration site and the join would be circular.
 What would settle the rest is a **runtime** read -- U8's `tools/xemu/class-tables-live.py` reads a loaded
 `UClass`'s name field and needs a boot -- or an engine-side class list for `Engine`'s native classes,
 which is the external data U8 has been blocked on since the script tree turned out not to declare them.
+
+## The parents artifact was grading a stale column (2026-11-15)
+
+`inventory/class_table_parents.csv` copies its `class_committed` column out of
+`inventory/xbe_class_table_names.csv`, and nothing compared the two afterwards. When #533 re-named five
+tables behind a better rule, the artifact kept the names it was generated with and its verdict column
+graded the new map against them: **five rows, one revision stale** -- `0x4cfba0` `WaterTexture` (map
+`Texture`), `0x4cfc88` `IceTexture` (map `FractalTexture`), `0x4cfd78` and `0x4d0228` blank (map
+`FireTexture`, `IceTexture`) and `0x4dd2a8` `VertexStreamBase` (map `Object`). Both
+`name-clash:<other table>` verdicts this page recorded were that column rather than a measurement of the
+image, and so was the reading that the installer-name rule reproduces the map whole.
+
+Regenerated, the verdicts are **464 `agrees`, 2 `adjacent`, 1 `differs`, 6 `unnamed->proposed`, 17
+`constrained`, 2 `no-caller`**, and all three disagreements sit on a table #533 renamed: the caller rule
+answers the *ancestor* there (`WaterTexture` for `0x4cfba0`, `IceTexture` for `0x4cfc88`,
+`VertexStreamBase` for `0x4dd2a8`), which is the skipped level this page already records. The class map
+wins those three, and the pairing section above decides `0x4cfba0`/`0x4cfe68` independently.
+
+**The six proposals are the same six tables the tree pairs, with no extra row and no disagreement**:
+`Material` (`0x4c7958`), `RenderedMaterial` (`0x4c7a10`), `BitmapMaterial` (`0x4c7ac8`), `CameraEffect`
+(`0x4c7c78`), `WaterTexture` (`0x4cfe68`) and `Engine` (`0x5040d0`). Two instruments that share no input
+-- the nearest common ancestor of the installers' callers, and the script supers of the child tables --
+name the same six, which is the corroboration the pairing needed and a check on both.
+
+**The gate that would have caught it is in `--check` now.** `committed_names_join` reads the committed
+artifact against the class map it copies, all 492 rows, and fails naming every stale row; on the pre-fix
+file it reports 5. It is a CSV join, so the tool keeps its no-dump, no-write `--check` contract.

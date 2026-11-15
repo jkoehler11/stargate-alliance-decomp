@@ -268,11 +268,44 @@ def self_test():
     bad = [(n, g, w) for n, g, w in checks if shape(g) != w]
     for n, g, w in checks:
         print("  %-10s %-34s %s" % (n, str(g), "ok" if shape(g) == w else "FAIL want %s" % (w,)))
+    stale = committed_names_join(ROOT)
+    if stale:
+        bad.append(("committed-names", stale[:1], "no stale rows"))
     if bad:
         print("%d self-test(s) failed" % len(bad))
         return 1
     print("self-test ok: %d cases" % len(checks))
     return 0
+
+
+def committed_names_join(root):
+    """The committed artifact's name column against the class map it was generated from.
+
+    `class_committed` is a copy of `inventory/xbe_class_table_names.csv`, and nothing compares the two
+    after the fact: when that map is regenerated behind a better naming rule, this artifact keeps the old
+    names and its verdicts grade the new rule against them. Measured 2026-11-15: five rows were one
+    revision stale, and the two `name-clash` verdicts they produced were the stale column, not the image.
+    """
+    names, committed = {}, {}
+    with open(os.path.join(root, "inventory/xbe_class_table_names.csv"), newline="") as fh:
+        for row in csv.DictReader(fh):
+            try:
+                names[int(row["table_va"], 16)] = (row.get("class") or "").strip()
+            except ValueError:
+                continue
+    with open(os.path.join(root, "inventory/class_table_parents.csv"), newline="") as fh:
+        for row in csv.DictReader(fh):
+            try:
+                committed[int(row["table_va"], 16)] = (row.get("class_committed") or "").strip()
+            except ValueError:
+                continue
+    differ = sorted((va, committed.get(va, ""), name) for va, name in names.items()
+                    if committed.get(va, "") != name)
+    print("  %-10s %-34s %s" % ("names-join", "%d of %d rows" % (len(names) - len(differ), len(names)),
+                                "ok" if not differ else "FAIL %d stale" % len(differ)))
+    for va, was, now in differ[:5]:
+        print("      0x%08x committed %-20s map %s" % (va, was or "-", now or "-"))
+    return differ
 
 
 def main():
