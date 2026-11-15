@@ -255,6 +255,18 @@ def check_opcode_table():
     ok(name, "256 opcodes, 31 groups, 11 streams split, 4 refusals honoured")
 
 
+def check_function_no_script_doc():
+    """docs/BYTECODE.md's scriptless-population block must match the committed artifact."""
+    name = "function-no-script-doc"
+    r = subprocess.run([sys.executable, repo("tools", "function-no-script.py"), "--check-doc", "docs/BYTECODE.md"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   function-no-script: ", "") if out else "")
+
+
 def check_lipsinc_index():
     """The committed LIPSinc index must be consistent with itself (target indices, record size, trailer names)."""
     name = "lipsinc-index"
@@ -510,6 +522,7 @@ def main():
     check_interaction_setup()
     check_opcode_table()
     check_function_flags()
+    check_function_no_script_doc()
     check_lipsinc_index()
     check_addresses_in_image()
     print()

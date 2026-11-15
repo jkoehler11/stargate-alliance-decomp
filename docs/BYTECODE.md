@@ -179,9 +179,75 @@ number in two unrelated places.
     TOTAL               12472    797    790    791 11379   337   756  11687     672   1975    674
 
 The epilogue counts move slightly with the corpus: **11,379** payloads carry it 7 bytes from the end, **337** 9
-because they are Net functions, and **756** carry it at neither position — the native/scriptless functions, which
-is why `natives.csv`'s 797 joinable are almost exactly that set. What the tail does *not* give is where the script
+because they are Net functions, and **756** carry it at neither position. That last population was a reading
+-- "the native/scriptless functions" -- until `tools/function-no-script.py` asked each payload for its own
+`FunctionFlags`: every one of the 756 is accounted for there, and the block below is that measurement rather
+than a join against a name list. What the tail does *not* give is where the script
 starts, because the header in front of it serialises object references and a name whose widths differ per payload.
+
+<!-- generated:function-no-script -->
+**The scriptless population is the native one, and the payload says so itself**: 751 of the 756 payloads that carry no script epilogue set `FUNC_Native` in their own tail's `FunctionFlags`, 672 are bound to a native body by `inventory/native_bodies.csv`, and the 84 with no body row are the operator natives (`77 in Core, 6 in Engine, 1 in StargateGame`) whose names the source never spells as functions.
+
+83 of the 756 carry `Operator` (`0x1000`) in the same word, so the body-less population (84 rows) and the operator bit name the same set to within 1 row -- the cross-check that the split is the operators, not an artifact of the body map.
+
+| measure | answer |
+|---|---|
+| `Function` payloads over 16 packages | **12472** |
+| with no epilogue | **756** (6.1%) |
+| of those, `FUNC_Native` set in the tail's `FunctionFlags` | **751 of 756** |
+| of those, bound to a native body by `inventory/native_bodies.csv` | **672** |
+| bodied natives whose own flags lack the native bit | **5** |
+
+The flag words the scriptless population ends with, most common first:
+
+| `FunctionFlags` | payloads | bits |
+|---|---|---|
+| `0x00020401` | 376 | 0x1:Final;0x400:Native;0x20000:Public; |
+| `0x00020400` | 118 | 0x400:Native;0x20000:Public; |
+| `0x00022401` | 80 | 0x1:Final;0x400:Native;0x2000:Static;0x20000:Public; |
+| `0x00023401` | 77 | 0x1:Final;0x400:Native;0x1000:Operator;0x2000:Static;0x20000:Public; |
+| `0x00022501` | 24 | 0x1:Final;0x100:Simulated;0x400:Native;0x2000:Static;0x20000:Public; |
+| `0x00020501` | 17 | 0x1:Final;0x100:Simulated;0x400:Native;0x20000:Public; |
+| `0x00020405` | 15 | 0x1:Final;0x4:Iterator;0x400:Native;0x20000:Public; |
+| `0x00020500` | 15 | 0x100:Simulated;0x400:Native;0x20000:Public; |
+| `0x00020409` | 10 | 0x1:Final;0x8:Latent;0x400:Native;0x20000:Public; |
+| `0x00023411` | 6 | 0x1:Final;0x10:PreOperator;0x400:Native;0x1000:Operator;0x2000:Static;0x20000:Public; |
+| `0x00020c00` | 5 | 0x400:Native;0x800:Event;0x20000:Public; |
+| `0x00022400` | 3 | 0x400:Native;0x2000:Static;0x20000:Public; |
+| `0x00040401` | 3 | 0x1:Final;0x400:Native;0x40000:Private; |
+| `0x066d0002` | 1 | 0x40000:Private;0x6690002:unknown; |
+| `0x00aa0002` | 1 | 0x20000:Public;0xa80002:unknown; |
+| `0x00760004` | 1 | 0x4:Iterator;0x20000:Public;0x40000:Private;0x100000:Delegate;0x600000:unknown; |
+| `0x01400004` | 1 | 0x4:Iterator;0x1400000:unknown; |
+| `0x00d10002` | 1 | 0x100000:Delegate;0xc10002:unknown; |
+| `0x00020c01` | 1 | 0x1:Final;0x400:Native;0x800:Event;0x20000:Public; |
+| `0x00022405` | 1 | 0x1:Final;0x4:Iterator;0x400:Native;0x2000:Static;0x20000:Public; |
+
+Per package:
+
+| package | payloads | no epilogue | native bit | in native bodies |
+|---|---|---|---|---|
+| `AmbientCreatures` | 97 | 0 | 0 | 0 |
+| `Core` | 214 | 168 | 168 | 91 |
+| `Editor` | 37 | 14 | 14 | 14 |
+| `Engine` | 3842 | 444 | 439 | 438 |
+| `GUI` | 800 | 81 | 81 | 81 |
+| `GamePlay` | 382 | 0 | 0 | 0 |
+| `IpDrv` | 111 | 28 | 28 | 28 |
+| `Sharpeffects` | 40 | 0 | 0 | 0 |
+| `StargateContent` | 1834 | 0 | 0 | 0 |
+| `StargateGame` | 3273 | 17 | 17 | 16 |
+| `StargateMenus` | 334 | 0 | 0 | 0 |
+| `StargateVehicles` | 549 | 4 | 4 | 4 |
+| `Stargateeffects` | 58 | 0 | 0 | 0 |
+| `UDebugMenu` | 157 | 0 | 0 | 0 |
+| `UPreview` | 13 | 0 | 0 | 0 |
+| `UWindow` | 731 | 0 | 0 | 0 |
+
+**1 package(s) hold a scriptless payload whose own flags omit the native bit** -- `Engine` (5 of its 444 scriptless payloads) -- and every one of those is a bodied native, so the flag is the weaker claim there and the body row is what names it.
+
+Census: corpus 16 package(s) with Function exports.
+<!-- /generated:function-no-script -->
 
 ## Where the script starts, anchored on the shipped source
 
