@@ -45,8 +45,8 @@ DOC_END = "<!-- /generated:class-text-comments -->"
 
 FIELDS = ["kind", "package", "key", "payload", "text_bytes", "comment_bytes", "live_bytes", "blocks",
           "live_functions", "live_vars", "comment_functions", "comment_vars", "comment_defaults",
-          "live_defaults", "comment_natives", "record_functions", "record_properties", "verdict",
-          "count", "note"]
+          "live_defaults", "comment_natives", "line_comment_natives", "record_functions",
+          "record_properties", "verdict", "count", "note"]
 
 BLOCK = re.compile(r"/\*.*?\*/", re.S)
 LINE_COMMENT = re.compile(r"//[^\n]*")
@@ -88,6 +88,10 @@ def analyse(text):
     blocks = [t[a:b] for a, b in spans]
     live = LINE_COMMENT.sub("", BLOCK.sub("", t)).strip()
     body = "\n".join(blocks)
+    # `//` runs are the other way a declaration is disabled, and on this corpus they hold more natives than the
+    # blocks do: counting the block only is how the page came to call 701 live when the live count is 681.
+    no_block = BLOCK.sub("", t)
+    line_spans = [m.span() for m in LINE_COMMENT.finditer(no_block)]
     live_functions = len(FUNC.findall(live))
     live_vars = len(VAR.findall(live))
     out = {
@@ -102,6 +106,7 @@ def analyse(text):
         "comment_defaults": len(DEFAULTS.findall(body)),
         "live_defaults": len(DEFAULTS.findall(live)),
         "comment_natives": declarations_in(t, NATIVE_FN, spans),
+        "line_comment_natives": declarations_in(no_block, NATIVE_FN, line_spans),
     }
     if not spans:
         out["verdict"] = "no-comment"
@@ -134,13 +139,30 @@ def records(path):
 
 
 # --- the sweep -------------------------------------------------------------------------------------
+def class_row(exp, package, cls, a, fn, pr, verdict):
+    """One `class` row.
+
+    `verdict` is `analyse()`'s, except `line-comment` for a class that carries no block but disables a
+    declaration in a `//` run -- those classes are outside the block census by construction.
+    """
+    return dict(kind="class", package=package, key=cls, payload=str(exp["size"]),
+                text_bytes=str(a["text_bytes"]), comment_bytes=str(a["comment_bytes"]),
+                live_bytes=str(a["live_bytes"]), blocks=str(a["blocks"]),
+                live_functions=str(a["live_functions"]), live_vars=str(a["live_vars"]),
+                comment_functions=str(a["comment_functions"]), comment_vars=str(a["comment_vars"]),
+                comment_defaults=str(a["comment_defaults"]), live_defaults=str(a["live_defaults"]),
+                comment_natives=str(a["comment_natives"]),
+                line_comment_natives=str(a["line_comment_natives"]),
+                record_functions=fn, record_properties=pr, verdict=verdict, count="1", note="")
+
+
 def sweep(system_dir, recs):
     pst = load_tool("pkg_script_text", "pkg-script-text.py")
     rows = []
     per_pkg = {}
     totals = dict(classes=0, comment=0, body_in_comment=0, live=0, comment_bytes=0, text_bytes=0,
                   comment_defaults=0, live_defaults=0, comment_functions=0, comment_vars=0,
-                  comment_natives=0)
+                  comment_natives=0, line_comment_natives=0, line_classes=0)
     zero_hits = 0
     live_zero = 0
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
@@ -149,7 +171,7 @@ def sweep(system_dir, recs):
         pkg.read_imports()
         pkg.read_exports()
         package = fname[:-2]
-        per_pkg[package] = [0, 0, 0]
+        per_pkg[package] = [0, 0, 0, 0]
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
@@ -163,7 +185,14 @@ def sweep(system_dir, recs):
             totals["classes"] += 1
             per_pkg[package][0] += 1
             totals["text_bytes"] += a["text_bytes"]
+            totals["line_comment_natives"] += a["line_comment_natives"]
+            per_pkg[package][3] += a["line_comment_natives"]
             if a["verdict"] == "no-comment":
+                # A class can disable a declaration in a `//` run without carrying a block, and then the block
+                # census never sees it -- Engine's ten are all in such classes.
+                if a["line_comment_natives"]:
+                    totals["line_classes"] += 1
+                    rows.append(class_row(exp, package, cls, a, fn, pr, "line-comment"))
                 continue
             totals["comment"] += 1
             totals["comment_bytes"] += a["comment_bytes"]
@@ -181,23 +210,14 @@ def sweep(system_dir, recs):
             else:
                 totals["live"] += 1
                 live_zero += zero
-            rows.append(dict(kind="class", package=package, key=cls, payload=str(exp["size"]),
-                             text_bytes=str(a["text_bytes"]), comment_bytes=str(a["comment_bytes"]),
-                             live_bytes=str(a["live_bytes"]), blocks=str(a["blocks"]),
-                             live_functions=str(a["live_functions"]), live_vars=str(a["live_vars"]),
-                             comment_functions=str(a["comment_functions"]),
-                             comment_vars=str(a["comment_vars"]),
-                             comment_defaults=str(a["comment_defaults"]),
-                             live_defaults=str(a["live_defaults"]),
-                             comment_natives=str(a["comment_natives"]),
-                             record_functions=fn, record_properties=pr,
-                             verdict=a["verdict"], count="1", note=""))
+            rows.append(class_row(exp, package, cls, a, fn, pr, a["verdict"]))
     corpus_zero = sum(1 for fn, pr in recs.values() if fn == "0" and pr == "0")
-    for package, (classes, comment, body) in sorted(per_pkg.items()):
-        if not comment:
+    for package, (classes, comment, body, line) in sorted(per_pkg.items()):
+        if not comment and not line:
             continue
         rows.append(dict(kind="package", package=package, key="", payload=str(classes),
                          blocks=str(comment), count=str(body), verdict="", note="",
+                         line_comment_natives=str(line),
                          text_bytes="", comment_bytes="", live_bytes="", live_functions="",
                          live_vars="", comment_functions="", comment_vars="", comment_defaults="",
                          live_defaults="", comment_natives="", record_functions="",
@@ -215,6 +235,13 @@ def sweep(system_dir, recs):
               ("comment_vars", totals["comment_vars"], "`var` declarations inside a block comment"),
               ("comment_natives", totals["comment_natives"],
                "`native function` declarations inside a block comment"),
+              ("line_comment_natives", totals["line_comment_natives"],
+               "`native function` declarations inside a `//` run"),
+              ("line_comment_classes", totals["line_classes"],
+               "classes whose only disabled natives are in `//` runs"),
+              ("natives_live", source_natives(SOURCES) - totals["comment_natives"]
+               - totals["line_comment_natives"],
+               "native declarations left live once both comment forms are subtracted"),
               ("comment_defaults", totals["comment_defaults"],
                "`defaultproperties` blocks inside a block comment"),
               ("live_defaults", totals["live_defaults"],
@@ -264,6 +291,8 @@ def render(rows):
     out.append("| `function` declarations inside a block comment | **%d** |" % n("comment_functions"))
     out.append("| `var` declarations inside a block comment | **%d** |" % n("comment_vars"))
     out.append("| `native function` declarations inside a block comment | **%d** |" % n("comment_natives"))
+    out.append("| `native function` declarations inside a `//` run | **%d** |" % n("line_comment_natives"))
+    out.append("| native declarations left live | **%d** of %d |" % (n("natives_live"), n("natives_in_source")))
     out.append("| `defaultproperties` blocks inside a block comment | **%d** |" % n("comment_defaults"))
     out.append("| `defaultproperties` blocks outside every comment | **%d** |" % n("live_defaults"))
     out.append("| bytes of text / of it inside a block comment | **%d** / **%d** |"
@@ -315,6 +344,18 @@ def render(rows):
                    "the inventory mis-attributes."
                    % (n("comment_natives"), "`, `".join("%s.%s" % (r["package"], r["key"]) for r in natives),
                       n("natives_in_source") - n("comment_natives"), n("natives_in_source")))
+    inline = [r for r in rows if r["kind"] == "class" and r["line_comment_natives"] not in ("", "0")]
+    if inline:
+        out.append("")
+        out.append("**The other comment form disables more of them: %d `native function` declarations sit inside "
+                   "a `//` run**, in %d classes of which %d carry no block at all (`%s`). A block-only count is "
+                   "what called this corpus %d live; with both forms subtracted the source declares **%d** live "
+                   "native functions, so any per-class attribution that starts from the whole-buffer number "
+                   "inherits the %d disabled ones."
+                   % (n("line_comment_natives"), len(inline), n("line_comment_classes"),
+                      "`, `".join("%s.%s" % (r["package"], r["key"]) for r in inline),
+                      n("natives_in_source") - n("comment_natives"), n("natives_live"),
+                      n("natives_in_source") - n("natives_live")))
     out.append("")
     out.append("Census: %d classes read, %d with a block comment." % (n("classes_with_text"),
                                                                      n("classes_with_block_comment")))
@@ -380,19 +421,41 @@ def self_check():
     d = analyse("class A extends B;\n// /* not a block */\nvar int X;\n")
     if d["blocks"] != 1 or d["verdict"] != "live-body":
         bad.append("a line comment holding `/* */` broke the block count: %r" % (d,))
+    # a `//`-runnable declaration is disabled as well, and it sits outside every block: Engine's ten are this shape
+    inline_text = ("class A extends B;\n//native final function int Foo( int A );\n"
+                   "native function Bar( int B );\n")
+    inline = analyse(inline_text)
+    if inline["line_comment_natives"] != 1 or inline["comment_natives"] != 0:
+        bad.append("a `//`-commented native split as %d line / %d block"
+                   % (inline["line_comment_natives"], inline["comment_natives"]))
+    if inline["verdict"] != "no-comment" or inline["blocks"] != 0:
+        bad.append("a `//`-only class read as %r with %d blocks"
+                   % (inline["verdict"], inline["blocks"]))
+    # a class whose only disabled declaration is a `//` one still gets a row, under its own verdict
+    lit = class_row({"size": 1, "index": 0}, "P", "Inline", inline, "1", "1", "line-comment")
+    if lit["line_comment_natives"] != "1" or lit["verdict"] != "line-comment":
+        bad.append("the line-comment row lost its count: %r" % (lit,))
+    # the count is not double-counted: the same declaration inside a block is a block one, not both
+    both = analyse("class A extends B;\n/*\n//native function Baz( int C );\n*/\n")
+    if both["comment_natives"] != 1 or both["line_comment_natives"] != 0:
+        bad.append("a `//` inside a block counted twice: %r" % (both,))
     # the census adds up over a synthetic package, and the record witness is read by key
     rows = []
-    for cls, verdict_rows in (("Body", whole), ("Live", half)):
+    for cls, verdict_rows in (("Body", whole), ("Live", half), ("Inline", inline_text)):
         a = analyse(verdict_rows)
         row = {k: str(a[k]) for k in FIELDS if k in a}
         row.update(kind="class", package="P", key=cls, payload="1", verdict=a["verdict"], count="1")
         rows.append(row)
-    rows.append(dict(kind="package", package="P", payload="2", blocks="2", count="1",
-                     **{k: "" for k in FIELDS if k not in ("kind", "package", "payload", "blocks", "count")}))
-    for key, value, note in (("classes_with_text", 2, ""), ("classes_with_block_comment", 2, ""),
+    rows.append(dict(kind="package", package="P", payload="3", blocks="2", count="1",
+                     line_comment_natives="1",
+                     **{k: "" for k in FIELDS if k not in ("kind", "package", "payload", "blocks", "count",
+                                                          "line_comment_natives")}))
+    for key, value, note in (("classes_with_text", 3, ""), ("classes_with_block_comment", 2, ""),
                              ("classes_body_in_comment", 1, ""), ("classes_live_body", 1, ""),
                              ("comment_functions", 2, ""), ("comment_vars", 2, ""),
-                             ("comment_natives", 1, ""), ("comment_defaults", 2, ""),
+                             ("comment_natives", 1, ""), ("line_comment_natives", 1, ""),
+                             ("line_comment_classes", 1, ""), ("natives_live", 705, ""),
+                             ("comment_defaults", 2, ""),
                              ("live_defaults", 0, ""), ("text_bytes", 1, ""), ("comment_bytes", 1, ""),
                              ("body_in_comment_record_zero", 1, ""), ("live_body_record_zero", 0, ""),
                              ("corpus_record_zero", 9, ""), ("natives_in_source", 707, "")):
@@ -400,7 +463,8 @@ def self_check():
         row.update(kind="census", key=key, count=str(value), note=note)
         rows.append(row)
     block = render(rows)
-    for want in ("2 of 2", "1 of them", "`P.Body`", "9", "706 against the 707"):
+    for want in ("2 of 3", "1 of them", "`P.Body`", "9", "706 against the 707", "**705** live",
+                 "`P.Inline`"):
         if want not in block:
             bad.append("render is missing %r" % want)
     if render(rows).count("`P.Live`") != 0:

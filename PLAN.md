@@ -1546,6 +1546,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the disabled native declarations are 26 and not 6, so the source declares 681 live)
+
+- **Task.** The previous note closed `StargateContent`'s mirror case by counting `native function` declarations
+  inside a *block* comment (6) and calling the rest live: `docs/PACKAGE_SCRIPT_TEXT.md` then read
+  "707 (6 inside a block comment, so 701 live)". Neither half survived measurement.
+- **The other comment form holds 20 of them.** `tools/class-text-comments.py` now counts a `native function`
+  whose start lands in a `//` run (`line_comment_natives`, plus a `line-comment` row for the classes that carry
+  no block at all), and the corpus splits exactly: **707 = 6 in a `/* */` + 20 in a `//` + 681 live**, with no
+  class contributing to two forms (a `//` inside a block stays a block native, and the `--check` fixture pins
+  that). The 20 sit in **9 classes**: `Engine` 16 (`Pawn`, `Controller`, `PlayerController`, `GameInfo`,
+  `PlayerStats`, `AIMsgManager`, `KConeLimit`) and `GUI` 4 (`GUIController`, `UIXInteraction`); 2 of the 9 carry
+  no block comment at all, which is why the block census could not see them.
+- **It matters where they land.** Those packages are the ones the page calls a surplus: `Engine` reads 451 found
+  against 444 recorded, and 16 of the 451 are disabled declarations, so the "7 extra functions" never existed;
+  `GUI`'s 82 against 81 is 4 disabled against 3 live events. A per-class attribution has to start from the live
+  count, not the whole buffer.
+- **Core's 101-against-203 is an expansion, not a shortfall.** The record side already closes it by name in
+  `inventory/native_reconcile.csv`: **203 records = 97 matched declarations + 106 records that its 86 live
+  `operator` statements expand into**, and 2 declarations (`Core.Object`'s `Divide`, `Round`) have no record --
+  so no arithmetic on the declaration count alone can reach 203, and the answer is +20 from expansion and -2
+  from absence, not +102 of operators. Corpus-wide: 797 records = 683 matched + 112 operator-expanded + 2 with
+  no declaration, against 692 live declarations (681 functions + 11 events) = 683 matched + 9 with no record.
+- **The instrument carries it.** `inventory/class_text_comments.csv` gains `line_comment_natives` and the census
+  rows `line_comment_natives`, `line_comment_classes` and `natives_live`; the generated block states both forms
+  and the 681; the page's own table row is corrected to `707 (26 disabled -- 6 in a /* */, 20 in a // -- so 681
+  live)`; `Where counting is incomplete` no longer reads the two counts as a shortfall. `--check` adds a
+  `//`-commented native, a `//`-only class row and the `//`-inside-a-block double-count control.
+- **Next measurement:** the 9 declarations with no record and the 2 records with no declaration are named per
+  class in `inventory/native_residual.csv`; the open question there is `UPreview`'s 2 records, whose class text
+  declares no native at all (`native_reconcile.csv` has them `csv-only`), so the package's own records disagree
+  with its own text and the image's binder is the third witness.
+
 ### Execution notes (2026-11-15, the six natives the source count credits are commented out, and that closes the mirror case)
 
 - **Task.** `docs/PACKAGE_SCRIPT_TEXT.md` (*Where counting is incomplete, and why*) left one case unexplained:
