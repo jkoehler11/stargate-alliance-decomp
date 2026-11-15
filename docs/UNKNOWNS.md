@@ -424,6 +424,15 @@ What the region does settle is the object model around the records:
 * in the exported set `0x000b4710` has exactly two callers, `0x000b5f10` and `0x000b63f0`; there is no
   third consumer of a single slot.
 
+**Measured 2026-11-15, the value's width, and a correction to the slot split.** `tools/lad-groups.py`'s
+`f32_exact` column puts every one of the 263,900 keys through a round trip at the pose block's own width: **128,042
+(48.5%) come back bit-identical**, 56.5% of the weight slots and 28.2% of the signed ones, and the share is
+43.6-50.4% in each of the seven files with tracks. So roughly half a block's values carry digits only a `f64` holds
+and half do not, which is the first property of the values that is not a range. It does not yet say what they mean:
+the sampler's snap at `2^-51` is one candidate producer of the wider half and is not shown to be the only one. The
+same artifact's `channels` column also retires the 19/7 split's best explanation -- the four files with a
+**21**-channel table split at 19 too, so 19 is the schema's weight count and not the corpus's channel count.
+
 ## U5. Which script path writes and reads a `.sgs` — the script half is measured
 
 **Observed.** The checkpoint container is settled (a UE2 package whose exports are the level's actors). The engine side

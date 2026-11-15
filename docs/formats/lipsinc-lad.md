@@ -413,8 +413,27 @@ two things fall out that the per-track census could not see.
 **Slots 0–18 carry weights, slots 19–25 carry signed values.** Across all 208 rows no slot below 19 ever holds a
 negative value, and the widest one holds at most `1.33783`; every slot from 19 up holds a negative value somewhere
 and reaches past the weight range. So the table is **19 weight curves and 7 signed curves**, split exactly at the
-nineteenth slot — which is also the channel count of the four `Controllers/` packs. That coincidence is recorded,
-not explained.
+nineteenth slot. The split is **not** the channel table, and that is measured rather than assumed: the
+`channels` column of `inventory/lipsinc_groups.csv` carries each file's channel count, and the four files whose
+table has **21** channels split at 19 all the same (`Controllers/grey.lad`, `JAnderson.lad`, `sg1_crew_carter.lad`,
+`sg1_crew_jackson.lad`), so the 19/7 boundary is a constant of the schema and not a per-file alignment with the
+channel table.
+
+**Half of a track's values are the pose block's width and half are not.** The `f32_exact` column counts the keys
+whose `f64` survives a round trip through `f32` — the width the pose block stores — as exact equality, and it
+divides the corpus almost in half: **128,042 of 263,900 keys (48.5%)**, 56.5% of the weight slots' keys and 28.2%
+of the signed slots', and 43.6-50.4% in each of the seven files that carry tracks. The two slots that only ever
+hold 0 and 1 (`17`, `18`) are 100% `f32`-exact, as a value of magnitude 1.0 must be. So the block is a mix of
+numbers a single-precision store could have written and numbers carrying digits only a double holds, and nothing
+in the writer rounds the second kind to the first. That is consistent with the sampler's own double-only snap at
+`2^-51` (`docs/formats/lipsinc-runtime.md`), but nothing measured here says which keys came from the sampler and
+which were stored.
+
+**The table could not be regenerated, and the gate did not see it.** `make lipsinc-groups` answered
+`refused <track>: too many values to unpack (expected 2, got 3)` for every track in every file, because
+`tools/lad-keys.py`'s `key_block` grew a third return value (the block's end offset) and two call sites in this
+tool still unpacked the old pair. `--check` never touches the dump, so `make ci` stayed green over a target that
+produced nothing; the same lesson as U6's extractor pinned to a symbol name.
 
 | slot | corpus value range | reading |
 |---|---|---:|

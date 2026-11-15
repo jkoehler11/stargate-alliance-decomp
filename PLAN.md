@@ -1627,6 +1627,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   only route left to a name for it, and one of them is likely the level loader that builds the
   `PackageMapLevel` -- read those bodies, not this one again.
 
+### Execution notes (2026-11-15, half a track's values are the pose block's width, and the 19/7 split is not the channel table)
+
+- **The value's width is measured, and it is the first property of a value that is not a range.** `tools/lad-groups.py`
+  now carries `f32_exact`: every key's `f64` is round-tripped through `f32` -- the width the pose block stores
+  (`lad-frames.py` reads its records as `<7f`) -- and the test is exact equality, not a tolerance. **128,042 of
+  263,900 keys (48.5%) survive it**: 56.5% of the weight slots' keys (107,182 of 189,835) and 28.2% of the signed
+  slots' (20,860 of 74,065), and 43.6-50.4% in each of the seven files that carry tracks. The two slots that only
+  ever hold 0 and 1 are 100%. So a block is a mix of values a single-precision store could have written and values
+  carrying digits only a double holds -- the sampler's snap at `2^-51` is one candidate producer of the wider half
+  and is not shown to be the only one, so this narrows "what a value is" without closing it.
+- **The 19/7 split is a schema constant, and the previous explanation is retired by measurement.** The artifact's new
+  `channels` column carries each file's channel count: `Controllers/grey.lad`, `JAnderson.lad`,
+  `sg1_crew_carter.lad` and `sg1_crew_jackson.lad` hold **21** channels and split at slot 19 exactly like the four
+  19-channel packs. So "19 weight slots is also the channel count of the four `Controllers/` packs" was a
+  coincidence of half the corpus (and of the four packs alone it is still just that pack's count), not a per-file
+  alignment -- the split belongs to the schema.
+- **A negative first: the slot table could not be regenerated at all, and `make ci` could not see it.**
+  `make lipsinc-groups` answered `refused <track>: too many values to unpack (expected 2, got 3)` on every track of
+  every file: `tools/lad-keys.py`'s `key_block` grew a third return value (the block's end offset) and two call
+  sites in `lad-groups.py` still unpacked the old pair. Only the dump path runs them; `--check` reads the committed
+  CSV, so the gate stayed green over a target that produced nothing. Both sites are fixed here, and the regenerated
+  artifact reproduces every committed column byte for byte -- the new columns are the only change.
+- Tool (`tools/lad-groups.py`: the `f32_exact` test with its docstring, the `channels` column, the two unpack fixes,
+  and two `--check` invariants -- `f32_exact <= keys`, and one channel count per file drawn from `{19, 21}`) +
+  `inventory/lipsinc_groups.csv` (208 rows, the same 56 redundant slots and 2,231 tracks) + the section on
+  `docs/formats/lipsinc-lad.md` + `docs/UNKNOWNS.md` U4. No boot and no new image read: the corpus is the eight
+  `.lad` files.
+- **Next measurement:** the wider half of the values needs a producer, not another range: the sampler's own
+  in-betweens (`0x000b2230`/`0x000b24f0`) are the only code that evaluates a curve at a time, so the read is whether
+  its output is ever stored back into a key -- if it is not, the `f64`-only values were written by the tool that
+  built the pack, and the question becomes which tool.
+
 ### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)### Execution notes (2026-11-15, the two unnamed factories are not anonymous to the join either)
 
 - **Neither unnamed factory has a registration anywhere in its caller chain.** The receivers artifact gains
