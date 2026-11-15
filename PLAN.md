@@ -406,6 +406,19 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       drives the receiver read on `Self`, a local, a `Context`, an array element and a cast. Controls: the site
       totals are unchanged at 44,811 + 4,289 = 49,100 and `resolved` is still 48,210, so the diff moves the three new
       columns and nothing else.
+      **And the band page quotes that read instead of contradicting it (2026-11-15)**: the generated block above still
+      said the off-chain sites "write an index only one class declares, so the index still names the native" -- true,
+      and silent about which class, so the page a reader lands on for the band described the population the fix had
+      just explained as an open question. The sentence is now rendered from the artifact: the high-band census gained
+      `off_chain_placed`/`off_chain_typed`/`off_chain_untyped`/`off_chain_rows`/`off_chain_indices`, each row of
+      `inventory/opcode_band_high.csv` carries the `receiver`/`receiver_placed`/`receiver_untyped` join, and the
+      rendered paragraph quotes **855 of 890, 40 of 42 indices, 16 typed-but-unplaced, 19 untyped** from those keys
+      rather than from a number typed into the renderer. That is the same rule the other generated blocks follow (a
+      run-level count belongs in the artifact, or `--check-doc` cannot rebuild the sentence), and it is what keeps the
+      two pages from drifting: `opcode-band --check` asserts the five new keys on a synthetic inventory whose two
+      off-chain rows disagree with each other (one placed, one untyped), and `--check-doc` rebuilds the paragraph from
+      the committed CSVs. Controls: the band's own totals do not move -- 144 direct slots and 149 extended indices
+      reproduce, 135/9 and 138/11 verdicts unchanged -- so the diff is the five keys, three columns and the sentence.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

@@ -188,7 +188,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/native_vtable_shared.csv` | 232 | 8 | `make native-vtable` |
 | `inventory/natives.csv` | 797 | 6 | `make help` |
 | `inventory/opcode_band.csv` | 145 | 22 | `make opcode-band` |
-| `inventory/opcode_band_high.csv` | 150 | 48 | `make opcode-band` |
+| `inventory/opcode_band_high.csv` | 150 | 56 | `make opcode-band` |
 | `inventory/opcode_compare.csv` | 17 | 11 | `make script-calls` |
 | `inventory/opcode_pairs.csv` | 222 | 14 | `make opcode-pairs` |
 | `inventory/opcode_refusals.csv` | 0 | 11 | `make opcode-refusals` |

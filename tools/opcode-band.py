@@ -89,12 +89,13 @@ NATIVE_OPCODES = os.path.join("inventory", "native_opcodes.csv")
 SYMBOLS = os.path.join("symbols", "xbox_functions.csv")
 HIGH_ROW = ["index", "token", "opcode", "operand", "pattern", "slot_name", "body", "symbol",
             "symbol_size", "record_name", "declared", "declarers", "sites", "resolved", "off_chain", "callee",
-            "callee_match", "name_match", "verdict"]
+            "callee_match", "name_match", "verdict", "receiver", "receiver_placed", "receiver_untyped"]
 HIGH_CENSUS = ["both", "both_named", "registered_only", "declared_only", "neither", "used",
                "opcodes_used", "unused", "unused_declared", "populated", "declared_total",
                "unnamed", "name_exact", "name_spelling", "name_differ", "callee_exact",
                "callee_spelling", "callee_differ", "sites_total", "resolved_total", "off_chain_total",
-               "off_chain_single",
+               "off_chain_single", "off_chain_placed", "off_chain_typed", "off_chain_untyped",
+               "off_chain_rows", "off_chain_indices",
                "symbols_mapped", "symbols_missing", "symbol_bytes", "symbol_min", "symbol_max",
                "unnamed_symbols", "runs"]
 HIGH_COLUMNS = HIGH_ROW + HIGH_CENSUS
@@ -456,6 +457,11 @@ def census_high(table, slots, records, natives, slot_names, bodies, tokens, symb
             "sites": t.get("sites", "0") or "0",
             "resolved": t.get("resolved", "0") or "0",
             "off_chain": t.get("off_chain", "0") or "0",
+            # The receiver read travels with the row: the off-chain population is what it explains, and the page
+            # quotes the three counts, so they belong in the artifact rather than in the renderer.
+            "receiver": t.get("off_chain_receiver", ""),
+            "receiver_placed": t.get("off_chain_resolved", "0") or "0",
+            "receiver_untyped": t.get("off_chain_untyped", "0") or "0",
             "callee": t.get("body_name", ""),
             "callee_match": callee_match(rec, t.get("body_name", "")),
             "name_match": match(rec, names),
@@ -489,6 +495,12 @@ def census_high(table, slots, records, natives, slot_names, bodies, tokens, symb
         "off_chain_total": sum(int(r["off_chain"]) for r in rows),
         "off_chain_single": sum(int(r["off_chain"]) for r in rows
                                  if len(natives.get(r["index"], [])) == 1),
+        "off_chain_placed": sum(int(r["receiver_placed"]) for r in rows),
+        "off_chain_typed": sum(sum(int(x.rsplit(":", 1)[1]) for x in r["receiver"].split(";") if x.strip())
+                               for r in rows),
+        "off_chain_untyped": sum(int(r["receiver_untyped"]) for r in rows),
+        "off_chain_rows": sum(1 for r in rows if int(r["off_chain"])),
+        "off_chain_indices": sum(1 for r in rows if int(r["receiver_placed"])),
         "symbols_mapped": sum(1 for r in rows if r["symbol"]),
         "symbols_missing": sum(1 for r in rows if not r["symbol"]),
         "symbol_bytes": sum(int(r["symbol_size"]) for r in rows if r["symbol_size"]),
@@ -633,6 +645,20 @@ def render_bands(rows, census, hrows, hcensus):
          "would turn a narrower lookup into a disagreement."
          % ("{:,}".format(int(hcensus["resolved_total"])), "{:,}".format(int(hcensus["sites_total"])),
             "{:,}".format(int(hcensus["off_chain_total"])), "{:,}".format(int(hcensus["off_chain_single"])))),
+        (""),
+        ("**The receiver is what resolves them (measured 2026-11-15): %s of those %s sites name their index on the "
+         "chain of the receiver expression's own class, across %s of the %s indices that write an off-chain site -- "
+         "and %s more have a receiver typed to a class whose own chain does not declare the index, while %s name no "
+         "expression that types to a class at all (a call result, a struct member, or a type their class never "
+         "declares).** The receiver is the expression in front of the call token, which `uscript-dis.py` types from "
+         "the class's own `ScriptText`; `native_opcodes.csv`'s `off_chain_receiver`, `off_chain_resolved` and "
+         "`off_chain_untyped` carry the three counts per index, and this table's `receiver`/`receiver_placed`/"
+         "`receiver_untyped` columns are that read joined onto the band. Their residue, not a gap in the corpus: the "
+         "`off_chain` column was a lookup that asked the caller's ancestry a question about the receiver."
+         % ("{:,}".format(int(hcensus["off_chain_placed"])), "{:,}".format(int(hcensus["off_chain_total"])),
+            "{:,}".format(int(hcensus["off_chain_indices"])), "{:,}".format(int(hcensus["off_chain_rows"])),
+            "{:,}".format(int(hcensus["off_chain_typed"]) - int(hcensus["off_chain_placed"])),
+            "{:,}".format(int(hcensus["off_chain_untyped"])))),
     ]
     return "\n".join(out)
 
@@ -690,10 +716,12 @@ def check():
         with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "operand", "index", "sites", "resolved", "off_chain", "param_fit", "body_name",
-                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args"])
-            w.writerow(["0x61", "0x00", 256, 3, 2, 1, 1, "intUObjectexecFoo", 1, "Foo", "Actor", "Actor", "1", "1:3/3"])
+                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args",
+                        "off_chain_receiver", "off_chain_resolved", "off_chain_untyped"])
+            w.writerow(["0x61", "0x00", 256, 3, 2, 1, 1, "intUObjectexecFoo", 1, "Foo", "Actor", "Actor", "1", "1:3/3",
+                        "Pawn:1", 1, 0])
             w.writerow(["0x61", "0x01", 257, 5, 4, 1, 1, "intUObjectexecBar_StringString", 1, "Bar_StrStr", "Object",
-                        "Object", "2", "2:5/5"])
+                        "Object", "2", "2:5/5", "", 0, 1])
         with open(os.path.join(inv, "opcode_usage.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "name", "tokens", "payloads", "scripts_walked", "scripts_with_epilogue"])
@@ -735,6 +763,12 @@ def check():
         if (hcensus["off_chain_total"], hcensus["off_chain_single"], hcensus["sites_total"] - hcensus["resolved_total"]) \
                 != (2, 2, 2):
             bad.append("extended off-chain %r" % {k: hcensus[k] for k in ("off_chain_total", "off_chain_single")})
+        # The receiver read: one row placed by its receiver and one that names no class, so the three counts and the
+        # two populations have to disagree with each other where the synthetic rows do.
+        if (hcensus["off_chain_placed"], hcensus["off_chain_typed"], hcensus["off_chain_untyped"],
+                hcensus["off_chain_rows"], hcensus["off_chain_indices"]) != (1, 1, 1, 2, 1):
+            bad.append("extended receiver census %r" % {k: hcensus[k] for k in (
+                "off_chain_placed", "off_chain_typed", "off_chain_untyped", "off_chain_rows", "off_chain_indices")})
         if (hcensus["callee_exact"], hcensus["callee_spelling"], hcensus["callee_differ"],
                 hcensus["sites_total"], hcensus["resolved_total"]) != (2, 0, 0, 8, 6):
             bad.append("extended callee %r" % {k: hcensus[k] for k in ("callee_exact", "callee_spelling",
