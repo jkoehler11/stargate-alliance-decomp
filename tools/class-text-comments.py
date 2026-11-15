@@ -38,6 +38,7 @@ from ue2pkg import Package  # noqa: E402
 
 ARTIFACT = os.path.join(ROOT, "inventory/class_text_comments.csv")
 CLASSES = os.path.join(ROOT, "inventory/classes.csv")
+SOURCES = os.path.join(ROOT, "inventory/script_text_natives.csv")
 DOC = os.path.join(ROOT, "docs/PACKAGE_SCRIPT_TEXT.md")
 DOC_START = "<!-- generated:class-text-comments -->"
 DOC_END = "<!-- /generated:class-text-comments -->"
@@ -109,6 +110,15 @@ def analyse(text):
     else:
         out["verdict"] = "live-body"
     return out
+
+
+def source_natives(path):
+    """The whole-buffer native total `inventory/script_text_natives.csv` credits to the source."""
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            return sum(int(r["natives_in_source"]) for r in csv.DictReader(fh))
+    except (OSError, KeyError, ValueError):
+        return 0
 
 
 def records(path):
@@ -215,6 +225,8 @@ def sweep(system_dir, recs):
                "live-body classes whose record declares 0 functions and 0 properties"),
               ("corpus_record_zero", corpus_zero,
                "classes in `inventory/classes.csv` declaring 0 functions and 0 properties"),
+              ("natives_in_source", source_natives(SOURCES),
+               "native declarations `inventory/script_text_natives.csv` credits to the source"),
               ("text_bytes", totals["text_bytes"], "bytes of `ScriptText` over every class"),
               ("comment_bytes", totals["comment_bytes"],
                "of those, bytes inside a block comment"))
@@ -292,6 +304,17 @@ def render(rows):
                    % "`, `".join("%s.%s" % (r["package"], r["key"]) for r in flagged))
     else:
         out.append("No body-in-comment class carries a `defaultproperties` block, so the two are disjoint.")
+    out.append("")
+    natives = [r for r in rows if r["kind"] == "class" and r["comment_natives"] not in ("", "0")]
+    if natives:
+        out.append("")
+        out.append("**%d of the `native function` declarations a whole-buffer count credits are inside a block "
+                   "comment**, and they sit in `%s` -- classes whose live part declares none of them, so the "
+                   "source-side native total is %d against the %d such a count reports. `StargateContent`'s "
+                   "3-against-0 in `inventory/script_text_natives.csv` is one of those classes and not a package "
+                   "the inventory mis-attributes."
+                   % (n("comment_natives"), "`, `".join("%s.%s" % (r["package"], r["key"]) for r in natives),
+                      n("natives_in_source") - n("comment_natives"), n("natives_in_source")))
     out.append("")
     out.append("Census: %d classes read, %d with a block comment." % (n("classes_with_text"),
                                                                      n("classes_with_block_comment")))
@@ -372,12 +395,12 @@ def self_check():
                              ("comment_natives", 1, ""), ("comment_defaults", 2, ""),
                              ("live_defaults", 0, ""), ("text_bytes", 1, ""), ("comment_bytes", 1, ""),
                              ("body_in_comment_record_zero", 1, ""), ("live_body_record_zero", 0, ""),
-                             ("corpus_record_zero", 9, "")):
+                             ("corpus_record_zero", 9, ""), ("natives_in_source", 707, "")):
         row = {k: "" for k in FIELDS}
         row.update(kind="census", key=key, count=str(value), note=note)
         rows.append(row)
     block = render(rows)
-    for want in ("2 of 2", "1 of them", "`P.Body`", "9"):
+    for want in ("2 of 2", "1 of them", "`P.Body`", "9", "706 against the 707"):
         if want not in block:
             bad.append("render is missing %r" % want)
     if render(rows).count("`P.Live`") != 0:

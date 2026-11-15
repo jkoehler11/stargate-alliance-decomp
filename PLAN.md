@@ -1546,6 +1546,27 @@ are limited to expected fields (checksum/timestamp) and documented.
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
 
+### Execution notes (2026-11-15, the six natives the source count credits are commented out, and that closes the mirror case)
+
+- **Task.** `docs/PACKAGE_SCRIPT_TEXT.md` (*Where counting is incomplete, and why*) left one case unexplained:
+  `StargateContent` shows "three found against zero recorded", called the mirror of Core's operator shortfall.
+- **The three are inside a block comment in one class.** `tools/class-text-comments.py`'s `comment_natives`
+  column (shipped with #569) names every `native function` declaration that sits inside a `/* ... */`:
+  **6 in 2 classes** -- `Core.Locale` three (`GetLanguage`, `GetDisplayLanguage`, `SetLanguage`) and
+  `StargateContent.SuperSoldier` three (`SetBoneDirection`, `SetBoneLocation`, `SetBoneRotation`). Neither
+  class's live part declares any of them; `SuperSoldier` has a 7,224-byte live body and simply never declares
+  them, and `Locale`'s live text is the declaration alone. So the count of 707 is 701 live declarations, and
+  the "three against zero" is a comment rather than a package the inventory mis-attributes.
+- **Both witnesses agree.** `inventory/script_text_natives.csv` credits `StargateContent` 3 and
+  `inventory/classes.csv` records 0 for the class -- the two artifacts disagreed and the text says which is
+  right, which is the shape this page asks for and did not have.
+- **The instrument carries it.** The census row `natives_in_source` (read from `script_text_natives.csv`, not
+  typed) makes the render say "701 against the 707", and the page's `native declarations found` row now reads
+  `707 (6 inside a block comment, so 701 live)`. `--check-doc` gates the block.
+- **Next measurement:** the other direction of the same join -- Core's 101-found-against-203-recorded is still
+  attributed to operator declarations, and that attribution can be counted from the same text now that the
+  commented half is separable (operators are declared `operator(...)`, not `function`).
+
 ### Execution notes (2026-11-15, the two blocks the text ships as defaults are commented out, and 39 classes keep their whole body that way)
 
 - **Task.** `[~] 3.5`'s last value question: `docs/CLASS_DEFAULTS.md` (*The shipped text is not an oracle for

@@ -276,5 +276,6 @@ census,,live_defaults,,,,,,,,,,,,,,,,0,`defaultproperties` blocks outside every 
 census,,body_in_comment_record_zero,,,,,,,,,,,,,,,,39,body-in-comment classes whose record declares 0 functions and 0 properties
 census,,live_body_record_zero,,,,,,,,,,,,,,,,0,live-body classes whose record declares 0 functions and 0 properties
 census,,corpus_record_zero,,,,,,,,,,,,,,,,953,classes in `inventory/classes.csv` declaring 0 functions and 0 properties
+census,,natives_in_source,,,,,,,,,,,,,,,,707,native declarations `inventory/script_text_natives.csv` credits to the source
 census,,text_bytes,,,,,,,,,,,,,,,,5881021,bytes of `ScriptText` over every class
 census,,comment_bytes,,,,,,,,,,,,,,,,278024,"of those, bytes inside a block comment"

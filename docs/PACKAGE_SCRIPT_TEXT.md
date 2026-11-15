@@ -59,7 +59,7 @@ writes to `$WORK`; nothing here prints or commits source.
 | classes with text | **2,319 of 2,319** |
 | source bytes recovered | 6,113,909 |
 | classes whose first line is `class X extends Y` | 2,319 |
-| `native` function declarations found | 707 |
+| `native` function declarations found | 707 (6 inside a block comment, so 701 live) |
 | `native` declarations recorded in `inventory/classes.csv` | 797 |
 
 The text is the real thing: `SGOrder`'s first line is `class SGOrder extends Order editinlinenew native;`,
@@ -88,9 +88,10 @@ agree. `inventory/native_declarations.csv` holds the rows.
 Eight of eighteen packages match `classes.csv` exactly; five do not, and the shortfall is `Core` (101 found
 vs 203 recorded). The cause is visible in Core's own source: it declares native **operators** — `native(208)
 static final operator(20) float + ( float A, float B )` — which the counter does not treat as functions.
-`StargateContent`'s three found against zero recorded is the mirror case: declarations the inventory does not
-attribute to that package's classes. Both are recorded in `inventory/script_text_natives.csv` rather than
-smoothed over; the six-class table above is the part that is validated.
+`StargateContent`'s three found against zero recorded was the mirror case, and it is **closed below**: the
+three are inside a block comment in `StargateContent.SuperSoldier`, so no record could carry them. Both counts
+are recorded in `inventory/script_text_natives.csv` rather than smoothed over; the six-class table above is the
+part that is validated.
 
 
 ## Extracting the whole tree, and what it is not
@@ -217,6 +218,9 @@ The 39 body-in-comment classes, `payload` being the class export's serial size:
 | `StargateMenus.XBoxLiveServerSelect` | 128 | 522 | 459 | - |
 
 **Every `defaultproperties` block the build ships as text is in that population** -- `Core.Locale`, `GUI.SGVertScrollBar` -- so the text cannot serve as an oracle for this build's compiled defaults: the block it carries belongs to a revision of the class that the package did not compile. `tools/defaults-emit.py --verify` now prints the same status per block.
+
+
+**6 of the `native function` declarations a whole-buffer count credits are inside a block comment**, and they sit in `Core.Locale`, `StargateContent.SuperSoldier` -- classes whose live part declares none of them, so the source-side native total is 701 against the 707 such a count reports. `StargateContent`'s 3-against-0 in `inventory/script_text_natives.csv` is one of those classes and not a package the inventory mis-attributes.
 
 Census: 2319 classes read, 252 with a block comment.
 <!-- /generated:class-text-comments -->
