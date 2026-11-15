@@ -10,6 +10,7 @@ a label table, and so on. This tool applies that table to a byte string and prin
     python3 tools/uscript-dis.py --hex 040b47
     python3 tools/uscript-dis.py --file script.bin
     python3 tools/uscript-dis.py --selftest            # dump-free; what `make ci` runs
+    python3 tools/uscript-dis.py --opcode-pairs SYSTEM -o inventory   # the L2 control's reach, pair by pair
     python3 tools/uscript-dis.py --payloads DUMP/.../System/Engine.u
     python3 tools/uscript-dis.py --sizefield DUMP/.../System
     python3 tools/uscript-dis.py --baseline DUMP/.../System -o inventory
@@ -3678,13 +3679,13 @@ def opcode_partners(table):
     and every following token's offset. That is the mutation that can test **L2**: the scoreboard's other control
     flips an operand bit, which the opcode sequence cannot see by construction, so L2 has never had a mutation that
     could fail it.
+
+    This is the rule the package control shipped with -- map rows with a non-empty pattern -- and it **stays** as
+    shipped so its artifact is comparable across runs. It is also **not** the population a rebuild is graded against:
+    `opcode_shapes(table, wide=True)` and `--opcode-pairs` are, and they measure what this narrow rule cannot reach.
     """
-    groups = collections.defaultdict(list)
-    for op, row in sorted(table.rows.items()):
-        if row.get("source") == "map" and row.get("pattern"):
-            groups[row["pattern"]].append(op)
     out = {}
-    for ops in groups.values():
+    for ops in opcode_shapes(table).values():
         for i, op in enumerate(ops):
             if len(ops) > 1:
                 out[op] = ops[(i + 1) % len(ops)]
@@ -3843,6 +3844,341 @@ def _same_function_as_operand_control(packages):
     sites = {r["package"]: r["control_site"].rsplit("+", 1)[0] for r in csv.DictReader(open(BASELINE_CSV))}
     same = [r for r in packages if not r["refused"] and sites.get(r["package"], "\0") == r["function"]]
     return "; %d of %d land on the operand control's own function" % (len(same), len(packages))
+
+
+# ==== PLAN 3.8's L2 reach: every shape the walker can read, pair by pair (inventory/opcode_pairs.csv) ====
+OPCODE_PAIRS_CSV = os.path.join(ROOT, "inventory", "opcode_pairs.csv")
+PAIR_COLUMNS = ("from", "to", "name_from", "name_to", "pattern", "tokens", "verdict", "package", "function",
+                "offset", "function_tokens", "l3", "l2", "similarity")
+PAIRS_MARK = ("<!-- generated:opcode-pairs -->", "<!-- /generated:opcode-pairs -->")
+PAIR_VERDICTS = ("graded", "refused", "extends", "unused", "unpaired", "census")
+
+
+def opcode_shapes(table, wide=False):
+    """`{shape: [opcodes]}` -- the swaps the table permits, grouped by the operand shape the walker reads.
+
+    **The empty pattern is a shape.** `EndFunctionParms` (`0x16`), `Nothing` (`0x0b`), `EndOfScript` (`0x47`),
+    `True`/`False`/`IntZero`/`NoObject`/`BoolVariable` take no operand at all, and those 13 rows carry 128,171 of the
+    corpus's 484,332 opcode tokens -- the largest single shape class in the build. `--opcode-control`'s rule tests
+    `row.get("pattern")` for truthiness and `source == "map"`, so it cannot see them, nor the 151 `record`/`record-high`
+    rows (`0x70..0xff` and the `HighNative` band, pattern `parms`) -- 49,100 more tokens. A `bad-token` row is not an
+    opcode the walker reads, so neither rule groups one.
+    """
+    groups = collections.defaultdict(list)
+    for op, row in sorted(table.rows.items()):
+        pat = row.get("pattern") or ""
+        if pat == "bad-token":
+            continue
+        if not wide and (row.get("source") != "map" or not pat):
+            continue
+        groups[pat].append(op)
+    return groups
+
+
+def _grade_pair(pkg, funcs, table, frm, to, cands, limit):
+    """Swap `frm` for `to` at the cheapest site in this package: `(verdict, site)`; the site is empty unless graded.
+
+    A swap either grades (the walk keeps its token count and exactly one token differs), is **refused** (the stream no
+    longer fits the new opcode) or **extends** (the walk is a different length, e.g. `0x16` `EndFunctionParms` no
+    longer terminates its parameter list). The last two are answers about the opcode, not about the tool: an opcode
+    that terminates a variable-length walk cannot be swapped for a non-terminator at all.
+    """
+    why = collections.Counter()
+    name = os.path.basename(pkg.path)
+    for _n, key in cands[:limit]:
+        got = parsed(funcs[key], pkg.data, table)
+        if got is None:
+            continue
+        nodes, _body = got
+        flat = flatten(nodes)
+        base = funcs[key]["offset"] + locate(funcs[key], pkg.data)[2]
+        for off, op in opcode_sites(nodes):
+            if op != frm:
+                continue
+            mut = bytearray(pkg.data)
+            mut[base + off] = to
+            after = script_of(_Bytes(bytes(mut)), funcs[key], table)
+            if after is None:
+                why["refused"] += 1
+                continue
+            if len(after) != len(flat):
+                why["extends"] += 1
+                continue
+            moved = sum(1 for x, y in zip(flat, after) if x != y)
+            if moved != 1:
+                why["moves %d" % moved] += 1
+                continue
+            c = compare_tokens(flat, after)
+            return "graded", {"package": name, "function": key, "offset": off, "tokens": len(flat),
+                              "l3": int(c["bytes"]), "l2": int(c["opcodes"]),
+                              "similarity": "%.6f" % c["similarity"]}
+    return (why.most_common(1)[0][0] if why else "refused"), None
+
+
+def opcode_pairs_rows(path, table, limit=40):
+    """One row per opcode the table permits a swap for, plus the opcodes it leaves without a partner.
+
+    The census reads every payload once, then grades each pair on the cheapest function that carries it, cheapest
+    first -- so the row is the *first* site that works, not the only one, and `tokens` is the whole corpus's count for
+    that opcode. Every used opcode appears exactly once as `from`, so the rows' `tokens` sum to the corpus total (the
+    check compares that against `inventory/opcode_usage.csv`'s own count).
+    """
+    files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".u")]
+             if os.path.isdir(path) else [path])
+    tokens = collections.Counter()
+    where = collections.defaultdict(list)
+    for one in files:
+        pkg, funcs = function_index(one)
+        for key in sorted(funcs):
+            got = parsed(funcs[key], pkg.data, table)
+            if got is None:
+                continue
+            nodes, _body = got
+            sites = opcode_sites(nodes)
+            n = len(sites)
+            for _off, op in sites:
+                tokens[op] += 1
+            for op in sorted({o for _o, o in sites}):
+                where[op].append((n, one, key))
+    for op in where:
+        where[op].sort()
+
+    partner = {}
+    for ops in opcode_shapes(table, wide=True).values():
+        for i, op in enumerate(ops):
+            if len(ops) > 1:
+                partner[op] = ops[(i + 1) % len(ops)]
+
+    rows, pending, failed = {}, {}, {}
+    for op in sorted(table.rows):
+        row = table.rows[op]
+        pat = row.get("pattern") or ""
+        if pat == "bad-token":
+            continue
+        to = partner.get(op)
+        if to is None:
+            rows[op] = ("%#04x" % op, "", row["name"], "", pat, tokens.get(op, 0), "unpaired", "", "", "", "", "",
+                        "", "")
+        elif not where.get(op):
+            rows[op] = ("%#04x" % op, "%#04x" % to, row["name"], table.rows[to]["name"], pat, 0, "unused", "", "",
+                        "", "", "", "", "")
+        else:
+            pending[op] = where[op]
+    for one in files:
+        here = [op for op, cs in pending.items() if any(c[1] == one for c in cs)]
+        if not here:
+            continue
+        pkg, funcs = function_index(one)
+        for op in here:
+            cands = [(n, key) for n, p, key in pending[op] if p == one][:limit]
+            verdict, site = _grade_pair(pkg, funcs, table, op, partner[op], cands, limit)
+            if site is None:
+                failed[op] = verdict
+                continue
+            rows[op] = ("%#04x" % op, "%#04x" % partner[op], table.rows[op]["name"],
+                        table.rows[partner[op]]["name"], table.rows[op].get("pattern") or "", tokens.get(op, 0),
+                        "graded", site["package"], site["function"], site["offset"], site["tokens"], site["l3"],
+                        site["l2"], site["similarity"])
+            del pending[op]
+    for op in pending:
+        to = partner[op]
+        rows[op] = ("%#04x" % op, "%#04x" % to, table.rows[op]["name"], table.rows[to]["name"],
+                    table.rows[op].get("pattern") or "", tokens.get(op, 0), failed.get(op, "refused"), "", "", "",
+                    "", "", "", "")
+    return [rows[op] for op in sorted(rows)]
+
+
+def pair_census(rows):
+    """The one census row: the pair counts in `l3`/`l2`, the token population in `tokens`/`function_tokens`."""
+    total = sum(int(r[5]) for r in rows)
+    reach = sum(int(r[5]) for r in rows if r[6] == "graded")
+    graded = sum(1 for r in rows if r[6] == "graded")
+    return ("census", "", "", "", "", total, "census", "", "", "", reach, graded, len(rows) - graded,
+            "%.6f" % (reach / total if total else 0.0))
+
+
+def opcode_pairs_report(path, table, out=None, write_doc=None, check_doc=None):
+    """How much of the build the L2 control can reach, pair by pair, and what each swap does to the walk.
+
+    `--opcode-control` answers "does L2 lose a function when one opcode becomes another" on the packages it reaches;
+    this asks the reach question -- which swaps the table permits at all, which of them the corpus exercises, and
+    which opcodes have no same-shape partner in this build -- because a rebuilt body is graded against *these*, and a
+    column's coverage is a claim of its own.
+    """
+    rows = opcode_pairs_rows(path, table)
+    census = pair_census(rows)
+    for r in rows:
+        if r[6] == "graded":
+            print("  %s %-22s -> %s %-22s %6s tok  %s+%s %s token(s), L3 %s, L2 %s, similarity %s"
+                  % (r[0], r[2], r[1], r[3], r[5], r[7], r[9], r[10], r[11], r[12], r[13]))
+        else:
+            print("  %s %-22s -> %-6s %-22s %6s tok  %s" % (r[0], r[2], r[1], r[3], r[5], r[6]))
+    graded = [r for r in rows if r[6] == "graded"]
+    print("%d opcode(s) censused: %d graded, %d without a site, %d never written, %d without a partner; "
+          "%s of %s token(s) under a graded swap (%.2f%%)"
+          % (len(rows), len(graded), sum(1 for r in rows if r[6] in ("refused", "extends")),
+             sum(1 for r in rows if r[6] == "unused"), sum(1 for r in rows if r[6] == "unpaired"),
+             census[10], census[5], 100.0 * int(census[10]) / int(census[5])))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        dest = os.path.join(out, "opcode_pairs.csv")
+        with open(dest, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(PAIR_COLUMNS)
+            for r in rows + [census]:
+                w.writerow(r)
+        print("wrote %s (%d row(s) + census)" % (dest, len(rows)))
+    if write_doc or check_doc:
+        return pairs_emit_doc(rows, census, write_doc, check_doc)
+    return 0
+
+
+def pairs_doc_block(rows, census, narrow):
+    """The page's reach table, from the artifact's own rows (strings, as `csv` reads them).
+
+    `narrow` is the opcode set the *package* control's rule pairs (`opcode_partners`), so the page can say what the
+    rule it shipped with could reach -- from the same rows, not from a second measurement of the dump.
+    """
+    rows = [r for r in rows if r[6] != "census"]
+    shapes = collections.OrderedDict()
+    for r in rows:
+        s = shapes.setdefault(r[4], {"ops": 0, "paired": 0, "graded": 0, "tokens": 0, "reach": 0})
+        s["ops"] += 1
+        s["tokens"] += int(r[5])
+        s["paired"] += 0 if r[6] == "unpaired" else 1
+        s["graded"] += 1 if r[6] == "graded" else 0
+        s["reach"] += int(r[5]) if r[6] == "graded" else 0
+    stuck = [r for r in rows if r[6] != "graded"]
+    lines = ["",
+             "**The L2 control reaches %s of the build's %s opcode tokens (%s%%): %s of its %s row(s) grade, and %s "
+             "do not.**"
+             % (census[10], census[5], "%.2f" % (100.0 * int(census[10]) / int(census[5])), census[11],
+                int(census[11]) + int(census[12]), census[12]),
+             "**%d of these rows are outside the rule `--opcode-control` shipped with** -- that rule pairs a `map` row "
+             "with a non-empty pattern, so the operand-free opcodes (`0x16` `EndFunctionParms` alone is 68,548 tokens) "
+             "and the `record` natives above `0x6f` were invisible to it, and it reached only %s of the %s tokens "
+             "(%s%%). The shape is the same measurement in both cases; only the rule's reach differed."
+             % (sum(1 for r in rows if r[0] not in narrow),
+                sum(int(r[5]) for r in rows if r[6] == "graded" and r[0] in narrow), census[5],
+                "%.2f" % (100.0 * sum(int(r[5]) for r in rows if r[6] == "graded" and r[0] in narrow)
+                          / int(census[5]))),
+             "",
+             "| operand shape | opcodes | with a partner | graded | tokens | under a graded swap |",
+             "|---|---:|---:|---:|---:|---:|"]
+    for shape, s in sorted(shapes.items(), key=lambda kv: (-kv[1]["tokens"], kv[0])):
+        lines.append("| %s | %d | %d | %d | %d | %d |"
+                     % ("(operand-free)" if shape == "" else "`%s`" % shape, s["ops"], s["paired"], s["graded"],
+                        s["tokens"], s["reach"]))
+    lines.append("| **total** | **%d** | **%d** | **%d** | **%s** | **%s** |"
+                 % (len(rows), sum(1 for r in rows if r[6] != "unpaired"), int(census[11]), census[5], census[10]))
+    named = ["`%s %s` (%s)" % (r[0], r[2], r[6]) for r in stuck if r[5] != "0"]
+    silent = sum(1 for r in stuck if r[5] == "0")
+    if named:
+        lines += ["", "The rows that keep no grade, in the order of their population: %s -- and %d more the corpus "
+                      "never writes, so they can be neither graded nor missed." % (", ".join(named), silent)]
+    elif silent:
+        lines += ["", "Every row the corpus uses grades; the other %d are opcodes it never writes." % silent]
+    return "\n".join(lines)
+
+
+def pairs_emit_doc(rows, census, write_doc=None, check_doc=None):
+    path = write_doc or check_doc
+    block = pairs_doc_block(rows, census, {"%#04x" % op for op in opcode_partners(Table())})
+    with open(path, encoding="utf-8") as fh:
+        current = fh.read()
+    begin, end = PAIRS_MARK
+    i, j = current.find(begin), current.find(end)
+    if i < 0 or j <= i:
+        sys.exit("document has no %s ... %s block" % PAIRS_MARK)
+    fresh = current[: i + len(begin)] + block + "\n" + current[j:]
+    if check_doc:
+        if fresh != current:
+            print("FAIL %s: the generated opcode-pairs block is stale" % path)
+            return 1
+        print("ok   opcode-pairs: %s matches its rows" % path)
+    else:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(fresh)
+        print("ok   opcode-pairs: wrote %s" % path)
+    return 0
+
+
+def read_pairs(path=OPCODE_PAIRS_CSV):
+    if not os.path.exists(path):
+        sys.exit("opcode-pairs: %s does not exist" % path)
+    rows = [tuple(r[c] for c in PAIR_COLUMNS) for r in csv.DictReader(open(path))]
+    if not rows:
+        sys.exit("opcode-pairs: %s holds no rows" % path)
+    return rows
+
+
+def opcode_pairs_check(path=OPCODE_PAIRS_CSV, usage=os.path.join(ROOT, "inventory", "opcode_usage.csv")):
+    """`inventory/opcode_pairs.csv` against its own claims and against the usage census -- no dump, writes nothing.
+
+    Three claims, each against a different source: every graded row is one token of n (L3 0, L2 0, similarity
+    `(n-1)/n`); every `from`/`to` pair sits in one operand-shape group per the committed table, so a row cannot claim a
+    swap the walker could not read; and the rows' `tokens` sum to the total `inventory/opcode_usage.csv` counts over
+    the same walk, which is the independent claim that this census saw the whole corpus and not a subset of it.
+    """
+    fails = []
+    if not os.path.exists(path):
+        print("FAIL opcode-pairs: %s does not exist" % path)
+        return 1
+    with open(path, newline="") as fh:
+        head = next(csv.reader(fh))
+        fh.seek(0)
+        rows = list(csv.DictReader(fh))
+    if tuple(head) != PAIR_COLUMNS:
+        fails.append("%s: header %s" % (path, head))
+    census = [r for r in rows if r["from"] == "census"]
+    body = [r for r in rows if r["from"] != "census"]
+    if len(census) != 1:
+        fails.append("%s: %d census row(s), wanted 1" % (path, len(census)))
+    shapes = {}
+    for ops in opcode_shapes(Table(), wide=True).values():
+        for op in ops:
+            shapes["%#04x" % op] = tuple("%#04x" % o for o in ops)
+    seen = collections.Counter(r["from"] for r in body)
+    for r in body:
+        where = "%s -> %s" % (r["from"], r["to"] or "-")
+        if r["verdict"] not in PAIR_VERDICTS:
+            fails.append("%s: verdict %r" % (where, r["verdict"]))
+        if seen[r["from"]] != 1:
+            fails.append("%s: %d row(s) for one opcode" % (where, seen[r["from"]]))
+        if r["verdict"] == "graded":
+            if (r["l3"], r["l2"]) != ("0", "0"):
+                fails.append("%s: graded L3 %s, L2 %s" % (where, r["l3"], r["l2"]))
+            n = int(r["function_tokens"])
+            if n < 2 or abs(float(r["similarity"]) - (n - 1) / n) > 1e-6:
+                fails.append("%s: similarity %s is not (%d-1)/%d" % (where, r["similarity"], n, n))
+            if r["from"] == r["to"]:
+                fails.append("%s: the opcode did not move" % where)
+            if r["to"] not in shapes.get(r["from"], ()):
+                fails.append("%s: the table does not put these two in one shape" % where)
+        elif any(r[c] for c in ("package", "function", "offset", "l3", "l2", "similarity")):
+            fails.append("%s: a %s row carries a site or a grade" % (where, r["verdict"]))
+    if census:
+        c = census[0]
+        total = sum(int(r["tokens"]) for r in body)
+        reach = sum(int(r["tokens"]) for r in body if r["verdict"] == "graded")
+        graded = sum(1 for r in body if r["verdict"] == "graded")
+        if int(c["tokens"]) != total:
+            fails.append("%s: census says %s token(s), the rows say %d" % (path, c["tokens"], total))
+        if int(c["function_tokens"]) != reach:
+            fails.append("%s: census says %s reachable, the rows say %d" % (path, c["function_tokens"], reach))
+        if int(c["l3"]) != graded or int(c["l2"]) != len(body) - graded:
+            fails.append("%s: census pair counts %s/%s against %d/%d rows"
+                         % (path, c["l3"], c["l2"], graded, len(body) - graded))
+        if os.path.exists(usage):
+            want = sum(int(r["tokens"]) for r in csv.DictReader(open(usage)))
+            if total != want:
+                fails.append("%s: the rows total %d token(s), opcode_usage.csv totals %d" % (path, total, want))
+    for f in fails:
+        print("FAIL opcode-pairs: %s" % f)
+    if not fails:
+        print("ok   opcode-pairs: %d row(s), %s graded, %s of %s token(s) under a graded swap"
+              % (len(body), census[0]["l3"], census[0]["function_tokens"], census[0]["tokens"]))
+    return 1 if fails else 0
 
 
 def cast_installed(path=os.path.join(ROOT, "inventory", "cast_operands.csv")):
@@ -4594,6 +4930,12 @@ def main():
                          "(inventory/opcode_compare.csv)")
     ap.add_argument("--baseline", metavar="PACKAGE_OR_SYSTEM", help="PLAN 3.8's scoreboard: per package, how many "
                     "functions a rebuild must match and how many the comparator can grade (docs/MATCHING.md)")
+    ap.add_argument("--opcode-pairs", metavar="PACKAGE_OR_SYSTEM",
+                    help="how much of the build the L2 control can reach, pair by pair: every swap the table permits, "
+                         "what it does to the walk, and the opcodes with no same-shape partner "
+                         "(inventory/opcode_pairs.csv)")
+    ap.add_argument("--pairs-doc", action="store_true",
+                    help="with --write-doc/--check-doc: re-render the opcode-pairs block from its artifact, no dump")
     ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
     ap.add_argument("--check-doc", metavar="PATH", help="fail if docs/MATCHING.md's block is stale (in `make ci`)")
     ap.add_argument("--from-csv", metavar="PATH", default=BASELINE_CSV,
@@ -4641,7 +4983,7 @@ def main():
 
     if args.check:
         rc = struct_check()
-        return rc or cast_check() or key_check() or opcode_check()
+        return rc or cast_check() or key_check() or opcode_check() or opcode_pairs_check()
     if args.header:
         return header_report(args.header)
     if args.start:
@@ -4679,8 +5021,17 @@ def main():
         return cast_control_report(args.cast_control, Table(), args.out)
     if args.opcode_control:
         return opcode_control_report(args.opcode_control, Table(), args.out)
+    if args.opcode_pairs:
+        return opcode_pairs_report(args.opcode_pairs, Table(), args.out, args.write_doc, args.check_doc)
+    if args.pairs_doc:
+        rows = [r for r in read_pairs() if r[0] != "census"]
+        return pairs_emit_doc(rows, pair_census(rows), args.write_doc, args.check_doc)
     if args.baseline or args.write_doc or args.check_doc:
-        return baseline_report(args.baseline, Table(), args.out, args.write_doc, args.check_doc, args.from_csv)
+        rc = baseline_report(args.baseline, Table(), args.out, args.write_doc, args.check_doc, args.from_csv)
+        if args.write_doc or args.check_doc:
+            rows = [r for r in read_pairs() if r[0] != "census"]
+            rc |= pairs_emit_doc(rows, pair_census(rows), args.write_doc, args.check_doc)
+        return rc
     if args.sizefield:
         return sizefield_report(args.sizefield, args.lists, args.residue_csv)
     if args.diverge:
