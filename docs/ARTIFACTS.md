@@ -22,7 +22,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_config_pair_census.csv` | 554 | 19 | `make class-config-pair` |
 | `inventory/class_constructors.csv` | 1028 | 12 | `make class-ctors` |
 | `inventory/class_ctor_bases.csv` | 522 | 19 | `make ci` |
-| `inventory/class_ctor_receivers.csv` | 7 | 11 | `make class-ctor-receivers` |
+| `inventory/class_ctor_receivers.csv` | 7 | 12 | `make class-ctor-receivers` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make defaults-coverage` |
 | `inventory/class_defaults_emit.csv` | 18 | 25 | `make defaults-emit` |
 | `inventory/class_defaults_misses.csv` | 655 | 8 | `make defaults-misses` |

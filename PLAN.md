@@ -1627,7 +1627,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   only route left to a name for it, and one of them is likely the level loader that builds the
   `PackageMapLevel` -- read those bodies, not this one again.
 
-### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)
+### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)### Execution notes (2026-11-15, the two unnamed factories are not anonymous to the join either)
+
+- **Neither unnamed factory has a registration anywhere in its caller chain.** The receivers artifact gains
+  `caller_registrations`: every caller's own symbol span is searched for a `class_registrations.csv` site. It
+  answers **none** for `0x0014e0e0`'s caller (`UEngine::Init`) and **none** for `0x00110120`'s three callers
+  (`FUN_0011d460` 66 bytes, `FUN_002d2890` 407, `FUN_002d55f0` 434), and none one hop further up
+  (`Engine_UnDemoRec`, `FUN_002d2bb0`, `FUN_002d2cd0`, `FUN_002d5c70`). The census row carries
+  `caller-regs=0`, so the negative lives in the artifact, not only in the prose.
+- **The first version of that join "found" eight registrations, and all eight were a units error.** It read
+  `symbols/xbox_functions.csv`'s `size` as hex, which inflates a 66-byte wrapper to 102 and a 407-byte body
+  to 1,031, so three small wrappers' spans overlapped the registration bodies next door and the join reported
+  `TcpipConnection`/`TcpNetDriver`, `TcpipConnectionXbox`/`TcpNetDriverXbox`, `DemoRecDriver`, `Download`,
+  `ChannelDownload`, `RenderDevice`. The column is decimal; the corrected join answers none, and `--check`
+  now pins the other half (a site outside the caller's span is not counted).
+- Tool (`tools/class-ctors.py`: `classes_in`, the `caller_registrations` column, and a `--check` case that a
+  site outside the caller's span is not counted) + `inventory/class_ctor_receivers.csv` + the paragraph on
+  `docs/NATIVE_CLASS_TREE.md` + this note. No boot and no new image read: the committed registration census
+  joined to the call sites the previous note measured.
+- **Next measurement:** the base-call body `0x002e8260` is the only one left whose class could be named --
+  it installs `0x4cfe68` and is the base of `ctor_WaveTexture`, `ctor_FluidTexture` and `ctor_WetTexture`, so
+  `0x4cfe68` is the parent of three named classes; naming it needs the missing
+  `WaterTexture`-style name, not another caller read.
+
+
 
 - **The caller rule is constrained by the script tree, not by the image.** 0 of the 63 caller tables the
   17 `constrained` rows of `inventory/class_table_parents.csv` name has a class row in
