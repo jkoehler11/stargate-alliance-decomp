@@ -820,19 +820,21 @@ Two checks say the join is the naming rather than a plausible one, and both are 
 
 **The image names 1 of the 11 one-sided slots and the shipped text declares none of them** (`intUObjectexecResetConfig` at 543), so a rebuild compiled from these packages cannot emit those tokens; the other 10 carry a runtime value whose record name the `.data` table leaves empty. Put together, they are the control on the join in both directions -- a key that matched on the wrong field would have put some of them on the *declaration* side, and 0 rows are.
 
-| index | token | `.data` record | `native()` |
-|---:|---|---|---|
-| 302 | `0x61 0x2e` | - | 0 |
-| 333 | `0x61 0x4d` | - | 0 |
-| 384 | `0x61 0x80` | - | 0 |
-| 385 | `0x61 0x81` | - | 0 |
-| 501 | `0x61 0xf5` | - | 0 |
-| 503 | `0x61 0xf7` | - | 0 |
-| 509 | `0x61 0xfd` | - | 0 |
-| 511 | `0x61 0xff` | - | 0 |
-| 528 | `0x62 0x10` | - | 0 |
-| 543 | `0x62 0x1f` | intUObjectexecResetConfig | 0 |
-| 561 | `0x62 0x31` | - | 0 |
+| index | token | body | `.data` record | `native()` |
+|---:|---|---|---|---|
+| 302 | `0x61 0x2e` | `Native_302` 25 B | - | 0 |
+| 333 | `0x61 0x4d` | `Native_333` 73 B | - | 0 |
+| 384 | `0x61 0x80` | `Native_384` 73 B | - | 0 |
+| 385 | `0x61 0x81` | `Native_385` 40 B | - | 0 |
+| 501 | `0x61 0xf5` | `Native_501` 171 B | - | 0 |
+| 503 | `0x61 0xf7` | `Native_503` 1778 B | - | 0 |
+| 509 | `0x61 0xfd` | `Native_509` 41 B | - | 0 |
+| 511 | `0x61 0xff` | `Native_511` 100 B | - | 0 |
+| 528 | `0x62 0x10` | `Native_528` 102 B | - | 0 |
+| 543 | `0x62 0x1f` | `Native_543` 245 B | intUObjectexecResetConfig | 0 |
+| 561 | `0x62 0x31` | `Native_561` 41 B | - | 0 |
+
+**None of the 11 is a hole in the image.** Every slot's body is a decoded function in `symbols/xbox_functions.csv` -- 149 of 149 mapped, 25 to 4,728 bytes, 59,995 in total -- so they are implemented and only the shipped text lacks them (the largest is 1,778 bytes). The map's `Native_<n>` label is `tools/native-names.py`'s fallback for a slot with no record name and 11 rows carry it, so it is not evidence of identity; the byte count is, and it is the one column here that does not come from the `GNatives` join.
 
 2,786 of the 4,289 high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` column, which answers a different question from `body_name`: a call site names the body it dispatches on whether or not the receiver's class declares that native, and reading the two columns as one would turn a narrower lookup into a disagreement.
 <!-- /generated:opcode-band-bands -->

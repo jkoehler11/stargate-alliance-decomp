@@ -86,12 +86,16 @@ HIGH_OUT = "opcode_band_high.csv"
 BANDS_START = "<!-- generated:opcode-band-bands -->"
 BANDS_END = "<!-- /generated:opcode-band-bands -->"
 NATIVE_OPCODES = os.path.join("inventory", "native_opcodes.csv")
-HIGH_ROW = ["index", "token", "opcode", "operand", "pattern", "slot_name", "record_name", "declared",
-            "declarers", "sites", "resolved", "callee", "callee_match", "name_match", "verdict"]
+SYMBOLS = os.path.join("symbols", "xbox_functions.csv")
+HIGH_ROW = ["index", "token", "opcode", "operand", "pattern", "slot_name", "body", "symbol",
+            "symbol_size", "record_name", "declared", "declarers", "sites", "resolved", "callee",
+            "callee_match", "name_match", "verdict"]
 HIGH_CENSUS = ["both", "both_named", "registered_only", "declared_only", "neither", "used",
                "opcodes_used", "unused", "unused_declared", "populated", "declared_total",
                "unnamed", "name_exact", "name_spelling", "name_differ", "callee_exact",
-               "callee_spelling", "callee_differ", "sites_total", "resolved_total", "runs"]
+               "callee_spelling", "callee_differ", "sites_total", "resolved_total",
+               "symbols_mapped", "symbols_missing", "symbol_bytes", "symbol_min", "symbol_max",
+               "unnamed_symbols", "runs"]
 HIGH_COLUMNS = HIGH_ROW + HIGH_CENSUS
 
 # The C++ name spells the argument types out (`StringString`); the script's operator declaration abbreviates them
@@ -370,6 +374,9 @@ def report(rows, census, hrows, hcensus):
           % (hcensus["callee_exact"], hcensus["callee_spelling"], hcensus["callee_differ"], hcensus["used"]))
     print("extended sites: %s over %s rows, and %s name a declaration on the caller chain"
           % (hcensus["sites_total"], hcensus["used"], hcensus["resolved_total"]))
+    print("extended bodies: %s of %s in the symbol map, %s to %s bytes, %s in total, %s a Native_ label"
+          % (hcensus["symbols_mapped"], hcensus["index"], hcensus["symbol_min"], hcensus["symbol_max"],
+             hcensus["symbol_bytes"], hcensus["unnamed_symbols"]))
     for r in hrows:
         if r["verdict"] != "both" or not int(r["sites"]):
             print("  %-9s %-5s %-10s slot=%s record=%s declared=%s sites=%s"
@@ -379,11 +386,20 @@ def report(rows, census, hrows, hcensus):
 
 
 def load_high_inputs(base):
-    """The two inputs only the extended band reads: the runtime slot's own name, and the per-token census."""
-    slot_names = {}
-    for r in read(os.path.join(base, SLOTS), ["index", "name"]):
+    """The inputs only the extended band reads: the runtime slot's name and body, the tokens, and the symbol map.
+
+    The symbol map is a fourth source and it asks a different question -- not what the native is called but whether a
+    function body was decoded at the address -- which is what tells an unnamed native from a hole.
+    """
+    slot_names, bodies = {}, {}
+    for r in read(os.path.join(base, SLOTS), ["index", "name", "address"]):
         if r["index"].strip():
             slot_names[int(r["index"])] = r["name"].strip()
+            bodies[int(r["index"])] = r["address"].strip().lower()
+    symbols = {}
+    for r in read(os.path.join(base, SYMBOLS), ["address", "name", "size"]):
+        if r["address"].strip():
+            symbols[r["address"].strip().lower()] = r
     tokens = {}
     for r in read(os.path.join(base, NATIVE_OPCODES),
                   ["opcode", "operand", "index", "sites", "resolved", "body_name"]):
@@ -395,7 +411,7 @@ def load_high_inputs(base):
         if idx in tokens:
             raise SystemExit("opcode-band: %s names index %d twice" % (NATIVE_OPCODES, idx))
         tokens[idx] = r
-    return slot_names, tokens
+    return slot_names, bodies, tokens, symbols
 
 
 def callee_match(record_name, callee):
@@ -407,7 +423,7 @@ def callee_match(record_name, callee):
     return "spelling" if unspell(record_name) == unspell(callee) else "differ"
 
 
-def census_high(table, slots, records, natives, slot_names, tokens):
+def census_high(table, slots, records, natives, slot_names, bodies, tokens, symbols):
     """The extended band keyed on the native, over every index above 255 a source reaches.
 
     The population is the union of the three sources, not just the called indices: a populated slot no token writes is
@@ -422,6 +438,7 @@ def census_high(table, slots, records, natives, slot_names, tokens):
         names = sorted({r["function"] for r in decl if r["function"].strip()})
         reg = idx in slots
         rec = records.get(idx, "")
+        sym = symbols.get(bodies.get(idx, ""), {})
         rows.append({
             "index": idx,
             "token": "0x%02x 0x%02x" % (op, idx & 0xFF),
@@ -429,6 +446,9 @@ def census_high(table, slots, records, natives, slot_names, tokens):
             "operand": "0x%02x" % (idx & 0xFF),
             "pattern": (table.get(op) or {}).get("pattern", ""),
             "slot_name": slot_names.get(idx, ""),
+            "body": bodies.get(idx, ""),
+            "symbol": sym.get("name", ""),
+            "symbol_size": sym.get("size", ""),
             "record_name": rec,
             "declared": len(names),
             "declarers": ";".join(sorted({"%s.%s.%s" % (r["package"], r["class"], r["function"]) for r in decl})),
@@ -464,6 +484,12 @@ def census_high(table, slots, records, natives, slot_names, tokens):
         "callee_differ": sum(1 for r in rows if r["callee_match"] == "differ"),
         "sites_total": sum(int(r["sites"]) for r in rows),
         "resolved_total": sum(int(r["resolved"]) for r in rows),
+        "symbols_mapped": sum(1 for r in rows if r["symbol"]),
+        "symbols_missing": sum(1 for r in rows if not r["symbol"]),
+        "symbol_bytes": sum(int(r["symbol_size"]) for r in rows if r["symbol_size"]),
+        "symbol_min": min([int(r["symbol_size"]) for r in rows if r["symbol_size"]] or [0]),
+        "symbol_max": max([int(r["symbol_size"]) for r in rows if r["symbol_size"]] or [0]),
+        "unnamed_symbols": sum(1 for r in rows if r["symbol"].startswith("Native_")),
         "runs": ";".join(high_runs(rows)),
     }.items():
         census[key] = val
@@ -571,11 +597,26 @@ def render_bands(rows, census, hrows, hcensus):
             ", ".join("`%s` at %s" % (r["record_name"], r["index"]) for r in named_only) or "none", len(bare),
             hcensus["declared_only"])),
         "",
-        "| index | token | `.data` record | `native()` |",
-        "|---:|---|---|---|",
+        "| index | token | body | `.data` record | `native()` |",
+        "|---:|---|---|---|---|",
     ]
     for r in onesided:
-        out.append("| %s | `%s` | %s | %s |" % (r["index"], r["token"], r["record_name"] or "-", r["declared"]))
+        body = "`%s` %s B" % (r["symbol"], r["symbol_size"]) if r["symbol"] else "-"
+        out.append("| %s | `%s` | %s | %s | %s |" % (r["index"], r["token"], body,
+                                                    r["record_name"] or "-", r["declared"]))
+    biggest = max([int(r["symbol_size"]) for r in onesided if r["symbol_size"]] or [0])
+    out += [
+        "",
+        ("**None of the %s is a hole in the image.** Every slot's body is a decoded function in "
+         "`symbols/xbox_functions.csv` -- %s of %s mapped, %s to %s bytes, %s in total -- so they are implemented "
+         "and only the shipped text lacks them (the largest is %s bytes). The map's `Native_<n>` label is "
+         "`tools/native-names.py`'s fallback for a slot with no record name and %s rows carry it, so it is not "
+         "evidence of identity; the byte count is, and it is the one column here that does not come from the "
+         "`GNatives` join."
+         % (len(onesided), hcensus["symbols_mapped"], hcensus["index"], "{:,}".format(int(hcensus["symbol_min"])),
+            "{:,}".format(int(hcensus["symbol_max"])), "{:,}".format(int(hcensus["symbol_bytes"])),
+            "{:,}".format(biggest), hcensus["unnamed_symbols"])),
+    ]
     out += [
         "",
         ("%s of the %s high-band sites also name a declaration on the caller's chain -- the artifact's `resolved` "
@@ -629,6 +670,14 @@ def check():
             w.writerow(["Engine.u", "Actor", "Foo", 256, "1", ""])
             w.writerow(["Core.u", "Object", "Bar_StrStr", 257, "2", ""])
             w.writerow(["Core.u", "Object", "Qqq", 301, "0", ""])
+        os.makedirs(os.path.join(tmp, "symbols"))
+        with open(os.path.join(tmp, "symbols", "xbox_functions.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["address", "name", "size", "module"])
+            w.writerow(["0x0020c830", "execFoo", 104, ""])
+            w.writerow(["0x00043670", "execBar_StrStr", 117, ""])
+            w.writerow(["0x0020cc10", "Native_300", 25, ""])
+            w.writerow(["0x0020cd00", "Native_302", 1778, ""])
         with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "operand", "index", "sites", "resolved", "param_fit", "body_name", "body_match",
@@ -678,6 +727,11 @@ def check():
                 hcensus["sites_total"], hcensus["resolved_total"]) != (2, 0, 0, 8, 6):
             bad.append("extended callee %r" % {k: hcensus[k] for k in ("callee_exact", "callee_spelling",
                                                                       "callee_differ", "sites", "resolved")})
+        if (hcensus["symbols_mapped"], hcensus["symbols_missing"], hcensus["unnamed_symbols"],
+                hcensus["symbol_bytes"], hcensus["symbol_max"]) != (4, 1, 2, 2024, 1778):
+            bad.append("extended symbols %r" % {k: hcensus[k] for k in ("symbols_mapped", "symbols_missing",
+                                                                       "unnamed_symbols", "symbol_bytes",
+                                                                       "symbol_max")})
         if hcensus["opcodes_used"] != 1:
             bad.append("extended opcodes_used %r" % hcensus["opcodes_used"])
         if (hcensus["both_named"], hcensus["index"]) != (2, 5):
