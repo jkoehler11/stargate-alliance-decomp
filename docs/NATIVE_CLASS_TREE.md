@@ -781,3 +781,49 @@ whose symbol-map size stops nine bytes short of the `jmp`) gives a parent for **
 **What is left is a name, not a position.** The 17 sit inside the 26 tables the registration cannot name
 (U8) and now carry a parent and a child set, so the next instrument is the 27 registration sites whose
 literal the table link cannot pair: pairing literal to position replaces guessing a name.
+
+## The tree pairs six of the 24, and the other reads do not exist (2026-11-15)
+
+Twenty-five registration literals never reach a table: they push the shared default constructor
+`0x00034650`, which stores the object root's table and no class argument (`docs/systems/CLASS_REGISTRATION.md`),
+so the 24 tables their classes own stay addresses in `inventory/xbe_class_table_names.csv`.
+`tools/class-table-name-pair.py` is the read U8 asked for -- literal to position -- and it decides the
+question with two rules that are each measured on the 467 tables that are **already** named before being
+applied to the 24:
+
+| rule | what it reads | on the named 467 |
+|---|---|---|
+| `child-super` | a named child table's class declares a script `super` in `inventory/classes.csv`, so the parent table is that super's table | **85 of 85**, no counter-example |
+| `parent-super` | the candidate whose own script super is the name of the table's *measured* parent (`class_table_parent_edges.csv`), where exactly one candidate has it | **29 of 29**, but it leaves one candidate on only 29 of 389 parented tables |
+| `family` | every named child contains the candidate (`...Property`, `...Texture`) | 10 of 16, and **rejected as a namer**: it answers the family ancestor -- `Info` for `ZoneInfo`, `Emitter` for `ParticleEmitter`, `Texture` for `FractalTexture`, `Material` for `RenderedMaterial` |
+
+**Six tables get a name, and five of the six are the ancestor's child rather than the ancestor** -- the
+distinction the family rule gets wrong: `0x4c7958` `Material` (3 children declare `super Material`),
+`0x4c7a10` `RenderedMaterial` (7 children, so a family fit of `Material` would have stopped one level
+high), `0x4c7ac8` `BitmapMaterial` (3), `0x4c7c78` `CameraEffect` (10), `0x4cfe68` `WaterTexture` (3, and
+its own script super `FractalTexture` is its measured parent), `0x5040d0` `Engine` (`GameEngine` declares
+`super Engine`). `0x4cfe68` also **settles the `WaterTexture` name clash** in `class_table_parents.csv`:
+that artifact gives `WaterTexture` to `0x4cfba0`, which the class map calls `Texture`, and this read puts
+`WaterTexture` one table below it, where `WaterTexture : FractalTexture` says it belongs.
+
+**Five more carry a family anchor and nothing decisive**: `0x4d17a8` `Property` (13 of 13 children are
+`*Property`), `0x4eaea8` `RenderDevice`, `0x4fa390` `Channel`, `0x4fc588` `PendingLevel`, `0x4fcfe0`
+`Download`. **Thirteen are open**, and three of those are open for a structural reason, not a missing
+name: `0x4c93d0` (`XboxViewport`), `0x4c94b0` (`XboxClient`) and `0x5178d8` have one or five children but
+no child whose class declares a super and no candidate above them.
+
+`inventory/class_table_name_pairs.csv` is one row per table with the votes that produced the verdict, the
+family anchor and the site the name came from, so a later read can disagree with a row rather than with a
+page.
+
+**Two routes the image does not offer, both measured this run.** (1) The installer body cannot name its
+own table: all 26 bodies `class_table_parents.csv` leaves unnamed (the 24 plus two the class map names by
+another route) were disassembled and every absolute operand that lands in a data section resolved to a
+string -- **0 carry a string at all**, which is what a 79-131-byte `mov [ecx],<table>; call <base>; ret`
+should do. (2) The registration's size argument cannot be the key: `inventory/class_size_sources.csv`'s
+own 24 `no-registration` rows are exactly these tables, so every size in the project's artifacts originates
+at a registration site and the join would be circular.
+
+What would settle the rest is a **runtime** read -- U8's `tools/xemu/class-tables-live.py` reads a loaded
+`UClass`'s name field and needs a boot -- or an engine-side class list for `Engine`'s native classes,
+which is the external data U8 has been blocked on since the script tree turned out not to declare them.
