@@ -631,6 +631,23 @@ other 38 rows.
       `PostBeginPlay` spawns its controller and the run starts with the level. What is left inside 5.2 is the
       simulation half -- `ACTION_IfCondition`/`IfProximity` decide a path at run time, so which branch a given
       play takes is not in the package.
+
+      **The paths are in the package, and so is every branch's operand** (2026-11-15, `docs/MAP_ACTION_PATHS.md`,
+      `inventory/action_paths.csv`, `tools/action-paths.py`, `make action-paths`). The skip is
+      `ScriptedAction.ProceedToSectionEnd`, which walks forward counting `StartsSection`/`EndsSection` and returns
+      *before* its own increment -- so a branch is a two-edge node (index+1, or the matching `EndSection`), and
+      the `EndSection` it lands on still runs. Over the same 2,437 arrays and 16,907 slots `action-order` counted
+      (its `reach` reproduced exactly, 73 of 73 maps, which is the control): **260 branch slots** (224
+      `ACTION_IfCondition`, 36 `ACTION_IfRandomPct`, **0 `ACTION_IfProximity`** -- the proximity test ships and no
+      map places one), 255 whose skip finds its `EndSection`, 5 whose skip runs off the array and ends the run,
+      none with an empty body. **16,888 slots are on some path** against 16,694 for the straight run: 200 are
+      reachable only through a skip edge and 6 that the straight count includes sit on no path at all (a backward
+      goto's tail). 649 slots are conditional, 16,239 must run. The operand is placed data, not a runtime
+      unknown: 257 of the 260 branch slots state one, 246 resolve in their own map and 11 name nothing, 3 state
+      none at all (always skip). Of the 210 `ACTION_IfCondition` conditions that resolve, **105 state
+      `bEnabled=True`, none states false, and 105 state nothing** -- and `TriggeredCondition` is a plain
+      `var() bool bEnabled` whose `Trigger` is what flips it later. So the first pass through every branch is
+      decided by the package; what is left of 5.2 is the runtime after a trigger fires and `FRand()`'s draw.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
