@@ -93,12 +93,31 @@ located prefixes are 10, 12 and 15 share their first ten bytes byte for byte (`8
 differ only in where the parse begins. So a class's modal prefix is **not** an offset a T3D writer may assume; a
 writer locates per object, exactly as this reader does.
 
-**What would settle the last of it** is a class whose native prefix the code fixes: require the start whose first
-property name is the one the class's own field table puts first, and see whether it reproduces the modal prefix on
-every instance. That is a reader-side read, not another corpus pass.
+**The type of the candidate's first tag decides it, and the name does not** (`make actor-prefix-anchor`,
+`tools/actor-prefix-anchor.py`, `inventory/actor_prefix_anchor.csv`). The identity anchor this page proposed — require
+the start whose first tag is the class's own first property — was measured on all 73 maps and does not hold:
+**35,870 of the 121,394 blocks (29.5%) begin with a property other than the one their class usually begins with**, a
+class's first property takes a median of 2 different names across its instances and up to 140 on `StaticMeshActor`, so
+the stream is a delta and the class's first property is not a constant of it.
+
+What does decide the start is the tag's *type*. A property's info byte carries its type in the low nibble, and the
+leading tag a misparse invents decodes as type 0, `Invalid`, which is not a property type: on `M02A` every
+`StaticMeshActor` whose extent front is 12 begins with `PrePivot` typed `Invalid` with one byte of value. Rejecting
+candidates that contain a type-0 property moves **25,005 of the 121,394 blocks (20.6%)** and takes **200 of the 295
+classes that locate a block to a single start** (the extent census: 176), 26 of them from `varies` to `constant`.
+`StaticMeshActor` is the case both pages used: 4 starts with 15 on 23,490 of 32,193 by the extent rule, **15 on
+32,053 of 32,193 (99.6%)** once type-0 candidates are rejected. `Light` is the sharper one — the census calls it
+constant at 12, and 4,661 of its 8,370 blocks begin there with a type-0 tag, which the rule moves to 15 on 8,112.
+
+**What is still open is the residue the rule cannot reach**: 93 classes (79,873 blocks, 66%) keep more than one start,
+2 have no type-0-free candidate at all (209 blocks), and 2 that were constant by extent now vary. For those the start
+a parse can see is genuinely shorter on some instances, which is the native prefix's own extent — a code question
+(the class's `Serialize`, slot 11), not another corpus pass.
 
 ## Not measured
 
 * Property *values* at corpus scale. The reader decodes them on demand (`--values`) and they are game content,
   so nothing here aggregates or stores them.
 * Class defaults (see above).
+* Why 93 classes still locate at more than one start once type-0 candidates are rejected, and whether the two that
+  became `varies` are the rule's own false positives — both need the class's `Serialize` body.

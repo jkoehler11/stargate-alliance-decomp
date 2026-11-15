@@ -872,6 +872,26 @@ other 38 rows.
       `actor_property_coverage.csv`) + the artifact (389 rows) + `docs/ACTOR_PROPERTIES.md` (*The prefix is not a
       per-class constant*) + this note. `make map-census` rewrites it with the two committed CSVs byte-identically
       in 38 s; no boot.
+      **The type of a leading tag decides the block's start, and the name does not (2026-11-15).** The read this
+      item named next — require the start whose first tag is the class's own first property, and see whether it
+      reproduces the modal prefix on every instance — was run over all 73 maps and **fails**: **35,870 of the 121,394
+      blocks (29.5%)** begin with a property other than their class's usual first one, and that property takes a
+      median of 2 names per class (140 on `StaticMeshActor`), so the class's own first field is not the stream's
+      first tag and the anchor moved the start on instances that were never misparsed. What does decide it is the
+      tag's *type*: a misparse's leading tag decodes as type 0 `Invalid`, which is not a property type, and every
+      `M02A` `StaticMeshActor` whose extent front is 12 begins with `PrePivot` typed `Invalid` and one byte of
+      value. Rejecting candidates that carry a type-0 property moves **25,005 of the 121,394 blocks (20.6%)** and
+      takes **200 of the 295 classes that locate a block to a single start** (the extent census: 176) — 26 of them
+      from `varies` to `constant` — including `StaticMeshActor` at 15 on **32,053 of its 32,193** (the extent rule:
+      23,490) and `Light`, whose census `constant 12` is 4,661 blocks of type-0 front that the rule puts at 15 on
+      8,112 of 8,370. The residue is named rather than dropped: **93 classes (79,873 blocks, 66%)** still keep more
+      than one start, **2** have no type-0-free candidate at all (209 blocks) and **2** go from constant to varies;
+      the row and its `strict_variants` say which. Tool (`tools/actor-prefix-anchor.py`: `candidates()` returns
+      every start with its type-0 count, `compute()` writes the extent front and the strict front side by side, and
+      `--check` re-derives every count against its own denominator and joins the census's `dominant_prefix`,
+      `dominant_count` and `blocks` row by row) + `inventory/actor_prefix_anchor.csv` (295 rows) +
+      `docs/ACTOR_PROPERTIES.md` (*The type of the candidate's first tag decides it*) + `make actor-prefix-anchor`
+      + this note. 73 maps in 73 s; no boot.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
