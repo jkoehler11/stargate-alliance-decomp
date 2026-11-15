@@ -855,6 +855,23 @@ other 38 rows.
       probability strictly between 0 and 1 in all 36 of its placed slots**, so no random branch is a resolved coin
       and `FRand()`'s draw is the only thing 5.2 ever left to a runtime -- 36 slots out of 16,907, on a branch class
       no map places the proximity test beside.
+      **The prefix in front of a property block is not a per-class constant (2026-11-15).** This section carried
+      "whether every class's prefix length is stable, or varies with the object's flags" as unmeasured, and the
+      answer is no on both counts: `tools/map-census.py` now keeps the located start per export, so the same
+      73-map walk that writes the coverage CSVs writes `inventory/actor_prefix_census.csv` — **194,190 exports,
+      121,394 with a located block, 389 classes: 94 never locate one, 176 one prefix on every instance, 119 more
+      than one**, and those 119 hold **80,064 of the 121,394 blocks (66%)**, `StaticMeshActor` among them (prefix
+      15 on 23,490 of 32,193). The flags do not explain it: 279 of the 295 classes that locate a block carry one
+      flags value on every instance, and of the 16 that vary, 3 put one value at two prefixes. The start is
+      ambiguous by construction — every property boundary in a block ends at the export's end too — so **4,354 of
+      4,358** exports over four maps admit more than one valid start (median 9, up to 32), and three `M02A`
+      `StaticMeshActor` instances located at 10, 12 and 15 share their first ten bytes (`82 82 ff ff ff ff ff ff ff
+      ff`): what moves is where the parse begins, not the class's native data. Tool (`blocks_in` returns the
+      prefix, the per-class histogram plus the flags split, and `--check` fails on a verdict that contradicts its
+      own histogram, a `varies` row under one flags value, and a block total that disagrees with
+      `actor_property_coverage.csv`) + the artifact (389 rows) + `docs/ACTOR_PROPERTIES.md` (*The prefix is not a
+      per-class constant*) + this note. `make map-census` rewrites it with the two committed CSVs byte-identically
+      in 38 s; no boot.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
