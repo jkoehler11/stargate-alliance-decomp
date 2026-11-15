@@ -685,12 +685,49 @@ the same for the `.map` writer (`0x000b55f0`) -- so all three authoring-side bod
 
 What *is* reached are the two loaders, and they answer the directory question as a glob rather than a walk:
 `LIPSincInitGame` (`0x000ba290`, called from `Engine_UnGame` at `0x0013917c`) pushes the **literal**
-`..\System\LIPSincData\Controllers\*.lad`, expands it through `FUN_000192a0` and hands the list to
-`LIPSincLoadDBFromDisk` (`0x000ba49d`); `LIPSincInitLevel` (`0x000ba750`, one site at `0x0015e237`, in a body the
-symbol map does not bound) expands a bare `*.lad` and calls the same loader. So the five `Controllers/` packs --
-**2,226 of the 2,231 keys** -- are the ones startup names, and the three packs at the `LIPSincData` root (5 keys
-between them) are only reachable through the second glob. There is no per-cue directory lookup to find: the cue
-names arrive as data, in the record the file itself carries.
+`..\System\LIPSincData\Controllers\*.lad` and hands the list to `LIPSincLoadDBFromDisk` (`0x000ba49d`);
+`LIPSincInitLevel` (`0x000ba750`, one site at `0x0015e237`, in a body the symbol map does not bound) builds the
+*same* pattern out of two pieces and calls the same loader. So the five `Controllers/` packs -- **2,226 of the
+2,231 keys** -- are the ones startup names, and the three packs at the `LIPSincData` root (5 keys between them)
+are **never** opened: the bare `*.lad` an earlier note left open is *appended* to a
+`..\System\LIPSincData\Controllers\` prefix, and no literal in the image names a `.lad` at the root. There is
+no per-cue directory lookup to find: the cue names arrive as data, in the record the file itself carries.
 
-**Residual:** which path `LIPSincInitLevel`'s bare `*.lad` is expanded against -- it decides whether the three root
-packs are ever opened. Its argument is built at `0x000baa57` and the strings cannot say.
+**Measured 2026-11-15: the two globs are the file manager's, and the body an earlier note called an expansion is a
+string append** (`tools/lipsinc-globs.py`, `inventory/lipsinc_globs.csv`, `make lipsinc-globs`). Both finds are
+`call [[0x005bf514]+0x30]` -- the file-manager find loop `docs/XEMU.md` already identified below `GetMapList` --
+with the argument shape `(TArray<FString>&, pattern, files = 1, dirs = 0)`. `LIPSincInitGame` hands over the wide
+literal `0x004eab98`; `LIPSincInitLevel` hands over a stack `FString` at `[esp+0x4c]` that it first copies from a
+second `FString` filled with `0x004eab18` (`..\System\LIPSincData\Controllers\`, the copy at `0x000ba8f0`) and
+then appends the literal `0x004eae2c` (`*.lad`, at `0x000ba90c`). The append is `FUN_000192a0`, which the earlier
+note read as the expander: its body does `Data.Num += appStrlen(arg)`, grows the buffer round the old length, copies
+with `appStrcpy(Data + old*2 - 2, arg)` and returns `this` with `ret 4` -- `FString::operator+=(const TCHAR*)`.
+Both initialisers therefore expand one pattern, four components deep, and the image holds only two literals that end
+in `.lad`: that pattern, and the bare suffix.
+
+<!-- generated:lipsinc-globs -->
+**2 find site(s) expand 1 pattern(s)** -- `..\System\LIPSincData\Controllers\*.lad` -- and the shallowest is 4 path components deep, so a directory inside `LIPSincData` is named, never the root.
+
+| find site | body | argument | parts | pattern it expands |
+|---|---|---|---|---|
+| `0x000ba2f9` | `LIPSincInitGame` | `[edx+0x30]` literal | 1 | `..\System\LIPSincData\Controllers\*.lad` |
+| `0x000ba93a` | `LIPSincInitLevel` | `[edx+0x30]` concat | 2 | `..\System\LIPSincData\Controllers\*.lad` |
+
+The chain behind each of those, address by address:
+
+| find site | evidence |
+|---|---|
+| `0x000ba2f9` | pushes the literal at 0x004eab98 |
+| `0x000ba93a` | FString at [esp+0x4c]: copied from another FString at 0x000ba8f0; filled from literal 0x004eab18 at 0x000ba8b9; appended 0x004eae2c at 0x000ba90c |
+
+Every wide literal in the image that names a `.lad` path, and what pushes it:
+
+| literal | text | pushes | pushed from |
+|---|---|---|---|
+| `0x004eab98` | `..\System\LIPSincData\Controllers\*.lad` | 1 | LIPSincInitGame at 0x000ba2f0 |
+| `0x004eae2c` | `*.lad` | 1 | LIPSincInitLevel at 0x000ba908 |
+
+**No literal names a `.lad` at the `LIPSincData` root** (0 of 2 does), and neither find site can build one, so the three root packs -- `JAnderson.lad`, `sg1_crew_carter.lad`, `sg1_crew_jackson.lad`, 5 keys between them -- are never opened by this build.
+
+Census: 2 find site(s), 1 distinct pattern(s); shallowest pattern is 4 components; 2 literals name a .lad.
+<!-- /generated:lipsinc-globs -->

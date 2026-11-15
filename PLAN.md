@@ -548,6 +548,14 @@ other 38 rows.
       **The payload's shape is measured, not assumed**: 32-byte-strided *runs* — 1 of 8 payloads is a whole number of
       32-byte records, gaps of 32/37/64/128/192, with 37 meaning a record five bytes longer than the common case. The
       earlier phrasing ("does not stride at 32") was too strong and is corrected in both pages.
+      **The last glob residual is closed, and it corrects the previous note's reading** (`make lipsinc-globs`,
+      `inventory/lipsinc_globs.csv`): `LIPSincInitLevel`'s bare `*.lad` is *appended* to a
+      `..\System\LIPSincData\Controllers\` prefix copied into a stack `FString` (`0x004eab18` -> slot `[esp+0x4c]`
+      at `0x000ba8f0`, then `*.lad` at `0x000ba90c`), so both initialisers expand the one four-component pattern and
+      the three packs at the `LIPSincData` root (5 keys) are never opened. The body the last note called the expander,
+      `FUN_000192a0`, is `FString::operator+=(const TCHAR*)` (`Data.Num += appStrlen`, `ret 4`); the find itself is
+      the file manager's `[[0x005bf514]+0x30]`, which `docs/XEMU.md` had already identified under `GetMapList`.
+      
       **And the ragdoll runtime is located** (`docs/formats/ragdoll-ka.md`): `tools/image-strings.py --topic karma`
       attributes `Karma*` strings to **8 functions** — the four `UKarmaParams` constructors (already named), a
       `KarmaGlobals` initialiser called from `Engine_UnGame`, the safe-time/debug toggle, a
