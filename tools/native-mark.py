@@ -33,6 +33,15 @@ bound), so the line gains a `record` field and nothing else changes; the compile
 the unary family) have no declaration to mark and stay in `inventory/native_tokens.csv` under basis
 `operator-expansion`.
 
+**The table and the registration table are now joined, and the gap is the record/declaration split.** `--check` reads
+`inventory/native_targets.csv` (dump-free) and requires every `body_va` this table names to be one of its bodies:
+**768 distinct bodies here, all 768 of them registration-table bodies (of 883), 0 foreign**. The other direction is
+reported, not failed, because the two tables are written from different populations — **115** registered names have
+no marker row, and they split into **13** that `inventory/natives.csv` states (all `Core.Object`, all the compiler's
+per-signature operator records: `AddAdd_Int`, `Subtract_PreInt`, `Not_PreBool`, …) and **102** that nothing states.
+The text declares `++`/`--`/`-`/`~`, never those expansions, so a table built from declarations is 13 short of
+`natives.csv`'s 797 rows by construction: those rows are **records**, and this table's keys are declarations.
+
 A `native event` is a third declaration form, and it was invisible to every counting pass: `native-reconcile` (and
 this tool before it) looked only for `native … function`, so the eleven `native event` declarations in the shipped
 text — `ClientTravel`, `ClientHearSound`, `UpdateVehicle`, `GetFont`, `LogStatLine` and their kin — read as
@@ -535,6 +544,31 @@ def selftest():
     return 0
 
 
+def bodies_join(rows, targets_path=None, natives_path=None):
+    """The two body artifacts, joined: does every body this table names come from the registration table, and
+    which of the registration table's bodies this table has no row for.
+
+    `native_bodies.csv` is written from *declarations* and `native_targets.csv` from *records*, so the two are not
+    supposed to be equal -- but nothing compared them, and a body this table names that the registration table does
+    not hold would be a marker pointing at an address the image never registered.
+    """
+    targets_path = targets_path or TARGETS
+    natives_path = natives_path or NATIVES
+    bodies = {(r["body_va"] or "").lower() for r in rows if r["body_va"]}
+    trows = list(csv.DictReader(open(targets_path, newline="", encoding="utf-8")))
+    tbodies = {(r["body"] or "").lower() for r in trows if r["body"]}
+    declared = {(r["class"].lower(), r["function"].lower())
+                for r in csv.DictReader(open(natives_path, newline="", encoding="utf-8"))}
+    missing = {}
+    for r in trows:
+        if r["body"] and r["body"].lower() not in bodies:
+            missing.setdefault((r["class"], r["function"]), r["body"].lower())
+    stated = sorted(n for n in missing if (n[0].lower(), n[1].lower()) in declared)
+    return {"bodies": len(bodies), "targets": len(tbodies), "foreign": sorted(bodies - tbodies),
+            "missing": len(missing), "missing_stated": stated,
+            "missing_unstated": len(missing) - len(stated)}
+
+
 def check(path=None):
     """Validate the committed cross-link table without a dump: shape, keys, and marker == render(row)."""
     path = path or OUT
@@ -573,6 +607,17 @@ def check(path=None):
             print("  " + line)
         return 1
     kinds = collections.Counter(r["kind"] for r in rows)
+    # The join against the registration table: a body here must be a body there, and the difference the other way
+    # is the declaration/record split, reported rather than treated as a hole.
+    if os.path.isfile(TARGETS) and os.path.isfile(NATIVES):
+        j = bodies_join(rows)
+        if j["foreign"]:
+            print("FAIL native-mark: %d body address(es) are not in native_targets.csv: %s"
+                  % (len(j["foreign"]), ", ".join(j["foreign"][:6])))
+            return 1
+        print("ok   native-mark: %d body addresses, all of them registration-table bodies (of %d); "
+              "%d registered name(s) have no row here, %d stated by natives.csv and %d not"
+              % (j["bodies"], j["targets"], j["missing"], len(j["missing_stated"]), j["missing_unstated"]))
     print("ok   native-mark: %d rows in %s (%s), every marker the render of its own row"
           % (len(rows), os.path.relpath(path, ROOT),
              ", ".join("%s %d" % kv for kv in sorted(kinds.items()))))
