@@ -674,6 +674,20 @@ other 38 rows.
       1,374) are reproduced exactly, and the 239 holders that page counts and this one does not are the two
       scene-manager classes' camera arrays (234 + 5), which wire no action. What is left of 5.2 is `FRand()`'s
       draw, which is a runtime value and not a property: every other edge of the graph is placed data.
+      **The undecided placements have names and slots, and `FRand()` owns 36 of them** (2026-11-15,
+      `docs/MAP_ACTION_DEFECTS.md`, `inventory/action_defects.csv`, `tools/action-defects.py`,
+      `make action-defects`). The three counts `MAP_ACTION_PATHS` reported are now a list -- map, element class,
+      holding sequence class and slot index per row -- under five kinds: **5 `skip_off_array`** (a section that never
+      closes, so the skip has no target and the run stops there), **3 `operand_unset`** (no operand stated, the class
+      default decides), **11 `unfired_condition`** (a `TriggeredCondition` no placed property fires, so the placed
+      `bEnabled` is final), **0 `random_decided`** and **36 `random_drawn`**, and **101 `slot_unreached`** (a wired
+      action on a slot no path reaches). All but the last reproduce `action_paths.csv` exactly (5 unmatched skips, 3
+      unset operands, 11 unfired); the branch population is 257 of its 260 slots because 3 branch slots are
+      themselves off every path, and `slot_unreached` is a different population from `MAP_ACTION_REACH`'s 9,096 --
+      those actions sit in sequences nothing starts, these in sequences that do. **`ACTION_IfRandomPct` states a
+      probability strictly between 0 and 1 in all 36 of its placed slots**, so no random branch is a resolved coin
+      and `FRand()`'s draw is the only thing 5.2 ever left to a runtime -- 36 slots out of 16,907, on a branch class
+      no map places the proximity test beside.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
@@ -1531,6 +1545,23 @@ are limited to expected fields (checksum/timestamp) and documented.
   table from the row whose `own` is `yes`, so `0x4cfd78` and `0x4d0228` are FireTexture and IceTexture and
   `0x004cfc88` keeps one installer -- since `tools/class-table-names.py` still reads
   `class_constructors.csv`'s first store.
+
+### Execution notes (2026-11-15, the undecided branches are a list, and every random branch is a real draw)
+
+- **Task.** `[x] 5.2`'s remaining caveat: the branch placements the counts named but never listed, and `FRand()`.
+- **Shipped.** `tools/action-defects.py` + `inventory/action_defects.csv` (204 rows: 120 defect instances, 3 branch
+  classes, 73 per-map rows, 8 census rows) + `docs/MAP_ACTION_DEFECTS.md` + `make action-defects` + the paragraph
+  above. No boot: 73 maps parse in 61 s on the agent host.
+- **Measurement.** 5 `skip_off_array`, 3 `operand_unset`, 11 `unfired_condition`, 0 `random_decided`, 36
+  `random_drawn`, 101 `slot_unreached`, over 257 walked branch slots in 73 maps. Every `ACTION_IfRandomPct` placement
+  states a probability strictly between 0 and 1, so the draw is the whole of what the package cannot decide.
+- **Controls.** The three counts `action_paths.csv` reports (5 / 3 / 11) reproduce exactly; the 3-slot gap in the
+  branch population is explained by branch slots that are themselves off every path (this walk only classifies a
+  branch a path reaches). The `slot_unreached` population is kept apart from `action_reach`'s stalled-sequence
+  population by construction, and the page says so rather than adding them.
+- **Next measurement:** none in 5.2 -- every branch, every path, every fire and every start is now a committed
+  artifact; the only open value is `FRand()`'s draw at run time. The next work in this phase is 5.1 (blocked on
+  `umodel`) or the T3D text half of 5.2's first checkbox, which is a format decision rather than a measurement.
 
 ### Execution notes (2026-11-15, the firing placement is reached by a closure, and no fire starts a sequence)
 
