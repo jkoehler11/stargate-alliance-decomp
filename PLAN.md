@@ -568,6 +568,28 @@ other 38 rows.
       behind it, and `docs/systems/OBJECTIVES.md`, `docs/MUSIC.md` and `docs/MAP_EXPORTS.md` said level script
       where the measurement says placed actors; all three are corrected. **What is open** is that wiring: which
       sequence references which action, and whether a placed action is reachable at all.
+
+      **The outer edge is read too: 2,495 of the 2,838 event waits a map's sequences arm (87.9%) are fired by a
+      placed actor in the same map, and 343 are not** (2026-11-15, `docs/MAP_EVENT_WIRING.md`,
+      `inventory/event_wiring.csv`, `tools/event-wiring.py`, `make event-wiring`). An event here is a name: a wait
+      site is `ExternalEvent` on `ACTION_WaitForEvent` (2,703) or `MatActionWaitForEvent` (135, counted apart
+      because a cutscene wait is not a mission wait), and a fire site is any *other* name-typed property whose
+      spelling says event -- **5,898 sites over 74 classes and 29 properties**, of which `Event` is only 3,689 of
+      3,689+2,209: `DeathEvent`, `EventName` (a `SubActionTrigger`), `DialogueFinishedEvent` (`ACTION_Talk`),
+      `CombatEvent` and a `Mover`'s door events are the rest, so a reader that looked only at the
+      `ACTION_TriggerEvent` class the previous note named sees 2,657 of the 5,898. **3,950 of the fires land on a
+      placed actor's `Tag`** -- the thing `TriggerEvent(name)` actually addresses -- and 3,526 fire a name no
+      waiter in that map waits on. Of the 343 unsatisfied waits, **83 name a placed actor's `Tag`** (addressable,
+      never addressed), **0** name an export's own object name, and **260** name nothing in their own map, **16**
+      of which another map fires (names that are conventions across levels rather than edges inside one); the
+      other 244 are what native code or a runtime-spawned actor has to account for. Three controls, each from a
+      different reader: the wait side is a subset of `inventory/map_export_classes.csv`'s 2,722
+      `ACTION_WaitForEvent` placements (73 of 73 maps, and the 19-placement gap is actions that override no
+      `ExternalEvent`), every fire property is declared a `UNameProperty` on its class chain in
+      `inventory/class_properties.csv` (4 name-typed properties whose spelling says event were refused as the
+      property reader landing on an object name), and the tag arm itself. Names compare case-insensitively in
+      UnrealScript, so the join folds case. What is left inside 5.2 is the per-element order within an `Actions`
+      array, and whether a name fired outside placed data reaches an armed waiter.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
