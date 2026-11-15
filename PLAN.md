@@ -265,12 +265,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
 - [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
       packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
       `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from
-      `inventory/matching_baseline.csv`: **12,153 `Function` exports, 11,368 with a script (the ceiling a rebuild
+      `inventory/matching_baseline.csv`: **12,472 `Function` exports, 11,687 with a script (the ceiling a rebuild
       can be graded on), 673 scriptless natives, 0 refused walks, 112 operator declarations, 0 unaligned, 0 other**,
-      with a mutation control on 16 of 18 packages -- `Fire.u` and `UnrealEd.u` export no `Function` at all, which is
-      why they cannot be controlled. Scoring a rebuild still needs `ucc` (`PLAN 3.6`); the comparator itself is
-      validated two ways, a package against itself (`Engine.u` 3,354 of 3,821) and a one-bit mutation inside an
+      with a mutation control on 16 of 18 packages -- `Fire.u` and `UnrealEd.u` export no `Function` at all, which
+      is why they cannot be controlled. Scoring a rebuild still needs `ucc` (`PLAN 3.6`); the comparator itself is
+      validated two ways, a package against itself (`Engine.u` 3,396 of 3,842) and a one-bit mutation inside an
       operand, which moves L3 by exactly one and leaves L2 alone.
+      **And the index is keyed by the class path now (2026-11-15)**: it keyed each function by its *immediate* outer,
+      which for the **2,137 exports a `state` declares** (17.1% of the corpus) is the state, not the class -- so two
+      classes with a same-named state wrote one slot. The index therefore held 319 fewer functions than the export
+      table (**12,153 of 12,472**), i.e. the denominator and the 11,368 ceiling were both short by exactly the
+      functions a rebuild is most likely to get wrong, and `--compare` between two packages "shared" **201 functions
+      in 21 of the 153 pairs**, every one of them a `Dead.BeginState`-shaped name two unrelated classes happen to
+      spell alike. `export_path()` walks to the outermost export (`Class.Function`, `Class.State.Function`) and the
+      same 153 pairs now share **2 functions in one pair** -- `ACTION_ChangeVehicleStatus`, genuinely declared in
+      both `StargateContent.u` and `StargateGame.u`, the only class this build compiles twice. Re-measured from the
+      packages in 3 s: 12,472 / 11,687 / 673 / 112, controls unchanged. **Cross-package `--compare` is a negative by
+      construction and now says so**: the index holds declarations, so a function one package inherits is in neither
+      shared set (`Engine.u` vs `StargateGame.u`: 0 in both, 3,842 and 3,273 only-in-one); the comparator grades the
+      package a rebuild rebuilds, and a class relocated between packages shows up as only-in-one rather than as a
+      match. `--pairs SYSTEM` prints the census, and `--check` drives `export_path` on a synthetic tree of two classes
+      with a same-named state, asserting that the *old* key collides on it.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

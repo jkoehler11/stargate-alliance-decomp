@@ -15,7 +15,7 @@ has a denominator instead of a fresh start.
 
 | column | what it counts | what moves it |
 |---|---|---|
-| `functions` | every `Function` export the package owns — the comparator's index | a package's export table |
+| `functions` | every `Function` export the package owns — the comparator's index, keyed by the **class path** (`Actor.Dying.BeginState`, below) | a package's export table |
 | `scripted` | payloads the header model places and the walker reads end to end — **the ceiling**: a rebuild can be graded on nothing else | an opcode rule (the corpus walk) |
 | `scriptless` | natives with no epilogue: no body exists to grade | — |
 | `refused` | an epilogue but a walk that stops (`docs/BYTECODE.md`, `inventory/opcode_refusals.csv`) | the per-opcode tail |
@@ -32,30 +32,62 @@ control is what keeps the two columns from being one tautology.
 ## The baseline
 
 <!-- generated:matching-baseline -->
-**18 package(s), 12153 `Function` export(s): 11368 with a script, 673 scriptless, 0 refused, 112 operator, 0 unaligned.**
+**18 package(s), 12472 `Function` export(s): 11687 with a script, 673 scriptless, 0 refused, 112 operator, 0 unaligned.**
 
 | package | functions | scripted | scriptless | refused | operator | unaligned | L3 ceiling | control |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `AmbientCreatures.u` | 95 | 95 | 0 | 0 | 0 | 0 | 95 | `AmbientCreatureManager.AddCreature+2` L3 94, L2 95 |
+| `AmbientCreatures.u` | 97 | 97 | 0 | 0 | 0 | 0 | 97 | `AmbientCreatureManager.AddCreature+2` L3 96, L2 97 |
 | `Core.u` | 214 | 19 | 91 | 0 | 104 | 0 | 19 | `HelloWorldCommandlet.Main+2` L3 18, L2 19 |
 | `Editor.u` | 37 | 23 | 14 | 0 | 0 | 0 | 23 | `ConeBuilder.Build+1` L3 22, L2 23 |
-| `Engine.u` | 3821 | 3375 | 438 | 0 | 8 | 0 | 3375 | `AIController.AdjustDesireFor+2` L3 3374, L2 3375 |
+| `Engine.u` | 3842 | 3396 | 438 | 0 | 8 | 0 | 3396 | `AIController.AdjustDesireFor+2` L3 3395, L2 3396 |
 | `Fire.u` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — |
-| `GUI.u` | 800 | 719 | 81 | 0 | 0 | 0 | 719 | `ConsoleVisible.BeginState+2` L3 718, L2 719 |
-| `GamePlay.u` | 378 | 378 | 0 | 0 | 0 | 0 | 378 | `ACTION_ChangeLevel.GetActionString+2` L3 377, L2 378 |
+| `GUI.u` | 800 | 719 | 81 | 0 | 0 | 0 | 719 | `ControllerButton.InitComponent+2` L3 718, L2 719 |
+| `GamePlay.u` | 382 | 382 | 0 | 0 | 0 | 0 | 382 | `ACTION_ChangeLevel.GetActionString+2` L3 381, L2 382 |
 | `IpDrv.u` | 111 | 83 | 28 | 0 | 0 | 0 | 83 | `BufferedTCPLink.DoBufferQueueIO+1` L3 82, L2 83 |
-| `Sharpeffects.u` | 37 | 37 | 0 | 0 | 0 | 0 | 37 | `Dead.BeginState+1` L3 36, L2 37 |
-| `StargateContent.u` | 1669 | 1669 | 0 | 0 | 0 | 0 | 1669 | `ACTION_ActivateAstralSight.InitActionFor+3` L3 1668, L2 1669 |
-| `StargateGame.u` | 3197 | 3180 | 17 | 0 | 0 | 0 | 3180 | `ACTION_ActivateHelmet.InitActionFor+1` L3 3179, L2 3180 |
+| `Sharpeffects.u` | 40 | 40 | 0 | 0 | 0 | 0 | 40 | `SE_AdvExplosiveMeshActor.CheckExplode+1` L3 39, L2 40 |
+| `StargateContent.u` | 1834 | 1834 | 0 | 0 | 0 | 0 | 1834 | `ACTION_ActivateAstralSight.InitActionFor+3` L3 1833, L2 1834 |
+| `StargateGame.u` | 3273 | 3256 | 17 | 0 | 0 | 0 | 3256 | `ACTION_ActivateHelmet.InitActionFor+1` L3 3255, L2 3256 |
 | `StargateMenus.u` | 334 | 334 | 0 | 0 | 0 | 0 | 334 | `ChapterList.GetChapter+2` L3 333, L2 334 |
-| `StargateVehicles.u` | 502 | 498 | 4 | 0 | 0 | 0 | 498 | `ACTION_CarpetBombing.InitActionFor+1` L3 497, L2 498 |
-| `Stargateeffects.u` | 57 | 57 | 0 | 0 | 0 | 0 | 57 | `AcidBurn.PostBeginPlay+2` L3 56, L2 57 |
+| `StargateVehicles.u` | 549 | 545 | 4 | 0 | 0 | 0 | 545 | `ACTION_CarpetBombing.InitActionFor+1` L3 544, L2 545 |
+| `Stargateeffects.u` | 58 | 58 | 0 | 0 | 0 | 0 | 58 | `AcidBurn.PostBeginPlay+2` L3 57, L2 58 |
 | `UDebugMenu.u` | 157 | 157 | 0 | 0 | 0 | 0 | 157 | `UDebugBlueLookAndFeel.Button_DrawSmallButton+1` L3 156, L2 157 |
 | `UPreview.u` | 13 | 13 | 0 | 0 | 0 | 0 | 13 | `UPreviewMapListClient.BeforePaint+2` L3 12, L2 13 |
-| `UWindow.u` | 731 | 731 | 0 | 0 | 0 | 0 | 731 | `UWindow.KeyEvent+2` L3 730, L2 731 |
+| `UWindow.u` | 731 | 731 | 0 | 0 | 0 | 0 | 731 | `UWindowBase.BuildObjectWithProperties+2` L3 730, L2 731 |
 | `UnrealEd.u` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — |
-| **total** | **12153** | **11368** | **673** | **0** | **112** | **0** | **11368** | 16 of 18 package(s) |
+| **total** | **12472** | **11687** | **673** | **0** | **112** | **0** | **11687** | 16 of 18 package(s) |
 <!-- /generated:matching-baseline -->
+
+## What a function is keyed by
+
+`--compare` matches two packages' functions by a key, and the key has to name the *class* a function belongs to.
+The export an inner function sits under is not always its class: **2,137 of this build's 12,472 `Function` exports
+are declared inside a `state`**, whose outer is the state, not the class. Keyed by `(immediate outer, name)` — which
+is what this tool did until now — those functions are keyed by a name like `Dead.BeginState`, and that name is
+ambiguous in exactly two ways this build exercises:
+
+- **inside one package** two classes that both have a `Dead` state write the same slot, so the second export
+  overwrites the first: **319 of 12,472 functions were missing from the index** (`Engine.u` 21, `StargateContent.u`
+  165, `StargateGame.u` 76, `StargateVehicles.u` 47, the rest scattered), and the baseline's denominator and `L3`
+  ceiling were both 319 short of the corpus;
+- **between two packages** a state whose name recurs in a different class reads as one shared function:
+  `--pairs` over the 18 packages' **153 pairs** finds the old key claiming **201 shared functions in 21 pairs**, and
+  every one of them is a name like `Dead.BeginState`, `Flying.BeginState` or `NormalFire.Fire` that two unrelated
+  classes happen to spell the same way.
+
+`export_path()` walks up to the outermost export instead, so a function is `Class.Function` or
+`Class.State.Function`. The state stays in the key because `Actor.Dying.BeginState` and `Actor.BeginState` are
+different bodies. Under the qualified path the same 153 pairs share **2 functions in one pair** — and those two are
+real: **`ACTION_ChangeVehicleStatus` is declared in both `StargateContent.u` and `StargateGame.u`**, the only class
+in this build compiled into two packages. `--check` drives `export_path` on a synthetic tree of two classes that both
+declare a `Dead` state, and asserts that the *old* key collides on that same tree — a self-test the previous shape
+would also have passed proves nothing.
+
+Two consequences for the scoreboard. The denominator is now the export table itself (**12,472**, not 12,153) and the
+ceiling **11,687** (not 11,368); and `--compare` across two different packages is a *negative* result by
+construction, because the index holds **declarations**. A function a package inherits from another package is not in
+its index, so `--compare Engine.u StargateGame.u` answers 0 shared and prints why: cross-package comparison can grade
+a relocated class, never an inherited function. That is the honest shape of the oracle anyway — a rebuild is graded
+against the package it rebuilds.
 
 ## The mutation control
 
@@ -104,15 +136,17 @@ only to a payload the header refused; a payload that walks is a script whatever 
 
 - **`Core.u` is 19 of 214, and that is not a defect**: 91 of its functions are natives with no body and 104 are
   operators. The engine's base classes are declared there and implemented in C++.
-- **The script-bearing packages already sit high**: `StargateContent.u` 1,666 of 1,669, `StargateGame.u` 3,169 of
-  3,197, `AmbientCreatures.u` 95 of 95. `Engine.u`'s 3,354 of 3,821 is the package `--compare` validated on.
-- **`refused` is the walker's remaining tail** — 79 payloads, concentrated in `StargateMenus.u` (24) and
-  `Engine.u` (21). Each is a row of `inventory/opcode_refusals.csv` carrying the opcode it stopped on; until one
-  walks, the comparator cannot grade it and no rebuild can raise that row above `scripted`.
+- **The script-bearing packages already sit at the top of their own export tables**: `StargateContent.u` 1,834 of
+  1,834, `StargateGame.u` 3,256 of 3,273, `AmbientCreatures.u` 97 of 97. `Engine.u`'s 3,396 of 3,842 is the package
+  `--compare` validated on.
+- **`refused` is empty**: the walk closes every scripted payload (11,687 of 11,687), so `inventory/opcode_refusals.csv`
+  is a header and `scripted` is the whole walkable set. The two negatives left are structural — 673 natives with no
+  body and 112 operator declarations — not gaps in the reader.
 
 ## Reproducing
 
     make matching-baseline SG1_DUMP=~/nfs/sg1-dump
+    python3 tools/uscript-dis.py --pairs ~/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15/System
     python3 tools/uscript-dis.py --check-doc docs/MATCHING.md     # in `make ci`; reads the artifact only
 
 `inventory/matching_baseline.csv` is the artifact and the table above is generated from it (`--write-doc`);
