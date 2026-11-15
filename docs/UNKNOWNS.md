@@ -831,15 +831,17 @@ immediate in `.text`. So the fork dispatches `ProcessEvent` as a virtual at a fi
 `docs/NATIVE_VM.md`, `tools/class-tables.py`, `inventory/xbe_class_tables.csv`.
 
 **Two families closed 2026-10-24, two residuals open.** The tables are named from the build's own
-class registrations (`docs/NATIVE_CLASSES.md`, `inventory/xbe_class_table_names.csv`): 466 of 492.
+class registrations (`docs/NATIVE_CLASSES.md`, `inventory/xbe_class_table_names.csv`): 468 of 492.
 Slots 19 and 20 hold `0x00020f00` — one `ret` — in 327 tables and real bodies in 165, and the 165 are
 the actor-side engine hierarchy (`Actor`, `Pawn`, `Controller`, `Info`, `NavigationPoint`, …): the
 split is which classes override those virtuals, not which are abstract.
 
 Still open: **which virtuals slots 19 and 20 are** (the override reads `[this+0x2dc] & 1`, then
-`[this+0xa4]` and `[+0xf4]`; nothing in the property track calls them), and **the 26 tables whose
+`[this+0xa4]` and `[+0xf4]`; nothing in the property track calls them), and **the 24 tables whose
 registration cannot be followed** — their constructors install the table but the registration pushes
-neither a literal nor a thunk the tool can follow. What would settle the first: a call site that
+neither a literal nor a thunk the tool can follow. Six of the 24 are paired from the constructor tree
+and five more by a family hint (`inventory/class_table_name_pairs.csv`), so 13 are the live question;
+`docs/NATIVE_CLASS_TREE.md` carries the current counts, generated from the committed inventories. What would settle the first: a call site that
 dispatches `+0x4c`/`+0x50` through a known object.
 
 **Assert-site residuals: 6 sites, down from 199 (2026-10-24).** Four passes now run, in order: entry
