@@ -1,9 +1,11 @@
 # Actor properties: read at last
 
 PLAN 5.2 wanted T3D for every map so mission structure could be indexed. The remaining blocker was the
-property block — and with the layout confirmed against a public format reference, it parses: **121,225 of
-194,190 exports across all 73 maps (62.4%) carry a readable property block**, and for actor classes it is
-effectively complete.
+property block — and with the layout confirmed against a public format reference, it parses: **121,394 of
+194,190 exports across all 73 maps (62.5%) carry a readable property block**, and for actor classes it is
+effectively complete. Those totals are the artifact's (`tools/map-census.py`, `make map-census`, 73 map rows and
+389 class rows in `inventory/map_property_coverage.csv` and `inventory/actor_property_coverage.csv`); this page
+used to quote 121,225 / 62.4%, which no committed run has produced since.
 
     python3 tools/prop-stream.py DUMP/Maps/M02A.unr --class StaticMeshActor --scan
     python3 tools/prop-stream.py DUMP/Maps/M02A.unr --export 50 --values
@@ -54,9 +56,10 @@ export ends and to contain only resolving names, and takes the candidate with th
 mis-parse that starts a few bytes late loses properties rather than inventing them, which is why the test is
 "ends at the end" and not "parses".
 
-Measured prefix lengths across the corpus: **15 bytes** (49,820 exports), **0** (41,097), **12** (24,096), then
-16 and 17 in small numbers. That distribution is what a T3D writer needs in order to sit on top of this — but it
-is *not* per class, and the next section measures why.
+The per-class histograms are in `inventory/actor_prefix_census.csv` — the corpus-wide mode list this page used to
+quote here (15 bytes on 49,820 exports, 0 on 41,097, 12 on 24,096) summed to less than the block total, so the
+census supersedes it: the offset is what a T3D writer needs in order to sit on top of this, **but it is not a
+per-class constant**, and the next section measures why.
 
 ## What this unblocks
 
