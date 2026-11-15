@@ -385,6 +385,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `--check` drives the owner walk on a synthetic export list two states deep (and on one with no enclosing class),
       and `native_opcodes.csv`'s `off_chain` column plus the band census's `off_chain_total`/`off_chain_single` are
       what the page quotes.
+      **And the 890 are typed by their receiver, not by any chain (2026-11-15)**: they are calls like
+      `Canvas.DrawText` inside `Actor.DisplayDebug`, where the receiver is a *parameter* and its declaration states the
+      class -- so the question the previous note left open was answerable from the token stream, not from another
+      chain. The expression in front of a call token is the object the emitter evaluated for it, `receiver_type()`
+      reads it through a `Context`/`ClassContext`, an array element or a cast, types a variable from its declaration
+      (a local or parameter out of the class's own `ScriptText`, a property out of `class_properties.csv`) and asks
+      *that* class's chain for the index. **855 of the 890 sites (96.1%) place, across 40 of the 42 indices**, and the
+      two largest rows land completely: `Canvas.DrawText` 465 370 of 370 (117 of the whole 855 typed from a
+      `canvas`-spelled declaration, which the chain walk could not reach before it folded case), `Canvas.StrLen` 464
+      123 of 123, `PlayInfo.AddSetting` 704 30 of 30, `Actor.AllActors` 304 42 of 51, `Actor.DynamicActors` 313 41 of
+      45, `Actor.Spawn` 278 49 of 54. The residue is named rather than counted: 16 sites type to a class whose chain
+      does not declare the index (fifteen of them `Object`, a base above the declarer) and 19 name no class at all -- a
+      `VirtualFunction`/`FinalFunction` call result (5 + 5), a `StructMember` (5), and two variables (`Game`, `Level`)
+      whose declarations are neither a local nor a property record -- while index 539 is the one row with no
+      expression in front of it (2 sites). The artifact carries `off_chain_receiver` (every receiver class with its
+      site count), `off_chain_resolved` and `off_chain_untyped`; `native-opcodes-census --check` refuses a row whose
+      histogram plus untyped count does not equal its `off_chain`, a placement count above its own histogram, and a
+      receiver on a row with no off-chain site, and it proves each of those on a synthetic row; `uscript-dis --check`
+      drives the receiver read on `Self`, a local, a `Context`, an array element and a cast. Controls: the site
+      totals are unchanged at 44,811 + 4,289 = 49,100 and `resolved` is still 48,210, so the diff moves the three new
+      columns and nothing else.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

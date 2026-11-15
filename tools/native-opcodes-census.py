@@ -14,7 +14,11 @@ What it asserts, per row:
 * a **direct** row (`0x70..0xff`) carries its index in the opcode itself;
 * an **extended** row (`0x60..0x6f`) carries it as two bytes: `(opcode - 0x60) * 256 + operand`;
 * the row's `sites` equal `opcode_usage.csv`'s `tokens` for that opcode, and a used opcode has a row (one row per
-  opcode in the direct band, one per operand in the extended band).
+  opcode in the direct band, one per operand in the extended band);
+* the row's `off_chain_receiver` histogram plus its `off_chain_untyped` count is its `off_chain` count, and
+  `off_chain_resolved` is at most the histogram -- the receiver read places sites *inside* the off-chain population,
+  so a histogram that claims more sites than the row has, an untyped count that does not close the row, or a
+  placement count above the histogram, is a column nothing measured.
 
 Why it exists (measured 2026-11-15): the committed census was written 2026-11-11 and the table moved twice on
 2026-11-14 (`Case` read its value twice; the `StructCmpEq` reference is a compact index), which changed how 87
@@ -35,7 +39,8 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CENSUS = os.path.join("inventory", "native_opcodes.csv")
 USAGE = os.path.join("inventory", "opcode_usage.csv")
-COLUMNS = ["opcode", "operand", "index", "sites"]
+COLUMNS = ["opcode", "operand", "index", "sites", "off_chain", "off_chain_receiver",
+           "off_chain_resolved", "off_chain_untyped"]
 
 DIRECT = (0x70, 0x100)
 EXTENDED = (0x60, 0x70)
@@ -79,6 +84,23 @@ def reconcile(rows, usage):
         if int(r["index"]) != want:
             bad.append("%s: index is %s, the arithmetic gives %d" % (where, r["index"], want))
         by_op[op] = by_op.get(op, 0) + int(r["sites"])
+        off = int(r["off_chain"] or 0)
+        recv = (r.get("off_chain_receiver") or "").strip()
+        try:
+            hist = sum(int(x.rsplit(":", 1)[1]) for x in recv.split(";") if x.strip())
+        except (IndexError, ValueError):
+            bad.append("%s: the receiver column %r is not name:count;..." % (where, recv))
+            hist = None
+        if hist is not None:
+            untyped = int(r.get("off_chain_untyped") or 0)
+            if hist + untyped != off:
+                bad.append("%s: the receiver histogram counts %d site(s) and %d untyped, off_chain says %d"
+                           % (where, hist, untyped, off))
+            placed = int(r.get("off_chain_resolved") or 0)
+            if placed > hist:
+                bad.append("%s: %d receiver placement(s) inside a %d-site histogram" % (where, placed, hist))
+            if not off and (recv or placed or untyped):
+                bad.append("%s: a row with no off-chain site carries a receiver" % where)
     for op, sites in sorted(by_op.items()):
         if usage.get(op, 0) != sites:
             bad.append("0x%02x: the census counts %d site(s), opcode_usage.csv %d token(s)"
@@ -109,9 +131,10 @@ def check():
         os.makedirs(inv)
         with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["opcode", "operand", "index", "sites"] + ["filler"] * 8)
-            w.writerow(["0x70", "", 112, 5] + [""] * 8)          # direct: index == opcode
-            w.writerow(["0x61", "0x01", 257, 6] + [""] * 8)      # extended: 0x61-0x60 * 256 + 1
+            w.writerow(["opcode", "operand", "index", "sites", "off_chain", "off_chain_receiver",
+                        "off_chain_resolved", "off_chain_untyped"] + ["filler"] * 4)
+            w.writerow(["0x70", "", 112, 5, 5, "Actor:3;Pawn:1", 4, 1])   # direct: index == opcode
+            w.writerow(["0x61", "0x01", 257, 6, 0, "", 0, 0])             # extended: 0x61-0x60 * 256 + 1
         with open(os.path.join(inv, "opcode_usage.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "name", "tokens"])
@@ -136,6 +159,16 @@ def check():
         rows2 = read(os.path.join(inv, "native_opcodes.csv"), COLUMNS)
         if not any("0x86" in f and "no row" not in f for f in reconcile(rows2, usage)):
             bad.append("a row with no tokens behind it was not caught")
+        # The receiver columns: a placement count above the histogram, and a histogram that does not sum to the
+        # off-chain count, are the two shapes a hand edit or a half-written row produces.
+        wrong = [dict(r) for r in rows]
+        wrong[0]["off_chain_resolved"] = "5"
+        if not any("placement(s) inside a" in f for f in reconcile(wrong, usage)):
+            bad.append("a placement count above the receiver histogram was not caught")
+        wrong = [dict(r) for r in rows]
+        wrong[0]["off_chain_receiver"] = "Actor:3;Pawn:9"
+        if not any("histogram counts" in f for f in reconcile(wrong, usage)):
+            bad.append("a receiver histogram that does not close the off-chain count was not caught")
         if bad:
             print("FAIL native-opcodes-census: " + "; ".join(bad))
             return 1

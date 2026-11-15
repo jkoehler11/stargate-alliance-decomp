@@ -1839,6 +1839,90 @@ def owner_class(exports, kinds, names, outer, limit=8):
     return ""
 
 
+def receiver_type(expr, self_class, var_name, decl_type, class_ref, depth=0):
+    """(the class a receiver expression's declared type names, why it names none).
+
+    A native-call token carries the native's index, not its receiver: the emitter evaluates the object *before* the
+    call token, so the expression in front of it in the same token list is the object the VM dispatches on. The 890
+    sites the caller's chain cannot place are calls like `Canvas.DrawText` inside `Actor.DisplayDebug` -- the
+    receiver is a parameter whose type is stated in the class's own text, not a class the caller inherits. So the
+    expression is walked to a variable, a cast or `Self`, and its declared type is the answer.
+
+    `var_name(index)` names the record an operand points at, `decl_type(name, outer)` answers a variable's declared
+    type and `class_ref(index)` the class a literal or cast names. The three are callables so a synthetic expression
+    can be driven without a package (`selftest`).
+    """
+    nm = expr["name"]
+    if depth > 4:
+        return "", "receiver nested deeper than 4"
+    if nm in ("Context", "ClassContext") and expr["children"]:
+        return receiver_type(expr["children"][-1], self_class, var_name, decl_type, class_ref, depth + 1)
+    if nm in ("ArrayElement", "DynamicArrayElement") and expr["children"]:
+        for child in expr["children"]:
+            got, _why = receiver_type(child, self_class, var_name, decl_type, class_ref, depth + 1)
+            if got:
+                return got, ""
+        return "", "an array element whose array names no class"
+    if nm == "Self":
+        return self_class, ""
+    if nm in ("DynamicCast", "MetaCast", "ObjectConst"):
+        value, _e = read_index(expr["operands"], 0)
+        return class_ref(value)
+    if nm in ("LocalVariable", "InstanceVariable", "DefaultVariable", "StateVariable"):
+        value, _e = read_index(expr["operands"], 0)
+        name, outer = var_name(value)
+        if not name:
+            return "", "a variable operand that names no export or import"
+        got = decl_type(name, outer)
+        if got:
+            return got, ""
+        return "", "a variable whose declaration names no class (%s)" % name
+    return "", "a %s receiver" % (nm or "token")
+
+
+def receiver_check():
+    """The off-chain receiver read on synthetic expressions: no dump, writes nothing.
+
+    It is a rule about a token's *declared type*, so the shapes it must answer are `Self` (the caller's own class),
+    a variable (its declaration's type, looked up through the record the operand names), a `Context` (the same
+    expression one child in) and an array element. `Canvas.DrawText` inside `Actor.DisplayDebug` is the first two
+    together -- a parameter on the caller, a native on the parameter's class -- so a rule that answered only `Self`
+    would leave every one of the 890 unplaced sites unplaced.
+    """
+    def node(name, **kw):
+        return dict({"name": name, "opcode": 0, "operands": b"", "children": []}, **kw)
+
+    decls = {"canvas": "Canvas"}
+    cases = [("Self", node("Self"), "Actor"),
+             ("a local", node("LocalVariable", operands=bytes([0x07])), "Canvas"),
+             ("a Context", node("Context", children=[node("Self"),
+                                                     node("LocalVariable", operands=bytes([0x07]))]), "Canvas"),
+             ("an array element", node("ArrayElement",
+                                       children=[node("IntConst"),
+                                                 node("LocalVariable", operands=bytes([0x07]))]), "Canvas"),
+             ("an int constant", node("IntConst"), "")]
+    for label, expr, want in cases:
+        got = receiver_type(expr, "Actor", lambda v: ("Canvas", "") if v == 7 else ("", ""),
+                            lambda n, o: decls.get((n or "").lower(), ""), lambda v: ("", "no ref"))[0]
+        if got != want:
+            print("FAIL uscript-dis: the receiver read answered %r for %s, expected %r" % (got, label, want))
+            return 1
+    got, why = receiver_type(node("IntConst"), "Actor", lambda v: ("", ""), lambda n, o: "",
+                             lambda v: ("", "no ref"))
+    if got or not why:
+        print("FAIL uscript-dis: an untyped receiver read %r / %r, expected no class and a reason" % (got, why))
+        return 1
+    # A cast is the other half: the operand names a class through the export or import table, and a cast that names
+    # something else is a reason and not a class.
+    if receiver_type(node("DynamicCast", operands=bytes([0x07])), "Actor", lambda v: ("", ""),
+                     lambda n, o: "", lambda v: ("Actor", "") if v == 7 else ("", "nr"))[0] != "Actor":
+        print("FAIL uscript-dis: a cast's receiver was not read from its operand")
+        return 1
+    print("ok   uscript-dis: the receiver read answers %d shape(s), and names a reason when it cannot"
+          % len(cases))
+    return 0
+
+
 def native_calls_report(path, table, out=None):
     """What the opcodes above 0x5f call: the token is the native index, read against the owning class's super chain.
 
@@ -1869,8 +1953,20 @@ def native_calls_report(path, table, out=None):
     for name, m in declared.items():
         for ix in m:
             declaring[ix].add(name)
+    # (class, property) -> (kind, declared type): the census's `friendly_type`, the same read `--calls` uses for a
+    # bare property receiver (`var() Canvas Canvas` is a property on a few classes and a local on the rest).
+    prop_type = {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "inventory", "class_properties.csv"))):
+        prop_type[(r["class"], r["property"])] = (r["kind"], r["friendly_type"])
+
+    # A class name's case is not its identity: the shipped text spells one `canvas` and the export table `Canvas`,
+    # and a chain that stops at the unfolded spelling answers nothing for every receiver typed from the source.
+    folded = {}
+    for one_name in supers:
+        folded.setdefault(one_name.lower(), one_name)
 
     def chain_of(cls):
+        cls = folded.get((cls or "").lower(), cls)
         names, seen = [], set()
         while cls and cls not in seen:
             seen.add(cls)
@@ -1902,6 +1998,12 @@ def native_calls_report(path, table, out=None):
     epilogue = bytes([0x04, 0x0B, 0x47])
     # sites, resolved, param-fit, (class, fn, params), argument-count histogram, off-chain sites
     rows = collections.defaultdict(lambda: [0, 0, 0, None, collections.Counter(), 0])
+    # The off-chain sites' receiver, by index: the expression in front of the call token names the object's type,
+    # and that class's own chain may declare the index whether or not the caller inherits it.
+    receivers = collections.defaultdict(collections.Counter)
+    on_receiver = collections.Counter()
+    recv_gap = collections.Counter()
+    recv_gap_by = collections.defaultdict(collections.Counter)
     scores = {"A": [0, 0, 0, 0], "B": [0, 0, 0, 0], "C": [0, 0, 0, 0]}   # sites, resolved, fit, body
     walked = seen_payloads = 0
     for one in files:
@@ -1911,6 +2013,16 @@ def native_calls_report(path, table, out=None):
         pkg.read_exports()
         names = {i + 1: pkg.name(x["name"]) for i, x in enumerate(pkg.exports)}
         kinds = {i + 1: pkg.class_name_of(x) for i, x in enumerate(pkg.exports)}
+        # The tables the receiver read needs: an operand is an export index or a negative import index, and a
+        # class's own text states the type of every local -- a parameter is a local the compiler makes.
+        export_at = {i: (names[i], kinds[i],
+                         pkg.name(pkg.exports[x["outer"] - 1]["name"]) if x.get("outer") else "")
+                     for i, x in enumerate(pkg.exports, 1)}
+        import_at = {i: (pkg.name(x["name"]), pkg.name(x["class"])) for i, x in enumerate(pkg.imports, 1)}
+        class_export = {}
+        for k, x in enumerate(pkg.exports, 1):
+            if kinds[k] == "Class":
+                class_export.setdefault(names[k], (k, x))
         for i, e in enumerate(pkg.exports):
             if kinds[i + 1] != "Function":
                 continue
@@ -1945,10 +2057,73 @@ def native_calls_report(path, table, out=None):
             if sum(x["end"] - x["offset"] for x in nodes) != end - start:
                 continue
             walked += 1
-            stack = list(nodes)
-            while stack:
-                node = stack.pop()
-                stack.extend(node["children"])
+            fn_name = pkg.name(e["name"])
+            cache = {}
+
+            def locals_of():
+                """{local: declared type} for this function, from its own class's ScriptText."""
+                if "hit" not in cache:
+                    got = {}
+                    here = class_export.get(cls)
+                    text = _script_text(pkg, here[1], here[0] - 1) if here else None
+                    for fn, d in (source_declarations(text) or {}).items():
+                        if fn.lower() == fn_name.lower():
+                            got = d
+                            break
+                    cache["hit"] = got
+                return cache["hit"]
+
+            def var_name(value):
+                """(name, the class its record's Outer names) for a variable operand."""
+                if 0 < value <= len(export_at):
+                    return export_at[value][0], export_at[value][2]
+                if value < 0 and -value in import_at:
+                    return import_at[-value][0], ""
+                return "", ""
+
+            def decl_type(name, outer):
+                """A variable's declared class: a local from the class text, else a property of its own class."""
+                got = locals_of().get(name)
+                if got is None:
+                    for k, v in locals_of().items():
+                        if k.lower() == name.lower():
+                            got = v
+                            break
+                if got:
+                    return got
+                for anc in ([outer] if outer else []) + chain_of(cls):
+                    hit2 = prop_type.get((anc, name))
+                    if hit2:
+                        return hit2[1] or ""
+                # A `ClassContext` names the class itself rather than an object of one (`Actor.Spawn(...)` from a
+                # class that does not inherit `Actor`), so a variable whose record names a class is typed to it.
+                if name.lower() in folded:
+                    return folded[name.lower()]
+                return ""
+
+            def class_ref(value):
+                """The class a `DynamicCast`/`ObjectConst` operand names, through the export or import table."""
+                if 0 < value <= len(export_at):
+                    if export_at[value][1] == "Class":
+                        return export_at[value][0], ""
+                    return "", "a cast whose export is a %s" % export_at[value][1]
+                if value < 0 and -value in import_at:
+                    if _kind_key(import_at[-value][1]) == "Class":
+                        return import_at[-value][0], ""
+                    return "", "a cast whose import is a %s" % import_at[-value][1]
+                return "", "a literal or cast that names no class"
+
+            # The walk is ordered, so a call token can read the expression in front of it: the emitter evaluates the
+            # object before the call, which is what makes that sibling the receiver.
+            todo = [(nodes, 0)]
+            while todo:
+                lst, i = todo.pop()
+                if i >= len(lst):
+                    continue
+                node = lst[i]
+                todo.append((lst, i + 1))
+                if node["children"]:
+                    todo.append((node["children"], 0))
                 op = node["opcode"]
                 if op < 0x60:
                     continue
@@ -1981,6 +2156,19 @@ def native_calls_report(path, table, out=None):
                     cell[3] = hit
                 else:
                     cell[5] += 1
+                    # Off the caller's chain: read the receiver in front of the token and ask *its* chain for the
+                    # index, because the declaration the site resolves against is the receiver type's, not the
+                    # caller's ancestry.
+                    recv, why = ("", "no expression in front of the call")
+                    if i:
+                        recv, why = receiver_type(lst[i - 1], cls, var_name, decl_type, class_ref)
+                    if recv:
+                        receivers[index][recv] += 1
+                        if lookup(recv, index):
+                            on_receiver[index] += 1
+                    else:
+                        recv_gap[why] += 1
+                        recv_gap_by[index][why] += 1
     print("%d payload(s) with an epilogue, %d walk clean" % (seen_payloads, walked))
     for rule, label in (("A", "op-0x70"), ("B", "op-0x60"), ("C", "the token itself")):
         sites, resolved, fit, named = scores[rule]
@@ -2002,19 +2190,32 @@ def native_calls_report(path, table, out=None):
     print("%d site(s) name no declaration on their own class's chain; %d of them write an index the image declares "
           "for exactly one class (%d distinct index(es))"
           % (off, off_single, len({k[2] for k, v in rows.items() if v[5]})))
+    placed = sum(on_receiver.values())
+    typed = sum(sum(h.values()) for h in receivers.values())
+    print("%d of those %d site(s) name their index on the chain of the receiver expression's own class (%d index(es)"
+          " placed); %d more have a receiver typed to a class whose own chain does not declare it, and %d name no"
+          " class at all (%s)"
+          % (placed, off, len(on_receiver), typed - placed, off - typed,
+             "; ".join("%s %d" % (k, n) for k, n in recv_gap.most_common()) or "none"))
+    for index, hist in sorted(receivers.items(), key=lambda kv: -sum(kv[1].values()))[:10]:
+        print("  %4d %-26s %s" % (index, ",".join(sorted(declaring.get(index, ()))) or "-",
+                                  "; ".join("%s:%d" % (k, n) for k, n in hist.most_common(4))))
     if out:
         os.makedirs(out, exist_ok=True)
         name = os.path.join(out, "native_opcodes.csv")
         with open(name, "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["opcode", "operand", "index", "sites", "resolved", "off_chain", "param_fit", "body_name",
-                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args"])
+                        "body_match", "native", "declared_in", "declared_by", "declared_params", "args",
+                        "off_chain_receiver", "off_chain_resolved", "off_chain_untyped"])
             for (op, operand, index), (sites, resolved, fit, hit, hist, offn) in sorted(rows.items()):
                 w.writerow(["0x%02x" % op, "" if operand is None else "0x%02x" % operand, index, sites, resolved,
                             offn, fit, bodies.get(index, ""), int(body_names(index, hit)),
                             hit[1] if hit else "", hit[0] if hit else "",
                             ";".join(sorted(declaring.get(index, ()))), hit[2] if hit else "",
-                            arg_hist(hist)])
+                            arg_hist(hist),
+                            ";".join("%s:%d" % (k, n) for k, n in (receivers.get(index) or collections.Counter()).most_common()),
+                            on_receiver.get(index, 0), sum(recv_gap_by.get(index, {}).values())])
         print("wrote %s (%d row(s), %d sites)" % (name, len(rows), sum(v[0] for v in rows.values())))
     return 0
 
@@ -5035,7 +5236,8 @@ def main():
 
     if args.check:
         rc = struct_check()
-        return rc or cast_check() or key_check() or opcode_check() or opcode_pairs_check()
+        return (rc or cast_check() or key_check() or opcode_check() or opcode_pairs_check()
+                or receiver_check())
     if args.header:
         return header_report(args.header)
     if args.start:
