@@ -262,6 +262,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       decode, not the format -- `--sizefield` kept a second copy of the locator and stopped on the first of the two
       front names these four payloads carry -- so read through `locate()` the identity holds on **11,687 of 11,687**
       payloads (100.00%), the residue is empty, and nothing in the header is left to find.
+      **And the native-call census was three days stale, which two censuses of the same tokens caught (2026-11-15)**:
+      `inventory/native_opcodes.csv` was last written 2026-11-11, and the table moved twice on 2026-11-14 (`Case` read
+      its value twice; the `StructCmpEq` reference is a compact index) -- `opcode_usage.csv` was regenerated then and
+      the census was not, so the page quoted a walk that no longer exists. Re-run against the same dump the census
+      reads **49,100 sites** where the file said 48,422, **121** direct opcodes where it said 120 (44,811 + 4,289
+      extended, resolved **42,694**, `op - 0x70` **5,928**), and it holds **two rows the current walk cannot produce**
+      -- `0x86`'s two sites and the two tokens the page recorded as naming nothing (`0x67 0x08` -> native(1800),
+      `0x6e 0x43` -> native(3651)), which are phantom tokens of a desynchronised parse since the corpus writes no
+      `0x67`/`0x6e` token at all -- while missing two real ones (`0x8a`, `0xc4`). **`tools/native-opcodes-census.py`
+      is the gate** (`make native-opcodes-check`, in `make ci`): the census and `opcode_usage.csv` are two passes of
+      one walker over one corpus, so they must agree opcode by opcode -- it asserts the index arithmetic for both
+      bands and the per-opcode counts, naming **63 disagreeing opcodes, two missing rows and three phantom ones** on
+      the committed pair and agreeing on all **125** opcodes on the regenerated one. The reconciliation is also the
+      independent confirmation the numbers are right: the regenerated census's 44,811 direct + 4,289 extended sites
+      equal `opcode_usage.csv`'s band and high-band token totals *exactly*, and the stale file reconciled with
+      nothing. Per-row figures the page quotes moved with it (`Log` 1,087 of 1,207, `NotEqual_ObjectObject` 5,406,
+      `VSize` 373/373, `0xfe` 416/416, unresolved 6,406 = 13.05%, 1,503 of them extended,
+      `intUCanvasexecDrawText` 370 / `execStrLen` 123).
 - [~] 3.8 **The scoreboard exists; only the oracle is missing.** `tools/uscript-dis.py --compare A B` scores two
       packages function by function (byte-identical = L3, opcode-identical = L2, plus a similarity ratio), and
       `--baseline SYSTEM` writes the per-package baseline of `docs/MATCHING.md` from

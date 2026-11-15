@@ -692,23 +692,23 @@ the token *is* the native's index -- the number `GNatives` is indexed by, with n
 
     python3 tools/uscript-dis.py --native-calls DUMP/System -o inventory
 
-over the same 11,602 scripts that walk clean writes `inventory/native_opcodes.csv` (206 rows:
+over the same 11,687 scripts that walk clean writes `inventory/native_opcodes.csv` (205 rows:
 `opcode,operand,index,sites,resolved,param_fit,body_name,body_match,native,declared_in,declared_params,args`), where
 the index is the opcode itself below `0x100` and two bytes at or above it (`0x60 + (n >> 8)`, then the low byte), and
 `body_name` is what the image's own `GNatives` record spells for the slot's body.
 
-* **48,422 native-call tokens**: 44,174 in the direct form over **120 opcodes**, and **4,248 in the extended form**,
+* **49,100 native-call tokens**: 44,811 in the direct form over **121 opcodes**, and **4,289 in the extended form**,
   every extended site naming an index of 256 or more -- exactly where the one-byte form cannot reach (it spans
   `112..255`, which is where the declared band sits).
 * **The token is the index, and the image says so twice.** For the body at the token's own `GNatives` slot, the
-  image's `.data` record (`{slot, intUObjectexec<Function>}`) already carries the name: **111 of the 120 direct opcodes
-  spell `exec<Function>` for the declaration at that exact index, 38,950 sites**, and the other nine differ only in
-  spelling (`execConcat_StringString` where the script declares `Concat_StrStr`). Under this rule **42,056 of the
-  48,422 sites name a `native()` declaration on the caller's own super chain**, against **5,864** under the
+  image's `.data` record (`{slot, intUObjectexec<Function>}`) already carries the name: **112 of the 121 direct opcodes
+  spell `exec<Function>` for the declaration at that exact index, 39,388 sites**, and the other nine differ only in
+  spelling (`execConcat_StringString` where the script declares `Concat_StrStr`). Under this rule **42,694 of the
+  49,100 sites name a `native()` declaration on the caller's own super chain**, against **5,928** under the
   `op - 0x70` reading this tool shipped with first.
-* **Arity agrees once the index is the token.** `0xe7` is slot 231 = `Object.Log` and 1,072 of its 1,186 sites pass
-  **one** argument; `0x77` is slot 119 = `Object.NotEqual_ObjectObject`, 5,368 sites, every one with two; `0xe1` slot
-  225 `Object.VSize` 372/372 with one; `0xc3` slot 195 `Object.FRand` 324/324 with none. The earlier reading had the
+* **Arity agrees once the index is the token.** `0xe7` is slot 231 = `Object.Log` and 1,087 of its 1,207 sites pass
+  **one** argument; `0x77` is slot 119 = `Object.NotEqual_ObjectObject`, 5,406 sites, every one with two; `0xe1` slot
+  225 `Object.VSize` 373/373 with one; `0xc3` slot 195 `Object.FRand` 324/324 with none. The earlier reading had the
   one-argument `Log` and the two-object `NotEqual` swapped, which is why its arity never fitted.
 * **There is no operator band below 96.** The first census read these tokens as slots `0..95` and reported 38,143
   sites that "name nothing": as slots `112..207` they are all declared. `op - 0x70` subtracts the same constant the
@@ -716,10 +716,10 @@ the index is the opcode itself below `0x100` and two bytes at or above it (`0x60
 * **`0xfe` is `Name` equality, not rotator.** Slot 254 = `Object.EqualEqual_NameName`, 414/414 with two arguments --
   the construct is `Tag == 'Foo'`, which is why it outnumbers every other comparison in the shipped script (the
   earlier reading called it `EqualEqual_RotatorRotator`, slot 142, by the same offset).
-* **What does not resolve is the classes, not the numbering.** 6,366 sites (13%) name no declaration on the caller's
-  chain: 1,480 are extended calls into engine classes the script half never declares (`intUCanvasexecDrawText` 352,
-  `execStrLen` 120, `execDrawActor` 8 -- Canvas draws through its own natives), and the rest are callers whose class
-  the super map does not carry. The body is still named by the image's record, so the index holds; the declaration is
+* **What does not resolve is the classes, not the numbering.** 6,406 sites (13.05%) name no declaration on the
+  caller's chain: 1,503 are extended calls into engine classes the script half never declares
+  (`intUCanvasexecDrawText` 370, `intUCanvasexecStrLen` 123, `intUCanvasexecDrawActor` 8 -- Canvas draws through its
+  own natives), and the rest are callers whose class the super map does not carry. The body is still named by the image's record, so the index holds; the declaration is
   what is missing.
 
 **What it rules out.** Both readings this page carried -- an operator token whose operand stream is not a parameter
@@ -821,10 +821,18 @@ for a `HighNative` token the callee its operand byte names:
 `inventory/opcode_usage.csv` and the walk are otherwise unchanged (184 opcodes, 11,608 scripts walk clean, the same
 token counts), so what moved here is names, not measurements.
 
-**Not claimed.** Two tokens name nothing: `0x67 0x08` resolves to native(1800) and `0x6e 0x43` to native(3651), one
-token each, with no `GNatives` record and no `native()` declaration anywhere in the shipped script (both rows stay
-empty in `inventory/native_opcodes.csv`). Naming those is a question about slots the record table does not populate,
-not about the token encoding.
+**The census is regenerated and reconciled (2026-11-15), and two rows it used to carry were phantoms.** The file was
+last written on 2026-11-11, three days before the table's two fixes (`Case` read its value twice; the `StructCmpEq`
+reference is a compact index) changed how 87 payloads parse -- and `opcode_usage.csv` was regenerated then and the
+census was not. Re-run against the same dump it gives **49,100** sites where the file said 48,422, **121** direct
+opcodes where it said 120, and it holds two rows the current walk cannot produce: `0x86`'s two sites, and the two
+tokens this page used to record as naming nothing (`0x67 0x08` -> native(1800), `0x6e 0x43` -> native(3651)) -- the
+corpus writes **no `0x67` or `0x6e` token at all**, which `opcode_usage.csv` says from the other side by having no
+row for either, so they were phantom tokens of a desynchronised parse rather than names the record table missed.
+Two real rows were missing in their place (`0x8a`, `0xc4`, 1 and 3 tokens). `tools/native-opcodes-census.py`
+(`make native-opcodes-check`, in `make ci`) is the gate that would have said so: it asserts the index arithmetic for
+both bands and the two censuses' per-opcode counts, naming **63 disagreeing opcodes, two rows missing and three
+phantom ones** on the stale pair, and agreeing on all 125 opcodes on the regenerated one.
 
 ## The calls the scripts make
 
