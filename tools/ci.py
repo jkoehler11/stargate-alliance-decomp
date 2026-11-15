@@ -267,6 +267,18 @@ def check_function_no_script_doc():
         ok(name, out[-1].replace("ok   function-no-script: ", "") if out else "")
 
 
+def check_opcode_band_doc():
+    """docs/BYTECODE.md's direct-band block must match the committed artifact."""
+    name = "opcode-band-doc"
+    r = subprocess.run([sys.executable, repo("tools", "opcode-band.py"), "--check-doc", "docs/BYTECODE.md"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   opcode-band: ", "") if out else "")
+
+
 def check_map_script_doc():
     """docs/MAP_SCRIPTS.md's block must match the committed artifact."""
     name = "map-script-doc"
@@ -571,6 +583,7 @@ def main():
     check_opcode_table()
     check_function_flags()
     check_function_no_script_doc()
+    check_opcode_band_doc()
     check_map_script_doc()
     check_action_wiring_doc()
     check_class_text_comments_doc()

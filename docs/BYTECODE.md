@@ -727,6 +727,61 @@ list, and two numbering schemes meeting at 96 -- are wrong. The stream is a para
 numbering: the token is `GNatives`' own index from 112 (`Object.Concat_StrStr`) upward, and the two-byte form exists
 only because one byte cannot spell 256.
 
+### The direct band, slot by slot (measured 2026-11-15)
+
+The band `0x70..0xff` covers natives 112..255, so every slot in it has exactly one native it can mean and three
+sources that can name it. `inventory/opcode_band.csv` is one row per slot (plus a `census` row the page's numbers are
+rendered from), and it is a join over committed artifacts, so it needs no dump:
+
+    python3 tools/opcode-band.py -o inventory          # make opcode-band
+    python3 tools/opcode-band.py --report
+
+<!-- generated:opcode-band -->
+The band is `0x70..0xff`, so its 144 slots cover natives 112..255 and nothing else can hide in it. Three
+sources can name a slot -- the runtime `GNatives` value, the `.data` record that value's body belongs to, and
+a `native(<index>)` declaration in the shipped `ScriptText` -- and **they never disagree**:
+
+| slots | runtime + declaration | runtime only | declaration only | neither |
+|---:|---:|---:|---:|---:|
+| 144 | 135 | 0 | 0 | 9 |
+
+No slot is one-sided: a key that matched on the wrong field would put the image's name and the source's on
+different rows, and there are none. The **9** slots the source does not declare are the ones the image does not
+implement either, in 3 run(s) of the numbering (`0xc6..0xc7`, `0xcc..0xd1`, `0xe4`):
+
+| opcode | index | table pattern | tokens | runtime slot | `.data` record | `native()` |
+|---|---:|---|---:|---|---|---|
+| `0xc6` | 198 | `parms` | 0 | no | - | 0 |
+| `0xc7` | 199 | `parms` | 0 | no | - | 0 |
+| `0xcc` | 204 | `parms` | 0 | no | - | 0 |
+| `0xcd` | 205 | `parms` | 0 | no | - | 0 |
+| `0xce` | 206 | `parms` | 0 | no | - | 0 |
+| `0xcf` | 207 | `parms` | 0 | no | - | 0 |
+| `0xd0` | 208 | `parms` | 0 | no | - | 0 |
+| `0xd1` | 209 | `parms` | 0 | no | - | 0 |
+| `0xe4` | 228 | `parms` | 0 | no | - | 0 |
+
+**121 of the 144 rows are used** -- 44,811 tokens, 9.25% of the corpus's 484,332 opcode tokens -- and the image's own
+spelling of the native matches the declaration exactly on **126** rows and differs on **9** by one rule: the
+C++ name writes the argument types out (`execConcat_StringString`) where `Object.uc` abbreviates them
+(`Concat_StrStr`). **0** rows disagree beyond that rule.
+<!-- /generated:opcode-band -->
+
+**The nine are a population the build does not have, not a hole in the control.** They sit in three runs of a
+numbering that is otherwise dense — `0xc5` `AllObjects` and `0xc8` `StrCmp` both carry a runtime value, a record and a
+declaration, and so do `0xcb` `NotEqual_RotatorRotator` and `0xd2` `ComplementEqual_FloatFloat` around the six-slot
+run — so Perception's `Object` class skipped exactly those indices instead of renumbering around them. That is what
+makes the band table's `parms` on those nine rows untestable and harmless at the same time: a rebuild compiles from
+the shipped `ScriptText`, no class in it declares those indices, so the compiler has nothing to emit at them and the
+untested pattern can never be exercised by a rebuild's grade. The L2 control's reach (`docs/MATCHING.md`) still
+counts them as ungraded rows, and that is correct — a swap that cannot be made is not a swap that failed.
+
+**The name join is one spelling rule, not nine disagreements.** Over the 135 slots that carry both a record and a
+declaration, 126 spell the native identically and nine differ the same way: the C++ name writes the argument types
+out (`intUObjectexecConcat_StringString`) where `Object.uc` abbreviates them (`Concat_StrStr`). Those are the same
+nine names the native-call section above reports for the 120 *used* direct opcodes, which is the check that the
+wider population did not find a new kind of difference.
+
 ## The name column is the image's own, not a token list that stops at `0x47`
 
 The table's names came from UELib's UE2 token map, which is a list of *expression* tokens and ends at `0x47`. The

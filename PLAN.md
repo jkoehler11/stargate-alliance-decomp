@@ -315,6 +315,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       end. `--check` holds the artifact to the walk's own claims (L3 0, L2 0, similarity `(n-1)/n`, one token moved),
       to the table's shape groups, and to `opcode_usage.csv`'s total -- the rows' `tokens` sum to that file's
       484,332, which is the independent claim that this census saw the whole corpus and not a subset of it.
+      **And the nine rows the band rule names without evidence are a population the build does not have
+      (2026-11-15)**: the reach census left nine band rows as the only ones whose `parms` pattern no payload tests,
+      and the question was whether the image or the source says anything about them. `inventory/opcode_band.csv`
+      (`make opcode-band`, `tools/opcode-band.py`, a join over committed artifacts with no dump) puts every one of
+      the band's 144 slots against the three sources that can name it -- the runtime `GNatives` value, the `.data`
+      `{name, body}` record that value belongs to, and a `native(<index>)` declaration in the shipped `ScriptText`.
+      They **never disagree**: **135 slots are all three, 0 are one-sided, 9 are neither**, and the nine are the
+      `0xc6..0xc7`, `0xcc..0xd1` and `0xe4` runs with 0 tokens. The zero one-sided count is the join's own control
+      -- a key that matched on the wrong field would put the image's name and the source's on different rows -- and
+      the neighbours of every run (`0xc5` `AllObjects`, `0xc8` `StrCmp`, `0xcb`, `0xd2`) are all three, so
+      Perception's `Object` class skipped those indices instead of renumbering around them: a rebuild compiles from
+      the shipped text, nothing declares them, so the untested patterns can never be exercised by a rebuild's grade.
+      The name join is one spelling rule over the whole band -- **126 exact, 9 differing only as
+      `execConcat_StringString`/`Concat_StrStr`, 0 beyond it** -- which is the same nine the native-call section
+      reports for the 120 used opcodes, and the band carries **44,811 of the corpus's 484,332 opcode tokens (9.25%)**
+      over 121 used rows. `--check` drives the four verdicts, the spelling rule, a hole run, the artifact round trip
+      and the page markers on a synthetic inventory.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`
