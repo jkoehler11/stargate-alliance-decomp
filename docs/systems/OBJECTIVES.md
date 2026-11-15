@@ -2,8 +2,13 @@
 
 PLAN 8.3 lists mission objectives. The measurement says there are **two** objective families that do not
 touch, and the one the campaign ships is the engine's own — while the fork's parallel family is never placed.
-The mission logic itself lives in **level script**, expressed through a vocabulary of 22 `ACTION_*` latent
-scripted actions.
+The mission logic itself lives in the **level's data**, expressed through a vocabulary of `ACTION_*` latent
+scripted actions -- and **82 distinct `ACTION_*` classes are placed** in the shipped maps, **18,283**
+placements over `GamePlay` 45, `StargateGame` 21, `StargateContent` 13 and `StargateVehicles` 3
+(`inventory/map_script.csv`). The 22-class table below counts the class *tree* and is a different population
+from what the maps carry, so neither replaces the other. The logic is *not* a compiled level script, which no
+map in this build carries at all (`docs/MAP_SCRIPTS.md`: 0 of 73 maps hold a `Function`, `State` or
+`TextBuffer` export).
 
 Body-level description of the class the game actually uses is in `docs/systems/mission-objectives.md`
 (written from the decompiled bodies); this file is the structural comparison and the content counts.
@@ -76,8 +81,8 @@ actions *are* placed, heavily:
 largest class in the campaign's control path. The player-facing side is `ObjectivesPanel` in
 `StargateMenus` (14 functions, 5 properties, a `GUITabPanel`), fed from the objective actors' state.
 
-So the chain is: `StoryModeGame` owns the campaign rules → level script places `ACTION_*` and objective
-actors → `ObjectivesPanel` renders their state. The mission content — which objective, in which order, with
+So the chain is: `StoryModeGame` owns the campaign rules → the level's placed `ACTION_*` and objective
+actors carry the mission → `ObjectivesPanel` renders their state. The mission content — which objective, in which order, with
 which text and sound — is **data in the `.unr`**, not code.
 
 ## The chapter list is the campaign's own index
@@ -89,8 +94,10 @@ report (`docs/CUT_CONTENT.md`): M01 and M05 keep music but no level.
 ## Why this matters for the rebuild
 
 1. **Objective logic is not a script port.** Once `StoryModeGame` and the 10 objective classes compile, the
-   missions still do nothing until the level script runs — so 5.2 (T3D of level script) is on the critical
-   path for anything playable, not a nice-to-have inventory step.
+   missions still do nothing until the placed actions run — so 5.2 (the maps' T3D, which is where those
+   actions and the sequences that drive them live) is on the critical path for anything playable, not a
+   nice-to-have inventory step. There is no level script to port: `docs/MAP_SCRIPTS.md` measures 0 script
+   exports over all 73 maps, so this half of a mission is data, not code.
 2. **The fork's `GameObjective` family can be deprioritised**: 22 functions and 10 classes that no shipped
    map instantiates. Porting it before the engine's `MissionObjective` would be working on the wrong class.
 3. **`MissionObjective` is the compatibility surface.** 261 placed actors mean the rebuild must reproduce
@@ -100,6 +107,7 @@ report (`docs/CUT_CONTENT.md`): M01 and M05 keep music but no level.
 
 * What any `ACTION_*` does. 22 classes with properties named after their editor fields is structure; the
   behaviour is in the script bodies under `$WORK`.
-* Which actions a given mission uses, and in what order — level script, i.e. the 5.2 dump.
+* Which actions a given mission uses, and in what order — the sequence actors' `Actions` arrays, i.e. the
+  actor-property read of the 5.2 dump. It is not a level script: no map carries one (`docs/MAP_SCRIPTS.md`).
 * The 7 missing chapters: whether their levels were cut, or renamed before ship (`chapters.csv` records
   what the chapter table names, not what the designers intended).

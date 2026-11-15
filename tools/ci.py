@@ -267,6 +267,18 @@ def check_function_no_script_doc():
         ok(name, out[-1].replace("ok   function-no-script: ", "") if out else "")
 
 
+def check_map_script_doc():
+    """docs/MAP_SCRIPTS.md's block must match the committed artifact."""
+    name = "map-script-doc"
+    r = subprocess.run([sys.executable, repo("tools", "map-script.py"), "--check-doc", "docs/MAP_SCRIPTS.md"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   map-script: ", "") if out else "")
+
+
 def check_lipsinc_index():
     """The committed LIPSinc index must be consistent with itself (target indices, record size, trailer names)."""
     name = "lipsinc-index"
@@ -523,6 +535,7 @@ def main():
     check_opcode_table()
     check_function_flags()
     check_function_no_script_doc()
+    check_map_script_doc()
     check_lipsinc_index()
     check_addresses_in_image()
     print()
