@@ -1,9 +1,51 @@
 address,size,name,evidence,callers
-0x0008ded0,860,FUN_0008ded0,KarmaGlobals,0x00139030
+0x0005c080,24266,Core_UnName,DevKarma,0x0005a990
+0x0008de20,163,FUN_0008de20,(Karma:) Ball and Socket | (Karma:) Contact Group | (Karma:) Hinge | (Karma:) Other Constraint | (Karma:) Skeletal,
+0x0008ded0,860,FUN_0008ded0,(Karma): Beginning Karma for game. | (Karma): KInitGameKarma: Already Initialised! | (Karma): Not Initialising Karma In Editor. | KarmaGlobals,0x00139030
+0x0008e230,3518,Engine_KarmaSupport,(Karma): Contact with 2 Triangle Lists! | (Karma): Contact with no bodies! | (Karma:) Bad Normal Length: %f | (Karma:) Contact with Actor with no KParams. | \alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\KarmaSupport.cpp,
+0x0008eff0,1267,FUN_0008eff0,(Karma): KInitActorDynamics: (%s) No StaticMesh or KarmaParamsRBFull | (Karma): KInitActorDynamics: No KParams. | (Karma): KInitActorDynamics: No Karma World | (Karma): KInitActorDynamics: No KarmaParams. | (Karma): KInitActorDynamics: No Model. | (Karma): KInitActorDynamics: Not in a Karma PHYS mode. | (Karma): KInitActorDynamics: bStatic is true.,0x00090cd0
+0x0008f4f0,285,FUN_0008f4f0,Actor using PHYS_Karma has no KParams. | Actor using PHYS_KarmaRagDoll has no KParams of type KarmaParamsSkel.,0x00128180
+0x0008fa70,514,FUN_0008fa70,(Karma): Destroying Asset Database. | (Karma): Destroying Framework. | (Karma): Destroying Geometry Manager. | (Karma): Ending Karma for game. | (Karma): Negative Geometry Count on Shutdown. | (Karma): Negative GeometryManager Geometry Count on Shutdown. | (Karma): Negative Model Count on Shutdown.,0x0008fc80 0x00090f10 0x000aa3c0 0x001321e0
+0x0008fce0,210,Engine_KarmaSupport,\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\KarmaSupport.cpp | actor->Physics == PHYS_Karma || actor->Physics == PHYS_KarmaRagDoll | actor->bBlockKarma,0x00090009 0x00091230 0x000aa3c0 0x000d41e0
+0x00090030,978,FUN_00090030,(Karma): Initialising Karma for Level.,0x00134d40 0x0013be80
+0x00090420,1512,FUN_00090420,(Karma): Actor (%s) with non uniform scale factor cannot use skeletal mesh karma collision. | (Karma): Could not create Karma collision from blocking volume: %s | (Karma): SkeletalMesh (%s) with empty Karma KAggregateGeometry. | (Karma): StaticMesh (%s) with empty Karma KAggregateGeometry.,0x00090a10 0x00091230
+0x00090a10,555,Engine_KarmaSupport,\alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\KarmaSupport.cpp,0x00090cd0 0x00091230
+0x00090c40,134,FUN_00090c40,(Karma): KTermActorCollision: Actor has no collision. | (Karma): KTermActorCollision: Actor still has dynamics. Automatic KTermActorDynamics.,0x00090e50 0x00091230
+0x00090f10,796,Engine_KarmaSupport,(Karma): Level Karma Terminated. | (Karma): Terminating Karma for Level. | (Karma:) KTermLevelKarma: %d Constraints left in MdtWorld. | (Karma:) KTermLevelKarma: %f Bodies left in MdtWorld. | \alienbrainWork\Stargate-sg1\Game\GameXBOX\Engine\Src\KarmaSupport.cpp,0x00134d40 0x0015d040
+0x000920d0,122,FUN_000920d0,(Karma:) KConstraint with Physics != Karma but an MdtConstraint.,0x00090e50 0x000aea60 0x001b2640
+0x00093ad0,1793,FUN_00093ad0,"(Karma): KInitConstraintKarma: Already initiaslised. | (Karma): KInitConstraintKarma: Could not create MdtConstraint. | (Karma): KInitConstraintKarma: Creating constraint between actors with different bKDoubleTickRate. | (Karma): KInitConstraintKarma: Creating constraint to destroyed actors. | (Karma): KInitConstraintKarma: If joint is to world, second actor must be NULL. | (Karma): KInitConstraintKarma: KConstraint with both bodies the same. | (Karma): KInitConstraintKarma: KConstraint with no valid bodies. | (Karma): KInitConstraintKarma: No MdtWorld.",
+0x00098c90,155,Engine_KDynStep,actor->KParams->IsA(UKarmaParams::StaticClass()),0x00098d30 0x00098d70
+0x0009a320,1759,Engine_KDynStep,(Karma:) Partition SimError! | (Karma:) SimError Actor: %s (%d),0x0009abc0
+0x0009abc0,3518,Engine_KDynStep,(Karma): conCount (%d) != keaCon->num_constraints (%d),0x0008f610
+0x0009d840,1327,Engine_KFarfield,KUpdateContacts: Actor without Karma physics mode. Name: %x %s Physics: %d | actor->Physics == PHYS_Karma || actor->Physics == PHYS_KarmaRagDoll | actor->bBlockKarma | overActor->bBlockKarma,0x0008f610
+0x000a0bf0,213,Engine_KPhysic,Physics == PHYS_Karma,
+0x000a0ce0,431,FUN_000a0ce0,(Karma:) KFreezeRagdoll: No skeletal mesh. | (Karma:) KFreezeRagdoll: Ragdoll not initialised.,0x000a6bb0
+0x000a14a0,942,Engine_KPhysic,(Karma:) preKarmaStep: Actor has no KParams. | Physics == PHYS_Karma || Physics == PHYS_KarmaRagDoll,0x00260f40
+0x000a1980,1645,FUN_000a1980,(Karma:) postKarmaStep: Actors with non-Karma physics. | postKarmaStep: Actor (%s) passed through world. | postKarmaStep: Karma Actor (%s) passed through %s.,
+0x000a1ff0,87,Engine_KPhysic,%s->setPhysics(%d). KVehicle's can only have Physics == PHYS_Karma. | Physics == PHYS_Karma,
+0x000a2f00,1911,Engine_KPhysic,(Karma:) AActor::physKarma: No Karma MdtWorld found. | Physics == PHYS_Karma,0x000a2590
 0x000a4820,176,Engine_KScript,KarmaParamsCollision,0x00012620 0x00017eb0 0x00091650 0x000a4b80 0x0013be80
 0x000a4c90,179,Engine_KScript,KarmaParams,0x00012620 0x00091450 0x00098c90 0x0009a320 0x000a2050 0x000a2e10
 0x000a4d50,179,Engine_KScript,KarmaParamsRBFull,0x00012620 0x00017f10 0x000a2c90 0x0013be80
 0x000a4e10,179,Engine_KScript,KarmaParamsSkel,0x00012620 0x00017ee0 0x0008f4f0 0x000a7d40 0x0013be80
-0x000ae030,872,FUN_000ae030,Karma Safe-Time Disabled. | Karma Safe-Time Enabled. | Karma debugging option recognized,0x0015ef40
+0x000a51d0,708,FUN_000a51d0,(Karma:) execKAddBoneLifter: Bone has no Karma model. | (Karma:) execKAddBoneLifter: Bone has no dynamics. | (Karma:) execKAddBoneLifter: Bone not found. | (Karma:) execKAddBoneLifter: No skeletal mesh. | (Karma:) execKAddBoneLifter: Ragdoll not initialised.,
+0x000a63e0,387,Engine_KScript,(Karma:) execKRemoveLifterFromBone: Bone not found. | (Karma:) execKRemoveLifterFromBone: No skeletal mesh.,
+0x000a661e,89,Engine_KScript,(Karma:) execKRemoveAllBoneLifters: No skeletal mesh.,
+0x000a8560,600,FUN_000a8560,(Karma:) Ragdoll Bounding Box invalid or outside world. | (Karma:) UpdateRagdollTrilist: No KarmaParams. Actor is : %s | (Karma:) UpdateRagdollTrilist: No Tri-list found for ragdoll.,0x0008f610
+0x000a87c0,569,FUN_000a87c0,(Karma:) preKarmaStep_skeletal: No KarmaParamsSkel.,0x000a14a0
+0x000a8a00,2058,FUN_000a8a00,postKarmaStep_skeletal: Bone (%s) does not have physics parent (%s). | postKarmaStep_skeletal: No USkeletalMeshInstance. | postKarmaStep_skeletal: No skelMesh.,0x000a1980
+0x000a9840,2659,Engine_KSkeletal,"(Karma): KInitSkeletonKarma: Asset not found. | (Karma): KInitSkeletonKarma: Framework, but no world. | (Karma): KInitSkeletonKarma: No KParams, or KParams is not a KarmaParamsSkel. | (Karma): KInitSkeletonKarma: Physics mode not PHYS_KarmaRagDoll. | (Karma): Not All Physics Joints Have Graphics Bones! | (Karma): Not All Physics Parts Have Graphics Bones!",0x000aaac0
+0x000aa3c0,1533,Engine_KSkeletal,(Karma:) KTermSkeletonKarma (NI): KSkelJoints Not Empty! | (Karma:) KTermSkeletonKarma (NI): KSkelModels Not Empty! | (Karma:) KTermSkeletonKarma (RA): KSkelJoints Not Empty! | (Karma:) KTermSkeletonKarma (RA): KSkelModels Not Empty! | (Karma:) KTermSkeletonKarma: No Tri-list found for ragdoll.,0x000a0ce0 0x00220c00
+0x000aaac0,1620,Engine_KSkeletal,(Karma:) Excessive Joint Error. Destroying RagDoll. | (Karma:) physKarmaRagDoll_internal: No KarmaParamsSkel. | Physics == PHYS_KarmaRagDoll | postKarmaStep_skeletal: No USkeletalMeshInstance. | postKarmaStep_skeletal: No skelMesh.,0x000aa2b0
+0x000ada60,159,FUN_000ada60,(Karma): ,
+0x000ae030,872,FUN_000ae030,Cannot execute Karma debugging options (No KGData). | Karma Safe-Time Disabled. | Karma Safe-Time Enabled. | Karma debugging option recognized,0x0015ef40
+0x000aeaf0,1837,FUN_000aeaf0,"(Karma:) KAggregateGeomInstance: (%S) No geometries in FKAggregateGeom. | (Karma:) KAggregateGeomInstance: (%s) Cannot 3D-Scale Karma primitives (sphere, box, cylinder).",0x00090420 0x000af2b0
+0x000b0f20,2120,FUN_000b0f20,(Karma): Creating MeAssetDB. | (Karma): Finished Creating MeAssetDB (%d Assets). | (Karma): Loading: %s | (Karma): Non-fatal error in MeFileLoad.,0x0008ded0
 0x000d8110,950,FUN_000d8110,KarmaGravScale | KarmaTimeScale,
-0x00253950,10539,FUN_00253950,Karma,0x001226a0
+0x0013be80,47779,Core_UnClass,UKarmaParams | UKarmaParamsCollision | UKarmaParamsRBFull | UKarmaParamsSkel,
+0x0024af30,809,FUN_0024af30,UseSimpleKarmaCollision,
+0x00253950,10539,FUN_00253950,  PostKarmaStep |   PreKarmaStep | Karma | physKarma,0x001226a0
+0x00256280,38716,FUN_00256280,- Karma --------,0x001daed0
+0x00260b90,94,Engine_UnSVehicle,Physics == PHYS_Karma || Physics == PHYS_None,
+0x00260bf0,269,Engine_UnSVehicle,Physics == PHYS_Karma || Physics == PHYS_None,
+0x00261310,1112,ASVehicle_physKarma,ASVehicle::physKarma : No Skeletal Mesh Instance! (%s) | ASVehicle::physKarma : No Skeletal Mesh! (%s),

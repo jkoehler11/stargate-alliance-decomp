@@ -56,7 +56,12 @@ into bodies is engine-side and undocumented until PLAN 4.8; the format itself ne
 The `.ka`/`.kaw` files are XML, so they need no reverse engineering — but the *code that consumes ragdolls* is in the
 image, and it announces itself the same way LIPSinc does. `tools/image-strings.py --topic karma`
 (`make karma-runtime`, `inventory/karma_runtime.csv`, `--check` in `make ci`) attributes every `push` of a `Karma*` or
-`KarmaSupport.cpp` string to the function containing it: **8 functions**.
+`KarmaSupport.cpp` string to the function containing it. The first pass answered **8 functions**; the artifact
+now holds **50** (26 named, 34 with a caller from the image), and the eight were a property of the matcher rather
+than of the image: a needle found inside a longer literal was keyed at the needle's own address, so a `push` of that
+literal's *first* character matched nothing, and 42 bodies that push a `Karma*` literal from its start were dropped.
+The eight in this table are the anchors the rest of the page reads from; `inventory/karma_runtime.csv` carries all
+fifty.
 
 | address | bytes | name | evidence | called by |
 |---|---:|---|---|---|

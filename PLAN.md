@@ -1731,6 +1731,23 @@ are limited to expected fields (checksum/timestamp) and documented.
   `?` where the symbol map bounds nothing -- + `inventory/lipsinc_formats.csv` + the `lipsinc-formats` target and
   its `ci` gate + the section on `docs/formats/lipsinc-lad.md` and the paragraph on `lipsinc-runtime.md` + U4 + this
   note. No boot and no Ghidra round: the image and the committed inventories only.
+
+### Execution notes (2026-11-15, the Karma census is fifty functions, not eight, and the matcher was reading the needle's address)
+
+- **The three topic artifacts were never re-run after the substring-address fix, and re-running them showed why.**
+  Regenerating `lipsinc_runtime.csv` came back two strings *shorter* (`0x00225cd0` lost `NumAnimations = %i`,
+  `0x00228730` lost `Just started at %f for Actor %s ...`): `pushers()` compared the raw `push` address against
+  walk-back-corrected string starts, so a literal the code pushes from an interior address matched no key at all.
+  The cause is in the pool itself -- this image's wide literals follow runs of tiny floats whose high word is
+  `0x0023`, which decode as printable `#`, so a walk-back can start a literal one or two units early.
+- **Fix, and what the fix changes.** A push now resolves to the literal by containment and the evidence is read at
+  the address the code pushes, so no literal is lost to a boundary the walk-back got slightly wrong. Regenerated:
+  `lipsinc_runtime.csv` is **byte-identical** to the committed one (the loss was the matcher's, not the artifact's),
+  `package_check_code.csv` gains two literals (`0x00132300` also pushes `Saving Packages.md5...`, and
+  `0x00187350`'s `PackageCheckInfo` is a substring of the assert path it really pushes), and
+  `karma_runtime.csv` goes **8 rows -> 50** (26 named, 34 with a caller, 165,153 bytes) -- the 42 the first pass
+  dropped all push a `Karma*` literal from its first character.
+- Tool + the two artifacts + the `docs/formats/ragdoll-ka.md` census sentence + this note. No boot, no Ghidra round.
 - **Residual:** which path `LIPSincInitLevel`'s bare `*.lad` is expanded against -- it decides whether the three root
   packs are ever opened. Its argument is built at `0x000baa57` and the strings cannot say.
 - **Measured in passing, not touched here:** regenerating a topic artifact from the *unmodified* tool moves rows --
