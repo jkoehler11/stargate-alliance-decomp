@@ -558,6 +558,51 @@ tools/native-mark.py --unstated` prints the listing; `--check` asserts the split
   `FAIL native-mark` when a `GNatives` slot's live value is not the record's body -- the one way this join can be
   wrong is a dispatch table pointing somewhere other than the registration block says.
 
+##### The 33 conversions are installed into a second table at `0x00630fe0` (measured 2026-11-15)
+
+The section above left one row of its table unexplained: **33 records whose names are the primitive conversions**
+(`BoolToByte` ... `VectorToString`) take no `GNatives` slot and no opcode name. The question they leave is which
+table holds them. `tools/native-fill-tables.py` answers it from the image's code, in three steps that each had to be
+measured before the next one was visible.
+
+* **There is a second body list, right after the record block.** `Core.Object`'s 306 `{name, body}` records run
+  `0x005c1a58`-`0x005c23e8`; a `0xffffffff` dword at `0x005c2400` separates them from an **array of 306 dwords at
+  `0x005c2404`**, terminated by zeroed dwords. It is the same population from the other side and not the same list:
+  **303** of its entries are the block's bodies, **3** are stubs no record carries (`0x000404b0`, `0x000409a0`,
+  `0x00040a30`) and the block carries **1** body the array does not (`0x00068890`). The array is in *declaration*
+  order, which is why an entry's index is not its record's -- `ByteToBool` is record 49 and array entry 54.
+* **Every installer is a thunk that reads its own entry.** The registration code first fills a table with the default
+  stub (`mov ecx,<count>; mov edi,<table>; rep stosd` of `0x000404a0`), then installs one entry per thunk:
+  `cmp [table+4*slot],stub; je skip; mov reg,[array+4*index]; mov [table+4*slot],reg`. So the stored *value* is never
+  an immediate, which is exactly why `gnatives-writes.py` reports those 233 stores as "a pointer read from a data
+  table" and cannot name the array from the store alone.
+* **Two tables are filled from it, and the 33 land in the second.** `GNatives` at `0x006313e8` (4096 entries, the
+  assert-named array) takes **233** of the array's entries, at slots 0-543; the table at **`0x00630fe0`** -- 255
+  entries, filled with the same stub by `0x00046cca` -- takes **33**, at slots **57-90**, and those 33 are exactly the
+  conversion records (`RotatorToVector` 57, `ByteToInt` 58, ... `StringToName` 90, slot 70 the one gap). So "they
+  take no `GNatives` slot" is true, and it does not mean "they are stored nowhere": they are a dispatch table's only
+  content, and a second one at that.
+* **The other 40 entries are installed into neither table, and they are the declared natives.** The array's 40
+  uninstalled entries are `SetUTracing`, `IsUTracing`, `Asin`, `Acos`, `OrthoRotation`, `SpiderOrthoRotation`,
+  `Normalize`, `ClockwiseFrom_IntInt`, `InterpCurveEval`/`GetInputDomain`/`GetOutputRange`, `QuatProduct`,
+  `QuatInvert`, `QuatRotateVector`, `QuatFindBetween`, `QuatFromAxisAndAngle`, `QuatFromRotator`, `QuatToRotator`,
+  `QuatSlerp`, `ListLogFilters`, `SetLogFilter`, `ClearLogFilter`, `EmptyLogFilters`, `Localize`, `GetPropertyText`,
+  `SetPropertyText`, `StaticSaveConfig`, `StaticClearConfig`, `GetPerObjectNames`, `GetEnum`, `DynamicLoadObject`,
+  `FindObject`, `IsOnConsole`, `PlatformIsMacOS`, `PlatformIsUnix`, `PlatformIsWindows`, `PlatformIs64Bit`,
+  `IsSoaking`, `MarkForSaveGame`, `DeleteObject`. All 40 have a `native_bodies.csv` row and a `natives.csv`
+  declaration, so they are reached as functions through `UFunction::Func` by the binder and never as an opcode --
+  which is the distinction the whole three-way split is about: **233 opcodes, 33 conversion operators, 40
+  declarations**.
+
+`inventory/native_fill_tables.csv` is one row per array entry: `index`, `body`, the record that also carries it
+(`record_index`, `record_name`), and the `table`/`slot` a thunk installs it into (empty when none does). The check is
+dump-free and joins the artifact three ways -- the records in `native_targets.csv`, the stores in
+`gnatives_write_sites.csv` (233 of 233 agree on slot *and* value) and the fill extents read from the image -- so a
+moved array, a re-slotted store or a lost entry fails `make ci` instead of the next document. `make native-fill`
+regenerates it. Two numbers the tool also states and the table does not: **466** store instructions for the 233
+`GNatives` slots and **66** for the 33, because every thunk stores the same entry twice, once on the
+first-registration path and once on the already-filled path.
+
 **A correction to the earlier `binder_va` column.** The first version of `tools/native-binder.py` decoded the whole
 image as UTF-16LE and multiplied the character index by two. A surrogate pair collapses two code units into one
 character, so every index after the first pair drifts: **all 769** non-empty addresses in

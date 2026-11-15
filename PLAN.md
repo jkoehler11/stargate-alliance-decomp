@@ -9752,6 +9752,36 @@ and a deliberate one-line script break is caught by the boot test.
   maps past `M15B`, which the list reaches and no run has ever gone past 40. `tools/xemu/missions.sh` already boots
   once per index, so it is a sweep of the existing instrument.
 
+### Execution notes (2026-11-15, the 33 conversions fill a second table, and the fillers read one array)
+
+- **The previous note's question is answered, and the guess it made was half right.** It proposed a dword scan for the
+  33 conversion bodies "if UE2 keeps a cast table the way it keeps `GNatives`". There is no separate cast *list*: the
+  33 bodies sit in a **306-entry dword array at `0x005c2404`**, immediately after `Core.Object`'s record block
+  (`0xffffffff` separates them) and in declaration order, and the thing that consumes them is a **second 255-entry
+  table at `0x00630fe0`**, filled with the same `0x000404a0` stub by `0x00046cca` and installed by exactly those 33
+  thunks at slots 57-90 (`RotatorToVector` 57 ... `StringToName` 90, 70 the one gap).
+- **Every installer is one thunk of the same shape**, and that is why the array was hard to name from a store:
+  `cmp [table+4*slot],stub; je skip; mov reg,[array+4*index]; mov [table+4*slot],reg`. `GNatives` takes **233** array
+  entries this way (466 stores, two paths per thunk, 233 distinct slots at 0-543) and the second table takes **33**
+  (66 stores). So the earlier reading of those stores as "a pointer read from a data table" was correct and the
+  *table* was the missing half.
+- **The array is the same population as the record block and not a copy of it**: 303 of its entries are the block's
+  bodies, 3 are stubs no record carries (`0x000404b0`, `0x000409a0`, `0x00040a30`), and the block carries one body
+  the array does not (`0x00068890`). The 3 are why the array is 5-7 entries ahead of the record block by the time it
+  reaches the conversions -- a positional offset that reads like a different list until the membership is joined.
+- **The 40 entries no thunk installs are the declared natives**, all 40 with a `native_bodies.csv` row and a
+  `natives.csv` declaration (`SetUTracing`, `QuatProduct`, `Localize`, `DeleteObject`, ...): reached through
+  `UFunction::Func` by the binder, never as an opcode. That closes the population PLAN 4.3 kept as "356 live slots,
+  123 blind": the blind half is not a gap in the store scan, it is the other two channels.
+- Tool (`tools/native-fill-tables.py`: `find_array` off the separator, the `rep stosd` fill discovery, the thunk store
+  scan with the array-load window, `--check` joining three committed artifacts, `--selftest` on synthetic inputs) +
+  `inventory/native_fill_tables.csv` (306 rows) + `docs/NATIVE_VM.md` (*The 33 conversions are installed into a second
+  table*) + `make native-fill` + this note. Boot-free: the image's own code and committed tables.
+- **Next measurement:** the second table's *name*. `0x00630fe0` is 255 entries and only 33 live; the code that reads
+  it is one indexed load away (`mov reg,[reg*4+0x630fe0]`), and the function that holds that load names the table the
+  way `ProcessInternal` names `GNatives` -- read it with `tools/vcall-receiver.py`'s indexed-site census rather than
+  another array scan.
+
 ### Execution notes (2026-11-15, the 102 unstated records are exec handlers, and the dispatch table states 69)
 
 - **The last note's proposed read was a dead end, and one join answered it instead.** It named the operator table
