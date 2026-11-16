@@ -3541,7 +3541,7 @@ in the stream those members are non-zero on a class with a source line. Statical
 artifact beside each class's own table sizes, so the naming test is a query: three to five bytes cannot be a count
 plus elements, so the candidates are one `FName` plus one or two references, or one reference plus one `FName`.
 
-## U18. What a `delegate` property's default value is
+## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:
 `__OnXControllerEvent__Delegate` (declared `delegate<OnXControllerEvent>`), the first property of its block in
@@ -4171,3 +4171,19 @@ type-0 tag and drop `img_Overlay`. So neither menu page ships a delegate default
 showing there is nothing there to read, and the residue was a locator offset rather than a value width. **What this
 leaves** is the locator itself -- `class-defaults.py`'s `choose_scored` prefers a start that swallows the record's last
 bytes on these three rows -- which is a change to the candidate rule, not to a value grammar.
+
+**2026-11-15 (fifteenth): the chooser takes the own-first tie-break, and the entry closes with nothing left to read.**
+The note above left the locator: `choose_scored` preferred the start that swallowed the record's last bytes on those
+three rows. `tools/class-defaults.py`'s `choose()` now scores the class's **own** declarations after the number of
+tags (fraction, type agreement, count, own names, trailer), which moves **four** rows in the whole corpus --
+`GUI.MenuItemOverlay` 460 -> 568, `StargateMenus.SelectTeamPage` 119 -> 161, `StargateMenus.ExtrasPage` and
+`StargateMenus.CreditsPage` 83 -> 93 -- and no others: a probe over the 2,182 class exports the locator sees ranks
+the candidates three ways (own before the fraction, own before the count, own only among fraction ties) and all
+three move the same four, so the narrowest ships. `inventory/class_defaults_per_class.csv` keeps 2,319 classes,
+1,983 blocks and 1,664 fully declared; `inventory/class_defaults_emit.csv` renders **15,521 of 15,521** properties
+(was 15,518) and 15,813 of 15,821 subobject properties (was 15,790). `inventory/delegate_value_census.csv` is where
+the entry ends: **39** delegate slots ship a value, all **39** decode as `{object, name}`, the type-15 tag count is
+**1** (`Engine.TriggeredProjector.DrawType`, the enum-property control), and `residue_starts` is **0** -- so the two
+menu pages ship no delegate default, and there is no tag grammar left in the build that this entry was about.
+`tools/class-defaults.py --check` drives the tie-break from synthetic candidate lists and fails on the pre-rule
+chooser. Depth: `docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*.

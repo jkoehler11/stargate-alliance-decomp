@@ -61,8 +61,9 @@ than that, so the classes with the most defaults were exactly the ones reported 
 Scanning the whole payload recovers **114 classes**, takes blocks found from 2,084 to **2,209**, fully-declared
 blocks from 1,552 to **1,666**, and classes with no block from 235 down to **110** — and the recovered set is the
 inheritance spine of the whole tree, which is why the emitted property count jumps from 13,307 to 15,491. (Those are
-the values of that change; the current ones are 1,664 and 15,518, because two blocks were later withheld for
-contradicting their own property record — see "The locator scores names first and tag types second".)
+the values of that change; the current ones are 1,664 and 15,521, because two blocks were later withheld for
+contradicting their own property record — see "The locator scores names first and tag types second" — and the last
+three of those properties were recovered by the own-first tie-break in the closing section.)
 
 Since that measurement the chooser has taken the record's closing group as a rule
 (`docs/NATIVE_VM.md`, *The chooser takes the group's end*): 373 starts move onto the record's own boundary and the
@@ -145,6 +146,10 @@ Where it still fails:
 | `Stargateeffects` | 77 | 69 | 367 | 367 | 100.0% | 172 |
 | others (9 packages) | 254 | 123 | 718 | 716 | 99.7% | 139 |
 | **total** | **2,319** | **1,664** | **15,521** | **15,518** | **99.98%** | **1,313** |
+
+That table is the state of this measurement; the current artifacts read **15,521 of 15,521** properties (100.00%)
+and **15,813 of 15,821** subobject properties over 1,318 references, because the own-first tie-break in the closing
+section recovers three residue values and one inline object.
 
 `blocks` is the fully-declared count, because only those render. The renderer settles **1,898** blocks in all:
 the 1,664 above plus **234** whose parse does not account for itself, whose **491** properties are withheld;
@@ -1175,3 +1180,62 @@ class itself declares) and reads 20 properties where the located start reads 20 
 followed by the five that are `TempLB`'s tag and its object, and both blocks read without any type-15 tag. The residue
 was a locator offset, not a value width -- and the delegate question U18 opened is answered by showing that neither
 class has a delegate default to read.
+
+## The block opens on a class's own declaration, and all 15,521 properties render
+
+The section above settled *which* start is the block on the two menu pages and left the locator alone: the shipped
+chooser still preferred the early one, so `class_defaults_per_class.csv` still published 83 and 460. `choose()` now
+takes the class's **own** declarations as a term -- the set from `inventory/class_properties.csv`'s `class` column,
+not the ancestor closure -- and the score is the declared fraction, then tag-type agreement, then the count of tags,
+then how many of them the class itself declares, then the smallest trailer. The term sits after the count on
+purpose: a longer parse that names no own property still wins, so the rule can only separate two parses that read
+the same number of tags to the payload's end.
+
+**Four rows move, and the corpus cannot tell the three orderings apart.** A probe recomputed `candidates()` and the
+group guard for all **2,182** class exports the locator sees and ranked them three ways: the own count before the
+declared fraction, before the count (what ships), and only among candidates that tie on fraction and type agreement.
+All three move the same **four** rows, so the narrowest was taken -- it is the one that cannot disturb a row where
+the parses differ in length.
+
+| class | start before | start after | first tag before | first tag after |
+|---|---:|---:|---|---|
+| `GUI.MenuItemOverlay` | 460 | 568 | `__OnXControllerEvent__Delegate` (type 0, 110 bytes) | `img_Overlay` -> `GUIImage'OverlayMain'` |
+| `StargateMenus.SelectTeamPage` | 119 | 161 | `Hint` (type `String`, 43 bytes) | `SelTeamPanel` (object reference) |
+| `StargateMenus.ExtrasPage` | 83 | 93 | `__OnXControllerEvent__Delegate` (type 15, 12 bytes) | `TempLB` -> `GUILabel'cTempLB'` |
+| `StargateMenus.CreditsPage` | 83 | 93 | `__OnXControllerEvent__Delegate` (type 15, 12 bytes) | `TempLB` -> `GUILabel'cTempLB'` |
+
+Each moved start keeps every term the old one had -- the same declared fraction (1.0), no contradicting tag type,
+the same tag count, and a trailer of 0 -- so the earlier start was only ever winning on being earlier, and it won by
+reading a residue as the block's first tag: 110 bytes as a type-0 `Invalid`, 12 as a type-15 `FixedArray`, and on
+`SelectTeamPage` 43 bytes as a `String` that swallowed `SelTeamPanel`, `SelectBN` and `SelectedTeamIndex` and then
+named `Hint` a second time in the same block. The own-first start reads those three tags where they are.
+
+**Nothing else moves, and the totals are unchanged**: 2,319 classes, **1,983** blocks, **1,664** fully declared
+and **336** with no block -- the same numbers as before the rule, because this is a locator change and not a
+coverage one. `inventory/class_defaults_coverage.csv`,
+`class_defaults_moved.csv` and `class_defaults_silent.csv` regenerate byte-identically.
+
+**The values behind the residue were the whole of the rendering gap.** `inventory/class_defaults_emit.csv` gains
+**three** rendered properties (15,518 -> **15,521 of 15,521**, 100.00%) and, because `img_Overlay`'s value is an
+inline object, **five** more subobject references whose **23** properties all render (15,790 -> **15,813 of
+15,821**); `GUI` and `StargateMenus` now render every property their blocks carry. The delegate census closes
+with them: **39** delegate slots ship a value (was 42), **39 of 39** decode as `{object, name}`, the type-15 tag
+count falls from 3 to **1** -- `Engine.TriggeredProjector.DrawType`, the enum property that cannot hold 12 bytes and
+is the control, not a delegate -- and the census's `residue_starts` falls from 6 to **0**.
+`inventory/defaults_residue.csv` keeps no rows for the two menu pages, and `inventory/delegate_blockstart.csv`
+drops the six residue-start rows. U18's delegate question is answered in the same commit: there is no delegate
+default in those classes to read, and no residue left in the build.
+
+**The gate is synthetic and it fails on the pre-rule chooser.** `tools/class-defaults.py --check` (dump-free, writes
+nothing, driven by `make ci`'s `tool-check-contract`) drives five candidate lists: the two-menu-pages shape (the
+later start that names the class's own property wins a count tie), the same list without an own set (the earlier
+start wins, which is what the old code did), a longer parse that names no own property (it still wins, so the term
+is not leading the count), a start with an own name that leaves a declared property out (the fraction still leads),
+and a tag type the record contradicts (agreement still leads). Reverting the one score line makes the first
+assertion fail with *the start opening on a class's own property wins a count tie*.
+
+**One artifact is stale and is not this change's.** `inventory/class_blockstart_guard.csv` is a snapshot of the
+chooser, and a run of its own tool at the pre-change tree already rewrites **621** of its ~1,984 rows (395
+inserted, 621 deleted: the shipped start is no longer reproduced on most rows), so the four rows this rule moves
+would be invisible inside that regeneration. The page keeps the committed artifact and the stale rows stay named
+here rather than mixed into this diff; regenerating it is its own measurement.

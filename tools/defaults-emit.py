@@ -512,7 +512,7 @@ def format_float(v):
 
 # ------------------------------------------------------------------------------------------------- blocks
 
-def choose_scored(cands, decl):
+def choose_scored(cands, decl, own=None):
     """`cd.choose` under the named-property floor: (best, None), or (None, reason).
 
     A candidate whose parse names none of the class's declared properties is not a block. Every one of the
@@ -522,7 +522,7 @@ def choose_scored(cands, decl):
     withholds the start there; the renderer has to withhold it from the same classes, or the two artifacts
     count different blocks over the same packages.
     """
-    best = cd.choose(cands, decl)
+    best = cd.choose(cands, decl, own)
     if best is None:
         return None, "no-block"
     if not any(n in decl for n in best[3]):
@@ -543,7 +543,7 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
     cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
-    best, reason = choose_scored(cands, decl)
+    best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
     if best is None:
         return None, reason
     _score, _count, start, _names, bad = best
@@ -573,7 +573,7 @@ def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
     cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
-    best, reason = choose_scored(cands, decl)
+    best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
     if best is None:
         return None, reason
     _score, _count, start, _names, bad = best
@@ -1064,7 +1064,7 @@ def explain(system_dir):
                 decl |= declared_all.get(cur, set())
                 cur = supers.get(cur)
             cands, _data = cd.candidates(pkg, ps, exp, kinds=cd.kinds_for_class(cls))
-            best, reason = choose_scored(cands, decl)
+            best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
             if best is None:
                 if reason == "no-declared-name":
                     # The chosen parse names no property the class declares: the renderer withholds the block
@@ -1137,9 +1137,9 @@ def reconcile(system_dir):
                 cur = supers.get(cur)
             kinds = cd.kinds_for_class(cls)
             cands, data = cd.candidates(pkg, ps, exp, kinds=kinds)
-            best_u, reason_u = choose_scored(cands, decl)
+            best_u, reason_u = choose_scored(cands, decl, declared_all.get(cls, set()))
             guarded, _where = cd.guarded(cands, data, pkg, decl, kinds, len(pkg.imports or []))
-            best_g = cd.choose(guarded, decl)
+            best_g = cd.choose(guarded, decl, declared_all.get(cls, set()))
             here = "block" if best_u else ("no-declared-name" if reason_u == "no-declared-name" else "no-candidate")
             there = "no-block" if best_g is None else (
                 "block" if any(n in decl for n in best_g[3]) else "no-declared-name")

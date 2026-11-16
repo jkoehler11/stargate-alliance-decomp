@@ -288,9 +288,9 @@ def single_walk(data, pkg, start, decl, kinds, population, pkgname, cls, origin)
     return rec
 
 
-def choose_scored(cands, decl):
+def choose_scored(cands, decl, own=None):
     """`cdef.choose` under the named-property floor `tools/defaults-emit.py` applies (its `choose_scored`)."""
-    best = cdef.choose(cands, decl)
+    best = cdef.choose(cands, decl, own)
     if best is None:
         return None, "no-block"
     if not any(n in decl for n in best[3]):
@@ -324,9 +324,9 @@ def gained(args):
             decl = declared_for(cls, decl_all, supers)
             kinds = cdef.kinds_for_class(cls)
             cands, data = cdef.candidates(pkg, pstream, exp, kinds=kinds)
-            best_u, _reason = choose_scored(cands, decl)
+            best_u, _reason = choose_scored(cands, decl, decl_all.get(cls, set()))
             guarded, origins = cdef.guarded(cands, data, pkg, decl, kinds, len(pkg.imports or []))
-            best_g = cdef.choose(guarded, decl)
+            best_g = cdef.choose(guarded, decl, decl_all.get(cls, set()))
             here = "block" if best_u else "no-block"
             there = "no-block" if best_g is None else (
                 "block" if any(n in decl for n in best_g[3]) else "no-declared-name")
