@@ -913,6 +913,32 @@ other 38 rows.
       synthetic table to prove the chain walker and fails on one flipped `actor_derived` — measured) +
       `inventory/actor_prefix_kind.csv` (295 rows) + `docs/ACTOR_PROPERTIES.md` (*The record marks an actor*) +
       `make actor-prefix-kind` + this note. 73 maps in 74 s; no boot.
+      **The record's four middle bytes are a code, and no reading that would make them a reference survives
+      (2026-11-15).** The field the last two notes left open is read as the two little-endian `u16` it is written as,
+      and it is a **vocabulary**: **1,010 distinct values over the 79,925 blocks that carry the record**, the
+      commonest `00 00 00 00` (24,907, 31.2%) and `30 00 30 00` = 48,48 (8,677), and **165 of the values appear in ten
+      or more of the 73 maps**. A name index is a fact about one package's table, so the cross-map count settles the
+      question the payload could otherwise only guess at: `48,48` is 8,677 blocks in **70 maps** and its first half
+      resolves to **42 different names** there, `110,0` 7,071 in 71 maps as **61 names**. Every other reading is
+      refused against a control run in the same pass -- a half naming a property the block declares **2,572 (3.2%)
+      against the control's 6,597 (8.3%)**, the block's class **294**, its `Tag` value **243**, and the dword equal to
+      the export's offset/size or the block's length **549 (0.7%)**. The control is a name index of the same *band*
+      (the export ordinal scrambled modulo `0x80`), which is the part that makes the first row a negative: at the same
+      magnitude an index the block never mentions hits *more* often, and a whole-table control (0.3%) would have made
+      3.2% look like evidence. Two shapes agree with a flag word: the halves are equal on **39,165 (49.0%)**, `00 00 00
+      00` is the commonest state, and **5,571 (7.0%)** carry a half at or above `0x80` where no one-byte name index
+      can (`65278,65278` 4,912 blocks in 18 maps, resolving to nothing). It is not an identity either -- `StaticMeshActor`
+      alone carries **607** distinct values over 32,193 blocks while `48,48` covers 448 `StaticMeshActor`s, 53 `Mover`s
+      and 39 `Light`s in one map -- so the field is **110 classes with several values, 21 with exactly one, 17 with one
+      per block**, and the tool's verdict column names which. The page's old "1,011 distinct over 79,991 exports" was
+      counted over every block that *begins* with its class index, not over the blocks whose record matched; it is
+      corrected to 1,010 over 79,925. What is left is the writer's answer, and it is not `AActor::Serialize` (#598).
+      Tool (`tools/actor-prefix-middle.py`: `compute()` reads the halves, the four reference readings and the control
+      on every matched record, `--check` re-derives each class row's counts against its own record total and joins
+      `actor_prefix_record.csv`'s `matched` column row by row, and a synthetic self-test drives the codec, the control
+      and the `Tag` text) + `inventory/actor_prefix_middle.csv` (187 rows: 148 classes, the 24 commonest values, 15
+      census rows) + `docs/ACTOR_PROPERTIES.md` (*The four middle bytes are a code*) + `make actor-prefix-middle` +
+      this note. 73 maps in 4 s; no boot.
       **The prefix in front of a block is a record, so the residue is 1.6% and not 93 classes (2026-11-15).** The code
       read this item named next was already on disk (`$WORK/module-export/Engine/000c7fa0` is `AActor::Serialize`,
       110 bytes, whose one unconditional call is `UObject::Serialize` at `0x00063f70`), and the decisive read was
