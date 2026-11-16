@@ -109,15 +109,39 @@ classes that locate a block to a single start** (the extent census: 176), 26 of 
 32,053 of 32,193 (99.6%)** once type-0 candidates are rejected. `Light` is the sharper one — the census calls it
 constant at 12, and 4,661 of its 8,370 blocks begin there with a type-0 tag, which the rule moves to 15 on 8,112.
 
-**What is still open is the residue the rule cannot reach**: 93 classes (79,873 blocks, 66%) keep more than one start,
-2 have no type-0-free candidate at all (209 blocks), and 2 that were constant by extent now vary. For those the start
-a parse can see is genuinely shorter on some instances, which is the native prefix's own extent — a code question
-(the class's `Serialize`, slot 11), not another corpus pass.
+**The prefix is a record, and its length is twice the class index plus thirteen** (`make actor-prefix-record`,
+`tools/actor-prefix-record.py`, `inventory/actor_prefix_record.csv`). The residue above was closed by reading the
+bytes in front of a block instead of rejecting candidate starts: **79,925 of the 121,394 blocks (65.8%) begin with
+their own class index**, and every one of those 79,925 carries the same record —
+
+    [class index][the same index again][8 x 0xff][4 bytes][0x81]
+
+so the front is **`2*w + 13`**, `w` being the encoded width of the class index (1, 2 or 3 bytes, depending on where
+the class sits in that package's import table): `ZoneInfo` is `ad ad ff ff ff ff ff ff ff ff 30 00 30 00 81` at 15,
+`LevelInfo` `d9 02 d9 02 ff ff ff ff ff ff ff ff 6b 00 78 00 81` at 17. The length is a property of the *package*,
+not of the class, so a per-class constant could not exist — and **148 of the 148 classes that carry a prefix are the
+record on every one of their blocks**, with nothing left over.
+
+The record judges both older rules. Its start is a type-0-free candidate on **all 79,925** blocks; it equals the
+extent locator's choice on 53,866 (67.4%) and the type-0 rule's on 78,658 (98.4%). The 1,267 blocks (1.6%) in 64
+classes where the two disagree are starts the type rule keeps because they parse without an `Invalid` tag and sit
+earlier: `Light` 257 of 8,370, `Mover` 143 of 1,268, `StaticMeshActor` 140 of 32,193. So the "93 classes still
+locating at more than one start" is not a residue of the prefix's own extent — it is 1.6% of the class-referenced
+blocks, and the record names the right start for every one of them.
+
+**The other third has no prefix at all.** 41,254 blocks (34.0%) sit at front 0 — `ReachSpec` 30,539,
+`SpriteEmitter` 2,854 — and 215 blocks over 5 classes carry a front whose first byte is not their class index
+(`StaticMeshInstance` 211). Those exports are not an actor instance's stream, which is why the earlier histogram of
+"prefixes" mixed two populations: 148 of the 295 classes carry the record and 147 never do.
+
+The four bytes between the `0xff` fill and the closing `-1` are left unnamed: they vary per instance, taking 1,011
+distinct values over the 79,991 exports that carry the record, the commonest `00 00 00 00` on 24,912 and
+`30 00 30 00` on 8,688.
 
 ## Not measured
 
 * Property *values* at corpus scale. The reader decodes them on demand (`--values`) and they are game content,
   so nothing here aggregates or stores them.
 * Class defaults (see above).
-* Why 93 classes still locate at more than one start once type-0 candidates are rejected, and whether the two that
-  became `varies` are the rule's own false positives — both need the class's `Serialize` body.
+* What the record's four middle bytes hold, and why 215 blocks over 5 classes carry a front without their class
+  index first (`StaticMeshInstance` 211 of them): the record names the block's start but not those fields.
