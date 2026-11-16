@@ -35,6 +35,12 @@ decomposing the gap instead of naming its fields:
   `inventory/class_tail_run.csv`, `array_end` sits at or before the record's last unit on most rows, so the `nm_*`
   block measures a unit body there -- `tools/class-tail-run.py --report` prints the join, and its group columns are
   the `+0x4dc` / `+0x4f4` counts to quote;
+* **the same four fields read where the writer puts them** -- `gr_*`, the gap re-read at the record's closing group
+  (`inventory/class_tail_run.csv`'s `last_unit` plus one element body), with `gr_off` recording how far that start
+  sits from the census's own tail and `gr_ref_ok` whether the group's reference is inside the package's object
+  tables. On the 373 rows that carry a group this read closes on the defaults start on 332 and names 3 or 4 entries
+  on 301 of them, where the `nm_*` block at `array_end` closes on none -- so the `nm_*` columns describe a position
+  inside the unit stream and the `gr_*` columns describe the record;
 * **the control** -- the same array grammar started at each of the next 8 bytes, counting the starts that parse and
   the ones whose end is exactly the defaults start. A grammar that fits the real position and the shifted ones
   about equally describes the arithmetic, not the record.
@@ -44,7 +50,7 @@ decomposing the gap instead of naming its fields:
     python3 tools/class-record-gap.py --report
     python3 tools/class-record-gap.py --check
 
-Reads the packages and one committed artifact; no boot, no Ghidra, no value decoded and no name published.
+Reads the packages and two committed artifacts; no boot, no Ghidra, no value decoded and no name published.
 """
 import argparse
 import collections
@@ -68,6 +74,8 @@ MAX_COUNT = 4096
 MAX_REF = 5
 MAX_NUMBER = 64                          # an `FName` duplicate counter; larger is not a name
 WINDOW = 8                               # the control's start offsets, 1..8 past the array's tail
+TAIL_ARTIFACT = "class_tail_run.csv"     # the record's closing group, located from the other side
+GROUP_BODY = 8                           # an element of the writer's array is a reference plus eight raw bytes
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "array_end", "gap", "shape",
            "first_count", "second_count", "second_len", "second_widths", "second_refs_ok", "second_zero",
            "ctl_parsed", "ctl_exact", "rest", "rest_lead", "list_count", "list_len", "list_exact",
@@ -75,7 +83,11 @@ COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "array_en
            "first_refs", "second_refs", "ref_same", "ref_same_set", "ref_shared", "array_same",
            "first_kinds", "second_kinds",
            "nm_mid_count", "nm_mid_len", "nm_cfg_len", "nm_cfg_name", "nm_list_count", "nm_list_len",
-           "nm_exact", "nm_ctl_exact", "nm_shape", "nm_mid_rest", "nm_mid_max", "nm_fits"]
+           "nm_exact", "nm_ctl_exact", "nm_shape", "nm_mid_rest", "nm_mid_max", "nm_fits",
+           "nm_ref", "nm_name", "nm_name_ok", "nm_ref_ok",
+           "gr_start", "gr_off", "gr_mid_count", "gr_mid_len", "gr_cfg_len", "gr_cfg_name", "gr_list_count",
+           "gr_list_len", "gr_exact", "gr_ctl_exact", "gr_shape", "gr_mid_rest", "gr_mid_max", "gr_fits",
+           "gr_ref", "gr_name", "gr_name_ok", "gr_ref_ok"]
 
 
 def read_index(buf, off):
@@ -148,7 +160,16 @@ def walk_names(buf, p):
     return {"count": count, "widths": widths, "end": o, "len": o - p}
 
 
-def walk_name_gap(data, array_end, block, nnames):
+def empty_gap(prefix):
+    """The gap read's columns, all unset: `prefix` is `nm` at the located array's tail, `gr` at the group."""
+    p = prefix + "_"
+    return {p + "mid_count": "", p + "mid_len": "", p + "cfg_len": "", p + "cfg_name": "",
+            p + "list_count": "", p + "list_len": "", p + "exact": 0, p + "ctl_exact": 0, p + "shape": "",
+            p + "mid_rest": "", p + "mid_max": "", p + "fits": "",
+            p + "ref": "", p + "name": "", p + "name_ok": 0, p + "ref_ok": ""}
+
+
+def walk_name_gap(data, start, block, nnames, prefix="nm"):
     """The same gap in the reader's own field order: `+0x4dc` names, the config name, then `+0x4f4` names.
 
     `UClass::Serialize` writes three things between the record array's tail and the defaults buffer, in this order:
@@ -156,46 +177,51 @@ def walk_name_gap(data, array_end, block, nnames):
     (`+0x18` on `+0x4b0`, then `+0x1c` on `+0x4b4`), and the `+0x4f4` array through the same writer -- and
     `FUN_0003d160`'s file element is ONE compact index per `FName`, so the whole gap is one stream of that shape.
     Closing exactly on the defaults start is what distinguishes this split from the twelve-byte second array the
-    same bytes also parse as; the shifted starts are the control, and `nm_fits` is the arithmetic bound.
-    """
-    out = {"nm_mid_count": "", "nm_mid_len": "", "nm_cfg_len": "", "nm_cfg_name": "", "nm_list_count": "",
-           "nm_list_len": "", "nm_exact": 0, "nm_ctl_exact": 0, "nm_shape": "", "nm_mid_rest": "",
-           "nm_mid_max": "", "nm_fits": ""}
+    same bytes also parse as; the shifted starts are the control, and `<prefix>_fits` is the arithmetic bound.
 
-    def run(p, stop):
-        mid = walk_names(data, p)
+    **`start` is the question.** The `nm_*` block starts at the located array's tail, which lands inside the
+    record's own unit stream on 402 of the 545 rows `inventory/class_tail_run.csv` also carries; the `gr_*` block
+    starts at the closing group (`last_unit + GROUP_BODY`), which is where the writer puts it. Reading both is what
+    makes the first a measurement of a position rather than of the record.
+    """
+    p = prefix + "_"
+    out = empty_gap(prefix)
+
+    def run(pos, stop):
+        mid = walk_names(data, pos)
         if not mid or mid["end"] + 2 > stop:
             return None
         q = mid["end"]
         try:
-            name, q = read_index(data, q)
-            _number, q = read_index(data, q)
+            ref, q = read_index(data, q)
+            number, q = read_index(data, q)
         except IndexError:
             return None
         lst = walk_names(data, q)
         if not lst or lst["end"] != stop:
             return None
-        return mid, q - mid["end"], name, lst
+        return mid, q - mid["end"], ref, number, lst
 
-    alone = walk_names(data, array_end)
+    alone = walk_names(data, start)
     if alone and alone["end"] <= block:
         # A name array is a compact count plus at most five bytes per element: that bound is what says whether
         # the middle could be this stream at all, independently of what it parses to.
-        out.update({"nm_mid_count": alone["count"], "nm_mid_len": alone["len"],
-                    "nm_mid_max": 1 + MAX_REF * alone["count"],
-                    "nm_fits": int(1 + MAX_REF * alone["count"] >= block - array_end),
-                    "nm_mid_rest": block - alone["end"]})
-    got = run(array_end, block)
+        out.update({p + "mid_count": alone["count"], p + "mid_len": alone["len"],
+                    p + "mid_max": 1 + MAX_REF * alone["count"],
+                    p + "fits": int(1 + MAX_REF * alone["count"] >= block - start),
+                    p + "mid_rest": block - alone["end"]})
+    got = run(start, block)
     if got is None:
-        out["nm_shape"] = "open"
+        out[p + "shape"] = "open"
     else:
-        mid, cfg_len, name, lst = got
-        out.update({"nm_cfg_len": cfg_len,
-                    "nm_cfg_name": int(0 <= name < nnames), "nm_list_count": lst["count"],
-                    "nm_list_len": lst["len"], "nm_exact": 1, "nm_shape": "names"})
-    for q in range(array_end + 1, array_end + 1 + WINDOW):
+        mid, cfg_len, ref, number, lst = got
+        out.update({p + "cfg_len": cfg_len,
+                    p + "cfg_name": int(0 <= ref < nnames), p + "list_count": lst["count"],
+                    p + "list_len": lst["len"], p + "exact": 1, p + "shape": "names",
+                    p + "ref": ref, p + "name": number, p + "name_ok": int(0 <= number < nnames)})
+    for q in range(start + 1, start + 1 + WINDOW):
         if run(q, block):
-            out["nm_ctl_exact"] += 1
+            out[p + "ctl_exact"] += 1
     return out
 
 
@@ -223,15 +249,21 @@ def in_tables(v, nimp, nex):
     return v == 0 or (v > 0 and v <= nex) or (v < 0 and -v <= nimp)
 
 
-def measure(data, prefix_end, block, array_end, nimp, nex, nnames):
-    """One class: the gap from the located array's tail, split into a second array and what follows it."""
+def measure(data, prefix_end, block, array_end, nimp, nex, nnames, group_start=None):
+    """One class: the gap from the located array's tail, split into a second array and what follows it.
+
+    `group_start` is the record's closing group (`last_unit + GROUP_BODY`, from `inventory/class_tail_run.csv`)
+    when that artifact locates one: the same gap is read there too, and `gr_off` says how far it sits from the
+    census's own tail, which is the column that names this tool's start as a position.
+    """
     row = {"prefix_end": prefix_end, "block_start": block, "array_end": array_end, "gap": block - array_end,
            "shape": "none", "first_count": "", "second_count": "", "second_len": "",
            "second_widths": "", "second_refs_ok": "", "second_zero": "", "ctl_parsed": 0, "ctl_exact": 0,
            "rest": "", "rest_lead": "", "list_count": "", "list_len": "", "list_exact": "",
            "cfg_a": "", "cfg_b": "", "cfg_ok": "",
            "first_refs": "", "second_refs": "", "ref_same": "", "ref_same_set": "", "ref_shared": "",
-           "array_same": ""}
+           "array_same": "", "gr_start": "", "gr_off": ""}
+    row.update(empty_gap("gr"))
     first = walk_array(data, prefix_end + DOC_OFFSET)
     if first:
         row["first_count"] = first["count"]
@@ -273,6 +305,14 @@ def measure(data, prefix_end, block, array_end, nimp, nex, nnames):
             row["cfg_a"], row["cfg_b"] = a, b
             row["cfg_ok"] = int(0 <= a < nnames and 0 <= b <= MAX_NUMBER)
     row.update(walk_name_gap(data, array_end, block, nnames))
+    if row["nm_ref"] != "":
+        row["nm_ref_ok"] = int(in_tables(row["nm_ref"], nimp, nex))
+    if group_start is not None and 0 <= group_start < block:
+        row.update(walk_name_gap(data, group_start, block, nnames, "gr"))
+        row["gr_start"] = group_start
+        row["gr_off"] = group_start - array_end
+        if row["gr_ref"] != "":
+            row["gr_ref_ok"] = int(in_tables(row["gr_ref"], nimp, nex))
     for q in range(array_end + 1, array_end + 1 + WINDOW):
         got = walk_array(data, q)
         if not got:
@@ -312,8 +352,30 @@ def read_source(path=None):
     return out
 
 
+def read_group_starts(path=None):
+    """Where the record's closing group starts, per class: the tail artifact's `last_unit` plus its element body.
+
+    `inventory/class_tail_run.csv` locates the run from the defaults start backwards, so `last_unit` is the last
+    element of `FUN_0003d900`'s array and the group `UClass::Serialize` writes after it begins one element body
+    later. Rows the artifact does not carry keep no group and their `gr_*` block stays unset.
+    """
+    path = path or os.path.join(ROOT, "inventory", TAIL_ARTIFACT)
+    out = {}
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r.get("last_unit") and r.get("block_start"):
+                try:
+                    out[(r["package"], r["class"])] = int(r["last_unit"]) + GROUP_BODY
+                except ValueError:
+                    continue
+    return out
+
+
 def sweep(args):
     located = read_source()
+    groups = read_group_starts()
     rows = []
     for fn in sorted(os.listdir(os.path.join(args.dump, "System"))):
         if not fn.endswith(".u"):
@@ -335,7 +397,7 @@ def sweep(args):
                 continue
             row = {"package": name, "class": key[1], "payload": len(data)}
             row.update(measure(data, prefix_end, block, array_end, len(pkg.imports), len(pkg.exports),
-                               len(pkg.names)))
+                               len(pkg.names), groups.get(key)))
             if row["first_refs"]:
                 row["first_kinds"] = kinds(pkg, split_refs(row["first_refs"]))
             if row["second_refs"]:
@@ -369,7 +431,10 @@ def report(rows):
                   "second_refs_ok", "second_zero", "ctl_parsed", "ctl_exact", "rest", "rest_lead",
                   "list_count", "list_len", "list_exact", "cfg_a", "cfg_b", "cfg_ok",
                   "ref_same", "ref_same_set", "ref_shared", "array_same",
-                  "nm_exact", "nm_ctl_exact", "nm_fits", "nm_cfg_name", "nm_mid_count", "nm_mid_len"):
+                  "nm_exact", "nm_ctl_exact", "nm_fits", "nm_cfg_name", "nm_mid_count", "nm_mid_len",
+                  "gr_start", "gr_off", "gr_mid_count", "gr_mid_len", "gr_cfg_name", "gr_list_count",
+                  "gr_exact", "gr_ctl_exact", "gr_fits", "gr_ref", "gr_name", "gr_name_ok", "gr_ref_ok",
+                  "nm_ref", "nm_name", "nm_name_ok"):
             if r[k] not in ("", None):
                 r[k] = int(r[k])
     print("located classes: %d" % len(rows))
@@ -470,6 +535,36 @@ def report(rows):
                   "rows the tail artifact also carries -- read class-tail-run.py --report before quoting these"
                   % (len(before), len(over)))
 
+    joined = [r for r in rows if r["gr_mid_count"] not in ("", None)]
+    if joined:
+        tail = os.path.join(ROOT, "inventory", TAIL_ARTIFACT)
+        at = {}
+        if os.path.exists(tail):
+            with open(tail, newline="", encoding="utf-8") as fh:
+                at = {(r["package"], r["class"]): r for r in csv.DictReader(fh)}
+        print("read where the writer puts it (`last_unit + %d`, %s): %d of %d rows"
+              % (GROUP_BODY, TAIL_ARTIFACT, len(joined), len(rows)))
+        print("  the +0x4dc count %s; it closes on the defaults start on %d"
+              % (collections.Counter(r["gr_mid_count"] for r in joined).most_common(5),
+                 sum(1 for r in joined if r["gr_exact"] == 1)))
+        refs = [r for r in joined if r["gr_ref"] != ""]
+        print("  the config name (the group's second field) inside the name table on %d; the reference "
+              "(its first) inside the object tables on %d of %d parses, negative on %d"
+              % (sum(1 for r in joined if r["gr_name_ok"] == 1), sum(1 for r in refs if r["gr_ref_ok"] == 1),
+                 len(refs), sum(1 for r in refs if r["gr_ref"] < 0)))
+        print("  the +0x4f4 list %s" % (collections.Counter(r["gr_list_count"] for r in joined).most_common(4),))
+        print("  the census's own start closes on %d of them and calls the middle %s"
+              % (sum(1 for r in joined if r["nm_exact"] == 1),
+                 collections.Counter(r["nm_mid_count"] for r in joined).most_common(4)))
+        print("  the group starts %s bytes after the census's tail"
+              % collections.Counter(r["gr_off"] for r in joined).most_common(5))
+        same = [r for r in joined if (r["package"], r["class"]) in at
+                and at[(r["package"], r["class"])]["names_count"] not in ("", None)]
+        if same:
+            print("  the same count as the tail artifact's `names_count`: %d of %d (the join's own control)"
+                  % (sum(1 for r in same
+                         if int(at[(r["package"], r["class"])]["names_count"]) == r["gr_mid_count"]), len(same)))
+
     twenty = [r for r in rest if r["gap"] == 27]
     if twenty:
         print("the 27-byte gap rows (the field walk's 20-byte leftover plus its 7-byte list): %d, a second array "
@@ -493,13 +588,19 @@ def one(args):
         print("%s.%s has no payload" % key)
         return 1
     row = {"package": key[0], "class": key[1], "payload": len(data)}
-    row.update(measure(data, prefix_end, block, array_end, len(pkg.imports), len(pkg.exports), len(pkg.names)))
+    row.update(measure(data, prefix_end, block, array_end, len(pkg.imports), len(pkg.exports), len(pkg.names),
+                       read_group_starts().get(key)))
     print("prefix_end %d, array_end %d, block_start %d, gap %d" % (prefix_end, array_end, block, row["gap"]))
     print("array at the tail: count %s, %s bytes, refs ok %s, all-null %s"
           % (row["second_count"], row["second_len"], row["second_refs_ok"], row["second_zero"]))
     print("after it: %s bytes (leading %s), list count %s len %s exact %s"
           % (row["rest"], row["rest_lead"], row["list_count"], row["list_len"], row["list_exact"]))
     print("config reading: %s, %s -> an FName %s" % (row["cfg_a"], row["cfg_b"], bool(row["cfg_ok"])))
+    if row["gr_start"] != "":
+        print("the writer's closing group starts at %s (array_end %+d): names count %s, config in range %s, "
+              "list count %s, closes exactly %s"
+              % (row["gr_start"], row["gr_off"], row["gr_mid_count"], bool(row["gr_cfg_name"]),
+                 row["gr_list_count"], bool(row["gr_exact"])))
     print("gap bytes: %s" % data[array_end:block].hex(" "))
     return 0
 
@@ -573,6 +674,26 @@ def self_check():
     body = data[:block - 4]
     row = measure(body, prefix_end, len(body), array_end, 40, 4000, 100)
     assert row["rest"] == 0 and row["list_count"] == "", row
+    # The group read: the census's tail lands inside the record's unit stream, and the writer's group start
+    # closes on the block. The same bytes therefore answer "no" at the tail and "names" at the group.
+    units = compact(2) + (compact(1) + b"\x01\x00\x00\x00" + b"\x02\x00\x00\x00") * 2
+    body = data[:2] + bytes(STATE_BYTES + 4 * CLASS_DWORDS) + units
+    array_end = len(body)                                                     # the census's own start
+    body += compact(1) + b"\x07\x00\x00\x00" + b"\x08\x00\x00\x00"             # one more unit, read as an array
+    group = len(body)
+    body += compact(3) + compact(1) + compact(2) + compact(3) + compact(30) + compact(70) + compact(0)
+    block = len(body)
+    body += b"\xaa\xbb\xcc\xdd" * 4
+    row = measure(body, 2, block, array_end, 40, 4000, 100, group)
+    assert row["gr_start"] == group and row["gr_off"] == group - array_end, row
+    assert row["gr_exact"] == 1 and row["gr_mid_count"] == 3 and row["gr_cfg_name"] == 1, row
+    assert row["gr_list_count"] == 0 and row["gr_shape"] == "names", row
+    assert (row["gr_ref"], row["gr_name"], row["gr_name_ok"], row["gr_ref_ok"]) == (30, 70, 1, 1), row
+    assert row["nm_exact"] == 0, "the tail read must not close on the block: %r" % row
+    # And with no group located, every `gr_*` column stays unset rather than reading the tail twice.
+    row = measure(body, 2, block, array_end, 40, 4000, 100)
+    assert row["gr_start"] == "" and row["gr_mid_count"] == "" and row["gr_exact"] == 0, row
+
     print("self-check ok: a 2-record array of 19 bytes, a 3-name list, an empty list, and no list")
     return 0
 

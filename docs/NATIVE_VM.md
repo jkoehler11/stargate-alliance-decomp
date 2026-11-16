@@ -2582,6 +2582,18 @@ unit -- 402 of 545 rows, 294 of the 330 that parse -- and must not be quoted as 
 quote are the group's columns. `make class-tail-run` regenerates the artifact and prints the join, and
 `tools/class-record-gap.py --report` says which of its own starts fall there.
 
+**The census reads the group itself now, and the two tools agree on the position (2026-11-15).** The re-derivation
+that section asked for is in the artifact: `inventory/class_record_gap.csv` carries the same group read in 22 `gr_*`
+columns beside the `nm_*` block, started at `class_tail_run.csv`'s `last_unit + 8` and joined to it by
+`(package, class)`. On the **373** rows that carry a group the `+0x4dc` count is **3 on 228, 4 on 73, 2 on 43**
+(12 on 4, 5 on 3); the group closes on the defaults start on **332**; its second field, the config name, is inside
+the name table on 332, and its first, the reference, is inside the object tables and negative on **332 of 332**; the
+`+0x4f4` list is empty on **316**. The census's own start closes on **0** of those 373 and reads a middle count of 2
+on 303 -- the position, not the record. The control is the sibling artifact: the count read at `last_unit + 8`
+equals `class_tail_run.csv`'s `names_count` on **332 of 332** parses, and the regeneration reproduces all **44**
+columns the census carried before on all 549 rows, so the `nm_*` numbers the earlier sections quote are unchanged
+and still describe where this tool starts rather than what the writer writes.
+
 ### The 95 rows whose located array ends past the block start, and the head census that does not separate them
 
 `inventory/class_record_array.csv` locates the record array from the prefix: `array_end` is the bare array started
