@@ -11504,3 +11504,27 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   is the other one U18 names -- a package from the same build that ships the property with a short value.
 - Tool + `inventory/property_serialisers.csv` + `docs/NATIVE_PROPERTIES.md` (§3 corrected, new §7) + U18 + this note.
   Reads the image; no boot.
+
+### Execution notes (2026-11-15, a delegate value ships 42 times, and the residue's tag is a mis-split, not a type)
+
+- **Task.** U18's last route, named by the entry above it: "a package from the same build that ships the property
+  with a value short enough to read directly", because a delegate's writer (`+0xa0`, `0x00077f00`) offers no third
+  field. The route turns out to have no member, and the measurement that says so also re-reads the residue's tag
+  against the corpus.
+- **The population, counted whole.** `tools/delegate-value-census.py` walks every class of the 18 packages and
+  counts *slots*, not declarations: a delegate property is inherited, so 2,319 classes hold **5,533** slots, of
+  which **42 ship a value** in a located block, **5,052** are inherited but unset and **439** sit in the 21
+  classes without a located block. The 42 are confined to `GUI` and `StargateMenus`, **39** decode as
+  `{object, name}`, and the property U18 turns on ships in **12** classes -- nine readable at 2-3 bytes, the three
+  residues. A second package with a shorter value of the same property does not exist in this build.
+- **The control that reframes the residue.** Every tag in the 1,898 located blocks was typed: 16,012 tags, 42
+  delegate-named (39 type 7, two type 15, one type 0), and **three** of type 15 -- the two menu pages and
+  `Engine.TriggeredProjector.DrawType`, an enum byte property (`UByteProperty`) that cannot hold the 12 bytes its
+  size class claims. One shape, one impossible carrier: the type-15 tag is a mis-split of the stream, so the two
+  menu pages' 12-byte values are instances of a grammar residue rather than delegate defaults, and their own first
+  index resolves to an export that is not the class.
+- **What this does not reach.** Where the record's tail ends and the defaults block begins in those two payloads
+  (`class_tail_run.csv` records both as `no-parse`). That is not a delegate measurement, and the writer has nothing
+  more to say about it.
+- Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no
+  boot.
