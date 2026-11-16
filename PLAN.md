@@ -892,6 +892,22 @@ other 38 rows.
       `dominant_count` and `blocks` row by row) + `inventory/actor_prefix_anchor.csv` (295 rows) +
       `docs/ACTOR_PROPERTIES.md` (*The type of the candidate's first tag decides it*) + `make actor-prefix-anchor`
       + this note. 73 maps in 73 s; no boot.
+      **The prefix in front of a block is a record, so the residue is 1.6% and not 93 classes (2026-11-15).** The code
+      read this item named next was already on disk (`$WORK/module-export/Engine/000c7fa0` is `AActor::Serialize`,
+      110 bytes, whose one unconditional call is `UObject::Serialize` at `0x00063f70`), and the decisive read was
+      the bytes: **79,925 of the 121,394 blocks (65.8%) begin with their own class index and every one of them is
+      `[class][class][8 x 0xff][4][0x81]`**, so the front is `2*w + 13` with `w` the index's encoded width. That is
+      a constant of the package's import table, not of the class, which is why the extent census could not see it
+      and why the per-class constant the earlier notes hunted for does not exist. The record agrees with the type
+      rule on 78,658 of those 79,925 blocks and corrects it on 1,267 (Light 257, Mover 143, StaticMeshActor 140): a
+      start can carry no `Invalid` tag and still sit inside the record, so "earliest clean start" is a tie-break
+      rather than a reading. What the record does not reach is a different population, not a residue of the same
+      one: **41,254 blocks (34.0%) carry no prefix at all** (`ReachSpec` 30,539, `SpriteEmitter` 2,854) and 215 over
+      5 classes carry one whose first byte is not their class index (`StaticMeshInstance` 211). Tool
+      (`tools/actor-prefix-record.py`: `record()` returns the length and whether the bytes are the record, `--check`
+      re-derives every count against its denominator, joins the anchor's block totals and drives six synthetic
+      prefixes) + `inventory/actor_prefix_record.csv` (295 rows) + `docs/ACTOR_PROPERTIES.md` (*The prefix is a
+      record*) + `make actor-prefix-record` + this note. 73 maps in 74 s; no boot.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
