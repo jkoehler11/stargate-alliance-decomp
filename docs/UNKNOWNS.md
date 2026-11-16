@@ -4114,4 +4114,19 @@ declared property, agree on type, end on the payload and sit on a group boundary
 them is `MIN_PROPERTIES = 2`. The shipped text cannot settle it: **two** classes of 2,319 keep a `defaultproperties`
 block in `ScriptText` (`Core.Locale`, `GUI.SGVertScrollBar`) and neither is in the population.
 
+**2026-11-15 (forty-first): the census reads the writer's group too, and the re-derivation it asked for is a column.**
+The sixteenth entry named the re-derivation -- join each row's `last_unit + 8` to the census's `array_end` -- and
+left it as a hand join. It is measured in the artifact now: `tools/class-record-gap.py` locates the closing group
+from `inventory/class_tail_run.csv` (`last_unit` plus one element body, eight bytes) and reads the same four fields
+there in 22 `gr_*` columns beside the unchanged `nm_*` block. On the **373** rows that carry a group the `+0x4dc`
+count is **3 on 228, 4 on 73, 2 on 43** (12 on 4, 5 on 3); the parse closes on the defaults start on **332**; the
+config name (the group's second field) is inside the name table on 332, and the reference (its first) is inside the
+object tables and **negative on 332 of 332**; the `+0x4f4` list is empty on **316**. The census's own start closes on
+**0** of those 373 rows and reads a middle count of 2 on 303, which is the position and not the record. Two controls:
+the count read at `last_unit + 8` equals `class_tail_run.csv`'s `names_count` on **332 of 332** parses (two tools,
+one position), and the **44** columns the census carried before are reproduced unchanged on all 549 rows, so every
+`nm_*` number the earlier entries quote stands as a measurement of where this tool starts. **What this does not
+reach** is the question U18 opened with: the two menu pages' 12-byte values, whose routes remain
+`UDelegateProperty`'s own value serialiser (not the slot-11 body it shares with `StructProperty`) or a second
+package from the same build that ships the property with a value short enough to read directly.
 

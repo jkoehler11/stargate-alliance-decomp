@@ -88,7 +88,7 @@ help:
 	@echo "  class-record-element-fields  three compact fields per element, against the shipped walk (needs the dump)"
 	@echo "  class-record-element   restart the array grammar at its own tail: element span, second parse, control"
 	@echo "  class-record-tail      the bytes after the array: a count of name/reference pairs, and its per-package share"
-	@echo "  class-record-gap       split the gap after the array: a second class-reference array, then the list"
+	@echo "  class-record-gap       split the gap after the array: a second class-reference array, then the list, and re-read it at the writer's closing group"
 	@echo "  class-record-order     where the middle's writers put its fields: the offset sweep and the pair's position (needs the dump)"
 	@echo "  class-record-gap-front what the 19-21 bytes in front of the array hold: a compact front and sixteen zero bytes (needs the dump)"
 	@echo "  class-record-bound    the array head after the sixteen zero bytes, as a bound on the block start (needs the dump)"

@@ -2365,6 +2365,30 @@ are limited to expected fields (checksum/timestamp) and documented.
   its output is ever stored back into a key -- if it is not, the `f64`-only values were written by the tool that
   built the pack, and the question becomes which tool.
 
+### Execution notes (2026-11-15, the record's name group is read where the writer puts it, and the sibling artifact agrees 332 of 332)
+
+- **The census reads the gap twice: its own start, and the writer's group.** `inventory/class_record_gap.csv`'s
+  `nm_*` block starts at the located array's tail, which sits inside the record's unit stream on 402 of the 545 rows
+  both artifacts carry; the UNKNOWNS entry that named the re-derivation (U18, sixteenth) left the column un-read at
+  the writer's position. `tools/class-record-gap.py` now locates the closing group (`inventory/class_tail_run.csv`'s
+  `last_unit` plus one element body, eight bytes) and reads the same four fields there in 22 `gr_*` columns. On the
+  **373** rows that carry a group the `+0x4dc` count is **3 on 228, 4 on 73, 2 on 43** (12 on 4, 5 on 3); the parse
+  closes on the defaults start on **332**; the config name -- the group's second field -- is inside the name table
+  on 332, and the reference (its first) is inside the object tables and negative on **332 of 332**; the `+0x4f4`
+  list is empty on **316**. The census's own start closes on 0 of the same 373 and reads a middle count of 2 on 303.
+- **Two controls, and they carry as much as the counts.** Reading at `last_unit + 8` gives the same count as
+  `class_tail_run.csv`'s `names_count` on **332 of 332** parses -- two tools, one position -- and the regeneration
+  reproduces all **44** columns the census carried before on all 549 rows, so every `nm_*` number the earlier pages
+  quote stays exactly as it was: it measures where this tool starts, not what the writer writes.
+- Tool (`tools/class-record-gap.py`: `read_group_starts()`, `walk_name_gap()` parameterised by start and prefix
+  through `empty_gap()`, the `gr_*` read and its reference bound in `measure()`, the join in `--report`, and a
+  synthetic case whose tail read refuses what its group read closes -- measured) + `inventory/class_record_gap.csv`
+  (549 rows, 66 columns) + the paragraph on `docs/NATIVE_VM.md` (*The gap census's array tail is not the writers*)
+  + `docs/UNKNOWNS.md` U18 + this note. No boot and no Ghidra: the corpus and two committed artifacts, 1.3 s.
+- **Next measurement:** the two menu pages' 12-byte delegate values are untouched by this read. The routes remain
+  `UDelegateProperty`'s own value serialiser (not slot 11, which is `StructProperty`'s body byte for byte) or a
+  second package from the same build that ships the property with a value short enough to read directly.
+
 ### Execution notes (2026-11-14, the 17 constrained tables are one call below a named layer)### Execution notes (2026-11-15, the two unnamed factories are not anonymous to the join either)
 
 - **Neither unnamed factory has a registration anywhere in its caller chain.** The receivers artifact gains

@@ -64,7 +64,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_record_element_fields.csv` | 395 | 11 | `make class-record-element-fields` |
 | `inventory/class_record_fields.csv` | 2209 | 13 | `make class-record-fields` |
 | `inventory/class_record_front.csv` | 1626 | 22 | `make class-record-front` |
-| `inventory/class_record_gap.csv` | 549 | 44 | `make class-record-array-head` |
+| `inventory/class_record_gap.csv` | 549 | 66 | `make class-record-array-head` |
 | `inventory/class_record_gap_front.csv` | 1626 | 10 | `make class-record-array-head` |
 | `inventory/class_record_middle.csv` | 2204 | 19 | `make class-record-middle` |
 | `inventory/class_record_no_shape.csv` | 578 | 13 | `make class-record-no-shape` |
