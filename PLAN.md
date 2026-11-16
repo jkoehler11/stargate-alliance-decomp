@@ -11529,6 +11529,24 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no
   boot.
 
+### Execution notes (2026-11-15, the guard artifact was a snapshot of an older chooser, and its gate now says so)
+
+- **Task.** The note below left `inventory/class_blockstart_guard.csv` alone because regenerating it would have hidden
+  the four rows the own-first rule moved inside 620 rows of unrelated drift. This PR is that regeneration, and the
+  measurement of the drift.
+- **What the drift is.** The artifact was written by #488 and never regenerated, while the chooser moved: against
+  today's `class_defaults_per_class.csv` it has **292** rows whose `shipped` start is not the one the locator
+  publishes, **25** published starts with no row at all, and **251** rows for classes the locator no longer publishes
+  a start for (2,209 rows then, 1,983 now -- the 196 withheld starts and the misses since #488).
+- **What did not move.** A run on the current tree reports the same conclusions the page quotes: **1,655 -> 1,936**
+  fully declared over the population (75.6% -> 88.4%), the same **280 / 1,596** control split, and the same **7**
+  refusals the control does not explain. So this is a stale snapshot, not a changed finding.
+- **The gate.** `tools/class-blockstart-guard.py --check` (dump-free, writes nothing, driven by
+  `tool-check-contract`) now also holds the committed rows to the locator's artifact: one row per published start and
+  that start in `shipped`. On the pre-change artifact it fails with `missing 25 / extra 251 / mismatched 292`; after
+  the regeneration it passes.
+- Artifact + `tools/class-blockstart-guard.py` + `docs/NATIVE_VM.md` + this note. Reads the packages; no boot.
+
 ### Execution notes (2026-11-15, the chooser takes the own declaration as a tie-break, and the last three residue values render)
 
 - **Task.** The note below left the locator: `choose_scored` still preferred the early start on the three rows

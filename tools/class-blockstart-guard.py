@@ -398,9 +398,39 @@ def self_check():
     iv3 = group_intervals(d3, 40, 40)
     hit3 = covering(iv3, 45)
     assert hit3 is not None, iv3
+    # The committed artifact is a snapshot of the chooser at the time it ran, so the one thing a dump-free check
+    # can hold it to is the locator's own artifact: one row per published start, and that start in `shipped`.
+    drift = artifact_drift()
+    if any(drift.values()):
+        for name, items in drift.items():
+            if items:
+                print("FAIL %s: %d row(s) -- %s" % (name, len(items), ", ".join(items[:5])))
+        return 1
+    print("artifact ok: one row per published start, and every `shipped` column holds it")
     print("self-check ok: a start inside a parsed group is covered, the group's own end and any start outside it "
           "are not, an out-of-table index is not a group, and the widest cover wins")
     return 0
+
+
+def artifact_drift():
+    """The committed artifact against `class_defaults_per_class.csv`: rows, extras and `shipped` values.
+
+    This is the gate the artifact never had. Its rows are a snapshot of the chooser's answer, and the chooser has
+    moved since (#488 wrote them; 292 of the starts the locator publishes today differ), so a run that reads the
+    artifact as current reads numbers from an older rule. Empty dict values mean the artifact is current.
+    """
+    path = os.path.join(ROOT, "inventory", ARTIFACT)
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            art = {(r["package"], r["class"]): r for r in csv.DictReader(fh)}
+    except OSError:
+        return {"missing": ["<no artifact>"], "extra": [], "mismatched": []}
+    want = {(r["package"], r["class"]): int(r["block_start"]) for r in shipped_rows()}
+    missing = ["%s.%s" % k for k in want if k not in art]
+    extra = ["%s.%s" % k for k in art if k not in want]
+    mismatched = ["%s.%s (artifact %s, locator %s)" % (k[0], k[1], art[k]["shipped"], want[k])
+                  for k in art if k in want and str(art[k]["shipped"]) != str(want[k])]
+    return {"missing": missing, "extra": extra, "mismatched": mismatched}
 
 
 def main():
