@@ -23,7 +23,6 @@ GUI,GUIHorzList,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,Stri
 GUI,GUILabelButton,__OnKeyEvent__Delegate,delegate<OnKeyEvent>,String,0x57,5,3,2,export,yes,InternalOnKeyEvent,yes,
 GUI,GUILabelButton,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,String,0x57,5,3,2,export,yes,InternalOnXControllerEvent,yes,
 GUI,moCheckBox,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,String,0x57,5,3,2,export,yes,InternalOnXControllerEvent,yes,
-GUI,MenuItemOverlay,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,Invalid,0x50,5,110,0,,,,,"does not tile as {object, name}"
 GUI,MenuItemOverlay,__notifyLayoutChange__Delegate,delegate<notifyLayoutChange>,String,0x27,2,4,2,export,yes,Realign,yes,
 GUI,GUIScrollingPanel,__OnPreDraw__Delegate,delegate<OnPreDraw>,String,0x27,2,4,2,export,yes,PreDraw,yes,
 StargateMenus,SGPageBase,__OnKeyEvent__Delegate,delegate<OnKeyEvent>,String,0x57,5,3,2,export,yes,MyKeyEvent,yes,
@@ -39,5 +38,3 @@ StargateMenus,ServerList,__GetSortString__Delegate,delegate<GetSortString>,Strin
 StargateMenus,SaveGameMenu,__OnActivate__Delegate,delegate<OnActivate>,String,0x27,2,4,2,export,yes,MyOnActivate,yes,
 StargateMenus,InGameScoreboard,__OnPreDraw__Delegate,delegate<OnPreDraw>,String,0x27,2,4,2,export,yes,MyOnPreDraw,yes,
 StargateMenus,HintScreen,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,String,0x57,5,3,2,export,yes,InternalOnXControllerEvent,yes,
-StargateMenus,ExtrasPage,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,FixedArray,0xbf,3,12,10,,,,,"does not tile as {object, name}"
-StargateMenus,CreditsPage,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,FixedArray,0xbf,3,12,10,,,,,"does not tile as {object, name}"

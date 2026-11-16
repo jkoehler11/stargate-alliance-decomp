@@ -496,7 +496,7 @@ def misses(system_dir, outdir):
             kinds = kinds_for_class(cls)
             if defaults:
                 cands, _data = candidates(pkg, mod, exp, kinds=kinds)
-                best = choose(cands, decl)
+                best = choose(cands, decl, declared_all.get(cls, set()))
                 bad = best[4] if best else 0
                 reason, props, trailer, prop = "type-contradiction" if bad else "incomplete", \
                     defaults, fully, ""
@@ -526,8 +526,8 @@ def misses(system_dir, outdir):
     return 0
 
 
-def choose(cands, declared):
-    """The declared names first, then no contradicting tag type, then the length and the smallest trailer.
+def choose(cands, declared, own=None):
+    """The declared names first, then no contradicting tag type, then the length, the own names, the trailer.
 
     Type agreement is the *tie-break*, not the leading term: `KConeLimit`'s chosen block types `CollisionHeight`
     (a `Float` property) as a 16-byte `Float` and `PhysicsVolume` (an `Object`) as a `Float`, while a shorter
@@ -535,11 +535,18 @@ def choose(cands, declared):
     whose tag types the class's own property record allows. Ranking it *first* is measured in
     `docs/CLASS_DEFAULTS.md`: it promotes 535 withheld classes to clean blocks, which is a claim about those
     blocks that nothing here has checked yet.
+
+    `own` is the set the class *itself* declares (not the ancestor closure), and it breaks a tie in the number
+    of tags: a class's defaults block opens on its own declarations, so when two parses read the same count to
+    the payload's end, the one that names more of them is the block. The term sits after the count and before
+    the trailer, which is the narrowest of the three orderings the corpus allows: four rows move, and the leading
+    `own` variant moves the same four (`docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*).
     """
     best = None
     for count, start, names, trailer, bad in cands:
         known = sum(1 for n in names if n in declared)
-        score = (known / float(count), bad == 0, count, -trailer)
+        own_known = sum(1 for n in names if n in own) if own else 0
+        score = (known / float(count), bad == 0, count, own_known, -trailer)
         if best is None or score > best[0]:
             best = (score, count, start, names, bad)
     return best
@@ -571,7 +578,7 @@ def all_packages(system_dir, outdir, floor=MIN_PROPERTIES):
                 cur = supers.get(cur)
             cands, data = candidates(pkg, mod, exp, kinds=kinds_for_class(cls), floor=floor)
             cands, where = guarded(cands, data, pkg, decl, kinds_for_class(cls), len(pkg.imports or []))
-            best = choose(cands, decl)
+            best = choose(cands, decl, declared_all.get(cls, set()))
             if best is None:
                 # No start survives the group rule: the class sets no defaults after its record. That is the
                 # honest reading of the rows the guard refused with no replacement, not a located start inside the
@@ -645,7 +652,7 @@ def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
             if not cands:
                 none_found += 1
                 continue
-            best = choose(cands, known_for(cls))
+            best = choose(cands, known_for(cls), declared.get(cls, set()))
             if not any(n in known_for(cls) for n in best[3]):
                 # The same withholding `all_packages` applies: a start that names none of the class's properties is
                 # not a block, so it counts as no block here rather than as an ambiguous one.
@@ -671,6 +678,38 @@ def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
     return 0
 
 
+
+def selftest():
+    """Synthetic candidate lists: the own-first tie-break, and that only a tie in the count can be broken.
+
+    Dump-free and writes nothing, so `make ci`'s `tool-check-contract` can drive it. The first case is the rule
+    the corpus measurement moved four rows on -- an earlier start that names only inherited properties against a
+    later one of the same length whose first tag is the class's own -- and it fails on the pre-rule chooser.
+    """
+    # (count, start, names, trailer, bad), as `candidates()` yields them.
+    inherited_first = (2, 83, ["__OnXControllerEvent__Delegate", "TitleString"], 0, 0)
+    own_first = (2, 93, ["TempLB", "TitleString"], 0, 0)
+    decl = {"__OnXControllerEvent__Delegate", "TitleString", "TempLB", "WinLeft", "WinTop", "bHidden"}
+    own = {"TempLB"}
+    best = choose([inherited_first, own_first], decl, own)
+    assert best is not None and best[2] == 93, "the start opening on the class's own property wins a count tie"
+    best = choose([inherited_first, own_first], decl)
+    assert best is not None and best[2] == 83, "without an own set the tie still goes to the earlier start"
+    # A longer parse that names no own property keeps winning: the own term sits after the count, not before it.
+    longer = (3, 60, ["WinLeft", "WinTop", "bHidden"], 0, 0)     # every name declared, none of them the class's
+    best = choose([longer, own_first], decl, own)
+    assert best is not None and best[2] == 60, "the count still leads the own-first term"
+    # The declared fraction and the type agreement lead both: a start with an own name that leaves a declared
+    # property out loses to one that names every property it reads.
+    mixed = (2, 70, ["TempLB", "NotDeclared"], 0, 0)
+    best = choose([mixed, own_first], decl, own)
+    assert best is not None and best[2] == 93, "the declared fraction leads the own-first term"
+    typed = (2, 40, ["TempLB", "TitleString"], 0, 1)
+    best = choose([typed, own_first], decl, own)
+    assert best is not None and best[2] == 93, "a tag type the record contradicts still loses"
+    print("selftest ok: own-first breaks a count tie, and nothing else moves")
+    return 0
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path", nargs="?", help="a package file (not needed with --packages)")
@@ -691,8 +730,12 @@ def main():
                     help="minimum properties in a candidate block (default %d; a floor of one is measured and "
                          "rejected, see docs/CLASS_DEFAULTS.md)" % MIN_PROPERTIES)
     ap.add_argument("-o", "--out")
+    ap.add_argument("--check", action="store_true",
+                    help="synthetic candidate lists: the chooser's tie-break, no dump and no write")
     args = ap.parse_args()
 
+    if args.check:
+        return selftest()
     if args.packages:
         return all_packages(args.packages, args.out or "inventory", args.floor)
     if args.check_misses:
@@ -733,7 +776,7 @@ def main():
         if not cands:
             none_found += 1
             continue
-        score, count, start, names, bad = choose(cands, known)
+        score, count, start, names, bad = choose(cands, known, declared.get(cls, set()))
         if score[0] == 1.0 and bad == 0:
             clean += 1
         elif len(cands) > 1:

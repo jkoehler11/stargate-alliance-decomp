@@ -11529,6 +11529,37 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no
   boot.
 
+### Execution notes (2026-11-15, the chooser takes the own declaration as a tie-break, and the last three residue values render)
+
+- **Task.** The note below left the locator: `choose_scored` still preferred the early start on the three rows
+  `delegate-value-census` had shown to be a locator offset. Correcting it is a change to the candidate rule, and the
+  rule is `choose()`'s: the score is now the declared fraction, the tag-type agreement, the number of tags, **how many
+  of those tags name a property the class itself declares**, then the smallest trailer.
+- **Measurement, before the rule was written.** A probe recomputed `candidates()` and the group guard for all
+  **2,182** class exports the locator sees and ranked them three ways (own before the fraction, own before the count,
+  own only among candidates tied on fraction and type agreement). All three move the same **four** rows, so the
+  narrowest ships: `GUI.MenuItemOverlay` 460 -> 568, `StargateMenus.SelectTeamPage` 119 -> 161, `StargateMenus.ExtrasPage`
+  and `StargateMenus.CreditsPage` 83 -> 93. Each move keeps the old start's other terms (fraction 1.0, no contradicting
+  type, the same tag count, trailer 0), so the earlier start was winning on position alone while reading a residue as
+  its first tag.
+- **What the move buys.** `inventory/class_defaults_per_class.csv` changes four rows and no totals (2,319 classes,
+  1,983 blocks, 1,664 fully declared, 336 with none; `class_defaults_coverage.csv`, `class_defaults_moved.csv` and
+  `class_defaults_silent.csv` regenerate byte-identically). `inventory/class_defaults_emit.csv` renders **15,521 of
+  15,521** properties (was 15,518) and 15,813 of 15,821 subobject properties (was 15,790, the extra 23 being
+  `img_Overlay`'s inline object); `inventory/defaults_residue.csv` and `inventory/delegate_blockstart.csv` lose the
+  residue rows; `inventory/delegate_value_census.csv` reads 39 shipped delegate slots (was 42), 39 of 39 decoding as
+  `{object, name}`, one type-15 tag (the enum-property control) and **zero** residue starts.
+- **The gate bites.** `tools/class-defaults.py --check` drives five synthetic candidate lists and fails on the
+  pre-rule score line (*the start opening on a class's own property wins a count tie*); it needs no dump and writes
+  nothing, so `tool-check-contract` runs it.
+- **One artifact is stale and is left as it is.** `inventory/class_blockstart_guard.csv` is a snapshot of the
+  chooser: a run of its own tool at the pre-change tree already rewrites 621 of its ~1,984 rows (395 inserted, 621
+  deleted, the shipped start no longer reproduced on most rows), so the four rows this rule moves would be invisible
+  inside that regeneration. It stays committed and untouched; regenerating it -- and saying why it drifted -- is the
+  next task.
+- Tool + `inventory/class_defaults_per_class.csv` + `inventory/class_defaults_emit.csv` + the five residue artifacts
+  + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no boot.
+
 ### Execution notes (2026-11-15, the residue is a locator offset, and the two menu pages ship no delegate default)
 
 - **Task.** The note above closed the type-15 tag against a control and left the record-to-block boundary open for the
