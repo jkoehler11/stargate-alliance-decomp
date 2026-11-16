@@ -11476,3 +11476,31 @@ class list, a decompiled script tree and a hundred-plus named native functions.
    the decompiler before committing to it as the tool of record.
 4. Stand up Ghidra + `ghidra-xbe` on `default.xbe` and find the native dispatch table (4.3).
 5. Only then fill in the remaining task list with owners and dates.
+
+### Execution notes (2026-11-15, the value serialiser is slot `+0xa0`, and a delegate's body names its own two fields)
+
+- **Task.** U18's remaining route was `UDelegateProperty`'s own value serialiser, "not the slot-11 body it shares
+  with `StructProperty`". The slot had never been named: `docs/NATIVE_PROPERTIES.md` §3 read the walk at
+  `0x0003bdc0` as calling `+0x94` for "per-element serialization", and every property class does have its own body
+  at `+0x94` -- which is why the reading survived.
+- **`+0x94` is a comparison, from both ends.** The walk calls it **once**, at `0x0003c340`, with two addresses, and
+  branches on the returned `bool`; the 14 per-class bodies are all two-argument comparisons (`IntProperty`
+  `0x00077bf0` compares a dword, `StructProperty` `0x0007b2e0` hands its `Inner` to `0x0003cb90`). A serialiser
+  cannot be a `bool` a branch consumes, so the row is corrected in place rather than extended.
+- **The value reader is `+0xa0`, and a class proves it from inside another.** `FixedArrayProperty`'s body
+  (`0x00078a20`) walks its elements and ends `call DWORD PTR [edx+0xa0]` on the property in its own `+0x6c`
+  (`Inner`), pushing the archive, the element address and the count (`0x00078a56`).
+- **`DelegateProperty`'s body writes two fields, and the two classes it composes name them.** `0x00077f00` (30
+  bytes) is `Ar->[+0x18](Value)` then `[that]->[+0x1c](Value+4)`; `ObjectProperty`'s entire serialiser is `[+0x18]`
+  (`0x00078660`, 17 bytes) and `NameProperty`'s is `[+0x1c]` (`0x00078840`, 17 bytes). A delegate's value is therefore
+  `{object at +0, FName at +4}` and nothing else -- the writer's field order, which the payload readings had tiled as
+  two compact indices on 39 of 42 values without being able to confirm it from the bytes.
+- **Census.** `tools/property-serialisers.py` (`make property-serialisers`, `inventory/property_serialisers.csv`,
+  19-case synthetic `--check`) reads the 14 constructor tables at `+0x2c`/`+0x94`/`+0xa0`: all **53 slots**, all
+  three offsets **per-class in 14 of 14**, and the `+0xa0` bodies split 6 archive-helpers / 4 archive-virtuals / 2
+  `Inner` recursions. `--check` follows a body past an internal `jmp` (a tail-call scan cut `FixedArrayProperty`'s
+  dispatch off its own body and left both array classes unclassified).
+- **What this does not reach.** The two menu pages' 12-byte values: the writer offers no third field, so their route
+  is the other one U18 names -- a package from the same build that ships the property with a short value.
+- Tool + `inventory/property_serialisers.csv` + `docs/NATIVE_PROPERTIES.md` (§3 corrected, new §7) + U18 + this note.
+  Reads the image; no boot.

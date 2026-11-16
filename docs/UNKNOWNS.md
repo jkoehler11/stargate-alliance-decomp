@@ -4130,3 +4130,14 @@ reach** is the question U18 opened with: the two menu pages' 12-byte values, who
 `UDelegateProperty`'s own value serialiser (not the slot-11 body it shares with `StructProperty`) or a second
 package from the same build that ships the property with a value short enough to read directly.
 
+**2026-11-15: the writer route is measured -- a delegate's value is an object then a name, and there is no third field.**
+`docs/NATIVE_PROPERTIES.md` §3 had the walk at `0x0003bdc0` calling `+0x94` for "per-element serialization".
+Measured, `+0x94` is a **two-argument comparison**: the walk calls it once (`0x0003c340`), with two addresses, and
+branches on its `bool`, and all 14 per-class bodies are `cmp`/`sete` shapes that call nothing. The per-class value
+reader is one slot further, `+0xa0`, which `FixedArrayProperty` proves by calling `[Inner+0xa0]` once per element
+(`0x00078a56`). `DelegateProperty`'s own body there (`0x00077f00`, 30 bytes) calls the archive's `[+0x18]` on the
+value and `[+0x1c]` on the value `+4` -- exactly `ObjectProperty`'s whole serialiser (`0x00078660`) followed by
+`NameProperty`'s (`0x00078840`). So the value is `{object, FName}` in that order, which is what the 39 decoded values
+already tiled; the writer has no third field to offer, so the three residues' only remaining route is the second one
+this entry names -- a package from the same build that ships the property with a value short enough to read directly.
+Census: `inventory/property_serialisers.csv` (`make property-serialisers`).
