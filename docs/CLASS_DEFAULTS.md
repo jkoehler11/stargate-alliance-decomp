@@ -1106,4 +1106,39 @@ Read as history, the two sections above now say 88 where the current artifacts s
 `Engine.PSBumpBSP` as the block the guard withdraws where the current row is `StargateGame.HighlightStaticMeshActor`.
 Both are the same rule doing its job: the parses that made those starts had begun inside another group.
 
+## A delegate default ships 42 times, and the residue's tag is not a delegate tag
 
+`tools/delegate-defaults.py` reads the delegate values the located blocks carry, and U18 left the three it cannot
+read -- `GUI.MenuItemOverlay`, `StargateMenus.ExtrasPage`, `StargateMenus.CreditsPage` -- to a second route: a
+package from the same build that ships the same property with a value short enough to read directly.
+`tools/delegate-value-census.py` measures whether that route has a member at all, and then reads the residue's
+*tag* against the corpus instead of against the delegate grammar. Artifact:
+`inventory/delegate_value_census.csv`, whose `kind` column separates the three populations (`value`, `tag15`,
+`census`); `--check` is a dump-free synthetic self-test and writes nothing.
+
+**The route is empty, and this is the whole population of it.** A delegate property is inherited, so the
+declaration count is not the value count: 2,319 classes hold **5,533** declared delegate slots (a class and each of
+its ancestors), of which **42 ship a value** in a located block, **5,052** are inherited but unset, and **439** sit
+in the 21 classes whose block the locator does not place. The 42 all live in two packages, `GUI` and
+`StargateMenus`, and **39** of them are the `{object, name}` pair, every one binding the class to itself and to a
+function it declares. `__OnXControllerEvent__Delegate`, the property both this page and U18 turn on, ships in
+**12** classes: **nine** decode at 2-3 bytes and **three** are the residue. No class is left in the build that
+ships the property at a width the reader can read directly, so the second route has no member.
+
+**The residue's tag is not a delegate tag, and an enum property is the control.** Every tag in the 1,898 located
+blocks was typed: 16,012 tags, of which **42** are delegate-named (39 of type 7 -- the type this build's delegate
+tags land on -- two of type 15 and one of type 0), and **exactly three** carry type nibble 15, UELib's
+`FixedArray`. All three carry size class 3, i.e. a fixed 12 bytes, and an array-index byte; and one of the three is
+`Engine.TriggeredProjector.DrawType`, an enum byte property (`property kind UByteProperty`), a kind that cannot
+hold 12 bytes there. Three tags of one shape where one sits on a property that cannot carry the value: the shape is
+a **tag-stream mis-split**, not a delegate type, and the two menu pages are its only other instances.
+
+Their twelve bytes then have no reading as a binding. They tile as **ten** compact indices
+(`03 07 08 06 90 0a 00 67 03 15 6a 19`; the same ten in both classes but for one byte -- 1642 in `ExtrasPage`,
+1641 in `CreditsPage`), and the first index resolves to an export that is **not the class** (`object_self` = no on
+both rows), so the value's own first field says it is not a delegate binding whatever the tag meant.
+
+**What stays open is not a delegate question.** A delegate default is `{object, name}` and the build ships nothing
+else of that shape; what remains is where the boundary between the class record's tail and the defaults block runs
+in these two payloads, and `inventory/class_tail_run.csv` already records both classes as `no-parse` -- the same
+statement from the record side.

@@ -4141,3 +4141,19 @@ value and `[+0x1c]` on the value `+4` -- exactly `ObjectProperty`'s whole serial
 already tiled; the writer has no third field to offer, so the three residues' only remaining route is the second one
 this entry names -- a package from the same build that ships the property with a value short enough to read directly.
 Census: `inventory/property_serialisers.csv` (`make property-serialisers`).
+
+**2026-11-15 (forty-second): the second route is empty, and the residue's tag is not a delegate tag.** The entry
+above left the two menu pages to "a package from the same build that ships the property with a value short enough
+to read directly". `tools/delegate-value-census.py` (`inventory/delegate_value_census.csv`) measures the whole
+population such a package would have to come from: 2,319 classes hold **5,533** declared delegate slots (delegate
+properties are inherited), **42** of them ship a value, and the **12** classes that ship
+`__OnXControllerEvent__Delegate` split **nine** that decode as `{object, name}` at 2-3 bytes against the three
+residues -- so no class in the build ships the property at a readable width the shipped tool has not already read.
+The residue's *tag* is then measured against the corpus: of 16,012 tags in the 1,898 located blocks, exactly
+**three** carry type nibble 15, all with size class 3 (12 bytes) and an array-index byte, and one of the three is
+`Engine.TriggeredProjector.DrawType` -- an enum byte property, a kind that cannot hold 12 bytes there. So the
+type-15 shape is a tag-stream mis-split and not a delegate type, and the two menu pages are its only other
+instances. Their twelve bytes tile as **ten** indices whose first resolves to an export that is not the class
+(`object_self` = no on both rows), so no reading of them is a `{object, name}` pair. **What this leaves** is the
+record-to-block boundary in those two payloads, which `inventory/class_tail_run.csv` already calls `no-parse` -- a
+tag-grammar question, not a delegate one, so U18's own question is answered as far as the build can answer it.
