@@ -4157,3 +4157,17 @@ instances. Their twelve bytes tile as **ten** indices whose first resolves to an
 (`object_self` = no on both rows), so no reading of them is a `{object, name}` pair. **What this leaves** is the
 record-to-block boundary in those two payloads, which `inventory/class_tail_run.csv` already calls `no-parse` -- a
 tag-grammar question, not a delegate one, so U18's own question is answered as far as the build can answer it.
+
+**2026-11-15 (forty-third): the two menu pages' block starts ten bytes later, and it sets `TempLB`, not a delegate.**
+The entry above refuted the type-15 tag and left the record-to-block boundary open. `tools/delegate-value-census.py`
+now tries every start inside each residue's first tag and keeps the ones whose block ends on the payload's end and
+names only declared properties (`kind` = `residue-start`): six survive across the three residues, and the one that
+opens on a property the class *itself* declares is the block. For `ExtrasPage` and `CreditsPage` that is **+10**, and
+it reads `TempLB` -- `var automated GUILabel TempLB;`, the only property either class declares -- bound to
+`GUILabel'cTempLB'` (exports 1642 and 1641, a template object per class), then the inherited `TitleString`; two
+properties, ending on the payload's last byte. `GUI.MenuItemOverlay`'s own-first start is **+108**, opening on
+`img_Overlay` (`GUIImage'OverlayMain'`) and reading 20 properties where the located start reads 20 that include the
+type-0 tag and drop `img_Overlay`. So neither menu page ships a delegate default at all: U18's question is answered by
+showing there is nothing there to read, and the residue was a locator offset rather than a value width. **What this
+leaves** is the locator itself -- `class-defaults.py`'s `choose_scored` prefers a start that swallows the record's last
+bytes on these three rows -- which is a change to the candidate rule, not to a value grammar.
