@@ -1,0 +1,43 @@
+class,table_va,table_slots,offset,slot_va,body_bytes,args,ops,reaches,shared,shape
+IntProperty,0x004d1880,53,Serialize,0x00077630,112,1,call:0x38dc0 call:0x37110 call:0x370e0 vt:0x1c call:0x37080 call:0x58850,,no,archive-virtual
+IntProperty,0x004d1880,53,compare,0x00077bf0,30,2,,,no,no-ops
+IntProperty,0x004d1880,53,SerializeItem,0x00077c30,21,3,call:0x37110,,no,archive-op
+BoolProperty,0x004d1958,53,Serialize,0x00078040,46,1,call:0x77630 call:0x370e0,,no,other
+BoolProperty,0x004d1958,53,compare,0x000781f0,29,2,,,no,no-ops
+BoolProperty,0x004d1958,53,SerializeItem,0x00078230,60,3,call:0x37040,,no,archive-op
+FloatProperty,0x004d1a30,53,Serialize,0x00077630,112,1,call:0x38dc0 call:0x37110 call:0x370e0 vt:0x1c call:0x37080 call:0x58850,,no,archive-virtual
+FloatProperty,0x004d1a30,53,compare,0x00078390,42,2,,,no,no-ops
+FloatProperty,0x004d1a30,53,SerializeItem,0x000783c0,21,3,call:0x37170,,no,archive-op
+StrProperty,0x004d32a0,53,Serialize,0x00078920,33,2,call:0x57330,,no,archive-op
+StrProperty,0x004d32a0,53,compare,0x0007a790,55,2,call:0x36cf0,,no,archive-op
+StrProperty,0x004d32a0,53,SerializeItem,0x00078900,21,3,call:0x58850,,no,archive-op
+ArrayProperty,0x004d3378,53,Serialize,0x00078f50,30,1,call:0x77630 vt:0x18,,no,archive-virtual
+ArrayProperty,0x004d3378,53,compare,0x00078de0,41,2,,,no,no-ops
+ArrayProperty,0x004d3378,53,SerializeItem,0x00078ea0,147,3,call:0x637e0 call:0x55ed0 call:0x2c800 vt:0xa0,direct,no,recurse-inner
+ObjectProperty,0x004e0b40,53,Serialize,0x000786a0,61,1,call:0x77630 vt:0x18,,no,archive-virtual
+ObjectProperty,0x004e0b40,53,compare,0x00078620,30,2,,,no,no-ops
+ObjectProperty,0x004e0b40,53,SerializeItem,0x00078660,17,3,vt:0x18,,no,archive-virtual
+ByteProperty,0x004e10c0,53,Serialize,0x00077b10,30,1,call:0x77630 vt:0x18,,no,archive-virtual
+ByteProperty,0x004e10c0,53,compare,0x00077a80,28,2,,,no,no-ops
+ByteProperty,0x004e10c0,53,SerializeItem,0x00077ab0,21,3,call:0x37040,,no,archive-op
+PointerProperty,0x004e1198,53,Serialize,0x00077630,112,1,call:0x38dc0 call:0x37110 call:0x370e0 vt:0x1c call:0x37080 call:0x58850,,no,archive-virtual
+PointerProperty,0x004e1198,53,compare,0x00077d80,30,2,,,no,no-ops
+PointerProperty,0x004e1198,53,SerializeItem,0x00077dc0,21,3,call:0x37110,,no,archive-op
+ClassProperty,0x004e1270,53,Serialize,0x00078730,100,1,call:0x77630 vt:0x18 vt:0x18 call:0x58a30,,no,archive-virtual
+ClassProperty,0x004e1270,53,compare,0x00078620,30,2,,,no,no-ops
+ClassProperty,0x004e1270,53,SerializeItem,0x00078660,17,3,vt:0x18,,no,archive-virtual
+NameProperty,0x004e1348,53,Serialize,0x00077630,112,1,call:0x38dc0 call:0x37110 call:0x370e0 vt:0x1c call:0x37080 call:0x58850,,no,archive-virtual
+NameProperty,0x004e1348,53,compare,0x00078820,32,2,,,no,no-ops
+NameProperty,0x004e1348,53,SerializeItem,0x00078840,17,3,vt:0x1c,,no,archive-virtual
+FixedArrayProperty,0x004e1420,53,Serialize,0x00078a80,43,1,call:0x77630 vt:0x18 call:0x37110,,no,archive-virtual
+FixedArrayProperty,0x004e1420,53,compare,0x000789c0,87,2,vt:0x94,,no,archive-virtual
+FixedArrayProperty,0x004e1420,53,SerializeItem,0x00078a20,75,3,vt:0xa0,direct,no,recurse-inner
+MapProperty,0x004e14f8,53,Serialize,0x000794c0,41,1,call:0x77630 vt:0x18 vt:0x18,,no,archive-virtual
+MapProperty,0x004e14f8,53,compare,0x00079490,8,2,,,no,no-ops
+MapProperty,0x004e14f8,53,SerializeItem,0x000794a0,3,3,,,no,no-ops
+StructProperty,0x004e15d0,53,Serialize,0x00079660,30,1,call:0x77630 vt:0x18,,no,archive-virtual
+StructProperty,0x004e15d0,53,compare,0x0007b2e0,167,2,call:0x3cb90 vt:0x94 call:0x3cb90,,no,archive-virtual
+StructProperty,0x004e15d0,53,SerializeItem,0x000795f0,73,3,vt:0x98,,no,archive-virtual
+DelegateProperty,0x004e16a8,53,Serialize,0x00077f70,30,1,call:0x77630 vt:0x18,,no,archive-virtual
+DelegateProperty,0x004e16a8,53,compare,0x00077ed0,21,2,,,no,no-ops
+DelegateProperty,0x004e16a8,53,SerializeItem,0x00077f00,30,3,vt:0x18 vt:0x1c,,no,object-then-name

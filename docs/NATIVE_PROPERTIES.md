@@ -130,7 +130,10 @@ establish:
 | `+0x48` | value offset: added to the element address; asserted non-zero before destruction | `0x0003bdc0`, `0x000796b0` |
 | `+0x6c` | the "inner" pointer of the wide classes: stored by the array-shaped constructor, read by `ClassProperty` and by the destruction path | `0x00078c20`, `0x00078730`, `0x000796b0` |
 | `+0x70` | the second pointer of the wide classes: the count written by the array-shaped constructor, `ClassProperty`'s `MetaClass` (asserted by name after serialising it) | `0x00078c20`, `0x00078730` |
-| vtable `+0x94` | per-element serialization: `(**(code **)(*child + 0x94))(value, …)` | `0x0003bdc0` |
+| vtable `+0x94` | a two-argument **comparison** of a value against another: the walk calls it once, with
+two addresses, and branches on the returned `bool` (`0x0003c340`) | `0x0003bdc0`, `0x0003c340` |
+| vtable `+0xa0` | the per-class **value serialiser** (`SerializeItem`), which the array classes dispatch on
+their own `Inner` | `0x00078a56` (§7) |
 | vtable `+0xc0` | per-element destruction: `(**(code **)(*element + 0xc0))(value)` | `0x000796b0` |
 
 The two-pointer constructor at `0x00078c20` asserts `!Inner`, `Property`, `InCount>0` and then
@@ -402,3 +405,29 @@ substitutes for an empty argument, so `SetNotifications` was given real text; an
 (`$WORK/xemu/prp3/02-mission.png`) draws that identical line at the bottom of the instruction panel. The text
 reaches the field and the field reaches the screen: the console's "draws nothing" reading does not extend to the
 notification path (U15).
+
+## 7. The value serialiser is slot `+0xa0`, and a delegate is `{object, FName}` (U18)
+
+`inventory/property_serialisers.csv` (`tools/property-serialisers.py`, `make property-serialisers`) censuses the 14
+property classes this build constructs -- `Property` itself has no constructor row -- at three offsets of their own
+tables. Every table is **53 slots**, split at its own install store, and every one of the three offsets has its own
+target in every class:
+
+| offset | what it is | per-class targets | what the bodies do |
+|---|---|---:|---|
+| `+0x2c` | `Serialize`, the tag writer | 14 of 14 | 12 dispatch an archive virtual, 1 calls one helper, 1 other |
+| `+0x94` | a two-argument **comparison** | 14 of 14 | 11 call nothing (`cmp`/`sete` and `ret 8`), 2 dispatch a virtual, 1 calls a helper |
+| `+0xa0` | `SerializeItem`, the value | 14 of 14 | 6 call one archive helper, 4 dispatch an archive virtual, 2 reach `+0xa0` on their `Inner` |
+
+**A property class proves `+0xa0` from inside another one.** `FixedArrayProperty`'s body (`0x00078a20`) loops its
+elements and ends `call DWORD PTR [edx+0xa0]` on the property in its own `+0x6c` (`Inner`), pushing the archive, the
+element address and the count (`0x00078a56`). A per-class body that recurses into a *different* class's reader at the
+same offset is a value reader, not a tag writer -- which is what `+0x94` is: the walk at `0x0003bdc0` calls it once,
+at `0x0003c340`, with two addresses, and branches on the `bool` it returns.
+
+**Delegates.** `DelegateProperty`'s `+0xa0` (`0x00077f00`, 30 bytes) is `Ar->[+0x18](Value)` and then
+`[that]->[+0x1c](Value+4)`. `ObjectProperty`'s whole serialiser is that first call (`0x00078660`, 17 bytes) and
+`NameProperty`'s is the second (`0x00078840`, 17 bytes), so a `delegate` value is an **object reference at `+0` and
+an `FName` at `+4`** with no third field: the writer's answer to U18, and the field order the payload readings tiled
+as two compact indices (39 of 42). `StructProperty`'s body dispatches `+0x98` instead, which is `UStruct`'s property
+walk at `0x0003bdc0`.
