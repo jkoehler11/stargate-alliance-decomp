@@ -152,14 +152,49 @@ The record is also not the class's own serialiser: this build's `AActor::Seriali
 `UObject::Serialize` (`0x00063f70`) first and then conditionally writes two arrays at `+0x244`/`+0x250`; nothing in it
 stores a class reference twice, so the front is written by whatever serialises the level's actor stream around it.
 
-The four bytes between the `0xff` fill and the closing `-1` are left unnamed: they vary per instance, taking 1,011
-distinct values over the 79,991 exports that carry the record, the commonest `00 00 00 00` on 24,912 and
-`30 00 30 00` on 8,688.
+The four bytes between the `0xff` fill and the closing `-1` are read below: they are a code, not a reference --
+**1,010 distinct values over the 79,925 blocks that carry the record**, the commonest `00 00 00 00` on 24,907 and
+`30 00 30 00` (the halves 48,48) on 8,677. The 1,011-over-79,991 this page used to quote was counted over every block
+that *begins* with its class index rather than over the blocks whose record matched, and no committed run produces
+that pair.
+
+**The four middle bytes are a code, not a reference, and the corpus says so four ways** (`make actor-prefix-middle`,
+`tools/actor-prefix-middle.py`, `inventory/actor_prefix_middle.csv`). Read as the two little-endian `u16` such a field
+would be written as, they are a *vocabulary*: **1,010 distinct values over the 79,925 blocks**, and **165 of those
+values appear in ten or more of the 73 maps**. The cross-map count is what refuses the one reading a serialiser's
+reader would try first. A name index is a fact about *one* package's name table, so a value that recurs in seventy
+maps cannot be one: `48,48` is 8,677 blocks in **70 maps** and its first half resolves to **42 different names** across
+them, `110,0` is 7,071 blocks in 71 maps as **61 names**.
+
+| reading of the four bytes | blocks it fires on | control |
+|---|---:|---:|
+| a half names a property the same block declares | 2,572 (3.2%) | 6,597 (8.3%) |
+| a half names the block's own class | 294 (0.4%) | -- |
+| a half names the block's `Tag` value | 243 (0.3%) | -- |
+| the dword is the export's offset or size, or the block's length | 549 (0.7%) | -- |
+
+The control is the same test with a name index of the same *band* (a fixed scramble of the export's ordinal taken
+modulo `0x80`), and it is what makes the first row a negative rather than a reading: early name-table entries are the
+names every class references, so a control drawn from the whole table hits only 0.3% and would have made the field's
+3.2% look like evidence. At the same magnitude, an index the block never mentions hits **more** often than the value
+does.
+
+Two more properties fit a flag or enum word rather than a pointer: the halves are **equal on 39,165 blocks (49.0%)**
+and `00 00 00 00` is the single commonest state (24,907, 31.2%), so "nothing" is what this field usually says; and
+**5,571 blocks (7.0%)** carry a half at or above `0x80`, which no one-byte name index can (`65278,65278` is 4,912
+blocks in 18 maps and resolves to nothing at all). Nor is the value an identity or a class constant: `StaticMeshActor`
+carries **607** distinct values over its 32,193 blocks, while `48,48` alone covers 448 `StaticMeshActor`s, 53 `Mover`s
+and 39 `Light`s in a single map -- per instance, and small. The tool's `verdict` column sorts the classes: **110 carry
+more than one value, 21 carry exactly one, and 17 give every block its own**.
+
+So what is left is the writer, not the payload: the field's *meaning* is fixed by whatever serialises the level's actor
+stream (and that is not `AActor::Serialize`, above), and the corpus can price every reading without naming the code it
+carries.
 
 ## Not measured
 
 * Property *values* at corpus scale. The reader decodes them on demand (`--values`) and they are game content,
   so nothing here aggregates or stores them.
 * Class defaults (see above).
-* What the record's four middle bytes hold: the record names the block's start and the class's side of the split, but
-  not those fields.
+* What the code in the record's four middle bytes *means*. The previous section measures it as a vocabulary of 1,010
+  values that no reference reading survives; which enum it indexes is the writer's answer, not the payload's.
