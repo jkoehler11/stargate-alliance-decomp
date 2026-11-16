@@ -129,10 +129,28 @@ earlier: `Light` 257 of 8,370, `Mover` 143 of 1,268, `StaticMeshActor` 140 of 32
 locating at more than one start" is not a residue of the prefix's own extent — it is 1.6% of the class-referenced
 blocks, and the record names the right start for every one of them.
 
-**The other third has no prefix at all.** 41,254 blocks (34.0%) sit at front 0 — `ReachSpec` 30,539,
-`SpriteEmitter` 2,854 — and 215 blocks over 5 classes carry a front whose first byte is not their class index
-(`StaticMeshInstance` 211). Those exports are not an actor instance's stream, which is why the earlier histogram of
-"prefixes" mixed two populations: 148 of the 295 classes carry the record and 147 never do.
+**The record marks an actor, and the class's super chain says which third gets one** (`make actor-prefix-kind`,
+`tools/actor-prefix-kind.py`, `inventory/actor_prefix_kind.csv`). The two populations above are not a residue and its
+remainder: they are the level's actor stream and everything else. Joining each block's class to
+`inventory/classes.csv`'s `super` column and walking the chain gives **148 classes and 79,925 blocks that carry the
+record, all of them reaching `Actor`, and 142 classes and 41,254 blocks with no front at all, none of which reach it** —
+no class on both sides, and no exception either way.
+
+The bare names are the ones that looked surprising: `ReachSpec` extends `Object` directly, `ActionMoveCamera` extends
+`MatAction`, `ACTION_Talk` extends `LatentScriptedAction`, `ACTION_SetBotScript` extends `ScriptedAction`, and
+`SpriteEmitter` is not the actor it looks like — its parent `ParticleEmitter` **is itself an `Object` in this build**,
+which is why a particle sprite is saved without a front and its owning `Emitter` (an `Actor`) is not.
+
+The remaining 215 blocks are not a front at all: `StaticMeshInstance` (211), `KMeshProps` (1) and `TerrainSector` (1)
+are the three classes no `.u` package in the corpus defines, and their exports are mesh and terrain bytes that the
+locator's "parses cleanly to the payload's end" test accepts as a block — a `StaticMeshInstance` export reads back as
+`Scale`, `Vector`, which are name-table hits and not properties. Two single blocks (`ACTION_SaveGame`, `Cubemap`) have
+bytes in front that are not their class index either. So the record, its absence and this small false-positive set
+account for **121,394 of 121,394 blocks**.
+
+The record is also not the class's own serialiser: this build's `AActor::Serialize` (`0x000c7fa0`, 110 bytes) calls
+`UObject::Serialize` (`0x00063f70`) first and then conditionally writes two arrays at `+0x244`/`+0x250`; nothing in it
+stores a class reference twice, so the front is written by whatever serialises the level's actor stream around it.
 
 The four bytes between the `0xff` fill and the closing `-1` are left unnamed: they vary per instance, taking 1,011
 distinct values over the 79,991 exports that carry the record, the commonest `00 00 00 00` on 24,912 and
@@ -143,5 +161,5 @@ distinct values over the 79,991 exports that carry the record, the commonest `00
 * Property *values* at corpus scale. The reader decodes them on demand (`--values`) and they are game content,
   so nothing here aggregates or stores them.
 * Class defaults (see above).
-* What the record's four middle bytes hold, and why 215 blocks over 5 classes carry a front without their class
-  index first (`StaticMeshInstance` 211 of them): the record names the block's start but not those fields.
+* What the record's four middle bytes hold: the record names the block's start and the class's side of the split, but
+  not those fields.

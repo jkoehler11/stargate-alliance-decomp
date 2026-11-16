@@ -892,6 +892,27 @@ other 38 rows.
       `dominant_count` and `blocks` row by row) + `inventory/actor_prefix_anchor.csv` (295 rows) +
       `docs/ACTOR_PROPERTIES.md` (*The type of the candidate's first tag decides it*) + `make actor-prefix-anchor`
       + this note. 73 maps in 73 s; no boot.
+      **The record marks an actor: the class's super chain decides it, and the 34% is every non-actor export (2026-11-15).**
+      The two populations the last note left as "a separate population rather than the same one's residue" are one
+      rule apart: joining each block's class to `inventory/classes.csv` walks **148 classes / 79,925 blocks that carry
+      the record, every one reaching `Actor`, and 142 classes / 41,254 blocks with no front, none reaching it** — no
+      class on both sides and no exception in either direction, which is the control the read needed. `ReachSpec`
+      extends `Object`, `ActionMoveCamera` `MatAction`, `ACTION_Talk` `LatentScriptedAction`; `SpriteEmitter` looked
+      like the counter-example and is not one, because its parent `ParticleEmitter` is itself an `Object` in this
+      build while its owner `Emitter` is an `Actor`. The 215 blocks over 5 classes are a different thing than a front:
+      `StaticMeshInstance` 211, `KMeshProps` 1 and `TerrainSector` 1 are the classes no `.u` in the corpus defines,
+      their exports are mesh/terrain bytes, and the locator's clean-parse test accepts them — the "properties" it
+      reads back are name-table hits (`Scale`, `Vector`), so they are the locator's false positives named rather than
+      a shape left to explain; two single blocks (`ACTION_SaveGame`, `Cubemap`) carry bytes in front that are not
+      their class index. The same read refused the instruction the last note left: this build's `AActor::Serialize`
+      (`0x000c7fa0`, 110 bytes, in `$WORK/module-export/Engine/`) calls `UObject::Serialize` (`0x00063f70`) and then
+      conditionally writes two arrays at `+0x244`/`+0x250`; it never stores a class reference twice, so the front is
+      written by the level's actor stream around the object, not by the object's own serialiser. Tool
+      (`tools/actor-prefix-kind.py`: `chain()` walks the class table, `compute()` records each block's front beside
+      the class's root, `--check` re-derives every row's sum, joins the record census's block totals, drives a
+      synthetic table to prove the chain walker and fails on one flipped `actor_derived` — measured) +
+      `inventory/actor_prefix_kind.csv` (295 rows) + `docs/ACTOR_PROPERTIES.md` (*The record marks an actor*) +
+      `make actor-prefix-kind` + this note. 73 maps in 74 s; no boot.
       **The prefix in front of a block is a record, so the residue is 1.6% and not 93 classes (2026-11-15).** The code
       read this item named next was already on disk (`$WORK/module-export/Engine/000c7fa0` is `AActor::Serialize`,
       110 bytes, whose one unconditional call is `UObject::Serialize` at `0x00063f70`), and the decisive read was
