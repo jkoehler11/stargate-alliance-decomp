@@ -175,6 +175,49 @@ def value_row(pkg, pkg_name, cls, p, decl, buf, decl_fns):
     return row
 
 
+def start_verdict(name, own):
+    """`own-first` when the class itself declares the property a later start names, else `inherited-first`."""
+    return "own-first" if name in own else "inherited-first"
+
+
+def residue_starts(pkg, pkg_name, cls, data, start, p, decl, own):
+    """Starts inside a residue's value that read a whole block to the payload's end.
+
+    The located block's first tag on these rows is a type-0 or a type-15 tag whose size class claims 12 or 110
+    bytes. The corpus says what such a tag is worth: three instances of type 15, one of them on a property that
+    cannot hold the value (`tag15` rows). So every start *after* that tag inside its span is tried and kept when
+    its block ends on the payload's end and names only properties the class declares -- a real tag inside the
+    span is what the block names, and `size` here is the start's offset from the located one.
+    """
+    out, end_of_payload = [], len(data)
+    lo = start + p["value_offset"] + 1
+    for s in range(lo, start + p["value_offset"] + p["size"]):
+        try:
+            props, end, reason = ps.read_block(data[s:], pkg, True)
+        except Exception:                                # noqa: BLE001 - a short read at the tail is a skip
+            continue
+        if reason != "None" or not props or s + end != end_of_payload:
+            continue
+        if any(q["name"] not in decl and q["name"] != "None" for q in props):
+            continue
+        first = props[0]
+        row = dict(kind="residue-start", package=pkg_name, cls=cls, property=first["name"],
+                   declared=(decl.get(first["name"]) or ("", ""))[1],
+                   property_kind=(decl.get(first["name"]) or ("", ""))[0], tag_type="",
+                   type_byte="0x%02x" % first["type_byte"], size=s - start, array_index="",
+                   indices=len(props), object_kind="", object_self="", handler="", handler_declared="",
+                   verdict=start_verdict(first["name"], own), note="")
+        if first["type"] == "Object":
+            value, _nxt = ps.read_index(data[s:], first["value_offset"])
+            if 0 < value <= len(pkg.exports):
+                ex = pkg.exports[value - 1]
+                row["object_kind"] = "export"
+                row["handler"] = pkg.name(ex["name"])
+                row["note"] = "%s'%s'" % (pkg.class_name_of(ex), row["handler"])
+        out.append(row)
+    return out
+
+
 def tag15_row(pkg_name, cls, p, kind):
     info = p["type_byte"]
     return dict(kind="tag15", package=pkg_name, cls=cls, property=p["name"], declared="",
@@ -210,7 +253,9 @@ def sweep(system_dir, pkgs):
                 continue
             props, start, _clean = got
             tally["blocks"] += 1
-            buf = pkg.data[exp["offset"]:exp["offset"] + exp["size"]][start:]
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            buf = data[start:]
+            own = declared_all.get(cls, set())
             tally["tags"] += len(props)
             seen = set()
             decl_fns = None
@@ -228,6 +273,11 @@ def sweep(system_dir, pkgs):
                 rows.append(value_row(pkg, pkg_name, cls, p, (decl_map.get(p["name"]) or ("", ""))[1],
                                       buf, decl_fns))
                 tally["delegate_tags"] += 1
+                if rows[-1]["verdict"] != "object-name":
+                    extra = residue_starts(pkg, pkg_name, cls, data, start, p, decl_map, own)
+                    rows.extend(extra)
+                    tally["residue_starts"] += len(extra)
+                    tally["residue_own_first"] += sum(1 for r in extra if r["verdict"] == "own-first")
             tally["slots_shipped"] += len(seen & set(slots))
             tally["slots_inherited_unset"] += len(set(slots) - seen)
     for row in rows:
@@ -235,7 +285,8 @@ def sweep(system_dir, pkgs):
             tally["value_" + row["verdict"]] += 1
     for key in ("classes", "blocks", "declared_slots", "slots_shipped", "slots_inherited_unset",
                 "slots_without_a_block", "classes_without_a_block", "tags", "delegate_tags",
-                "tag15_tags", "value_object-name", "value_not-two-indices", "value_object-is-not-an-export"):
+                "tag15_tags", "value_object-name", "value_not-two-indices", "value_object-is-not-an-export",
+                "residue_starts", "residue_own_first"):
         rows.append(dict(kind="census", package="", cls="", property=key, declared="", property_kind="",
                          tag_type="", type_byte="", size=tally[key], array_index="", indices="",
                          verdict="", note=""))
@@ -271,6 +322,14 @@ def report(rows, tally):
               % (r["package"], r["cls"][:26], r["property"][:32], r["tag_type"], r["size"], r["indices"],
                  r["verdict"], (r["object_kind"] or "-")[:26], r["handler"]))
     print()
+    print("residue starts (a later start inside the value that reads a whole block):")
+    for r in rows:
+        if r["kind"] != "residue-start":
+            continue
+        print("   %-14s %-26s +%-4s %-32s %-16s %2s props  %s %s"
+              % (r["package"], r["cls"][:26], r["size"], r["property"][:32], r["verdict"], r["indices"],
+                 r["handler"], r["note"]))
+    print()
     print("type-15 tags (every one in the corpus):")
     for r in rows:
         if r["kind"] != "tag15":
@@ -296,7 +355,9 @@ def self_test():
     assert classify([2, 3], "import", "no", "x", "yes") == "object-is-not-an-export"
     assert classify([2, 3], "export", "no", "x", "yes") == "object-is-not-the-class"
     assert classify([2, 3], "export", "yes", "x", "no") == "handler-not-declared"
-    print("self-test: ok (11 synthetic cases)")
+    assert start_verdict("TempLB", {"TempLB"}) == "own-first", "a class's own declaration is the own-first start"
+    assert start_verdict("WinLeft", {"TempLB"}) == "inherited-first", "an ancestor's property is not"
+    print("self-test: ok (13 synthetic cases)")
     return 0
 
 

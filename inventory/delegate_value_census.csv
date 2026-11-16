@@ -25,6 +25,8 @@ value,GUI,GUILabelButton,__OnKeyEvent__Delegate,delegate<OnKeyEvent>,,String,0x5
 value,GUI,GUILabelButton,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,String,0x57,3,0,2,export,yes,InternalOnXControllerEvent,yes,object-name,
 value,GUI,moCheckBox,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,String,0x57,3,0,2,export,yes,InternalOnXControllerEvent,yes,object-name,
 value,GUI,MenuItemOverlay,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,Invalid,0x50,110,0,0,,,,,not-two-indices,"indices tile as 0, and a delegate value is a pair"
+residue-start,GUI,MenuItemOverlay,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,UDelegateProperty,,0x50,90,,11,,,,,inherited-first,
+residue-start,GUI,MenuItemOverlay,img_Overlay,GUIImage,UObjectProperty,,0x15,108,,20,export,,OverlayMain,,own-first,GUIImage'OverlayMain'
 value,GUI,MenuItemOverlay,__notifyLayoutChange__Delegate,delegate<notifyLayoutChange>,,String,0x27,4,0,2,export,yes,Realign,yes,object-name,
 value,GUI,GUIScrollingPanel,__OnPreDraw__Delegate,delegate<OnPreDraw>,,String,0x27,4,0,2,export,yes,PreDraw,yes,object-name,
 value,StargateMenus,SGPageBase,__OnKeyEvent__Delegate,delegate<OnKeyEvent>,,String,0x57,3,0,2,export,yes,MyKeyEvent,yes,object-name,
@@ -42,8 +44,12 @@ value,StargateMenus,InGameScoreboard,__OnPreDraw__Delegate,delegate<OnPreDraw>,,
 value,StargateMenus,HintScreen,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,String,0x57,3,0,2,export,yes,InternalOnXControllerEvent,yes,object-name,
 tag15,StargateMenus,ExtrasPage,__OnXControllerEvent__Delegate,,UDelegateProperty,FixedArray,0xbf,12,14,,,,,,,
 value,StargateMenus,ExtrasPage,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,FixedArray,0xbf,12,14,10,export,no,StargateMenus,no,not-two-indices,"indices tile as 10, and a delegate value is a pair"
+residue-start,StargateMenus,ExtrasPage,TempLB,GUILabel,UObjectProperty,,0x15,10,,2,export,,cTempLB,,own-first,GUILabel'cTempLB'
+residue-start,StargateMenus,ExtrasPage,WinLeft,float,UFloatProperty,,0x15,11,,2,export,,cTempLB,,inherited-first,GUILabel'cTempLB'
 tag15,StargateMenus,CreditsPage,__OnXControllerEvent__Delegate,,UDelegateProperty,FixedArray,0xbf,12,14,,,,,,,
 value,StargateMenus,CreditsPage,__OnXControllerEvent__Delegate,delegate<OnXControllerEvent>,,FixedArray,0xbf,12,14,10,export,no,StargateMenus,no,not-two-indices,"indices tile as 10, and a delegate value is a pair"
+residue-start,StargateMenus,CreditsPage,TempLB,GUILabel,UObjectProperty,,0x15,10,,2,export,,cTempLB,,own-first,GUILabel'cTempLB'
+residue-start,StargateMenus,CreditsPage,WinLeft,float,UFloatProperty,,0x15,11,,2,export,,cTempLB,,inherited-first,GUILabel'cTempLB'
 census,,,classes,,,,,2319,,,,,,,,
 census,,,blocks,,,,,1898,,,,,,,,
 census,,,declared_slots,,,,,5533,,,,,,,,
@@ -57,3 +63,5 @@ census,,,tag15_tags,,,,,3,,,,,,,,
 census,,,value_object-name,,,,,39,,,,,,,,
 census,,,value_not-two-indices,,,,,3,,,,,,,,
 census,,,value_object-is-not-an-export,,,,,0,,,,,,,,
+census,,,residue_starts,,,,,6,,,,,,,,
+census,,,residue_own_first,,,,,3,,,,,,,,

@@ -1142,3 +1142,36 @@ both rows), so the value's own first field says it is not a delegate binding wha
 else of that shape; what remains is where the boundary between the class record's tail and the defaults block runs
 in these two payloads, and `inventory/class_tail_run.csv` already records both classes as `no-parse` -- the same
 statement from the record side.
+
+## The two menu pages' block starts ten bytes later, and it names their own `TempLB`
+
+The section above refutes the type-15 tag and leaves one question: where the class record's tail ends and the
+defaults block begins in those two payloads. `tools/delegate-value-census.py` now answers it for every residue it
+finds (`kind` = `residue-start`): every start after the residue's first tag, inside that tag's span, is read and kept
+when its block ends on the payload's end and names only properties the class declares; `size` on those rows is the
+start's offset from the located one.
+
+Six starts survive across the three residues, and the discriminator is whose declaration the block opens on:
+
+| class | offset | first property | verdict | object |
+|---|---:|---|---|---|
+| `StargateMenus.ExtrasPage` | +10 | `TempLB` | own-first | `GUILabel'cTempLB'` |
+| `StargateMenus.ExtrasPage` | +11 | `WinLeft` | inherited-first | `GUILabel'cTempLB'` |
+| `StargateMenus.CreditsPage` | +10 | `TempLB` | own-first | `GUILabel'cTempLB'` |
+| `StargateMenus.CreditsPage` | +11 | `WinLeft` | inherited-first | `GUILabel'cTempLB'` |
+| `GUI.MenuItemOverlay` | +90 | `__OnXControllerEvent__Delegate` | inherited-first | 11 properties |
+| `GUI.MenuItemOverlay` | +108 | `img_Overlay` | own-first | `GUIImage'OverlayMain'` |
+
+**The own-first start is the class's own block, and it is the whole of what these classes set.** `ExtrasPage` and
+`CreditsPage` each declare exactly one property -- `var automated GUILabel TempLB;` in their own `ScriptText` -- and
+both surviving starts that open on it read `TempLB` bound to a `GUILabel` export named `cTempLB` (1642 and 1641, a
+template object per class), then the inherited `TitleString` ("Extras", "Credits"): two properties, ending on the
+payload's last byte. `GUI.MenuItemOverlay`'s +108 start opens on `img_Overlay` (`GUIImage'OverlayMain'`, a property the
+class itself declares) and reads 20 properties where the located start reads 20 that include the type-0 tag and drop
+`img_Overlay`.
+
+**So the two menu pages ship no delegate default at all.** At the +10 start there is no
+`__OnXControllerEvent__Delegate` tag in the block: the 12 bytes the located start read are the record's last ten bytes
+followed by the five that are `TempLB`'s tag and its object, and both blocks read without any type-15 tag. The residue
+was a locator offset, not a value width -- and the delegate question U18 opened is answered by showing that neither
+class has a delegate default to read.

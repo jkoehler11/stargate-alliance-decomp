@@ -11528,3 +11528,21 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   more to say about it.
 - Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no
   boot.
+
+### Execution notes (2026-11-15, the residue is a locator offset, and the two menu pages ship no delegate default)
+
+- **Task.** The note above closed the type-15 tag against a control and left the record-to-block boundary open for the
+  two menu pages. The same tool now reads it there (`kind` = `residue-start`): every start after a residue's first
+  tag, inside that tag's span, kept when its block ends on the payload's end and names only declared properties.
+- **Six starts survive, and the class's own declaration picks the block.** `StargateMenus.ExtrasPage` and
+  `CreditsPage` each declare exactly one property (`var automated GUILabel TempLB;`), and the start that opens on it is
+  **+10** from the located one: `TempLB` bound to `GUILabel'cTempLB'` (exports 1642 and 1641 -- a template object per
+  class) then the inherited `TitleString`, two properties ending on the payload's last byte. `GUI.MenuItemOverlay`'s
+  own-first start is +108 (`img_Overlay` = `GUIImage'OverlayMain'`, 20 properties against the located start's 20, which
+  include the type-0 tag and drop `img_Overlay`).
+- **What that settles.** Neither menu page ships a delegate default: the 12 bytes were the record's last ten plus
+  `TempLB`'s five (tag and object), and both blocks read with no type-15 tag at all. U18's delegate question is
+  answered as "nothing there", not as a width.
+- **What this does not do.** It does not change the locator: `choose_scored` still prefers the early start on these
+  three rows, and correcting that is a change to the candidate rule rather than to a value grammar.
+- Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no boot.
