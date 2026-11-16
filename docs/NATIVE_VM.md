@@ -2998,7 +2998,16 @@ untouched, so the only thing that changed is the population of candidates.
   skew. The two exceptions are `Engine.Speech` (shipped 139, chooser 5) and `StargateGame.CTFFlagMesh` (96 against
   21,801): `class_defaults_per_class.csv` is one chooser version behind on those rows.
 
-`make class-blockstart-guard` writes `inventory/class_blockstart_guard.csv` (2,209 rows: `shipped`, `chosen`,
+**The artifact is a snapshot, and it now says so in a gate.** `class_blockstart_guard.csv` was written by #488 and
+not regenerated since, while the locator's chooser moved (**292** of the starts `class_defaults_per_class.csv`
+publishes today are not the ones the artifact records, 25 published starts have no row and 251 rows describe
+classes the locator no longer publishes -- 2,209 rows then, 1,983 now). Its conclusions did not move: a run on the
+current tree still reports 1,655 -> 1,936 fully declared over the population, the same 280/1,596 control split and
+the same 7 refusals the control does not explain. `--check` therefore now holds the committed rows to
+`class_defaults_per_class.csv` (one row per published start, and that start in `shipped`) as well as driving the
+synthetic bodies, so the next drift fails `make ci` instead of being read as current.
+
+`make class-blockstart-guard` writes `inventory/class_blockstart_guard.csv` (1,983 rows: `shipped`, `chosen`,
 `reproduced`, `cands`, `guard`, `group_from`/`group_len`/`group_end`/`group_ref`/`group_hex`, `overlap`,
 `old_count`/`old_known`/`old_decl`, `survivors`, `new_start`/`delta`/`new_count`/`new_known`/`new_decl`/`new_to_end`/
 `new_origin`/`new_on_group`, `verdict`). It reads the packages and three committed tables; no boot, no Ghidra round,
