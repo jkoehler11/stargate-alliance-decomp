@@ -445,6 +445,7 @@ ci:
 	@$(PYTHON) tools/state-entry.py --check-doc docs/systems/AI.md
 	@$(PYTHON) tools/state-code.py --check-doc docs/systems/AI.md
 	@$(PYTHON) tools/jump-census.py --check-doc docs/BYTECODE.md
+	@$(PYTHON) tools/jump-census.py --cross-check
 	@$(PYTHON) tools/jump-graph.py --check-doc docs/BYTECODE.md
 	@$(PYTHON) tools/jump-branches.py --check-doc docs/BYTECODE.md
 	@$(PYTHON) tools/text-branches.py --check-doc docs/BYTECODE.md
@@ -1389,9 +1390,10 @@ state-entry:
 		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
 		-o inventory/state_entry.csv --write-doc docs/systems/AI.md
 
-# A `Goto('Label')` is a `Jump` whose operand is script-absolute: the handler adds it to the object's script
-# pointer, so a file-space reading of it lands nowhere. This measures that negative over the whole corpus and
-# counts the two label tokens the build never emits (PLAN 3.7, docs/BYTECODE.md).
+# A `Goto('Label')` is a `Jump` whose operand is an offset into the object's script *as the loader widens it*, so a
+# file-space reading of it lands nowhere. This tests all four readings over the whole corpus and counts the two
+# label tokens the build never emits; `--cross-check` holds its census to inventory/jump_graph.csv (PLAN 3.7,
+# docs/BYTECODE.md).
 jump-census:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
 	$(PYTHON) tools/jump-census.py \

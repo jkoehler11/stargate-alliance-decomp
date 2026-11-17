@@ -68,6 +68,23 @@ CENSUS_NOTE = {
     "terminators": "`EndOfScript`/`EndFunction` tokens, left out of the flow nodes because nothing jumps to them",
     "reachable": "of those, tokens a walk from the first token reaches over fallthrough and jump edges",
     "dead": "tokens no walk reaches (code behind a return or a jump with no incoming edge)",
+    "dead_runs": "maximal runs of unreachable statements",
+    "dead_after_return": "unreachable statements whose run starts directly behind a `Return`",
+    "dead_after_stop": "the same behind a `Stop`",
+    "dead_after_jump": "the same behind an unconditional `Jump`",
+    "dead_after_other": "the same behind any other statement",
+    "dead_runs_after_return": "runs behind a `Return`",
+    "dead_runs_after_stop": "runs behind a `Stop`",
+    "dead_runs_after_jump": "runs behind an unconditional `Jump`",
+    "dead_runs_after_other": "runs behind any other statement",
+    "dead_singletons": "runs that are one statement long",
+    "dead_final": "unreachable statements that are their script's own last statement",
+    "dead_return": "unreachable `Return` tokens",
+    "dead_jump": "unreachable `Jump` tokens",
+    "dead_iteratornext": "unreachable `IteratorNext` tokens",
+    "dead_iteratornext_after_jump": "unreachable `IteratorNext` tokens whose predecessor is a `Jump`",
+    "dead_return_after_return": "unreachable `Return`s whose own predecessor is another `Return`",
+    "dead_scripts": "scripts with at least one unreachable statement",
     "jump_sites": "`Jump` tokens",
     "jumpifnot_sites": "`JumpIfNot` tokens",
     "jump_hits": "`Jump` tokens whose operand lands on a token start's guest offset",
@@ -213,7 +230,22 @@ def reach(body, nodes, edges, starts):
             if nxt in starts_set and nxt not in seen:
                 seen.add(nxt)
                 todo.append(nxt)
-    return len(seen), len(starts) - len(seen)
+    # The dead statements arrive in runs, and what sits in front of a run is the measurement: a run behind a
+    # `Return` is a tail the compiler emitted (the implicit return), a run behind an unconditional `Jump` is a
+    # block no branch enters. `(start offset, length, predecessor name, reaches the script's end)`.
+    flow = sorted(nodes, key=lambda n: n["offset"])
+    runs, i = [], 0
+    while i < len(flow):
+        if flow[i]["offset"] in seen:
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(flow) and flow[j + 1]["offset"] not in seen:
+            j += 1
+        runs.append((flow[i]["offset"], j - i + 1, flow[i - 1]["name"] if i else "",
+                     j == len(flow) - 1))
+        i = j + 1
+    return len(seen), len(starts) - len(seen), runs, seen
 
 
 def measure(body, nodes, spans):
@@ -258,8 +290,29 @@ def measure(body, nodes, spans):
         edges.append((n["offset"], n["name"], value, target))
         resolved[n["offset"]] = target
     stats["edges"] = len(edges)
-    ok, dead = reach(body, flow, resolved, statements)
+    ok, dead, runs, seen = reach(body, flow, resolved, statements)
     stats["reachable"], stats["dead"] = ok, dead
+    stats["dead_runs"] = len(runs)
+    for _start, length, prev, _at_end in runs:
+        key = ("after_return" if prev == "Return" else "after_stop" if prev == "Stop"
+               else "after_jump" if prev == "Jump" else "after_other")
+        stats["dead_" + key] += length
+        stats["dead_runs_" + key] += 1
+    stats["dead_singletons"] = len([r for r in runs if r[1] == 1])
+    dead_nodes = [n for n in flow if n["offset"] not in seen]
+    last = flow[-1]["offset"] if flow else None
+    where = {n["offset"]: i for i, n in enumerate(flow)}
+    stats["dead_final"] = len([n for n in dead_nodes if n["offset"] == last])
+    stats["dead_return"] = len([n for n in dead_nodes if n["name"] == "Return"])
+    stats["dead_jump"] = len([n for n in dead_nodes if n["name"] == "Jump"])
+    stats["dead_iteratornext"] = len([n for n in dead_nodes if n["name"] == "IteratorNext"])
+    stats["dead_return_after_return"] = len([n for n in dead_nodes if n["name"] == "Return"
+                                            and where[n["offset"]] > 0
+                                            and flow[where[n["offset"]] - 1]["name"] == "Return"])
+    stats["dead_iteratornext_after_jump"] = len([n for n in dead_nodes if n["name"] == "IteratorNext"
+                                                and where[n["offset"]] > 0
+                                                and flow[where[n["offset"]] - 1]["name"] == "Jump"])
+    stats["dead_scripts"] = 1 if dead else 0
     return edges, stats
 
 
@@ -275,6 +328,12 @@ def read_dump(system):
         census["terminators"] += st["terminators"]
         census["reachable"] += st["reachable"]
         census["dead"] += st["dead"]
+        for key in ("dead_runs", "dead_after_return", "dead_after_stop", "dead_after_jump", "dead_after_other",
+                    "dead_runs_after_return", "dead_runs_after_stop", "dead_runs_after_jump",
+                    "dead_runs_after_other", "dead_singletons", "dead_final", "dead_return", "dead_jump",
+                    "dead_iteratornext", "dead_return_after_return", "dead_iteratornext_after_jump",
+                    "dead_scripts"):
+            census[key] += st[key]
         if not st["jumps"]:
             continue
         cls, _state = owner_of(pkg, exp)
@@ -304,7 +363,12 @@ def read_dump(system):
                     "note": "%d script(s), %d token(s), %d unreachable" % (c["scripts"], c["tokens"], c["dead"])})
     for key in ("jumps", "scripts_with_a_jump", "guest_hits", "file_absolute_hits", "at_end", "past_end", "misses",
                 "guest_token_starts", "guest_bytes", "file_token_starts", "file_bytes", "forward", "backward",
-                "tokens", "terminators", "reachable", "dead", "jump_sites", "jumpifnot_sites", "jump_hits", "jumpifnot_hits",
+                "tokens", "terminators", "reachable", "dead", "dead_runs", "dead_after_return", "dead_after_stop",
+                "dead_after_jump", "dead_after_other", "dead_runs_after_return", "dead_runs_after_stop",
+                "dead_runs_after_jump", "dead_runs_after_other", "dead_singletons", "dead_final", "dead_return",
+                "dead_jump", "dead_iteratornext", "dead_return_after_return", "dead_iteratornext_after_jump",
+                "dead_scripts",
+                "jump_sites", "jumpifnot_sites", "jump_hits", "jumpifnot_hits",
                 "packages", "payloads_seen", "payloads_walked"):
             name = key
             if key == "guest_token_starts":
@@ -367,13 +431,28 @@ def doc_block(rows):
              "**%s** operands run past the script's guest length and **%s** land on no token start, so the graph has"
              " **%s** edges over **%s** scripts -- **%s** forward and **%s** backward (a loop backedge). A walk from"
              " each script's first statement over those edges and fallthrough reaches **%s of %s** statements"
-             " (**%s%%**); the other **%s** are the dead tails behind a return or a jump with no incoming edge. The"
-             " **%s** `EndOfScript`/`EndFunction` terminators are left out of that count -- nothing jumps to them."
+             " (**%s%%**); the **%s** `EndOfScript`/`EndFunction` terminators are left out of that count -- nothing"
+             " jumps to them."
              % (comma(count(rows, "past_end")), comma(count(rows, "misses")), comma(jumps),
                 comma(count(rows, "scripts_with_a_jump")), comma(count(rows, "forward")),
                 comma(count(rows, "backward")), comma(count(rows, "reachable")), comma(count(rows, "tokens")),
-                "%.2f" % pct(count(rows, "reachable"), count(rows, "tokens")), comma(count(rows, "dead")),
+                "%.2f" % pct(count(rows, "reachable"), count(rows, "tokens")),
                 comma(count(rows, "terminators"))),
+             "",
+             "**%s** statements are unreachable, in **%s** runs over **%s** scripts, and the statement in front of a"
+             " run says what they are: **%s** follow a `Return` (%s runs), **%s** an unconditional `Jump` (%s runs),"
+             " **%s** anything else. **%s** of the runs are a single statement; **%s** statements are their script's"
+             " own last one and **%s** of the unreachable `Return`s follow another `Return` -- the compiler's"
+             " implicit return after an explicit one. **%s** are `Return` tokens and **%s** `Jump`s; **%s** are an"
+             " `IteratorNext`, **%s** of those behind a `Jump` that lands on the instruction past it (a loop exit"
+             " over the iterator step)."
+             % (comma(count(rows, "dead")), comma(count(rows, "dead_runs")), comma(count(rows, "dead_scripts")),
+                comma(count(rows, "dead_after_return")), comma(count(rows, "dead_runs_after_return")),
+                comma(count(rows, "dead_after_jump")), comma(count(rows, "dead_runs_after_jump")),
+                comma(count(rows, "dead_after_other")), comma(count(rows, "dead_singletons")),
+                comma(count(rows, "dead_final")), comma(count(rows, "dead_return_after_return")),
+                comma(count(rows, "dead_return")), comma(count(rows, "dead_jump")),
+                comma(count(rows, "dead_iteratornext")), comma(count(rows, "dead_iteratornext_after_jump"))),
              ]
     pkgs = [r for r in rows if r.get("kind") == "package"]
     if pkgs:

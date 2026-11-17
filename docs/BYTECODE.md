@@ -1637,10 +1637,15 @@ The shipped source agrees on the shape: the body is `if( RecentlyUsed[i] == Full
 so the token carries exactly two nested expressions -- `expr,expr` with no operand refuses at `0x155`, which is what
 rules the no-operand reading out.
 
-**A second field confirms the width.** The dword at `name_end + 12` is the script's size with every index operand
-widened to four bytes (`--sizefield`), so a correct widening rule has to predict it: the residue falls from 6 rows
-(11,680 of 11,686 exact) to **4** (11,683 of 11,687), and the two rows that leave are differences of 5 and 6 bytes
--- this row's widening -- while the four that remain are dword values of 261,119 and up, i.e. not lengths at all.
+**A second field confirms the width, and the residue it left is now empty.** The dword at `name_end + 12` is the
+script's size with every index operand widened to four bytes (`--sizefield`), so a correct widening rule has to
+predict it: **11,687 of 11,687** payloads agree (100.00%), against 11,683 when this row landed. The four rows that
+were still off -- dword values of 261,119 and up, recorded here as "not lengths at all" -- were a **read** offset,
+not a format: those payloads carry the export's name as their **fifth and sixth** front value, and `--sizefield`
+still had a private front decode that stopped at the first match, so it read the field two bytes early while
+`locate()` (six values) had the right name end all along. `--sizefield` prints them as `the front's sixth value
+repeats the export name, so the name end is the second one: 4 payload(s)`, and `residue by sign: {}` is the check
+that no row is left.
 
 With it committed the corpus has **no refusals**: `inventory/opcode_refusals.csv` is a header, 11,687 of 11,687
 scripted payloads walk end to end, and `matching_baseline.csv`'s scripted ceiling is **11,368**. The rival is worth
@@ -1650,7 +1655,7 @@ only the handler's dereference and the size-field agreement separate them -- `--
 starts from the enclosing chain instead of from the byte where the walk stopped.
 
 
-## Where a jump goes: the operand is not a file offset
+## Where a jump goes: the operand is an offset into the widened code
 
 `tools/jump-census.py` tests the walk from the other side. A `Goto('Label')` in the source is a `Jump` in the
 bytecode and the label's name is not in the payload at all -- the corpus carries **no** `LabelTable` (`0x0c`) and
@@ -1684,32 +1689,19 @@ never emits a label" is true of the function half and false of the state half: `
     python3 tools/jump-census.py --system DUMP/System -o inventory/jump_census.csv
 
 <!-- generated:jump-census -->
-**23,778** `Jump`/`JumpIfNot` tokens over **6127** scripts, each 2-byte operand tested against that script's own token starts under the three readings an offset can have: **absolute** 5495 (23.11%), **unsigned relative** 3255 (13.69%), **signed relative** 3255 (13.69%). The base rate is **45.6%** -- 484,332 of the 1,062,761 byte positions in the same scripts are a token start -- and **none of the three is the encoding**: every reading lands at or below chance, which is what an operand expressed in a layout the file does not have looks like.
+**23,778 of 23,778** `Jump`/`JumpIfNot` operands (**100.00%**) equal the **guest-space offset** of a token start -- an offset into the script as the loader widens it -- over **6,127** scripts. The three file-space readings are the control, on the same sites: **absolute** 5,495 (23.11%), **unsigned relative** 3,255 (13.69%), **signed relative** 3,255 (13.69%). The chance levels are counted over those same scripts, not the whole corpus: a token start is **33.49%** of a byte in the widened layout (412,610 of 1,231,947) and **45.22%** in the file (412,610 of 912,388), so the guest reading clears chance by the whole population while every file reading lands at or below it -- the operand is written in the layout `FFrame::Code = Node->Script + operand` computes against, and the file is not that layout.
 
-The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads; a `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up. **16,539** jumps land on no token start under any reading; the first 50 are rows below, the count is the census row.
-
-| package | class | function | offset | op | target |
-| --- | --- | --- | ---: | --- | ---: |
-| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0000 | JumpIfNot | 32 |
-| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0016 | Jump | 53 |
-| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0019 | JumpIfNot | 53 |
-| AmbientCreatures | `HerdAnimal` | `BeginState` | 0004 | JumpIfNot | 39 |
-| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 0045 | JumpIfNot | 140 |
-| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 0090 | JumpIfNot | 226 |
-| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 00a1 | JumpIfNot | 280 |
-| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 00ba | Jump | 237 |
-| AmbientCreatures | `HerdAnimal` | `FollowParent` | 001a | Jump | 56 |
-| AmbientCreatures | `HerdAnimal` | `FollowParent` | 0024 | JumpIfNot | 82 |
-| AmbientCreatures | `HerdAnimal` | `HearNoise` | 0000 | JumpIfNot | 67 |
-| AmbientCreatures | `HerdAnimal` | `HerdLeader` | 0005 | JumpIfNot | 50 |
+**0** operands land on the epilogue's first byte and **0** run past the script's widened length, so no edge dangles; **0** land on no token start under any of the four readings. The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads; a `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up.
 
 <!-- /generated:jump-census -->
 
-**The fourth reading is the widened code, and it is the one that holds.** `Jump` adds its operand to the memory
-script (`FFrame::Code = Node->Script + operand`), so a file-space offset sits at chance by construction -- which is
-what the three readings above measure. In the `State` payloads, where the widening map is available, **863 of 863**
-jump operands land on a token start in the widened code (`tools/state-code.py`, `docs/systems/AI.md`); the same
-test over the 11,687 `Function` scripts is what the function half of this census would need.
+**The fourth reading is the widened code, and it is the one that holds -- in both halves.** `Jump` adds its operand
+to the memory script (`FFrame::Code = Node->Script + operand`), so a file-space offset sits at chance by
+construction, which is what the three control readings above measure. In the `State` payloads **863 of 863** jump
+operands land on a token start in the widened code (`tools/state-code.py`, `docs/systems/AI.md`), and this census
+runs the same test over the 11,687 `Function` scripts: **23,778 of 23,778**, no operand past the script's widened
+length, none on the epilogue. `--cross-check` holds that count to `inventory/jump_graph.csv`, which derives the same
+map in its own walk, so the two artifacts are one fact measured twice rather than one file agreeing with itself.
 
 The two exec handlers settle what that operand is, and it is not the file's layout:
 
@@ -1719,10 +1711,11 @@ The two exec handlers settle what that operand is, and it is not the file's layo
   condition, then takes the same route (`0x00047837..0x0004783f`).
 
 `+0x48` is the object's script pointer, i.e. the buffer the loader has **already widened**, and the loader does not
-adjust the operand when it widens -- which is why every file-space reading lands at or below chance. That base is not missing: it is the
-size `--sizefield` already measures. The script's memory image is its file with every index operand at four bytes
-and nothing else moved, so the operands are **guest-space offsets** and the jump graph can be rebuilt from the file
--- `tools/jump-graph.py` does, and a real copy in a `pmemsave` image agrees (next section).
+adjust the operand when it widens -- which is why every file-space reading lands at or below chance. That base is not
+missing: it is the size `--sizefield` already measures. The script's memory image is its file with every index
+operand at four bytes and nothing else moved, so the operands are **guest-space offsets** and both tools rebuild
+them from the file -- this census puts every one of them on a token start and `tools/jump-graph.py` turns the same
+reading into edges (next section).
 
 ## The jump graph: an operand is the guest copy's offset
 
@@ -1749,7 +1742,9 @@ the image stays on the desktop.
 <!-- generated:jump-graph -->
 **23,778 of 23,778** `Jump`/`JumpIfNot` operands (**100.00%**) equal the **guest-space offset** of a token start under the widening model, against a guest base rate of **33.49%** (412,610 of 1,231,947 widened bytes) and **5,495** (23.11%) for the same population read as a file-space absolute offset -- the operand is the offset into the buffer the exec handler adds it to, and the compiler wrote it in the layout the loader restores.
 
-**0** operands run past the script's guest length and **0** land on no token start, so the graph has **23,778** edges over **6,127** scripts -- **22,270** forward and **1,508** backward (a loop backedge). A walk from each script's first statement over those edges and fallthrough reaches **91,977 of 96,193** statements (**95.62%**); the other **4,216** are the dead tails behind a return or a jump with no incoming edge. The **11,687** `EndOfScript`/`EndFunction` terminators are left out of that count -- nothing jumps to them.
+**0** operands run past the script's guest length and **0** land on no token start, so the graph has **23,778** edges over **6,127** scripts -- **22,270** forward and **1,508** backward (a loop backedge). A walk from each script's first statement over those edges and fallthrough reaches **91,977 of 96,193** statements (**95.62%**); the **11,687** `EndOfScript`/`EndFunction` terminators are left out of that count -- nothing jumps to them.
+
+**4,216** statements are unreachable, in **4,045** runs over **3,453** scripts, and the statement in front of a run says what they are: **4,109** follow a `Return` (3,938 runs), **107** an unconditional `Jump` (107 runs), **0** anything else. **3,903** of the runs are a single statement; **3,342** statements are their script's own last one and **3,226** of the unreachable `Return`s follow another `Return` -- the compiler's implicit return after an explicit one. **3,352** are `Return` tokens and **603** `Jump`s; **92** are an `IteratorNext`, **89** of those behind a `Jump` that lands on the instruction past it (a loop exit over the iterator step).
 
 | package | scripts | jumps | tokens | unreachable |
 | --- | ---: | ---: | ---: | ---: |
@@ -1780,10 +1775,16 @@ counts those (a first version counted every child token and reported 77% of the 
 **`EndOfScript`/`EndFunction`** are terminators, not statements -- nothing jumps to them -- so they are counted in
 their own census row rather than as dead code.
 
-**What the residue is.** The 4,216 unreachable statements are the tails behind a `return` that no branch jumps back
-into, which is exactly the shape a control-flow graph should expose: a decompiler can now say a block is unreachable
-instead of guessing. The graph is also what the earlier label question needed -- a `Goto('Label')` was resolved to one
-of these offsets at compile time, and `inventory/jump_graph.csv` holds the offset it resolved to.
+**What the residue is: emitted housekeeping, not dead source.** The page used to call all 4,216 "the tails behind a
+`return`", and the predecessor of each run is the measurement that says whether that is true. It is true of **4,109**
+of them, in **3,938** runs, and **107** more sit behind an unconditional `Jump` that nothing targets -- no run is
+behind anything else. The shape is the compiler's, not the source's: **3,342** are their script's own last
+statement and **3,226** unreachable `Return`s follow another `Return`, i.e. the implicit return a body pays after an
+explicit one, and **3,903** of the 4,045 runs are a single statement. The one shape worth naming separately is the
+**89** `IteratorNext`s a loop-exit `Jump` lands just past -- an iterator step the exit path skips. So a decompiler
+should not print these as dead code: what it can say is that a block has no entry, and this is the population where
+that is normal. The graph is also what the earlier label question needed -- a `Goto('Label')` was resolved to one of
+these offsets at compile time, and `inventory/jump_graph.csv` holds the offset it resolved to.
 
 ## What the branches are: an `else` arm, a straight arm, or an empty one
 
