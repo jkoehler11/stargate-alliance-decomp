@@ -301,6 +301,23 @@ predicate that might — `bad == 0` with at least one declared name and no fract
 **1,665 classes and 15,523 properties**, one class more than the shipped rule rather than 537; the figure is
 withdrawn here rather than carried.
 
+**The withheld starts are one-tag blocks, and the type map refuses five tags out of 330.**
+`tools/class-defaults-contradictions.py` (`make class-defaults-contradictions`,
+`inventory/class_defaults_contradictions.csv`) reads the block at every start the locator publishes and withholds the
+verdict on — **319 of the 655 withheld classes** (the other 336 have no start at all) — and joins each tag's name to
+the class's declared kind through `class_properties.csv`, counting the tags `TYPE_AGREEMENT` refuses:
+
+* **330 tags, 319 of them naming a declared property, over 313 starts that hold exactly one tag** and six that hold
+  two or more. The population is therefore what the two-property floor withholds (`single-declared`), not a set of
+  blocks refused on their types: there is no block here for a type correction to recover.
+* **Five tags are refused, and they are five different (kind, type) pairs, one tag each**: `UBoolProperty` read as
+  `Byte` (`SP_Timer.bBlockPlayers`), as `Class` (`ClientBeaconReceiver.bAlwaysTick`) and as `Invalid`
+  (`ArmorPickup.bDirectional`), `UClassProperty` read as `Vector` (`MasterServerClient.Class`) and
+  `UFloatProperty` read as `String` (`MultiplayerMapFileList.WinLeft`). A pair the map had wrong would cluster --
+  that is how `UClassProperty`/`Object` was found, 734 tags in otherwise-clean blocks. Five singletons do not: each
+  of these five blocks is a read of something that is not a tag stream, which is the conclusion the section above
+  reaches from the other side (the four starts the type-first order moves are shifts inside one parse as well).
+
 ## Subobjects: 1,317 `Begin Object` blocks
 
 An `editinline` property or array element does not point at a class or a texture: it points at an **export whose
