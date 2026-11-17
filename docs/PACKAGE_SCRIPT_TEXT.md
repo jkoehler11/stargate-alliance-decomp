@@ -349,6 +349,92 @@ direction. Three causes are visible in the data, and one is not yet explained:
 The unexplained residue is small but real: 530 classes' counts disagree and this file does not claim to know
 which side is right. Both numbers are recorded; the disagreement is the finding.
 
+## What a disabled body weighs
+
+`tools/class-text-comments.py` counts the `function` declarations a block comment disables and joins them to
+the package's exports by name; it stops at the declaration. `tools/class-text-bodies.py` reads the body behind
+each one -- its brace span, its operator multiset (through `tools/decompiler-operators.py`'s own token table,
+so a change to that table moves both pages at once), the statements at the body's own brace depth and its byte
+length -- and splits the population three ways: a commented body whose name the live text of the same class
+also declares with a body, a commented body with no live twin, and the live declarations themselves, which are
+the reader's control.
+
+Most of what a comment disables it disables whole: the body sits inside the same `/* ... */`, so the comment
+is readable per function and not only per declaration. A live twin of the same name is usually **not** the
+same function -- the operator multiset alone separates most pairs, and a group of them keeps the class's
+declaration while the body beside it is a trailer. And the commented bodies with no live twin at all are the
+weight of the comment: bytes, operators and statements this build never compiled, which is a cut-content
+ranking rather than another declaration count.
+
+A reader that found fewer bodies in the live text than the text declares would not be measuring the comment,
+so the same reader runs over the live declarations too and the block reports the pair of rates; the residue
+in the comments is the comment's own, not the pattern's.
+
+<!-- generated:class-text-bodies -->
+**181 of the 208 `function` declarations a block comment disables also carry their body inside that comment, and 22 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **4468 of 4890 declarations (91.4%)**, against **87.0%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 22 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **5** keep the operator multiset with a different layout, **11** move at least one operator and **5** leave a live body of 32 bytes or fewer behind a substantial comment -- 10413 commented bytes against 7473 live ones over the population.
+
+| measure | value |
+|---|---|
+| classes with a `ScriptText` / carrying a block comment | **2319** / **252** |
+| `function` declarations inside a block comment | **208** |
+| ... with a body in the same comment | **181** |
+| ... a declaration without a body | **27** |
+| live `function` declarations / whose body the reader finds | **4890** / **4468** |
+| commented bodies with a live twin of the same name | **22** |
+| ... byte-identical | **1** |
+| ... same operator multiset, different layout | **5** |
+| ... at least one operator moved | **11** |
+| ... whose live body is a trailer | **5** |
+| bytes, commented revisions / live revisions of the pairs | **10413** / **7473** |
+| operators, the same pair | **101** / **89** |
+| commented bodies with no live twin | **158** |
+| bytes / operators / statements of those bodies | **49672** / **500** / **531** |
+
+Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
+
+| class.function | verdict | commented ops / stmts / bytes | live ops / stmts / bytes | operators that moved |
+|---|---|---:|---:|---|
+| `Engine.AIMsgManager.issubtypeof` | differs | 23 / 15 / 1454 | 2 / 4 / 118 | !=,&,+,-,<,==,> |
+| `Engine.xAdminGroup.removeuser` | differs | 0 / 1 / 23 | 1 / 0 / 137 | != |
+| `StargateContent.BotScarab.beginstate` | differs | 0 / 4 / 126 | 2 / 10 / 321 | !=,== |
+| `StargateContent.BotScarab.pickdestination` | differs | 2 / 7 / 326 | 2 / 7 / 437 | !=,- |
+| `StargateContent.HaakenBot.timer` | differs | 0 / 1 / 21 | 3 / 1 / 339 | !=,-,>= |
+| `StargateContent.ReetouBot.pickdestinationtododgephasetorch` | differs | 37 / 39 / 3111 | 58 / 50 / 3159 | !=,*,+,-,<,==,> |
+| `StargateContent.ReetouWeapon.botfire` | differs | 0 / 4 / 105 | 1 / 2 / 101 | == |
+| `StargateContent.SuperSoldier.playfiring` | differs | 8 / 4 / 1422 | 0 / 2 / 96 | !=,&&,*,-,==,> |
+| `StargateVehicles.SemektetMortarGun.animend` | differs | 1 / 2 / 89 | 6 / 3 / 491 | !=,==,|| |
+| `StargateVehicles.SemektetStaffCannonGun.animend` | differs | 0 / 1 / 48 | 4 / 0 / 203 | !=,==,|| |
+| `StargateVehicles.SemektetStaffCannonGun.projectilefirebarrels` | differs | 4 / 13 / 988 | 0 / 9 / 660 | *,/ |
+| `StargateGame.BotEnemy.findlocalcover` | identical | 0 / 1 / 16 | 0 / 1 / 16 | - |
+| `Engine.Weapon.fire` | live-stub | 9 / 1 / 496 | 0 / 0 / 2 | +,-,<,==,>,|| |
+| `Engine.Weapon.serveraltfire` | live-stub | 0 / 2 / 88 | 0 / 1 / 28 | - |
+| `Engine.Weapon.serverfire` | live-stub | 4 / 2 / 481 | 0 / 1 / 25 | -,==,> |
+| `StargateContent.BotScarab.timer` | live-stub | 3 / 2 / 221 | 0 / 1 / 28 | !=,&&,== |
+| `StargateGame.StargateWeapon.serverfire` | live-stub | 0 / 2 / 48 | 0 / 1 / 25 | - |
+| `StargateContent.HaakenBot.beginstate` | same-operators | 0 / 1 / 36 | 0 / 3 / 117 | - |
+| `StargateContent.HaakenBot.notifytakehit` | same-operators | 1 / 3 / 224 | 1 / 3 / 165 | - |
+| `StargateGame.BotEnemy.needtoturn` | same-operators | 2 / 8 / 234 | 2 / 9 / 275 | - |
+| `StargateGame.StargateWeaponEmplacement.updateaimingrotation` | same-operators | 1 / 17 / 613 | 1 / 15 / 487 | - |
+| `StargateVehicles.SemektetStaffCannonGun.getfirestart` | same-operators | 6 / 3 / 243 | 6 / 3 / 243 | - |
+
+**The disabled bodies are the weight of the comment, not a residue of it.** 158 commented bodies have no live twin at all: 49672 bytes of source, 500 operators and 531 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
+
+The largest of the 158 disabled bodies (`ops` / `stmts` at the body's own brace depth, the artifact carrying all of them):
+
+| class.function | bytes | ops | stmts |
+|---|---:|---:|---:|
+| `StargateGame.TeamAI.setorders` | 2669 | 9 | 8 |
+| `StargateMenus.MainMenu.buttonclick` | 1482 | 2 | 3 |
+| `StargateGame.BotSG.findroamdest` | 1386 | 17 | 14 |
+| `StargateGame.StargatePawn.endduststormanims` | 1350 | 1 | 0 |
+| `StargateVehicles.SemektetStaffCannonGun.tick` | 1318 | 10 | 7 |
+| `StargateGame.StargatePawn.startduststormanims` | 1294 | 1 | 0 |
+| `StargateGame.StargatePawn.getweaponclass` | 1273 | 4 | 4 |
+| `StargateGame.StargateAIMsgManager.checkmsgtype` | 1241 | 26 | 27 |
+
+Census: 2319 classes read, 252 with a block comment, 181 commented bodies.
+<!-- /generated:class-text-bodies -->
+
 ## Handling: measured here, extracted elsewhere
 
 The text is game-derived. Per `AGENTS.md` and `docs/LEGAL.md` it must not be committed: what is committed is
