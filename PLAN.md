@@ -12324,6 +12324,34 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, the text control — `else`, `&&` and `||` against the bytes)
+
+- **Task.** The branch census's next measurement: count `else` in the classes' live `ScriptText` (comment-aware)
+  against the 4,047 bytecode arms per class, which also gives the `&&` count the bytecode cannot see.
+- **The measurement.** The live text spells **4,051** `else` over the 2,319 classes whose `ScriptText` parses,
+  against **4,047** arms: **800 of the 967** classes the two artifacts share agree exactly (**82.7%**), **45**
+  spell more and **122** fewer -- so the corpus totals agree to four in four thousand only because the two sides
+  cancel. **1,352** more classes carry readable text and no branch row at all (1,105 of them `functions=0` in
+  `inventory/classes.csv`, 472 function bodies between them), and **386** `else`s exist only inside comments.
+- **One `JumpIfNot` per condition term, and `&&`/`||` add none.** `if` + `while` + `for` over the 967 joined
+  classes is 18,452 terms for 17,463 tokens, exact on 820 (84.8%) -- and on the 424 classes whose text carries no
+  `&&`/`||` it is exact **412** times (97.2%) against **408 of 543** (75.1%) where one is present. So a `&&`/`||`
+  is not a hidden branch: this dialect evaluates both sides (strict operators), which is why the branch census
+  found 0 jumps naming a non-statement, and the 3,686 `&&` + 1,568 `||` in this text are **0** arms. The 989
+  surplus terms sit in 147 classes -- one contributes 164 -- the shape of a per-class revision, not of a codegen
+  rule that varies by branch.
+- **The mask is the instrument, and its order is the finding.** Comments first, then quoted literals, length
+  preserving: an apostrophe in prose otherwise runs a string match to the next apostrophe thousands of lines
+  later. `#else` is a directive, not a branch, and gets its own column -- this corpus has **0** of them.
+- Tool (`mask`, `counts`, `walk`, `join`, the doc block, a 6-case `--check`) + `inventory/text_branches.csv`
+  (967 joined classes + 1,352 no-branch + one census) + `docs/BYTECODE.md` (a new section, and the branch
+  section's "that is a text question" sentence corrected to the measured answer) + a `make text-branches` target
+  and its `--check-doc` line + this note. One 1-second read of the 18 packages; no boot.
+- **Next measurement:** the label jumps the state-entry note left open -- 169 text `Goto`s against the `0x0c`
+  `LabelTable` tokens: whether the corpus's label tables enumerate the same labels the text jumps to, and which
+  `Jump` operands index them. `inventory/jump_graph.csv` already resolves every `Jump`, so the read is the
+  `LabelTable` operand per payload plus the text's `Goto` targets per class.
+
 ### Execution notes (2026-11-17, the branch census — the jump graph's first consumer)
 
 - **Task.** The previous note's next measurement, first half: spend the graph instead of measuring it again. A
