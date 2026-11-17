@@ -1689,8 +1689,68 @@ The two exec handlers settle what that operand is, and it is not the file's layo
   condition, then takes the same route (`0x00047837..0x0004783f`).
 
 `+0x48` is the object's script pointer, i.e. the buffer the loader has **already widened**, and the loader does not
-adjust the operand when it widens -- which is why every file-space reading lands at or below chance. Reconstructing
-that base is the missing piece: which index operand widens is a per-slot property (the same rule the `--sizefield`
-residue rows are about), so a script's jump graph cannot be rebuilt from the file yet. The next instrument is a
-guest copy -- `Script + operand` can be read directly in an existing `pmemsave` image, and
-`tools/xemu/script-ram.py` already places those copies.
+adjust the operand when it widens -- which is why every file-space reading lands at or below chance. That base is not missing: it is the
+size `--sizefield` already measures. The script's memory image is its file with every index operand at four bytes
+and nothing else moved, so the operands are **guest-space offsets** and the jump graph can be rebuilt from the file
+-- `tools/jump-graph.py` does, and a real copy in a `pmemsave` image agrees (next section).
+
+## The jump graph: an operand is the guest copy's offset
+
+`tools/jump-graph.py` (`make jump-graph`; artifact `inventory/jump_graph.csv`, one row per edge plus per-package and
+census rows) reads every `Jump`/`JumpIfNot` operand as an offset into the **widened** script the exec handler adds
+it to. The whole corpus then closes: each of the 23,778 edges lands on a token the runtime can enter, in file space,
+and a walk over those edges reaches 95.62% of the statements in the 6,127 scripts that carry a jump.
+
+**The model is one this project already measured, in another reader.** `--sizefield`'s ladder established that the
+dword at `name_end + 12` equals the script's file length plus `sum(4 - width)` over its index operands on 11,687 of
+11,687 payloads (U13), i.e. the memory image is the file with every index operand at four bytes. A jump's own
+operand is *not* one of them -- `07 cd 00` is `07 cd 00` in the copy -- so the file-space readings were always going
+to miss: the offset is written in the widened coordinate space, which is why the serializer's shrinking of the index
+operands moved every target the file can name. The compiler patched jumps against the layout the loader restores.
+
+**The guest agrees copy by copy.** `tools/jump-graph.py --guest RAM` places a script in an existing `pmemsave` image
+with `tools/xemu/script-ram.py`'s aligner and reads the *copy's own* token starts -- the widths the alignment found,
+not the model's -- then asks where each operand lands. Over the **80** copies placed in `menu1/ram.bin` and
+`xemu/findtext3/ram.bin` (40 each, the run's cap per image) the aligned guest length equals the model's on every one,
+the copy's start set equals the model's on every one, and all **348** of their jump operands land on a start of the
+copy (measured 2026-11-17). The guest side prints offsets and counts only;
+the image stays on the desktop.
+
+<!-- generated:jump-graph -->
+**23,778 of 23,778** `Jump`/`JumpIfNot` operands (**100.00%**) equal the **guest-space offset** of a token start under the widening model, against a guest base rate of **33.49%** (412,610 of 1,231,947 widened bytes) and **5,495** (23.11%) for the same population read as a file-space absolute offset -- the operand is the offset into the buffer the exec handler adds it to, and the compiler wrote it in the layout the loader restores.
+
+**0** operands run past the script's guest length and **0** land on no token start, so the graph has **23,778** edges over **6,127** scripts -- **22,270** forward and **1,508** backward (a loop backedge). A walk from each script's first statement over those edges and fallthrough reaches **91,977 of 96,193** statements (**95.62%**); the other **4,216** are the dead tails behind a return or a jump with no incoming edge. The **11,687** `EndOfScript`/`EndFunction` terminators are left out of that count -- nothing jumps to them.
+
+| package | scripts | jumps | tokens | unreachable |
+| --- | ---: | ---: | ---: | ---: |
+| AmbientCreatures | 54 | 185 | 586 | 17 |
+| Core | 4 | 15 | 41 | 3 |
+| Editor | 20 | 155 | 579 | 13 |
+| Engine | 1753 | 6558 | 21311 | 803 |
+| GUI | 405 | 1529 | 5070 | 230 |
+| GamePlay | 192 | 654 | 2153 | 133 |
+| IpDrv | 36 | 182 | 596 | 32 |
+| Sharpeffects | 21 | 82 | 268 | 0 |
+| StargateContent | 883 | 2764 | 9240 | 273 |
+| StargateGame | 1882 | 8248 | 26102 | 884 |
+| StargateMenus | 168 | 478 | 1868 | 113 |
+| StargateVehicles | 233 | 720 | 2802 | 83 |
+| Stargateeffects | 18 | 39 | 163 | 0 |
+| UDebugMenu | 111 | 601 | 2866 | 9 |
+| UPreview | 9 | 21 | 117 | 1 |
+| UWindow | 338 | 1547 | 5519 | 84 |
+
+<!-- /generated:jump-graph -->
+
+**Three modelling decisions, each of them a measurement.** A **switch** body is not reached by a jump: `execCase`
+scans forward to the next `Case` token when its value does not match, so the tool adds that scan as an edge -- without
+it every switch body looked dead (18,629 of 107,880 statements in the first pass, and the three worst scripts were
+`Case` runs). An **expression** is not a flow node: only statement tokens can be a jump's target, so reachability
+counts those (a first version counted every child token and reported 77% of the corpus unreachable). And
+**`EndOfScript`/`EndFunction`** are terminators, not statements -- nothing jumps to them -- so they are counted in
+their own census row rather than as dead code.
+
+**What the residue is.** The 4,216 unreachable statements are the tails behind a `return` that no branch jumps back
+into, which is exactly the shape a control-flow graph should expose: a decompiler can now say a block is unreachable
+instead of guessing. The graph is also what the earlier label question needed -- a `Goto('Label')` was resolved to one
+of these offsets at compile time, and `inventory/jump_graph.csv` holds the offset it resolved to.

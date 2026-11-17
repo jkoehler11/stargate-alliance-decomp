@@ -12324,6 +12324,39 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, the jump operand is the guest copy's offset — and the graph closes)
+
+- **Task.** The previous note's next measurement: read `Script + operand` in a guest copy. The file half settled it
+  without the boot, because the model was measured three sections earlier: U13's `--sizefield` ladder proves
+  `dword@name_end+12 == len(script) + sum(4 - width)` on 11,687 of 11,687 payloads, i.e. the memory image is the file
+  with every **index** operand at four bytes and nothing else moved. A jump's operand is not one of those -- `07 cd
+  00` is unchanged in the copy -- so it is an offset written in the widened space, and the loader's widening is what
+  makes it resolve.
+- **The measurement.** Read that way, the 23,778 `Jump`/`JumpIfNot` operands land on a token start **23,778 of
+  23,778** (100.00%), against a base rate of **33.49%** (412,610 token starts over 1,231,947 widened bytes) and
+  **5,495 (23.11%)** for the same population read in file space -- the control, on the same sites, from the same
+  walk. **0** operands run past the script's end and **0** land on no token start, so there is no dangling edge.
+- **The guest read is now a control rather than the instrument.** `--guest RAM` places a script in an existing
+  `pmemsave` image with `tools/xemu/script-ram.py`'s aligner and reads the *copy's own* token starts -- the widths the
+  alignment found, not the model's. Over the **80** copies placed in `menu1/ram.bin` and
+  `xemu/findtext3/ram.bin` the aligned guest length equals the model's on every one, the copy's start set equals the
+  model's on every one, and all **348** operands land on a start of the copy. Nothing of the image enters git: the mode prints offsets and counts.
+- **Three modelling decisions, each of them a measurement a first pass got wrong.** A **switch** body is reached by
+  `execCase`'s *forward scan* to the next `Case` token, not by an edge, so that scan is an edge here (without it
+  18,629 of 107,880 statements looked dead and the three worst scripts were `Case` runs). An **expression** is not a
+  flow node -- only a statement can be a jump's target -- so reachability counts statements (a first version counted
+  every child token and called 77% of the corpus unreachable). **`EndOfScript`/`EndFunction`** are terminators that
+  nothing jumps to, so they are counted in their own row instead of as dead code (11,675 of the first pass's 15,891
+  "dead" tokens were the terminator).
+- Tool (`guest_map`, `measure`, `reach`, `payloads`, `guest_report`, the doc block and a 6-case `--check`) +
+  `inventory/jump_graph.csv` (edge rows + 16 package rows + 25 census rows) + `docs/BYTECODE.md` (the new section and
+  the corrected "cannot be rebuilt from the file yet" paragraph) + `docs/UNKNOWNS.md` (the U13 tail) + a
+  `make jump-graph` target and its `--check-doc` line in `make ci` + this note. One 1-second read of the 18 packages;
+  no boot, no Ghidra.
+- **Next measurement:** spend the graph. A `JumpIfNot`'s target is the end of an `if` arm, so a decompiled body can
+  have its arms labelled from `inventory/jump_graph.csv`; and the 4,216 unreachable statements can be diffed against
+  the shipped text -- a statement the text still spells that no path reaches is dead code the compiler kept.
+
 ### Execution notes (2026-11-17, a jump operand is not a file offset — and the build never emits a label)
 
 - **Task.** The previous note's next measurement: the label jumps. A source `Goto('Begin')` is neither a
