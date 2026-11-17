@@ -309,36 +309,36 @@ the tool reports the trailer it leaves behind and counts the short regions as re
 them -- the arm total below is therefore a **floor**, not a fixed count.
 
 <!-- generated:state-code -->
-**552 `State` payloads walk as code -- 30,217 bytes and 12,758 tokens of the state's own label block, `JumpIfNot` 524 -- and 30 of them carry the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 505 `JumpIfNot` against their 842 keywords, equal in 19.
+**553 `State` payloads walk as code -- 40,380 bytes and 16,097 tokens of the state's own label block, `JumpIfNot` 596 -- and 174 of them carry the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 571 `JumpIfNot` against their 843 keywords, equal in 28.
 
 | measure | value |
 |---|---|
 | `State` exports read | 553 |
-| payloads that walk | 552 |
-| payload bytes / of them code | 57,297 / 30,217 |
-| tokens / `JumpIfNot` / `Jump` | 12,758 / 524 / 246 |
-| `LabelTable` tokens, in states / in `Function` payloads | 31 / 0 |
-| `StringConst` tokens | 126 |
-| walks ending on `LabelTable` (whole) / ending earlier (a floor) | 7 / 545 |
-| payloads that do not walk | 1 |
+| payloads that walk | 553 |
+| payload bytes / of them code | 57,297 / 40,380 |
+| tokens / `JumpIfNot` / `Jump` | 16,097 / 596 / 258 |
+| `LabelTable` tokens, in states / in `Function` payloads | 174 / 0 |
+| `StringConst` tokens | 152 |
+| walks ending on `LabelTable` (whole) / ending earlier (a floor) | 174 / 379 |
+| payloads that do not walk | 0 |
 | states whose text spells label code | 120 |
 | ... keywords / `else` / `else` at the statement level | 843 / 252 / 118 |
-| ... with a walk / their `JumpIfNot` / their keywords | 119 / 505 / 842 |
-| ... equal counts | 19 |
+| ... with a walk / their `JumpIfNot` / their keywords | 120 / 571 / 843 |
+| ... equal counts | 28 |
 | states with a walk and no label keyword (overrides only) | 392 |
 
 | class | state | payload | code | tokens | `JumpIfNot` | `Jump` | text keywords |
 |---|---|---:|---:|---:|---:|---:|---:|
-| `BotSG` | `RestFormation` | 1,070 | 954 | 333 | 17 | 12 | 29 |
-| `ScriptedController` | `Scripting` | 704 | 617 | 285 | 19 | 6 | 26 |
-| `BotEnemy` | `CoveredAttack` | 1,206 | 1,126 | 445 | 19 | 7 | 26 |
-| `BotSG` | `CoveredAttack` | 1,191 | 1,067 | 385 | 18 | 6 | 24 |
-| `BotEnemy` | `Suspicious` | 555 | 453 | 236 | 16 | 6 | 23 |
-| `JaffaBotLight` | `Sniper` | 580 | 471 | 216 | 13 | 3 | 17 |
-| `ReetouBot` | `Combat` | 480 | 381 | 169 | 11 | 6 | 17 |
-| `BotSG` | `ConcentrateFire` | 583 | 483 | 199 | 11 | 4 | 16 |
-| `BotEnemy` | `CoveredMove` | 370 | 314 | 162 | 9 | 6 | 15 |
-| `ReetouBot` | `Escape` | 428 | 408 | 166 | 10 | 4 | 14 |
+| `BotSG` | `RestFormation` | 1,070 | 1,022 | 354 | 17 | 12 | 29 |
+| `ScriptedController` | `Scripting` | 704 | 656 | 300 | 20 | 6 | 26 |
+| `BotEnemy` | `CoveredAttack` | 1,206 | 1,167 | 456 | 19 | 7 | 26 |
+| `BotSG` | `CoveredAttack` | 1,191 | 1,140 | 412 | 18 | 6 | 24 |
+| `BotEnemy` | `Suspicious` | 555 | 508 | 246 | 16 | 6 | 23 |
+| `JaffaBotLight` | `Sniper` | 580 | 533 | 232 | 14 | 3 | 17 |
+| `ReetouBot` | `Combat` | 480 | 429 | 182 | 11 | 6 | 17 |
+| `BotSG` | `ConcentrateFire` | 583 | 534 | 224 | 11 | 5 | 16 |
+| `BotEnemy` | `CoveredMove` | 370 | 334 | 171 | 9 | 6 | 15 |
+| `ReetouBot` | `Escape` | 428 | 380 | 159 | 10 | 4 | 14 |
 <!-- /generated:state-code -->
 
 A keyword and a `JumpIfNot` are not the same unit, so the equality the question asked for does not hold per
