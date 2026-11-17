@@ -909,30 +909,67 @@ phantom ones** on the stale pair, and agreeing on all 125 opcodes on the regener
 
 `--calls` walks the corpus and records every call site, resolving each one as far as its operand rules allow:
 
+```
     $ python3 tools/uscript-dis.py --calls DUMP/System -o inventory
-    11687 scripts with an epilogue, 11608 walked; 18931 call sites
-      static (FinalFunction): 5424, of which the target is a Function: 5424
-      by name (VirtualFunction, GlobalFunction): 13507
-        naming a declaring class: 13461 of 13507 (99.7%)
-        on the caller's chain: 8413 -- 5778 in its own class, 2635 on an ancestor (top: Engine.Actor 345, Engine.Pawn 246, StargateGame.BotBase 191, Editor.BrushBuilder 187, StargateGame.BotEnemy 187)
-          of those, 231 name a function only a *state* of that class declares (the class owns the state)
-          the chain's package names, folded from the file's spelling: 70 row(s) over 1 package(s) (Gameplay->GamePlay 70), and 12 of 12 chain target(s) had no key before the fold
-        by the corpus alone: 2234 site(s) reach the one class that declares the name (904 names), top: ShouldCrouch -> Engine.Pawn 63, AddMenuItem -> UWindow.UWindowPulldownMenu 58, SetPosImmediate -> StargateGame.UIWidget 51, GetLocalPlayerController -> Engine.LevelInfo 40, FindInventoryType -> Engine.Pawn 31
-        on the receiver's chain: 2814 (650 names) -- the expression in front of the call types to a class (278 distinct, top: Pawn 269, UWindowEditControl 189, Controller 143, UWindowCheckbox 138, Weapon 111)
-          of those, 47 place because the receiver's type names a class in another case, top: pawn 14, playercontroller 12, GameHUD 4, inventory 3, stargateammo 3, pickup 2
-          and 15 name a function only a *state* of the receiver's chain declares
-        decided by the receiver: 46 site(s) across 15 names, top: ClientMessage 26 over 3 classes, GetPickupItemName 7 over 2 classes, AddToTeam 1 over 2 classes, ValidIndex 1 over 2 classes, Save 1 over 5 classes
-          an object expression with no recorded type: 3 -- 0 of them a local, 3 not
-          a directive line between a declaration and its body: 4 declaration(s) over 173 class text(s): InteractionMaster.AddInteraction, InteractionMaster.AddInteraction, StargatePawn.Talk, StargatePawn.Talk
-          of the receiver-typed sites, 618 had a local in front (typed from the class's own ScriptText)
-          a local whose declaration the source spells in another case: 159 site(s), top: Msg 30, GUI 20, t 13, i 12, Dir 8, Image 7
-          an expression that typed to a class whose chain declares no such name: 36, of which 0 reach exactly one descendant that declares it (descendant:Pkg.Class, 0 names), top: 
-          a completed value in front (a self-call, or a receiver the walk did not reach): 7
-          a receiver that is a call result: 822 site(s), 132 typed from the callee's declared return type (top: playercontroller 80, sound 33, sgformation 6, herdanimal 4, stargateammo 4, vector 3)
-          why an expression in front names no class: call result: the callee GetInstigator is declared by 2 classes, none on the caller's chain 2, call result: the callee TeamIDLookup is declared by 5 classes, none on the caller's chain 1
-          a receiver that is an array element: 681 site(s) over 64 (token, class) pairs, top: ArrayElement/UWindowEditControl 168, ArrayElement/UWindowCheckbox 126, ArrayElement/UWindowLabelControl 42, DynamicArrayElement/GUIComponent 31, DynamicArrayElement/MaplistRecord 28, DynamicArrayElement/ScriptEvent 24
-          typed by the import's own owner class: 427 site(s) over 16 class(es), top: Pawn 177, Actor 57, GUI 57, LevelInfo 46, GUIListBox 37, BotBase 19
-          where every declarer agrees, the owner's own class agrees in 711 site(s) and differs in 0
+```
+
+The run's own numbers are the table below, rendered from `inventory/script_call_census.csv` (the report prints the same figures):
+
+<!-- generated:calls-census -->
+| measure | count |
+|---|---:|
+| packages walked | 18 |
+| scripts with an epilogue | 11,687 |
+| scripts the walk read to the epilogue | 11,687 |
+| call sites | 19,349 |
+| static sites (`FinalFunction`) | 5,561 |
+| static sites whose target is a `Function` export | 5,561 |
+| by-name sites (`VirtualFunction`, `GlobalFunction`) | 13,788 |
+| by-name sites that name a declaring class | 13,740 |
+| on the caller's own class | 5,904 |
+| on an ancestor | 2,720 |
+| of those, declared only by a state the class owns | 231 |
+| chain rows whose package spelling the index had to fold | 70 |
+| by the corpus alone (one declaring class) | 2,253 |
+| names the corpus-alone group places | 909 |
+| on the receiver's chain | 2,863 |
+| distinct names placed on a receiver | 653 |
+| distinct receiver types | 278 |
+| placed because the type is spelled in another case | 51 |
+| of those, declared only by a state the receiver class owns | 15 |
+| decided by the receiver (several declaring descendants) | 48 |
+| names the receiver decides | 15 |
+| an object expression with no recorded type | 3 |
+| of those, a local | 0 |
+| declarations a preprocessor directive line split from its body | 4 |
+| class texts carrying such a directive | 173 |
+| a local the source declares in another case | 160 |
+| a local typed from an ancestor's declaration | 0 |
+| a receiver typed to a class whose chain declares no such name | 38 |
+| of those, placed on one declaring descendant | 0 |
+| of those, a dispatch across several descendants | 38 |
+| of those, a name only classes outside the subtree declare | 0 |
+| of those, a name no class in the corpus declares | 0 |
+| a completed value in front (a self-call or a walk that stopped) | 7 |
+| typed by the import's own owner class | 450 |
+| names a disagreeing import owns | 0 |
+| residue rows `--lists` names | 3 |
+| typed residue rows `--lists` names | 38 |
+
+**13,740 of the 13,788 by-name sites (99.7%) name a declaring class**: 8,624 on the caller's chain -- 5,904 in its own class, 2,720 an ancestor -- 2,253 by the corpus alone, 2,863 on the receiver's chain, and 48 a dispatch the receiver's static type cannot decide. The rest of the reading is in the table: 3 object expressions with no recorded type (0 of them a local), 7 a completed value in front, and 38 receivers whose own chain declares no such name.
+
+The numbers are `inventory/script_call_census.csv` (`tools/uscript-dis.py --calls`), the artifact this block is rendered from; `make script-calls` re-runs the walk against the dump and `--calls-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci` needs no dump to prove the page still matches its census.
+<!-- /generated:calls-census -->
+
+**The census was 79 scripts behind the walk, and this block is the first the artifact carries.** The figures in the
+paragraphs below were written at the 11,608-walk; the two operand fixes of 2026-11-14 -- `Case` reading its value
+twice, the `StructCmpEq` reference being the archive's compact index -- took the corpus to **11,687 of 11,687**.
+Re-running the same command against the same dump adds **79 scripts, 137 static edges and 418 call sites (18,931 ->
+19,349)**, and moves the by-name reading to **13,740 of 13,788 (99.7%)**, against the 12,811 of 13,507 (94.8%) the
+owner paragraph below records; the corpus-alone group is 2,253, the receiver's chain 2,863 and 48 sites stay a
+dispatch a static receiver cannot decide. The paragraphs below are left as the runs that produced them wrote them --
+they are the history of the reading, not a second census. The block above is the census, and `make ci`'s `calls-doc`
+check fails when the page and `inventory/script_call_census.csv` disagree.
 
 `--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name; it writes no CSV
 and exists only to measure how much of the reading the declarations decided (see "The check is a shuffle" below).

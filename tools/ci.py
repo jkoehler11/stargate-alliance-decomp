@@ -455,6 +455,18 @@ def check_matching_doc():
         ok(name, out[-1].replace("ok   matching-baseline: ", "") if out else "")
 
 
+def check_calls_doc():
+    """docs/BYTECODE.md's call census block is rendered from inventory/script_call_census.csv."""
+    name = "calls-doc"
+    r = subprocess.run([sys.executable, repo("tools", "uscript-dis.py"), "--calls-doc", "--check-doc",
+                        "docs/BYTECODE.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   calls-census: ", "") if out else "")
+
+
 def check_body_name_doc():
     """docs/NAMING.md's tables are generated from inventory/body_names.csv."""
     name = "body-name-doc"
@@ -601,6 +613,7 @@ def main():
     check_library_doc()
     check_body_name_doc()
     check_matching_doc()
+    check_calls_doc()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()

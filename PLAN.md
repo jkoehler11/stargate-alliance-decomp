@@ -11961,3 +11961,31 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   four-region `run`, the reconciliation `--check`) + `inventory/decompiler_operator_regions.csv` + `make
   decompiler-operator-regions` + `docs/DECOMPILER.md` (new section, and the closing paragraph corrected) + this
   note. Reads the packages and one tree; no boot, no Ghidra round.
+
+### Execution notes (2026-11-17, the call census was 79 scripts behind the walk, and the page renders from its artifact)
+
+- **The census the page quotes had not been re-run since the walk moved.** `inventory/script_calls.csv` was last
+  written on 2026-11-11 (18,931 rows), before the two operand fixes of 2026-11-14 (`Case` reads its value once;
+  `StructCmpEq`'s operand is the archive's compact index) took the corpus from 11,608 walking scripts to **11,687 of
+  11,687**. Re-running the same command against the same dump: **19,349 call sites -- 5,561 static, every one naming a
+  `Function` export, and 13,788 by name**, of which **13,740 (99.7%) name a declaring class**: 5,904 on the caller's
+  own class, 2,720 on an ancestor, 2,253 by the corpus alone, 2,863 on the receiver's chain and 48 a dispatch a static
+  receiver cannot decide. The page's owner paragraph still presented 12,811 of 13,507 (94.8%).
+- **The numbers were a hand copy of a report, which is how they drifted.** `--calls` now writes
+  `inventory/script_call_census.csv` (37 `key,value` rows, one per figure the report prints), and `--calls-doc
+  --write-doc docs/BYTECODE.md` renders the page's block *from that artifact*, so `--calls-doc --check-doc` is a
+  dump-free gate and the new `calls-doc` check in `make ci` fails when the two disagree. Proved it bites: flipping one
+  `call_sites` value to 19,348 answers `FAIL docs/BYTECODE.md: the generated calls block is stale`, and restoring the
+  copy answers `ok`.
+- **The stale output block is gone rather than corrected.** The page's indented copy of the walk's report (23 lines,
+  3,532 bytes) is replaced by the generated table and a paragraph recording the drift, because a second hand copy is
+  what went stale in the first place.
+- **What the new walk changed in the reading, beyond the count.** The residue `--lists` names is 3 untyped object
+  expressions, each a call result whose callee the caller's chain does not declare (`GetInstigator` twice,
+  `TeamIDLookup` once), and 38 typed-residue rows on a receiver typed `Object` -- 27 of them `ClientMessage`, which
+  every one of their declaring descendants (`Pawn`, `PlayerController`, `Security`) shares. The 25 struct members a
+  struct declaration would type are unchanged and remain the next instrument.
+- Tool (`calls_report`'s census and artifact write, `read_calls_census`, `CALLS_ROWS`, `calls_doc_block`,
+  `calls_emit_doc`, the marker argument on `replace_block`, `--calls-doc`) + `inventory/script_call_census.csv` (new,
+  37 rows) + `inventory/script_calls.csv` regenerated (19,349 rows) + `tools/ci.py`'s `calls-doc` + `docs/BYTECODE.md`
+  (the block and the drift paragraph) + this note. One 16-second walk; no boot, no Ghidra.
