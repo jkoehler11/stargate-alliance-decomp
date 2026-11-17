@@ -569,7 +569,7 @@ withholds these classes: the two-property floor withholds the 285 one-tag ones, 
 floor, a map correction or a type map to promote -- what is left for them is the record's end, and the tag grammar
 cannot fix it (the earlier section's saturation: every payload ends in `00`, so a one-byte empty parse is free
 everywhere). **What it does not settle** is whether a record accounts for each payload whole; 153 are inside the
-window where one can, and the other 181 still have bytes no parse explains.
+window where one can, and the other 181 still have bytes no parse explains -- now measured below, where the record's closing group ends on the payload's terminator and no defaults buffer follows it.
 
 ## The bytes in front of a block start, measured
 
@@ -1336,3 +1336,52 @@ chooser, and a run of its own tool at the pre-change tree already rewrites **621
 inserted, 621 deleted: the shipped start is no longer reproduced on most rows), so the four rows this rule moves
 would be invisible inside that regeneration. The page keeps the committed artifact and the stale rows stay named
 here rather than mixed into this diff; regenerating it is its own measurement.
+
+## The record ends on the payload's terminator, so the 334 ship no defaults buffer
+
+The previous section left one question open and named it precisely: of the 334 classes withheld as `empty-block`,
+153 sit inside the 100-byte window a class record alone can account for and **181 do not**, so the open half is where
+the record *ends*, and the tag grammar cannot answer it -- every payload ends in `00`, so a one-byte empty parse is
+free at every offset. The record's end is measurable without first knowing the record's length, because
+`UClass::Serialize` closes with a group of four fields (a compact-counted names array, a reference, a name and a
+second names array, `tools/class-tail-run.py`) and on the located population that group's last byte **is** the
+defaults block's first byte. A payload that holds a record and nothing else must therefore have that group end
+exactly on its own terminator.
+
+`tools/class-defaults-recordend.py` (`make class-defaults-recordend`, `inventory/class_defaults_recordend.csv`, 334
+rows and a census) parses that group at **every** offset of every one of the 334 payloads with no required end --
+every index inside the name table, both arrays empty refused -- and compares the ends it reaches with the payload's
+own terminator (its last byte, which the artifact carries as `anchor`). The located population is read the same way
+with the published block start as the anchor (`class_record_bound.csv`), which is the same question with a known
+answer.
+
+**331 of the 334 close the group exactly on the terminator**: 153 of 153 inside the record window and **178 of the
+181** beyond it (99.1% overall, 98.3% of the long half). The record's last field is the payload's last record byte,
+so no defaults buffer follows it -- these classes ship the empty block's single `00` and nothing else, which is what
+`empty-block` said. The record's own length is measured for the first time on this population: **80 to 3,678 bytes,
+median 102, p90 292**, so the long half is long *records*, not a defaults buffer no parse reached.
+
+**The base rate is what makes 331 a reading.** A group ends on **5.0% of a payload's offsets** (median 5.2%), so a
+terminator match by chance would be a handful of classes, not 331; and the same parse anchored on the located
+population's block start finds its group on **1,665 of 2,200** (75.7%). The shape of what it finds is the writer's, at
+the control's own rate: **275 of the 331** name nothing but packages and **294** name the class's own package with a
+reference inside the import table (the control: 1,429 package-shaped of 1,665, 1,468 own-package-and-import).
+
+**Three payloads have bytes after the record, and they are the only ones.**
+`StargateContent.ZatGun_JaffaCaptain` and `.ZatGun_Weak` (102 bytes, the group ending at 96) and
+`StargateGame.HighlightStaticMeshActor` (101, ending at 96) leave 5, 5 and 4 bytes between the record and the
+terminator -- **14 bytes in the whole population**, listed per row in the artifact's `residue` column. Nothing in this
+measurement accounts for those 14; they are named rather than explained.
+
+**Where the locator's own start falls is inside the record.** Of the 243 payloads that carry a published block start,
+**68** publish exactly the closing group's first byte -- `UWindow.UWindowWindow`'s 3,671 of 3,679 is one, its seven
+group bytes plus the terminator reading as an eight-byte tag block -- and another **128** publish a byte 1 to 340
+earlier (median 13), where the record's own bytes form a tag-shaped run that ends on the terminator. That is the
+shape the previous section saw from the other side, when it read the payload's best parse as package and function
+references rather than properties.
+
+**What this settles**: no floor, name-map or type correction can promote these 334, because there is no defaults
+buffer in their payloads to promote -- the withholding is correct on the bytes, and the 181 are not a shorter version
+of the 655. **What it does not settle**: whether any of them *should* declare defaults. The shipped text is not an
+oracle for that question on this build (see the section above), so a zero here is a property of what the package
+carries, not a claim about the class's intent.
