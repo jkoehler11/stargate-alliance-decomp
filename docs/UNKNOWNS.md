@@ -2070,7 +2070,18 @@ nothing, but it is not the rule:** the other 422 bool-literal declarations emit 
 payload separates the four (same `0x00020000` flags), so what would settle it is their own declaration text and one
 `--script` read per case.
 
-**2026-11-12, closing it: their declaration text was the answer, and it has no body.** `function bool CanMultiJump();`
+**2026-11-12, closing it: their declaration text was the answer, and it has no body.**
+**2026-11-17: the corpus count is 906, and the payload says which side is short.** The 82 above were the bodiless
+declarations one anchor read reached; `tools/text-stubs.py` reads the question over every class text and every
+`Function` export: **906 of the 11,411 declarations the grammar's rule reads** have no body, **903** end in `;`, **2**
+put the body after an `#endif` and **1** is a `ScriptText` truncated inside a body. **794** are exported by the class
+itself, **112** by a `State` of it and **0** by nothing -- so "implemented in a state or in native code" is now 112 for
+the state half and **0** native. The payload is the second half: **759 compile to the empty script**
+(`03 00 00 00 04 0b 47` before the trailer), **147 carry a longer one** of which 23 are forward declarations, leaving
+**124 bodies the live text does not spell** (the largest `UWindow.UURLTextArea.TextAreaClipText` 734 bytes). The
+control keeps it honest: 441 bodied declarations compile to the same empty script too, so the test is *no code*
+against *code*. Depth: `docs/PACKAGE_SCRIPT_TEXT.md`, artifact `inventory/text_stubs.csv`.
+ `function bool CanMultiJump();`
 — a declaration-only stub, implemented in a state or in native code. The anchor's body finder takes the first `{`
 after the parameter list, so for every such stub it paired the *next* function's body: 82 declarations in the corpus
 are like this (all the `VoiceChatReplicationInfo` accessors among them), each searched for a literal its own export

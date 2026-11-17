@@ -12324,6 +12324,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, a declaration without a body is 906 holes, and a third of them hide a compiled script)
+
+- **Task.** `[~] 3.5`'s comment half left the corpus's declaration rule corrected but its *bodiless* declarations
+  unread: `tools/class-text-bodies.py` answers `None` for 906 of the 11,411 declarations the grammar's rule reads,
+  and UNKNOWNS' bytecode entry had counted 82 of them from one anchor read. What a missing body *means* was the open
+  question -- a language shape, an `#ifdef` split, a truncated buffer, or a body the text lost.
+- **The shape is three populations, and two of them are single rows.** **903** stubs end in `;` before any `{` (the
+  parameter list may sit on the next line -- `static function StaticPrecache(\nLevelInfo L);`), **2** have no `{` in
+  their window at all (the body sits after the `#endif`: `Engine.InteractionMaster.AddInteraction`,
+  `StargateGame.StargatePawn.Talk`) and **1** is a `ScriptText` that stops inside a body
+  (`UWindow.UWindowURLTextArea.TextAreaClipText`: 11 `{` against 8 `}`).
+- **Every stub has an export, and its owner is the class or a state.** 794 name a `Function` the class itself
+  exports, 112 one only a `State` of the class exports and **0** name no export: the declaration-only stub is not a
+  name the package lacks. 61 are declared a second time in the same text *with* a body (a forward declaration), 37
+  sit in a window holding a block comment, and **0** carries `FUNC_Native` -- so the population is the grammar's, not
+  a native declaration the reader missed.
+- **The payload says which side is short, and the empty script is 3 bytes.** A `Function` payload ends
+  `<u32 length><script><7-byte trailer>`, so no-code reads as `03 00 00 00 04 0b 47` immediately before the trailer
+  (`04 0b 47` = `Return`). **759 of the 906 carry it** -- the text and the build agree there is nothing to compile --
+  and **147 carry a longer script**: 23 are the forward declarations above, so **124 name a body no live body in the
+  class's `ScriptText` spells**, led by `UWindow.UWindowURLTextArea.TextAreaClipText` (734 bytes),
+  `StargateGame.BotBase.WeaponFireAgain` (643) and `StargateGame.StargatePawn.Talk` (498). The concentration is in
+  the game packages' bot and player classes (`StargateGame.BotEnemy` 28 of its 38 stubs bodied,
+  `StargateGame.StargatePlayer` 26 of 28) while `Engine.Actor` 71, `Engine.Controller` 49 and `Engine.Pawn` 46 are
+  every one of them no-code: the engine classes declare hooks, the game classes ship a text whose bodies are gone.
+- **The control that keeps this from being a stub test.** **441 of the 10,505 bodied declarations compile to the
+  same empty script** -- 307 an empty `{}` body and 134 a body carrying only locals, comments or structure -- so the
+  test separates *no code* from *code* and not a stub from a body; 62 of the 369 empty-`{}` bodies carry a longer
+  payload than it. It is the same reading UNKNOWNS' entry reached on 82 rows, now over the corpus.
+- Tool (`window_shape`, `empty_script` with both trailer widths, `classify` as a pure function over a `resolve`
+  callable, `index_exports`'s class-over-state preference, 17 census rows, the shape/owner/payload tables and the
+  generated block, and a `--check` that drives a bodyless declaration, an `#endif` split, a truncated text, a
+  state-owned export and a forward declaration) + `inventory/text_stubs.csv` (2,138 rows: 1,202 class, 906 stub, 30
+  census) + `docs/PACKAGE_SCRIPT_TEXT.md` (a new section) + `docs/UNKNOWNS.md` (the stub entry corrected in place) +
+  a `make text-stubs` target and its `--check-doc` line in `make ci` + this note. One 2-second read of the 18
+  packages; no bytecode walk, no boot, no Ghidra.
+- **Next measurement:** the 124 are the corpus's clearest cut-content lead and they are joinable without a new
+  instrument -- `inventory/class_text_bodies.csv` already carries the 172 commented bodies, so the question is how
+  many of the 124 bodied stubs are the same functions as a commented body elsewhere in the class (a body moved into
+  a comment rather than dropped), which is one name join against the artifact this note ships.
+
 ### Execution notes (2026-11-17, the declaration rule was half the grammar, and the outside bucket closes to 107)
 
 - **Task.** The note below's next measurement: the `less` classes' keywords outside any function body as state
