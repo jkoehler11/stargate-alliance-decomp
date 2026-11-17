@@ -1598,11 +1598,15 @@ ceiling from 11,289 to **11,367**.
 **The sixteen label-table rows were this defect, not a label table.** Every one of them recovers under the corrected
 row, and in each the `0x0c` is not a token the walk reaches at all: it is an operand byte read by the token in front
 of it -- in the thirteen `StargateMenus` pages a one-byte compact name index (value 12) after a `1c`
-`FinalFunction`, which is the call the page makes on the way out. The `0x0c` row is still right on its own terms,
-and now measured from its handler rather than from a note: `0x00039d4e` advances the cursor by 8, reads the entry's
-first dword and loops while it is non-zero. But nothing in this corpus exercises it -- **0 of 11,686 walking
-payloads reaches a reachable `0x0c`** -- so the shipped compiler emitted `case` chains and no label tables, and the
-8-byte entry is a rule with no population behind it in this build.
+`FinalFunction`, which is the call the page makes on the way out. **Two sentences here were wrong about the table
+itself, and both were a count over the wrong population.** "The 8-byte entry" came from the handler's `add
+eax,8` -- but that step is the entry in the loader's **widened** buffer, where the name index is four bytes, so the
+stored entry is a **compact name index plus a 4-byte offset** (five or six bytes, not eight) and the table ends on
+the **None name**, not on a zero dword; and "the
+shipped compiler emitted no label tables" is true only of `Function` payloads (**0 of 11,687** walking payloads
+reaches a `0x0c`). A `State` payload carries one: **166** of the 553 do, **326** entries in all, and every entry is
+a token start in the widened code (`tools/state-code.py`, `docs/systems/AI.md`). `0x00039d4e`'s loop is right on
+its own terms; the widths were the page's, not the image's.
 
 That also retires the "anchor upstream of the stop" question the previous section left open: the stream was not
 desynchronised by a missing width, it was over-read by one row, and the anchor that settles it is the handler's own
@@ -1683,15 +1687,17 @@ land on token starts **863 of 863** (758 of 835 under the old starts), which is 
 control: a jump operand is an offset into the widened code, exactly as `FFrame::Code = Node->Script + operand`
 (`0x00047788`) computes it. `tools/state-code.py` takes the start from the record now and keeps the most-tokens
 rule only as the fallback for a payload whose field fits nothing. So "the build
-never emits a label" is true of the function half and false of the state half: `tools/state-code.py`,
-`inventory/state_code.csv`, `docs/systems/AI.md`.
+never emits a label" is true of the function half and false of the state half: there **166** tables decode to
+**326** entries, every entry's offset is a token start in the widened code and every name index resolves, and
+**154** of them besides the implicit `Begin` are labels the state's own text spells (**0** text labels have no
+entry) -- `tools/state-code.py`, `inventory/state_code.csv`, `docs/systems/AI.md`.
 
     python3 tools/jump-census.py --system DUMP/System -o inventory/jump_census.csv
 
 <!-- generated:jump-census -->
 **23,778 of 23,778** `Jump`/`JumpIfNot` operands (**100.00%**) equal the **guest-space offset** of a token start -- an offset into the script as the loader widens it -- over **6,127** scripts. The three file-space readings are the control, on the same sites: **absolute** 5,495 (23.11%), **unsigned relative** 3,255 (13.69%), **signed relative** 3,255 (13.69%). The chance levels are counted over those same scripts, not the whole corpus: a token start is **33.49%** of a byte in the widened layout (412,610 of 1,231,947) and **45.22%** in the file (412,610 of 912,388), so the guest reading clears chance by the whole population while every file reading lands at or below it -- the operand is written in the layout `FFrame::Code = Node->Script + operand` computes against, and the file is not that layout.
 
-**0** operands land on the epilogue's first byte and **0** run past the script's widened length, so no edge dangles; **0** land on no token start under any of the four readings. The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads; a `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up.
+**0** operands land on the epilogue's first byte and **0** run past the script's widened length, so no edge dangles; **0** land on no token start under any of the four readings. The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads, where a source `Goto('Label')` therefore keeps no name: the compiler resolved it to an offset and the runtime never looks one up. A `State` payload is the other half and keeps them -- its table's entries are the state's labels, each a widened token start (`tools/state-code.py`, `docs/systems/AI.md`).
 
 <!-- /generated:jump-census -->
 

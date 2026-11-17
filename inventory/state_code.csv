@@ -1,596 +1,606 @@
-kind,package,class,state,payload,start,code,trailer,tokens,jumpifnot,jump,labeltable,complete,stringconst,record,probe_mask,ignore_mask,label_offset,state_flags,table_w,start_by,jump_on,code_lv,walk_lv,override_of,text_kw,text_label,text_else,text_else_label,verdict,count,note
-state,AmbientCreatures,Bird,Dying,49,,,,,,,,,,22,17107200,18446744072635771327,65535,0,,,,,,ambientcreatures.transientambientpawn,0,0,0,0,record-only,,
-state,AmbientCreatures,Birds,Wandering,49,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,ambientcreatures.transientambientcreature,0,0,0,0,record-only,,
-state,AmbientCreatures,CirclingBirds,Circling,91,24,44,23,20,0,0,1,1,0,22,65536,18446744073709551615,64,2,63,field,0,0,2,,0,0,0,0,payload-only,,
-state,AmbientCreatures,FishBase,Flopping,49,,,,,,,,,,22,16849152,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,AmbientCreatures,FishBase,SWIMMING,50,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,AmbientCreatures,HerdAnimal,grazing,312,24,265,23,96,2,0,1,1,0,22,4789472650657856,18446742974197891071,288,2,287,field,2,0,2,,2,2,0,0,label+payload,,
-state,AmbientCreatures,HerdAnimal,stampeding,208,24,161,23,72,2,0,1,1,0,22,9007199254740992,18446738576151379903,180,0,179,field,2,0,4,,2,2,0,0,label+payload,,
-state,AmbientCreatures,MigratingBirds,Migrating,90,25,42,23,21,0,0,1,1,0,22,65536,18446744073709551615,44,2,43,field,0,0,4,,0,0,0,0,payload-only,,
-state,AmbientCreatures,TransientAmbientCreature,Wandering,115,23,69,23,34,1,0,1,1,0,22,0,18446744073709551615,100,2,99,field,1,0,2,,1,1,0,0,label+payload,,
-state,AmbientCreatures,TransientAmbientPawn,Dying,127,24,80,23,35,1,1,1,1,0,22,17107200,18446744072635771327,84,0,83,field,2,0,2,,2,2,1,1,label+payload,,
-state,AmbientCreatures,TransientAmbientPawn,Wandering,149,24,102,23,49,3,2,1,1,0,22,0,18446744072635771327,136,2,135,field,5,0,4,,5,5,2,1,label+payload,,
-state,Engine,Ammo,Pickup,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,record-only,,
-state,Engine,AntiPortalActor,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,AntiPortalActor,TriggerToggle,51,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Armor,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.powerups (no table),0,0,0,0,record-only,,
-state,Engine,ClientMover,ServerIdle,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Console,Typing,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Controller,Dead,50,,,,,,,,,,22,0,18446738576151412735,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Controller,GameEnded,49,,,,,,,,,,22,65536,18443642351407593983,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Controller,RoundEnded,49,,,,,,,,,,22,65536,18443642351407593983,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,DemoRecSpectator,Spectating,52,,,,,,,,,,22,137439150336,18446744073709551615,65535,2,,,,,,engine.playercontroller (no table),0,0,0,0,record-only,,
-state,Engine,Fragment,Dying,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Fragment,Flying,50,,,,,,,,,,22,69888,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Engine,KHinge,ControlDesired,51,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,KHinge,ControlMotor,79,27,29,23,11,0,0,1,1,0,22,192,18446744073709551615,24,1,23,field,0,0,3,,,,,,payload-only,,
-state,Engine,KHinge,Default,48,,,,,,,,,,22,0,18446744073709551423,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Engine,KHinge,ToggleDesired,51,,,,,,,,,,22,64,18446744073709551487,65535,1,,,,,,,,,,,record-only,,
-state,Engine,KHinge,ToggleMotor,79,27,29,23,11,0,0,1,1,0,22,64,18446744073709551487,24,1,23,field,0,0,4,,,,,,payload-only,,
-state,Engine,MessagingSpectator,NotPlaying,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,BumpButton,166,27,116,23,56,4,0,1,1,0,22,32768,18446744073709551615,132,1,131,field,4,0,4,,,,,,payload-only,,
-state,Engine,Mover,BumpOpenTimed,52,,,,,,,,,,22,98304,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Mover,ConstantLoop,97,27,47,23,18,0,0,1,1,0,22,65536,18446744073709551615,40,1,39,field,0,0,2,,,,,,payload-only,,
-state,Engine,Mover,LeadInOutLooper,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Mover,LeadInOutLooping,51,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,LoopMove,152,27,102,23,50,0,0,1,1,0,22,65728,18446744073709551615,116,1,115,field,0,0,3,,,,,,payload-only,,
-state,Engine,Mover,OpenTimedMover,205,26,156,23,76,5,0,1,1,0,22,65536,18446744073709551615,192,0,191,field,5,0,2,,5,5,0,0,label+payload,,
-state,Engine,Mover,RotatingMover,51,,,,,,,,,,22,65536,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Mover,StandOpenTimed,52,,,,,,,,,,22,589824,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Mover,TriggerAdvance,209,27,159,23,79,4,0,1,1,0,22,196800,18446744073709551615,188,1,187,field,4,0,2,,,,,,payload-only,,
-state,Engine,Mover,TriggerControl,175,27,125,23,59,5,0,1,1,0,22,65728,18446744073709551615,140,1,139,field,5,0,3,,,,,,payload-only,,
-state,Engine,Mover,TriggerOpenTimed,52,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Mover,TriggerPound,169,27,119,23,58,4,0,1,1,0,22,65728,18446744073709551615,132,1,131,field,4,0,4,,,,,,payload-only,,
-state,Engine,Mover,TriggerToggle,147,27,97,23,45,2,0,1,1,0,22,64,18446744073709551615,104,1,103,field,2,0,3,,,,,,payload-only,,
-state,Engine,Mover,WasBumpButton,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,WasOpenTimedMover,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,WasTriggerAdvance,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,WasTriggerControl,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Mover,WasTriggerPound,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Pawn,Dying,81,27,31,23,11,0,0,1,1,0,22,17107200,18446744072635771327,24,0,23,field,0,0,5,,0,0,0,0,payload-only,,
-state,Engine,Pickup,Disabled,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Pickup,FadeOut,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Pickup,FallingPickup,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Pickup,Pickup,66,26,17,23,4,0,0,1,1,0,22,196864,18446744073709551615,8,2,7,field,0,0,3,,0,0,0,0,payload-only,,
-state,Engine,Pickup,Sleeping,189,27,139,23,57,2,1,1,1,0,22,196608,18446744073709543423,148,0,147,field,3,0,4,,3,3,1,1,label+payload,,
-state,Engine,Pickup,WaitingForMatch,50,,,,,,,,,,22,65536,18446744073709543423,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,AttractMode,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,BaseSpectating,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,Dead,94,28,43,23,18,1,0,1,1,0,22,196864,18446738576151412735,40,0,39,field,1,0,1,,1,1,0,0,label+payload,,
-state,Engine,PlayerController,GameEnded,66,28,15,23,4,0,0,1,1,0,22,196864,18443642351407593983,4,0,3,field,0,0,6,,0,0,0,0,payload-only,,
-state,Engine,PlayerController,PlayerClimbing,51,,,,,,,,,,22,562949953617920,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerDriving,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerEnterVehicle,51,,,,,,,,,,22,196608,18446738576151379967,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerFlying,51,,,,,,,,,,22,65536,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerRocketing,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerSpaceFlying,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerSpidering,51,,,,,,,,,,22,14073748835729408,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerSwimming,51,,,,,,,,,,22,5066549580857600,18446739675663007743,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerTurreting,65,27,15,23,4,0,0,1,1,0,22,196608,18446739675663007743,4,0,3,field,0,0,4,,0,0,0,0,payload-only,,
-state,Engine,PlayerController,PlayerWaiting,52,,,,,,,,,,22,196608,18446457101174697983,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,PlayerWalking,65,27,15,23,4,0,0,1,1,0,22,562949953617920,18446739675663007743,4,0,3,field,0,0,3,,0,0,0,0,payload-only,,
-state,Engine,PlayerController,RoundEnded,66,28,15,23,4,0,0,1,1,0,22,65792,18443642351407593983,4,0,3,field,0,0,3,,0,0,0,0,payload-only,,
-state,Engine,PlayerController,Scripting,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,Spectating,52,,,,,,,,,,22,196864,18443929323942445055,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,PlayerController,WaitingForPawn,52,,,,,,,,,,22,137439150336,18446738576151412735,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Powerups,Activated,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Projector,NoProjection,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Screenplay,RunScreenplay,78,27,28,23,11,0,0,1,1,0,22,196608,18446744073709551615,20,0,19,field,0,0,3,,0,0,0,0,payload-only,,
-state,Engine,Security,Probation,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,StationaryWeapons,fucked,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Engine,TestInfo,AA,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,TestInfo,BB,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,TestInfo,CCAA,52,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,TestInfo,DDAA,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,TestInfo,EEDDAA,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Trigger,NormalTrigger,49,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerToggles,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerTurnsOff,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerTurnsOn,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Engine,Vehicle,Deployed,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Vehicle,UnDeployed,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Volume,AssociatedTouch,50,,,,,,,,,,22,90112,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,WarpZoneInfo,DelayedWarp,51,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Weapon,Active,51,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Weapon,ClientFiring,51,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Weapon,DownWeapon,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Weapon,Idle,175,27,125,23,57,3,0,1,1,0,22,16842752,18446744073709551615,152,0,151,field,3,0,4,,3,3,0,0,label+payload,,
-state,Engine,Weapon,NormalFire,78,26,29,23,11,0,0,1,1,0,22,16908288,18446744073709551615,20,0,19,field,0,0,4,,0,0,0,0,payload-only,,
-state,Engine,Weapon,PendingClientWeaponSet,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,Weapon,Reloading,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Engine,WeaponPickup,Pickup,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,record-only,,
-state,GUI,ExtendedConsole,ConsoleVisible,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,GamePlay,Dispatcher,Dispatch,136,24,89,23,42,2,1,1,1,0,22,0,18446744073709551551,112,2,111,field,3,0,3,,2,2,0,0,label+payload,,
-state,GamePlay,FadeViewTrigger,IsTriggered,49,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,GamePlay,PuzzleMover,TriggerControl,50,,,,,,,,,,22,65728,18446744073709551615,65535,1,,,,,,engine.mover,,,,,record-only,,
-state,GamePlay,ScriptedController,Broken,122,24,75,23,33,2,0,1,1,0,22,65536,18446744073709551615,76,0,75,field,2,0,2,,2,2,0,0,label+payload,,
-state,GamePlay,ScriptedController,Scripting,704,25,656,23,298,20,6,1,1,4,22,68736450880,18446744073709551615,868,0,867,field,26,0,2,,26,26,6,0,label+payload,,
-state,GamePlay,ScriptedTriggerController,Scripting,143,26,94,23,40,5,0,1,1,0,22,68736450880,18446744073709551615,116,0,115,field,5,0,7,,5,5,0,0,label+payload,,
-state,GamePlay,TournamentConsole,Typing,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.console (no table),0,0,0,0,record-only,,
-state,GamePlay,TournamentConsole,UWindow,50,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,uwindow.windowconsole,0,0,0,0,record-only,,
-state,GamePlay,TriggerLight,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerPound,49,,,,,,,,,,22,320,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerToggle,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerTurnsOff,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerTurnsOn,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,NormalTrigger,48,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerToggles,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerTurnsOff,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerTurnsOn,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,Sharpeffects,SE_AdvExplosiveMeshActor,Dead,49,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Sharpeffects,SE_ExplosiveKActor,Dead,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,AlarmLight,Disabled,48,,,,,,,,,,22,0,18446744073709551423,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,AlarmSiren,Disabled,49,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,AlarmSiren,LoopForFixedTime,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,record-only,,
-state,StargateContent,AlarmSiren,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,3,,,,,,,,,,,record-only,,
-state,StargateContent,AlarmSiren,WaitForDeactivation,49,,,,,,,,,,22,448,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Binoculars,Idle,87,25,39,23,18,1,0,1,1,0,22,16842752,18446744073709551615,36,0,35,field,1,0,3,,1,1,0,0,label+payload,,
-state,StargateContent,Binoculars,ZoomScope,50,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,record-only,,
-state,StargateContent,BotGoauld,FocusedAttack,50,,,,,,,,,,22,2199023452416,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,BotScarab,Buried,120,25,72,23,18,1,0,1,1,1,22,196864,18446744073709551615,64,0,63,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateContent,BotScarab,Mellee,131,26,82,23,32,2,0,1,1,0,22,9288674231648512,18446744073709551615,84,0,83,field,2,0,2,,2,2,0,0,label+payload,,
-state,StargateContent,C4Mission,CountDown,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,C4Mission,DoDestroy,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,C4Mission,Idle,47,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,C4Mission,explosion,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,C4Pickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,record-only,,
-state,StargateContent,C4Weapon,Idle,71,25,23,23,8,0,0,1,1,0,22,16842752,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateContent,C4Weapon,IgniteC4,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,C4Weapon,PlaceC4,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CTFDialHomeDevice,Dialling,50,,,,,,,,,,22,65984,18446744073709551615,65535,0,,,,,,stargatecontent.dialhomedevice (no table),0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnel,Closed,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnel,Closing,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnel,Open,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnel,Opening,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelLayer,Closed,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelLayer,Closing,95,25,47,23,19,0,0,1,1,0,22,65792,18446744073709551615,44,0,43,field,0,0,3,,0,0,0,0,payload-only,,
-state,StargateContent,CrystalTunnelLayer,Open,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelLayer,Opening,83,25,35,23,14,0,0,1,1,0,22,65792,18446744073709551615,28,0,27,field,0,0,7,,0,0,0,0,payload-only,,
-state,StargateContent,CrystalTunnelPiece,Closed,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelPiece,Closing,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelPiece,Open,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,CrystalTunnelPiece,Opening,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,DecipheringProjectile,Flying,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,DialHomeDevice,Deactivated,49,,,,,,,,,,22,0,18446744073709551423,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,DialHomeDevice,Dialling,49,,,,,,,,,,22,65984,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,DialHomeDevice,Powered,49,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteAutoTurretController,CloseIdle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,stargatecontent.goaautoturretcontroller (no table),0,0,0,0,record-only,,
-state,StargateContent,ExtreniteAutoTurretController,Goo,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteAutoTurretController,Malfunction,49,,,,,,,,,,22,1168247947264,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,BotFireDelay,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,Charging,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,OverCharge,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeapon,RapidFire,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ExtreniteWeaponProjectileAlt,Flying,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,FragGrenadePickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,record-only,,
-state,StargateContent,GOAULDRIBBONDEVICE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,GRENADE,ClientGrenadeCountdown,50,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GRENADE,ClientPreparingToFire,50,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GRENADE,GrenadeCountdown,49,,,,,,,,,,22,68719607808,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GRENADE,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,GRENADE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,GRENADE,PreparingToFire,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GRENADE,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,GRENADE,ThrowGrenade,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Gate,Dialing,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Gate,Inactive,49,,,,,,,,,,22,65600,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Gate,SpeedDialing,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Gate,WormholeOpen,49,,,,,,,,,,22,196928,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GateIris,Closed,49,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GateIris,Opened,49,,,,,,,,,,22,64,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GateSymbolRing,Idle,48,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GateSymbolRing,Spinning,49,,,,,,,,,,22,33619968,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretController,Close,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretController,CloseIdle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretController,Open,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretController,OpenIdle,49,,,,,,,,,,22,1168231170048,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretController,Shoot,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretMK2Controller,Deactivated,71,25,23,23,7,0,0,1,1,0,22,196864,18446744073709551615,12,0,11,field,0,0,3,,0,0,0,0,payload-only,,
-state,StargateContent,GoaAutoTurretMK2Controller,FireDelay,49,,,,,,,,,,22,196864,18446742974197923839,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretMK2Controller,Idle,48,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretMK2Controller,Shoot,49,,,,,,,,,,22,16974080,18446742974197923839,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoaAutoTurretMK2Controller,Wait,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,GoauldShield,Activated,50,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,record-only,,
-state,StargateContent,HANDOFLIGHT,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HANDOFLIGHT,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,HANDOFLIGHT,Idle,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,HaakenBot,MeleeAttack,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenBot,ShieldCover,227,25,179,23,65,4,1,1,1,0,22,196864,18446744073709551615,224,0,223,field,5,0,1,,5,5,1,0,label+payload,,
-state,StargateContent,HaakenLeaderBot,SeizeMindControl,98,25,50,23,15,0,0,1,1,0,22,196608,18446744073709551615,44,0,43,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateContent,HaakenMK1Weapon,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenMK1Weapon,Clubbing,114,26,65,23,24,1,1,1,1,0,22,16973824,18446744073709551615,64,0,63,field,2,0,2,,2,2,1,1,label+payload,,
-state,StargateContent,HaakenMK1Weapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,HaakenMK2Weapon,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,HaakenMK2Weapon,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,HaakenPod,Idle,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenPod,LaunchPod,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenPod,OpenDoors,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenPod,PrepareToLaunch,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenPod,ThawCycle,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Closing,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Downed,50,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Idle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,2,,,,,,stargategame.mobileshield (no table),0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Lowered,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Opening,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShield,Raised,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Closing,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Hit,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Idle,48,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Lowered,49,,,,,,,,,,22,16843008,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Opening,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HaakenWeaponShieldEffect,Raised,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HandOfLight_AstralSenseParticle,Flying,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,HealthPickup,Pickup,50,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,record-only,,
-state,StargateContent,InteractionHands,Active,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,record-only,,
-state,StargateContent,InteractionHands,Idle,71,25,23,23,8,0,0,1,1,0,22,16842752,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateContent,InteractionHands,Interact,49,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,InteractionHands,LoweredIdle,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,JaffaBotHeavy,Hunt,50,,,,,,,,,,22,3298535080192,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,record-only,,
-state,StargateContent,JaffaBotHeavy,Mellee,298,26,249,23,118,9,3,1,1,0,22,9291972766531840,18446744073709551615,296,0,295,field,12,0,2,,12,12,3,2,label+payload,,
-state,StargateContent,JaffaBotHeavy,MelleeCharge,651,25,603,23,214,6,4,1,1,2,22,283742719639552,18430413027502194687,724,0,723,field,10,0,5,,10,10,4,3,label+payload,,
-state,StargateContent,JaffaBotHeavy,Sniper,50,,,,,,,,,,22,3298535080192,18446744073709551615,65535,0,,,,,,stargatecontent.jaffabotlight,0,0,0,0,record-only,,
-state,StargateContent,JaffaBotLight,CoveredAttack,50,,,,,,,,,,22,9010497789821184,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,record-only,,
-state,StargateContent,JaffaBotLight,Mellee,566,26,517,23,158,9,2,1,1,8,22,9288674231648512,18446744073709551615,560,0,559,field,11,0,2,,11,11,2,1,label+payload,,
-state,StargateContent,JaffaBotLight,Sniper,580,26,531,23,229,14,3,1,1,2,22,3298535080192,18446739675663040511,684,0,683,field,17,0,2,,17,17,3,1,label+payload,,
-state,StargateContent,JaffaBotMedium,CoveredAttack,50,,,,,,,,,,22,9010497789821184,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,record-only,,
-state,StargateContent,JaffaBotMedium,Mellee,566,26,517,23,158,9,2,1,1,8,22,9288674231648512,18446744073709551615,560,0,559,field,11,0,2,,11,11,2,1,label+payload,,
-state,StargateContent,JaffaSerpentM,Dying,50,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.stargatepawn (no table),0,0,0,0,record-only,,
-state,StargateContent,LinkedGate,Inactive,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,stargatecontent.gate (no table),0,0,0,0,record-only,,
-state,StargateContent,LinkedGate,Initialising,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,LinkedGate,WormholeOpen,50,,,,,,,,,,22,196928,18446744073709551615,65535,0,,,,,,stargatecontent.gate (no table),0,0,0,0,record-only,,
-state,StargateContent,LinkedGateTeleporter,Initialising,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,MindControlCrystal,ActivateCrystal,49,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,MindControlCrystal,ControlMind,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,MindControlCrystal,CrystalDisabled,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,MindControlledBot,MindControlGuard,194,25,146,23,66,3,2,1,1,0,22,65536,18446744073709551615,176,0,175,field,5,0,5,,5,5,2,1,label+payload,,
-state,StargateContent,MorphTest,Flopping,49,,,,,,,,,,22,16849152,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,PteroBoss,Invulnerable,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,PteroBossBot,Attacking,253,26,204,23,85,6,2,1,1,1,22,196864,18446744073709551615,264,0,263,field,8,0,4,,8,8,2,1,label+payload,,
-state,StargateContent,PteroBossBot,Guarding,343,25,295,23,123,7,3,1,1,1,22,196864,18446744073709551615,396,0,395,field,10,0,2,,10,10,3,1,label+payload,,
-state,StargateContent,PteroBossBot,Nesting,359,25,311,23,132,9,3,1,1,1,22,196864,18446744073709551615,404,0,403,field,12,0,1,,12,12,3,2,label+payload,,
-state,StargateContent,PteroBossBot,Protected,112,25,64,23,26,0,0,1,1,0,22,196864,18446744073709551615,64,0,63,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateContent,PteroBossBot,Searching,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,stargatecontent.pterobot,0,0,0,0,record-only,,
-state,StargateContent,PteroBossBot,Swiping,165,25,117,23,54,3,2,1,1,0,22,65792,18446744073709551615,144,0,143,field,5,0,1,,5,5,2,2,label+payload,,
-state,StargateContent,PteroBossBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateContent,PteroBot,Attacking,257,25,209,23,89,6,2,1,1,1,22,196864,18446744073709551615,272,0,271,field,8,0,3,,8,8,2,1,label+payload,,
-state,StargateContent,PteroBot,Landing,216,25,168,23,65,4,3,1,1,1,22,0,18446744073709551615,204,0,203,field,7,0,4,,7,7,3,1,label+payload,,
-state,StargateContent,PteroBot,Searching,224,25,176,23,77,6,3,1,1,1,22,65536,18446744073709551615,228,0,227,field,9,0,2,,9,9,3,1,label+payload,,
-state,StargateContent,PteroClaws,Active,68,25,20,23,8,0,0,1,1,0,22,16973824,18446744073709551615,12,0,11,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateContent,PteroClaws,ClientFinishing,82,26,33,23,12,0,0,1,1,0,22,16842752,18446744073709551615,28,0,27,field,0,0,6,,0,0,0,0,payload-only,,
-state,StargateContent,PteroClaws,ClientFiring,50,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,PteroClaws,NormalFire,112,26,63,23,19,0,0,1,1,0,22,16974080,18446744073709551615,48,0,47,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateContent,ReetouBot,Ambush,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ReetouBot,Berserk,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ReetouBot,Combat,480,25,432,23,181,11,6,1,1,5,22,65536,18446738576151412735,524,0,523,field,17,0,1,,17,17,6,1,label+payload,,
-state,StargateContent,ReetouBot,Escape,428,25,380,23,157,10,4,1,1,5,22,65536,18446738576151412735,472,0,471,field,14,0,2,,14,14,4,4,label+payload,,
-state,StargateContent,ReetouBot,Hunt,299,25,251,23,92,5,2,1,1,5,22,65536,18446744073709551615,288,0,287,field,7,0,2,,7,7,2,2,label+payload,,
-state,StargateContent,ReetouBot,Melee,356,25,308,23,118,6,1,1,1,5,22,196608,18446738576151412735,360,0,359,field,7,0,1,,7,7,1,0,label+payload,,
-state,StargateContent,ReetouBot,Ranged,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ReetouBot,Sneak,329,25,281,23,110,7,2,1,1,5,22,1099511693312,18446744073709551615,328,0,327,field,9,0,2,,9,9,2,2,label+payload,,
-state,StargateContent,ReetouBot,Waiting,223,26,174,23,62,2,0,1,1,4,22,65792,18446744073709551615,188,2,187,field,2,0,2,,2,2,0,0,label+payload,,
-state,StargateContent,ReetouDevice,Reloading,99,25,51,23,20,1,1,1,1,0,22,16842752,18446744073709551615,48,0,47,field,2,0,8,,2,2,1,1,label+payload,,
-state,StargateContent,ReetouDevice,SummoningReetou,167,25,119,23,48,2,0,1,1,0,22,0,18446744073709551615,132,0,131,field,2,0,7,,2,2,0,0,label+payload,,
-state,StargateContent,ReetouMeleeAttack,Active,68,25,20,23,8,0,0,1,1,0,22,16973824,18446744073709551615,12,0,11,field,0,0,3,,0,0,0,0,payload-only,,
-state,StargateContent,ReetouMeleeAttack,ClientFinishing,66,26,17,23,4,0,0,1,1,0,22,16842752,18446744073709551615,8,0,7,field,0,0,1,,0,0,0,0,payload-only,,
-state,StargateContent,ReetouMeleeAttack,ClientFiring,50,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,ReetouMeleeAttack,NormalFire,86,26,37,23,12,0,0,1,1,0,22,16974080,18446744073709551615,32,0,31,field,0,0,7,,0,0,0,0,payload-only,,
-state,StargateContent,ReetouProtectorBot,Attacking,249,25,201,23,89,5,3,1,1,1,22,65792,18446744073709551615,260,0,259,field,8,0,1,,8,8,3,2,label+payload,,
-state,StargateContent,ReetouProtectorBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateContent,ReetouWeapon,Charging,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ReetouWeapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,Replicator,Dying,50,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.stargatepawn (no table),0,0,0,0,record-only,,
-state,StargateContent,SGC_SecurityDoor,TriggerToggle,50,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,engine.mover,0,0,0,0,record-only,,
-state,StargateContent,SHOTGUN,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,SHOTGUN,Reloading2,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,SHOTGUN,Reloading3,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,SNIPERRIFLE,ClientFiring,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.scopedweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,SNIPERRIFLE,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,SNIPERRIFLE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,SNIPERRIFLE,SteadySway,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,SNIPERRIFLE,ZoomScope,50,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,record-only,,
-state,StargateContent,STAFFWEAPON,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,STAFFWEAPON,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,STAFFWEAPON,MeleeCharging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,STAFFWEAPON,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,STINGER,BotFireDelay,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,STINGER,Idle,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,STINGER,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,STINGER,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,Scarab,Buried,49,,,,,,,,,,22,68736450816,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,Scarab,Surfaced,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,ShieldPickup,Pickup,50,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,record-only,,
-state,StargateContent,ShockGrenadePickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,record-only,,
-state,StargateContent,StaffCannon,Charging,49,,,,,,,,,,22,16777216,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,StaffCannon,Firing,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,StaffCannonGun,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,StaffCannonGun,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,StaffCannonGun,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,StargateWeaponPickup,FadeOut,50,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,engine.pickup (no table),0,0,0,0,record-only,,
-state,StargateContent,SuperSoldierBot,ChasePlayer,175,25,127,23,45,2,1,1,1,1,22,9008298766565632,18446739675663040511,144,0,143,field,3,0,3,,3,3,1,1,label+payload,,
-state,StargateContent,SuperSoldierBot,GrabAndThrow,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,SuperSoldierBot,Ranged,50,,,,,,,,,,22,2199023452416,18446738576151412735,65535,0,,,,,,stargategame.botenemy,0,0,0,0,record-only,,
-state,StargateContent,SuperSoldierBot,SuperPunch,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,SuperSoldierGun,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,TERWEAPON,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,TransportPlatform,Initialising,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,TransportPlatformTeleporter,Initialising,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,TransportPlatformTeleporter,RingCoolDown,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,TransportPlatformTeleporter,RingTransport,49,,,,,,,,,,22,196672,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,TransportPlatformTeleporter,RingWarmup,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateContent,WeapRepDefault,ClientFiring,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateContent,ZATGUN,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,Activated,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,DeactivatingAfterDelay,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,Disabled,51,,,,,,,,,,22,0,18446744073709551167,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,FlashOff,51,,,,,,,,,,22,256,18446744073709551423,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,FlashOn,51,,,,,,,,,,22,256,18446744073709551423,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,UseActivates,50,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,UseDeactivates,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,AlarmPanel,UseDelaysDeactivation,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,Beacons,VisibleForABit,49,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotBase,Dead,177,26,128,23,50,2,1,1,1,0,22,65792,18430129353502228479,148,0,147,field,3,0,6,,3,3,1,1,label+payload,,
-state,StargateGame,BotBase,ReactionDelay,49,,,,,,,,,,22,68719673344,18437452100943216639,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotBase,RunAwayFromFearSpot,87,25,39,23,17,1,0,1,1,0,22,196608,18446740775174668287,40,0,39,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateGame,BotBase,Scripting,50,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,gameplay.scriptedcontroller,0,0,0,0,record-only,,
-state,StargateGame,BotBase,Waiting,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,ActivateAlarm,505,25,457,23,146,7,4,1,1,4,22,196608,18446738576151412735,552,0,551,field,11,0,1,,11,11,4,1,label+payload,,
-state,StargateGame,BotEnemy,AlertSquad,68,25,20,23,7,0,0,1,1,0,22,196864,18446744073709551615,12,0,11,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateGame,BotEnemy,BotBeingElectrocuted,50,,,,,,,,,,22,196608,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotBurning,93,27,43,23,18,0,0,1,1,0,22,68719673344,18437447702896705535,44,0,43,field,0,0,3,,0,0,0,0,payload-only,,
-state,StargateGame,BotEnemy,BotGrabbed,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotGunning,78,27,28,23,11,0,0,1,1,0,22,1168231301376,18446458200686329855,24,0,23,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateGame,BotEnemy,BotHacking,51,,,,,,,,,,22,68719673344,18437447702896705535,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotKnockedBack,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotMeleeDash,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotPrepareGrabbed,51,,,,,,,,,,22,196608,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotStaggered,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,BotUnconscious,51,,,,,,,,,,22,68719673600,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,CoveredAttack,1206,27,1156,23,450,19,7,1,1,6,22,9010497789821184,18446744073709551615,1440,0,1439,field,26,0,5,,26,26,7,1,label+payload,,
-state,StargateGame,BotEnemy,CoveredHide,397,27,347,23,181,9,4,1,1,0,22,9010497789821184,18446744073709551615,460,0,459,field,13,0,3,,13,13,4,2,label+payload,,
-state,StargateGame,BotEnemy,CoveredMove,370,28,319,23,163,9,6,1,1,0,22,9010497789821184,18446744073709551615,432,0,431,field,15,0,5,,15,15,6,1,label+payload,,
-state,StargateGame,BotEnemy,Dead,179,28,128,23,50,2,1,1,1,0,22,65792,18430129353502228479,148,0,147,field,3,0,5,,3,3,1,1,label+payload,,
-state,StargateGame,BotEnemy,DriveHunting,192,27,142,23,73,4,2,1,1,0,22,3298534949120,18446458200686329855,188,0,187,field,6,0,2,,6,6,2,2,label+payload,,
-state,StargateGame,BotEnemy,DriveRamming,189,27,139,23,40,2,0,1,1,2,22,2199023452416,18446741874686296063,156,0,155,field,2,0,3,,2,2,0,0,label+payload,,
-state,StargateGame,BotEnemy,DriveRanged,260,27,210,23,73,4,2,1,1,2,22,2199023452416,18446738576151379967,244,0,243,field,6,0,4,,6,6,2,2,label+payload,,
-state,StargateGame,BotEnemy,EnemySpotted,112,25,64,23,18,1,0,1,1,1,22,196608,18446738576151412735,64,0,63,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateGame,BotEnemy,FallbackMove,357,27,307,23,120,8,1,1,1,2,22,2199023452416,18446744073709551615,388,0,387,field,9,0,3,,9,9,1,1,label+payload,,
-state,StargateGame,BotEnemy,FindAir,101,27,51,23,22,1,1,1,1,0,22,11261198091878656,18446738576151379967,52,0,51,field,2,0,2,,2,2,1,1,label+payload,,
-state,StargateGame,BotEnemy,Flee,117,26,68,23,33,1,0,1,1,0,22,196608,18446736377128157183,88,0,87,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateGame,BotEnemy,FormationCombat,383,27,333,23,119,6,3,1,1,2,22,196864,18446738576151379967,412,0,411,field,9,0,3,,9,9,3,0,label+payload,,
-state,StargateGame,BotEnemy,GetInFormation,374,26,325,23,144,8,4,1,1,0,22,196864,18446744073709551615,404,0,403,field,12,0,2,,12,12,4,2,label+payload,,
-state,StargateGame,BotEnemy,Hunt,260,25,212,23,97,6,4,1,1,0,22,3298535080192,18446744073709551615,268,0,267,field,10,0,1,,10,10,4,1,label+payload,,
-state,StargateGame,BotEnemy,InteractUseObject,351,27,301,23,100,5,4,1,1,3,22,65536,18446744073709551615,364,0,363,field,9,0,2,,9,9,4,2,label+payload,,
-state,StargateGame,BotEnemy,Mellee,550,27,500,23,151,9,2,1,1,8,22,9288674231648512,18446744073709551615,552,0,551,field,11,0,2,,11,11,2,1,label+payload,,
-state,StargateGame,BotEnemy,MoveInFormation,242,25,194,23,84,5,4,1,1,0,22,68719673600,18446462598732840959,248,0,247,field,9,0,3,,9,9,4,2,label+payload,,
-state,StargateGame,BotEnemy,MoveToHackingPos,148,27,98,23,49,3,3,1,1,0,22,196608,18437447702896705535,120,0,119,field,6,0,3,,6,6,3,2,label+payload,,
-state,StargateGame,BotEnemy,Ranged,359,27,309,23,117,8,1,1,1,2,22,2199023452416,18446738576151412735,388,0,387,field,9,0,5,,9,9,1,0,label+payload,,
-state,StargateGame,BotEnemy,RunToTurret,317,27,267,23,114,6,2,1,1,0,22,196608,18446739675663040511,332,0,331,field,8,0,2,,8,8,2,2,label+payload,,
-state,StargateGame,BotEnemy,RunToVehicle,316,27,266,23,114,6,2,1,1,0,22,65536,18446739675663040511,332,0,331,field,8,0,2,,8,8,2,2,label+payload,,
-state,StargateGame,BotEnemy,Scripting,52,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateGame,BotEnemy,ShootFromCover,206,26,157,23,76,1,0,1,1,0,22,9009398278193408,18446744073709551615,212,0,211,field,1,0,3,,1,1,0,0,label+payload,,
-state,StargateGame,BotEnemy,StaggeredAssist,215,25,167,23,75,3,1,1,1,0,22,196608,18446744073709551615,220,0,219,field,4,0,2,,4,4,1,1,label+payload,,
-state,StargateGame,BotEnemy,StaggeredMove,277,25,229,23,113,6,1,1,1,0,22,1099511824384,18446744073709551615,312,0,311,field,7,0,2,,7,7,1,1,label+payload,,
-state,StargateGame,BotEnemy,Suspicious,555,25,507,23,243,17,6,1,1,1,22,5566277812224,18446744073709551615,668,0,667,field,23,0,4,,23,23,6,1,label+payload,,
-state,StargateGame,BotEnemy,TakePoint,268,25,220,23,97,5,3,1,1,0,22,68719673600,18446744073709551551,276,0,275,field,8,0,2,,8,8,3,2,label+payload,,
-state,StargateGame,BotEnemy,Waiting,164,26,115,23,39,2,0,1,1,1,22,65792,18446744073709551615,116,2,115,field,2,0,2,,2,2,0,0,label+payload,,
-state,StargateGame,BotEnemy,WaitingForFormation,117,27,67,23,27,1,0,1,1,0,22,65792,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateGame,BotGuide,Follow,334,27,284,23,112,6,4,1,1,3,22,8590000384,18446741874686296063,356,0,355,field,10,0,3,,10,10,4,1,label+payload,,
-state,StargateGame,BotGuide,ReturnToPlayer,453,27,403,23,153,9,3,1,1,2,22,0,18446744073709551615,524,0,523,field,12,0,5,,12,12,3,1,label+payload,,
-state,StargateGame,BotGuide,Scripting,52,,,,,,,,,,22,68736450880,18446744073709551615,65535,0,,,,,,stargategame.botenemy (no table),0,0,0,0,record-only,,
-state,StargateGame,BotLite,Dead,73,28,22,23,7,0,0,1,1,0,22,65792,18430129353502228479,12,0,11,field,0,0,3,,0,0,0,0,payload-only,,
-state,StargateGame,BotLite,Hunting,216,27,166,23,81,7,4,1,1,0,22,65792,18446736377128157183,224,0,223,field,11,0,2,,11,11,4,2,label+payload,,
-state,StargateGame,BotLite,Scripting,52,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateGame,BotLite,TacticalMove,192,27,142,23,74,4,2,1,1,0,22,9007199254937856,18446457101174702079,172,0,171,field,6,0,2,,6,6,2,1,label+payload,,
-state,StargateGame,BotLite,Waiting,52,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateGame,BotRep,Hunt,229,28,178,23,69,4,1,1,1,1,22,3298535080192,18446744073709551615,220,0,219,field,5,0,2,,5,5,1,1,label+payload,,
-state,StargateGame,BotRep,MoveInFormation,300,28,249,23,113,6,4,1,1,0,22,68719673600,18446738576151412735,336,0,335,field,10,0,2,,10,10,4,2,label+payload,,
-state,StargateGame,BotRep,TakePoint,591,28,540,23,149,5,3,1,1,6,22,68719673600,18446744073709551551,612,0,611,field,8,0,2,,8,8,3,2,label+payload,,
-state,StargateGame,BotRep,Waiting,122,28,71,23,18,1,0,1,1,1,22,65792,18446744073709551615,64,2,63,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateGame,BotSG,BotUnconscious,52,,,,,,,,,,22,68719673600,18430129353502228479,65535,0,,,,,,stargategame.botenemy (no table),0,0,0,0,record-only,,
-state,StargateGame,BotSG,ConcentrateFire,583,27,533,23,222,11,5,1,1,1,22,1099511824384,18446744073709551615,676,0,675,field,16,0,2,,16,16,5,1,label+payload,,
-state,StargateGame,BotSG,CoveredAttack,1191,26,1142,23,411,18,6,1,1,10,22,9010497789821184,18446744073709551615,1380,0,1379,field,24,0,1,,24,24,6,1,label+payload,,
-state,StargateGame,BotSG,HuntMellee,52,,,,,,,,,,22,3367254556928,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotSG,InvisibleRest,52,,,,,,,,,,22,9288682821583104,18430129353502228479,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,BotSG,RestFormation,1070,27,1020,23,352,17,12,1,1,5,22,9288682821583104,18446741874686296063,1240,0,1239,field,29,0,2,,29,29,12,2,label+payload,,
-state,StargateGame,BotSG,Roaming,344,27,294,23,131,6,4,1,1,1,22,196864,18446741874686296063,380,0,379,field,10,0,2,,10,10,4,1,label+payload,,
-state,StargateGame,BotSG,Stakeout,436,27,386,23,169,3,0,1,1,1,22,1099511824640,18446741874686296063,484,0,483,field,3,0,2,,3,3,0,0,label+payload,,
-state,StargateGame,BotSG,TacticalMove,539,27,489,23,209,8,3,1,1,1,22,9009398278193408,18446738576151412735,616,0,615,field,11,0,6,,11,11,3,2,label+payload,,
-state,StargateGame,BotSG,Waiting,186,26,137,23,56,3,1,1,1,1,22,65792,18446744073709551615,152,2,151,field,4,0,4,,4,4,1,1,label+payload,,
-state,StargateGame,CTFFlag,Held,52,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,stargategame.gameobject (no table),0,0,0,0,record-only,,
-state,StargateGame,CTFFlag,dropped,52,,,,,,,,,,22,200960,18446744073709551615,65535,0,,,,,,stargategame.gameobject (no table),0,0,0,0,record-only,,
-state,StargateGame,CTFFlag,home,52,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,stargategame.gameobject,0,0,0,0,record-only,,
-state,StargateGame,CTFGame,MatchOver,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,stargategame.deathmatch (no table),0,0,0,0,record-only,,
-state,StargateGame,DeathMatch,MatchInProgress,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,DeathMatch,MatchOver,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,DeathMatch,PendingMatch,51,,,,,,,,,,22,256,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,FarClipChange,Done,51,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,FarClipChange,Tweening,51,,,,,,,,,,22,68719542336,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,FarClipChange,Waiting,51,,,,,,,,,,22,64,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,GameObject,Held,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,GameObject,dropped,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,GameObject,home,72,25,24,23,7,0,0,1,1,0,22,196608,18446744073709551615,16,2,15,field,0,0,5,,0,0,0,0,payload-only,,
-state,StargateGame,GravCraneLifter,GravBeamDeactivate,51,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,GravCraneLifter,GravBeamOff,50,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,GravCraneLifter,GravBeamOn,50,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,HealthRegenerator,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,record-only,,
-state,StargateGame,IntelligentSpawner,TriggerActivates,51,,,,,,,,,,22,448,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,IntelligentSpawner,TriggerDeactivates,51,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,KeyPickup,Sleeping,63,26,14,23,4,0,0,1,1,0,22,196608,18446744073709543423,4,0,3,field,0,0,8,,0,0,0,0,payload-only,,
-state,StargateGame,MobileShield,Idle,51,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,MuzzleFlashAttachment,Visible,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,4,,,,,,,,,,,record-only,,
-state,StargateGame,SGInsetCamera,OffCamera,50,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,SGInsetCamera,OnCamera,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,SGInsetCamera,SlideOff,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,SGInsetCamera,SlideOn,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,SGInsetCameraTarget,Disabled,49,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,SGInsetCameraTarget,TriggerTimeOut,50,,,,,,,,,,22,320,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,ScopedWeapon,ClientFiring,52,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateGame,ScopedWeapon,ZoomScope,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,record-only,,
-state,StargateGame,ScopedWeapon,ZoomingIn,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,record-only,,
-state,StargateGame,ScopedWeapon,ZoomingOut,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,record-only,,
-state,StargateGame,ShieldBelt,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,record-only,,
-state,StargateGame,ShieldBelt,Cloaked,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,ShieldBelt,Cloaking,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateArmor,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,record-only,,
-state,StargateGame,StargatePawn,Dying,52,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.unrealpawn (no table),0,0,0,0,record-only,,
-state,StargateGame,StargatePawn,HeadShotted,51,,,,,,,,,,22,16973824,18446744072635771327,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,Deployed,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,GameEnded,50,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,engine.playercontroller,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,Hacking,52,,,,,,,,,,22,5066549580988416,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerBeingElectrocuted,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerConsoling,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerGrabbed,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerGunning,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerKnockedBack,51,,,,,,,,,,22,4503599627567360,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerMeleeDash,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerPrepareGrabbed,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerStaggered,51,,,,,,,,,,22,4503599627567360,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,PlayerUnconscious,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargatePlayer,UsingProgressTrigger,52,,,,,,,,,,22,5066549580988416,18443642351407561215,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateStationaryWeapon,Broken,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateStationaryWeapon,Online,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateStationaryWeapon,Warmup,51,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,ClientFinishing,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,ClientFiring,52,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,Clubbing,51,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,DownWeapon,52,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,Freeze,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,Idle,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,LowerWeapon,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,LoweredIdle,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,NormalFire,52,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,engine.weapon,0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,PendingClientWeaponSet,52,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,Reloading,52,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,record-only,,
-state,StargateGame,StargateWeapon,Zooming,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,record-only,,
-state,StargateGame,StargateWeaponEmplacement,Activate,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StargateWeaponEmplacement,DeActivate,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StoryModeGame,MatchInProgress,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StoryModeGame,MatchOver,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,StoryModeGame,PendingMatch,51,,,,,,,,,,22,256,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,TransportRings,PostTransportPhase,51,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,TransportRings,PreTransportPhase,51,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,TransportRings,Spawning,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,TransportRings,TransportPhase,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,UnrealPawn,Dying,51,,,,,,,,,,22,17107200,18446744072618994111,65535,0,,,,,,engine.pawn,0,0,0,0,record-only,,
-state,StargateGame,UnrealPawn,FeigningDeath,51,,,,,,,,,,22,0,18446744073709518335,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,UnrealPawn,TimingOut,51,,,,,,,,,,22,65536,18446744072618729919,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,UnrealPlayer,Dead,52,,,,,,,,,,22,196864,18446738576151412735,65535,0,,,,,,engine.playercontroller,0,0,0,0,record-only,,
-state,StargateGame,UnrealPlayer,FeigningDeath,50,,,,,,,,,,22,563087409348608,18446738576151379967,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateGame,UnrealPlayer,PlayerWalking,51,,,,,,,,,,22,5066549580988416,18446739675663040511,65535,0,,,,,,engine.playercontroller,0,0,0,0,record-only,,
-state,StargateGame,WillowWhisp,Pathing,79,25,31,23,12,1,0,1,1,0,22,0,18446744073709551615,28,2,27,field,1,0,7,,1,1,0,0,label+payload,,
-state,StargateVehicles,APCM60Gun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,label+payload,,
-state,StargateVehicles,AirborneTurretController,Shoot,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargatecontent.goaautoturretmk2controller (no table),0,0,0,0,record-only,,
-state,StargateVehicles,AlkeshBombProjectile,Flying,49,,,,,,,,,,22,196608,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,AlkeshBomberBot,Ascending,239,25,191,23,80,4,1,1,1,0,22,196608,18446744073709551615,248,0,247,field,5,0,2,,5,5,1,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,BombingRun,338,25,290,23,79,4,3,1,1,2,22,196864,18446744073709551615,332,0,331,field,7,0,2,,7,7,3,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,CarpetBombing,110,25,62,23,25,2,0,1,1,0,22,196608,18446744073709551615,60,0,59,field,2,0,2,,2,2,0,0,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,Chasing,152,25,104,23,37,4,1,1,1,1,22,0,18446744073709551615,108,0,107,field,5,0,4,,5,5,1,0,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,DescendToTransportHeight,190,25,142,23,51,2,1,1,1,0,22,196608,18446744073709551615,168,0,167,field,3,0,2,,3,3,1,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,GroundAttack,91,25,43,23,14,0,0,1,1,0,22,196864,18446744073709551615,32,0,31,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateVehicles,AlkeshBomberBot,Landing,283,25,235,23,91,5,3,1,1,1,22,65536,18446744073709551615,324,0,323,field,8,0,2,,8,8,3,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,OrderedLanding,290,26,241,23,94,5,2,1,1,1,22,65536,18446744073709551615,308,0,307,field,7,0,4,,7,7,2,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,RingTransport,71,25,23,23,7,0,0,1,1,0,22,196672,18446744073709551615,16,0,15,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateVehicles,AlkeshBomberBot,Scripting,50,,,,,,,,,,22,68736450880,18446744073709551615,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateVehicles,AlkeshBomberBot,Searching,302,25,254,23,71,5,3,1,1,3,22,9007199254740992,18446744073709551615,280,0,279,field,8,0,6,,8,8,3,1,label+payload,,
-state,StargateVehicles,AlkeshBomberBot,StabiliseForTransport,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,AlkeshBomberBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,3,,1,1,0,0,label+payload,,
-state,StargateVehicles,DeathGlider,ImpactedWall,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,DeathGlider,TakeOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,DeathGliderBot,Attacking,203,25,155,23,67,4,2,1,1,1,22,65792,18446744073709551615,196,0,195,field,6,0,2,,6,6,2,1,label+payload,,
-state,StargateVehicles,DeathGliderBot,PullUpAttacking,133,25,85,23,30,2,0,1,1,1,22,65792,18446744073709551615,92,0,91,field,2,0,2,,2,2,0,0,label+payload,,
-state,StargateVehicles,DeathGliderBot,Searching,223,25,175,23,77,6,3,1,1,1,22,0,18446744073709551615,228,0,227,field,9,0,7,,9,9,3,1,label+payload,,
-state,StargateVehicles,DeathGliderBot,StallTurn,128,25,80,23,30,2,0,1,1,1,22,196864,18446744073709551615,92,0,91,field,2,0,3,,2,2,0,0,label+payload,,
-state,StargateVehicles,DeathGliderBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateVehicles,DeathGliderGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,6,,6,6,3,2,label+payload,,
-state,StargateVehicles,GatlingGun,WaitingForBarrel,129,24,82,23,32,1,1,1,1,0,22,0,18446744073709551615,92,0,91,field,2,0,2,,2,2,1,1,label+payload,,
-state,StargateVehicles,GoauldDrone,Exploding,64,26,15,23,4,0,0,1,1,0,22,0,18446744073709551615,8,0,7,field,0,0,8,,0,0,0,0,payload-only,,
-state,StargateVehicles,GoauldDroneBot,Attacking,245,25,197,23,90,8,5,1,1,1,22,196864,18446744073709551615,260,0,259,field,13,0,2,,13,13,5,1,label+payload,,
-state,StargateVehicles,GoauldDroneBot,Pursuit,290,25,242,23,115,7,5,1,1,0,22,9288674231648512,18446744073709551615,312,0,311,field,12,0,2,,12,12,5,2,label+payload,,
-state,StargateVehicles,GoauldDroneBot,Searching,205,25,157,23,66,6,2,1,1,1,22,9007199254937856,18446744073709551615,184,0,183,field,8,0,2,,8,8,2,1,label+payload,,
-state,StargateVehicles,GoauldDroneBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,record-only,,
-state,StargateVehicles,GoauldKillerDroid,Exploding,65,26,16,23,4,0,0,1,1,0,22,0,18446744073709551615,8,0,7,field,0,0,6,,0,0,0,0,payload-only,,
-state,StargateVehicles,GoauldKillerDroidBot,Pursuit,50,,,,,,,,,,22,9288674231648512,18446744073709551615,65535,0,,,,,,stargatevehicles.goaulddronebot,0,0,0,0,record-only,,
-state,StargateVehicles,GoauldKillerDroidBot,Searching,50,,,,,,,,,,22,9288674231648512,18446744073709551615,65535,0,,,,,,stargatevehicles.goaulddronebot,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraft,Active,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraft,BackingOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraft,Braking,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraft,Chasing,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraft,RearPushOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,HoverCraftFixedGun,NormalFire,206,25,158,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,label+payload,,
-state,StargateVehicles,HoverCraftTurretGun,NormalFire,199,25,151,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,label+payload,,
-state,StargateVehicles,HoverTankCannon,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,5,,6,6,3,2,label+payload,,
-state,StargateVehicles,HoverTankPilotBot,TroopDrop,77,24,30,23,11,0,0,1,1,0,22,0,18446744073709551615,28,0,27,field,0,0,1,,0,0,0,0,payload-only,,
-state,StargateVehicles,M60TurretGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,label+payload,,
-state,StargateVehicles,Semektet,Active,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,Semektet,BackingOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,Semektet,Braking,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,Semektet,Chasing,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,Semektet,RearPushOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,SemektetMortarGun,NormalFire,199,25,151,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,label+payload,,
-state,StargateVehicles,SemektetMortarGun,ThrowGrenade,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,SemektetStaffCannonGun,NormalFire,48,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargatecontent.staffcannongun (no table),0,0,0,0,record-only,,
-state,StargateVehicles,StargateCar,Correcting,127,25,79,23,32,0,0,1,1,0,22,0,18446744073709551615,88,0,87,field,0,0,2,,0,0,0,0,payload-only,,
-state,StargateVehicles,TeltakBot,Ascending,239,25,191,23,80,4,1,1,1,0,22,196608,18446744073709551615,248,0,247,field,5,0,3,,5,5,1,1,label+payload,,
-state,StargateVehicles,TeltakBot,DescendToTransportHeight,190,25,142,23,51,2,1,1,1,0,22,196608,18446744073709551615,168,0,167,field,3,0,2,,3,3,1,1,label+payload,,
-state,StargateVehicles,TeltakBot,Landing,283,25,235,23,91,5,3,1,1,1,22,65536,18446744073709551615,324,0,323,field,8,0,2,,8,8,3,1,label+payload,,
-state,StargateVehicles,TeltakBot,OrderedLanding,286,26,237,23,96,5,2,1,1,1,22,65536,18446744073709551615,304,0,303,field,7,0,6,,7,7,2,1,label+payload,,
-state,StargateVehicles,TeltakBot,RingTransport,71,25,23,23,7,0,0,1,1,0,22,196672,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,payload-only,,
-state,StargateVehicles,TeltakBot,Searching,254,25,206,23,66,5,2,1,1,2,22,9007199254740992,18446744073709551615,232,0,231,field,7,0,8,,7,7,2,0,label+payload,,
-state,StargateVehicles,TeltakBot,StabiliseForTransport,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,StargateVehicles,TeltakBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,label+payload,,
-state,StargateVehicles,TempleTurretGun,Idle,48,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,record-only,,
-state,StargateVehicles,TempleTurretGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,label+payload,,
-state,Stargateeffects,Chip,Flying,48,,,,,,,,,,22,68096,18446744073709551615,65535,2,,,,,,,0,0,0,0,record-only,,
-state,Stargateeffects,CrystalTunnelGrow,DelayedStart,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Stargateeffects,CrystalTunnelGrow,DelayedStop,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Stargateeffects,DustStormEmitter,FadeIn,48,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Stargateeffects,DustStormEmitter,FadeOut,48,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,Stargateeffects,RepChip,Flying,49,,,,,,,,,,22,68096,18446744073709551615,65535,2,,,,,,stargateeffects.chip (no table),0,0,0,0,record-only,,
-state,UDebugMenu,UDebugRootWindow,UWindows,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,uwindow.uwindowrootwindow (no table),0,0,0,0,record-only,,
-state,UPreview,UPreviewRootWindow,UWindows,48,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,uwindow.uwindowrootwindow (no table),0,0,0,0,record-only,,
-state,UWindow,UWindowRootWindow,UWindows,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,record-only,,
-state,UWindow,WindowConsole,UWindow,62,24,15,23,4,0,0,1,1,0,22,68719476736,18446744073709551615,4,0,3,field,0,0,5,,0,0,0,0,payload-only,,
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,553,states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,57297,payload_bytes
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,regions
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,387,no_code
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,387,no_table
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,29859,code_bytes
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11885,tokens
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,jumpifnot
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,253,jump
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable_states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,147,stringconst
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,553,record
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,marker
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,443,ignore_all_ones
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,58,probe_zero
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,451,flags_zero
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,33,flags_one
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,61,flags_two
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,8,flags_other
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,offset_entry
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,offset_other
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,offset_unmeasured
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,start_by_field
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1694,start_shift
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,100,override_state
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,25,override_code
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,287,override_none
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,code_local
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,543,walk_local
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,863,jumps
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,863,jumps_on_boundary
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,text_label_states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,text_label
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,252,text_else
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,118,text_else_label
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,joined
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,591,joined_jif
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,joined_label
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,30,joined_equal
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37,overrides
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,payload_arms
+kind,package,class,state,payload,start,code,trailer,tokens,jumpifnot,jump,labeltable,complete,stringconst,record,probe_mask,ignore_mask,label_offset,state_flags,table_w,start_by,jump_on,code_lv,walk_lv,override_of,text_kw,text_label,text_else,text_else_label,labels,labels_on,labels_named,labels_last,labels_spelled,labels_unspelled,labels_text_only,verdict,count,note
+state,AmbientCreatures,Bird,Dying,49,,,,,,,,,,22,17107200,18446744072635771327,65535,0,,,,,,ambientcreatures.transientambientpawn,0,0,0,0,,,,,,,,record-only,,
+state,AmbientCreatures,Birds,Wandering,49,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,ambientcreatures.transientambientcreature,0,0,0,0,,,,,,,,record-only,,
+state,AmbientCreatures,CirclingBirds,Circling,91,24,44,23,20,0,0,1,1,0,22,65536,18446744073709551615,64,2,63,field,0,0,2,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,AmbientCreatures,FishBase,Flopping,49,,,,,,,,,,22,16849152,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,AmbientCreatures,FishBase,SWIMMING,50,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,AmbientCreatures,HerdAnimal,grazing,312,24,265,23,96,2,0,1,1,0,22,4789472650657856,18446742974197891071,288,2,287,field,2,0,2,,2,2,0,0,6,6,6,0,3,2,0,label+payload,,none-name
+state,AmbientCreatures,HerdAnimal,stampeding,208,24,161,23,72,2,0,1,1,0,22,9007199254740992,18446738576151379903,180,0,179,field,2,0,4,,2,2,0,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,AmbientCreatures,MigratingBirds,Migrating,90,25,42,23,21,0,0,1,1,0,22,65536,18446744073709551615,44,2,43,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,AmbientCreatures,TransientAmbientCreature,Wandering,115,23,69,23,34,1,0,1,1,0,22,0,18446744073709551615,100,2,99,field,1,0,2,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,AmbientCreatures,TransientAmbientPawn,Dying,127,24,80,23,35,1,1,1,1,0,22,17107200,18446744072635771327,84,0,83,field,2,0,2,,2,2,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,AmbientCreatures,TransientAmbientPawn,Wandering,149,24,102,23,49,3,2,1,1,0,22,0,18446744072635771327,136,2,135,field,5,0,4,,5,5,2,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,Engine,Ammo,Pickup,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,,,,,,,,record-only,,
+state,Engine,AntiPortalActor,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,AntiPortalActor,TriggerToggle,51,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Armor,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.powerups (no table),0,0,0,0,,,,,,,,record-only,,
+state,Engine,ClientMover,ServerIdle,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Console,Typing,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Controller,Dead,50,,,,,,,,,,22,0,18446738576151412735,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Controller,GameEnded,49,,,,,,,,,,22,65536,18443642351407593983,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Controller,RoundEnded,49,,,,,,,,,,22,65536,18443642351407593983,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,DemoRecSpectator,Spectating,52,,,,,,,,,,22,137439150336,18446744073709551615,65535,2,,,,,,engine.playercontroller (no table),0,0,0,0,,,,,,,,record-only,,
+state,Engine,Fragment,Dying,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Fragment,Flying,50,,,,,,,,,,22,69888,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,KHinge,ControlDesired,51,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,KHinge,ControlMotor,79,27,29,23,11,0,0,1,1,0,22,192,18446744073709551615,24,1,23,field,0,0,3,,,,,,1,1,1,0,,,,payload-only,,none-name
+state,Engine,KHinge,Default,48,,,,,,,,,,22,0,18446744073709551423,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,KHinge,ToggleDesired,51,,,,,,,,,,22,64,18446744073709551487,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,KHinge,ToggleMotor,79,27,29,23,11,0,0,1,1,0,22,64,18446744073709551487,24,1,23,field,0,0,4,,,,,,1,1,1,0,,,,payload-only,,none-name
+state,Engine,MessagingSpectator,NotPlaying,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,BumpButton,166,27,116,23,56,4,0,1,1,0,22,32768,18446744073709551615,132,1,131,field,4,0,4,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,BumpOpenTimed,52,,,,,,,,,,22,98304,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,ConstantLoop,97,27,47,23,18,0,0,1,1,0,22,65536,18446744073709551615,40,1,39,field,0,0,2,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,LeadInOutLooper,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,LeadInOutLooping,51,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,LoopMove,152,27,102,23,50,0,0,1,1,0,22,65728,18446744073709551615,116,1,115,field,0,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,OpenTimedMover,205,26,156,23,76,5,0,1,1,0,22,65536,18446744073709551615,192,0,191,field,5,0,2,,5,5,0,0,2,2,2,0,2,0,0,label+payload,,none-name
+state,Engine,Mover,RotatingMover,51,,,,,,,,,,22,65536,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,StandOpenTimed,52,,,,,,,,,,22,589824,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,TriggerAdvance,209,27,159,23,79,4,0,1,1,0,22,196800,18446744073709551615,188,1,187,field,4,0,2,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,TriggerControl,175,27,125,23,59,5,0,1,1,0,22,65728,18446744073709551615,140,1,139,field,5,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,TriggerOpenTimed,52,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,TriggerPound,169,27,119,23,58,4,0,1,1,0,22,65728,18446744073709551615,132,1,131,field,4,0,4,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,TriggerToggle,147,27,97,23,45,2,0,1,1,0,22,64,18446744073709551615,104,1,103,field,2,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,WasBumpButton,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,WasOpenTimedMover,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,WasTriggerAdvance,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,WasTriggerControl,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,WasTriggerPound,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Pawn,Dying,81,27,31,23,11,0,0,1,1,0,22,17107200,18446744072635771327,24,0,23,field,0,0,5,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,Pickup,Disabled,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Pickup,FadeOut,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Pickup,FallingPickup,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Pickup,Pickup,66,26,17,23,4,0,0,1,1,0,22,196864,18446744073709551615,8,2,7,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,Pickup,Sleeping,189,27,139,23,57,2,1,1,1,0,22,196608,18446744073709543423,148,0,147,field,3,0,4,,3,3,1,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,Engine,Pickup,WaitingForMatch,50,,,,,,,,,,22,65536,18446744073709543423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,AttractMode,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,BaseSpectating,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,Dead,94,28,43,23,18,1,0,1,1,0,22,196864,18446738576151412735,40,0,39,field,1,0,1,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,Engine,PlayerController,GameEnded,66,28,15,23,4,0,0,1,1,0,22,196864,18443642351407593983,4,0,3,field,0,0,6,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,PlayerController,PlayerClimbing,51,,,,,,,,,,22,562949953617920,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerDriving,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerEnterVehicle,51,,,,,,,,,,22,196608,18446738576151379967,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerFlying,51,,,,,,,,,,22,65536,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerRocketing,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerSpaceFlying,51,,,,,,,,,,22,196608,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerSpidering,51,,,,,,,,,,22,14073748835729408,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerSwimming,51,,,,,,,,,,22,5066549580857600,18446739675663007743,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerTurreting,65,27,15,23,4,0,0,1,1,0,22,196608,18446739675663007743,4,0,3,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,PlayerController,PlayerWaiting,52,,,,,,,,,,22,196608,18446457101174697983,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,PlayerWalking,65,27,15,23,4,0,0,1,1,0,22,562949953617920,18446739675663007743,4,0,3,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,PlayerController,RoundEnded,66,28,15,23,4,0,0,1,1,0,22,65792,18443642351407593983,4,0,3,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,PlayerController,Scripting,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,Spectating,52,,,,,,,,,,22,196864,18443929323942445055,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,PlayerController,WaitingForPawn,52,,,,,,,,,,22,137439150336,18446738576151412735,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Powerups,Activated,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Projector,NoProjection,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Screenplay,RunScreenplay,78,27,28,23,11,0,0,1,1,0,22,196608,18446744073709551615,20,0,19,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,Security,Probation,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,StationaryWeapons,fucked,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,TestInfo,AA,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,TestInfo,BB,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,TestInfo,CCAA,52,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,TestInfo,DDAA,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,TestInfo,EEDDAA,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Trigger,NormalTrigger,49,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerToggles,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerTurnsOff,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerTurnsOn,51,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Vehicle,Deployed,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Vehicle,UnDeployed,50,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Volume,AssociatedTouch,50,,,,,,,,,,22,90112,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,WarpZoneInfo,DelayedWarp,51,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Weapon,Active,51,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Weapon,ClientFiring,51,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Weapon,DownWeapon,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Weapon,Idle,175,27,125,23,57,3,0,1,1,0,22,16842752,18446744073709551615,152,0,151,field,3,0,4,,3,3,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,Engine,Weapon,NormalFire,78,26,29,23,11,0,0,1,1,0,22,16908288,18446744073709551615,20,0,19,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,Engine,Weapon,PendingClientWeaponSet,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Weapon,Reloading,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,WeaponPickup,Pickup,52,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,,,,,,,,record-only,,
+state,GUI,ExtendedConsole,ConsoleVisible,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,Dispatcher,Dispatch,136,24,89,23,42,2,1,1,1,0,22,0,18446744073709551551,112,2,111,field,3,0,3,,2,2,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,GamePlay,FadeViewTrigger,IsTriggered,49,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,PuzzleMover,TriggerControl,50,,,,,,,,,,22,65728,18446744073709551615,65535,1,,,,,,engine.mover,,,,,,,,,,,,record-only,,
+state,GamePlay,ScriptedController,Broken,122,24,75,23,33,2,0,1,1,0,22,65536,18446744073709551615,76,0,75,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,GamePlay,ScriptedController,Scripting,704,25,656,23,298,20,6,1,1,4,22,68736450880,18446744073709551615,868,0,867,field,26,0,2,,26,26,6,0,2,2,2,0,0,1,0,label+payload,,none-name
+state,GamePlay,ScriptedTriggerController,Scripting,143,26,94,23,40,5,0,1,1,0,22,68736450880,18446744073709551615,116,0,115,field,5,0,7,,5,5,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,GamePlay,TournamentConsole,Typing,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.console (no table),0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TournamentConsole,UWindow,50,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,uwindow.windowconsole,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerPound,49,,,,,,,,,,22,320,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerToggle,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerTurnsOff,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerTurnsOn,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,NormalTrigger,48,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerToggles,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerTurnsOff,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerTurnsOn,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Sharpeffects,SE_AdvExplosiveMeshActor,Dead,49,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Sharpeffects,SE_ExplosiveKActor,Dead,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,AlarmLight,Disabled,48,,,,,,,,,,22,0,18446744073709551423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,Disabled,49,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,LoopForFixedTime,49,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,TriggerControl,49,,,,,,,,,,22,192,18446744073709551615,65535,3,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,WaitForDeactivation,49,,,,,,,,,,22,448,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Binoculars,Idle,87,25,39,23,18,1,0,1,1,0,22,16842752,18446744073709551615,36,0,35,field,1,0,3,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,Binoculars,ZoomScope,50,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,,,,,,,,record-only,,
+state,StargateContent,BotGoauld,FocusedAttack,50,,,,,,,,,,22,2199023452416,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,BotScarab,Buried,120,25,72,23,18,1,0,1,1,1,22,196864,18446744073709551615,64,0,63,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,BotScarab,Mellee,131,26,82,23,32,2,0,1,1,0,22,9288674231648512,18446744073709551615,84,0,83,field,2,0,2,,2,2,0,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,C4Mission,CountDown,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Mission,DoDestroy,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Mission,Idle,47,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Mission,explosion,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Pickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Weapon,Idle,71,25,23,23,8,0,0,1,1,0,22,16842752,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,C4Weapon,IgniteC4,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,C4Weapon,PlaceC4,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CTFDialHomeDevice,Dialling,50,,,,,,,,,,22,65984,18446744073709551615,65535,0,,,,,,stargatecontent.dialhomedevice (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnel,Closed,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnel,Closing,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnel,Open,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnel,Opening,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelLayer,Closed,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelLayer,Closing,95,25,47,23,19,0,0,1,1,0,22,65792,18446744073709551615,44,0,43,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,CrystalTunnelLayer,Open,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelLayer,Opening,83,25,35,23,14,0,0,1,1,0,22,65792,18446744073709551615,28,0,27,field,0,0,7,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,CrystalTunnelPiece,Closed,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelPiece,Closing,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelPiece,Open,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,CrystalTunnelPiece,Opening,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,DecipheringProjectile,Flying,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,DialHomeDevice,Deactivated,49,,,,,,,,,,22,0,18446744073709551423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,DialHomeDevice,Dialling,49,,,,,,,,,,22,65984,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,DialHomeDevice,Powered,49,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteAutoTurretController,CloseIdle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,stargatecontent.goaautoturretcontroller (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteAutoTurretController,Goo,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteAutoTurretController,Malfunction,49,,,,,,,,,,22,1168247947264,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,BotFireDelay,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,Charging,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,OverCharge,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeapon,RapidFire,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ExtreniteWeaponProjectileAlt,Flying,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,FragGrenadePickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GOAULDRIBBONDEVICE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,ClientGrenadeCountdown,50,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,ClientPreparingToFire,50,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,GrenadeCountdown,49,,,,,,,,,,22,68719607808,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,PreparingToFire,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GRENADE,ThrowGrenade,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Gate,Dialing,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Gate,Inactive,49,,,,,,,,,,22,65600,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Gate,SpeedDialing,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Gate,WormholeOpen,49,,,,,,,,,,22,196928,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GateIris,Closed,49,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GateIris,Opened,49,,,,,,,,,,22,64,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GateSymbolRing,Idle,48,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GateSymbolRing,Spinning,49,,,,,,,,,,22,33619968,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretController,Close,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretController,CloseIdle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretController,Open,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretController,OpenIdle,49,,,,,,,,,,22,1168231170048,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretController,Shoot,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretMK2Controller,Deactivated,71,25,23,23,7,0,0,1,1,0,22,196864,18446744073709551615,12,0,11,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,GoaAutoTurretMK2Controller,FireDelay,49,,,,,,,,,,22,196864,18446742974197923839,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretMK2Controller,Idle,48,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretMK2Controller,Shoot,49,,,,,,,,,,22,16974080,18446742974197923839,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoaAutoTurretMK2Controller,Wait,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,GoauldShield,Activated,50,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HANDOFLIGHT,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HANDOFLIGHT,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HANDOFLIGHT,Idle,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenBot,MeleeAttack,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenBot,ShieldCover,227,25,179,23,65,4,1,1,1,0,22,196864,18446744073709551615,224,0,223,field,5,0,1,,5,5,1,0,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateContent,HaakenLeaderBot,SeizeMindControl,98,25,50,23,15,0,0,1,1,0,22,196608,18446744073709551615,44,0,43,field,0,0,4,,0,0,0,0,2,2,2,0,1,0,0,payload-only,,none-name
+state,StargateContent,HaakenMK1Weapon,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenMK1Weapon,Clubbing,114,26,65,23,24,1,1,1,1,0,22,16973824,18446744073709551615,64,0,63,field,2,0,2,,2,2,1,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,HaakenMK1Weapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenMK2Weapon,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenMK2Weapon,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenPod,Idle,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenPod,LaunchPod,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenPod,OpenDoors,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenPod,PrepareToLaunch,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenPod,ThawCycle,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Closing,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Downed,50,,,,,,,,,,22,68719542272,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Idle,49,,,,,,,,,,22,68719542272,18446744073709551615,65535,2,,,,,,stargategame.mobileshield (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Lowered,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Opening,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShield,Raised,49,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Closing,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Hit,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Idle,48,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Lowered,49,,,,,,,,,,22,16843008,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Opening,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HaakenWeaponShieldEffect,Raised,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HandOfLight_AstralSenseParticle,Flying,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,HealthPickup,Pickup,50,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,InteractionHands,Active,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,InteractionHands,Idle,71,25,23,23,8,0,0,1,1,0,22,16842752,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,InteractionHands,Interact,49,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,InteractionHands,LoweredIdle,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,JaffaBotHeavy,Hunt,50,,,,,,,,,,22,3298535080192,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,JaffaBotHeavy,Mellee,298,26,249,23,118,9,3,1,1,0,22,9291972766531840,18446744073709551615,296,0,295,field,12,0,2,,12,12,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,JaffaBotHeavy,MelleeCharge,651,25,603,23,214,6,4,1,1,2,22,283742719639552,18430413027502194687,724,0,723,field,10,0,5,,10,10,4,3,5,5,5,0,4,0,0,label+payload,,none-name
+state,StargateContent,JaffaBotHeavy,Sniper,50,,,,,,,,,,22,3298535080192,18446744073709551615,65535,0,,,,,,stargatecontent.jaffabotlight,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,JaffaBotLight,CoveredAttack,50,,,,,,,,,,22,9010497789821184,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,JaffaBotLight,Mellee,566,26,517,23,158,9,2,1,1,8,22,9288674231648512,18446744073709551615,560,0,559,field,11,0,2,,11,11,2,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,JaffaBotLight,Sniper,580,26,531,23,229,14,3,1,1,2,22,3298535080192,18446739675663040511,684,0,683,field,17,0,2,,17,17,3,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,JaffaBotMedium,CoveredAttack,50,,,,,,,,,,22,9010497789821184,18446744073709551615,65535,0,,,,,,stargategame.botenemy,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,JaffaBotMedium,Mellee,566,26,517,23,158,9,2,1,1,8,22,9288674231648512,18446744073709551615,560,0,559,field,11,0,2,,11,11,2,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,JaffaSerpentM,Dying,50,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.stargatepawn (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,LinkedGate,Inactive,49,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,stargatecontent.gate (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,LinkedGate,Initialising,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,LinkedGate,WormholeOpen,50,,,,,,,,,,22,196928,18446744073709551615,65535,0,,,,,,stargatecontent.gate (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,LinkedGateTeleporter,Initialising,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,MindControlCrystal,ActivateCrystal,49,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,MindControlCrystal,ControlMind,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,MindControlCrystal,CrystalDisabled,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,MindControlledBot,MindControlGuard,194,25,146,23,66,3,2,1,1,0,22,65536,18446744073709551615,176,0,175,field,5,0,5,,5,5,2,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,MorphTest,Flopping,49,,,,,,,,,,22,16849152,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,PteroBoss,Invulnerable,49,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,PteroBossBot,Attacking,253,26,204,23,85,6,2,1,1,1,22,196864,18446744073709551615,264,0,263,field,8,0,4,,8,8,2,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,PteroBossBot,Guarding,343,25,295,23,123,7,3,1,1,1,22,196864,18446744073709551615,396,0,395,field,10,0,2,,10,10,3,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,PteroBossBot,Nesting,359,25,311,23,132,9,3,1,1,1,22,196864,18446744073709551615,404,0,403,field,12,0,1,,12,12,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,PteroBossBot,Protected,112,25,64,23,26,0,0,1,1,0,22,196864,18446744073709551615,64,0,63,field,0,0,2,,0,0,0,0,2,2,2,0,1,0,0,payload-only,,none-name
+state,StargateContent,PteroBossBot,Searching,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,stargatecontent.pterobot,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,PteroBossBot,Swiping,165,25,117,23,54,3,2,1,1,0,22,65792,18446744073709551615,144,0,143,field,5,0,1,,5,5,2,2,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,PteroBossBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,PteroBot,Attacking,257,25,209,23,89,6,2,1,1,1,22,196864,18446744073709551615,272,0,271,field,8,0,3,,8,8,2,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,PteroBot,Landing,216,25,168,23,65,4,3,1,1,1,22,0,18446744073709551615,204,0,203,field,7,0,4,,7,7,3,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,PteroBot,Searching,224,25,176,23,77,6,3,1,1,1,22,65536,18446744073709551615,228,0,227,field,9,0,2,,9,9,3,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,PteroClaws,Active,68,25,20,23,8,0,0,1,1,0,22,16973824,18446744073709551615,12,0,11,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,PteroClaws,ClientFinishing,82,26,33,23,12,0,0,1,1,0,22,16842752,18446744073709551615,28,0,27,field,0,0,6,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,PteroClaws,ClientFiring,50,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,PteroClaws,NormalFire,112,26,63,23,19,0,0,1,1,0,22,16974080,18446744073709551615,48,0,47,field,0,0,2,,0,0,0,0,3,3,3,0,2,0,0,payload-only,,none-name
+state,StargateContent,ReetouBot,Ambush,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouBot,Berserk,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouBot,Combat,480,25,432,23,181,11,6,1,1,5,22,65536,18446738576151412735,524,0,523,field,17,0,1,,17,17,6,1,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateContent,ReetouBot,Escape,428,25,380,23,157,10,4,1,1,5,22,65536,18446738576151412735,472,0,471,field,14,0,2,,14,14,4,4,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,ReetouBot,Hunt,299,25,251,23,92,5,2,1,1,5,22,65536,18446744073709551615,288,0,287,field,7,0,2,,7,7,2,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,ReetouBot,Melee,356,25,308,23,118,6,1,1,1,5,22,196608,18446738576151412735,360,0,359,field,7,0,1,,7,7,1,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateContent,ReetouBot,Ranged,48,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouBot,Sneak,329,25,281,23,110,7,2,1,1,5,22,1099511693312,18446744073709551615,328,0,327,field,9,0,2,,9,9,2,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,ReetouBot,Waiting,223,26,174,23,62,2,0,1,1,4,22,65792,18446744073709551615,188,2,187,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,ReetouDevice,Reloading,99,25,51,23,20,1,1,1,1,0,22,16842752,18446744073709551615,48,0,47,field,2,0,8,,2,2,1,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,ReetouDevice,SummoningReetou,167,25,119,23,48,2,0,1,1,0,22,0,18446744073709551615,132,0,131,field,2,0,7,,2,2,0,0,2,2,2,0,0,1,0,label+payload,,none-name
+state,StargateContent,ReetouMeleeAttack,Active,68,25,20,23,8,0,0,1,1,0,22,16973824,18446744073709551615,12,0,11,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,ReetouMeleeAttack,ClientFinishing,66,26,17,23,4,0,0,1,1,0,22,16842752,18446744073709551615,8,0,7,field,0,0,1,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,ReetouMeleeAttack,ClientFiring,50,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouMeleeAttack,NormalFire,86,26,37,23,12,0,0,1,1,0,22,16974080,18446744073709551615,32,0,31,field,0,0,7,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateContent,ReetouProtectorBot,Attacking,249,25,201,23,89,5,3,1,1,1,22,65792,18446744073709551615,260,0,259,field,8,0,1,,8,8,3,2,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateContent,ReetouProtectorBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouWeapon,Charging,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ReetouWeapon,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Replicator,Dying,50,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.stargatepawn (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SGC_SecurityDoor,TriggerToggle,50,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,engine.mover,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SHOTGUN,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SHOTGUN,Reloading2,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SHOTGUN,Reloading3,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,ClientFiring,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.scopedweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,SteadySway,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,ZoomScope,50,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,,,,,,,,record-only,,
+state,StargateContent,STAFFWEAPON,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STAFFWEAPON,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STAFFWEAPON,MeleeCharging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STAFFWEAPON,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STINGER,BotFireDelay,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STINGER,Idle,49,,,,,,,,,,22,68736319488,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STINGER,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,STINGER,Reloading,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Scarab,Buried,49,,,,,,,,,,22,68736450816,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,Scarab,Surfaced,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ShieldPickup,Pickup,50,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ShockGrenadePickup,Pickup,49,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.weaponpickup (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StaffCannon,Charging,49,,,,,,,,,,22,16777216,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StaffCannon,Firing,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StaffCannonGun,Charging,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StaffCannonGun,Idle,49,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StaffCannonGun,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,StargateWeaponPickup,FadeOut,50,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,engine.pickup (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SuperSoldierBot,ChasePlayer,175,25,127,23,45,2,1,1,1,1,22,9008298766565632,18446739675663040511,144,0,143,field,3,0,3,,3,3,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateContent,SuperSoldierBot,GrabAndThrow,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SuperSoldierBot,Ranged,50,,,,,,,,,,22,2199023452416,18446738576151412735,65535,0,,,,,,stargategame.botenemy,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SuperSoldierBot,SuperPunch,49,,,,,,,,,,22,16973824,18437447702896705535,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,SuperSoldierGun,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TERWEAPON,DownWeapon,50,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TransportPlatform,Initialising,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TransportPlatformTeleporter,Initialising,49,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TransportPlatformTeleporter,RingCoolDown,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TransportPlatformTeleporter,RingTransport,49,,,,,,,,,,22,196672,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,TransportPlatformTeleporter,RingWarmup,49,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,WeapRepDefault,ClientFiring,50,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,ZATGUN,NormalFire,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,Activated,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,DeactivatingAfterDelay,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,Disabled,51,,,,,,,,,,22,0,18446744073709551167,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,FlashOff,51,,,,,,,,,,22,256,18446744073709551423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,FlashOn,51,,,,,,,,,,22,256,18446744073709551423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,UseActivates,50,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,UseDeactivates,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,AlarmPanel,UseDelaysDeactivation,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,Beacons,VisibleForABit,49,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotBase,Dead,177,26,128,23,50,2,1,1,1,0,22,65792,18430129353502228479,148,0,147,field,3,0,6,,3,3,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotBase,ReactionDelay,49,,,,,,,,,,22,68719673344,18437452100943216639,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotBase,RunAwayFromFearSpot,87,25,39,23,17,1,0,1,1,0,22,196608,18446740775174668287,40,0,39,field,1,0,2,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotBase,Scripting,50,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,gameplay.scriptedcontroller,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotBase,Waiting,49,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,ActivateAlarm,505,25,457,23,146,7,4,1,1,4,22,196608,18446738576151412735,552,0,551,field,11,0,1,,11,11,4,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,AlertSquad,68,25,20,23,7,0,0,1,1,0,22,196864,18446744073709551615,12,0,11,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,BotEnemy,BotBeingElectrocuted,50,,,,,,,,,,22,196608,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotBurning,93,27,43,23,18,0,0,1,1,0,22,68719673344,18437447702896705535,44,0,43,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,BotEnemy,BotGrabbed,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotGunning,78,27,28,23,11,0,0,1,1,0,22,1168231301376,18446458200686329855,24,0,23,field,0,0,2,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,BotEnemy,BotHacking,51,,,,,,,,,,22,68719673344,18437447702896705535,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotKnockedBack,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotMeleeDash,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotPrepareGrabbed,51,,,,,,,,,,22,196608,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotStaggered,51,,,,,,,,,,22,68719673344,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,BotUnconscious,51,,,,,,,,,,22,68719673600,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,CoveredAttack,1206,27,1156,23,450,19,7,1,1,6,22,9010497789821184,18446744073709551615,1440,0,1439,field,26,0,5,,26,26,7,1,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,CoveredHide,397,27,347,23,181,9,4,1,1,0,22,9010497789821184,18446744073709551615,460,0,459,field,13,0,3,,13,13,4,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,CoveredMove,370,28,319,23,163,9,6,1,1,0,22,9010497789821184,18446744073709551615,432,0,431,field,15,0,5,,15,15,6,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Dead,179,28,128,23,50,2,1,1,1,0,22,65792,18430129353502228479,148,0,147,field,3,0,5,,3,3,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,DriveHunting,192,27,142,23,73,4,2,1,1,0,22,3298534949120,18446458200686329855,188,0,187,field,6,0,2,,6,6,2,2,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,DriveRamming,189,27,139,23,40,2,0,1,1,2,22,2199023452416,18446741874686296063,156,0,155,field,2,0,3,,2,2,0,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,DriveRanged,260,27,210,23,73,4,2,1,1,2,22,2199023452416,18446738576151379967,244,0,243,field,6,0,4,,6,6,2,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,EnemySpotted,112,25,64,23,18,1,0,1,1,1,22,196608,18446738576151412735,64,0,63,field,1,0,2,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,FallbackMove,357,27,307,23,120,8,1,1,1,2,22,2199023452416,18446744073709551615,388,0,387,field,9,0,3,,9,9,1,1,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,FindAir,101,27,51,23,22,1,1,1,1,0,22,11261198091878656,18446738576151379967,52,0,51,field,2,0,2,,2,2,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Flee,117,26,68,23,33,1,0,1,1,0,22,196608,18446736377128157183,88,0,87,field,1,0,2,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,FormationCombat,383,27,333,23,119,6,3,1,1,2,22,196864,18446738576151379967,412,0,411,field,9,0,3,,9,9,3,0,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,GetInFormation,374,26,325,23,144,8,4,1,1,0,22,196864,18446744073709551615,404,0,403,field,12,0,2,,12,12,4,2,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Hunt,260,25,212,23,97,6,4,1,1,0,22,3298535080192,18446744073709551615,268,0,267,field,10,0,1,,10,10,4,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,InteractUseObject,351,27,301,23,100,5,4,1,1,3,22,65536,18446744073709551615,364,0,363,field,9,0,2,,9,9,4,2,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Mellee,550,27,500,23,151,9,2,1,1,8,22,9288674231648512,18446744073709551615,552,0,551,field,11,0,2,,11,11,2,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,MoveInFormation,242,25,194,23,84,5,4,1,1,0,22,68719673600,18446462598732840959,248,0,247,field,9,0,3,,9,9,4,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,MoveToHackingPos,148,27,98,23,49,3,3,1,1,0,22,196608,18437447702896705535,120,0,119,field,6,0,3,,6,6,3,2,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Ranged,359,27,309,23,117,8,1,1,1,2,22,2199023452416,18446738576151412735,388,0,387,field,9,0,5,,9,9,1,0,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,RunToTurret,317,27,267,23,114,6,2,1,1,0,22,196608,18446739675663040511,332,0,331,field,8,0,2,,8,8,2,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,RunToVehicle,316,27,266,23,114,6,2,1,1,0,22,65536,18446739675663040511,332,0,331,field,8,0,2,,8,8,2,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Scripting,52,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotEnemy,ShootFromCover,206,26,157,23,76,1,0,1,1,0,22,9009398278193408,18446744073709551615,212,0,211,field,1,0,3,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,StaggeredAssist,215,25,167,23,75,3,1,1,1,0,22,196608,18446744073709551615,220,0,219,field,4,0,2,,4,4,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,StaggeredMove,277,25,229,23,113,6,1,1,1,0,22,1099511824384,18446744073709551615,312,0,311,field,7,0,2,,7,7,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Suspicious,555,25,507,23,243,17,6,1,1,1,22,5566277812224,18446744073709551615,668,0,667,field,23,0,4,,23,23,6,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,TakePoint,268,25,220,23,97,5,3,1,1,0,22,68719673600,18446744073709551551,276,0,275,field,8,0,2,,8,8,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,Waiting,164,26,115,23,39,2,0,1,1,1,22,65792,18446744073709551615,116,2,115,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotEnemy,WaitingForFormation,117,27,67,23,27,1,0,1,1,0,22,65792,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotGuide,Follow,334,27,284,23,112,6,4,1,1,3,22,8590000384,18446741874686296063,356,0,355,field,10,0,3,,10,10,4,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotGuide,ReturnToPlayer,453,27,403,23,153,9,3,1,1,2,22,0,18446744073709551615,524,0,523,field,12,0,5,,12,12,3,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotGuide,Scripting,52,,,,,,,,,,22,68736450880,18446744073709551615,65535,0,,,,,,stargategame.botenemy (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotLite,Dead,73,28,22,23,7,0,0,1,1,0,22,65792,18430129353502228479,12,0,11,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,BotLite,Hunting,216,27,166,23,81,7,4,1,1,0,22,65792,18446736377128157183,224,0,223,field,11,0,2,,11,11,4,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotLite,Scripting,52,,,,,,,,,,22,68736450880,18446741874686296063,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotLite,TacticalMove,192,27,142,23,74,4,2,1,1,0,22,9007199254937856,18446457101174702079,172,0,171,field,6,0,2,,6,6,2,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotLite,Waiting,52,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotRep,Hunt,229,28,178,23,69,4,1,1,1,1,22,3298535080192,18446744073709551615,220,0,219,field,5,0,2,,5,5,1,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotRep,MoveInFormation,300,28,249,23,113,6,4,1,1,0,22,68719673600,18446738576151412735,336,0,335,field,10,0,2,,10,10,4,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotRep,TakePoint,591,28,540,23,149,5,3,1,1,6,22,68719673600,18446744073709551551,612,0,611,field,8,0,2,,8,8,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotRep,Waiting,122,28,71,23,18,1,0,1,1,1,22,65792,18446744073709551615,64,2,63,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,BotSG,BotUnconscious,52,,,,,,,,,,22,68719673600,18430129353502228479,65535,0,,,,,,stargategame.botenemy (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotSG,ConcentrateFire,583,27,533,23,222,11,5,1,1,1,22,1099511824384,18446744073709551615,676,0,675,field,16,0,2,,16,16,5,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotSG,CoveredAttack,1191,26,1142,23,411,18,6,1,1,10,22,9010497789821184,18446744073709551615,1380,0,1379,field,24,0,1,,24,24,6,1,4,4,4,0,3,0,0,label+payload,,none-name
+state,StargateGame,BotSG,HuntMellee,52,,,,,,,,,,22,3367254556928,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotSG,InvisibleRest,52,,,,,,,,,,22,9288682821583104,18430129353502228479,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,BotSG,RestFormation,1070,27,1020,23,352,17,12,1,1,5,22,9288682821583104,18446741874686296063,1240,0,1239,field,29,0,2,,29,29,12,2,5,5,5,0,2,2,0,label+payload,,none-name
+state,StargateGame,BotSG,Roaming,344,27,294,23,131,6,4,1,1,1,22,196864,18446741874686296063,380,0,379,field,10,0,2,,10,10,4,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateGame,BotSG,Stakeout,436,27,386,23,169,3,0,1,1,1,22,1099511824640,18446741874686296063,484,0,483,field,3,0,2,,3,3,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateGame,BotSG,TacticalMove,539,27,489,23,209,8,3,1,1,1,22,9009398278193408,18446738576151412735,616,0,615,field,11,0,6,,11,11,3,2,7,7,7,0,4,2,0,label+payload,,none-name
+state,StargateGame,BotSG,Waiting,186,26,137,23,56,3,1,1,1,1,22,65792,18446744073709551615,152,2,151,field,4,0,4,,4,4,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateGame,CTFFlag,Held,52,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,stargategame.gameobject (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,CTFFlag,dropped,52,,,,,,,,,,22,200960,18446744073709551615,65535,0,,,,,,stargategame.gameobject (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,CTFFlag,home,52,,,,,,,,,,22,196864,18446744073709551615,65535,2,,,,,,stargategame.gameobject,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,CTFGame,MatchOver,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,stargategame.deathmatch (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,DeathMatch,MatchInProgress,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,DeathMatch,MatchOver,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,DeathMatch,PendingMatch,51,,,,,,,,,,22,256,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,FarClipChange,Done,51,,,,,,,,,,22,65600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,FarClipChange,Tweening,51,,,,,,,,,,22,68719542336,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,FarClipChange,Waiting,51,,,,,,,,,,22,64,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,GameObject,Held,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,GameObject,dropped,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,GameObject,home,72,25,24,23,7,0,0,1,1,0,22,196608,18446744073709551615,16,2,15,field,0,0,5,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,GravCraneLifter,GravBeamDeactivate,51,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,GravCraneLifter,GravBeamOff,50,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,GravCraneLifter,GravBeamOn,50,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,HealthRegenerator,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,IntelligentSpawner,TriggerActivates,51,,,,,,,,,,22,448,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,IntelligentSpawner,TriggerDeactivates,51,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,KeyPickup,Sleeping,63,26,14,23,4,0,0,1,1,0,22,196608,18446744073709543423,4,0,3,field,0,0,8,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateGame,MobileShield,Idle,51,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,MuzzleFlashAttachment,Visible,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,SGInsetCamera,OffCamera,50,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,SGInsetCamera,OnCamera,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,SGInsetCamera,SlideOff,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,SGInsetCamera,SlideOn,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,SGInsetCameraTarget,Disabled,49,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,SGInsetCameraTarget,TriggerTimeOut,50,,,,,,,,,,22,320,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ClientFiring,52,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomScope,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomingIn,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomingOut,52,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,ShieldBelt,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ShieldBelt,Cloaked,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ShieldBelt,Cloaking,51,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateArmor,Activated,52,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePawn,Dying,52,,,,,,,,,,22,17107200,18446744073709551615,65535,0,,,,,,stargategame.unrealpawn (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePawn,HeadShotted,51,,,,,,,,,,22,16973824,18446744072635771327,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,Deployed,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,GameEnded,50,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,engine.playercontroller,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,Hacking,52,,,,,,,,,,22,5066549580988416,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerBeingElectrocuted,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerConsoling,51,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerGrabbed,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerGunning,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerKnockedBack,51,,,,,,,,,,22,4503599627567360,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerMeleeDash,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerPrepareGrabbed,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerStaggered,51,,,,,,,,,,22,4503599627567360,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,PlayerUnconscious,51,,,,,,,,,,22,196608,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargatePlayer,UsingProgressTrigger,52,,,,,,,,,,22,5066549580988416,18443642351407561215,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateStationaryWeapon,Broken,51,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateStationaryWeapon,Online,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateStationaryWeapon,Warmup,51,,,,,,,,,,22,65792,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,ClientFinishing,51,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,ClientFiring,52,,,,,,,,,,22,16908288,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Clubbing,51,,,,,,,,,,22,16973824,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,DownWeapon,52,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Freeze,51,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Idle,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,LowerWeapon,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,LoweredIdle,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,NormalFire,52,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,engine.weapon,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,PendingClientWeaponSet,52,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Reloading,52,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Zooming,49,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,StargateWeaponEmplacement,Activate,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StargateWeaponEmplacement,DeActivate,51,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StoryModeGame,MatchInProgress,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StoryModeGame,MatchOver,51,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,StoryModeGame,PendingMatch,51,,,,,,,,,,22,256,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,TransportRings,PostTransportPhase,51,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,TransportRings,PreTransportPhase,51,,,,,,,,,,22,68719673600,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,TransportRings,Spawning,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,TransportRings,TransportPhase,51,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPawn,Dying,51,,,,,,,,,,22,17107200,18446744072618994111,65535,0,,,,,,engine.pawn,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPawn,FeigningDeath,51,,,,,,,,,,22,0,18446744073709518335,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPawn,TimingOut,51,,,,,,,,,,22,65536,18446744072618729919,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPlayer,Dead,52,,,,,,,,,,22,196864,18446738576151412735,65535,0,,,,,,engine.playercontroller,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPlayer,FeigningDeath,50,,,,,,,,,,22,563087409348608,18446738576151379967,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,UnrealPlayer,PlayerWalking,51,,,,,,,,,,22,5066549580988416,18446739675663040511,65535,0,,,,,,engine.playercontroller,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,WillowWhisp,Pathing,79,25,31,23,12,1,0,1,1,0,22,0,18446744073709551615,28,2,27,field,1,0,7,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,APCM60Gun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,AirborneTurretController,Shoot,50,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargatecontent.goaautoturretmk2controller (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,AlkeshBombProjectile,Flying,49,,,,,,,,,,22,196608,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,AlkeshBomberBot,Ascending,239,25,191,23,80,4,1,1,1,0,22,196608,18446744073709551615,248,0,247,field,5,0,2,,5,5,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,BombingRun,338,25,290,23,79,4,3,1,1,2,22,196864,18446744073709551615,332,0,331,field,7,0,2,,7,7,3,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,CarpetBombing,110,25,62,23,25,2,0,1,1,0,22,196608,18446744073709551615,60,0,59,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,Chasing,152,25,104,23,37,4,1,1,1,1,22,0,18446744073709551615,108,0,107,field,5,0,4,,5,5,1,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,DescendToTransportHeight,190,25,142,23,51,2,1,1,1,0,22,196608,18446744073709551615,168,0,167,field,3,0,2,,3,3,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,GroundAttack,91,25,43,23,14,0,0,1,1,0,22,196864,18446744073709551615,32,0,31,field,0,0,2,,0,0,0,0,2,2,2,0,1,0,0,payload-only,,none-name
+state,StargateVehicles,AlkeshBomberBot,Landing,283,25,235,23,91,5,3,1,1,1,22,65536,18446744073709551615,324,0,323,field,8,0,2,,8,8,3,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,OrderedLanding,290,26,241,23,94,5,2,1,1,1,22,65536,18446744073709551615,308,0,307,field,7,0,4,,7,7,2,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,RingTransport,71,25,23,23,7,0,0,1,1,0,22,196672,18446744073709551615,16,0,15,field,0,0,2,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,AlkeshBomberBot,Scripting,50,,,,,,,,,,22,68736450880,18446744073709551615,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,AlkeshBomberBot,Searching,302,25,254,23,71,5,3,1,1,3,22,9007199254740992,18446744073709551615,280,0,279,field,8,0,6,,8,8,3,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,AlkeshBomberBot,StabiliseForTransport,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,AlkeshBomberBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,3,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGlider,ImpactedWall,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,DeathGlider,TakeOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,DeathGliderBot,Attacking,203,25,155,23,67,4,2,1,1,1,22,65792,18446744073709551615,196,0,195,field,6,0,2,,6,6,2,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGliderBot,PullUpAttacking,133,25,85,23,30,2,0,1,1,1,22,65792,18446744073709551615,92,0,91,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGliderBot,Searching,223,25,175,23,77,6,3,1,1,1,22,0,18446744073709551615,228,0,227,field,9,0,7,,9,9,3,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGliderBot,StallTurn,128,25,80,23,30,2,0,1,1,1,22,196864,18446744073709551615,92,0,91,field,2,0,3,,2,2,0,0,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGliderBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,DeathGliderGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,6,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,GatlingGun,WaitingForBarrel,129,24,82,23,32,1,1,1,1,0,22,0,18446744073709551615,92,0,91,field,2,0,2,,2,2,1,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,GoauldDrone,Exploding,64,26,15,23,4,0,0,1,1,0,22,0,18446744073709551615,8,0,7,field,0,0,8,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,GoauldDroneBot,Attacking,245,25,197,23,90,8,5,1,1,1,22,196864,18446744073709551615,260,0,259,field,13,0,2,,13,13,5,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,GoauldDroneBot,Pursuit,290,25,242,23,115,7,5,1,1,0,22,9288674231648512,18446744073709551615,312,0,311,field,12,0,2,,12,12,5,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,GoauldDroneBot,Searching,205,25,157,23,66,6,2,1,1,1,22,9007199254937856,18446744073709551615,184,0,183,field,8,0,2,,8,8,2,1,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,GoauldDroneBot,Waiting,50,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,stargategame.botbase (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,GoauldKillerDroid,Exploding,65,26,16,23,4,0,0,1,1,0,22,0,18446744073709551615,8,0,7,field,0,0,6,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,GoauldKillerDroidBot,Pursuit,50,,,,,,,,,,22,9288674231648512,18446744073709551615,65535,0,,,,,,stargatevehicles.goaulddronebot,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,GoauldKillerDroidBot,Searching,50,,,,,,,,,,22,9288674231648512,18446744073709551615,65535,0,,,,,,stargatevehicles.goaulddronebot,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraft,Active,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraft,BackingOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraft,Braking,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraft,Chasing,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraft,RearPushOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,HoverCraftFixedGun,NormalFire,206,25,158,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,HoverCraftTurretGun,NormalFire,199,25,151,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,HoverTankCannon,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,5,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,HoverTankPilotBot,TroopDrop,77,24,30,23,11,0,0,1,1,0,22,0,18446744073709551615,28,0,27,field,0,0,1,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,M60TurretGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,Semektet,Active,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,Semektet,BackingOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,Semektet,Braking,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,Semektet,Chasing,49,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,Semektet,RearPushOff,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,SemektetMortarGun,NormalFire,199,25,151,23,63,3,3,1,1,0,22,16974080,18446744073709551615,196,0,195,field,6,0,7,,6,6,3,2,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,SemektetMortarGun,ThrowGrenade,49,,,,,,,,,,22,65536,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,SemektetStaffCannonGun,NormalFire,48,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargatecontent.staffcannongun (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,StargateCar,Correcting,127,25,79,23,32,0,0,1,1,0,22,0,18446744073709551615,88,0,87,field,0,0,2,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,TeltakBot,Ascending,239,25,191,23,80,4,1,1,1,0,22,196608,18446744073709551615,248,0,247,field,5,0,3,,5,5,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,TeltakBot,DescendToTransportHeight,190,25,142,23,51,2,1,1,1,0,22,196608,18446744073709551615,168,0,167,field,3,0,2,,3,3,1,1,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,TeltakBot,Landing,283,25,235,23,91,5,3,1,1,1,22,65536,18446744073709551615,324,0,323,field,8,0,2,,8,8,3,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,TeltakBot,OrderedLanding,286,26,237,23,96,5,2,1,1,1,22,65536,18446744073709551615,304,0,303,field,7,0,6,,7,7,2,1,1,1,1,0,0,0,0,label+payload,,none-name
+state,StargateVehicles,TeltakBot,RingTransport,71,25,23,23,7,0,0,1,1,0,22,196672,18446744073709551615,16,0,15,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+state,StargateVehicles,TeltakBot,Searching,254,25,206,23,66,5,2,1,1,2,22,9007199254740992,18446744073709551615,232,0,231,field,7,0,8,,7,7,2,0,3,3,3,0,2,0,0,label+payload,,none-name
+state,StargateVehicles,TeltakBot,StabiliseForTransport,49,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,TeltakBot,Waiting,118,26,69,23,28,1,0,1,1,0,22,196864,18446744073709551615,68,0,67,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
+state,StargateVehicles,TempleTurretGun,Idle,48,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
+state,StargateVehicles,TempleTurretGun,NormalFire,212,25,164,23,67,3,3,1,1,0,22,16974080,18446744073709551615,204,0,203,field,6,0,7,,6,6,3,2,3,3,3,0,2,0,0,label+payload,,none-name
+state,Stargateeffects,Chip,Flying,48,,,,,,,,,,22,68096,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Stargateeffects,CrystalTunnelGrow,DelayedStart,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Stargateeffects,CrystalTunnelGrow,DelayedStop,49,,,,,,,,,,22,256,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Stargateeffects,DustStormEmitter,FadeIn,48,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Stargateeffects,DustStormEmitter,FadeOut,48,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Stargateeffects,RepChip,Flying,49,,,,,,,,,,22,68096,18446744073709551615,65535,2,,,,,,stargateeffects.chip (no table),0,0,0,0,,,,,,,,record-only,,
+state,UDebugMenu,UDebugRootWindow,UWindows,50,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,uwindow.uwindowrootwindow (no table),0,0,0,0,,,,,,,,record-only,,
+state,UPreview,UPreviewRootWindow,UWindows,48,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,uwindow.uwindowrootwindow (no table),0,0,0,0,,,,,,,,record-only,,
+state,UWindow,UWindowRootWindow,UWindows,49,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,UWindow,WindowConsole,UWindow,62,24,15,23,4,0,0,1,1,0,22,68719476736,18446744073709551615,4,0,3,field,0,0,5,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,553,states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,57297,payload_bytes
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,regions
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,387,no_code
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,387,no_table
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,29859,code_bytes
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11885,tokens
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,jumpifnot
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,253,jump
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,147,stringconst
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,553,record
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,marker
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,443,ignore_all_ones
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,58,probe_zero
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,451,flags_zero
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,33,flags_one
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,61,flags_two
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,8,flags_other
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,offset_entry
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,offset_other
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,offset_unmeasured
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,start_by_field
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1694,start_shift
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,100,override_state
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,25,override_code
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,287,override_none
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,code_local
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,543,walk_local
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,863,jumps
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,863,jumps_on_boundary
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,label_tables
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries_on_boundary
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries_named
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,label_ends_zero
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,157,label_join_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,146,label_spelled
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,8,label_unspelled
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,label_text_only
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,157,label_join_equal
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,text_label_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,text_label
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,252,text_else
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,118,text_else_label
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,joined
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,591,joined_jif
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,joined_label
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,30,joined_equal
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37,overrides
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,payload_arms

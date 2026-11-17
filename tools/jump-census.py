@@ -299,10 +299,11 @@ def doc_block(rows):
              "",
              "**%s** operands land on the epilogue's first byte and **%s** run past the script's widened length, so"
              " no edge dangles; **%s** land on no token start under any of the four readings. The corpus carries"
-             " **%d** `LabelTable` (`0x0c`) and **%d** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads; a"
-             " `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source"
-             " `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the"
-             " runtime never looks one up."
+             " **%d** `LabelTable` (`0x0c`) and **%d** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads, where"
+             " a source `Goto('Label')` therefore keeps no name: the compiler resolved it to an offset and the"
+             " runtime never looks one up. A `State` payload is the other half and keeps them -- its table's"
+             " entries are the state's labels, each a widened token start (`tools/state-code.py`,"
+             " `docs/systems/AI.md`)."
              % (comma(count(rows, "at_end")), comma(count(rows, "past_end")), comma(count(rows, "misses")),
                 count(rows, "tokens_labeltable"), count(rows, "tokens_gotolabel")),
              ""]
