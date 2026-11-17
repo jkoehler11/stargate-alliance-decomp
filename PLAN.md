@@ -12737,3 +12737,32 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `StateFlags`, `LabelTableOffset` -- and check `LabelTableOffset` against the table's measured offset in file space.
   A field that agrees would make the table's position a header read rather than a search, and would say whether the
   374 short payloads are a record with a code pointer into the overrides.
+
+### Execution notes (2026-11-17, the state record is 22 bytes -- and the label table's name is a compact index)
+
+- **Task.** The previous note's next measurement: read the record out of the anchored trailers and check
+  `LabelTableOffset` against the table's offset. The read answered the record and *corrected* the table.
+- **The table entry's name is the archive's compact index, and the None name ends the table.** With that read the
+  leftovers collapse from 80 x 27 + 63 x 28 to one shape, and the tables that used to end early no longer do --
+  a label at code offset 0 looks like a terminator to a zero-offset test. Measured on the corpus: **166** payloads
+  carry code (**31,478** bytes, **12,562** tokens, **590** `JumpIfNot`) against 174 over 30,097 and 565, and 13 of
+  the old 174 were tables inside the record.
+- **The record's widths come from the image, not from a guess.** `tools/call-census.py --target 0x392b0` names two
+  callers; `0x394c0` is `UState::Serialize` -- it calls `UStruct::Serialize` and then `0x371d0` twice (each pushes
+  8, read in `ExportLiterals`), `0x37080` (pushes 2) and `0x370e0` (pushes 4) -- so the record is `ProbeMask` u64,
+  `IgnoreMask` u64, `LabelTableOffset` u16, `StateFlags` u32, **22 bytes**, and every one of the 553 payloads
+  decodes. A kept-project Ghidra round is 30 s (`-process default.xbe -noanalysis`, project `~/sg1/work/pcq/ghproj`).
+- **The container's end anchors the walk, and the "residue" was never code.** `<header><script><0x47><record>`
+  admits a start only when the table ends 23 bytes before the payload does and the byte there is the marker; the
+  387 payloads that end on no table are 47-52 bytes = header + record, so they are states with no script.
+- **The field is a negative, recorded in U19.** `LabelTableOffset` is below the code's own byte count in 60 of the
+  166, so it is not an offset into the stored script (nor a widened one, which is always larger), and
+  `table_end - LabelTableOffset` is a valid start for 31. Two routes named: the loader's read of `+0x94`, or a
+  guest read of a live `UState`.
+- **Files.** `tools/uscript-dis.py` (both label-table readers: compact name, None-name terminator) +
+  `tools/opcode-table.py` (its pattern note) + `inventory/opcode_table.csv` + `tools/state-code.py` (the end anchor,
+  the record decode, the new census keys, a 4-case `--check`) + `inventory/state_code.csv` + `docs/systems/AI.md`
+  (prose and block) + `docs/BYTECODE.md` (two paragraphs) + `docs/UNKNOWNS.md` U19 + this note.
+- **Next measurement:** the field's meaning -- print one state's record beside its table and read `UState::Serialize`'s
+  reader side (the loader at the `Script` store), then re-check the 387 header+record payloads for a code pointer
+  into the overrides.

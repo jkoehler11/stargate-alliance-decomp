@@ -4226,30 +4226,35 @@ menu pages ship no delegate default, and there is no tag grammar left in the bui
 chooser. Depth: `docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*.
 
 
-## U19. What a `State` payload's code region ends on -- answered: a 6-byte `LabelTable`, then a 27- or 28-byte record
+## U19. What a `State` payload's code region ends on -- answered: a `LabelTable` on the None name, the `0x47` marker, then a 22-byte record
 
 **Observed.** `tools/state-code.py` (PLAN 3.10, `docs/systems/AI.md`) walks a `State` export's payload as code and
-reported **522 of 552** walks ending before the container's terminator, so their code length and arm count were a
-floor: `PlayerController.PlayerWalking` and `Console.Typing` read 7-byte walks against text that spells 41 and 40
-label keywords. The note that left it named a `Stop`/`Nothing` terminator test as the next instrument.
+once reported **522 of 552** walks ending before the container's terminator, so their code length and arm count
+were a floor.
 
-**The terminator was there; the table's entry shape was wrong.** A state's code ends on a `LabelTable` token
-(`0x0c`) whose entries are **6 bytes -- a 2-byte name index and a 4-byte code offset -- and the table ends on a zero
-*offset***. The walker read 8-byte entries until a zero *dword*, which no real table satisfies: the terminator's dword
-is `offset<<16 | name`, non-zero, so every table refused. Read the measured way the entries decode to strictly
-decreasing offsets inside the code (`JaffaBotHeavy.MelleeCharge`: 600, 557, 299, 105, then 0), which is what a label
-table is.
+**The table's entry shape, measured twice.** A `LabelTable` (`0x0c`) entry is an **archive compact name index**
+then a 4-byte code offset, and the table ends on the **None name** (a zero index). A fixed 2-byte name refused on
+545 of the 552 payloads; reading the terminator as a zero *offset* then stopped one entry early whenever a label sat
+at the code's first byte (offset 0), and a fixed-width name also drifted by a byte whenever an index was one byte --
+which is why the leftover record came out at 27 *and* 28 bytes.
 
-**Measured, with the shape corrected.** **174 of the 553** state payloads end on a complete `LabelTable`; they carry
-**30,097** of the 40,380 state code bytes and **565** `JumpIfNot` exactly, and **143** of them leave the state record
-after the table at a constant width -- 80 at 27 bytes, 63 at 28. The census's `code_anchored`, `anchored_arms` and
-`record27`/`record28` rows carry it; `inventory/state_code.csv` has the per-state columns.
+**The end is the container's, not a search result.** A state payload is `<header><script><0x47><22-byte record>`:
+the script's last byte is the `0x47` ('G') marker `UStruct::Serialize` (`0x392b0`) appends on save, and
+`UState::Serialize` (`0x394c0`, which calls `0x392b0` and is itself called from `UFunction::Serialize`) then writes
+`ProbeMask` and `IgnoreMask` as two QWORDs, then a WORD and a DWORD -- its three writers (`0x371d0`, `0x37080`,
+`0x370e0`) push 8, 2 and 4 bytes. Census: **553 of 553** payloads decode such a record; `IgnoreMask` is all ones in
+**443**, `ProbeMask` is 0 in **58**, and `StateFlags` is 0 in **451**, 1 in **33**, 2 in **61**.
 
-**What is left (the residue, named).** **379** payloads end on no table: **374** of them are 60 bytes or fewer, the
-record-only shape (a 49-52-byte payload is the commonest in the corpus), and their "code" is an accident of the
-record's bytes rather than a lost region. Two things would settle the rest: reading the 27-byte record's fields out
-of the anchored trailers (UELib's `UState` order is `ProbeMask`, `IgnoreMask`, `StateFlags`, `LabelTableOffset`)
-and checking `LabelTableOffset` against the measured table offset; and the same anchoring for a payload whose code
-the table still refuses part-way, which is a per-opcode tail rather than a container question.
+**Measured, with the end anchoring the walk.** **166** payloads carry code -- **31,478** of the payload bytes over
+**12,562** tokens, **590** `JumpIfNot` exactly -- and **387** carry none: they are 47-52 bytes, a header plus the
+record. The old count of 174 included 13 "tables" that were the record's own bytes read as a token stream.
+
+**What is left (named, and measured).** `LabelTableOffset` does not equal the table's file offset in any framing
+tried: it is *smaller* than the code's own byte count in **60** of the 166, so it is neither the stored offset nor a
+widened one, and `table_end - LabelTableOffset` is a valid start for only **31** of them (negative for 83). Two
+routes would settle it: the loader's use of the field (`UState`'s `+0x94` in memory) at a `Script` store or a break
+on a state's first token; or a guest read of a live `UState` object to see what the engine stores there. Printing
+one state's record beside its table would make the next attempt a comparison rather than a search.
 
 **Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
+

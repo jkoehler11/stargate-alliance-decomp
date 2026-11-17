@@ -92,7 +92,7 @@ The cursor walks the object's script buffer â€” `+0x48` bytes, `+0x4c` length â€
 executes, so these advances are the stored bytecode's operand widths and not a property of some other encoding.
 
 Three terminators are part of the format and are encoded as pattern items rather than plain counts: a parameter list
-ends at `0x16`, a case list ends at a `0xffff` value, and a label table ends at a zero dword. Strings are
+ends at `0x16`, a case list ends at a `0xffff` value, and a label table ends on the None name (a zero name index). Strings are
 NUL-terminated (ANSI for `0x1f`, UTF-16 for `0x34`), so their length is data, not a field.
 
 ## Cross-check against the reference reader
@@ -1658,12 +1658,14 @@ bytecode and the label's name is not in the payload at all -- the corpus carries
 thing left, and it has to point at the start of an instruction.
 
 **The token is the `State` container's own, and it is there.** A state's label block compiles into the `State`
-export's payload rather than into a `Function`, and **174** of the 553 state payloads end on a complete
-`LabelTable` -- entries of 6 bytes (a 2-byte name index and a 4-byte code offset) terminated by a zero *offset*,
-which the walker read as 8-byte entries until a zero dword and refused on every real table. The anchored walks
-carry 30,097 of the 40,380 state code bytes and 565 `JumpIfNot` exactly, and 143 of them leave the state record
-after the table at 27 or 28 bytes. So "the build never emits a label" is true of the function half and false of
-the state half: `tools/state-code.py`, `inventory/state_code.csv`, `docs/systems/AI.md`.
+export's payload rather than into a `Function`, and **166** of the 553 state payloads carry one: a table's entries
+are an archive compact name index and a 4-byte code offset, the table ends on the **None name**, and the script
+then ends on the `0x47` marker `UStruct::Serialize` appends on save. That end is what makes a walk the state's
+code -- the payload is `<header><script><0x47><22-byte UState record>` -- so the anchored walks carry **31,478** of
+the 57,297 state payload bytes and **590** `JumpIfNot` exactly. The other **387** payloads are 47-52 bytes: a header
+and that record, with no script at all, which is why they used to read as a residue of short "code". So "the build
+never emits a label" is true of the function half and false of the state half: `tools/state-code.py`,
+`inventory/state_code.csv`, `docs/systems/AI.md`.
 
     python3 tools/jump-census.py --system DUMP/System -o inventory/jump_census.csv
 
@@ -1844,7 +1846,7 @@ length-preserving mask so both counts read the same offsets) and then counts the
 
 The 118 keywords at a state body's own statement level have a compiled counterpart after all, in the
 `State` export's payload rather than in a `Function`; `docs/systems/AI.md` carries the per-state block
-(`tools/state-code.py`, 174 payloads anchored on their `LabelTable`).
+(`tools/state-code.py`, 166 payloads anchored on the container's end).
 
 **What the comparison is worth.** The two corpora agreeing is a cancellation, not an oracle: the classes that
 spell more `else` than they compile and the ones that spell fewer are each a population a rebuild has to handle

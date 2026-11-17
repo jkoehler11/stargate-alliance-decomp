@@ -302,45 +302,50 @@ kilobyte of its own code, so a census that reads only functions sees nothing the
 *overrides* compile is a second, separate population (`inventory/state_exports.csv`), and the two are read
 together here.
 
-The region is measured rather than assumed: every start in the payload's first 72 bytes is walked and the
-longest exact walk wins, which leaves the state record at the tail. That boundary is approximate wherever the
-opcode table refuses a token part-way (a `bad-token` the compiler does not normally emit inside a function), so
-the tool reports the trailer it leaves behind and counts the short regions as residue instead of smoothing
-them -- the arm total below is therefore a **floor**, not a fixed count.
+The region is anchored rather than guessed: a state payload is `<header><script><0x47><22-byte record>`, so a
+walk counts as the state's code only when its label table ends exactly 23 bytes before the payload does and the
+byte there is the `0x47` marker `UStruct::Serialize` (`0x392b0`) appends to a script on save. The 22 bytes after
+the marker are `UState::Serialize`'s own record (`0x394c0`: `ProbeMask` and `IgnoreMask` as QWORDs, then a WORD
+and a DWORD -- the writers it calls push 8, 2 and 4), so the code's end is a container fact rather than a search
+result: the earlier version anchored on the longest walk and accepted 13 tables that were the record's own bytes.
+What stays approximate is the start, which the walk still takes as the first of the payload's 72 offsets that
+reaches that end; the record's `LabelTableOffset` does not settle it (60 of the 166 are smaller than the code they
+name, so it is not an offset into the stored script).
 
 <!-- generated:state-code -->
-**553 `State` payloads walk as code -- 40,380 bytes and 16,097 tokens of the state's own label block, `JumpIfNot` 596 -- and 174 of them end on the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** A table's entries are 6 bytes, a 2-byte name index and a 4-byte code offset, and it ends on a zero *offset*; an anchored walk is the code exactly and not a floor -- 30,097 code bytes and 565 arms -- and 80 of them leave the state record after the table at 27 bytes and 63 more at 28. The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 571 `JumpIfNot` against their 843 keywords, equal in 28.
+**All 553 `State` payloads end with `UState`'s 22-byte record, and 166 of them carry code: 31,478 bytes and 12,562 tokens of the state's own label block, `JumpIfNot` 590.** A script ends on a `LabelTable` (`0x0c`) -- entries of an archive compact name index and a 4-byte code offset, terminated by the None name, then the `0x47` marker `UStruct::Serialize` appends on save -- and that end, not a longest-walk guess, is what anchors the code: the token appears in **zero** `Function` payloads. The other 387 payloads are 47-52 bytes, a header and the record, with no script at all. Of the records, 443 carry `IgnoreMask` all ones and 58 `ProbeMask` 0; `StateFlags` is 0 in 451, 1 in 33 and 2 in 61. The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 572 `JumpIfNot` against their 843 keywords, equal in 28.
 
 | measure | value |
 |---|---|
 | `State` exports read | 553 |
-| payloads that walk | 553 |
-| payload bytes / of them code | 57,297 / 40,380 |
-| tokens / `JumpIfNot` / `Jump` | 16,097 / 596 / 258 |
-| `LabelTable` tokens, in states / in `Function` payloads | 174 / 0 |
-| `StringConst` tokens | 152 |
-| walks ending on `LabelTable` (whole) / ending earlier (a floor) | 174 / 379 |
-| ... code bytes / `JumpIfNot` in the whole walks | 30,097 / 565 |
-| ... leaving a 27- / 28-byte record after the table | 80 / 63 |
-| payloads that do not walk | 0 |
+| payload bytes | 57,297 |
+| payloads that walk to the container's end / a header and the record only | 166 / 387 |
+| code bytes / tokens | 31,478 / 12,562 |
+| `JumpIfNot` / `Jump` | 590 / 256 |
+| `LabelTable` tokens, in states / in `Function` payloads | 176 / 0 |
+| `StringConst` tokens | 150 |
+| decodable 22-byte records / scripts ending on the `0x47` marker | 553 / 166 |
+| records with `IgnoreMask` all ones / `ProbeMask` 0 | 443 / 58 |
+| `StateFlags` 0 / 1 / 2 / other | 451 / 33 / 61 / 8 |
+| `LabelTableOffset` below / at or above the code's byte count | 60 / 106 |
 | states whose text spells label code | 120 |
 | ... keywords / `else` / `else` at the statement level | 843 / 252 / 118 |
-| ... with a walk / their `JumpIfNot` / their keywords | 120 / 571 / 843 |
+| ... with a walk / their `JumpIfNot` / their keywords | 120 / 572 / 843 |
 | ... equal counts | 28 |
-| states with a walk and no label keyword (overrides only) | 392 |
+| states with a walk and no label keyword (overrides only) | 37 |
 
 | class | state | payload | code | tokens | `JumpIfNot` | `Jump` | text keywords |
 |---|---|---:|---:|---:|---:|---:|---:|
-| `BotSG` | `RestFormation` | 1,070 | 1,022 | 354 | 17 | 12 | 29 |
-| `ScriptedController` | `Scripting` | 704 | 656 | 300 | 20 | 6 | 26 |
-| `BotEnemy` | `CoveredAttack` | 1,206 | 1,167 | 456 | 19 | 7 | 26 |
-| `BotSG` | `CoveredAttack` | 1,191 | 1,140 | 412 | 18 | 6 | 24 |
-| `BotEnemy` | `Suspicious` | 555 | 508 | 246 | 16 | 6 | 23 |
-| `JaffaBotLight` | `Sniper` | 580 | 533 | 232 | 14 | 3 | 17 |
-| `ReetouBot` | `Combat` | 480 | 429 | 182 | 11 | 6 | 17 |
-| `BotSG` | `ConcentrateFire` | 583 | 534 | 224 | 11 | 5 | 16 |
-| `BotEnemy` | `CoveredMove` | 370 | 334 | 171 | 9 | 6 | 15 |
-| `ReetouBot` | `Escape` | 428 | 380 | 159 | 10 | 4 | 14 |
+| `BotSG` | `RestFormation` | 1,070 | 1,026 | 354 | 17 | 12 | 29 |
+| `ScriptedController` | `Scripting` | 704 | 661 | 300 | 20 | 6 | 26 |
+| `BotEnemy` | `CoveredAttack` | 1,206 | 1,171 | 456 | 19 | 7 | 26 |
+| `BotSG` | `CoveredAttack` | 1,191 | 1,144 | 412 | 18 | 6 | 24 |
+| `BotEnemy` | `Suspicious` | 555 | 522 | 249 | 16 | 6 | 23 |
+| `JaffaBotLight` | `Sniper` | 580 | 538 | 232 | 14 | 3 | 17 |
+| `ReetouBot` | `Combat` | 480 | 434 | 182 | 11 | 6 | 17 |
+| `BotSG` | `ConcentrateFire` | 583 | 538 | 224 | 11 | 5 | 16 |
+| `BotEnemy` | `CoveredMove` | 370 | 338 | 171 | 9 | 6 | 15 |
+| `ReetouBot` | `Escape` | 428 | 385 | 159 | 10 | 4 | 14 |
 <!-- /generated:state-code -->
 
 A keyword and a `JumpIfNot` are not the same unit, so the equality the question asked for does not hold per
