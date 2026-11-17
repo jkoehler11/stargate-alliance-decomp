@@ -12115,3 +12115,32 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   declares no such function, so what they would have *used* (the properties and calls they name) is a read of
   the bodies' identifiers against `inventory/class_properties.csv`, which is the same join
   `tools/class-text-comments.py` does for names and needs no new instrument.
+
+### Execution notes (2026-11-17, the disabled bodies call the build's own functions at the live base rate)
+
+- **Task.** The previous note's next measurement: the 158 commented bodies with no live twin are ranked by size
+  but not typed, so the question is what they *name*. Their calls are joinable against the corpus's own
+  `Function` exports -- no new instrument, no boot.
+- **The join.** Every distinct call name in a body (an identifier in front of a parenthesis, script keywords
+  excluded, string literals removed) resolves three ways against all eighteen packages' `Function` exports, a
+  state's functions counted to the class that owns the state: **own** (the class the body sits in), **elsewhere**
+  (another class of the corpus -- an engine or sibling native) and **missing** (no export anywhere).
+- **The answer is a negative, and a useful one.** The 158 disabled bodies make **355** distinct call names: **80**
+  own, **208** elsewhere and **67** by nothing at all -- **18.9%** unresolved. The control is the same read over
+  every live body of the classes that carry a comment: **8,190 of 9,317 (87.9%)** resolve and **12.1%** do not.
+  So the disabled bodies' residue sits **6.8 points** above the base rate rather than at a different order of
+  magnitude: the comment is a revision of **this** build's corpus and not a fragment of a foreign tree, which is
+  what a cut-content read needs to know before it quotes the 49,672 bytes as content that existed.
+- **`missing` is not a defect count.** A local's delegate call and a function a class declares without an
+  export land there too, which is why the pair is reported against the control instead of alone.
+- **The trap is a case mismatch, and it produced an impossible zero.** The first run answered **0 own of 355** --
+  impossible for bodies sitting in classes that still declare functions. `corpus_index` lowercases the export
+  name while the `ScriptText` walk keeps the class's own spelling, so `(package, cls)` never matched and every
+  own call fell to *elsewhere*. It is the same rule `tools/class-text-comments.py`'s `own` map already follows;
+  `--check` now feeds a lowercase index with a mixed-case class, so the old comparison fails it.
+- Tool (`corpus_index`, `calls`, `resolve`, the four call groups in the census, the call columns on every pair
+  and disabled row, the paragraph) + `inventory/class_text_bodies.csv` regenerated (213 rows: 22 pairs, 158
+  disabled bodies, 33 census rows) + `docs/PACKAGE_SCRIPT_TEXT.md` (the generated block and one prose
+  paragraph) + this note. One 1-second read of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** the 67 `missing` names are small enough to type by hand -- whether they are locals'
+  delegates, engine intrinsics the script calls without an export, or names this build genuinely dropped.

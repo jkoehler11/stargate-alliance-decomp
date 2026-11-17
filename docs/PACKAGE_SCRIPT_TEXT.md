@@ -370,6 +370,12 @@ A reader that found fewer bodies in the live text than the text declares would n
 so the same reader runs over the live declarations too and the block reports the pair of rates; the residue
 in the comments is the comment's own, not the pattern's.
 
+The bodies also say what the cut code *used*: every call name a body makes is joined against the
+corpus's own `Function` exports, so a body that calls functions the build still carries is a revision of this
+build rather than a fragment of some other tree. The disabled bodies resolve at close to the base rate the
+live bodies set, which is the negative that matters -- the comment is a revision, not an import from elsewhere.
+
+
 <!-- generated:class-text-bodies -->
 **181 of the 208 `function` declarations a block comment disables also carry their body inside that comment, and 22 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **4468 of 4890 declarations (91.4%)**, against **87.0%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 22 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **5** keep the operator multiset with a different layout, **11** move at least one operator and **5** leave a live body of 32 bytes or fewer behind a substantial comment -- 10413 commented bytes against 7473 live ones over the population.
 
@@ -387,8 +393,13 @@ in the comments is the comment's own, not the pattern's.
 | ... whose live body is a trailer | **5** |
 | bytes, commented revisions / live revisions of the pairs | **10413** / **7473** |
 | operators, the same pair | **101** / **89** |
+| distinct call names, the pairs' commented / live revisions | **85** / **57** |
+| ... naming no `Function` export of the corpus | **12** / **9** |
 | commented bodies with no live twin | **158** |
 | bytes / operators / statements of those bodies | **49672** / **500** / **531** |
+| distinct call names in those bodies | **355** |
+| ... declared by the body's own class / elsewhere in the corpus / by nothing | **80** / **208** / **67** |
+| the same read over every live body of the commented classes (control) | **2763** / **5427** / **1127** of **9317** |
 
 Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
 
@@ -416,6 +427,8 @@ Every pair, `ops` being the operator multiset and `stmts` the statements at the 
 | `StargateGame.BotEnemy.needtoturn` | same-operators | 2 / 8 / 234 | 2 / 9 / 275 | - |
 | `StargateGame.StargateWeaponEmplacement.updateaimingrotation` | same-operators | 1 / 17 / 613 | 1 / 15 / 487 | - |
 | `StargateVehicles.SemektetStaffCannonGun.getfirestart` | same-operators | 6 / 3 / 243 | 6 / 3 / 243 | - |
+
+**A disabled body calls into the build, so it is a revision of a class that still exists.** Of the **355** distinct call names the 158 disabled bodies make, **80** are declared by the class the body sits in, **208** by another class of the corpus (an engine or sibling native) and **67** by nothing at all -- **18.9%**. The control is the same read over every live body of the classes that carry a comment: **8190 of 9317 (87.9%)** resolve and **12.1%** do not, so the disabled bodies' residue sits 6.8 points above the base rate rather than at a different order of magnitude. `missing` is not a defect count: a local's delegate call and a function the class declares without a `Function` export land there too.
 
 **The disabled bodies are the weight of the comment, not a residue of it.** 158 commented bodies have no live twin at all: 49672 bytes of source, 500 operators and 531 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
 
