@@ -11708,6 +11708,32 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next:** 3.5's remaining `replication` blocks, state code and labels, latent calls, operator precedence. The 545
   withheld classes stay withheld on the record's own evidence (`inventory/class_defaults_misses.csv`).
 
+### Execution notes (2026-11-17, the page's totals are rendered and its reason table is gated)
+
+- **The defect the last two PRs walked past.** This page's headline read "1,663 fully declared, 656 not (288
+  `single-declared`, 200 `incomplete`, 135 `empty-block`, ...) and 138 with no usable block" while the artifacts it
+  quotes say **1,664 / 655 / 285 / 4 / 334 and 336** -- `incomplete` was off by 196 rows, because the numbers were
+  typed from the run that introduced the reason and nothing ever compared the page with the files.
+- **What makes it not happen again.** The totals are a `<!-- generated:defaults-totals -->` block rendered from
+  `inventory/class_defaults_per_class.csv` and `class_defaults_misses.csv` (`python3 tools/class-defaults.py
+  --write-doc`), and `--check` -- which `tool-check-contract` runs in `make ci` -- fails on a byte difference in that
+  block **and** on any row of the reason table whose count the artifact contradicts. The table's prose column stays
+  hand-written.
+- **The gate was proved to bite in both directions**, which is the difference between a check that exists and a check
+  that can fail: `incomplete 4 -> 5` answers `FAIL class-defaults: the page says incomplete is 5, the artifact 4`, and
+  one digit of the block answers `FAIL class-defaults: the generated totals block differs from the artifacts ...; run
+  --write-doc`. Restoring by re-rendering returns `ok class-defaults: 1664 of 2319 fully declared, 336 with no block;
+  the block and 7 reason rows agree`.
+- **Corrected in place from the artifacts.** The `empty-block` reading of the 109-row population is replaced by the
+  current one (334 rows; 281 hold not one declared name, 53 hold one) with a pointer to this page's new section, and
+  the two event-scoped counts that read as current (`110 classes`, `Nine of the 263`) carry their current population.
+- A page-wide scan of `| \`name\` | N |` rows is **not** the gate: the first version reported six package names against
+  a reason, because this page's package table has the same shape. The check reads only the rows after the reason
+  table's own header.
+- Tool (`tools/class-defaults.py`: `artifact_totals`, `render_totals`, `splice_doc`, `write_doc`, `doc_check`,
+  `--write-doc`; `--check` runs the page gate after the chooser self-test) + `docs/CLASS_DEFAULTS.md` + this note.
+  Reads two committed CSVs and the page: no dump, no boot, and `--check` writes nothing.
+
 ### Execution notes (2026-11-17, the 334 have no start because their payloads hold no tag stream)
 
 - **The measurement the last note named.** The 334 classes `class_defaults_misses.csv` calls `empty-block` were the

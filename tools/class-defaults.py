@@ -679,6 +679,109 @@ def coverage(system_dir, outdir, floor=MIN_PROPERTIES):
 
 
 
+# ---------------------------------------------------------------- the page's generated totals, and its gates
+
+# `docs/CLASS_DEFAULTS.md` is hand-written prose whose headline numbers were three runs stale (it said 1,663 fully
+# declared and 200 `incomplete` while the artifacts said 1,664 and 4), because nothing compared the page with the files
+# it quotes. The totals are now rendered from the two committed artifacts between markers, and `--check` -- which the
+# `tool-check-contract` gate in `make ci` runs -- fails on a byte difference or on a reason row whose count has moved.
+DOC = os.path.join(ROOT, "docs", "CLASS_DEFAULTS.md")
+DOC_START = "<!-- generated:defaults-totals -->"
+DOC_END = "<!-- /generated:defaults-totals -->"
+
+
+def artifact_totals():
+    """The counts the page quotes, read from the two committed artifacts (no dump)."""
+    per = os.path.join(ROOT, "inventory", "class_defaults_per_class.csv")
+    misses = os.path.join(ROOT, "inventory", "class_defaults_misses.csv")
+    total = full = no_block = 0
+    with open(per, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            total += 1
+            full += 1 if r["fully_declared"] == "1" else 0
+            no_block += 1 if r["defaults"] == "0" else 0
+    reasons = collections.Counter()
+    with open(misses, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            reasons[r["reason"]] += 1
+    return total, full, total - full, no_block, reasons
+
+
+def render_totals():
+    """The block, one sentence and its source line."""
+    total, full, missing, no_block, _reasons = artifact_totals()
+    return ("**%s of the %s classes are fully declared (%.1f%%), %s are not, and %s of those have no block at all**\n"
+            "-- `inventory/class_defaults_per_class.csv` and `inventory/class_defaults_misses.csv`, rendered by\n"
+            "`python3 tools/class-defaults.py --write-doc`"
+            % ("{:,}".format(full), "{:,}".format(total), 100.0 * full / total, "{:,}".format(missing),
+               "{:,}".format(no_block)))
+
+
+def splice_doc(text, block, path=DOC):
+    """`text` with whatever sits between the two markers replaced by `block`."""
+    if DOC_START not in text or DOC_END not in text:
+        raise ValueError("%s has no %s ... %s markers" % (path, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _old, tail = rest.split(DOC_END, 1)
+    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+
+
+def write_doc(path=DOC):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    new = splice_doc(text, render_totals(), path)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print("wrote %s" % path)
+    return 0
+
+
+def doc_check(path=DOC):
+    """The page against the artifacts: the generated block byte for byte, and every reason row's count."""
+    problems, checked = [], 0
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    total, full, missing, no_block, reasons = artifact_totals()
+    try:
+        want = splice_doc(text, render_totals(), path)
+    except ValueError as exc:
+        problems.append(str(exc))
+        want = text
+    if want != text:
+        problems.append("the generated totals block differs from the artifacts (%d of %d fully declared, %d with no "
+                        "block); run `--write-doc`" % (full, total, no_block))
+    lines = text.splitlines()
+    header = next((i for i, ln in enumerate(lines) if ln.strip() == "| reason | classes | what it means |"), None)
+    if header is None:
+        problems.append("the page has no reason table (| reason | classes | what it means |)")
+    else:
+        # Only the reason table is read: other tables in this page key on package and class names, and a scan over
+        # every `| \`name\` | N |` row in the page reported six packages against a reason that is not theirs.
+        for row in lines[header + 1:]:
+            stripped = row.strip()
+            if not stripped.startswith("|"):
+                break
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cells) < 2:
+                continue
+            reason = cells[0].strip("`")
+            try:
+                got = int(cells[1].replace("**", "").replace(",", ""))
+            except ValueError:
+                continue
+            # a reason no class carries is checked too: its row claims zero, which is true only while the artifact
+            # has no row of that reason, so skipping it would leave the one count that can appear out of nowhere.
+            if got != reasons.get(reason, 0):
+                problems.append("the page says %s is %d, the artifact %d" % (reason, got, reasons.get(reason, 0)))
+            checked += 1
+    if problems:
+        print("FAIL class-defaults: " + "; ".join(problems[:6]))
+        return 1
+    print("ok   class-defaults: %d of %d fully declared, %d with no block; the block and %d reason rows agree"
+          % (full, total, no_block, checked))
+    return 0
+
+
 def selftest():
     """Synthetic candidate lists: the own-first tie-break, and that only a tie in the count can be broken.
 
@@ -732,10 +835,15 @@ def main():
     ap.add_argument("-o", "--out")
     ap.add_argument("--check", action="store_true",
                     help="synthetic candidate lists: the chooser's tie-break, no dump and no write")
+    ap.add_argument("--write-doc", action="store_true",
+                    help="rewrite the generated totals block in docs/CLASS_DEFAULTS.md from the artifacts")
     args = ap.parse_args()
 
+    if args.write_doc:
+        return write_doc()
     if args.check:
-        return selftest()
+        rc = selftest()
+        return doc_check() or rc
     if args.packages:
         return all_packages(args.packages, args.out or "inventory", args.floor)
     if args.check_misses:
