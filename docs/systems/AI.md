@@ -319,7 +319,7 @@ were the header's tail, and the code's **863** jump operands then land on a toke
 it beside the size dword at `name_end + 12`.
 
 <!-- generated:state-code -->
-**All 553 `State` payloads end with `UState`'s 22-byte record, 166 of them carry code, and the record is what anchors it at both ends.** The 387 payloads with no script are a header and the record whose `LabelTableOffset` is `0xffff` -- no table, no code pointer at all -- and 100 of them are a state an ancestor class declares by the same name (25 of those ancestors carry the table, so the code is inherited), while 287 name a state no ancestor declares. Where there is a table the field is that table's first entry in the **loader's** code (every compact index operand widened back to four bytes), exact in **166 of 166** payloads (0 fit none at all and keep the most-tokens fallback). Because the widened offset depends on where the walk starts, the field names the start too: it chose **166** of the 166 walks, and they begin **1,694 bytes** past the first offset of the payload that tiles -- the 543 `LocalVariable` tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. The code's own jump operands live in the same space, so with that start **863 of 863** land on a token start in the widened code. The walks carry 29,859 bytes and 11,885 tokens of the state's own label block, `JumpIfNot` 610.
+**All 553 `State` payloads end with `UState`'s 22-byte record, 166 of them carry code, and the record is what anchors it at both ends.** The 387 payloads with no script are a header and the record whose `LabelTableOffset` is `0xffff` -- no table, no code pointer at all -- and 100 of them are a state an ancestor class declares by the same name (25 of those ancestors carry the table, so the code is inherited), while 287 name a state no ancestor declares. Where there is a table the field is that table's first entry in the **loader's** code (every compact index operand widened back to four bytes), exact in **166 of 166** payloads (0 fit none at all and keep the most-tokens fallback). Because the widened offset depends on where the walk starts, the field names the start too: it chose **166** of the 166 walks, and they begin **1,694 bytes** past the first offset of the payload that tiles -- the 543 `LocalVariable` tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. The code's own jump operands live in the same space, so with that start **863 of 863** land on a token start in the widened code. The walks carry 29,859 bytes and 11,885 tokens of the state's own label block, `JumpIfNot` 610. The table those walks end on is the state's **label map**, and it is readable: **326** entries over 166 tables, every one of them a token start in the widened code (**326**), every name index resolving (**326**), and the last entry at the code's first byte in **166** tables -- so a `Goto('Label')` in a `State` does keep its name, and the runtime can look it up (the `Function` half has no table at all). Against the state's own text, **146** entries besides `Begin` are labels that state spells and **8** are not, while **0** labels the text spells have no entry -- so the table is a superset of the text, and all 157 joined states are covered: the extra entries are the labels whose code lives in a state override.
 
 | measure | value |
 |---|---|
@@ -331,6 +331,9 @@ it beside the size dword at `name_end + 12`.
 | code bytes / tokens | 29,859 / 11,885 |
 | `JumpIfNot` / `Jump` | 610 / 253 |
 | `LabelTable` tokens, in states / in `Function` payloads | 166 / 0 |
+| label-table entries / on a widened token start / named | 326 / 326 / 326 |
+| ... tables whose last entry is the code's first byte | 166 |
+| ... entries the state's text spells / does not (besides `Begin`) / text labels with no entry | 146 / 8 / 0 |
 | `StringConst` tokens | 147 |
 | decodable 22-byte records / scripts ending on the `0x47` marker | 553 / 166 |
 | records with `IgnoreMask` all ones / `ProbeMask` 0 | 443 / 58 |
@@ -365,6 +368,16 @@ condition term compiles one `JumpIfNot`, a short-circuit `&&`/`||` adds more ins
 counts the tests it spells. What the join does establish is the container: a state's code is measurable at all,
 per state, and the label code the earlier censuses counted in the text has a compiled counterpart to compare
 against.
+
+**The labels a state spells are in its payload, names and all.** Every anchored walk ends on the state's own
+`LabelTable`, and the table decodes entry by entry: a compact name index and the 4-byte offset its code starts at,
+terminated by the None name. **326** entries over 166 tables, every offset a token start in the widened code, every
+name resolving, and the last entry at the code's first byte -- the state's entry point, `Begin`. So the label names
+this page quotes per state (`BotEnemy.CoveredAttack`'s `Begin`/`Move`/`FinishedAttack`/`NoCover`) are checkable
+against the payload rather than read off the text: the table is a **superset** of the state's own text (**0** text
+labels lack an entry), and the 8 entries the text does not spell are labels whose code lives in a state override.
+That is the mechanism behind the `Goto('Begin')` in the body of `BotEnemy.ShootFromCover` below: the jump is an
+offset, and the offset is the one this table names.
 
 ### `BotEnemy.ShootFromCover` -- 475 lines, 16 own statements, 19 overrides
 

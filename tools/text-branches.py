@@ -141,6 +141,9 @@ STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
 # (`stateTime = 0.0;`) as declarations and answered 67 where the capital-`State` shape is 55 in 35 classes.
 STATE_CAPITAL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?State[ \t]+\w+")
 PP_ELSE = re.compile(r"#[ \t]*else\b")
+# A label statement -- `Begin:` at the start of a line. `state-tools`' entry census reads the state's `LabelTable`
+# against these (tools/state-code.py), so the pattern is here with the other text scanners rather than there.
+LABEL = re.compile(r"^[ \t]*([A-Za-z_]\w*)[ \t]*:(?!:)", re.M)
 
 
 def load_tool(name, filename):

@@ -67,7 +67,8 @@ FIELDS = ["kind", "package", "class", "state", "payload", "start", "code", "trai
           "jumpifnot", "jump", "labeltable", "complete", "stringconst", "record", "probe_mask",
           "ignore_mask", "label_offset", "state_flags", "table_w", "start_by", "jump_on", "code_lv", "walk_lv",
           "override_of", "text_kw",
-          "text_label", "text_else", "text_else_label", "verdict", "count", "note"]
+          "text_label", "text_else", "text_else_label", "labels", "labels_on", "labels_named", "labels_last",
+          "labels_spelled", "labels_unspelled", "labels_text_only", "verdict", "count", "note"]
 
 CENSUS_NOTE = {
     "states": "`State` export payloads read",
@@ -112,6 +113,16 @@ CENSUS_NOTE = {
     "joined_equal": "joined states whose `JumpIfNot` count equals the keyword count",
     "overrides": "states with a walk and no label keyword -- code in the overrides only",
     "payload_arms": "`JumpIfNot` in every payload the walk reaches",
+    "label_tables": "walks whose table decoded to entries",
+    "label_entries": "label-table entries, i.e. names a `Goto` can use in that state",
+    "label_entries_on_boundary": "entries whose offset is a token start in the widened code",
+    "label_entries_named": "entries whose compact name index resolves in the package's name table",
+    "label_ends_zero": "tables whose last entry is the code's first byte -- the entry point",
+    "label_join_states": "states with both a table and a text block to compare it with",
+    "label_spelled": "entries (besides `Begin`) the state's own text spells as a label",
+    "label_unspelled": "entries (besides `Begin`) the state's own text does not spell -- code in an override",
+    "label_text_only": "labels the text spells that the table has no entry for",
+    "label_join_equal": "joined states whose every text label has an entry (the table is a superset)",
 }
 
 CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "code_bytes", "tokens",
@@ -119,7 +130,9 @@ CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "cod
                "ignore_all_ones", "probe_zero", "flags_zero", "flags_one", "flags_two", "flags_other",
                "offset_entry", "offset_other", "offset_unmeasured", "start_by_field",
                "start_shift", "override_state", "override_code", "override_none", "code_local", "walk_local",
-               "jumps", "jumps_on_boundary", "text_label_states", "text_label", "text_else",
+               "jumps", "jumps_on_boundary", "label_tables", "label_entries", "label_entries_on_boundary",
+               "label_entries_named", "label_ends_zero", "label_join_states", "label_spelled",
+               "label_unspelled", "label_text_only", "label_join_equal", "text_label_states", "text_label", "text_else",
                "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal", "overrides",
                "payload_arms")
 
@@ -266,6 +279,30 @@ def record(payload):
     return {"probe_mask": pm, "ignore_mask": im, "label_offset": lto, "state_flags": sf}
 
 
+def label_entries(data):
+    """`([(name index, offset)], terminator)` for a label table's bytes, i.e. what follows its `0x0c` opcode.
+
+    An entry is the archive's compact **name index** then a 4-byte code offset, and the table ends on the **None
+    name** (index 0) -- not on a zero offset, because a label at the code's first byte has one. The offsets are in
+    the loader's widened space like every other code offset here, which is what makes them testable against the
+    walk's token starts: an entry names a place the runtime can enter, so it has to be a token boundary.
+    """
+    dis = dis_tool()
+    out, i = [], 0
+    while i < len(data):
+        try:
+            name, j = dis.read_index(data, i)
+        except IndexError:
+            return out, "ran-off"
+        if not name:
+            return out, "none-name"
+        if j + 4 > len(data):
+            return out, "short"
+        out.append((name, struct.unpack_from("<I", data, j)[0]))
+        i = j + 4
+    return out, "end"
+
+
 def text_label_counts(text, spans_of):
     """`(label keywords, label `else`)` for every `state` block in one class's text, outside its overrides.
 
@@ -294,7 +331,18 @@ def text_label_counts(text, spans_of):
                 els += 1
                 if depth[pos] == floor:
                     at_floor += 1
-        out[m.group(1).lower()] = (kw, els, at_floor)
+        # The labels the body spells at its own statement level: `Name:` at the body's depth and outside every
+        # override. `default`/`case` are keywords, not labels, and `Begin` is the state's implicit entry point --
+        # the table carries it whether or not the text does, so it is left out of the comparison.
+        names = []
+        for lm in tb.LABEL.finditer(live[span[0]:span[1]]):
+            pos = span[0] + lm.start()
+            if depth[pos] != floor or any(a <= pos < b for a, b in spans):
+                continue
+            if lm.group(1).lower() in ("default", "case"):
+                continue
+            names.append(lm.group(1).lower())
+        out[m.group(1).lower()] = (kw, els, at_floor, names)
     return out
 
 
@@ -336,7 +384,8 @@ def walk_dump(system):
             got = region(payload, table, rec["label_offset"] if rec else None)
             if got is not None and got["start_by"] != "walk":
                 shift += got["start"] - got["first"]
-            kw, els, at_floor = texts.get((package, cls.lower()), {}).get(state.lower(), ("", "", ""))
+            kw, els, at_floor, tl_names = texts.get((package, cls.lower()), {}).get(
+                state.lower(), ("", "", "", []))
             row = {"kind": "state", "package": package, "class": cls, "state": state,
                    "payload": len(payload), "start": "", "code": "", "trailer": "", "tokens": "",
                    "jumpifnot": "", "jump": "", "labeltable": "", "complete": "", "stringconst": "",
@@ -347,6 +396,8 @@ def walk_dump(system):
                    "state_flags": rec["state_flags"] if rec else "",
                    "table_w": "", "start_by": "", "jump_on": "", "code_lv": "", "walk_lv": "", "override_of": "",
                    "text_kw": kw, "text_label": kw, "text_else": els, "text_else_label": at_floor,
+                   "labels": "", "labels_on": "", "labels_named": "", "labels_last": "",
+                   "labels_spelled": "", "labels_unspelled": "", "labels_text_only": "",
                    "verdict": "record-only", "count": "", "note": ""}
             if got is not None:
                 flat = tokens(got["nodes"])
@@ -357,8 +408,8 @@ def walk_dump(system):
                             "labeltable": c["LabelTable"], "stringconst": c["StringConst"],
                             "complete": 1, "table_w": got["table_w"] if got["table_w"] is not None else "",
                             "start_by": got["start_by"], "code_lv": got["local"], "walk_lv": got["walk_lv"]})
+                woffs = set()
                 if got["spans"] is not None:
-                    woffs = set()
                     for nd in flat:
                         w = widened_at(got["spans"], nd["offset"])
                         if w is not None:
@@ -366,6 +417,27 @@ def walk_dump(system):
                     row["jump_on"] = sum(1 for nd in flat
                                          if nd["name"] in ("Jump", "JumpIfNot") and len(nd["operands"]) == 2
                                          and (nd["operands"][0] | (nd["operands"][1] << 8)) in woffs)
+                # The table's own entries: each one is a label's name and the widened offset its code starts at,
+                # so it is testable against the walk's token starts exactly as a jump operand is.
+                tabs = [nd for nd in flat if nd["name"] == "LabelTable"]
+                if tabs:
+                    t = tabs[-1]
+                    ents, stop = label_entries(payload[got["start"] + t["offset"] + 1:
+                                                       got["start"] + t["end"]])
+                    names = [pkg.name(nm) for nm, _off in ents]
+                    row["labels"] = len(ents)
+                    row["labels_named"] = sum(1 for nm in names if nm)
+                    if woffs:
+                        row["labels_on"] = sum(1 for _nm, off in ents if off in woffs)
+                    if ents:
+                        row["labels_last"] = ents[-1][1]
+                    if tl_names:
+                        spelled = set(tl_names) - {"begin"}
+                        table_names = {nm.lower() for nm in names} - {"begin"}
+                        row["labels_spelled"] = len(table_names & spelled)
+                        row["labels_unspelled"] = len(table_names - spelled)
+                        row["labels_text_only"] = len(spelled - table_names)
+                    row["note"] = stop
                 row["verdict"] = ("label+payload" if kw else "payload-only")
             rows.append(row)
     return rows, shift
@@ -459,6 +531,20 @@ def census(rows, shift=None):
         c["jumps"] += int(r["jump"]) + int(r["jumpifnot"])
         if r["jump_on"] != "":
             c["jumps_on_boundary"] += int(r["jump_on"])
+        if r["labels"] != "":
+            c["label_tables"] += 1
+            c["label_entries"] += int(r["labels"])
+            c["label_entries_named"] += int(r["labels_named"] or 0)
+            c["label_entries_on_boundary"] += int(r["labels_on"] or 0)
+            if r["labels_last"] != "" and int(r["labels_last"]) == 0:
+                c["label_ends_zero"] += 1
+        if r["labels_spelled"] != "":
+            c["label_join_states"] += 1
+            c["label_spelled"] += int(r["labels_spelled"])
+            c["label_unspelled"] += int(r["labels_unspelled"] or 0)
+            c["label_text_only"] += int(r["labels_text_only"] or 0)
+            if int(r["labels_text_only"] or 0) == 0:
+                c["label_join_equal"] += 1
     for r in rows:
         if r["text_kw"] in ("", None):
             continue
@@ -486,7 +572,10 @@ def census(rows, shift=None):
                     "complete": "", "stringconst": "", "record": "", "probe_mask": "", "ignore_mask": "",
                     "label_offset": "", "state_flags": "", "table_w": "", "start_by": "", "jump_on": "",
                     "code_lv": "", "walk_lv": "", "text_kw": "", "text_label": "", "text_else": "",
-                    "text_else_label": "", "verdict": "", "count": c[key], "note": key})
+                    "text_else_label": "", "labels": "", "labels_on": "", "labels_named": "", "labels_last": "",
+                    "labels_spelled": "", "labels_unspelled": "", "labels_text_only": "", "verdict": "",
+                    "count": c[key],
+                    "note": key})
     return out
 
 
@@ -525,7 +614,14 @@ def doc_block(rows):
                  "start kept are the header's tail, and **no** state's code keeps one. The code's own jump "
                  "operands live in the same space, so with that start **%s of %s** land on a token start in the "
                  "widened code. The walks carry %s bytes and %s tokens of the state's own label block, "
-                 "`JumpIfNot` %s."
+                 "`JumpIfNot` %s. The table those walks end on is the state's **label map**, and it is readable: "
+                 "**%s** entries over %s tables, every one of them a token start in the widened code (**%s**), "
+                 "every name index resolving (**%s**), and the last entry at the code's first byte in **%s** "
+                 "tables -- so a `Goto('Label')` in a `State` does keep its name, and the runtime can look it up "
+                 "(the `Function` half has no table at all). Against the state's own text, **%s** entries besides "
+                 "`Begin` are labels that state spells and **%s** are not, while **%s** labels the text spells have "
+                 "no entry -- so the table is a superset of the text, and all %s joined states are covered: the "
+                 "extra entries are the labels whose code lives in a state override."
                  % (comma(num(rows, "states")), num(rows, "regions"), num(rows, "no_code"),
                     comma(num(rows, "override_state")), comma(num(rows, "override_code")),
                     comma(num(rows, "override_none")),
@@ -534,7 +630,12 @@ def doc_block(rows):
                     comma(num(rows, "start_shift")), comma(num(rows, "walk_local")),
                     comma(num(rows, "jumps_on_boundary")), comma(num(rows, "jumps")),
                     comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
-                    comma(num(rows, "jumpifnot"))))
+                    comma(num(rows, "jumpifnot")),
+                    comma(num(rows, "label_entries")), comma(num(rows, "label_tables")),
+                    comma(num(rows, "label_entries_on_boundary")), comma(num(rows, "label_entries_named")),
+                    comma(num(rows, "label_ends_zero")), comma(num(rows, "label_spelled")),
+                    comma(num(rows, "label_unspelled")), comma(num(rows, "label_text_only")),
+                    comma(num(rows, "label_join_equal"))))
     lines.append("")
     lines.append("| measure | value |")
     lines.append("|---|---|")
@@ -554,6 +655,14 @@ def doc_block(rows):
                  % (comma(num(rows, "jumpifnot")), comma(num(rows, "jump"))))
     lines.append("| `LabelTable` tokens, in states / in `Function` payloads | %s / 0 |"
                  % comma(num(rows, "labeltable")))
+    lines.append("| label-table entries / on a widened token start / named | %s / %s / %s |"
+                 % (comma(num(rows, "label_entries")), comma(num(rows, "label_entries_on_boundary")),
+                    comma(num(rows, "label_entries_named"))))
+    lines.append("| ... tables whose last entry is the code's first byte | %s |" % comma(num(rows, "label_ends_zero")))
+    lines.append("| ... entries the state's text spells / does not (besides `Begin`) / text labels with no entry "
+                 "| %s / %s / %s |"
+                 % (comma(num(rows, "label_spelled")), comma(num(rows, "label_unspelled")),
+                    comma(num(rows, "label_text_only"))))
     lines.append("| `StringConst` tokens | %s |" % comma(num(rows, "stringconst")))
     lines.append("| decodable 22-byte records / scripts ending on the `0x47` marker | %s / %s |"
                  % (comma(num(rows, "record")), comma(num(rows, "marker"))))
@@ -706,8 +815,14 @@ def selftest():
             "\telse Sleep(0.1);\r\n}\r\n")
     got = text_label_counts(text, lambda live: tb.function_else(live)[2])
     assert "suspicious" in got, got
-    kw, els, at_floor = got["suspicious"]
+    kw, els, at_floor, names = got["suspicious"]
     assert (kw, els, at_floor) == (3, 1, 1), (kw, els, at_floor)  # the override's `if` is excluded
+    assert names == ["begin"], names                              # the body's own label, and only it
+    # The table's entries: name index then a 4-byte offset, ending on the None name -- a zero *offset* is a real
+    # label at the code's first byte, which is why the terminator is the name.
+    ents, stop = label_entries(bytes([0x06, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x00, 0x00, 0x00, 0x00]))
+    assert ents == [(6, 0), (7, 9)] and stop == "none-name", (ents, stop)
+    assert label_entries(bytes([0x06, 0x00, 0x00, 0x00, 0x00]))[1] == "end", "an unterminated table is named"
     print("ok   state-code: end anchor, compact label names, record, field-chosen start and label-code count")
 
 

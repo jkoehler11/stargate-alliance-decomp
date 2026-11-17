@@ -23810,6 +23810,23 @@ census,,,,,,,,tokens,96193,statement tokens in the scripts that carry a jump (an
 census,,,,,,,,terminators,11687,"`EndOfScript`/`EndFunction` tokens, left out of the flow nodes because nothing jumps to them"
 census,,,,,,,,reachable,91977,"of those, tokens a walk from the first token reaches over fallthrough and jump edges"
 census,,,,,,,,dead,4216,tokens no walk reaches (code behind a return or a jump with no incoming edge)
+census,,,,,,,,dead_runs,4045,maximal runs of unreachable statements
+census,,,,,,,,dead_after_return,4109,unreachable statements whose run starts directly behind a `Return`
+census,,,,,,,,dead_after_stop,0,the same behind a `Stop`
+census,,,,,,,,dead_after_jump,107,the same behind an unconditional `Jump`
+census,,,,,,,,dead_after_other,0,the same behind any other statement
+census,,,,,,,,dead_runs_after_return,3938,runs behind a `Return`
+census,,,,,,,,dead_runs_after_stop,0,runs behind a `Stop`
+census,,,,,,,,dead_runs_after_jump,107,runs behind an unconditional `Jump`
+census,,,,,,,,dead_runs_after_other,0,runs behind any other statement
+census,,,,,,,,dead_singletons,3903,runs that are one statement long
+census,,,,,,,,dead_final,3342,unreachable statements that are their script's own last statement
+census,,,,,,,,dead_return,3352,unreachable `Return` tokens
+census,,,,,,,,dead_jump,603,unreachable `Jump` tokens
+census,,,,,,,,dead_iteratornext,92,unreachable `IteratorNext` tokens
+census,,,,,,,,dead_return_after_return,3226,unreachable `Return`s whose own predecessor is another `Return`
+census,,,,,,,,dead_iteratornext_after_jump,89,unreachable `IteratorNext` tokens whose predecessor is a `Jump`
+census,,,,,,,,dead_scripts,3453,scripts with at least one unreachable statement
 census,,,,,,,,jump_sites,6315,`Jump` tokens
 census,,,,,,,,jumpifnot_sites,17463,`JumpIfNot` tokens
 census,,,,,,,,jump_hits,6315,`Jump` tokens whose operand lands on a token start's guest offset

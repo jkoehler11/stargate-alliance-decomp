@@ -12805,3 +12805,58 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   three file-space readings and reports all of them at chance, and the `State` half now says the fourth reading (a
   widened token start) is the one that holds.
 
+
+### Execution notes (2026-11-17, the jump operand is the widened offset in both halves, and the labels are readable)
+
+- **Task.** The previous note's next measurement: the widened-start test over `Function` payloads. `tools/jump-census.py`
+  tested three file-space readings and reported every one at or below chance, while the `State` half said the fourth
+  reading -- an offset into the code the loader widens -- was the one that holds. The census now tests it, and the
+  run's bundle is the census, the gate that holds it to the graph, and the two residues the reading exposed.
+- **The fourth reading holds over the whole corpus: 23,778 of 23,778 (100.00%).** Every `Jump`/`JumpIfNot` operand
+  of the 6,127 `Function` scripts that carry one equals the **guest-space offset** of a token start, against a guest
+  chance level of **33.49%** (412,610 token starts over 1,231,947 widened bytes) and **45.22%** in the file. The three
+  file readings stay as the control on the same sites (absolute 5,495 / 23.11%, unsigned and signed 3,255 / 13.69%),
+  **0** operands land on the epilogue and **0** past the script, so no edge dangles.
+- **The base rate was computed over the wrong population, and the fix moves the control's number.** The old block
+  compared 23,778 hits against a chance level taken over all 11,687 walked payloads (484,332 of 1,062,761 = 45.6%);
+  the hits come from 6,127 scripts, so the census now counts its base rates over those same scripts. The file rate
+  moves 45.6% -> 45.22%, and the guest rate is only meaningful over the same set -- a chance level that answers for
+  scripts with no jump in them is the kind of mismatch that makes a 100% result look like a rounding accident.
+- **The two artifacts are held together by a gate, not by a coincidence.** `--cross-check` (in `make ci`) compares
+  eleven census rows -- jumps, scripts, guest hits, at/past the end, misses, both token-start counts, both byte
+  counts, walked payloads -- between `inventory/jump_census.csv` and `inventory/jump_graph.csv`, which derives the
+  widening map in its own walk. The two tools compute that map **separately on purpose** (a comment in each says so):
+  a shared helper would turn the comparison into a file agreeing with itself, and a zero row in the census needs a
+  second claim or the gate would pass on a truncated artifact.
+- **The 4,216 unreachable statements are now classified, and the page's sentence was only two-thirds right.** The
+  predecessor of each dead run says what it is: **4,109** follow a `Return` (3,938 runs), **107** an unconditional
+  `Jump` (107 runs), **0** anything else. The shape is the compiler's: **3,342** are their script's own last
+  statement, **3,226** unreachable `Return`s follow another `Return` (the implicit return after an explicit one),
+  **3,903** of the 4,045 runs are one statement, and **89** are an `IteratorNext` a loop-exit `Jump` lands past.
+  `docs/BYTECODE.md` said "the tails behind a `return`", which is a decompiler-facing claim about dead source; the
+  measurement says emitted housekeeping, and the page says that now.
+- **The label table is readable, and the "never emits a label" claim was a census that looked in one place.** A
+  `State` payload's table decodes to **326** entries over 166 tables -- a compact name index plus a 4-byte offset,
+  ending on the None name -- and **every** entry's offset is a token start in the widened code (**326**), every name
+  index resolves (**326**), and the last entry is the code's first byte in **166** tables. Against the state's own
+  text: **146** entries besides `Begin` are labels that state spells, **8** are not, **0** text labels lack an entry
+  (**157** of 157 joined states covered) -- the table is a superset of the text, and the extra entries are labels
+  whose code sits in a state override. `tools/text-branches.py` gained the `LABEL` scanner the join uses.
+- **Two page sentences about the table itself were wrong.** `docs/BYTECODE.md` called the entry "8 bytes" (it is the
+  *widened* entry the handler steps over; the stored one is five or six) and said the compiler emitted no label
+  tables (true of `Function` payloads only). Both were counts over the wrong population, and both are corrected in
+  place. `--sizefield`'s four residue rows also read as "not lengths at all" on the same page; the measurement is
+  that they are exact and the residue is empty -- those four payloads carry the export's name as their fifth and
+  sixth front value, and the field was being read two bytes early.
+- **Files.** `tools/jump-census.py` (the guest reading, `guest_starts`, the base rates moved onto the jump population,
+  the `guest` column, `--cross-check`, a 17-case `--check`) + `tools/jump-graph.py` (dead-run classification: 16
+  census keys, the block's new paragraph) + `tools/state-code.py` (`label_entries`, the entry/text join, five columns,
+  ten census keys, two `--check` cases) + `tools/text-branches.py` (`LABEL`) + `inventory/jump_census.csv` +
+  `inventory/jump_graph.csv` + `inventory/state_code.csv` + `docs/BYTECODE.md` (the jump sections, the table
+  paragraph, the residue sentence) + `docs/systems/AI.md` (block and the entry sentence) + `docs/UNKNOWNS.md` (U13
+  tail, U19 tail) + `Makefile` (the `--cross-check` line and the target's comment). One read of the 18 packages; no
+  boot, no Ghidra.
+- **Next measurement:** spend the graph's classification. The 107 dead runs behind a `Jump` are the only unreachable
+  population a decompiler must *not* treat as housekeeping, and 89 of them are iterator exits; the 18 `Jump`s behind
+  a `Jump` are the ones to name, and the `Case` forward scan (modelled as an edge, not measured in the guest) is the
+  modelling assumption everything else rests on.
