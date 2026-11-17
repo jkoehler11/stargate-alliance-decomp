@@ -2410,7 +2410,10 @@ dword at `name_end + 12` is `len(script) + sum(4 - width)` on 11,687 of 11,687 p
 file with every index operand at four bytes. Read in **that** space the same operands hit **23,778 of 23,778**
 (100.00%) against a 33.49% base rate, and 80 copies placed in two `pmemsave` images agree length for length and start for
 start (348 operands). `tools/jump-graph.py` now emits the graph (22,270 forward and 1,508 backward edges; 95.62% of statements
-reachable; the 4,216 unreachable ones are tails behind a `return`). **What is left is not the encoding but its user**:
+reachable; the 4,216 unreachable ones are **measured** there: 4,109 behind a `Return`, 107 behind an unconditional
+`Jump`, 3,903 runs of a single statement, most of them the compiler's implicit return). `tools/jump-census.py` owns
+the same count from its own walk and `--cross-check` holds the two artifacts together. **What is left is not the
+encoding but its user**:
 the target is a file offset, so a decompiler's branch rendering can consume it, and the `Case` scan (`execCase` walks
 forward to the next `Case`) is modelled as an edge rather than measured in the guest.
 
@@ -4266,10 +4269,23 @@ is what makes the code's own offsets consistent -- **863 of 863** jump operands 
 code, against 758 of 835 under the old starts -- and it is a second, independent witness to the widening rule that
 the dword at `name_end + 12` had been the only check on.
 
-**What is left.** Not the field: the same test over `Function` payloads (whether every `Jump`/`JumpIfNot` operand of
-the 11,687 `Function` scripts lands on a widened token start) is the function half of `tools/jump-census.py`, which
-still tests only file-space readings and therefore reports all three at chance. The widening rule itself still has
-the known residue (`--sizefield`'s four rows and the one-slot differences in guest copies).
+**The function half is measured too, and it closes the same way.** `tools/jump-census.py` now tests the fourth
+reading as well: **23,778 of 23,778** `Jump`/`JumpIfNot` operands over the 6,127 `Function` scripts that carry one
+land on a widened token start, against a guest chance level of 33.49% and a file chance level of 45.22% over the same
+scripts (the file readings -- absolute 23.11%, unsigned 13.69%, signed 13.69% -- are kept as the control). The
+`--sizefield` residue is **empty** (11,687 of 11,687, this table's own four rows were a front read two bytes late),
+and the one-slot differences in guest copies are the model's over-widening, not the operand's. So the only thing
+this entry still owns is the space: *which* operands widen is a per-slot property the file states only through the
+widened length, and both tools rebuild it from that one field. `--cross-check` holds the two artifacts to each other
+row for row, which is what makes an empty residue a claim rather than a silence.
+
+**Two residues this entry used to carry are now named rather than left.** The 4,216 unreachable statements are not
+"dead source": 4,109 follow a `Return` and 107 an unconditional `Jump`, 3,226 of the unreachable `Return`s follow
+another `Return` (the compiler's implicit return after an explicit one), and 89 are an `IteratorNext` a loop-exit
+`Jump` lands past. And a `State` payload's label table is readable: **326** entries over 166 tables, every entry's
+offset a widened token start, every name index resolving, and every label the state's own text spells present in the
+table (**0** text labels without an entry) -- so a `Goto('Label')` keeps its name in a state even though it keeps
+none in a `Function`.
 
 **Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
 

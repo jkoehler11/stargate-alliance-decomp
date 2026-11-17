@@ -369,6 +369,16 @@ counts the tests it spells. What the join does establish is the container: a sta
 per state, and the label code the earlier censuses counted in the text has a compiled counterpart to compare
 against.
 
+**The labels a state spells are in its payload, names and all.** Every anchored walk ends on the state's own
+`LabelTable`, and the table decodes entry by entry: a compact name index and the 4-byte offset its code starts at,
+terminated by the None name. **326** entries over 166 tables, every offset a token start in the widened code, every
+name resolving, and the last entry at the code's first byte -- the state's entry point, `Begin`. So the label names
+this page quotes per state (`BotEnemy.CoveredAttack`'s `Begin`/`Move`/`FinishedAttack`/`NoCover`) are checkable
+against the payload rather than read off the text: the table is a **superset** of the state's own text (**0** text
+labels lack an entry), and the 8 entries the text does not spell are labels whose code lives in a state override.
+That is the mechanism behind the `Goto('Begin')` in the body of `BotEnemy.ShootFromCover` below: the jump is an
+offset, and the offset is the one this table names.
+
 ### `BotEnemy.ShootFromCover` -- 475 lines, 16 own statements, 19 overrides
 
 Sixteen statements, three of them inside one `if`: `Target = Enemy`, `CheckBurning()`, `ShouldStartHacking()`;
