@@ -188,9 +188,10 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/defaults_residue.csv`): the tool now re-renders every value of every clean block and writes one
       `census` row beside its table -- **0 refused of 15,521 values over 1,664 blocks in 2,319 classes**. The three
       `__OnXControllerEvent__Delegate` rows it was built for were a locator offset, not a value the renderer could not
-      read (U18's closing entries; `docs/CLASS_DEFAULTS.md`). Remaining here: 545 withheld blocks (whether the 535 that a type-first ranking would promote are
-      real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
-      labels, latent calls, operator precedence.
+      read (U18's closing entries; `docs/CLASS_DEFAULTS.md`). Remaining here: the 545 withheld blocks — and the type-first ranking that was going to promote 535 of
+      them promotes **none** (`make class-defaults-promoted`: 1,664 clean blocks and 15,521 properties under either
+      ordering, so the 535 was never this rule; `docs/CLASS_DEFAULTS.md`) — then `replication` blocks, state code
+      and labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -11672,3 +11673,30 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool (`tools/defaults-residue.py`: the corpus by default, `--named`, the census row) + `inventory/defaults_residue.csv`
   + `docs/CLASS_DEFAULTS.md` (the three rows closed, the "Not measured" bullet answered) + this note. Reads the
   packages; no boot.
+
+### Execution notes (2026-11-16, the type-first ranking promotes nothing, and the 535 it was quoted with is not that rule)
+
+- **PLAN 3.5's last value question is settled on the population it named: the population does not exist.** This page
+  carried "ranking type agreement first promotes 535 withheld classes to clean blocks (2,201 of 2,319, 16,764
+  properties, 272 unrendered values)" as measured but unexplained. `tools/class-defaults-promoted.py`
+  (`make class-defaults-promoted`, `inventory/class_defaults_promoted.csv`) runs both orderings over the same
+  candidate list -- `class-defaults.candidates()` + `guarded()` once per class -- and reads **1,664 clean blocks and
+  15,521 properties under either ordering, 0 promoted of 2,319 classes**. The tool's control is the shipped
+  locator's own two figures to the unit (1,664 / 15,521 out of `inventory/class_defaults_per_class.csv`), so the
+  equality is the measurement's and not a re-implementation's.
+- **The ordering cannot move the verdict, by its own shape.** A class is clean only when every tag names a declared
+  property and contradicts none -- declared fraction **1.0** with `bad == 0` -- and `choose()` already sorts
+  `bad == 0` ahead of the count, so the same candidate wins under both orders. What the reorder does move is **four**
+  starts, and each is a shift inside one parse rather than a shorter block: `GamePlay.SP_Timer` 132 -> 133,
+  `IpDrv.MasterServerClient` 87 -> 88, `IpDrv.ClientBeaconReceiver` 102 -> 105 (each drops the safe parse's first
+  tag -- `bBlockPlayers`, `Class`, `bAlwaysTick` -- and reads the next byte as a tag name: `System`, `Lighting`,
+  `Init`, package and function names, never properties), and `Engine.ArmorPickup` 68 -> 227, 159 bytes into a
+  235-byte payload. On all four the safe parse names no declared property either, which is why the class is withheld:
+  the rule moves from one junk alignment to another, one byte over.
+- **The hole behind the rule**: `contradictions()` counts only tags whose name the class declares, so a parse naming
+  *only* undeclared names scores `bad == 0` and the type test calls that the agreement. The weaker predicate that
+  might have produced the quoted 2,201 (`bad == 0` and at least one declared name, no fraction requirement) selects
+  **1,665 classes / 15,523 properties** -- one class more than the shipped rule, not 537 -- so the figure is
+  withdrawn from `docs/CLASS_DEFAULTS.md` rather than carried forward.
+- **Next:** 3.5's remaining `replication` blocks, state code and labels, latent calls, operator precedence. The 545
+  withheld classes stay withheld on the record's own evidence (`inventory/class_defaults_misses.csv`).

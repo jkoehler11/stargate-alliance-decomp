@@ -272,11 +272,34 @@ rather than emitting a block that contradicts their own record: `StargateMenus.S
 **15,517 (99.97%)** — the six classes named in the previous note are down to one array and three delegate tags (the array has
 rendered since: the section below measures it).
 
-**What was deliberately not shipped, measured: ranking type agreement *first*.** Putting `bad == 0` at the head of
-that tuple instead promotes **535 withheld classes to clean blocks** — 2,201 of 2,319, 16,764 properties (against
-15,521), 272 unrendered values — because those are exactly the classes whose candidate held undeclared package names,
-and the type check picks a shorter candidate that agrees. That is a claim that those 535 blocks *are* the classes'
-blocks, and nothing here checks it, so it stays a measurement rather than a change.
+**Ranking type agreement *first* promotes nothing, and the figure this paragraph used to quote is not that rule.**
+Putting `bad == 0` at the head of the tuple leaves the corpus exactly where the shipped ordering does:
+`tools/class-defaults-promoted.py` (`make class-defaults-promoted`, `inventory/class_defaults_promoted.csv`) runs
+both orderings over the same candidate list and gets **1,664 clean blocks and 15,521 properties under either, 0
+promoted of 2,319 classes** — and its control is the shipped locator's own two figures to the unit (1,664 and
+15,521 from `inventory/class_defaults_per_class.csv`), so the agreement is the measurement's and not a
+re-implementation's.
+
+The reason is the ordering's shape, not this dump: a clean class is one whose every tag names a declared property and
+contradicts none, i.e. a declared fraction of **1.0** with `bad == 0`, and `choose()` already sorts `bad == 0` ahead
+of the count, so the same candidate wins under both orders. The reorder does move **four** starts, and each is a
+shift inside one desynchronised stream rather than a shorter block: `GamePlay.SP_Timer` 132 -> 133,
+`IpDrv.MasterServerClient` 87 -> 88 and `IpDrv.ClientBeaconReceiver` 102 -> 105 each drop the safe parse's first tag
+(`bBlockPlayers`, `Class`, `bAlwaysTick`) and read the next byte as a tag name — `System`, `Lighting`, `Init`, names
+of *packages* and of a function, never of properties — while `Engine.ArmorPickup` moves 159 bytes to
+`Range`/`Core` at 227 of a 235-byte payload. On all four the safe parse names no declared property either, which is
+why the class is withheld at all: the rule moves from one junk alignment to another, one byte over.
+
+**Why `bad == 0` cannot mean "agrees": `contradictions()` counts only the tags whose name the class declares.** A
+parse that names *only* undeclared names — a package, a function, a state — has nothing to contradict, so it scores
+`bad == 0` and the type test calls that the agreement. On the four rows above the candidate the type rule prefers
+opens on a name that is not a property at all -- a package (`System`, `Lighting`) or a function (`Init`).
+
+An earlier note in this page quoted **535 promoted classes, 2,201 of 2,319, 16,764 properties, 272 unrendered
+values** for this variant. No ordering of `(fraction, bad, count, own, trailer)` produces that, and the weaker
+predicate that might — `bad == 0` with at least one declared name and no fraction requirement — selects
+**1,665 classes and 15,523 properties**, one class more than the shipped rule rather than 537; the figure is
+withdrawn here rather than carried.
 
 ## Subobjects: 1,317 `Begin Object` blocks
 
@@ -869,12 +892,14 @@ often?
 
 ## Not measured
 
-* **Whether the 535 promoted blocks are real.** Ranking tag-type agreement first promotes 535 withheld classes to
-  clean blocks (2,201 of 2,319, 16,764 properties) — measured, not shipped, as the section above describes. Those
-  classes' candidates held undeclared **package** names, and the type rule chooses a shorter candidate that agrees
-  with the record; nothing here checks that the shorter block is *complete*. What would settle it: a per-class audit
-  of the chosen block against the properties the class is documented to override, or the runtime reader of the
-  trailing table (the route `docs/NATIVE_PROPERTIES.md` took for the tag format).
+* ~~**Whether the 535 promoted blocks are real.**~~ **Answered, and there are none**
+  (`tools/class-defaults-promoted.py`, `inventory/class_defaults_promoted.csv`): the type-first ordering is clean on
+  the same 1,664 blocks and 15,521 properties as the shipped one -- **0 promoted of 2,319** -- and on the four starts
+  it does move the shorter candidate is a one-byte shift of the same desynchronised parse (`GamePlay.SP_Timer`,
+  `IpDrv.MasterServerClient`, `IpDrv.ClientBeaconReceiver`) or a 159-byte jump into junk (`Engine.ArmorPickup`). The
+  question this bullet asked -- whether the shorter block is *complete* -- has no promoted population to ask it of;
+  what the audit did find is that `bad == 0` is satisfied by a parse naming *only* undeclared names, because
+  `contradictions()` counts the class's declared names alone.
 * ~~**Whether the three residue classes set that delegate.**~~ **Answered** (`docs/UNKNOWNS.md` U18): the value
   layout is an object reference plus a function name, and those three rows are locator offsets — the two menu pages'
   blocks open ten bytes later on `TempLB` and the overlay's 108 bytes later on `img_Overlay`, so none of them ships a
