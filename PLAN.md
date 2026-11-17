@@ -12144,3 +12144,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   paragraph) + this note. One 1-second read of the 18 packages; no boot, no Ghidra.
 - **Next measurement:** the 67 `missing` names are small enough to type by hand -- whether they are locals'
   delegates, engine intrinsics the script calls without an export, or names this build genuinely dropped.
+
+### Execution notes (2026-11-17, a cast is not a call, and the 25 unresolved names type into three populations)
+
+- **Task.** The previous note's next measurement: type the disabled bodies' unresolved call names by hand --
+  locals' delegates, engine intrinsics the script calls without an export, or names this build dropped.
+- **The number the note named is sites, not names, and the largest group is not a name at all.** The 67 are
+  call sites; there are 47 distinct names behind them, and **21** of those are `Class`/`Enum`/`Struct` exports
+  of the corpus in cast syntax (`PlayerController(Owner)`, `ConstantColor(Shader(Target).SpecularityMask)`,
+  `EInputKey(Profile.UsableKeys[i])`, `Action_MoveToPoint(...)`, `HoldSpot(...)`) plus one built-in constructor
+  (`vect(1,0,0)`). The call pattern is an identifier in front of a parenthesis, so a conversion came in as a
+  call; `calls()` now takes the corpus's own type table and drops a name that some package exports as a type and
+  none as a `Function`.
+- **With the conversions out, the pair the page quoted moves by an order of magnitude -- the base rate was the
+  reader's.** The disabled bodies' 355 names become **320**, their unresolved sites **67 -> 32 (10.0%)**; the
+  control's **9,317** names become **8,289** and its unresolved **1,127 -> 99 (12.1% -> 1.2%)**, because
+  **1,028 of that 1,127 were casts**. So the disabled bodies' residue is **8.8 points above** a 1.2% live rate,
+  not at it: the comment is this build's text, and it calls functions this build does not carry. Both readings
+  are in the artifact (`disabled_calls_all`/`disabled_casts`, `control_calls_all`/`control_casts`) so the page
+  can quote the correction rather than a moved number.
+- **The 25 names that remain are typed by evidence the text carries, not by a table of names.** **9** are
+  declared as a `function`/`event`/`delegate` inside a block comment themselves -- caller and callee both
+  revisions the comment disabled (`TeamAI.PutOnDefense`, `TeamAI.GetPriorityAttackObjective`,
+  `PlayerController.SetupKeyBindings` under `#ifdefPC`, `Locale.DateTimeToMap`,
+  `StargateHover.AttachDriverToSeat`). **12** are member calls whose receiver's declared type declares no such
+  function: nine are one AI override API called on a `BotEnemy` from `TeamAI.SetOrders` (`ActivateStateOveride`,
+  `ActivateFearOveride`, `ActivateForceMelee` and their `DeActivate` counterparts, `DoCharge`,
+  `DoRangedAttack`, `DoRetreat`), and `SquadAIBasic.MergeWith`/`SetObjective` plus `string.Format` are the
+  other three. **4** are declared nowhere: `Screenprint`, `SetFreelanceScriptFor`, and the two casts to classes
+  the export table does not carry (`Viewport`, `StaticView` -- the live text spawns `"StargateGame.StaticView"`
+  by name, so the class came from outside this text). The receivers are read from the body's own `local`
+  declarations and its declaration's parameter list, which is what turns `S.MergeWith(...)` from "unresolved"
+  into a member call on a `SquadAIBasic`.
+- **Concentration is the finding.** `StargateGame.TeamAI.SetOrders` is the largest disabled body (2,669 bytes)
+  and holds **9 of the 12** member calls and **3 of the 9** commented declarations -- one function's commented
+  revision is the cut-content story here, not a scatter of names.
+- Tool (`type_index`, the type table in `calls()`, `param_types`, `receivers`, `residue_kind`, `residue_row`,
+  25 residue rows and 9 census rows) + `inventory/class_text_bodies.csv` regenerated (248 rows: 22 pairs, 158
+  disabled bodies, 25 residue, 43 census) + `docs/PACKAGE_SCRIPT_TEXT.md` (the generated block and its prose
+  paragraph) + this note. One 1.2-second read of the 18 packages' `ScriptText`; no boot, no Ghidra.
+- **Next measurement:** the nine `BotEnemy` override names are states as much as functions --
+  `StargateContent.JaffaBotHeavy` carries `DoCharge:` as a **state label**, not a function -- so the next read
+  is the bot classes' state labels against these nine names: if the vocabulary ships as states this build still
+  has, the commented `TeamAI.SetOrders` calls an API the package presents differently, and if it does not, it is
+  a dropped feature.
