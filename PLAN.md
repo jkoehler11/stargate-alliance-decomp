@@ -184,8 +184,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       that is the format's limit, not the decompiler's — instrumenting `FormatReplication` shows every one of the 79
       classes that lose a block has **`net=0`**: not one property carries `PropertyFlag.Net`, so the class record holds
       no group to reconstruct. They declare `persistent` groups, which are compile-time-only.
-      Remaining here: 3 values, all one `__OnXControllerEvent__Delegate` property whose tag type is
-      not a delegate type (`inventory/defaults_residue.csv`), 545 withheld blocks (whether the 535 that a type-first ranking would promote are
+      **The residue is empty and the census proves it** (`make defaults-residue` ->
+      `inventory/defaults_residue.csv`): the tool now re-renders every value of every clean block and writes one
+      `census` row beside its table -- **0 refused of 15,521 values over 1,664 blocks in 2,319 classes**. The three
+      `__OnXControllerEvent__Delegate` rows it was built for were a locator offset, not a value the renderer could not
+      read (U18's closing entries; `docs/CLASS_DEFAULTS.md`). Remaining here: 545 withheld blocks (whether the 535 that a type-first ranking would promote are
       real is measured but not settled — see the doc's "Not measured"), then `replication` blocks, state code and
       labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
@@ -11648,3 +11651,24 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool (`tools/map-name-values.py`: `--sweep`, `--report`, `--write-doc`/`--check-doc`, `--check` on six synthetic
   name tables) + `inventory/map_name_values.csv` (286 rows) + `docs/MAP_NAME_VALUES.md` + `make map-name-values` +
   `docs/CLASS_DEFAULTS.md` (the bullet is closed) + this note. Reads the map packages; no boot.
+
+### Execution notes (2026-11-16, the residue table is a census, and it refuses none of 15,521 values)
+
+- **Task.** PLAN 3.5's "Remaining here: 3 values" and `docs/CLASS_DEFAULTS.md`'s "whether the three residue classes
+  set that delegate" both described a residue that `inventory/defaults_residue.csv` no longer held: the artifact was
+  header-only, which reads as "the build has no residue" but only ever meant "the four rows this tool was seeded with
+  are gone". The tool took a hard-coded list, so the empty table carried no denominator.
+- **The census.** `tools/defaults-residue.py` now walks the corpus the way `defaults-emit.sweep()` does -- every
+  package, every `Class` export, `block_of`, then `render_value` per property -- and keeps the values the renderer
+  refuses. `--named` re-reads the four seed rows and `--for` reaches one of them.
+- **The finding.** **0 of 15,521** values are refused, over **1,664** clean blocks in **2,319** classes (5 s on the
+  desktop) -- the same 15,521 values `defaults-emit` renders. So the residue is closed by a measurement rather than
+  by an empty list, and the three `__OnXControllerEvent__Delegate` rows were a block start inside the record (U18: the
+  menu pages open ten bytes later on `TempLB`, the overlay 108 later on `img_Overlay`).
+- **The artifact carries its denominator.** The CSV's first row is `kind=census` holding `values`, `clean_blocks` and
+  `classes`, so the table and the count that makes an empty table a finding travel together; `--check` grew two
+  synthetic cases that write a CSV outside the tree and assert the census row is the first row and the totals are the
+  run's own.
+- Tool (`tools/defaults-residue.py`: the corpus by default, `--named`, the census row) + `inventory/defaults_residue.csv`
+  + `docs/CLASS_DEFAULTS.md` (the three rows closed, the "Not measured" bullet answered) + this note. Reads the
+  packages; no boot.

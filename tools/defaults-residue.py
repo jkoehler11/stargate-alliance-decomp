@@ -1,28 +1,39 @@
-#!/usr/bin/env python3
-"""Diagnose the `defaultproperties` values that do not render (PLAN 3.5's last values).
+"""Census the `defaultproperties` values that do not render (PLAN 3.5's last values).
 
-`tools/defaults-emit.py` renders 15,517 of 15,521 class-level values; four are left, and both
-`docs/CLASS_DEFAULTS.md` and PLAN 3.5 name them but not what their bytes are:
+`tools/defaults-emit.py` renders **15,521 of 15,521** class-level values, and this tool is what says so:
+it re-renders every value of every clean block in the 18 packages and keeps the ones the renderer
+refuses. The table it writes is therefore a census with a denominator, not a list of known bad rows --
+an empty table with `values = 15521` beside it is a finding, an empty table alone is not.
+
+It was built for four named rows and still reaches them (`--named`, `--for`), because their shapes are
+what the first version measured:
 
     Engine.TextToSpeechAlias.Aliases   array<SpeechReplacement>, 511 bytes, "does not tile at any width"
     GUI.MenuItemOverlay                a delegate tag typed Invalid
     StargateMenus.ExtrasPage           a delegate tag typed Invalid
     StargateMenus.CreditsPage          a delegate tag typed Invalid
 
-This tool reports the *shape* of each residue value without printing any of it: the tag's type byte
+All four are now closed -- the two menu pages open their block ten bytes later (`docs/UNKNOWNS.md` U18)
+and the array tiles at its own grammar -- so the corpus walk, not the seed list, is what the artifact
+records.
+
+For a value it does keep, the row reports the *shape* without printing any of it: the tag's type byte
 and size class, the declared type from `inventory/class_properties.csv`, the width of the value's
 first compact index, and every tiling that closes the value region exactly -- a count plus fixed-width
 elements (`count x w`), a tagged struct stream, or a run of compact indices. A tiling that lands
 exactly on the declared size is a candidate layout; one that does not is a negative, and both are
 recorded, so a session that guessed wrong does not have to guess the same way twice.
 
-    python3 tools/defaults-residue.py DUMP/System                  # the four named rows
+    python3 tools/defaults-residue.py DUMP/System                  # every clean block in the corpus
+    python3 tools/defaults-residue.py DUMP/System --named          # only the four seed rows
     python3 tools/defaults-residue.py DUMP/System --for Engine.TextToSpeechAlias
     python3 tools/defaults-residue.py DUMP/System --csv inventory/defaults_residue.csv
     python3 tools/defaults-residue.py --check                       # synthetic self-test, no dump
 
-Values are game data: the table prints types, widths and offsets, never a value. `--show` adds the
-resolved names of a value's compact indices, for a terminal session only.
+The CSV carries one `census` row -- values, clean blocks and classes walked -- ahead of the residue
+rows, so the denominator travels with the table. Values are game data: the table prints types, widths
+and offsets, never a value. `--show` adds the resolved names of a value's compact indices, for a
+terminal session only.
 """
 import argparse
 import csv
@@ -50,16 +61,18 @@ de = load_tool("defaults_emit", "defaults-emit.py")
 ps = cd.load_prop_stream()
 
 # The residue `docs/CLASS_DEFAULTS.md` records ("The last 4 values"): (package, class, property).
-RESIDUE = [
+# The four rows this tool was built for; `--named` re-reads them and `--for` reaches one of them.
+SEEDS = [
     ("Engine", "TextToSpeechAlias", "Aliases"),
     ("GUI", "MenuItemOverlay", None),
     ("StargateMenus", "ExtrasPage", None),
     ("StargateMenus", "CreditsPage", None),
 ]
 
-COLUMNS = ["package", "class", "property", "declared", "tag_type", "type_byte", "size_class",
+COLUMNS = ["kind", "package", "class", "property", "declared", "tag_type", "type_byte", "size_class",
            "flags", "size", "nested_index", "index_bytes", "greedy_indices", "greedy_bytes", "count",
-           "zero_bytes", "fixed_widths", "tagged_elements", "value_offset"]
+           "zero_bytes", "fixed_widths", "tagged_elements", "value_offset",
+           "values", "clean_blocks", "classes"]
 
 
 def compact_width(buf, off):
@@ -174,6 +187,55 @@ def residue_rows(system_dir, wanted, show=False):
     return rows
 
 
+def census_rows(system_dir, show=False):
+    """Every class-level value the renderer refuses, over the whole corpus.
+
+    The walk mirrors `defaults-emit.sweep()`: same packages, same `block_of` call, same `render_value`
+    and the same context, so a value counted here is a value the emitter left unrendered -- and the
+    totals beside it are the denominator that makes an empty table mean something.
+    """
+    supers = cd.super_map()
+    declared_all = cd.declared_properties()
+    props_meta = de.property_meta()
+    enums, _conflicts = de.global_enums(system_dir)
+    ctx = {"enums": enums, "classes": de.class_set()}
+    rows = []
+    tot = {"classes": 0, "clean_blocks": 0, "values": 0}
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        pkg_name = fname[:-2]
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            cls = pkg.name(exp["name"])
+            tot["classes"] += 1
+            got, _reason = de.block_of(pkg, cls, supers, declared_all, want_score=True)
+            if got is None:
+                continue
+            props, start, clean = got
+            if not clean:
+                continue
+            tot["clean_blocks"] += 1
+            meta_of = de.prop_meta_for(cls, supers, props_meta)
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            buf = data[start:]
+            for p in props:
+                tot["values"] += 1
+                meta = meta_of(p["name"])
+                text, _note = de.render_value(pkg, p, meta, buf, ctx)
+                if text is not None:
+                    continue
+                row = shape_row(pkg, pkg_name, cls, p, meta, buf, show)
+                if show:
+                    off = p.get("value_offset") or 0
+                    row["hex"] = buf[off:off + (p.get("size") or 0)][:96].hex(" ")
+                rows.append(row)
+    return rows, tot
+
+
 def shape_row(pkg, pkg_name, cls, p, meta, buf, show=False):
     off = p.get("value_offset") or 0
     size = p.get("size") or 0
@@ -187,6 +249,7 @@ def shape_row(pkg, pkg_name, cls, p, meta, buf, show=False):
     info = p.get("type_byte", 0)
     value = buf[off:off + size]
     row = {
+        "kind": "residue",
         "package": pkg_name,
         "class": cls,
         "property": p["name"],
@@ -214,15 +277,20 @@ def shape_row(pkg, pkg_name, cls, p, meta, buf, show=False):
     return row
 
 
-def emit(rows, path):
+def emit(rows, path, tot=None):
+    """Write the residue rows, preceded by one `census` row carrying the run's denominator."""
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNS, lineterminator="\n")
         w.writeheader()
+        if tot is not None:
+            row = {"kind": "census"}
+            row.update({k: tot.get(k, "") for k in ("values", "clean_blocks", "classes")})
+            w.writerow({k: row.get(k, "") for k in COLUMNS})
         for r in rows:
             w.writerow({k: r.get(k, "") for k in COLUMNS})
 
 
-def report(rows):
+def report(rows, tot=None):
     head = ("%-14s %-22s %-30s %-10s %-11s %6s %4s %3s %5s %5s %5s %s"
             % ("package", "class", "property", "declared", "tag", "size", "cls", "f", "zero",
                "grdy", "tagd", "tilings"))
@@ -237,6 +305,11 @@ def report(rows):
                  r["greedy_indices"], r["tagged_elements"], r["fixed_widths"] or "-"))
     print()
     print("%d unrendered value(s)" % len(rows))
+    if tot is not None:
+        print("%d value(s) over %d clean block(s) in %d class(es): %d rendered, %d refused; %d class(es) whose block "
+              "is withheld or absent are outside this walk"
+              % (tot["values"], tot["clean_blocks"], tot["classes"], tot["values"] - len(rows), len(rows),
+                 tot["classes"] - tot["clean_blocks"]))
 
 
 def self_test():
@@ -252,7 +325,22 @@ def self_test():
     assert fixed_widths(bytes([0x02] + [0] * 8), 0, 9) == [(2, 4, 2)], \
         "a count of two over eight body bytes is a two-wide, wait, four-wide element"
     assert fixed_widths(bytes([0x03] + [0] * 8), 0, 9) == [], "a count that does not divide is no width"
-    print("self-test: ok (%d synthetic cases)" % 8)
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp()
+    try:
+        path = os.path.join(tmp, "residue.csv")
+        emit([{"kind": "residue", "package": "P", "class": "C", "property": "X"}], path,
+             {"values": 7, "clean_blocks": 3, "classes": 4})
+        lines = open(path, newline="").read().splitlines()
+        assert len(lines) == 3, "a census row plus one residue row is two rows under the header"
+        head = dict(zip(COLUMNS, lines[1].split(",")))
+        assert head["kind"] == "census" and head["values"] == "7", \
+            "the census row must carry the run's own totals"
+        assert dict(zip(COLUMNS, lines[2].split(",")))["kind"] == "residue"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    print("self-test: ok (%d synthetic cases)" % 10)
     return 0
 
 
@@ -261,6 +349,8 @@ def main():
     ap.add_argument("dump", nargs="?", help="DUMP/System directory")
     ap.add_argument("--for", dest="only", action="append", default=[], metavar="PACKAGE.CLASS",
                     help="restrict to one class (repeatable)")
+    ap.add_argument("--named", action="store_true",
+                    help="only the four seed rows this tool was built for, not the corpus census")
     ap.add_argument("--csv", help="write the rows here")
     ap.add_argument("--show", action="store_true", help="also print the first index's resolved name")
     ap.add_argument("--check", action="store_true", help="synthetic self-test, no dump needed")
@@ -269,18 +359,22 @@ def main():
         return self_test()
     if not args.dump:
         ap.error("a DUMP/System directory is required unless --check is given")
-    wanted = RESIDUE
-    if args.only:
-        wanted = []
-        for spec in args.only:
-            if "." not in spec:
-                ap.error("--class wants PACKAGE.CLASS")
-            pkg_name, cls = spec.split(".", 1)
-            wanted.append((pkg_name, cls, None))
-    rows = residue_rows(args.dump, wanted, show=args.show)
-    report(rows)
+    tot = None
+    if args.only or args.named:
+        wanted = SEEDS
+        if args.only:
+            wanted = []
+            for spec in args.only:
+                if "." not in spec:
+                    ap.error("--class wants PACKAGE.CLASS")
+                pkg_name, cls = spec.split(".", 1)
+                wanted.append((pkg_name, cls, None))
+        rows = residue_rows(args.dump, wanted, show=args.show)
+    else:
+        rows, tot = census_rows(args.dump, show=args.show)
+    report(rows, tot)
     if args.csv:
-        emit(rows, args.csv)
+        emit(rows, args.csv, tot)
         print("wrote %s" % args.csv)
     return 0
 
