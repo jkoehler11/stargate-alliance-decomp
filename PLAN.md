@@ -207,6 +207,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       40,762, no ternary anywhere in the corpus) and the ten prefix sites are the parenthesised operands, so the
       renderer knows the form. Every postfix site names its own operand (1,238 a name, 815 a call or group), so the
       correction is a text move, not a rebuilt tree; the renderer is the pinned UELib, which is where 3.5 files it.
+      **And the move is run over the whole corpus** (`make decompiler-notfix` -> `inventory/decompiler_notfix.csv`):
+      `tools/decompiler-notfix.py` writes a corrected tree with 2,056 sites moved, **0 refused and a byte delta of 0**
+      (a moved character, so every file keeps its size), and re-reading the result with the census returns **2,063
+      prefix / 0 postfix** with a second pass moving 0 -- the reconstruction is then valid UnrealScript as far as this
+      operator goes, which is what PLAN 6.1's compile loop was missing.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -11741,6 +11746,34 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool (`tools/class-defaults.py`: `artifact_totals`, `render_totals`, `splice_doc`, `write_doc`, `doc_check`,
   `--write-doc`; `--check` runs the page gate after the chooser self-test) + `docs/CLASS_DEFAULTS.md` + this note.
   Reads two committed CSVs and the page: no dump, no boot, and `--check` writes nothing.
+
+### Execution notes (2026-11-17, the correction is a one-character move and it runs over all 2,319 classes)
+
+- **The last run left the fix as the next measurement; this is it.** A postfix `!` names its own operand, so the
+  correction needs no expression tree -- and the renderer's position is one link further out than the first reading
+  assumed: the `!` sits at the end of the **receiver**, not of the whole expression (`PlayerController(C)!.
+  IsSpectating()`, `Class'X'!.static.F()`, `Array[i]!.Field`), so a pass that moves it in front of the *last name*
+  emits `Array[i].!Field`, which is not a form either. `tools/decompiler-notfix.py` walks back over groups, name
+  literals and dotted links to the front of the chain, and the corrected text is what the bytecode's postfix
+  selector-plus-unary nesting implies: `!Array[i].Field`.
+- **The run:** 2,319 files, **2,056 sites moved, 0 refused, byte delta 0** -- a move is one character, so every file
+  keeps its size and a diff of the two trees is exactly the sites the manifest counts
+  (`inventory/decompiler_notfix.csv`, one row per package plus a census row).
+- **The proof is the census re-read, not the pass's own count:** `tools/decompiler-operators.py` on
+  `$WORK/UnrealScript-fixed` answers **2,063 prefix / 0 postfix** (the 2,063 negations the previous note measured as
+  recovered), and a second `decompiler-notfix` run over the corrected tree moves **0** sites -- the pass is a fixpoint
+  and the residue is empty rather than filtered.
+- **A site it cannot delimit is refused and named, with a count.** The `--check` is a synthetic class carrying the six
+  shapes the scanner has to separate -- a prefix `!` left alone, `!=`, a `!` inside a string, one inside a line
+  comment, one inside a block comment, and a class the tree does not have -- plus a refusal (`"x"!`: a string is not a
+  bool), by exact text comparison, and it asserts idempotency by re-running `rewrite()` on its own output.
+- **What this does not do.** It does not touch the renderer: the corrected tree is derived output under `$WORK` and
+  never committed, so a later `make decompile` reintroduces the 2,056 sites until the UELib patch lands. It also does
+  not move the ten prefix sites that already exist, and cannot place a `!` whose primary is a string literal.
+- Tool (`tools/decompiler-notfix.py`: the comment/quote scanner, `operand_start` over groups/literals/links,
+  `rewrite`, `run`, the manifest writer, the synthetic `--check`) + `inventory/decompiler_notfix.csv` + `make
+  decompiler-notfix` + `docs/DECOMPILER.md` (the correction subsection) + this note. Reads a `$WORK` tree; no dump,
+  no boot.
 
 ### Execution notes (2026-11-17, the negation is reconstructed and written after its operand)
 
