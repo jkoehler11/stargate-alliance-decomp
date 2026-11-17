@@ -1791,6 +1791,27 @@ length-preserving mask so both counts read the same offsets) and then counts the
 **The live text spells 4,051 `else`** over the 2,319 classes whose `ScriptText` parses, against the **4,047** arms the bytecode carries: **800 of 967** classes the branch census also has agree exactly on the count (**82.7%**), **45** spell more and **122** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 472 function bodies between them. Per class the source is therefore an **82.7%** oracle, and the corpus totals agree to 4 in 4,047 only because the two sides cancel.
 
 **One `JumpIfNot` per condition term is the codegen's rule and it holds**: `if` + `while` + `for` over those 967 joined classes is **18,452** terms for **17,463** `JumpIfNot` tokens, exact on **820** classes (**84.8%**). **424** of them carry no `&&`/`||` and are exact **412** times (**97.2%**), while the **543** that do carry one are exact **408** times (**75.1%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming a non-statement; the 3,686 `&&` and 1,568 `||` in this text are therefore **0** arms, and the model's 989 surplus terms sit in the 147 joined classes that are not exact -- text a class ships and its package does not compile.
+
+| package | joined | agree | more | less | text `else` | arms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| AmbientCreatures | 18 | 8 | 1 | 1 | 32 | 32 |
+| Core | 7 | 2 | 0 | 0 | 1 | 1 |
+| Editor | 16 | 12 | 0 | 0 | 12 | 12 |
+| Engine | 367 | 118 | 4 | 37 | 889 | 986 |
+| Fire | 7 | 0 | 0 | 0 | 0 | 0 |
+| GUI | 148 | 48 | 2 | 7 | 216 | 246 |
+| GamePlay | 262 | 76 | 1 | 4 | 91 | 90 |
+| IpDrv | 14 | 6 | 0 | 2 | 39 | 44 |
+| Sharpeffects | 158 | 6 | 0 | 0 | 11 | 11 |
+| StargateContent | 567 | 164 | 13 | 18 | 550 | 514 |
+| StargateGame | 306 | 149 | 11 | 39 | 1,587 | 1,531 |
+| StargateMenus | 98 | 64 | 0 | 3 | 76 | 79 |
+| StargateVehicles | 142 | 53 | 13 | 1 | 219 | 156 |
+| Stargateeffects | 77 | 11 | 0 | 0 | 6 | 6 |
+| UDebugMenu | 38 | 32 | 0 | 0 | 90 | 90 |
+| UPreview | 4 | 4 | 0 | 0 | 5 | 5 |
+| UWindow | 78 | 47 | 0 | 10 | 227 | 244 |
+| UnrealEd | 12 | 0 | 0 | 0 | 0 | 0 |
 <!-- /generated:text-branches -->
 
 **What the comparison is worth.** The two corpora agreeing is a cancellation, not an oracle: the classes that
@@ -1800,6 +1821,13 @@ authority for what the author wrote.
 
 **The no-branch population is a declaration set, not a join hole.** 1,105 of those classes are `functions=0` in
 `inventory/classes.csv`, so a join over the branch census has nothing to join there rather than something it lost.
+
+**Where the disagreement lives.** The one-sided classes cluster by package and by kind of code. `Engine` carries
+41 of the 167 (4 more, 37 fewer) and `StargateGame` 50 (11/39), so the framework's text is the side that *misses*
+arms the compiler emitted, while `StargateVehicles` is the one package where the text runs far ahead -- 219 `else`
+against 156 arms, 13 classes more and 1 fewer -- and that is the game's bot code. `Fire` and `UnrealEd` spell no
+`else` on either side at all. A rebuild that graded itself against the text would therefore be wrong exactly where
+the bots are, which is the part of this build nobody else has a reference for.
 
 **The surplus is per class, not per branch.** The 989 terms the model over-counts sit in 147 of the 967 joined
 classes rather than spread across the corpus -- one class contributes 164 of them -- which is the shape of a class

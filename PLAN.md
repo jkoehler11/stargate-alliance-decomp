@@ -12324,6 +12324,27 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, who the disagreement belongs to — and a pointer already closed)
+
+- **Task.** The note above shipped the text/bytecode join as a corpus total; the owner question is per package, and
+  the class rows already carry the key. This aggregates them into `kind=package` rows and a table in the page.
+- **The distribution.** The 167 one-sided classes are not spread evenly: `Engine` 41 (4 more, 37 fewer),
+  `StargateGame` 50 (11/39), `StargateContent` 31 (13/18), `StargateVehicles` 14 (13/1). The `more` side is the
+  game's bot code -- `StargateVehicles` spells 219 `else` where it compiles 156 -- and the `fewer` side is the
+  framework classes, where the bytecode carries arms the text does not spell (`Engine` 889 against 986).
+  `Fire` and `UnrealEd` spell 0 `else` on both sides, which is what a stock or native-only text looks like.
+- **A pointer in the note above is already closed.** Its next measurement was the label jumps; `tools/jump-census.py`
+  measured **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens across the corpus, so a source `Goto`
+  has no label token to name and the 169 text `Goto`s lowered to ordinary `Jump` offsets. Nothing is left to
+  measure there -- the next read is below instead.
+- Tool (`package_table`, the per-package rows, one more `--check` case) + 18 package rows in
+  `inventory/text_branches.csv` + the table in the page's block + this note.
+- **Next measurement:** the `fewer` population as a class-set test, which the artifact already carries --
+  `text_functions` and `record_functions` per class. For the 122 `fewer` classes: how many declare fewer functions
+  than the record has? A class whose text declares the record's functions and still spells fewer `else`s is a text
+  revision; one that declares fewer is a body the package gained, and the two need different answers. One read of
+  the committed CSV, no dump.
+
 ### Execution notes (2026-11-17, the text control — `else`, `&&` and `||` against the bytes)
 
 - **Task.** The branch census's next measurement: count `else` in the classes' live `ScriptText` (comment-aware)

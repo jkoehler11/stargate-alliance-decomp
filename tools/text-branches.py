@@ -49,6 +49,7 @@ FIELDS = ["kind", "package", "class", "live_else", "comment_else", "and", "or", 
 
 CENSUS_NOTE = {
     "classes": "classes whose `ScriptText` was readable",
+    "packages": "packages with at least one joined class",
     "joined": "of those, classes the branch census also has",
     "agree": "classes whose live text spells exactly the `else` arms the bytecode has",
     "more": "classes whose live text spells more `else` than the bytecode has arms",
@@ -263,8 +264,28 @@ def join(texts, arms, branch_census, jumpifnot, records):
             census["with_and_or"] += 1
             census["with_and_or_exact"] += 1 if exact else 0
         rows.append(row)
-    out = list(rows)
-    for k in ("classes", "joined", "agree", "more", "less", "no_branch", "arms_no_text", "text_else",
+    # Per-package rows: the join is a per-class test, but which package is a worse oracle is the question a
+    # rebuild's owner asks, and it is a sum over the rows above.
+    per = collections.defaultdict(collections.Counter)
+    for row in rows:
+        if not row["class"] or row["verdict"] == "no-text":
+            continue
+        c = per[row["package"]]
+        c["classes"] += 1
+        c[row["verdict"]] += 1
+        c["text_else"] += int(row["live_else"])
+        c["byte_else"] += int(row["byte_else"])
+        c["terms"] += int(row["terms"])
+    pkg_rows = []
+    for name in sorted(per):
+        c = per[name]
+        pkg_rows.append({"kind": "package", "package": name, "live_else": c["text_else"],
+                         "byte_else": c["byte_else"], "terms": c["terms"], "count": c["classes"],
+                         "note": "agree %d, more %d, less %d, no-branch %d"
+                                 % (c["agree"], c["more"], c["less"], c["no-branch"])})
+    census["packages"] = len(pkg_rows)
+    out = rows + pkg_rows
+    for k in ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text", "text_else",
               "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else", "text_functions",
               "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
               "byte_empty", "byte_expression", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
@@ -309,7 +330,7 @@ def doc_block(rows):
     classes = count(rows, "classes")
     if not classes:
         return "\n(no text-branch census rows)\n"
-    return ("\n**The live text spells %s `else`** over the %s classes whose `ScriptText` parses, against the "
+    body = ("\n**The live text spells %s `else`** over the %s classes whose `ScriptText` parses, against the "
             "**%s** arms the bytecode carries: **%s of %s** classes the branch census also has agree exactly on "
             "the count (**%s%%**), **%s** spell more and **%s** fewer, and %s more carry text with no branch at "
             "all in the bytecode -- text that declares %s function bodies between them. Per class the source is "
@@ -322,8 +343,8 @@ def doc_block(rows):
             "boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming "
             "a non-statement; the %s `&&` and %s `||` in this text are therefore **0** arms, and the model's %s "
             "surplus terms sit in the %s joined classes that are not exact -- text a class ships and its package "
-            "does not compile.\n"
-            % (comma(count(rows, "text_else")), comma(classes), comma(count(rows, "byte_else")),
+            "does not compile.\n")
+    body = body % (comma(count(rows, "text_else")), comma(classes), comma(count(rows, "byte_else")),
                comma(count(rows, "agree")), comma(count(rows, "joined")),
                "%.1f" % pct(count(rows, "agree"), count(rows, "joined")), comma(count(rows, "more")),
                comma(count(rows, "less")), comma(count(rows, "no_branch")),
@@ -338,7 +359,24 @@ def doc_block(rows):
                "%.1f" % pct(count(rows, "with_and_or_exact"), count(rows, "with_and_or")),
                comma(count(rows, "and")), comma(count(rows, "or")),
                comma(count(rows, "terms") - count(rows, "jumpifnot")),
-               comma(count(rows, "joined") - count(rows, "terms_exact"))))
+               comma(count(rows, "joined") - count(rows, "terms_exact")))
+    return body + package_table(rows)
+
+
+def package_table(rows):
+    """A markdown table of the joined classes per package, so the disagreement has an owner."""
+    lines = ["\n| package | joined | agree | more | less | text `else` | arms |",
+             "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    for r in [x for x in rows if x.get("kind") == "package"]:
+        note = {}
+        for part in (r["note"] or "").split(","):
+            k, _, v = part.strip().partition(" ")
+            note[k] = v
+        lines.append("| %s | %s | %s | %s | %s | %s | %s |"
+                     % (r["package"], comma(r["count"]), comma(note.get("agree", 0)),
+                        comma(note.get("more", 0)), comma(note.get("less", 0)), comma(r["live_else"]),
+                        comma(r["byte_else"])))
+    return "\n".join(lines) + "\n"
 
 
 def splice(path, block):
@@ -406,7 +444,10 @@ def selftest():
              ("while", 2), ("for", 1), ("terms", 9), ("pp_else", 1), ("text_functions", 5),
              ("no_branch_functions", 1), ("no_branch_terms", 0), ("max_gap", 2), ("byte_else", 3), ("byte_if", 4),
              ("byte_empty", 0), ("byte_expression", 0), ("jumpifnot", 7), ("terms_exact", 2),
-             ("no_and_or", 1), ("no_and_or_exact", 1), ("with_and_or", 2), ("with_and_or_exact", 1))]
+             ("no_and_or", 1), ("no_and_or_exact", 1), ("with_and_or", 2), ("with_and_or_exact", 1),
+             ("packages", 1))]
+    rows.append({"kind": "package", "package": "Fixture", "live_else": 3, "byte_else": 2, "terms": 4,
+                 "count": 2, "note": "agree 1, more 1, less 0, no-branch 0"})
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "rows.csv")
