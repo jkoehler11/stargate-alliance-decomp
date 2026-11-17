@@ -192,9 +192,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       promotes **none** of them (`make class-defaults-promoted`: 1,664 clean blocks and 15,521 properties under
       either ordering, so the 535 was never this rule) and their published starts are one-tag blocks whose type
       refusals are five singleton pairs (`make class-defaults-contradictions`: 313 of 319 starts hold one tag, 5
-      tags of 330 contradict their kind) — so what is left there is the two-property floor and the 336 classes with
-      no start at all, not a map correction; then `replication` blocks, state code and labels, latent calls,
-      operator precedence.
+      tags of 330 contradict their kind), so no map correction recovers them. **The 334 with no start at all (of the 336 with no block) are
+      measured from the payload too** (`make class-defaults-nostream` -> `inventory/class_defaults_nostream.csv`):
+      281 hold not one declared property name anywhere in 10,686 parses and the names their best parses yield are the
+      record's own references (packages 11.7% against 0.1% of the name table, classes 14.9% against 8.1%, declared
+      properties 16.6% against 36.5%), so the two-property floor withholds the 285 one-tag classes and these 334 have
+      no start to promote -- what is left for them is the record's end, not a floor or a map correction; then
+      `replication` blocks, state code and labels, latent calls, operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -11703,6 +11707,38 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   withdrawn from `docs/CLASS_DEFAULTS.md` rather than carried forward.
 - **Next:** 3.5's remaining `replication` blocks, state code and labels, latent calls, operator precedence. The 545
   withheld classes stay withheld on the record's own evidence (`inventory/class_defaults_misses.csv`).
+
+### Execution notes (2026-11-17, the 334 have no start because their payloads hold no tag stream)
+
+- **The measurement the last note named.** The 334 classes `class_defaults_misses.csv` calls `empty-block` were the
+  population left after the type map was cleared, and the question was what their payloads hold. `tools/
+  class-defaults-nostream.py` (`make class-defaults-nostream`, `inventory/class_defaults_nostream.csv`) reads each
+  one's payload as a tag stream at **every** offset and classifies every name it yields, so the answer is about the
+  bytes and not about the locator: **10,686 valid parses over 61,873 payload bytes, 12,928 tags, and not one parse in
+  one payload holds two declared property names.**
+- **281 of the 334 hold not a single one.** The number `diagnose()` computes but never published is `max_declared`, and
+  it splits the population **281 at 0 / 53 at 1**. The 53 are record bytes that decode to one declared name, not a
+  block -- `HerdAnimal`'s sits at offset 5 of 1,365 with 1,353 bytes after it -- and only 5 of the 53 leave the
+  payload's last byte to a one-tag parse, which `single_declared_block()` refuses on type anyway.
+- **What they do name is the record.** The best parse of each payload, by kind over 778 names: properties 129 (16.6%),
+  classes 116 (14.9%), functions 114 (14.7%), **packages 91 (11.7%)**, other 327 (42.0%); the packages' name tables run
+  36.5 / 8.1 / 18.1 / **0.1** / 36.2 over the same kinds. A property stream is 100% declared properties by
+  construction, so 16.6% with package references at 155x their base rate is a reader standing in the record, whose
+  references are what it extends and what it calls: `UWindowWindow` opens `Core;Engine;System`, `CheatManager` yields
+  six function names, `BotRep` reads `Min;Engine;Tweak_Misc_BotEnemy`.
+- **The controls are what make the zero a reading.** The same sweep resolves the published start at two declared names
+  on **42 of 42** fully-declared classes and puts **284 of 285** `single-declared` classes at exactly one declared name
+  (the 285th, `Engine.JumpDest`, has a two-declared parse elsewhere in its payload: its one-tag label is about the start
+  the locator published, not the payload). A blind reader would fail the first control, and a reader that cannot see a
+  one-tag block would fail the second.
+- **So the floor is not what withholds them.** `MIN_PROPERTIES = 2` withholds the 285 one-tag classes; these 334 have
+  no start for a floor, a type map or a name-map correction to promote. What remains for them is the record's end,
+  where 153 payloads are inside the 100-byte window a record alone can account for and 181 are not -- unchanged by
+  this measurement and still the open half.
+- Tool (`tools/class-defaults-nostream.py`: `scan` at every offset, the name-kind join, the two controls, the
+  record-window shape, a dump-free `--check` reconciling the class rows against the census) +
+  `inventory/class_defaults_nostream.csv` (335 rows) + `make class-defaults-nostream` + `docs/CLASS_DEFAULTS.md` (new
+  section) + this note. Reads the packages; no boot, no Ghidra round, no property value decoded.
 
 ### Execution notes (2026-11-16, the withheld starts are one-tag blocks, and the type map refuses five tags out of 330)
 

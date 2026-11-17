@@ -523,6 +523,53 @@ those two reasons do not mean "a block the renderer could not match" — their i
 the 1,692 / 517 split, the six names behind it and the per-reason breakdown, and `--check` covers the read with a
 declared name, a non-property name and an offset past the payload.
 
+### The 334 payloads with no start name the record's own references
+
+`empty-block` says only what the locator did *not* find, so `tools/class-defaults-nostream.py`
+(`make class-defaults-nostream`, `inventory/class_defaults_nostream.csv`) reads the same payloads as tag streams at
+every offset and asks what the names it yields are:
+
+| measure | value |
+|---|---:|
+| classes / payload bytes | 334 / 61,873 |
+| valid parses / tags read | 10,686 / 12,928 |
+| the most declared names any single parse holds: **0** | **281** |
+| the same, **1** | **53** |
+| payload at or below the record window (100 B) | 153 (181 longer) |
+
+A property block is *all* declared property names by construction, so its share would sit near 100%; the best parse of
+each payload instead names the package's own references. Over 778 names, against each package's name table:
+
+| kind | the payloads | the name table |
+|---|---:|---:|
+| a property of some class | 129 (16.6%) | 36.5% |
+| a class | 116 (14.9%) | 8.1% |
+| a function | 114 (14.7%) | 18.1% |
+| a package | 91 (11.7%) | **0.1%** |
+| a state | 1 | 1.0% |
+| none of those | 327 (42.0%) | 36.2% |
+
+**Package names at 155 times their base rate, classes at 1.8 times, declared properties at half** is the record
+showing through: a class record carries references to the imports it extends, the classes it names and the functions it
+declares, which is what a reader standing inside it decodes as tags. The samples say the same: `UWindow.UWindowWindow`
+opens on `Core;Engine;System`, `Engine.CheatManager` yields six function names (`Timer`, `AltFire`, `PostBeginPlay`),
+`StargateGame.BotRep` on `Min;Engine;Tweak_Misc_BotEnemy`.
+
+Both directions are controlled, because a scan that finds a block only where the answer is already known proves
+nothing: the same sweep finds the published start among the two-declared parses on **42 of 42** of the classes whose
+block is fully declared, and resolves **284 of 285** `single-declared` classes at exactly one declared name. The 285th,
+`Engine.JumpDest`, has a two-declared parse elsewhere in its payload -- the one-tag label records the start the locator
+published, not a property of the whole payload. So the 281 zeros are the payload's shape, not the reader's blindness.
+
+The 53 that hold one declared name hold it as a record byte that happens to decode to one, not a block: `HerdAnimal`'s
+sits at **offset 5 of 1,365** with 1,353 bytes after it, and only 5 of the 53 leave the payload's last byte to a
+one-tag parse -- the shape `single_declared_block()` already refuses on type. **What this settles** is which rule
+withholds these classes: the two-property floor withholds the 285 one-tag ones, and these 334 have no start for a
+floor, a map correction or a type map to promote -- what is left for them is the record's end, and the tag grammar
+cannot fix it (the earlier section's saturation: every payload ends in `00`, so a one-byte empty parse is free
+everywhere). **What it does not settle** is whether a record accounts for each payload whole; 153 are inside the
+window where one can, and the other 181 still have bytes no parse explains.
+
 ## The bytes in front of a block start, measured
 
 `tools/class-tail.py` reads the four fields `UClass::Serialize` writes *before* the defaults (`docs/NATIVE_VM.md`)
