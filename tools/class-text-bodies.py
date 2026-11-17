@@ -45,7 +45,9 @@ DOC_START = "<!-- generated:class-text-bodies -->"
 DOC_END = "<!-- /generated:class-text-bodies -->"
 
 FIELDS = ["kind", "package", "class", "name", "verdict", "c_ops", "c_stmts", "c_kw", "c_bytes",
-          "l_ops", "l_stmts", "l_kw", "l_bytes", "keys", "count", "note"]
+          "l_ops", "l_stmts", "l_kw", "l_bytes", "c_calls", "c_calls_own", "c_calls_elsewhere",
+          "c_calls_missing", "l_calls", "l_calls_own", "l_calls_elsewhere", "l_calls_missing",
+          "keys", "count", "note"]
 
 # The same declaration pattern `class-text-comments.py` counts, so the two censuses describe one population.
 FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
@@ -53,6 +55,7 @@ FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \
 BLOCK = re.compile(r"/\*.*?\*/", re.S)
 LINE_COMMENT = re.compile(r"//[^\n]*")
 KEYWORD = re.compile(r"\b(?:if|else|for|while|switch|case|return|do)\b")
+LITERAL = re.compile(r"\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'")
 # A live body this short is a trailer, not a revision: the class kept the declaration and emptied the body.
 STUB_BYTES = 32
 
@@ -129,6 +132,40 @@ def statements(body):
     return semis, len(KEYWORD.findall(body))
 
 
+# A call is an identifier in front of a parenthesis. The keywords that do it are not calls, and `super` is the
+# archive's own constructor form rather than a name the export table carries.
+CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+NOT_A_CALL = {"if", "else", "for", "foreach", "while", "switch", "case", "return", "do", "goto", "break",
+              "continue", "class", "function", "state", "event", "defaultproperties", "simulated", "static",
+              "final", "latent", "native", "local", "super", "new", "exec", "assert", "const", "var", "out",
+              "optional", "coerce", "config", "globalconfig", "byte", "bool", "int", "float", "string", "name",
+              "array", "struct", "enum", "delegate"}
+
+
+def calls(body):
+    """The distinct call names a body makes, string literals removed."""
+    text = LITERAL.sub('""', body)
+    return {m.group(1).lower() for m in CALL.finditer(text) if m.group(1).lower() not in NOT_A_CALL}
+
+
+def resolve(names, package, cls, index):
+    """(own, elsewhere, missing) for a set of call names against the corpus's `Function` exports.
+
+    `own` is a function this class declares (a state's counted to the class), `elsewhere` one some other class
+    of the corpus declares, `missing` one no class in the eighteen packages declares.
+    """
+    own = elsewhere = missing = 0
+    for n in names:
+        keys = index.get(n, ())
+        if not keys:
+            missing += 1
+        elif (package, cls.lower()) in keys:
+            own += 1
+        else:
+            elsewhere += 1
+    return own, elsewhere, missing
+
+
 def shape(body, ops):
     """One body's row columns: the operator multiset, the statement counts and the byte length."""
     c = ops.counts(body)
@@ -158,30 +195,61 @@ def pair_row(package, cls, name, cshape, lshape, verdict):
     return dict(kind="pair", package=package, **{"class": cls}, name=name, verdict=verdict,
                 c_ops=cshape["ops"], c_stmts=cshape["stmts"], c_kw=cshape["kw"], c_bytes=cshape["bytes"],
                 l_ops=lshape["ops"], l_stmts=lshape["stmts"], l_kw=lshape["kw"], l_bytes=lshape["bytes"],
+                c_calls=cshape["calls"], c_calls_own=cshape["own"], c_calls_elsewhere=cshape["elsewhere"],
+                c_calls_missing=cshape["missing"],
+                l_calls=lshape["calls"], l_calls_own=lshape["own"], l_calls_elsewhere=lshape["elsewhere"],
+                l_calls_missing=lshape["missing"],
                 keys=",".join(moved), count="1", note="")
 
 
 def disabled_row(package, cls, name, cshape):
     return dict(kind="disabled", package=package, **{"class": cls}, name=name, verdict="no-live-twin",
                 c_ops=cshape["ops"], c_stmts=cshape["stmts"], c_kw=cshape["kw"], c_bytes=cshape["bytes"],
-                l_ops="", l_stmts="", l_kw="", l_bytes="", keys="", count="1", note="")
+                l_ops="", l_stmts="", l_kw="", l_bytes="",
+                c_calls=cshape["calls"], c_calls_own=cshape["own"], c_calls_elsewhere=cshape["elsewhere"],
+                c_calls_missing=cshape["missing"],
+                l_calls="", l_calls_own="", l_calls_elsewhere="", l_calls_missing="",
+                keys="", count="1", note="")
+
+
+def corpus_index(pkg):
+    """name -> {(package, class)} over one package's `Function` exports, a state's counted to its class."""
+    out = {}
+    for e in pkg.exports:
+        if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
+            continue
+        oe = pkg.exports[e["outer"] - 1]
+        if pkg.class_name_of(oe) == "State" and oe["outer"] > 0:
+            oe = pkg.exports[oe["outer"] - 1]
+        out.setdefault(pkg.name(e["name"]).lower(), set()).add(pkg.name(oe["name"]).lower())
+    return out
 
 
 def sweep(system_dir):
     pst = load_tool("pkg_script_text", "pkg-script-text.py")
     ops = load_tool("decompiler_operators", "decompiler-operators.py")
-    rows = []
-    t = dict(classes=0, with_block=0, declarations=0, with_body=0, no_body=0,
-             live_declarations=0, live_with_body=0,
-             pairs=0, identical=0, same_operators=0, differs=0, live_stub=0,
-             pair_c_bytes=0, pair_l_bytes=0, pair_c_ops=0, pair_l_ops=0,
-             disabled=0, disabled_bytes=0, disabled_ops=0, disabled_stmts=0, disabled_stub=0)
+    # Pass one: every package's exports, so a call can be resolved against the whole corpus and not only its
+    # own package -- an engine native a game class calls is declared in Core or Engine.
+    packages, index = [], {}
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
         package = fname[:-2]
+        packages.append((package, pkg))
+        for name, classes in corpus_index(pkg).items():
+            index.setdefault(name, set()).update((package, c) for c in classes)
+    rows = []
+    t = dict(classes=0, with_block=0, declarations=0, with_body=0, no_body=0,
+             live_declarations=0, live_with_body=0,
+             pairs=0, identical=0, same_operators=0, differs=0, live_stub=0,
+             pair_c_bytes=0, pair_l_bytes=0, pair_c_ops=0, pair_l_ops=0,
+             disabled=0, disabled_bytes=0, disabled_ops=0, disabled_stmts=0, disabled_stub=0,
+             disabled_calls=0, disabled_calls_own=0, disabled_calls_elsewhere=0, disabled_calls_missing=0,
+             control_calls=0, control_calls_own=0, control_calls_elsewhere=0, control_calls_missing=0,
+             pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0)
+    for package, pkg in packages:
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
@@ -204,14 +272,29 @@ def sweep(system_dir):
             t["live_declarations"] += ldeclared
             t["live_with_body"] += lresolved
             cls = pkg.name(exp["name"])
+            # the control: every live body of a class that carries a comment, resolved the same way
+            for lbody in lbodies.values():
+                names = calls(lbody)
+                own, elsewhere, missing = resolve(names, package, cls, index)
+                t["control_calls"] += len(names)
+                t["control_calls_own"] += own
+                t["control_calls_elsewhere"] += elsewhere
+                t["control_calls_missing"] += missing
             for name in sorted(cbodies):
                 body = cbodies[name]
                 cshape = shape(body, ops)
                 cshape["text"] = body
+                names = calls(body)
+                cshape["calls"] = len(names)
+                (cshape["own"], cshape["elsewhere"], cshape["missing"]) = resolve(names, package, cls, index)
                 if name in lbodies:
                     lbody = lbodies[name]
                     lshape = shape(lbody, ops)
                     lshape["text"] = lbody
+                    lnames = calls(lbody)
+                    lshape["calls"] = len(lnames)
+                    (lshape["own"], lshape["elsewhere"], lshape["missing"]) = resolve(
+                        lnames, package, cls, index)
                     verdict = compare(cshape, lshape)
                     t["pairs"] += 1
                     t[verdict.replace("-", "_")] += 1
@@ -219,6 +302,10 @@ def sweep(system_dir):
                     t["pair_l_bytes"] += lshape["bytes"]
                     t["pair_c_ops"] += cshape["ops"]
                     t["pair_l_ops"] += lshape["ops"]
+                    t["pair_c_calls"] += cshape["calls"]
+                    t["pair_c_calls_missing"] += cshape["missing"]
+                    t["pair_l_calls"] += lshape["calls"]
+                    t["pair_l_calls_missing"] += lshape["missing"]
                     rows.append(pair_row(package, cls, name, cshape, lshape, verdict))
                 else:
                     t["disabled"] += 1
@@ -226,6 +313,10 @@ def sweep(system_dir):
                     t["disabled_ops"] += cshape["ops"]
                     t["disabled_stmts"] += cshape["stmts"]
                     t["disabled_stub"] += cshape["bytes"] <= STUB_BYTES
+                    t["disabled_calls"] += cshape["calls"]
+                    t["disabled_calls_own"] += cshape["own"]
+                    t["disabled_calls_elsewhere"] += cshape["elsewhere"]
+                    t["disabled_calls_missing"] += cshape["missing"]
                     rows.append(disabled_row(package, cls, name, cshape))
     census = (
         ("classes_with_text", t["classes"], "class exports carrying a `ScriptText`"),
@@ -249,12 +340,33 @@ def sweep(system_dir):
         ("pairs_live_bytes", t["pair_l_bytes"], "bytes of their live revisions"),
         ("pairs_comment_operators", t["pair_c_ops"], "operators in the commented revisions"),
         ("pairs_live_operators", t["pair_l_ops"], "operators in the live revisions"),
+        ("pairs_comment_calls", t["pair_c_calls"],
+         "distinct call names in the commented revisions, counted per body"),
+        ("pairs_comment_calls_missing", t["pair_c_calls_missing"],
+         "of those, naming no `Function` export of the eighteen packages"),
+        ("pairs_live_calls", t["pair_l_calls"], "the same read over their live revisions"),
+        ("pairs_live_calls_missing", t["pair_l_calls_missing"],
+         "of those, naming no `Function` export of the eighteen packages"),
         ("disabled_bodies", t["disabled"], "commented bodies whose name no live body in the text carries"),
         ("disabled_bytes", t["disabled_bytes"], "bytes of those bodies"),
         ("disabled_operators", t["disabled_ops"], "operators in those bodies"),
         ("disabled_statements", t["disabled_stmts"], "statements at their own brace depth"),
         ("disabled_stubs", t["disabled_stub"],
          "of those, a trailer of %d bytes or fewer" % STUB_BYTES),
+        ("disabled_calls", t["disabled_calls"],
+         "distinct call names in those bodies, counted per body"),
+        ("disabled_calls_own", t["disabled_calls_own"],
+         "of those, declared by the class the body sits in"),
+        ("disabled_calls_elsewhere", t["disabled_calls_elsewhere"],
+         "of those, declared by another class of the corpus -- an engine or sibling native"),
+        ("disabled_calls_missing", t["disabled_calls_missing"],
+         "of those, naming no `Function` export of the eighteen packages"),
+        ("control_calls", t["control_calls"],
+         "the same read over every live body of the classes that carry a comment -- the control"),
+        ("control_calls_own", t["control_calls_own"], "of those, declared by the body's own class"),
+        ("control_calls_elsewhere", t["control_calls_elsewhere"], "of those, declared elsewhere in the corpus"),
+        ("control_calls_missing", t["control_calls_missing"],
+         "of those, naming no `Function` export -- locals, delegates and the residue"),
     )
     for key, value, note in census:
         row = {k: "" for k in FIELDS}
@@ -311,9 +423,21 @@ def render(rows):
                % (n("pairs_comment_bytes"), n("pairs_live_bytes")))
     out.append("| operators, the same pair | **%d** / **%d** |"
                % (n("pairs_comment_operators"), n("pairs_live_operators")))
+    out.append("| distinct call names, the pairs' commented / live revisions | **%d** / **%d** |"
+               % (n("pairs_comment_calls"), n("pairs_live_calls")))
+    out.append("| ... naming no `Function` export of the corpus | **%d** / **%d** |"
+               % (n("pairs_comment_calls_missing"), n("pairs_live_calls_missing")))
     out.append("| commented bodies with no live twin | **%d** |" % n("disabled_bodies"))
     out.append("| bytes / operators / statements of those bodies | **%d** / **%d** / **%d** |"
                % (n("disabled_bytes"), n("disabled_operators"), n("disabled_statements")))
+    out.append("| distinct call names in those bodies | **%d** |" % n("disabled_calls"))
+    out.append("| ... declared by the body's own class / elsewhere in the corpus / by nothing | "
+               "**%d** / **%d** / **%d** |" % (n("disabled_calls_own"), n("disabled_calls_elsewhere"),
+                                               n("disabled_calls_missing")))
+    out.append("| the same read over every live body of the commented classes (control) | "
+               "**%d** / **%d** / **%d** of **%d** |"
+               % (n("control_calls_own"), n("control_calls_elsewhere"), n("control_calls_missing"),
+                  n("control_calls")))
     out.append("")
     if pairs:
         pairs.sort(key=lambda r: (r["verdict"], r["package"], r["class"], r["name"]))
@@ -329,6 +453,25 @@ def render(rows):
                           r["c_ops"], r["c_stmts"], r["c_bytes"],
                           r["l_ops"], r["l_stmts"], r["l_bytes"], r["keys"] or "-"))
         out.append("")
+    out.append("**A disabled body calls into the build, so it is a revision of a class that still exists.** Of "
+               "the **%d** distinct call names the %d disabled bodies make, **%d** are declared by the class the "
+               "body sits in, **%d** by another class of the corpus (an engine or sibling native) and **%d** by "
+               "nothing at all -- **%s%%**. The control is the same read over every live body of the classes "
+               "that carry a comment: **%d of %d (%s%%)** resolve and **%s%%** do not, so the disabled bodies' "
+               "residue sits %s points %s the base rate rather than at a different order of magnitude. "
+               "`missing` is not a defect count: a local's delegate call and a function the class declares "
+               "without a `Function` export land there too."
+               % (n("disabled_calls"), n("disabled_bodies"), n("disabled_calls_own"),
+                  n("disabled_calls_elsewhere"), n("disabled_calls_missing"),
+                  pct(n("disabled_calls_missing"), n("disabled_calls")),
+                  n("control_calls") - n("control_calls_missing"), n("control_calls"),
+                  pct(n("control_calls") - n("control_calls_missing"), n("control_calls")),
+                  pct(n("control_calls_missing"), n("control_calls")),
+                  "%.1f" % abs(100.0 * n("disabled_calls_missing") / max(1, n("disabled_calls"))
+                               - 100.0 * n("control_calls_missing") / max(1, n("control_calls"))),
+                  "above" if n("disabled_calls_missing") * n("control_calls")
+                  >= n("control_calls_missing") * n("disabled_calls") else "below"))
+    out.append("")
     out.append("**The disabled bodies are the weight of the comment, not a residue of it.** %d commented bodies "
                "have no live twin at all: %d bytes of source, %d operators and %d statements this build never "
                "compiled, %d of them a trailer of %d bytes or fewer (a declaration a class kept while emptying "
@@ -438,7 +581,17 @@ def self_check():
     stub["text"] = "{\n}"
     if compare(long_body, stub) != "live-stub":
         bad.append("an emptied live body did not read live-stub")
+    # a call is an identifier in front of a parenthesis, and the keywords are not calls
+    got = calls('{\n\tif (A) SuperMask(B);\n\tX = "Foo(1)";\n\tLocal = Bar();\n}')
+    if got != {"supermask", "bar"}:
+        bad.append("the call reader returned %r" % (sorted(got),))
+    index = {"foo": {("P", "c")}, "bar": {("Q", "d")}}
+    if resolve({"foo", "bar", "baz"}, "P", "C", index) != (1, 1, 1):
+        bad.append("the resolution split %r -- the class key is matched case-insensitively"
+                   % (resolve({"foo", "bar", "baz"}, "P", "C", index),))
     # the census adds up over a synthetic population, and the render reads the artifact's own rows
+    for sh in (c, moved, dict(c)):
+        sh.update(calls=2, own=1, elsewhere=1, missing=0)
     rows = [pair_row("P", "C", "foo", c, moved, compare(c, moved)),
             pair_row("P", "C", "bar", c, dict(c), "identical"),
             disabled_row("P", "C", "baz", c)]
@@ -449,13 +602,20 @@ def self_check():
            ("pairs_comment_bytes", 2 * c["bytes"], ""), ("pairs_live_bytes", c["bytes"] + moved["bytes"], ""),
            ("pairs_comment_operators", 2 * c["ops"], ""), ("pairs_live_operators", c["ops"] + moved["ops"], ""),
            ("disabled_bodies", 1, ""), ("disabled_bytes", c["bytes"], ""), ("disabled_operators", c["ops"], ""),
-           ("disabled_statements", c["stmts"], ""), ("disabled_stubs", 0, ""))
+           ("disabled_statements", c["stmts"], ""), ("disabled_stubs", 0, ""),
+           ("pairs_comment_calls", 4, ""), ("pairs_comment_calls_missing", 0, ""),
+           ("pairs_live_calls", 4, ""), ("pairs_live_calls_missing", 0, ""),
+           ("disabled_calls", 2, ""), ("disabled_calls_own", 1, ""),
+           ("disabled_calls_elsewhere", 1, ""), ("disabled_calls_missing", 0, ""),
+           ("control_calls", 4, ""), ("control_calls_own", 2, ""),
+           ("control_calls_elsewhere", 2, ""), ("control_calls_missing", 0, ""))
     for key, value, note in cen:
         row = {k: "" for k in FIELDS}
         row.update(kind="census", name=key, count=str(value), note=note)
         rows.append(row)
     block = render(rows)
-    for want in ("3 of the 4", "2 of them have a live twin", "`P.C.foo`", "`P.C.bar`"):
+    for want in ("3 of the 4", "2 of them have a live twin", "`P.C.foo`", "`P.C.bar`",
+                 "A disabled body calls into the build"):
         if want not in block:
             bad.append("render is missing %r" % want)
     pair_lines = [l for l in block.splitlines() if l.startswith("| `P.C.")]
