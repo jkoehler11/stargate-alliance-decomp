@@ -12678,3 +12678,29 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   few (`Suspicious.BeginState` 2 arms, `EndState` 1, `Timer` 3, against 68 in `BotEnemy`'s label code) -- so the read
   is whether one state's label keywords equal the arms its own overrides carry, which decides whether the bots'
   label code is a revision the package did not compile or a compile shape this census attributes elsewhere.
+
+### Execution notes (2026-11-17, a state's own code is a `State` export's payload, and no census walked it)
+
+- **Task.** The previous note's next measurement: a state's label keywords against the arms its own overrides
+  carry, per state. Reading the join first showed the comparison was miscast: `tools/jump-census.py` walks
+  **`Function` exports only**, so no artifact in the tree has ever contained a state's label block.
+- **The label block is an export of the class `State`, and its payload is the compiled code.** The literals the
+  block spells are in it (`BotEnemy.Suspicious`'s payload carries `STUCK IN Suspicious!`, which the text places
+  after that state's `Begin:`), the bytes walk as a token stream, and the walk ends on a `LabelTable` token
+  (`0x0c`) -- the token `tools/jump-census.py` reports as absent from all 11,687 `Function` scripts. The build
+  emits 31 of them, one per state that has labels, in the container no census opens.
+- **Measured:** 552 of 553 `State` payloads walk; **30,217 code bytes, 12,758 tokens, 524 `JumpIfNot`, 246
+  `Jump`**, and 30 walks end on the container's own terminator. 120 states spell label code in the text (843
+  keywords, 252 `else` of which **118** at the statement level -- the number `docs/BYTECODE.md` carries), 119 of
+  them joined, 19 with equal counts; 392 states have a walk and no label keyword at all.
+- **What it settles.** The bots' label code is neither a text revision the package did not compile nor a count
+  attributed elsewhere -- it is compiled, in the `State` export. `BotSG.CoveredAttack` is the extreme case: a
+  157-line body whose `State` record has **zero function children** and 1,067 bytes of its own code.
+- **The residue, named.** The walk starts are measured (longest exact walk in the first 72 bytes) and 522 walks
+  end before the terminator, so their code length and arm count are a floor: `PlayerController.PlayerWalking`
+  and `Console.Typing` spell 41 and 40 keywords against 7-byte walks. That is a region the opcode table stopped
+  following, not a state without code; a `Stop`/`Nothing` terminator test is the next instrument.
+- Tool (`region`, `text_label_counts`, `tokens`, the census with its key guard, the doc block, the 7-case
+  `--check`) + `inventory/state_code.csv` (553 state rows + 23 census rows) + `docs/systems/AI.md` (a new
+  section with the generated block) + a `make state-code` target and its `--check-doc` line in `make ci` + this
+  note. One read of the 18 packages' export tables; no boot, no Ghidra, no bytecode walk outside the payloads.

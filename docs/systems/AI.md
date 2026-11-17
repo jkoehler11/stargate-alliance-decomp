@@ -283,6 +283,71 @@ assignments and 641 conditional branches, and a state repeats by `Goto('Begin')`
 re-entered, not by iterating. 55 of the 151 run to completion in one tick -- no `Sleep` and no `Finish`/`Wait`
 call -- which is what makes the dispatch layer, rather than the bodies, the thing a rebuild has to get right.
 
+### The state's own code is a `State` export's payload
+
+`docs/BYTECODE.md` counts the `else` keywords a state body spells at its own statement level
+(`fn_state_label`, **118**) beside the arms `inventory/jump_branches.csv` carries, and the two never met: that
+census walks **`Function` exports only** (`tools/jump-census.py` skips every export whose class is not
+`Function`), and a state's label block is not one of those. It is an export of the class **`State`**, and the
+payload is the compiled label code -- the literals the block spells are in it (`BotEnemy.Suspicious`'s payload
+carries `STUCK IN Suspicious!`, which the text places after that state's `Begin:`), it walks as a token stream
+with this tree's own disassembler, and it ends on a **`LabelTable`** token (`0x0c`) -- the token
+`tools/jump-census.py` reports as absent from all 11,687 `Function` scripts. The build does not emit no label
+tables: it emits one per state that has labels, in the one container the census skips.
+
+That settles what the last note left open. The bots' label code is neither a revision the package did not
+compile nor a count attributed elsewhere -- it is compiled, in the `State` export, and `BotSG.CoveredAttack`
+is the extreme case: a 157-line body whose `State` record carries **zero function children** and over a
+kilobyte of its own code, so a census that reads only functions sees nothing there at all. What a state's
+*overrides* compile is a second, separate population (`inventory/state_exports.csv`), and the two are read
+together here.
+
+The region is measured rather than assumed: every start in the payload's first 72 bytes is walked and the
+longest exact walk wins, which leaves the state record at the tail. That boundary is approximate wherever the
+opcode table refuses a token part-way (a `bad-token` the compiler does not normally emit inside a function), so
+the tool reports the trailer it leaves behind and counts the short regions as residue instead of smoothing
+them -- the arm total below is therefore a **floor**, not a fixed count.
+
+<!-- generated:state-code -->
+**552 `State` payloads walk as code -- 30,217 bytes and 12,758 tokens of the state's own label block, `JumpIfNot` 524 -- and 30 of them carry the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 505 `JumpIfNot` against their 842 keywords, equal in 19.
+
+| measure | value |
+|---|---|
+| `State` exports read | 553 |
+| payloads that walk | 552 |
+| payload bytes / of them code | 57,297 / 30,217 |
+| tokens / `JumpIfNot` / `Jump` | 12,758 / 524 / 246 |
+| `LabelTable` tokens, in states / in `Function` payloads | 31 / 0 |
+| `StringConst` tokens | 126 |
+| walks ending on `LabelTable` (whole) / ending earlier (a floor) | 7 / 545 |
+| payloads that do not walk | 1 |
+| states whose text spells label code | 120 |
+| ... keywords / `else` / `else` at the statement level | 843 / 252 / 118 |
+| ... with a walk / their `JumpIfNot` / their keywords | 119 / 505 / 842 |
+| ... equal counts | 19 |
+| states with a walk and no label keyword (overrides only) | 392 |
+
+| class | state | payload | code | tokens | `JumpIfNot` | `Jump` | text keywords |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `BotSG` | `RestFormation` | 1,070 | 954 | 333 | 17 | 12 | 29 |
+| `ScriptedController` | `Scripting` | 704 | 617 | 285 | 19 | 6 | 26 |
+| `BotEnemy` | `CoveredAttack` | 1,206 | 1,126 | 445 | 19 | 7 | 26 |
+| `BotSG` | `CoveredAttack` | 1,191 | 1,067 | 385 | 18 | 6 | 24 |
+| `BotEnemy` | `Suspicious` | 555 | 453 | 236 | 16 | 6 | 23 |
+| `JaffaBotLight` | `Sniper` | 580 | 471 | 216 | 13 | 3 | 17 |
+| `ReetouBot` | `Combat` | 480 | 381 | 169 | 11 | 6 | 17 |
+| `BotSG` | `ConcentrateFire` | 583 | 483 | 199 | 11 | 4 | 16 |
+| `BotEnemy` | `CoveredMove` | 370 | 314 | 162 | 9 | 6 | 15 |
+| `ReetouBot` | `Escape` | 428 | 408 | 166 | 10 | 4 | 14 |
+<!-- /generated:state-code -->
+
+A keyword and a `JumpIfNot` are not the same unit, so the equality the question asked for does not hold per
+state and the numbers above are two measures of one body rather than a check of one against the other: a
+condition term compiles one `JumpIfNot`, a short-circuit `&&`/`||` adds more inside the condition, and the text
+counts the tests it spells. What the join does establish is the container: a state's code is measurable at all,
+per state, and the label code the earlier censuses counted in the text has a compiled counterpart to compare
+against.
+
 ### `BotEnemy.ShootFromCover` -- 475 lines, 16 own statements, 19 overrides
 
 Sixteen statements, three of them inside one `if`: `Target = Enemy`, `CheckBurning()`, `ShouldStartHacking()`;
