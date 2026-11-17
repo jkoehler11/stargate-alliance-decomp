@@ -2318,7 +2318,26 @@ class,UnrealEd,NotifyProperties,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,no-branch,,
 class,UnrealEd,SequEditProps,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,no-branch,,
 class,UnrealEd,SkelPrefsEditProps,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,no-branch,,
 class,UnrealEd,UnrealEdEngine,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,no-branch,,
+package,AmbientCreatures,,32,,,,,,,141,,,,32,,,,,18,"agree 8, more 1, less 1, no-branch 8"
+package,Core,,1,,,,,,,9,,,,1,,,,,7,"agree 2, more 0, less 0, no-branch 5"
+package,Editor,,12,,,,,,,85,,,,12,,,,,16,"agree 12, more 0, less 0, no-branch 4"
+package,Engine,,889,,,,,,,5102,,,,986,,,,,367,"agree 118, more 4, less 37, no-branch 208"
+package,Fire,,0,,,,,,,0,,,,0,,,,,7,"agree 0, more 0, less 0, no-branch 7"
+package,GUI,,216,,,,,,,1097,,,,246,,,,,148,"agree 48, more 2, less 7, no-branch 91"
+package,GamePlay,,91,,,,,,,508,,,,90,,,,,262,"agree 76, more 1, less 4, no-branch 181"
+package,IpDrv,,39,,,,,,,121,,,,44,,,,,14,"agree 6, more 0, less 2, no-branch 6"
+package,Sharpeffects,,11,,,,,,,66,,,,11,,,,,158,"agree 6, more 0, less 0, no-branch 152"
+package,StargateContent,,550,,,,,,,2375,,,,514,,,,,567,"agree 164, more 13, less 18, no-branch 372"
+package,StargateGame,,1587,,,,,,,6575,,,,1531,,,,,306,"agree 149, more 11, less 39, no-branch 107"
+package,StargateMenus,,76,,,,,,,309,,,,79,,,,,98,"agree 64, more 0, less 3, no-branch 31"
+package,StargateVehicles,,219,,,,,,,663,,,,156,,,,,142,"agree 53, more 13, less 1, no-branch 75"
+package,Stargateeffects,,6,,,,,,,30,,,,6,,,,,77,"agree 11, more 0, less 0, no-branch 66"
+package,UDebugMenu,,90,,,,,,,363,,,,90,,,,,38,"agree 32, more 0, less 0, no-branch 6"
+package,UPreview,,5,,,,,,,12,,,,5,,,,,4,"agree 4, more 0, less 0, no-branch 0"
+package,UWindow,,227,,,,,,,996,,,,244,,,,,78,"agree 47, more 0, less 10, no-branch 21"
+package,UnrealEd,,0,,,,,,,0,,,,0,,,,,12,"agree 0, more 0, less 0, no-branch 12"
 census,,,,,,,,,,,,,,,,,,,2319,classes whose `ScriptText` was readable
+census,,,,,,,,,,,,,,,,,,,18,packages with at least one joined class
 census,,,,,,,,,,,,,,,,,,,967,"of those, classes the branch census also has"
 census,,,,,,,,,,,,,,,,,,,800,classes whose live text spells exactly the `else` arms the bytecode has
 census,,,,,,,,,,,,,,,,,,,45,classes whose live text spells more `else` than the bytecode has arms

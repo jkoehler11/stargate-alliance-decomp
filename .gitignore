@@ -41,3 +41,4 @@ __pycache__/
 # build/measurement logs (a run redirects make ci here)
 ci.log
 *.ci.log
+ci*.log
