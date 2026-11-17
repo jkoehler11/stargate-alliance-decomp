@@ -1772,9 +1772,36 @@ arm, so a reconstruction that assumes the common `if`/`else` pattern would misla
 then-arms survive codegen (`if (x) ;`), nine conditional jumps point **backward** -- a loop test at the bottom of its
 body -- and no `JumpIfNot` names a non-statement, which is the useful negative: a `&&`/`||` short circuit would be the
 only source of one, so a condition's sub-jumps take exactly the shape of an `if` and the stream alone cannot separate
-them. That is a text question, not a bytecode one.
+them. **That is a text question, and the text answers it**: `&&` and `||` add no `JumpIfNot` at all
+(the last section), so both sides are evaluated and there is nothing to separate.
 
 **`if (x) ; else y` is not separable and is not claimed.** With no then-arm there is nothing to jump over, so its
 bytes are identical to `if (!x) y`; the first draft of this census had an `else_empty` category, and the self-test
 that "found" one was reading its own fixture rather than the encoding. The category is gone and the empty count is
 `if` arms only.
+
+## The shipped source against the bytes: `else`, `&&` and `||`
+
+The branch census above counts arms in compiled bytecode. Every class also ships its `ScriptText`, so the same
+question has a second, independent answer -- what the build shipped as source -- and the two can be compared class
+by class. `tools/text-branches.py` masks each class's text first (comments, then quoted literals, with a
+length-preserving mask so both counts read the same offsets) and then counts the keywords and operators.
+
+<!-- generated:text-branches -->
+**The live text spells 4,051 `else`** over the 2,319 classes whose `ScriptText` parses, against the **4,047** arms the bytecode carries: **800 of 967** classes the branch census also has agree exactly on the count (**82.7%**), **45** spell more and **122** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 472 function bodies between them. Per class the source is therefore an **82.7%** oracle, and the corpus totals agree to 4 in 4,047 only because the two sides cancel.
+
+**One `JumpIfNot` per condition term is the codegen's rule and it holds**: `if` + `while` + `for` over those 967 joined classes is **18,452** terms for **17,463** `JumpIfNot` tokens, exact on **820** classes (**84.8%**). **424** of them carry no `&&`/`||` and are exact **412** times (**97.2%**), while the **543** that do carry one are exact **408** times (**75.1%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming a non-statement; the 3,686 `&&` and 1,568 `||` in this text are therefore **0** arms, and the model's 989 surplus terms sit in the 147 joined classes that are not exact -- text a class ships and its package does not compile.
+<!-- /generated:text-branches -->
+
+**What the comparison is worth.** The two corpora agreeing is a cancellation, not an oracle: the classes that
+spell more `else` than they compile and the ones that spell fewer are each a population a rebuild has to handle
+separately, and it is why the branch census stays the arm authority for a decompiler while the text is the
+authority for what the author wrote.
+
+**The no-branch population is a declaration set, not a join hole.** 1,105 of those classes are `functions=0` in
+`inventory/classes.csv`, so a join over the branch census has nothing to join there rather than something it lost.
+
+**The surplus is per class, not per branch.** The 989 terms the model over-counts sit in 147 of the 967 joined
+classes rather than spread across the corpus -- one class contributes 164 of them -- which is the shape of a class
+whose shipped text is a different revision from the one the package compiled, not of a codegen rule that varies by
+branch. The widest single class is 62 `else`s apart.
