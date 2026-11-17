@@ -86,6 +86,27 @@ the pinned renderer (`tools/uelib`, `8236c39`, git-ignored) rather than to this 
 says to file upstream. Until that lands the correction is a text pass over `$WORK/UnrealScript`, not a measurement
 anyone has to guess at.
 
+### The correction, run over the whole tree
+
+`tools/decompiler-notfix.py` (`make decompiler-notfix`, `inventory/decompiler_notfix.csv`) is that pass. It reads a
+reconstructed tree, writes a corrected one, and reports the counts:
+
+    python3 tools/decompiler-notfix.py $WORK/UnrealScript $WORK/UnrealScript-fixed -o inventory
+
+* **2,319 files, 2,056 sites moved, 0 refused, byte delta 0.** A move is one character, so every file keeps its size
+  and a `diff` of the two trees is exactly the sites the manifest counts.
+* **The `!` is placed at the end of the receiver, not of the expression**, so the pass walks back over groups, name
+  literals and dotted links to the front of the chain: `PlayerController(C)!.IsSpectating()` becomes
+  `!PlayerController(C).IsSpectating()`, `Class'X'!.static.F()` becomes `!Class'X'.static.F()`, and
+  `Array[i]!.Field` becomes `!Array[i].Field` -- the same tree a reader of the bytecode would draw, since a postfix
+  selector binds tighter than the unary operator.
+* **Re-reading the fixed tree with the census returns 2,063 prefix and 0 postfix**, the same 2,063 negations the
+  section above counts as recovered, and a second pass over the corrected tree moves **0** sites.
+* **A site it cannot delimit is refused and named**, never guessed: the `--check` covers the six shapes the scanner
+  must separate (prefix left alone, `!=`, a `!` inside a string, one inside a line comment and one inside a block
+  comment, a class the tree does not have) plus a refusal (`"x"!`, a string that is not a bool), by exact text
+  comparison, and asserts the pass is its own fixpoint.
+
 ## What this does not measure
 
 Statement shapes. This counts three constructs, not statements: no `if`/`while` nesting, call arity or statement
