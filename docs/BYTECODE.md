@@ -1415,26 +1415,49 @@ when the byte is zero, which says the same thing a second way: the buffers are `
 zero).
 
 **The corpus.** `make switch-operands` (`tools/uscript-dis.py --switches`; rows in `inventory/switch_operands.csv`)
-walks every script that disassembles -- 11,602 of them -- and finds **105 switch sites carrying three widths**:
+walks every script that disassembles end to end and records, per `Switch` token, the byte it carries, the opcodes its
+expression and its case values are built from, how many cases follow and how the list ends. The table below is
+rendered from that artifact by `--switches-doc`, so it cannot drift from the census it quotes:
 
-| width | sites | case values are built from | cases per switch |
-|---|---:|---|---|
-| 0 | 7 | `StringConst` 16 (one site, `UWindowHTMLTextArea.GetHexDigit`) | 0..16 |
-| 1 | 78 | `ByteConst` 273 | 1..14 |
-| 4 | 20 | `IntConstByte` 40, `NameConst` 8, `InstanceVariable` 8 | 0..17 |
+<!-- generated:switch-widths -->
+**Every `Switch` token a clean walk reaches** -- **200** sites over **174** functions, and the operand byte carries three widths:
 
-The split is the check. A one-byte value's cases are **all** `ByteConst` (273 of 273) and `ByteConst` appears under
-no other width, while an int's cases are the compact int tokens (`IntConstByte`, `IntZero`, `IntOne`). The width is
-therefore a property of the value's type as the compiler saw it, not of the case list -- which is why the
-"case-count byte" reading the opcode table carried until now could not be right: `Engine.IMusicActor.
-ConvertStateToTransitionType` switches on a byte with four cases and its operand is `1`, and
-`UWindowHTMLTextArea.GetHexDigit` switches on a string with sixteen `StringConst` cases and its operand is `0`.
+| width | sites | case values are built from (sites) | cases in total | per switch |
+|---:|---:|---|---:|---|
+| 0 | 19 | `StringConst` 19 | 143 | 2..19 |
+| 1 | 118 | `ByteConst` 118, `InstanceVariable` 2 | 413 | 1..14 |
+| 4 | 63 | `IntConstByte` 27, `IntOne` 23, `InstanceVariable` 20, `IntZero` 17, `NameConst` 8, `PrimitiveCast` 5 | 276 | 0..21 |
 
-**Residue, named rather than explained.** Six of the seven zero-width sites (`UDebugMenu` and `UWindow`
-`Combo_SetupSizes`, `Checkbox_SetupSizes`, `Editbox_SetupSizes`) are followed by **no case list at all** -- no
-`0xffff` terminator, no case, which a switch cannot be -- and `StargateMenus.ButtonClick`'s four-width site ends the
-same way. They are rows in the artifact with `ended=end`: the token the table calls `0x05` is doing something this
-page does not yet describe, and the census records that instead of guessing at it.
+**A case value is not always a literal.** 35 of the 200 sites build at least one case value from an expression rather than a constant -- `InstanceVariable` on 22 site(s), `NameConst` on 8 site(s), `PrimitiveCast` on 5 site(s) -- so the comparison's other side is code the compiler emitted, not a value folded into the token stream.
+
+**How each list ended:** **193** on the `0xffff` terminator, and **7** at a `Switch` that belongs to a case body, so this forward scan meets it before the list's own terminator -- `UDebugMapListCW.Notify`, `UDebugMenuBar.MenuItemSelected`, `UDebugVideoClient.Notify`, `UWindow.KeyEvent`, `UWindowConsoleClientWindow.Notify`, `UWindows.KeyEvent`, `WindowConsole.KeyEvent`.
+Those 7 rows count the arms they reach before the nested switch, so their `cases` is a lower bound; the chain each `Case` operand links (the handler's own reading, `inventory/jump_branches.csv`) is where a list's full arm count comes from.
+
+The numbers are `inventory/switch_operands.csv` (`tools/uscript-dis.py --switches`), the artifact this block is rendered from; `make switch-operands` re-runs the walk against the dump and `--switches-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci` needs no dump to prove the page still matches its census.
+<!-- /generated:switch-widths -->
+
+The split is the check, and it is a split by site. A wide-string switch's case values are `StringConst` on every one
+of its sites, and `ByteConst` appears under the one-byte width only, while an int's cases are the compact int tokens
+(`IntConstByte`, `IntZero`, `IntOne`). The width is therefore a property of the value's type as the compiler saw it,
+not of the case list -- which is why the "case-count byte" reading the opcode table carried until now could not be
+right: `Engine.IMusicActor.ConvertStateToTransitionType` switches on a byte with four cases and its operand is `1`,
+and `UWindowHTMLTextArea.GetHexDigit` switches on a string with sixteen `StringConst` cases and its operand is `0`.
+
+**The residue this page used to name was the walker, not the build.** Until 2026-11-17 the artifact carried **105**
+sites, and seven of them ended with no case list at all (`ended=end`) -- six `UDebugMenu`/`UWindow` `*_SetupSizes`
+functions and `StargateMenus.SinglePlayerTutorial.ButtonClick` -- which the page recorded as "the token this page does
+not yet describe". It was a desynchronised walk: the `Case` row's pattern was `bytes:2,case`, so it consumed two fixed
+bytes *and* the 2-byte case link before the value token, and every case in a stream shifted the walk two bytes
+further. A switch that carries three arms therefore walked off its own list and re-entered the token stream mid
+operand, where a `0x05` byte inside a field index became a "switch". That row was fixed on 2026-11-14 (`d484f98`,
+"the Case row read its value twice") and this page was never re-measured against it, so the artifact went stale
+rather than wrong-by-design. Three trees settle it, each run over the whole `System` directory: the artifact's own
+commit (`70927c6`) reproduces the committed 105 rows **byte-identically** (`diff` empty); the tree immediately before
+the `Case` fix (`d484f98^`) still yields the same 105 rows and the same seven `end` sites, differing from the committed
+file in nothing but one opcode's name (`opeb` -> `Caps`); and today's tree yields **200** sites, **0** `end` rows and
+the seven `nested-switch` rows the block above names. So the seven were the census's own bug, and `--switches` now
+**refuses to write** an artifact carrying one, `switches_check` fails on it in `make ci`, and the block above is
+generated so a page can no longer quote a census its artifact does not hold.
 
 ## Not measured
 

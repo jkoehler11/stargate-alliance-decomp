@@ -3776,6 +3776,15 @@ def switches_report(path, table, out=None):
             span[byte][0], span[byte][1]))
     print("how each case list ended: %s" % ", ".join(
         "byte %d %s %d" % (b, why, n) for (b, why), n in sorted(ended.items(), key=lambda kv: -kv[1])))
+    lost = sum(n for (_b, why), n in ended.items() if why == "end")
+    if lost:
+        # A switch's case list is a chain of `Case` tokens ending on `0xffff`, so a site whose stream ends with no
+        # list is the walk losing its place, not a switch with no cases (`--switches` measured seven of those on
+        # 2026-11-11, all of them a `Case` row that read its own value twice). Refuse the artifact rather than
+        # write a row the page would have to explain away.
+        print("FAIL %d switch site(s) reach no case list before the stream ends: a list is a chain, so that is the"
+              " walk losing its place, not a switch without cases" % lost)
+        return 1
     if out:
         os.makedirs(out, exist_ok=True)
         path_out = os.path.join(out, "switch_operands.csv")
@@ -3788,6 +3797,236 @@ def switches_report(path, table, out=None):
         print("wrote %s (%d switch sites, widths %s)"
               % (path_out, total, ", ".join(str(b) for b in sorted(span))))
     return 0
+
+
+# ==== The switch census's page block: `inventory/switch_operands.csv` is the only input ====
+SWITCH_CSV = os.path.join(ROOT, "inventory", "switch_operands.csv")
+SWITCH_COLUMNS = ("package", "class", "function", "offset", "width", "expression", "cases", "case_values", "ended")
+SWITCH_MARK = ("<!-- generated:switch-widths -->", "<!-- /generated:switch-widths -->")
+# How a case list can stop. `terminator` is the chain's own end (`Case` carrying `0xffff`); `nested-switch` is a
+# `Switch` inside a case body, which this forward scan meets before its own terminator (the chain walk in
+# `inventory/jump_branches.csv` is what counts those lists' arms). `end` is neither: the stream ran out with no
+# terminator, i.e. the walk lost its place, which is what every one of this artifact's seven `end` rows turned out
+# to be -- so `--switches` refuses to write one and `switches_check` fails on it.
+SWITCH_ENDINGS = ("terminator", "nested-switch")
+# The case tokens that carry a value rather than name one. A case value built from anything else (`InstanceVariable`,
+# `NameConst`, `PrimitiveCast`) is the compiler emitting the comparison's other side as an expression.
+SWITCH_LITERALS = ("StringConst", "ByteConst", "IntConstByte", "IntConst", "IntZero", "IntOne")
+
+
+def read_switches(path=SWITCH_CSV):
+    """The census rows, or a stop when the artifact is missing."""
+    if not os.path.exists(path):
+        sys.exit("switch-doc: %s does not exist" % path)
+    rows = list(csv.DictReader(open(path, newline="")))
+    if not rows:
+        sys.exit("switch-doc: %s holds no rows" % path)
+    return rows
+
+
+def switch_census(rows):
+    """What the page's block quotes, every figure counted from the rows: the artifact is its own source.
+
+    Nothing here comes from the measuring run, so `--switches-doc --check-doc` rebuilds the block from the
+    committed CSV alone and `make ci` needs no dump (`tools/ci.py`'s `check_switch_doc`).
+    """
+    per = {}
+    for r in rows:
+        width = int(r["width"])
+        entry = per.setdefault(width, {"sites": 0, "values": collections.Counter(), "lo": None, "hi": 0,
+                                       "expr": collections.Counter()})
+        entry["sites"] += 1
+        cases = int(r["cases"])
+        entry["lo"] = cases if entry["lo"] is None else min(entry["lo"], cases)
+        entry["hi"] = max(entry["hi"], cases)
+        entry["cases"] = entry.get("cases", 0) + cases
+        entry["expr"][r["expression"]] += 1
+        for value in (r["case_values"] or "").split(";"):
+            if value and value != "-":
+                entry["values"][value] += 1
+    ended = collections.Counter(r["ended"] for r in rows)
+    named = [(r["class"], r["function"], r["offset"], int(r["width"])) for r in rows if r["ended"] == "nested-switch"]
+    return {"rows": len(rows),
+            "functions": len({(r["package"], r["class"], r["function"]) for r in rows}),
+            "per": per, "ended": ended, "nested": named}
+
+
+def switches_doc_block(rows):
+    """Render `inventory/switch_operands.csv` as the page's table and the sentences that read it.
+
+    The artifact records, per site, **which tokens build that site's case values** (a set, not a tally), so every
+    figure here counts sites. The case *values* a width holds come from the `cases` column's total, which is a count
+    of tokens -- the two are quoted separately and neither is derived from the other.
+    """
+    c = switch_census(rows)
+    per, ended = c["per"], c["ended"]
+    words = {0: "zero", 1: "one", 2: "two", 3: "three", 4: "four"}
+    lines = ["**Every `Switch` token a clean walk reaches** -- **%s** sites over **%s** functions, and the operand"
+             " byte carries %s widths:"
+             % (format(c["rows"], ",d"), format(c["functions"], ",d"),
+                words.get(len(per), str(len(per))))]
+    lines += ["", "| width | sites | case values are built from (sites) | cases in total | per switch |",
+              "|---:|---:|---|---:|---|"]
+    for width in sorted(per):
+        e = per[width]
+        values = ", ".join("`%s` %d" % kv for kv in sorted(e["values"].items(), key=lambda kv: (-kv[1], kv[0])))
+        lines.append("| %d | %d | %s | %s | %d..%d |"
+                     % (width, e["sites"], values or "-", format(e.get("cases", 0), ",d"), e["lo"], e["hi"]))
+
+    expr_sites = [r for r in rows
+                  if any(v not in SWITCH_LITERALS for v in (r["case_values"] or "").split(";") if v and v != "-")]
+    if expr_sites:
+        by_name = collections.Counter()
+        for r in expr_sites:
+            for v in (r["case_values"] or "").split(";"):
+                if v and v != "-" and v not in SWITCH_LITERALS:
+                    by_name[v] += 1
+        lines += ["", "**A case value is not always a literal.** %s of the %s sites build at least one case value"
+                  " from an expression rather than a constant -- %s -- so the comparison's other side is code the"
+                  " compiler emitted, not a value folded into the token stream."
+                  % (format(len(expr_sites), ",d"), format(c["rows"], ",d"),
+                     ", ".join("%s on %s site(s)" % ("`%s`" % v, format(n, ",d"))
+                               for v, n in sorted(by_name.items(), key=lambda kv: (-kv[1], kv[0]))))]
+
+    lines += ["", "**How each list ended:** **%s** on the `0xffff` terminator, and **%s** at a `Switch` that belongs"
+              " to a case body, so this forward scan meets it before the list's own terminator -- %s."
+              % (format(ended.get("terminator", 0), ",d"), format(len(c["nested"]), ",d"),
+                 ", ".join("`%s.%s`" % (cls, func) for cls, func, _off, _w in c["nested"]) if c["nested"] else "none")]
+    if c["nested"]:
+        lines += ["Those %d rows count the arms they reach before the nested switch, so their `cases` is a lower"
+                  " bound; the chain each `Case` operand links (the handler's own reading, `inventory/"
+                  "jump_branches.csv`) is where a list's full arm count comes from." % len(c["nested"])]
+
+    lines += ["", "The numbers are `inventory/switch_operands.csv` (`tools/uscript-dis.py --switches`), the"
+              " artifact this block is rendered from; `make switch-operands` re-runs the walk against the dump and"
+              " `--switches-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so"
+              " `make ci` needs no dump to prove the page still matches its census."]
+    return "\n".join(lines)
+
+
+def switches_emit_doc(write_doc=None, check_doc=None):
+    """Write or check the switch-widths block. `--check-doc` reads the artifact only, so the gate is dump-free."""
+    path = write_doc or check_doc
+    block = switches_doc_block(read_switches())
+    with open(path, encoding="utf-8") as fh:
+        current = fh.read()
+    begin, end = SWITCH_MARK
+    i, j = current.find(begin), current.find(end)
+    if i < 0 or j <= i:
+        sys.exit("document has no %s ... %s block" % SWITCH_MARK)
+    fresh = current[: i + len(begin)] + "\n" + block + "\n" + current[j:]
+    if check_doc:
+        if fresh != current:
+            print("FAIL %s: the generated switch-widths block is stale" % path)
+            return 1
+        print("ok   switch-widths: %s matches its rows" % path)
+    else:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(fresh)
+        print("ok   switch-widths: wrote %s" % path)
+    return 0
+
+
+def switches_check(path=SWITCH_CSV):
+    """`inventory/switch_operands.csv` against its own claims, plus the `Case` row's operand length -- no dump.
+
+    Three claims, and each is one a stale or corrupt artifact fails. Every width is one the interpreter's
+    comparison can read (`0`, `1` or `4`: `repz cmpsb` over a byte count, `__wcsicmp` at zero). A one-byte
+    switch's cases are one-byte tokens and a wide-string switch's are `StringConst`, so a row whose values came
+    from another width is a desynchronised walk, not a switch. And no list ends at `end`: a list is a chain, so
+    running out of stream means the walk lost its place -- which is what all seven of the rows this artifact
+    carried until 2026-11-17 were, every one of them a `Case` row that read its own value twice.
+
+    The synthetic stream is the regression that residue was: a switch with two cases must parse into two `Case`
+    tokens with a value each, and the value token must sit three bytes past the `Case` (two bytes of link, then
+    the token) -- which a pattern that consumes the value twice, or twice the link, cannot produce.
+    """
+    fails = []
+    if not os.path.exists(path):
+        print("FAIL switch-census: %s does not exist" % path)
+        return 1
+    with open(path, newline="") as fh:
+        head = next(csv.reader(fh))
+        fh.seek(0)
+        rows = list(csv.DictReader(fh))
+    if tuple(head) != SWITCH_COLUMNS:
+        fails.append("%s: header %s" % (path, head))
+    for r in rows:
+        where = "`%s.%s` at %s" % (r["class"], r["function"], r["offset"])
+        try:
+            width, cases = int(r["width"]), int(r["cases"])
+        except ValueError:
+            fails.append("a row with a non-numeric width or case count: %s" % where)
+            continue
+        if width not in (0, 1, 4):
+            fails.append("%s carries width %d: the interpreter compares 0, 1 or 4 bytes" % (where, width))
+        if r["ended"] not in SWITCH_ENDINGS:
+            fails.append("%s ends at %r: a switch's list is a chain, so that is the walk losing its place"
+                         % (where, r["ended"]))
+        values = [v for v in (r["case_values"] or "").split(";") if v and v != "-"]
+        if width == 0 and any(v != "StringConst" for v in values):
+            fails.append("%s is a wide-string switch with a case value that is not `StringConst`: %s"
+                         % (where, ",".join(values)))
+        if width == 1 and any(v in ("IntConstByte", "IntZero", "IntOne", "IntConst", "StringConst") for v in values):
+            fails.append("%s is a one-byte switch with a wider case value: %s" % (where, ",".join(values)))
+        if width == 4 and any(v in ("ByteConst", "StringConst") for v in values):
+            fails.append("%s is a four-byte switch with a narrower case value: %s" % (where, ",".join(values)))
+        if cases < 0:
+            fails.append("%s counts %d cases" % (where, cases))
+
+    table = Table()
+    by_name = {}
+    for code, row in table.rows.items():
+        if row["name"]:
+            by_name.setdefault(row["name"], code)
+
+    def op(name):
+        if name not in by_name:
+            fails.append("the table has no opcode named %s" % name)
+            return 0
+        return by_name[name]
+
+    stream = bytes([op("Switch"), 1, op("LocalVariable"), 2,
+                    op("Case"), 0x10, 0x00, op("ByteConst"), 2,
+                    op("Case"), 0x20, 0x00, op("ByteConst"), 3,
+                    op("Case"), 0xFF, 0xFF])
+    try:
+        nodes = parse(stream, table)
+    except Refused as exc:
+        fails.append("a switch with two one-byte cases does not parse: %s" % exc)
+        nodes = []
+    if nodes:
+        if len(nodes) != 4:
+            fails.append("the synthetic switch parses into %d top-level token(s), wanted 4" % len(nodes))
+        else:
+            switch, first, second, last = nodes
+            if switch["opcode"] != op("Switch") or switch["operands"] != b"\x01":
+                fails.append("the synthetic switch is not a `Switch` carrying width 1")
+            for case in (first, second):
+                if case["opcode"] != op("Case"):
+                    fails.append("%#x is not a `Case`" % case["offset"])
+                    continue
+                if not case["children"] or case["children"][0]["opcode"] != op("ByteConst"):
+                    fails.append("the case at %#x carries no one-byte value" % case["offset"])
+                    continue
+                if stream[case["offset"] + 3] != op("ByteConst"):
+                    fails.append("the case at %#x does not hold its value token three bytes in, so the"
+                                 " `case_values` column reads the wrong byte" % case["offset"])
+            if last["opcode"] != op("Case") or last["operands"] != b"\xff\xff" or last["children"]:
+                fails.append("the last `Case` is not the bare `0xffff` terminator")
+            if sum(n["end"] - n["offset"] for n in nodes) != len(stream):
+                fails.append("the synthetic switch does not cover its own bytes")
+            else:
+                counted = sum(1 for n in nodes
+                              if n["opcode"] == op("Case") and n["operands"][:2] != b"\xff\xff")
+                if counted != 2:
+                    fails.append("a two-case switch is counted as %d case(s)" % counted)
+    for f in fails:
+        print("FAIL switch-census: %s" % f)
+    if not fails:
+        print("ok   switch-census: %d rows, widths %s, no list ends at `end`"
+              % (len(rows), ", ".join(str(w) for w in sorted({int(r["width"]) for r in rows}))))
+    return 1 if fails else 0
 
 
 EPILOGUE = bytes([0x04, 0x0B, 0x47])
@@ -5701,6 +5940,9 @@ def main():
                     help="for each index operand, what the value points at (a check on the operand rules)")
     ap.add_argument("--switches", metavar="PATH",
                     help="what a 0x05 switch's operand byte is: the width of the value it compares")
+    ap.add_argument("--switches-doc", action="store_true",
+                    help="with --write-doc/--check-doc: re-render docs/BYTECODE.md's switch-widths block from "
+                         "inventory/switch_operands.csv, no dump")
     ap.add_argument("--highnative", metavar="PATH",
                     help="census the HighNative band (0x60..0x6f): which native each token calls "
                          "(console report; inventory/native_opcodes.csv is the full row set)")
@@ -5733,7 +5975,7 @@ def main():
     if args.check:
         rc = struct_check()
         return (rc or cast_check() or key_check() or opcode_check() or opcode_pairs_check()
-                or receiver_check())
+                or switches_check() or receiver_check())
     if args.header:
         return header_report(args.header)
     if args.start:
@@ -5746,6 +5988,8 @@ def main():
         return function_script(args.script[0], args.script[1], args.script[2], Table(), hex_bytes=args.hex_bytes)
     if args.switches:
         return switches_report(args.switches, Table(), args.out)
+    if args.switches_doc:
+        return switches_emit_doc(args.write_doc, args.check_doc)
     if args.usage:
         return usage_report(args.usage, Table(), args.out)
     if args.highnative:
