@@ -36,41 +36,52 @@ only.
 | mission | maps | speech lines | music groups | chapters | verdict |
 |---|---|---|---|---|---|
 | `M00` | 1 | 0 | 0 | 0 | shipped map only |
-| `M01` | **0** | 0 | **1** | **1** | audio + campaign entry, no map |
-| `M02` | 4 | 79 | 2 | 2 | shipped, recorded, in campaign |
-| `M04` | 2 | 62 | 1 | 1 | shipped, recorded, in campaign |
-| `M05` | **0** | 0 | **1** | **2** | audio + campaign entries, no map |
-| `M07` | 5 | 133 | 2 | 3 | shipped, recorded, in campaign |
-| `M10` | 4 | 37 | 1 | 3 | shipped, recorded, in campaign |
+| `M01` | **0** | **17** | **1** | **1** | audio + campaign entry, no map |
+| `M02` | 4 | 169 | 2 | 2 | shipped, recorded, in campaign |
+| `M04` | 2 | 114 | 1 | 1 | shipped, recorded, in campaign |
+| `M05` | **0** | **31** | **1** | **2** | audio + campaign entries, no map |
+| `M07` | 5 | 202 | 2 | 3 | shipped, recorded, in campaign |
+| `M10` | 4 | 56 | 1 | 3 | shipped, recorded, in campaign |
 | `M11` | **0** | 0 | **1** | 0 | music for a mission the campaign never names |
-| `M12` | 6 | 40 | 2 | 3 | shipped, recorded, in campaign |
-| `M13` | 4 | 45 | 2 | 3 | shipped, recorded, in campaign |
-| `M14` | 3 | 78 | 2 | 2 | shipped, recorded, in campaign |
-| `M15` | 6 | 81 | 1 | 3 | shipped, recorded, in campaign |
-| `M16` | 7 | 59 | 2 | 1 | shipped, recorded, in campaign |
-| `M17` | 3 | 41 | 2 | 2 | shipped, recorded, in campaign |
-| `M18` | 3 | 28 | 1 | 2 | shipped, recorded, in campaign |
-| `M19` | 5 | 38 | 1 | 1 | shipped, recorded, in campaign |
-| `M20` | 4 | 60 | 1 | 2 | shipped, recorded, in campaign |
-| `M21` | 4 | 38 | 1 | 2 | shipped, recorded, in campaign |
+| `M12` | 6 | 50 | 2 | 3 | shipped, recorded, in campaign |
+| `M13` | 4 | 67 | 2 | 3 | shipped, recorded, in campaign |
+| `M14` | 3 | 91 | 2 | 2 | shipped, recorded, in campaign |
+| `M15` | 6 | 88 | 1 | 3 | shipped, recorded, in campaign |
+| `M16` | 7 | 60 | 2 | 1 | shipped, recorded, in campaign |
+| `M17` | 3 | 42 | 2 | 2 | shipped, recorded, in campaign |
+| `M18` | 3 | 34 | 1 | 2 | shipped, recorded, in campaign |
+| `M19` | 5 | 42 | 1 | 1 | shipped, recorded, in campaign |
+| `M20` | 4 | 88 | 1 | 2 | shipped, recorded, in campaign |
+| `M21` | 4 | 74 | 1 | 2 | shipped, recorded, in campaign |
 
 Mission numbers **M03, M06, M08, M09** have no row at all: no map, no audio, no chapter. The campaign
 numbering that ships skips them, and the audio that ships does too.
 
 ## Findings, strongest first
 
-### 1. Two campaign missions were cut with their music still in the build
+### 1. Two campaign missions were cut with their music and their voice work still in the build
 
-`M01` and `M05` each have a full music group and no map:
+`M01` and `M05` each have a full music group, recorded dialogue and no map:
 
-- `M01` — 112 cues, 17.5 MiB (`inventory/music_index.csv`), and chapter 1 of `ChapterList.ini` names
-  `m01a.unr`, which is not in the dump (`inventory/chapters.csv`).
-- `M05` — 108 cues, 17.3 MiB, and **two** chapters (5 and 6: "Mission 5 Reetou Infiltration A/B")
-  name `M05A.unr` and `M05B.unr`, neither present.
+- `M01` — 112 cues, 17.5 MiB (`inventory/music_index.csv`), **17 dialogue lines**, and chapter 1 of
+  `ChapterList.ini` names `m01a.unr`, which is not in the dump (`inventory/chapters.csv`).
+- `M05` — 108 cues, 17.3 MiB, **31 dialogue lines**, and **two** chapters (5 and 6: "Mission 5 Reetou
+  Infiltration A/B") name `M05A.unr` and `M05B.unr`, neither present.
 
-Neither has any recorded speech, so the missions were cut before dialogue was recorded — the music
-was scored earlier than the voice work. That is a dateable difference inside the prototype, not an
-inference about intent.
+Both were cut with the music scored *and* the interlude dialogue recorded: the two missions are
+indistinguishable from the fourteen that ship in audio terms, and only the map is missing. That is a
+difference inside the prototype, not an inference about intent.
+
+**Corrected.** The first version of this report said neither mission had any recorded speech, and read
+that as "cut before dialogue was recorded". That was the tagger. Those lines are named
+`<mission>int_<scene>_<line>_<speaker>.wav` — an interlude prefix glued to the mission number — and the
+index's first pattern required `<mission>_<scene>_…`, so 545 of the corpus's 1,364 lines carried no
+mission and every interlude and briefing group was read as menu noise. `tools/dialogue-index.py` now
+parses **1,364 of 1,364** names over six shapes, which adds M01 and M05 as recorded missions and moves
+the speech column of every row above (`inventory/speech_index.csv`, `inventory/dialogue_by_mission.csv`,
+`docs/DIALOGUE.md`). The matrix's verdicts did not move — both ids already had music — but the sentence
+about *when* the voice work stopped does, so it is the count behind a claim that changed, not the claim's
+shape.
 
 ### 2. Music exists for a mission the campaign never mentions
 

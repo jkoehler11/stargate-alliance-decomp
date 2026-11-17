@@ -960,6 +960,23 @@ other 38 rows.
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
       export pass (`inventory/sfx_index.csv`, `docs/systems/AUDIO.md`). Extraction of the effects as WAVs remains the
       5.1 export pass.
+      **The speech index now reads every filename, and one published claim did not survive it.** The tagger
+      matched `<mission>_<scene>_<line>_<speaker>` and 545 of the 1,364 lines matched nothing, so 14 mission
+      ids looked like the whole recorded campaign. The corpus actually uses **six shapes**: letter-suffixed
+      scenes (`m21_13b_*`), interlude and briefing groups glued to the mission number (`m02int_*`,
+      `m02brief_*`), a word scene token (`m01_int_d_*`), named scenes (`m13_jacob_follow1`), the
+      `coda`/`prol`/`tut` segments, and 82 free-form cues. Widened in `tools/dialogue-index.py` — which now
+      carries a `--check` self-test over 18 synthetic names, so it joins `make ci`'s tool contract — the
+      index parses **1,364 of 1,364** and names **16 mission ids** (adding M01 and M05), **241 scenes** over
+      38 speakers. `inventory/speech_index.csv` gained `segment`/`shape`/`cue` because a scene number is only
+      unique inside its segment: **17** scene ids repeat across segments of one mission, since an interlude
+      numbers from 01 again. The correction that matters is in `docs/CUT_CONTENT.md`: M01 and M05 were
+      reported as "no recorded speech, so cut before dialogue was recorded", and they in fact hold 17 and 31
+      interlude lines — exactly the shape the narrow rule missed, so the voice work started before those two
+      missions were cut. Regenerated with the tool: `inventory/speech_index.csv`,
+      `inventory/dialogue_by_mission.csv`, `inventory/campaign_matrix.csv` (speech column only; no verdict
+      moved), `docs/DIALOGUE.md`, and the speech sections of `docs/systems/AUDIO.md`,
+      `docs/BUILDING.md` and `docs/CUT_CONTENT.md`.
 - [x] 5.4 Parse `.sgs` checkpoints and `.sgp` profiles; document the save format (also needed to make rebuilt builds testable).
       A checkpoint is a UE2 package whose exports are the level's actors; 9 files, 19,080 property tags,
       1,739 distinct schema tags (415 in all nine) in `inventory/sgs_schema.csv`. The profile is INI and

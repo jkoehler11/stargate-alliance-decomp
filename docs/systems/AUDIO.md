@@ -206,24 +206,34 @@ still unestablished (`docs/MUSIC.md` records the guess as a guess).
 
 ## Speech
 
-From `inventory/speech_index.csv`: **1,364 lines, 150.8 MiB**, spread over **15 missions and 207 scenes**,
-with **30 distinct speakers**. The distribution:
+From `inventory/speech_index.csv`: **1,364 lines, 150.8 MiB**, spread over **16 mission ids and 241
+scenes** (distinct *(segment, scene)* pairs, because an interlude numbers from 01 again), with **38
+distinct speakers**. The distribution:
 
 | speaker | lines |
 |---|---:|
-| (untagged) | 545 |
-| `oneill` | 312 |
-| `carter` | 170 |
-| `daniel` | 125 |
-| `tealc` | 69 |
-| `grey` | 38 |
+| `oneill` | 462 |
+| `daniel` | 230 |
+| `carter` | 214 |
+| `tealc` | 81 |
+| `hammond` | 41 |
+| `grey` | 39 |
+| (no speaker tag) | 87 |
 
-The SG-1 four are 676 of the 819 tagged lines. Two fifths of the corpus carries no speaker tag — barks,
-mission control, crowd and radio chatter are not attributed in the file names, so any dialogue analysis has
-to treat "untagged" as a category rather than an error.
+The SG-1 four are 987 of the 1,277 attributed lines. Every line is tagged now: the corpus uses **six**
+filename shapes, and the first index read one of them — the numbered `<mission>_<scene>_<line>_<speaker>`
+form — so interlude and briefing groups glued to a mission number (`m02int_*`, `m02brief_*`), a word scene
+token (`m01_int_*`), named scenes, the `coda`/`prol`/`tut` segments and 82 free-form cues all fell out of
+the count and this section used to report 545 untagged lines over 14 missions. `docs/DIALOGUE.md` carries
+the shape table and the per-segment breakdown.
 
-Per mission (`inventory/dialogue_by_mission.csv`, 14 missions): `m07` 133 lines / 30 scenes / 7 speakers is
-the densest, then `m15` 81, `m02` 79, `m14` 78.
+Only 87 lines carry no speaker, and they are untagged by shape rather than by accident: the free-form
+cues are named by a namespace (`Ca_`, `On_`, `Sc1_`, `Tokra_`) rather than by scene and speaker, and the
+prefix is a lead, not a field — `ja_` fits both `jacob` and Daniel Jackson.
+
+Per mission (`inventory/dialogue_by_mission.csv`, 16 missions): `m07` 202 lines / 37 scenes / 9 speakers is
+the densest, then `m02` 169, `m04` 114, `m14` 91. `M01` and `M05` appear with 17 and 31 lines and no map
+(`docs/CUT_CONTENT.md`).
 
 ## Sound effects are now indexed
 
