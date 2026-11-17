@@ -946,6 +946,7 @@ The run's own numbers are the table below, rendered from `inventory/script_call_
 | a local the source declares in another case | 160 |
 | a local typed from an ancestor's declaration | 0 |
 | a receiver typed to a class whose chain declares no such name | 38 |
+| distinct receiver shapes in that residue (kind, operand, type) | 1 |
 | of those, placed on one declaring descendant | 0 |
 | of those, a dispatch across several descendants | 38 |
 | of those, a name only classes outside the subtree declare | 0 |
@@ -1008,10 +1009,25 @@ Together: by-name sites naming a declaring class **13,258 -> 13,356 of 13,507 (9
 **What the remaining 83 are**, by shape: **40 array elements whose array holds a struct** (`TArray<ScriptDirection>`
 in `Engine.ScriptEvent`, `TArray<PlayInfo>` in `Engine.PlayInfo`, `TArray<StreamPlaylist>`) -- an element of a struct
 array is not an object, so that is a negative and not a gap; **25 struct members whose declared type is a class**
-(`StargateGame.SquadMenu.PostRender`'s `FaceWidget`, `GoauldConsoleHud.DrawHUD`'s `Message`), which needs the struct
-declarations the class `ScriptText` already carries -- the next instrument; **17 call results** whose callee is an
-import with no return type anywhere in this corpus; and **one local**, `Engine.InteractionMaster.AddInteraction`'s
-`NewInteraction`, which the class text does declare, so the body scan still stops short of that line.
+(`StargateGame.SquadMenu.PostRender`'s `FaceWidget`, `GoauldConsoleHud.DrawHUD`'s `Message`), which the struct
+blocks in the class `ScriptText` settle: 24 of the 25 place and the twenty-fifth types to `BotBase`, where `Possess`
+stays a dispatch; **17 call results** whose callee is an import with no return type anywhere in this corpus; and
+**one local**, `Engine.InteractionMaster.AddInteraction`'s `NewInteraction`, which the class text does declare, so the
+body scan still stops short of that line.
+
+**The typed residue that is left is one declaration asked 38 times, not 38 gaps** (2026-11-17). The census counts
+`a receiver typed to a class whose chain declares no such name` by *site*, and the instrument now also groups those
+sites by the receiver's shape -- the expression kind, the operand it names and the class its declaration gives:
+**1 shape over 38 sites**, `InstanceVariable Outer Object`. Every one of the 38 is `Outer.<call>`, in
+`Engine.CheatManager` 25, `Engine.AdminBase` 11 and `Engine.PlaylistParserBase` 2, and `Outer` is one row of
+`inventory/class_properties.csv`: `Core.Object.Outer`, a `UObjectProperty` carrying `Native;Const` with the friendly
+type `Object`. It is the engine's own `UObject` member, declared on the root class, so every object carries it and its
+runtime class is whatever contains that object -- the declaration says `Object` and the call name (`ClientMessage` 27,
+then `ValidIndex`, `Save`, `ConsoleCommand`, `Possess` and seven more singletons) belongs to a class the declaration
+does not name. No reading of this build's text decides it, which is the same C++-declared-property limit the 474
+untyped-property imports hit; the 38 is one member of a rebuild's work, and
+`inventory/script_call_census.csv`'s `typed_gap_shapes` carries the count so a later census cannot grow the residue
+without growing the shapes.
 
 **5,424 static edges, every one of them naming a `Function` export or import**, plus **13,507 dynamic call sites**
 whose target is a name rather than an object. A by-name target is first resolved along the **caller's super chain, in

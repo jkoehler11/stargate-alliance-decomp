@@ -27,6 +27,7 @@ directive_classes,173
 local_case_sites,160
 ancestor_local_sites,0
 typed_gap,38
+typed_gap_shapes,1
 descendant_placed,0
 below_several,38
 below_outside,0
