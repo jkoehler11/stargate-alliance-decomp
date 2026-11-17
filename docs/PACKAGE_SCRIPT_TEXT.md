@@ -567,6 +567,80 @@ The largest of the 172 disabled bodies (`ops` / `stmts` at the body's own brace 
 Census: 2319 classes read, 252 with a block comment, 198 commented bodies.
 <!-- /generated:class-text-bodies -->
 
+## A declaration without a body
+
+`tools/class-text-bodies.py` reads a declaration's body with a brace walk, and the walk answering `None` is not
+one thing. The grammar lets a class declare a function and never write it -- UE2's own `Engine.Actor` does that
+for the events native code calls -- and the exported `ScriptText` can also lose the body while keeping the
+declaration, or stop in the middle of one. The other side of the question is what the build did with the
+declaration, and every declaration has an export: a bodyless declaration is a `Function` object like any other,
+so its payload says whether the compiler also thought there was nothing to compile.
+
+`tools/text-stubs.py` asks both, per declaration, over the same 18 packages: the window between a declaration
+and the next one gives the shape, the class's export of that name gives the owner (the class itself or one of
+its `State`s), and the payload's own length field gives the compiled script. The empty script is seven bytes
+before the trailer (`03 00 00 00 04 0b 47` -- a `Return` with no operand), so a stub that carries it is a
+declaration the build agreed about, and a stub that carries anything longer is a body the text no longer
+spells. The artifact is `inventory/text_stubs.csv` (one row per class, one per stub, and the census), and
+`make text-stubs` regenerates it and this block.
+
+<!-- generated:text-stubs -->
+**Of the 11,411 declarations the grammar's rule reads, 10,505 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **759 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **147 carry a longer script**, a body the package kept. Of those **23** are forward declarations -- the same text declares the name again, with a body, further down -- so **124 carry a script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **441 of the 10,505 bodied declarations compile to the same empty script too** -- **307** an empty `{}` body and **134** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 62 of the 369 empty-`{}` bodies carry a longer payload than it.
+
+| shape | stubs | what it is |
+|---|---:|---|
+| `;` before any `{` | 903 | a bodyless declaration -- the parameter list may sit on the next line |
+| no `{` in the window | 2 | the body sits after an `#endif`, outside the declaration's region |
+| braces never close | 1 | the exported `ScriptText` ends inside a body |
+
+| owner | empty script | compiled body |
+|---|---:|---:|
+| the class itself | 657 | 137 |
+| a `State` of the class | 102 | 10 |
+
+A stub's name is never a name the package lacks: **794 name a `Function` the class itself exports**, **112 one only a `State` of the class exports**, and **0 name no export at all**. **61** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
+
+| package | stubs |
+|---|---:|
+| `Engine` | 428 |
+| `StargateGame` | 164 |
+| `StargateContent` | 133 |
+| `GUI` | 78 |
+| `UWindow` | 38 |
+| `StargateVehicles` | 22 |
+| `IpDrv` | 18 |
+| `GamePlay` | 15 |
+| `AmbientCreatures` | 3 |
+| `Core` | 3 |
+| `Editor` | 2 |
+| `StargateMenus` | 2 |
+
+The concentration is a handful of classes, not a spread: **15 classes are all stubs** and **10 hold at least half**. The eight with the most:
+
+| class | stubs / declarations | empty | bodied |
+|---|---:|---:|---:|
+| `Engine.actor` | 71 / 111 | 71 | 0 |
+| `Engine.controller` | 49 / 136 | 49 | 0 |
+| `Engine.pawn` | 46 / 212 | 46 | 0 |
+| `StargateGame.botenemy` | 38 / 403 | 10 | 28 |
+| `UWindow.uwindowlookandfeel` | 37 / 38 | 37 | 0 |
+| `GUI.guicomponent` | 30 / 104 | 30 | 0 |
+| `StargateGame.stargateplayer` | 28 / 214 | 2 | 26 |
+| `Engine.gameinfo` | 22 / 162 | 22 | 0 |
+
+The stubs whose payload carries code are the ones where the text and the build disagree -- three of them are the shape cases above (the two `#endif` windows and the truncated text) and the rest are bodies no live declaration of that class spells. The largest:
+
+| function | payload | owner |
+|---|---:|---|
+| `UWindow.uwindowurltextarea.textareacliptext` | 734 | class |
+| `StargateGame.botbase.weaponfireagain` | 643 | class |
+| `StargateGame.stargatepawn.talk` | 498 | class |
+| `Engine.interactionmaster.addinteraction` | 314 | class |
+| `StargateGame.stargatepawn.playwaiting` | 308 | class |
+| `Engine.playercontroller.serveruse` | 269 | class |
+
+<!-- /generated:text-stubs -->
+
 ## Handling: measured here, extracted elsewhere
 
 The text is game-derived. Per `AGENTS.md` and `docs/LEGAL.md` it must not be committed: what is committed is
