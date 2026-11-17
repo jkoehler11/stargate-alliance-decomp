@@ -45,7 +45,8 @@ DOC_MARK = ("<!-- generated:text-branches -->", "<!-- /generated:text-branches -
 
 FIELDS = ["kind", "package", "class", "function", "live_else", "comment_else", "and", "or", "if", "while", "for",
           "terms", "pp_else", "text_functions", "record_functions", "byte_else", "byte_if", "byte_empty",
-          "byte_expression", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_unpaired",
+          "byte_expression", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
+          "fn_top", "fn_unpaired",
           "verdict", "count", "note"]
 
 CENSUS_NOTE = {
@@ -85,12 +86,31 @@ CENSUS_NOTE = {
     "less_more": "`less` classes that declare more",
     "agree_fewer": "`agree` classes that declare fewer functions than their record has -- the control for the above",
     "fn_absent_names": "distinct function names behind the `less` classes' absent arms",
+    "decl_legacy": "declarations the previous rule counted (`simulated`/`static`/`final`/`latent` only)",
+    "decl_wide": "declarations the grammar has, any modifier",
+    "decl_no_function": "declarations introduced by `event`/`delegate`/`operator` rather than the word `function`",
+    "fn_state": "`else` keywords inside a `state { }` block and outside every function in it",
+    "fn_top": "`else` keywords outside every function and every block",
+    "state_blocks": "`state` declarations with a braced body",
 }
 
 WORD = re.compile(r"(?<![#\w$])(if|else|while|for)(?![\w$])")
-# The declaration shape `tools/class-text-comments.py` counts, so the two agree on what a function is.
-FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
-                  r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
+# The grammar's declaration modifiers. The previous rule carried `simulated`/`static`/`final`/`latent` only, so
+# an `exec function` -- an entire class's worth in `CheatManager` and `PlayerController` -- read as code outside
+# any function; `FUNC_LEGACY` keeps that shape so the correction is a number rather than a claim.
+MODIFIERS = ("simulated", "static", "final", "latent", "exec", "private", "protected", "public", "event",
+             "iterator", "singular", "delegate", "preoperator", "postoperator", "operator")
+# A declaration does not need the word `function` either: `event`, `delegate` and the operator family introduce
+# one on their own, and in the engine classes the `event` handlers are most of the code that is not a function.
+FUNC = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:function|event|delegate|operator|preoperator|postoperator)"
+                  r"[ \t]+(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\("
+                  % "|".join(MODIFIERS), re.M)
+FUNC_NO_KEYWORD = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:event|delegate|operator|preoperator|postoperator)"
+                             r"[ \t]+(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\("
+                             % "|".join(MODIFIERS), re.M)
+FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
+                         r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
+STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M)
 PP_ELSE = re.compile(r"#[ \t]*else\b")
 
 
@@ -99,6 +119,17 @@ def load_tool(name, filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+CTB = None
+
+
+def ctb_tool():
+    """`tools/class-text-bodies.py`, loaded once -- its `body_span` is the brace walk both readers share."""
+    global CTB
+    if CTB is None:
+        CTB = load_tool("class_text_bodies", "class-text-bodies.py")
+    return CTB
 
 
 # --- masking ---------------------------------------------------------------------------------------
@@ -175,16 +206,16 @@ def else_in(text):
 
 
 def function_else(live):
-    """`(name -> `else` in the function's live body, every name the text declares)` for one class text.
+    """`(name -> `else` in the body, every name declared, the body spans)` for one class text.
 
     Spans come from `tools/class-text-bodies.py` -- its `FUNC` and its brace walk bounded by the next
     declaration -- applied to the **masked** buffer, so a declaration inside a comment is not a declaration and
     a body's braces are the code's own. A name declared with no body is returned in the set and absent from the
     map, because the two are different facts: the text knows the function but shows no arms either.
     """
-    ctb = load_tool("class_text_bodies", "class-text-bodies.py")
-    bodies, names = {}, set()
-    ms = list(ctb.FUNC.finditer(live))
+    ctb = ctb_tool()
+    bodies, names, spans = {}, set(), []
+    ms = list(FUNC.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
         name = m.group(1).lower()
@@ -192,9 +223,35 @@ def function_else(live):
         if name in bodies:
             continue  # first declaration of a name wins, as in `class-text-bodies.functions`
         span = ctb.body_span(live, m.end(), limit)
-        if span is not None:
-            bodies[name] = else_in(live[span[0]:span[1]])
-    return bodies, names
+        if span is None or name in bodies:
+            continue  # no body, or a redeclaration: the first one wins, as in `class-text-bodies.functions`
+        bodies[name] = else_in(live[span[0]:span[1]])
+        spans.append(span)
+    return bodies, names, spans
+
+
+def state_split(live, fn_spans, total_else):
+    """`(else inside a state block but outside its functions, else outside every block, blocks with a body)`.
+
+    The 3.5 notes call the state code a gap in its own right; a class-level count cannot tell it from a
+    function's arms, so the keywords that no function body holds get their own split here, and `fn_top` is the
+    residual a reader bug shows up in.
+    """
+    ctb = ctb_tool()
+    in_state, blocks = 0, 0
+    ms = list(STATE.finditer(live))
+    for k, m in enumerate(ms):
+        limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
+        span = ctb.body_span(live, m.end(), limit)
+        if span is None:
+            continue
+        blocks += 1
+        here = else_in(live[span[0]:span[1]])
+        inside = sum(else_in(live[max(a, span[0]):min(b, span[1])])
+                     for a, b in fn_spans if a < span[1] and b > span[0])
+        in_state += here - inside
+    outside = total_else - sum(else_in(live[a:b]) for a, b in fn_spans)
+    return in_state, outside - in_state, blocks
 
 
 # --- the dump side ---------------------------------------------------------------------------------
@@ -214,13 +271,17 @@ def walk(system_dir):
             if not text:
                 continue
             live, comments = mask(text)
-            fn_else, fn_names = function_else(live)
+            fn_else, fn_names, fn_spans = function_else(live)
+            fn_state, fn_top, state_blocks = state_split(live, fn_spans, counts(live)["else"])
             rows[(package, pkg.name(exp["name"]).lower())] = {
                 "class": pkg.name(exp["name"]),
                 "live": counts(live),
                 "comment_else": counts(comments)["else"],
                 "functions": len(FUNC.findall(live)),
                 "fn_else": fn_else, "fn_names": fn_names,
+                "fn_state": fn_state, "fn_top": fn_top, "state_blocks": state_blocks,
+                "decl_legacy": len(FUNC_LEGACY.findall(live)),
+                "decl_no_function": len(FUNC_NO_KEYWORD.findall(live)),
             }
     return rows
 
@@ -283,6 +344,12 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                     "if": c["if"], "while": c["while"], "for": c["for"], "terms": terms, "pp_else": c["pp_else"],
                     "text_functions": t["functions"]})
         census["text_functions"] += t["functions"]
+        census["decl_legacy"] += t["decl_legacy"]
+        census["decl_wide"] += t["functions"]
+        census["decl_no_function"] += t["decl_no_function"]
+        census["state_blocks"] += t["state_blocks"]
+        census["fn_state"] += t["fn_state"]
+        census["fn_top"] += t["fn_top"]
         census["classes"] += 1
         for k in ("else", "and", "or", "if", "while", "for", "pp_else"):
             census["text_" + k if k == "else" else k] += c[k]
@@ -320,8 +387,13 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
             print("FAIL text-branches: the function split does not reconcile for %s.%s (%d/%d, %d/%d)"
                   % (key[0], key[1], fn_total, a["else"], paired + surplus + unpaired + outside, c["else"]))
             raise SystemExit(1)
+        if t["fn_state"] + t["fn_top"] != outside:
+            print("FAIL text-branches: the state split does not reconcile for %s.%s (%d+%d vs %d)"
+                  % (key[0], key[1], t["fn_state"], t["fn_top"], outside))
+            raise SystemExit(1)
         row.update({"fn_arms": fn_total, "fn_absent": absent, "fn_short": short, "fn_long": surplus,
-                    "fn_outside": outside, "fn_unpaired": unpaired})
+                    "fn_outside": outside, "fn_state": t["fn_state"], "fn_top": t["fn_top"],
+                    "fn_unpaired": unpaired})
         vc = verdicts[verdict(c["else"], a["else"])]
         vc["classes"] += 1
         vc["arms"] += fn_total
@@ -329,6 +401,8 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         vc["short"] += short
         vc["outside"] += outside
         vc["unpaired"] += unpaired
+        vc["state"] += t["fn_state"]
+        vc["top"] += t["fn_top"]
         vc["text_else"] += c["else"]
         vc["byte_else"] += a["else"]
         if row["verdict"] == "less":
@@ -386,7 +460,8 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
             continue
         rows.append({"kind": "verdict", "class": name, "live_else": c["text_else"],
                      "byte_else": c["byte_else"], "fn_arms": c["arms"], "fn_absent": c["absent"],
-                     "fn_short": c["short"], "fn_outside": c["outside"], "fn_unpaired": c["unpaired"],
+                     "fn_short": c["short"], "fn_outside": c["outside"], "fn_state": c["state"],
+                     "fn_top": c["top"], "fn_unpaired": c["unpaired"],
                      "count": c["classes"], "note": "the `%s` population" % name})
     rows.extend(sorted(absent_rows, key=lambda r: (-r["count"], r["package"], r["class"], r["function"])))
     out = rows + pkg_rows
@@ -395,7 +470,8 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
               "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
               "byte_empty", "byte_expression", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
               "with_and_or", "with_and_or_exact", "less_fewer", "less_equal", "less_more", "agree_fewer",
-              "fn_absent_names"):
+              "fn_absent_names", "decl_legacy", "decl_wide", "decl_no_function", "fn_state", "fn_top",
+              "state_blocks"):
         value = jumpifnot if k == "jumpifnot" else census[k]
         out.append({"kind": "census", "count": value, "note": CENSUS_NOTE[k]})
     return out
@@ -531,12 +607,23 @@ def verdict_paragraph(rows):
             "by function, not by class.** Its {nc} classes carry {arms} `else` arms: **{absent}** sit in a "
             "function whose name the live text does not declare at all, **{short}** are the shortfall inside a "
             "function it declares, and the rest are spelled exactly. Its text in turn spells {text} `else` "
-            "keywords, of which **{outside}** sit outside any function body -- state code and class-level code, "
-            "which a class-level count cannot separate from a function's arms -- and {unpaired} in a declared "
-            "body the record gives no arm. So the net of {ln} is {missing} missing arms against {outside} "
-            "keywords outside a function, and **the {ac} classes that agree on the count carry the same three "
-            "populations** ({a_absent} absent, {a_short} short, {a_outside} outside, net {a_net:+d}): a net of "
-            "zero is two equal mismatches, not a class whose text is the revision compiled.\n"
+            "keywords, of which **{outside}** sit outside any function body -- {state} inside a `state` block "
+            "and {topn} outside every block -- and {unpaired} in a declared body the record gives no arm. So "
+            "the net of {ln} is {missing} missing arms against {outside} keywords outside a function, and "
+            "**the {ac} classes that agree on the count carry the same three populations** ({a_absent} absent, "
+            "{a_short} short, {a_outside} outside, net {a_net:+d}): a net of zero is two equal mismatches, not "
+            "a class whose text is the revision compiled.\n"
+            "\n**The declaration rule was narrower than the grammar, and the figures above moved with it.** "
+            "Declarations are counted with the grammar's modifiers now; the rule that carried only "
+            "`simulated`/`static`/`final`/`latent` read **{decl_legacy}** of the corpus's **{decl_wide}** "
+            "declarations, so an `exec function` -- an entire class's worth in `CheatManager` and "
+            "`PlayerController` -- was code outside any function, and **{nokw}** declarations are introduced by "
+            "`event`, `delegate` or an operator rather than by the word `function` at all. The `less` "
+            "population's absent arms fall from the previous run's 356 to **{absent}** while its outside "
+            "keywords fall from 336 to **{outside}**, and what is left of that outside half is **{topn}** "
+            "keywords in the `less` classes (and {alltop} in the corpus) that sit outside every function and "
+            "every block. `class-text-bodies.py` still counts with the narrow shape, so its 4,890 "
+            "declarations are a floor and re-basing that census is the open half.\n"
             "\n**What the absent arms name is a surface, not a scatter.** They sit behind **{names}** distinct "
             "function names in the `less` classes, and the largest are {top} -- compiled in the package and no "
             "longer declared in the text it ships. **The class-set test does not decide this either**: "
@@ -546,14 +633,16 @@ def verdict_paragraph(rows):
             .format(ln=comma(less_net), nc=comma(less["count"]), arms=comma(less["fn_arms"]),
                     absent=comma(less["fn_absent"]), short=comma(less["fn_short"]),
                     text=comma(less["live_else"]), outside=comma(less["fn_outside"]),
+                    state=comma(less["fn_state"]), topn=comma(less["fn_top"]),
                     unpaired=comma(less["fn_unpaired"]),
                     missing=comma(int(less["fn_absent"]) + int(less["fn_short"])),
                     ac=comma(agree["count"]), a_absent=comma(agree["fn_absent"]),
                     a_short=comma(agree["fn_short"]), a_outside=comma(agree["fn_outside"]), a_net=agree_net,
+                    decl_legacy=comma(count(rows, "decl_legacy")), decl_wide=comma(count(rows, "decl_wide")),
+                    nokw=comma(count(rows, "decl_no_function")), alltop=comma(count(rows, "fn_top")),
                     names=comma(count(rows, "fn_absent_names")), top=named,
                     l_fewer=comma(count(rows, "less_fewer")), l_equal=comma(count(rows, "less_equal")),
                     l_more=comma(count(rows, "less_more")), a_fewer=comma(count(rows, "agree_fewer"))))
-
 
 def package_table(rows):
     """A markdown table of the joined classes per package, so the disagreement has an owner."""
@@ -633,7 +722,25 @@ def selftest():
     text = ("function Exact() { if (a) b(); else c(); }\n"
             "function Short() { if (a) b(); }\n"
             "function Bare();\n")
-    fns, names = function_else(mask(text)[0])
+    text = ("exec function Exec() { if (a) b(); else c(); }\n"
+            "protected function Prot() { if (a) b(); }\n"
+            "state S {\n"
+            "Begin:\n"
+            "  if (x) y(); else z();\n"
+            "  function Inner() { if (p) q(); }\n"
+            "}\n")
+    live2 = mask(text)[0]
+    fns, names, spans = function_else(live2)
+    st, tp, blocks = state_split(live2, spans, counts(live2)["else"])
+    if fns != {"exec": 1, "prot": 0, "inner": 0}:
+        print("FAIL text-branches: a modified declaration read %r / %r" % (fns, names))
+        return 1
+    if (st, tp, blocks) != (1, 0, 1):
+        print("FAIL text-branches: the state split read %r" % ((st, tp, blocks),))
+        return 1
+    fns, names = function_else(mask("function Exact() { if (a) b(); else c(); }\n"
+                                    "function Short() { if (a) b(); }\n"
+                                    "function Bare();\n")[0])[:2]
     if fns != {"exact": 1, "short": 0} or names != {"exact", "short", "bare"}:
         print("FAIL text-branches: the function split read %r / %r" % (fns, names))
         return 1
@@ -650,11 +757,11 @@ def selftest():
     rows.append({"kind": "package", "package": "Fixture", "live_else": 3, "byte_else": 2, "terms": 4,
                  "count": 2, "note": "agree 1, more 1, less 0, no-branch 0"})
     rows.append({"kind": "verdict", "class": "less", "live_else": 2, "byte_else": 5, "fn_arms": 5, "fn_absent": 3,
-                 "fn_short": 1, "fn_long": 0, "fn_outside": 2, "fn_unpaired": 0, "count": 2,
-                 "note": "the `less` population"})
+                 "fn_short": 1, "fn_long": 0, "fn_outside": 2, "fn_state": 2, "fn_top": 0, "fn_unpaired": 0,
+                 "count": 2, "note": "the `less` population"})
     rows.append({"kind": "verdict", "class": "agree", "live_else": 1, "byte_else": 1, "fn_arms": 1, "fn_absent": 0,
-                 "fn_short": 0, "fn_long": 0, "fn_outside": 0, "fn_unpaired": 0, "count": 1,
-                 "note": "the `agree` population"})
+                 "fn_short": 0, "fn_long": 0, "fn_outside": 0, "fn_state": 0, "fn_top": 0, "fn_unpaired": 0,
+                 "count": 1, "note": "the `agree` population"})
     rows.append({"kind": "absent", "package": "Fixture", "class": "C", "function": "gone", "count": 3})
     if "| `less` | 2 | 5 | 3 | 1 | 2 | +3 |" not in doc_block(rows):
         print("FAIL text-branches: the verdict table does not render its own row")

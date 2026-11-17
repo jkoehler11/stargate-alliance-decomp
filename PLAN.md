@@ -12324,6 +12324,46 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, the declaration rule was half the grammar, and the outside bucket closes to 107)
+
+- **Task.** The note below's next measurement: the `less` classes' keywords outside any function body as state
+  code, against the arms their state bodies compile. The read answered the other direction first.
+- **The bucket was mostly not state code -- it was declarations the reader could not see.** `PlayerController`
+  read 93 keywords outside every function and only 277 declarations; `CheatManager` 20 and 3. The declaration
+  pattern carried `simulated`/`static`/`final`/`latent` and the word `function` only, so `exec function` (**343**),
+  `native function` (**123**), `protected` (30), `singular` (8), `delegate` (5), `private` (2) and `event` (1) --
+  and, on a second widening, **1,162 declarations introduced by `event`, `delegate` or an operator with no
+  `function` keyword at all** -- were read as code outside any function. The corpus carries **11,458**
+  declarations; the previous rule saw **9,860**.
+- **What the correction does to the split, over the `less` population's 122 classes:** absent arms **356 -> 65**,
+  the shortfall inside a declared body **271 -> 338**, keywords outside every function **336 -> 107** (**43**
+  inside a `state` block and **64** outside every block; 118 corpus-wide). The net is unchanged at 290 because it
+  is `65 + 338 - 107 - 6`, so the two larger counts were real and the net was never the finding.
+- **The agreeing classes show it from the other side.** Their absent arms fall 157 -> **4** while their shortfall
+  rises 61 -> **99**: a class that agrees on the total still carries 99 arms of shortfall against 102 keywords
+  outside a function.
+- **The class-set test inverts, which is the same lesson twice.** Under the narrow rule 65 of the 122 declared
+  fewer functions than their record; with the grammar's declarations counted it is **19 fewer, 79 the same and 24
+  more**, against **42 of 800** agreeing classes. The previous note's conclusion ("a function count is not what an
+  arm count is missing") survives and its 65/39/18 was the reader's arithmetic, not the build's.
+- **What is left has owners and a bound.** The 65 absent arms sit behind **8** function names -- `servermove` 13,
+  `longclientadjustposition` 12, `callservermove` 10, `login` 9, `replicatemove` 9,
+  `enumpositiondescription` 5, `prelogin` 4, `moveautonomous` 3 -- the player-movement and replication API, so
+  the text ships a revision of that surface and not of a scatter. The 118 corpus-wide keywords outside every
+  function and every block are what a further enclosing shape (`state` label blocks, `#ifdef` sections) would have
+  to explain, and that is the open half worth a boot-free read.
+- **`class-text-bodies.py` still counts with the narrow shape**, so its 4,890 live declarations and its 208
+  commented ones are floors; the block now says so rather than quoting them as the corpus's count, and re-basing
+  that census is named below instead of assumed.
+- Tool (`FUNC` with the grammar's modifiers and declaration keywords, `FUNC_LEGACY` so the correction is its own
+  number, `FUNC_NO_KEYWORD`, `state_split`, five more columns and census rows, and a `--check` that drives an
+  `exec`/`protected` declaration and a state block holding a function) + `inventory/text_branches.csv` (2,392
+  rows) + `docs/BYTECODE.md` (the block) + this note. One 3-second read of the 18 packages; no bytecode walk, no
+  boot, no Ghidra.
+- **Next measurement:** re-baseline `tools/class-text-bodies.py` on the same rule -- its 22 pairs, 158 disabled
+  bodies and 4,468-of-4,890 resolved are all counted with the narrow pattern, so the commented-declaration census
+  is a floor under a rule this run has measured to be short by 1,598 declarations.
+
 ### Execution notes (2026-11-17, the `less` population's net is two larger counts, and the missing arms have owners)
 
 - **Task.** The last note's next measurement: the 122 `less` classes as a class-set test over `text_functions` and
@@ -12360,6 +12400,11 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   function-split case in `--check`) + `inventory/text_branches.csv` (2,539 rows: 2,319 class, 18 package, 163
   absent, 3 verdict, 36 census) + `docs/BYTECODE.md` (the block) + this note. One 2.7-second read of the 18
   packages; no bytecode walk, no boot, no Ghidra.
+- **Superseded the same day (see the note above):** these figures were taken with a declaration rule that
+  carried four modifiers and the word `function` only, so `exec`/`native`/`protected`/`event` declarations read as
+  code outside any function. With the grammar's declarations counted the `less` population reads **65** absent
+  arms, **338** short and **107** outside a function, and the class-set test is 19 fewer / 79 the same / 24 more
+  rather than 65/39/18.
 - **Next measurement:** the 336 keywords outside any function body are state code, and the bytecode's in-state
   arms are already counted (`inventory/state_entry.csv` resolves 372 `GotoState` sites inside a state body, and
   `jump_branches.csv` carries the arms) -- so the read is whether a class's outside-function keywords pair with
