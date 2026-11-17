@@ -1,0 +1,18 @@
+diff --git a/src/Core/Classes/UFunction.cs b/src/Core/Classes/UFunction.cs
+index 99979b4..7b6fae3 100644
+--- a/src/Core/Classes/UFunction.cs
++++ b/src/Core/Classes/UFunction.cs
+@@ -208,7 +208,12 @@ namespace UELib.Core
+ 
+         public bool IsPost()
+         {
+-            return IsOperator() && OperPrecedence == 0;
++            // A pre operator carries the PreOperator flag and no precedence byte, so a zero precedence
++            // alone does not make it a post operator: this build writes `!` (`Object.Not_PreBool`) and
++            // `-` (`Object.Subtract_PreVector`) with precedence 0, and testing the byte first rendered
++            // them postfix (`bFlag!`) even where IsPre() also answered true.
++            return IsOperator() && OperPrecedence == 0
++                && !FunctionFlags.HasFlag(FunctionFlag.PreOperator);
+         }
+ 
+         public bool IsPre()

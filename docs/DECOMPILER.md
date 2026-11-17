@@ -83,8 +83,8 @@ unary one.
 
 The tree is written by UELib's `UClass.Decompile()` (`tools/Sg1Tool/DecompileCommand.cs`), so the defect belongs to
 the pinned renderer (`tools/uelib`, `8236c39`, git-ignored) rather than to this repository's code -- the case 3.5
-says to file upstream. Until that lands the correction is a text pass over `$WORK/UnrealScript`, not a measurement
-anyone has to guess at.
+says to file upstream. **It is filed and fixed**: the next section measures the cause and ships the patch, and the
+correction pass below stays as the regression check on the patched renderer, where it moves nothing.
 
 ### The correction, run over the whole tree
 
@@ -106,6 +106,49 @@ reconstructed tree, writes a corrected one, and reports the counts:
   must separate (prefix left alone, `!=`, a `!` inside a string, one inside a line comment and one inside a block
   comment, a class the tree does not have) plus a refusal (`"x"!`, a string that is not a bool), by exact text
   comparison, and asserts the pass is its own fixpoint.
+* **With the patch installed the pass moves 0** -- `inventory/decompiler_notfix.csv` is regenerated from the patched
+  tree -- so what it measures from now on is a renderer regression: a non-zero count means the postfix form came
+  back.
+
+### The renderer patch: a pre operator is not a post operator
+
+`tools/patches/uelib-negation-prefix.patch` is the whole fix, and the cause is one condition in UELib:
+
+    public bool IsPost()            // src/Core/Classes/UFunction.cs
+    {
+        return IsOperator() && OperPrecedence == 0;
+    }
+
+In this build a *pre* operator carries the `PreOperator` flag and **no precedence byte**. Measured from the dump's
+own `Core.u` -- `Object.Not_PreBool` (native 129), `Object.Subtract_PreVector` (211) and `Object.Subtract_PreFloat`
+(169) -- every one reads `prec=0, flags=0x00023411`, i.e. `Final|PreOperator|Native|Operator|Static|Public`. So
+`OperPrecedence == 0` is true of a pre operator, `IsPost()` answered **true** where `IsPre()` answered true as well,
+and both `NativeTableItem(UFunction)` and the two token renderers test `IsPost()` first: the postfix branch won every
+native pre operator. That is not only `!` (`bFlag!`): unary minus went the same way (`float(StepHeight-)`,
+`direction-`, `(dz / float(2))-`).
+
+The fix adds the flag test, so a function the build declares `PreOperator` can never be classified post:
+
+    return IsOperator() && OperPrecedence == 0 && !FunctionFlags.HasFlag(FunctionFlag.PreOperator);
+
+`tools/fetch-uelib.sh` applies every `tools/patches/uelib-*.patch` in name order after checking out `8236c39`, and it
+is idempotent both ways: a patch that already applies in reverse is reported as applied, and one that neither
+applies nor reverses stops the fetch with exit 3 rather than leaving a checkout patched halfway.
+
+**Two fresh `make decompile` runs over the same dump, one per renderer** (the committed artifact was one tree older
+than today's build, so both columns were measured now):
+
+| | prefix `!` | postfix `!` | postfix unary `-` |
+|---|---:|---:|---:|
+| shipped source | 2,064 | 0 | 0 |
+| pinned renderer (`8236c39`) | 10 | 2,057 | 145 |
+| patched renderer | **2,067** | **0** | **1** |
+
+The negation total does not move (2,067 in both runs): the patch is a position fix, 2,057 sites, and the ten prefix
+survivors stay prefix. `tools/decompiler-notfix.py` over the patched tree moves **0 sites** (2,056 over the pinned
+one), so the correction pass is now a fixpoint check rather than a step, and `inventory/decompiler_operators.csv` and
+`inventory/decompiler_notfix.csv` are regenerated from the patched tree. The `-` column is a text scan for
+`[A-Za-z0-9_)]-` followed by `)`, `,`, `;` or a space: 145 sites in the pinned tree, 1 in the patched one.
 
 ## What this does not measure
 
