@@ -65,12 +65,20 @@ the values of that change; the current ones are 1,664 and 15,521, because two bl
 contradicting their own property record — see "The locator scores names first and tag types second" — and the last
 three of those properties were recovered by the own-first tie-break in the closing section.)
 
-Since that measurement the chooser has taken the record's closing group as a rule
-(`docs/NATIVE_VM.md`, *The chooser takes the group's end*): 373 starts move onto the record's own boundary and the
-totals are now **1,663 fully declared, 656 not (288 `single-declared`, 200 `incomplete`, 135 `empty-block`, 30
-`type-contradiction`, 2 `single-property`, 1 `trailer-over-64`) and 138 with no usable block** -- the last move is the
-witness floor `docs/NATIVE_VM.md`, *The witness floor the chooser computed is in force*, which withdrew 16 starts that
-left bytes behind. The reason table below was measured before both changes; only the totals above are current.
+Since that measurement the chooser has taken the record's closing group as a rule (`docs/NATIVE_VM.md`, *The chooser
+takes the group's end*), and the witness floor (`docs/NATIVE_VM.md`, *The witness floor the chooser computed is in
+force*) withdrew 16 starts that left bytes behind. **The totals below are rendered from the two committed artifacts**
+-- `python3 tools/class-defaults.py --write-doc` rewrites the block and `--check` (in `make ci`) fails when the page and
+the files disagree, so a count here cannot drift from the run that produced it:
+
+<!-- generated:defaults-totals -->
+**1,664 of the 2,319 classes are fully declared (71.8%), 655 are not, and 336 of those have no block at all**
+-- `inventory/class_defaults_per_class.csv` and `inventory/class_defaults_misses.csv`, rendered by
+`python3 tools/class-defaults.py --write-doc`
+<!-- /generated:defaults-totals -->
+
+The reason table's counts are gated the same way: `--check` reads the rows and compares each against
+`class_defaults_misses.csv`. Its last column is prose and stays hand-written.
 
 Where it still fails:
 
@@ -78,42 +86,35 @@ Where it still fails:
   declared properties mostly come from `GUI`/`Core` parents; `Fire`'s are fractals with almost no declared
   properties, so "every property declared" is the wrong test there — they may well be correct blocks scored
   harshly.
-* **110 classes have no usable block, and the trailer bound is not why.** `make defaults-misses`
+* **336 classes have no usable block, and the trailer bound is not why.** `make defaults-misses`
   (`tools/class-defaults.py --misses`, `inventory/class_defaults_misses.csv`, `--check-misses` in `make ci`) classifies
   every one of the 655 classes that are not fully declared, against the committed per-class artifact:
 
   | reason | classes | what it means |
   |---|---:|---|
-  | `single-declared` | 263 | the payload's tail is a one-property block whose name the class declares, and no parse holds two declared names — the floor-of-one measurement below |
-  | `incomplete` | 252 | a block was chosen, but it holds names the class does not declare — the tie below |
+  | `empty-block` | 334 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding two of the class's properties -- *The 334 payloads with no start name the record's own references* above measures what they hold instead |
+  | `single-declared` | 285 | the payload's tail is a one-property block whose name the class declares, and no parse holds two declared names -- the floor-of-one measurement below |
   | `type-contradiction` | 30 | a block was chosen whose names are declared, but at least one tag's type the declared kind cannot carry (below) |
-  | `empty-block` | 109 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding even two of the class's properties |
+  | `incomplete` | 4 | a block was chosen, but it holds names the class does not declare -- the tie below |
   | `single-property` | 1 | only one-property blocks parse |
-  | `trailer-over-64` | **0** | no class is rejected by the 64-byte bound |
-  | `no-block-parses` | **0** | every class parses *something* |
+  | `trailer-over-64` | 1 | one class is rejected by the 64-byte bound |
+  | `no-block-parses` | 0 | every class parses *something* |
 
   `single-declared` is new and it is a *reason*, not a located block: the `property` column names the tag a
   floor of one would have promoted the class on, and the tag is usually the payload's own tail rather than its
-  block. Nine of the 263 name `VoiceSets` — the nine packs that set the `array<VoiceSet>` — and
+  block. Nine of the 285 name `VoiceSets` — the nine packs that set the `array<VoiceSet>` — and
   `tools/voice-sets.py` reads that same array independently, so *those* rows are a real one-property block. `ActionString` is the tag for **53** of them, which
   is a menu-table tail shared across classes, and `VoicePack` itself would be "fully declared" on `LifeSpan` out of
-  a 108-byte payload that holds no `defaultproperties` at all. The 24 `empty-block` and 24 `type-contradiction`
+  a 108-byte payload that holds no `defaultproperties` at all. The `empty-block` and `type-contradiction`
   rows that also end in a declared one-tag parse keep their reasons: an empty block parses at offset 0, so those
   payloads do hold a block-shaped structure the single tag does not explain, and a contradicting block is a
   different finding.
 
-  This corrects an earlier reading of the same data. The first pass labelled 48 of these `trailer-over-64`, because it
-  asked only "what was the best parse and how far did it end from EOF" — and a 1–2 property parse 90 bytes from the end
-  looks like a block cut short by the bound. Asking the stronger question, "does any parse contain a property this class
-  *declares*", gives 0 or 1 for all 110: there is no block being truncated, so raising the bound would recover nothing.
-  The `< 2` and `≤ 64` guards are innocent here.
-
-  What the 109 actually look like, measured: an empty block parses at offset 0, followed by a **uniform 80–95-byte
-  remainder** (`Object` 81 bytes, `Locale` 91, `Subsystem` 92) that is not decoded. Two readings survive and this page
-  does not choose between them: the classes set none of their declared properties (so a rebuild emits an empty
-  `defaultproperties` and loses nothing), or their block has a shape `read_block` does not parse and the remainder is
-  where it lives. Settling it needs that remainder decoded, or a stock `ucc` build of one of these classes to compare
-  against — neither of which this project has.
+  That reading is superseded. Asking the stronger question, *does any parse hold a property this class declares*,
+  answers 0 or 1 for every class with no block (281 at 0 and 53 at 1 among the 334 `empty-block` rows), so no block
+  being truncated and raising the bound recovers nothing: the `< 2` and `<= 64` guards are innocent. What the 334 do
+  hold is measured above -- not a tag stream, but the record's own references -- and whether a record accounts for
+  each payload whole (153 are inside the 100-byte window where it can, 181 are not) is what stays open.
 * **Dropping the two-property floor was measured, and it is why the guard is two.** A floor of one promotes **320**
   classes to "fully declared" (1,664 → **1,984** of 2,319), and every one of those verdicts rests on a single tag.
   That tag is not evidence that a block was found: **1,477 of the 1,664** classes whose block is *already* located
