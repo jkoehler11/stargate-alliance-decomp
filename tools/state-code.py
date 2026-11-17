@@ -64,8 +64,12 @@ CENSUS_NOTE = {
     "labeltable": "`LabelTable` tokens (`0x0c`) -- 0 in every `Function` payload of the corpus",
     "labeltable_states": "states carrying one",
     "stringconst": "`StringConst` tokens, the literals the label block is written with",
-    "complete": "walks ending on the `LabelTable` token -- the container's own terminator",
-    "prefix": "walks that end earlier, so their code length and arm count are a floor",
+    "complete": "walks ending on the `LabelTable` token -- the container's own terminator, so the walk is the code",
+    "prefix": "walks that end on no `LabelTable`: a payload without one, so its length and arm count are a floor",
+    "code_anchored": "code bytes in the anchored walks",
+    "anchored_arms": "`JumpIfNot` in them -- arms a complete walk counts, not a floor",
+    "record27": "anchored walks leaving a 27-byte trailer after the table",
+    "record28": "anchored walks leaving a 28-byte trailer -- the same record, one byte wider",
     "no_region": "payloads that do not walk at all",
     "text_label_states": "states whose text spells label code (keywords outside every override)",
     "text_label": "`if`/`else`/`while`/`for` keywords in those states' label code",
@@ -80,7 +84,8 @@ CENSUS_NOTE = {
 }
 
 CENSUS_KEYS = ("states", "regions", "payload_bytes", "code_bytes", "tokens", "jumpifnot", "jump", "labeltable",
-               "labeltable_states", "stringconst", "complete", "prefix", "no_region", "text_label_states", "text_label",
+               "labeltable_states", "stringconst", "complete", "prefix", "no_region", "code_anchored",
+               "anchored_arms", "record27", "record28", "text_label_states", "text_label",
                "text_else", "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal",
                "overrides", "payload_arms")
 
@@ -111,34 +116,46 @@ def dis_tool():
 
 
 def region(payload, table):
-    """The longest exact token walk inside a State export payload: `(start, end, nodes)` or None.
+    """The walk that ends on the container's own terminator: `(start, end, nodes, anchored)` or None.
 
-    A start inside the friendly-name chain desynchronises within a token or two, so the longest walk is the
-    code; the header it skips and the record it leaves at the tail are reported, not assumed.
+    A `State` payload's code region ends on a `LabelTable` token -- the token no `Function` payload of the
+    corpus carries -- so the tokens up to and including that table are the code, and what follows is the state
+    record. Anchoring matters twice over: "the longest exact walk" is not a rule (a start inside the header can
+    open one `StringConst` that swallows the payload: `BotEnemy.Suspicious` reads 545 bytes over 3 tokens from
+    offset 10, against 494 bytes over 120 tokens from the code's own start at 15), and `parse`'s refusal offset
+    is not a token boundary, so the anchored walk has to come from `parse_prefix`.
+
+    Among the starts that reach a table the statement stream wins on token count; a payload with no table keeps
+    the longest prefix and is reported `anchored=0`, the residue the census counts (`prefix`).
     """
     dis = dis_tool()
-    best = None
+    best = anchored = None
     for start in range(0, min(72, len(payload))):
-        try:
-            nodes = dis.parse(payload[start:], table)
-            end = len(payload)
-        except dis.Refused as exc:
-            head = str(exc).split(":", 1)[0]
-            try:
-                end = int(head, 16)
-            except ValueError:
-                continue
-            if end <= start:
-                continue
-            try:
-                nodes = dis.parse(payload[start:end], table)
-            except dis.Refused:
-                continue
-        if sum(n["end"] - n["offset"] for n in nodes) != end - start:
+        nodes, covered = dis.parse_prefix(payload[start:], table)
+        if not nodes:
             continue
-        if best is None or (end - start) > best[1] - best[0]:
-            best = (start, end, nodes)
-    return best
+        flat = tokens(nodes)
+        cut = None
+        for i, n in enumerate(flat):
+            if n["name"] == "LabelTable":
+                cut = i
+        if cut is not None:
+            stop = start + flat[cut]["end"]
+            keep = []
+            for n in nodes:
+                if start + n["end"] <= stop:
+                    keep.append(n)
+            if (anchored is None or len(tokens(keep)) > len(tokens(anchored[2]))
+                    or (len(tokens(keep)) == len(tokens(anchored[2]))
+                        and stop - start > anchored[1] - anchored[0])):
+                anchored = (start, stop, keep)
+        if best is None or covered > best[1] - best[0]:
+            best = (start, start + covered, nodes)
+    if anchored is not None:
+        return anchored + (True,)
+    if best is None:
+        return None
+    return best + (False,)
 
 
 def tokens(nodes):
@@ -225,20 +242,23 @@ def walk_dump(system):
                    "text_kw": kw, "text_label": kw, "text_else": els, "text_else_label": at_floor,
                    "verdict": "no-region", "count": "", "note": ""}
             if got is not None:
-                start, end, nodes = got
+                start, end, nodes, anchored = got
                 flat = tokens(nodes)
                 c = collections.Counter(x["name"] for x in flat)
                 row.update({"start": start, "code": end - start, "trailer": len(payload) - end,
                             "tokens": len(flat), "jumpifnot": c["JumpIfNot"], "jump": c["Jump"],
                             "labeltable": c["LabelTable"], "stringconst": c["StringConst"],
-                            "complete": int(bool(flat) and flat[-1]["name"] == "LabelTable")})
+                            "complete": int(anchored)})
                 row["verdict"] = ("label+payload" if kw else "payload-only")
             rows.append(row)
     return rows
 
 
 def census(rows):
-    c = collections.Counter()
+    # Every census key starts at zero: the emission guard below is what caught the accumulator that was never
+    # written, and it fires on a key that is legitimately zero unless the key exists before the first hit (the
+    # corrected label-table pattern moved `no_region` to 0 of 553 and the guard refused the artifact).
+    c = collections.Counter({key: 0 for key in CENSUS_KEYS})
     for r in rows:
         c["states"] += 1
         c["payload_bytes"] += int(r["payload"])
@@ -258,6 +278,12 @@ def census(rows):
             c["labeltable_states"] += 1
         if int(r["complete"]):
             c["complete"] += 1
+            c["code_anchored"] += code
+            c["anchored_arms"] += int(r["jumpifnot"])
+            if int(r["trailer"]) == 27:
+                c["record27"] += 1
+            elif int(r["trailer"]) == 28:
+                c["record28"] += 1
         else:
             c["prefix"] += 1
     for r in rows:
@@ -310,11 +336,16 @@ def doc_block(rows):
                  key=lambda r: -int(r["text_kw"]))[:10]
     lines = []
     lines.append("**%s `State` payloads walk as code -- %s bytes and %s tokens of the state's own label block, "
-                 "`JumpIfNot` %s -- and %s of them carry the `LabelTable` token (`0x0c`) that appears in **zero** "
-                 "`Function` payloads.** The text spells %s label keywords across %s states (its `else` %s); "
+                 "`JumpIfNot` %s -- and %s of them end on the `LabelTable` token (`0x0c`) that appears in **zero** "
+                 "`Function` payloads.** A table's entries are 6 bytes, a 2-byte name index and a 4-byte code "
+                 "offset, and it ends on a zero *offset*; an anchored walk is the code exactly and not a floor -- "
+                 "%s code bytes and %s arms -- and %s of them leave the state record after the table at 27 bytes "
+                 "and %s more at 28. The text spells %s label keywords across %s states (its `else` %s); "
                  "the joined states compile %s `JumpIfNot` against their %s keywords, equal in %s."
                  % (comma(num(rows, "regions")), comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
                     comma(num(rows, "jumpifnot")), num(rows, "labeltable_states"),
+                    comma(num(rows, "code_anchored")), comma(num(rows, "anchored_arms")),
+                    num(rows, "record27"), num(rows, "record28"),
                     comma(num(rows, "text_label")), num(rows, "text_label_states"), comma(num(rows, "text_else")),
                     comma(num(rows, "joined_jif")), comma(num(rows, "joined_label")),
                     num(rows, "joined_equal")))
@@ -332,6 +363,10 @@ def doc_block(rows):
     lines.append("| `StringConst` tokens | %s |" % comma(num(rows, "stringconst")))
     lines.append("| walks ending on `LabelTable` (whole) / ending earlier (a floor) | %s / %s |"
                  % (comma(num(rows, "complete")), comma(num(rows, "prefix"))))
+    lines.append("| ... code bytes / `JumpIfNot` in the whole walks | %s / %s |"
+                 % (comma(num(rows, "code_anchored")), comma(num(rows, "anchored_arms"))))
+    lines.append("| ... leaving a 27- / 28-byte record after the table | %s / %s |"
+                 % (num(rows, "record27"), num(rows, "record28")))
     lines.append("| payloads that do not walk | %s |" % comma(num(rows, "no_region")))
     lines.append("| states whose text spells label code | %s |" % comma(num(rows, "text_label_states")))
     lines.append("| ... keywords / `else` / `else` at the statement level | %s / %s / %s |"
@@ -398,22 +433,36 @@ def report(rows):
 
 
 def selftest():
-    """Drive the walker and the label-code count on synthetic input: no dump, no writes."""
+    """Drive the walker, the label table and the label-code count on synthetic input: no dump, no writes."""
     dis = dis_tool()
     table = dis.Table()
-    # EndFunctionParms, JumpIfNot(operand 2, expr EndFunctionParms), Stop -- then a 3-byte trailer.
+    # EndFunctionParms, JumpIfNot(operand 2, expr EndFunctionParms), Stop -- then the state's own epilogue
+    # (`Nothing Nothing LabelTable`), one 6-byte table entry whose offset is 0 (the terminator), then a record.
     code = bytes([0x16, 0x07, 0x02, 0x00, 0x16, 0x08])
-    payload = b"\x09\x07" + code + b"\xff\xff\x00"
+    table_tok = bytes([0x0b, 0x0b, 0x0c, 0x5f, 0x02, 0x00, 0x00, 0x00, 0x00])
+    record = b"\xff" * 27
+    payload = b"\x03\x03" + code + table_tok + record
     got = region(payload, table)
     assert got is not None, "synthetic payload did not walk"
-    start, end, nodes = got
-    assert (start, end) == (2, 8), (start, end)
+    start, end, nodes, anchored = got
+    assert anchored, "a walk that ends on the label table is anchored"
+    assert (start, end) == (2, 2 + len(code) + len(table_tok)), (start, end)
+    assert len(payload) - end == 27, len(payload) - end
     flat = tokens(nodes)
     names = collections.Counter(n["name"] for n in flat)
     assert names["JumpIfNot"] == 1 and names["Jump"] == 0, names
-    assert len(payload) - end == 3, len(payload) - end
-    # A trailer that itself parses must not extend the walk past the code: the longest exact walk wins.
+    assert names["LabelTable"] == 1, names
+    # No label table: the longest prefix is kept and the row is marked unanchored -- the census's residue.
+    plain = b"\x03\x03" + code + b"\xff\xff\x00"
+    got = region(plain, table)
+    assert got is not None and got[3] is False, got
+    assert len(plain) - got[1] == 3, len(plain) - got[1]
     assert region(b"", table) is None
+
+    # parse_prefix keeps the tokens before a refusal that lands inside a nested operand, which `parse` cannot:
+    # the JumpIfNot's expression is the walker's bad-token case, so the cut is not a token boundary.
+    nodes, covered = dis.parse_prefix(bytes([0x16, 0x07, 0x02, 0x00, 0x03]), table)
+    assert covered == 1 and [n["name"] for n in nodes] == ["EndFunctionParms"], (covered, nodes)
 
     tb = text_tool()
     text = ("class Foo extends Bar;\r\n"            # the declaration a real text opens with
@@ -425,7 +474,7 @@ def selftest():
     assert "suspicious" in got, got
     kw, els, at_floor = got["suspicious"]
     assert (kw, els, at_floor) == (3, 1, 1), (kw, els, at_floor)  # the override's `if` is excluded
-    print("ok   state-code: synthetic walk, trailer and label-code count")
+    print("ok   state-code: anchored walk, record trailer, prefix walk and label-code count")
 
 
 def main():

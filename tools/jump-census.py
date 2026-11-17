@@ -248,7 +248,8 @@ def doc_block(rows):
                 rates[2][1], "%.2f" % pct(rates[2][1], jumps),
                 "%.1f" % base, "{:,}".format(starts), "{:,}".format(size)),
              "",
-             "The corpus carries **%d** `LabelTable` (`0x0c`) and **%d** `GotoLabel` (`0x0d`) tokens, so a source "
+             "The corpus carries **%d** `LabelTable` (`0x0c`) and **%d** `GotoLabel` (`0x0d`) tokens -- in `Function` "
+             "payloads; a `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source "
              "`Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the "
              "runtime never looks one up. **%s** jumps land on no token start under any reading; the first %d are "
              "rows below, the count is the census row."

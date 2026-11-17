@@ -1654,15 +1654,23 @@ starts from the enclosing chain instead of from the byte where the walk stopped.
 
 `tools/jump-census.py` tests the walk from the other side. A `Goto('Label')` in the source is a `Jump` in the
 bytecode and the label's name is not in the payload at all -- the corpus carries **no** `LabelTable` (`0x0c`) and
-**no** `GotoLabel` (`0x0d`) token in any of the 11,687 scripts that walk -- so a jump's 2-byte operand is the only
+**no** `GotoLabel` (`0x0d`) token in any of the 11,687 **`Function`** scripts that walk -- so a jump's 2-byte operand is the only
 thing left, and it has to point at the start of an instruction.
+
+**The token is the `State` container's own, and it is there.** A state's label block compiles into the `State`
+export's payload rather than into a `Function`, and **174** of the 553 state payloads end on a complete
+`LabelTable` -- entries of 6 bytes (a 2-byte name index and a 4-byte code offset) terminated by a zero *offset*,
+which the walker read as 8-byte entries until a zero dword and refused on every real table. The anchored walks
+carry 30,097 of the 40,380 state code bytes and 565 `JumpIfNot` exactly, and 143 of them leave the state record
+after the table at 27 or 28 bytes. So "the build never emits a label" is true of the function half and false of
+the state half: `tools/state-code.py`, `inventory/state_code.csv`, `docs/systems/AI.md`.
 
     python3 tools/jump-census.py --system DUMP/System -o inventory/jump_census.csv
 
 <!-- generated:jump-census -->
 **23,778** `Jump`/`JumpIfNot` tokens over **6127** scripts, each 2-byte operand tested against that script's own token starts under the three readings an offset can have: **absolute** 5495 (23.11%), **unsigned relative** 3255 (13.69%), **signed relative** 3255 (13.69%). The base rate is **45.6%** -- 484,332 of the 1,062,761 byte positions in the same scripts are a token start -- and **none of the three is the encoding**: every reading lands at or below chance, which is what an operand expressed in a layout the file does not have looks like.
 
-The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens, so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up. **16,539** jumps land on no token start under any reading; the first 50 are rows below, the count is the census row.
+The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens -- in `Function` payloads; a `State` payload carries the table (`tools/state-code.py`, `docs/systems/AI.md`) -- so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up. **16,539** jumps land on no token start under any reading; the first 50 are rows below, the count is the census row.
 
 | package | class | function | offset | op | target |
 | --- | --- | --- | ---: | --- | ---: |
@@ -1833,6 +1841,10 @@ length-preserving mask so both counts read the same offsets) and then counts the
 | UWindow | 78 | 47 | 0 | 10 | 227 | 244 |
 | UnrealEd | 12 | 0 | 0 | 0 | 0 | 0 |
 <!-- /generated:text-branches -->
+
+The 118 keywords at a state body's own statement level have a compiled counterpart after all, in the
+`State` export's payload rather than in a `Function`; `docs/systems/AI.md` carries the per-state block
+(`tools/state-code.py`, 174 payloads anchored on their `LabelTable`).
 
 **What the comparison is worth.** The two corpora agreeing is a cancellation, not an oracle: the classes that
 spell more `else` than they compile and the ones that spell fewer are each a population a rebuild has to handle

@@ -12704,3 +12704,36 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `--check`) + `inventory/state_code.csv` (553 state rows + 23 census rows) + `docs/systems/AI.md` (a new
   section with the generated block) + a `make state-code` target and its `--check-doc` line in `make ci` + this
   note. One read of the 18 packages' export tables; no boot, no Ghidra, no bytecode walk outside the payloads.
+
+### Execution notes (2026-11-17, the label table's entries are 6 bytes, and 174 state walks now reach the terminator)
+
+- **Task.** The previous note's next instrument: the 522 state walks that ended before the container's terminator,
+  named there as "a `Stop`/`Nothing` terminator test". The test found the terminator in the same bytes and the
+  reason it was never reached: the `LabelTable` token's own pattern.
+- **The entry shape is 6 bytes, and the table ends on a zero offset.** A `LabelTable` (`0x0c`) entry is a 2-byte
+  name index and a 4-byte code offset, and the table terminates on a zero *offset*. The pattern read 8-byte entries
+  until a zero *dword*; a terminator's dword is `offset<<16 | name`, which is never zero, so **every** real table
+  refused -- which is why the walk stopped there and why the census read a floor. Decoded the measured way the
+  entries are strictly decreasing offsets inside the code (`JaffaBotHeavy.MelleeCharge` 600, 557, 299, 105, 0;
+  `BotEnemy.Suspicious` 143, 104, 0).
+- **Measured: 174 of 553 payloads anchor, and the record after the table is 27 or 28 bytes.** The anchored walks
+  carry **30,097** of the 40,380 state code bytes and **565** `JumpIfNot` exactly; **143** of them leave a trailer of
+  80 x 27 and 63 x 28 bytes -- a constant-width state record, where the old walk left a floor of arbitrary length.
+  `BotEnemy.Suspicious` goes from a 3-token, 545-byte desync to 508 bytes over 246 tokens with 16 `JumpIfNot` and 6
+  `Jump`; `BotSG.CoveredAttack` 1,140 bytes, 412 tokens, 18 arms.
+- **Two tool corrections the measurement forced.** `parse`'s refusal offset is not a token boundary (the refusal is
+  often inside a nested operand), so the prefix it could re-parse was never the last complete token before a record:
+  `parse_prefix` keeps the tokens that parse and is what `region()` now walks. And the census's emission guard fired
+  on a key that is legitimately zero (`no_region` at 0 of 553) -- every key now starts at zero, which is what the
+  guard was written to check.
+- **The residue, named.** 379 payloads end on no table, 374 of them 60 bytes or fewer: the record-only shape. The
+  record's own fields (`ProbeMask`, `IgnoreMask`, `StateFlags`, `LabelTableOffset`) are the next read.
+- Tool (`parse_prefix`, the anchored `region()`, the label-table pattern in both walkers, the three census keys, the
+  rewritten `--check`) + `inventory/opcode_table.csv` (the pattern's note) + `inventory/state_code.csv` +
+  `docs/systems/AI.md` (the block) + `docs/BYTECODE.md` (the label-table paragraph and the qualified
+  "never emits a label" claim) + `docs/UNKNOWNS.md` U19. One read of the 18 packages' export tables; no boot, no
+  Ghidra.
+- **Next measurement:** read the 27-byte record out of the anchored trailers -- `ProbeMask`, `IgnoreMask`,
+  `StateFlags`, `LabelTableOffset` -- and check `LabelTableOffset` against the table's measured offset in file space.
+  A field that agrees would make the table's position a header read rather than a search, and would say whether the
+  374 short payloads are a record with a code pointer into the overrides.

@@ -143,12 +143,15 @@ def parse(data, table):
                         break
                 node["operands"] += data[start:q]
             elif item == "labeltable":
+                # A 6-byte entry: a 2-byte name index and a 4-byte code offset, and the table ends on a
+                # zero *offset* -- not a zero dword, which is what "8-byte entries" read and what refused on
+                # 545 of the 552 State payloads that carry the token (docs/BYTECODE.md).
                 while True:
-                    if q + 8 > len(data):
+                    if q + 6 > len(data):
                         raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
-                    entry = struct.unpack_from("<I", data, q)[0]
-                    node["operands"] += data[q:q + 8]
-                    q += 8
+                    entry = struct.unpack_from("<I", data, q + 2)[0]
+                    node["operands"] += data[q:q + 6]
+                    q += 6
                     if entry == 0:
                         break
             elif item == "case":
@@ -1361,12 +1364,14 @@ def _spans_with_op(data, table):
                         break
                 spans.append((start, q, "fixed", op))
             elif item == "labeltable":
+                # 6-byte entries: a 2-byte name index and a 4-byte code offset, ending on a zero offset
+                # (the same shape `parse` reads -- one pattern, two walkers).
                 start = q
                 while True:
-                    if q + 8 > len(data):
+                    if q + 6 > len(data):
                         raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
-                    entry = struct.unpack_from("<I", data, q)[0]
-                    q += 8
+                    entry = struct.unpack_from("<I", data, q + 2)[0]
+                    q += 6
                     if entry == 0:
                         break
                 spans.append((start, q, "fixed", op))
@@ -3834,6 +3839,47 @@ def parsed(export, data, table):
 def top_level(pkg, export, table):
     """A function's top-level token list and the bytes it was parsed from, or None when it does not disassemble."""
     return parsed(export, pkg.data, table)
+
+
+def parse_prefix(data, table):
+    """The top-level nodes of `data` that parse, and how many bytes they cover: `(nodes, covered)`.
+
+    `parse` answers all-or-nothing, and its refusal offset is not a token boundary when the refusal is inside
+    a nested operand -- re-parsing the prefix at that offset refuses again, so a caller looking for the last
+    complete token before a refusal cannot use it. This walk keeps every top-level token that parses and stops
+    at the first that does not, shrinking the cut until a prefix parses: what a payload with a record after its
+    code needs, because the code's tokens are complete and the record's are not.
+    """
+    out, pos = [], 0
+
+    def where(exc):
+        head = str(exc).split(":", 1)[0]
+        try:
+            return int(head, 16)
+        except ValueError:
+            return None
+
+    while pos < len(data):
+        rest = data[pos:]
+        try:
+            return out + parse(rest, table), len(data)
+        except Refused as exc:
+            cut = where(exc)
+        if cut is None or cut <= 0:
+            return out, pos
+        while cut > 0:
+            try:
+                nodes = parse(rest[:cut], table)
+            except Refused as exc2:
+                nxt = where(exc2)
+                cut = cut - 1 if nxt is None or nxt >= cut else nxt
+                continue
+            out.extend(nodes)
+            pos += cut
+            break
+        else:
+            return out, pos
+    return out, pos
 
 
 def flatten(nodes):
