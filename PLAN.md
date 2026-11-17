@@ -12188,3 +12188,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   is the bot classes' state labels against these nine names: if the vocabulary ships as states this build still
   has, the commented `TeamAI.SetOrders` calls an API the package presents differently, and if it does not, it is
   a dropped feature.
+
+### Execution notes (2026-11-17, the AI override API was dropped, not renamed — the one surviving name is a state label)
+
+- **Task.** The previous note's next measurement: the nine `BotEnemy` override names against the build's own
+  vocabularies, to say whether the commented `StargateGame.TeamAI.setorders` calls an API this build presents
+  differently (a state, say) or one it never had.
+- **The answer is `dropped`, and it is not a spelling question.** Each of the 25 unresolved call names is now
+  read against three vocabularies beyond the export table: the `state` blocks the class texts declare, the
+  labels at a state body's own statement level, and **each package's own name table** -- which the compiler
+  fills with every name any of its objects referenced, declaration or call. Of the 25: **1** is a state label,
+  **2** are only a name in a package's table (`format` in Engine/UWindow, `viewport` in five), **22** are in no
+  name table of the eighteen packages.
+- **Eight of the nine `BotEnemy` names are in no name table at all** -- `ActivateStateOveride`,
+  `ActivateFearOveride`, `ActivateForceMelee`, their three `DeActivate` counterparts, `DoRangedAttack`,
+  `DoRetreat`. A name the build merely renamed would still be in the table it was renamed *in*; these are not
+  referenced by any object of any package, so nothing in this build ever saw them.
+- **The ninth is a jump target.** `DoCharge` is in `StargateContent`'s table because live code names it -- as
+  the **entry label** of a state: `StargateContent.JaffaBotHeavy` enters its `MelleeCharge` state with
+  `GotoState('MelleeCharge', 'DoCharge')`, and `DoCharge:` sits at that state body's own statement level.
+  (The other two labels in that state, `ContinueCharge:` and `FinishAttack:`, are the same shape -- note that
+  `ai-states.py`'s `labels` column counts them, which is the cross-check that the new read agrees with the
+  shipped one about what a state label is.)
+- **What the bots present instead is a state vocabulary**, entered with `GotoState` and never called:
+  `Mellee`, `MelleeCharge`, `Ranged`, `Flee`, `CoveredAttack` on `BotEnemy`/`JaffaBotHeavy`
+  (`inventory/ai_states.csv`). A commented revision calling `DoRangedAttack()` on a `BotEnemy` was written
+  against an API this build does not carry in any form, so the `setorders` revision is cut content and not a
+  mis-resolved reader.
+- **Both base rates are recorded so the negative carries a control.** **13 of the 266** state names and
+  **7 of the 54** state labels the class texts declare are also `Function` exports, so a name that ships is
+  normally visible in the export table; a name that is *only* a label is a jump target. The 266 states are a
+  wider population than `docs/systems/AI.md`'s 151: that tool's read is scoped to the AI classes, this one to
+  all 2,319 class texts, so the two counts are not a disagreement and neither should be quoted against the
+  other.
+- Tool (`mask`, `depth_map`, `state_vocabulary`, `vocab_of`, the name-table pass, `vocab`/`vocab_where` on
+  every residue row, four census rows for the ladder and four for the base rates) +
+  `inventory/class_text_bodies.csv` regenerated (258 rows: 22 pairs, 158 disabled bodies, 25 residue,
+  53 census) + `docs/PACKAGE_SCRIPT_TEXT.md` (the generated block, its two columns, and one prose section) +
+  this note. One 2.4-second read of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** the nine names' *stems* do ship, in a subclass and as functions --
+  `JaffaBotHeavy` declares `DoMelleeCharge()` and `ShouldStartMelleeCharge()` beside the `MelleeCharge` state
+  -- so the next read is the `BotEnemy` family's live `Do*`/`Should*` function vocabulary against the nine
+  names' stems (Charge, Ranged, Retreat, Fear, Melee, Override): if the behaviour ships under the build's own
+  spelling, the cut-content statement becomes "the override API was replaced by per-subclass charge functions",
+  and if no stem matches, the feature was removed outright.

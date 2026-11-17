@@ -32,6 +32,18 @@ as a `Function` -- or one of the built-in constructors below -- is a type conver
 call name must skip it. The names that survive that filter *and* resolve to nothing are typed in the artifact's
 `residue` rows: a declaration inside a block comment, a member call on a receiver whose declared type declares
 no such function, or nothing at all.
+
+**A name missing from the export table is not a name missing from the build.** The export table holds what the
+loader must construct; three other vocabularies say whether the build ever saw a name at all:
+
+* the `state` blocks the class texts declare,
+* the labels at a state body's own statement level -- the targets `Goto` and a `GotoState(x, 'label')` name,
+* each package's own **name table**, which the compiler fills with every name any of its objects referenced.
+
+So a `residue` row carries `vocab`/`vocab_where`: `function` (never, by construction -- a name with an export
+never reaches the residue), `state`, `state-label`, `name-only` (in a name table with no declaration) or
+`absent`. A name in no name table of the eighteen packages was never compiled into this build; a name that is
+only a state's label is a jump target, not something a call site can reach.
 """
 import argparse
 import csv
@@ -54,7 +66,7 @@ DOC_END = "<!-- /generated:class-text-bodies -->"
 FIELDS = ["kind", "package", "class", "name", "verdict", "c_ops", "c_stmts", "c_kw", "c_bytes",
           "l_ops", "l_stmts", "l_kw", "l_bytes", "c_calls", "c_calls_own", "c_calls_elsewhere",
           "c_calls_missing", "l_calls", "l_calls_own", "l_calls_elsewhere", "l_calls_missing",
-          "keys", "count", "note"]
+          "keys", "count", "note", "vocab", "vocab_where"]
 
 # The same declaration pattern `class-text-comments.py` counts, so the two censuses describe one population.
 FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
@@ -113,6 +125,85 @@ def body_span(text, start, limit):
                 return (i, j + 1)
         j += 1
     return None
+
+
+STATE_DECL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)")
+LABEL_LINE = re.compile(r"(?m)^[ \t]*(\w+)[ \t]*:")
+LITERAL_ANY = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
+
+
+def mask(text):
+    """Blank block comments, line comments, then string literals, keeping every offset.
+
+    The order is the census's, not a free choice: masking literals first runs an apostrophe inside a prose
+    comment ("don't") to the next apostrophe hundreds of lines later and blanks the code between, which reads as
+    a corpus-wide zero rather than as an error.
+    """
+    out = list(text)
+    for rx in (BLOCK, LINE_COMMENT):
+        for m in rx.finditer(text):
+            for i in range(m.start(), m.end()):
+                if out[i] != "\n":
+                    out[i] = " "
+    masked = "".join(out)
+    for m in LITERAL_ANY.finditer(masked):
+        for i in range(m.start(), m.end()):
+            if out[i] != "\n":
+                out[i] = " "
+    return "".join(out)
+
+
+def depth_map(text):
+    """The brace depth *inside* which each character sits: `{` opens, `}` closes before itself."""
+    out, depth = [], 0
+    for c in text:
+        if c == "{":
+            out.append(depth)
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            out.append(depth)
+        else:
+            out.append(depth)
+    return out
+
+
+def state_vocabulary(text):
+    """(state names, `label -> state`) for one class text, read from the comment-masked text.
+
+    A `state ... { Begin: ... }` a block comment disables is not vocabulary this build carries. A label inside a
+    function the state overrides sits one brace deeper and is not counted -- the depth rule
+    `tools/ai-states.py` counts a state's labels by.
+    """
+    d = depth_map(text)
+    spans = []
+    for m in STATE_DECL.finditer(text):
+        i = text.find("{", m.end())
+        if i < 0:
+            continue
+        j = i + 1
+        while j < len(text) and d[j] > d[i]:
+            j += 1
+        spans.append((m.group(1).lower(), i, j, d[i] + 1))
+    labels = {}
+    for name, a, b, level in spans:
+        for m in LABEL_LINE.finditer(text, a, b):
+            if d[m.start()] == level:
+                labels.setdefault(m.group(1).lower(), name)
+    return [s[0] for s in spans], labels
+
+
+def vocab_of(name, index, states, labels, tables):
+    """Where a name lives in the build: an export, a state, a state's label, only a name table, or nowhere."""
+    if index.get(name):
+        return "function", ", ".join(sorted("%s.%s" % k for k in index[name])[:3])
+    if states.get(name):
+        return "state", ", ".join(sorted(states[name])[:3])
+    if labels.get(name):
+        return "state-label", ", ".join(sorted(labels[name])[:3])
+    if tables.get(name):
+        return "name-only", ",".join(sorted(tables[name])[:6])
+    return "absent", ""
 
 
 def functions(text):
@@ -352,8 +443,9 @@ def sweep(system_dir):
     ops = load_tool("decompiler_operators", "decompiler-operators.py")
     # Pass one: every package's exports, so a call can be resolved against the whole corpus and not only its
     # own package -- an engine native a game class calls is declared in Core or Engine. The type table is the
-    # other half: a name some package exports as a class, struct or enum and none as a function is a cast.
-    packages, index, types = [], {}, {}
+    # other half: a name some package exports as a class, struct or enum and none as a function is a cast. The
+    # name table is the third: it holds every name the compiler saw, declaration or reference.
+    packages, index, types, tables = [], {}, {}, {}
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
@@ -361,6 +453,11 @@ def sweep(system_dir):
         pkg.read_exports()
         package = fname[:-2]
         packages.append((package, pkg))
+        for i in range(len(pkg.names)):
+            try:
+                tables.setdefault(pkg.name(i).lower(), set()).add(package)
+            except (IndexError, ValueError, KeyError):
+                pass
         for name, classes in corpus_index(pkg).items():
             index.setdefault(name, set()).update((package, c) for c in classes)
         for name, kinds in type_index(pkg, package).items():
@@ -377,7 +474,7 @@ def sweep(system_dir):
              control_calls=0, control_calls_own=0, control_calls_elsewhere=0, control_calls_missing=0,
              control_calls_all=0, control_casts=0,
              pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0)
-    com_decl, ifdef_decl, sites = {}, {}, {}
+    com_decl, ifdef_decl, sites, states, labels = {}, {}, {}, {}, {}
     for package, pkg in packages:
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
@@ -388,6 +485,12 @@ def sweep(system_dir):
             text = text.replace("\r\n", "\n")
             spans = [m.span() for m in BLOCK.finditer(text)]
             t["classes"] += 1
+            cls = pkg.name(exp["name"])
+            st_names, st_labels = state_vocabulary(mask(text))
+            for s in set(st_names):
+                states.setdefault(s, set()).add("%s.%s" % (package, cls))
+            for lab, st in st_labels.items():
+                labels.setdefault(lab, set()).add("%s.%s.%s" % (package, cls, st))
             if not spans:
                 continue
             t["with_block"] += 1
@@ -400,7 +503,6 @@ def sweep(system_dir):
             t["no_body"] += cbare_total
             t["live_declarations"] += ldeclared
             t["live_with_body"] += lresolved
-            cls = pkg.name(exp["name"])
             for m in ANY_DECL.finditer(comment):
                 com_decl.setdefault(m.group(2).lower(), set()).add(("comment", package, cls.lower()))
             for m in IFDEF.finditer(text):
@@ -460,13 +562,22 @@ def sweep(system_dir):
                             sites.setdefault(n, []).append(
                                 (package, cls, name, receivers(body, n, param_types(comment, name), types)))
                     rows.append(disabled_row(package, cls, name, cshape))
-    residue = []
+    residue, receivers_of = [], {}
     for n in sorted(sites):
         recv = set().union(*[s[3] for s in sites[n]]) if sites[n] else set()
-        residue.append(residue_row(n, sites[n], None, recv, com_decl, ifdef_decl))
+        receivers_of[n] = recv
+        row = residue_row(n, sites[n], None, recv, com_decl, ifdef_decl)
+        row["vocab"], row["vocab_where"] = vocab_of(n, index, states, labels, tables)
+        residue.append(row)
     kinds = {}
     for r in residue:
         kinds[r["verdict"]] = kinds.get(r["verdict"], 0) + 1
+    kinds_vocab = {}
+    for r in residue:
+        kinds_vocab[r["vocab"]] = kinds_vocab.get(r["vocab"], 0) + 1
+    # The bot override API: the names a `BotEnemy` receiver is handed, and how many of them the build carries.
+    bot = sorted(n for n in receivers_of if "BotEnemy" in receivers_of[n])
+    bot_present = [r["name"] for r in residue if r["name"] in bot and r["vocab"] != "absent"]
     rows.extend(residue)
     census = (
         ("classes_with_text", t["classes"], "class exports carrying a `ScriptText`"),
@@ -525,6 +636,23 @@ def sweep(system_dir):
         ("residue_member_of", kinds.get("member-of", 0),
          "of those, called on a receiver whose declared type declares no such function"),
         ("residue_unresolved", kinds.get("unresolved", 0), "of those, no declaration anywhere in the text"),
+        ("residue_state", kinds_vocab.get("state", 0),
+         "of those, the name of a `state` block a class text declares"),
+        ("residue_state_label", kinds_vocab.get("state-label", 0),
+         "of those, a label at a state body's own statement level"),
+        ("residue_name_only", kinds_vocab.get("name-only", 0),
+         "of those, a name in a package name table with no declaration and no state"),
+        ("residue_absent", kinds_vocab.get("absent", 0),
+         "of those, in no name table of the eighteen packages"),
+        ("residue_botenemy", len(bot), "of those, called on a `BotEnemy` receiver"),
+        ("residue_botenemy_present", len(bot_present),
+         "of those, which the build carries in some vocabulary"),
+        ("state_names", len(states), "distinct `state` names the class texts declare"),
+        ("state_names_exported", sum(1 for n in states if index.get(n)),
+         "of those, a name the export table also carries as a `Function`"),
+        ("label_names", len(labels), "distinct labels at a state body's own statement level"),
+        ("label_names_exported", sum(1 for n in labels if index.get(n)),
+         "of those, also a `Function` export somewhere in the corpus"),
         ("control_calls", t["control_calls"],
          "the same read over every live body of the classes that carry a comment -- the control"),
         ("control_calls_all", t["control_calls_all"],
@@ -552,6 +680,13 @@ def render(rows):
 
     def n(key):
         return int(cen[key]["count"])
+
+    def label_where(r):
+        """`name` plus its state and class, from a residue row's `vocab_where` (`Pkg.Class.state`)."""
+        parts = (r["vocab_where"] or "").split(".")
+        if len(parts) >= 3:
+            return "`%s`, the entry label of `%s` in `%s`" % (r["name"], parts[-1], ".".join(parts[:-1]))
+        return "`%s`" % r["name"]
 
     def pct(a, b):
         return "%.1f" % (100.0 * a / b) if b else "-"
@@ -622,6 +757,16 @@ def render(rows):
                "**%d** / **%d** / **%d** / **%d** |"
                % (n("residue_commented_declaration"), n("residue_member_of"), n("residue_unresolved"),
                   n("residue_ifdef")))
+    out.append("| ... a `state` name / a state label / only a name in a table / in no name table | "
+               "**%d** / **%d** / **%d** / **%d** |"
+               % (n("residue_state"), n("residue_state_label"), n("residue_name_only"),
+                  n("residue_absent")))
+    out.append("| ... called on a `BotEnemy` receiver, of which the build carries | **%d** / **%d** |"
+               % (n("residue_botenemy"), n("residue_botenemy_present")))
+    out.append("| distinct `state` names / also a `Function` export | **%d** / **%d** |"
+               % (n("state_names"), n("state_names_exported")))
+    out.append("| distinct state-label names / also a `Function` export | **%d** / **%d** |"
+               % (n("label_names"), n("label_names_exported")))
     out.append("")
     if pairs:
         pairs.sort(key=lambda r: (r["verdict"], r["package"], r["class"], r["name"]))
@@ -672,12 +817,40 @@ def render(rows):
                       if n("residue_ifdef") else "",
                       top_n, n("residue_member_of"), top_body))
         out.append("")
-        out.append("| unresolved call name | sites | kind | called from | evidence |")
-        out.append("|---|---:|---|---|---|")
+        labelled = [r for r in residue if r["vocab"] == "state-label"]
+        lab_names = ", ".join(label_where(r) for r in labelled)
+        out.append("**Those names are missing from the build, not only from its export table.** Each of the %d "
+                   "is read against three further vocabularies -- the `state` blocks the class texts declare, "
+                   "the labels at a state body's own statement level, and every package's own name table, "
+                   "which the compiler fills with every name it saw: **%d** is a state, **%d** is a state "
+                   "label%s, **%d** only a name in a package's table and **%d** in none of the three. The base "
+                   "rates are what make the last column a finding rather than a reader artefact: **%d of the "
+                   "%d** state names and **%d of the %d** state labels the corpus declares are also `Function` "
+                   "exports, so a name this build ships is normally visible in the table, and an API that had "
+                   "merely been renamed would leave its names there."
+                   % (n("residue_names"), n("residue_state"), n("residue_state_label"),
+                      (" (%s)" % lab_names) if labelled else "",
+                      n("residue_name_only"), n("residue_absent"),
+                      n("state_names_exported"), n("state_names"), n("label_names_exported"),
+                      n("label_names")))
+        out.append("")
+        if n("residue_botenemy"):
+            out.append("That is the whole answer for the AI override API: `StargateGame.TeamAI.setorders` calls "
+                       "**%d** names on a `BotEnemy` receiver and the build carries **%d** of them -- %s -- "
+                       "while the remaining **%d** sit in no name table of the eighteen packages. A call site "
+                       "cannot reach a label, and nothing in the build references the other names at all, so "
+                       "the commented revision is a dropped API rather than one this build presents under "
+                       "another name."
+                       % (n("residue_botenemy"), n("residue_botenemy_present"), lab_names or "-",
+                          n("residue_botenemy") - n("residue_botenemy_present")))
+            out.append("")
+        out.append("| unresolved call name | sites | kind | called from | in the build | where | evidence |")
+        out.append("|---|---:|---|---|---|---|---|")
         for r in sorted(residue, key=lambda r: (-int(r["count"]), r["name"])):
-            out.append("| `%s` | %s | %s | `%s` | %s |"
+            out.append("| `%s` | %s | %s | `%s` | %s | %s | %s |"
                        % (r["name"], r["count"], r["verdict"],
                           r["keys"].split(",")[0] if r["keys"] else "-",
+                          r["vocab"], (r["vocab_where"] or "-").replace("|", "/"),
                           r["note"].replace("|", "/")))
         out.append("")
     out.append("")
@@ -823,14 +996,41 @@ def self_check():
     if resolve({"foo", "bar", "baz"}, "P", "C", index) != (1, 1, 1):
         bad.append("the resolution split %r -- the class key is matched case-insensitively"
                    % (resolve({"foo", "bar", "baz"}, "P", "C", index),))
+    # the state vocabulary: a label at a state body's own level, not one inside a function it overrides
+    state_text = mask("state Alert\n{\nBegin:\n\tGoto('Again');\nAgain:\n\tSleep(1);\n"
+                      "\tfunction Foo()\n\t{\n\t\tInner:\n\t}\n}\n")
+    st_names, st_labels = state_vocabulary(state_text)
+    if st_names != ["alert"] or set(st_labels) != {"begin", "again"}:
+        bad.append("the state vocabulary read %r / %r" % (st_names, sorted(st_labels)))
+    if st_labels.get("begin") != "alert":
+        bad.append("a state label was not attributed to its state: %r" % (st_labels,))
+    # a state a block comment disables is not vocabulary this build carries
+    masked_state, masked_labels = state_vocabulary(mask("/*\nstate Gone\n{\nHere:\n}\n*/\n"))
+    if masked_state or masked_labels:
+        bad.append("a commented state counted as vocabulary: %r / %r" % (masked_state, sorted(masked_labels)))
+    # a brace or a label inside a string literal must not move the depth
+    lit_states, lit_labels = state_vocabulary(mask('state Alert\n{\n\tLog("}{  Here: ");\nBegin:\n}\n'))
+    if lit_states != ["alert"] or set(lit_labels) != {"begin"}:
+        bad.append("a literal desynchronised the state read: %r / %r" % (lit_states, sorted(lit_labels)))
+    # the vocabulary ladder, each rung from its own dictionary
+    for want, args in (("function", ({"n": {("P", "c")}}, {}, {}, {})),
+                       ("state", ({}, {"n": {"P.C"}}, {}, {})),
+                       ("state-label", ({}, {}, {"n": {"P.C.alert"}}, {})),
+                       ("name-only", ({}, {}, {}, {"n": {"P"}})),
+                       ("absent", ({}, {}, {}, {}))):
+        kind, _where = vocab_of("n", *args)
+        if kind != want:
+            bad.append("the vocabulary ladder read %r, not %r" % (kind, want))
     # the census adds up over a synthetic population, and the render reads the artifact's own rows
     for sh in (c, moved, dict(c)):
         sh.update(calls=2, own=1, elsewhere=1, missing=0)
     rows = [pair_row("P", "C", "foo", c, moved, compare(c, moved)),
             pair_row("P", "C", "bar", c, dict(c), "identical"),
             disabled_row("P", "C", "baz", c),
-            residue_row("qux", [("P", "C", "baz", set())], None, {"BotEnemy"}, {}, {}),
+            residue_row("qux", [("P", "C", "baz", {"BotEnemy"})], None, {"BotEnemy"}, {}, {}),
             residue_row("quux", [("P", "C", "baz", set())], None, set(), {}, {})]
+    rows[3]["vocab"], rows[3]["vocab_where"] = "state-label", "P.C.alert"
+    rows[4]["vocab"] = "absent"
     cen = (("classes_with_text", 2, ""), ("classes_with_block", 2, ""), ("comment_declarations", 4, ""),
            ("comment_with_body", 3, ""), ("comment_no_body", 1, ""), ("live_declarations", 5, ""),
            ("live_with_body", 5, ""), ("pairs", 2, ""), ("pairs_identical", 1, ""),
@@ -849,14 +1049,20 @@ def self_check():
            ("control_calls_all", 4, ""), ("control_casts", 0, ""),
            ("residue_names", 2, ""), ("residue_sites", 2, ""),
            ("residue_commented_declaration", 1, ""), ("residue_ifdef", 0, ""),
-           ("residue_member_of", 1, ""), ("residue_unresolved", 0, ""))
+           ("residue_member_of", 1, ""), ("residue_unresolved", 0, ""),
+           ("residue_state", 0, ""), ("residue_state_label", 1, ""), ("residue_name_only", 0, ""),
+           ("residue_absent", 1, ""), ("residue_botenemy", 1, ""), ("residue_botenemy_present", 1, ""),
+           ("state_names", 3, ""), ("state_names_exported", 1, ""),
+           ("label_names", 4, ""), ("label_names_exported", 0, ""))
     for key, value, note in cen:
         row = {k: "" for k in FIELDS}
         row.update(kind="census", name=key, count=str(value), note=note)
         rows.append(row)
     block = render(rows)
     for want in ("3 of the 4", "2 of them have a live twin", "`P.C.foo`", "`P.C.bar`",
-                 "A cast is not a call", "typed by evidence", "| `qux` |", "| `quux` |"):
+                 "A cast is not a call", "typed by evidence", "| `qux` |", "| `quux` |",
+                 "missing from the build, not only from its export table", "dropped API",
+                 "| in the build | where |"):
         if want not in block:
             bad.append("render is missing %r" % want)
     pair_lines = [l for l in block.splitlines() if l.startswith("| `P.C.")]
