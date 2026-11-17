@@ -12014,3 +12014,34 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool (`--shuffle` writing `script_call_shuffle.csv` and no call table, `CALLS_SHUFFLE`, the control table in
   `calls_doc_block`, the monotonicity gate in `calls_emit_doc`) + `inventory/script_call_shuffle.csv` (new, 37 rows) +
   `docs/BYTECODE.md` (the block and two paragraphs) + this note. One 17-second control run; no boot, no Ghidra.
+
+### Execution notes (2026-11-17, a third of the commented declarations name a function the build never compiled)
+
+- **Task.** `[~] 3.5`'s last named measurement: the 213 classes that keep a live body beside a block comment
+  carry revision *text*, so the question they can answer is what the fork's toolchain disabled -- a diff of a
+  commented body against the class's own live exports, with no boot and no Ghidra round.
+- **The join is name by name against the package's `Function` exports**, and a function a `State` declares
+  belongs to the class that owns the state: of **208** `function` declarations inside a block comment, **124**
+  name a function the same class still exports, **29** name a function another class of the same package exports
+  (the declaration moved) and **55** name no export of the package at all.
+- **The control is what makes that a measurement rather than a matcher.** The same pattern over the same
+  classes' *live* declarations places **4,872 of 4,890 (99.6%)**, against **124 of 208 (59.6%)** for the
+  commented ones -- so the join finds what the package carries, and the difference is the comment's own residue.
+- **The residue is concentrated, which is the finding.** 42 of the 55 sit in a class that keeps a live body (a
+  class this build compiled, where the function is simply not there) and 13 in the 39 whose whole body is the
+  comment (their class exports nothing at all). Two classes hold **16 of the 42**: `StargateGame.TeamAI`
+  declares 10 functions and exports none of them beside a live record of 27, and `Engine.xAdminGroup` declares
+  8 and exports 7 -- a revision that was *replaced*, not renamed, which is the shape a comment-only diff of the
+  source would have shown as "drift".
+- **Two more counts, kept apart rather than folded in**: **42** of the 124 placed declarations are also declared
+  in the class's live text (the buffer carries both revisions of the same function), and **3** of the 55 absent
+  names occur in the live text as a mention -- counted absent, because a mention is not a declaration.
+- **Tool** (`revision_counts`, the per-package export index in `sweep`, five columns, eleven census rows, the
+  table and paragraph in `render`, the synthetic placed/moved/absent/duplicate/mention case in `--check`) +
+  `inventory/class_text_comments.csv` regenerated (296 rows; the older columns and every older census row
+  unchanged, and a second run reproduces the file byte for byte) + `docs/PACKAGE_SCRIPT_TEXT.md` (the generated
+  block and a fourth consequence). One 1.3-second read of the 18 packages.
+- **Next measurement:** the comment half of 3.5 is now a diff, and what it leaves is prose -- 208 disabled
+  function *bodies* against 11,687 live ones, so the next question is a body's shape, not a name's: whether a
+  commented body's operator or statement counts differ from the live function of the same name, which is the
+  decompiler-operator instrument applied per function.
