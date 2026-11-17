@@ -4289,3 +4289,27 @@ none in a `Function`.
 
 **Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
 
+## U20. The two switch censuses cannot be joined arm by arm -- the function key differs, not the count
+
+**Observed.** `inventory/switch_operands.csv` counts a switch's arms by scanning the top-level tokens forward and
+stopping at the next `Switch`, so the seven rows it marks `nested-switch` (`UDebugMapListCW.Notify`,
+`UDebugMenuBar.MenuItemSelected`, `UDebugVideoClient.Notify`, `UWindow.KeyEvent`,
+`UWindowConsoleClientWindow.Notify`, `UWindows.KeyEvent`, `WindowConsole.KeyEvent`) count only the arms they reach
+before a switch inside a case body, and their `cases` is a lower bound. The chain reading
+(`inventory/jump_branches.csv`) follows each `Case` operand, which is the handler's own reading, and is exact there:
+**193** of the 200 lists end on their `0xffff` terminator, **0** end with no list at all.
+
+**What blocks the join is the key, not the measurement.** Both artifacts name a function by
+`(package, class, function)`, but the switch census takes the export's **immediate outer** while the jump census walks
+to an owning class: of the 200 rows, **186** carry a case count equal to the chain's list size minus its terminator,
+**4** are the lower bounds above, and the rest sit in `UWindow.u`'s four `KeyEvent` functions, which one file keys to
+two classes and the other to four. So an arm-by-arm comparison cannot be finished until both walks agree on what a
+function's key is.
+
+**Next instrument.** Give both walks `uscript-dis.export_path()` -- the class path with a declaring state kept in the
+key, which `--pairs` and `--baseline` already use -- and re-run both over the 18 packages. The join is then an
+equality with no folding, and each of the seven lower bounds either fills in from the chain or names a list whose
+terminator genuinely is not there.
+
+**Reproduce.** `python3 tools/uscript-dis.py --switches "$SG1_DUMP/System" -o inventory` (1 s, no boot); the join is
+`inventory/jump_branches.csv`'s `switch` rows against the census's `cases` column, per `(package, class, function)`.

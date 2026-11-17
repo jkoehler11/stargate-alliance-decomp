@@ -12860,3 +12860,44 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   population a decompiler must *not* treat as housekeeping, and 89 of them are iterator exits; the 18 `Jump`s behind
   a `Jump` are the ones to name, and the `Case` forward scan (modelled as an edge, not measured in the guest) is the
   modelling assumption everything else rests on.
+
+
+### Execution notes (2026-11-17, the switch census was five days stale -- the seven `ended=end` rows were the `Case` row's double read)
+
+- **Task.** The previous bundle's next measurement: `inventory/switch_operands.csv` and the page's switch table. The
+  artifact's seven residue rows had **no case list at all**, which a switch cannot have, and the page recorded that as
+  an unknown rather than as a bug. Three trees, one run each, close it; the bundle is the regenerated census, the
+  generated block that holds the page to it, and the two gates that refuse the row.
+- **The committed artifact reproduces from its own commit and nowhere after it.** `git archive 70927c6` (the commit
+  that added the artifact) run over the whole `System` directory writes **105** rows whose `diff` against the committed
+  file is **empty** -- byte-identical, so the census was a real measurement and not a hand-edited file. The tree
+  immediately before the `Case` fix (`d484f98^`) writes the same 105 rows and the same seven `end` sites, differing in
+  **one** row and only in an opcode's name (`opeb` -> `Caps`, renamed by `4a026c0`). Today's tree writes **200**.
+- **The residue is the `Case` row reading its value twice.** Pattern `bytes:2,case` consumed the 2-byte link *and* the
+  `case` item's own 2-byte value before the value token, so every case in a stream moved the walk two bytes on; a
+  three-arm switch walked off its own list and re-entered the stream mid-operand, where a `0x05` inside a field index
+  read as a `Switch` whose "expression" was the next byte (`Return`). That is exactly the six `*_SetupSizes` bodies
+  (each carrying a real three-arm one-byte switch earlier in the same function) and
+  `SinglePlayerTutorial.ButtonClick` (a real four-width switch, one arm, earlier in its body).
+- **The census now refuses the row it used to write.** `--switches` prints `FAIL ... reach no case list before the
+  stream ends` and returns 1 instead of writing an artifact with an `end` row, and `switches_check` (in `make ci`
+  through `--check`) fails on one -- measured by running both against the *committed* file before regenerating: seven
+  `FAIL` lines, one per row. The check's synthetic stream is the regression: a switch with two cases must parse into
+  two `Case` tokens whose value token sits three bytes in, which `bytes:2,case` cannot produce.
+- **The page's table is generated from the artifact now.** `--switches-doc` (with `--write-doc`/`--check-doc`) renders
+  the widths table, the case-value families and the ending split from `inventory/switch_operands.csv` alone, and
+  `tools/ci.py`'s `check_switch_doc` holds it -- a page and an artifact can no longer disagree for five days, which is
+  the defect this bundle actually fixes.
+- **What the regenerated census says.** 200 sites over 174 functions: width 0 on **19** (every case value
+  `StringConst`), width 1 on **118** (411 `ByteConst` plus 2 `InstanceVariable` case values) and width 4 on **63** (the
+  compact int tokens plus 8 `NameConst`, 20 `InstanceVariable` and 5 `PrimitiveCast`). **193** lists end on the
+  `0xffff` terminator, **7** at a nested switch, and **0** with no list. 35 sites build a case value from an
+  expression rather than a constant, so the compared value is not always foldable into the stream.
+- **Files.** `tools/uscript-dis.py` (`--switches` refusing the `end` row, `--switches-doc`, `switch_census`,
+  `switches_check`) + `tools/ci.py` (`check_switch_doc`) + `inventory/switch_operands.csv` (200 rows) +
+  `docs/BYTECODE.md` (the switch section's block and the residue paragraph) + `docs/UNKNOWNS.md` U20 +
+  `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. One read of the 18 packages (1 s); no boot, no
+  Ghidra.
+- **Next measurement:** the seven `nested-switch` rows' arm counts are a lower bound here and exact in
+  `inventory/jump_branches.csv`, but the two censuses key a function differently (U20), so the arm-by-arm join needs
+  one key rule in both walks before it can be run.
