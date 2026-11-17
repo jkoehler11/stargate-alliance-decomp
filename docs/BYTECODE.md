@@ -1754,3 +1754,27 @@ their own census row rather than as dead code.
 into, which is exactly the shape a control-flow graph should expose: a decompiler can now say a block is unreachable
 instead of guessing. The graph is also what the earlier label question needed -- a `Goto('Label')` was resolved to one
 of these offsets at compile time, and `inventory/jump_graph.csv` holds the offset it resolved to.
+
+## What the branches are: an `else` arm, a straight arm, or an empty one
+
+`tools/jump-branches.py` (`make jump-branches`; `inventory/jump_branches.csv`) is the graph's first consumer: it
+reads `inventory/jump_graph.csv`'s resolution back against the statement stream, which is what a decompiler needs
+from a jump target. An `if`/`else` compiles to `JumpIfNot <else>` + `<then>` + `Jump <end>`, so the statement
+immediately in front of a `JumpIfNot`'s target says whether the arm has an `else` -- the `Jump` that skips it -- and
+counting that is a measurement of the build's own shape rather than a reading of the shipped text.
+
+<!-- generated:jump-branches -->
+**17,463** `JumpIfNot` tokens resolve to **4,047** branches with an `else` arm (**23.17%**), **13,405** conditional jumps over a straight arm (**76.76%**) and **11** empty then-arms (**0.06%**). **9** of them jump **backward**, i.e. a loop test at the bottom of its body, and **0** name no statement at all -- a `&&`/`||` short circuit would be the only way that happens, and this build has none, so a condition's sub-jumps take the same shape as an `if` and the stream alone cannot separate them. A then-arm is -15 to 165 statements long, counted as the distance from the jump to its target -- negative for a loop test, as expected.
+<!-- /generated:jump-branches -->
+
+**What that says about the build.** `else` is the minority shape: three conditional jumps in four guard a straight
+arm, so a reconstruction that assumes the common `if`/`else` pattern would mislabel three arms in four. Eleven empty
+then-arms survive codegen (`if (x) ;`), nine conditional jumps point **backward** -- a loop test at the bottom of its
+body -- and no `JumpIfNot` names a non-statement, which is the useful negative: a `&&`/`||` short circuit would be the
+only source of one, so a condition's sub-jumps take exactly the shape of an `if` and the stream alone cannot separate
+them. That is a text question, not a bytecode one.
+
+**`if (x) ; else y` is not separable and is not claimed.** With no then-arm there is nothing to jump over, so its
+bytes are identical to `if (!x) y`; the first draft of this census had an `else_empty` category, and the self-test
+that "found" one was reading its own fixture rather than the encoding. The category is gone and the empty count is
+`if` arms only.
