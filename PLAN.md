@@ -12271,3 +12271,55 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   their payloads with `tools/uscript-dis.py --script` -- whether either takes a force flag or is reached
   directly with `GotoState('Mellee', ...)` says whether an "activate forced melee" call had a live
   counterpart at all.
+
+### Execution notes (2026-11-17, a forced melee needs no flag — the live counterpart is an unconditional state entry)
+
+- **Task.** The previous note's next measurement: the two `ForceMelee` names are what a word match cannot settle,
+  so the read is the bodies -- `StargateGame.BotEnemy.DoMellee` and `StargateContent.JaffaBotLight.DoMeleeAttack`
+  -- for a force flag or a direct `GotoState('Mellee', ...)`. The instrument that came out of it is larger than
+  the two rows: a `GotoState` site is a token in a payload, so the whole corpus can be asked at once.
+- **The answer is `no flag`, and the capability is a state entry.** `BotEnemy.DoMellee()` takes **no parameters**
+  and its whole 19-byte script is `if (GetStateName() != 'Mellee') GotoState('Mellee')` -- entering the state is
+  the function, and nothing in it tests a flag. The name is shared and its target is not:
+  `SuperSoldierBot.DoMellee` Gotostates `ChasePlayer` and `BotSG.DoMellee` `TacticalMove`, each with one argument,
+  so a `DoMellee` means "enter this class's melee-adjacent state" and not one state the family agrees on.
+  `JaffaBotLight.DoMeleeAttack(Actor Target)` takes one **Actor** and returns `bool`, and carries **no `GotoState`
+  at all** (`JaffaBotLight`'s only two sites are `DoSniper` and `Sniper.NotifyTakeHit`): it fires at the target
+  when the enemy pawn or the target is missing, measures the distance between them, returns early when the enemy
+  cannot be reached or the target is out of range, and swings through `DoMelleeSwing(distance)` from inside the
+  state it is already in. So an "activate forced melee" **flag** has no counterpart in this build; the behaviour
+  is an unconditional zero-argument state entry followed by distance-gated swinging. That is weaker than
+  `dropped` and stronger than a word match, and it is the sentence the two earlier notes were circling.
+- **The census, and the two zeros that are results.** `tools/state-entry.py` walks every script that disassembles
+  end to end and resolves each `GotoState` target and entry label through the package's **name table**:
+  **811 sites over 537 functions in 162 classes**, **667** literal targets, **109** the null name, **35** computed,
+  **104** carrying an entry label (1 of those computed), **372** inside a state body and **439** in a class-level
+  function. Opcode `0x0d` `GotoLabel` is in the operand table and **no walking script carries one**, and
+  `inventory/script_calls.csv` has no by-name call to `Goto`/`GotoState` at all -- `GotoState` is `native(113)`,
+  slot `0x71`, which is the token all 811 sites carry -- so a label jump is compiled into something this read does
+  not see. That is the next measurement, not a negative.
+- **A trap that a self-test caught before the corpus did.** `literal()` tested the index for falsiness, so
+  `NameConst 0` -- a real entry -- read as no name at all: two entry labels and one target name vanished. The
+  index-0 entry is the **null name**, which every package spells `None` and the source writes `GotoState('')`, so
+  the fix made the *meaning* explicit rather than the truthiness: a target of 0 is `null` (it leaves the current
+  state, it does not enter a state called None) and a label of 0 is no label. `--check` now drives both, plus a
+  past-the-table index, a computed target, a computed label and a no-argument site; the two `0x7f`-style fixtures
+  had to become two-byte operands because bit 6 is the continuation bit.
+- **The text is 6-16% ahead of the build, in both pairs the read can compare.** Over the 32 classes
+  `inventory/ai_states.csv` measured -- the same classes read twice, so this is a control and not two populations
+  -- the text has **95** in-state and **127** class-level sites against the bytecode's **86** and **120**, and the
+  shipped text spells `GotoState('')` **126** times against the 109 null-name sites. The bytecode is therefore the
+  floor: a call it does not carry is not a call the build makes, whatever the shipped text still spells.
+- **A join that needed its own rule.** `ai_states.csv`'s `class_gotos` repeats a class's dispatcher count on every
+  one of its state rows (2,046 summed over 151 rows), so the corpus total is the sum over **distinct classes**
+  (127) and a column sum would have been 16x wrong. Both numbers are in the artifact (`text_gotos_in_states`,
+  `text_gotos_in_classes`), so a later run can see which one a page is quoting.
+- Tool (`site_of`, `args_of`, `literal`, `owner_of` walking a `State` outer to its class, `payloads`, `census`,
+  `text_control`, the doc block, the 13-case `--check`) + `inventory/state_entry.csv` (811 site rows + 25 census
+  rows) + `docs/systems/AI.md` (a new section with the generated block, the null-name paragraph and the two-melee
+  subsection) + a `make state-entry` target and its `--check-doc` line in `make ci` + this note. One 1-second read
+  of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** the label jumps. A source `Goto('Begin')` is neither a `GotoState` token nor a by-name
+  call, and the text census counts 169 of them, so the read is the `LabelTable` token (`0x0c`, pattern `labeltable`)
+  and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
+  which `Jump` operands index them.

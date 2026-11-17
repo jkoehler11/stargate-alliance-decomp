@@ -354,3 +354,77 @@ not when a state body is, which is why `WhatToDoNext` and `SetEnemy` are worth r
 
 * Whether `IntelligentSpawner` configuration is in the map, the checkpoint or both. The counts say the
   instances are in checkpoints; how the spawner was configured before the checkpoint existed is open.
+
+## The `GotoState` sites, as the bytecode carries them
+
+`tools/ai-states.py` reads the machine out of the text, and a text read is a floor in two directions: a call whose
+argument is an expression has no name to read, and a class whose text is missing or disabled shows nothing at all.
+`tools/state-entry.py` asks the same question of the payloads -- every `GotoState` token in every script that
+disassembles end to end, with its target and its entry label resolved through the package's own **name table** (a
+compact index into it, not an object reference) -- so the two censuses can be quoted side by side.
+
+    python3 tools/state-entry.py --system DUMP/System -o inventory/state_entry.csv
+
+<!-- generated:state-entry -->
+811 `GotoState` sites over 537 functions in 162 classes of the 11,687 scripts that walk end to end: **667** name their target with a `NameConst`, **109** name the null name (`GotoState('')`, which leaves the current state), **35** build it from an expression, **0** pass no argument at all, and **104** also pass an entry label (**1** of those computed).
+
+Where the call sits is a second split: over the whole corpus **372** sites are inside a state body and **439** are in a class-level function. Restricted to the **32** classes `inventory/ai_states.csv` measured -- the same classes read twice, so the two counts are a control and not two populations -- the bytecode has **86** in-state and **120** class-level sites where the text has **95** and **127**.
+
+| target | sites | classes |
+| --- | ---: | --- |
+| `Idle` | 48 | `APCM60Gun`, `Binoculars`, `C4Weapon` |
+| `ClientFinishing` | 38 | `APCM60Gun`, `DeathGliderGun`, `ExtreniteWeapon` |
+| `DownWeapon` | 20 | `Binoculars`, `C4Weapon`, `ExtreniteWeapon` |
+| `NormalFire` | 20 | `APCM60Gun`, `DeathGliderGun`, `HoverCraftFixedGun` |
+| `Scripting` | 18 | `BotBase`, `BotEnemy`, `BotLite` |
+| `Dead` | 16 | `Controller`, `GameInfo`, `PlayerController` |
+| `PlayerWalking` | 13 | `PlayerController`, `ProgressTrigger`, `StargatePawn` |
+| `Active` | 11 | `HoverCraft`, `Semektet`, `StargateWeapon` |
+| `Charging` | 11 | `ExtreniteWeapon`, `HANDOFLIGHT`, `HaakenMK1Weapon` |
+| `Dying` | 11 | `Controller`, `FishBase`, `Fragment` |
+| `Broken` | 9 | `BotBase`, `BotEnemy`, `BotLite` |
+| `Reloading` | 9 | `GRENADE`, `StargateWeapon`, `Weapon` |
+| `Spectating` | 8 | `GameInfo`, `PlayerController`, `SpecialEventTrigger` |
+| `Waiting` | 8 | `BotBase`, `BotEnemy`, `JaffaBase` |
+
+The 35 computed-target sites are the population behind the page's "a state a native body or a `GotoState` with a computed argument enters": each one is a state this build can enter and the text cannot name.
+
+<!-- /generated:state-entry -->
+
+The tool records `GotoState` and nothing else, on purpose. Opcode `0x0d` `GotoLabel` is in the operand table and
+**no walking script carries one**; a source `Goto('Begin')` is a call in no census here either -- `Object.GotoState`
+is `native(113)`, which is slot `0x71`, which is the token all the sites below carry, while
+`inventory/script_calls.csv` has no by-name call to `Goto` or `GotoState` at all. So a label jump is compiled into
+something this read does not see, and that is the next measurement rather than a negative.
+
+The null name is the clearest case, and it is why the table has no `None` row. **109** sites name the name table's
+entry 0, which every one of the eighteen packages spells `None` and which the source writes `GotoState('')` -- a call
+that *leaves* the current state rather than entering one. The compiled `Actor.StartInterpolation` is exactly that
+pair: `NameConst 00` in its payload, `GotoState('')` in the class's own text. The shipped text spells that form
+**126** times, and the AI classes show the same direction: **95** in-state and **127** class-level `GotoState` calls
+in the text against **86** and **120** in the bytecode. Both differences put the text 6-16% ahead of the compiled
+build, the width the earlier notes found on commented and guarded code -- so the bytecode is the floor: a call it
+does not carry is not a call the build makes, whatever the shipped text still spells.
+
+### Two melee bodies, and what "activate forced melee" would have been
+
+A previous note left two of the AI override names open -- `ActivateForceMelee` and `DeActivateForceMelee` -- because
+a word match against the family's declarations cannot separate `force` and `melee` from the corpus's common
+vocabulary. The read that settles them is the body, and both bodies are in the sites above:
+
+* `BotEnemy.DoMellee()` takes **no parameters**, and its whole 19-byte script is
+  `if (GetStateName() != 'Mellee') GotoState('Mellee')`: entering the state *is* the function, and nothing in it
+  tests a flag.
+* The name is shared and its target is not: `SuperSoldierBot.DoMellee` Gotostates `ChasePlayer`, `BotSG.DoMellee`
+  `TacticalMove`, each with one argument. A `DoMellee` is therefore "enter this class's melee-adjacent state", not
+  one state the family agrees on.
+* `JaffaBotLight.DoMeleeAttack(Actor Target)` takes one **Actor** and returns `bool`, and carries **no `GotoState`
+  at all** -- `JaffaBotLight`'s two sites are `DoSniper` and `Sniper.NotifyTakeHit`. It fires at the target when the
+  enemy pawn or the target is missing, measures the distance between them, returns early when the enemy cannot be
+  reached or the target is out of range, and swings through `DoMelleeSwing(distance)` from inside the state it is
+  already in.
+
+So a "forced melee" **flag** has no counterpart in this build. The capability does: an unconditional, zero-argument
+state entry (`DoMellee`), followed by distance-gated swinging in the state it entered. That is a weaker statement
+than `dropped` and a stronger one than a word match -- the API's *names* are absent from every name table, and its
+*behaviour* is a state entry with nothing left to force.
