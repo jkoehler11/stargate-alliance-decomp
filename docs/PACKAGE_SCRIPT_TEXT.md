@@ -577,12 +577,16 @@ declaration, and every declaration has an export: a bodyless declaration is a `F
 so its payload says whether the compiler also thought there was nothing to compile.
 
 `tools/text-stubs.py` asks both, per declaration, over the same 18 packages: the window between a declaration
-and the next one gives the shape, the class's export of that name gives the owner (the class itself or one of
-its `State`s), and the payload's own length field gives the compiled script. The empty script is seven bytes
-before the trailer (`03 00 00 00 04 0b 47` -- a `Return` with no operand), so a stub that carries it is a
-declaration the build agreed about, and a stub that carries anything longer is a body the text no longer
-spells. The artifact is `inventory/text_stubs.csv` (one row per class, one per stub, and the census), and
-`make text-stubs` regenerates it and this block.
+and the next one gives the shape, the declaration's **scope** decides which record answers it -- a `Function`'s
+Outer is a `State` as often as a `Class`, and the compiler binds a declaration written inside a `state` block to
+that state's own `Function` record, so asking the class for it credits the state with the class's script -- and
+the payload's own length field gives the compiled script. The empty script is seven bytes before the trailer
+(`03 00 00 00 04 0b 47` -- a `Return` with no operand), so a stub that carries it is a declaration the build
+agreed about, and a stub that carries anything longer is a body the package kept. The tool also joins the bodies
+`tools/class-text-bodies.py` measured inside block comments by `(package, class, name)`, which is the only way
+to say whether a body the text does not spell *moved into a comment* rather than being dropped. The artifact is
+`inventory/text_stubs.csv` (one row per class, one per stub, and the census), and `make text-stubs` regenerates
+it and this block.
 
 <!-- generated:text-stubs -->
 **Of the 11,411 declarations the grammar's rule reads, 10,505 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **880 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **15 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **12** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **372 of the 10,505 bodied declarations compile to the same empty script too** -- **358** an empty `{}` body and **14** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 11 of the 369 empty-`{}` bodies carry a longer payload than it.
@@ -659,12 +663,15 @@ That is not a technicality — it is the difference between an inventory and a c
 
 ## Not measured
 
-* The text's *completeness*: it parses as source for all 2,319 classes, but whether every body is present
-  (rather than every declaration) is not measured — that needs a compile attempt, i.e. 3.6.
+* The text's *completeness* at statement level: it parses as source for all 2,319 classes, and the payload
+  test above says the text spells a body for every bodied declaration except one truncated `ScriptText` -- but
+  whether those statements are the ones the compiler consumed still needs a compile attempt, and 3.6 measured
+  that a stock `ucc` cannot read these packages (`references/compiler-gate.md`).
 * Native **indices**: the declarations here say `native function`, not `native(1234)`, so the index still
   lives in the function's record inside the package. The names are now known; the numbers are not.
 * Whether the text is byte-identical to what the compiler consumed. The package stores what the build wrote;
   a compiler may have normalised line endings or comments.
-* Function bodies. The export table gives each function's name, size and byte range, but no `UFunction`
-  record or bytecode is decoded yet, so "native vs script" is still not separable from the table alone —
-  `docs/systems/UCPP_NATIVES.md` records the same gap from the other side.
+* Function bodies. They are decoded now: `tools/uscript-dis.py` walks every scripted payload (11,687 of
+  11,687, `docs/BYTECODE.md`), and native-versus-script is separated per record in `inventory/native_reconcile.csv`
+  (797 records = 683 matched + 112 an `operator` statement expands into + 2 with no declaration, against 692 live
+  declarations = 683 matched + 9 with no record). `docs/systems/UCPP_NATIVES.md` has the native side.

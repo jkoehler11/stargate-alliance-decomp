@@ -12365,6 +12365,43 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   many of the 124 bodied stubs are the same functions as a commented body elsewhere in the class (a body moved into
   a comment rather than dropped), which is one name join against the artifact this note ships.
 
+### Execution notes (2026-11-17, a state's declaration is the state's record, and the lost bodies are one)
+
+- **Task.** The note below shipped the stub census with 124 "bodies the live text does not spell" and named the
+  join against `inventory/class_text_bodies.csv`'s commented bodies as the next measurement. The join answered
+  itself by failing: only one of the 124 named a commented body of its own name, which sent the read back to the
+  rule that produced the 124.
+- **Two rules were answering a declaration with another scope's record.** `index_exports` preferred the
+  class-owned `Function` export for a `(class, name)` key, but a `Function`'s Outer is a `State` as often as a
+  `Class`: **227 of the 906 stubs are inside a `state` block**, every one of them compiles to that state's own
+  (empty) script, and the class's script was being credited to them. With the scope kept apart, bodied stubs go
+  **147 -> 15**, empty ones **759 -> 880**, and **11** class-level declarations whose name only a state binds read
+  as having no export at all -- the "0 name no export" the previous note reported was this preference too.
+- **The duplicate test was forward-only.** A `State` declares its member below the class's own body, and the same
+  text can also declare a name again *above* a bodyless one: **2** bodied stubs are forward declarations, **12**
+  are the mirror case (a bodyless re-declaration of a name the class defines above), and the residue is **1** --
+  `UWindow.UWindowURLTextArea.TextAreaClipText`, whose `ScriptText` is truncated inside its own body. Both are
+  counted inside the declaration's own scope, so a class-level declaration is never answered by a state's body.
+- **The comment join is negative, and that is the answer the note asked for.** `inventory/class_text_bodies.csv`
+  measures 197 commented bodies (172 with no live twin, 25 with one); joined by `(package, class, name)` against
+  the 15 bodied stubs it places **0** in a class whose comment carries a body of the same name, **0** in a
+  commented class under another name and **1** in a class with no block at all. The name-level control says the
+  join is not the weak part: **23 of 647** distinct stub names (3.6%) are a commented body somewhere in the
+  corpus, and **0 of 1** of the residue's names is. So the text does not move a body into a comment -- it keeps
+  the body, spells it above the duplicate declaration, or (once) truncates.
+- **The payload census survives the correction.** The 15 carry **13** distinct payloads and **4** rows share one,
+  and those four are one name declared twice in a class (`StargatePlayer.fire`/`altfire`, `StargateWeapon.fire`):
+  equal sizes across *different* names are distinct scripts, so a size census would have called them one body.
+- Tool (`state_spans`/`scope_of`, `export_resolver` replacing the class-over-state `index_exports`,
+  `redeclared_back`, `script_sha`, the comment join with its verdicts, 20 census rows, four new generated
+  paragraphs, and a `--check` that drives a state re-declaration, the three join verdicts and a class-level body
+  that must not lose its script to a state's scope) + `inventory/text_stubs.csv` (2,147 rows) +
+  `docs/PACKAGE_SCRIPT_TEXT.md` (the block and two stale "not measured" bullets corrected) + `docs/UNKNOWNS.md`
+  (the stub entry gains the correction) + this note. One 2-second read of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** `docs/BYTECODE.md`'s 118 keywords outside every function and every block, typed by their
+  enclosing shape (`#ifdef` section, `state` label block, class-level code) -- the one part of the split the
+  declaration rule still cannot place, and it needs no boot.
+
 ### Execution notes (2026-11-17, the declaration rule was half the grammar, and the outside bucket closes to 107)
 
 - **Task.** The note below's next measurement: the `less` classes' keywords outside any function body as state
