@@ -206,7 +206,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       production for, while binary precedence is over-parenthesised (+8.1% groups, 40,254 operator tokens against
       40,762, no ternary anywhere in the corpus) and the ten prefix sites are the parenthesised operands, so the
       renderer knows the form. Every postfix site names its own operand (1,238 a name, 815 a call or group), so the
-      correction is a text move, not a rebuilt tree; the renderer is the pinned UELib, which is where 3.5 files it.
+      correction is a text move, not a rebuilt tree; the renderer is the pinned UELib, and **the patch is in**
+      (`tools/patches/uelib-negation-prefix.patch`, applied by `tools/fetch-uelib.sh`): `IsPost()` read
+      `OperPrecedence == 0` without the `PreOperator` flag, which every pre operator in this build carries beside a
+      zero precedence byte, so a fresh patched decompile writes **2,067 prefix / 0 postfix** against the pinned
+      renderer's 10 / 2,057, and unary minus moves with it (145 postfix sites to 1).
       **And the move is run over the whole corpus** (`make decompiler-notfix` -> `inventory/decompiler_notfix.csv`):
       `tools/decompiler-notfix.py` writes a corrected tree with 2,056 sites moved, **0 refused and a byte delta of 0**
       (a moved character, so every file keeps its size), and re-reading the result with the census returns **2,063
@@ -11774,6 +11778,36 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `rewrite`, `run`, the manifest writer, the synthetic `--check`) + `inventory/decompiler_notfix.csv` + `make
   decompiler-notfix` + `docs/DECOMPILER.md` (the correction subsection) + this note. Reads a `$WORK` tree; no dump,
   no boot.
+
+### Execution notes (2026-11-17, the renderer is patched and the negation is written in front of its operand)
+
+- **The item the last note named, and it was one condition.** That note closed with "the renderer is UELib's
+  `UClass.Decompile()`, so the patch belongs upstream in the pinned checkout"; this run measured the cause instead
+  of guessing at it. UELib's `UFunction.IsPost()` is `IsOperator() && OperPrecedence == 0`, and a *pre* operator in
+  this build carries the `PreOperator` flag with no precedence byte -- `Object.Not_PreBool` (native 129),
+  `Object.Subtract_PreVector` (211) and `Object.Subtract_PreFloat` (169) all read `prec=0, flags=0x00023411` -- so
+  `IsPost()` and `IsPre()` were both true and every renderer tests `IsPost()` first. The one condition the patch
+  adds (`&& !FunctionFlags.HasFlag(FunctionFlag.PreOperator)`) flips all three to `isPost=False isPre=True`, and a
+  fresh decompile of the whole corpus writes **2,067 prefix / 0 postfix**.
+- **The measurement is two fresh runs, not two trees.** The tree the committed artifact described was older than
+  today's build (`&&` 3,594 against 3,643, `==` 5,512 against 5,579 on the same dump), so the before column was
+  re-taken: the pinned renderer writes **10 prefix / 2,057 postfix**, the patched one **2,067 / 0**. The negation
+  total is unchanged, which is what makes it a position fix rather than a count change.
+- **It is not a `!` fix, it is a pre-operator fix.** Unary minus was classified post by the same condition
+  (`float(StepHeight-)`, `direction-`, `(dz / float(2))-`); the scan for `[A-Za-z0-9_)]-` before `)`, `,`, `;` or a
+  space finds **145 sites in the pinned tree and 1 in the patched one**.
+- **The correction pass becomes a fixpoint check.** `tools/decompiler-notfix.py` over the patched tree moves **0
+  sites** (2,056 over the pinned tree, 0 refused, byte delta 0 both ways), so the tool stays as the regression
+  detector and both artifacts (`decompiler_operators.csv`, `decompiler_notfix.csv`) are regenerated from the patched
+  tree.
+- **`fetch-uelib.sh` applies the patch, and refuses to half-apply one.** Patches live in `tools/patches/` and apply
+  in name order after the pinned checkout: reverse-applies means "already applied", neither direction exits 3. The
+  first version of the script passed a *relative* patch path to `git -C tools/uelib apply`, which resolves it
+  inside the checkout and answered "neither applies nor reverses" for a patch that applies cleanly by hand -- the
+  script now anchors its own directory with `cd … && pwd`.
+- Tool + artifact: `tools/patches/uelib-negation-prefix.patch`, `tools/fetch-uelib.sh`,
+  `inventory/decompiler_operators.csv`, `inventory/decompiler_notfix.csv`, `docs/DECOMPILER.md` (this section's
+  page). No dump file is read by the gate; `--check` on both tools is synthetic and unchanged.
 
 ### Execution notes (2026-11-17, the negation is reconstructed and written after its operand)
 
