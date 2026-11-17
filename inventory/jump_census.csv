@@ -6141,5 +6141,9 @@ census,,,,,,,,,,,guest_bytes,1231947,"widened bytes of those scripts, its denomi
 census,,,,,,,,,,,misses,0,jumps whose operand is no token start under any of the four readings
 census,,,,,,,,,,,tokens_labeltable,0,`LabelTable` (`0x0c`) tokens -- a label a computed jump could name
 census,,,,,,,,,,,tokens_gotolabel,0,`GotoLabel` (`0x0d`) tokens -- a jump by name
+census,,,,,,,,,,,cases,1044,"`Case` tokens, the switch's case list entries including its terminator"
+census,,,,,,,,,,,case_terminator,200,`Case` tokens whose operand is `0xffff` -- the end of their list
+census,,,,,,,,,,,case_linked,844,`Case` operands that resolve to the guest offset of a `Case` token -- the next case of the list
+census,,,,,,,,,,,case_off_list,18,links whose target is not the next `Case` in the stream -- a switch inside a case body
 census,,,,,,,,,,,payloads_seen,11687,
 census,,,,,,,,,,,payloads_walked,11687,

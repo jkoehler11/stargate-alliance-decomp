@@ -22,6 +22,12 @@ graph usable: each site's target is `file_by_guest[operand]`, the file offset of
     python3 tools/jump-graph.py --system DUMP/System -o inventory/jump_graph.csv --write-doc docs/BYTECODE.md
     python3 tools/jump-graph.py --system DUMP/System --report
 
+A `Case` token's operand is the same kind of offset and belongs in the same graph: `execSwitch` (`0x0004ca20`) reads
+it as `Node->Script + operand`, steps one byte past the `Case` opcode and reads the next word, so the 2-byte operand
+is the guest offset of the next `Case` **of that list** (or `0xffff`, the terminator). The artifact carries one
+`case` row per link, and reachability walks those links instead of the forward scan the page used to assume; a case
+whose operand resolves to no `Case` token keeps the scan and is counted in `case_scanned`.
+
 `--guest RAM --pkg StargateMenus.u` reads the same claim from real copies: `tools/xemu/script-ram.py`'s aligner
 places a script in a `pmemsave` image, and the copy's own guest token starts (derived from the *aligned* widths,
 not from the model) then say whether the operand is the offset of a token there. It prints to stdout only; no
@@ -92,6 +98,18 @@ CENSUS_NOTE = {
     "payloads_seen": "Function exports with a located epilogue",
     "payloads_walked": "of those, scripts the table walks end to end",
     "packages": "packages walked",
+    "cases": "`Case` tokens (the switch's case list entries, including the terminator)",
+    "case_terminator": "`Case` tokens whose operand is `0xffff` -- the end of their list",
+    "case_linked": "`Case` operands that resolve to the guest offset of a `Case` token -- the next case of the list",
+    "case_off_list": "linked cases whose target is not the next `Case` in the stream -- a switch inside a case body",
+    "case_not_a_case": "operands that resolve to a token start which is not a `Case`",
+    "case_scanned": "cases the operand did not place, read by the forward scan instead",
+    "dead_run_iterator_exit": "runs behind a `Jump` that lands on the statement after it -- a loop exit over an"
+                              " `IteratorNext`",
+    "dead_run_else_skip": "runs behind a `Jump` whose statement is the else arm a `JumpIfNot` lands on -- the"
+                          " compiler's skip-the-else jump after a then-arm that jumped away",
+    "dead_run_duplicate": "runs behind a `Jump` that targets its predecessor's own target",
+    "dead_run_other": "runs behind a `Jump` in neither shape -- the tail a fourth one would land in",
 }
 
 
@@ -191,21 +209,18 @@ def payloads(system, table, stats):
 
 
 def reach(body, nodes, edges, starts):
-    """`(reachable, dead)` token counts for one script: a walk from the first token over fallthrough and jump edges.
+    """`(reachable, dead, runs, seen)` token counts for one script: a walk from the first token over the edges.
 
     Fallthrough is the next token start after a token's end, and it is suppressed after a return, a stop and an
-    unconditional jump. `edges` is `{token offset: target token offset}` for the jump sites the model resolved.
+    unconditional jump. `edges` is `{token offset: target token offset}` and holds the jump sites the model resolved
+    **and** each `Case` token's own link to the next case of its list (`case_chain`), so the switch is a measured
+    edge here rather than a forward scan: `execSwitch` (`0x0004ca20`) reads the 2-byte operand, and on a mismatch
+    does `Code = Node->Script + operand` / `Code++` (past the `Case` opcode) / reads the next word, which is the
+    next `Case` token of the same list -- `0xffff` ends the list. A `Case` whose operand resolves to nothing keeps
+    the scan as its fallback, and that count is `case_scanned`.
     """
     if not starts:
         return 0, 0
-    # `Case` does not jump: the VM's `execCase` scans *forward* to the next `Case` token when its value does not
-    # match, so a switch's bodies are reached by that scan and not by an edge in the stream. Without this the whole
-    # of every switch body looked dead (measured 2026-11-17: 18,629 of 107,880 statements, and the dead tokens were
-    # `Case` and the code behind it in every one of the three worst scripts).
-    cases = [n["offset"] for n in nodes if n["name"] == "Case"]
-    for a, b in zip(cases, cases[1:]):
-        edges = dict(edges)
-        edges.setdefault(a, b)
     seen = {starts[0]}
     todo = [starts[0]]
     # The flow nodes are the *statement* tokens, not every nested expression: a jump cannot target inside an
@@ -243,7 +258,7 @@ def reach(body, nodes, edges, starts):
         while j + 1 < len(flow) and flow[j + 1]["offset"] not in seen:
             j += 1
         runs.append((flow[i]["offset"], j - i + 1, flow[i - 1]["name"] if i else "",
-                     j == len(flow) - 1))
+                     j == len(flow) - 1, flow[i - 1]["offset"] if i else None))
         i = j + 1
     return len(seen), len(starts) - len(seen), runs, seen
 
@@ -289,15 +304,79 @@ def measure(body, nodes, spans):
         stats["backward" if target <= n["offset"] else "forward"] += 1
         edges.append((n["offset"], n["name"], value, target))
         resolved[n["offset"]] = target
+    # The switch's case list: `Case <u16>` is the widened-code offset of the next `Case` of the *same* list, and
+    # `0xffff` ends it -- `execSwitch` (`0x0004ca20`) jumps `Code = Node->Script + operand`, steps one byte past the
+    # `Case` opcode, reads that word and repeats. So the list is in the payload, a switch inside a case body is a
+    # list of its own (its first case is not the stream's next case), and the scan is only the fallback.
+    g2f = {at: a for at, a in starts.items()}
+    cases = sorted((n for n in flat(nodes) if n["name"] == "Case"), key=lambda n: n["offset"])
+    case_starts = {n["offset"] for n in cases}
+    hold = {n["offset"] for n in flow}
+    links = []
+    by_case = {n["offset"]: n for n in cases}
+    for i, n in enumerate(cases):
+        stats["cases"] += 1
+        raw = (n["operands"] or b"")[:2]
+        follow = cases[i + 1]["offset"] if i + 1 < len(cases) else None
+        if len(raw) == 2:
+            value = int.from_bytes(raw, "little")
+            if value == 0xFFFF:
+                stats["case_terminator"] += 1
+                continue
+            target = g2f.get(value)
+            if target is not None and target in case_starts:
+                stats["case_linked"] += 1
+                stats["case_off_list"] += int(target != follow)
+                links.append((n["offset"], value, target))
+                resolved[n["offset"]] = target
+                continue
+            stats["case_not_a_case"] += 1
+        # The fallback: a case whose operand resolves to no `Case` token keeps the page's forward scan, and the
+        # count is printed so a corpus that stops resolving cannot hide behind the sentence.
+        stats["case_scanned"] += 1
+        if follow is not None and follow in hold:
+            resolved.setdefault(n["offset"], follow)
+    stats["case_links"] = links
     stats["edges"] = len(edges)
     ok, dead, runs, seen = reach(body, flow, resolved, statements)
     stats["reachable"], stats["dead"] = ok, dead
     stats["dead_runs"] = len(runs)
-    for _start, length, prev, _at_end in runs:
+    # A run behind an unconditional `Jump` is the population a decompiler must not print as dead source, and it is
+    # two shapes rather than one (measured 2026-11-17): a **loop-exit jump over an `IteratorNext`** -- the exit path
+    # leaves the loop before the iterator's step, so the step has no entry and the code resumes at `IteratorPop` --
+    # and the **skip-the-else `Jump`** of an `if` whose then-arm already jumped away (`break`, `continue`, `return`),
+    # where the branch's own `JumpIfNot` lands on the statement right after the dead jump, i.e. the else arm begins
+    # there. The third shape is a dead `Jump` to its predecessor's own target. `dead_run_other` is the tail a fourth
+    # shape would land in, and `--check` asserts the four sum to `dead_runs_after_jump`.
+    jn_targets = {resolved[n["offset"]] for n in flow
+                  if n["name"] == "JumpIfNot" and n["offset"] in resolved}
+    by_offset = {n["offset"]: n for n in flow}
+    order = [n["offset"] for n in flow]
+    where = {n["offset"]: i for i, n in enumerate(flow)}
+    detail = []
+    for start, length, prev, _at_end, prev_at in runs:
         key = ("after_return" if prev == "Return" else "after_stop" if prev == "Stop"
                else "after_jump" if prev == "Jump" else "after_other")
         stats["dead_" + key] += length
         stats["dead_runs_" + key] += 1
+        if key != "after_jump":
+            continue
+        dead = by_offset[start]
+        i = where[start]
+        after = order[i + length] if i + length < len(order) else None
+        p_to = resolved.get(prev_at)
+        d_to = resolved.get(start)
+        if dead["name"] == "IteratorNext" and p_to is not None and p_to == after:
+            shape = "iterator_exit"
+        elif p_to is not None and d_to is not None and p_to == d_to:
+            shape = "duplicate"
+        elif after is not None and after in jn_targets:
+            shape = "else_skip"
+        else:
+            shape = "other"
+        stats["dead_run_" + shape] += 1
+        detail.append((start, dead["name"], d_to, p_to, after, shape, prev_at))
+    stats["dead_runs_detail"] = detail
     stats["dead_singletons"] = len([r for r in runs if r[1] == 1])
     dead_nodes = [n for n in flow if n["offset"] not in seen]
     last = flow[-1]["offset"] if flow else None
@@ -328,16 +407,30 @@ def read_dump(system):
         census["terminators"] += st["terminators"]
         census["reachable"] += st["reachable"]
         census["dead"] += st["dead"]
+        for key in ("cases", "case_terminator", "case_linked", "case_off_list", "case_not_a_case", "case_scanned",
+                    "dead_run_iterator_exit", "dead_run_else_skip", "dead_run_duplicate", "dead_run_other"):
+            census[key] += st[key]
         for key in ("dead_runs", "dead_after_return", "dead_after_stop", "dead_after_jump", "dead_after_other",
                     "dead_runs_after_return", "dead_runs_after_stop", "dead_runs_after_jump",
                     "dead_runs_after_other", "dead_singletons", "dead_final", "dead_return", "dead_jump",
                     "dead_iteratornext", "dead_return_after_return", "dead_iteratornext_after_jump",
                     "dead_scripts"):
             census[key] += st[key]
-        if not st["jumps"]:
-            continue
         cls, _state = owner_of(pkg, exp)
         func = pkg.name(exp["name"])
+        for start, name, d_to, p_to, after, shape, prev_at in st["dead_runs_detail"]:
+            rows.append({"kind": "deadrun", "package": package, "class": cls, "function": func,
+                         "offset": "%04x" % start, "op": name, "operand": d_to,
+                         "target": "%04x" % after if after is not None else "", "key": "", "count": "",
+                         "note": "%s, predecessor Jump at %04x -> %s" % (shape, prev_at,
+                                                                        "%04x" % p_to if p_to is not None else "?")})
+        for offset, value, target in st["case_links"]:
+            rows.append({"kind": "case", "package": package, "class": cls, "function": func,
+                         "offset": "%04x" % offset, "op": "Case", "operand": value,
+                         "target": "%04x" % target, "key": "", "count": "",
+                         "note": "next case of the list"})
+        if not st["jumps"]:
+            continue
         for key in ("jumps", "guest_hits", "file_absolute_hits", "at_end", "past_end", "misses", "forward", "backward",
                     "jump_sites", "jumpifnot_sites", "jump_hits", "jumpifnot_hits"):
             census[key] += st[key]
@@ -355,13 +448,16 @@ def read_dump(system):
                          "offset": "%04x" % offset, "op": op, "operand": value, "target": "%04x" % target,
                          "key": "", "count": "", "note": "backward" if target <= offset else "forward"})
     census["packages"], census["seen"], census["walked"] = stats["packages"], stats["seen"], stats["walked"]
-    out = [r for r in rows if r["kind"] == "edge"]
+    out = ([r for r in rows if r["kind"] == "edge"] + [r for r in rows if r["kind"] == "case"]
+           + [r for r in rows if r["kind"] == "deadrun"])
     for package in sorted(per_pkg):
         c = per_pkg[package]
         out.append({"kind": "package", "package": package, "class": "", "function": "", "offset": "", "op": "",
                     "operand": "", "target": "", "key": "package", "count": c["jumps"],
                     "note": "%d script(s), %d token(s), %d unreachable" % (c["scripts"], c["tokens"], c["dead"])})
     for key in ("jumps", "scripts_with_a_jump", "guest_hits", "file_absolute_hits", "at_end", "past_end", "misses",
+                "cases", "case_terminator", "case_linked", "case_off_list", "case_not_a_case", "case_scanned",
+                "dead_run_iterator_exit", "dead_run_else_skip", "dead_run_duplicate", "dead_run_other",
                 "guest_token_starts", "guest_bytes", "file_token_starts", "file_bytes", "forward", "backward",
                 "tokens", "terminators", "reachable", "dead", "dead_runs", "dead_after_return", "dead_after_stop",
                 "dead_after_jump", "dead_after_other", "dead_runs_after_return", "dead_runs_after_stop",
@@ -454,6 +550,39 @@ def doc_block(rows):
                 comma(count(rows, "dead_return")), comma(count(rows, "dead_jump")),
                 comma(count(rows, "dead_iteratornext")), comma(count(rows, "dead_iteratornext_after_jump"))),
              ]
+    lines += ["",
+              "**The %s unreachable statements behind an unconditional `Jump` are two shapes, and the page names"
+              " them now.** **%s** are the loop exit's own skip: the `Jump` lands on the statement just after an"
+              " `IteratorNext`, so the iterator's step has no entry and the code resumes at `IteratorPop`. **%s** are"
+              " the compiler's **skip-the-else** `Jump`: the then-arm ended in a jump away (`break`/`continue`/"
+              "`return`), so the `Jump` that would step over the `else` arm is unreachable -- and the branch's own"
+              " `JumpIfNot` lands on the statement right after it, i.e. the else arm begins there, in **%s of %s** of"
+              " them. **%s** is a dead `Jump` whose target is its predecessor's own target, and **%s** are anything"
+              " else. So none of the %s is dead *source*: the first shape is the loop's housekeeping and the second is"
+              " the `if`/`else` codegen's, and a decompiler that prints the second as unreachable code is reading its"
+              " own arm pair backwards."
+              % (comma(count(rows, "dead_after_jump")), comma(count(rows, "dead_run_iterator_exit")),
+                 comma(count(rows, "dead_run_else_skip")), comma(count(rows, "dead_run_else_skip")),
+                 comma(count(rows, "dead_after_jump") - count(rows, "dead_run_iterator_exit")
+                       - count(rows, "dead_run_duplicate") - count(rows, "dead_run_other")),
+                 comma(count(rows, "dead_run_duplicate")), comma(count(rows, "dead_run_other")),
+                 comma(count(rows, "dead_after_jump")))]
+    lines += ["",
+              "**%s** `Case` tokens carry a switch's case list, and **%s** of them are a link: the operand is the"
+              " **guest-space offset** of the next `Case` of the *same* list, resolved in **%s of %s** (**%s%%**),"
+              " and the other **%s** are the `0xffff` terminator. **%s** links skip a case token because the list"
+              " belongs to a switch inside a case body, and **%s** case(s) needed the forward scan. The chain is the"
+              " handler's own reading -- `execSwitch` (`0x0004ca20`) sets `Code = Node->Script + operand`, steps one"
+              " byte past the `Case` opcode and reads the next word -- and it replaces the scan this page used to"
+              " assume: every script's dead set is the same size either way (%s statements), so the scan was not"
+              " wrong, only unproven."
+              % (comma(count(rows, "cases")), comma(count(rows, "cases") - count(rows, "case_terminator")),
+                 comma(count(rows, "case_linked")),
+                 comma(count(rows, "cases") - count(rows, "case_terminator")),
+                 "%.2f" % pct(count(rows, "case_linked"),
+                               max(1, count(rows, "cases") - count(rows, "case_terminator"))),
+                 comma(count(rows, "case_terminator")), comma(count(rows, "case_off_list")),
+                 comma(count(rows, "case_scanned")), comma(count(rows, "dead")))]
     pkgs = [r for r in rows if r.get("kind") == "package"]
     if pkgs:
         lines += ["", "| package | scripts | jumps | tokens | unreachable |", "| --- | ---: | ---: | ---: | ---: |"]
@@ -532,15 +661,23 @@ def guest_report(ram, system, pkgs, limit):
             g += gw
         model_starts, model_len = guest_map(spans)
         hits = file_hits = 0
+        case_ops = case_hits = 0
         for n in flat(nodes):
-            if n["name"] not in JUMPS or len(n["operands"] or b"") < 2:
-                continue
-            value = int.from_bytes(n["operands"][:2], "little")
-            hits += int(value in starts)
-            file_hits += int(value in {x for x in starts.values()})
+            raw = n["operands"] or b""
+            if n["name"] in JUMPS and len(raw) >= 2:
+                value = int.from_bytes(raw[:2], "little")
+                hits += int(value in starts)
+                file_hits += int(value in {x for x in starts.values()})
+            # A `Case` operand is the same kind of offset (`execSwitch` reads `Node->Script + operand`), so the
+            # copy's *own* aligned starts must hold it too -- and a list's terminator is `0xffff`, not an offset.
+            if n["name"] == "Case" and len(raw) >= 2:
+                value = int.from_bytes(raw[:2], "little")
+                if value != 0xFFFF:
+                    case_ops += 1
+                    case_hits += int(value in starts)
         print("  %s %s.%s: guest copy %d bytes (model %d), %d token start(s), jump operand in the copy's own"
-              " starts %d, model layout agrees %s"
-              % (package, cls, pkg.name(exp["name"]), g, model_len, len(starts), hits,
+              " starts %d, case link in them %d of %d, model layout agrees %s"
+              % (package, cls, pkg.name(exp["name"]), g, model_len, len(starts), hits, case_hits, case_ops,
                  "yes" if sorted(starts) == sorted(model_starts) else "no (%d vs %d)"
                  % (len(starts), len(model_starts))))
     return 0
@@ -586,12 +723,55 @@ def selftest():
         print("FAIL jump-graph: reachability read %d/%d, expected 2 reachable and 1 dead"
               % (st["reachable"], st["dead"]))
         return 1
+    # The two named shapes of a run behind a `Jump`. An `IteratorNext` the jump lands past is a loop exit ...
+    spans5 = [(0, 1, "opcode", 0x06), (1, 3, "fixed", 0x06), (3, 4, "opcode", 0x15),
+              (4, 5, "opcode", 0x15), (5, 6, "opcode", 0x15), (6, 7, "opcode", 0x16)]
+    nodes5 = [node(0, "Jump", bytes([6, 0]), 3), node(3, "IteratorNext", b"", 4), node(6, "IteratorPop", b"", 7)]
+    _e, st = measure(bytes([0x06, 0x06, 0x00, 0x15, 0x15, 0x15, 0x16]), nodes5, spans5)
+    if st["dead_run_iterator_exit"] != 1 or st["dead_runs_after_jump"] != 1:
+        print("FAIL jump-graph: a loop exit over an IteratorNext read %r" % (dict(st),))
+        return 1
+    # ... and a `Jump` the branch's own `JumpIfNot` lands past is the skip-the-else instruction.
+    spans6 = [(0, 1, "opcode", 0x07), (1, 3, "fixed", 0x07), (3, 4, "opcode", 0x06), (4, 6, "fixed", 0x06),
+              (6, 7, "opcode", 0x06), (7, 9, "fixed", 0x06), (9, 10, "opcode", 0x0F), (10, 11, "opcode", 0x04)]
+    nodes6 = [node(0, "JumpIfNot", bytes([9, 0]), 3), node(3, "Jump", bytes([13, 0]), 4),
+              node(6, "Jump", bytes([11, 0]), 7), node(9, "Let", b"", 10), node(11, "Return", b"", 12)]
+    body6 = bytes([0x07, 9, 0, 0x06, 13, 0, 0x06, 11, 0, 0x0F, 0x04])
+    _e, st = measure(body6, nodes6, spans6)
+    if st["dead_run_else_skip"] != 1 or st["dead_runs_after_jump"] != 1 or st["dead_run_duplicate"]:
+        print("FAIL jump-graph: a skip-the-else jump read %r" % (dict(st),))
+        return 1
+    for start, name, _d, _p, _after, shape, _prev in st["dead_runs_detail"]:
+        if name != "Jump" or shape != "else_skip":
+            print("FAIL jump-graph: the dead run read as %r" % (st["dead_runs_detail"],))
+            return 1
+    # The case chain: `Case <u16>` links to the next `Case` of its own list and `0xffff` ends it. Guest offsets are
+    # the file offsets here because the spans carry no widened operand.
+    spans3 = [(0, 1, "opcode", 0x0A), (1, 3, "case", 0x0A), (3, 4, "opcode", 0x0A),
+              (4, 6, "case", 0x0A), (6, 7, "opcode", 0x04)]
+    body3 = bytes([0x0A, 0x03, 0x00, 0x0A, 0xFF, 0xFF, 0x04])
+    nodes3 = [node(0, "Case", bytes([3, 0]), 3), node(3, "Case", bytes([0xFF, 0xFF]), 6),
+              node(6, "Return", b"", 7)]
+    _e, st = measure(body3, nodes3, spans3)
+    if st["cases"] != 2 or st["case_linked"] != 1 or st["case_terminator"] != 1 or st["case_scanned"] \
+            or st["case_links"] != [(0, 3, 3)]:
+        print("FAIL jump-graph: the case chain read %r" % (dict(st),))
+        return 1
+    # A case whose operand names no `Case` falls back to the scan and says so.
+    nodes4 = [node(0, "Case", bytes([7, 0]), 3), node(3, "Case", bytes([0xFF, 0xFF]), 6),
+              node(6, "Return", b"", 7)]
+    _e, st = measure(bytes([0x0A, 0x07, 0x00, 0x0A, 0xFF, 0xFF, 0x04]), nodes4, spans3)
+    if st["case_linked"] or st["case_scanned"] != 1:
+        print("FAIL jump-graph: an unresolvable case operand read %r" % (dict(st),))
+        return 1
     # The artifact round trip: a CSV of these rows renders the block the run would have written.
     rows = [{"kind": "census", "key": k, "count": v} for k, v in
             (("jumps", 1), ("guest_hits", 1), ("file_absolute_hits", 0), ("guest_token_starts", 2),
              ("guest_bytes", 8), ("file_token_starts", 2), ("file_bytes", 5), ("past_end", 0), ("misses", 0),
              ("scripts_with_a_jump", 1), ("forward", 1), ("backward", 0), ("reachable", 2), ("tokens", 2),
-             ("dead", 0))]
+             ("dead", 0), ("cases", 2), ("case_terminator", 1), ("case_linked", 1), ("case_off_list", 0),
+             ("case_scanned", 0), ("dead_run_iterator_exit", 0), ("dead_run_else_skip", 0),
+             ("dead_run_duplicate", 0), ("dead_run_other", 0))]
     import tempfile
     tmp = tempfile.mkdtemp()
     try:
@@ -606,7 +786,9 @@ def selftest():
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
     print("ok   jump-graph: the guest offset and the file offset disagree on the same script, the copy's length is"
-          " the model's, reachability finds the dead tail, and the block reproduces from its CSV")
+          " the model's, reachability finds the dead tail, a loop exit and a skip-the-else jump are told apart, the"
+          " case chain links and terminates, and the block"
+          " reproduces from its CSV")
     return 0
 
 
