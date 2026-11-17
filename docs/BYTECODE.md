@@ -1788,32 +1788,23 @@ by class. `tools/text-branches.py` masks each class's text first (comments, then
 length-preserving mask so both counts read the same offsets) and then counts the keywords and operators.
 
 <!-- generated:text-branches -->
-**The live text spells 4,051 `else`** over the 2,319 classes whose `ScriptText` parses, against the **4,047** arms the bytecode carries: **800 of 967** classes the branch census also has agree exactly on the count (**82.7%**), **45** spell more and **122** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 565 function bodies between them. Per class the source is therefore an **82.7%** oracle, and the corpus totals agree to 4 in 4,047 only because the two sides cancel.
+**The live text spells 4,051 `else`** over the 2,319 classes whose `ScriptText` parses, against the **4,047** arms the bytecode carries: **800 of 967** classes the branch census also has agree exactly on the count (**82.7%**), **45** spell more and **122** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 566 function bodies between them. Per class the source is therefore an **82.7%** oracle, and the corpus totals agree to 4 in 4,047 only because the two sides cancel.
 
 **One `JumpIfNot` per condition term is the codegen's rule and it holds**: `if` + `while` + `for` over those 967 joined classes is **18,452** terms for **17,463** `JumpIfNot` tokens, exact on **820** classes (**84.8%**). **424** of them carry no `&&`/`||` and are exact **412** times (**97.2%**), while the **543** that do carry one are exact **408** times (**75.1%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming a non-statement; the 3,686 `&&` and 1,568 `||` in this text are therefore **0** arms, and the model's 989 surplus terms sit in the 147 joined classes that are not exact -- text a class ships and its package does not compile.
 
-**The `less` population's 290-arm net is a cancellation of two larger counts, and the split is by function, not by class.** Its 122 classes carry 1,558 `else` arms: **65** sit in a function whose name the live text does not declare at all, **338** are the shortfall inside a function it declares, and the rest are spelled exactly. Its text in turn spells 1,268 `else` keywords, of which **107** sit outside any function body -- 43 inside a `state` block and 64 outside every block -- and 6 in a declared body the record gives no arm. So the net of 290 is 403 missing arms against 107 keywords outside a function, and **the 800 classes that agree on the count carry the same three populations** (4 absent, 99 short, 102 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
+**The `less` population's 290-arm net is a cancellation of two larger counts, and the split is by function, not by class.** Its 122 classes carry 1,558 `else` arms: **0** sit in a function whose name the live text does not declare at all, **298** are the shortfall inside a function it declares, and the rest are spelled exactly. Its text in turn spells 1,268 `else` keywords, of which **1** sit outside any function body -- 1 inside a `state` block and 0 outside every block -- and 6 in a declared body the record gives no arm. So the net of 290 is 298 missing arms against 1 keywords outside a function, and **the 800 classes that agree on the count carry the same three populations** (0 absent, 3 short, 1 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
 
-**The declaration rule was narrower than the grammar, and the figures above moved with it.** Declarations are counted with the grammar's modifiers now; the rule that carried only `simulated`/`static`/`final`/`latent` read **9,860** of the corpus's **11,458** declarations, so an `exec function` -- an entire class's worth in `CheatManager` and `PlayerController` -- was code outside any function, and **1,162** declarations are introduced by `event`, `delegate` or an operator rather than by the word `function` at all. The `less` population's absent arms fall from the previous run's 356 to **65** while its outside keywords fall from 336 to **107**, and what is left of that outside half is **64** keywords in the `less` classes (and 118 in the corpus) that sit outside every function and every block. `class-text-bodies.py` still counts with the narrow shape, so its 4,890 declarations are a floor and re-basing that census is the open half.
+**The declaration rule was still short of the grammar, in four shapes, and this census moved with it.** Declarations are counted with `class-text-bodies.py`'s rule now: the grammar's keywords and modifiers, a modifier after the keyword (`function static`), a qualified return type (`function Actor.eDoubleClickDir Foo(`), and a parameter list that starts on the line after the name -- which is how the engine's own movement API is written, so `ServerMove`, `LongClientAdjustPosition`, `CallServerMove`, `ReplicateMove` and `MoveAutonomous` are all declared in `PlayerController`'s text and their bodies were outside every function. The four-modifier rule read **9,860** of the corpus's **11,523** declarations and `#635`'s same-line rule **0**. **No arm is left without a declaring body, and one `else` keyword in the whole corpus is left outside every block** (`GUI.MenuItemOverlay`), against the previous reading's 65 absent arms behind 8 names and 107 outside keywords (1 corpus wide).
 
-**What the absent arms name is a surface, not a scatter.** They sit behind **8** distinct function names in the `less` classes, and the largest are `servermove` 13, `longclientadjustposition` 12, `callservermove` 10 -- compiled in the package and no longer declared in the text it ships. **The class-set test does not decide this either**: 19 of the 122 `less` classes declare fewer functions than their record has, 79 the same number and 24 more, against 42 of 800 agreeing classes that also declare fewer -- so a function count is not what an arm count is missing.
+**The in-state count fell for a second reason: the state read was case-sensitive.** UnrealScript folds keyword case and the shipped text spells `State` in 36 classes -- **0** of the corpus's **513** `state` declarations -- so every body in those blocks read as code outside one. Among them are the five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as states no class's text declares: the text declares them, in a capitalised block, and `1` keywords now sit in state code (against 462).
+
+**The class-set test moves with the rule and still does not decide the arm count.** 15 of the 122 `less` classes declare fewer functions than their record has, 83 the same number and 24 more, against 38 of 800 agreeing classes that also declare fewer -- so a function count is not what an arm count is missing. The class-level verdicts (800 agree, 45 more, 122 less, 1,352 with no branch) do not move at all: the correction moved the per-function split, which is what it was supposed to move.
 
 | population | classes | `else` arms | in a function the text does not declare | short in a declared body | text `else` outside any function | net |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `less` | 122 | 1,558 | 65 | 338 | 107 | +290 |
-| `agree` | 800 | 1,537 | 4 | 99 | 102 | +0 |
-| `more` | 45 | 952 | 8 | 126 | 371 | -294 |
-
-| function | classes | `else` arms |
-| --- | ---: | ---: |
-| `servermove` | 1 | 13 |
-| `longclientadjustposition` | 1 | 12 |
-| `callservermove` | 1 | 10 |
-| `login` | 2 | 9 |
-| `replicatemove` | 1 | 9 |
-| `enumpositiondescription` | 1 | 5 |
-| `prelogin` | 2 | 4 |
-| `moveautonomous` | 1 | 3 |
+| `less` | 122 | 1,558 | 0 | 298 | 1 | +290 |
+| `agree` | 800 | 1,537 | 0 | 3 | 1 | +0 |
+| `more` | 45 | 952 | 0 | 14 | 251 | -294 |
 
 | package | joined | agree | more | less | text `else` | arms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |

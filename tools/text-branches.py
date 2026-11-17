@@ -89,6 +89,9 @@ CENSUS_NOTE = {
     "decl_legacy": "declarations the previous rule counted (`simulated`/`static`/`final`/`latent` only)",
     "decl_wide": "declarations the grammar has, any modifier",
     "decl_no_function": "declarations introduced by `event`/`delegate`/`operator` rather than the word `function`",
+    "decl_grammar": "declarations read with the parameter list required on the same line -- `#635`'s rule",
+    "decl_trailing": "declarations with a modifier after the keyword (`function static`)",
+    "states_case_folded": "`state` declarations spelled `State`, lost to a case-sensitive read",
     "fn_state": "`else` keywords inside a `state { }` block and outside every function in it",
     "fn_top": "`else` keywords outside every function and every block",
     "state_blocks": "`state` declarations with a braced body",
@@ -102,15 +105,17 @@ MODIFIERS = ("simulated", "static", "final", "latent", "exec", "private", "prote
              "iterator", "singular", "delegate", "preoperator", "postoperator", "operator")
 # A declaration does not need the word `function` either: `event`, `delegate` and the operator family introduce
 # one on their own, and in the engine classes the `event` handlers are most of the code that is not a function.
-FUNC = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:function|event|delegate|operator|preoperator|postoperator)"
-                  r"[ \t]+(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\("
-                  % "|".join(MODIFIERS), re.M)
+# Declarations are counted with `tools/class-text-bodies.py`'s rule -- one rule for every text census in the
+# tree, so a declaration no reader can see is not a disagreement between two pages. `FUNC_LEGACY` and
+# `FUNC_NO_KEYWORD` stay local: they are readings of their own, quoted as deltas.
 FUNC_NO_KEYWORD = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:event|delegate|operator|preoperator|postoperator)"
                              r"[ \t]+(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\("
                              % "|".join(MODIFIERS), re.M)
 FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
                          r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
-STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M)
+# UnrealScript folds keyword case, and 36 classes ship `State` with a capital: a case-sensitive read loses 56
+# state declarations and reports their bodies as code outside every block.
+STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
 PP_ELSE = re.compile(r"#[ \t]*else\b")
 
 
@@ -215,17 +220,18 @@ def function_else(live):
     """
     ctb = ctb_tool()
     bodies, names, spans = {}, set(), []
-    ms = list(FUNC.finditer(live))
+    ms = list(ctb.FUNC.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
         name = m.group(1).lower()
         names.add(name)
-        if name in bodies:
-            continue  # first declaration of a name wins, as in `class-text-bodies.functions`
         span = ctb.body_span(live, m.end(), limit)
-        if span is None or name in bodies:
-            continue  # no body, or a redeclaration: the first one wins, as in `class-text-bodies.functions`
-        bodies[name] = else_in(live[span[0]:span[1]])
+        if span is None:
+            continue  # a declaration without a body shows no arms, and is in `names` but not in `bodies`
+        # a class may declare a function twice -- a `state` block that overrides it is the common case -- and the
+        # arms belong to the name, so every declaration's body counts and every body is a span the outside
+        # bucket is measured against. Skipping the second one read 26 keywords as code outside every function.
+        bodies[name] = bodies.get(name, 0) + else_in(live[span[0]:span[1]])
         spans.append(span)
     return bodies, names, spans
 
@@ -257,6 +263,7 @@ def state_split(live, fn_spans, total_else):
 # --- the dump side ---------------------------------------------------------------------------------
 def walk(system_dir):
     pst = load_tool("pkg_script_text", "pkg-script-text.py")
+    ctb = ctb_tool()
     rows = {}
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
@@ -277,10 +284,13 @@ def walk(system_dir):
                 "class": pkg.name(exp["name"]),
                 "live": counts(live),
                 "comment_else": counts(comments)["else"],
-                "functions": len(FUNC.findall(live)),
+                "functions": len(ctb.FUNC.findall(live)),
+                "decl_grammar": len(ctb.FUNC_GRAMMAR.findall(live)),
+                "decl_trailing": len(ctb.FUNC_TRAIL.findall(live)),
+                "state_blocks_capital": len(ctb.STATE_DECL.findall(live)) - len(ctb.STATE_DECL_LEGACY.findall(live)),
                 "fn_else": fn_else, "fn_names": fn_names,
                 "fn_state": fn_state, "fn_top": fn_top, "state_blocks": state_blocks,
-                "decl_legacy": len(FUNC_LEGACY.findall(live)),
+                "decl_legacy": len(ctb.FUNC_LEGACY.findall(live)),
                 "decl_no_function": len(FUNC_NO_KEYWORD.findall(live)),
             }
     return rows
@@ -346,6 +356,9 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         census["text_functions"] += t["functions"]
         census["decl_legacy"] += t["decl_legacy"]
         census["decl_wide"] += t["functions"]
+        census["decl_grammar"] += t["decl_grammar"]
+        census["decl_trailing"] += t["decl_trailing"]
+        census["states_case_folded"] += t["state_blocks_capital"]
         census["decl_no_function"] += t["decl_no_function"]
         census["state_blocks"] += t["state_blocks"]
         census["fn_state"] += t["fn_state"]
@@ -613,23 +626,31 @@ def verdict_paragraph(rows):
             "**the {ac} classes that agree on the count carry the same three populations** ({a_absent} absent, "
             "{a_short} short, {a_outside} outside, net {a_net:+d}): a net of zero is two equal mismatches, not "
             "a class whose text is the revision compiled.\n"
-            "\n**The declaration rule was narrower than the grammar, and the figures above moved with it.** "
-            "Declarations are counted with the grammar's modifiers now; the rule that carried only "
-            "`simulated`/`static`/`final`/`latent` read **{decl_legacy}** of the corpus's **{decl_wide}** "
-            "declarations, so an `exec function` -- an entire class's worth in `CheatManager` and "
-            "`PlayerController` -- was code outside any function, and **{nokw}** declarations are introduced by "
-            "`event`, `delegate` or an operator rather than by the word `function` at all. The `less` "
-            "population's absent arms fall from the previous run's 356 to **{absent}** while its outside "
-            "keywords fall from 336 to **{outside}**, and what is left of that outside half is **{topn}** "
-            "keywords in the `less` classes (and {alltop} in the corpus) that sit outside every function and "
-            "every block. `class-text-bodies.py` still counts with the narrow shape, so its 4,890 "
-            "declarations are a floor and re-basing that census is the open half.\n"
-            "\n**What the absent arms name is a surface, not a scatter.** They sit behind **{names}** distinct "
-            "function names in the `less` classes, and the largest are {top} -- compiled in the package and no "
-            "longer declared in the text it ships. **The class-set test does not decide this either**: "
+            "\n**The declaration rule was still short of the grammar, in four shapes, and this census moved "
+            "with it.** Declarations are counted with `class-text-bodies.py`'s rule now: the grammar's "
+            "keywords and modifiers, a modifier after the keyword (`function static`), a qualified return type "
+            "(`function Actor.eDoubleClickDir Foo(`), and a parameter list that starts on the line after the "
+            "name -- which is how the engine's own movement API is written, so `ServerMove`, "
+            "`LongClientAdjustPosition`, `CallServerMove`, `ReplicateMove` and `MoveAutonomous` are all "
+            "declared in `PlayerController`'s text and their bodies were outside every function. The "
+            "four-modifier rule read **{decl_legacy}** of the corpus's **{decl_wide}** declarations and "
+            "`#635`'s same-line rule **{decl_grammar}**. **No arm is left without a declaring body, and one "
+            "`else` keyword in the whole corpus is left outside every block** (`GUI.MenuItemOverlay`), against "
+            "the previous reading's 65 absent arms behind 8 names and 107 outside keywords ({alltop} corpus "
+            "wide).\n"
+            "\n**The in-state count fell for a second reason: the state read was case-sensitive.** "
+            "UnrealScript folds keyword case and the shipped text spells `State` in 36 classes -- "
+            "**{case_states}** of the corpus's **{blocks}** `state` declarations -- so every body in those "
+            "blocks read as code outside one. Among them are the five states "
+            "(`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree "
+            "once recorded as states no class's text declares: the text declares them, in a capitalised "
+            "block, and `{state}` keywords now sit in state code (against 462).\n"
+            "\n**The class-set test moves with the rule and still does not decide the arm count.** "
             "{l_fewer} of the {nc} `less` classes declare fewer functions than their record has, {l_equal} the "
-            "same number and {l_more} more, against {a_fewer} of {ac} agreeing classes that also declare fewer "
-            "-- so a function count is not what an arm count is missing.\n"
+            "same number and {l_more} more, against {a_fewer} of {ac} agreeing classes that also declare "
+            "fewer -- so a function count is not what an arm count is missing. The class-level verdicts "
+            "(800 agree, 45 more, 122 less, 1,352 with no branch) do not move at all: the correction moved "
+            "the per-function split, which is what it was supposed to move.\n"
             .format(ln=comma(less_net), nc=comma(less["count"]), arms=comma(less["fn_arms"]),
                     absent=comma(less["fn_absent"]), short=comma(less["fn_short"]),
                     text=comma(less["live_else"]), outside=comma(less["fn_outside"]),
@@ -642,7 +663,10 @@ def verdict_paragraph(rows):
                     nokw=comma(count(rows, "decl_no_function")), alltop=comma(count(rows, "fn_top")),
                     names=comma(count(rows, "fn_absent_names")), top=named,
                     l_fewer=comma(count(rows, "less_fewer")), l_equal=comma(count(rows, "less_equal")),
-                    l_more=comma(count(rows, "less_more")), a_fewer=comma(count(rows, "agree_fewer"))))
+                    l_more=comma(count(rows, "less_more")), a_fewer=comma(count(rows, "agree_fewer")),
+                    case_states=comma(count(rows, "states_case_folded")),
+                    blocks=comma(count(rows, "state_blocks")),
+                    decl_grammar=comma(count(rows, "decl_grammar"))))
 
 def package_table(rows):
     """A markdown table of the joined classes per package, so the disagreement has an owner."""

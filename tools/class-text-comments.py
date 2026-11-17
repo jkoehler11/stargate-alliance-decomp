@@ -51,10 +51,20 @@ FIELDS = ["kind", "package", "key", "payload", "text_bytes", "comment_bytes", "l
 
 BLOCK = re.compile(r"/\*.*?\*/", re.S)
 LINE_COMMENT = re.compile(r"//[^\n]*")
-# `function` at the head of a line, the shape `pkg-script-text.py` counts -- a mention of the word inside
-# prose is not a declaration, and the difference is 306 rows against 213 over this corpus.
-FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
-                  r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
+# Declarations are counted with `tools/class-text-bodies.py`'s rule -- one rule for every text census in the
+# tree, so this page and that one cannot disagree about what a declaration is. `FUNC_LEGACY` keeps the
+# four-modifier `function`-only shape this tool counted with first, so the correction is a number.
+FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
+                         r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
+_CTB = None
+
+
+def func():
+    """The shared declaration rule, loaded from its own tool so the two censuses cannot drift."""
+    global _CTB
+    if _CTB is None:
+        _CTB = load_tool("class_text_bodies", "class-text-bodies.py")
+    return _CTB.FUNC
 VAR = re.compile(r"^[ \t]*var\b", re.M)
 DEFAULTS = re.compile(r"^[ \t]*_?defaultproperties[ \t]*$", re.M)
 # The declaration pattern `pkg-script-text.py` counts natives with, so the two agree.
@@ -93,7 +103,7 @@ def analyse(text):
     # blocks do: counting the block only is how the page came to call 701 live when the live count is 681.
     no_block = BLOCK.sub("", t)
     line_spans = [m.span() for m in LINE_COMMENT.finditer(no_block)]
-    live_functions = len(FUNC.findall(live))
+    live_functions = len(func().findall(live))
     live_vars = len(VAR.findall(live))
     out = {
         "text_bytes": len(t),
@@ -102,7 +112,7 @@ def analyse(text):
         "blocks": len(blocks),
         "live_functions": live_functions,
         "live_vars": live_vars,
-        "comment_functions": len(FUNC.findall(body)),
+        "comment_functions": len(func().findall(body)),
         "comment_vars": len(VAR.findall(body)),
         "comment_defaults": len(DEFAULTS.findall(body)),
         "live_defaults": len(DEFAULTS.findall(live)),
@@ -117,8 +127,8 @@ def analyse(text):
         out["verdict"] = "live-body"
     # The two name lists are what `revision_counts` joins against the package's exports; they stay out of the
     # artifact, which carries the joined counts only.
-    out["comment_function_names"] = FUNC.findall(body)
-    out["live_function_names"] = FUNC.findall(live)
+    out["comment_function_names"] = func().findall(body)
+    out["live_function_names"] = func().findall(live)
     out["live_text"] = live
     return out
 

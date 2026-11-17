@@ -68,9 +68,33 @@ FIELDS = ["kind", "package", "class", "name", "verdict", "c_ops", "c_stmts", "c_
           "c_calls_missing", "l_calls", "l_calls_own", "l_calls_elsewhere", "l_calls_missing",
           "keys", "count", "note", "vocab", "vocab_where"]
 
-# The same declaration pattern `class-text-comments.py` counts, so the two censuses describe one population.
-FUNC = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
-                  r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
+# The grammar's declaration keywords and modifiers, one rule for every text census in the tree: UnrealScript
+# keywords are case-insensitive, a declaration does not need the word `function` (`event`, `delegate` and the
+# operator family introduce one on their own), a modifier may follow the keyword (`function static float Foo(..)`)
+# and the parameter list may start on its own line, which is the engine classes' own style.
+# `native` is deliberately absent: a `native function` is counted by the natives census, and treating it as a
+# function declaration here would count it twice.
+MODIFIERS = ("simulated", "static", "final", "latent", "exec", "private", "protected", "public", "event",
+             "iterator", "singular", "delegate", "preoperator", "postoperator", "operator")
+# A declaration anywhere inside a block comment, `native` included: this reader only asks whether some
+# declaration of a name sits in the comment.
+ANY_MODIFIERS = MODIFIERS + ("native",)
+KEYWORD = r"(?:function|event|delegate|operator|preoperator|postoperator)"
+# A declared type may be qualified: `function Actor.eDoubleClickDir CheckForDoubleClickMove(...)` is the shape
+# `Engine.PlayerInput` writes, and a type pattern without the dot left that body outside every function.
+_TYPE = r"(?:[\w<>\[\]]+(?:\.[\w<>\[\]]+)?[ \t]+)?"
+FUNC = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s(?:[ \t]+(?:%s))*[ \t]+%s(\w+)[ \t]*(?:\r?\n[ \t]*)?\("
+                  % ("|".join(MODIFIERS), KEYWORD, "|".join(MODIFIERS), _TYPE), re.M | re.I)
+# The same rule with the parameter list on the declaration's own line: `#635`'s shape, kept so the correction is
+# its own number.
+FUNC_GRAMMAR = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s[ \t]+%s(\w+)[ \t]*\("
+                          % ("|".join(MODIFIERS), KEYWORD, _TYPE), re.M | re.I)
+# A modifier after the keyword, still on one line -- the shape `Engine.GameProfile` writes its enum helper in.
+FUNC_TRAIL = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s(?:[ \t]+(?:%s))+[ \t]+%s(\w+)[ \t]*\("
+                        % ("|".join(MODIFIERS), KEYWORD, "|".join(MODIFIERS), _TYPE), re.M | re.I)
+# This census's original rule: four modifiers and the word `function`, so the whole correction is a delta.
+FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
+                         r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
 BLOCK = re.compile(r"/\*.*?\*/", re.S)
 LINE_COMMENT = re.compile(r"//[^\n]*")
 KEYWORD = re.compile(r"\b(?:if|else|for|while|switch|case|return|do)\b")
@@ -85,8 +109,10 @@ TYPE_KINDS = ("Class", "Struct", "Enum")
 BUILTIN_TYPES = {"string", "class", "array", "bool", "byte", "int", "float", "name", "vector", "rotator"}
 # A declaration anywhere inside the block comment, indentation and modifiers allowed, as `class-text-comments.py`
 # counts them; used only to type a call name that resolves to nothing.
-ANY_DECL = re.compile(r"(?m)^[ \t]*(?:(?:simulated|static|final|latent)[ \t]+)*"
-                      r"(function|event|delegate)[ \t]+(?:[\w<>\[\], \t]+[ \t]+)?(\w+)[ \t]*\(")
+ANY_DECL = re.compile(r"(?m)^[ \t]*(?:(?:%s)[ \t]+)*"
+                      r"(function|event|delegate|operator|preoperator|postoperator)[ \t]+"
+                      r"(?:[\w<>\[\], \t]+[ \t]+)?(\w+)[ \t]*\("
+                      % "|".join(ANY_MODIFIERS), re.I)
 IFDEF = re.compile(r"(?m)^[ \t]*#(ifdef|ifndef|if)[^\n]*\n((?:(?!#(?:endif|else)).*\n)*?)[ \t]*#endif")
 LOCAL_DECL = re.compile(r"(?m)^[ \t]*local[ \t]+([\w<>\[\]]+(?:[ \t]*<[^>]*>)?)[ \t]+([^;]+);")
 
@@ -127,7 +153,12 @@ def body_span(text, start, limit):
     return None
 
 
-STATE_DECL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)")
+# UnrealScript keywords are case-insensitive and the shipped text spells `State` in 36 classes, so a
+# case-sensitive read loses 56 state declarations -- among them the five (`GetInFormation`, `MoveInFormation`,
+# `TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as states no text declares.
+STATE_DECL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)", re.I)
+# The case-sensitive shape, so the states the fold recovers are a number rather than a claim.
+STATE_DECL_LEGACY = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)")
 LABEL_LINE = re.compile(r"(?m)^[ \t]*(\w+)[ \t]*:")
 LITERAL_ANY = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
 
@@ -250,7 +281,7 @@ def function_tokens(raw_of):
     return {n: {w.lower() for w in STEM_SPLIT.findall(raw)} for n, raw in raw_of.items()}
 
 
-def functions(text):
+def functions(text, rx=None):
     """(name -> body, names without a body, declarations, bare, with a body) for one text.
 
     The first declaration of a name wins, so a text that ships the same function twice reads once -- which is
@@ -258,7 +289,7 @@ def functions(text):
     deduplicated map would report 82% over a text whose every declaration the reader in fact resolves.
     """
     bodies, bare, declared, bare_total, resolved = {}, [], 0, 0, 0
-    ms = list(FUNC.finditer(text))
+    ms = list((rx or FUNC).finditer(text))
     for k, m in enumerate(ms):
         declared += 1
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(text)
@@ -512,7 +543,11 @@ def sweep(system_dir):
             for kind, pkgs in kinds.items():
                 types.setdefault(name, {}).setdefault(kind, set()).update(pkgs)
     rows = []
-    t = dict(classes=0, with_block=0, declarations=0, with_body=0, no_body=0,
+    t = dict(grammar_comment_declarations=0, grammar_live_declarations=0, grammar_pairs=0, grammar_disabled=0,
+             legacy_comment_declarations=0, legacy_live_declarations=0, legacy_live_with_body=0,
+             legacy_pairs=0, legacy_disabled=0, trailing_declarations=0, sameline_declarations=0,
+             case_only_states=0, state_declarations=0,
+             classes=0, with_block=0, declarations=0, with_body=0, no_body=0,
              live_declarations=0, live_with_body=0,
              pairs=0, identical=0, same_operators=0, differs=0, live_stub=0,
              pair_c_bytes=0, pair_l_bytes=0, pair_c_ops=0, pair_l_ops=0,
@@ -546,6 +581,26 @@ def sweep(system_dir):
             live = LINE_COMMENT.sub("", BLOCK.sub("", text))
             cbodies, _cbare, cdeclared, cbare_total, cresolved = functions(comment)
             lbodies, _lbare, ldeclared, _lbare_total, lresolved = functions(live)
+            # the same two reads under the two earlier rules, so each correction is a delta beside the number it
+            # replaces rather than a claim about it
+            gbodies, _gbar, gdeclared, _gbt, _gres = functions(comment, FUNC_GRAMMAR)
+            hbodies, _hbar, hdeclared, _hbt, _hres = functions(live, FUNC_GRAMMAR)
+            kbodies, _kbar, kdeclared, _kbt, _kres = functions(comment, FUNC_LEGACY)
+            mbodies, _mbar, mdeclared, _mbt, mresolved = functions(live, FUNC_LEGACY)
+            t["grammar_comment_declarations"] += gdeclared
+            t["grammar_live_declarations"] += hdeclared
+            t["grammar_pairs"] += len(set(gbodies) & set(hbodies))
+            t["grammar_disabled"] += len(set(gbodies) - set(hbodies))
+            t["legacy_comment_declarations"] += kdeclared
+            t["legacy_live_declarations"] += mdeclared
+            t["legacy_live_with_body"] += mresolved
+            t["legacy_pairs"] += len(set(kbodies) & set(mbodies))
+            t["legacy_disabled"] += len(set(kbodies) - set(mbodies))
+            t["trailing_declarations"] += len(FUNC_TRAIL.findall(live)) + len(FUNC_TRAIL.findall(comment))
+            t["sameline_declarations"] += (len(FUNC_GRAMMAR.findall(live)) + len(FUNC_TRAIL.findall(live)) +
+                                           len(FUNC_GRAMMAR.findall(comment)) + len(FUNC_TRAIL.findall(comment)))
+            t["state_declarations"] += len(STATE_DECL.findall(live))
+            t["case_only_states"] += len(STATE_DECL.findall(live)) - len(STATE_DECL_LEGACY.findall(live))
             t["declarations"] += cdeclared
             t["with_body"] += cresolved
             t["no_body"] += cbare_total
@@ -647,6 +702,33 @@ def sweep(system_dir):
     rows.extend(stemmed)
     stem_names = {r["name"] for r in stemmed if int(r["count"])}
     census = (
+        ("declarations_full", t["declarations"] + t["live_declarations"],
+         "declarations the grammar's rule reads, both populations"),
+        ("declarations_sameline", t["sameline_declarations"],
+         "of those, with the parameter list on the declaration's own line"),
+        ("declarations_trailing_modifier", t["trailing_declarations"],
+         "of those, with a modifier after the keyword (`function static`)"),
+        ("declarations_grammar", t["grammar_comment_declarations"] + t["grammar_live_declarations"],
+         "declarations read with the parameter list required on the same line -- `#635`'s rule"),
+        ("declarations_legacy", t["legacy_comment_declarations"] + t["legacy_live_declarations"],
+         "declarations read with four modifiers and the word `function` -- this census's first rule"),
+        ("comment_declarations_legacy", t["legacy_comment_declarations"],
+         "`function` declarations inside a block comment, four-modifier rule"),
+        ("live_declarations_legacy", t["legacy_live_declarations"],
+         "live declarations, four-modifier rule -- this census's first reading"),
+        ("comment_declarations_grammar", t["grammar_comment_declarations"],
+         "`function`-grammar declarations inside a block comment, same-line rule"),
+        ("live_declarations_grammar", t["grammar_live_declarations"],
+         "live declarations under the same-line rule"),
+        ("live_with_body_legacy", t["legacy_live_with_body"],
+         "live declarations whose body the first rule found -- its own rate, not the corpus's"),
+        ("pairs_grammar", t["grammar_pairs"], "pairs under the same-line rule"),
+        ("disabled_bodies_grammar", t["grammar_disabled"], "commented bodies with no live twin, same-line rule"),
+        ("pairs_legacy", t["legacy_pairs"], "pairs under the first rule"),
+        ("disabled_bodies_legacy", t["legacy_disabled"], "commented bodies with no live twin, first rule"),
+        ("state_declarations", t["state_declarations"], "`state` declarations the case-folded read finds"),
+        ("states_case_only", t["case_only_states"],
+         "of those, spelled `State` -- lost to a case-sensitive read"),
         ("classes_with_text", t["classes"], "class exports carrying a `ScriptText`"),
         ("classes_with_block", t["with_block"], "of those, carrying a `/* ... */` block"),
         ("comment_declarations", t["declarations"],
@@ -772,7 +854,7 @@ def render(rows):
             by_body[b] = by_body.get(b, 0) + 1
     top_body, top_n = max(by_body.items(), key=lambda kv: (kv[1], kv[0])) if by_body else ("-", 0)
     out = []
-    out.append("**%d of the %d `function` declarations a block comment disables also carry their body inside "
+    out.append("**%d of the %d declarations a block comment disables also carry their body inside "
                "that comment, and %d of them have a live twin of the same name in the same class's text.** The "
                "reader is not the weak part: over the same classes' live text it finds a body for **%d of %d "
                "declarations (%s%%)**, against **%s%%** inside the comments -- so the shortfall is the comment's own "
@@ -791,10 +873,10 @@ def render(rows):
     out.append("|---|---|")
     out.append("| classes with a `ScriptText` / carrying a block comment | **%d** / **%d** |"
                % (n("classes_with_text"), n("classes_with_block")))
-    out.append("| `function` declarations inside a block comment | **%d** |" % n("comment_declarations"))
+    out.append("| declarations inside a block comment | **%d** |" % n("comment_declarations"))
     out.append("| ... with a body in the same comment | **%d** |" % n("comment_with_body"))
     out.append("| ... a declaration without a body | **%d** |" % n("comment_no_body"))
-    out.append("| live `function` declarations / whose body the reader finds | **%d** / **%d** |"
+    out.append("| live declarations / whose body the reader finds | **%d** / **%d** |"
                % (n("live_declarations"), n("live_with_body")))
     out.append("| commented bodies with a live twin of the same name | **%d** |" % n("pairs"))
     out.append("| ... byte-identical | **%d** |" % n("pairs_identical"))
@@ -841,6 +923,33 @@ def render(rows):
     out.append("| distinct state-label names / also a `Function` export | **%d** / **%d** |"
                % (n("label_names"), n("label_names_exported")))
     out.append("")
+    out.append("")
+    out.append("**The rule needed three shapes the grammar's first form did not have, and each is its own number.** "
+               "A declaration is introduced by `event`, `delegate` or the operator family as well as by `function`, "
+               "carries any of the grammar's modifiers, may put a modifier after the keyword (`function static`) and "
+               "may start its parameter list on the next line -- which is how the engine's own `PlayerController` "
+               "and `GameProfile` write theirs. Counted with the four-modifier `function`-only rule the corpus reads "
+               "**%d** declarations over the classes that carry a comment; with the grammar's modifiers and keywords "
+               "but the parameter list required on the same line, **%d**; with the parameter list allowed on its own "
+               "line, **%d** -- of which **%d** are same-line and **%d** carry a trailing modifier. What that does "
+               "to this census is the three readings side by side: commented declarations **%d -> %d -> %d**, live "
+               "declarations **%d -> %d -> %d**, pairs **%d -> %d -> %d** and disabled bodies "
+               "**%d -> %d -> %d** (first rule, same-line rule, this rule), so every figure the page quoted before "
+               "was a floor under a rule that could not see the declarations it was counting."
+               % (n("declarations_legacy"), n("declarations_grammar"), n("declarations_full"),
+                  n("declarations_sameline"), n("declarations_trailing_modifier"),
+                  n("comment_declarations_legacy"), n("comment_declarations_grammar"),
+                  n("comment_declarations"),
+                  n("live_declarations_legacy"), n("live_declarations_grammar"), n("live_declarations"),
+                  n("pairs_legacy"), n("pairs_grammar"), n("pairs"),
+                  n("disabled_bodies_legacy"), n("disabled_bodies_grammar"), n("disabled_bodies")))
+    out.append("")
+    out.append("**The state read was case-sensitive and the text is not.** UnrealScript folds keywords, and **%d** of "
+               "the **%d** `state` declarations this read finds over the same classes are spelled `State` -- lost to "
+               "the case-sensitive pattern that a previous revision counted with, which is why the tree once "
+               "recorded five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, "
+               "`Broken`) as ones no text declares: the text declares them, in a capitalised block."
+               % (n("states_case_only"), n("state_declarations")))
     if pairs:
         pairs.sort(key=lambda r: (r["verdict"], r["package"], r["class"], r["name"]))
         out.append("Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own "
@@ -1034,6 +1143,26 @@ def self_check():
     cbodies, cbare, cdeclared, _cbt, _cr = functions(two)
     if cdeclared != 2 or set(cbodies) != {"baz"} or cbare != ["bar"]:
         bad.append("a bodyless declaration took its neighbour's body: %r / %r" % (sorted(cbodies), sorted(cbare)))
+    # a declaration whose parameter list starts on its own line, and one with a modifier after the keyword: the
+    # two shapes the first rule could not see
+    multi = ("simulated function int Mult\r\n(\r\n\tint A\r\n)\r\n" + body +
+             "\r\nfunction static int Trail(int A)\r\n" + body + "\r\n")
+    mbodies, _mbare, mdeclared, _mbt, _mres = functions(multi)
+    if mdeclared != 2 or set(mbodies) != {"mult", "trail"}:
+        bad.append("a multi-line or trailing-modifier declaration was not read: %r of %d" % (sorted(mbodies), mdeclared))
+    _lb2, _lb3, ldeclared, _lb4, _lb5 = functions(multi, FUNC_LEGACY)
+    if ldeclared != 0:
+        bad.append("the first rule saw a declaration it cannot: %d" % ldeclared)
+    _gb2, _gb3, gdeclared, _gb4, _gb5 = functions(multi, FUNC_GRAMMAR)
+    if gdeclared != 0:
+        bad.append("the same-line rule read %d declarations of a multi-line and a trailing-modifier one"
+                   % gdeclared)
+    if len(FUNC_TRAIL.findall(multi)) != 1:
+        bad.append("the trailing-modifier rule read %d declarations, not 1" % len(FUNC_TRAIL.findall(multi)))
+    # a capitalised `state` block is a state: the keyword is case-insensitive
+    cap_states, cap_labels = state_vocabulary(mask("State Alert\n{\nBegin:\n\tGoto('Again');\nAgain:\n\tSleep(1);\n}\n"))
+    if cap_states != ["alert"] or set(cap_labels) != {"begin", "again"}:
+        bad.append("a capitalised state block was not read: %r / %r" % (cap_states, sorted(cap_labels)))
     # `;` before the brace means no body, whatever follows
     native = "function int Quux( int A );\nfunction int Zed()\n" + body + "\n"
     nbodies, nbare, ndeclared, _nbt, _nr = functions(native)
@@ -1179,7 +1308,15 @@ def self_check():
            ("residue_stem_matched", 1, ""), ("residue_stem_unmatched", 1, ""),
            ("residue_botenemy_stem_matched", 1, ""),
            ("state_names", 3, ""), ("state_names_exported", 1, ""),
-           ("label_names", 4, ""), ("label_names_exported", 0, ""))
+           ("label_names", 4, ""), ("label_names_exported", 0, ""),
+           ("declarations_full", 9, ""), ("declarations_sameline", 6, ""),
+           ("declarations_trailing_modifier", 1, ""), ("declarations_grammar", 8, ""),
+           ("declarations_legacy", 6, ""), ("comment_declarations_legacy", 3, ""),
+           ("live_declarations_legacy", 5, ""), ("comment_declarations_grammar", 3, ""),
+           ("live_declarations_grammar", 5, ""), ("live_with_body_legacy", 5, ""),
+           ("pairs_grammar", 1, ""), ("disabled_bodies_grammar", 1, ""),
+           ("pairs_legacy", 1, ""), ("disabled_bodies_legacy", 1, ""),
+           ("state_declarations", 3, ""), ("states_case_only", 1, ""))
     for key, value, note in cen:
         row = {k: "" for k in FIELDS}
         row.update(kind="census", name=key, count=str(value), note=note)
