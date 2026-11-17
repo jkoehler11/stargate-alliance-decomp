@@ -112,6 +112,7 @@ Editor,CubeBuilder,BuildCube,VirtualFunction,by name,Poly4i,Function,Editor.Brus
 Editor,CubeBuilder,BuildCube,VirtualFunction,by name,Poly4i,Function,Editor.BrushBuilder,1,,VirtualFunction,
 Editor,CubeBuilder,BuildCube,VirtualFunction,by name,Poly4i,Function,Editor.BrushBuilder,1,,VirtualFunction,
 Editor,CubeBuilder,BuildCube,VirtualFunction,by name,Poly4i,Function,Editor.BrushBuilder,1,,VirtualFunction,
+Editor,FractalTextureFactory,CreateMaterial,VirtualFunction,by name,ConsoleCommand,Function,Editor.MaterialFactory,4,,value,
 Editor,FractalTextureFactory,CreateMaterial,FinalFunction,static,FindObject,Function,,,,,
 Editor,FractalTextureFactory,CreateMaterial,FinalFunction,static,FindObject,Function,,,,,
 Editor,CubeBuilder,Build,VirtualFunction,by name,BadParameters,Function,Editor.BrushBuilder,1,,self,
@@ -334,6 +335,13 @@ Engine,PlayerController,AltFire,VirtualFunction,by name,SetPause,Function,packag
 Engine,PlayerController,AltFire,VirtualFunction,by name,AltFire,Function,package,25,,InstanceVariable,Pawn
 Engine,Actor,UpdatePrecacheMaterials,VirtualFunction,by name,AddPrecacheMaterial,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,InstanceVariable,LevelInfo
 Engine,Weapon,AnimEnd,VirtualFunction,by name,PlayIdleAnim,Function,package,5,,value,
+Engine,PlayerController,ServerMove,VirtualFunction,by name,GivePawn,Function,package,2,,value,
+Engine,PlayerController,ServerMove,FinalFunction,static,MoveAutonomous,Function,,,,,
+Engine,PlayerController,ServerMove,VirtualFunction,by name,ResetTimeMargin,Function,package,1,,value,
+Engine,PlayerController,ServerMove,FinalFunction,static,CheckSpeedHack,Function,,,,,
+Engine,PlayerController,ServerMove,VirtualFunction,by name,ClientMessage,Function,package,3,,value,
+Engine,PlayerController,ServerMove,FinalFunction,static,MoveAutonomous,Function,,,,,
+Engine,PlayerController,ServerMove,VirtualFunction,by name,PlayerCalcView,Function,package,3,,FinalFunction,
 Engine,PlayerController,SwitchWeapon,VirtualFunction,by name,SwitchWeapon,Function,package,7,,InstanceVariable,Pawn
 Engine,Actor,GetHumanReadableName,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,self,
 Engine,KActor,Trigger,FinalFunction,static,KWake,Function,,,,,
@@ -363,6 +371,7 @@ Engine,PlayerController,Suicide,VirtualFunction,by name,Suicide,Function,package
 Engine,PlayerController,ThrowWeapon,VirtualFunction,by name,ServerThrowWeapon,Function,package,1,,value,
 Engine,StreamBase,ParseExtension,FinalFunction,static,RevInStr,Function,,,,,
 Engine,StreamBase,ParseExtension,FinalFunction,static,ConvertToFileType,Function,,,,,
+Engine,StreamBase,ConvertToFileType,FinalFunction,static,ParseExtension,Function,,,,,
 Engine,Controller,DisplayDebug,FinalFunction,static,DisplayDebug,Function,,,,,
 Engine,Controller,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
 Engine,Controller,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
@@ -1047,6 +1056,7 @@ Engine,StaticMeshActor,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function
 Engine,StaticMeshActor,PostBeginPlay,VirtualFunction,by name,InitShadow,Function,corpus:Engine.ShadowProjector,1,Engine.ShadowProjector,LocalVariable,ShadowProjector
 Engine,StaticMeshActor,PostBeginPlay,VirtualFunction,by name,UpdateShadow,Function,corpus:Engine.ShadowProjector,1,Engine.ShadowProjector,LocalVariable,ShadowProjector
 Engine,StaticMeshActor,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
+Engine,GameReplicationInfo,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 Engine,Vehicle,PrevWeapon,VirtualFunction,by name,BehindView,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 Engine,Vehicle,PrevWeapon,FinalFunction,static,StaticSaveConfig,Function,,,,,
 Engine,GameReplicationInfo,FillPlayInfo,FinalFunction,static,FillPlayInfo,Function,,,,,
@@ -1134,6 +1144,7 @@ Engine,Mover,DoClose,VirtualFunction,by name,UntriggerEvent,Function,Engine.Acto
 Engine,Mover,DoClose,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,value,
 Engine,Mover,DoClose,VirtualFunction,by name,DoClose,Function,package,2,,InstanceVariable,Mover
 Engine,Mover,BeginPlay,FinalFunction,static,BeginPlay,Function,,,,,
+Engine,VoiceChatReplicationInfo,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 Engine,Mover,SetResetStatus,VirtualFunction,by name,SetResetStatus,Function,package,1,,InstanceVariable,Mover
 Engine,VoiceChatReplicationInfo,FillPlayInfo,FinalFunction,static,FillPlayInfo,Function,,,,,
 Engine,Mover,MakeGroupStop,VirtualFunction,by name,MakeGroupStop,Function,package,1,,InstanceVariable,Mover
@@ -1865,6 +1876,9 @@ Engine,PlayerController,Destroyed,VirtualFunction,by name,KDriverLeave,Function,
 Engine,PlayerController,Destroyed,VirtualFunction,by name,Died,Function,receiver:Engine.Pawn,8,,LocalVariable,Pawn
 Engine,PlayerController,Destroyed,VirtualFunction,by name,Died,Function,receiver:Engine.Pawn,8,,InstanceVariable,Pawn
 Engine,PlayerController,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
+Engine,PlayerController,ClientSetMusic,FinalFunction,static,StopAllMusic,Function,,,,,
+Engine,PlayerController,ClientSetMusic,FinalFunction,static,PlayMusic,Function,,,,,
+Engine,PlayerController,ClientSetMusic,VirtualFunction,by name,SetMusic,Function,corpus:Engine.Console,1,Engine.Console,Context,Console
 Engine,PlayerController,ClientSetInitialMusic,VirtualFunction,by name,SetInitialMusic,Function,corpus:Engine.Console,1,Engine.Console,Context,Console
 Engine,PlayerController,ClientSetInitialMusic,VirtualFunction,by name,ClientSetMusic,Function,package,1,,value,
 Engine,Pawn,ClimbLadder,VirtualFunction,by name,IsHumanControlled,Function,package,1,,self,
@@ -2391,9 +2405,9 @@ Engine,PlayerController,ChatBan,VirtualFunction,by name,SetRestrictionID,Functio
 Engine,PlayerController,ChatBan,VirtualFunction,by name,ServerChatRestriction,Function,package,1,,value,
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,GetChannelAt,Function,corpus:Engine.VoiceChatReplicationInfo,1,Engine.VoiceChatReplicationInfo,InstanceVariable,VoiceChatReplicationInfo
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,JoinChannelAt,Function,corpus:Engine.VoiceChatReplicationInfo,1,Engine.VoiceChatReplicationInfo,InstanceVariable,VoiceChatReplicationInfo
-Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,self,
+Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,value,
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,GetTitle,Function,receiver:Engine.VoiceChatRoom,4,,LocalVariable,VoiceChatRoom
-Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,self,
+Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,ClientOpenMenu,Function,package,1,,value,
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,GetTitle,Function,receiver:Engine.VoiceChatRoom,4,,LocalVariable,VoiceChatRoom
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,ChangeVoiceChannel,Function,corpus:Engine.GameInfo,1,Engine.GameInfo,Context,GameInfo
 Engine,PlayerController,ServerJoinVoiceChannel,VirtualFunction,by name,GetPublicChannelCount,Function,corpus:Engine.VoiceChatReplicationInfo,1,Engine.VoiceChatReplicationInfo,InstanceVariable,VoiceChatReplicationInfo
@@ -2576,6 +2590,7 @@ Engine,GameRules,AddGameRules,VirtualFunction,by name,AddGameRules,Function,pack
 Engine,GameMessage,GetString,VirtualFunction,by name,GetHumanReadableName,Function,Engine.Actor,9,,DynamicCast,TeamInfo
 Engine,Inventory,OwnerEvent,VirtualFunction,by name,OwnerEvent,Function,package,2,,InstanceVariable,Inventory
 Engine,Inventory,SetOwnerDisplay,VirtualFunction,by name,SetOwnerDisplay,Function,package,1,,InstanceVariable,Inventory
+Engine,ChatRoomMessage,IsConsoleMessage,FinalFunction,static,IsConsoleMessage,Function,,,,,
 Engine,Ammunition,CheckOutOfAmmo,VirtualFunction,by name,OutOfAmmo,Function,receiver:Engine.Weapon,3,,Context,Weapon
 Engine,Ammunition,UseAmmo,VirtualFunction,by name,CheckOutOfAmmo,Function,package,2,,value,
 Engine,Ammunition,UseAmmo,VirtualFunction,by name,CheckOutOfAmmo,Function,package,2,,value,
@@ -2732,6 +2747,7 @@ Engine,Console,StopRollingDemo,VirtualFunction,by name,ConsoleCommand,Function,E
 Engine,Weapon,GetFireStart,VirtualFunction,by name,EyePosition,Function,receiver:Engine.Pawn,6,,InstanceVariable,Pawn
 Engine,BroadcastHandler,AllowsBroadcast,VirtualFunction,by name,HandlerAllowsBroadcast,Function,package,1,,InstanceVariable,BroadcastHandler
 Engine,Weapon,AdjustAim,VirtualFunction,by name,AdjustAim,Function,package,12,,InstanceVariable,Pawn
+Engine,BroadcastHandler,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 Engine,BroadcastHandler,FillPlayInfo,FinalFunction,static,FillPlayInfo,Function,,,,,
 Engine,BroadcastHandler,FillPlayInfo,VirtualFunction,by name,FillPlayInfo,Function,package,8,,DefaultVariable,BroadcastHandler
 Engine,Weapon,ProjectileFire,VirtualFunction,by name,GetViewRotation,Function,receiver:Engine.Pawn,9,,InstanceVariable,Pawn
@@ -2857,6 +2873,7 @@ Engine,Weapon,InvisEffectOff,VirtualFunction,by name,InvisEffectOff,Function,pac
 Engine,Weapon,PlayFireSound,FinalFunction,static,PlayOwnedSound,Function,,,,,
 Engine,Weapon,PlayFireSound,FinalFunction,static,RandRange,Function,,,,,
 Engine,AccessControl,CheckID,FinalFunction,static,IsDemoBuild,Function,,,,,
+Engine,AccessControl,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 Engine,GameInfo,PreBeginPlay,VirtualFunction,by name,SetGameSpeed,Function,package,1,,value,
 Engine,GameInfo,PreBeginPlay,VirtualFunction,by name,InitGameReplicationInfo,Function,package,2,,value,
 Engine,GameInfo,PreBeginPlay,VirtualFunction,by name,InitVoiceReplicationInfo,Function,package,1,,VirtualFunction,
@@ -3160,6 +3177,13 @@ Engine,Interactions,GetFriendlyName,FinalFunction,static,GetEnum,Function,,,,,
 Engine,StreamPlaylistManager,GetCurrentTitle,VirtualFunction,by name,GetCurrentIndex,Function,package,1,,self,
 Engine,StreamPlaylistManager,GetCurrentTitle,VirtualFunction,by name,GetTitle,Function,receiver:Engine.StreamPlaylist,4,,DynamicArrayElement,StreamPlaylist
 Engine,StreamPlaylistManager,Save,VirtualFunction,by name,Save,Function,package,5,,DynamicArrayElement,StreamPlaylist
+Engine,StreamPlaylistManager,HandleDebugExec,FinalFunction,static,HandleDebugExec,Function,,,,,
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,ActivatePlaylist,Function,package,1,,value,
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,ActivatePlaylist,Function,package,1,,value,
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,GetTitle,Function,receiver:Engine.StreamPlaylist,4,,DynamicArrayElement,StreamPlaylist
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,GetPlaylistLength,Function,corpus:Engine.StreamPlaylist,1,Engine.StreamPlaylist,DynamicArrayElement,StreamPlaylist
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,GetTitle,Function,receiver:Engine.StreamPlaylist,4,,DynamicArrayElement,StreamPlaylist
+Engine,StreamPlaylistManager,HandleDebugExec,VirtualFunction,by name,HandleDebugExec,Function,package,4,,DynamicArrayElement,StreamPlaylist
 Engine,KActor,PreSaveGame,FinalFunction,static,MarkForSaveGame,Function,,,,,
 Engine,KActor,PreSaveGame,FinalFunction,static,KIsAwake,Function,,,,,
 Engine,KActor,PostLoadSavedGame,FinalFunction,static,PostLoadSavedGame,Function,,,,,
@@ -3328,6 +3352,7 @@ Engine,GameStats,EndGame,VirtualFunction,by name,Header,Function,package,1,,self
 Engine,GameStats,EndGame,VirtualFunction,by name,Logf,Function,package,3,,value,
 Engine,GameStats,StartGame,VirtualFunction,by name,Logf,Function,package,3,,self,
 Engine,GameStats,StartGame,VirtualFunction,by name,Header,Function,package,1,,self,
+Engine,StreamPlaylistManager,GetPlaylistType,FinalFunction,static,ParseExtension,Function,,,,,
 Engine,StreamPlaylistManager,ClearCurrentPlaylist,VirtualFunction,by name,ValidIndex,Function,package,2,,self,
 Engine,StreamPlaylistManager,ClearCurrentPlaylist,VirtualFunction,by name,ClearPlaylist,Function,corpus:Engine.StreamPlaylist,1,Engine.StreamPlaylist,DynamicArrayElement,StreamPlaylist
 Engine,GameInfo,ProcessServerTravel,VirtualFunction,by name,ServerTraveling,Function,corpus:Engine.Mutator,1,Engine.Mutator,InstanceVariable,Mutator
@@ -3438,6 +3463,12 @@ Engine,GameStats,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 Engine,GameStats,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 Engine,GameStats,PostBeginPlay,VirtualFunction,by name,Init,Function,package,13,,value,
 Engine,StreamPlaylist,Save,VirtualFunction,by name,GetPath,Function,corpus:Engine.Stream,1,Engine.Stream,DynamicArrayElement,Stream
+Engine,StreamPlaylist,HandleDebugExec,FinalFunction,static,HandleDebugExec,Function,,,,,
+Engine,StreamPlaylist,HandleDebugExec,VirtualFunction,by name,AddSong,Function,package,1,,value,
+Engine,StreamPlaylist,HandleDebugExec,VirtualFunction,by name,DumpTags,Function,corpus:Engine.Stream,1,Engine.Stream,DynamicArrayElement,Stream
+Engine,StreamPlaylist,HandleDebugExec,VirtualFunction,by name,DumpScriptTag,Function,receiver:Engine.Stream,2,,DynamicArrayElement,Stream
+Engine,StreamPlaylist,HandleDebugExec,VirtualFunction,by name,GetTitle,Function,package,4,,value,
+Engine,StreamPlaylist,HandleDebugExec,VirtualFunction,by name,GetPath,Function,corpus:Engine.Stream,1,Engine.Stream,DynamicArrayElement,Stream
 Engine,StreamPlaylist,DebugInfo,VirtualFunction,by name,GetTitle,Function,package,4,,value,
 Engine,StreamPlaylist,DebugInfo,VirtualFunction,by name,GetPlaylistLength,Function,package,1,,self,
 Engine,StreamPlaylist,DebugInfo,VirtualFunction,by name,GetPlaylistLength,Function,package,1,,LocalVariable,
@@ -3746,6 +3777,14 @@ Engine,MaterialSwitch,Reset,VirtualFunction,by name,Reset,Function,package,54,,I
 Engine,MaterialSwitch,Reset,VirtualFunction,by name,Reset,Function,package,54,,InstanceVariable,Material
 Engine,MaterialSwitch,Trigger,VirtualFunction,by name,Trigger,Function,package,118,,InstanceVariable,Material
 Engine,MaterialSwitch,Trigger,VirtualFunction,by name,Trigger,Function,package,118,,InstanceVariable,Material
+Engine,StreamInterface,HandleDebugExec,FinalFunction,static,HandleDebugExec,Function,,,,,
+Engine,StreamInterface,HandleDebugExec,FinalFunction,static,GetBaseDirectory,Function,,,,,
+Engine,StreamInterface,HandleDebugExec,VirtualFunction,by name,GetCurrentDirectory,Function,package,1,,self,
+Engine,StreamInterface,HandleDebugExec,FinalFunction,static,ValidFile,Function,,,,,
+Engine,StreamInterface,HandleDebugExec,FinalFunction,static,GetDirectoryContents,Function,,,,,
+Engine,StreamInterface,HandleDebugExec,VirtualFunction,by name,GetCurrentDirectory,Function,package,1,,LocalVariable,
+Engine,StreamInterface,HandleDebugExec,VirtualFunction,by name,ChangeDirectory,Function,package,1,,value,
+Engine,StreamInterface,HandleDebugExec,VirtualFunction,by name,GetCurrentDirectory,Function,package,1,,value,
 Engine,StreamInterface,GetCurrentDirectory,FinalFunction,static,ValidDirectory,Function,,,,,
 Engine,StreamInterface,GetCurrentDirectory,VirtualFunction,by name,ChangeDirectory,Function,package,1,,value,
 Engine,StreamInterface,GetCurrentDirectory,FinalFunction,static,GetBaseDirectory,Function,,,,,
@@ -4006,6 +4045,28 @@ Engine,AdminBase,ShowCurrentMapList,VirtualFunction,by name,SendComplexMsg,Funct
 Engine,AdminBase,ShowCurrentMapList,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
 Engine,AdminBase,GetMapListNames,VirtualFunction,by name,GetGameIndex,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
 Engine,AdminBase,GetMapListNames,VirtualFunction,by name,GetMapListNames,Function,package,3,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,CanPerform,Function,package,2,,self,
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetGameIndex,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListNames,Function,package,3,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,SendComplexMsg,Function,package,1,,value,
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetActiveList,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapList,Function,receiver:Engine.MaplistManagerBase,5,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,SendComplexMsg,Function,package,1,,value,
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetActiveList,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetActiveList,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,AddMap,Function,receiver:Engine.MaplistManagerBase,4,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,SendComplexMsg,Function,package,1,,value,
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetActiveList,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,ClientMessage,name,,3,,InstanceVariable,Object
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,RemoveMap,Function,receiver:Engine.MaplistManagerBase,3,,Context,MaplistManagerBase
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,SendComplexMsg,Function,package,1,,value,
+Engine,AdminBase,MaplistCommand,VirtualFunction,by name,GetMapListTitle,Function,receiver:Engine.MaplistManagerBase,2,,Context,MaplistManagerBase
 Engine,AdminBase,RestartCurrentMap,VirtualFunction,by name,ServerTravel,Function,corpus:Engine.LevelInfo,1,Engine.LevelInfo,Context,LevelInfo
 Engine,AdminBase,PlayerList,VirtualFunction,by name,CanPerform,Function,package,2,,self,
 Engine,AdminBase,Kick,VirtualFunction,by name,CanPerform,Function,package,2,,self,
@@ -4256,6 +4317,7 @@ Engine,CheatManager,AddLogFilter,FinalFunction,static,SetLogFilter,Function,,,,,
 Engine,CheatManager,RemoveLogFilter,FinalFunction,static,ClearLogFilter,Function,,,,,
 Engine,CheatManager,ClearAllLogFilters,FinalFunction,static,EmptyLogFilters,Function,,,,,
 Engine,MaplistManager,GetAvailableMaps,VirtualFunction,by name,ValidGameIndex,Function,package,2,,self,
+Engine,GameInfo,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 Engine,MaplistManager,GetMapList,VirtualFunction,by name,ValidRecordIndex,Function,package,1,,self,
 Engine,MaplistManager,GetMapList,VirtualFunction,by name,GetAllMapURL,Function,corpus:Engine.MaplistRecord,1,Engine.MaplistRecord,DynamicArrayElement,MaplistRecord
 Engine,GameInfo,AcceptPlayInfoProperty,FinalFunction,static,AcceptPlayInfoProperty,Function,,,,,
@@ -4384,6 +4446,10 @@ Engine,GameInfo,GetKeyBindName,VirtualFunction,by name,GetBindWeight,Function,pa
 Engine,GameInfo,GetKeyBindName,VirtualFunction,by name,ConsoleCommand,Function,Engine.Actor,4,,LocalVariable,PlayerController
 Engine,MaplistManager,RemoveRecord,VirtualFunction,by name,ValidRecordIndex,Function,package,1,,self,
 Engine,MaplistManager,RemoveRecord,VirtualFunction,by name,ValidRecordIndex,Function,package,1,,self,
+Engine,Canvas,DrawLine,FinalFunction,static,DrawVertical,Function,,,,,
+Engine,Canvas,DrawLine,FinalFunction,static,DrawVertical,Function,,,,,
+Engine,Canvas,DrawLine,FinalFunction,static,DrawHorizontal,Function,,,,,
+Engine,Canvas,DrawLine,FinalFunction,static,DrawHorizontal,Function,,,,,
 Engine,Canvas,DrawBracket,FinalFunction,static,DrawHorizontal,Function,,,,,
 Engine,Canvas,DrawBracket,FinalFunction,static,DrawHorizontal,Function,,,,,
 Engine,Canvas,DrawBracket,FinalFunction,static,DrawVertical,Function,,,,,
@@ -4396,6 +4462,7 @@ Engine,Canvas,DrawBox,FinalFunction,static,DrawHorizontal,Function,,,,,
 Engine,Canvas,DrawBox,FinalFunction,static,DrawHorizontal,Function,,,,,
 Engine,Canvas,DrawBox,FinalFunction,static,DrawVertical,Function,,,,,
 Engine,Canvas,DrawBox,FinalFunction,static,DrawVertical,Function,,,,,
+Engine,Canvas,DrawScreenText,FinalFunction,static,SetPos,Function,,,,,
 Engine,GameInfo,AllowMutator,VirtualFunction,by name,IsVehicleMutator,Function,package,1,,self,
 Engine,GameInfo,AllowMutator,FinalFunction,static,IsDemoBuild,Function,,,,,
 Engine,GameProfile,Initialize,FinalFunction,static,DynamicLoadObject,Function,,,,,
@@ -5000,6 +5067,7 @@ GUI,GUIMultiComponent,EnableComponent,VirtualFunction,by name,EnableComponent,Fu
 GUI,GUIMultiComponent,DisableComponent,FinalFunction,static,DisableComponent,Function,,,,,
 GUI,GUIMultiComponent,DisableComponent,VirtualFunction,by name,DisableComponent,Function,package,3,,DynamicArrayElement,GUIComponent
 GUI,GUILabel,setTextFont,VirtualFunction,by name,GetMenuFont,Function,corpus:GUI.GUIController,1,GUI.GUIController,InstanceVariable,GUIController
+GUI,GUIController,PlayClickSound,VirtualFunction,by name,GetPlayerController,Function,package,2,,self,
 GUI,GUIController,PlayClickSound,FinalFunction,static,PlayOwnedSound,Function,,,,,
 GUI,GUIController,RestoreMenu,FinalFunction,static,CreateMenu,Function,,,,,
 GUI,GUIController,RestoreMenu,FinalFunction,static,FindMenuIndex,Function,,,,,
@@ -5164,6 +5232,11 @@ GUI,GUIScrollBar,bMoreAbove,VirtualFunction,by name,VerticalPercentageOffset,Fun
 GUI,GUIScrollBar,bMoreRight,VirtualFunction,by name,HorizontalPercentageOffset,Function,GUI.GUIMultiComponent,2,,InstanceVariable,GUIMultiComponent
 GUI,GUIScrollBar,bMoreRight,VirtualFunction,by name,HorizontalPercentageDisplayed,Function,GUI.GUIMultiComponent,2,,InstanceVariable,GUIMultiComponent
 GUI,GUIScrollBar,bMoreLeft,VirtualFunction,by name,HorizontalPercentageOffset,Function,GUI.GUIMultiComponent,2,,InstanceVariable,GUIMultiComponent
+GUI,GUIScrollBar,createParts,VirtualFunction,by name,InitComponent,Function,package,103,,ArrayElement,GUIPanel
+GUI,GUIScrollBar,createParts,VirtualFunction,by name,InitComponent,Function,package,103,,ArrayElement,GUIButton
+GUI,GUIScrollBar,createParts,FinalFunction,static,WeightedInsertControl,Function,,,,,
+GUI,GUIScrollBar,createParts,VirtualFunction,by name,InitComponent,Function,package,103,,ArrayElement,GUIButton
+GUI,GUIScrollBar,createParts,FinalFunction,static,WeightedInsertControl,Function,,,,,
 GUI,GUIMenuOption,MenuStateChange,FinalFunction,static,MenuStateChange,Function,,,,,
 GUI,GUIMenuOption,MenuStateChange,VirtualFunction,by name,MenuStateChange,Function,package,4,,DynamicArrayElement,GUIComponent
 GUI,GUIMenuOption,GetDesiredComponentWidth,FinalFunction,static,ActualWidth,Function,,,,,
@@ -5397,6 +5470,8 @@ GUI,moListEditBox,MyPreDraw,FinalFunction,static,ActualHeight,Function,,,,,
 GUI,GUIHorzScrollBar,UpdateGripPosition,FinalFunction,static,MakeVisible,Function,,,,,
 GUI,GUIHorzScrollBar,GripMouseMove,FinalFunction,static,ActualWidth,Function,,,,,
 GUI,GUIHorzScrollBar,GripMouseMove,VirtualFunction,by name,UpdateGripPosition,Function,package,3,,value,
+GUI,moListEditBox,OnScrollButtonClick,VirtualFunction,by name,NextItem,Function,package,3,,value,
+GUI,moListEditBox,OnScrollButtonClick,VirtualFunction,by name,PrevItem,Function,package,3,,value,
 GUI,moListEditBox,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 GUI,moListEditBox,InitComponent,VirtualFunction,by name,GetStyle,Function,corpus:GUI.GUIController,1,GUI.GUIController,InstanceVariable,GUIController
 GUI,moListEditBox,InitComponent,FinalFunction,static,ActualHeight,Function,,,,,
@@ -5520,6 +5595,7 @@ GUI,GUIScrollBar,PrevControl,FinalFunction,static,PrevControl,Function,,,,,
 GUI,GUIScrollBar,horizontalArrowClick,VirtualFunction,by name,HorizontalButtonMove,Function,GUI.GUIMultiComponent,2,,InstanceVariable,GUIMultiComponent
 GUI,GUIScrollBar,verticalArrowClick,VirtualFunction,by name,VerticalButtonMove,Function,GUI.GUIMultiComponent,2,,InstanceVariable,GUIMultiComponent
 GUI,GUIArrowScrollPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
+GUI,GUIArrowScrollPanel,createParts,VirtualFunction,by name,InitComponent,Function,package,103,,ArrayElement,GUIButton
 GUI,GUIArrowScrollPanel,doLayout,FinalFunction,static,RemoveControl,Function,,,,,
 GUI,GUIArrowScrollPanel,doLayout,FinalFunction,static,RemoveControl,Function,,,,,
 GUI,GUIArrowScrollPanel,doLayout,FinalFunction,static,bShowHorizontal,Function,,,,,
@@ -5683,6 +5759,9 @@ GUI,GUISlider,DrawSlider,FinalFunction,static,SetPos,Function,,,,,
 GUI,GUISlider,DrawSlider,FinalFunction,static,SetDrawColor,Function,,,,,
 GUI,GUISlider,DrawSlider,VirtualFunction,by name,MaterialUSize,Function,corpus:Engine.Material,1,Engine.Material,InstanceVariable,Material
 GUI,GUISlider,DrawSlider,VirtualFunction,by name,MaterialVSize,Function,corpus:Engine.Material,1,Engine.Material,InstanceVariable,Material
+GUI,GUISlider,OnXControllerEvent,FinalFunction,static,adjustValue,Function,,,,,
+GUI,GUISlider,OnXControllerEvent,FinalFunction,static,adjustValue,Function,,,,,
+GUI,GUISlider,OnXControllerEvent,FinalFunction,static,OnXControllerEvent,Function,,,,,
 GUI,GUIMultiComponent,GetFocusedControl,VirtualFunction,by name,GetFocusedControlAt,Function,package,3,,self,
 GUI,GUIMultiComponent,GetFocusedControl,FinalFunction,static,GetPlayerIndex,Function,,,,,
 GUI,GUIMultiComponent,IsFocused,VirtualFunction,by name,GetFocusedControlAt,Function,package,3,,LocalVariable,GUIComponent
@@ -5706,8 +5785,8 @@ GUI,GUIHorzList,InternalOnXControllerEvent,VirtualFunction,by name,Up,Function,p
 GUI,GUIHorzList,InternalOnXControllerEvent,VirtualFunction,by name,Down,Function,package,4,,value,
 GUI,GUIHorzList,InternalOnXControllerEvent,FinalFunction,static,PgDn,Function,,,,,
 GUI,GUIHorzList,InternalOnXControllerEvent,FinalFunction,static,PgUp,Function,,,,,
-GUI,GUIHorzList,InternalOnKeyEvent,VirtualFunction,by name,Up,Function,package,2,,self,
-GUI,GUIHorzList,InternalOnKeyEvent,VirtualFunction,by name,Down,Function,package,4,,self,
+GUI,GUIHorzList,InternalOnKeyEvent,VirtualFunction,by name,Up,Function,package,2,,value,
+GUI,GUIHorzList,InternalOnKeyEvent,VirtualFunction,by name,Down,Function,package,4,,value,
 GUI,GUIHorzList,InternalOnKeyEvent,FinalFunction,static,home,Function,,,,,
 GUI,GUIHorzList,InternalOnKeyEvent,FinalFunction,static,End,Function,,,,,
 GUI,GUIHorzList,InternalOnKeyEvent,FinalFunction,static,PgUp,Function,,,,,
@@ -5752,8 +5831,8 @@ GUI,GUIController,OpenMenu,VirtualFunction,by name,Opened,Function,receiver:GUI.
 GUI,GUIController,OpenMenu,VirtualFunction,by name,SetFocus,Function,Engine.Interaction,9,,LocalVariable,GUIPage
 GUI,GUIController,OpenMenu,VirtualFunction,by name,HandleParameters,Function,receiver:GUI.GUIPage,20,,LocalVariable,GUIPage
 GUI,GUIController,OpenMenu,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,
-GUI,GUIScrollText,InternalOnXControllerEvent,VirtualFunction,by name,Up,Function,GUI.GUIVertList,2,,self,
-GUI,GUIScrollText,InternalOnXControllerEvent,VirtualFunction,by name,Down,Function,GUI.GUIVertList,4,,self,
+GUI,GUIScrollText,InternalOnXControllerEvent,VirtualFunction,by name,Up,Function,GUI.GUIVertList,2,,value,
+GUI,GUIScrollText,InternalOnXControllerEvent,VirtualFunction,by name,Down,Function,GUI.GUIVertList,4,,value,
 GUI,GUIScrollText,InternalOnXControllerEvent,FinalFunction,static,PgUp,Function,,,,,
 GUI,GUIScrollText,InternalOnXControllerEvent,FinalFunction,static,PgDn,Function,,,,,
 GUI,GUIController,AutoLoadMenus,FinalFunction,static,AutoLoadMenus,Function,,,,,
@@ -6037,6 +6116,9 @@ GamePlay,PuzzleMover,FinishedOpening,VirtualFunction,by name,NotifyPuzzleTrigger
 GamePlay,PuzzleMover,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
 GamePlay,TimedTrigger,Timer,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,self,
 GamePlay,TriggeredCondition,PostBeginPlay,FinalFunction,static,PostBeginPlay,Function,,,,,
+GamePlay,counter,Trigger,VirtualFunction,by name,ClientMessage,Function,receiver:Engine.Pawn,3,,LocalVariable,pawn
+GamePlay,counter,Trigger,VirtualFunction,by name,TriggerEvent,Function,Engine.Actor,3,,Context,
+GamePlay,counter,Trigger,VirtualFunction,by name,ClientMessage,Function,receiver:Engine.Pawn,3,,LocalVariable,pawn
 GamePlay,MessageTextureClient,Replace,VirtualFunction,by name,Replace,Function,package,3,,value,
 GamePlay,MusicEvent,Trigger,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,DynamicCast,PlayerController
 GamePlay,MusicEvent,Trigger,VirtualFunction,by name,ClientSetMusic,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
@@ -6411,6 +6493,7 @@ IpDrv,MasterServerUplink,Refresh,VirtualFunction,by name,GetServerPlayers,Functi
 IpDrv,MasterServerUplink,Tick,FinalFunction,static,Tick,Function,,,,,
 IpDrv,MasterServerUplink,Tick,VirtualFunction,by name,Reconnect,Function,package,1,,value,
 IpDrv,MasterServerUplink,FillPlayInfo,FinalFunction,static,FillPlayInfo,Function,,,,,
+IpDrv,MasterServerUplink,GetDescriptionText,FinalFunction,static,GetDescriptionText,Function,,,,,
 IpDrv,ServerQueryClient,BroadcastPingRequest,VirtualFunction,by name,PingServer,Function,package,2,,value,
 Sharpeffects,SE_AdvExplosiveMeshActor,Timer,VirtualFunction,by name,CheckExplode,Function,package,2,,value,
 Sharpeffects,SE_AdvExplosiveMeshActor,TakeDamage,FinalFunction,static,RandRange,Function,,,,,
@@ -8313,6 +8396,8 @@ StargateContent,ExtreniteWeaponProjectileAlt,Tick,VirtualFunction,by name,_Chang
 StargateContent,ExtreniteWeaponProjectileAlt,_FindTarget,VirtualFunction,by name,SameTeamAs,Function,corpus:Engine.Controller,1,Engine.Controller,Context,Controller
 StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
 StargateContent,ExtreniteWeaponProjectileAlt,_ChangeVelocityTowardsTarget,VirtualFunction,by name,Tool_AngleLinearInterpolate,Function,corpus:Engine.Pawn,1,Engine.Pawn,ObjectConst,Pawn
+StargateContent,TeamVoicePack,PlayerSpeech,VirtualFunction,by name,OrderToIndex,Function,package,2,,LocalVariable,
+StargateContent,TeamVoicePack,PlayerSpeech,VirtualFunction,by name,SendVoiceMessage,Function,corpus:Engine.Controller,1,Engine.Controller,DynamicCast,Controller
 StargateContent,TeamVoicePack,Timer,VirtualFunction,by name,TeamMessage,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 StargateContent,TeamVoicePack,Timer,FinalFunction,static,GetSoundDuration,Function,,,,,
 StargateContent,StargateGrenadeProjectile,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
@@ -8739,6 +8824,10 @@ StargateContent,TransportPlatform,DisplayDebug,VirtualFunction,by name,DisplayDe
 StargateContent,Cond_WhenIntVar,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateContent,Cond_WhenIntVar,ConditionStart,VirtualFunction,by name,SetTarget,Function,corpus:GamePlay.SP_TargetList,1,GamePlay.SP_TargetList,InstanceVariable,SP_IntVar
 StargateContent,Cond_WhenIntVar,ConditionFinish,VirtualFunction,by name,UnsetTarget,Function,corpus:GamePlay.SP_TargetList,1,GamePlay.SP_TargetList,InstanceVariable,SP_IntVar
+StargateContent,Cond_WhenIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,self,
+StargateContent,Cond_WhenIntVar,ProcessParams,VirtualFunction,by name,GetActorByTag,Function,corpus:Engine.Screenplay,1,Engine.Screenplay,InstanceVariable,Screenplay
+StargateContent,Cond_WhenIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,LocalVariable,
+StargateContent,Cond_WhenIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,self,
 StargateContent,Cond_WhenIntVar,Update,VirtualFunction,by name,GetValue,Function,receiver:GamePlay.SP_IntVar,10,,InstanceVariable,SP_IntVar
 StargateContent,Cond_WhenIntVar,Update,VirtualFunction,by name,Notify,Function,Engine.Condition,38,,InstanceVariable,
 StargateContent,Cond_WhenPlayerTriggerChanges,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
@@ -8780,6 +8869,10 @@ StargateContent,Dir_SceneJump,ProcessParams,VirtualFunction,by name,GetParam,Fun
 StargateContent,Dir_SetIntVar,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateContent,Dir_SetIntVar,DirectionStart,VirtualFunction,by name,GetValue,Function,receiver:GamePlay.SP_IntVar,10,,InstanceVariable,SP_IntVar
 StargateContent,Dir_SetIntVar,DirectionStart,VirtualFunction,by name,SetValue,Function,receiver:GamePlay.SP_IntVar,13,,InstanceVariable,SP_IntVar
+StargateContent,Dir_SetIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,self,
+StargateContent,Dir_SetIntVar,ProcessParams,VirtualFunction,by name,GetActorByTag,Function,corpus:Engine.Screenplay,1,Engine.Screenplay,InstanceVariable,Screenplay
+StargateContent,Dir_SetIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,LocalVariable,
+StargateContent,Dir_SetIntVar,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,self,
 StargateContent,Dir_SetPlayerStart,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateContent,Dir_SetPlayerStart,DirectionStart,VirtualFunction,by name,SetPlayerStart,Function,package,1,,value,
 StargateContent,Dir_SetPlayerStart,ProcessParams,VirtualFunction,by name,GetParam,Function,Engine.ScriptObject,1,,self,
@@ -10598,18 +10691,18 @@ StargateGame,BotRep,BeginState,VirtualFunction,by name,ShouldCrouch,Function,cor
 StargateGame,BotRep,BeginState,VirtualFunction,by name,SetAlertnessVariables,Function,StargateGame.BotBase,1,,value,
 StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,SpeedUpMatinee,Function,package,1,,value,
 StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ToggleMap,Function,package,1,,value,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ToggleMap,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,UpMenu,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,DownMenu,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,SelectMenu,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,UpMenu,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,DownMenu,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapUp,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapDown,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapLeft,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapRight,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ZoomMapIn,Function,package,1,,self,
-StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ZoomMapOut,Function,package,1,,self,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ToggleMap,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,UpMenu,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,DownMenu,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,SelectMenu,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,UpMenu,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,DownMenu,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapUp,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapDown,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapLeft,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ScrollMapRight,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ZoomMapIn,Function,package,1,,value,
+StargateGame,SGMenuInteraction,KeyEvent,VirtualFunction,by name,ZoomMapOut,Function,package,1,,value,
 StargateGame,BotRep,EndState,VirtualFunction,by name,SetAlertnessVariables,Function,StargateGame.BotBase,1,,value,
 StargateGame,BotRep,DetermineFollowLocation,VirtualFunction,by name,GetSGFormation,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
 StargateGame,BotRep,DetermineFollowLocation,VirtualFunction,by name,GetSGFormation,Function,receiver:StargateGame.SquadAIBasic,2,,InstanceVariable,SquadAIBasic
@@ -12629,6 +12722,12 @@ StargateGame,StargateHUD,Timer,VirtualFunction,by name,PawnDied,Function,receive
 StargateGame,StargatePawn,AnimateSniping,VirtualFunction,by name,GetWeaponClass,Function,package,2,,LocalVariable,StargateWeapon
 StargateGame,StargateHUD,TellTime,VirtualFunction,by name,ReceiveLocalizedMessage,Function,receiver:Engine.PlayerController,2,,InstanceVariable,PlayerController
 StargateGame,StargateHUD,Tick,FinalFunction,static,Tick,Function,,,,,
+StargateGame,StargateHUD,Message,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,PlayerController
+StargateGame,StargateHUD,Message,VirtualFunction,by name,LocalizedMessage,Function,package,4,,value,
+StargateGame,StargateHUD,Message,FinalFunction,static,DynamicLoadObject,Function,,,,,
+StargateGame,StargateHUD,Message,VirtualFunction,by name,SetSubtitle,Function,package,1,,value,
+StargateGame,StargateHUD,Message,VirtualFunction,by name,GetHumanReadableName,Function,Engine.Actor,9,,LocalVariable,PlayerReplicationInfo
+StargateGame,StargateHUD,Message,VirtualFunction,by name,AddNotification,Function,package,3,,value,
 StargateGame,SelectionMenu,ItemHighlightDown,VirtualFunction,by name,OptionHighlightDown,Function,corpus:StargateGame.GameMenu,1,StargateGame.GameMenu,DynamicArrayElement,GameMenu
 StargateGame,SelectionMenu,ItemHighlightDown,VirtualFunction,by name,SetHighlightColumn,Function,package,1,,value,
 StargateGame,SelectionMenu,ItemHighlightDown,VirtualFunction,by name,_ItemHighlightDown,Function,package,1,,LocalVariable,
@@ -12661,6 +12760,7 @@ StargateGame,SelectionMenu,ItemHighlightUp,VirtualFunction,by name,SetHighlightC
 StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,PlayerController
 StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,GetString,Function,receiver:Engine.LocalMessage,15,,LocalVariable,LocalMessage
 StargateGame,StargateHUD,LocalizedMessage,VirtualFunction,by name,AddNotification,Function,package,3,,value,
+StargateGame,StargatePawn,GetWeaponClass,FinalFunction,static,DynamicLoadObject,Function,,,,,
 StargateGame,StargatePawn,IsPlayingSwimming,FinalFunction,static,AnimIsInGroup,Function,,,,,
 StargateGame,StargateDeathMatch,HandleGameEndedFor,VirtualFunction,by name,ServerReStartPlayer,Function,receiver:Engine.PlayerController,2,,LocalVariable,PlayerController
 StargateGame,StargateHUD,DisplayMessages,VirtualFunction,by name,DisplayMessages,Function,package,5,,LocalVariable,NotificationManager
@@ -12958,6 +13058,9 @@ StargateGame,GameHud,PostRender,VirtualFunction,by name,Update,Function,receiver
 StargateGame,GoauldConsoleHud,TellTime,VirtualFunction,by name,ReceiveLocalizedMessage,Function,receiver:Engine.PlayerController,2,,InstanceVariable,PlayerController
 StargateGame,GoauldConsoleHud,Tick,FinalFunction,static,Tick,Function,,,,,
 StargateGame,GameHud,HideNotifications,VirtualFunction,by name,Hide,Function,receiver:StargateGame.UITextBox,6,,InstanceVariable,UITextBox
+StargateGame,GoauldConsoleHud,Message,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,PlayerController
+StargateGame,GoauldConsoleHud,Message,VirtualFunction,by name,LocalizedMessage,Function,package,4,,value,
+StargateGame,GoauldConsoleHud,Message,VirtualFunction,by name,AddTextMessage,Function,Engine.HUD,1,,value,
 StargateGame,GameHud,SetNotifications,VirtualFunction,by name,DisplayTextBox,Function,package,2,,InstanceVariable,UITextBox
 StargateGame,GameHud,HideInteractionText,VirtualFunction,by name,Hide,Function,receiver:StargateGame.UITextBox,6,,InstanceVariable,UITextBox
 StargateGame,GameHud,SetInteractionText,VirtualFunction,by name,DisplayTextBox,Function,package,2,,InstanceVariable,UITextBox
@@ -13203,6 +13306,9 @@ StargateGame,ReplicatorHUD,Timer,VirtualFunction,by name,CopyMessage,Function,En
 StargateGame,ReplicatorHUD,Timer,VirtualFunction,by name,ClearMessage,Function,Engine.HUD,1,,VirtualFunction,
 StargateGame,ReplicatorHUD,TellTime,VirtualFunction,by name,ReceiveLocalizedMessage,Function,receiver:Engine.PlayerController,2,,InstanceVariable,PlayerController
 StargateGame,ReplicatorHUD,Tick,FinalFunction,static,Tick,Function,,,,,
+StargateGame,ReplicatorHUD,Message,VirtualFunction,by name,PlayBeepSound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,InstanceVariable,PlayerController
+StargateGame,ReplicatorHUD,Message,VirtualFunction,by name,LocalizedMessage,Function,package,4,,value,
+StargateGame,ReplicatorHUD,Message,VirtualFunction,by name,AddTextMessage,Function,Engine.HUD,1,,value,
 StargateGame,GameHud,SetHealth,VirtualFunction,by name,UpdateStatusBar,Function,package,1,,value,
 StargateGame,ReplicatorHUD,TraceIdentify,VirtualFunction,by name,SpecialIdentify,Function,package,3,,self,
 StargateGame,StargatePawn,DrawStargateHud,VirtualFunction,by name,NotifyCheckTranslate,Function,package,1,,value,
@@ -13713,6 +13819,7 @@ StargateGame,FarClipChange,DisplayDebug,FinalFunction,static,DisplayDebug,Functi
 StargateGame,FarClipChange,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,FarClipChange,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,FarClipChange,DisplayDebug,VirtualFunction,by name,GetFarClipDistance,Function,package,1,,self,
+StargateGame,CommandInterface,ConvertEnumToName,VirtualFunction,by name,GetPlayerType,Function,package,1,,self,
 StargateGame,CommandInterface,InteractionAppliesToPlayer,VirtualFunction,by name,CompareWithUser,Function,package,1,,self,
 StargateGame,CommandInterface,InteractionAppliesToPlayer,VirtualFunction,by name,ConvertEnumToName,Function,package,1,,self,
 StargateGame,StargateWeaponEmplacement,BeginState,VirtualFunction,by name,AnimEnd,Function,package,44,,value,
@@ -13996,6 +14103,11 @@ StargateGame,GravCraneLifter,SetActorAcceleration,VirtualFunction,by name,UsingK
 StargateGame,GravCraneLifter,SetActorAcceleration,VirtualFunction,by name,SetExternalInfluences,Function,Engine.Actor,3,,InstanceVariable,Actor
 StargateGame,GravCraneLifter,SetActorAcceleration,VirtualFunction,by name,GetGravActorMass,Function,package,1,,LocalVariable,
 StargateGame,GravCraneLifter,SetActorAcceleration,FinalFunction,static,KWake,Function,,,,,
+StargateGame,CTFMessage,ClientReceive,FinalFunction,static,ClientReceive,Function,,,,,
+StargateGame,CTFMessage,ClientReceive,VirtualFunction,by name,ClientPlaySound,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
+StargateGame,CTFMessage,ClientReceive,VirtualFunction,by name,PlayStatusAnnouncement,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
+StargateGame,CTFMessage,ClientReceive,VirtualFunction,by name,PlayStatusAnnouncement,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
+StargateGame,CTFMessage,ClientReceive,VirtualFunction,by name,PlayStatusAnnouncement,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,LocalVariable,PlayerController
 StargateGame,GravCraneLifter,CalcKarmaAntiGravPhysics,VirtualFunction,by name,GetGravActorMass,Function,package,1,,LocalVariable,
 StargateGame,GravCraneLifter,CalcKarmaAntiGravPhysics,VirtualFunction,by name,GetGravActorMass,Function,package,1,,LocalVariable,
 StargateGame,GravCraneLifter,CalcKarmaAntiGravPhysics,VirtualFunction,by name,SetActorAcceleration,Function,package,1,,value,
@@ -14194,6 +14306,44 @@ StargateGame,PickupMessagePlus,GetString,VirtualFunction,by name,GetPickupItemNa
 StargateGame,TransportRings,Destroyed,FinalFunction,static,Destroyed,Function,,,,,
 StargateGame,StargateVehicle,CalculateCameraAimRot,VirtualFunction,by name,EyePosition,Function,Engine.Pawn,6,,value,
 StargateGame,StargateVehicle,CalculateCameraAimRot,FinalFunction,static,Normalize,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,value,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,GetItemName,Function,Core.Object,1,,LocalVariable,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,DisplayDebug,Function,package,68,,InstanceVariable,Controller
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,DisplayDebug,Function,package,68,,DynamicArrayElement,Weapon
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetDrawColor,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,StargateVehicle,DisplayDebug,VirtualFunction,by name,DisplayDebug,Function,package,68,,DynamicArrayElement,StargateVehiclePassenger
 StargateGame,StargateVehicle,PostNetBeginPlay,VirtualFunction,by name,ClearExternalInfluences,Function,package,3,,self,
 StargateGame,StargateVehicle,PostNetBeginPlay,FinalFunction,static,PostNetBeginPlay,Function,,,,,
 StargateGame,StargateVehicle,PostNetBeginPlay,FinalFunction,static,KSetCOMOffset,Function,,,,,
@@ -14636,6 +14786,12 @@ StargateGame,DrawOpImage,Draw,VirtualFunction,by name,MaterialVSize,Function,cor
 StargateGame,DrawOpImage,Draw,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,DrawOpImage,Draw,FinalFunction,static,DrawTileStretched,Function,,,,,
 StargateGame,SGFontInfo,GetHugeFont,VirtualFunction,by name,GetStaticHugeFont,Function,package,2,,ArrayElement,Font
+StargateGame,DrawOpText,Draw,FinalFunction,static,Draw,Function,,,,,
+StargateGame,DrawOpText,Draw,VirtualFunction,by name,GetFont,Function,StargateGame.DrawOpBase,2,,LocalVariable,Font
+StargateGame,DrawOpText,Draw,FinalFunction,static,WrapStringToArray,Function,,,,,
+StargateGame,DrawOpText,Draw,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,DrawOpText,Draw,FinalFunction,static,SetPos,Function,,,,,
+StargateGame,DrawOpText,Draw,FinalFunction,static,SetPos,Function,,,,,
 StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,Actor
 StargateGame,StargateVoicePack,GetVoiceDescString,VirtualFunction,by name,GetMsgTypeString,Function,Engine.Actor,1,,ObjectConst,Actor
 StargateGame,StargateVoicePack,GetVoiceDescString,FinalFunction,static,GetEnum,Function,,,,,
@@ -14847,6 +15003,7 @@ StargateGame,VoiceSelector,SearchVoices,FinalFunction,static,IsSubTypeOf,Functio
 StargateGame,VoiceSelector,SearchVoices,VirtualFunction,by name,IsValidRecipient,Function,package,1,,self,
 StargateGame,VoiceSelector,SearchVoices,VirtualFunction,by name,IsValidSubject,Function,package,1,,self,
 StargateGame,VoiceSelector,SearchVoices,VirtualFunction,by name,IsValidTone,Function,package,1,,self,
+StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,VirtualFunction,by name,GetNumFoundSuitableVoices,Function,package,1,,LocalVariable,
 StargateGame,VoiceSelector,SelectVoice,VirtualFunction,by name,GetNumFoundVoices,Function,package,1,,self,
 StargateGame,VoiceSelector,SelectVoice,VirtualFunction,by name,DumpFoundVoices,Function,package,1,,InstanceVariable,
 StargateGame,VoiceSelector,SelectVoice,VirtualFunction,by name,GetNumFoundSuitableVoices,Function,package,1,,self,
@@ -14905,6 +15062,10 @@ StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,PlayerOwner,Func
 StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,OptionsEditBase,SaveSettings,FinalFunction,static,SaveProfile,Function,,,,,
 StargateMenus,OptionsEditBase,SaveSettings,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,InGameMenu,ButtonClick,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,InGameMenu,ButtonClick,VirtualFunction,by name,DisableMatineeSkip,Function,receiver:Engine.PlayerController,2,,FinalFunction,playercontroller
+StargateMenus,InGameMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,InGameMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,OptionsEditBase,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,OptionsEditBase,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
 StargateMenus,RightLockingMenuPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -14912,7 +15073,22 @@ StargateMenus,RightLockingMenuPanel,InitComponent,VirtualFunction,by name,Disabl
 StargateMenus,RightLockingMenuPanel,InitComponent,VirtualFunction,by name,SetVisibility,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUILabel
 StargateMenus,RightLockingMenuPanel,InitComponent,FinalFunction,static,RemoveControl,Function,,,,,
 StargateMenus,RightLockingMenuPanel,InitComponent,FinalFunction,static,SetTimer,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,PlayAction,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,VirtualFunction,by name,DoneSelected,Function,package,4,,value,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,InternalOnKeyType,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,VirtualFunction,by name,InternalOnKeyEvent,Function,receiver:GUI.GUIEditBox,8,,InstanceVariable,GUIEditBox
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,InternalOnKeyType,Function,,,,,
+StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,FinalFunction,static,UpdateKeyboard,Function,,,,,
 StargateMenus,InGameMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
+StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,VirtualFunction,by name,GetProfile,Function,receiver:StargateMenus.ProfilePanel,2,,InstanceVariable,ProfilePanel
+StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,SGPageBase,ChangeHint,VirtualFunction,by name,ChangeHint,Function,package,9,,DynamicCast,RightLockingMenuPanel
 StargateMenus,VirtualKeyboardPage,DoneSelected,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,ChapterSelectionPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -14930,6 +15106,7 @@ StargateMenus,SinglePlayerSelectProfile,InitComponent,VirtualFunction,by name,Re
 StargateMenus,ChapterList,InitComponent,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,InstanceVariable,GUIVertList
 StargateMenus,ChapterList,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,OptionsEditProfile,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
+StargateMenus,OptionsEditProfile,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,RightLockingMenuPanel,Timer,VirtualFunction,by name,GetFocusedControl,Function,GUI.GUIMultiComponent,3,,self,
 StargateMenus,RightLockingMenuPanel,Timer,VirtualFunction,by name,SetFocus,Function,GUI.GUIMultiComponent,9,,DynamicArrayElement,GUIComponent
 StargateMenus,VirtualKeyboardPanel,constructshiftButtons,FinalFunction,static,WeightedInsertControl,Function,,,,,
@@ -14981,6 +15158,7 @@ StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,GetPlayerCont
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,EnableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveFriendsMenu,MyOnOpen,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveFriendsMenu,ButtonClick,VirtualFunction,by name,ShowFriends,Function,package,4,,self,
+StargateMenus,XBoxLiveFriendsMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,ShowFriends,Function,package,4,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFriendsMenu,ShowFriends,VirtualFunction,by name,GetPlayerController,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
@@ -14999,6 +15177,7 @@ StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,Clear,
 StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,UpdateServerListInfo,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,TempDoServerQuery,FinalFunction,static,SetTimer,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,XBoxLiveFindGameMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveFindGameMenu,MyOnOpen,VirtualFunction,by name,getGamerTag,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
@@ -15018,6 +15197,11 @@ StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,SetVisibility,Functi
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,XBoxLiveMenu,MyOnOpen,VirtualFunction,by name,SetFocus,Function,GUI.GUIMultiComponent,9,,InstanceVariable,GUIButton
+StargateMenus,XBoxLiveMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,XBoxLiveMenu,ButtonClick,VirtualFunction,by name,XBoxLiveSignInOut,Function,package,1,,self,
+StargateMenus,XBoxLiveMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,XBoxLiveMenu,ButtonClick,VirtualFunction,by name,ShowPlayers,Function,package,3,,self,
+StargateMenus,XBoxLiveMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLiveFindGameMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,XBoxLiveMenu,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,XBoxLiveMenu,HandleParameters,FinalFunction,static,LoadProfile,Function,,,,,
@@ -15030,6 +15214,8 @@ StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,DisableCompone
 StargateMenus,WaitingForPlayers,StartGame,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,StartMatch,Function,receiver:Engine.GameInfo,3,,Context,GameInfo
 StargateMenus,WaitingForPlayers,StartGame,VirtualFunction,by name,CloseAll,Function,receiver:GUI.GUIController,2,,InstanceVariable,GUIController
+StargateMenus,WaitingForPlayers,InternalOnXControllerEvent,VirtualFunction,by name,StartGame,Function,package,2,,value,
+StargateMenus,WaitingForPlayers,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,SignedIn,Function,receiver:GUI.UIXInteraction,2,,LocalVariable,UIXInteraction
 StargateMenus,XBoxLiveMenu,XBoxLiveSignInOut,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
@@ -15057,6 +15243,7 @@ StargateMenus,SystemLinkMenu,HandleParameters,FinalFunction,static,PlayerOwner,F
 StargateMenus,SystemLinkMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,SystemLinkMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,SystemLinkMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,SinglePlayerTutorial,HandleParameters,VirtualFunction,by name,SetURL,Function,package,2,,value,
 StargateMenus,XBoxLivePlayMenu,MyOnOpen,VirtualFunction,by name,GetUIXInteraction,Function,receiver:GUI.UIXInteraction,2,,ObjectConst,UIXInteraction
@@ -15070,12 +15257,14 @@ StargateMenus,SinglePlayerTutorial,LoadMap,FinalFunction,static,Travel,Function,
 StargateMenus,XBoxLivePlayMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,XBoxLivePlayMenu,ButtonClick,VirtualFunction,by name,TempDoServerQuery,Function,package,2,,self,
 StargateMenus,XBoxLivePlayMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,XBoxLivePlayMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,TempDoServerQuery,FinalFunction,static,GetXboxLiveInterface,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,TempDoServerQuery,FinalFunction,static,Clear,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,TempDoServerQuery,FinalFunction,static,UpdateServerListInfo,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,TempDoServerQuery,FinalFunction,static,SetTimer,Function,,,,,
 StargateMenus,SinglePlayerTutorial,ButtonClick,VirtualFunction,by name,LoadMap,Function,package,3,,self,
 StargateMenus,SinglePlayerTutorial,ButtonClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,SinglePlayerTutorial,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,Timer,FinalFunction,static,GetXboxLiveInterface,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,Timer,FinalFunction,static,UpdateServerListInfo,Function,,,,,
 StargateMenus,XBoxLivePlayMenu,Timer,FinalFunction,static,SetTimer,Function,,,,,
@@ -15095,6 +15284,8 @@ StargateMenus,SinglePlayerMenu,ChangeHint,VirtualFunction,by name,ChangeHint,Fun
 StargateMenus,SelectTeamPage,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,DeleteProfilePage,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
 StargateMenus,DeleteProfilePage,HandleParameters,VirtualFunction,by name,SetProfileName,Function,package,3,,value,
+StargateMenus,SelectTeamPage,InternalOnXControllerEvent,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
+StargateMenus,SelectTeamPage,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,SelectTeamPage,HandleParameters,VirtualFunction,by name,SetNumPlayers,Function,corpus:StargateMenus.SelectTeamPanel,1,StargateMenus.SelectTeamPanel,InstanceVariable,SelectTeamPanel
 StargateMenus,DeleteProfilePage,InternalOnClick,FinalFunction,static,DeleteProfile,Function,,,,,
 StargateMenus,DeleteProfilePage,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
@@ -15108,6 +15299,8 @@ StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,GetCurrentPro
 StargateMenus,SelectPawnPage,OnSelectClick,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SelectPawnPage,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,SelectPawnPage,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+StargateMenus,SelectPawnPage,InternalOnXControllerEvent,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
+StargateMenus,SelectPawnPage,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,SelectPawnPage,OnListBoxDblClick,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
 StargateMenus,OverwriteSavedGamePage,InternalOnClick,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,OverwriteSavedGamePage,InternalOnClick,VirtualFunction,by name,DeleteSavedGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
@@ -15136,6 +15329,15 @@ StargateMenus,SaveGameMenu,InternalOnChange,VirtualFunction,by name,EnableCompon
 StargateMenus,HintScreen,InternalOnXControllerEvent,VirtualFunction,by name,IsScrolling,Function,corpus:GUI.SGScrollTextBox,1,GUI.SGScrollTextBox,InstanceVariable,SGScrollTextBox
 StargateMenus,HintScreen,InternalOnXControllerEvent,VirtualFunction,by name,EndScrolling,Function,receiver:GUI.SGScrollTextBox,2,,InstanceVariable,SGScrollTextBox
 StargateMenus,HintScreen,InternalOnXControllerEvent,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,NewSaveGame,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
+StargateMenus,SaveGameMenu,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,NoMatchFoundPage,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,NotYetImplementedPage,InternalOnClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,SaveGameMenu,Refresh,VirtualFunction,by name,Refresh,Function,package,9,,InstanceVariable,SaveGamePanel
@@ -15180,6 +15382,10 @@ StargateMenus,OptionsEditVideo,InitComponent,FinalFunction,static,PlayerOwner,Fu
 StargateMenus,OptionsEditVideo,InitComponent,VirtualFunction,by name,FillViewPointBox,Function,package,1,,value,
 StargateMenus,OptionsEditVideo,InitComponent,VirtualFunction,by name,ConsoleCommand,Function,receiver:Engine.Actor,4,,LocalVariable,Actor
 StargateMenus,VSMainMenu,CanClose,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,VSMainMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,VSMainMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,VSMainMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,VSMainMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,OptionsEditVideo,FillViewPointBox,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,Context,GUIListBase
 StargateMenus,OptionsEditVideo,FillViewPointBox,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,Context,GUIListBase
 StargateMenus,OptionsEditVideo,FillViewPointBox,VirtualFunction,by name,InitBaseList,Function,receiver:GUI.GUIListBoxBase,2,,Context,GUIListBox
@@ -15223,12 +15429,16 @@ StargateMenus,OptionsEditAppearance,InitComponent,VirtualFunction,by name,Select
 StargateMenus,OptionsEditAppearance,InitComponent,FinalFunction,static,GetCharacterClass,Function,,,,,
 StargateMenus,RightLockingPanel,Lock,FinalFunction,static,Animate,Function,,,,,
 StargateMenus,RightLockingPanel,Activated,VirtualFunction,by name,Lock,Function,package,1,,self,
+StargateMenus,OptionsEditBase,InternalOnXControllerEvent,VirtualFunction,by name,SaveSettings,Function,package,5,,self,
+StargateMenus,OptionsEditBase,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,GetIP,Function,receiver:StargateMenus.ServerSelectionPanel,3,,InstanceVariable,ServerSelectionPanel
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,GetGameTypeName,Function,corpus:StargateMenus.ServerSelectionListBox,1,StargateMenus.ServerSelectionListBox,Context,ServerSelectionListBox
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,IsTeamGame,Function,receiver:StargateMenus.ServerSelectionListBox,2,,Context,ServerSelectionListBox
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,GetTeamInfoURL,Function,corpus:StargateMenus.ServerSelectionListBox,1,StargateMenus.ServerSelectionListBox,Context,ServerSelectionListBox
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,ServerSelectionPage,OnSelectClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,ServerSelectionPage,InternalOnXControllerEvent,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
+StargateMenus,ServerSelectionPage,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,ChapterSelectionPanel,GetSelectedChapter,VirtualFunction,by name,GetSelectedChapter,Function,package,3,,InstanceVariable,ChapterList
 StargateMenus,ChapterSelectionPanel,GetChapter,VirtualFunction,by name,GetChapter,Function,package,4,,InstanceVariable,ChapterList
 StargateMenus,ServerSelectionPage,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -15236,8 +15446,16 @@ StargateMenus,OptionsPage,Refresh,FinalFunction,static,Refresh,Function,,,,,
 StargateMenus,OptionsPage,Refresh,VirtualFunction,by name,ItemCount,Function,receiver:StargateMenus.ProfilePanel,6,,InstanceVariable,ProfilePanel
 StargateMenus,OptionsPage,Refresh,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,ControllerButton
 StargateMenus,OptionsPage,Refresh,VirtualFunction,by name,EnableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,ControllerButton
+StargateMenus,OptionsPage,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,OptionsPage,InternalOnXControllerEvent,VirtualFunction,by name,GetProfile,Function,receiver:StargateMenus.ProfilePanel,2,,InstanceVariable,ProfilePanel
+StargateMenus,OptionsPage,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,OptionsPage,InternalOnXControllerEvent,VirtualFunction,by name,GetProfile,Function,receiver:StargateMenus.ProfilePanel,2,,InstanceVariable,ProfilePanel
+StargateMenus,OptionsPage,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,OptionsPage,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,MultiplayerMapSelectionPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
+StargateMenus,MultiplayerSelectProfile,InternalOnXControllerEvent,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,MultiplayerSelectProfile,InternalOnXControllerEvent,VirtualFunction,by name,GetProfile,Function,receiver:StargateMenus.ProfilePanel,2,,InstanceVariable,ProfilePanel
+StargateMenus,MultiplayerSelectProfile,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,CharacterSelectionPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,SinglePlayerSelectProfile,MyOnActivate,VirtualFunction,by name,Refresh,Function,package,9,,self,
 StargateMenus,ConnectPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
@@ -15249,6 +15467,9 @@ StargateMenus,MultiplayerMenu,HandleParameters,FinalFunction,static,LoadProfile,
 StargateMenus,MultiplayerMenu,HandleParameters,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,MultiplayerMenu,HandleParameters,VirtualFunction,by name,SetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,LeftLockingPanel,Retract,FinalFunction,static,Animate,Function,,,,,
+StargateMenus,MultiplayerMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,MultiplayerMenu,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,MultiplayerMenu,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,MultiplayerMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,MultiplayerMenu,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,CurrentChapterPanel,SetChapter,FinalFunction,static,DynamicLoadObject,Function,,,,,
@@ -15258,6 +15479,8 @@ StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,PlayerOwner
 StargateMenus,SinglePlayerChapterSelect,LoadMap,VirtualFunction,by name,GetCurrentProfile,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,SinglePlayerChapterSelect,LoadMap,FinalFunction,static,Travel,Function,,,,,
+StargateMenus,SinglePlayerChapterSelect,InternalOnXControllerEvent,VirtualFunction,by name,LoadMap,Function,package,3,,self,
+StargateMenus,SinglePlayerChapterSelect,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,CurrentCharPanel,SetCharacter,FinalFunction,static,DynamicLoadObject,Function,,,,,
 StargateMenus,SinglePlayerChapterSelect,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,SinglePlayerChapterSelect,InitComponent,FinalFunction,static,InternalOnChange,Function,,,,,
@@ -15270,6 +15493,8 @@ StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,IsT
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,MultiplayerGameSelect,SelectedGameMode,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,CurrentGameModePanel,SetModeInfo,FinalFunction,static,DynamicLoadObject,Function,,,,,
+StargateMenus,MultiplayerGameSelect,InternalOnXControllerEvent,VirtualFunction,by name,SelectedGameMode,Function,package,1,,self,
+StargateMenus,MultiplayerGameSelect,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,MultiplayerGameSelect,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,MultiplayerGameSelect,InitComponent,FinalFunction,static,InternalOnChange,Function,,,,,
 StargateMenus,CurrentProfilePanel,SetProfile,FinalFunction,static,LoadProfile,Function,,,,,
@@ -15283,6 +15508,8 @@ StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,GetCur
 StargateMenus,MultiplayerCharSelect,OnSelectClick,FinalFunction,static,GetPlayerName,Function,,,,,
 StargateMenus,MultiplayerCharSelect,OnSelectClick,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,MultiplayerCharSelect,OnSelectClick,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+StargateMenus,MultiplayerCharSelect,InternalOnXControllerEvent,VirtualFunction,by name,OnSelectClick,Function,package,4,,self,
+StargateMenus,MultiplayerCharSelect,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetPawnClass,Function,corpus:StargateMenus.CurrentCharPanel,1,StargateMenus.CurrentCharPanel,InstanceVariable,CurrentCharPanel
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetSelectedPawnClass,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
 StargateMenus,MultiplayerCharSelect,InternalOnChange,VirtualFunction,by name,GetSelectedCharacter,Function,receiver:StargateMenus.CharacterSelectionList,2,,Context,CharacterSelectionList
@@ -15308,6 +15535,11 @@ StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,LoadGame,Function,pa
 StargateMenus,LoadGameMenu,LoadGame,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
 StargateMenus,RightLockingMenuPanel,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
 StargateMenus,RightLockingMenuPanel,ButtonClick,VirtualFunction,by name,ButtonClick,Function,package,20,,DynamicCast,SGPageBase
+StargateMenus,LoadGameMenu,InternalOnXControllerEvent,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,LoadGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,LoadGame,Function,package,2,,FinalFunction,playercontroller
+StargateMenus,LoadGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,GetSelected,Function,receiver:StargateMenus.SaveGamePanel,3,,InstanceVariable,SaveGamePanel
+StargateMenus,LoadGameMenu,InternalOnXControllerEvent,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,LoadGameMenu,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,LoadGameMenu,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,LoadGameMenu,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
 StargateMenus,InGameScoreboard,MyOnPreDraw,VirtualFunction,by name,UpdateGRI,Function,corpus:Engine.ScoreBoard,1,Engine.ScoreBoard,InstanceVariable,ScoreBoard
@@ -15328,11 +15560,21 @@ StargateMenus,InGameScoreboard,InitColumn,VirtualFunction,by name,InitBaseList,F
 StargateMenus,InGameScoreboard,FillList,VirtualFunction,by name,Clear,Function,receiver:GUI.GUIListBase,24,,LocalVariable,GUIListBase
 StargateMenus,InGameScoreboard,FillList,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,LocalVariable,GUIListBase
 StargateMenus,InGameScoreboard,FillList,VirtualFunction,by name,Add,Function,receiver:GUI.GUIListBase,5,,LocalVariable,GUIListBase
+StargateMenus,SinglePlayerInGame,ButtonClick,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,SinglePlayerInGame,ButtonClick,VirtualFunction,by name,DisableMatineeSkip,Function,receiver:Engine.PlayerController,2,,FinalFunction,playercontroller
+StargateMenus,SinglePlayerInGame,ButtonClick,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,SinglePlayerInGame,ButtonClick,VirtualFunction,by name,RestartLevel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+StargateMenus,SinglePlayerInGame,ButtonClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,SinglePlayerInGame,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,CoopPlayerPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,CoopPlayerPanel,InitComponent,VirtualFunction,by name,GetStyle,Function,corpus:GUI.GUIController,1,GUI.GUIController,InstanceVariable,GUIController
 StargateMenus,CoopPlayerPanel,InitComponent,FinalFunction,static,SetTimer,Function,,,,,
 StargateMenus,SinglePlayerInGame,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,CoopPlayerPanel,Clear,VirtualFunction,by name,Clear,Function,package,24,,InstanceVariable,GUIMultiColumnList
+StargateMenus,RestartGame,ButtonClick,FinalFunction,static,PlayerOwner,Function,,,,,
+StargateMenus,RestartGame,ButtonClick,VirtualFunction,by name,RestartLevel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+StargateMenus,RestartGame,ButtonClick,VirtualFunction,by name,OpenMenu,Function,GUI.GUIComponent,3,,InstanceVariable,GUIController
+StargateMenus,RestartGame,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,CoopPlayerPanel,Timer,VirtualFunction,by name,Clear,Function,package,24,,self,
 StargateMenus,CoopPlayerPanel,Timer,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,CoopPlayerPanel,Timer,FinalFunction,static,PlayerOwner,Function,,,,,
@@ -15343,6 +15585,8 @@ StargateMenus,CoopPlayerPanel,Timer,VirtualFunction,by name,AddPlayer,Function,p
 StargateMenus,RestartGame,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,RestartGame,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
 StargateMenus,RestartGame,InitComponent,VirtualFunction,by name,DisableComponent,Function,GUI.GUIMultiComponent,3,,InstanceVariable,GUIButton
+StargateMenus,MultiPlayerInGame,ButtonClick,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
+StargateMenus,MultiPlayerInGame,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,InGameMenu,Closed,FinalFunction,static,PlayerOwner,Function,,,,,
 StargateMenus,InGameMenu,Closed,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,InGameMenu,Closed,FinalFunction,static,Closed,Function,,,,,
@@ -15368,6 +15612,7 @@ StargateMenus,InGameInfoScreen,Opened,FinalFunction,static,PlayerOwner,Function,
 StargateMenus,InGameInfoScreen,Opened,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,FinalFunction,playercontroller
 StargateMenus,InGameInfoScreen,Opened,VirtualFunction,by name,Update,Function,receiver:StargateMenus.InGameInfoPanel,18,,InstanceVariable,InGameInfoPanel
 StargateMenus,InGameInfoScreen,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
+StargateMenus,ExtrasPage,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,ErrorPage,DoOkay,VirtualFunction,by name,CloseMenu,Function,receiver:GUI.GUIController,3,,InstanceVariable,GUIController
 StargateMenus,ErrorPage,ButtonClick,VirtualFunction,by name,DoOkay,Function,package,1,,value,
 StargateMenus,ErrorPage,HandleParameters,FinalFunction,static,HandleParameters,Function,,,,,
@@ -15385,12 +15630,18 @@ StargateMenus,VirtualKeyboardPage,PressKey,FinalFunction,static,PressKey,Functio
 StargateMenus,VirtualKeyboardPage,ShiftKey,FinalFunction,static,ShiftKey,Function,,,,,
 StargateMenus,ServerSelectionPanel,GetIP,VirtualFunction,by name,GetIP,Function,package,3,,InstanceVariable,ServerSelectionListBox
 StargateMenus,VirtualKeyboardPage,DeleteKey,FinalFunction,static,DeleteKey,Function,,,,,
+StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,VirtualFunction,by name,DeleteKey,Function,package,2,,InstanceVariable,
+StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,VirtualFunction,by name,ShiftKey,Function,package,2,,InstanceVariable,
+StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,VirtualFunction,by name,PressKey,Function,package,2,,InstanceVariable,
+StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,GameModeSelectionPanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,VirtualKeyboardPage,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,VirtualKeyboardPage,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
 StargateMenus,VirtualKeyboardPage,InitComponent,FinalFunction,static,SetCaption,Function,,,,,
+StargateMenus,CreditsPage,ButtonClick,FinalFunction,static,ButtonClick,Function,,,,,
 StargateMenus,ProfilePanel,InitComponent,FinalFunction,static,InitComponent,Function,,,,,
 StargateMenus,CreateNewProfile,InternalOnXControllerEvent,VirtualFunction,by name,CreateProfile,Function,package,1,,self,
+StargateMenus,CreateNewProfile,InternalOnXControllerEvent,FinalFunction,static,InternalOnXControllerEvent,Function,,,,,
 StargateMenus,ProfilePanel,GetProfile,VirtualFunction,by name,GetSelectedProfile,Function,corpus:StargateMenus.ProfileList,1,StargateMenus.ProfileList,InstanceVariable,ProfileList
 StargateMenus,ProfilePanel,Refresh,VirtualFunction,by name,Refresh,Function,package,9,,InstanceVariable,ProfileList
 StargateMenus,ProfilePanel,ItemCount,FinalFunction,static,ItemCount,Function,,,,,
@@ -16416,6 +16667,9 @@ UDebugMenu,UDebugVideoClient,SettingsChanged,FinalFunction,static,GetPlayerOwner
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,LoadAvailableSettings,Function,package,1,,value,
 UDebugMenu,UDebugVideoClient,SettingsChanged,VirtualFunction,by name,MessageBox,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowMessageBox
+UDebugMenu,UDebugVideoClient,Notify,FinalFunction,static,Notify,Function,,,,,
+UDebugMenu,UDebugVideoClient,Notify,VirtualFunction,by name,SettingsChanged,Function,package,1,,value,
+UDebugMenu,UDebugVideoClient,Notify,VirtualFunction,by name,BrightnessChanged,Function,package,1,,value,
 UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
 UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,SetSize,Function,,,,,
 UDebugMenu,UDebugVideoClient,BeforePaint,FinalFunction,static,SetSize,Function,,,,,
@@ -16505,6 +16759,8 @@ UDebugMenu,UDebugOpenCW,Initialized,VirtualFunction,by name,SetSelectedIndex,Fun
 UDebugMenu,UDebugMapListCW,WindowEvent,VirtualFunction,by name,Scroll,Function,receiver:UWindow.UWindowVScrollbar,2,,Context,UWindowVScrollbar
 UDebugMenu,UDebugMapListCW,WindowEvent,VirtualFunction,by name,Scroll,Function,receiver:UWindow.UWindowVScrollbar,2,,Context,UWindowVScrollbar
 UDebugMenu,UDebugMapListCW,WindowEvent,FinalFunction,static,WindowEvent,Function,,,,,
+UDebugMenu,UDebugMapListCW,Notify,FinalFunction,static,Notify,Function,,,,,
+UDebugMenu,UDebugMapListCW,Notify,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowComboControl,10,,InstanceVariable,UWindowComboControl
 UDebugMenu,UDebugMapListCW,LoadMapList,FinalFunction,static,GetPlayerOwner,Function,,,,,
 UDebugMenu,UDebugMapListCW,LoadMapList,VirtualFunction,by name,Append,Function,corpus:UWindow.UWindowList,1,UWindow.UWindowList,Context,UWindowList
 UDebugMenu,UDebugMapListCW,LoadMapList,FinalFunction,static,GetPlayerOwner,Function,,,,,
@@ -17357,6 +17613,58 @@ UDebugMenu,UDebugBlueLookAndFeel,ControlFrame_Draw,FinalFunction,static,SetDrawC
 UDebugMenu,UDebugBlueLookAndFeel,ControlFrame_Draw,FinalFunction,static,DrawStretchedTexture,Function,,,,,
 UDebugMenu,UDebugBlueLookAndFeel,ControlFrame_Draw,FinalFunction,static,DrawMiscBevel,Function,,,,,
 UDebugMenu,UDebugGraphClientScroll,Initialized,FinalFunction,static,Initialized,Function,,,,,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ShowModal,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,FinalFunction,static,CreateWindow,Function,,,,,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ShowModal,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,FinalFunction,static,CreateWindow,Function,,,,,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,FinalFunction,static,GetPlayerOwner,Function,,,,,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ClientOpenMenu,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,InitGraphConfig,Function,package,1,,value,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,InitGraphConfig,Function,package,1,,value,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,InitGraphConfig,Function,package,1,,value,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,InitGraphConfig,Function,package,1,,value,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ShowModal,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ShowModal,Function,UWindow.UWindowWindow,1,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,FinalFunction,static,CreateWindow,Function,,,,,
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UDebugMenu,UDebugMenuBar,MenuItemSelected,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
 UDebugMenu,UDebugBlueLookAndFeel,Tab_DrawTab,FinalFunction,static,SetDrawColor,Function,,,,,
 UDebugMenu,UDebugBlueLookAndFeel,Tab_DrawTab,VirtualFunction,by name,GetLookAndFeelTexture,Function,receiver:UWindow.UWindowWindow,4,,LocalVariable,UWindowTabControlTabArea
 UDebugMenu,UDebugBlueLookAndFeel,Tab_DrawTab,FinalFunction,static,DrawStretchedTextureSegment,Function,,,,,
@@ -17376,6 +17684,7 @@ UDebugMenu,UDebugMenuBar,Paint,FinalFunction,static,TextSize,Function,,,,,
 UDebugMenu,UDebugMenuBar,Paint,FinalFunction,static,RemoveAmpersand,Function,,,,,
 UDebugMenu,UDebugMenuBar,Paint,VirtualFunction,by name,DrawItem,Function,package,8,,InstanceVariable,
 UDebugMenu,UDebugMenuBar,Paint,VirtualFunction,by name,DrawItem,Function,package,8,,value,
+UDebugMenu,UDebugMenuBar,WindowEvent,FinalFunction,static,WindowEvent,Function,,,,,
 UDebugMenu,UDebugMenuBar,MenuCmd,FinalFunction,static,MenuCmd,Function,,,,,
 UDebugMenu,UDebugMenuBar,NotifyAfterLevelChange,VirtualFunction,by name,NotifyAfterLevelChange,Function,package,3,,Context,UWindowPulldownMenu
 UDebugMenu,UDebugMenuBar,NotifyBeforeLevelChange,VirtualFunction,by name,NotifyBeforeLevelChange,Function,package,3,,Context,UWindowPulldownMenu
@@ -17623,6 +17932,9 @@ UWindow,UWindowWindow,DrawUpBevel,FinalFunction,static,DrawStretchedTextureSegme
 UWindow,UWindowWindow,DrawUpBevel,FinalFunction,static,DrawStretchedTextureSegment,Function,,,,,
 UWindow,UWindowWindow,DrawUpBevel,FinalFunction,static,DrawStretchedTextureSegment,Function,,,,,
 UWindow,UWindowWindow,DrawUpBevel,FinalFunction,static,DrawStretchedTextureSegment,Function,,,,,
+UWindow,UWindowDialogControl,KeyDown,FinalFunction,static,GetPlayerOwner,Function,,,,,
+UWindow,UWindowDialogControl,KeyDown,FinalFunction,static,ActivateWindow,Function,,,,,
+UWindow,UWindowDialogControl,KeyDown,FinalFunction,static,KeyDown,Function,,,,,
 UWindow,UWindowWindow,RemoveAmpersand,FinalFunction,static,ParseAmpersand,Function,,,,,
 UWindow,UWindowWindow,MessageClients,VirtualFunction,by name,CheckMousePassThrough,Function,package,2,,LocalVariable,UWindowWindow
 UWindow,UWindowWindow,MessageClients,VirtualFunction,by name,WindowEvent,Function,package,5,,LocalVariable,UWindowWindow
@@ -17642,7 +17954,7 @@ UWindow,UWindowWindow,BringToFront,FinalFunction,static,ShowChildWindow,Function
 UWindow,UWindowWindow,BringToFront,FinalFunction,static,BringToFront,Function,,,,,
 UWindow,UWindowWindow,ShowChildWindow,VirtualFunction,by name,AddHotkeyWindow,Function,corpus:UWindow.UWindowRootWindow,1,UWindow.UWindowRootWindow,InstanceVariable,UWindowRootWindow
 UWindow,UWindowWindow,GetEntryLevel,FinalFunction,static,GetEntryLevel,Function,,,,,
-UWindow,UWindowWindow,WindowEvent,VirtualFunction,by name,Paint,Function,package,42,,self,
+UWindow,UWindowWindow,WindowEvent,VirtualFunction,by name,Paint,Function,package,42,,value,
 UWindow,UWindowWindow,WindowEvent,FinalFunction,static,PaintClients,Function,,,,,
 UWindow,UWindowWindow,WindowEvent,VirtualFunction,by name,CheckCaptureMouseDown,Function,corpus:UWindow.UWindowRootWindow,1,UWindow.UWindowRootWindow,InstanceVariable,UWindowRootWindow
 UWindow,UWindowWindow,WindowEvent,FinalFunction,static,MessageClients,Function,,,,,
@@ -17775,6 +18087,9 @@ UWindow,UWindowDynamicTextArea,DrawTextLine,VirtualFunction,by name,TextAreaClip
 UWindow,UWindowDynamicTextArea,GetWrapPos,VirtualFunction,by name,TextAreaTextSize,Function,package,2,,self,
 UWindow,UWindowDynamicTextArea,GetWrapPos,VirtualFunction,by name,RemoveNextWord,Function,package,2,,value,
 UWindow,UWindowDynamicTextArea,GetWrapPos,VirtualFunction,by name,TextAreaTextSize,Function,package,2,,VirtualFunction,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,LaunchUWindow,Function,package,2,,value,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,LaunchUWindow,Function,package,2,,value,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,ShowConsole,Function,package,1,,value,
 UWindow,WindowConsole,Tick,FinalFunction,static,Tick,Function,,,,,
 UWindow,WindowConsole,Tick,FinalFunction,static,GetEntryLevel,Function,,,,,
 UWindow,WindowConsole,Tick,VirtualFunction,by name,NotifyAfterLevelChange,Function,receiver:UWindow.UWindowWindow,3,,InstanceVariable,UWindowRootWindow
@@ -17795,6 +18110,7 @@ UWindow,UWindowWindow,NotifyAfterLevelChange,VirtualFunction,by name,NotifyAfter
 UWindow,UWindowButton,KeyDown,FinalFunction,static,GetPlayerOwner,Function,,,,,
 UWindow,UWindowButton,KeyDown,VirtualFunction,by name,LMouseDown,Function,UWindow.UWindowWindow,25,,value,
 UWindow,UWindowButton,KeyDown,VirtualFunction,by name,LMouseUp,Function,UWindow.UWindowWindow,6,,VirtualFunction,
+UWindow,UWindowButton,KeyDown,FinalFunction,static,KeyDown,Function,,,,,
 UWindow,UWindowTextAreaControl,Paint,FinalFunction,static,SetDrawColor,Function,,,,,
 UWindow,UWindowTextAreaControl,Paint,FinalFunction,static,TextSize,Function,,,,,
 UWindow,UWindowTextAreaControl,Paint,FinalFunction,static,GetLevel,Function,,,,,
@@ -17856,6 +18172,10 @@ UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,VirtualFunction,by name,SetFon
 UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,VirtualFunction,by name,SetFont,Function,receiver:UWindow.UWindowDialogControl,4,,InstanceVariable,UWindowSmallButton
 UWindow,UWindowConsoleClientWindow,Message,FinalFunction,static,Message,Function,,,,,
 UWindow,UWindowConsoleClientWindow,Message,VirtualFunction,by name,AddText,Function,receiver:UWindow.UWindowDynamicTextArea,5,,InstanceVariable,UWindowConsoleTextAreaControl
+UWindow,UWindowMessageBoxCW,Notify,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,LocalVariable,UWindowMessageBox
+UWindow,UWindowMessageBoxCW,Notify,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,LocalVariable,UWindowMessageBox
+UWindow,UWindowMessageBoxCW,Notify,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,LocalVariable,UWindowMessageBox
+UWindow,UWindowMessageBoxCW,Notify,VirtualFunction,by name,Close,Function,UWindow.UWindowClientWindow,10,,LocalVariable,UWindowMessageBox
 UWindow,UWindowConsoleClientWindow,Paint,FinalFunction,static,DrawStretchedTexture,Function,,,,,
 UWindow,UWindowConsoleClientWindow,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
 UWindow,UWindowConsoleClientWindow,BeforePaint,FinalFunction,static,SetSize,Function,,,,,
@@ -17869,6 +18189,16 @@ UWindow,UWindowComboControl,Initialized,VirtualFunction,by name,HideWindow,Funct
 UWindow,UWindowComboControl,Initialized,VirtualFunction,by name,SetEditTextColor,Function,package,2,,value,
 UWindow,UWindowSmallOKButton,Initialized,FinalFunction,static,Initialized,Function,,,,,
 UWindow,UWindowSmallOKButton,Initialized,VirtualFunction,by name,SetText,Function,UWindow.UWindowDialogControl,5,,FinalFunction,
+UWindow,UWindowConsoleClientWindow,Notify,FinalFunction,static,Notify,Function,,,,,
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowEditControl,10,,InstanceVariable,UWindowEditControl
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,GetValue,Function,receiver:UWindow.UWindowEditControl,10,,InstanceVariable,UWindowEditControl
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Message,Function,package,10,,value,
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Clear,Function,receiver:UWindow.UWindowEditControl,24,,InstanceVariable,UWindowEditControl
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,InstanceVariable,UWindowRootWindow
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Message,Function,package,10,,value,
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Localize,Function,Core.Object,1,,self,
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Scroll,Function,receiver:UWindow.UWindowVScrollbar,2,,Context,UWindowVScrollbar
+UWindow,UWindowConsoleClientWindow,Notify,VirtualFunction,by name,Scroll,Function,receiver:UWindow.UWindowVScrollbar,2,,Context,UWindowVScrollbar
 UWindow,UWindowSmallCloseButton,Click,FinalFunction,static,GetParent,Function,,,,,
 UWindow,UWindowSmallCloseButton,Click,VirtualFunction,by name,Close,Function,UWindow.UWindowWindow,10,,DynamicCast,UWindowFramedWindow
 UWindow,UWindowConsoleClientWindow,Initialized,FinalFunction,static,CreateWindow,Function,,,,,
@@ -18078,6 +18408,14 @@ UWindow,UWindowComboButton,FocusOtherWindow,FinalFunction,static,FocusOtherWindo
 UWindow,UWindowComboButton,FocusOtherWindow,VirtualFunction,by name,CloseUp,Function,receiver:UWindow.UWindowComboControl,7,,InstanceVariable,UWindowComboControl
 UWindow,UWindowGridColumn,Initialized,FinalFunction,static,Initialized,Function,,,,,
 UWindow,UWindowGridColumn,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
+UWindow,UWindowHSliderControl,KeyDown,FinalFunction,static,GetPlayerOwner,Function,,,,,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowHSliderControl,KeyDown,FinalFunction,static,KeyDown,Function,,,,,
 UWindow,UWindowHSliderControl,MouseMove,FinalFunction,static,MouseMove,Function,,,,,
 UWindow,UWindowHSliderControl,MouseMove,VirtualFunction,by name,SetValue,Function,package,13,,value,
 UWindow,UWindowHSliderControl,LMouseDown,FinalFunction,static,LMouseDown,Function,,,,,
@@ -18118,6 +18456,8 @@ UWindow,UWindowGridColumn,RMouseDown,VirtualFunction,by name,RightClickRowDown,F
 UWindow,UWindowComboButton,BeforePaint,VirtualFunction,by name,Combo_GetButtonBitmaps,Function,receiver:UWindow.UWindowLookAndFeel,3,,InstanceVariable,UWindowLookAndFeel
 UWindow,UWindowComboControl,DropDown,VirtualFunction,by name,SetEditable,Function,package,2,,InstanceVariable,UWindowEditBox
 UWindow,UWindowComboControl,DropDown,VirtualFunction,by name,ShowWindow,Function,UWindow.UWindowWindow,3,,InstanceVariable,UWindowComboList
+UWindow,UWindowHSliderControl,BeforePaint,FinalFunction,static,BeforePaint,Function,,,,,
+UWindow,UWindowHSliderControl,BeforePaint,FinalFunction,static,TextSize,Function,,,,,
 UWindow,UWindowGridColumn,RMouseUp,FinalFunction,static,RMouseUp,Function,,,,,
 UWindow,UWindowGridColumn,RMouseUp,VirtualFunction,by name,SelectRow,Function,corpus:UWindow.UWindowGrid,1,UWindow.UWindowGrid,DynamicCast,UWindowGrid
 UWindow,UWindowGridColumn,RMouseUp,VirtualFunction,by name,RightClickRow,Function,corpus:UWindow.UWindowGrid,1,UWindow.UWindowGrid,DynamicCast,UWindowGrid
@@ -18269,6 +18609,30 @@ UWindow,UWindowRootWindow,MoveMouse,VirtualFunction,by name,MouseMove,Function,U
 UWindow,UWindowEditBox,Click,VirtualFunction,by name,Notify,Function,package,38,,self,
 UWindow,UWindowRootWindow,DrawMouse,FinalFunction,static,SetPos,Function,,,,,
 UWindow,UWindowRootWindow,DrawMouse,FinalFunction,static,DrawIcon,Function,,,,,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Insert,Function,package,6,,InstanceVariable,UWindowEditBoxHistory
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Notify,Function,package,38,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Notify,Function,package,38,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Notify,Function,package,38,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,WordRight,Function,package,1,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveRight,Function,package,3,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,WordLeft,Function,package,1,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveLeft,Function,package,3,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveEnd,Function,package,1,,VirtualFunction,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,SetValue,Function,package,13,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveEnd,Function,package,1,,VirtualFunction,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveHome,Function,package,1,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,MoveEnd,Function,package,1,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Clear,Function,package,24,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Backspace,Function,package,1,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Clear,Function,package,24,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,DeleteMe,Function,package,2,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,Insert,Function,package,6,,InstanceVariable,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,EditCopy,Function,package,1,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,EditPaste,Function,package,1,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,EditCut,Function,package,1,,value,
+UWindow,UWindowEditBox,KeyDown,VirtualFunction,by name,KeyDown,Function,package,10,,InstanceVariable,UWindowDialogControl
+UWindow,UWindowEditBox,KeyDown,FinalFunction,static,KeyDown,Function,,,,,
 UWindow,UWindowRootWindow,CheckCaptureMouseUp,FinalFunction,static,GetMouseXY,Function,,,,,
 UWindow,UWindowRootWindow,CheckCaptureMouseUp,VirtualFunction,by name,LMouseUp,Function,UWindow.UWindowWindow,6,,InstanceVariable,UWindowWindow
 UWindow,UWindowWindow,SetAcceptsHotKeys,VirtualFunction,by name,AddHotkeyWindow,Function,corpus:UWindow.UWindowRootWindow,1,UWindow.UWindowRootWindow,InstanceVariable,UWindowRootWindow
@@ -18282,6 +18646,7 @@ UWindow,UWindowRootWindow,RemoveHotkeyWindow,VirtualFunction,by name,Remove,Func
 UWindow,UWindowEditBox,KeyUp,FinalFunction,static,GetPlayerOwner,Function,,,,,
 UWindow,UWindowRootWindow,WindowEvent,VirtualFunction,by name,HotKeyDown,Function,package,3,,self,
 UWindow,UWindowRootWindow,WindowEvent,VirtualFunction,by name,HotKeyUp,Function,package,3,,self,
+UWindow,UWindowRootWindow,WindowEvent,FinalFunction,static,WindowEvent,Function,,,,,
 UWindow,UWindowRootWindow,HotKeyDown,VirtualFunction,by name,HotKeyDown,Function,package,3,,Context,UWindowWindow
 UWindow,UWindowEditBox,KeyPressed,VirtualFunction,by name,Clear,Function,package,24,,InstanceVariable,
 UWindow,UWindowEditBox,KeyPressed,VirtualFunction,by name,Insert,Function,package,6,,value,
@@ -18324,6 +18689,15 @@ UWindow,UWindowRootWindow,EndState,VirtualFunction,by name,SetPause,Function,rec
 UWindow,UWindowRootWindow,EndState,VirtualFunction,by name,HideWindow,Function,package,2,,InstanceVariable,UWindowConsoleWindow
 UWindow,UWindowRootWindow,KeyType,VirtualFunction,by name,WindowEvent,Function,package,5,,self,
 UWindow,UWindowEditBox,WordLeft,FinalFunction,static,GetLevel,Function,,,,,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,CloseActiveWindow,Function,package,1,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
+UWindow,UWindowRootWindow,KeyEvent,VirtualFunction,by name,WindowEvent,Function,package,5,,value,
 UWindow,UWindowRootWindow,PostRender,VirtualFunction,by name,Resized,Function,package,10,,value,
 UWindow,UWindowRootWindow,PostRender,FinalFunction,static,CheckKeyFocusWindow,Function,,,,,
 UWindow,UWindowRootWindow,PostRender,VirtualFunction,by name,KeyFocusExit,Function,UWindow.UWindowWindow,3,,InstanceVariable,UWindowWindow
@@ -18551,7 +18925,14 @@ UWindow,UWindowList,MoveItemSorted,VirtualFunction,by name,Remove,Function,packa
 UWindow,UWindowList,MoveItemSorted,VirtualFunction,by name,AppendItem,Function,package,1,,value,
 UWindow,UWindowList,MoveItemSorted,VirtualFunction,by name,InsertItemBefore,Function,package,1,,LocalVariable,UWindowList
 UWindow,UWindowListBox,DrawItem,FinalFunction,static,DrawStretchedTexture,Function,,,,,
+UWindow,UWindowListBox,DrawItem,FinalFunction,static,ClipText,Function,,,,,
 UWindow,UWindowList,Validate,VirtualFunction,by name,Validate,Function,package,1,,InstanceVariable,UWindowList
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,GetTag,Function,package,3,,self,
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,ParseColor,Function,package,1,,StructMember,
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,ParseColor,Function,package,1,,StructMember,
+UWindow,UWindowHTMLTextArea,ProcessInlineHTML,VirtualFunction,by name,GetOption,Function,package,1,,StructMember,
 UWindow,UWindowList,Append,VirtualFunction,by name,CreateItem,Function,package,1,,LocalVariable,UWindowList
 UWindow,UWindowList,Append,VirtualFunction,by name,AppendItem,Function,package,1,,value,
 UWindow,UWindowListBox,KeyUp,VirtualFunction,by name,SetSelectedItem,Function,package,1,,value,
@@ -18611,6 +18992,29 @@ UWindow,UWindowMenuBar,LMouseDown,VirtualFunction,by name,DeSelect,Function,rece
 UWindow,UWindowMenuBar,LMouseDown,VirtualFunction,by name,Select,Function,package,5,,value,
 UWindow,UWindowMenuBar,DrawItem,FinalFunction,static,SetDrawColor,Function,,,,,
 UWindow,UWindowMenuBar,DrawItem,VirtualFunction,by name,Menu_DrawMenuBarItem,Function,receiver:UWindow.UWindowLookAndFeel,3,,InstanceVariable,UWindowLookAndFeel
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseHTML,Function,package,1,,value,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetTag,Function,package,3,,self,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,InstanceVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,InstanceVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,InstanceVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,InstanceVariable,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,StructMember,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,LocalVariable,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,ParseColor,Function,package,1,,StructMember,
+UWindow,UWindowHTMLTextArea,AddText,VirtualFunction,by name,GetOption,Function,package,1,,StructMember,
+UWindow,UWindowHTMLTextArea,AddText,FinalFunction,static,AddText,Function,,,,,
 UWindow,UWindowMenuBar,DrawMenuBar,FinalFunction,static,DrawStretchedTexture,Function,,,,,
 UWindow,UWindowBase,BuildObjectWithProperties,FinalFunction,static,DynamicLoadObject,Function,,,,,
 UWindow,UWindowBase,BuildObjectWithProperties,VirtualFunction,by name,InStrAfter,Function,package,1,,LocalVariable,
@@ -18717,6 +19121,20 @@ UWindow,UWindowHTMLTextArea,LaunchUnrealURL,FinalFunction,static,GetPlayerOwner,
 UWindow,UWindowHTMLTextArea,LaunchUnrealURL,VirtualFunction,by name,ClientTravel,Function,corpus:Engine.PlayerController,1,Engine.PlayerController,FinalFunction,playercontroller
 UWindow,WindowConsole,CloseUWindow,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,Context,PlayerController
 UWindow,WindowConsole,LaunchUWindow,VirtualFunction,by name,SetPause,Function,receiver:Engine.PlayerController,4,,Context,PlayerController
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,GlobalFunction,by name,KeyEvent,Function,package,9,,self,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,HideConsole,Function,package,1,,InstanceVariable,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,CloseUWindow,Function,package,1,,InstanceVariable,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,ShowConsole,Function,package,1,,InstanceVariable,
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,CloseActiveWindow,Function,corpus:UWindow.UWindowRootWindow,1,UWindow.UWindowRootWindow,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
+UWindow,WindowConsole,KeyEvent,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
 UWindow,WindowConsole,KeyType,VirtualFunction,by name,WindowEvent,Function,receiver:UWindow.UWindowRootWindow,5,,InstanceVariable,UWindowRootWindow
 UWindow,UWindowHTMLTextArea,ProcessURL,FinalFunction,static,GetPlayerOwner,Function,,,,,
 UWindow,UWindowHTMLTextArea,ProcessURL,VirtualFunction,by name,ConsoleCommand,Function,Engine.Interaction,4,,FinalFunction,playercontroller
@@ -18897,7 +19315,7 @@ UWindow,UWindowWin95LookAndFeel,Tab_DrawTabPageArea,VirtualFunction,by name,GetL
 UWindow,UWindowWin95LookAndFeel,Tab_GetTabSize,FinalFunction,static,TextSize,Function,,,,,
 UWindow,UWindowPulldownMenu,ExecuteItem,VirtualFunction,by name,MenuItemSelected,Function,receiver:UWindow.UWindowMenuBar,2,,InstanceVariable,UWindowMenuBar
 UWindow,UWindowPulldownMenu,ExecuteItem,VirtualFunction,by name,CloseUp,Function,package,7,,Context,
-UWindow,UWindowPulldownMenu,KeyDown,VirtualFunction,by name,CloseUp,Function,package,7,,self,
+UWindow,UWindowPulldownMenu,KeyDown,VirtualFunction,by name,CloseUp,Function,package,7,,value,
 UWindow,UWindowPulldownMenu,KeyDown,VirtualFunction,by name,PerformSelect,Function,package,1,,value,
 UWindow,UWindowPulldownMenu,KeyDown,VirtualFunction,by name,PerformSelect,Function,package,1,,value,
 UWindow,UWindowPulldownMenu,KeyDown,VirtualFunction,by name,PerformSelect,Function,package,1,,Context,UWindowPulldownMenu

@@ -3600,8 +3600,55 @@ def calls_report(path, table, out=None, lists=0):
     callees = collections.Counter([r[5] for r in static if r[6] == "Function" and r[5]]
                                   + [r[5] for r in by_name if r[5] and r[7]])
     print("  most-called resolved targets: %s" % ", ".join("%s %d" % kv for kv in callees.most_common(8)))
+    # The page quotes one set of numbers, so the run writes them into a `key,value` artifact the doc block renders
+    # from. Every figure below is one the report above printed, so the block, the report and the gate are one read.
+    census = [
+        ("packages", len(files)),
+        ("epilogue_scripts", seen),
+        ("walked_scripts", walked),
+        ("call_sites", len(rows)),
+        ("static_sites", len(static)),
+        ("static_function_targets", sum(1 for r in static if r[6] == "Function")),
+        ("by_name_sites", len(by_name)),
+        ("by_name_naming_class", len(by_name) - len(wide)),
+        ("chain_own", len(here)),
+        ("chain_ancestor", len(above)),
+        ("chain_state_only", sum(chain_state.values())),
+        ("chain_renamed_packages", sum(respelled.values())),
+        ("corpus_only", len(corpus)),
+        ("corpus_names", len(only)),
+        ("receiver_chain", len(recv)),
+        ("receiver_names", len({r[5] for r in recv})),
+        ("receiver_types", len({r[11] for r in recv})),
+        ("receiver_case", sum(case_fixed.values())),
+        ("receiver_state_only", sum(recv_state.values())),
+        ("decided_by_receiver", len(wide)),
+        ("decided_names", len(wide_n)),
+        ("untyped_object", len(untyped)),
+        ("untyped_local", len(locals_)),
+        ("directive_gaps", preproc["gaps"]),
+        ("directive_classes", preproc["classes"]),
+        ("local_case_sites", sum(local_case.values())),
+        ("ancestor_local_sites", sum(ancestor_local.values())),
+        ("typed_gap", len(typed_gap)),
+        ("descendant_placed", len(below_rows)),
+        ("below_several", sum(below_multi.values())),
+        ("below_outside", sum(below_outside.values())),
+        ("below_none", sum(below_none.values())),
+        ("completed_value", len(open_) - len(untyped) - len(typed_gap)),
+        ("import_owner_typed", sum(owner_fixed.values())),
+        ("owner_conflict_names", len(owner_conflict)),
+        ("residue_named", len(residue)),
+        ("typed_residue_named", len(gap_rows)),
+    ]
     if out:
         os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "script_call_census.csv"), "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["key", "value"])
+            for key, value in census:
+                w.writerow((key, value))
+        print("wrote %s/script_call_census.csv (%d row(s))" % (out, len(census)))
         with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class",
@@ -3934,6 +3981,11 @@ def compare_report(path_a, path_b, table, out=None):
 
 
 DOC_MARK = ("<!-- generated:matching-baseline -->", "<!-- /generated:matching-baseline -->")
+# The call census has its own block and its own artifact. `inventory/script_call_census.csv` is the numbers the
+# page quotes, so `--calls-doc --check-doc` re-renders the block from the committed artifact with no dump -- the
+# walk itself needs one, and `make ci` deliberately has none.
+CALLS_DOC_MARK = ("<!-- generated:calls-census -->", "<!-- /generated:calls-census -->")
+CALLS_CENSUS = os.path.join(ROOT, "inventory", "script_call_census.csv")
 BASELINE_CSV = os.path.join(ROOT, "inventory", "matching_baseline.csv")
 COLUMNS = ("package", "functions", "scripted", "scriptless", "refused", "operator", "unaligned", "other",
            "l3", "l2", "control_l3", "control_l2", "control_site")
@@ -4855,8 +4907,8 @@ def doc_block(rows):
     return "\n".join(lines)
 
 
-def replace_block(text, block):
-    begin, end = DOC_MARK
+def replace_block(text, block, mark=None):
+    begin, end = mark or DOC_MARK
     i, j = text.find(begin), text.find(end)
     if i < 0 or j <= i:
         sys.exit("document has no %s ... %s block" % DOC_MARK)
@@ -4878,6 +4930,114 @@ def emit_doc(rows, write_doc=None, check_doc=None):
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(fresh)
         print("ok   matching-baseline: wrote %s" % path)
+    return 0
+
+
+def read_calls_census(path=None):
+    """The call census artifact `--calls` writes: `key,value` rows in the run's own order."""
+    path = path or CALLS_CENSUS
+    if not os.path.exists(path):
+        sys.exit("calls-doc: %s does not exist" % path)
+    return [(r["key"], r["value"]) for r in csv.DictReader(open(path))]
+
+
+# The block's order and its labels. A key the artifact carries and this table does not know is appended raw rather
+# than dropped, so a figure added to the run cannot go quietly missing from the page.
+CALLS_ROWS = (
+    ("packages", "packages walked"),
+    ("epilogue_scripts", "scripts with an epilogue"),
+    ("walked_scripts", "scripts the walk read to the epilogue"),
+    ("call_sites", "call sites"),
+    ("static_sites", "static sites (`FinalFunction`)"),
+    ("static_function_targets", "static sites whose target is a `Function` export"),
+    ("by_name_sites", "by-name sites (`VirtualFunction`, `GlobalFunction`)"),
+    ("by_name_naming_class", "by-name sites that name a declaring class"),
+    ("chain_own", "on the caller's own class"),
+    ("chain_ancestor", "on an ancestor"),
+    ("chain_state_only", "of those, declared only by a state the class owns"),
+    ("chain_renamed_packages", "chain rows whose package spelling the index had to fold"),
+    ("corpus_only", "by the corpus alone (one declaring class)"),
+    ("corpus_names", "names the corpus-alone group places"),
+    ("receiver_chain", "on the receiver's chain"),
+    ("receiver_names", "distinct names placed on a receiver"),
+    ("receiver_types", "distinct receiver types"),
+    ("receiver_case", "placed because the type is spelled in another case"),
+    ("receiver_state_only", "of those, declared only by a state the receiver class owns"),
+    ("decided_by_receiver", "decided by the receiver (several declaring descendants)"),
+    ("decided_names", "names the receiver decides"),
+    ("untyped_object", "an object expression with no recorded type"),
+    ("untyped_local", "of those, a local"),
+    ("directive_gaps", "declarations a preprocessor directive line split from its body"),
+    ("directive_classes", "class texts carrying such a directive"),
+    ("local_case_sites", "a local the source declares in another case"),
+    ("ancestor_local_sites", "a local typed from an ancestor's declaration"),
+    ("typed_gap", "a receiver typed to a class whose chain declares no such name"),
+    ("descendant_placed", "of those, placed on one declaring descendant"),
+    ("below_several", "of those, a dispatch across several descendants"),
+    ("below_outside", "of those, a name only classes outside the subtree declare"),
+    ("below_none", "of those, a name no class in the corpus declares"),
+    ("completed_value", "a completed value in front (a self-call or a walk that stopped)"),
+    ("import_owner_typed", "typed by the import's own owner class"),
+    ("owner_conflict_names", "names a disagreeing import owns"),
+    ("residue_named", "residue rows `--lists` names"),
+    ("typed_residue_named", "typed residue rows `--lists` names"),
+)
+
+
+def calls_doc_block(census):
+    """The page's census block, from the artifact's own rows -- the same read `--calls` printed."""
+    got = dict(census)
+
+    def n(key):
+        return int(got.get(key, 0) or 0)
+
+    by_name, named = n("by_name_sites"), n("by_name_naming_class")
+    share = (100.0 * named / by_name) if by_name else 0.0
+    lines = ["",
+             "| %s | %s |" % ("measure", "count"),
+             "|---|---:|"]
+    for key, label in CALLS_ROWS:
+        lines.append("| %s | %s |" % (label, format(n(key), ",d")))
+    known = {k for k, _l in CALLS_ROWS}
+    for key, value in census:
+        if key not in known:
+            lines.append("| `%s` | %s |" % (key, value))
+    lines += ["",
+              "**%s of the %s by-name sites (%0.1f%%) name a declaring class**: %s on the caller's chain -- %s in its"
+              " own class, %s an ancestor -- %s by the corpus alone, %s on the receiver's chain, and %s a dispatch the"
+              " receiver's static type cannot decide. The rest of the reading is in the table: %s object expressions"
+              " with no recorded type (%s of them a local), %s a completed value in front, and %s receivers whose own"
+              " chain declares no such name."
+              % (format(named, ",d"), format(by_name, ",d"), share,
+                 format(n("chain_own") + n("chain_ancestor"), ",d"), format(n("chain_own"), ",d"),
+                 format(n("chain_ancestor"), ",d"), format(n("corpus_only"), ",d"),
+                 format(n("receiver_chain"), ",d"), format(n("decided_by_receiver"), ",d"),
+                 format(n("untyped_object"), ",d"), format(n("untyped_local"), ",d"),
+                 format(n("completed_value"), ",d"), format(n("typed_gap"), ",d")),
+              "",
+              "The numbers are `inventory/script_call_census.csv` (`tools/uscript-dis.py --calls`), the artifact this"
+              " block is rendered from; `make script-calls` re-runs the walk against the dump and"
+              " `--calls-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci`"
+              " needs no dump to prove the page still matches its census."]
+    return "\n".join(lines)
+
+
+def calls_emit_doc(census, write_doc=None, check_doc=None):
+    """Write or check the calls-census block. `--check-doc` reads the artifact only, so the gate is dump-free."""
+    path = write_doc or check_doc
+    block = calls_doc_block(census)
+    with open(path, encoding="utf-8") as fh:
+        current = fh.read()
+    fresh = replace_block(current, block, CALLS_DOC_MARK)
+    if check_doc:
+        if fresh != current:
+            print("FAIL %s: the generated calls block is stale" % path)
+            return 1
+        print("ok   calls-census: %s matches its artifact" % path)
+    else:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(fresh)
+        print("ok   calls-census: wrote %s" % path)
     return 0
 
 
@@ -5405,6 +5565,9 @@ def main():
                     help="how much of the build the L2 control can reach, pair by pair: every swap the table permits, "
                          "what it does to the walk, and the opcodes with no same-shape partner "
                          "(inventory/opcode_pairs.csv)")
+    ap.add_argument("--calls-doc", action="store_true",
+                    help="with --write-doc/--check-doc: re-render docs/BYTECODE.md's call census block from "
+                         "inventory/script_call_census.csv, no dump")
     ap.add_argument("--pairs-doc", action="store_true",
                     help="with --write-doc/--check-doc: re-render the opcode-pairs block from its artifact, no dump")
     ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
@@ -5495,6 +5658,8 @@ def main():
         return opcode_control_report(args.opcode_control, Table(), args.out)
     if args.opcode_pairs:
         return opcode_pairs_report(args.opcode_pairs, Table(), args.out, args.write_doc, args.check_doc)
+    if args.calls_doc:
+        return calls_emit_doc(read_calls_census(), args.write_doc, args.check_doc)
     if args.pairs_doc:
         rows = [r for r in read_pairs() if r[0] != "census"]
         return pairs_emit_doc(rows, pair_census(rows), args.write_doc, args.check_doc)
