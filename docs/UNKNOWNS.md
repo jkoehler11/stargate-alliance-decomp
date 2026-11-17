@@ -2081,6 +2081,21 @@ the state half and **0** native. The payload is the second half: **759 compile t
 **124 bodies the live text does not spell** (the largest `UWindow.UURLTextArea.TextAreaClipText` 734 bytes). The
 control keeps it honest: 441 bodied declarations compile to the same empty script too, so the test is *no code*
 against *code*. Depth: `docs/PACKAGE_SCRIPT_TEXT.md`, artifact `inventory/text_stubs.csv`.
+
+**2026-11-17, later: the 124 were the reader's, and the text loses one body.** Two rules were answering a
+declaration with a record from a scope it does not live in. **227 of the 906 stubs are written inside a `state`
+block**, and each is bound by the compiler to that state's own `Function` export -- every one of them compiles to
+the empty script -- while the census asked the class and got its script: bodied stubs fall **147 -> 15** and the
+"bodies the text does not spell" **124 -> 1**. The other rule was the duplicate test: it looked only *below* the
+declaration, and the same text can declare a name again *above* it, so **12** of the 15 are a bodyless
+re-declaration of a name the class already defines (2 are forward declarations, 1 is the truncated `ScriptText` of
+`UWindow.UWindowURLTextArea.TextAreaClipText`). A third answer came with them: **11** class-level declarations
+name a function only a `State` of the class binds, so "every stub has an export" was itself the class-over-state
+preference. The comment join the previous note asked for is negative and now measured: joining
+`inventory/class_text_bodies.csv`'s 197 commented bodies by package/class/name, **0** of the 15 matches a commented
+body of its own name (the 1 residue's class ships no block comment at all), against a **23 of 647** (3.6%) name
+rate over every stub name. Depth: `docs/PACKAGE_SCRIPT_TEXT.md`, artifact `inventory/text_stubs.csv` (columns
+`scope`, `redeclared_back`, `comment`).
  `function bool CanMultiJump();`
 — a declaration-only stub, implemented in a state or in native code. The anchor's body finder takes the first `{`
 after the parameter list, so for every such stub it paired the *next* function's body: 82 declarations in the corpus
