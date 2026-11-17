@@ -479,6 +479,20 @@ def check_switch_doc():
         ok(name, out[-1].replace("ok   switch-widths: ", "") if out else "")
 
 
+def check_switch_join():
+    """The two switch censuses join arm by arm, and the page's block is rendered from the join (U20)."""
+    name = "switch-join"
+    for argv, tail in ((["--check"], "switch-join: "),
+                       (["--check-doc", "docs/BYTECODE.md"], "switch-join: ")):
+        r = subprocess.run([sys.executable, repo("tools", "switch-join.py")] + argv,
+                           capture_output=True, text=True, cwd=ROOT)
+        out = (r.stdout or r.stderr).strip().splitlines()
+        if r.returncode != 0:
+            fail(name, out[-1] if out else "exit %d" % r.returncode)
+            return
+    ok(name, "the join reproduces and docs/BYTECODE.md matches it")
+
+
 def check_body_name_doc():
     """docs/NAMING.md's tables are generated from inventory/body_names.csv."""
     name = "body-name-doc"
@@ -627,6 +641,7 @@ def main():
     check_matching_doc()
     check_calls_doc()
     check_switch_doc()
+    check_switch_join()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
