@@ -2377,6 +2377,17 @@ through `locate()` (which now returns `name_end` and the six front values) makes
 is `name_end + 16`, the dword at `name_end + 12` is the script's size in memory, and the walk and the field check each
 other on every payload the corpus has.
 
+**2026-11-17: the jump operand is the guest copy's offset, and the model was already in this entry.** The 23,778
+`Jump`/`JumpIfNot` operands land on a token start in file space only 23.11% of the time, against a 45.57% base rate,
+so `docs/BYTECODE.md` called the widened base the missing piece -- while this entry's own tail already held it: the
+dword at `name_end + 12` is `len(script) + sum(4 - width)` on 11,687 of 11,687 payloads, i.e. the memory image is the
+file with every index operand at four bytes. Read in **that** space the same operands hit **23,778 of 23,778**
+(100.00%) against a 33.49% base rate, and 80 copies placed in two `pmemsave` images agree length for length and start for
+start (348 operands). `tools/jump-graph.py` now emits the graph (22,270 forward and 1,508 backward edges; 95.62% of statements
+reachable; the 4,216 unreachable ones are tails behind a `return`). **What is left is not the encoding but its user**:
+the target is a file offset, so a decompiler's branch rendering can consume it, and the `Case` scan (`execCase` walks
+forward to the next `Case`) is modelled as an edge rather than measured in the guest.
+
 ## U14. Scripted input reaches the guest; one list step, and a mission load, do not (PLAN 7.2, 7.3)
 
 The title boots to its real five-item menu and the frame is capturable, but nothing sent at it from the harness has
