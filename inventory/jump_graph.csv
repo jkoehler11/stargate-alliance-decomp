@@ -23777,6 +23777,957 @@ edge,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,00f1,JumpIfNot,43
 edge,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,0129,Jump,502,0156,,,forward
 edge,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,0156,JumpIfNot,566,0186,,,forward
 edge,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,0186,JumpIfNot,640,01be,,,forward
+case,Editor,FractalTextureFactory,CreateMaterial,0005,Case,22,0011,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0011,Case,38,001e,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,001e,Case,54,002b,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,002b,Case,70,0038,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0038,Case,86,0045,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0045,Case,102,0052,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0052,Case,118,005f,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,005f,Case,134,006c,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,006c,Case,153,007c,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0084,Case,178,0090,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,0090,Case,194,009d,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,009d,Case,210,00aa,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00aa,Case,226,00b7,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00b7,Case,242,00c4,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00c4,Case,258,00d1,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00d1,Case,274,00de,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00de,Case,290,00eb,,,next case of the list
+case,Editor,FractalTextureFactory,CreateMaterial,00eb,Case,309,00fb,,,next case of the list
+case,Engine,Actor,DisplayDebug,00da,Case,311,00ef,,,next case of the list
+case,Engine,Actor,DisplayDebug,00ef,Case,343,0109,,,next case of the list
+case,Engine,Actor,DisplayDebug,0109,Case,380,0128,,,next case of the list
+case,Engine,Actor,DisplayDebug,0128,Case,418,0148,,,next case of the list
+case,Engine,Actor,DisplayDebug,0148,Case,450,0162,,,next case of the list
+case,Engine,Actor,DisplayDebug,0180,Case,515,0195,,,next case of the list
+case,Engine,Actor,DisplayDebug,0195,Case,547,01af,,,next case of the list
+case,Engine,Actor,DisplayDebug,01af,Case,584,01ce,,,next case of the list
+case,Engine,Actor,DisplayDebug,01ce,Case,622,01ee,,,next case of the list
+case,Engine,Actor,DisplayDebug,01ee,Case,654,0208,,,next case of the list
+case,Engine,Actor,DisplayDebug,025c,Case,795,0271,,,next case of the list
+case,Engine,Actor,DisplayDebug,0271,Case,825,0289,,,next case of the list
+case,Engine,Actor,DisplayDebug,0289,Case,855,02a1,,,next case of the list
+case,Engine,Actor,DisplayDebug,02a1,Case,886,02ba,,,next case of the list
+case,Engine,Actor,DisplayDebug,02ba,Case,915,02d1,,,next case of the list
+case,Engine,Actor,DisplayDebug,02d1,Case,946,02ea,,,next case of the list
+case,Engine,Actor,DisplayDebug,02ea,Case,979,0305,,,next case of the list
+case,Engine,Actor,DisplayDebug,0305,Case,1015,0323,,,next case of the list
+case,Engine,Actor,DisplayDebug,0323,Case,1049,033f,,,next case of the list
+case,Engine,Actor,DisplayDebug,033f,Case,1078,0356,,,next case of the list
+case,Engine,Actor,DisplayDebug,0356,Case,1108,036e,,,next case of the list
+case,Engine,Actor,DisplayDebug,036e,Case,1137,0385,,,next case of the list
+case,Engine,Actor,DisplayDebug,0385,Case,1165,039b,,,next case of the list
+case,Engine,Actor,DisplayDebug,06bf,Case,2197,06cc,,,next case of the list
+case,Engine,Actor,DisplayDebug,06cc,Case,2226,06e3,,,next case of the list
+case,Engine,Actor,DisplayDebug,06e3,Case,2255,06fa,,,next case of the list
+case,Engine,Actor,DisplayDebug,06fa,Case,2289,0716,,,next case of the list
+case,Engine,Actor,DisplayDebug,0716,Case,2321,0730,,,next case of the list
+case,Engine,Actor,DisplayDebug,0730,Case,2349,0746,,,next case of the list
+case,Engine,Actor,DisplayDebug,074e,Case,2387,0764,,,next case of the list
+case,Engine,Actor,DisplayDebug,0764,Case,2418,077d,,,next case of the list
+case,Engine,Actor,DisplayDebug,077d,Case,2447,0794,,,next case of the list
+case,Engine,Actor,DisplayDebug,0794,Case,2477,07ac,,,next case of the list
+case,Engine,Actor,DisplayDebug,07ac,Case,2512,07c9,,,next case of the list
+case,Engine,Actor,DisplayDebug,07c9,Case,2551,07ea,,,next case of the list
+case,Engine,Actor,DisplayDebug,07ea,Case,2585,0806,,,next case of the list
+case,Engine,Actor,DisplayDebug,0806,Case,2624,0827,,,next case of the list
+case,Engine,Actor,DisplayDebug,0827,Case,2659,0844,,,next case of the list
+case,Engine,PlayerProfile,SetCategoryVolume,000d,Case,62,002c,,,next case of the list
+case,Engine,PlayerProfile,SetCategoryVolume,002c,Case,105,004b,,,next case of the list
+case,Engine,PlayerProfile,SetCategoryVolume,004b,Case,148,006a,,,next case of the list
+case,Engine,PlayerController,ServerMove,016d,Case,498,017a,,,next case of the list
+case,Engine,PlayerController,ServerMove,017a,Case,513,0187,,,next case of the list
+case,Engine,PlayerController,ServerMove,0187,Case,529,0195,,,next case of the list
+case,Engine,PlayerController,ServerMove,0195,Case,545,01a3,,,next case of the list
+case,Engine,PlayerController,ServerMove,01a3,Case,561,01b1,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0037,Case,83,003f,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,003f,Case,94,004a,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,004a,Case,102,0052,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0052,Case,113,005d,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,005d,Case,124,0068,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0068,Case,135,0073,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0073,Case,146,007e,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,007e,Case,157,0089,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0089,Case,168,0094,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,0094,Case,179,009f,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,009f,Case,190,00aa,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00aa,Case,201,00b5,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00b5,Case,212,00c0,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00c0,Case,223,00cb,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00cb,Case,232,00d4,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00d4,Case,243,00df,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00df,Case,251,00e7,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00e7,Case,259,00ef,,,next case of the list
+case,Engine,StreamBase,ConvertToFileType,00ef,Case,270,00fa,,,next case of the list
+case,Engine,PlayerProfile,GetCategoryVolume,0005,Case,36,001a,,,next case of the list
+case,Engine,PlayerProfile,GetCategoryVolume,001a,Case,65,002f,,,next case of the list
+case,Engine,PlayerProfile,GetCategoryVolume,002f,Case,94,0044,,,next case of the list
+case,Engine,GameReplicationInfo,GetDescriptionText,0005,Case,30,001a,,,next case of the list
+case,Engine,GameReplicationInfo,GetDescriptionText,001a,Case,52,002e,,,next case of the list
+case,Engine,GameReplicationInfo,GetDescriptionText,002e,Case,76,0044,,,next case of the list
+case,Engine,GameReplicationInfo,GetDescriptionText,0044,Case,105,005f,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,0005,Case,36,0020,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,0020,Case,69,003f,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,003f,Case,102,005e,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,005e,Case,138,0080,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,0080,Case,170,009e,,,next case of the list
+case,Engine,VoiceChatReplicationInfo,GetDescriptionText,009e,Case,197,00b7,,,next case of the list
+case,Engine,IMusicActor,ConvertStateToTransitionType,0005,Case,14,000c,,,next case of the list
+case,Engine,IMusicActor,ConvertStateToTransitionType,000c,Case,22,0014,,,next case of the list
+case,Engine,IMusicActor,ConvertStateToTransitionType,0014,Case,30,001c,,,next case of the list
+case,Engine,IMusicActor,ConvertStateToTransitionType,001c,Case,38,0024,,,next case of the list
+case,Engine,Trigger,IsRelevant,001b,Case,81,003b,,,next case of the list
+case,Engine,Trigger,IsRelevant,003b,Case,150,006d,,,next case of the list
+case,Engine,Trigger,IsRelevant,006d,Case,194,008d,,,next case of the list
+case,Engine,Trigger,IsRelevant,008d,Case,239,00ae,,,next case of the list
+case,Engine,Trigger,IsRelevant,00ae,Case,312,00e4,,,next case of the list
+case,Engine,Trigger,IsRelevant,00e4,Case,319,00eb,,,next case of the list
+case,Engine,Trigger,IsRelevant,00eb,Case,369,0111,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0005,Case,22,0012,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0012,Case,37,001f,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,001f,Case,53,002d,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,002d,Case,69,003b,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,003b,Case,85,0049,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0049,Case,101,0057,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0057,Case,117,0065,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0065,Case,133,0073,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0073,Case,149,0081,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,0081,Case,165,008f,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,008f,Case,181,009d,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,009d,Case,197,00ab,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00ab,Case,213,00b9,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00b9,Case,229,00c7,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00c7,Case,245,00d5,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00d5,Case,261,00e3,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00e3,Case,277,00f1,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00f1,Case,293,00ff,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,00ff,Case,309,010d,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,010d,Case,325,011b,,,next case of the list
+case,Engine,Pawn,ConvertIntToSurface,011b,Case,341,0129,,,next case of the list
+case,Engine,PlayerController,ClientSetMusic,0005,Case,37,001f,,,next case of the list
+case,Engine,PlayerController,ClientSetMusic,001f,Case,67,0039,,,next case of the list
+case,Engine,PlayerController,ClientSetMusic,0039,Case,97,0053,,,next case of the list
+case,Engine,PlayerController,ClientSetMusic,0053,Case,127,006d,,,next case of the list
+case,Engine,TestInfo,TestSwitch,0014,Case,37,001f,,,next case of the list
+case,Engine,TestInfo,TestSwitch,001f,Case,53,002d,,,next case of the list
+case,Engine,TestInfo,TestSwitch,0043,Case,91,004f,,,next case of the list
+case,Engine,TestInfo,TestSwitch,004f,Case,108,0060,,,next case of the list
+case,Engine,PlayerController,ServerJoinVoiceChannel,006a,Case,185,008c,,,next case of the list
+case,Engine,PlayerController,ServerJoinVoiceChannel,008c,Case,229,00af,,,next case of the list
+case,Engine,PlayerController,ServerJoinVoiceChannel,00af,Case,273,00ce,,,next case of the list
+case,Engine,PlayerController,ClientReceiveIntStat,0026,Case,87,0040,,,next case of the list
+case,Engine,PlayerController,ClientReceiveIntStat,0040,Case,161,0074,,,next case of the list
+case,Engine,PlayerController,ClientReceiveIntStat,0074,Case,200,0091,,,next case of the list
+case,Engine,PlayerController,ClientReceiveIntStat,0091,Case,257,00b9,,,next case of the list
+case,Engine,PlayerController,ClientReceiveFloatStat,0020,Case,118,0054,,,next case of the list
+case,Engine,PlayerController,ClientReceiveFloatStat,0054,Case,157,0071,,,next case of the list
+case,Engine,PlayerController,ClientReceiveFloatStat,0071,Case,214,0099,,,next case of the list
+case,Engine,GameMessage,GetString,0005,Case,20,0010,,,next case of the list
+case,Engine,GameMessage,GetString,0010,Case,66,0033,,,next case of the list
+case,Engine,GameMessage,GetString,0033,Case,126,0062,,,next case of the list
+case,Engine,GameMessage,GetString,0062,Case,213,00a6,,,next case of the list
+case,Engine,GameMessage,GetString,00a6,Case,257,00c9,,,next case of the list
+case,Engine,GameMessage,GetString,00c9,Case,271,00d5,,,next case of the list
+case,Engine,GameMessage,GetString,00d5,Case,285,00e1,,,next case of the list
+case,Engine,GameMessage,GetString,00e1,Case,299,00ed,,,next case of the list
+case,Engine,GameMessage,GetString,00ed,Case,313,00f9,,,next case of the list
+case,Engine,GameMessage,GetString,00f9,Case,343,0110,,,next case of the list
+case,Engine,GameMessage,GetString,0110,Case,357,011c,,,next case of the list
+case,Engine,GameMessage,GetString,011c,Case,371,0128,,,next case of the list
+case,Engine,GameMessage,GetString,0128,Case,385,0134,,,next case of the list
+case,Engine,GameMessage,GetString,0134,Case,399,0140,,,next case of the list
+case,Engine,GameMessage,GetString,0140,Case,429,0157,,,next case of the list
+case,Engine,GameMessage,GetString,0157,Case,443,0163,,,next case of the list
+case,Engine,GameMessage,GetString,0163,Case,490,0187,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,0005,Case,11,0009,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,0009,Case,16,000e,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,000e,Case,21,0013,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,0013,Case,26,0018,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,0018,Case,31,001d,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,001d,Case,36,0022,,,next case of the list
+case,Engine,ChatRoomMessage,IsConsoleMessage,0022,Case,43,0029,,,next case of the list
+case,Engine,BroadcastHandler,GetDescriptionText,0005,Case,35,001f,,,next case of the list
+case,Engine,BroadcastHandler,GetDescriptionText,001f,Case,68,003e,,,next case of the list
+case,Engine,AccessControl,GetDescriptionText,0005,Case,32,001c,,,next case of the list
+case,Engine,AccessControl,GetDescriptionText,001c,Case,55,0031,,,next case of the list
+case,Engine,AccessControl,GetDescriptionText,0031,Case,82,004a,,,next case of the list
+case,Engine,AccessControl,GetDescriptionText,004a,Case,113,0067,,,next case of the list
+case,Engine,StreamPlaylistManager,HandleDebugExec,0016,Case,165,0086,,,next case of the list
+case,Engine,StreamPlaylistManager,HandleDebugExec,0086,Case,305,00fd,,,next case of the list
+case,Engine,StreamPlaylistManager,GetPlaylistType,0012,Case,37,001d,,,next case of the list
+case,Engine,StreamPlaylistManager,GetPlaylistType,001d,Case,48,0028,,,next case of the list
+case,Engine,StreamPlaylistManager,GetPlaylistType,0028,Case,59,0033,,,next case of the list
+case,Engine,StreamPlaylistManager,InsertInPlaylist,002f,Case,172,007b,,,next case of the list
+case,Engine,StreamPlaylistManager,InsertInPlaylist,007b,Case,275,00c6,,,next case of the list
+case,Engine,StreamPlaylistManager,InsertInPlaylist,00c6,Case,336,00f5,,,next case of the list
+case,Engine,StreamPlaylist,HandleDebugExec,0016,Case,55,002b,,,next case of the list
+case,Engine,StreamPlaylist,HandleDebugExec,002b,Case,124,0062,,,next case of the list
+case,Engine,StreamPlaylist,HandleDebugExec,0062,Case,193,0099,,,next case of the list
+case,Engine,StreamPlaylist,HandleDebugExec,0099,Case,341,0114,,,next case of the list
+case,Engine,xMaterialController,ShaderAction,0005,Case,35,001b,,,next case of the list
+case,Engine,xMaterialController,Trigger,012e,Case,399,0133,,,next case of the list
+case,Engine,xMaterialController,Trigger,0133,Case,414,013f,,,next case of the list
+case,Engine,MaterialSequence,Trigger,0005,Case,37,001f,,,next case of the list
+case,Engine,MaterialSequence,Trigger,001f,Case,60,0032,,,next case of the list
+case,Engine,MaterialSequence,Trigger,0032,Case,76,0040,,,next case of the list
+case,Engine,StreamInterface,HandleDebugExec,0016,Case,52,002a,,,next case of the list
+case,Engine,StreamInterface,HandleDebugExec,002a,Case,77,0041,,,next case of the list
+case,Engine,StreamInterface,HandleDebugExec,0041,Case,112,0060,,,next case of the list
+case,Engine,StreamInterface,HandleDebugExec,0060,Case,221,00b9,,,next case of the list
+case,Engine,StreamInterface,HandleDebugExec,00b9,Case,287,00ef,,,next case of the list
+case,Engine,TexOscillatorTriggered,Trigger,000c,Case,69,0033,,,next case of the list
+case,Engine,TexOscillatorTriggered,Trigger,0033,Case,104,0050,,,next case of the list
+case,Engine,TexPannerTriggered,Trigger,000c,Case,69,0033,,,next case of the list
+case,Engine,TexPannerTriggered,Trigger,0033,Case,104,0050,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0005,Case,19,0011,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0011,Case,31,001d,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,001d,Case,53,0033,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0033,Case,65,003f,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,003f,Case,77,004b,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,004b,Case,89,0057,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0057,Case,101,0063,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0063,Case,113,006f,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,006f,Case,125,007b,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,007b,Case,143,008d,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,008d,Case,155,0099,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,0099,Case,169,00a7,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,00a7,Case,181,00b3,,,next case of the list
+case,Engine,StreamBase,ConvertToFileExtension,00b3,Case,198,00c4,,,next case of the list
+case,Engine,AdminBase,MaplistCommand,0044,Case,208,0096,,,next case of the list
+case,Engine,AdminBase,MaplistCommand,0096,Case,397,0120,,,next case of the list
+case,Engine,AdminBase,MaplistCommand,0120,Case,511,0174,,,next case of the list
+case,Engine,AdminBase,MaplistCommand,0174,Case,804,0249,,,next case of the list
+case,Engine,AdminBase,MaplistCommand,0249,Case,1097,031e,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,0005,Case,34,001e,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,001e,Case,58,0034,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,0034,Case,85,004d,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,004d,Case,109,0063,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,0063,Case,132,0078,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,0078,Case,154,008c,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,008c,Case,177,00a1,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,00a1,Case,209,00bf,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,00bf,Case,243,00df,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,00df,Case,273,00fb,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,00fb,Case,301,0115,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,0115,Case,326,012c,,,next case of the list
+case,Engine,GameInfo,GetDisplayText,012c,Case,362,014e,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,0005,Case,34,001e,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,001e,Case,58,0034,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,0034,Case,85,004d,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,004d,Case,109,0063,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,0063,Case,132,0078,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,0078,Case,154,008c,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,008c,Case,177,00a1,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,00a1,Case,209,00bf,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,00bf,Case,243,00df,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,00df,Case,273,00fb,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,00fb,Case,301,0115,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,0115,Case,326,012c,,,next case of the list
+case,Engine,GameInfo,GetDescriptionText,012c,Case,362,014e,,,next case of the list
+case,Engine,Canvas,DrawLine,0013,Case,64,002c,,,next case of the list
+case,Engine,Canvas,DrawLine,002c,Case,87,003d,,,next case of the list
+case,Engine,Canvas,DrawLine,003d,Case,123,0057,,,next case of the list
+case,Engine,Canvas,DrawLine,0057,Case,147,0069,,,next case of the list
+case,Engine,Canvas,DrawScreenText,0037,Case,87,003f,,,next case of the list
+case,Engine,Canvas,DrawScreenText,003f,Case,113,0055,,,next case of the list
+case,Engine,Canvas,DrawScreenText,0055,Case,135,0067,,,next case of the list
+case,Engine,Canvas,DrawScreenText,0067,Case,175,0087,,,next case of the list
+case,Engine,Canvas,DrawScreenText,0087,Case,211,00a3,,,next case of the list
+case,Engine,Canvas,DrawScreenText,00a3,Case,251,00c3,,,next case of the list
+case,Engine,Canvas,DrawScreenText,00c3,Case,273,00d5,,,next case of the list
+case,Engine,Canvas,DrawScreenText,00d5,Case,299,00eb,,,next case of the list
+case,Engine,Canvas,DrawScreenText,00eb,Case,343,010f,,,next case of the list
+case,Engine,GameProfile,TextPositionDescription,0022,Case,63,0035,,,next case of the list
+case,Engine,GameProfile,TextPositionDescription,0035,Case,86,0048,,,next case of the list
+case,Engine,GameProfile,TextPositionDescription,0048,Case,110,005c,,,next case of the list
+case,Engine,GameProfile,TextPositionDescription,005c,Case,134,0070,,,next case of the list
+case,Engine,GameProfile,TextPositionDescription,0070,Case,158,0084,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,0025,Case,97,0049,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,0049,Case,145,006d,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,006d,Case,194,0092,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,0092,Case,243,00b7,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,00b7,Case,292,00dc,,,next case of the list
+case,Engine,LadderInfo,UpdateLadders,00dc,Case,341,0101,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,0010,Case,38,001e,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,001e,Case,56,002c,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,002c,Case,75,003b,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,003b,Case,94,004a,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,004a,Case,113,0059,,,next case of the list
+case,Engine,LadderInfo,GetMatchInfo,0059,Case,132,0068,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,000c,Case,41,0023,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,0023,Case,71,003f,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,003f,Case,97,0057,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,0057,Case,129,0075,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,0075,Case,156,008e,,,next case of the list
+case,Engine,LadderInfo,GetMatchDescription,008e,Case,190,00ae,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,0005,Case,18,000e,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,000e,Case,29,0017,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,0017,Case,41,0021,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,0021,Case,53,002b,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,002b,Case,65,0035,,,next case of the list
+case,Engine,LadderInfo,LengthOfLadder,0035,Case,77,003f,,,next case of the list
+case,GUI,GUIComponent,MenuStateChange,0042,Case,141,006b,,,next case of the list
+case,GUI,GUIComponent,MenuStateChange,006b,Case,197,0093,,,next case of the list
+case,GUI,GUIComponent,MenuStateChange,0093,Case,315,00eb,,,next case of the list
+case,GUI,GUIComponent,MenuStateChange,00eb,Case,344,00ff,,,next case of the list
+case,GUI,GUIComponent,MenuStateChange,00ff,Case,373,0113,,,next case of the list
+case,GUI,GUIComponent,TranslateBounding,001c,Case,84,0038,,,next case of the list
+case,GUI,GUIComponent,TranslateBounding,0038,Case,126,0054,,,next case of the list
+case,GUI,GUIComponent,TranslateBounding,0054,Case,168,0070,,,next case of the list
+case,GUI,GUIComponent,TranslateBounding,0070,Case,210,008c,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0005,Case,26,0014,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0014,Case,45,0023,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0023,Case,64,0032,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0032,Case,83,0041,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0041,Case,102,0050,,,next case of the list
+case,GUI,GUIController,PlayClickSound,0050,Case,121,005f,,,next case of the list
+case,GUI,GUIController,PlayClickSound,005f,Case,140,006e,,,next case of the list
+case,GUI,GUIController,PlayClickSound,006e,Case,159,007d,,,next case of the list
+case,GUI,GUIScrollBar,createParts,0118,Case,439,011f,,,next case of the list
+case,GUI,GUIScrollBar,createParts,011f,Case,446,0126,,,next case of the list
+case,GUI,GUIScrollBar,createParts,01bd,Case,852,0228,,,next case of the list
+case,GUI,GUIScrollBar,createParts,0228,Case,1022,0295,,,next case of the list
+case,GUI,GUIScrollBar,createParts,0295,Case,1188,0301,,,next case of the list
+case,GUI,GUIScrollBar,createParts,0301,Case,1359,036f,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,0005,Case,12,000a,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,000a,Case,17,000f,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,000f,Case,30,001a,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,001a,Case,35,001f,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,001f,Case,40,0024,,,next case of the list
+case,GUI,moTextOption,InternalOnXControllerEvent,0024,Case,53,002f,,,next case of the list
+case,GUI,moListEditBox,OnScrollButtonClick,0005,Case,24,0012,,,next case of the list
+case,GUI,moListEditBox,OnScrollButtonClick,0012,Case,41,001f,,,next case of the list
+case,GUI,GUIArrowScrollPanel,createParts,0088,Case,400,00fe,,,next case of the list
+case,GUI,GUIArrowScrollPanel,createParts,00fe,Case,704,01bd,,,next case of the list
+case,GUI,GUIArrowScrollPanel,createParts,01bd,Case,887,0234,,,next case of the list
+case,GUI,GUIArrowScrollPanel,createParts,0234,Case,1193,02f5,,,next case of the list
+case,GUI,GUIEditBox,InternalOnKeyType,004a,Case,132,0066,,,next case of the list
+case,GUI,GUIEditBox,InternalOnKeyType,0066,Case,306,00db,,,next case of the list
+case,GUI,GUIEditBox,InternalOnKeyType,00db,Case,347,00f7,,,next case of the list
+case,GUI,GUISlider,OnXControllerEvent,0005,Case,12,000a,,,next case of the list
+case,GUI,GUISlider,OnXControllerEvent,000a,Case,32,001a,,,next case of the list
+case,GUI,GUISlider,OnXControllerEvent,001a,Case,37,001f,,,next case of the list
+case,GUI,GUISlider,OnXControllerEvent,001f,Case,55,002d,,,next case of the list
+case,GUI,GUIMultiComponent,MapControls,015d,Case,573,0183,,,next case of the list
+case,GUI,GUIMultiComponent,MapControls,0183,Case,626,01a9,,,next case of the list
+case,GUI,GUIMultiComponent,MapControls,01a9,Case,679,01cf,,,next case of the list
+case,GUI,GUIMultiComponent,MapControls,01cf,Case,732,01f5,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0021,Case,49,0026,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0026,Case,62,0031,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0031,Case,67,0036,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0036,Case,80,0041,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0041,Case,85,0046,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0046,Case,98,0051,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0051,Case,103,0056,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0056,Case,116,0061,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0061,Case,121,0066,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0066,Case,134,0071,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0071,Case,139,0076,,,next case of the list
+case,GUI,GUIHorzList,InternalOnKeyEvent,0076,Case,152,0081,,,next case of the list
+case,GUI,GUIScrollText,InternalOnXControllerEvent,0005,Case,20,0010,,,next case of the list
+case,GUI,GUIScrollText,InternalOnXControllerEvent,0010,Case,33,001b,,,next case of the list
+case,GUI,GUIScrollText,InternalOnXControllerEvent,001b,Case,46,0026,,,next case of the list
+case,GUI,GUIScrollText,InternalOnXControllerEvent,0026,Case,59,0031,,,next case of the list
+case,GUI,GUIComponent,TranslateScaling,001b,Case,84,0036,,,next case of the list
+case,GUI,GUIComponent,TranslateScaling,0036,Case,126,0052,,,next case of the list
+case,GUI,GUIComponent,TranslateScaling,0052,Case,168,006d,,,next case of the list
+case,GUI,GUIComponent,TranslateScaling,006d,Case,210,0089,,,next case of the list
+case,GamePlay,CountTrigger,ChangeCount,002b,Case,80,0042,,,next case of the list
+case,GamePlay,CountTrigger,ChangeCount,0042,Case,109,0059,,,next case of the list
+case,GamePlay,CountTrigger,ChangeCount,0059,Case,138,0070,,,next case of the list
+case,GamePlay,CountTrigger,ChangeCount,0070,Case,167,0087,,,next case of the list
+case,GamePlay,CountTrigger,ChangeCount,0087,Case,196,009e,,,next case of the list
+case,GamePlay,counter,Trigger,005e,Case,144,006f,,,next case of the list
+case,GamePlay,counter,Trigger,006f,Case,163,0080,,,next case of the list
+case,GamePlay,counter,Trigger,0080,Case,184,0093,,,next case of the list
+case,GamePlay,counter,Trigger,0093,Case,204,00a5,,,next case of the list
+case,GamePlay,counter,Trigger,00a5,Case,224,00b7,,,next case of the list
+case,GamePlay,counter,Trigger,00b7,Case,243,00c8,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,0018,Case,81,0036,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,0036,Case,150,0065,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,0065,Case,194,0083,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,0083,Case,267,00ba,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,00ba,Case,274,00c1,,,next case of the list
+case,GamePlay,TriggeredScript,IsRelevant,00c1,Case,324,00e5,,,next case of the list
+case,GamePlay,ACTION_SetAlertness,GetActionString,0005,Case,33,001d,,,next case of the list
+case,GamePlay,ACTION_SetAlertness,GetActionString,001d,Case,63,0039,,,next case of the list
+case,GamePlay,ACTION_SetAlertness,GetActionString,0039,Case,93,0055,,,next case of the list
+case,GamePlay,ACTION_SetAlertness,GetActionString,0055,Case,132,007a,,,next case of the list
+case,IpDrv,MasterServerUplink,GetDescriptionText,0005,Case,28,0018,,,next case of the list
+case,IpDrv,MasterServerUplink,GetDescriptionText,0018,Case,50,002c,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,0005,Case,15,000b,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,000b,Case,23,0011,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,0011,Case,52,0026,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,0026,Case,390,011f,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,011f,Case,398,0125,,,next case of the list
+case,StargateContent,TeamVoicePack,PlayerSpeech,0125,Case,427,013a,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,00da,Case,264,00ea,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,00ea,Case,283,00fb,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,00fb,Case,301,010b,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,010b,Case,320,011c,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,011c,Case,338,012c,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,ProcessParams,012c,Case,357,013d,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,008b,Case,190,00a4,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,00a4,Case,221,00bd,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,00bd,Case,252,00d6,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,00d6,Case,283,00ef,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,00ef,Case,314,0108,,,next case of the list
+case,StargateContent,Cond_WhenIntVar,Update,0108,Case,345,0121,,,next case of the list
+case,StargateContent,Dir_SetIntVar,DirectionStart,0086,Case,165,0095,,,next case of the list
+case,StargateContent,Dir_SetIntVar,DirectionStart,0095,Case,185,00a5,,,next case of the list
+case,StargateContent,Dir_SetIntVar,DirectionStart,00a5,Case,205,00b5,,,next case of the list
+case,StargateContent,Dir_SetIntVar,ProcessParams,0101,Case,306,0112,,,next case of the list
+case,StargateContent,Dir_SetIntVar,ProcessParams,0112,Case,325,0123,,,next case of the list
+case,StargateContent,Dir_SetIntVar,ProcessParams,0123,Case,344,0134,,,next case of the list
+case,StargateContent,Dir_SetIntVar,ProcessParams,0134,Case,362,0144,,,next case of the list
+case,StargateGame,WeaponZoomInteraction,KeyEvent,0005,Case,12,000a,,,next case of the list
+case,StargateGame,WeaponZoomInteraction,KeyEvent,000a,Case,58,0030,,,next case of the list
+case,StargateGame,WeaponZoomInteraction,KeyEvent,0030,Case,63,0035,,,next case of the list
+case,StargateGame,WeaponZoomInteraction,KeyEvent,0035,Case,109,005b,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,005d,Case,119,0069,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,0069,Case,133,0075,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,0075,Case,147,0081,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,0081,Case,161,008d,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,008d,Case,175,0099,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,0099,Case,189,00a5,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00a5,Case,203,00b1,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00b1,Case,217,00bd,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00bd,Case,231,00c9,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00c9,Case,245,00d5,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00d5,Case,259,00e1,,,next case of the list
+case,StargateGame,SGMenuInteraction,KeyEvent,00e1,Case,273,00ed,,,next case of the list
+case,StargateGame,StargatePlayer,ToggleMusicState,0012,Case,58,0031,,,next case of the list
+case,StargateGame,StargatePlayer,ToggleMusicState,0031,Case,89,004e,,,next case of the list
+case,StargateGame,StargatePlayer,ToggleMusicState,004e,Case,121,006c,,,next case of the list
+case,StargateGame,StargatePlayer,ToggleMusicState,006c,Case,151,0088,,,next case of the list
+case,StargateGame,StargateWeapon,PlayFiring,0082,Case,192,0097,,,next case of the list
+case,StargateGame,StargateWeapon,PlayFiring,0097,Case,197,009c,,,next case of the list
+case,StargateGame,StargateWeapon,PlayFiring,009c,Case,222,00b1,,,next case of the list
+case,StargateGame,StargateHUD,Message,0016,Case,53,0026,,,next case of the list
+case,StargateGame,StargateHUD,Message,0026,Case,75,0036,,,next case of the list
+case,StargateGame,StargateHUD,Message,0036,Case,116,0053,,,next case of the list
+case,StargateGame,StargateHUD,Message,0053,Case,138,0063,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,000f,Case,64,0039,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,0039,Case,111,0066,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,0066,Case,149,008a,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,008a,Case,189,00b0,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,00b0,Case,232,00d9,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,00d9,Case,271,00fe,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,00fe,Case,314,0127,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,0127,Case,355,014e,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,014e,Case,394,0173,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,0173,Case,433,0198,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,0198,Case,480,01c5,,,next case of the list
+case,StargateGame,StargatePawn,GetWeaponClass,01c5,Case,527,01f2,,,next case of the list
+case,StargateGame,GoauldConsoleHud,Message,0016,Case,86,003f,,,next case of the list
+case,StargateGame,GoauldConsoleHud,Message,003f,Case,141,0068,,,next case of the list
+case,StargateGame,GoauldConsoleHud,Message,0068,Case,182,0085,,,next case of the list
+case,StargateGame,GoauldConsoleHud,Message,0085,Case,204,0095,,,next case of the list
+case,StargateGame,GoauldConsoleHud,Message,0095,Case,232,00a7,,,next case of the list
+case,StargateGame,ReplicatorHUD,Message,0016,Case,86,003f,,,next case of the list
+case,StargateGame,ReplicatorHUD,Message,003f,Case,141,0068,,,next case of the list
+case,StargateGame,ReplicatorHUD,Message,0068,Case,182,0085,,,next case of the list
+case,StargateGame,ReplicatorHUD,Message,0085,Case,204,0095,,,next case of the list
+case,StargateGame,ReplicatorHUD,Message,0095,Case,232,00a7,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,0007,Case,23,0013,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,0013,Case,38,0020,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,0020,Case,52,002c,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,002c,Case,66,0038,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,0038,Case,80,0044,,,next case of the list
+case,StargateGame,CommandInterface,ConvertEnumToName,0044,Case,94,0050,,,next case of the list
+case,StargateGame,CommandInterface,executeScriptCommand,0019,Case,100,0048,,,next case of the list
+case,StargateGame,CommandInterface,executeScriptCommand,0048,Case,124,005a,,,next case of the list
+case,StargateGame,CommandInterface,executeScriptCommand,005a,Case,148,006c,,,next case of the list
+case,StargateGame,CommandInterface,executeScriptCommand,006c,Case,172,007e,,,next case of the list
+case,StargateGame,CommandInterface,executeScriptCommand,007e,Case,193,008d,,,next case of the list
+case,StargateGame,CommandInterface,GetPawn,0017,Case,49,0022,,,next case of the list
+case,StargateGame,CommandInterface,GetPawn,0022,Case,114,0054,,,next case of the list
+case,StargateGame,CommandInterface,GetPawn,0054,Case,179,0086,,,next case of the list
+case,StargateGame,CommandInterface,GetPawn,0086,Case,247,00bb,,,next case of the list
+case,StargateGame,CommandInterface,GetPawn,00bb,Case,312,00ed,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,0025,Case,88,003f,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,003f,Case,92,0043,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,0043,Case,97,0048,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,0048,Case,148,006e,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,006e,Case,199,0094,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,0094,Case,204,0099,,,next case of the list
+case,StargateGame,CTFMessage,ClientReceive,0099,Case,255,00bf,,,next case of the list
+case,StargateGame,CTFMessage,GetString,0013,Case,119,005b,,,next case of the list
+case,StargateGame,CTFMessage,GetString,005b,Case,249,00bd,,,next case of the list
+case,StargateGame,CTFMessage,GetString,00bd,Case,343,0106,,,next case of the list
+case,StargateGame,CTFMessage,GetString,0106,Case,391,012b,,,next case of the list
+case,StargateGame,CTFMessage,GetString,012b,Case,485,0174,,,next case of the list
+case,StargateGame,CTFMessage,GetString,0174,Case,533,0199,,,next case of the list
+case,StargateGame,CTFMessage,GetString,0199,Case,627,01e2,,,next case of the list
+case,StargateGame,StaticMenuPane,Update,001f,Case,242,00a7,,,next case of the list
+case,StargateGame,StaticMenuPane,Update,00a7,Case,945,0264,,,next case of the list
+case,StargateGame,StaticMenuPane,Update,0264,Case,1810,049f,,,next case of the list
+case,StargateGame,StaticMenuPane,Update,049f,Case,1929,04f2,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,0153,Case,475,016a,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,016a,Case,505,0184,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,0184,Case,535,019e,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,019e,Case,566,01b9,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,01b9,Case,595,01d2,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,01d2,Case,626,01ed,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,01ed,Case,659,020a,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,020a,Case,695,022a,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,022a,Case,729,0248,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,0248,Case,758,0261,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,0261,Case,788,027b,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,027b,Case,817,0294,,,next case of the list
+case,StargateGame,StargateVehicle,DisplayDebug,0294,Case,845,02ac,,,next case of the list
+case,StargateGame,DrawOpImage,Draw,017c,Case,560,01a3,,,next case of the list
+case,StargateGame,DrawOpImage,Draw,01a3,Case,598,01bf,,,next case of the list
+case,StargateGame,DrawOpImage,Draw,01bf,Case,653,01e6,,,next case of the list
+case,StargateGame,DrawOpText,Draw,0104,Case,395,0123,,,next case of the list
+case,StargateGame,DrawOpText,Draw,0123,Case,428,013c,,,next case of the list
+case,StargateGame,DrawOpText,Draw,016c,Case,527,0184,,,next case of the list
+case,StargateGame,DrawOpText,Draw,0184,Case,580,01ac,,,next case of the list
+case,StargateGame,DrawOpText,Draw,01ac,Case,627,01ce,,,next case of the list
+case,StargateGame,MovementMarker,CanUse,0013,Case,81,003d,,,next case of the list
+case,StargateGame,MovementMarker,CanUse,003d,Case,137,0067,,,next case of the list
+case,StargateGame,MovementMarker,CanUse,0067,Case,194,0092,,,next case of the list
+case,StargateGame,MovementMarker,CanUse,0092,Case,251,00bd,,,next case of the list
+case,StargateGame,MovementMarker,CanUse,00bd,Case,267,00cb,,,next case of the list
+case,StargateMenus,InGameMenu,ButtonClick,0010,Case,98,004e,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,0053,Case,130,005e,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,005e,Case,158,0072,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,0072,Case,187,0089,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,0089,Case,216,00a0,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,00a0,Case,296,00da,,,next case of the list
+case,StargateMenus,VirtualKeyboardPanel,KeyboardOnClick,00da,Case,373,0113,,,next case of the list
+case,StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,0005,Case,76,0042,,,next case of the list
+case,StargateMenus,SinglePlayerSelectProfile,InternalOnXControllerEvent,0042,Case,183,0098,,,next case of the list
+case,StargateMenus,OptionsEditProfile,InternalOnXControllerEvent,0005,Case,15,000d,,,next case of the list
+case,StargateMenus,XBoxLiveFriendsMenu,ButtonClick,0010,Case,41,001e,,,next case of the list
+case,StargateMenus,XBoxLiveFindGameMenu,ButtonClick,0010,Case,86,0047,,,next case of the list
+case,StargateMenus,XBoxLiveMenu,ButtonClick,0010,Case,82,0043,,,next case of the list
+case,StargateMenus,XBoxLiveMenu,ButtonClick,0043,Case,100,0051,,,next case of the list
+case,StargateMenus,XBoxLiveMenu,ButtonClick,0051,Case,177,0096,,,next case of the list
+case,StargateMenus,XBoxLiveMenu,ButtonClick,0096,Case,195,00a4,,,next case of the list
+case,StargateMenus,WaitingForPlayers,InternalOnXControllerEvent,0005,Case,59,002e,,,next case of the list
+case,StargateMenus,SystemLinkMenu,ButtonClick,0010,Case,112,005f,,,next case of the list
+case,StargateMenus,SystemLinkMenu,ButtonClick,005f,Case,178,0099,,,next case of the list
+case,StargateMenus,XBoxLivePlayMenu,ButtonClick,0010,Case,125,006c,,,next case of the list
+case,StargateMenus,XBoxLivePlayMenu,ButtonClick,006c,Case,143,007a,,,next case of the list
+case,StargateMenus,XBoxLivePlayMenu,ButtonClick,007a,Case,206,00b1,,,next case of the list
+case,StargateMenus,SinglePlayerTutorial,ButtonClick,0010,Case,38,001b,,,next case of the list
+case,StargateMenus,SinglePlayerTutorial,ButtonClick,001b,Case,63,002c,,,next case of the list
+case,StargateMenus,SelectTeamPage,InternalOnXControllerEvent,0005,Case,31,0017,,,next case of the list
+case,StargateMenus,SelectPawnPage,InternalOnXControllerEvent,0005,Case,31,0017,,,next case of the list
+case,StargateMenus,SaveGameMenu,InternalOnXControllerEvent,0005,Case,164,0084,,,next case of the list
+case,StargateMenus,SaveGameMenu,InternalOnXControllerEvent,0084,Case,274,00df,,,next case of the list
+case,StargateMenus,VSMainMenu,ButtonClick,004b,Case,162,0082,,,next case of the list
+case,StargateMenus,VSMainMenu,ButtonClick,0082,Case,225,00b9,,,next case of the list
+case,StargateMenus,VSMainMenu,ButtonClick,00b9,Case,276,00e4,,,next case of the list
+case,StargateMenus,OptionsEditBase,InternalOnXControllerEvent,0005,Case,31,0018,,,next case of the list
+case,StargateMenus,ServerSelectionPage,InternalOnXControllerEvent,0005,Case,31,0017,,,next case of the list
+case,StargateMenus,OptionsPage,InternalOnXControllerEvent,0005,Case,115,005d,,,next case of the list
+case,StargateMenus,OptionsPage,InternalOnXControllerEvent,005d,Case,224,00b5,,,next case of the list
+case,StargateMenus,MultiplayerSelectProfile,InternalOnXControllerEvent,0005,Case,113,005a,,,next case of the list
+case,StargateMenus,MultiplayerMenu,ButtonClick,0010,Case,80,0041,,,next case of the list
+case,StargateMenus,MultiplayerMenu,ButtonClick,0041,Case,135,0070,,,next case of the list
+case,StargateMenus,SinglePlayerChapterSelect,InternalOnXControllerEvent,0005,Case,31,0018,,,next case of the list
+case,StargateMenus,MultiplayerGameSelect,InternalOnXControllerEvent,0005,Case,31,0018,,,next case of the list
+case,StargateMenus,MultiplayerCharSelect,InternalOnXControllerEvent,0005,Case,31,0017,,,next case of the list
+case,StargateMenus,LoadGameMenu,InternalOnXControllerEvent,0005,Case,71,0032,,,next case of the list
+case,StargateMenus,SinglePlayerInGame,ButtonClick,0010,Case,68,0031,,,next case of the list
+case,StargateMenus,SinglePlayerInGame,ButtonClick,0031,Case,96,0045,,,next case of the list
+case,StargateMenus,RestartGame,ButtonClick,0010,Case,36,001b,,,next case of the list
+case,StargateMenus,RestartGame,ButtonClick,001b,Case,65,0031,,,next case of the list
+case,StargateMenus,RestartGame,ButtonClick,0031,Case,120,0060,,,next case of the list
+case,StargateMenus,MultiPlayerInGame,ButtonClick,0010,Case,51,0024,,,next case of the list
+case,StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,0005,Case,29,0017,,,next case of the list
+case,StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,0017,Case,51,0029,,,next case of the list
+case,StargateMenus,VirtualKeyboardPage,InternalOnXControllerEvent,0029,Case,73,003a,,,next case of the list
+case,StargateMenus,CreateNewProfile,InternalOnXControllerEvent,0005,Case,31,0019,,,next case of the list
+case,StargateMenus,SavedGameInfo,GetTypeString,0004,Case,33,001e,,,next case of the list
+case,StargateMenus,SavedGameInfo,GetTypeString,001e,Case,59,0038,,,next case of the list
+case,StargateMenus,SavedGameInfo,GetTypeString,0038,Case,85,0050,,,next case of the list
+case,UDebugMenu,UDebugVideoClient,Notify,000e,Case,75,0037,,,next case of the list
+case,UDebugMenu,UDebugVideoClient,Notify,0018,Case,52,0024,,,next case of the list
+case,UDebugMenu,UDebugVideoClient,Notify,0024,Case,69,0031,,,next case of the list
+case,UDebugMenu,UDebugMapListCW,Notify,000e,Case,76,0036,,,next case of the list
+case,UDebugMenu,UDebugMapListCW,Notify,0018,Case,70,0030,,,next case of the list
+case,UDebugMenu,UGraphVisibilityPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,0005,Case,15,000d,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,000d,Case,23,0015,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,0015,Case,31,001d,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,001d,Case,39,0025,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,0025,Case,47,002d,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,PlayMenuSound,002d,Case,55,0035,,,next case of the list
+case,UDebugMenu,UGraphTerrainPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphStencilPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphStatsPage,Notify,000e,Case,119,0052,,,next case of the list
+case,UDebugMenu,UGraphStaticMeshPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphProjectorPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphParticlePage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphNetPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphMiscGamePage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphMeshPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphMatineePage,Notify,000e,Case,119,0052,,,next case of the list
+case,UDebugMenu,UGraphLightMapPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Combo_SetupSizes,0070,Case,240,00a4,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Combo_SetupSizes,00a4,Case,304,00d2,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Combo_SetupSizes,00d2,Case,405,011a,,,next case of the list
+case,UDebugMenu,UGraphKarmaPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphHardwarePage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphHardware2Page,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphGamePage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphGame2Page,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Checkbox_SetupSizes,003f,Case,156,006e,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Checkbox_SetupSizes,006e,Case,220,009c,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Checkbox_SetupSizes,009c,Case,311,00df,,,next case of the list
+case,UDebugMenu,UGraphFramePage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphFluidPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphDecoLayerPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Editbox_SetupSizes,0079,Case,257,00ad,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Editbox_SetupSizes,00ad,Case,321,00db,,,next case of the list
+case,UDebugMenu,UDebugBlueLookAndFeel,Editbox_SetupSizes,00db,Case,422,0123,,,next case of the list
+case,UDebugMenu,UGraphCollisionPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphBSPPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UGraphBatchPage,Notify,000e,Case,188,0081,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0020,Case,420,0144,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0032,Case,181,0084,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0084,Case,289,00d7,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,00d7,Case,318,00ee,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,00ee,Case,348,0106,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0106,Case,385,0127,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0127,Case,414,013e,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0144,Case,562,01b3,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,01b3,Case,809,0280,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,01c5,Case,620,01e1,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,01e1,Case,654,01fd,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,01fd,Case,688,0219,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0219,Case,727,023a,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,023a,Case,764,0259,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0259,Case,803,027a,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0280,Case,1401,045b,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0291,Case,865,02ab,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,02ab,Case,899,02c7,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,02c7,Case,935,02e5,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,02e5,Case,969,0301,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0301,Case,1007,0321,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0321,Case,1040,033c,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,033c,Case,1074,0358,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0358,Case,1134,0388,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0388,Case,1209,03c4,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,03c4,Case,1274,03f9,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,03f9,Case,1318,041c,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,041c,Case,1359,043c,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,043c,Case,1395,0455,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,045b,Case,1687,0549,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,046d,Case,1460,048a,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,048a,Case,1502,04ae,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,04ae,Case,1539,04cd,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,04cd,Case,1572,04e8,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,04e8,Case,1605,0503,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0503,Case,1642,0522,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0522,Case,1681,0543,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0549,Case,1807,05a9,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,055b,Case,1785,0593,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0593,Case,1793,059b,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,059b,Case,1801,05a3,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,05a9,Case,2061,067d,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,05bb,Case,1870,05dc,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,05dc,Case,1909,05fd,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,05fd,Case,1949,061f,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,061f,Case,1983,063b,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,063b,Case,2019,0659,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,MenuItemSelected,0659,Case,2055,0677,,,next case of the list
+case,UDebugMenu,UDebugMenuBar,WindowEvent,0005,Case,56,002c,,,next case of the list
+case,UPreview,UPreviewSkinnedButton,SetRenderInfo,0004,Case,47,001b,,,next case of the list
+case,UPreview,UPreviewSkinnedButton,SetRenderInfo,001b,Case,87,0032,,,next case of the list
+case,UPreview,UPreviewSkinnedButton,SetRenderInfo,0032,Case,128,004a,,,next case of the list
+case,UPreview,UPreviewSkinnedButton,SetRenderInfo,004a,Case,169,0062,,,next case of the list
+case,UWindow,UWindowDialogControl,KeyDown,0013,Case,160,0079,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,0005,Case,57,0026,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,0026,Case,137,005e,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,005e,Case,217,0096,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,0096,Case,277,00c0,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,00c0,Case,337,00ea,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,00ea,Case,397,0114,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,0114,Case,457,013e,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,013e,Case,522,016a,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,016a,Case,587,0197,,,next case of the list
+case,UWindow,UWindowWindow,WindowEvent,0197,Case,652,01c4,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,000c,Case,120,005e,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0016,Case,62,0030,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0030,Case,114,0058,,,next case of the list
+case,UWindow,UWindowButton,KeyDown,0013,Case,97,0042,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,BeforePaint,002d,Case,229,00a1,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,BeforePaint,00a1,Case,341,00f1,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,BeforePaint,00f1,Case,453,0141,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,BeforePaint,0141,Case,513,016d,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,0021,Case,432,0134,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,0134,Case,690,01ee,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,01ee,Case,948,02a8,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,SetupMessageBoxClient,02a8,Case,1081,0309,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,Notify,001a,Case,80,003a,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,Notify,003a,Case,123,005a,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,Notify,005a,Case,166,007a,,,next case of the list
+case,UWindow,UWindowMessageBoxCW,Notify,007a,Case,209,009a,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,000f,Case,194,0095,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,0019,Case,188,008f,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,0095,Case,252,00c4,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,009f,Case,246,00be,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,00c4,Case,310,00f3,,,next case of the list
+case,UWindow,UWindowConsoleClientWindow,Notify,00ce,Case,304,00ed,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,0057,Case,157,006d,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,006d,Case,187,0083,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,0083,Case,217,0099,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,0099,Case,247,00af,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,00af,Case,277,00c5,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,00c5,Case,307,00db,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,00db,Case,337,00f1,,,next case of the list
+case,UWindow,UWindowFramedWindow,LMouseDown,00f1,Case,367,0107,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,0077,Case,175,007c,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,007c,Case,203,0091,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,0091,Case,208,0096,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,0096,Case,236,00ab,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,00ab,Case,241,00b0,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,00b0,Case,269,00c5,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,00c5,Case,274,00ca,,,next case of the list
+case,UWindow,UWindowFramedWindow,MouseMove,00ca,Case,302,00df,,,next case of the list
+case,UWindow,UWindowLabelControl,BeforePaint,003e,Case,102,0046,,,next case of the list
+case,UWindow,UWindowLabelControl,BeforePaint,0046,Case,134,005f,,,next case of the list
+case,UWindow,UWindowLabelControl,BeforePaint,005f,Case,160,0072,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,0005,Case,12,000a,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,000a,Case,40,0021,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,0021,Case,45,0026,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,0026,Case,73,003d,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,003d,Case,117,0060,,,next case of the list
+case,UWindow,UWindowGrid,KeyDown,0060,Case,159,0081,,,next case of the list
+case,UWindow,UWindowHSliderControl,KeyDown,0019,Case,106,004e,,,next case of the list
+case,UWindow,UWindowHSliderControl,KeyDown,004e,Case,175,0083,,,next case of the list
+case,UWindow,UWindowHSliderControl,KeyDown,0083,Case,205,009a,,,next case of the list
+case,UWindow,UWindowHSliderControl,KeyDown,009a,Case,235,00b1,,,next case of the list
+case,UWindow,UWindowHSliderControl,BeforePaint,002d,Case,107,0049,,,next case of the list
+case,UWindow,UWindowHSliderControl,BeforePaint,0049,Case,144,0065,,,next case of the list
+case,UWindow,UWindowHSliderControl,BeforePaint,0065,Case,200,008f,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,000b,Case,31,0019,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,0019,Case,47,0027,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,0027,Case,55,002f,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,002f,Case,163,007d,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,007d,Case,188,0091,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,0091,Case,213,00a5,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,00a5,Case,262,00cc,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,00cc,Case,311,00f3,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,00f3,Case,431,014c,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,014c,Case,551,01a7,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,01a7,Case,582,01c0,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,01c0,Case,613,01d9,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,01d9,Case,662,01ff,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,01ff,Case,711,0225,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,0225,Case,716,022a,,,next case of the list
+case,UWindow,UWindowEditBox,KeyDown,022a,Case,746,0243,,,next case of the list
+case,UWindow,UWindowEditBox,KeyUp,0013,Case,72,0036,,,next case of the list
+case,UWindow,UWindowEditBox,KeyUp,0036,Case,117,0059,,,next case of the list
+case,UWindow,UWindowRootWindow,WindowEvent,0005,Case,41,001f,,,next case of the list
+case,UWindow,UWindowRootWindow,WindowEvent,001f,Case,75,0039,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,000c,Case,181,0087,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0016,Case,44,0022,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0022,Case,78,003b,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,003b,Case,112,0054,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0054,Case,146,006d,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0087,Case,330,00f6,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0091,Case,227,00aa,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,00aa,Case,261,00c3,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,00c3,Case,295,00dc,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,00f6,Case,411,0135,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0100,Case,375,0119,,,next case of the list
+case,UWindow,UWindowRootWindow,KeyEvent,0119,Case,408,0132,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0007,Case,17,000f,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,000f,Case,25,0017,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0017,Case,34,0020,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0020,Case,43,0029,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0029,Case,52,0032,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0032,Case,61,003b,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,003b,Case,70,0044,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0044,Case,79,004d,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,004d,Case,88,0056,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0056,Case,97,005f,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,005f,Case,106,0068,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0068,Case,115,0071,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0071,Case,124,007a,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,007a,Case,133,0083,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,0083,Case,142,008c,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,GetHexDigit,008c,Case,151,0095,,,next case of the list
+case,UWindow,UWindowListBox,DrawItem,0095,Case,243,00a7,,,next case of the list
+case,UWindow,UWindowListBox,DrawItem,00a7,Case,281,00c7,,,next case of the list
+case,UWindow,UWindowListBox,DrawItem,00c7,Case,320,00e6,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,0015,Case,50,0028,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,0028,Case,74,003c,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,003c,Case,206,009c,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,009c,Case,251,00bd,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,00bd,Case,273,00cf,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,00cf,Case,296,00e2,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,00e2,Case,318,00f4,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,00f4,Case,341,0107,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,0107,Case,392,012d,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,012d,Case,428,0149,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,0149,Case,453,015e,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,015e,Case,479,0174,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,0174,Case,505,018a,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,ProcessInlineHTML,018a,Case,532,01a1,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,0108,Case,576,0181,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,0181,Case,679,01c4,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,01c4,Case,973,028e,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,028e,Case,1112,02eb,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,02eb,Case,1233,033b,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,033b,Case,1368,0394,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,0394,Case,1485,03e0,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,03e0,Case,1642,044d,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,044d,Case,1712,047b,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,047b,Case,1759,049b,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,049b,Case,1807,04bc,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,04bc,Case,1854,04dc,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,04dc,Case,1902,04fd,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,04fd,Case,1978,0530,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,0530,Case,2039,0559,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,0559,Case,2089,057c,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,057c,Case,2140,05a0,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,05a0,Case,2191,05c4,,,next case of the list
+case,UWindow,UWindowHTMLTextArea,AddText,05c4,Case,2243,05e9,,,next case of the list
+case,UWindow,UWindowMenuBar,KeyDown,0005,Case,156,0065,,,next case of the list
+case,UWindow,UWindowMenuBar,KeyDown,0065,Case,288,00b7,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,000c,Case,247,00b3,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0016,Case,84,003d,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,003d,Case,138,0064,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0064,Case,192,008b,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,00b3,Case,646,01d7,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,00bd,Case,289,00d3,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,00d3,Case,395,0120,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0120,Case,429,013a,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,013a,Case,483,0161,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0161,Case,537,0188,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,0188,Case,591,01af,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,01d7,Case,727,0216,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,01e1,Case,691,01fa,,,next case of the list
+case,UWindow,WindowConsole,KeyEvent,01fa,Case,724,0213,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Combo_SetupSizes,006f,Case,240,00a3,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Combo_SetupSizes,00a3,Case,304,00d1,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Combo_SetupSizes,00d1,Case,405,0119,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Checkbox_SetupSizes,0044,Case,156,0076,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Checkbox_SetupSizes,0076,Case,220,00a7,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Checkbox_SetupSizes,00a7,Case,311,00ee,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Editbox_SetupSizes,007e,Case,257,00b6,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Editbox_SetupSizes,00b6,Case,321,00e7,,,next case of the list
+case,UWindow,UWindowWin95LookAndFeel,Editbox_SetupSizes,00e7,Case,422,0134,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,000b,Case,32,0016,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,0016,Case,297,00c1,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,00c1,Case,536,0156,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,0156,Case,689,01bd,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,01bd,Case,962,0275,,,next case of the list
+case,UWindow,UWindowPulldownMenu,KeyDown,0275,Case,1090,02d6,,,next case of the list
+deadrun,Engine,Actor,DisplayDebug,08a0,Jump,2235,08a3,,,"else_skip, predecessor Jump at 089d -> 08c3"
+deadrun,Engine,Vehicle,Destroyed,0138,Jump,322,013b,,,"else_skip, predecessor Jump at 0135 -> 0153"
+deadrun,Engine,Volume,PostBeginPlay,001f,IteratorNext,,0020,,,"iterator_exit, predecessor Jump at 001c -> 0020"
+deadrun,Engine,Pawn,PostBeginPlay,0087,IteratorNext,,0088,,,"iterator_exit, predecessor Jump at 0084 -> 0088"
+deadrun,Engine,PlayerReplicationInfo,Destroyed,003e,IteratorNext,,003f,,,"iterator_exit, predecessor Jump at 003b -> 003f"
+deadrun,Engine,PlayerReplicationInfo,Destroyed,0058,IteratorNext,,0059,,,"iterator_exit, predecessor Jump at 0055 -> 0059"
+deadrun,Engine,PlayerReplicationInfo,PostNetReceive,0061,Jump,142,0064,,,"else_skip, predecessor Jump at 005e -> 008f"
+deadrun,Engine,PlayerReplicationInfo,PostNetBeginPlay,003e,IteratorNext,,003f,,,"iterator_exit, predecessor Jump at 003b -> 003f"
+deadrun,Engine,PlayerReplicationInfo,PostNetBeginPlay,0056,IteratorNext,,0057,,,"iterator_exit, predecessor Jump at 0053 -> 0057"
+deadrun,Engine,GameReplicationInfo,PostNetBeginPlay,0058,IteratorNext,,0059,,,"iterator_exit, predecessor Jump at 0055 -> 0059"
+deadrun,Engine,LiftCenter,PostBeginPlay,001b,IteratorNext,,001c,,,"iterator_exit, predecessor Jump at 0018 -> 001c"
+deadrun,Engine,LineOfSightTrigger,PostBeginPlay,0037,IteratorNext,,0038,,,"iterator_exit, predecessor Jump at 0034 -> 0038"
+deadrun,Engine,SceneManager,SceneStarted,0189,IteratorNext,,018a,,,"iterator_exit, predecessor Jump at 0186 -> 018a"
+deadrun,Engine,SceneManager,ResolveActorsInActions,0068,IteratorNext,,0069,,,"iterator_exit, predecessor Jump at 0065 -> 0069"
+deadrun,Engine,SceneManager,ResolveActorsInActions,00e3,IteratorNext,,00e4,,,"iterator_exit, predecessor Jump at 00e0 -> 00e4"
+deadrun,Engine,PlayerController,ServerViewNextPlayer,00c8,Jump,228,00cb,,,"else_skip, predecessor Jump at 00c5 -> 00f5"
+deadrun,Engine,DemoRecSpectator,DemoViewNextPlayer,0095,Jump,177,0098,,,"else_skip, predecessor Jump at 0092 -> 00b2"
+deadrun,Engine,AIController,DisplayDebug,029c,Jump,707,029f,,,"else_skip, predecessor Jump at 0299 -> 02cb"
+deadrun,Engine,HUD,PostBeginPlay,001b,IteratorNext,,001c,,,"iterator_exit, predecessor Jump at 0018 -> 001c"
+deadrun,Engine,HUD,DisplayMessages,0024,Jump,160,0027,,,"else_skip, predecessor Jump at 0021 -> 00a8"
+deadrun,Engine,HUD,DisplayMessages,0098,Jump,160,009b,,,"else_skip, predecessor Jump at 0095 -> 00a8"
+deadrun,GamePlay,PuzzleTrigger,PostBeginPlay,0034,IteratorNext,,0035,,,"iterator_exit, predecessor Jump at 0031 -> 0035"
+deadrun,GamePlay,PuzzleTrigger,PostBeginPlay,008b,IteratorNext,,008c,,,"iterator_exit, predecessor Jump at 0088 -> 008c"
+deadrun,GamePlay,PuzzleMover,PostBeginPlay,001f,IteratorNext,,0020,,,"iterator_exit, predecessor Jump at 001c -> 0020"
+deadrun,GamePlay,SpecialEventTrigger,Trigger,016d,IteratorNext,,016e,,,"iterator_exit, predecessor Jump at 016a -> 016e"
+deadrun,GamePlay,SpecialEventTrigger,Trigger,01e7,IteratorNext,,01e8,,,"iterator_exit, predecessor Jump at 01e4 -> 01e8"
+deadrun,GamePlay,CameraTextureClient,PostBeginPlay,0018,IteratorNext,,0019,,,"iterator_exit, predecessor Jump at 0015 -> 0019"
+deadrun,GamePlay,ScriptedController,InitializeDefaultScript,0027,IteratorNext,,0028,,,"iterator_exit, predecessor Jump at 0024 -> 0028"
+deadrun,GamePlay,ScriptedController,GetMyPlayerController,0015,IteratorNext,,0016,,,"iterator_exit, predecessor Jump at 0012 -> 0016"
+deadrun,GamePlay,ACTION_WaitForEvent,InitActionFor,0021,IteratorNext,,0022,,,"iterator_exit, predecessor Jump at 001e -> 0022"
+deadrun,GamePlay,ACTION_MoveToPoint,ForceTeleportToPoint,0042,IteratorNext,,0043,,,"iterator_exit, predecessor Jump at 003f -> 0043"
+deadrun,GamePlay,ACTION_MoveToPoint,GetMoveTargetFor,0043,IteratorNext,,0044,,,"iterator_exit, predecessor Jump at 0040 -> 0044"
+deadrun,GamePlay,ACTION_TeleportSpecificPawn,InitActionFor,0036,IteratorNext,,0037,,,"iterator_exit, predecessor Jump at 0033 -> 0037"
+deadrun,GamePlay,ACTION_TeleportSpecificPawn,InitActionFor,006e,IteratorNext,,006f,,,"iterator_exit, predecessor Jump at 006b -> 006f"
+deadrun,GamePlay,ACTION_TeleportToPoint,InitActionFor,0036,IteratorNext,,0037,,,"iterator_exit, predecessor Jump at 0033 -> 0037"
+deadrun,GamePlay,ACTION_ChangeScript,GetScript,002d,IteratorNext,,002e,,,"iterator_exit, predecessor Jump at 002a -> 002e"
+deadrun,GamePlay,ACTION_ForceMoveToPoint,InitActionFor,0034,IteratorNext,,0035,,,"iterator_exit, predecessor Jump at 0031 -> 0035"
+deadrun,GamePlay,ACTION_IfCondition,ProceedToNextAction,002d,IteratorNext,,002e,,,"iterator_exit, predecessor Jump at 002a -> 002e"
+deadrun,GamePlay,ACTION_SetViewTarget,InitActionFor,0062,IteratorNext,,0063,,,"iterator_exit, predecessor Jump at 005f -> 0063"
+deadrun,GamePlay,ACTION_ShootTarget,InitActionFor,0055,IteratorNext,,0056,,,"iterator_exit, predecessor Jump at 0052 -> 0056"
+deadrun,GamePlay,ACTION_UseActor,InitActionFor,0021,IteratorNext,,0022,,,"iterator_exit, predecessor Jump at 001e -> 0022"
+deadrun,GamePlay,MoveOrder,SetTargetActor,003b,IteratorNext,,003c,,,"iterator_exit, predecessor Jump at 0038 -> 003c"
+deadrun,IpDrv,UdpGamespyUplink,PreBeginPlay,0011,IteratorNext,,0012,,,"iterator_exit, predecessor Jump at 000e -> 0012"
+deadrun,IpDrv,UdpGamespyQuery,SendPlayers,005c,Jump,257,005f,,,"else_skip, predecessor Jump at 0059 -> 0110"
+deadrun,IpDrv,MasterServerUplink,BeginPlay,00a9,IteratorNext,,00aa,,,"iterator_exit, predecessor Jump at 00a6 -> 00aa"
+deadrun,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,0051,IteratorNext,,0052,,,"iterator_exit, predecessor Jump at 004e -> 0052"
+deadrun,StargateContent,HackingPawnForBot,StartHacking,0025,IteratorNext,,0026,,,"iterator_exit, predecessor Jump at 0022 -> 0026"
+deadrun,StargateContent,M10_SuperSoldierBattleManager,PostBeginPlay,003b,IteratorNext,,003c,,,"iterator_exit, predecessor Jump at 0038 -> 003c"
+deadrun,StargateContent,M10_SuperSoldierBattleManager,PostBeginPlay,0088,IteratorNext,,0089,,,"iterator_exit, predecessor Jump at 0085 -> 0089"
+deadrun,StargateContent,ACTION_SquadMoveInFormation,ForceTeleportToPoint,0066,IteratorNext,,0067,,,"iterator_exit, predecessor Jump at 0063 -> 0067"
+deadrun,StargateContent,ACTION_SquadMoveInFormation,InitActionFor,00e5,IteratorNext,,00e6,,,"iterator_exit, predecessor Jump at 00e2 -> 00e6"
+deadrun,StargateContent,ACTION_SquadWander,SetTargetActor,0048,IteratorNext,,0049,,,"iterator_exit, predecessor Jump at 0045 -> 0049"
+deadrun,StargateContent,ACTION_ChangeVehicleStatus,InitActionFor,002e,IteratorNext,,002f,,,"iterator_exit, predecessor Jump at 002b -> 002f"
+deadrun,StargateContent,ACTION_Hack,InitActionFor,0030,IteratorNext,,0031,,,"iterator_exit, predecessor Jump at 002d -> 0031"
+deadrun,StargateContent,ACTION_IfProximity,ProceedToNextAction,003b,IteratorNext,,003c,,,"iterator_exit, predecessor Jump at 0038 -> 003c"
+deadrun,StargateContent,ACTION_MindControl,FindMindControlCrystal,0018,IteratorNext,,0019,,,"iterator_exit, predecessor Jump at 0015 -> 0019"
+deadrun,StargateContent,ACTION_SetSquadScript,InitActionFor,0022,IteratorNext,,0023,,,"iterator_exit, predecessor Jump at 001f -> 0023"
+deadrun,StargateContent,ACTION_SetSquadScript,InitActionFor,009d,IteratorNext,,009e,,,"iterator_exit, predecessor Jump at 009a -> 009e"
+deadrun,StargateContent,ACTION_SquadEnterVehicle,InitActionFor,0041,IteratorNext,,0042,,,"iterator_exit, predecessor Jump at 003e -> 0042"
+deadrun,StargateContent,ACTION_SquadSetBotScript,InitActionFor,0041,IteratorNext,,0042,,,"iterator_exit, predecessor Jump at 003e -> 0042"
+deadrun,StargateGame,GameObjective,PostBeginPlay,00c9,IteratorNext,,00ca,,,"iterator_exit, predecessor Jump at 00c6 -> 00ca"
+deadrun,StargateGame,DeathMatch,InitGame,000f,IteratorNext,,0010,,,"iterator_exit, predecessor Jump at 000c -> 0010"
+deadrun,StargateGame,UnrealPawn,PostBeginPlay,0059,IteratorNext,,005a,,,"iterator_exit, predecessor Jump at 0056 -> 005a"
+deadrun,StargateGame,StargatePawn,SetupPlayerShadow,0042,Jump,79,0045,,,"else_skip, predecessor Jump at 003f -> 0050"
+deadrun,StargateGame,StargatePawn,SetupPlayerShadow,004f,IteratorNext,,0050,,,"iterator_exit, predecessor Jump at 004c -> 0050"
+deadrun,StargateGame,SGInsetCameraTarget,PostBeginPlay,002a,IteratorNext,,002b,,,"iterator_exit, predecessor Jump at 0027 -> 002b"
+deadrun,StargateGame,SquadAIBasic,teamKnockedOut,002e,Jump,99,0031,,,"else_skip, predecessor Jump at 002b -> 0073"
+deadrun,StargateGame,BotBase,FindVehicleFromTag,001d,IteratorNext,,001e,,,"iterator_exit, predecessor Jump at 001a -> 001e"
+deadrun,StargateGame,UnrealTeamInfo,NextLoadOut,004b,Jump,94,004e,,,"else_skip, predecessor Jump at 0048 -> 0066"
+deadrun,StargateGame,BotEnemy,SoakStop,0023,IteratorNext,,0024,,,"iterator_exit, predecessor Jump at 0020 -> 0024"
+deadrun,StargateGame,UnrealScriptedSequence,BeginPlay,002b,IteratorNext,,002c,,,"iterator_exit, predecessor Jump at 0028 -> 002c"
+deadrun,StargateGame,SGMenuInteraction,drawObjectivesMenu,0104,IteratorNext,,0105,,,"iterator_exit, predecessor Jump at 0101 -> 0105"
+deadrun,StargateGame,SGMenuInteraction,drawObjectivesMenu,02d9,Jump,783,02dc,,,"else_skip, predecessor Jump at 02d6 -> 0317"
+deadrun,StargateGame,BotLite,Timer,002f,IteratorNext,,0030,,,"iterator_exit, predecessor Jump at 002c -> 0030"
+deadrun,StargateGame,WarpPortalTrigger,PostBeginPlay,0016,IteratorNext,,0017,,,"iterator_exit, predecessor Jump at 0013 -> 0017"
+deadrun,StargateGame,LockedObjective,FindKey,0034,IteratorNext,,0035,,,"iterator_exit, predecessor Jump at 0031 -> 0035"
+deadrun,StargateGame,SnipingVolume,Touch,0045,Jump,120,0048,,,"else_skip, predecessor Jump at 0042 -> 0080"
+deadrun,StargateGame,WillowWhisp,PostBeginPlay,0096,Jump,186,0099,,,"else_skip, predecessor Jump at 0093 -> 00c2"
+deadrun,StargateGame,StargateHUD,getCurrentLevel,001c,IteratorNext,,001d,,,"iterator_exit, predecessor Jump at 0019 -> 001d"
+deadrun,StargateGame,StargateHUD,PostNetBeginPlay,009b,IteratorNext,,009c,,,"iterator_exit, predecessor Jump at 0098 -> 009c"
+deadrun,StargateGame,StargateHUD,Timer,008f,IteratorNext,,0090,,,"iterator_exit, predecessor Jump at 008c -> 0090"
+deadrun,StargateGame,StoryModeGame,InitGame,000f,IteratorNext,,0010,,,"iterator_exit, predecessor Jump at 000c -> 0010"
+deadrun,StargateGame,StoryModeGame,AddBotRoster,00f9,IteratorNext,,00fa,,,"iterator_exit, predecessor Jump at 00f6 -> 00fa"
+deadrun,StargateGame,StoryModeGame,AddBotDetailed,0181,IteratorNext,,0182,,,"iterator_exit, predecessor Jump at 017e -> 0182"
+deadrun,StargateGame,SGServerLoading,StripMap,0032,Jump,58,0035,,,"else_skip, predecessor Jump at 002f -> 003d"
+deadrun,StargateGame,CommandInterface,executeScriptCommand,01fb,IteratorNext,,01fc,,,"iterator_exit, predecessor Jump at 01f8 -> 01fc"
+deadrun,StargateGame,CommandInterface,GetPawn,00b8,Jump,243,00bb,,,"duplicate, predecessor Jump at 00b5 -> 00f3"
+deadrun,StargateGame,GravCraneConsole,PostBeginPlay,0074,IteratorNext,,0075,,,"iterator_exit, predecessor Jump at 0071 -> 0075"
+deadrun,StargateGame,SGInsetCameraTarget,Timer,000e,IteratorNext,,000f,,,"iterator_exit, predecessor Jump at 000b -> 000f"
+deadrun,StargateGame,SGInsetCameraTarget,Trigger,000e,IteratorNext,,000f,,,"iterator_exit, predecessor Jump at 000b -> 000f"
+deadrun,StargateGame,ACTION_PlaySGSound,Play3DSound,00b8,IteratorNext,,00b9,,,"iterator_exit, predecessor Jump at 00b5 -> 00b9"
+deadrun,StargateGame,ACTION_Talk,InitActionFor,01ba,IteratorNext,,01bb,,,"iterator_exit, predecessor Jump at 01b7 -> 01bb"
+deadrun,StargateGame,ACTION_SpawnScriptedActor,InitActionFor,0144,IteratorNext,,0145,,,"iterator_exit, predecessor Jump at 0141 -> 0145"
+deadrun,StargateGame,ACTION_ChangeVehicleStatus,InitActionFor,002d,IteratorNext,,002e,,,"iterator_exit, predecessor Jump at 002a -> 002e"
+deadrun,StargateGame,ACTION_ForceBotEnemy,InitActionFor,002d,IteratorNext,,002e,,,"iterator_exit, predecessor Jump at 002a -> 002e"
+deadrun,StargateGame,ACTION_GuardActor,InitActionFor,003a,IteratorNext,,003b,,,"iterator_exit, predecessor Jump at 0037 -> 003b"
+deadrun,StargateGame,ACTION_Lookat,InitActionFor,0051,IteratorNext,,0052,,,"iterator_exit, predecessor Jump at 004e -> 0052"
+deadrun,StargateGame,ACTION_SetBotScript,InitActionFor,0022,IteratorNext,,0023,,,"iterator_exit, predecessor Jump at 001f -> 0023"
+deadrun,StargateGame,ACTION_SetBotScript,InitActionFor,00fe,IteratorNext,,00ff,,,"iterator_exit, predecessor Jump at 00fb -> 00ff"
+deadrun,StargateGame,ACTION_SuggestNextState,InitActionFor,0022,IteratorNext,,0023,,,"iterator_exit, predecessor Jump at 001f -> 0023"
+deadrun,StargateGame,ACTION_VehicleEnter,InitActionFor,003c,IteratorNext,,003d,,,"iterator_exit, predecessor Jump at 0039 -> 003d"
+deadrun,StargateVehicles,ACTION_CarpetBombing,InitActionFor,003d,IteratorNext,,003e,,,"iterator_exit, predecessor Jump at 003a -> 003e"
+deadrun,StargateVehicles,ACTION_CarpetBombing,InitActionFor,00a2,IteratorNext,,00a3,,,"iterator_exit, predecessor Jump at 009f -> 00a3"
+deadrun,StargateVehicles,ACTION_MoveToLandingPoint,InitActionFor,002d,IteratorNext,,002e,,,"iterator_exit, predecessor Jump at 002a -> 002e"
+deadrun,StargateVehicles,ACTION_VehicleActivateTurret,InitActionFor,003d,IteratorNext,,003e,,,"iterator_exit, predecessor Jump at 003a -> 003e"
+deadrun,StargateVehicles,ACTION_VehicleTransportRings,InitActionFor,003d,IteratorNext,,003e,,,"iterator_exit, predecessor Jump at 003a -> 003e"
+deadrun,UWindow,UWindowTabControlTabArea,SizeTabsMultiLine,0111,Jump,311,0114,,,"else_skip, predecessor Jump at 010e -> 0149"
 package,AmbientCreatures,,,,,,,package,185,"54 script(s), 586 token(s), 17 unreachable"
 package,Core,,,,,,,package,15,"4 script(s), 41 token(s), 3 unreachable"
 package,Editor,,,,,,,package,155,"20 script(s), 579 token(s), 13 unreachable"
@@ -23800,6 +24751,16 @@ census,,,,,,,,file_absolute_hits,5495,the same operands read as a file-space abs
 census,,,,,,,,at_end,0,operands equal to the script's guest length -- a jump to the epilogue
 census,,,,,,,,past_end,0,operands past the script's guest length -- a dangling edge
 census,,,,,,,,misses,0,operands that are no token start's guest offset
+census,,,,,,,,cases,1044,"`Case` tokens (the switch's case list entries, including the terminator)"
+census,,,,,,,,case_terminator,200,`Case` tokens whose operand is `0xffff` -- the end of their list
+census,,,,,,,,case_linked,844,`Case` operands that resolve to the guest offset of a `Case` token -- the next case of the list
+census,,,,,,,,case_off_list,18,linked cases whose target is not the next `Case` in the stream -- a switch inside a case body
+census,,,,,,,,case_not_a_case,0,operands that resolve to a token start which is not a `Case`
+census,,,,,,,,case_scanned,0,"cases the operand did not place, read by the forward scan instead"
+census,,,,,,,,dead_run_iterator_exit,89,runs behind a `Jump` that lands on the statement after it -- a loop exit over an `IteratorNext`
+census,,,,,,,,dead_run_else_skip,17,runs behind a `Jump` whose statement is the else arm a `JumpIfNot` lands on -- the compiler's skip-the-else jump after a then-arm that jumped away
+census,,,,,,,,dead_run_duplicate,1,runs behind a `Jump` that targets its predecessor's own target
+census,,,,,,,,dead_run_other,0,runs behind a `Jump` in neither shape -- the tail a fourth one would land in
 census,,,,,,,,guest_token_starts,412610,"token starts over the same scripts, in the widened layout"
 census,,,,,,,,guest_bytes,1231947,"bytes of those scripts in the widened layout, the guest base rate's denominator"
 census,,,,,,,,file_token_starts,412610,"token starts over the same scripts, in the file"

@@ -168,6 +168,33 @@ def measure(nodes, spans):
     return jumps, labels, starts, gstarts, glen
 
 
+def case_chain(nodes, spans):
+    """`(cases, terminator, linked, off_list)` from *this* walk's token set and widening map.
+
+    A `Case` token's 2-byte operand is the guest offset of the next `Case` of its own list (`execSwitch`,
+    `0x0004ca20`), and `0xffff` ends the list. This is the second computation of that count on purpose:
+    `tools/jump-graph.py` writes the links as artifact rows, and `--cross-check` compares the two.
+    """
+    gstarts, _glen = guest_starts(spans)
+    cases = sorted((n for n in flat(nodes) if n["name"] == "Case"), key=lambda n: n["offset"])
+    offsets = {n["offset"] for n in cases}
+    terminator = linked = off_list = 0
+    for i, n in enumerate(cases):
+        raw = (n["operands"] or b"")[:2]
+        if len(raw) < 2:
+            continue
+        value = int.from_bytes(raw, "little")
+        if value == 0xFFFF:
+            terminator += 1
+            continue
+        target = gstarts.get(value)
+        if target is not None and target in offsets:
+            linked += 1
+            follow = cases[i + 1]["offset"] if i + 1 < len(cases) else None
+            off_list += int(target != follow)
+    return len(cases), terminator, linked, off_list
+
+
 def read_dump(system):
     table = DIS.Table()
     stats = {"seen": 0, "walked": 0}
@@ -177,6 +204,11 @@ def read_dump(system):
         jumps, labels, starts, gstarts, glen = measure(nodes, spans)
         for kind, n in labels.items():
             census["tokens_" + kind.lower()] += n
+        n_cases, n_term, n_linked, n_off = case_chain(nodes, spans)
+        census["cases"] += n_cases
+        census["case_terminator"] += n_term
+        census["case_linked"] += n_linked
+        census["case_off_list"] += n_off
         if not jumps:
             continue
         # The base rates are counted over the scripts the hits come from -- a chance level taken over the whole
@@ -218,7 +250,8 @@ def read_dump(system):
     out = []
     for key in ("jumps", "scripts_with_a_jump", "guest_hits", "absolute_hits", "unsigned_hits", "signed_hits",
                 "at_end", "past_end", "token_starts", "bytes", "guest_token_starts", "guest_bytes", "misses",
-                "tokens_labeltable", "tokens_gotolabel"):
+                "tokens_labeltable", "tokens_gotolabel", "cases", "case_terminator", "case_linked",
+                "case_off_list"):
         out.append({"kind": "census", "key": key, "count": census[key], "note": CENSUS_NOTE.get(key, "")})
     out.append({"kind": "census", "key": "payloads_seen", "count": stats["seen"], "note": ""})
     out.append({"kind": "census", "key": "payloads_walked", "count": stats["walked"], "note": ""})
@@ -241,6 +274,10 @@ CENSUS_NOTE = {
     "misses": "jumps whose operand is no token start under any of the four readings",
     "tokens_labeltable": "`LabelTable` (`0x0c`) tokens -- a label a computed jump could name",
     "tokens_gotolabel": "`GotoLabel` (`0x0d`) tokens -- a jump by name",
+    "cases": "`Case` tokens, the switch's case list entries including its terminator",
+    "case_terminator": "`Case` tokens whose operand is `0xffff` -- the end of their list",
+    "case_linked": "`Case` operands that resolve to the guest offset of a `Case` token -- the next case of the list",
+    "case_off_list": "links whose target is not the next `Case` in the stream -- a switch inside a case body",
 }
 
 
@@ -307,6 +344,17 @@ def doc_block(rows):
              % (comma(count(rows, "at_end")), comma(count(rows, "past_end")), comma(count(rows, "misses")),
                 count(rows, "tokens_labeltable"), count(rows, "tokens_gotolabel")),
              ""]
+    cases = count(rows, "cases")
+    if cases:
+        lines.append("")
+        lines.append("The same walk counts the switch's case list: **%s** `Case` tokens, **%s** of them a link to the"
+                     " next `Case` of their own list in the widened code and **%s** the `0xffff` terminator, with"
+                     " **%s** of the links skipping a case token because the list belongs to a switch inside a case"
+                     " body. `inventory/jump_graph.csv` writes one `case` row per link from its own walk and"
+                     " `--cross-check` holds the two counts together, so this is one fact measured twice rather than"
+                     " a file agreeing with itself."
+                     % (comma(cases), comma(count(rows, "case_linked")), comma(count(rows, "case_terminator")),
+                        comma(count(rows, "case_off_list"))))
     if misses:
         lines.append("| package | class | function | offset | op | target |")
         lines.append("| --- | --- | --- | ---: | --- | ---: |")
@@ -341,7 +389,8 @@ def cross_check(census_csv, graph_csv):
              ("guest_hits", "guest_hits"), ("at_end", "at_end"), ("past_end", "past_end"),
              ("misses", "misses"), ("token_starts", "file_token_starts"), ("bytes", "file_bytes"),
              ("guest_token_starts", "guest_token_starts"), ("guest_bytes", "guest_bytes"),
-             ("payloads_walked", "payloads_walked")]
+             ("cases", "cases"), ("case_terminator", "case_terminator"), ("case_linked", "case_linked"),
+             ("case_off_list", "case_off_list"), ("payloads_walked", "payloads_walked")]
     bad = 0
     for mine, theirs in pairs:
         x, y = count(a, mine), count(b, theirs)
@@ -446,6 +495,21 @@ def check():
 
     short = [token("Jump", b"\x01", 0)]
     want(measure(short, [(0, 2, "opcode", 0)])[0][0][2], False, "a truncated operand is a miss, not a crash")
+
+    # The case list: `Case <2 bytes>` links to the next `Case` of its list, `0xffff` terminates it, and a link
+    # that skips a case token is a list of its own (a switch inside a case body).
+    chain = [token("Case", bytes([3, 0]), 0), token("Case", bytes([6, 0]), 3),
+             token("Case", bytes([255, 255]), 6)]
+    cspans = [(0, 1, "opcode", 0), (1, 3, "case", 0), (3, 4, "opcode", 0), (4, 6, "case", 0),
+              (6, 7, "opcode", 0), (7, 9, "case", 0)]
+    want(case_chain(chain, cspans), (3, 1, 2, 0), "a two-link chain and its terminator")
+    skip = [token("Case", bytes([6, 0]), 0), token("Case", bytes([255, 255]), 3),
+            token("Case", bytes([255, 255]), 6)]
+    want(case_chain(skip, cspans), (3, 2, 1, 1), "a link that skips a case token")
+    wide_case = [token("Case", bytes([8, 0]), 0), token("Case", bytes([255, 255]), 7)]
+    wcspan = [(0, 1, "opcode", 0), (1, 3, "case", 0), (3, 4, "opcode", 0), (4, 7, "index", 0),
+              (7, 8, "opcode", 0), (8, 10, "case", 0)]
+    want(case_chain(wide_case, wcspan), (2, 1, 1, 0), "a link read in the widened space")
 
     def rows_with(guest_hits, misses, jumps_n):
         out = [{"kind": "census", "key": "jumps", "count": str(jumps_n), "note": ""},

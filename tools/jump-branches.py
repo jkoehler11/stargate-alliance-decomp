@@ -42,6 +42,15 @@ CENSUS_NOTE = {
     "jump": "`Jump` tokens the graph resolved, for scale",
     "arm_min": "the shortest then-arm, in statements",
     "arm_max": "the longest",
+    "switch": "`Switch` tokens",
+    "switch_scripts": "scripts carrying one",
+    "switch_list": "case lists (a chain of `Case` tokens ending on the `0xffff` terminator)",
+    "switch_no_list": "switches whose next statement is not a `Case` -- no list at all",
+    "switch_cases": "`Case` tokens inside a list, terminator included",
+    "case_outside": "`Case` tokens in no list",
+    "empty_arm": "arms whose body is the next case of their list -- a shared `case A: case B:` body",
+    "switch_arm_min": "the shortest case list, in cases",
+    "switch_arm_max": "the longest",
 }
 
 
@@ -83,6 +92,80 @@ def classify(nodes, edges):
     return out, len(stmts)
 
 
+def switch_census(stmts, links):
+    """`(switches, chains, empty, outside, no_list)` for one script: the case lists and their arms.
+
+    A `Case` token's operand is the guest offset of the next `Case` of its own list (`execSwitch`, `0x0004ca20`),
+    so the list is a chain in the token stream and a switch inside a case body is a list of its own (`links` comes
+    from `tools/jump-graph.py`, one tuple per link). A chain's last case is the `0xffff` terminator, so a list of
+    `n` cases has `n-1` testable arms; an **empty arm** is a case whose body is the next case of its list -- the
+    `case A: case B:` shared body. A `Switch` whose next statement is not a `Case` has no list at all, which is a
+    shape this build has and the page names.
+    """
+    offs = [n["offset"] for n in stmts]
+    index = {o: i for i, o in enumerate(offs)}
+    names = {n["offset"]: n["name"] for n in stmts}
+    cases = [o for o in offs if names[o] == "Case"]
+    by = {a: b for a, _v, b in links}
+    targets = set(by.values())
+    heads = [c for c in cases if c not in targets]
+    chains, used = [], set()
+    for head in heads:
+        seq, at = [head], head
+        while at in by:
+            at = by[at]
+            if at in seq:
+                break
+            seq.append(at)
+        chains.append(seq)
+        used.update(seq)
+    outside = [c for c in cases if c not in used]
+    counted = []
+    for seq in chains:
+        here = 0
+        for one, nxt in zip(seq, seq[1:]):
+            i = index[one]
+            if i + 1 < len(offs) and offs[i + 1] == nxt:
+                here += 1
+        counted.append((seq, here))
+    chains = counted
+    empty = sum(c for _s, c in chains)
+    switches = [o for o in offs if names[o] == "Switch"]
+    no_list = []
+    for one in switches:
+        i = index[one]
+        if i + 1 >= len(offs) or names[offs[i + 1]] != "Case":
+            no_list.append(one)
+    return switches, chains, empty, outside, no_list
+
+
+def switch_rows(package, cls, func, stmts, links, census):
+    """One row per case list (and per switch with no list), and the census it accumulates."""
+    switches, chains, empty, outside, no_list = switch_census(stmts, links)
+    if not switches:
+        return []
+    rows = []
+    census["switch"] += len(switches)
+    census["switch_list"] += len(chains)
+    census["switch_no_list"] += len(no_list)
+    census["switch_cases"] += sum(len(seq) for seq, _e in chains)
+    census["case_outside"] += len(outside)
+    census["switch_scripts"] += 1
+    if chains:
+        census["switch_arm_min"] = min([census.get("switch_arm_min", 99)] + [len(seq) for seq, _e in chains])
+        census["switch_arm_max"] = max([census.get("switch_arm_max", 0)] + [len(seq) for seq, _e in chains])
+        census["empty_arm"] += empty
+    for seq, here in chains:
+        rows.append({"kind": "switch", "package": package, "class": cls, "function": func,
+                     "offset": "%04x" % seq[0], "category": "", "operand": "", "target": "%04x" % seq[-1],
+                     "count": len(seq), "note": "list of %d case(s), %d empty arm(s)" % (len(seq), here)})
+    for one in no_list:
+        rows.append({"kind": "switch", "package": package, "class": cls, "function": func,
+                     "offset": "%04x" % one, "category": "", "operand": "", "target": "", "count": 0,
+                     "note": "no case list"})
+    return rows
+
+
 def read_dump(system):
     table = JG.DIS.Table()
     stats = {"seen": 0, "walked": 0, "packages": 0}
@@ -90,13 +173,15 @@ def read_dump(system):
     rows, arms = [], []
     for package, pkg, exp, body, nodes, spans in JG.payloads(system, table, stats):
         edges, _st = JG.measure(body, nodes, spans)
+        cls, _state = JG.owner_of(pkg, exp)
+        func = pkg.name(exp["name"])
+        stmts = [n for n in nodes if n["name"] not in JG.TERMINATORS]
+        rows.extend(switch_rows(package, cls, func, stmts, _st["case_links"], census))
         if not edges:
             continue
         verdicts, n_stmts = classify(nodes, edges)
         if not verdicts:
             continue
-        cls, _state = JG.owner_of(pkg, exp)
-        func = pkg.name(exp["name"])
         counts = collections.Counter(v[1] for v in verdicts)
         census["scripts"] += 1
         census["jump"] += len([e for e in edges if e[1] == "Jump"])
@@ -118,8 +203,11 @@ def read_dump(system):
                 rows.append({"kind": "branch", "package": package, "class": cls, "function": func,
                              "offset": "%04x" % offset, "category": category, "operand": value,
                              "target": "%04x" % target, "count": "", "note": ""})
-    out = [r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "script"]
-    for key in ("jumpifnot", "else", "empty", "if", "expression", "backward", "scripts", "jump"):
+    out = ([r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "switch"]
+           + [r for r in rows if r["kind"] == "script"])
+    for key in ("jumpifnot", "else", "empty", "if", "expression", "backward", "scripts", "jump",
+                "switch", "switch_scripts", "switch_list", "switch_no_list", "switch_cases", "case_outside",
+                "empty_arm", "switch_arm_min", "switch_arm_max"):
         out.append({"kind": "census", "package": "", "class": "", "function": "", "offset": "",
                     "category": "", "operand": "", "target": "", "count": census[key],
                     "note": CENSUS_NOTE.get(key, "")})
@@ -165,6 +253,11 @@ def doc_block(rows):
     total = count(rows, "jumpifnot")
     if not total:
         return "\n(no branch census rows)\n"
+    # A list of one case is the terminator alone: a `switch` with no case. The names come from the rows, so the
+    # sentence cannot drift from the artifact.
+    bare = sorted({"%s.%s" % (r["class"], r["function"]) for r in rows
+                   if r.get("kind") == "switch" and str(r.get("count")) == "1"})
+    bare_text = (" (`%s`)" % "`, `".join(bare)) if bare else ""
     return ("\n**%s** `JumpIfNot` tokens resolve to **%s** branches with an `else` arm (**%s%%**), **%s** "
             "conditional jumps over a straight arm (**%s%%**) and **%s** empty then-arms (**%s%%**). **%s** of them "
             "jump **backward**, i.e. a loop test at the bottom of its body, and **%s** name no statement at all -- a "
@@ -176,7 +269,23 @@ def doc_block(rows):
                comma(count(rows, "if")), "%.2f" % pct(count(rows, "if"), total),
                comma(count(rows, "empty")), "%.2f" % pct(count(rows, "empty"), total),
                comma(count(rows, "backward")), comma(count(rows, "expression")),
-               count(rows, "arm_min"), count(rows, "arm_max")))
+               count(rows, "arm_min"), count(rows, "arm_max"))
+            + "\n"
+            + ("**A switch is a chain, and its arms are counted here too.** **%s** `Switch` tokens over **%s**"
+               " scripts hold **%s** case lists covering **%s** of the **%s** `Case` tokens (**%s** are in no list),"
+               " and a list runs **%s** to **%s** cases -- its last is the `0xffff` terminator, so a list of `n`"
+               " carries `n-1` testable arms. **%s** of those arms are **empty**, i.e. their body is the next case of"
+               " their list: the source's shared `case A: case B:` body, which a decompiler must render as one arm"
+               " with two values rather than as an arm that does nothing. **%s** list(s) carry only the terminator,"
+               " i.e. a `switch` with no case at all%s; **%s** `Switch`"
+               " tokens are followed by a statement that is not a `Case`, which is this walk's test for a list that is"
+               " not there, so no switch in this build is missing one. Both counts are rows of"
+               " `inventory/jump_branches.csv`, which is the population that shape needs before it can be called a"
+               " compiler defect rather than a reader's."
+               % (comma(count(rows, "switch")), comma(count(rows, "switch_scripts")), comma(count(rows, "switch_list")),
+                  comma(count(rows, "switch_cases")), comma(count(rows, "switch_cases") + count(rows, "case_outside")),
+                  comma(count(rows, "case_outside")), count(rows, "switch_arm_min"), count(rows, "switch_arm_max"),
+                  comma(count(rows, "empty_arm")), len(bare), bare_text, comma(count(rows, "switch_no_list")))))
 
 
 def splice(path, block):
@@ -234,11 +343,22 @@ def selftest():
     if got != [(0, "if", 3, 4)]:
         print("FAIL jump-branches: a bare if read as %r" % (got,))
         return 1
+    # A case list with a shared body, and a switch whose next statement is not a `Case`.
+    stmts = [node(0, "Switch", 1), node(1, "Case", 2), node(2, "Case", 3), node(3, "Let", 4),
+             node(4, "Case", 5), node(5, "Return", 6), node(6, "Switch", 7), node(7, "Let", 8)]
+    links = [(1, 2, 2), (2, 4, 4)]
+    sw, chains, empty, outside, no_list = switch_census(stmts, links)
+    if (sw, [len(seq) for seq, _e in chains], [e for _s, e in chains], empty, len(outside), no_list)             != ([0, 6], [3], [1], 1, 0, [6]):
+        print("FAIL jump-branches: the switch census read %r / %r / %r / %r / %r"
+              % (sw, chains, empty, outside, no_list))
+        return 1
     # The block reproduces from its own CSV.
     import tempfile
     rows = [{"kind": "census", "count": v, "note": CENSUS_NOTE[k]} for k, v in
             (("jumpifnot", 4), ("else", 1), ("if", 1), ("empty", 1), ("expression", 0), ("backward", 1),
-             ("scripts", 1), ("jump", 1), ("arm_min", 1), ("arm_max", 2))]
+             ("scripts", 1), ("jump", 1), ("arm_min", 1), ("arm_max", 2), ("switch", 1), ("switch_scripts", 1),
+             ("switch_list", 1), ("switch_no_list", 0), ("switch_cases", 2), ("case_outside", 0), ("empty_arm", 1),
+             ("switch_arm_min", 2), ("switch_arm_max", 2))]
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "rows.csv")
@@ -251,8 +371,8 @@ def selftest():
         for name in os.listdir(tmp):
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
-    print("ok   jump-branches: else, empty, if and expression each read as themselves, and the block reproduces from"
-          " its CSV")
+    print("ok   jump-branches: else, empty, if and expression each read as themselves, a case list counts its empty"
+          " arm and a switch with no list is named, and the block reproduces from its CSV")
     return 0
 
 
