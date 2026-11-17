@@ -1792,6 +1792,27 @@ length-preserving mask so both counts read the same offsets) and then counts the
 
 **One `JumpIfNot` per condition term is the codegen's rule and it holds**: `if` + `while` + `for` over those 967 joined classes is **18,452** terms for **17,463** `JumpIfNot` tokens, exact on **820** classes (**84.8%**). **424** of them carry no `&&`/`||` and are exact **412** times (**97.2%**), while the **543** that do carry one are exact **408** times (**75.1%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming a non-statement; the 3,686 `&&` and 1,568 `||` in this text are therefore **0** arms, and the model's 989 surplus terms sit in the 147 joined classes that are not exact -- text a class ships and its package does not compile.
 
+**The `less` population's 290-arm net is a cancellation of two larger counts, and the split is by function, not by class.** Its 122 classes carry 1,558 `else` arms: **356** sit in a function whose name the live text does not declare at all, **271** are the shortfall inside a function it declares, and the rest are spelled exactly. Its text in turn spells 1,268 `else` keywords, of which **336** sit outside any function body -- state code and class-level code, which a class-level count cannot separate from a function's arms -- and 1 in a declared body the record gives no arm. So the net of 290 is 627 missing arms against 336 keywords outside a function, and **the 800 classes that agree on the count carry the same three populations** (157 absent, 61 short, 217 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
+
+**What the absent arms name is a surface, not a scatter.** They sit behind **147** distinct function names in the `less` classes, and the largest are `postrender` 18, `servermove` 13, `longclientadjustposition` 12 -- compiled in the package and no longer declared in the text it ships. **The class-set test does not decide this either**: 65 of the 122 `less` classes declare fewer functions than their record has, 39 the same number and 18 more, against 257 of 800 agreeing classes that also declare fewer -- so a function count is not what an arm count is missing.
+
+| population | classes | `else` arms | in a function the text does not declare | short in a declared body | text `else` outside any function | net |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `less` | 122 | 1,558 | 356 | 271 | 336 | +290 |
+| `agree` | 800 | 1,537 | 157 | 61 | 217 | +0 |
+| `more` | 45 | 952 | 95 | 119 | 470 | -294 |
+
+| function | classes | `else` arms |
+| --- | ---: | ---: |
+| `postrender` | 2 | 18 |
+| `servermove` | 1 | 13 |
+| `longclientadjustposition` | 1 | 12 |
+| `callservermove` | 1 | 10 |
+| `login` | 2 | 9 |
+| `replicatemove` | 1 | 9 |
+| `issueorder` | 2 | 8 |
+| `playertick` | 2 | 7 |
+
 | package | joined | agree | more | less | text `else` | arms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | AmbientCreatures | 18 | 8 | 1 | 1 | 32 | 32 |

@@ -12324,6 +12324,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, the `less` population's net is two larger counts, and the missing arms have owners)
+
+- **Task.** The last note's next measurement: the 122 `less` classes as a class-set test over `text_functions` and
+  `record_functions`, to say whether a class whose text spells fewer `else` is a text revision or a body the
+  package gained.
+- **The class-set test does not decide it, and the control is why.** 65 of the 122 declare fewer functions than
+  their record has, 39 the same number and 18 more -- but **257 of the 800 classes that agree on the arm count
+  also declare fewer**, so a function count is not what an arm count is missing. The class is the wrong unit: the
+  arms belong to functions, and the record and the text can be joined there.
+- **At function granularity the net is a cancellation of two larger populations.** The 122 carry **1,558** `else`
+  arms: **356** sit in a function whose name the live text does not declare at all, **271** are the shortfall
+  inside a function it declares, and 931 are spelled exactly. Their text's 1,268 keywords in turn include **336
+  outside any function body** -- state code and class-level code, which a class-level count cannot separate from a
+  function's arms -- and 1 in a declared body the record gives no arm. So the 290-arm net is **627 missing arms
+  against 336 unpaired keywords**, and the 800 agreeing classes carry all three populations (157 absent, 61 short,
+  217 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
+- **The absent arms are a surface, not a scatter.** They sit behind **147** distinct function names, led by
+  `postrender` 18, `servermove` 13, `longclientadjustposition` 12, `callservermove` 10 and `login` 9 -- the
+  movement, replication and login surface of the engine's player and game-info classes, compiled in the packages
+  and no longer declared in the text they ship.
+- **Two readers were needed, and the masked one is the right one.** `function_else` walks `class-text-bodies`'
+  `FUNC` and its brace walk over the **masked** buffer, so a commented-out declaration is not a declaration; a
+  probe that ran the same walk on the unmasked text counted 24 more absent arms and 18 fewer short ones, which is
+  the difference between reading the text the build compiled and reading everything the buffer holds.
+- **The split reconciles per class, and that identity is the gate**: `fn_absent + paired + fn_short == fn_arms ==
+  byte_else` and `paired + fn_long + fn_unpaired + fn_outside == live_else`, asserted on every joined class in
+  `join()`. The first version counted the surplus into both sides of the arms identity and stopped on
+  `GUI.guiimagelist` with 17 arms and an 18-keyword body -- which is the assertion doing its job.
+- **The control on the artifact is the old reading.** All **2,337** class and package rows reproduce
+  **byte-identically** in their existing columns and only the five new census rows appear, so the join moved
+  nothing it had already measured; `--check-doc` reproduces the block from the CSV, including its tables.
+- Tool (`function_else`, `else_in`, the per-function `arm_counts`, six columns on the class rows, `kind=verdict`
+  and `kind=absent` rows, five census rows, two tables and the paragraph in the generated block, the
+  function-split case in `--check`) + `inventory/text_branches.csv` (2,539 rows: 2,319 class, 18 package, 163
+  absent, 3 verdict, 36 census) + `docs/BYTECODE.md` (the block) + this note. One 2.7-second read of the 18
+  packages; no bytecode walk, no boot, no Ghidra.
+- **Next measurement:** the 336 keywords outside any function body are state code, and the bytecode's in-state
+  arms are already counted (`inventory/state_entry.csv` resolves 372 `GotoState` sites inside a state body, and
+  `jump_branches.csv` carries the arms) -- so the read is whether a class's outside-function keywords pair with
+  the arms its state bodies compile, which is one join and no new dump read.
+
 ### Execution notes (2026-11-17, who the disagreement belongs to — and a pointer already closed)
 
 - **Task.** The note above shipped the text/bytecode join as a corpus total; the owner question is per package, and
