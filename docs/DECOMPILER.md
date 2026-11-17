@@ -46,8 +46,49 @@ What that means for 3.5: the replication feature is closed for everything the da
 decompiler gap but a limit of the format. A rebuild that wants those blocks has to take them from the source text,
 which is game-derived and stays out of this repository.
 
+## The negation is reconstructed and written in the wrong position
+
+3.5's remaining operator item is not the precedence table but the unary position, and the packed source settles it
+without the privately held 2006 tree. `tools/decompiler-operators.py` (`make decompiler-operators`,
+`inventory/decompiler_operators.csv`: 2,319 class rows, one row per operator, a census row) counts the logical
+negation in both trees and in both positions, the parenthesised groups, and every operator token.
+
+| | source | reconstruction |
+|---|---:|---:|
+| `!` **before** its operand | 2,064 | 10 |
+| `!` **after** its operand | 0 | **2,053** |
+
+**The negation is not lost; its position is.** 2,294 of the 2,319 classes carry the source's count exactly, 12 lose
+one and 13 gain one, so the reconstruction holds **2,063 of the source's 2,064 negations (99.95%)** -- and 2,053 of
+those 2,063 are written postfix (`bFlag!`, `IsReady()!`, `(Other == none)!`), a form the source's own 2,064
+negations never use and UnrealScript's grammar has no production for. The ten that survive as prefix are the ones
+whose operand is a parenthesised comparison (`if(!(DemoLevels[i] != ""))`, `Engine.Console`): the renderer knows the
+prefix form and chooses it only for a group.
+
+**The fix is mechanical, which is why this is a finding and not a loss.** 1,238 of the 2,053 sites (60.3%) follow a
+name and 815 (39.7%) follow a call or a parenthesised group, so every one is recovered by moving the `!` in front of
+the operand it follows -- a postfix site names its own operand, so no expression tree has to be rebuilt. As the tree
+stands it is not UnrealScript: PLAN 6.1's compile loop would inherit 2,053 syntax errors before a compiler reaches an
+expression.
+
+**Binary precedence is not the gap, and the page can say so now.** The reconstruction carries **8.1% more**
+parenthesised groups than the source (85,076 against 78,707) and 40,254 operator tokens against 40,762 (−1.2%, all
+twenty operators present: `-` +839 from negative literals and unary minus, `==` −921, `&&` −85), and the corpus
+contains no ternary at all (`?` counts 0 in both trees). So a `&&`/`||` chain is over-parenthesised rather than
+flattened -- a reader who re-parses the text gets the same tree -- and the one operator the text gets wrong is the
+unary one.
+
+**The control is the zero case.** 1,890 classes declare no negation and the reconstruction adds one on **2** of them
+(`Core.Object`, `Sharpeffects.SE_AnimatedActor`), so the renderer is not emitting a `!` per class or per function.
+
+The tree is written by UELib's `UClass.Decompile()` (`tools/Sg1Tool/DecompileCommand.cs`), so the defect belongs to
+the pinned renderer (`tools/uelib`, `8236c39`, git-ignored) rather than to this repository's code -- the case 3.5
+says to file upstream. Until that lands the correction is a text pass over `$WORK/UnrealScript`, not a measurement
+anyone has to guess at.
+
 ## What this does not measure
 
-Text fidelity generally: this counts three constructs, not statements. The 3.3 oracle diff (bucket *matches leak*,
-*drifted*, *absent*) is the text-level measure, and it needs the privately held 2006 source, which this repository does
-not carry.
+Statement shapes. This counts three constructs, not statements: no `if`/`while` nesting, call arity or statement
+order is compared. The operator census above is the one text-level property the packed source settles without a tree
+builder; the 3.3 oracle diff (bucket *matches leak*, *drifted*, *absent*) is the full text-level measure, and it needs
+the privately held 2006 source, which this repository does not carry.

@@ -199,6 +199,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       properties 16.6% against 36.5%), so the two-property floor withholds the 285 one-tag classes and these 334 have
       no start to promote -- what is left for them is the record's end, not a floor or a map correction; then
       `replication` blocks, state code and labels, latent calls, operator precedence.
+      **The operator half is measured, and the gap is the unary position rather than precedence**
+      (`make decompiler-operators` -> `inventory/decompiler_operators.csv`): the reconstruction holds 2,063 of the
+      source's 2,064 logical negations (2,294 of 2,319 classes agree to the negation) but writes **2,053 of them
+      postfix** -- `bFlag!`, `IsReady()!` -- a form the source never uses and UnrealScript's grammar has no
+      production for, while binary precedence is over-parenthesised (+8.1% groups, 40,254 operator tokens against
+      40,762, no ternary anywhere in the corpus) and the ten prefix sites are the parenthesised operands, so the
+      renderer knows the form. Every postfix site names its own operand (1,238 a name, 815 a call or group), so the
+      correction is a text move, not a rebuilt tree; the renderer is the pinned UELib, which is where 3.5 files it.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -11733,6 +11741,39 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - Tool (`tools/class-defaults.py`: `artifact_totals`, `render_totals`, `splice_doc`, `write_doc`, `doc_check`,
   `--write-doc`; `--check` runs the page gate after the chooser self-test) + `docs/CLASS_DEFAULTS.md` + this note.
   Reads two committed CSVs and the page: no dump, no boot, and `--check` writes nothing.
+
+### Execution notes (2026-11-17, the negation is reconstructed and written after its operand)
+
+- **The last unmeasured item in 3.5, and it is not the precedence table.** The bullet above still listed "operator
+  precedence" beside the replication and latent gaps; the packed `ScriptText` is a statement-level oracle for it, so
+  this needed no boot, no Ghidra round and no separately held source. `tools/decompiler-operators.py` (`make
+  decompiler-operators`, `inventory/decompiler_operators.csv`: 2,319 class rows + one per operator + a census) counts
+  the logical negation in both trees **and in both positions**, the parenthesised groups, and every operator token.
+- **The negation is there; its position is not.** Source **2,064 prefix / 0 postfix**; reconstruction **10 prefix /
+  2,053 postfix**. **2,294 of the 2,319 classes** carry exactly the source's count (12 lose one, 13 gain one), so
+  recall is 2,063 of 2,064 (99.95%) while 2,053 sites are written `bFlag!`, `IsReady()!`, `(Other == none)!` -- not a
+  form the source's own 2,064 negations ever use, and not one the grammar has. The ten prefix survivors are the
+  parenthesised operands (`if(!(DemoLevels[i] != ""))`), so the renderer can emit the prefix form and picks it only
+  when the operand is a group.
+- **So the fix is mechanical and the tree is not UnrealScript.** 1,238 sites (60.3%) follow a name and 815 (39.7%) a
+  call or a group, and a postfix site names its own operand: moving the `!` in front of what it follows recovers all
+  2,053 without rebuilding an expression. Until that happens PLAN 6.1's compile loop inherits 2,053 syntax errors
+  before a compiler sees an expression. The renderer is UELib's `UClass.Decompile()` (`tools/Sg1Tool/
+  DecompileCommand.cs`), so the patch belongs upstream in the pinned checkout, as 3.5 says for generic gaps.
+- **Precedence proper comes out clean, which is the measurement the item asked for.** The reconstruction carries
+  **+8.1% parenthesised groups** (85,076 against 78,707) and **40,254 operator tokens against 40,762** (−1.2%; all
+  twenty present, `-` +839 from unary minus and negative literals, `==` −921, `&&` −85), and `?` is **0 in both
+  trees** -- the corpus has no ternary, so "operator precedence" reduces to the unary position. A re-reader of the
+  text gets the same `&&`/`||` tree it was built from.
+- **The controls are the zeros.** 1,890 classes declare no negation and the reconstruction adds one on 2
+  (`Core.Object`, `Sharpeffects.SE_AnimatedActor`), so the renderer is not writing one per class; and the synthetic
+  `--check` separates the four shapes it must (prefix/postfix, name/call operand, a `!` inside a string literal, a
+  class the reconstruction does not have) -- proved to bite by moving one expected count, which answered
+  `FAIL decompiler-operators: the reconstruction postfix negations: got 3, expected 2`.
+- Tool (`tools/decompiler-operators.py`: `clean`, `counts`, `tree`, `census`, `write_csv`, `report`, the synthetic
+  `--check`) + `inventory/decompiler_operators.csv` + `make decompiler-operators` + `docs/DECOMPILER.md` (new
+  section, and the closing "what this does not measure" paragraph corrected) + this note. Reads two `$WORK` trees; no
+  dump, no boot.
 
 ### Execution notes (2026-11-17, the 334 records end on the payload terminator and no defaults buffer follows)
 
