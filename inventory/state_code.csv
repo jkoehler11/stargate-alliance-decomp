@@ -568,6 +568,7 @@ census,,,,,,,,,,,,,,,,,,,0,no_region
 census,,,,,,,,,,,,,,,,,,,30097,code_anchored
 census,,,,,,,,,,,,,,,,,,,565,anchored_arms
 census,,,,,,,,,,,,,,,,,,,80,record27
+census,,,,,,,,,,,,,,,,,,,63,record28
 census,,,,,,,,,,,,,,,,,,,120,text_label_states
 census,,,,,,,,,,,,,,,,,,,843,text_label
 census,,,,,,,,,,,,,,,,,,,252,text_else

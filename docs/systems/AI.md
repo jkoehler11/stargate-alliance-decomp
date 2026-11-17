@@ -309,7 +309,7 @@ the tool reports the trailer it leaves behind and counts the short regions as re
 them -- the arm total below is therefore a **floor**, not a fixed count.
 
 <!-- generated:state-code -->
-**553 `State` payloads walk as code -- 40,380 bytes and 16,097 tokens of the state's own label block, `JumpIfNot` 596 -- and 174 of them carry the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 571 `JumpIfNot` against their 843 keywords, equal in 28.
+**553 `State` payloads walk as code -- 40,380 bytes and 16,097 tokens of the state's own label block, `JumpIfNot` 596 -- and 174 of them end on the `LabelTable` token (`0x0c`) that appears in **zero** `Function` payloads.** A table's entries are 6 bytes, a 2-byte name index and a 4-byte code offset, and it ends on a zero *offset*; an anchored walk is the code exactly and not a floor -- 30,097 code bytes and 565 arms -- and 80 of them leave the state record after the table at 27 bytes and 63 more at 28. The text spells 843 label keywords across 120 states (its `else` 252); the joined states compile 571 `JumpIfNot` against their 843 keywords, equal in 28.
 
 | measure | value |
 |---|---|
@@ -320,6 +320,8 @@ them -- the arm total below is therefore a **floor**, not a fixed count.
 | `LabelTable` tokens, in states / in `Function` payloads | 174 / 0 |
 | `StringConst` tokens | 152 |
 | walks ending on `LabelTable` (whole) / ending earlier (a floor) | 174 / 379 |
+| ... code bytes / `JumpIfNot` in the whole walks | 30,097 / 565 |
+| ... leaving a 27- / 28-byte record after the table | 80 / 63 |
 | payloads that do not walk | 0 |
 | states whose text spells label code | 120 |
 | ... keywords / `else` / `else` at the statement level | 843 / 252 / 118 |

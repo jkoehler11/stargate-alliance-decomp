@@ -68,7 +68,8 @@ CENSUS_NOTE = {
     "prefix": "walks that end on no `LabelTable`: a payload without one, so its length and arm count are a floor",
     "code_anchored": "code bytes in the anchored walks",
     "anchored_arms": "`JumpIfNot` in them -- arms a complete walk counts, not a floor",
-    "record27": "anchored walks leaving a 27-byte trailer after the table -- the state record's size",
+    "record27": "anchored walks leaving a 27-byte trailer after the table",
+    "record28": "anchored walks leaving a 28-byte trailer -- the same record, one byte wider",
     "no_region": "payloads that do not walk at all",
     "text_label_states": "states whose text spells label code (keywords outside every override)",
     "text_label": "`if`/`else`/`while`/`for` keywords in those states' label code",
@@ -84,7 +85,7 @@ CENSUS_NOTE = {
 
 CENSUS_KEYS = ("states", "regions", "payload_bytes", "code_bytes", "tokens", "jumpifnot", "jump", "labeltable",
                "labeltable_states", "stringconst", "complete", "prefix", "no_region", "code_anchored",
-               "anchored_arms", "record27", "text_label_states", "text_label",
+               "anchored_arms", "record27", "record28", "text_label_states", "text_label",
                "text_else", "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal",
                "overrides", "payload_arms")
 
@@ -281,6 +282,8 @@ def census(rows):
             c["anchored_arms"] += int(r["jumpifnot"])
             if int(r["trailer"]) == 27:
                 c["record27"] += 1
+            elif int(r["trailer"]) == 28:
+                c["record28"] += 1
         else:
             c["prefix"] += 1
     for r in rows:
@@ -333,11 +336,16 @@ def doc_block(rows):
                  key=lambda r: -int(r["text_kw"]))[:10]
     lines = []
     lines.append("**%s `State` payloads walk as code -- %s bytes and %s tokens of the state's own label block, "
-                 "`JumpIfNot` %s -- and %s of them carry the `LabelTable` token (`0x0c`) that appears in **zero** "
-                 "`Function` payloads.** The text spells %s label keywords across %s states (its `else` %s); "
+                 "`JumpIfNot` %s -- and %s of them end on the `LabelTable` token (`0x0c`) that appears in **zero** "
+                 "`Function` payloads.** A table's entries are 6 bytes, a 2-byte name index and a 4-byte code "
+                 "offset, and it ends on a zero *offset*; an anchored walk is the code exactly and not a floor -- "
+                 "%s code bytes and %s arms -- and %s of them leave the state record after the table at 27 bytes "
+                 "and %s more at 28. The text spells %s label keywords across %s states (its `else` %s); "
                  "the joined states compile %s `JumpIfNot` against their %s keywords, equal in %s."
                  % (comma(num(rows, "regions")), comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
                     comma(num(rows, "jumpifnot")), num(rows, "labeltable_states"),
+                    comma(num(rows, "code_anchored")), comma(num(rows, "anchored_arms")),
+                    num(rows, "record27"), num(rows, "record28"),
                     comma(num(rows, "text_label")), num(rows, "text_label_states"), comma(num(rows, "text_else")),
                     comma(num(rows, "joined_jif")), comma(num(rows, "joined_label")),
                     num(rows, "joined_equal")))
@@ -355,6 +363,10 @@ def doc_block(rows):
     lines.append("| `StringConst` tokens | %s |" % comma(num(rows, "stringconst")))
     lines.append("| walks ending on `LabelTable` (whole) / ending earlier (a floor) | %s / %s |"
                  % (comma(num(rows, "complete")), comma(num(rows, "prefix"))))
+    lines.append("| ... code bytes / `JumpIfNot` in the whole walks | %s / %s |"
+                 % (comma(num(rows, "code_anchored")), comma(num(rows, "anchored_arms"))))
+    lines.append("| ... leaving a 27- / 28-byte record after the table | %s / %s |"
+                 % (num(rows, "record27"), num(rows, "record28")))
     lines.append("| payloads that do not walk | %s |" % comma(num(rows, "no_region")))
     lines.append("| states whose text spells label code | %s |" % comma(num(rows, "text_label_states")))
     lines.append("| ... keywords / `else` / `else` at the statement level | %s / %s / %s |"

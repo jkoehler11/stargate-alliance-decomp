@@ -4224,3 +4224,32 @@ the entry ends: **39** delegate slots ship a value, all **39** decode as `{objec
 menu pages ship no delegate default, and there is no tag grammar left in the build that this entry was about.
 `tools/class-defaults.py --check` drives the tie-break from synthetic candidate lists and fails on the pre-rule
 chooser. Depth: `docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*.
+
+
+## U19. What a `State` payload's code region ends on -- answered: a 6-byte `LabelTable`, then a 27- or 28-byte record
+
+**Observed.** `tools/state-code.py` (PLAN 3.10, `docs/systems/AI.md`) walks a `State` export's payload as code and
+reported **522 of 552** walks ending before the container's terminator, so their code length and arm count were a
+floor: `PlayerController.PlayerWalking` and `Console.Typing` read 7-byte walks against text that spells 41 and 40
+label keywords. The note that left it named a `Stop`/`Nothing` terminator test as the next instrument.
+
+**The terminator was there; the table's entry shape was wrong.** A state's code ends on a `LabelTable` token
+(`0x0c`) whose entries are **6 bytes -- a 2-byte name index and a 4-byte code offset -- and the table ends on a zero
+*offset***. The walker read 8-byte entries until a zero *dword*, which no real table satisfies: the terminator's dword
+is `offset<<16 | name`, non-zero, so every table refused. Read the measured way the entries decode to strictly
+decreasing offsets inside the code (`JaffaBotHeavy.MelleeCharge`: 600, 557, 299, 105, then 0), which is what a label
+table is.
+
+**Measured, with the shape corrected.** **174 of the 553** state payloads end on a complete `LabelTable`; they carry
+**30,097** of the 40,380 state code bytes and **565** `JumpIfNot` exactly, and **143** of them leave the state record
+after the table at a constant width -- 80 at 27 bytes, 63 at 28. The census's `code_anchored`, `anchored_arms` and
+`record27`/`record28` rows carry it; `inventory/state_code.csv` has the per-state columns.
+
+**What is left (the residue, named).** **379** payloads end on no table: **374** of them are 60 bytes or fewer, the
+record-only shape (a 49-52-byte payload is the commonest in the corpus), and their "code" is an accident of the
+record's bytes rather than a lost region. Two things would settle the rest: reading the 27-byte record's fields out
+of the anchored trailers (UELib's `UState` order is `ProbeMask`, `IgnoreMask`, `StateFlags`, `LabelTableOffset`)
+and checking `LabelTableOffset` against the measured table offset; and the same anchoring for a payload whose code
+the table still refuses part-way, which is a per-opcode tail rather than a container question.
+
+**Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
