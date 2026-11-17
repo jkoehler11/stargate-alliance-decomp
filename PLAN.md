@@ -12069,3 +12069,49 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `inventory/script_calls.csv` regenerated **byte-identically**, which is the control that no placement rule moved.
 - **Next measurement:** the residue is closed as a corpus question -- placing these 38 needs the runtime class of
   one `Outer`, i.e. a guest read, not a better walk.
+
+### Execution notes (2026-11-17, a disabled body is a revision and most pairs are not the same function)
+
+- **Task.** The previous note's next measurement: `[~] 3.5`'s comment half is a name-level diff, so the
+  question left was a body's *shape* -- whether a commented body's operator and statement counts differ from
+  the live function of the same name, i.e. the `decompiler-operators` instrument applied per function.
+- **The population was already there, and it is bodies as well as names.** Of the **208** `function`
+  declarations `tools/class-text-comments.py` counts inside a block comment -- the same **208**, which is the
+  consistency check that the two walks see one corpus -- **181** carry a brace-matched body inside the same
+  comment and only **27** are bare declarations. The reader is not the weak part: over the same classes' live
+  text it resolves **4,468 of 4,890 declarations (91.4%)** against **87.0%** of the commented ones, so the
+  shortfall is the comment's own residue.
+- **The pairs are the finding, and they are a minority.** A commented body has a live twin of the same name in
+  only **22** functions, and of those **1** is byte-identical, **5** keep the operator multiset with a
+  different layout, **11** move at least one operator, and **5** leave a live body of 32 bytes or fewer behind
+  a comment of 48 to 496 bytes (`Engine.Weapon.fire` 496 commented against 2 live, `serverfire` 481 against
+  25, `serveraltfire` 88 against 28, `BotScarab.timer` 221 against 28). The biggest single disagreement is
+  `Engine.AIMsgManager.IsSubTypeOf` at 23 operators and 1,454 bytes commented against 2 and 118 live -- so a
+  commented revision cannot stand in for the compiled function anywhere in this population, which is the
+  negative `docs/CLASS_DEFAULTS.md` reached from the defaults side.
+- **The residue is the weight, and it is measurable now.** **158** commented bodies have no live twin at all:
+  **49,672** bytes, **500** operators and **531** statements this build never compiled, with **20** of them
+  trailers of 32 bytes or fewer (the emptied-declaration shape from the other side). The largest are
+  `StargateGame.TeamAI.setorders` at 2,669 bytes and `StargateMenus.MainMenu.buttonClick` at 1,482, so a
+  cut-content read can rank the population by size instead of counting declarations.
+- **A bodyless declaration must not lend its neighbour's body, and a naive brace walk does exactly that.**
+  The first version bounded the body only by the next `}` and reported 42 pairs, among them four
+  `SemektetStaffCannonGun` functions with one *commented* shape between them -- every one had inherited the
+  body of the function that followed it. Bounding
+  the `{` by the next declaration (and refusing a `;` before it) drops the population to the 22 above, and the
+  `--check` carries both cases: a bodyless declaration followed by one with a body, and a `;`-terminated
+  declaration followed by one with a body.
+- **A deduplicated body map is not the control's denominator.** `functions()` keys bodies by name, so a text
+  that declares one function twice collapses; counting `len(bodies)` as "resolved" reported **3,908 of 4,890
+  (79.9%)** for a reader that resolves every declaration it can. The resolved count is now returned
+  separately from the map and `--check` asserts a duplicated declaration reads `2 declared / 2 resolved / 1
+  body`.
+- Tool (`body_span`, `functions`, `statements`, `shape`, `compare`, `sweep`, `render`, `--write-doc`,
+  `--check-doc`, the synthetic `--check`) + `inventory/class_text_bodies.csv` (201 rows: 22 pairs, 158
+  disabled bodies, 21 census rows) + `make class-text-bodies` + `docs/PACKAGE_SCRIPT_TEXT.md` (the section and
+  its generated block) + this note. One 1-second read of the 18 packages' `ScriptText`; no bytecode, no boot,
+  no Ghidra.
+- **Next measurement:** the disabled bodies are ranked but not typed -- the 158 sit in classes whose live text
+  declares no such function, so what they would have *used* (the properties and calls they name) is a read of
+  the bodies' identifiers against `inventory/class_properties.csv`, which is the same join
+  `tools/class-text-comments.py` does for names and needs no new instrument.
