@@ -27,6 +27,15 @@ So the container's own end anchors the code: a walk is a state's code only when 
 23 bytes before the payload does and the byte there is `0x47`. A start inside the header cannot pass that test,
 which is why the longest-walk rule is gone -- it used to accept tables that were the record's own bytes.
 
+**The record anchors the start too, and the WORD is what does it.** `LabelTableOffset` is the label table's
+offset in the code as the *loader* rebuilds it in memory, where every compact index operand is widened back to
+four bytes -- not in the payload's bytes, which is why no offset framing of the stored script ever matched it.
+Measured: the field equals the widened offset of the table's **first entry** (one byte past the `0x0c` opcode)
+in **166 of 166** payloads that carry a table, and it is `0xffff` in **all 387** that do not. Because the widened
+offset depends on where the walk starts, the field also names the start: taking the later start it supports
+(the widened offset counts the code, not the header's tail) is what `region()` now does, and the junk
+`LocalVariable` tokens the earlier starts produced disappear from the token stream.
+
     tools/state-code.py --system DUMP/System -o inventory/state_code.csv --write-doc docs/systems/AI.md
     tools/state-code.py --report
     tools/state-code.py --check-doc docs/systems/AI.md   # from the committed artifact
@@ -42,7 +51,6 @@ import importlib.util
 import os
 import struct
 import sys
-import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -53,17 +61,20 @@ DOC_MARK = ("<!-- generated:state-code -->", "<!-- /generated:state-code -->")
 
 RECORD = 22          # ProbeMask u64 + IgnoreMask u64 + LabelTableOffset u16 + StateFlags u32
 MARKER = 0x47        # 'G', the end marker UStruct::Serialize appends to a script on save
+NO_TABLE = 0xFFFF    # what `LabelTableOffset` reads when the state carries no label table -- and no code
 
 FIELDS = ["kind", "package", "class", "state", "payload", "start", "code", "trailer", "tokens",
           "jumpifnot", "jump", "labeltable", "complete", "stringconst", "record", "probe_mask",
-          "ignore_mask", "label_offset", "state_flags", "text_kw", "text_label", "text_else",
-          "text_else_label", "verdict", "count", "note"]
+          "ignore_mask", "label_offset", "state_flags", "table_w", "start_by", "jump_on", "code_lv", "walk_lv",
+          "text_kw",
+          "text_label", "text_else", "text_else_label", "verdict", "count", "note"]
 
 CENSUS_NOTE = {
     "states": "`State` export payloads read",
     "payload_bytes": "bytes in those payloads",
     "regions": "payloads whose script walks to the container's end (table, `0x47`, record)",
     "no_code": "payloads that are a header and the record only -- no script",
+    "no_table": "records whose `LabelTableOffset` is `0xffff`: no table, so no code",
     "code_bytes": "bytes of the walk, i.e. the state's own code",
     "tokens": "tokens the walk names",
     "jumpifnot": "`JumpIfNot` tokens in them -- the label code's arms",
@@ -79,8 +90,15 @@ CENSUS_NOTE = {
     "flags_one": "records with `StateFlags` 1",
     "flags_two": "records with `StateFlags` 2",
     "flags_other": "records with another `StateFlags` value",
-    "offset_below_code": "anchored walks whose record `LabelTableOffset` is below the code's byte count",
-    "offset_above_code": "the rest -- the field does not equal the table's file offset in either framing",
+    "offset_entry": "records whose `LabelTableOffset` is the widened offset of the table's first entry",
+    "offset_other": "anchored walks whose start the field fits at none of -- the widening model is wrong there",
+    "offset_unmeasured": "anchored walks whose operand spans refuse, so the field cannot be tested",
+    "start_by_field": "anchored walks whose start the record's field chose",
+    "start_shift": "bytes between that start and the first offset of the payload that tiles",
+    "code_local": "`LocalVariable` tokens left in the chosen streams -- a state's code declares none",
+    "walk_local": "`LocalVariable` tokens at the most-tokens start, i.e. the header's tail the field drops",
+    "jumps": "`Jump`/`JumpIfNot` operands in the anchored walks",
+    "jumps_on_boundary": "of those, the ones that land on a token start in the widened code",
     "text_label_states": "states whose text spells label code (keywords outside every override)",
     "text_label": "`if`/`else`/`while`/`for` keywords in those states' label code",
     "text_else": "`else` of them, at the state body's own statement level and nested",
@@ -93,11 +111,13 @@ CENSUS_NOTE = {
     "payload_arms": "`JumpIfNot` in every payload the walk reaches",
 }
 
-CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "code_bytes", "tokens", "jumpifnot", "jump",
-               "labeltable", "labeltable_states", "stringconst", "record", "marker", "ignore_all_ones",
-               "probe_zero", "flags_zero", "flags_one", "flags_two", "flags_other", "offset_below_code",
-               "offset_above_code", "text_label_states", "text_label", "text_else", "text_else_label",
-               "joined", "joined_jif", "joined_label", "joined_equal", "overrides", "payload_arms")
+CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "code_bytes", "tokens",
+               "jumpifnot", "jump", "labeltable", "labeltable_states", "stringconst", "record", "marker",
+               "ignore_all_ones", "probe_zero", "flags_zero", "flags_one", "flags_two", "flags_other",
+               "offset_entry", "offset_other", "offset_unmeasured", "start_by_field",
+               "start_shift", "code_local", "walk_local", "jumps", "jumps_on_boundary", "text_label_states", "text_label", "text_else",
+               "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal", "overrides",
+               "payload_arms")
 
 
 def load_tool(name, filename):
@@ -136,17 +156,27 @@ def tokens(nodes):
     return out
 
 
-def region(payload, table):
-    """The walk that ends on the container's own end: `(start, end, nodes)` or None.
+def widened_at(spans, pos):
+    """One code offset in the loader's memory space: each compact `index` operand takes four bytes there.
 
-    A state payload is `<header><script><0x47><22-byte record>`, so an anchored walk is one whose label table
-    ends exactly 23 bytes before the payload does and whose next byte is the marker. The old rule -- the longest
-    exact walk, anchored on the table token -- accepted 174 payloads, and 13 of those tables were the record's
-    own bytes read as a table; the end test refuses them (a table inside the record cannot be 23 bytes from the
-    payload's end *and* end on `0x47`). Among the starts that pass, the statement stream wins on token count.
+    `spans` is `uscript_dis.operand_spans`, whose kind is `index` exactly for those operands. A position inside
+    one is not a token boundary and answers None.
     """
+    extra = 0
+    for a, b, kind in spans:
+        if kind != "index":
+            continue
+        if b <= pos:
+            extra += 4 - (b - a)
+        elif a < pos < b:
+            return None
+    return pos + extra
+
+
+def candidates(payload, table):
+    """Every start whose walk ends on the container's end, with the table's widened offset where it is known."""
     dis = dis_tool()
-    best = None
+    out = []
     for start in range(0, min(72, len(payload))):
         nodes, _covered = dis.parse_prefix(payload[start:], table)
         if not nodes:
@@ -162,8 +192,65 @@ def region(payload, table):
         if end + 1 + RECORD != len(payload) or payload[end] != MARKER:
             continue
         keep = [n for n in nodes if start + n["end"] <= end]
-        if best is None or len(tokens(keep)) > len(tokens(best[2])):
-            best = (start, end, keep)
+        t0 = flat[cut]["offset"]
+        try:
+            spans = dis.operand_spans(payload[start:end], table)
+        except Exception:                     # a slice the span walker will not tile: no widening map
+            spans = None
+        wid = widened_at(spans, t0) if spans is not None else None
+        lv = sum(1 for nd in tokens(keep) if nd["name"] == "LocalVariable")
+        on = 0
+        if spans is not None:
+            flat_keep = tokens(keep)
+            woffs = set()
+            for nd in flat_keep:
+                w = widened_at(spans, nd["offset"])
+                if w is not None:
+                    woffs.add(w)
+            on = sum(1 for nd in flat_keep
+                     if nd["name"] in ("Jump", "JumpIfNot") and len(nd["operands"]) == 2
+                     and (nd["operands"][0] | (nd["operands"][1] << 8)) in woffs)
+        out.append({"start": start, "end": end, "nodes": keep, "t0": t0, "spans": spans, "table_w": wid,
+                    "jump_on": on, "local": lv, "ntok": len(tokens(keep))})
+    return out
+
+
+def region(payload, table, want=None):
+    """The walk that ends on the container's own end: a dict, or None.
+
+    A state payload is `<header><script><0x47><22-byte record>`, so an anchored walk is one whose label table
+    ends exactly 23 bytes before the payload does and whose next byte is the marker. The old rule -- the longest
+    exact walk, anchored on the table token -- accepted 174 payloads, and 13 of those tables were the record's
+    own bytes read as a table; the end test refuses them (a table inside the record cannot be 23 bytes from the
+    payload's end *and* end on `0x47`).
+
+    The start is the record's, not a search result. `want` is the record's `LabelTableOffset`, the table's first
+    entry in the loader's widened code; among the starts that tile, the one whose widened table offset fits it
+    (exactly, or at the `0x0c` opcode for the odd payload where the model and the compiler agree one byte apart)
+    is the state's code, and the *latest* such start wins because anything earlier is the header's tail reading
+    as `LocalVariable` tokens. Without a field -- a payload with no table, or a caller with no record -- the
+    most-tokens rule stays as the fallback.
+    """
+    cands = candidates(payload, table)
+    if not cands:
+        return None
+    first = min(c["start"] for c in cands)
+    if want is not None and want != NO_TABLE:
+        entry = [c for c in cands if c["table_w"] is not None and c["table_w"] + 1 == want]
+        if entry:
+            # A start one byte earlier can fit the same number, so the stream decides: the start that leaves
+            # no `LocalVariable` token wins (a state's code declares no locals, and in every one of the 166
+            # starts the old rule chose, the prefix it kept was exactly such a token), then the start that puts
+            # the most `Jump`/`JumpIfNot` operands on a token boundary in the widened code, then the later start.
+            best = max(entry, key=lambda c: (-c["local"], c["jump_on"], c["start"]))
+            best["start_by"] = "field"
+            best["first"] = first
+            best["walk_lv"] = max(cands, key=lambda c: c["ntok"])["local"]
+            return best
+    best = max(cands, key=lambda c: c["ntok"])
+    best["start_by"] = "walk"
+    best["first"] = first
+    best["walk_lv"] = best["local"]
     return best
 
 
@@ -208,7 +295,7 @@ def text_label_counts(text, spans_of):
 
 
 def walk_dump(system):
-    """Per-state rows: the payload walk joined to the state's own label keywords, read from its class text."""
+    """Per-state rows (and the junk-prefix total): the payload walk joined to its class's label keywords."""
     from ue2pkg import Package
     tb = text_tool()
     pst = load_tool("pkg_script_text", "pkg-script-text.py")
@@ -227,6 +314,7 @@ def walk_dump(system):
             texts[(package, pkg.name(exp["name"]).lower())] = text_label_counts(
                 body, lambda live: tb.function_else(live)[2])
     rows = []
+    shift = 0
     for fname in sorted(f for f in os.listdir(system) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system, fname))
         pkg.read_names(); pkg.read_imports(); pkg.read_exports()
@@ -241,7 +329,9 @@ def walk_dump(system):
             cls, state = pkg.name(outer["name"]), pkg.name(exp["name"])
             payload = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
             rec = record(payload)
-            got = region(payload, table)
+            got = region(payload, table, rec["label_offset"] if rec else None)
+            if got is not None and got["start_by"] != "walk":
+                shift += got["start"] - got["first"]
             kw, els, at_floor = texts.get((package, cls.lower()), {}).get(state.lower(), ("", "", ""))
             row = {"kind": "state", "package": package, "class": cls, "state": state,
                    "payload": len(payload), "start": "", "code": "", "trailer": "", "tokens": "",
@@ -251,22 +341,33 @@ def walk_dump(system):
                    "ignore_mask": rec["ignore_mask"] if rec else "",
                    "label_offset": rec["label_offset"] if rec else "",
                    "state_flags": rec["state_flags"] if rec else "",
+                   "table_w": "", "start_by": "", "jump_on": "", "code_lv": "", "walk_lv": "",
                    "text_kw": kw, "text_label": kw, "text_else": els, "text_else_label": at_floor,
                    "verdict": "record-only", "count": "", "note": ""}
             if got is not None:
-                start, end, nodes = got
-                flat = tokens(nodes)
+                flat = tokens(got["nodes"])
                 c = collections.Counter(x["name"] for x in flat)
-                row.update({"start": start, "code": end - start, "trailer": len(payload) - end,
-                            "tokens": len(flat), "jumpifnot": c["JumpIfNot"], "jump": c["Jump"],
+                row.update({"start": got["start"], "code": got["end"] - got["start"],
+                            "trailer": len(payload) - got["end"], "tokens": len(flat),
+                            "jumpifnot": c["JumpIfNot"], "jump": c["Jump"],
                             "labeltable": c["LabelTable"], "stringconst": c["StringConst"],
-                            "complete": 1})
+                            "complete": 1, "table_w": got["table_w"] if got["table_w"] is not None else "",
+                            "start_by": got["start_by"], "code_lv": got["local"], "walk_lv": got["walk_lv"]})
+                if got["spans"] is not None:
+                    woffs = set()
+                    for nd in flat:
+                        w = widened_at(got["spans"], nd["offset"])
+                        if w is not None:
+                            woffs.add(w)
+                    row["jump_on"] = sum(1 for nd in flat
+                                         if nd["name"] in ("Jump", "JumpIfNot") and len(nd["operands"]) == 2
+                                         and (nd["operands"][0] | (nd["operands"][1] << 8)) in woffs)
                 row["verdict"] = ("label+payload" if kw else "payload-only")
             rows.append(row)
-    return rows
+    return rows, shift
 
 
-def census(rows):
+def census(rows, shift=None):
     # Every census key starts at zero: the emission guard below is what caught the accumulator that was never
     # written, and it fires on a key that is legitimately zero unless the key exists before the first hit.
     c = collections.Counter({key: 0 for key in CENSUS_KEYS})
@@ -282,6 +383,8 @@ def census(rows):
             flags = int(r["state_flags"])
             c["flags_zero" if flags == 0 else "flags_one" if flags == 1
               else "flags_two" if flags == 2 else "flags_other"] += 1
+            if int(r["label_offset"]) == NO_TABLE:
+                c["no_table"] += 1
         if r["verdict"] == "record-only":
             c["no_code"] += 1
             continue
@@ -297,10 +400,19 @@ def census(rows):
         c["marker"] += 1
         if int(r["labeltable"]):
             c["labeltable_states"] += 1
-        if int(r["label_offset"]) < code:
-            c["offset_below_code"] += 1
+        if r["table_w"] == "":
+            c["offset_unmeasured"] += 1
+        elif int(r["table_w"]) + 1 == int(r["label_offset"]):
+            c["offset_entry"] += 1
         else:
-            c["offset_above_code"] += 1
+            c["offset_other"] += 1
+        if r["start_by"].startswith("field"):
+            c["start_by_field"] += 1
+        c["code_local"] += int(r["code_lv"] or 0)
+        c["walk_local"] += int(r["walk_lv"] or 0)
+        c["jumps"] += int(r["jump"]) + int(r["jumpifnot"])
+        if r["jump_on"] != "":
+            c["jumps_on_boundary"] += int(r["jump_on"])
     for r in rows:
         if r["text_kw"] in ("", None):
             continue
@@ -317,6 +429,8 @@ def census(rows):
                     c["joined_equal"] += 1
         elif r["verdict"] != "record-only":
             c["overrides"] += 1
+    if shift is not None:
+        c["start_shift"] = shift
     out = []
     for key in CENSUS_KEYS:
         if key not in c:
@@ -324,7 +438,8 @@ def census(rows):
         out.append({"kind": "census", "package": "", "class": "", "state": "", "payload": "", "start": "",
                     "code": "", "trailer": "", "tokens": "", "jumpifnot": "", "jump": "", "labeltable": "",
                     "complete": "", "stringconst": "", "record": "", "probe_mask": "", "ignore_mask": "",
-                    "label_offset": "", "state_flags": "", "text_kw": "", "text_label": "", "text_else": "",
+                    "label_offset": "", "state_flags": "", "table_w": "", "start_by": "", "jump_on": "",
+                    "code_lv": "", "walk_lv": "", "text_kw": "", "text_label": "", "text_else": "",
                     "text_else_label": "", "verdict": "", "count": c[key], "note": key})
     return out
 
@@ -346,27 +461,30 @@ def comma(n):
 
 
 def doc_block(rows):
-    """The generated block: the container's numbers and the states whose label code compiles."""
+    """The generated block: the container's numbers, the record's field, and the states whose label code compiles."""
     states = [r for r in rows if r["kind"] == "state"]
     top = sorted([r for r in states if r["verdict"] == "label+payload"],
                  key=lambda r: -int(r["text_kw"]))[:10]
     lines = []
-    lines.append("**All %s `State` payloads end with `UState`'s 22-byte record, and %s of them carry code: %s "
-                 "bytes and %s tokens of the state's own label block, `JumpIfNot` %s.** A script ends on a "
-                 "`LabelTable` (`0x0c`) -- entries of an archive compact name index and a 4-byte code offset, "
-                 "terminated by the None name, then the `0x47` marker `UStruct::Serialize` appends on save -- and "
-                 "that end, not a longest-walk guess, is what anchors the code: the token appears in **zero** "
-                 "`Function` payloads. The other %s payloads are 47-52 bytes, a header and the record, with no "
-                 "script at all. Of the records, %s carry `IgnoreMask` all ones and %s `ProbeMask` 0; `StateFlags` "
-                 "is 0 in %s, 1 in %s and 2 in %s. The text spells %s label keywords across %s states (its `else` "
-                 "%s); the joined states compile %s `JumpIfNot` against their %s keywords, equal in %s."
-                 % (comma(num(rows, "states")), num(rows, "regions"), comma(num(rows, "code_bytes")),
-                    comma(num(rows, "tokens")), comma(num(rows, "jumpifnot")), num(rows, "no_code"),
-                    comma(num(rows, "ignore_all_ones")), num(rows, "probe_zero"), num(rows, "flags_zero"),
-                    num(rows, "flags_one"), num(rows, "flags_two"),
-                    comma(num(rows, "text_label")), num(rows, "text_label_states"), comma(num(rows, "text_else")),
-                    comma(num(rows, "joined_jif")), comma(num(rows, "joined_label")),
-                    num(rows, "joined_equal")))
+    lines.append("**All %s `State` payloads end with `UState`'s 22-byte record, %s of them carry code, and the "
+                 "record is what anchors it at both ends.** The %s payloads with no script are a header and the "
+                 "record whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer into an "
+                 "override. Where there is a table, the field is the table's first entry in the **loader's** "
+                 "code (every compact index operand widened back to four bytes), exact in **%s of %s** payloads "
+                 "(%s fit none at all, and those keep the most-tokens fallback). Because the widened offset depends on "
+                 "where the walk starts, the field also names the start: it chose **%s** of the %s walks, and they "
+                 "begin **%s bytes** past the first offset of the payload that tiles: the %s `LocalVariable` "
+                 "tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. "
+                 "The code's own jump operands live in the "
+                 "same space -- **%s of %s** land on a token start in the widened code. The walks still reach "
+                 "%s bytes and %s tokens of the state's own label block, `JumpIfNot` %s."
+                 % (comma(num(rows, "states")), num(rows, "regions"), num(rows, "no_code"),
+                    comma(num(rows, "offset_entry")), num(rows, "regions"), num(rows, "offset_other"),
+                    comma(num(rows, "start_by_field")), num(rows, "regions"),
+                    comma(num(rows, "start_shift")), comma(num(rows, "walk_local")),
+                    comma(num(rows, "jumps_on_boundary")),
+                    comma(num(rows, "jumps")), comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
+                    comma(num(rows, "jumpifnot"))))
     lines.append("")
     lines.append("| measure | value |")
     lines.append("|---|---|")
@@ -374,6 +492,8 @@ def doc_block(rows):
     lines.append("| payload bytes | %s |" % comma(num(rows, "payload_bytes")))
     lines.append("| payloads that walk to the container's end / a header and the record only | %s / %s |"
                  % (comma(num(rows, "regions")), comma(num(rows, "no_code"))))
+    lines.append("| records whose `LabelTableOffset` is `0xffff` (no table, no code) | %s |"
+                 % comma(num(rows, "no_table")))
     lines.append("| code bytes / tokens | %s / %s |"
                  % (comma(num(rows, "code_bytes")), comma(num(rows, "tokens"))))
     lines.append("| `JumpIfNot` / `Jump` | %s / %s |"
@@ -388,8 +508,14 @@ def doc_block(rows):
     lines.append("| `StateFlags` 0 / 1 / 2 / other | %s / %s / %s / %s |"
                  % (num(rows, "flags_zero"), num(rows, "flags_one"), num(rows, "flags_two"),
                     num(rows, "flags_other")))
-    lines.append("| `LabelTableOffset` below / at or above the code's byte count | %s / %s |"
-                 % (comma(num(rows, "offset_below_code")), comma(num(rows, "offset_above_code"))))
+    lines.append("| field = the table's first entry in the widened code / no start fits / unmeasured | %s / %s / %s |"
+                 % (comma(num(rows, "offset_entry")), num(rows, "offset_other"), num(rows, "offset_unmeasured")))
+    lines.append("| walks whose start the record chose / bytes past the first tiling offset | %s / %s |"
+                 % (comma(num(rows, "start_by_field")), comma(num(rows, "start_shift"))))
+    lines.append("| `LocalVariable` tokens in the chosen code / at the most-tokens start | %s / %s |"
+                 % (comma(num(rows, "code_local")), comma(num(rows, "walk_local"))))
+    lines.append("| jump operands on a widened token start | %s / %s |"
+                 % (comma(num(rows, "jumps_on_boundary")), comma(num(rows, "jumps"))))
     lines.append("| states whose text spells label code | %s |" % comma(num(rows, "text_label_states")))
     lines.append("| ... keywords / `else` / `else` at the statement level | %s / %s / %s |"
                  % (comma(num(rows, "text_label")), comma(num(rows, "text_else")),
@@ -456,7 +582,7 @@ def report(rows):
 
 
 def selftest():
-    """Drive the end anchor, the label table's compact name index and the record on synthetic input."""
+    """Drive the end anchor, the compact label names, the record, and the start the record's field chooses."""
     dis = dis_tool()
     table = dis.Table()
     # EndFunctionParms, JumpIfNot(operand 2, expr EndFunctionParms), Stop -- then the state's own epilogue
@@ -464,32 +590,59 @@ def selftest():
     # (name 0, offset 0xffff), the `0x47` end marker, and the 22-byte record.
     code = bytes([0x16, 0x07, 0x02, 0x00, 0x16, 0x08])
     table_tok = bytes([0x0b, 0x0b, 0x0c, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00])
-    rec_bytes = struct.pack("<QQHI", 0, 0xFFFFFFFFFFFFFFFF, 4, 2)
-    payload = b"\x03\x03" + code + table_tok + bytes([MARKER]) + rec_bytes
-    got = region(payload, table)
+    head = b"\x03\x03"
+    placeholder = struct.pack("<QQHI", 0, 0xFFFFFFFFFFFFFFFF, 0, 2)
+    bare = head + code + table_tok + bytes([MARKER]) + placeholder
+    # No field: the most-tokens start is the script's own start, and its table offset is the widened one.
+    alone = region(bare, table)
+    assert alone is not None and alone["start"] == 2, alone
+    assert alone["start_by"] == "walk", alone
+    entry_at = alone["table_w"] + 1                  # the record's u16 on the true start
+    rec_bytes = struct.pack("<QQHI", 0, 0xFFFFFFFFFFFFFFFF, entry_at, 2)
+    payload = head + code + table_tok + bytes([MARKER]) + rec_bytes
+    got = region(payload, table, entry_at)
     assert got is not None, "synthetic payload did not walk"
-    start, end, nodes = got
-    assert (start, end) == (2, 2 + len(code) + len(table_tok)), (start, end)
-    assert len(payload) - end == 1 + RECORD, len(payload) - end
-    flat = tokens(nodes)
+    assert (got["start"], got["end"]) == (2, 2 + len(code) + len(table_tok)), (got["start"], got["end"])
+    assert got["start_by"] == "field" and got["table_w"] + 1 == entry_at, got
+    assert len(payload) - got["end"] == 1 + RECORD, len(payload) - got["end"]
+    flat = tokens(got["nodes"])
     names = collections.Counter(n["name"] for n in flat)
     assert names["JumpIfNot"] == 1 and names["Jump"] == 0, names
     assert names["LabelTable"] == 1, names
     rec = record(payload)
-    assert rec == {"probe_mask": 0, "ignore_mask": 0xFFFFFFFFFFFFFFFF, "label_offset": 4, "state_flags": 2}, rec
+    assert rec == {"probe_mask": 0, "ignore_mask": 0xFFFFFFFFFFFFFFFF, "label_offset": entry_at,
+                   "state_flags": 2}, rec
     # Drop the record: no end anchor, so the same bytes are not a state's code.
     assert region(payload[:-RECORD], table) is None
     # A table whose last entry has a zero offset but a real name does not end the table; the None name does.
     two = bytes([0x0b, 0x0b, 0x0c, 0x06, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x00, 0x00, 0x00,
                  0x00, 0xff, 0xff, 0x00, 0x00])
-    payload2 = b"\x03\x03" + code + two + bytes([MARKER]) + rec_bytes
+    payload2 = head + code + two + bytes([MARKER]) + rec_bytes
     got2 = region(payload2, table)
-    assert got2 is not None and got2[1] == 2 + len(code) + len(two), got2
+    assert got2 is not None and got2["end"] == 2 + len(code) + len(two), got2
 
     # parse_prefix keeps the tokens before a refusal that lands inside a nested operand, which `parse` cannot:
     # the JumpIfNot's expression is the walker's bad-token case, so the cut is not a token boundary.
     nodes, covered = dis.parse_prefix(bytes([0x16, 0x07, 0x02, 0x00, 0x03]), table)
     assert covered == 1 and [n["name"] for n in nodes] == ["EndFunctionParms"], (covered, nodes)
+
+    # The field refuses the header's tail: a `LocalVariable` in front of the same code tiles, so the most-tokens
+    # rule keeps it, and the record's u16 -- measured from the script's start -- cannot be satisfied from there.
+    junk = b"\x00\x05"
+    payload3 = junk + code + table_tok + bytes([MARKER]) + rec_bytes
+    no_field = region(payload3, table)
+    assert no_field["start"] == 0 and no_field["start_by"] == "walk", no_field
+    assert any(n["name"] == "LocalVariable" for n in tokens(no_field["nodes"])), "no junk to drop"
+    by_field = region(payload3, table, entry_at)
+    assert by_field["start"] == 2 and by_field["start_by"] == "field", by_field
+    assert by_field["local"] == 0 and no_field["local"] == 1, (by_field["local"], no_field["local"])
+    # ... and the sentinel says there is no table at all, so nothing anchors a start on it.
+    assert region(payload3, table, NO_TABLE)["start_by"] == "walk"
+
+    # The widened map: an index operand is three bytes longer in memory, and a position inside one has no offset.
+    spans = dis.operand_spans(bytes([0x01, 0xC1, 0x05, 0x16]), table)  # InstanceVariable(index 2 bytes), EndParms
+    assert widened_at(spans, 3) == 5, widened_at(spans, 3)     # 3 bytes in, plus the two the index gains
+    assert widened_at(spans, 2) is None, "a position inside an index operand is not a token boundary"
 
     tb = text_tool()
     text = ("class Foo extends Bar;\r\n"            # the declaration a real text opens with
@@ -501,7 +654,7 @@ def selftest():
     assert "suspicious" in got, got
     kw, els, at_floor = got["suspicious"]
     assert (kw, els, at_floor) == (3, 1, 1), (kw, els, at_floor)  # the override's `if` is excluded
-    print("ok   state-code: end anchor, compact label names, record decode and label-code count")
+    print("ok   state-code: end anchor, compact label names, record, field-chosen start and label-code count")
 
 
 def main():
@@ -525,14 +678,14 @@ def main():
         return 0
     if not args.system:
         ap.error("--system is required unless --check/--report/--check-doc")
-    rows = walk_dump(args.system)
-    rows = sorted(rows, key=lambda r: (r["package"], r["class"], r["state"])) + census(rows)
-    if args.write_doc:
-        write_doc(args.write_doc, rows)
+    rows, shift = walk_dump(args.system)
+    rows = sorted(rows, key=lambda r: (r["package"], r["class"], r["state"])) + census(rows, shift)
     with open(args.out, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
+    if args.write_doc:
+        write_doc(args.write_doc, rows)
     report(rows)
     return 0
 

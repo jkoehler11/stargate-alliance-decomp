@@ -1661,9 +1661,21 @@ thing left, and it has to point at the start of an instruction.
 export's payload rather than into a `Function`, and **166** of the 553 state payloads carry one: a table's entries
 are an archive compact name index and a 4-byte code offset, the table ends on the **None name**, and the script
 then ends on the `0x47` marker `UStruct::Serialize` appends on save. That end is what makes a walk the state's
-code -- the payload is `<header><script><0x47><22-byte UState record>` -- so the anchored walks carry **31,478** of
-the 57,297 state payload bytes and **590** `JumpIfNot` exactly. The other **387** payloads are 47-52 bytes: a header
-and that record, with no script at all, which is why they used to read as a residue of short "code". So "the build
+code -- the payload is `<header><script><0x47><22-byte UState record>` -- so the anchored walks carry **29,859** of
+the 57,297 state payload bytes and **610** `JumpIfNot` exactly. The other **387** payloads are 47-52 bytes: a header
+and that record, whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer into an
+override -- which is why they used to read as a residue of short "code".
+
+**The record's WORD is where the table lives, and it is in the loader's code, not in the file's.** `LabelTableOffset`
+is the label table's first entry measured in the code as the loader rebuilds it, every compact `index` operand
+widened back to four bytes, so every file-space framing of it failed: it equals that widened offset in **166 of
+166** anchored payloads and reads `0xffff` in the 387 with no table. The widened offset depends on where the walk
+starts, so the field pins the start as well, and it is the start that leaves **no** `LocalVariable` token in the
+stream: **543** of them -- all header tail -- disappear across the 166 payloads. The code's own jump operands then
+land on token starts **863 of 863** (758 of 835 under the old starts), which is the same space and therefore the
+control: a jump operand is an offset into the widened code, exactly as `FFrame::Code = Node->Script + operand`
+(`0x00047788`) computes it. `tools/state-code.py` takes the start from the record now and keeps the most-tokens
+rule only as the fallback for a payload whose field fits nothing. So "the build
 never emits a label" is true of the function half and false of the state half: `tools/state-code.py`,
 `inventory/state_code.csv`, `docs/systems/AI.md`.
 
@@ -1690,6 +1702,12 @@ The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) to
 | AmbientCreatures | `HerdAnimal` | `HerdLeader` | 0005 | JumpIfNot | 50 |
 
 <!-- /generated:jump-census -->
+
+**The fourth reading is the widened code, and it is the one that holds.** `Jump` adds its operand to the memory
+script (`FFrame::Code = Node->Script + operand`), so a file-space offset sits at chance by construction -- which is
+what the three readings above measure. In the `State` payloads, where the widening map is available, **863 of 863**
+jump operands land on a token start in the widened code (`tools/state-code.py`, `docs/systems/AI.md`); the same
+test over the 11,687 `Function` scripts is what the function half of this census would need.
 
 The two exec handlers settle what that operand is, and it is not the file's layout:
 
