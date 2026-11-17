@@ -4226,7 +4226,7 @@ menu pages ship no delegate default, and there is no tag grammar left in the bui
 chooser. Depth: `docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*.
 
 
-## U19. What a `State` payload's code region ends on -- answered: a `LabelTable` on the None name, the `0x47` marker, then a 22-byte record
+## U19. What a `State` payload's code region ends on -- answered: a `LabelTable` on the None name, the `0x47` marker, then a 22-byte record whose WORD is the table's offset in the *widened* code
 
 **Observed.** `tools/state-code.py` (PLAN 3.10, `docs/systems/AI.md`) walks a `State` export's payload as code and
 once reported **522 of 552** walks ending before the container's terminator, so their code length and arm count
@@ -4245,16 +4245,31 @@ the script's last byte is the `0x47` ('G') marker `UStruct::Serialize` (`0x392b0
 `0x370e0`) push 8, 2 and 4 bytes. Census: **553 of 553** payloads decode such a record; `IgnoreMask` is all ones in
 **443**, `ProbeMask` is 0 in **58**, and `StateFlags` is 0 in **451**, 1 in **33**, 2 in **61**.
 
-**Measured, with the end anchoring the walk.** **166** payloads carry code -- **31,478** of the payload bytes over
-**12,562** tokens, **590** `JumpIfNot` exactly -- and **387** carry none: they are 47-52 bytes, a header plus the
-record. The old count of 174 included 13 "tables" that were the record's own bytes read as a token stream.
+**Measured, with the end anchoring the walk.** **166** payloads carry code -- **29,859** of the payload bytes over
+**11,885** tokens, **610** `JumpIfNot` exactly -- and **387** carry none: they are 47-52 bytes, a header plus the
+record, and every one of those records reads `LabelTableOffset = 0xffff`, i.e. no table and therefore no code and
+no code pointer at all. What the 387 *are* is a class-tree question, and the committed tree answers it: **100** of
+them are a state an ancestor class declares by the same name -- of which only **25** have an ancestor that carries
+the table, so the code is inherited there -- and **287** name a state no ancestor declares, i.e. a state whose body
+compiled to nothing. The old count of 174 included 13 "tables" that were the record's own bytes read
+as a token stream.
 
-**What is left (named, and measured).** `LabelTableOffset` does not equal the table's file offset in any framing
-tried: it is *smaller* than the code's own byte count in **60** of the 166, so it is neither the stored offset nor a
-widened one, and `table_end - LabelTableOffset` is a valid start for only **31** of them (negative for 83). Two
-routes would settle it: the loader's use of the field (`UState`'s `+0x94` in memory) at a `Script` store or a break
-on a state's first token; or a guest read of a live `UState` object to see what the engine stores there. Printing
-one state's record beside its table would make the next attempt a comparison rather than a search.
+**The field is answered: it is an offset in the loader's code, not in the file's.** `LabelTableOffset` counts the
+label table's first entry in the code *as the loader rebuilds it in memory*, where every compact `index` operand
+takes four bytes -- so the three file-space framings (stored offset, widened length, `table_end - field`) could
+never match, and the "60 of 166 below the code's byte count" that killed them was the space, not the field. Taken
+that way it fits **166 of 166** anchored payloads exactly (`tools/state-code.py`, `table_w + 1 == label_offset`),
+and it is `0xffff` in all 387 without a table. Because the widened offset depends on the start, the field also
+**pins the start**: the start it chooses is the only one that leaves no `LocalVariable` token in the stream, so the
+**543** such tokens the old most-tokens rule kept across the 166 payloads were the header's tail. That re-anchoring
+is what makes the code's own offsets consistent -- **863 of 863** jump operands land on a token start in the widened
+code, against 758 of 835 under the old starts -- and it is a second, independent witness to the widening rule that
+the dword at `name_end + 12` had been the only check on.
+
+**What is left.** Not the field: the same test over `Function` payloads (whether every `Jump`/`JumpIfNot` operand of
+the 11,687 `Function` scripts lands on a widened token start) is the function half of `tools/jump-census.py`, which
+still tests only file-space readings and therefore reports all three at chance. The widening rule itself still has
+the known residue (`--sizefield`'s four rows and the one-slot differences in guest copies).
 
 **Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
 

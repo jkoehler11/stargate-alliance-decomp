@@ -12758,7 +12758,8 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **The field is a negative, recorded in U19.** `LabelTableOffset` is below the code's own byte count in 60 of the
   166, so it is not an offset into the stored script (nor a widened one, which is always larger), and
   `table_end - LabelTableOffset` is a valid start for 31. Two routes named: the loader's read of `+0x94`, or a
-  guest read of a live `UState`.
+  guest read of a live `UState`. **Corrected in the next note:** it is an offset in the loader's widened code --
+  the framing was wrong, not the field.
 - **Files.** `tools/uscript-dis.py` (both label-table readers: compact name, None-name terminator) +
   `tools/opcode-table.py` (its pattern note) + `inventory/opcode_table.csv` + `tools/state-code.py` (the end anchor,
   the record decode, the new census keys, a 4-case `--check`) + `inventory/state_code.csv` + `docs/systems/AI.md`
@@ -12766,3 +12767,41 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the field's meaning -- print one state's record beside its table and read `UState::Serialize`'s
   reader side (the loader at the `Script` store), then re-check the 387 header+record payloads for a code pointer
   into the overrides.
+
+### Execution notes (2026-11-17, the state record's WORD is the table's offset in the loader's widened code)
+
+- **Task.** The previous note's next measurement: the meaning of `LabelTableOffset`. It was recorded as a negative
+  (below the code's byte count in 60 of the 166). The read settles it positively, and it moves the walk's start.
+- **The field counts in the loader's code, not in the file's bytes.** `LabelTableOffset` is the label table's first
+  entry measured in the code *as the loader rebuilds it in memory*, where every compact `index` operand is widened
+  back to four bytes. Measured over the anchored corpus: `table_w + 1 == label_offset` in **166 of 166** payloads
+  (0 fit none), where `table_w` is the `0x0c` opcode's widened offset and `+1` is the first entry. That is why the
+  three file-space framings failed -- the space was wrong, not the field.
+- **The sentinel closes the 387.** Every record-only payload reads `LabelTableOffset = 0xffff`: no table, so no
+  code and no code pointer at all. The residue the last note left ("check the 387 for a code pointer") has no
+  pointer to find, and the class tree says what they are: **100** are a state an ancestor declares by the same
+  name (**25** of those ancestors carry the table, so the code is genuinely inherited) and **287** name a state no
+  ancestor declares -- a body that compiled to nothing.
+- **The field pins the start, and that is the measurable win.** The widened offset depends on where the walk
+  begins, so the field names the start too; among the starts that fit it, the one that leaves **no** `LocalVariable`
+  token wins (a state's code declares no locals). Measured: **166** starts came from the field, they sit **1,694**
+  bytes past the first offset that tiles, and they remove **543** `LocalVariable` tokens -- the header's tail that
+  the most-tokens rule kept in **all 166** streams. `walk_local 543` against `code_local 0` is the control.
+- **The code's offsets agree, which is the independent check on the widening rule.** `Jump`/`JumpIfNot` operands are
+  offsets into the widened code (`FFrame::Code = Node->Script + operand`, `0x00047788`), so with the right start
+  they must land on token starts: **863 of 863** do, against 758 of 835 under the old starts. The numbers move with
+  the start -- anchored code **31,478 → 29,859** bytes, tokens **12,562 → 11,885**, `JumpIfNot` **590 → 610** (a
+  walk that started in the header had lost arms to a desync), `StringConst` 150 → 147.
+- **A tool defect hid the whole measurement.** `_spans_with_op`'s label-table guard demanded six bytes
+  (`q + 6 > len(data)`) where the terminator is five (a one-byte None name and its four-byte offset), so it refused
+  **all 166** state scripts on a slice that ends exactly on the table -- which is why no widening map existed for
+  this corpus before. One byte of slack and the map exists for every payload.
+- **Files.** `tools/state-code.py` (the widened-offset helper, `candidates()`, the field-chosen `region()`, the
+  three new columns `table_w`/`start_by`/`jump_on` and two counters `code_lv`/`walk_lv`, the new census keys, the
+  rewritten `--check`) + `tools/uscript-dis.py` (the span guard) + `inventory/state_code.csv` + `docs/systems/AI.md`
+  (prose and block) + `docs/BYTECODE.md` (the record paragraph and the jump-census note) + `docs/UNKNOWNS.md` U19 +
+  this note. One read of the 18 packages' export tables; no boot, no Ghidra.
+- **Next measurement:** the same widened-start test over `Function` payloads -- `tools/jump-census.py` still tests
+  three file-space readings and reports all of them at chance, and the `State` half now says the fourth reading (a
+  widened token start) is the one that holds.
+

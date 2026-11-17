@@ -1373,9 +1373,14 @@ def _spans_with_op(data, table):
                 # (the same shape `parse` reads -- one pattern, two walkers).
                 start = q
                 while True:
-                    if q + 6 > len(data):
+                    # One byte, not six: a slice that ends exactly on the table (a `State` payload walked
+                    # from its own start to the end marker) leaves the terminator five bytes -- a one-byte
+                    # name and its four-byte offset -- and a six-byte guard refused all 166 state scripts.
+                    if q >= len(data):
                         raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
                     name_index, q = read_index(data, q)
+                    if q + 4 > len(data):
+                        raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
                     q += 4
                     if name_index == 0:
                         break
