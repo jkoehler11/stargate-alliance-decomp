@@ -198,6 +198,11 @@ the live remainder declares.
 | live part declares no `function` and no `var` | **39** |
 | live part declares a body | **213** |
 | `function` declarations inside a block comment | **208** |
+| of those, naming a function the same class still exports | **124** |
+| ... also declared in the same class's live text | **42** |
+| ... naming a function another class of the package exports | **29** |
+| ... naming no function the package exports at all | **55** |
+| live `function` declarations in the same classes / naming an export | **4890** / **4872** |
 | `var` declarations inside a block comment | **51** |
 | `native function` declarations inside a block comment | **6** |
 | `native function` declarations inside a `//` run | **20** |
@@ -207,6 +212,33 @@ the live remainder declares.
 | bytes of text / of it inside a block comment | **5881021** / **278024** |
 
 **The class record agrees, and the base rate is why that alone proves nothing.** All **39** body-in-comment classes are `functions=0, properties=0` in `inventory/classes.csv`, and **0** of the 213 classes that keep a live body are -- but **953 of the corpus's 2319** classes record `0/0` anyway, so a record cannot name one. The text can, and the pair of rates is the control: inside the comment population the split is 39 of 39 against 0 of 213.
+
+**The comment is mostly a revision of the class that shipped, and a third of its declarations name a function the build does not carry.** Joined name by name against the package's own exports, **124 of 208** `function` declarations inside a block comment name a function the same class still exports, **29** name a function another class of the same package exports (the declaration moved) and **55** name nothing the package exports at all. The control says the join is not the weak part: the same matcher over the same classes' live declarations places **4872 of 4890 (99.6%)**, against **124 of 208 (59.6%)** for the commented ones. **42** of the placed ones are also declared in the live text, so those classes carry both revisions of the same function. The absent ones split by population: **42** sit in a class that keeps a live body -- classes this build compiled, where the function is simply not there -- and **13** in the 39 classes whose whole body is the comment, where the class itself exports nothing at all. **3** of the absent names still occur somewhere in the live text, but as a mention rather than a declaration, so they stay counted absent.
+
+The 20 classes that keep a live body and still carry a commented declaration the package does not export, `declared` being every `function` declaration in the comment:
+
+| class | declared | placed | moved | absent | functions in the record |
+|---|---:|---:|---:|---:|---:|
+| `StargateGame.TeamAI` | 10 | 0 | 0 | 10 | 27 |
+| `Engine.xAdminGroup` | 8 | 1 | 1 | 6 | 7 |
+| `StargateGame.BotSG` | 5 | 1 | 0 | 4 | 93 |
+| `StargateVehicles.SemektetStaffCannonGun` | 16 | 9 | 4 | 3 | 5 |
+| `Engine.Screenplay` | 17 | 14 | 1 | 2 | 46 |
+| `StargateContent.SuperSoldier` | 4 | 0 | 2 | 2 | 24 |
+| `StargateGame.BotEnemy` | 4 | 2 | 0 | 2 | 168 |
+| `Engine.AIMsgManager` | 2 | 1 | 0 | 1 | 39 |
+| `Engine.MapList` | 1 | 0 | 0 | 1 | 11 |
+| `Engine.PlayerController` | 6 | 5 | 0 | 1 | 360 |
+| `GamePlay.ScriptedController` | 1 | 0 | 0 | 1 | 38 |
+| `StargateContent.ExtreniteWeapon` | 1 | 0 | 0 | 1 | 9 |
+| `StargateGame.AlarmPanel` | 1 | 0 | 0 | 1 | 8 |
+| `StargateGame.StargateAIMsgManager` | 1 | 0 | 0 | 1 | 4 |
+| `StargateGame.StargatePawn` | 41 | 40 | 0 | 1 | 218 |
+| `StargateGame.StargatePlayer` | 1 | 0 | 0 | 1 | 134 |
+| `StargateGame.StargateWeapon` | 3 | 1 | 1 | 1 | 88 |
+| `StargateMenus.ServerSelectionPage` | 1 | 0 | 0 | 1 | 3 |
+| `StargateVehicles.DeathGliderBot` | 1 | 0 | 0 | 1 | 20 |
+| `StargateVehicles.StargateHover` | 1 | 0 | 0 | 1 | 11 |
 
 Per package (`classes` / `with a comment` / `body in the comment`):
 
@@ -228,47 +260,47 @@ Per package (`classes` / `with a comment` / `body in the comment`):
 
 The 39 body-in-comment classes, `payload` being the class export's serial size:
 
-| class | payload | text bytes | commented | `defaultproperties` in the comment |
-|---|---:|---:|---:|---:|
-| `Core.Time` | 91 | 3123 | 1701 | - |
-| `Core.Locale` | 91 | 6355 | 6024 | 1 |
-| `Engine.WaterSceneManager` | 99 | 390 | 267 | - |
-| `Engine.xMaterialTrigger` | 94 | 2814 | 2759 | - |
-| `Engine.PSLuminanceTexIndexMaterial` | 101 | 529 | 390 | - |
-| `Engine.PSBumpBSP` | 109 | 537 | 365 | - |
-| `Engine.PSBumpSpecularBSP` | 107 | 974 | 274 | - |
-| `Engine.PSModulatedDistortionMaterial` | 103 | 423 | 340 | - |
-| `Engine.PSAdditiveDistortion` | 103 | 409 | 335 | - |
-| `Engine.PSSubtractiveDistortion` | 103 | 419 | 342 | - |
-| `Engine.PSVDM` | 125 | 825 | 311 | - |
-| `Engine.PSReplicatorVision` | 128 | 746 | 267 | - |
-| `GUI.STY_OnScreenKeyboardButton` | 300 | 302 | 248 | - |
-| `GUI.STY_Sui20pt_C8C8C87F` | 256 | 345 | 273 | - |
-| `GUI.SGVertScrollBar` | 106 | 808 | 594 | 1 |
-| `GUI.STY_CharacterButton` | 131 | 296 | 248 | - |
-| `GUI.fntXboxSymbols` | 244 | 273 | 215 | - |
-| `GUI.STY_Sui28pt_C8C8C8FF` | 221 | 347 | 275 | - |
-| `GUI.STY_Sui24pt_C8C8C8FF` | 265 | 347 | 275 | - |
-| `GUI.STY_Sui18pt_FFFFFFFF` | 234 | 339 | 267 | - |
-| `GUI.STY_Sui18pt_FF9C00FF` | 265 | 339 | 267 | - |
-| `GUI.STY_Sui18pt_C8C8C8FF` | 226 | 345 | 273 | - |
-| `GUI.STY_Sui12pt_C8C8C8FF` | 226 | 345 | 273 | - |
-| `GUI.STY_ScrollBox` | 195 | 267 | 224 | - |
-| `GUI.STY_OnScreenKeyboardButtonPressed` | 147 | 375 | 248 | - |
-| `GUI.STY_MessageBoxButton` | 255 | 297 | 249 | - |
-| `GUI.STY_MessageBox` | 301 | 259 | 196 | - |
-| `GUI.STY_ListBoxHeader` | 157 | 281 | 225 | - |
-| `GUI.STY_ImageStyle_13816BFF` | 268 | 353 | 275 | - |
-| `GUI.STY_ImageListItem` | 144 | 293 | 225 | - |
-| `GUI.STY_ImageListCursor` | 127 | 290 | 220 | - |
-| `GUI.STY_GroupingBox` | 186 | 286 | 223 | - |
-| `GUI.STY_ArrowScrollPanel` | 140 | 313 | 240 | - |
-| `GamePlay.BumpSpecularShader` | 105 | 368 | 316 | - |
-| `GamePlay.BumpShader` | 103 | 352 | 316 | - |
-| `StargateContent.CaptainStaffWeaponAttachment` | 100 | 206 | 134 | - |
-| `StargateGame.GoauldConsoleFillVessel` | 118 | 411 | 75 | - |
-| `StargateGame.SGScreenComboFlash` | 97 | 487 | 398 | - |
-| `StargateMenus.XBoxLiveServerSelect` | 128 | 522 | 459 | - |
+| class | payload | text bytes | commented | `function` declarations | absent | `defaultproperties` in the comment |
+|---|---:|---:|---:|---:|---:|---:|
+| `Core.Time` | 91 | 3123 | 1701 | 3 | 3 | - |
+| `Core.Locale` | 91 | 6355 | 6024 | 9 | 9 | 1 |
+| `Engine.WaterSceneManager` | 99 | 390 | 267 | 0 | 0 | - |
+| `Engine.xMaterialTrigger` | 94 | 2814 | 2759 | 5 | 0 | - |
+| `Engine.PSLuminanceTexIndexMaterial` | 101 | 529 | 390 | 0 | 0 | - |
+| `Engine.PSBumpBSP` | 109 | 537 | 365 | 0 | 0 | - |
+| `Engine.PSBumpSpecularBSP` | 107 | 974 | 274 | 0 | 0 | - |
+| `Engine.PSModulatedDistortionMaterial` | 103 | 423 | 340 | 0 | 0 | - |
+| `Engine.PSAdditiveDistortion` | 103 | 409 | 335 | 0 | 0 | - |
+| `Engine.PSSubtractiveDistortion` | 103 | 419 | 342 | 0 | 0 | - |
+| `Engine.PSVDM` | 125 | 825 | 311 | 0 | 0 | - |
+| `Engine.PSReplicatorVision` | 128 | 746 | 267 | 0 | 0 | - |
+| `GUI.STY_OnScreenKeyboardButton` | 300 | 302 | 248 | 0 | 0 | - |
+| `GUI.STY_Sui20pt_C8C8C87F` | 256 | 345 | 273 | 0 | 0 | - |
+| `GUI.SGVertScrollBar` | 106 | 808 | 594 | 0 | 0 | 1 |
+| `GUI.STY_CharacterButton` | 131 | 296 | 248 | 0 | 0 | - |
+| `GUI.fntXboxSymbols` | 244 | 273 | 215 | 0 | 0 | - |
+| `GUI.STY_Sui28pt_C8C8C8FF` | 221 | 347 | 275 | 0 | 0 | - |
+| `GUI.STY_Sui24pt_C8C8C8FF` | 265 | 347 | 275 | 0 | 0 | - |
+| `GUI.STY_Sui18pt_FFFFFFFF` | 234 | 339 | 267 | 0 | 0 | - |
+| `GUI.STY_Sui18pt_FF9C00FF` | 265 | 339 | 267 | 0 | 0 | - |
+| `GUI.STY_Sui18pt_C8C8C8FF` | 226 | 345 | 273 | 0 | 0 | - |
+| `GUI.STY_Sui12pt_C8C8C8FF` | 226 | 345 | 273 | 0 | 0 | - |
+| `GUI.STY_ScrollBox` | 195 | 267 | 224 | 0 | 0 | - |
+| `GUI.STY_OnScreenKeyboardButtonPressed` | 147 | 375 | 248 | 0 | 0 | - |
+| `GUI.STY_MessageBoxButton` | 255 | 297 | 249 | 0 | 0 | - |
+| `GUI.STY_MessageBox` | 301 | 259 | 196 | 0 | 0 | - |
+| `GUI.STY_ListBoxHeader` | 157 | 281 | 225 | 0 | 0 | - |
+| `GUI.STY_ImageStyle_13816BFF` | 268 | 353 | 275 | 0 | 0 | - |
+| `GUI.STY_ImageListItem` | 144 | 293 | 225 | 0 | 0 | - |
+| `GUI.STY_ImageListCursor` | 127 | 290 | 220 | 0 | 0 | - |
+| `GUI.STY_GroupingBox` | 186 | 286 | 223 | 0 | 0 | - |
+| `GUI.STY_ArrowScrollPanel` | 140 | 313 | 240 | 0 | 0 | - |
+| `GamePlay.BumpSpecularShader` | 105 | 368 | 316 | 0 | 0 | - |
+| `GamePlay.BumpShader` | 103 | 352 | 316 | 0 | 0 | - |
+| `StargateContent.CaptainStaffWeaponAttachment` | 100 | 206 | 134 | 0 | 0 | - |
+| `StargateGame.GoauldConsoleFillVessel` | 118 | 411 | 75 | 0 | 0 | - |
+| `StargateGame.SGScreenComboFlash` | 97 | 487 | 398 | 0 | 0 | - |
+| `StargateMenus.XBoxLiveServerSelect` | 128 | 522 | 459 | 1 | 1 | - |
 
 **Every `defaultproperties` block the build ships as text is in that population** -- `Core.Locale`, `GUI.SGVertScrollBar` -- so the text cannot serve as an oracle for this build's compiled defaults: the block it carries belongs to a revision of the class that the package did not compile. `tools/defaults-emit.py --verify` now prints the same status per block.
 
@@ -285,6 +317,14 @@ Three consequences, each measured rather than argued:
 * **A declaration count over the whole buffer counts disabled declarations.** 208 `function` and 51 `var`
   declarations, and 6 `native function` declarations, sit inside a block comment, so a per-class count that
   scans the whole text is an upper bound on what the class compiles.
+* **The comment is a revision of the class, and what it declares that the build does not is the residue.** Joined
+  name by name against the package's own `Function` exports, **124 of the 208** commented declarations name a
+  function the same class still exports, **29** name one another class of the package exports, and **55** name
+  no export of the package at all. The control is the same matcher over the same classes' live declarations:
+  **4,872 of 4,890** place, against 59.6% for the commented ones, so the join is not the weak part. The 55 are
+  concentrated: `StargateGame.TeamAI` alone declares ten functions the package never compiles and
+  `Engine.xAdminGroup` six, each beside a live class that carries a different set of functions -- a replaced
+  revision rather than a renamed one. The generated block above carries the per-class table.
 * **The tree row above counts mentions.** Of the 16 classes whose text contains the word `defaultproperties`,
   only **2** carry a block, and both are commented out -- the rest are prose in a comment (`Engine.Actor`'s
   clipboard help text, a `// defaultproperties` banner in eight classes, and two classes whose disabled

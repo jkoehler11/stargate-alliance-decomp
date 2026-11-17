@@ -46,7 +46,8 @@ DOC_END = "<!-- /generated:class-text-comments -->"
 FIELDS = ["kind", "package", "key", "payload", "text_bytes", "comment_bytes", "live_bytes", "blocks",
           "live_functions", "live_vars", "comment_functions", "comment_vars", "comment_defaults",
           "live_defaults", "comment_natives", "line_comment_natives", "record_functions",
-          "record_properties", "verdict", "count", "note"]
+          "record_properties", "commented_placed", "commented_duplicate", "commented_moved",
+          "commented_absent", "commented_named_live", "live_placed", "verdict", "count", "note"]
 
 BLOCK = re.compile(r"/\*.*?\*/", re.S)
 LINE_COMMENT = re.compile(r"//[^\n]*")
@@ -114,6 +115,44 @@ def analyse(text):
         out["verdict"] = "body-in-comment"
     else:
         out["verdict"] = "live-body"
+    # The two name lists are what `revision_counts` joins against the package's exports; they stay out of the
+    # artifact, which carries the joined counts only.
+    out["comment_function_names"] = FUNC.findall(body)
+    out["live_function_names"] = FUNC.findall(live)
+    out["live_text"] = live
+    return out
+
+
+def revision_counts(comment_names, live_names, exports, package_exports, live_text=""):
+    """Where the `function` declarations inside a block comment land against the package's own exports.
+
+    `exports` is the set of lowercased function names this class owns in the compiled package (a function a
+    `State` declares belongs to the class that owns the state) and `package_exports` the same names for every
+    class in the package. A commented declaration is `placed` when the class still exports it, `duplicate` when
+    the live part of the same text declares it a second time, `moved` when another class of the package exports
+    it and this one does not, and `absent` otherwise -- the functions the toolchain did not compile. `named_live`
+    counts the absent ones whose name still occurs somewhere in the live text: a mention is not a declaration
+    and never counts as placed, so the flag exists to keep that residue honest rather than to shrink it.
+
+    `live_placed` is the control the page needs: the same join, with the same matcher, over the live
+    declarations of the same classes. A comment whose declarations match as often as the live ones says nothing.
+    """
+    live_set = {n.lower() for n in live_names}
+    out = dict(commented_declared=len(comment_names), commented_placed=0, commented_duplicate=0,
+               commented_moved=0, commented_absent=0, commented_named_live=0,
+               live_declared=len(live_names), live_placed=0)
+    for n in comment_names:
+        n = n.lower()
+        if n in exports:
+            out["commented_placed"] += 1
+            out["commented_duplicate"] += n in live_set
+        elif n in package_exports:
+            out["commented_moved"] += 1
+        else:
+            out["commented_absent"] += 1
+            out["commented_named_live"] += bool(
+                re.search(r"\b%s\b" % re.escape(n), live_text or "", re.I))
+    out["live_placed"] = sum(1 for n in live_names if n.lower() in exports)
     return out
 
 
@@ -139,12 +178,14 @@ def records(path):
 
 
 # --- the sweep -------------------------------------------------------------------------------------
-def class_row(exp, package, cls, a, fn, pr, verdict):
+def class_row(exp, package, cls, a, fn, pr, verdict, rev=None):
     """One `class` row.
 
     `verdict` is `analyse()`'s, except `line-comment` for a class that carries no block but disables a
-    declaration in a `//` run -- those classes are outside the block census by construction.
+    declaration in a `//` run -- those classes are outside the block census by construction. `rev` is
+    `revision_counts()`'s join against the package's exports, empty for a class outside the block census.
     """
+    rev = rev or {}
     return dict(kind="class", package=package, key=cls, payload=str(exp["size"]),
                 text_bytes=str(a["text_bytes"]), comment_bytes=str(a["comment_bytes"]),
                 live_bytes=str(a["live_bytes"]), blocks=str(a["blocks"]),
@@ -153,7 +194,14 @@ def class_row(exp, package, cls, a, fn, pr, verdict):
                 comment_defaults=str(a["comment_defaults"]), live_defaults=str(a["live_defaults"]),
                 comment_natives=str(a["comment_natives"]),
                 line_comment_natives=str(a["line_comment_natives"]),
-                record_functions=fn, record_properties=pr, verdict=verdict, count="1", note="")
+                record_functions=fn, record_properties=pr,
+                commented_placed=str(rev.get("commented_placed", "")),
+                commented_duplicate=str(rev.get("commented_duplicate", "")),
+                commented_moved=str(rev.get("commented_moved", "")),
+                commented_absent=str(rev.get("commented_absent", "")),
+                commented_named_live=str(rev.get("commented_named_live", "")),
+                live_placed=str(rev.get("live_placed", "")),
+                verdict=verdict, count="1", note="")
 
 
 def sweep(system_dir, recs):
@@ -162,7 +210,10 @@ def sweep(system_dir, recs):
     per_pkg = {}
     totals = dict(classes=0, comment=0, body_in_comment=0, live=0, comment_bytes=0, text_bytes=0,
                   comment_defaults=0, live_defaults=0, comment_functions=0, comment_vars=0,
-                  comment_natives=0, line_comment_natives=0, line_classes=0)
+                  comment_natives=0, line_comment_natives=0, line_classes=0,
+                  commented_placed=0, commented_duplicate=0, commented_moved=0, commented_absent=0,
+                  commented_named_live=0, live_placed=0, live_declared=0, classes_with_declared=0,
+                  lb_declared=0, lb_absent=0, lb_moved=0, bic_declared=0, bic_absent=0, bic_moved=0)
     zero_hits = 0
     live_zero = 0
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
@@ -172,6 +223,19 @@ def sweep(system_dir, recs):
         pkg.read_exports()
         package = fname[:-2]
         per_pkg[package] = [0, 0, 0, 0]
+        # The join needs the package's own export names before the class walk starts: a function a `State`
+        # declares belongs to the class that owns the state, and "another class of the package exports it" is
+        # the second claim a commented declaration can make.
+        own, everywhere = {}, set()
+        for e in pkg.exports:
+            if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
+                continue
+            nm = pkg.name(e["name"]).lower()
+            everywhere.add(nm)
+            oe = pkg.exports[e["outer"] - 1]
+            if pkg.class_name_of(oe) == "State" and oe["outer"] > 0:
+                oe = pkg.exports[oe["outer"] - 1]
+            own.setdefault(pkg.name(oe["name"]).lower(), set()).add(nm)
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
@@ -181,6 +245,8 @@ def sweep(system_dir, recs):
             a = analyse(text)
             cls = pkg.name(exp["name"])
             key = (package, cls)
+            rev = revision_counts(a["comment_function_names"], a["live_function_names"],
+                                  own.get(cls.lower(), set()), everywhere, a["live_text"])
             fn, pr = recs.get(key, ("", ""))
             totals["classes"] += 1
             per_pkg[package][0] += 1
@@ -201,8 +267,16 @@ def sweep(system_dir, recs):
             totals["comment_natives"] += a["comment_natives"]
             totals["comment_defaults"] += a["comment_defaults"]
             totals["live_defaults"] += a["live_defaults"]
+            for k in ("commented_placed", "commented_duplicate", "commented_moved",
+                      "commented_absent", "commented_named_live", "live_placed", "live_declared"):
+                totals[k] += rev.get(k, 0)
+            totals["classes_with_declared"] += bool(rev["commented_declared"])
             per_pkg[package][1] += 1
             zero = (fn == "0" and pr == "0")
+            tag = "bic" if a["verdict"] == "body-in-comment" else "lb"
+            totals[tag + "_declared"] += rev["commented_declared"]
+            totals[tag + "_absent"] += rev["commented_absent"]
+            totals[tag + "_moved"] += rev["commented_moved"]
             if a["verdict"] == "body-in-comment":
                 totals["body_in_comment"] += 1
                 per_pkg[package][2] += 1
@@ -210,7 +284,7 @@ def sweep(system_dir, recs):
             else:
                 totals["live"] += 1
                 live_zero += zero
-            rows.append(class_row(exp, package, cls, a, fn, pr, a["verdict"]))
+            rows.append(class_row(exp, package, cls, a, fn, pr, a["verdict"], rev))
     corpus_zero = sum(1 for fn, pr in recs.values() if fn == "0" and pr == "0")
     for package, (classes, comment, body, line) in sorted(per_pkg.items()):
         if not comment and not line:
@@ -232,6 +306,28 @@ def sweep(system_dir, recs):
                "of those, the live part declares a function or a var"),
               ("comment_functions", totals["comment_functions"],
                "`function` declarations inside a block comment"),
+              ("commented_placed", totals["commented_placed"],
+               "of those, naming a function the same class still exports"),
+              ("commented_duplicate", totals["commented_duplicate"],
+               "of the placed ones, also declared in the same text's live part"),
+              ("commented_moved", totals["commented_moved"],
+               "naming a function another class of the package exports"),
+              ("commented_absent", totals["commented_absent"],
+               "naming no function the package exports at all"),
+              ("commented_named_live", totals["commented_named_live"],
+               "of the absent ones, whose name still occurs in the live text"),
+              ("commented_declared_live_body", totals["lb_declared"],
+               "commented declarations in the classes that keep a live body"),
+              ("commented_absent_live_body", totals["lb_absent"],
+               "of those, absent -- the functions the toolchain did not compile"),
+              ("commented_declared_body_in_comment", totals["bic_declared"],
+               "commented declarations in the classes whose whole body is the comment"),
+              ("commented_absent_body_in_comment", totals["bic_absent"],
+               "of those, absent -- the class exports nothing, so only a move can place one"),
+              ("live_functions", totals["live_declared"],
+               "`function` declarations in the same classes' live text"),
+              ("live_functions_placed", totals["live_placed"],
+               "of those, naming an export the same class owns -- the control"),
               ("comment_vars", totals["comment_vars"], "`var` declarations inside a block comment"),
               ("comment_natives", totals["comment_natives"],
                "`native function` declarations inside a block comment"),
@@ -271,8 +367,12 @@ def census_of(rows):
 
 def render(rows):
     cen = census_of(rows)
+
     def n(key):
         return int(cen[key]["count"])
+
+    def pct(a, b):
+        return "%.1f" % (100.0 * a / b) if b else "-"
     classes = [r for r in rows if r["kind"] == "class" and r["verdict"] == "body-in-comment"]
     packages = [r for r in rows if r["kind"] == "package"]
     out = []
@@ -289,6 +389,12 @@ def render(rows):
     out.append("| live part declares no `function` and no `var` | **%d** |" % n("classes_body_in_comment"))
     out.append("| live part declares a body | **%d** |" % n("classes_live_body"))
     out.append("| `function` declarations inside a block comment | **%d** |" % n("comment_functions"))
+    out.append("| of those, naming a function the same class still exports | **%d** |" % n("commented_placed"))
+    out.append("| ... also declared in the same class's live text | **%d** |" % n("commented_duplicate"))
+    out.append("| ... naming a function another class of the package exports | **%d** |" % n("commented_moved"))
+    out.append("| ... naming no function the package exports at all | **%d** |" % n("commented_absent"))
+    out.append("| live `function` declarations in the same classes / naming an export | **%d** / **%d** |"
+               % (n("live_functions"), n("live_functions_placed")))
     out.append("| `var` declarations inside a block comment | **%d** |" % n("comment_vars"))
     out.append("| `native function` declarations inside a block comment | **%d** |" % n("comment_natives"))
     out.append("| `native function` declarations inside a `//` run | **%d** |" % n("line_comment_natives"))
@@ -308,6 +414,43 @@ def render(rows):
                   n("body_in_comment_record_zero"), n("classes_body_in_comment"),
                   n("live_body_record_zero"), n("classes_live_body")))
     out.append("")
+    out.append("**The comment is mostly a revision of the class that shipped, and a third of its declarations name "
+               "a function the build does not carry.** Joined name by name against the package's own exports, "
+               "**%d of %d** `function` declarations inside a block comment name a function the same class "
+               "still exports, **%d** name a function another class of the same package exports (the "
+               "declaration moved) and **%d** name nothing the package exports at all. The control says the "
+               "join is not the weak part: the same matcher over the same classes' live declarations places "
+               "**%d of %d (%s%%)**, against **%d of %d (%s%%)** for the commented ones. **%d** of the placed "
+               "ones are also declared in the live text, so those classes carry both revisions of the same "
+               "function. The absent ones split by population: **%d** sit in a class that keeps a live body -- "
+               "classes this build compiled, where the function is simply not there -- and **%d** in the %d "
+               "classes whose whole body is the comment, where the class itself exports nothing at all. **%d** of the "
+               "absent names still occur somewhere in the " 
+               "live text, but as a mention rather than a declaration, so they stay counted absent."
+               % (n("commented_placed"), n("comment_functions"),
+                  n("commented_moved"), n("commented_absent"),
+                  n("live_functions_placed"), n("live_functions"),
+                  pct(n("live_functions_placed"), n("live_functions")),
+                  n("commented_placed"), n("comment_functions"),
+                  pct(n("commented_placed"), n("comment_functions")),
+                  n("commented_duplicate"), n("commented_absent_live_body"),
+                  n("commented_absent_body_in_comment"), n("classes_body_in_comment"),
+                  n("commented_named_live")))
+    out.append("")
+    absent = [r for r in rows if r["kind"] == "class" and r["verdict"] == "live-body"
+              and int(r["commented_absent"] or 0)]
+    absent.sort(key=lambda r: (-int(r["commented_absent"]), r["package"], r["key"]))
+    if absent:
+        out.append("The %d classes that keep a live body and still carry a commented declaration the package "
+                   "does not export, `declared` being every `function` declaration in the comment:" % len(absent))
+        out.append("")
+        out.append("| class | declared | placed | moved | absent | functions in the record |")
+        out.append("|---|---:|---:|---:|---:|---:|")
+        for r in absent:
+            out.append("| `%s.%s` | %s | %s | %s | %s | %s |"
+                       % (r["package"], r["key"], r["comment_functions"], r["commented_placed"],
+                          r["commented_moved"], r["commented_absent"], r["record_functions"]))
+        out.append("")
     out.append("Per package (`classes` / `with a comment` / `body in the comment`):")
     out.append("")
     out.append("| package | classes | with a block comment | body in the comment |")
@@ -317,11 +460,13 @@ def render(rows):
     out.append("")
     out.append("The %d body-in-comment classes, `payload` being the class export's serial size:" % len(classes))
     out.append("")
-    out.append("| class | payload | text bytes | commented | `defaultproperties` in the comment |")
-    out.append("|---|---:|---:|---:|---:|")
+    out.append("| class | payload | text bytes | commented | `function` declarations | absent | "
+               "`defaultproperties` in the comment |")
+    out.append("|---|---:|---:|---:|---:|---:|---:|")
     for r in classes:
-        out.append("| `%s.%s` | %s | %s | %s | %s |"
+        out.append("| `%s.%s` | %s | %s | %s | %s | %s | %s |"
                    % (r["package"], r["key"], r["payload"], r["text_bytes"], r["comment_bytes"],
+                      r["comment_functions"], r["commented_absent"],
                       r["comment_defaults"] if r["comment_defaults"] not in ("", "0") else "-"))
     out.append("")
     flagged = [r for r in classes if r["comment_defaults"] not in ("", "0")]
@@ -439,11 +584,22 @@ def self_check():
     both = analyse("class A extends B;\n/*\n//native function Baz( int C );\n*/\n")
     if both["comment_natives"] != 1 or both["line_comment_natives"] != 0:
         bad.append("a `//` inside a block counted twice: %r" % (both,))
+    # the revision join: a commented declaration is placed only by the class's own export, and a name another
+    # class of the package exports is a move, not a placement
+    rv = revision_counts(["Foo", "Bar", "Baz", "Quux"], ["Foo"], {"foo"}, {"foo", "baz"},
+                         "// Quux is mentioned here, not declared\n")
+    if (rv["commented_placed"], rv["commented_moved"], rv["commented_absent"]) != (1, 1, 2):
+        bad.append("the revision join split %d placed / %d moved / %d absent"
+                   % (rv["commented_placed"], rv["commented_moved"], rv["commented_absent"]))
+    if rv["commented_duplicate"] != 1 or rv["live_placed"] != 1 or rv["live_declared"] != 1:
+        bad.append("the duplicate or the control read %r" % (rv,))
+    if rv["commented_named_live"] != 1:
+        bad.append("a mention in the live text was not flagged: %d" % rv["commented_named_live"])
     # the census adds up over a synthetic package, and the record witness is read by key
     rows = []
     for cls, verdict_rows in (("Body", whole), ("Live", half), ("Inline", inline_text)):
         a = analyse(verdict_rows)
-        row = {k: str(a[k]) for k in FIELDS if k in a}
+        row = {k: (str(a[k]) if k in a else "") for k in FIELDS}
         row.update(kind="class", package="P", key=cls, payload="1", verdict=a["verdict"], count="1")
         rows.append(row)
     rows.append(dict(kind="package", package="P", payload="3", blocks="2", count="1",
@@ -453,6 +609,14 @@ def self_check():
     for key, value, note in (("classes_with_text", 3, ""), ("classes_with_block_comment", 2, ""),
                              ("classes_body_in_comment", 1, ""), ("classes_live_body", 1, ""),
                              ("comment_functions", 2, ""), ("comment_vars", 2, ""),
+                             ("commented_placed", 1, ""), ("commented_duplicate", 0, ""),
+                             ("commented_moved", 1, ""), ("commented_absent", 1, ""),
+                             ("commented_named_live", 0, ""),
+                             ("commented_declared_live_body", 1, ""),
+                             ("commented_absent_live_body", 1, ""),
+                             ("commented_declared_body_in_comment", 1, ""),
+                             ("commented_absent_body_in_comment", 1, ""),
+                             ("live_functions", 0, ""), ("live_functions_placed", 0, ""),
                              ("comment_natives", 1, ""), ("line_comment_natives", 1, ""),
                              ("line_comment_classes", 1, ""), ("natives_live", 705, ""),
                              ("comment_defaults", 2, ""),
