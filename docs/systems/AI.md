@@ -319,7 +319,7 @@ were the header's tail, and the code's **863** jump operands then land on a toke
 it beside the size dword at `name_end + 12`.
 
 <!-- generated:state-code -->
-**All 553 `State` payloads end with `UState`'s 22-byte record, 166 of them carry code, and the record is what anchors it at both ends.** The 387 payloads with no script are a header and the record whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer into an override. Where there is a table, the field is the table's first entry in the **loader's** code (every compact index operand widened back to four bytes), exact in **166 of 166** payloads (0 fit none at all, and those keep the most-tokens fallback). Because the widened offset depends on where the walk starts, the field also names the start: it chose **166** of the 166 walks, and they begin **1,694 bytes** past the first offset of the payload that tiles: the 543 `LocalVariable` tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. The code's own jump operands live in the same space -- **863 of 863** land on a token start in the widened code. The walks still reach 29,859 bytes and 11,885 tokens of the state's own label block, `JumpIfNot` 610.
+**All 553 `State` payloads end with `UState`'s 22-byte record, 166 of them carry code, and the record is what anchors it at both ends.** The 387 payloads with no script are a header and the record whose `LabelTableOffset` is `0xffff` -- no table, no code pointer at all -- and 100 of them are a state an ancestor class declares by the same name (25 of those ancestors carry the table, so the code is inherited), while 287 name a state no ancestor declares. Where there is a table the field is that table's first entry in the **loader's** code (every compact index operand widened back to four bytes), exact in **166 of 166** payloads (0 fit none at all and keep the most-tokens fallback). Because the widened offset depends on where the walk starts, the field names the start too: it chose **166** of the 166 walks, and they begin **1,694 bytes** past the first offset of the payload that tiles -- the 543 `LocalVariable` tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. The code's own jump operands live in the same space, so with that start **863 of 863** land on a token start in the widened code. The walks carry 29,859 bytes and 11,885 tokens of the state's own label block, `JumpIfNot` 610.
 
 | measure | value |
 |---|---|
@@ -327,6 +327,7 @@ it beside the size dword at `name_end + 12`.
 | payload bytes | 57,297 |
 | payloads that walk to the container's end / a header and the record only | 166 / 387 |
 | records whose `LabelTableOffset` is `0xffff` (no table, no code) | 387 |
+| ... a state an ancestor declares / that ancestor carries the table / no ancestor state | 100 / 25 / 287 |
 | code bytes / tokens | 29,859 / 11,885 |
 | `JumpIfNot` / `Jump` | 610 / 253 |
 | `LabelTable` tokens, in states / in `Function` payloads | 166 / 0 |

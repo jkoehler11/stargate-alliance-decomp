@@ -66,7 +66,7 @@ NO_TABLE = 0xFFFF    # what `LabelTableOffset` reads when the state carries no l
 FIELDS = ["kind", "package", "class", "state", "payload", "start", "code", "trailer", "tokens",
           "jumpifnot", "jump", "labeltable", "complete", "stringconst", "record", "probe_mask",
           "ignore_mask", "label_offset", "state_flags", "table_w", "start_by", "jump_on", "code_lv", "walk_lv",
-          "text_kw",
+          "override_of", "text_kw",
           "text_label", "text_else", "text_else_label", "verdict", "count", "note"]
 
 CENSUS_NOTE = {
@@ -95,6 +95,9 @@ CENSUS_NOTE = {
     "offset_unmeasured": "anchored walks whose operand spans refuse, so the field cannot be tested",
     "start_by_field": "anchored walks whose start the record's field chose",
     "start_shift": "bytes between that start and the first offset of the payload that tiles",
+    "override_state": "record-only states an ancestor class declares by the same name",
+    "override_code": "of those, the ones whose ancestor state carries a label table (the code is inherited)",
+    "override_none": "record-only states no ancestor declares -- a state whose body compiled to nothing",
     "code_local": "`LocalVariable` tokens left in the chosen streams -- a state's code declares none",
     "walk_local": "`LocalVariable` tokens at the most-tokens start, i.e. the header's tail the field drops",
     "jumps": "`Jump`/`JumpIfNot` operands in the anchored walks",
@@ -115,7 +118,8 @@ CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "cod
                "jumpifnot", "jump", "labeltable", "labeltable_states", "stringconst", "record", "marker",
                "ignore_all_ones", "probe_zero", "flags_zero", "flags_one", "flags_two", "flags_other",
                "offset_entry", "offset_other", "offset_unmeasured", "start_by_field",
-               "start_shift", "code_local", "walk_local", "jumps", "jumps_on_boundary", "text_label_states", "text_label", "text_else",
+               "start_shift", "override_state", "override_code", "override_none", "code_local", "walk_local",
+               "jumps", "jumps_on_boundary", "text_label_states", "text_label", "text_else",
                "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal", "overrides",
                "payload_arms")
 
@@ -341,7 +345,7 @@ def walk_dump(system):
                    "ignore_mask": rec["ignore_mask"] if rec else "",
                    "label_offset": rec["label_offset"] if rec else "",
                    "state_flags": rec["state_flags"] if rec else "",
-                   "table_w": "", "start_by": "", "jump_on": "", "code_lv": "", "walk_lv": "",
+                   "table_w": "", "start_by": "", "jump_on": "", "code_lv": "", "walk_lv": "", "override_of": "",
                    "text_kw": kw, "text_label": kw, "text_else": els, "text_else_label": at_floor,
                    "verdict": "record-only", "count": "", "note": ""}
             if got is not None:
@@ -367,6 +371,42 @@ def walk_dump(system):
     return rows, shift
 
 
+def supers():
+    """`(package, class)` -> `(super_package, super_class)`, lower-cased, from the committed class table."""
+    out = {}
+    with open(os.path.join(ROOT, "inventory", "classes.csv"), newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            out[(r["package"].lower(), r["class"].lower())] = (r["package_of_super"].lower(),
+                                                              (r["super"] or "").lower())
+    return out
+
+
+def inherited(rows):
+    """Fill `override_of` on the record-only rows: the nearest ancestor declaring a state of the same name.
+
+    A state that declares no table has no code of its own; whether the code is *inherited* is a question about
+    the class tree, and the tree is committed (`inventory/classes.csv`), so this needs no second read of the
+    packages. The value names the ancestor, and says when that ancestor has no table either.
+    """
+    have = {}
+    for r in rows:
+        have[(r["package"].lower(), r["class"].lower(), r["state"].lower())] = r["verdict"] != "record-only"
+    up = supers()
+    for r in rows:
+        if r["verdict"] != "record-only":
+            continue
+        pkg, cls, state = r["package"].lower(), r["class"].lower(), r["state"].lower()
+        for _hop in range(40):
+            edge = up.get((pkg, cls))
+            if not edge or not edge[1]:
+                break
+            pkg, cls = edge
+            if (pkg, cls, state) in have:
+                r["override_of"] = "%s.%s%s" % (pkg, cls, "" if have[(pkg, cls, state)] else " (no table)")
+                break
+    return rows
+
+
 def census(rows, shift=None):
     # Every census key starts at zero: the emission guard below is what caught the accumulator that was never
     # written, and it fires on a key that is legitimately zero unless the key exists before the first hit.
@@ -387,6 +427,12 @@ def census(rows, shift=None):
                 c["no_table"] += 1
         if r["verdict"] == "record-only":
             c["no_code"] += 1
+            if r["override_of"]:
+                c["override_state"] += 1
+                if "(no table)" not in r["override_of"]:
+                    c["override_code"] += 1
+            else:
+                c["override_none"] += 1
             continue
         code = int(r["code"])
         c["regions"] += 1
@@ -468,22 +514,26 @@ def doc_block(rows):
     lines = []
     lines.append("**All %s `State` payloads end with `UState`'s 22-byte record, %s of them carry code, and the "
                  "record is what anchors it at both ends.** The %s payloads with no script are a header and the "
-                 "record whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer into an "
-                 "override. Where there is a table, the field is the table's first entry in the **loader's** "
-                 "code (every compact index operand widened back to four bytes), exact in **%s of %s** payloads "
-                 "(%s fit none at all, and those keep the most-tokens fallback). Because the widened offset depends on "
-                 "where the walk starts, the field also names the start: it chose **%s** of the %s walks, and they "
-                 "begin **%s bytes** past the first offset of the payload that tiles: the %s `LocalVariable` "
-                 "tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. "
-                 "The code's own jump operands live in the "
-                 "same space -- **%s of %s** land on a token start in the widened code. The walks still reach "
-                 "%s bytes and %s tokens of the state's own label block, `JumpIfNot` %s."
+                 "record whose `LabelTableOffset` is `0xffff` -- no table, no code pointer at all -- and %s of "
+                 "them are a state an ancestor class declares by the same name (%s of those ancestors carry the "
+                 "table, so the code is inherited), while %s name a state no ancestor declares. Where there is a "
+                 "table the field is that table's first entry in the **loader's** code (every compact index "
+                 "operand widened back to four bytes), exact in **%s of %s** payloads (%s fit none at all and keep "
+                 "the most-tokens fallback). Because the widened offset depends on where the walk starts, the "
+                 "field names the start too: it chose **%s** of the %s walks, and they begin **%s bytes** past "
+                 "the first offset of the payload that tiles -- the %s `LocalVariable` tokens the most-tokens "
+                 "start kept are the header's tail, and **no** state's code keeps one. The code's own jump "
+                 "operands live in the same space, so with that start **%s of %s** land on a token start in the "
+                 "widened code. The walks carry %s bytes and %s tokens of the state's own label block, "
+                 "`JumpIfNot` %s."
                  % (comma(num(rows, "states")), num(rows, "regions"), num(rows, "no_code"),
+                    comma(num(rows, "override_state")), comma(num(rows, "override_code")),
+                    comma(num(rows, "override_none")),
                     comma(num(rows, "offset_entry")), num(rows, "regions"), num(rows, "offset_other"),
                     comma(num(rows, "start_by_field")), num(rows, "regions"),
                     comma(num(rows, "start_shift")), comma(num(rows, "walk_local")),
-                    comma(num(rows, "jumps_on_boundary")),
-                    comma(num(rows, "jumps")), comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
+                    comma(num(rows, "jumps_on_boundary")), comma(num(rows, "jumps")),
+                    comma(num(rows, "code_bytes")), comma(num(rows, "tokens")),
                     comma(num(rows, "jumpifnot"))))
     lines.append("")
     lines.append("| measure | value |")
@@ -494,6 +544,10 @@ def doc_block(rows):
                  % (comma(num(rows, "regions")), comma(num(rows, "no_code"))))
     lines.append("| records whose `LabelTableOffset` is `0xffff` (no table, no code) | %s |"
                  % comma(num(rows, "no_table")))
+    lines.append("| ... a state an ancestor declares / that ancestor carries the table / no ancestor state "
+                 "| %s / %s / %s |"
+                 % (comma(num(rows, "override_state")), comma(num(rows, "override_code")),
+                    comma(num(rows, "override_none"))))
     lines.append("| code bytes / tokens | %s / %s |"
                  % (comma(num(rows, "code_bytes")), comma(num(rows, "tokens"))))
     lines.append("| `JumpIfNot` / `Jump` | %s / %s |"
@@ -679,6 +733,7 @@ def main():
     if not args.system:
         ap.error("--system is required unless --check/--report/--check-doc")
     rows, shift = walk_dump(args.system)
+    rows = inherited(rows)
     rows = sorted(rows, key=lambda r: (r["package"], r["class"], r["state"])) + census(rows, shift)
     with open(args.out, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS)

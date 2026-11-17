@@ -4248,7 +4248,10 @@ the script's last byte is the `0x47` ('G') marker `UStruct::Serialize` (`0x392b0
 **Measured, with the end anchoring the walk.** **166** payloads carry code -- **29,859** of the payload bytes over
 **11,885** tokens, **610** `JumpIfNot` exactly -- and **387** carry none: they are 47-52 bytes, a header plus the
 record, and every one of those records reads `LabelTableOffset = 0xffff`, i.e. no table and therefore no code and
-no code pointer into an override. The old count of 174 included 13 "tables" that were the record's own bytes read
+no code pointer at all. What the 387 *are* is a class-tree question, and the committed tree answers it: **100** of
+them are a state an ancestor class declares by the same name -- of which only **25** have an ancestor that carries
+the table, so the code is inherited there -- and **287** name a state no ancestor declares, i.e. a state whose body
+compiled to nothing. The old count of 174 included 13 "tables" that were the record's own bytes read
 as a token stream.
 
 **The field is answered: it is an offset in the loader's code, not in the file's.** `LabelTableOffset` counts the

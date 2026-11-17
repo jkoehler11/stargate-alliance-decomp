@@ -12778,8 +12778,10 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   (0 fit none), where `table_w` is the `0x0c` opcode's widened offset and `+1` is the first entry. That is why the
   three file-space framings failed -- the space was wrong, not the field.
 - **The sentinel closes the 387.** Every record-only payload reads `LabelTableOffset = 0xffff`: no table, so no
-  code and no code pointer into an override. The residue the last note left ("check the 387 for a code pointer")
-  has no pointer to find.
+  code and no code pointer at all. The residue the last note left ("check the 387 for a code pointer") has no
+  pointer to find, and the class tree says what they are: **100** are a state an ancestor declares by the same
+  name (**25** of those ancestors carry the table, so the code is genuinely inherited) and **287** name a state no
+  ancestor declares -- a body that compiled to nothing.
 - **The field pins the start, and that is the measurable win.** The widened offset depends on where the walk
   begins, so the field names the start too; among the starts that fit it, the one that leaves **no** `LocalVariable`
   token wins (a state's code declares no locals). Measured: **166** starts came from the field, they sit **1,694**

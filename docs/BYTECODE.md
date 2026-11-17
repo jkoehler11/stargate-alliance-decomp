@@ -1663,8 +1663,10 @@ are an archive compact name index and a 4-byte code offset, the table ends on th
 then ends on the `0x47` marker `UStruct::Serialize` appends on save. That end is what makes a walk the state's
 code -- the payload is `<header><script><0x47><22-byte UState record>` -- so the anchored walks carry **29,859** of
 the 57,297 state payload bytes and **610** `JumpIfNot` exactly. The other **387** payloads are 47-52 bytes: a header
-and that record, whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer into an
-override -- which is why they used to read as a residue of short "code".
+and that record, whose `LabelTableOffset` is `0xffff` -- no table, so no code and no code pointer at all. **100**
+of the 387 are a state an ancestor class declares by the same name and only **25** of those ancestors carry the
+table, so the code is inherited in 25 and in the other 287 the body compiled to nothing -- which is why they used
+to read as a residue of short "code".
 
 **The record's WORD is where the table lives, and it is in the loader's code, not in the file's.** `LabelTableOffset`
 is the label table's first entry measured in the code as the loader rebuilds it, every compact `index` operand
