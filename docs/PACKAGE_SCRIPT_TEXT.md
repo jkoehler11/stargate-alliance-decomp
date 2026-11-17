@@ -585,7 +585,7 @@ spells. The artifact is `inventory/text_stubs.csv` (one row per class, one per s
 `make text-stubs` regenerates it and this block.
 
 <!-- generated:text-stubs -->
-**Of the 11,411 declarations the grammar's rule reads, 10,505 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **759 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **147 carry a longer script**, a body the package kept. Of those **23** are forward declarations -- the same text declares the name again, with a body, further down -- so **124 carry a script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **441 of the 10,505 bodied declarations compile to the same empty script too** -- **307** an empty `{}` body and **134** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 62 of the 369 empty-`{}` bodies carry a longer payload than it.
+**Of the 11,411 declarations the grammar's rule reads, 10,505 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **880 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **15 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **12** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **372 of the 10,505 bodied declarations compile to the same empty script too** -- **358** an empty `{}` body and **14** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 11 of the 369 empty-`{}` bodies carry a longer payload than it.
 
 | shape | stubs | what it is |
 |---|---:|---|
@@ -595,10 +595,10 @@ spells. The artifact is `inventory/text_stubs.csv` (one row per class, one per s
 
 | owner | empty script | compiled body |
 |---|---:|---:|
-| the class itself | 657 | 137 |
-| a `State` of the class | 102 | 10 |
+| the class itself | 653 | 15 |
+| a `State` of the class | 227 | 0 |
 
-A stub's name is never a name the package lacks: **794 name a `Function` the class itself exports**, **112 one only a `State` of the class exports**, and **0 name no export at all**. **61** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
+A stub's name is almost always one the package exports: **668 name a `Function` the class itself exports**, **227 one a `State` of the class exports**, and **11 name no export at all** -- a class-level declaration whose name only a state binds, which a class-over-state index cannot see. **8** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
 
 | package | stubs |
 |---|---:|
@@ -622,22 +622,30 @@ The concentration is a handful of classes, not a spread: **15 classes are all st
 | `Engine.actor` | 71 / 111 | 71 | 0 |
 | `Engine.controller` | 49 / 136 | 49 | 0 |
 | `Engine.pawn` | 46 / 212 | 46 | 0 |
-| `StargateGame.botenemy` | 38 / 403 | 10 | 28 |
+| `StargateGame.botenemy` | 38 / 403 | 37 | 1 |
 | `UWindow.uwindowlookandfeel` | 37 / 38 | 37 | 0 |
 | `GUI.guicomponent` | 30 / 104 | 30 | 0 |
-| `StargateGame.stargateplayer` | 28 / 214 | 2 | 26 |
+| `StargateGame.stargateplayer` | 28 / 214 | 24 | 4 |
 | `Engine.gameinfo` | 22 / 162 | 22 | 0 |
 
-The stubs whose payload carries code are the ones where the text and the build disagree -- three of them are the shape cases above (the two `#endif` windows and the truncated text) and the rest are bodies no live declaration of that class spells. The largest:
+**A `state`'s declaration belongs to the state.** **227 of the 906 stubs are written inside a `state` block**, and each one resolves to that state's own `Function` export rather than the class's: **227** of them compile to the empty script and **0** carry one, against **653** empty and **15** bodied at the class's own level. Asking the class for the name -- a class-over-state preference -- credits a state's bodyless declaration with the class's script, which is how a census can read a body the text does not spell where the text spells nothing missing at all.
+
+**The residue is not in the class's comment.** `inventory/class_text_bodies.csv` already measures the bodies a block comment disables, and joining that artifact by `(package, class, function)` against them puts **0** in a class whose own comment carries a body of the same name -- a body the text moved into a comment rather than dropped -- **0** in a class that ships a block comment without this name, and **1** in a class that ships no comment at all, so **1 of the 15** bodied stubs is a body the `ScriptText` does not spell anywhere. The name-level rate is the control: **23 of the 647** distinct stub names also occur as a commented body somewhere in the corpus (3.6%), against **0 of 1** (0.0%) for the lost bodies' own names -- the join is not finding less than a plain name census would.
+
+**The declaration lookups stay inside their own scope.** A forward declaration is one the same text declares again *below* with a body (**2** bodied stubs) and the mirror case is a body *above* (**12**); both are counted on the same scope's declarations only, so a class-level declaration is never answered with a state's body or the reverse.
+
+**A repeated payload size is not a repeated script.** The 15 bodied stubs carry **13** distinct payloads and **4** rows share one, and those are one name declared twice in a class (`StargatePlayer.fire`, `StargateWeapon.fire`) -- equal sizes across *different* names are distinct scripts, not one lost body counted several times.
+
+The stubs whose payload carries code are the ones where the text and the build disagree, and almost every one of them is a *shape*: 3 sit in an `#endif` window or a truncated text, 14 re-declare a name the class's text spells a body for (2 forward, 12 backward) and the remainder is the one body the text does not spell. The largest:
 
 | function | payload | owner |
 |---|---:|---|
 | `UWindow.uwindowurltextarea.textareacliptext` | 734 | class |
-| `StargateGame.botbase.weaponfireagain` | 643 | class |
 | `StargateGame.stargatepawn.talk` | 498 | class |
 | `Engine.interactionmaster.addinteraction` | 314 | class |
-| `StargateGame.stargatepawn.playwaiting` | 308 | class |
-| `Engine.playercontroller.serveruse` | 269 | class |
+| `StargateGame.botsg.whattodonext` | 221 | class |
+| `StargateGame.stargateplayer.fire` | 170 | class |
+| `StargateGame.stargateweapon.fire` | 83 | class |
 
 <!-- /generated:text-stubs -->
 

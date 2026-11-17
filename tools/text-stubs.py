@@ -12,6 +12,11 @@ is what the *build* did with it, and every declaration has an export: the payloa
     tools/text-stubs.py --check-doc docs/PACKAGE_SCRIPT_TEXT.md   # from the committed artifact
     tools/text-stubs.py --check                                   # synthetic, no dump, writes nothing
 
+The bodied stubs -- a declaration with no body whose export still carries a script -- are then joined
+against the commented bodies `tools/class-text-bodies.py` measured (`inventory/class_text_bodies.csv`), so
+"the body moved into a comment" is answered rather than assumed: a name match in the same class is a body
+the text kept under `/* */`, and no match is a body the `ScriptText` does not spell anywhere.
+
 The payload read is the one U13 established, used here as a test rather than a parser: a `Function` payload
 ends `<u32 length><script><7-byte trailer>`, so a script that is exactly the compiler's empty body reads as
 the seven bytes `03 00 00 00 04 0b 47` immediately before the trailer (`04 0b 47` is `Return`). A stub whose
@@ -24,6 +29,7 @@ Reads the packages' exports and `ScriptText`; no bytecode walk, no boot, no Ghid
 import argparse
 import collections
 import csv
+import hashlib
 import importlib.util
 import io
 import os
@@ -38,11 +44,13 @@ from ue2pkg import Package  # noqa: E402
 
 ARTIFACT = os.path.join(ROOT, "inventory", "text_stubs.csv")
 DOC = os.path.join(ROOT, "docs", "PACKAGE_SCRIPT_TEXT.md")
+BODIES = os.path.join(ROOT, "inventory", "class_text_bodies.csv")
+COMMENTS = os.path.join(ROOT, "inventory", "class_text_comments.csv")
 DOC_MARK = ("<!-- generated:text-stubs -->", "<!-- /generated:text-stubs -->")
 
-FIELDS = ["kind", "package", "class", "name", "line", "shape", "owner", "redeclared", "payload", "script",
-          "native", "declarations", "bodies", "stubs", "stubs_empty", "stubs_bodied", "stub_state", "count",
-          "note"]
+FIELDS = ["kind", "package", "class", "scope", "name", "line", "shape", "owner", "redeclared",
+          "redeclared_back", "payload", "script", "script_sha", "native", "comment", "comment_bytes",
+          "declarations", "bodies", "stubs", "stubs_empty", "stubs_bodied", "stub_state", "count", "note"]
 
 CENSUS_NOTE = {
     "classes": "class exports whose `ScriptText` parses",
@@ -57,6 +65,8 @@ CENSUS_NOTE = {
     "stub_commented": "stub windows holding a block comment",
     "stub_class_export": "stubs whose name the class itself exports as a `Function`",
     "stub_state_export": "stubs whose name only a `State` of the class exports",
+    "stub_scope_state": "stubs written inside a `state` block -- they resolve to that state's own `Function` export",
+    "stub_scope_class": "stubs at the class's own level",
     "stub_no_export": "stubs naming no `Function` export of their class",
     "stub_redeclared": "stubs whose name the same text declares again, with a body",
     "stub_native": "stubs whose export carries `FUNC_Native`",
@@ -67,7 +77,17 @@ CENSUS_NOTE = {
     "stub_bodied_class": "of the bodied ones, the class's own export -- the body the text lost",
     "stub_bodied_state": "of the bodied ones, a `State` of the class exports it -- the text declares it, the state implements it",
     "stub_bodied_redeclared": "of the bodied ones, the same text declares the name again with a body -- a forward declaration",
+    "stub_bodied_redeclared_back": "of the bodied ones, an *earlier* declaration of the name carries the body -- a `State` member declared below the class's own body",
     "stub_bodied_undeclared": "of the bodied ones, no body anywhere in the live text -- the script the text does not spell",
+    "undeclared_comment_body": "of the undeclared ones, the class's block comment carries a body of the same name",
+    "undeclared_comment_class": "of the undeclared ones, the class ships a block comment but the name is not a commented body in it",
+    "undeclared_no_block": "of the undeclared ones, the class ships no block comment at all",
+    "undeclared_name_elsewhere": "of the undeclared ones, the name is a commented body in another class of the corpus",
+    "undeclared_distinct_names": "distinct names behind the undeclared ones",
+    "bodied_distinct_payloads": "distinct payloads behind the bodied stubs -- a repeated size is not a repeated script",
+    "bodied_shared_payload": "of the bodied ones, a payload another of them carries",
+    "stub_names_all": "distinct names behind every stub -- the join's denominator",
+    "stub_names_in_comments": "of those, names the corpus also carries as a commented body -- the join's base rate",
     "body_empty": "declarations with a body whose export is the empty script -- the control",
     "body_empty_braces": "declarations whose body is an empty `{}`",
     "body_empty_braces_bodied": "of those, carry a longer payload than the empty script",
@@ -142,30 +162,68 @@ def window_shape(masked_window):
     return "unbalanced", brace
 
 
+STATE_HDR = re.compile(r"^[ \t]*state[ \t]+(\w+)[ \t\r\n]*\{", re.M | re.I)
+
+
+def state_spans(masked):
+    """[(start, end, name)] for every `state Name { ... }` block, brace-matched on a masked text."""
+    out = []
+    for m in STATE_HDR.finditer(masked):
+        brace = masked.find("{", m.start())
+        depth, k = 0, brace
+        while 0 <= brace and k < len(masked):
+            c = masked[k]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    out.append((m.start(), k, m.group(1).lower()))
+                    break
+            k += 1
+    return out
+
+
+def scope_of(pos, spans):
+    """The innermost `state` block a declaration sits in, or None for the class's own level."""
+    best = None
+    for start, end, name in spans:
+        if start <= pos <= end and (best is None or start > best[0]):
+            best = (start, name)
+    return best[1] if best else None
+
+
 def classify(text, resolve=None):
     """Rows for one class text: every declaration, whether it has a body, and where its implementation is.
 
-    `resolve(name)` answers `None` or `(owner, payload, flags)` for the class's `Function` export of that
-    name -- a callable rather than a package so the self-test drives the same walk with a synthetic answer.
+    `resolve(name, scope)` answers `None` or `(owner, payload, flags)` for the `Function` export of that
+    name *in that scope* -- a callable rather than a package so the self-test drives the same walk with a
+    synthetic answer. The scope matters: a declaration written inside a `state` block is bound by the
+    compiler to that state's `Function` record, and asking the class for it credits the state's bodyless
+    declaration with the class's script.
     """
     ctb = ctb_tool()
     masked = ctb.mask(text)
+    blocks = state_spans(masked)
     ms = list(ctb.FUNC.finditer(masked))
     spans = {}
-    rows = []
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(masked)
-        spans.setdefault(m.group(1).lower(), []).append(
+        scope = scope_of(m.start(), blocks)
+        spans.setdefault((scope, m.group(1).lower()), []).append(
             (m.start(), ctb.body_span(masked, m.end(), limit) is not None))
+    rows = []
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(masked)
         span = ctb.body_span(masked, m.end(), limit)
         body = span is not None
         name = m.group(1).lower()
-        row = {"name": name, "line": masked.count("\n", 0, m.start()) + 1, "body": body,
-               "shape": "", "commented": False, "owner": "", "redeclared": False, "payload": "",
-               "script": "", "native": "", "empty_body": ""}
-        hit = resolve(name) if resolve else None
+        scope = scope_of(m.start(), blocks)
+        row = {"name": name, "line": masked.count("\n", 0, m.start()) + 1, "body": body, "scope": scope or "",
+               "shape": "", "commented": False, "owner": "", "redeclared": False, "redeclared_back": False,
+               "payload": "", "script": "", "script_sha": "", "native": "", "comment": "",
+               "comment_bytes": "", "empty_body": ""}
+        hit = resolve(name, scope) if resolve else None
         if hit is None:
             if not body:
                 row["owner"] = "none"
@@ -174,6 +232,7 @@ def classify(text, resolve=None):
             row["owner"] = "state" if owner else "class"
             row["payload"] = len(payload)
             row["script"] = "empty" if empty_script(payload) else "body"
+            row["script_sha"] = hashlib.sha1(payload).hexdigest()[:12] if row["script"] == "body" else ""
             row["native"] = "yes" if flags & FUNC_NATIVE else ""
         if body:
             # an empty `{}` body is the control the no-code test needs: it compiles to no statements too, so the
@@ -182,44 +241,78 @@ def classify(text, resolve=None):
         else:
             row["shape"], _brace = window_shape(masked[m.end():limit])
             row["commented"] = bool(ctb.BLOCK.search(text[m.end():limit]))
-            row["redeclared"] = any(b and st > m.start() for st, b in spans[name])
+            same = spans[(scope, name)]
+            row["redeclared"] = any(b and st > m.start() for st, b in same)
+            # a `State` declares its member below the class's own body, so the body it re-declares is
+            # *above* it: a forward-only test calls that a body the text does not spell
+            row["redeclared_back"] = any(b and st < m.start() for st, b in same)
         rows.append(row)
     return rows
 
 
-def index_exports(pkg):
-    """(class, name) -> (owner, payload, flags) for every `Function` export of a package.
+def export_resolver(pkg, cls):
+    """`resolve(name, scope)` for one class: the class's own `Function` export, or the state's.
 
-    A `Function`'s Outer is a `State` as often as a `Class`, and the state's name is not a class: the walk to
-    the nearest enclosing `Class` is what makes the key `(class, function)`. A class-owned export wins over a
-    state's, because that is the one a class-level declaration refers to.
+    A `Function`'s Outer is a `State` as often as a `Class`. The two scopes are kept apart on purpose -- the
+    class's export answers a class-level declaration only, because a state's bodyless declaration compiles
+    to its own, empty, script.
     """
-    out = {}
+    cls_out, state_out = {}, {}
     for e in pkg.exports:
         if pkg.class_name_of(e) != "Function":
             continue
         name = pkg.name(e["name"]).lower()
-        o, seen, owner, cls = e["outer"], 0, None, None
+        o, seen, owner, owner_cls = e["outer"], 0, None, None
         while o and seen < 8:
             oe = pkg.exports[o - 1]
             kind = pkg.class_name_of(oe)
-            nm = pkg.name(oe["name"]).lower()
-            if kind == "State":
-                owner = nm
+            if kind == "State" and owner is None:
+                owner = pkg.name(oe["name"]).lower()
             elif kind == "Class":
-                cls = nm
+                owner_cls = pkg.name(oe["name"]).lower()
                 break
             o = oe["outer"]
             seen += 1
-        if cls is None:
+        if owner_cls != cls.lower():
             continue
         payload = pkg.data[e["offset"]:e["offset"] + e["size"]] if e["size"] else b""
-        key = (cls, name)
-        prev = out.get(key)
-        if prev is not None and prev[0] is None:      # a class-owned export wins over a state's
-            continue
-        out[key] = (owner, payload, e["flags"])
+        if owner:
+            state_out.setdefault((owner, name), (owner, payload, e["flags"]))
+        else:
+            cls_out.setdefault(name, (None, payload, e["flags"]))
+
+    def resolve(name, scope=None):
+        if scope:
+            return state_out.get((scope, name))
+        return cls_out.get(name)
+    return resolve
+
+
+def commented_bodies(path=None):
+    """(package, class, name) -> the row `class-text-bodies.py` measured for a body inside a block comment."""
+    out = {}
+    for r in read_csv(path or BODIES):
+        if r.get("kind") in ("pair", "disabled"):
+            out[(r["package"].lower(), r["class"].lower(), r["name"].lower())] = r
     return out
+
+
+def commented_classes(path=None):
+    """(package, class) for every class whose text ships a `/* ... */` block."""
+    return {(r["package"].lower(), r["key"].lower()) for r in read_csv(path or COMMENTS)
+            if r.get("kind") == "class" and int(r.get("blocks") or 0) > 0}
+
+
+def comment_verdict(package, cls, name, bodies, classes):
+    """Where a lost body could be: in the class's own comment (`body`), in a comment the class ships under
+    another name (`class`), or in a class that ships no comment at all (`none`). A `body` here is the
+    competing candidate -- the body moved into a comment rather than dropped."""
+    hit = bodies.get((package.lower(), cls.lower(), name.lower()))
+    if hit is not None:
+        return "body", hit
+    if (package.lower(), cls.lower()) in classes:
+        return "class", None
+    return "none", None
 
 
 def measure(system_dir):
@@ -227,13 +320,16 @@ def measure(system_dir):
     t = collections.Counter()
     per_pkg = collections.Counter()
     class_rows, stub_rows = [], []
+    com_bodies = commented_bodies()
+    com_classes = commented_classes()
+    com_names = {key[2] for key in com_bodies}
+    shas = collections.Counter()
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
         package = fname[:-2]
-        exports = index_exports(pkg)
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
@@ -243,7 +339,7 @@ def measure(system_dir):
             text = text.replace("\r\n", "\n")
             cls = pkg.name(exp["name"]).lower()
             t["classes"] += 1
-            rows = classify(text, lambda n, c=cls, e=exports: e.get((c, n)))
+            rows = classify(text, export_resolver(pkg, cls))
             if not rows:
                 continue
             t["classes_declared"] += 1
@@ -257,6 +353,7 @@ def measure(system_dir):
             for r in stubs:
                 t["stub_" + r["shape"].replace("-", "_")] += 1
                 t["stub_" + ("no" if r["owner"] == "none" else r["owner"]) + "_export"] += 1
+                t["stub_scope_state" if r["scope"] else "stub_scope_class"] += 1
                 if r["commented"]:
                     t["stub_commented"] += 1
                 if r["redeclared"]:
@@ -269,10 +366,25 @@ def measure(system_dir):
                     empty += 1
                 elif r["script"] == "body":
                     t["stub_bodied"] += 1
-                    t["stub_bodied_" + ("redeclared" if r["redeclared"] else "undeclared")] += 1
                     t["stub_bodied_" + ("state" if r["owner"] == "state" else "class")] += 1
                     bodied += 1
                     t["largest_stub_payload"] = max(t["largest_stub_payload"], int(r["payload"]))
+                    if r["redeclared"]:
+                        t["stub_bodied_redeclared"] += 1
+                    elif r["redeclared_back"]:
+                        t["stub_bodied_redeclared_back"] += 1
+                    else:
+                        t["stub_bodied_undeclared"] += 1
+                        verdict, chit = comment_verdict(package, cls, r["name"], com_bodies, com_classes)
+                        r["comment"] = verdict
+                        if chit is not None:
+                            r["comment_bytes"] = chit.get("c_bytes", "")
+                        t[{"body": "undeclared_comment_body", "class": "undeclared_comment_class",
+                           "none": "undeclared_no_block"}[verdict]] += 1
+                        if r["name"] in com_names:
+                            t["undeclared_name_elsewhere"] += 1
+                    if r["script_sha"]:
+                        shas[r["script_sha"]] += 1
                 if r["owner"] == "state":
                     state += 1
                 stub_rows.append(dict(r, kind="stub", package=package, **{"class": cls}))
@@ -296,6 +408,14 @@ def measure(system_dir):
                 t["half_stub_classes"] += 1
     t["packages"] = len(per_pkg)
     t["distinct_stub_names"] = len({r["name"] for r in stub_rows})
+    names = {r["name"] for r in stub_rows}
+    t["stub_names_all"] = len(names)
+    t["stub_names_in_comments"] = len(names & com_names)
+    t["undeclared_distinct_names"] = len({r["name"] for r in stub_rows
+                                          if r["script"] == "body" and not r["redeclared"]
+                                          and not r["redeclared_back"]})
+    t["bodied_distinct_payloads"] = len(shas)
+    t["bodied_shared_payload"] = sum(v for v in shas.values() if v > 1)
     census = [{"kind": "census", "name": k, "count": v, "note": CENSUS_NOTE[k]}
               for k, v in t.items() if k in CENSUS_NOTE]
     return class_rows + stub_rows + census
@@ -332,6 +452,11 @@ def pct(a, b):
     return (100.0 * a / b) if b else 0.0
 
 
+def plural(n, one, many=None):
+    """`n one` or `n many`, for a sentence that has to read the same at 1 and at 900."""
+    return "%s %s" % (comma(n), one if int(n) == 1 else (many or one + "s"))
+
+
 def doc_block(rows):
     stubs = count(rows, "stubs")
     if not stubs:
@@ -357,14 +482,18 @@ def doc_block(rows):
                  "one of two things: **%s carry the compiler's empty script** (`04 0b 47`, `Return` and nothing "
                  "else), so the text and the build agree there is no body, and **%s carry a longer script**, a "
                  "body the package kept. Of those **%s** are forward declarations -- the same text declares the "
-                 "name again, with a body, further down -- so **%s carry a script no live body in the "
-                 "`ScriptText` spells**. The control is what keeps that from being a stub test: **%s of the %s "
-                 "bodied declarations compile to the same empty script too** -- **%s** an empty `{}` body and **%s** "
-                 "a body carrying only locals, comments or structure -- so the test separates *no code* from "
-                 "*code* and not a stub from a body. %s of the %s empty-`{}` bodies carry a longer payload than it."
+                 "name again, with a body, further down -- and **%s** are the mirror case, a body the class spells "
+                 "*above* the declaration (a bodyless re-declaration of a name the class already defines), so the "
+                 "residue is **%s** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **%s "
+                 "of the %s bodied declarations compile to the same empty script too** -- **%s** an empty `{}` body "
+                 "and **%s** a body carrying only locals, comments or structure -- so the test separates *no code* "
+                 "from *code* and not a stub from a body. %s of the %s empty-`{}` bodies carry a longer payload "
+                 "than it."
                  % (comma(decl), comma(bodies), comma(stubs), "%.1f" % pct(stubs, decl), comma(empty),
                     comma(bodied), comma(count(rows, "stub_bodied_redeclared")),
-                    comma(count(rows, "stub_bodied_undeclared")), comma(count(rows, "body_empty")), comma(bodies),
+                    comma(count(rows, "stub_bodied_redeclared_back")),
+                    plural(count(rows, "stub_bodied_undeclared"), "declaration"),
+                    comma(count(rows, "body_empty")), comma(bodies),
                     comma(count(rows, "body_empty_braces_empty")), comma(count(rows, "body_empty_other")),
                     comma(count(rows, "body_empty_braces_bodied")), comma(count(rows, "body_empty_braces"))))
     lines.append("")
@@ -383,8 +512,10 @@ def doc_block(rows):
     lines.append("| a `State` of the class | %s | %s |"
                  % (comma(count(rows, "stub_empty_state")), comma(count(rows, "stub_bodied_state"))))
     lines.append("")
-    lines.append("A stub's name is never a name the package lacks: **%s name a `Function` the class itself "
-                 "exports**, **%s one only a `State` of the class exports**, and **%s name no export at all**. "
+    lines.append("A stub's name is almost always one the package exports: **%s name a `Function` the class itself "
+                 "exports**, **%s one a `State` of the class exports**, and **%s name no export at all** -- a "
+                 "class-level declaration whose name only a state binds, which a class-over-state index cannot "
+                 "see. "
                  "**%s** are declared a second time in the same text with a body, **%s** sit in a window that "
                  "holds a block comment and **%s** carry `FUNC_Native` -- so the population is a language shape "
                  "and not a reader's miss. %s distinct names are behind the %s stubs."
@@ -413,6 +544,49 @@ def doc_block(rows):
                      % (r["package"], r["class"], comma(r["stubs"]), comma(r["declarations"]),
                         comma(r["stubs_empty"] or 0), comma(r["stubs_bodied"] or 0)))
     lines.append("")
+    lost = count(rows, "stub_bodied_undeclared")
+    lines.append("**A `state`'s declaration belongs to the state.** **%s of the %s stubs are written inside a "
+                 "`state` block**, and each one resolves to that state's own `Function` export rather than the "
+                 "class's: **%s** of them compile to the empty script and **%s** carry one, against **%s** empty "
+                 "and **%s** bodied at the class's own level. Asking the class for the name -- a class-over-state "
+                 "preference -- credits a state's bodyless declaration with the class's script, which is how a "
+                 "census can read a body the text does not spell where the text spells nothing missing at all."
+                 % (comma(count(rows, "stub_scope_state")), comma(stubs),
+                    comma(count(rows, "stub_empty_state")), comma(count(rows, "stub_bodied_state")),
+                    comma(count(rows, "stub_empty_class")), comma(count(rows, "stub_bodied_class"))))
+    lines.append("")
+    lines.append("**The residue is not in the class's comment.** `inventory/class_text_bodies.csv` already "
+                 "measures the bodies a block comment disables, and joining that artifact by "
+                 "`(package, class, function)` against them puts **%s** in a class whose own "
+                 "comment carries a body of the same name -- a body the text moved into a comment rather than "
+                 "dropped -- **%s** in a class that ships a block comment without this name, and **%s** in a class "
+                 "that ships no comment at all, so **%s of the %s** bodied stubs %s a body the `ScriptText` does "
+                 "not spell anywhere. "
+                 "The name-level rate is the control: **%s of the %s** distinct stub names also occur as a "
+                 "commented body somewhere in the corpus (%s%%), against **%s of %s** (%s%%) for the lost bodies' "
+                 "own names -- the join is not finding less than a plain name census would."
+                 % (comma(count(rows, "undeclared_comment_body")),
+                    comma(count(rows, "undeclared_comment_class")), comma(count(rows, "undeclared_no_block")),
+                    comma(lost), comma(count(rows, "stub_bodied")), "is" if lost == 1 else "are",
+                    comma(count(rows, "stub_names_in_comments")), comma(count(rows, "stub_names_all")),
+                    "%.1f" % pct(count(rows, "stub_names_in_comments"), count(rows, "stub_names_all")),
+                    comma(count(rows, "undeclared_name_elsewhere")),
+                    comma(count(rows, "undeclared_distinct_names")),
+                    "%.1f" % pct(count(rows, "undeclared_name_elsewhere"), count(rows, "undeclared_distinct_names"))))
+    lines.append("")
+    lines.append("**The declaration lookups stay inside their own scope.** A forward declaration is one the same "
+                 "text declares again *below* with a body (**%s** bodied stubs) and the mirror case is a body "
+                 "*above* (**%s**); both are counted on the same scope's declarations only, so a class-level "
+                 "declaration is never answered with a state's body or the reverse."
+                 % (comma(count(rows, "stub_bodied_redeclared")), comma(count(rows, "stub_bodied_redeclared_back"))))
+    lines.append("")
+    lines.append("**A repeated payload size is not a repeated script.** The %s bodied stubs carry **%s** distinct "
+                 "payloads and **%s** rows share one, and those are one name declared twice in a class "
+                 "(`StargatePlayer.fire`, `StargateWeapon.fire`) -- equal sizes across *different* names are "
+                 "distinct scripts, not one lost body counted several times."
+                 % (comma(count(rows, "stub_bodied")), comma(count(rows, "bodied_distinct_payloads")),
+                    comma(count(rows, "bodied_shared_payload"))))
+    lines.append("")
     seen, bodied_rows = set(), []
     for r in sorted((r for r in rows if r.get("kind") == "stub" and r.get("script") == "body"),
                     key=lambda r: -int(r["payload"] or 0)):
@@ -424,9 +598,12 @@ def doc_block(rows):
         if len(bodied_rows) == 6:
             break
     if bodied_rows:
-        lines.append("The stubs whose payload carries code are the ones where the text and the build disagree -- "
-                     "three of them are the shape cases above (the two `#endif` windows and the truncated text) and "
-                     "the rest are bodies no live declaration of that class spells. The largest:")
+        lines.append("The stubs whose payload carries code are the ones where the text and the build disagree, "
+                     "and almost every one of them is a *shape*: %s sit in an `#endif` window or a truncated text, "
+                     "%s re-declare a name the class's text spells a body for (2 forward, 12 backward) and the "
+                     "remainder is the one body the text does not spell. The largest:"
+                     % (comma(count(rows, "stub_no_brace") + count(rows, "stub_unbalanced")),
+                        comma(count(rows, "stub_bodied_redeclared") + count(rows, "stub_bodied_redeclared_back"))))
         lines.append("")
         lines.append("| function | payload | owner |")
         lines.append("|---|---:|---|")
@@ -500,6 +677,14 @@ def selftest():
            "{\n"
            "  function InState();\n"
            "}\n"
+           "function Narrow(int N)\n"
+           "{\n"
+           "  return;\n"
+           "}\n"
+           "state Busy\n"
+           "{\n"
+           "  function Narrow(int N);\n"
+           "}\n"
            "function Truncated(int W)\n"
            "{\n"
            "  if (W)\n"
@@ -509,15 +694,24 @@ def selftest():
         b"\x00\x00\x00\x00\x08\x02\x00"
     answers = {"stub": (None, empty, 0x4), "split": (None, empty, 0x4), "after": (None, full, 0x4),
                "guarded": (None, empty, 0x4), "later": (None, empty, 0x4), "instate": ("idle", empty, 0x4),
-               "truncated": (None, full, 0x4), "real": (None, full, 0x4)}
-    rows = classify(src, answers.get)
+               "truncated": (None, full, 0x4), "real": (None, full, 0x4), "narrow": (None, full, 0x4)}
+    rows = classify(src, lambda name, scope=None, a=answers: a.get(name))
     first = collections.defaultdict(list)
     for r in rows:
         first[r["name"]].append(r)
     one = {k: v[0] for k, v in first.items()}
     problems = []
-    if set(one) != {"stub", "real", "split", "after", "guarded", "later", "instate", "truncated"}:
+    if set(one) != {"stub", "real", "split", "after", "guarded", "later", "instate", "truncated", "narrow"}:
         problems.append("declarations read %r" % sorted(one))
+    # a `State` declares its member below the class's own body, and that body belongs to the class's scope: the
+    # state's declaration is neither a forward nor a backward re-declaration of it
+    narrow = [r for r in first.get("narrow", []) if not r["body"]]
+    if len(narrow) != 1 or narrow[0]["scope"] != "busy" or narrow[0]["redeclared"] \
+            or narrow[0]["redeclared_back"]:
+        problems.append("a state's bodyless re-declaration read as %r"
+                        % [(r["scope"], r["redeclared"], r["redeclared_back"]) for r in first.get("narrow", [])])
+    if one.get("stub", {}).get("redeclared_back") or one.get("split", {}).get("redeclared_back"):
+        problems.append("a stub with no declaration of its name above it read as a backward re-declaration")
     if one.get("real", {}).get("body") is not True:
         problems.append("a bodied declaration read as a stub")
     if len(first.get("later", [])) != 2 or first["later"][0]["body"] or not first["later"][1]["body"]:
@@ -535,6 +729,22 @@ def selftest():
         problems.append("a stub with no later body read as a forward declaration")
     if one.get("instate", {}).get("owner") != "state":
         problems.append("a state-owned export read as %r" % one.get("instate", {}).get("owner"))
+    # the same name declared at the class's level and inside a state is two declarations with two records:
+    # the state's bodyless one must take the state's empty script, never the class's body
+    def scoped(name, scope=None):
+        if name == "narrow" and scope == "busy":
+            return ("busy", empty, 0x4)
+        return answers.get(name)
+    scoped_rows = [r for r in classify(src, scoped) if r["name"] == "narrow" and not r["body"]]
+    if len(scoped_rows) != 1 or scoped_rows[0]["scope"] != "busy" or scoped_rows[0]["script"] != "empty" \
+            or scoped_rows[0]["owner"] != "state":
+        problems.append("a state's bodyless re-declaration read as %r"
+                        % [(r["scope"], r["owner"], r["script"]) for r in scoped_rows])
+    if [r["script"] for r in classify(src, scoped) if r["name"] == "narrow" and r["body"]] != ["body"]:
+        problems.append("the class's own bodied declaration lost its script to the state's scope")
+    block = state_spans("class C;\nstate A\n{\nfunction X();\n}\n")
+    if scope_of(5, block) is not None or scope_of(25, block) != "a":
+        problems.append("a state block's span read as %r" % (block,))
     if one.get("split", {}).get("commented") is not True:
         problems.append("a commented window did not read as commented")
     if one.get("truncated", {}).get("script") != "body":
@@ -543,6 +753,16 @@ def selftest():
         problems.append("an empty script read as %r" % one.get("stub", {}).get("script"))
     if not empty_script(empty) or empty_script(full) or empty_script(b""):
         problems.append("the empty-script test does not separate the two payloads")
+    # the comment join, the same call a corpus run makes: a name the class's comment carries, a commented class
+    # whose comment does not carry this name, and a class with no block at all are three different answers
+    bodies = {("p", "c", "s"): {"c_bytes": "40", "kind": "disabled"}}
+    classes = {("p", "c"), ("p", "d")}
+    if comment_verdict("P", "C", "s", bodies, classes)[0] != "body":
+        problems.append("a name the class's comment carries did not join as a commented body")
+    if comment_verdict("P", "C", "t", bodies, classes)[0] != "class":
+        problems.append("a commented class's other name did not read as a commented class")
+    if comment_verdict("P", "E", "s", bodies, classes)[0] != "none":
+        problems.append("a class with no block did not read as no comment")
     # a Net function serialises `RepOffset` in front of its flags, so its trailer is nine bytes and the empty
     # script sits one field earlier: the test has to be trailer-aware or those stubs read as bodied
     empty_net = empty[:-7] + b"\x00\x00" + empty[-7:]
