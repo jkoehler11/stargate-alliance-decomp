@@ -11595,3 +11595,39 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **What this does not do.** It does not change the locator: `choose_scored` still prefers the early start on these
   three rows, and correcting that is a change to the candidate rule rather than to a value grammar.
 - Tool + `inventory/delegate_value_census.csv` + `docs/CLASS_DEFAULTS.md` + U18 + this note. Reads the dump; no boot.
+
+### Execution notes (2026-11-16, a map's name table is 5% data, and the squad roster is a property value)
+
+- **Task.** `docs/CLASS_DEFAULTS.md`'s last open bullet -- "the squad scripts maps name ... appear in those packages'
+  name tables but are neither imports nor exports, so the reference to them lives in data inside the `Level` export,
+  which this reader does not parse" -- is one instance of a general question, and the general question has a cheap
+  answer: a package's name table also holds the **values** of name-typed properties, and a value needs no import, no
+  export and no resolution, only an entry.
+- **The four arms, and they partition the table.** `tools/map-name-values.py` classifies every distinct entry of the
+  73 maps' name tables by what needs it -- an export's object name, an import's name, a `UNameProperty` value read
+  out of a placed export's block, or vocabulary: **210,963 objects / 13,329 value-only strings / 25,134 vocabulary
+  of 249,426** distinct per-map entries (an entry counts once per map that needs it, and a string two maps share is
+  two entries). Nothing falls outside the split, so no count here is a sample.
+- **The finding.** 123,424 name values over **212 properties**, **15,578** distinct. **13,329 entries (5.3%) exist
+  only because a placed actor's property names them**, and a further **2,248** distinct values resolve to an object
+  (`205` an export's own name, `2,043` an import's), so a `Tag` that repeats an actor's name costs the table
+  nothing. The carriers are the flow graph's vocabulary: `Tag` 10,785 values over all 73 maps, `Event` 2,856,
+  `ExternalEvent` 1,894, `DestinationTag` 1,662, `Group` 797, `DialogueName` 709, `SuggestedSquadScript` 630.
+- **The roster is a property value: 612 of 614.** `SuggestedSquadScript` is a declared `UNameProperty` on
+  `IntelligentSpawner` (`inventory/class_properties.csv`), and **612** of the 614 (map, script) pairs in
+  `inventory/squad_scripts.csv` are data-only values in their own map. The other two (`M17D`, `M21A`) are rows whose
+  script name is the literal `?` -- an index the older census could not resolve -- so they are a defect in that
+  artifact rather than a name, and no `Level` export is involved in either.
+- **The control is the refusal, not a hope.** A `Name` tag's value region is an `FCompactIndex` (at most five
+  bytes), so a wider one cannot be a name index: **58 tags over 28 maps** are counted as the property walk's own
+  mis-split (a `KMeshProps.Tag` with a 12-byte value, a `counter.Vector`, a `SkyZoneInfo.ZoneNumber`) instead of
+  being resolved to the reader's `?`. After that filter **1 of 15,578** values names no table entry at all -- one
+  out-of-range index, which is the assertion that the string comparison is right, because a name index can only
+  resolve inside the table.
+- **What this does not reach.** It does not read a `Level` export's serialised data, and the corpus gives no reason
+  to (`docs/MAP_SCRIPTS.md`: 0 of 73 maps export a script or a `Function`). It does not decide whether a value
+  *means* anything -- only that the table carries it; `docs/MAP_EVENT_WIRING.md`, `docs/MAP_EVENT_TARGETS.md` and
+  `docs/MAP_ACTION_ORDER.md` are the reads that use these names as a graph.
+- Tool (`tools/map-name-values.py`: `--sweep`, `--report`, `--write-doc`/`--check-doc`, `--check` on six synthetic
+  name tables) + `inventory/map_name_values.csv` (286 rows) + `docs/MAP_NAME_VALUES.md` + `make map-name-values` +
+  `docs/CLASS_DEFAULTS.md` (the bullet is closed) + this note. Reads the map packages; no boot.
