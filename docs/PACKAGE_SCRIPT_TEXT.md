@@ -197,12 +197,12 @@ the live remainder declares.
 | carrying a `/* ... */` block | **252** |
 | live part declares no `function` and no `var` | **39** |
 | live part declares a body | **213** |
-| `function` declarations inside a block comment | **208** |
-| of those, naming a function the same class still exports | **124** |
-| ... also declared in the same class's live text | **42** |
-| ... naming a function another class of the package exports | **29** |
-| ... naming no function the package exports at all | **55** |
-| live `function` declarations in the same classes / naming an export | **4890** / **4872** |
+| `function` declarations inside a block comment | **226** |
+| of those, naming a function the same class still exports | **134** |
+| ... also declared in the same class's live text | **45** |
+| ... naming a function another class of the package exports | **33** |
+| ... naming no function the package exports at all | **59** |
+| live `function` declarations in the same classes / naming an export | **5925** / **5890** |
 | `var` declarations inside a block comment | **51** |
 | `native function` declarations inside a block comment | **6** |
 | `native function` declarations inside a `//` run | **20** |
@@ -213,9 +213,9 @@ the live remainder declares.
 
 **The class record agrees, and the base rate is why that alone proves nothing.** All **39** body-in-comment classes are `functions=0, properties=0` in `inventory/classes.csv`, and **0** of the 213 classes that keep a live body are -- but **953 of the corpus's 2319** classes record `0/0` anyway, so a record cannot name one. The text can, and the pair of rates is the control: inside the comment population the split is 39 of 39 against 0 of 213.
 
-**The comment is mostly a revision of the class that shipped, and a third of its declarations name a function the build does not carry.** Joined name by name against the package's own exports, **124 of 208** `function` declarations inside a block comment name a function the same class still exports, **29** name a function another class of the same package exports (the declaration moved) and **55** name nothing the package exports at all. The control says the join is not the weak part: the same matcher over the same classes' live declarations places **4872 of 4890 (99.6%)**, against **124 of 208 (59.6%)** for the commented ones. **42** of the placed ones are also declared in the live text, so those classes carry both revisions of the same function. The absent ones split by population: **42** sit in a class that keeps a live body -- classes this build compiled, where the function is simply not there -- and **13** in the 39 classes whose whole body is the comment, where the class itself exports nothing at all. **3** of the absent names still occur somewhere in the live text, but as a mention rather than a declaration, so they stay counted absent.
+**The comment is mostly a revision of the class that shipped, and a third of its declarations name a function the build does not carry.** Joined name by name against the package's own exports, **134 of 226** `function` declarations inside a block comment name a function the same class still exports, **33** name a function another class of the same package exports (the declaration moved) and **59** name nothing the package exports at all. The control says the join is not the weak part: the same matcher over the same classes' live declarations places **5890 of 5925 (99.4%)**, against **134 of 226 (59.3%)** for the commented ones. **45** of the placed ones are also declared in the live text, so those classes carry both revisions of the same function. The absent ones split by population: **46** sit in a class that keeps a live body -- classes this build compiled, where the function is simply not there -- and **13** in the 39 classes whose whole body is the comment, where the class itself exports nothing at all. **4** of the absent names still occur somewhere in the live text, but as a mention rather than a declaration, so they stay counted absent.
 
-The 20 classes that keep a live body and still carry a commented declaration the package does not export, `declared` being every `function` declaration in the comment:
+The 22 classes that keep a live body and still carry a commented declaration the package does not export, `declared` being every `function` declaration in the comment:
 
 | class | declared | placed | moved | absent | functions in the record |
 |---|---:|---:|---:|---:|---:|
@@ -224,16 +224,18 @@ The 20 classes that keep a live body and still carry a commented declaration the
 | `StargateGame.BotSG` | 5 | 1 | 0 | 4 | 93 |
 | `StargateVehicles.SemektetStaffCannonGun` | 16 | 9 | 4 | 3 | 5 |
 | `Engine.Screenplay` | 17 | 14 | 1 | 2 | 46 |
+| `GamePlay.ScriptedController` | 2 | 0 | 0 | 2 | 38 |
 | `StargateContent.SuperSoldier` | 4 | 0 | 2 | 2 | 24 |
-| `StargateGame.BotEnemy` | 4 | 2 | 0 | 2 | 168 |
+| `StargateGame.BotEnemy` | 5 | 3 | 0 | 2 | 168 |
+| `StargateGame.StargatePawn` | 42 | 40 | 0 | 2 | 218 |
 | `Engine.AIMsgManager` | 2 | 1 | 0 | 1 | 39 |
 | `Engine.MapList` | 1 | 0 | 0 | 1 | 11 |
-| `Engine.PlayerController` | 6 | 5 | 0 | 1 | 360 |
-| `GamePlay.ScriptedController` | 1 | 0 | 0 | 1 | 38 |
+| `Engine.MaplistManager` | 1 | 0 | 0 | 1 | 55 |
+| `Engine.PlayerController` | 13 | 12 | 0 | 1 | 360 |
+| `GamePlay.TournamentConsole` | 1 | 0 | 0 | 1 | 3 |
 | `StargateContent.ExtreniteWeapon` | 1 | 0 | 0 | 1 | 9 |
 | `StargateGame.AlarmPanel` | 1 | 0 | 0 | 1 | 8 |
 | `StargateGame.StargateAIMsgManager` | 1 | 0 | 0 | 1 | 4 |
-| `StargateGame.StargatePawn` | 41 | 40 | 0 | 1 | 218 |
 | `StargateGame.StargatePlayer` | 1 | 0 | 0 | 1 | 134 |
 | `StargateGame.StargateWeapon` | 3 | 1 | 1 | 1 | 88 |
 | `StargateMenus.ServerSelectionPage` | 1 | 0 | 0 | 1 | 3 |
@@ -265,7 +267,7 @@ The 39 body-in-comment classes, `payload` being the class export's serial size:
 | `Core.Time` | 91 | 3123 | 1701 | 3 | 3 | - |
 | `Core.Locale` | 91 | 6355 | 6024 | 9 | 9 | 1 |
 | `Engine.WaterSceneManager` | 99 | 390 | 267 | 0 | 0 | - |
-| `Engine.xMaterialTrigger` | 94 | 2814 | 2759 | 5 | 0 | - |
+| `Engine.xMaterialTrigger` | 94 | 2814 | 2759 | 6 | 0 | - |
 | `Engine.PSLuminanceTexIndexMaterial` | 101 | 529 | 390 | 0 | 0 | - |
 | `Engine.PSBumpBSP` | 109 | 537 | 365 | 0 | 0 | - |
 | `Engine.PSBumpSpecularBSP` | 107 | 974 | 274 | 0 | 0 | - |
@@ -408,38 +410,42 @@ tables if nowhere else.
 
 
 <!-- generated:class-text-bodies -->
-**181 of the 208 `function` declarations a block comment disables also carry their body inside that comment, and 22 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **4468 of 4890 declarations (91.4%)**, against **87.0%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 22 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **5** keep the operator multiset with a different layout, **11** move at least one operator and **5** leave a live body of 32 bytes or fewer behind a substantial comment -- 10413 commented bytes against 7473 live ones over the population.
+**198 of the 226 declarations a block comment disables also carry their body inside that comment, and 25 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **5316 of 5925 declarations (89.7%)**, against **87.6%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 25 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **6** keep the operator multiset with a different layout, **12** move at least one operator and **6** leave a live body of 32 bytes or fewer behind a substantial comment -- 10684 commented bytes against 7672 live ones over the population.
 
 | measure | value |
 |---|---|
 | classes with a `ScriptText` / carrying a block comment | **2319** / **252** |
-| `function` declarations inside a block comment | **208** |
-| ... with a body in the same comment | **181** |
-| ... a declaration without a body | **27** |
-| live `function` declarations / whose body the reader finds | **4890** / **4468** |
-| commented bodies with a live twin of the same name | **22** |
+| declarations inside a block comment | **226** |
+| ... with a body in the same comment | **198** |
+| ... a declaration without a body | **28** |
+| live declarations / whose body the reader finds | **5925** / **5316** |
+| commented bodies with a live twin of the same name | **25** |
 | ... byte-identical | **1** |
-| ... same operator multiset, different layout | **5** |
-| ... at least one operator moved | **11** |
-| ... whose live body is a trailer | **5** |
-| bytes, commented revisions / live revisions of the pairs | **10413** / **7473** |
-| operators, the same pair | **101** / **89** |
-| distinct call names, the pairs' commented / live revisions | **75** / **48** |
+| ... same operator multiset, different layout | **6** |
+| ... at least one operator moved | **12** |
+| ... whose live body is a trailer | **6** |
+| bytes, commented revisions / live revisions of the pairs | **10684** / **7672** |
+| operators, the same pair | **103** / **91** |
+| distinct call names, the pairs' commented / live revisions | **80** / **51** |
 | ... naming no `Function` export of the corpus | **2** / **0** |
-| commented bodies with no live twin | **158** |
-| bytes / operators / statements of those bodies | **49672** / **500** / **531** |
-| distinct call names in those bodies | **320** |
-| ... declared by the body's own class / elsewhere in the corpus / by nothing | **80** / **208** / **32** |
-| ... of which a cast rather than a call (in the earlier revision's count) | **35** of **355** |
-| the same read over every live body of the commented classes (control) | **2763** / **5427** / **99** of **8289** |
-| ... of which a cast rather than a call (in the earlier revision's count) | **1028** of **9317** |
-| unresolved call names, typed by evidence / their call sites | **25** / **32** |
-| ... declared inside a block comment / a member call on a type / nowhere / `#ifdef` | **9** / **12** / **4** / **0** |
-| ... a `state` name / a state label / only a name in a table / in no name table | **0** / **1** / **2** / **22** |
+| commented bodies with no live twin | **172** |
+| bytes / operators / statements of those bodies | **54105** / **534** / **574** |
+| distinct call names in those bodies | **361** |
+| ... declared by the body's own class / elsewhere in the corpus / by nothing | **88** / **238** / **35** |
+| ... of which a cast rather than a call (in the earlier revision's count) | **39** of **400** |
+| the same read over every live body of the commented classes (control) | **3522** / **6503** / **119** of **10144** |
+| ... of which a cast rather than a call (in the earlier revision's count) | **1272** of **11416** |
+| unresolved call names, typed by evidence / their call sites | **28** / **35** |
+| ... declared inside a block comment / a member call on a type / nowhere / `#ifdef` | **9** / **12** / **7** / **0** |
+| ... a `state` name / a state label / only a name in a table / in no name table | **0** / **1** / **3** / **24** |
 | ... called on a `BotEnemy` receiver, of which the build carries | **9** / **1** |
-| distinct `state` names / also a `Function` export | **266** / **13** |
-| distinct state-label names / also a `Function` export | **54** / **7** |
+| distinct `state` names / also a `Function` export | **290** / **14** |
+| distinct state-label names / also a `Function` export | **61** / **7** |
 
+
+**The rule needed three shapes the grammar's first form did not have, and each is its own number.** A declaration is introduced by `event`, `delegate` or the operator family as well as by `function`, carries any of the grammar's modifiers, may put a modifier after the keyword (`function static`) and may start its parameter list on the next line -- which is how the engine's own `PlayerController` and `GameProfile` write theirs. Counted with the four-modifier `function`-only rule the corpus reads **5098** declarations over the classes that carry a comment; with the grammar's modifiers and keywords but the parameter list required on the same line, **6110**; with the parameter list allowed on its own line, **6151** -- of which **6113** are same-line and **3** carry a trailing modifier. What that does to this census is the three readings side by side: commented declarations **208 -> 226 -> 226**, live declarations **4890 -> 5884 -> 5925**, pairs **22 -> 25 -> 25** and disabled bodies **158 -> 172 -> 172** (first rule, same-line rule, this rule), so every figure the page quoted before was a floor under a rule that could not see the declarations it was counting.
+
+**The state read was case-sensitive and the text is not.** UnrealScript folds keywords, and **37** of the **251** `state` declarations this read finds over the same classes are spelled `State` -- lost to the case-sensitive pattern that a previous revision counted with, which is why the tree once recorded five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) as ones no text declares: the text declares them, in a capitalised block.
 Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
 
 | class.function | verdict | commented ops / stmts / bytes | live ops / stmts / bytes | operators that moved |
@@ -452,30 +458,33 @@ Every pair, `ops` being the operator multiset and `stmts` the statements at the 
 | `StargateContent.ReetouBot.pickdestinationtododgephasetorch` | differs | 37 / 39 / 3111 | 58 / 50 / 3159 | !=,*,+,-,<,==,> |
 | `StargateContent.ReetouWeapon.botfire` | differs | 0 / 4 / 105 | 1 / 2 / 101 | == |
 | `StargateContent.SuperSoldier.playfiring` | differs | 8 / 4 / 1422 | 0 / 2 / 96 | !=,&&,*,-,==,> |
+| `StargateGame.BotEnemy.enemynotvisible` | differs | 0 / 1 / 76 | 1 / 1 / 52 | != |
 | `StargateVehicles.SemektetMortarGun.animend` | differs | 1 / 2 / 89 | 6 / 3 / 491 | !=,==,|| |
 | `StargateVehicles.SemektetStaffCannonGun.animend` | differs | 0 / 1 / 48 | 4 / 0 / 203 | !=,==,|| |
 | `StargateVehicles.SemektetStaffCannonGun.projectilefirebarrels` | differs | 4 / 13 / 988 | 0 / 9 / 660 | *,/ |
 | `StargateGame.BotEnemy.findlocalcover` | identical | 0 / 1 / 16 | 0 / 1 / 16 | - |
+| `Engine.PlayerController.jump` | live-stub | 1 / 2 / 115 | 0 / 0 / 7 | == |
 | `Engine.Weapon.fire` | live-stub | 9 / 1 / 496 | 0 / 0 / 2 | +,-,<,==,>,|| |
 | `Engine.Weapon.serveraltfire` | live-stub | 0 / 2 / 88 | 0 / 1 / 28 | - |
 | `Engine.Weapon.serverfire` | live-stub | 4 / 2 / 481 | 0 / 1 / 25 | -,==,> |
 | `StargateContent.BotScarab.timer` | live-stub | 3 / 2 / 221 | 0 / 1 / 28 | !=,&&,== |
 | `StargateGame.StargateWeapon.serverfire` | live-stub | 0 / 2 / 48 | 0 / 1 / 25 | - |
+| `Engine.Controller.postloadsavedgame` | same-operators | 1 / 2 / 80 | 1 / 2 / 140 | - |
 | `StargateContent.HaakenBot.beginstate` | same-operators | 0 / 1 / 36 | 0 / 3 / 117 | - |
 | `StargateContent.HaakenBot.notifytakehit` | same-operators | 1 / 3 / 224 | 1 / 3 / 165 | - |
 | `StargateGame.BotEnemy.needtoturn` | same-operators | 2 / 8 / 234 | 2 / 9 / 275 | - |
 | `StargateGame.StargateWeaponEmplacement.updateaimingrotation` | same-operators | 1 / 17 / 613 | 1 / 15 / 487 | - |
 | `StargateVehicles.SemektetStaffCannonGun.getfirestart` | same-operators | 6 / 3 / 243 | 6 / 3 / 243 | - |
 
-**A cast is not a call, and with the conversions out the disabled bodies' residue is not a base rate.** The reader counts every identifier in front of a parenthesis, so a type conversion came in as a call: **35 of the 355** distinct names the disabled bodies make name a `Class`/`Struct`/`Enum` export or a built-in constructor and are no function, and the same filter takes **1028 of 9317** out of the control. What is left is **320** names: **80** declared by the body's own class, **208** by another class of the corpus and **32** by nothing at all (**10.0%**), against **1.2%** over every live body of the classes that carry a comment (8190 of 8289 names resolve). The page's previous revision read **18.9%** against **12.1%** and called the difference the live base rate; its control residue was almost entirely conversions -- **1028 of that read's 1127** unresolved control names were casts -- so the pair it quoted was the reader's, not the corpus's.
+**A cast is not a call, and with the conversions out the disabled bodies' residue is not a base rate.** The reader counts every identifier in front of a parenthesis, so a type conversion came in as a call: **39 of the 400** distinct names the disabled bodies make name a `Class`/`Struct`/`Enum` export or a built-in constructor and are no function, and the same filter takes **1272 of 11416** out of the control. What is left is **361** names: **88** declared by the body's own class, **238** by another class of the corpus and **35** by nothing at all (**9.7%**), against **1.2%** over every live body of the classes that carry a comment (10025 of 10144 names resolve). The page's previous revision read **18.5%** against **12.2%** and called the difference the live base rate; its control residue was almost entirely conversions -- **1272 of that read's 1391** unresolved control names were casts -- so the pair it quoted was the reader's, not the corpus's.
 
-**The 25 names behind those 32 sites are typed by evidence the text carries.** 9 are declared as a `function`/`event`/`delegate` inside a block comment themselves -- the caller and the callee are both revisions the comment disabled -- 12 are member calls whose receiver's declared type declares no such function, 4 are declared nowhere in the eighteen packages. The member calls are concentrated: **9 of the 12** are called from one body, `StargateGame.TeamAI.setorders`.
+**The 28 names behind those 35 sites are typed by evidence the text carries.** 9 are declared as a `function`/`event`/`delegate` inside a block comment themselves -- the caller and the callee are both revisions the comment disabled -- 12 are member calls whose receiver's declared type declares no such function, 7 are declared nowhere in the eighteen packages. The member calls are concentrated: **9 of the 12** are called from one body, `StargateGame.TeamAI.setorders`.
 
-**Those names are missing from the build, not only from its export table.** Each of the 25 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **2** only a name in a package's table and **22** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **13 of the 266** state names and **7 of the 54** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
+**Those names are missing from the build, not only from its export table.** Each of the 28 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **3** only a name in a package's table and **24** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **14 of the 290** state names and **7 of the 61** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
 
 That is the whole answer for the AI override API's **names**: `StargateGame.TeamAI.setorders` calls **9** names on a `BotEnemy` receiver and the build carries **1** of them -- `docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy` -- while the remaining **8** sit in no name table of the eighteen packages, so no object of any package ever referenced them. A call site cannot reach a label, and the other eight were never compiled: the revision is written against a spelling this build does not use.
 
-**A name is not a behaviour, and most of the behaviours are still here.** Each commented name's own words -- `DoRangedAttack` carries `ranged`, `DeActivateStateOveride` carries `overide`; the verb prefixes and the generic `state` are not words a declaration is distinctive by -- are matched, as words, against every `Function` the eighteen packages export: **21 of the 25** residue names and **7 of the 9** `BotEnemy` ones share one with a declaration the build carries. A word more than 25 declarations carry is not counted as evidence, so a name whose words are all that common reads 0 (`activateforcemelee`, `deactivateforcemelee`, words the corpus uses everywhere). The matches are the build's own spellings of the same vocabulary (`shouldsquadoverideai` beside the commented `activatestateoveride`; `shouldsquadoverideai` beside the commented `deactivatestateoveride`; `pickretreatdestination` beside the commented `doretreat`; `fearthisspot` beside the commented `activatefearoveride`) -- a naming correspondence, not an identity: a low count says where to look, and only the bodies can say the two do the same thing.
+**A name is not a behaviour, and most of the behaviours are still here.** Each commented name's own words -- `DoRangedAttack` carries `ranged`, `DeActivateStateOveride` carries `overide`; the verb prefixes and the generic `state` are not words a declaration is distinctive by -- are matched, as words, against every `Function` the eighteen packages export: **24 of the 28** residue names and **7 of the 9** `BotEnemy` ones share one with a declaration the build carries. A word more than 25 declarations carry is not counted as evidence, so a name whose words are all that common reads 0 (`activateforcemelee`, `deactivateforcemelee`, words the corpus uses everywhere). The matches are the build's own spellings of the same vocabulary (`shouldsquadoverideai` beside the commented `activatestateoveride`; `shouldsquadoverideai` beside the commented `deactivatestateoveride`; `pickretreatdestination` beside the commented `doretreat`; `fearthisspot` beside the commented `activatefearoveride`) -- a naming correspondence, not an identity: a low count says where to look, and only the bodies can say the two do the same thing.
 
 | commented name | its words | declarations of this build that share one |
 |---|---|---:|
@@ -487,8 +496,11 @@ That is the whole answer for the AI override API's **names**: `StargateGame.Team
 | `mergewith` | merge with | `addsquadwithleader`, `buildobjectwithproperties`, `comparewithuser`, `connectwithpassword` (15) |
 | `docharge` | charge | `animnotify_melleecharge_hold`, `cancharge`, `canmellecharge`, `charge` (14) |
 | `getleastdefendedobjective` | least defended objective | `addobjective`, `addvisibleobjective`, `botnearobjective`, `disablenextobjective` (10) |
+| `netconnection` | net connection | `connectionfailed`, `displaybadconnectionalert`, `ispendingconnection`, `neednetnotify` (10) |
 | `setobjective` | objective | `addobjective`, `addvisibleobjective`, `botnearobjective`, `disablenextobjective` (10) |
 | `viewport` | viewport | `addchildviewport`, `findviewportindex`, `getviewport`, `getviewportcount` (10) |
+| `utpasswordcw` | password | `connectwithpassword`, `findchannelpassword`, `getpassword`, `requirespassword` (9) |
+| `utpasswordwindow` | password window | `connectwithpassword`, `findchannelpassword`, `getpassword`, `requirespassword` (9) |
 | `dorangedattack` | ranged attack | `doranged`, `dovehicleranged`, `rangedattacktime`, `recommendlongrangedattack` (5) |
 | `putondefense` | put defense | `adddefensepoint`, `ownsdefensescript`, `putbotonsquadledby`, `putdown` (5) |
 | `activatefearoveride` | fear overide | `fearthisspot`, `shouldrunawayfromfearspot`, `shouldsquadoverideai`, `updatefearspotstatus` (4) |
@@ -524,6 +536,7 @@ That is the whole answer for the AI override API's **names**: `StargateGame.Team
 | `dorangedattack` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
 | `doretreat` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
 | `mergewith` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | called on a `SquadAIBasic` receiver and no class declares it |
+| `netconnection` | 1 | unresolved | `Engine.PlayerController.restartlevel` | name-only | Engine,StargateGame | no declaration anywhere in the corpus's text |
 | `putondefense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
 | `putonfreelance` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
 | `putonoffense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
@@ -532,11 +545,13 @@ That is the whole answer for the AI override API's **names**: `StargateGame.Team
 | `setobjective` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | called on a `SquadAIBasic` receiver and no class declares it |
 | `setupkeybindings` | 1 | commented-declaration | `Engine.PlayerController.setcurrentprofile` | absent | - | declared inside a block comment at Engine.playercontroller, under #ifdef |
 | `staticview` | 1 | unresolved | `StargateGame.StargatePlayer.changeaim` | absent | - | no declaration anywhere in the corpus's text |
+| `utpasswordcw` | 1 | unresolved | `GamePlay.TournamentConsole.connectfailure` | absent | - | no declaration anywhere in the corpus's text |
+| `utpasswordwindow` | 1 | unresolved | `GamePlay.TournamentConsole.connectfailure` | absent | - | no declaration anywhere in the corpus's text |
 
 
-**The disabled bodies are the weight of the comment, not a residue of it.** 158 commented bodies have no live twin at all: 49672 bytes of source, 500 operators and 531 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
+**The disabled bodies are the weight of the comment, not a residue of it.** 172 commented bodies have no live twin at all: 54105 bytes of source, 534 operators and 574 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
 
-The largest of the 158 disabled bodies (`ops` / `stmts` at the body's own brace depth, the artifact carrying all of them):
+The largest of the 172 disabled bodies (`ops` / `stmts` at the body's own brace depth, the artifact carrying all of them):
 
 | class.function | bytes | ops | stmts |
 |---|---:|---:|---:|
@@ -549,7 +564,7 @@ The largest of the 158 disabled bodies (`ops` / `stmts` at the body's own brace 
 | `StargateGame.StargatePawn.getweaponclass` | 1273 | 4 | 4 |
 | `StargateGame.StargateAIMsgManager.checkmsgtype` | 1241 | 26 | 27 |
 
-Census: 2319 classes read, 252 with a block comment, 181 commented bodies.
+Census: 2319 classes read, 252 with a block comment, 198 commented bodies.
 <!-- /generated:class-text-bodies -->
 
 ## Handling: measured here, extracted elsewhere
