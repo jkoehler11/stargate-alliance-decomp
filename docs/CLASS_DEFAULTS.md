@@ -881,9 +881,12 @@ often?
 * **Whether a compiler accepts the output.** Nothing here has been through `ucc`: the text is shaped like the
   shipped source (verified character by character on the two blocks above that do agree), not compiled. 3.6 is
   where that gets tested.
-* **The roster itself.** The squad scripts maps name (`TSS_7A_B_Jaffa_01`, `AI_Jaffa_Horus_Med_single`) appear in
-  those packages' name tables but are neither imports nor exports, so the reference to them lives in data inside
-  the `Level` export, which this reader does not parse.
+* ~~**The roster itself.**~~ **Measured** (`docs/MAP_NAME_VALUES.md`): `SuggestedSquadScript` is a declared
+  `UNameProperty` on `IntelligentSpawner` (`inventory/class_properties.csv`), and all 614 squad-script pairs in
+  `inventory/squad_scripts.csv` are property *values* -- 612 of them in their own map -- so the roster is data on
+  the spawner that names it. Nothing here needs the `Level` export this bullet blamed, and `docs/MAP_NAME_VALUES.md`
+  counts the whole shape: 13,329 of the 249,426 distinct name-table entries the 73 maps need exist only because a
+  property names them.
 
 ### The 27-byte gap is an array and a list, and the 20 bytes are the array
 
