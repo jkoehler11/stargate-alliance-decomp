@@ -101,6 +101,7 @@ help:
 	@echo "  class-defaults-moved   where the starts that move without naming more sit against the closing group: 58 rows, 36 to no block (needs the dump)"
 	@echo "  class-defaults-silent  the 196 zero-fraction starts: 374 of 440 tags name no property, and no offset of those payloads holds a declared block (needs the dump)"
 	@echo "  class-defaults-single  the guard adds 88 one-tag starts and the locator publishes 288: both walk as one declared tag with nothing after it (needs the dump)"
+	@echo "  class-defaults-promoted  both orderings over the same candidates: 0 promoted of 2,319, and the 4 starts the type rule moves are shifts inside one parse (needs the dump)"
 	@echo "  class-record-front    the 3-5 byte front against four readings and three controls: a name, a tag, a reference, a width (needs the dump)"
 	@echo "  class-record-room     the 32 impossible block starts, re-located by the record fields (needs the dump)"
 	@echo "  class-tail-units      the record tail's units, and whether the 32 claims start inside one (needs the dump)"
@@ -1643,6 +1644,9 @@ class-defaults-silent:
 class-defaults-single:
 	python3 tools/class-defaults-silent.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --gained -o inventory   # writes inventory/class_defaults_single.csv
 	@python3 tools/class-defaults-silent.py --report-gained
+class-defaults-promoted:
+	python3 tools/class-defaults-promoted.py $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System --sweep -o inventory
+	@python3 tools/class-defaults-promoted.py --report
 class-record-front:
 	python3 tools/class-record-front.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory
 	@python3 tools/class-record-front.py --report

@@ -1,0 +1,6 @@
+kind,package,class,safe_start,safe_count,safe_bad,tf_start,tf_count,tf_witness,gap,dropped_tags,dropped_declared,dropped_own,dropped_bad,verdict,classes,safe_clean,tf_clean,promoted,moved,moved_truncated,moved_complete,moved_earlier,clean_witness,divergence_witness,tf_nocontra,tf_nocontra_props,tf_names_package
+census,,,,,,,,,,,,,,,2319,1664,1664,0,4,4,0,0,candidate 1664,candidate 4,1665,15523,0
+moved,Engine,ArmorPickup,68,2,1,227,2,candidate,159,2,1,0,1,truncated,,,,,,,,,,,,,
+moved,GamePlay,SP_Timer,132,2,1,133,2,candidate,1,1,1,0,1,truncated,,,,,,,,,,,,,
+moved,IpDrv,ClientBeaconReceiver,102,5,1,105,4,candidate,3,1,1,0,1,truncated,,,,,,,,,,,,,
+moved,IpDrv,MasterServerClient,87,4,1,88,4,candidate,1,1,1,0,1,truncated,,,,,,,,,,,,,
