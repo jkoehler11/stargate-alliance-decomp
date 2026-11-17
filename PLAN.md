@@ -12324,6 +12324,33 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
 
+### Execution notes (2026-11-17, the branch census — the jump graph's first consumer)
+
+- **Task.** The previous note's next measurement, first half: spend the graph instead of measuring it again. A
+  `JumpIfNot`'s target is the end of its `if` arm, and the statement in front of the target decides whether the arm
+  has an `else`: an `if`/`else` is `JumpIfNot <else>` + `<then>` + `Jump <end>`, so the `Jump` that skips the else is
+  the else test.
+- **The shapes, over the graph's 17,463 `JumpIfNot` tokens.** **4,047** with an `else` arm (23.17%), **13,405** a
+  conditional jump over a straight arm (76.76%), **11** empty then-arms (0.06%), **9** jumping backward (a loop test
+  at the bottom of its body), and **0** naming a non-statement. `else` is the minority shape by three to one, and the
+  zero is a result: a `&&`/`||` short circuit is the only thing that would target a non-statement, and this build has
+  none, so a condition's sub-jumps take an `if`'s shape exactly -- separating them is a text question.
+- **A category the bytes cannot carry, withdrawn rather than shipped.** The first draft had `else_empty`
+  (`if (x) ; else ...`). With no then-arm there is nothing to jump over, so those bytes are identical to
+  `if (!x) y`; the self-test that "found" one was asserting its own fixture, which is why the category, its census
+  key and its rendering are gone.
+- **Two of the graph's rules are reused rather than re-derived.** The statement list and the terminator exclusion are
+  `tools/jump-graph.py`'s (`payloads`, `measure`, `TERMINATORS`), so an empty-arm test compares against the next
+  *statement* and not the next token start -- an expression child can never be an arm's first statement, and the
+  first version of the reach walk is the reason that distinction is written down there.
+- Tool (`classify`, `read_dump`, the doc block, a 4-case `--check`) + `inventory/jump_branches.csv` (branch rows +
+  per-script rows + a census) + `docs/BYTECODE.md` (a new section) + a `make jump-branches` target and its
+  `--check-doc` line in `make ci` + this note. One 1-second read of the 18 packages; no boot.
+- **Next measurement:** the text control. Count `else` in the classes' live `ScriptText` (comment-aware, as
+  `tools/class-text-comments.py` already does) and compare with the 4,047 else arms per class: a class whose text
+  spells more `else`s than the bytecode has arms is the disabled-body signature the 3.5 notes track, and the same
+  join would give the `&&` count the bytecode cannot see.
+
 ### Execution notes (2026-11-17, the jump operand is the guest copy's offset — and the graph closes)
 
 - **Task.** The previous note's next measurement: read `Script + operand` in a guest copy. The file half settled it
