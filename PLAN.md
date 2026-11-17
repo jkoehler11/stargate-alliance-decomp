@@ -11734,6 +11734,36 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `--write-doc`; `--check` runs the page gate after the chooser self-test) + `docs/CLASS_DEFAULTS.md` + this note.
   Reads two committed CSVs and the page: no dump, no boot, and `--check` writes nothing.
 
+### Execution notes (2026-11-17, the 334 records end on the payload terminator and no defaults buffer follows)
+
+- **The measurement the last note named.** That note left the 181 long payloads as "bytes no parse explains" and
+  the question as where the record ends. A record's end is measurable without its length: `UClass::Serialize`
+  closes with a group of four fields, and on the located population that group's last byte is the defaults block's
+  first byte -- so a payload holding only a record must close the same group on its own terminator.
+- **`tools/class-defaults-recordend.py`** (`make class-defaults-recordend`,
+  `inventory/class_defaults_recordend.csv`, 334 rows + a census) parses that group at every offset of every one of
+  the 334 with no required end and compares the ends with the payload's terminator; the located population is read
+  the same way with its published block start as the anchor. **331 of 334 close on the terminator** (153/153 inside
+  the 100-byte window, 178/181 beyond it, 99.1%), so the payload is the record plus the empty block's `00` and no
+  defaults buffer follows. Record lengths are measured for this population for the first time: 80..3,678 bytes,
+  median 102, p90 292 -- the long half is long records, not a missed block.
+- **The controls make that a reading.** A group ends on 5.0% of a payload's offsets (median 5.2%), and the same
+  parse anchored at the located block start finds its group on 1,665 of 2,200 (75.7%), with 1,429 package-shaped
+  names and 1,468 own-package-plus-import; on the 334 the figures are 275 and 294 of 331 -- the control's shape at
+  the control's rate. On 68 of the 243 payloads that carry a published start, that start *is* the group's first
+  byte (UWindowWindow 3,671 of 3,679), and on 128 more it sits 1..340 bytes earlier inside the record.
+- **The three exceptions are named, not explained.** `ZatGun_JaffaCaptain`, `ZatGun_Weak` and
+  `HighlightStaticMeshActor` leave 5, 5 and 4 bytes between the record and the terminator -- 14 bytes in the whole
+  population, in the artifact's `residue` column.
+- **What this settles**: no floor, name-map or type correction can promote these 334 -- there is no defaults buffer
+  in their payloads to promote, so the withholding is correct on the bytes and the 181 are not a shorter version of
+  the 655. What it does not settle is whether any of them should declare defaults; the shipped text is not an
+  oracle for that on this build.
+- Tool (`tools/class-defaults-recordend.py`: the free group walk, the anchored control, five synthetic bodies in a
+  dump-free `--check`, the artifact gate) + `inventory/class_defaults_recordend.csv` + `make
+  class-defaults-recordend` + `docs/CLASS_DEFAULTS.md` (new section, and the pointer from the previous section) +
+  this note. Reads the packages; no boot, no Ghidra round, no property value decoded.
+
 ### Execution notes (2026-11-17, the 334 have no start because their payloads hold no tag stream)
 
 - **The measurement the last note named.** The 334 classes `class_defaults_misses.csv` calls `empty-block` were the
