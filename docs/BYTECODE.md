@@ -1430,8 +1430,8 @@ rendered from that artifact by `--switches-doc`, so it cannot drift from the cen
 
 **A case value is not always a literal.** 35 of the 200 sites build at least one case value from an expression rather than a constant -- `InstanceVariable` on 22 site(s), `NameConst` on 8 site(s), `PrimitiveCast` on 5 site(s) -- so the comparison's other side is code the compiler emitted, not a value folded into the token stream.
 
-**How each list ended:** **193** on the `0xffff` terminator, and **7** at a `Switch` that belongs to a case body, so this forward scan meets it before the list's own terminator -- `UDebugMapListCW.Notify`, `UDebugMenuBar.MenuItemSelected`, `UDebugVideoClient.Notify`, `UWindow.KeyEvent`, `UWindowConsoleClientWindow.Notify`, `UWindows.KeyEvent`, `WindowConsole.KeyEvent`.
-Those 7 rows count the arms they reach before the nested switch, so their `cases` is a lower bound; the chain each `Case` operand links (the handler's own reading, `inventory/jump_branches.csv`) is where a list's full arm count comes from.
+**How each list ended:** **193** on the `0xffff` terminator, and **7** at a `Switch` that belongs to a case body, so this forward scan meets it before the list's own terminator -- `UDebugMapListCW.Notify`, `UDebugMenuBar.MenuItemSelected`, `UDebugVideoClient.Notify`, `WindowConsole.UWindow.KeyEvent`, `UWindowConsoleClientWindow.Notify`, `UWindowRootWindow.UWindows.KeyEvent`, `WindowConsole.KeyEvent`.
+Those 7 rows count the arms they reach before the nested switch, so their `cases` is a lower bound; `inventory/switch_join.csv` (`tools/switch-join.py`) pairs each one with the chain its `Case` operands link -- the handler's own reading -- and fills or confirms it in the next section.
 
 The numbers are `inventory/switch_operands.csv` (`tools/uscript-dis.py --switches`), the artifact this block is rendered from; `make switch-operands` re-runs the walk against the dump and `--switches-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci` needs no dump to prove the page still matches its census.
 <!-- /generated:switch-widths -->
@@ -1458,6 +1458,53 @@ file in nothing but one opcode's name (`opeb` -> `Caps`); and today's tree yield
 the seven `nested-switch` rows the block above names. So the seven were the census's own bug, and `--switches` now
 **refuses to write** an artifact carrying one, `switches_check` fails on it in `make ci`, and the block above is
 generated so a page can no longer quote a census its artifact does not hold.
+
+## The two switch censuses join, and the bound rows fill in (U20)
+
+`inventory/switch_operands.csv` counts a switch's arms by scanning the token stream forward from each `0x05`, and
+`inventory/jump_branches.csv` follows the `Case` chain each case operand links, which is `execSwitch`'s own reading
+of the list. The two artifacts describe the same sites from opposite ends, and until now they could not be compared
+(U20): the scan keyed a site by the export's **immediate outer**, the chain by the class it walks to, so a
+state-declared body was one key in one file and two in the other. Both artifacts carry `path` now
+(`uscript-dis.export_path()`, the class path with the declaring state kept in it), and `tools/switch-join.py` joins
+them on `package`+`path`. The two committed CSVs are the join's only input, so neither the artifact nor its gate
+needs a dump, and a `differ` or `unpaired` row fails `--check`.
+
+<!-- generated:switch-join -->
+**The two switch censuses join arm by arm.** **200** `Switch` sites over **174** functions pair with **200** case lists: **193** agree on the arm count, **4** are the forward scan's lower bounds and the `Case` chain fills them, **3** lower bound(s) the chain confirms were already whole, **0** disagree and **0** side is unpaired.
+
+| | arms |
+|---|---:|
+| the forward scan counts | 832 |
+| the chain adds on the filled rows | +12 |
+| the chain counts | **844** |
+
+**832 + 12 = 844 exactly**, so the 7 rows the scan could only bound are the whole of the difference between the two walks -- no site's count moved for any other reason.
+
+| filled site | `Switch` at | forward scan | chain |
+|---|---|---:|---:|
+| `UDebugMenuBar.MenuItemSelected` | 0x001b | 1 | 7 |
+| `UWindowConsoleClientWindow.Notify` | 0x000a | 1 | 3 |
+| `UWindowRootWindow.UWindows.KeyEvent` | 0x0007 | 1 | 3 |
+| `WindowConsole.UWindow.KeyEvent` | 0x0007 | 1 | 3 |
+
+The 3 bound(s) the chain did not extend are `UDebugMapListCW.Notify`, `UDebugVideoClient.Notify`, `WindowConsole.KeyEvent`: the switch carries a single case, so the nested switch the scan met sits inside that arm's body and there was no further case to reach.
+
+The rows are `inventory/switch_join.csv` (`tools/switch-join.py`), a dump-free join of `inventory/switch_operands.csv` with `inventory/jump_branches.csv` on `package`+`path`; `--check-doc` re-renders this block from the committed artifact, so `make ci` holds the page to it without the dump.
+<!-- /generated:switch-join -->
+
+**`UWindow.u`'s four `KeyEvent` exports are what the old key merged.** Two are class-owned
+(`WindowConsole.KeyEvent`, `UWindowRootWindow.KeyEvent`) and two are declared in states
+(`WindowConsole.UWindow.KeyEvent`, `UWindowRootWindow.UWindows.KeyEvent`). Keyed by the immediate outer the two state
+bodies filed under `UWindow` and `UWindows` -- names that read as classes and are not -- while keyed by the owning
+class each pair collapsed into one slot, which is why one artifact showed two functions where the other showed one
+for four bodies. `path` separates all four and each one's site joins its own list.
+
+**A filled arm count is the one a decompiler should read.** The scan's number is a scan: it stops at the first
+`Switch` it meets inside an arm, and for three of the seven bound rows the arm it stopped in *is* the whole list, so
+the chain confirms rather than extends them. The other four grow by twelve arms in total, and the scan's total plus
+those twelve equals the chain's total exactly -- that identity, not the per-row verdicts alone, is what says no site
+moved for any other reason.
 
 ## Not measured
 

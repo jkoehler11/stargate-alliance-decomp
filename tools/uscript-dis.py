@@ -3734,6 +3734,10 @@ def switches_report(path, table, out=None):
             walked += 1
             cls = pkg.name(pkg.exports[e["outer"] - 1]["name"]) if e.get("outer") else "-"
             func = pkg.name(e["name"])
+            # The join key with `inventory/jump_branches.csv` is this export's qualified path, not the pair above:
+            # `class` is the *immediate* outer, so a state-owned body is keyed to its state's name and two classes'
+            # same-named states collide on one key (U20).
+            key = export_path(pkg, e)
             for i, node in enumerate(nodes):
                 if node["opcode"] != 0x05:
                     continue
@@ -3761,7 +3765,7 @@ def switches_report(path, table, out=None):
                 lo, hi = span.get(byte, (None, None))
                 span[byte] = (seen if lo is None else min(lo, seen), seen if hi is None else max(hi, seen))
                 rows.append([name, cls, func, "0x%04x" % node["offset"], byte, nm(expr), seen,
-                             ";".join(nm(v) for v in sorted(set(vals))) or "-", why])
+                             ";".join(nm(v) for v in sorted(set(vals))) or "-", why, key])
     total = sum(sites.values())
 
     print("%d scripts walk clean; %d switch sites" % (walked, total))
@@ -3790,8 +3794,7 @@ def switches_report(path, table, out=None):
         path_out = os.path.join(out, "switch_operands.csv")
         with open(path_out, "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
-            w.writerow(["package", "class", "function", "offset", "width", "expression", "cases",
-                        "case_values", "ended"])
+            w.writerow(SWITCH_COLUMNS)
             for row in sorted(rows):
                 w.writerow(row)
         print("wrote %s (%d switch sites, widths %s)"
@@ -3801,7 +3804,8 @@ def switches_report(path, table, out=None):
 
 # ==== The switch census's page block: `inventory/switch_operands.csv` is the only input ====
 SWITCH_CSV = os.path.join(ROOT, "inventory", "switch_operands.csv")
-SWITCH_COLUMNS = ("package", "class", "function", "offset", "width", "expression", "cases", "case_values", "ended")
+SWITCH_COLUMNS = ("package", "class", "function", "offset", "width", "expression", "cases", "case_values", "ended",
+                   "path")
 SWITCH_MARK = ("<!-- generated:switch-widths -->", "<!-- /generated:switch-widths -->")
 # How a case list can stop. `terminator` is the chain's own end (`Case` carrying `0xffff`); `nested-switch` is a
 # `Switch` inside a case body, which this forward scan meets before its own terminator (the chain walk in
@@ -3845,9 +3849,9 @@ def switch_census(rows):
             if value and value != "-":
                 entry["values"][value] += 1
     ended = collections.Counter(r["ended"] for r in rows)
-    named = [(r["class"], r["function"], r["offset"], int(r["width"])) for r in rows if r["ended"] == "nested-switch"]
+    named = [(r["path"], r["offset"], int(r["width"])) for r in rows if r["ended"] == "nested-switch"]
     return {"rows": len(rows),
-            "functions": len({(r["package"], r["class"], r["function"]) for r in rows}),
+            "functions": len({(r["package"], r["path"]) for r in rows}),
             "per": per, "ended": ended, "nested": named}
 
 
@@ -3891,11 +3895,12 @@ def switches_doc_block(rows):
     lines += ["", "**How each list ended:** **%s** on the `0xffff` terminator, and **%s** at a `Switch` that belongs"
               " to a case body, so this forward scan meets it before the list's own terminator -- %s."
               % (format(ended.get("terminator", 0), ",d"), format(len(c["nested"]), ",d"),
-                 ", ".join("`%s.%s`" % (cls, func) for cls, func, _off, _w in c["nested"]) if c["nested"] else "none")]
+                 ", ".join("`%s`" % path for path, _off, _w in c["nested"]) if c["nested"] else "none")]
     if c["nested"]:
         lines += ["Those %d rows count the arms they reach before the nested switch, so their `cases` is a lower"
-                  " bound; the chain each `Case` operand links (the handler's own reading, `inventory/"
-                  "jump_branches.csv`) is where a list's full arm count comes from." % len(c["nested"])]
+                  " bound; `inventory/switch_join.csv` (`tools/switch-join.py`) pairs each one with the chain its"
+                  " `Case` operands link -- the handler's own reading -- and fills or confirms it in the next"
+                  " section." % len(c["nested"])]
 
     lines += ["", "The numbers are `inventory/switch_operands.csv` (`tools/uscript-dis.py --switches`), the"
               " artifact this block is rendered from; `make switch-operands` re-runs the walk against the dump and"
@@ -3952,7 +3957,7 @@ def switches_check(path=SWITCH_CSV):
     if tuple(head) != SWITCH_COLUMNS:
         fails.append("%s: header %s" % (path, head))
     for r in rows:
-        where = "`%s.%s` at %s" % (r["class"], r["function"], r["offset"])
+        where = "`%s` at %s" % (r.get("path") or "%s.%s" % (r["class"], r["function"]), r["offset"])
         try:
             width, cases = int(r["width"]), int(r["cases"])
         except ValueError:

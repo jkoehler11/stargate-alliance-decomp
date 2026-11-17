@@ -29,7 +29,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_PATH = os.path.join(ROOT, "inventory", "jump_branches.csv")
 DOC_MARK = ("<!-- generated:jump-branches -->", "<!-- /generated:jump-branches -->")
-FIELDS = ["kind", "package", "class", "function", "offset", "category", "operand", "target", "count", "note"]
+FIELDS = ["kind", "package", "class", "function", "offset", "category", "operand", "target", "count", "note", "path"]
 
 CENSUS_NOTE = {
     "jumpifnot": "`JumpIfNot` tokens the graph resolved",
@@ -139,7 +139,7 @@ def switch_census(stmts, links):
     return switches, chains, empty, outside, no_list
 
 
-def switch_rows(package, cls, func, stmts, links, census):
+def switch_rows(package, cls, func, path, stmts, links, census):
     """One row per case list (and per switch with no list), and the census it accumulates."""
     switches, chains, empty, outside, no_list = switch_census(stmts, links)
     if not switches:
@@ -158,11 +158,12 @@ def switch_rows(package, cls, func, stmts, links, census):
     for seq, here in chains:
         rows.append({"kind": "switch", "package": package, "class": cls, "function": func,
                      "offset": "%04x" % seq[0], "category": "", "operand": "", "target": "%04x" % seq[-1],
-                     "count": len(seq), "note": "list of %d case(s), %d empty arm(s)" % (len(seq), here)})
+                     "count": len(seq), "note": "list of %d case(s), %d empty arm(s)" % (len(seq), here),
+                     "path": path})
     for one in no_list:
         rows.append({"kind": "switch", "package": package, "class": cls, "function": func,
                      "offset": "%04x" % one, "category": "", "operand": "", "target": "", "count": 0,
-                     "note": "no case list"})
+                     "note": "no case list", "path": path})
     return rows
 
 
@@ -175,8 +176,11 @@ def read_dump(system):
         edges, _st = JG.measure(body, nodes, spans)
         cls, _state = JG.owner_of(pkg, exp)
         func = pkg.name(exp["name"])
+        # The class path, kept identical to `inventory/switch_operands.csv`'s `path` so the two switch censuses join
+        # on an equality: `cls` above is the *owning* class, which merges a class's own function with its state's (U20).
+        path = JG.DIS.export_path(pkg, exp)
         stmts = [n for n in nodes if n["name"] not in JG.TERMINATORS]
-        rows.extend(switch_rows(package, cls, func, stmts, _st["case_links"], census))
+        rows.extend(switch_rows(package, cls, func, path, stmts, _st["case_links"], census))
         if not edges:
             continue
         verdicts, n_stmts = classify(nodes, edges)
@@ -195,14 +199,14 @@ def read_dump(system):
                 continue
             arms.append(where[target] - where[offset] - 1)
         rows.append({"kind": "script", "package": package, "class": cls, "function": func, "offset": "",
-                     "category": "", "operand": "", "target": "", "count": len(verdicts),
+                     "path": path, "category": "", "operand": "", "target": "", "count": len(verdicts),
                      "note": "else %d, empty %d, if %d, expression %d, %d statement(s)"
                      % (counts["else"], counts["empty"], counts["if"], counts["expression"], n_stmts)})
         for offset, category, value, target in verdicts:
             if category in ("if", "else"):
                 rows.append({"kind": "branch", "package": package, "class": cls, "function": func,
                              "offset": "%04x" % offset, "category": category, "operand": value,
-                             "target": "%04x" % target, "count": "", "note": ""})
+                             "target": "%04x" % target, "count": "", "note": "", "path": path})
     out = ([r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "switch"]
            + [r for r in rows if r["kind"] == "script"])
     for key in ("jumpifnot", "else", "empty", "if", "expression", "backward", "scripts", "jump",

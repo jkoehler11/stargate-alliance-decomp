@@ -12901,3 +12901,29 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the seven `nested-switch` rows' arm counts are a lower bound here and exact in
   `inventory/jump_branches.csv`, but the two censuses key a function differently (U20), so the arm-by-arm join needs
   one key rule in both walks before it can be run.
+
+### Execution notes (2026-11-17, the two switch censuses join arm by arm, and the key was the classifier)
+
+- **Task.** U20's instrument, taken as the flow thread's bundle: the census key (`U20`), the join artifact, the page
+  block, the gate and the two censuses' keys made one rule.
+- **The key was the classifier, not the count.** `--switches` keyed a site by the export's immediate outer and
+  `jump-branches` by the class it walks to; `UWindow.u`'s four `KeyEvent` exports (two class-owned, two declared in
+  states) therefore split **2**:1 across the pair, and no arm-by-arm comparison could be finished. Both artifacts
+  carry `path` (`export_path()`) now -- the same key `--pairs` and `--baseline` already use.
+- **The join is complete and needs no dump.** `tools/switch-join.py` pairs each `Switch` with its case list inside a
+  function by offset order and writes `inventory/switch_join.csv`: **200** sites over **174** functions against
+  **200** lists, **193** agree, **4** filled by the chain (**+12** arms), **3** bounds the chain confirms already
+  whole, **0** differ, **0** unpaired. The scan's **832** arms + the **12** the chain adds = its **844** exactly, and
+  `--check` fails if that identity or any row breaks.
+- **What the seven bounds were.** Four are real lower bounds (1->7, 1->3, 1->3, 1->3) and three are single-case
+  switches whose nested switch sits inside the arm's body, so the scan had already reached the whole list. A
+  decompiler should read the chain's count, which the join now names per site.
+- **Files.** `tools/uscript-dis.py` (the census's `path` column and the block's pointer sentence),
+  `tools/jump-branches.py` (the same `path` on every row), `tools/switch-join.py` (new, dump-free),
+  `inventory/switch_operands.csv`, `inventory/jump_branches.csv`, `inventory/switch_join.csv` (new) +
+  `docs/BYTECODE.md` (the join section and both generated blocks) + `docs/UNKNOWNS.md` U20 + `Makefile`
+  (`switch-join`, two `make ci` lines) + `tools/ci.py` (`check_switch_join`) + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note.
+- **Next measurement:** the switch's case *values* are one arm each; what a decompiler still cannot read from the
+  stream is which arm a `Case`'s body ends at (the arm bodies are delimited only by the next `Case`), so an
+  arm-body extent census is the next instrument on this page.
