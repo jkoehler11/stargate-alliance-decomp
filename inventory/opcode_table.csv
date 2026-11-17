@@ -11,7 +11,7 @@ opcode,group,handler,name,pattern,fixed_bytes,source,note
 0x09,6,0x00039d98,Assert,"bytes:2,expr",2,map,code offset then the expression
 0x0a,7,0x00039d26,Case,case,0,map,"2-byte value, then one nested token unless the value is 0xffff"
 0x0b,5,0x00039e38,Nothing,,0,map,"no operand bytes, no children: the handler returns the opcode"
-0x0c,8,0x00039d4e,LabelTable,labeltable,0,map,"6-byte entries (2-byte name index, 4-byte offset), zero offset ends"
+0x0c,8,0x00039d4e,LabelTable,labeltable,0,map,compact name index then a 4-byte offset; the None name ends it
 0x0d,9,0x000399a7,GotoLabel,expr,0,map,one nested token
 0x0e,9,0x000399a7,EatString,expr,0,map,one nested token
 0x0f,10,0x00039b55,Let,"expr,expr",0,map,"two nested tokens (lvalue, value)"

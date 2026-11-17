@@ -143,16 +143,21 @@ def parse(data, table):
                         break
                 node["operands"] += data[start:q]
             elif item == "labeltable":
-                # A 6-byte entry: a 2-byte name index and a 4-byte code offset, and the table ends on a
-                # zero *offset* -- not a zero dword, which is what "8-byte entries" read and what refused on
-                # 545 of the 552 State payloads that carry the token (docs/BYTECODE.md).
+                # An entry is an archive compact name index and a 4-byte code offset, and the table ends on
+                # the None name (a zero index) -- not on a zero offset, which a label sitting at the code's
+                # first byte also has, and not on a 2-byte name, which refused on 545 of the 552 State
+                # payloads carrying the token (docs/BYTECODE.md, docs/systems/AI.md).
                 while True:
                     if q + 6 > len(data):
                         raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
-                    entry = struct.unpack_from("<I", data, q + 2)[0]
-                    node["operands"] += data[q:q + 6]
-                    q += 6
-                    if entry == 0:
+                    here = q
+                    name_index, q = read_index(data, q)
+                    entry_q = q
+                    q += 4
+                    if entry_q + 4 > len(data):
+                        raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
+                    node["operands"] += data[here:q]
+                    if name_index == 0:
                         break
             elif item == "case":
                 if q + 2 > len(data):
@@ -1364,15 +1369,15 @@ def _spans_with_op(data, table):
                         break
                 spans.append((start, q, "fixed", op))
             elif item == "labeltable":
-                # 6-byte entries: a 2-byte name index and a 4-byte code offset, ending on a zero offset
+                # A compact name index and a 4-byte code offset per entry, ending on the None name
                 # (the same shape `parse` reads -- one pattern, two walkers).
                 start = q
                 while True:
                     if q + 6 > len(data):
                         raise Refused("%#x: label table of %02x is not zero-terminated" % (pos, op))
-                    entry = struct.unpack_from("<I", data, q + 2)[0]
-                    q += 6
-                    if entry == 0:
+                    name_index, q = read_index(data, q)
+                    q += 4
+                    if name_index == 0:
                         break
                 spans.append((start, q, "fixed", op))
             else:

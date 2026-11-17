@@ -47,9 +47,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #   parms       nested tokens until one of them is 0x16 (EX_EndFunctionParms)
 #   str         NUL-terminated ANSI string
 #   utf16       NUL-terminated UTF-16 string (2-byte units, ends on a zero unit)
-#   labeltable  6-byte entries -- a 2-byte name index and a 4-byte code offset -- until a zero
-#               offset. Reading them as 8-byte entries until a zero dword refused on 545 of the 552
-#               State payloads that carry the token (docs/BYTECODE.md)
+#   labeltable  an archive compact name index then a 4-byte code offset, until the None name (a zero
+#               index). A label at the code's first byte has a zero offset, so a zero-offset test stops
+#               one entry early; a fixed 2-byte name refused on 545 of the 552 State payloads carrying
+#               the token and drifted by a byte whenever the index was one byte (docs/BYTECODE.md,
+#               docs/systems/AI.md)
 #   case        a 2-byte value, then one nested token unless the value is 0xffff. The handler at 0x39d26
 #               advances the cursor by 2, compares those bytes with 0xffff and jumps to the no-operand case
 #               on a match, so the value is read once -- `bytes:2,case` read it twice (docs/BYTECODE.md)
@@ -65,7 +67,7 @@ GROUPS = {
          "no operand bytes, no children: the handler returns the opcode"),
     6:  ("bytes:2,expr",     "Assert,Skip", "code offset then the expression"),
     7:  ("case",             "Case", "2-byte value, then one nested token unless the value is 0xffff"),
-    8:  ("labeltable",       "LabelTable", "6-byte entries (2-byte name index, 4-byte offset), zero offset ends"),
+    8:  ("labeltable",       "LabelTable", "compact name index then a 4-byte offset; the None name ends it"),
     9:  ("expr",             "GotoLabel,EatString,DynamicArrayLength", "one nested token"),
     10: ("expr,expr",        "Let,DynamicArrayElement,LetBool,ArrayElement,LetDelegate",
          "two nested tokens (lvalue, value)"),
