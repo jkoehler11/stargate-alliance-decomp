@@ -380,6 +380,25 @@ base rate -- nine names declared inside a block comment themselves, twelve membe
 declares no such function (nine of them the AI override API `StargateGame.TeamAI.setorders` calls on a
 `BotEnemy`), four declared nowhere at all.
 
+Those twelve are then read against the build's *other* vocabularies, because a name missing from the export
+table is not a name missing from the build: the `state` blocks the class texts declare, the labels at a state
+body's own statement level, and each package's own name table, which the compiler fills with every name any of
+its objects referenced. **The AI override API is a dropped one, not a renamed one.** Eight of the nine names
+`StargateGame.TeamAI.setorders` calls on a `BotEnemy` -- `ActivateStateOveride`, `ActivateFearOveride`,
+`ActivateForceMelee` and their three `DeActivate` counterparts, `DoRangedAttack`, `DoRetreat` -- appear in no
+name table of the eighteen packages, so nothing in this build ever referenced them. The ninth, `DoCharge`, is
+the **entry label of a state**: `StargateContent.JaffaBotHeavy` jumps into its `MelleeCharge` state with
+`GotoState('MelleeCharge', 'DoCharge')`, which is a jump target and not something a call site can reach. What
+the bots present instead is a state vocabulary -- `Mellee`, `MelleeCharge`, `Ranged`, `Flee`, `CoveredAttack`
+(`inventory/ai_states.csv`, and `docs/systems/AI.md` for the machine) -- entered with `GotoState`, so a
+commented revision that calls `DoRangedAttack()` on a `BotEnemy` was written against an API this build does not
+carry in any form.
+
+The two base rates are what make that a finding rather than a reader artefact: **13 of the 266** state names
+and **7 of the 54** state labels the corpus declares are also `Function` exports, so a name this build ships is
+normally visible in the export table, and an API that had merely been renamed would leave its names in the name
+tables if nowhere else.
+
 
 <!-- generated:class-text-bodies -->
 **181 of the 208 `function` declarations a block comment disables also carry their body inside that comment, and 22 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **4468 of 4890 declarations (91.4%)**, against **87.0%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 22 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **5** keep the operator multiset with a different layout, **11** move at least one operator and **5** leave a live body of 32 bytes or fewer behind a substantial comment -- 10413 commented bytes against 7473 live ones over the population.
@@ -409,6 +428,10 @@ declares no such function (nine of them the AI override API `StargateGame.TeamAI
 | ... of which a cast rather than a call (in the earlier revision's count) | **1028** of **9317** |
 | unresolved call names, typed by evidence / their call sites | **25** / **32** |
 | ... declared inside a block comment / a member call on a type / nowhere / `#ifdef` | **9** / **12** / **4** / **0** |
+| ... a `state` name / a state label / only a name in a table / in no name table | **0** / **1** / **2** / **22** |
+| ... called on a `BotEnemy` receiver, of which the build carries | **9** / **1** |
+| distinct `state` names / also a `Function` export | **266** / **13** |
+| distinct state-label names / also a `Function` export | **54** / **7** |
 
 Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
 
@@ -441,33 +464,37 @@ Every pair, `ops` being the operator multiset and `stmts` the statements at the 
 
 **The 25 names behind those 32 sites are typed by evidence the text carries.** 9 are declared as a `function`/`event`/`delegate` inside a block comment themselves -- the caller and the callee are both revisions the comment disabled -- 12 are member calls whose receiver's declared type declares no such function, 4 are declared nowhere in the eighteen packages. The member calls are concentrated: **9 of the 12** are called from one body, `StargateGame.TeamAI.setorders`.
 
-| unresolved call name | sites | kind | called from | evidence |
-|---|---:|---|---|---|
-| `getpriorityattackobjective` | 3 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | declared inside a block comment at StargateGame.teamai |
-| `datetimetomap` | 2 | commented-declaration | `Core.Locale.datetostring` | declared inside a block comment at Core.locale |
-| `format` | 2 | member-of | `Core.Locale.datetostring` | called on a `string` receiver and no class declares it |
-| `getleastdefendedobjective` | 2 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | declared inside a block comment at StargateGame.teamai |
-| `getpriorityfreelanceobjective` | 2 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | declared inside a block comment at StargateGame.teamai |
-| `viewport` | 2 | unresolved | `Engine.Pawn.isfirstperson` | no declaration anywhere in the corpus's text |
-| `activatefearoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `activateforcemelee` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `activatestateoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `attachdrivertoseat` | 1 | commented-declaration | `StargateVehicles.StargateHover.attachdrivertoseat` | declared inside a block comment at StargateVehicles.stargatehover |
-| `deactivatefearoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `deactivateforcemelee` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `deactivatestateoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `docharge` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `dorangedattack` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `doretreat` | 1 | member-of | `StargateGame.TeamAI.setorders` | called on a `BotEnemy` receiver and no class declares it |
-| `mergewith` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | called on a `SquadAIBasic` receiver and no class declares it |
-| `putondefense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | declared inside a block comment at StargateGame.teamai |
-| `putonfreelance` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | declared inside a block comment at StargateGame.teamai |
-| `putonoffense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | declared inside a block comment at StargateGame.teamai |
-| `screenprint` | 1 | unresolved | `Engine.Screenplay.tick` | no declaration anywhere in the corpus's text |
-| `setfreelancescriptfor` | 1 | unresolved | `StargateGame.BotSG.findroamdest` | no declaration anywhere in the corpus's text |
-| `setobjective` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | called on a `SquadAIBasic` receiver and no class declares it |
-| `setupkeybindings` | 1 | commented-declaration | `Engine.PlayerController.setcurrentprofile` | declared inside a block comment at Engine.playercontroller, under #ifdef |
-| `staticview` | 1 | unresolved | `StargateGame.StargatePlayer.changeaim` | no declaration anywhere in the corpus's text |
+**Those names are missing from the build, not only from its export table.** Each of the 25 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **2** only a name in a package's table and **22** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **13 of the 266** state names and **7 of the 54** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
+
+That is the whole answer for the AI override API: `StargateGame.TeamAI.setorders` calls **9** names on a `BotEnemy` receiver and the build carries **1** of them -- `docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy` -- while the remaining **8** sit in no name table of the eighteen packages. A call site cannot reach a label, and nothing in the build references the other names at all, so the commented revision is a dropped API rather than one this build presents under another name.
+
+| unresolved call name | sites | kind | called from | in the build | where | evidence |
+|---|---:|---|---|---|---|---|
+| `getpriorityattackobjective` | 3 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `datetimetomap` | 2 | commented-declaration | `Core.Locale.datetostring` | absent | - | declared inside a block comment at Core.locale |
+| `format` | 2 | member-of | `Core.Locale.datetostring` | name-only | Engine,UWindow | called on a `string` receiver and no class declares it |
+| `getleastdefendedobjective` | 2 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `getpriorityfreelanceobjective` | 2 | commented-declaration | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `viewport` | 2 | unresolved | `Engine.Pawn.isfirstperson` | name-only | AmbientCreatures,Engine,GUI,GamePlay,UWindow | no declaration anywhere in the corpus's text |
+| `activatefearoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `activateforcemelee` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `activatestateoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `attachdrivertoseat` | 1 | commented-declaration | `StargateVehicles.StargateHover.attachdrivertoseat` | absent | - | declared inside a block comment at StargateVehicles.stargatehover |
+| `deactivatefearoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `deactivateforcemelee` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `deactivatestateoveride` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `docharge` | 1 | member-of | `StargateGame.TeamAI.setorders` | state-label | StargateContent.JaffaBotHeavy.melleecharge | called on a `BotEnemy` receiver and no class declares it |
+| `dorangedattack` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `doretreat` | 1 | member-of | `StargateGame.TeamAI.setorders` | absent | - | called on a `BotEnemy` receiver and no class declares it |
+| `mergewith` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | called on a `SquadAIBasic` receiver and no class declares it |
+| `putondefense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `putonfreelance` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `putonoffense` | 1 | commented-declaration | `StargateGame.TeamAI.setorders` | absent | - | declared inside a block comment at StargateGame.teamai |
+| `screenprint` | 1 | unresolved | `Engine.Screenplay.tick` | absent | - | no declaration anywhere in the corpus's text |
+| `setfreelancescriptfor` | 1 | unresolved | `StargateGame.BotSG.findroamdest` | absent | - | no declaration anywhere in the corpus's text |
+| `setobjective` | 1 | member-of | `StargateGame.TeamAI.findnewobjectivefor` | absent | - | called on a `SquadAIBasic` receiver and no class declares it |
+| `setupkeybindings` | 1 | commented-declaration | `Engine.PlayerController.setcurrentprofile` | absent | - | declared inside a block comment at Engine.playercontroller, under #ifdef |
+| `staticview` | 1 | unresolved | `StargateGame.StargatePlayer.changeaim` | absent | - | no declaration anywhere in the corpus's text |
 
 
 **The disabled bodies are the weight of the comment, not a residue of it.** 158 commented bodies have no live twin at all: 49672 bytes of source, 500 operators and 531 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
