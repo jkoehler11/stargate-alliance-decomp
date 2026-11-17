@@ -92,7 +92,7 @@ The census and derived stages. **Every committed artifact is reachable from one 
 | command | needs | produces | gate |
 |---|---|---|---|
 | `make campaign-matrix` | committed CSVs only | `inventory/campaign_matrix.csv` | **`make ci`** (reproduced byte for byte) |
-| `make dialogue-index SG1_DUMP=…` | the dump's `Speech/` | `inventory/dialogue_by_mission.csv`, `docs/DIALOGUE.md` | nightly |
+| `make dialogue-index SG1_DUMP=…` | the dump's `Speech/` | `inventory/dialogue_by_mission.csv`, `docs/DIALOGUE.md` | nightly, `--check` in `make ci` |
 | `make package-check SG1_DUMP=…` | the dump's `System/Packages.md5` | `inventory/package_check.csv` | nightly |
 | `make content-census SG1_DUMP=… WORK=…` | the dump + `$WORK/UnrealScript` | `inventory/content_census.csv`, `docs/CONTENT_CENSUS.md` | nightly |
 | `make property-types WORK=…` | `$WORK/native` ExportAt output (step 5) | `inventory/property_types.csv` | nightly |
@@ -106,7 +106,7 @@ produces different per-module counts (measured: `inventory/xbe_game_modules.csv`
 `--index`), which is why it is a nightly stage rather than a CI one.
 
 Two of these were run against the real dump and reproduced their committed artifacts byte for byte —
-`dialogue-index` (1,364 WAVs, 14 missions, 29 speakers) and `package-check`. The other four need an input this
+`dialogue-index` (1,364 WAVs, reproduced until its tagger was widened, which moved 545 rows — the finding in `docs/DIALOGUE.md`) and `package-check`. The other four need an input this
 repository does not carry (`$WORK/native`, the private tree) and stay listed as gates rather than claims.
 
 ## 4. What each stage is expected to say
