@@ -206,6 +206,50 @@ def vocab_of(name, index, states, labels, tables):
     return "absent", ""
 
 
+# A commented call name's own words, as the evidence a declaration could share: `DoRangedAttack` carries
+# `ranged`, `DeActivateStateOveride` carries `overide`. The verb prefixes and the generic `state` are not words
+# a declaration is distinctive by, so they are dropped -- the match is a naming correspondence, not an identity.
+STEM_SPLIT = re.compile(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+")
+STEM_VERBS = {"activate", "de", "deactivate", "do", "finish", "get", "is", "pick", "set", "should", "start",
+              "stop", "update"}
+STEM_GENERIC = {"state"}
+# A word this many declarations carry names none of them: `attack` and `objective` sit in hundreds of names.
+STEM_COMMON = 25
+
+
+def stem_words(raw):
+    """The distinctive words of a call name's original spelling, in order."""
+    out = []
+    for w in STEM_SPLIT.findall(raw or ""):
+        w = w.lower()
+        if len(w) < 3 or w in STEM_VERBS or w in STEM_GENERIC or w in out:
+            continue
+        out.append(w)
+    return out
+
+
+def stem_matches(words, tokens, common=STEM_COMMON):
+    """(declarations whose own name carries one of the words as a word, the words distinctive enough to use).
+
+    Matching a **word**, not a substring: `put` sits inside `canacceptinput` and says nothing about it, which is
+    the coincidence the token split removes. Dropping a word more than `common` declarations carry is the other
+    half -- and a name whose every word is common gets no match, which is the honest answer.
+    """
+    used, hits = [], set()
+    for w in words:
+        cand = {n for n, toks in tokens.items() if w in toks}
+        if not cand or len(cand) > common:
+            continue
+        used.append(w)
+        hits |= cand
+    return sorted(hits), used
+
+
+def function_tokens(raw_of):
+    """`name -> its own words`, from the declarations' original spellings."""
+    return {n: {w.lower() for w in STEM_SPLIT.findall(raw)} for n, raw in raw_of.items()}
+
+
 def functions(text):
     """(name -> body, names without a body, declarations, bare, with a body) for one text.
 
@@ -445,7 +489,7 @@ def sweep(system_dir):
     # own package -- an engine native a game class calls is declared in Core or Engine. The type table is the
     # other half: a name some package exports as a class, struct or enum and none as a function is a cast. The
     # name table is the third: it holds every name the compiler saw, declaration or reference.
-    packages, index, types, tables = [], {}, {}, {}
+    packages, index, types, tables, func_raw = [], {}, {}, {}, {}
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
@@ -458,6 +502,10 @@ def sweep(system_dir):
                 tables.setdefault(pkg.name(i).lower(), set()).add(package)
             except (IndexError, ValueError, KeyError):
                 pass
+        for e in pkg.exports:
+            if pkg.class_name_of(e) == "Function":
+                n = pkg.name(e["name"])
+                func_raw.setdefault(n.lower(), n)
         for name, classes in corpus_index(pkg).items():
             index.setdefault(name, set()).update((package, c) for c in classes)
         for name, kinds in type_index(pkg, package).items():
@@ -474,7 +522,7 @@ def sweep(system_dir):
              control_calls=0, control_calls_own=0, control_calls_elsewhere=0, control_calls_missing=0,
              control_calls_all=0, control_casts=0,
              pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0)
-    com_decl, ifdef_decl, sites, states, labels = {}, {}, {}, {}, {}
+    com_decl, ifdef_decl, sites, states, labels, raw_of = {}, {}, {}, {}, {}, {}
     for package, pkg in packages:
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
@@ -561,6 +609,11 @@ def sweep(system_dir):
                         if not index.get(n):
                             sites.setdefault(n, []).append(
                                 (package, cls, name, receivers(body, n, param_types(comment, name), types)))
+                            if n not in raw_of:
+                                for mm in CALL.finditer(LITERAL.sub('""', body)):
+                                    if mm.group(1).lower() == n:
+                                        raw_of[n] = mm.group(1)
+                                        break
                     rows.append(disabled_row(package, cls, name, cshape))
     residue, receivers_of = [], {}
     for n in sorted(sites):
@@ -578,7 +631,21 @@ def sweep(system_dir):
     # The bot override API: the names a `BotEnemy` receiver is handed, and how many of them the build carries.
     bot = sorted(n for n in receivers_of if "BotEnemy" in receivers_of[n])
     bot_present = [r["name"] for r in residue if r["name"] in bot and r["vocab"] != "absent"]
+    # The same names against the corpus's declarations by word: the build's own spelling of a behaviour whose
+    # name this revision does not use.
+    stemmed = []
+    tokens = function_tokens(func_raw)
+    for r in residue:
+        words = stem_words(raw_of.get(r["name"], r["name"]))
+        hits, used = stem_matches(words, tokens)
+        row = {k: "" for k in FIELDS}
+        row.update(kind="stem", name=r["name"], count=str(len(hits)),
+                   keys=",".join(hits[:6]), note="--".join(words), vocab=r["vocab"],
+                   vocab_where="BotEnemy" if r["name"] in bot else "")
+        stemmed.append(row)
     rows.extend(residue)
+    rows.extend(stemmed)
+    stem_names = {r["name"] for r in stemmed if int(r["count"])}
     census = (
         ("classes_with_text", t["classes"], "class exports carrying a `ScriptText`"),
         ("classes_with_block", t["with_block"], "of those, carrying a `/* ... */` block"),
@@ -647,6 +714,12 @@ def sweep(system_dir):
         ("residue_botenemy", len(bot), "of those, called on a `BotEnemy` receiver"),
         ("residue_botenemy_present", len(bot_present),
          "of those, which the build carries in some vocabulary"),
+        ("residue_stem_matched", len(stem_names),
+         "of those, sharing a distinctive word with a declaration the corpus exports"),
+        ("residue_stem_unmatched", len(residue) - len(stem_names),
+         "of those, whose every word the corpus also uses too widely to be evidence"),
+        ("residue_botenemy_stem_matched", len([n for n in bot if n in stem_names]),
+         "of the `BotEnemy` names, sharing a word with a declaration the corpus exports"),
         ("state_names", len(states), "distinct `state` names the class texts declare"),
         ("state_names_exported", sum(1 for n in states if index.get(n)),
          "of those, a name the export table also carries as a `Function`"),
@@ -835,14 +908,44 @@ def render(rows):
                       n("label_names")))
         out.append("")
         if n("residue_botenemy"):
-            out.append("That is the whole answer for the AI override API: `StargateGame.TeamAI.setorders` calls "
-                       "**%d** names on a `BotEnemy` receiver and the build carries **%d** of them -- %s -- "
-                       "while the remaining **%d** sit in no name table of the eighteen packages. A call site "
-                       "cannot reach a label, and nothing in the build references the other names at all, so "
-                       "the commented revision is a dropped API rather than one this build presents under "
-                       "another name."
+            out.append("That is the whole answer for the AI override API's **names**: `StargateGame.TeamAI.setorders` "
+                       "calls **%d** names on a `BotEnemy` receiver and the build carries **%d** of them -- %s -- "
+                       "while the remaining **%d** sit in no name table of the eighteen packages, so no object "
+                       "of any package ever referenced them. A call site cannot reach a label, and the other "
+                       "eight were never compiled: the revision is written against a spelling this build does "
+                       "not use."
                        % (n("residue_botenemy"), n("residue_botenemy_present"), lab_names or "-",
                           n("residue_botenemy") - n("residue_botenemy_present")))
+            out.append("")
+        stems = [r for r in rows if r["kind"] == "stem"]
+        if stems:
+            ex = ["`%s` beside the commented `%s`" % (r["keys"].split(",")[0], r["name"])
+                  for r in sorted(stems, key=lambda r: (int(r["count"]), r["name"]))
+                  if r["vocab_where"] == "BotEnemy" and int(r["count"])][:4]
+            zero = ["`%s`" % r["name"] for r in sorted(stems, key=lambda r: r["name"])
+                    if r["vocab_where"] == "BotEnemy" and not int(r["count"])]
+            out.append("**A name is not a behaviour, and most of the behaviours are still here.** Each commented "
+                       "name's own words -- `DoRangedAttack` carries `ranged`, `DeActivateStateOveride` carries "
+                       "`overide`; the verb prefixes and the generic `state` are not words a declaration is "
+                       "distinctive by -- are matched, as words, against every `Function` the eighteen packages "
+                       "export: **%d of the %d** residue names and **%d of the %d** `BotEnemy` ones share one "
+                       "with a declaration the build carries. A word more than %d declarations carry is not "
+                       "counted as evidence, so a name whose words are all that common reads 0%s. The matches "
+                       "are the build's own spellings of the same vocabulary%s -- a naming correspondence, not "
+                       "an identity: a low count says where to look, and only the bodies can say the two do the "
+                       "same thing."
+                       % (n("residue_stem_matched"), n("residue_names"), n("residue_botenemy_stem_matched"),
+                          n("residue_botenemy"), STEM_COMMON,
+                          (" (%s, words the corpus uses everywhere)" % ", ".join(zero)) if zero else "",
+                          (" (%s)" % "; ".join(ex)) if ex else ""))
+            out.append("")
+            out.append("| commented name | its words | declarations of this build that share one |")
+            out.append("|---|---|---:|")
+            for r in sorted(stems, key=lambda r: (-int(r["count"]), r["name"])):
+                out.append("| `%s` | %s | %s (%s) |"
+                           % (r["name"], r["note"].replace("--", " "),
+                              ", ".join("`%s`" % k for k in r["keys"].split(",")[:4])
+                              if r["keys"] else "-", r["count"]))
             out.append("")
         out.append("| unresolved call name | sites | kind | called from | in the build | where | evidence |")
         out.append("|---|---:|---|---|---|---|---|")
@@ -1031,6 +1134,27 @@ def self_check():
             residue_row("quux", [("P", "C", "baz", set())], None, set(), {}, {})]
     rows[3]["vocab"], rows[3]["vocab_where"] = "state-label", "P.C.alert"
     rows[4]["vocab"] = "absent"
+    # a name's own words, and the build's spelling of one: the verb prefix and the generic `state` are not evidence
+    if stem_words("DoRangedAttack") != ["ranged", "attack"]:
+        bad.append("the word splitter read %r" % (stem_words("DoRangedAttack"),))
+    if stem_words("DeActivateStateOveride") != ["overide"]:
+        bad.append("a verb or a generic word survived the splitter: %r"
+                   % (stem_words("DeActivateStateOveride"),))
+    # a word matches a word, not a substring: `put` lives inside `canacceptinput` and says nothing about it
+    toks = {"shouldsquadoverideai": {"should", "squad", "overide", "ai"},
+            "canacceptinput": {"can", "accept", "input"}}
+    if stem_matches(["overide"], toks)[0] != ["shouldsquadoverideai"]:
+        bad.append("the word match returned %r" % (stem_matches(["overide"], toks),))
+    if stem_matches(["put"], toks)[0]:
+        bad.append("a word inside another token matched: %r" % (stem_matches(["put"], toks),))
+    # a word too many declarations carry is not evidence, and a name whose every word is common gets nothing
+    common_tokens = {"f_%02d_x" % i: {"f", "x"} for i in range(30)}
+    if stem_matches(["x"], common_tokens, common=25)[0]:
+        bad.append("a common word still matched: %r" % (stem_matches(["x"], common_tokens, common=25),))
+    stem = {k: "" for k in FIELDS}
+    stem.update(kind="stem", name="qux", count="1", keys="shouldsquadoverideai", note="overide",
+                vocab="state-label", vocab_where="BotEnemy")
+    rows.append(stem)
     cen = (("classes_with_text", 2, ""), ("classes_with_block", 2, ""), ("comment_declarations", 4, ""),
            ("comment_with_body", 3, ""), ("comment_no_body", 1, ""), ("live_declarations", 5, ""),
            ("live_with_body", 5, ""), ("pairs", 2, ""), ("pairs_identical", 1, ""),
@@ -1052,6 +1176,8 @@ def self_check():
            ("residue_member_of", 1, ""), ("residue_unresolved", 0, ""),
            ("residue_state", 0, ""), ("residue_state_label", 1, ""), ("residue_name_only", 0, ""),
            ("residue_absent", 1, ""), ("residue_botenemy", 1, ""), ("residue_botenemy_present", 1, ""),
+           ("residue_stem_matched", 1, ""), ("residue_stem_unmatched", 1, ""),
+           ("residue_botenemy_stem_matched", 1, ""),
            ("state_names", 3, ""), ("state_names_exported", 1, ""),
            ("label_names", 4, ""), ("label_names_exported", 0, ""))
     for key, value, note in cen:
@@ -1061,8 +1187,9 @@ def self_check():
     block = render(rows)
     for want in ("3 of the 4", "2 of them have a live twin", "`P.C.foo`", "`P.C.bar`",
                  "A cast is not a call", "typed by evidence", "| `qux` |", "| `quux` |",
-                 "missing from the build, not only from its export table", "dropped API",
-                 "| in the build | where |"):
+                 "missing from the build, not only from its export table", "spelling this build does",
+                 "| in the build | where |", "A name is not a behaviour",
+                 "| commented name | its words |"):
         if want not in block:
             bad.append("render is missing %r" % want)
     pair_lines = [l for l in block.splitlines() if l.startswith("| `P.C.")]

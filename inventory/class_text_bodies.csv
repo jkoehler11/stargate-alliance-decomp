@@ -204,6 +204,31 @@ residue,StargateGame,TeamAI,setobjective,member-of,,,,,,,,,,,,,,,,,StargateGame.
 residue,Engine,PlayerController,setupkeybindings,commented-declaration,,,,,,,,,,,,,,,,,Engine.PlayerController.setcurrentprofile,1,"declared inside a block comment at Engine.playercontroller, under #ifdef",absent,
 residue,StargateGame,StargatePlayer,staticview,unresolved,,,,,,,,,,,,,,,,,StargateGame.StargatePlayer.changeaim,1,no declaration anywhere in the corpus's text,absent,
 residue,Engine,Pawn,viewport,unresolved,,,,,,,,,,,,,,,,,"Engine.Pawn.isfirstperson,Engine.Pawn.islocallycontrolled",2,no declaration anywhere in the corpus's text,name-only,"AmbientCreatures,Engine,GUI,GamePlay,UWindow"
+stem,,,activatefearoveride,,,,,,,,,,,,,,,,,,"fearthisspot,shouldrunawayfromfearspot,shouldsquadoverideai,updatefearspotstatus",4,fear--overide,absent,BotEnemy
+stem,,,activateforcemelee,,,,,,,,,,,,,,,,,,,0,force--melee,absent,BotEnemy
+stem,,,activatestateoveride,,,,,,,,,,,,,,,,,,shouldsquadoverideai,1,overide,absent,BotEnemy
+stem,,,attachdrivertoseat,,,,,,,,,,,,,,,,,,"adjustdriverdamage,animnotify_driveralighted,animnotify_driverignition,attach,attachactor,attachdriver",31,attach--driver--seat,absent,
+stem,,,datetimetomap,,,,,,,,,,,,,,,,,,"fulltimedate,getprettydate",2,date--time--map,absent,
+stem,,,deactivatefearoveride,,,,,,,,,,,,,,,,,,"fearthisspot,shouldrunawayfromfearspot,shouldsquadoverideai,updatefearspotstatus",4,fear--overide,absent,BotEnemy
+stem,,,deactivateforcemelee,,,,,,,,,,,,,,,,,,,0,force--melee,absent,BotEnemy
+stem,,,deactivatestateoveride,,,,,,,,,,,,,,,,,,shouldsquadoverideai,1,overide,absent,BotEnemy
+stem,,,docharge,,,,,,,,,,,,,,,,,,"animnotify_melleecharge_hold,cancharge,canmellecharge,charge,chargebar,domelleecharge",14,charge,state-label,BotEnemy
+stem,,,dorangedattack,,,,,,,,,,,,,,,,,,"doranged,dovehicleranged,rangedattacktime,recommendlongrangedattack,recommendrangedattack",5,ranged--attack,absent,BotEnemy
+stem,,,doretreat,,,,,,,,,,,,,,,,,,pickretreatdestination,1,retreat,absent,BotEnemy
+stem,,,format,,,,,,,,,,,,,,,,,,"formatquat,formattime,formattimedisplay",3,format,name-only,
+stem,,,getleastdefendedobjective,,,,,,,,,,,,,,,,,,"addobjective,addvisibleobjective,botnearobjective,disablenextobjective,disableobjective,displayobjective",10,least--defended--objective,absent,
+stem,,,getpriorityattackobjective,,,,,,,,,,,,,,,,,,"addobjective,addvisibleobjective,armorpriority,assessenemypriority,autobuildpriority,botnearobjective",17,priority--attack--objective,absent,
+stem,,,getpriorityfreelanceobjective,,,,,,,,,,,,,,,,,,"addobjective,addvisibleobjective,armorpriority,assessenemypriority,autobuildpriority,botnearobjective",17,priority--freelance--objective,absent,
+stem,,,mergewith,,,,,,,,,,,,,,,,,,"addsquadwithleader,buildobjectwithproperties,comparewithuser,connectwithpassword,getnumenemieswithaggrolevel,gotostatewithdelay",15,merge--with,absent,
+stem,,,putondefense,,,,,,,,,,,,,,,,,,"adddefensepoint,ownsdefensescript,putbotonsquadledby,putdown,suggestdefensestyle",5,put--defense,absent,
+stem,,,putonfreelance,,,,,,,,,,,,,,,,,,"putbotonsquadledby,putdown",2,put--freelance,absent,
+stem,,,putonoffense,,,,,,,,,,,,,,,,,,"putbotonsquadledby,putdown",2,put--offense,absent,
+stem,,,screenprint,,,,,,,,,,,,,,,,,,,0,screenprint,absent,
+stem,,,setfreelancescriptfor,,,,,,,,,,,,,,,,,,"abortscript,clearscript,continueformationscript,docombatscript,dumpscripttag,executescriptcommand",20,freelance--script--for,absent,
+stem,,,setobjective,,,,,,,,,,,,,,,,,,"addobjective,addvisibleobjective,botnearobjective,disablenextobjective,disableobjective,displayobjective",10,objective,absent,
+stem,,,setupkeybindings,,,,,,,,,,,,,,,,,,,0,setup--key--bindings,absent,
+stem,,,staticview,,,,,,,,,,,,,,,,,,"addprecachestaticmesh,fillprecachestaticmeshesarray,getstaticbigfont,getstatichugefont,getstaticmediumfont,getstaticsmallestfont",21,static--view,absent,
+stem,,,viewport,,,,,,,,,,,,,,,,,,"addchildviewport,findviewportindex,getviewport,getviewportcount,notifyaddviewport,notifyremoveviewport",10,viewport,name-only,
 census,,,classes_with_text,,,,,,,,,,,,,,,,,,,2319,class exports carrying a `ScriptText`,,
 census,,,classes_with_block,,,,,,,,,,,,,,,,,,,252,"of those, carrying a `/* ... */` block",,
 census,,,comment_declarations,,,,,,,,,,,,,,,,,,,208,`function` declarations inside a block comment,,
@@ -247,6 +272,9 @@ census,,,residue_name_only,,,,,,,,,,,,,,,,,,,2,"of those, a name in a package na
 census,,,residue_absent,,,,,,,,,,,,,,,,,,,22,"of those, in no name table of the eighteen packages",,
 census,,,residue_botenemy,,,,,,,,,,,,,,,,,,,9,"of those, called on a `BotEnemy` receiver",,
 census,,,residue_botenemy_present,,,,,,,,,,,,,,,,,,,1,"of those, which the build carries in some vocabulary",,
+census,,,residue_stem_matched,,,,,,,,,,,,,,,,,,,21,"of those, sharing a distinctive word with a declaration the corpus exports",,
+census,,,residue_stem_unmatched,,,,,,,,,,,,,,,,,,,4,"of those, whose every word the corpus also uses too widely to be evidence",,
+census,,,residue_botenemy_stem_matched,,,,,,,,,,,,,,,,,,,7,"of the `BotEnemy` names, sharing a word with a declaration the corpus exports",,
 census,,,state_names,,,,,,,,,,,,,,,,,,,266,distinct `state` names the class texts declare,,
 census,,,state_names_exported,,,,,,,,,,,,,,,,,,,13,"of those, a name the export table also carries as a `Function`",,
 census,,,label_names,,,,,,,,,,,,,,,,,,,54,distinct labels at a state body's own statement level,,
