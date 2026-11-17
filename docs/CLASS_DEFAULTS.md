@@ -241,10 +241,14 @@ and how many tagged struct elements fit. All three rows are `__OnXControllerEven
 Two things are measured rather than assumed: the blocks continue cleanly *after* these tags and end on the payload's
 last byte (a zero trailer in all three), so the extents belong to the format and are not a locator overshoot; and the
 tag map this reader uses (UELib's, 0-15) has **no delegate type**, so the value is not written by the tag grammar at
-all — which is what `UDelegateProperty`'s exemption in the type check below already assumed. What the value *is*
-stays open: the 110-byte one is twelve repeats of a nine-byte record plus two bytes, and the two 12-byte ones differ
-in one byte, so they read as structural data rather than a bound function. `docs/UNKNOWNS.md` U18 records it with the
-routes that would settle it.
+all — which is what `UDelegateProperty`'s exemption in the type check below already assumed. **All three rows turned
+out to be locator offsets, and no value is left** (2026-11-16). Read from every offset inside the first tag, the block
+that opens on a property the class *itself* declares is **ten bytes later** on both menu pages — `TempLB`, the one
+property each of them declares, bound to a `GUILabel` template, then the inherited `TitleString` — and **108 bytes
+later** on `GUI.MenuItemOverlay`, where it opens on `img_Overlay` (`docs/UNKNOWNS.md` U18, *the two menu pages' block
+starts ten bytes later*). The chooser's own-first tie-break ships that reading and moves four rows in the whole
+corpus. So the residue was a block start inside the record, not a value width, and `tools/defaults-residue.py` is a
+corpus census now: it re-renders every value of every clean block and refuses **0 of 15,521**.
 
 ### The locator scores names first and tag types second
 
@@ -795,8 +799,9 @@ class handles its own event". The width differs per class only because the expor
 is export 2, 3 bytes where it is export 107 or higher, under tag bytes `0x17` and `0x57` (same type nibble, different
 size class). The three that do not tile -- `GUI.MenuItemOverlay` and the two `StargateMenus` menu pages -- are the
 `defaults-residue` rows, and their `{first, second}` pair names no declared function, so they are a tag-offset
-question, and the next section measures it: one of the three is a misplaced block start, the other two
-are tags whose value is still open.
+question, and the next sections measure it: **all three are misplaced block starts** — the two menu pages' blocks open
+ten bytes later on `TempLB` and the overlay's 108 bytes later on `img_Overlay`, so no class in the build ships this
+property at a width the reader has not already read (`docs/UNKNOWNS.md` U18).
 
 The source form these values come from is the familiar one: the shipped text writes
 `OnXControllerEvent=cFriends.InternalOnXControllerEvent`, i.e. the same object-and-function pair, resolved at load.
@@ -870,11 +875,10 @@ often?
   with the record; nothing here checks that the shorter block is *complete*. What would settle it: a per-class audit
   of the chosen block against the properties the class is documented to override, or the runtime reader of the
   trailing table (the route `docs/NATIVE_PROPERTIES.md` took for the tag format).
-* **Whether the three residue classes set that delegate.** The value layout is measured (a delegate is an
-  object reference plus a function name, see "A delegate's default is `{object, function}`" above), but
-  `GUI.MenuItemOverlay` and the two `StargateMenus` menu pages do not tile as that pair and name no declared
-  function, so their tag offset is open. What would settle it: the block's own property sequence read from the
-  tag the *previous* property ends on, and whether it lands on a `delegate` type nibble at all.
+* ~~**Whether the three residue classes set that delegate.**~~ **Answered** (`docs/UNKNOWNS.md` U18): the value
+  layout is an object reference plus a function name, and those three rows are locator offsets — the two menu pages'
+  blocks open ten bytes later on `TempLB` and the overlay's 108 bytes later on `img_Overlay`, so none of them ships a
+  delegate default and `tools/defaults-residue.py`'s corpus census refuses **0 of 15,521** values.
 * **The 545 withheld blocks.** Their candidate parses a package name as a property, so it reads a record and
   not a tag stream — but whether that record means "this class sets no defaults" or is a component table is not
   settled (see the section above for the three explanations already tested and rejected).

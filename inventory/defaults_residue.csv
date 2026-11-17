@@ -1,1 +1,2 @@
-package,class,property,declared,tag_type,type_byte,size_class,flags,size,nested_index,index_bytes,greedy_indices,greedy_bytes,count,zero_bytes,fixed_widths,tagged_elements,value_offset
+kind,package,class,property,declared,tag_type,type_byte,size_class,flags,size,nested_index,index_bytes,greedy_indices,greedy_bytes,count,zero_bytes,fixed_widths,tagged_elements,value_offset,values,clean_blocks,classes
+census,,,,,,,,,,,,,,,,,,,15521,1664,2319
